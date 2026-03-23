@@ -6,16 +6,17 @@ import * as THREE from 'three';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 
 /**
- * SOVEREIGN MATRIX — Glowing Immersive Background
+ * SOVEREIGN MATRIX — Circuit Matrix Background
+ * Inspired by the hexagonal S logo with circuit board traces.
  *
- * - Rich emerald particle field with color variation
- * - Glowing glass core sphere (frosted emerald)
- * - Two orbital rings (different angles, subtle glow)
- * - Neural connection mesh with higher visibility
- * - Mouse-reactive brightening
- * - Scroll parallax
- * - Grid floor with more presence
- * - Strong bloom for cinematic glow
+ * - Circuit grid floor with pulsing data lines
+ * - Hexagonal node network (not random spherical particles)
+ * - Glowing connection lines between hex nodes
+ * - Central glowing hexagonal core
+ * - Floating data motes along circuit paths
+ * - Deep emerald neon on pure black
+ * - Mouse-reactive node brightening
+ * - Smooth, instant, no flash
  */
 
 function useScrollY() {
@@ -41,102 +42,118 @@ function useMouseNDC() {
   return mouse;
 }
 
-// ─── Glowing Glass Core Sphere ───
-function GlassCore() {
-  const ref = useRef<THREE.Mesh>(null);
+// ─── Hexagonal Core Structure ───
+function HexCore() {
+  const groupRef = useRef<THREE.Group>(null);
   const matRef = useRef<THREE.ShaderMaterial>(null);
-
-  const uniforms = useMemo(() => ({
-    uTime: { value: 0 },
-  }), []);
+  const uniforms = useMemo(() => ({ uTime: { value: 0 } }), []);
 
   useFrame((_, delta) => {
+    if (groupRef.current) groupRef.current.rotation.y += delta * 0.08;
     if (matRef.current) matRef.current.uniforms.uTime.value += delta;
-    if (ref.current) ref.current.rotation.y += delta * 0.05;
   });
 
+  // Create hexagonal wireframe geometry
+  const hexEdges = useMemo(() => {
+    const geo = new THREE.IcosahedronGeometry(1.2, 1);
+    return new THREE.EdgesGeometry(geo);
+  }, []);
+
   return (
-    <mesh ref={ref}>
-      <icosahedronGeometry args={[0.8, 4]} />
-      <shaderMaterial
-        ref={matRef}
-        transparent
-        depthWrite={false}
-        blending={THREE.AdditiveBlending}
-        uniforms={uniforms}
-        vertexShader={`
-          varying vec3 vNormal;
-          varying vec3 vPosition;
-          void main() {
-            vNormal = normalize(normalMatrix * normal);
-            vPosition = position;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-          }
-        `}
-        fragmentShader={`
-          uniform float uTime;
-          varying vec3 vNormal;
-          varying vec3 vPosition;
-          void main() {
-            // Fresnel edge glow
-            float fresnel = pow(1.0 - abs(dot(vNormal, vec3(0.0, 0.0, 1.0))), 3.0);
-            // Emerald color with subtle pulse
-            float pulse = 0.7 + 0.3 * sin(uTime * 0.8);
-            vec3 emerald = vec3(0.063, 0.725, 0.506);
-            vec3 bright = vec3(0.208, 0.91, 0.624);
-            vec3 color = mix(emerald, bright, fresnel * pulse);
-            // Glass-like transparency: edges glow, center is mostly clear
-            float alpha = fresnel * 0.25 + 0.02;
-            gl_FragColor = vec4(color, alpha);
-          }
-        `}
-      />
-    </mesh>
+    <group ref={groupRef}>
+      {/* Outer hex wireframe */}
+      <lineSegments geometry={hexEdges}>
+        <shaderMaterial
+          ref={matRef}
+          transparent
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          uniforms={uniforms}
+          vertexShader={`
+            varying vec3 vPos;
+            void main() {
+              vPos = position;
+              gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+          `}
+          fragmentShader={`
+            uniform float uTime;
+            varying vec3 vPos;
+            void main() {
+              float pulse = 0.6 + 0.4 * sin(uTime * 0.5 + vPos.y * 3.0);
+              vec3 emerald = vec3(0.063, 0.725, 0.506);
+              vec3 bright = vec3(0.431, 0.953, 0.733);
+              vec3 color = mix(emerald, bright, pulse * 0.5);
+              gl_FragColor = vec4(color, 0.4 * pulse);
+            }
+          `}
+        />
+      </lineSegments>
+
+      {/* Inner glow sphere */}
+      <mesh>
+        <icosahedronGeometry args={[0.6, 2]} />
+        <meshBasicMaterial color="#10B981" transparent opacity={0.04} depthWrite={false} blending={THREE.AdditiveBlending} />
+      </mesh>
+
+      {/* Core point light effect */}
+      <mesh>
+        <sphereGeometry args={[0.15, 16, 16]} />
+        <meshBasicMaterial color="#6EE7B7" transparent opacity={0.8} depthWrite={false} blending={THREE.AdditiveBlending} />
+      </mesh>
+    </group>
   );
 }
 
-// ─── Core Particle Field with Color Variation ───
-function ParticleField({ scrollY }: { scrollY: React.MutableRefObject<number> }) {
+// ─── Circuit Node Network (hex grid in 3D space) ───
+function CircuitNodes({ scrollY }: { scrollY: React.MutableRefObject<number> }) {
   const ref = useRef<THREE.Points>(null);
   const geomRef = useRef<THREE.BufferGeometry>(null);
   const mouse = useMouseNDC();
-  const count = 2500;
 
-  const positions = useMemo(() => {
-    const p = new Float32Array(count * 3);
-    for (let i = 0; i < count; i++) {
-      const theta = Math.random() * 2.0 * Math.PI;
-      const phi = Math.acos(2.0 * Math.random() - 1.0);
-      const r = 0.5 + Math.cbrt(Math.random()) * 3.0;
-      p[i * 3] = r * Math.sin(phi) * Math.cos(theta);
-      p[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
-      p[i * 3 + 2] = r * Math.cos(phi);
+  // Place nodes on a hex-inspired lattice, not random sphere
+  const { positions, count } = useMemo(() => {
+    const nodes: number[] = [];
+    const spacing = 0.8;
+    for (let layer = -3; layer <= 3; layer++) {
+      for (let row = -4; row <= 4; row++) {
+        for (let col = -4; col <= 4; col++) {
+          const x = col * spacing + (row % 2) * spacing * 0.5;
+          const y = layer * spacing * 0.9;
+          const z = row * spacing * 0.866;
+          const dist = Math.sqrt(x * x + y * y + z * z);
+          // Only keep nodes within a sphere, skip center (hex core lives there)
+          if (dist > 1.5 && dist < 4.0) {
+            // Slight random offset for organic feel
+            nodes.push(
+              x + (Math.random() - 0.5) * 0.15,
+              y + (Math.random() - 0.5) * 0.15,
+              z + (Math.random() - 0.5) * 0.15
+            );
+          }
+        }
+      }
     }
-    return p;
+    return { positions: new Float32Array(nodes), count: nodes.length / 3 };
   }, []);
 
-  // Color variation: mix of deep emerald, bright emerald, and teal
   const initColors = useMemo(() => {
     const c = new Float32Array(count * 3);
     const palette = [
-      new THREE.Color("#10B981"), // emerald
-      new THREE.Color("#34D399"), // light emerald
-      new THREE.Color("#059669"), // deep emerald
-      new THREE.Color("#0D9488"), // teal hint
-      new THREE.Color("#6EE7B7"), // bright mint
+      new THREE.Color("#10B981"),
+      new THREE.Color("#059669"),
+      new THREE.Color("#34D399"),
+      new THREE.Color("#0D9488"),
     ];
-    const tmp = new THREE.Color();
     for (let i = 0; i < count; i++) {
-      const base = palette[Math.floor(Math.random() * palette.length)];
-      tmp.copy(base);
-      // Slight random brightness variation
-      tmp.multiplyScalar(0.6 + Math.random() * 0.6);
-      c[i * 3] = tmp.r;
-      c[i * 3 + 1] = tmp.g;
-      c[i * 3 + 2] = tmp.b;
+      const col = palette[Math.floor(Math.random() * palette.length)];
+      const brightness = 0.5 + Math.random() * 0.5;
+      c[i * 3] = col.r * brightness;
+      c[i * 3 + 1] = col.g * brightness;
+      c[i * 3 + 2] = col.b * brightness;
     }
     return c;
-  }, []);
+  }, [count]);
 
   useEffect(() => {
     if (geomRef.current) {
@@ -145,8 +162,7 @@ function ParticleField({ scrollY }: { scrollY: React.MutableRefObject<number> })
     }
   }, [positions, initColors]);
 
-  const baseColor = useMemo(() => new THREE.Color("#10B981"), []);
-  const hoverColor = useMemo(() => new THREE.Color("#A7F3D0"), []); // brighter on hover
+  const hoverColor = useMemo(() => new THREE.Color("#A7F3D0"), []);
   const tmp = useMemo(() => new THREE.Color(), []);
   const mouseWorld = useMemo(() => new THREE.Vector3(), []);
   const pv = useMemo(() => new THREE.Vector3(), []);
@@ -154,9 +170,8 @@ function ParticleField({ scrollY }: { scrollY: React.MutableRefObject<number> })
 
   useFrame((_, delta) => {
     if (!ref.current || !geomRef.current) return;
-    ref.current.rotation.y -= delta * 0.025;
-    ref.current.rotation.x -= delta * 0.012;
-    ref.current.position.y = -(scrollY.current * 0.0006);
+    ref.current.rotation.y -= delta * 0.015;
+    ref.current.position.y = -(scrollY.current * 0.0005);
 
     const frame = Math.round(performance.now() / 16);
     if (frame % 3 !== 0) return;
@@ -174,12 +189,11 @@ function ParticleField({ scrollY }: { scrollY: React.MutableRefObject<number> })
         .applyMatrix4(ref.current.matrixWorld);
       const dist = pv.distanceTo(mouseWorld);
       const influence = Math.max(0, 1 - dist / 2.5);
+      tmp.set(initColors[i * 3], initColors[i * 3 + 1], initColors[i * 3 + 2]);
       if (influence > 0.01) {
-        // Brighten particles near mouse
-        tmp.set(initColors[i * 3], initColors[i * 3 + 1], initColors[i * 3 + 2]);
-        tmp.lerp(hoverColor, influence * influence);
-        colorAttr.setXYZ(i, tmp.r, tmp.g, tmp.b);
+        tmp.lerp(hoverColor, influence * influence * 0.8);
       }
+      colorAttr.setXYZ(i, tmp.r, tmp.g, tmp.b);
     }
     colorAttr.needsUpdate = true;
   });
@@ -187,35 +201,46 @@ function ParticleField({ scrollY }: { scrollY: React.MutableRefObject<number> })
   return (
     <points ref={ref}>
       <bufferGeometry ref={geomRef} />
-      <pointsMaterial size={0.015} vertexColors transparent opacity={0.55} depthWrite={false} blending={THREE.AdditiveBlending} />
+      <pointsMaterial size={0.025} vertexColors transparent opacity={0.7} depthWrite={false} blending={THREE.AdditiveBlending} />
     </points>
   );
 }
 
-// ─── Neural Connection Mesh ───
-function ConnectionMesh({ scrollY }: { scrollY: React.MutableRefObject<number> }) {
+// ─── Circuit Trace Lines (connecting nearby hex nodes) ───
+function CircuitTraces({ scrollY }: { scrollY: React.MutableRefObject<number> }) {
   const ref = useRef<THREE.LineSegments>(null);
 
   const linePositions = useMemo(() => {
-    const nodeCount = 400;
-    const maxDist = 0.6;
-    const nodes = new Float32Array(nodeCount * 3);
-    for (let i = 0; i < nodeCount; i++) {
-      const theta = Math.random() * 2.0 * Math.PI;
-      const phi = Math.acos(2.0 * Math.random() - 1.0);
-      const r = Math.cbrt(Math.random()) * 2.8;
-      nodes[i * 3] = r * Math.sin(phi) * Math.cos(theta);
-      nodes[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
-      nodes[i * 3 + 2] = r * Math.cos(phi);
+    const spacing = 0.8;
+    const nodes: [number, number, number][] = [];
+    for (let layer = -3; layer <= 3; layer++) {
+      for (let row = -4; row <= 4; row++) {
+        for (let col = -4; col <= 4; col++) {
+          const x = col * spacing + (row % 2) * spacing * 0.5;
+          const y = layer * spacing * 0.9;
+          const z = row * spacing * 0.866;
+          const dist = Math.sqrt(x * x + y * y + z * z);
+          if (dist > 1.5 && dist < 4.0) {
+            nodes.push([
+              x + (Math.random() - 0.5) * 0.08,
+              y + (Math.random() - 0.5) * 0.08,
+              z + (Math.random() - 0.5) * 0.08
+            ]);
+          }
+        }
+      }
     }
+
     const lines: number[] = [];
-    for (let i = 0; i < nodeCount && lines.length < 4500; i++) {
-      for (let j = i + 1; j < nodeCount && lines.length < 4500; j++) {
-        const dx = nodes[i * 3] - nodes[j * 3];
-        const dy = nodes[i * 3 + 1] - nodes[j * 3 + 1];
-        const dz = nodes[i * 3 + 2] - nodes[j * 3 + 2];
-        if (dx * dx + dy * dy + dz * dz < maxDist * maxDist) {
-          lines.push(nodes[i*3], nodes[i*3+1], nodes[i*3+2], nodes[j*3], nodes[j*3+1], nodes[j*3+2]);
+    const maxDist = 1.0;
+    for (let i = 0; i < nodes.length && lines.length < 9000; i++) {
+      for (let j = i + 1; j < nodes.length && lines.length < 9000; j++) {
+        const dx = nodes[i][0] - nodes[j][0];
+        const dy = nodes[i][1] - nodes[j][1];
+        const dz = nodes[i][2] - nodes[j][2];
+        const d2 = dx * dx + dy * dy + dz * dz;
+        if (d2 < maxDist * maxDist && d2 > 0.3 * 0.3) {
+          lines.push(...nodes[i], ...nodes[j]);
         }
       }
     }
@@ -224,9 +249,8 @@ function ConnectionMesh({ scrollY }: { scrollY: React.MutableRefObject<number> }
 
   useFrame((_, delta) => {
     if (ref.current) {
-      ref.current.rotation.y -= delta * 0.025;
-      ref.current.rotation.x -= delta * 0.012;
-      ref.current.position.y = -(scrollY.current * 0.0006);
+      ref.current.rotation.y -= delta * 0.015;
+      ref.current.position.y = -(scrollY.current * 0.0005);
     }
   });
 
@@ -236,50 +260,12 @@ function ConnectionMesh({ scrollY }: { scrollY: React.MutableRefObject<number> }
         {/* @ts-expect-error — R3F declarative bufferAttribute type mismatch */}
         <bufferAttribute attach="attributes-position" count={linePositions.length / 3} array={linePositions} itemSize={3} />
       </bufferGeometry>
-      <lineBasicMaterial color="#10B981" transparent opacity={0.07} depthWrite={false} blending={THREE.AdditiveBlending} />
+      <lineBasicMaterial color="#10B981" transparent opacity={0.06} depthWrite={false} blending={THREE.AdditiveBlending} />
     </lineSegments>
   );
 }
 
-// ─── Ambient Outer Glow ───
-function AmbientHaze({ scrollY }: { scrollY: React.MutableRefObject<number> }) {
-  const ref = useRef<THREE.Points>(null);
-  const geomRef = useRef<THREE.BufferGeometry>(null);
-  const count = 1200;
-
-  const positions = useMemo(() => {
-    const p = new Float32Array(count * 3);
-    for (let i = 0; i < count; i++) {
-      const theta = Math.random() * 2 * Math.PI;
-      const phi = Math.acos(2 * Math.random() - 1);
-      const r = 3 + Math.random() * 3;
-      p[i * 3] = r * Math.sin(phi) * Math.cos(theta);
-      p[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
-      p[i * 3 + 2] = r * Math.cos(phi);
-    }
-    return p;
-  }, []);
-
-  useEffect(() => {
-    if (geomRef.current) geomRef.current.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-  }, [positions]);
-
-  useFrame((_, delta) => {
-    if (ref.current) {
-      ref.current.rotation.y += delta * 0.01;
-      ref.current.position.y = -(scrollY.current * 0.0003);
-    }
-  });
-
-  return (
-    <points ref={ref}>
-      <bufferGeometry ref={geomRef} />
-      <pointsMaterial size={0.008} color="#34D399" transparent opacity={0.12} depthWrite={false} blending={THREE.AdditiveBlending} />
-    </points>
-  );
-}
-
-// ─── Two Orbital Rings ───
+// ─── Orbital Rings ───
 function OrbitalRings() {
   const ring1 = useRef<THREE.Mesh>(null);
   const ring2 = useRef<THREE.Mesh>(null);
@@ -292,42 +278,64 @@ function OrbitalRings() {
   return (
     <>
       <mesh ref={ring1} rotation={[Math.PI / 3, 0, 0]}>
-        <torusGeometry args={[3.2, 0.004, 8, 160]} />
-        <meshBasicMaterial color="#10B981" transparent opacity={0.15} depthWrite={false} blending={THREE.AdditiveBlending} />
+        <torusGeometry args={[3.2, 0.005, 8, 160]} />
+        <meshBasicMaterial color="#10B981" transparent opacity={0.18} depthWrite={false} blending={THREE.AdditiveBlending} />
       </mesh>
       <mesh ref={ring2} rotation={[Math.PI / 5, Math.PI / 4, 0]}>
         <torusGeometry args={[3.8, 0.003, 8, 160]} />
-        <meshBasicMaterial color="#34D399" transparent opacity={0.08} depthWrite={false} blending={THREE.AdditiveBlending} />
+        <meshBasicMaterial color="#34D399" transparent opacity={0.1} depthWrite={false} blending={THREE.AdditiveBlending} />
       </mesh>
     </>
   );
 }
 
-// ─── Grid Floor ───
-function GridFloor({ scrollY }: { scrollY: React.MutableRefObject<number> }) {
+// ─── Circuit Grid Floor ───
+function CircuitFloor({ scrollY }: { scrollY: React.MutableRefObject<number> }) {
   const ref = useRef<THREE.Mesh>(null);
   const matRef = useRef<THREE.ShaderMaterial>(null);
-  const uniforms = useMemo(() => ({ uTime: { value: 0 }, uOpacity: { value: 0.05 } }), []);
+  const uniforms = useMemo(() => ({ uTime: { value: 0 } }), []);
 
   useFrame((_, delta) => {
-    if (matRef.current) matRef.current.uniforms.uTime.value += delta * 0.2;
-    if (ref.current) ref.current.position.y = -2.8 - scrollY.current * 0.0004;
+    if (matRef.current) matRef.current.uniforms.uTime.value += delta;
+    if (ref.current) ref.current.position.y = -2.5 - scrollY.current * 0.0004;
   });
 
   return (
-    <mesh ref={ref} rotation={[-Math.PI / 2, 0, 0]} position={[0, -2.8, 0]}>
-      <planeGeometry args={[24, 24, 1, 1]} />
+    <mesh ref={ref} rotation={[-Math.PI / 2, 0, 0]} position={[0, -2.5, 0]}>
+      <planeGeometry args={[30, 30, 1, 1]} />
       <shaderMaterial ref={matRef} transparent depthWrite={false} uniforms={uniforms}
         vertexShader={`varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`}
         fragmentShader={`
-          uniform float uTime; uniform float uOpacity; varying vec2 vUv;
+          uniform float uTime;
+          varying vec2 vUv;
           void main() {
-            vec2 uv = (vUv - 0.5) * 24.0; uv.y += uTime;
+            vec2 uv = (vUv - 0.5) * 30.0;
+
+            // Main grid
             float gx = abs(fract(uv.x) - 0.5) * 2.0;
-            float gy = abs(fract(uv.y) - 0.5) * 2.0;
-            float line = 1.0 - min(smoothstep(0.0, 0.05, gx), smoothstep(0.0, 0.05, gy));
-            float fade = 1.0 - length(vUv - 0.5) * 1.5;
-            gl_FragColor = vec4(0.063, 0.725, 0.506, line * clamp(fade, 0.0, 1.0) * uOpacity);
+            float gy = abs(fract(uv.y + uTime * 0.3) - 0.5) * 2.0;
+            float grid = 1.0 - min(smoothstep(0.0, 0.04, gx), smoothstep(0.0, 0.04, gy));
+
+            // Sub-grid (circuit detail)
+            float sgx = abs(fract(uv.x * 4.0) - 0.5) * 2.0;
+            float sgy = abs(fract((uv.y + uTime * 0.3) * 4.0) - 0.5) * 2.0;
+            float subgrid = 1.0 - min(smoothstep(0.0, 0.15, sgx), smoothstep(0.0, 0.15, sgy));
+
+            // Pulse lines (data flowing through circuits)
+            float pulse1 = smoothstep(0.48, 0.5, fract(uv.y * 0.5 + uTime * 0.8)) *
+                           smoothstep(0.52, 0.5, fract(uv.y * 0.5 + uTime * 0.8));
+            float pulse2 = smoothstep(0.48, 0.5, fract(uv.x * 0.3 + uTime * 0.5)) *
+                           smoothstep(0.52, 0.5, fract(uv.x * 0.3 + uTime * 0.5));
+
+            // Fade from center
+            float fade = 1.0 - length(vUv - 0.5) * 1.4;
+            fade = clamp(fade, 0.0, 1.0);
+
+            // Combine
+            float alpha = (grid * 0.06 + subgrid * 0.015 + (pulse1 + pulse2) * 0.08) * fade;
+            vec3 color = vec3(0.063, 0.725, 0.506);
+
+            gl_FragColor = vec4(color, alpha);
           }
         `}
       />
@@ -339,15 +347,14 @@ function GridFloor({ scrollY }: { scrollY: React.MutableRefObject<number> }) {
 function Scene({ scrollY }: { scrollY: React.MutableRefObject<number> }) {
   return (
     <>
-      <ambientLight intensity={0.15} />
-      <GlassCore />
+      <ambientLight intensity={0.1} />
+      <HexCore />
       <OrbitalRings />
-      <ConnectionMesh scrollY={scrollY} />
-      <ParticleField scrollY={scrollY} />
-      <AmbientHaze scrollY={scrollY} />
-      <GridFloor scrollY={scrollY} />
+      <CircuitTraces scrollY={scrollY} />
+      <CircuitNodes scrollY={scrollY} />
+      <CircuitFloor scrollY={scrollY} />
       <EffectComposer>
-        <Bloom luminanceThreshold={0.1} luminanceSmoothing={0.9} intensity={0.8} mipmapBlur />
+        <Bloom luminanceThreshold={0.08} luminanceSmoothing={0.9} intensity={1.0} mipmapBlur />
       </EffectComposer>
     </>
   );
@@ -357,9 +364,9 @@ export function ImmersiveNodeLayer() {
   const scrollY = useScrollY();
   return (
     <div className="absolute inset-0 z-0 pointer-events-none">
-      <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black z-10" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,black_70%)] z-10 opacity-40" />
-      <Canvas camera={{ position: [0, 0, 8], fov: 50 }} gl={{ antialias: true, alpha: true }} dpr={[1, 1.5]}>
+      <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black z-10" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,black_65%)] z-10 opacity-35" />
+      <Canvas camera={{ position: [0, 0.5, 7], fov: 52 }} gl={{ antialias: true, alpha: true }} dpr={[1, 1.5]}>
         <Scene scrollY={scrollY} />
       </Canvas>
     </div>
