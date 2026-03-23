@@ -1,68 +1,125 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Shield, Zap, Lock, CreditCard, ExternalLink, Activity } from "lucide-react";
+import { CreditCard, ExternalLink, Activity, CheckCircle2, Zap, BarChart3 } from "lucide-react";
+import { useUsage } from "@/hooks/useUsage";
 
 export default function BillingPortal() {
+  const { today, limit, total, plan } = useUsage();
+
+  const PLANS = [
+    {
+      name: "Free",
+      price: "R0",
+      period: "/month",
+      features: ["10 agent calls/day", "3 NIM models", "Community support", "1 workspace"],
+      current: plan === "starter",
+    },
+    {
+      name: "Pro",
+      price: "R499",
+      period: "/month",
+      features: ["100 agent calls/day", "39 NIM models", "Priority support", "5 workspaces", "White-label"],
+      current: plan === "pro",
+      recommended: true,
+    },
+    {
+      name: "Enterprise",
+      price: "Custom",
+      period: "",
+      features: ["Unlimited calls", "All models + local NemoClaw", "Dedicated support", "Unlimited workspaces", "Custom agents", "SOC2 compliance"],
+      current: plan === "enterprise",
+    },
+  ];
+
   return (
     <div className="max-w-5xl mx-auto space-y-8 p-4 lg:p-8">
-      
-      {/* 🔴 TACTICAL ELITE HEADER */}
-      <header className="border-b border-emerald-500/20 pb-8">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center">
-            <CreditCard className="w-6 h-6 text-emerald-500" />
+
+      <header className="pb-8">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
+            <CreditCard className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl font-serif font-bold text-white">Cartel Retainer Access</h1>
-            <p className="text-neutral-500 font-mono text-xs uppercase tracking-widest mt-1">Account & Subscription Matrix</p>
+            <h1 className="text-2xl font-bold text-white">Billing</h1>
+            <p className="text-neutral-500 text-xs">Manage your subscription and usage</p>
           </div>
         </div>
       </header>
 
-      <div className="grid lg:grid-cols-3 gap-8">
-         {/* Status Panel */}
-         <div className="lg:col-span-2 p-8 bg-black/60 border border-white/5 rounded-3xl">
-             <div className="flex items-center justify-between mb-8">
-                <h2 className="text-xl font-serif font-bold text-white flex items-center gap-2">
-                  <Activity className="w-5 h-5 text-emerald-500" /> Active Subscription Core
-                </h2>
-                <span className="px-3 py-1 flex items-center gap-2 text-xs font-bold uppercase tracking-widest bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-full">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> ONLINE
-                </span>
-             </div>
-             
-             <div className="flex items-end gap-2 mb-2">
-               <span className="text-5xl font-mono font-bold text-white">$5,000</span>
-               <span className="text-neutral-500 font-bold mb-1 uppercase tracking-widest">/ month</span>
-             </div>
-             <p className="text-sm text-neutral-400 max-w-lg">
-               Your deployment of the Sovereign Swarm is active until <strong>April 18th, 2026</strong>. Failing to maintain balance will result in immediate API disconnection and shutdown of all automated outreach nodes.
-             </p>
-
-             <button className="mt-8 w-full md:w-auto px-8 py-4 bg-white hover:bg-neutral-200 text-black font-bold text-xs uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2">
-                <Shield className="w-4 h-4" /> Manage Paystack/Stripe Portal <ExternalLink className="w-3 h-3" />
-             </button>
-         </div>
-
-         {/* Usage Panel */}
-         <div className="p-8 bg-gradient-to-b from-emerald-500/10 to-transparent border border-emerald-500/20 rounded-3xl">
-            <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center mb-6">
-              <Zap className="w-5 h-5 text-emerald-400" />
+      {/* Usage Stats */}
+      <div className="grid grid-cols-3 gap-4">
+        {[
+          { label: "Today", value: `${today}/${limit}`, icon: Zap, color: "text-cyan-400" },
+          { label: "All Time", value: `${total}`, icon: BarChart3, color: "text-emerald-400" },
+          { label: "Plan", value: plan === "starter" ? "Free" : plan.charAt(0).toUpperCase() + plan.slice(1), icon: Activity, color: "text-violet-400" },
+        ].map((stat, i) => (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.1 }}
+            className="p-5 bg-white/[0.02] border border-white/5 rounded-xl"
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <stat.icon className={`w-4 h-4 ${stat.color}`} />
+              <span className="text-xs text-neutral-500">{stat.label}</span>
             </div>
-            <h3 className="text-lg font-bold text-white mb-2">Allocated Cloud GPU</h3>
-            <p className="text-sm text-neutral-400 mb-6">
-              Your $5,000 retainer actively covers dedicated NVIDIA TensorRT API throughput, ElevenLabs audio allocations, and highly-available node provisioning.
-            </p>
+            <span className="text-2xl font-bold text-white">{stat.value}</span>
+          </motion.div>
+        ))}
+      </div>
 
-            <ul className="space-y-4">
-              {['Unlimited Gemini 1.5 Pro Token Streams', '10,000 Local Outbound Extractions / wk', 'Full NemoClaw OS Virtualization Rights'].map((perk, i) => (
-                 <li key={i} className="flex items-center gap-3 text-sm text-neutral-300">
-                    <Lock className="w-4 h-4 text-emerald-500/50" /> {perk}
-                 </li>
+      {/* Plans */}
+      <div className="grid md:grid-cols-3 gap-4">
+        {PLANS.map((p, i) => (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 + i * 0.1 }}
+            className={`p-6 rounded-2xl border transition-all ${
+              p.current
+                ? "border-emerald-500/30 bg-emerald-500/5"
+                : p.recommended
+                ? "border-white/10 bg-white/[0.02] hover:border-white/20"
+                : "border-white/5 bg-white/[0.01] hover:border-white/10"
+            }`}
+          >
+            {p.current && (
+              <span className="text-[10px] uppercase tracking-widest text-emerald-400 font-bold mb-3 block">Current Plan</span>
+            )}
+            {p.recommended && !p.current && (
+              <span className="text-[10px] uppercase tracking-widest text-cyan-400 font-bold mb-3 block">Recommended</span>
+            )}
+            <h3 className="text-lg font-bold text-white mb-1">{p.name}</h3>
+            <div className="flex items-baseline gap-1 mb-4">
+              <span className="text-3xl font-black text-white">{p.price}</span>
+              <span className="text-sm text-neutral-500">{p.period}</span>
+            </div>
+            <ul className="space-y-2 mb-6">
+              {p.features.map((f, j) => (
+                <li key={j} className="flex items-center gap-2 text-sm text-neutral-400">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-neutral-600 shrink-0" />
+                  {f}
+                </li>
               ))}
             </ul>
-         </div>
+            {p.current ? (
+              <button className="w-full py-3 rounded-xl bg-white/5 text-neutral-400 text-sm font-medium cursor-default">
+                Active
+              </button>
+            ) : p.name === "Enterprise" ? (
+              <a href="mailto:hello@sovereignmatrix.agency" className="w-full py-3 rounded-xl border border-white/10 text-white text-sm font-semibold hover:bg-white/5 transition-colors flex items-center justify-center gap-2">
+                Contact Sales <ExternalLink className="w-3 h-3" />
+              </a>
+            ) : (
+              <button className="w-full py-3 rounded-xl bg-white text-black text-sm font-bold hover:bg-neutral-200 transition-colors">
+                Upgrade
+              </button>
+            )}
+          </motion.div>
+        ))}
       </div>
     </div>
   );
