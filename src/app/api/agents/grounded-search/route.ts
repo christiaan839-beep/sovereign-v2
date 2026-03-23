@@ -46,7 +46,7 @@ export const POST = createAgentRoute({
           },
           tools: [
             {
-              googleSearch: {},
+              google_search: {},
             },
           ],
           generationConfig: {

@@ -56,6 +56,9 @@ export interface AgentConfig {
   /** Skip PII scanning on output (for PII agents themselves) */
   skipPiiScan?: boolean;
 
+  /** Allowed topics — agent will refuse off-topic requests (NeMo Guardrails pattern) */
+  allowedTopics?: string[];
+
   /** The agent's core logic */
   handler: (ctx: AgentContext) => Promise<Record<string, unknown>>;
 }
@@ -126,6 +129,26 @@ export function createAgentRoute(config: AgentConfig) {
               "Request blocked by safety system. Your input was flagged as a potential prompt injection.",
               403,
               "JAILBREAK_BLOCKED"
+            );
+          }
+        }
+      }
+
+      // ─── Safety Pre-flight: Topic Control (NeMo Guardrails pattern) ───
+      if (config.allowedTopics && config.allowedTopics.length > 0) {
+        const primaryInput = getFirstStringValue(sanitized);
+        if (primaryInput) {
+          const inputLower = primaryInput.toLowerCase();
+          const onTopic = config.allowedTopics.some(topic =>
+            inputLower.includes(topic.toLowerCase())
+          );
+          // Only block if input is long enough to be a real request (not just a URL or short param)
+          if (!onTopic && primaryInput.length > 50) {
+            log.info("Off-topic request filtered", { agent: config.name, topics: config.allowedTopics });
+            return errorResponse(
+              `This agent handles: ${config.allowedTopics.join(", ")}. Your request seems off-topic. Try the Sovereign Assistant for general queries.`,
+              400,
+              "OFF_TOPIC"
             );
           }
         }

@@ -123,6 +123,18 @@ const ROUTES: Array<{
     label: "Agentic Chain",
     extractParam: (t) => ({ goal: t }),
   },
+  {
+    keywords: ["analyze url", "read this page", "check this site", "look at this url"],
+    endpoint: "/api/agents/url-context",
+    label: "URL Analyzer",
+    extractParam: (t) => ({ url: extractUrl(t) || t, question: "Analyze this page comprehensively." }),
+  },
+  {
+    keywords: ["run code", "execute", "calculate", "python", "script", "compute"],
+    endpoint: "/api/agents/code-sandbox",
+    label: "Code Sandbox",
+    extractParam: (t) => ({ task: t }),
+  },
 ];
 
 /**
