@@ -174,11 +174,11 @@ export default function Home() {
 
       <main className="pt-32 md:pt-44 pb-20 px-6 relative overflow-hidden flex flex-col items-center min-h-[100vh] justify-center">
          <div className="absolute inset-0 pointer-events-none z-0">
-           {/* $100M gradient system — deep, cinematic, understated */}
-           <div className="absolute top-[-30%] left-[10%] w-[60%] h-[60%] rounded-full bg-indigo-950/25 blur-[200px]" />
-           <div className="absolute top-[20%] right-[-15%] w-[40%] h-[40%] rounded-full bg-violet-950/15 blur-[180px]" />
-           <div className="absolute bottom-[-20%] left-[30%] w-[50%] h-[50%] rounded-full bg-cyan-950/10 blur-[200px]" />
-           <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(120,119,198,0.08),transparent)]" />
+           {/* Emerald Matrix gradient system — matches logo aesthetic */}
+           <div className="absolute top-[-30%] left-[10%] w-[60%] h-[60%] rounded-full bg-emerald-950/30 blur-[200px]" />
+           <div className="absolute top-[20%] right-[-15%] w-[40%] h-[40%] rounded-full bg-green-950/20 blur-[180px]" />
+           <div className="absolute bottom-[-20%] left-[30%] w-[50%] h-[50%] rounded-full bg-emerald-950/15 blur-[200px]" />
+           <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(16,185,129,0.06),transparent)]" />
            <div className="absolute inset-0 noise-overlay" />
          </div>
 
@@ -187,7 +187,7 @@ export default function Home() {
         <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }} className="relative z-10 w-full max-w-5xl mx-auto text-center">
 
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.8 }}
-            className="inline-flex items-center gap-2.5 px-5 py-2 rounded-full border border-white/[0.08] text-xs font-medium tracking-wider mb-12 bg-white/[0.02] backdrop-blur-2xl">
+            className="inline-flex items-center gap-2.5 px-5 py-2 rounded-full border border-emerald-500/20 text-xs font-medium tracking-wider mb-12 bg-emerald-500/[0.03] backdrop-blur-2xl">
             <span className="relative flex h-1.5 w-1.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60"></span>
               <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400"></span>
@@ -205,7 +205,7 @@ export default function Home() {
           >
             <span className="text-white">Your Agents.</span>
             <br/>
-            <span className="bg-clip-text text-transparent bg-[length:200%_auto] animate-[shimmer_8s_ease-in-out_infinite] bg-gradient-to-r from-white via-neutral-500 to-white">
+            <span className="bg-clip-text text-transparent bg-[length:200%_auto] animate-[shimmer_8s_ease-in-out_infinite] bg-gradient-to-r from-white via-emerald-400/60 to-white">
               Your Infrastructure.
             </span>
           </motion.h1>
@@ -581,7 +581,7 @@ export default function Home() {
       </section>
 
       <section className="py-40 text-center px-6 bg-[#050505] border-t border-white/5 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(99,102,241,0.08),transparent_70%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(16,185,129,0.06),transparent_70%)]" />
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="relative z-10">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-neutral-500 mb-6">No credit card required</p>
           <h2 className="text-4xl md:text-7xl font-black text-white mb-6 tracking-tight leading-[1.05]">Ready to Deploy.</h2>

@@ -63,7 +63,7 @@ function CoreParticles({ scrollY }: { scrollY: React.MutableRefObject<number> })
 
   const initColors = useMemo(() => {
     const c = new Float32Array(count * 3);
-    const blue = new THREE.Color("#60A5FA");
+    const blue = new THREE.Color("#10B981");
     for (let i = 0; i < count; i++) {
       c[i * 3] = blue.r;
       c[i * 3 + 1] = blue.g;
@@ -79,7 +79,7 @@ function CoreParticles({ scrollY }: { scrollY: React.MutableRefObject<number> })
     }
   }, [positions, initColors]);
 
-  const blue = useMemo(() => new THREE.Color("#60A5FA"), []);
+  const blue = useMemo(() => new THREE.Color("#10B981"), []);
   const emerald = useMemo(() => new THREE.Color("#34D399"), []);
   const tmp = useMemo(() => new THREE.Color(), []);
   const mouseWorld = useMemo(() => new THREE.Vector3(), []);
@@ -168,7 +168,7 @@ function ConnectionLines({ scrollY }: { scrollY: React.MutableRefObject<number> 
         {/* @ts-expect-error — R3F declarative bufferAttribute type mismatch */}
         <bufferAttribute attach="attributes-position" count={linePositions.length / 3} array={linePositions} itemSize={3} />
       </bufferGeometry>
-      <lineBasicMaterial color="#60A5FA" transparent opacity={0.04} depthWrite={false} blending={THREE.AdditiveBlending} />
+      <lineBasicMaterial color="#10B981" transparent opacity={0.05} depthWrite={false} blending={THREE.AdditiveBlending} />
     </lineSegments>
   );
 }
@@ -205,7 +205,7 @@ function OuterHaze({ scrollY }: { scrollY: React.MutableRefObject<number> }) {
   return (
     <points ref={ref}>
       <bufferGeometry ref={geomRef} />
-      <pointsMaterial size={0.008} color="#818CF8" transparent opacity={0.15} depthWrite={false} blending={THREE.AdditiveBlending} />
+      <pointsMaterial size={0.008} color="#34D399" transparent opacity={0.12} depthWrite={false} blending={THREE.AdditiveBlending} />
     </points>
   );
 }
@@ -217,7 +217,7 @@ function OrbitalRing() {
   return (
     <mesh ref={ref} rotation={[Math.PI / 3, 0, 0]}>
       <torusGeometry args={[3.2, 0.004, 8, 128]} />
-      <meshBasicMaterial color="#60A5FA" transparent opacity={0.12} />
+      <meshBasicMaterial color="#10B981" transparent opacity={0.12} />
     </mesh>
   );
 }
@@ -322,7 +322,7 @@ function DataStreams() {
   return (
     <points ref={ref}>
       <bufferGeometry ref={geomRef} />
-      <pointsMaterial size={0.018} color="#A78BFA" transparent opacity={0.35} depthWrite={false} blending={THREE.AdditiveBlending} />
+      <pointsMaterial size={0.018} color="#6EE7B7" transparent opacity={0.3} depthWrite={false} blending={THREE.AdditiveBlending} />
     </points>
   );
 }
@@ -351,7 +351,7 @@ function GridFloor({ scrollY }: { scrollY: React.MutableRefObject<number> }) {
             float gy = abs(fract(uv.y) - 0.5) * 2.0;
             float line = 1.0 - min(smoothstep(0.0, 0.06, gx), smoothstep(0.0, 0.06, gy));
             float fade = 1.0 - length(vUv - 0.5) * 1.8;
-            gl_FragColor = vec4(0.376, 0.631, 0.976, line * clamp(fade, 0.0, 1.0) * uOpacity);
+            gl_FragColor = vec4(0.063, 0.725, 0.506, line * clamp(fade, 0.0, 1.0) * uOpacity);
           }
         `}
       />
