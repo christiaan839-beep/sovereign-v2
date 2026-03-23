@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { BrainCircuit, CheckCircle2, Cpu, Globe, Target, ShieldAlert, ChevronDown, XCircle, DollarSign, MessageSquare, Activity, Zap, Lock } from "lucide-react";
 import Link from "next/link";
 import { SignInButton } from "@clerk/nextjs";
@@ -120,8 +120,13 @@ export default function Home() {
     <>
     <div className="min-h-screen bg-[#000000] text-white selection:bg-white/20 font-sans">
       
-      {/* Navigation */}
-      <nav className="fixed top-0 inset-x-0 z-50 flex justify-center px-6 py-4 pointer-events-none">
+      {/* Navigation — cinematic fade-in */}
+      <motion.nav
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+        className="fixed top-0 inset-x-0 z-50 flex justify-center px-6 py-4 pointer-events-none"
+      >
          <div className="bg-[#0A0A0A]/80 backdrop-blur-xl border border-white/10 rounded-full px-6 h-14 flex items-center justify-between pointer-events-auto w-full max-w-5xl transition-all duration-300">
           <Link href="/" className="flex items-center gap-3 group cursor-pointer">
             <SovereignLogo size="sm" />
@@ -147,18 +152,25 @@ export default function Home() {
           </button>
         </div>
 
-        {mobileNavOpen && (
-          <div className="absolute top-20 left-6 right-6 p-6 rounded-2xl md:hidden bg-[#0A0A0A] border border-white/10 flex flex-col gap-4 shadow-2xl pointer-events-auto">
-            <Link href="/demo" className="text-sm font-medium text-neutral-300 hover:text-white" onClick={() => setMobileNavOpen(false)}>Platform</Link>
-            <Link href="/pricing" className="text-sm font-medium text-neutral-300 hover:text-white" onClick={() => setMobileNavOpen(false)}>Pricing</Link>
-            <Link href="/partner" className="text-sm font-medium text-neutral-300 hover:text-white" onClick={() => setMobileNavOpen(false)}>Enterprise</Link>
-            <SignInButton mode="modal" fallbackRedirectUrl="/dashboard">
-              <button className="text-sm font-medium text-neutral-300 hover:text-white text-left" onClick={() => setMobileNavOpen(false)}>Log in</button>
-            </SignInButton>
-            <Link href="/demo" className="px-5 py-3 rounded-xl bg-white text-sm font-bold text-black text-center mt-4" onClick={() => setMobileNavOpen(false)}>Deploy Now</Link>
-          </div>
-        )}
-      </nav>
+        <AnimatePresence>
+          {mobileNavOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="absolute top-20 left-6 right-6 p-6 rounded-2xl md:hidden bg-[#0A0A0A]/95 backdrop-blur-2xl border border-white/10 flex flex-col gap-4 shadow-2xl pointer-events-auto"
+            >
+              <Link href="/demo" className="text-sm font-medium text-neutral-300 hover:text-white" onClick={() => setMobileNavOpen(false)}>Platform</Link>
+              <Link href="/pricing" className="text-sm font-medium text-neutral-300 hover:text-white" onClick={() => setMobileNavOpen(false)}>Pricing</Link>
+              <Link href="/partner" className="text-sm font-medium text-neutral-300 hover:text-white" onClick={() => setMobileNavOpen(false)}>Enterprise</Link>
+              <SignInButton mode="modal" fallbackRedirectUrl="/dashboard">
+                <button className="text-sm font-medium text-neutral-300 hover:text-white text-left" onClick={() => setMobileNavOpen(false)}>Log in</button>
+              </SignInButton>
+              <Link href="/demo" className="px-5 py-3 rounded-xl bg-white text-sm font-bold text-black text-center mt-4" onClick={() => setMobileNavOpen(false)}>Deploy Now</Link>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.nav>
 
       <main className="pt-32 md:pt-44 pb-20 px-6 relative overflow-hidden flex flex-col items-center min-h-[100vh] justify-center">
          <div className="absolute inset-0 pointer-events-none z-0">
