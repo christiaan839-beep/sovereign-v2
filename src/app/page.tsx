@@ -135,7 +135,7 @@ export default function Home() {
              <SignInButton mode="modal" fallbackRedirectUrl="/dashboard">
                <button className="text-xs font-semibold tracking-wide text-neutral-400 hover:text-white transition-colors">Log in</button>
              </SignInButton>
-             <Link href="/demo" className="px-5 py-2 rounded-full bg-white text-xs font-bold text-black hover:bg-neutral-200 transition-colors">
+             <Link href="/demo" className="relative px-5 py-2 rounded-full bg-white text-xs font-bold text-black hover:bg-neutral-100 transition-all hover:shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:scale-[1.03]">
                Deploy Now
              </Link>
           </div>
@@ -162,10 +162,11 @@ export default function Home() {
 
       <main className="pt-40 pb-20 px-6 relative overflow-hidden flex flex-col items-center min-h-[95vh] justify-center">
          <div className="absolute inset-0 pointer-events-none z-0">
-           {/* Cinematic Background Gradients */}
-           <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-emerald-900/20 blur-[120px]" />
-           <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-cyan-900/20 blur-[120px]" />
-           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.03),transparent_60%)]" />
+           {/* Premium gradient system — subtle, layered, cinematic */}
+           <div className="absolute top-[-20%] left-[20%] w-[50%] h-[50%] rounded-full bg-indigo-950/30 blur-[180px]" />
+           <div className="absolute top-[10%] right-[-10%] w-[35%] h-[35%] rounded-full bg-emerald-950/20 blur-[150px]" />
+           <div className="absolute bottom-[-15%] left-[-5%] w-[40%] h-[40%] rounded-full bg-cyan-950/15 blur-[160px]" />
+           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.04),transparent_50%)]" />
            <div className="absolute inset-0 noise-overlay" />
          </div>
 
@@ -198,13 +199,19 @@ export default function Home() {
           </div>
 
           <div className="w-full max-w-6xl mx-auto mb-20 hidden md:block">
-            <div className="rounded-2xl border border-white/10 bg-[#0A0A0A] overflow-hidden">
-              <div className="flex items-center gap-2 px-5 py-3 border-b border-white/5 bg-[#111111]">
-                <span className="w-2 h-2 rounded-full bg-green-500" />
-                <span className="text-[10px] font-medium uppercase tracking-widest text-neutral-500 font-mono">Swarm Telemetry</span>
-              </div>
-              <div className="p-4">
-                <AgentOrgMap />
+            {/* Gradient border card — $100M aesthetic */}
+            <div className="relative rounded-2xl p-[1px] bg-gradient-to-b from-white/15 via-white/5 to-transparent">
+              <div className="rounded-2xl bg-[#0A0A0A] overflow-hidden">
+                <div className="flex items-center justify-between px-5 py-3 border-b border-white/5 bg-[#080808]">
+                  <div className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
+                    <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-neutral-500 font-mono">Live Agent Network</span>
+                  </div>
+                  <span className="text-[10px] text-neutral-600 font-mono">106 agents deployed</span>
+                </div>
+                <div className="p-4">
+                  <AgentOrgMap />
+                </div>
               </div>
             </div>
           </div>
