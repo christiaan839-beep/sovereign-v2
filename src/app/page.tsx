@@ -138,7 +138,7 @@ export default function Home() {
                <button className="text-xs font-semibold tracking-wide text-neutral-400 hover:text-white transition-colors">Log in</button>
              </SignInButton>
              <Link href="/demo" className="relative px-5 py-2 rounded-full bg-white text-xs font-bold text-black hover:bg-neutral-100 transition-all hover:shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:scale-[1.03]">
-               Deploy Now
+               Start Free
              </Link>
           </div>
           
@@ -163,7 +163,7 @@ export default function Home() {
               <SignInButton mode="modal" fallbackRedirectUrl="/dashboard">
                 <button className="text-sm font-medium text-neutral-300 hover:text-white text-left" onClick={() => setMobileNavOpen(false)}>Log in</button>
               </SignInButton>
-              <Link href="/demo" className="px-5 py-3 rounded-xl bg-white text-sm font-bold text-black text-center mt-4" onClick={() => setMobileNavOpen(false)}>Deploy Now</Link>
+              <Link href="/demo" className="px-5 py-3 rounded-xl bg-white text-sm font-bold text-black text-center mt-4" onClick={() => setMobileNavOpen(false)}>Start Free</Link>
             </motion.div>
           )}
         </AnimatePresence>
@@ -189,9 +189,9 @@ export default function Home() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60"></span>
               <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400"></span>
             </span>
-            <span className="text-neutral-400">106 Agents Live</span>
+            <span className="text-neutral-400">Trusted by agencies worldwide</span>
             <span className="w-px h-3 bg-white/10" />
-            <span className="text-neutral-500">Zero API Costs</span>
+            <span className="text-neutral-500">109 AI agents running now</span>
           </motion.div>
 
           <motion.h1
@@ -200,13 +200,13 @@ export default function Home() {
             transition={{ delay: 0.1, duration: 1, ease: [0.16, 1, 0.3, 1] }}
             className="text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-black mb-10 leading-[0.9] tracking-[-0.04em]"
           >
-            <span className="text-white">Deploy.</span>
+            <span className="text-white">Replace Your</span>
             <br/>
             <span className="bg-clip-text text-transparent bg-[length:200%_auto] animate-[shimmer_8s_ease-in-out_infinite] bg-gradient-to-r from-white via-emerald-400/80 to-white">
-              Automate.
+              Entire Tech Stack
             </span>
             <br/>
-            <span className="text-white">Dominate.</span>
+            <span className="text-white">With AI Agents.</span>
           </motion.h1>
 
           <motion.p
@@ -215,10 +215,25 @@ export default function Home() {
             transition={{ delay: 0.5, duration: 0.8 }}
             className="text-lg md:text-xl text-neutral-400 max-w-2xl mx-auto leading-relaxed mb-16 font-light"
           >
-            109 AI agents. 39 models. Zero per-token costs.
+            Stop paying for 6 different tools. One platform handles your content, SEO, leads, outreach, voice calls, and reporting.
             <br className="hidden sm:block" />
-            <span className="text-neutral-500">The autonomous operating system for agencies and enterprises.</span>
+            <span className="text-neutral-500">Used by agencies doing R50K–R500K/month who want to scale without hiring.</span>
           </motion.p>
+
+          {/* Strong CTAs — benefit-driven */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6, duration: 0.8 }}
+            className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-20"
+          >
+            <Link href="/demo" className="px-8 py-4 bg-white text-black font-bold rounded-full text-sm hover:bg-neutral-100 transition-all hover:shadow-[0_0_30px_rgba(255,255,255,0.15)] hover:scale-[1.02]">
+              Start Free — No Card Required
+            </Link>
+            <Link href="/pricing" className="px-8 py-4 border border-white/10 text-white font-semibold rounded-full text-sm hover:border-white/20 hover:bg-white/[0.03] transition-all">
+              See Pricing
+            </Link>
+          </motion.div>
 
           <div className="mb-20">
             <InteractiveHeroStrike />
@@ -440,7 +455,7 @@ export default function Home() {
                 Every agent call is audited, rate-limited, and secured. NeMo Guardrails handle content safety. Vector memory persists context across sessions. You own the data and the infrastructure.
               </p>
               <Link href="/pricing" className="inline-flex items-center justify-center px-6 py-3 rounded-lg bg-white text-black font-semibold text-sm hover:bg-neutral-200 transition-colors">
-                Deploy Infrastructure
+                See How It Works
               </Link>
             </div>
             
@@ -543,7 +558,7 @@ export default function Home() {
 
           <div className="mt-16 text-center">
             <Link href="/partner" className="inline-flex px-8 py-4 bg-white text-black font-bold rounded-full text-sm hover:bg-neutral-100 transition-all hover:shadow-[0_0_30px_rgba(255,255,255,0.15)] hover:scale-[1.02]">
-              Talk to Sales
+              Book a Strategy Call
             </Link>
           </div>
         </motion.div>
@@ -581,14 +596,14 @@ export default function Home() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(16,185,129,0.06),transparent_70%)]" />
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="relative z-10">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-neutral-500 mb-6">No credit card required</p>
-          <h2 className="text-4xl md:text-7xl font-black text-white mb-6 tracking-tight leading-[1.05]">Ready to Deploy.</h2>
-          <p className="text-base text-neutral-500 max-w-md mx-auto mb-12">Start with the free tier. Scale when you see results.</p>
+          <h2 className="text-4xl md:text-7xl font-black text-white mb-6 tracking-tight leading-[1.05]">Stop Paying For<br className="hidden md:block" /> Tools That Don&apos;t Scale.</h2>
+          <p className="text-base text-neutral-500 max-w-lg mx-auto mb-12">Join agencies replacing HubSpot, Jasper, Semrush, and Zapier with a single platform. Free tier available.</p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link href="/pricing" className="inline-flex px-8 py-4 bg-white text-black font-bold rounded-full text-sm hover:bg-neutral-200 transition-all hover:shadow-[0_0_30px_rgba(255,255,255,0.15)] hover:scale-[1.02]">
-              Get Started Free
+            <Link href="/demo" className="inline-flex px-8 py-4 bg-white text-black font-bold rounded-full text-sm hover:bg-neutral-200 transition-all hover:shadow-[0_0_30px_rgba(255,255,255,0.15)] hover:scale-[1.02]">
+              Get Your Free Audit
             </Link>
-            <Link href="/demo" className="inline-flex px-8 py-4 border border-white/10 text-white font-semibold rounded-full text-sm hover:border-white/20 hover:bg-white/[0.03] transition-all">
-              Watch Demo
+            <Link href="/pricing" className="inline-flex px-8 py-4 border border-white/10 text-white font-semibold rounded-full text-sm hover:border-white/20 hover:bg-white/[0.03] transition-all">
+              Compare Plans
             </Link>
           </div>
         </motion.div>
