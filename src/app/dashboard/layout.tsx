@@ -6,9 +6,10 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Users, Settings, Shield, DollarSign, Target,
-  Layers, Globe2, Network, Search, ChevronDown, Rocket, Palette, Factory, 
+  Layers, Globe2, Network, Search, ChevronDown, Rocket, Palette, Factory,
   X, Menu, Cpu, Mic, ScanFace, Video, Swords, ShieldAlert, Database, Headphones,
-  FileVideo, Cuboid, Briefcase, Ghost, Zap, CircuitBoard, BarChart3, RefreshCcw, Sparkles
+  FileVideo, Cuboid, Briefcase, Ghost, Zap, CircuitBoard, BarChart3, RefreshCcw, Sparkles,
+  PanelLeftOpen, PanelLeftClose
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { UserButton, useUser } from "@clerk/nextjs";
@@ -91,6 +92,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [ping, setPing] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [sidebarExpanded, setSidebarExpanded] = useState(false);
+  const isHome = pathname === "/dashboard";
+
+  // Persist sidebar preference
+  useEffect(() => {
+    const saved = localStorage.getItem("sidebar-expanded");
+    if (saved === "true") setSidebarExpanded(true);
+  }, []);
+  useEffect(() => {
+    localStorage.setItem("sidebar-expanded", String(sidebarExpanded));
+  }, [sidebarExpanded]);
 
   useEffect(() => {
     const checkHealth = async () => {
@@ -232,37 +244,62 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="flex h-screen bg-[#000000] text-white overflow-hidden font-sans">
         
         {/* === DESKTOP SIDEBAR === */}
-        <aside className="hidden lg:flex w-[260px] border-r border-[#111111] bg-[#050505] flex-col shrink-0 overflow-hidden relative z-10 transition-all duration-300">
-          
+        <aside className={`hidden lg:flex ${sidebarExpanded ? "w-[260px]" : "w-16"} border-r border-[#111111] bg-[#050505] flex-col shrink-0 overflow-hidden relative z-10 transition-all duration-300`}>
+
           {/* Logo Header */}
-          <div className="p-6 border-b border-white/5 z-10 flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-3">
+          <div className={`border-b border-white/5 z-10 flex items-center ${sidebarExpanded ? "p-6 justify-between" : "p-4 justify-center"}`}>
+            <Link href="/dashboard" className="flex items-center gap-3">
               <Image src="/logo.png" alt="Matrix" width={24} height={24} className="rounded-md opacity-90 grayscale hover:grayscale-0 transition-all duration-500" />
-              <span className="text-sm font-semibold tracking-wide text-white">Sovereign Matrix</span>
+              {sidebarExpanded && <span className="text-sm font-semibold tracking-wide text-white">Sovereign Matrix</span>}
             </Link>
           </div>
 
-          {renderNavContent(false)}
+          {sidebarExpanded ? (
+            renderNavContent(false)
+          ) : (
+            /* Collapsed: icon-only nav */
+            <nav className="flex-1 overflow-y-auto py-3 space-y-1 custom-scrollbar">
+              {NAV_GROUPS.flatMap(g => g.items).map((item) => {
+                const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
+                return (
+                  <Link key={item.href} href={item.href} title={item.label}
+                    className={`flex items-center justify-center w-10 h-10 mx-auto rounded-lg transition-colors ${
+                      isActive ? "bg-white/10 text-white" : "text-neutral-500 hover:text-white hover:bg-white/5"
+                    }`}>
+                    <item.icon className="w-4 h-4" />
+                  </Link>
+                );
+              })}
+            </nav>
+          )}
 
-          <div className="px-4 py-2 border-t border-white/5">
-            <UsageBar userId={user?.id} plan="node" />
-          </div>
+          {sidebarExpanded && (
+            <div className="px-4 py-2 border-t border-white/5">
+              <UsageBar userId={user?.id} plan="node" />
+            </div>
+          )}
 
-          {/* User Footer */}
-          <div className="p-5 border-t border-white/5 flex items-center justify-between bg-[#0A0A0A]">
+          {/* User Footer + Toggle */}
+          <div className={`border-t border-white/5 bg-[#0A0A0A] ${sidebarExpanded ? "p-5 flex items-center justify-between" : "p-3 flex flex-col items-center gap-3"}`}>
             <div className="flex items-center gap-3">
                <UserButton appearance={{ elements: { userButtonAvatarBox: "w-8 h-8 rounded-lg outline outline-1 outline-white/10" } }} />
-               <div className="flex flex-col">
-                 <span className="text-xs font-medium text-white">{user?.fullName || "Commander"}</span>
-                 <span className="text-[10px] text-neutral-500 font-mono tracking-wider flex items-center gap-1.5 mt-0.5">
-                   {isConnected ? (
-                     <><span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" /> {ping}ms</>
-                   ) : (
-                     <><span className="w-1.5 h-1.5 bg-red-500 rounded-full" /> OFF</>
-                   )}
-                 </span>
-               </div>
+               {sidebarExpanded && (
+                 <div className="flex flex-col">
+                   <span className="text-xs font-medium text-white">{user?.fullName || "Commander"}</span>
+                   <span className="text-[10px] text-neutral-500 font-mono tracking-wider flex items-center gap-1.5 mt-0.5">
+                     {isConnected ? (
+                       <><span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" /> {ping}ms</>
+                     ) : (
+                       <><span className="w-1.5 h-1.5 bg-red-500 rounded-full" /> OFF</>
+                     )}
+                   </span>
+                 </div>
+               )}
             </div>
+            <button onClick={() => setSidebarExpanded(!sidebarExpanded)} title={sidebarExpanded ? "Collapse sidebar" : "Expand sidebar"}
+              className="p-1.5 rounded-lg text-neutral-500 hover:text-white hover:bg-white/5 transition-colors">
+              {sidebarExpanded ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeftOpen className="w-4 h-4" />}
+            </button>
           </div>
         </aside>
 
@@ -270,7 +307,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <main className="flex-1 overflow-y-auto bg-[#000000] relative z-10 custom-scrollbar">
           <div className="relative z-10 w-full min-h-full max-w-[1600px] mx-auto">
             <SystemPulseStrip />
-            <SmartContextBar />
+            {!isHome && <SmartContextBar />}
             <ErrorBoundary>
               <ToastProvider>
                 <CinematicOnboarding>
@@ -290,8 +327,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <CommandPalette />
         </main>
 
-        <LiveActivityConsole />
-        <SovereignAssistant />
+        {!isHome && <LiveActivityConsole />}
+        {!isHome && <SovereignAssistant />}
 
         {/* === MOBILE BOTTOM NAV === */}
         <nav className="lg:hidden fixed bottom-6 left-6 right-6 z-50 bg-[#0A0A0A] border border-white/10 rounded-2xl flex items-center justify-around p-3 shadow-2xl">
