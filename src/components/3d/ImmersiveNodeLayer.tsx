@@ -257,7 +257,7 @@ function EnergyPulse() {
       {[ring1, ring2, ring3].map((ref, i) => (
         <mesh key={i} ref={ref} rotation={[Math.PI / 2, 0, 0]}>
           <torusGeometry args={[2.8, 0.008, 8, 96]} />
-          <meshBasicMaterial color={i === 1 ? "#34D399" : "#60A5FA"} transparent opacity={0.15} depthWrite={false} blending={THREE.AdditiveBlending} />
+          <meshBasicMaterial color={i === 1 ? "#34D399" : "#10B981"} transparent opacity={0.15} depthWrite={false} blending={THREE.AdditiveBlending} />
         </mesh>
       ))}
     </>
