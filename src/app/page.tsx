@@ -289,16 +289,16 @@ export default function Home() {
 
         <div className="w-full max-w-7xl mx-auto relative z-10 mt-10">
            <div className="text-center mb-16">
-              <h2 className="text-3xl font-bold text-white mb-4 tracking-tight">Enterprise Infrastructure</h2>
-              <p className="text-neutral-500 text-sm">Four core systems working in absolute unison.</p>
+              <h2 className="text-3xl font-bold text-white mb-4 tracking-tight">How It Works</h2>
+              <p className="text-neutral-500 text-sm">Four systems. One platform. Everything runs on models you own.</p>
             </div>
            
            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
               {[
-                { icon: BrainCircuit, title: "Enterprise RAG Pipeline", desc: "Ground every AI response in your actual business data using vector retrieval and 120B-parameter reasoning models." },
-                { icon: Target, title: "Local Edge Execution", desc: "Run agents locally from your terminal with zero cloud dependency. Full offline capability via the OpenClaw daemon." },
-                { icon: Globe, title: "Voice Agent Pipeline", desc: "Deploy AI voice agents for outbound calls with sub-200ms latency. Automated qualification, booking, and follow-up." },
-                { icon: ShieldAlert, title: "Safety & Guardrails", desc: "4-layer pipeline: jailbreak detection, content safety, PII redaction, and output quality scoring. Every agent, automatically." }
+                { icon: BrainCircuit, title: "Document Intelligence", desc: "Upload your files. The platform indexes them, finds answers, and writes reports using your actual data. Not generic — grounded in what you know." },
+                { icon: Target, title: "Run Locally", desc: "Install NemoClaw on your machine. Agents run on your hardware with zero cloud dependency. Your data stays on your device." },
+                { icon: Globe, title: "Voice Agents", desc: "AI makes calls for you. Qualifies leads, books meetings, follows up. Sub-200ms response time. Sounds like a real person." },
+                { icon: ShieldAlert, title: "Built-in Safety", desc: "Every agent goes through 5 checks before responding: jailbreak detection, topic control, content safety, PII scan, quality scoring." }
               ].map((feature, i) => (
                 <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.6 }}
                   className="bg-white/[0.02] border border-white/5 p-8 rounded-3xl group hover:border-white/15 hover:bg-white/[0.04] transition-all duration-500 backdrop-blur-xl relative overflow-hidden shadow-2xl hover:shadow-[0_8px_40px_rgba(255,255,255,0.03)] hover:-translate-y-1">
@@ -317,18 +317,18 @@ export default function Home() {
 
         <div className="w-full max-w-7xl mx-auto relative z-10 mt-32 mb-24">
           <div className="text-center mb-16">
-             <h2 className="text-3xl md:text-5xl font-bold text-white mb-4 tracking-tight">What The Agents Actually Do.</h2>
-             <p className="text-neutral-500 max-w-2xl mx-auto">Each capability runs on real infrastructure — no simulations, no placeholders. Open-source models you own.</p>
+             <h2 className="text-3xl md:text-5xl font-bold text-white mb-4 tracking-tight">What You Can Do With It.</h2>
+             <p className="text-neutral-500 max-w-xl mx-auto">Real agents doing real work. Not demos. Not mockups.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
-              { icon: Cpu, title: "Desktop Automation", desc: "Agents control headless browsers to research competitors, scrape public data, and execute multi-step workflows autonomously.", tag: "DAEMON" },
-              { icon: BrainCircuit, title: "Private Document RAG", desc: "Upload corporate documents and run vector analysis locally. Your data never leaves your infrastructure. Zero per-token API fees.", tag: "LOCAL VECTOR" },
-              { icon: Target, title: "Outbound Sales Engine", desc: "Augment your sales team with AI-powered prospecting, personalized email sequences, and automated lead qualification.", tag: "OUTBOUND" },
-              { icon: ShieldAlert, title: "Spatial Analytics", desc: "Connect video feeds for real-time spatial analysis. Foot traffic counting, occupancy monitoring, and behavioral analytics for retail.", tag: "ANALYTICS" },
-              { icon: Globe, title: "AI Code Generation", desc: "Generate, review, and commit production code using local models. Integrated with your existing git workflow and CI/CD pipelines.", tag: "CODING" },
-              { icon: MessageSquare, title: "Mobile Command", desc: "Control your agent swarm from Telegram or WhatsApp. Trigger competitive analysis, generate reports, or deploy campaigns on the go.", tag: "MOBILE" },
+              { icon: Cpu, title: "Browser Automation", desc: "Point an agent at a website. It opens a browser, clicks through pages, extracts what you need, and reports back. Hands-free.", tag: "AUTOMATION" },
+              { icon: BrainCircuit, title: "Private Documents", desc: "Drop in your PDFs, contracts, or reports. Ask questions in plain English. Get answers sourced from your files — not the internet.", tag: "RAG" },
+              { icon: Target, title: "Sales Outreach", desc: "Find prospects matching your criteria. Write personalized emails. Send sequences. Qualify responses. Book meetings.", tag: "SALES" },
+              { icon: ShieldAlert, title: "Competitor Intel", desc: "Paste a competitor URL. Get their tech stack, SEO gaps, content strategy, and specific moves you can make against them.", tag: "INTEL" },
+              { icon: Globe, title: "Code & Deploy", desc: "Describe what you want built. The agent writes the code, reviews it for bugs, and prepares it for deployment.", tag: "CODE" },
+              { icon: MessageSquare, title: "Mobile Control", desc: "Send a WhatsApp message to your agent. Get a competitive report back in 30 seconds. Works from your phone, anywhere.", tag: "MOBILE" },
             ].map((feature, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.08 }}
                 className="bg-[#050505] p-8 border border-white/5 hover:border-white/15 rounded-3xl transition-all duration-500 shadow-xl hover:shadow-[0_4px_30px_rgba(255,255,255,0.02)] hover:-translate-y-0.5 group">
@@ -353,9 +353,9 @@ export default function Home() {
          <div className="max-w-5xl mx-auto">
             <div className="text-center mb-16">
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-neutral-600 mb-4">The Difference</p>
-              <h2 className="text-3xl md:text-5xl font-bold text-white mb-6 tracking-tight">Why Open-Source Architecture.</h2>
+              <h2 className="text-3xl md:text-5xl font-bold text-white mb-6 tracking-tight">Why This Is Different.</h2>
               <p className="text-base text-neutral-500 max-w-xl mx-auto">
-                Most AI tools are chatbots with a wrapper. This is a full agent orchestration platform with real autonomy.
+                Most AI tools need you to type every prompt. This platform takes a goal and handles the rest.
               </p>
             </div>
 
