@@ -2,8 +2,8 @@ import { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Terms of Service — SOVEREIGN",
-  description: "SOVEREIGN terms of service. Rules and guidelines for using the platform.",
+  title: "Terms of Service — Sovereign Matrix",
+  description: "Sovereign Matrix terms of service. Rules and guidelines for using the platform.",
 };
 
 export default function TermsPage() {
@@ -18,12 +18,12 @@ export default function TermsPage() {
         <div className="space-y-8 text-sm text-neutral-400 leading-relaxed">
           <section>
             <h2 className="text-lg font-bold text-white mb-3">1. Acceptance of Terms</h2>
-            <p>By accessing or using SOVEREIGN (&quot;the Platform&quot;), you agree to be bound by these Terms of Service. If you do not agree, do not use the Platform.</p>
+            <p>By accessing or using Sovereign Matrix (&quot;the Platform&quot;), you agree to be bound by these Terms of Service. If you do not agree, do not use the Platform.</p>
           </section>
 
           <section>
             <h2 className="text-lg font-bold text-white mb-3">2. Service Description</h2>
-            <p>SOVEREIGN provides AI-powered marketing tools including content generation, ad creation, SEO optimization, lead prospecting, and marketing analytics. The platform is provided &quot;as-is&quot; and we continuously update and improve our tools.</p>
+            <p>Sovereign Matrix provides AI-powered marketing tools including content generation, ad creation, SEO optimization, lead prospecting, and marketing analytics. The platform is provided &quot;as-is&quot; and we continuously update and improve our tools.</p>
           </section>
 
           <section>
@@ -38,12 +38,12 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-lg font-bold text-white mb-3">5. Intellectual Property</h2>
-            <p>Content you generate using SOVEREIGN belongs to you. The platform itself, including its design, code, and branding, remains the property of SOVEREIGN. You may not copy, modify, or distribute the platform.</p>
+            <p>Content you generate using Sovereign Matrix belongs to you. The platform itself, including its design, code, and branding, remains the property of Sovereign Matrix. You may not copy, modify, or distribute the platform.</p>
           </section>
 
           <section>
             <h2 className="text-lg font-bold text-white mb-3">6. Limitation of Liability</h2>
-            <p>SOVEREIGN is provided &quot;as-is&quot; without warranties of any kind. We are not liable for any indirect, incidental, or consequential damages arising from your use of the platform. Our total liability is limited to the amount you paid in the last 12 months.</p>
+            <p>Sovereign Matrix is provided &quot;as-is&quot; without warranties of any kind. We are not liable for any indirect, incidental, or consequential damages arising from your use of the platform. Our total liability is limited to the amount you paid in the last 12 months.</p>
           </section>
 
           <section>

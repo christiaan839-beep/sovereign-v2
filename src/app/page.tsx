@@ -187,7 +187,7 @@ export default function Home() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60"></span>
               <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400"></span>
             </span>
-            <span className="text-neutral-400">Trusted by agencies worldwide</span>
+            <span className="text-neutral-400">AI Agent Platform</span>
             <span className="w-px h-3 bg-white/10" />
             <span className="text-neutral-500">109 agents deployed</span>
           </motion.div>
@@ -215,7 +215,7 @@ export default function Home() {
           >
             Stop paying for 6 different tools. One platform handles your content, SEO, leads, outreach, voice calls, and reporting.
             <br className="hidden sm:block" />
-            <span className="text-neutral-500">Used by agencies doing R50K–R500K/month who want to scale without hiring.</span>
+            <span className="text-neutral-500">Built for agencies that want to scale without hiring.</span>
           </motion.p>
 
           {/* Strong CTAs — benefit-driven */}

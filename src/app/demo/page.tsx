@@ -84,7 +84,7 @@ export default function DemoPage() {
 
       setQueriesUsed(q => q + 1);
     } catch {
-      setStreamText("Neural pathway disrupted. Deploy a Sovereign Node for full access.");
+      setStreamText("Something went wrong. Please try again or sign up for full access.");
     } finally {
       setTimeout(() => setIsRunning(false), 500);
     }

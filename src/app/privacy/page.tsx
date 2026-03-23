@@ -2,8 +2,8 @@ import { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — SOVEREIGN",
-  description: "SOVEREIGN privacy policy. How we collect, use, and protect your data.",
+  title: "Privacy Policy — Sovereign Matrix",
+  description: "Sovereign Matrix privacy policy. How we collect, use, and protect your data.",
 };
 
 export default function PrivacyPage() {
@@ -23,17 +23,17 @@ export default function PrivacyPage() {
 
           <section>
             <h2 className="text-lg font-bold text-white mb-3">2. How We Use Your Information</h2>
-            <p>We use your information to: provide and maintain the SOVEREIGN platform, process payments via Paystack, send transactional emails, improve our services, and provide customer support. We do not sell your data to third parties.</p>
+            <p>We use your information to: provide and maintain the Sovereign Matrix platform, process payments via PayFast, send transactional emails, improve our services, and provide customer support. We do not sell your data to third parties.</p>
           </section>
 
           <section>
             <h2 className="text-lg font-bold text-white mb-3">3. Data Security</h2>
-            <p>We use 256-bit encryption for all data in transit. Your payment information is processed securely through Paystack and is never stored on our servers. We implement industry-standard security measures to protect your data.</p>
+            <p>We use 256-bit encryption for all data in transit. Your payment information is processed securely through PayFast and is never stored on our servers. We implement industry-standard security measures to protect your data.</p>
           </section>
 
           <section>
             <h2 className="text-lg font-bold text-white mb-3">4. Third-Party Services</h2>
-            <p>We use the following third-party services: Clerk (authentication), Paystack (payments), Vercel (hosting), Pinecone (AI memory), and Google Gemini (AI processing). Each has their own privacy policy and data handling practices.</p>
+            <p>We use the following third-party services: Clerk (authentication), PayFast (payments), Vercel (hosting), Pinecone (AI memory), and Google Gemini (AI processing). Each has their own privacy policy and data handling practices.</p>
           </section>
 
           <section>

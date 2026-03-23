@@ -60,9 +60,9 @@ const TIERS = [
 ];
 
 const FAQS = [
-  { q: "What AI tools are included?", a: "SOVEREIGN includes AI-powered tools for SEO analysis, content creation, design briefs, landing page generation, lead prospecting, competitor intelligence, and more. All powered by Google Gemini 2.5 Pro." },
+  { q: "What AI tools are included?", a: "Sovereign Matrix includes AI-powered tools for SEO analysis, content creation, design briefs, landing page generation, lead prospecting, competitor intelligence, and more. All powered by Google Gemini 2.5 Pro." },
   { q: "Do I need technical skills?", a: "No. The dashboard is designed for founders and operators, not coders. Select a tool, fill in your business name, and the AI generates production-ready marketing assets." },
-  { q: "How is SOVEREIGN different from GoHighLevel?", a: "GoHighLevel gives you empty templates and makes you do the work. SOVEREIGN is an autonomous engine that generates the actual content, strategies, and creatives for you. It's the difference between buying a toolkit and hiring a 24/7 marketing team." },
+  { q: "How is Sovereign Matrix different from GoHighLevel?", a: "GoHighLevel gives you empty templates and makes you do the work. Sovereign Matrix is an autonomous engine that generates the actual content, strategies, and creatives for you. It's the difference between buying a toolkit and hiring a 24/7 marketing team." },
   { q: "What are AI generations?", a: "Each time you use an AI tool (e.g., generate a blog post, analyze a competitor, create a landing page), that counts as one generation. Free users get 20/day, Pro and Agency get unlimited." },
   { q: "What is BYOK (Bring Your Own Key)?", a: "You can plug in your own API keys for Gemini, Anthropic, or Tavily. This means your generations use your own API quota, giving you full control over costs and usage." },
   { q: "Can I cancel anytime?", a: "Yes. No contracts, no cancellation fees. Monthly billing, cancel whenever you want." },
@@ -127,7 +127,7 @@ export default function PricingPage() {
       <nav className="relative z-10 flex items-center justify-between px-8 py-6 max-w-7xl mx-auto">
         <Link href="/" className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#00B7FF] to-blue-600 flex items-center justify-center text-xs font-bold">U</div>
-          <span className="text-sm font-medium tracking-[0.15em] uppercase">SOVEREIGN</span>
+          <span className="text-sm font-medium tracking-[0.15em] uppercase">Sovereign Matrix</span>
         </Link>
         <div className="flex items-center gap-6 text-xs text-neutral-400">
           <Link href="/" className="hover:text-white transition-colors">Home</Link>
@@ -187,7 +187,7 @@ export default function PricingPage() {
         <motion.div {...fadeIn(0)} className="rounded-2xl bg-white/[0.02] border border-white/10 p-8">
           <h3 className="text-lg font-bold mb-2">30-Day Money-Back Guarantee</h3>
           <p className="text-sm text-neutral-400 leading-relaxed">
-            Try SOVEREIGN for 30 days. If it doesn&apos;t work for you, we&apos;ll refund you — no questions asked.
+            Try Sovereign Matrix for 30 days. If it doesn&apos;t work for you, we&apos;ll refund you — no questions asked.
           </p>
           <div className="flex items-center justify-center gap-4 mt-4">
             <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-bold uppercase tracking-wider"><Shield className="w-3 h-3" /> SSL Secured</span>
@@ -234,7 +234,7 @@ export default function PricingPage() {
       </section>
 
       <footer className="relative z-10 border-t border-white/5 px-8 py-10 text-center">
-        <p className="text-[10px] text-neutral-600 uppercase tracking-[0.4em]">SOVEREIGN — AI Marketing Platform</p>
+        <p className="text-[10px] text-neutral-600 uppercase tracking-[0.4em]">Sovereign Matrix — AI Marketing Platform</p>
       </footer>
     </div>
   );
