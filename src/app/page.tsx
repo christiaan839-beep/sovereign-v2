@@ -160,39 +160,52 @@ export default function Home() {
         )}
       </nav>
 
-      <main className="pt-40 pb-20 px-6 relative overflow-hidden flex flex-col items-center min-h-[95vh] justify-center">
+      <main className="pt-32 md:pt-44 pb-20 px-6 relative overflow-hidden flex flex-col items-center min-h-[100vh] justify-center">
          <div className="absolute inset-0 pointer-events-none z-0">
-           {/* Premium gradient system — subtle, layered, cinematic */}
-           <div className="absolute top-[-20%] left-[20%] w-[50%] h-[50%] rounded-full bg-indigo-950/30 blur-[180px]" />
-           <div className="absolute top-[10%] right-[-10%] w-[35%] h-[35%] rounded-full bg-emerald-950/20 blur-[150px]" />
-           <div className="absolute bottom-[-15%] left-[-5%] w-[40%] h-[40%] rounded-full bg-cyan-950/15 blur-[160px]" />
-           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.04),transparent_50%)]" />
+           {/* $100M gradient system — deep, cinematic, understated */}
+           <div className="absolute top-[-30%] left-[10%] w-[60%] h-[60%] rounded-full bg-indigo-950/25 blur-[200px]" />
+           <div className="absolute top-[20%] right-[-15%] w-[40%] h-[40%] rounded-full bg-violet-950/15 blur-[180px]" />
+           <div className="absolute bottom-[-20%] left-[30%] w-[50%] h-[50%] rounded-full bg-cyan-950/10 blur-[200px]" />
+           <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(120,119,198,0.08),transparent)]" />
            <div className="absolute inset-0 noise-overlay" />
          </div>
 
         <ImmersiveNodeLayer />
 
-        <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }} className="relative z-10 w-full max-w-5xl mx-auto text-center">
-          
-          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.15, ease: "easeOut" }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/10 text-xs font-semibold tracking-wide mb-10 bg-white/[0.03] backdrop-blur-xl shadow-[0_0_20px_rgba(255,255,255,0.02)]">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)]"></span>
+        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }} className="relative z-10 w-full max-w-5xl mx-auto text-center">
+
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.8 }}
+            className="inline-flex items-center gap-2.5 px-5 py-2 rounded-full border border-white/[0.08] text-xs font-medium tracking-wider mb-12 bg-white/[0.02] backdrop-blur-2xl">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60"></span>
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400"></span>
             </span>
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-cyan-300">100% Data Sovereignty</span>
+            <span className="text-neutral-400">106 Agents Live</span>
+            <span className="w-px h-3 bg-white/10" />
+            <span className="text-neutral-500">Zero API Costs</span>
           </motion.div>
 
-          <h1 className="text-6xl md:text-8xl lg:text-9xl font-black mb-8 leading-[1.02] tracking-tighter text-white drop-shadow-2xl">
-            Your Agents.<br/>
-            <span className="bg-clip-text text-transparent bg-[length:200%_auto] animate-[shimmer_6s_ease-in-out_infinite] bg-gradient-to-r from-white via-neutral-400 to-white">
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1, duration: 1, ease: [0.16, 1, 0.3, 1] }}
+            className="text-5xl sm:text-7xl md:text-8xl lg:text-[7rem] font-black mb-8 leading-[0.95] tracking-[-0.04em]"
+          >
+            <span className="text-white">Your Agents.</span>
+            <br/>
+            <span className="bg-clip-text text-transparent bg-[length:200%_auto] animate-[shimmer_8s_ease-in-out_infinite] bg-gradient-to-r from-white via-neutral-500 to-white">
               Your Infrastructure.
             </span>
-          </h1>
+          </motion.h1>
 
-          <p className="text-base md:text-xl text-neutral-500 max-w-2xl mx-auto leading-relaxed mb-14 font-normal">
-            Deploy 100+ AI agents across sales, marketing, and operations. Open-source models. Zero inference costs. Your infrastructure, your data.
-          </p>
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5, duration: 0.8 }}
+            className="text-base md:text-lg text-neutral-500 max-w-xl mx-auto leading-relaxed mb-16 font-normal"
+          >
+            Deploy AI agents across sales, marketing, and operations. Open-source models you own. Infrastructure you control.
+          </motion.p>
 
           <div className="mb-20">
             <InteractiveHeroStrike />
@@ -216,34 +229,40 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-3 mb-16 max-w-4xl mx-auto">
-              {[
-                { icon: Lock, label: "Open-Source Architecture", color: "text-emerald-400" },
-                { icon: Cpu, label: "39 NVIDIA NIM Models", color: "text-cyan-400" },
-                { icon: Zap, label: "Zero Inference Costs", color: "text-amber-400" },
-                { icon: Activity, label: "4-Layer Safety Pipeline", color: "text-violet-400" },
-              ].map((badge) => (
-                <div key={badge.label} className="flex items-center gap-2 text-[10px] md:text-xs font-semibold text-neutral-300 border border-white/10 bg-white/[0.02] backdrop-blur-md px-4 py-2 rounded-full hover:bg-white/[0.04] transition-colors cursor-default">
-                  <badge.icon className={`w-3.5 h-3.5 ${badge.color}`} />
-                  {badge.label}
-                </div>
-              ))}
-           </div>
+          {/* Trust Badges — minimal, spaced */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.7, duration: 0.8 }}
+            className="flex flex-wrap items-center justify-center gap-6 mb-16 max-w-3xl mx-auto"
+          >
+            {[
+              { icon: Lock, label: "Open-Source" },
+              { icon: Cpu, label: "NVIDIA NIM" },
+              { icon: Zap, label: "Zero Cost" },
+              { icon: Activity, label: "5-Layer Safety" },
+            ].map((badge) => (
+              <div key={badge.label} className="flex items-center gap-2 text-[11px] font-medium text-neutral-500 cursor-default">
+                <badge.icon className="w-3.5 h-3.5 text-neutral-600" />
+                {badge.label}
+              </div>
+            ))}
+          </motion.div>
 
           {/* Live Agent Ticker */}
-          <div className="w-full max-w-4xl mx-auto mb-16">
+          <div className="w-full max-w-3xl mx-auto mb-20">
             <AgentStatusTicker />
           </div>
 
-          {/* Animated Metrics */}
+          {/* Animated Metrics — clean, minimal */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="grid grid-cols-2 md:grid-cols-4 gap-8 w-full max-w-3xl mx-auto mb-20 py-8 px-6 rounded-2xl border border-white/5 bg-white/[0.01]"
+            className="grid grid-cols-2 md:grid-cols-4 gap-12 w-full max-w-3xl mx-auto mb-24"
           >
-            <AnimatedCounter end={100} suffix="+" label="AI Agents" />
-            <AnimatedCounter end={39} label="NIM Models" />
+            <AnimatedCounter end={106} suffix="" label="Agents" />
+            <AnimatedCounter end={39} label="Models" />
             <AnimatedCounter end={12} label="Languages" />
             <AnimatedCounter end={0} suffix="ms" label="Cold Start" />
           </motion.div>
