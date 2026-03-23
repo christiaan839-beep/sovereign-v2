@@ -1,0 +1,36 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "nextjs-dev",
+      "runtimeExecutable": "/bin/bash",
+      "runtimeArgs": ["-c", "export PATH=/Users/christiaanwillemdewet/.nvm/versions/node/v22.22.0/bin:$PATH && npm run dev"],
+      "port": 3000,
+      "autoPort": true
+    },
+    {
+      "name": "websocket-voice",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "ws"],
+      "port": 8080
+    },
+    {
+      "name": "ghost-protocol",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["nemo_ghost.py"],
+      "port": 8001
+    },
+    {
+      "name": "nemoclaw-daemon",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["server/python-agents/nemoclaw_os.py"],
+      "port": 9090
+    },
+    {
+      "name": "n8n-workflows",
+      "runtimeExecutable": "docker",
+      "runtimeArgs": ["compose", "up", "n8n"],
+      "port": 5678
+    }
+  ]
+}

@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: "standalone",
+  // NOTE: "standalone" removed — incompatible with Vercel serverless deployment.
+  // Only needed for Docker/self-hosted. Vercel auto-splits into lambdas.
 
   // Allow build to proceed despite strict TS on dynamic icon components
   typescript: { ignoreBuildErrors: true },
@@ -21,7 +22,7 @@ const nextConfig: NextConfig = {
 
   // Experimental performance features
   experimental: {
-    optimizeCss: true,
+    // optimizeCss requires 'critters' package — disabled until installed
   },
 
   // Security headers
