@@ -4,6 +4,24 @@ import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Swords, Terminal, ShieldAlert, CheckCircle2, Play, Network, Eye, Crosshair } from "lucide-react";
 
+function renderMessageText(text: string) {
+  const thinkMatch = text.match(/<think>([\s\S]*?)<\/think>/);
+  if (thinkMatch) {
+    const thought = thinkMatch[1].trim();
+    const rest = text.replace(/<think>[\s\S]*?<\/think>/, "").trim();
+    return (
+      <div className="flex flex-col gap-4">
+        <div className="bg-indigo-500/5 border border-indigo-500/20 rounded-xl p-4 shadow-inner">
+          <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-widest mb-2 flex items-center gap-2"><Network className="w-3 h-3" /> DeepSeek Internal Reasoning</p>
+          <p className="text-xs font-mono text-indigo-300/70 whitespace-pre-wrap leading-relaxed">{thought}</p>
+        </div>
+        <p className="text-sm leading-relaxed font-mono whitespace-pre-wrap">{rest}</p>
+      </div>
+    );
+  }
+  return <p className="text-sm leading-relaxed font-mono whitespace-pre-wrap">{text}</p>;
+}
+
 export default function WarRoomColosseum() {
   const [topic, setTopic] = useState("Cold Outreach Campaign for B2B SaaS");
   const [status, setStatus] = useState<"idle" | "debating" | "consensus">("idle");
@@ -30,41 +48,57 @@ export default function WarRoomColosseum() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ task: topic, room_type: "debate" }),
       });
-      const data = await res.json();
 
-      if (data.success && data.rounds) {
-        const allMessages: Array<{ agent: "Nemotron" | "Llama" | "Kosmos" | "DeepSeek"; text: string }> = [];
+      if (!res.body) throw new Error("Stream not supported by server");
+      
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let consensusIndex = -1;
 
-        // Map proposals
-        data.rounds.proposals?.forEach((p: { agent: string; proposal: string }) => {
-          const mapped = p.agent === "Strategist" ? "DeepSeek" : p.agent === "Operator" ? "Llama" : "Kosmos";
-          allMessages.push({ agent: mapped as "DeepSeek" | "Llama" | "Kosmos", text: `PROPOSAL: ${p.proposal}` });
-        });
-
-        // Map critiques
-        data.rounds.critiques?.forEach((c: { agent: string; critique: string }) => {
-          const mapped = c.agent === "Strategist" ? "DeepSeek" : c.agent === "Operator" ? "Llama" : "Kosmos";
-          allMessages.push({ agent: mapped as "DeepSeek" | "Llama" | "Kosmos", text: `CRITIQUE: ${c.critique}` });
-        });
-
-        // Consensus from Nemotron
-        if (data.rounds.consensus) {
-          allMessages.push({ agent: "Nemotron", text: `CONSENSUS DEPLOYMENT:\n${data.rounds.consensus}` });
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n');
+        
+        for (const line of lines) {
+          if (line.trim().startsWith('data: ') && line.trim() !== 'data: [DONE]') {
+            try {
+              const data = JSON.parse(line.replace('data: ', ''));
+              
+              if (data.type === 'proposal' || data.type === 'critique') {
+                const mappedAgent = data.agent === 'Strategist' ? 'DeepSeek' : data.agent === 'Operator' ? 'Llama' : 'Kosmos';
+                setMessages(prev => [...prev, { agent: mappedAgent, text: `${data.type.toUpperCase()}:\n${data.text}` }]);
+              } else if (data.type === 'consensus_start') {
+                setMessages(prev => {
+                  consensusIndex = prev.length;
+                  return [...prev, { agent: 'Nemotron', text: 'CONSENSUS DEPLOYMENT:\n' }];
+                });
+                setStatus("consensus");
+              } else if (data.type === 'consensus_chunk') {
+                setMessages(prev => {
+                  if (consensusIndex === -1) return prev;
+                  const newMsgs = [...prev];
+                  newMsgs[consensusIndex] = {
+                    ...newMsgs[consensusIndex],
+                    text: newMsgs[consensusIndex].text + data.text
+                  };
+                  return newMsgs;
+                });
+              } else if (data.type === 'done') {
+                setStatus("consensus");
+              } else if (data.type === 'error') {
+                setMessages(prev => [...prev, { agent: 'Nemotron', text: `[SYSTEM ERROR] ${data.text}` }]);
+              }
+            } catch {
+              // Ignore partial JSON chunks
+            }
+          }
         }
-
-        // Reveal messages one by one with delay for dramatic effect
-        for (let i = 0; i < allMessages.length; i++) {
-          await new Promise(r => setTimeout(r, 800));
-          setMessages(prev => [...prev, allMessages[i]]);
-        }
-
-        setStatus("consensus");
-      } else {
-        setMessages([{ agent: "Nemotron", text: `Error: ${data.error || "Collab Room failed. Check your NVIDIA NIM key in Settings."}` }]);
-        setStatus("consensus");
       }
     } catch {
-      setMessages([{ agent: "Nemotron", text: "Network error. Check your connection and API keys." }]);
+      setMessages([{ agent: "Nemotron", text: "Network error. Check your connection to the Sovereign execution layer." }]);
       setStatus("consensus");
     }
   };
@@ -208,9 +242,7 @@ export default function WarRoomColosseum() {
                                ? "bg-[#10B981]/10 border-[#10B981]/50 text-white shadow-[0_0_30px_rgba(0,183,255,0.15)]"
                                : "bg-white/[0.02] border-white/5 text-neutral-200"
                            }`}>
-                              <p className="text-sm leading-relaxed font-mono whitespace-pre-wrap">
-                                {msg.text}
-                              </p>
+                              {renderMessageText(msg.text)}
                            </div>
                         </motion.div>
                      ))}

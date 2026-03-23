@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     if (!question) {
       return NextResponse.json({ error: "question is required." }, { status: 400 });
     }
-    }
+    
 
     const steps: Array<{ step: string; content: string; model: string; duration_ms: number }> = [];
     const startTime = Date.now();

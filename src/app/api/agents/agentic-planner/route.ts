@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     if (!goal) {
       return NextResponse.json({ error: "goal is required." }, { status: 400 });
     }
-    }
+    
 
     // Step 1: GLM-5 creates the execution plan
     const toolList = AVAILABLE_TOOLS.map(t => `- ${t.name}: ${t.description} (params: ${t.params})`).join("\n");

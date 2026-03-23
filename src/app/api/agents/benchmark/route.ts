@@ -10,7 +10,7 @@ import { NextResponse } from "next/server";
 export async function POST(request: Request) {
   try {
     const { prompt = "Write a 100-word analysis of how AI will impact marketing in 2026." } = await request.json();
-    }
+    
 
     const models = [
       { id: "deepseek-ai/deepseek-v3.2", name: "DeepSeek V3.2" },

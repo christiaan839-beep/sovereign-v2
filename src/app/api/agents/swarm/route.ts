@@ -1,4 +1,4 @@
-import { nimChat, getNimKey } from "@/lib/nvidia";
+import { getNimKey } from "@/lib/nvidia";
 import { NextResponse } from "next/server";
 
 /**
@@ -15,7 +15,6 @@ export async function POST(request: Request) {
 
     if (!task) {
       return NextResponse.json({ error: "task is required." }, { status: 400 });
-    }
     }
 
     // Default swarm: 3 different models attack the same problem

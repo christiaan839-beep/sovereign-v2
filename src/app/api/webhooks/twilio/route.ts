@@ -30,21 +30,34 @@ export async function POST(request: NextRequest) {
     const incomingText = formData.get("Body")?.toString() || "";
     const from = formData.get("From")?.toString() || "unknown";
 
+    // ENFORCE signature validation in production
+    if (process.env.NODE_ENV === "production" && process.env.TWILIO_AUTH_TOKEN) {
+      const signature = request.headers.get("x-twilio-signature");
+      const url = request.url;
+      const params: Record<string, string> = {};
+      formData.forEach((v, k) => { params[k] = v.toString(); });
+      if (!validateTwilioSignature(signature, url, params)) {
+        return new NextResponse('<?xml version="1.0" encoding="UTF-8"?><Response></Response>', { 
+          status: 403, headers: { "Content-Type": "text/xml" }
+        });
+      }
+    }
+
     if (!incomingText) {
       return new NextResponse('<?xml version="1.0" encoding="UTF-8"?><Response></Response>', { 
         status: 200, headers: { "Content-Type": "text/xml" }
       });
     }
     
-    // NVIDIA Nemotron via NIM
+    // NVIDIA Nemotron 3 Super via NIM (upgraded from 340B)
     const nimResponse = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.NVIDIA_API_KEY}`,
+        "Authorization": `Bearer ${process.env.NVIDIA_NIM_API_KEY}`,
       },
       body: JSON.stringify({
-        model: "nvidia/nemotron-4-340b-instruct",
+        model: "nvidia/nemotron-3-super-120b-a12b",
         messages: [
           { role: "system", content: "You are a professional AI assistant for Sovereign Matrix. Help the user with their inquiry clearly and concisely. If they ask about pricing, direct them to https://sovereignmatrix.agency/pricing" },
           { role: "user", content: `[From: ${from}] ${incomingText}` }

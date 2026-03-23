@@ -83,7 +83,6 @@ export async function POST(request: Request) {
           total_ratings: records.length,
         });
       }
-      }
 
       const feedbackSummary = `
 HIGH RATED (${highRated.length}):

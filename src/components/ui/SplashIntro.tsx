@@ -4,15 +4,15 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const BOOT_LINES = [
-  { text: "SOVEREIGN MATRIX INITIALIZING...", delay: 0 },
-  { text: "Establishing secure uplink to Command Node.", delay: 200 },
-  { text: "Authenticating Nemotron-Mini-4B Edge Daemon...", delay: 400 },
-  { text: "Edge Daemon: BYPASS AUTHORIZED [LOCAL INFERENCE ONLINE]", delay: 700 },
-  { text: "███████████████████████████ 100%", delay: 1000 },
-  { text: "Google AI Ultra (Gemini 1.5 Pro) Synthesizer: ACTIVE", delay: 1300 },
-  { text: "Ghost Fleet Webcrawler: ARMED", delay: 1600 },
-  { text: "Vercel REST Clone Engine: STANDBY", delay: 1800 },
-  { text: "TOTAL AGENCY EXTINCTION PROTOCOL: READY.", delay: 2200 },
+  { text: "SOVEREIGN MATRIX v2.0 INITIALIZING...", delay: 0 },
+  { text: "Establishing encrypted uplink to Command Node.", delay: 200 },
+  { text: "Nemotron 340B Instruct: ONLINE", delay: 400 },
+  { text: "DeepSeek R1 Reasoning Engine: ONLINE", delay: 600 },
+  { text: "NeMo Guardrails Safety Layer: ACTIVE", delay: 800 },
+  { text: "███████████████████████████ 100%", delay: 1100 },
+  { text: "OpenClaw Local Edge Daemon: CONNECTED (port 18789)", delay: 1400 },
+  { text: "Ghost Fleet Webcrawler: ARMED", delay: 1700 },
+  { text: "SOVEREIGN MATRIX: DEPLOYMENT READY.", delay: 2100 },
 ];
 
 export function SplashIntro({ onComplete }: { onComplete: () => void }) {

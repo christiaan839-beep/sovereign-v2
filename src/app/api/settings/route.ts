@@ -11,7 +11,7 @@ export async function POST(req: Request) {
     const userEmail = auth.email || "admin@umbra.ai";
 
     // Keys that should go to the apiKeys column (used by ai.ts)
-    const API_KEY_NAMES = ["gemini", "anthropic", "tavily", "pinecone_key", "pinecone_index", "ollama"];
+    const API_KEY_NAMES = ["gemini", "anthropic", "tavily", "pinecone_key", "pinecone_index", "ollama", "groq", "grok"];
 
     if (action === "save") {
       const existing = await db.select().from(settings).where(eq(settings.userEmail, userEmail));
@@ -67,6 +67,7 @@ export async function POST(req: Request) {
         anthropic: !!savedApiKeys.anthropic || !!process.env.ANTHROPIC_API_KEY,
         tavily: !!savedApiKeys.tavily || !!process.env.TAVILY_API_KEY,
         pinecone_key: !!savedApiKeys.pinecone_key || !!process.env.PINECONE_API_KEY,
+        groq: !!savedApiKeys.groq || !!process.env.GROQ_API_KEY,
       };
 
       return NextResponse.json({ success: true, masked, status });

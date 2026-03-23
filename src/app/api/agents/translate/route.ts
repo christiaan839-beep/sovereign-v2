@@ -1,4 +1,4 @@
-import { nimChat, getNimKey } from "@/lib/nvidia";
+import { getNimKey } from "@/lib/nvidia";
 import { NextResponse } from "next/server";
 
 /**
@@ -32,7 +32,6 @@ export async function POST(request: Request) {
         error: `Unsupported language: ${target_lang}`,
         supported: SUPPORTED_LANGUAGES.map(l => `${l} (${LANGUAGE_NAMES[l]})`),
       }, { status: 400 });
-    }
     }
 
     const nimRes = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {

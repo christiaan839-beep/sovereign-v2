@@ -121,7 +121,7 @@ export function useOnboarding() {
   const [showTour, setShowTour] = useState(false);
   useEffect(() => {
     const done = window.localStorage.getItem("sovereign-onboarded");
-    if (!done) setShowTour(true);
+    if (!done) setTimeout(() => setShowTour(true), 0);
   }, []);
   return { showTour, setShowTour };
 }

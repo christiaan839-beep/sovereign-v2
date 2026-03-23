@@ -13,7 +13,7 @@ export async function POST(request: Request) {
     if (!clientName) {
       return NextResponse.json({ error: "clientName is required." }, { status: 400 });
     }
-    }
+    
 
     const nimRes = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
       method: "POST",

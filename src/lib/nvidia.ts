@@ -34,9 +34,9 @@ export async function getNimKey(): Promise<string> {
  */
 export async function nimChat(
   model: string,
-  messages: { role: string; content: string }[],
-  options: { maxTokens?: number; temperature?: number } = {}
-): Promise<string> {
+  messages: Array<{ role: string; content: string | Array<{ type: string; text?: string; image_url?: { url: string } }> }>,
+  options: { maxTokens?: number; temperature?: number; stream?: boolean } = {}
+): Promise<string | globalThis.Response> {
   const apiKey = await getNimKey();
   if (!apiKey) throw new Error("NVIDIA NIM API key not configured. Add it in Settings > API Keys.");
 
@@ -51,12 +51,17 @@ export async function nimChat(
       messages,
       temperature: options.temperature ?? 0.2,
       max_tokens: options.maxTokens ?? 1024,
+      stream: options.stream ?? false,
     }),
   });
 
   if (!response.ok) {
     const errorBody = await response.text().catch(() => "");
     throw new Error(`NVIDIA NIM Error (${response.status}): ${response.statusText}. ${errorBody}`);
+  }
+
+  if (options.stream) {
+    return response; // Return raw Response for SSE streaming parsing
   }
 
   const data = await response.json();
@@ -71,11 +76,17 @@ export async function callNemotron(prompt: string, model: 'nvidia/nemotron-4-340
 }
 
 /**
- * 2. The Visionary: Cosmos-Reason (Visual Analysis)
+ * 2. The Visionary: Llama-3.2-90b-Vision (Visual Analysis)
  */
 export async function analyzeWithCosmos(imageUrl: string, prompt: string = "Analyze this website for UI/UX flaws and business model weaknesses.") {
-  return nimChat('nvidia/cosmos-nemotron-34b', [
-    { role: 'user', content: `${prompt} [Image URL: ${imageUrl}]` }
+  return nimChat('meta/llama-3.2-90b-vision-instruct', [
+    { 
+      role: 'user', 
+      content: [
+        { type: "text", text: prompt },
+        { type: "image_url", image_url: { url: imageUrl } }
+      ]
+    }
   ], { maxTokens: 500 });
 }
 
@@ -96,7 +107,7 @@ export async function transcribeAudio(audioBase64: string): Promise<{ text: stri
       "nvidia/nemotron-voicechat",
       [{ role: "user", content: `Transcribe the following audio content and return only the transcribed text. Audio data: [base64 audio provided, length: ${audioBase64.length} chars]` }],
       { maxTokens: 2000, temperature: 0.1 }
-    );
+    ) as string;
 
     return { text: result };
   } catch {

@@ -1,4 +1,4 @@
-import { nimChat, getNimKey } from "@/lib/nvidia";
+import { getNimKey } from "@/lib/nvidia";
 import { NextResponse } from "next/server";
 
 /**
@@ -20,7 +20,6 @@ export async function POST(request: Request) {
 
     if (!image_url) {
       return NextResponse.json({ error: "image_url is required (direct URL to image)." }, { status: 400 });
-    }
     }
 
     const modePrompts: Record<string, string> = {

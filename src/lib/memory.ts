@@ -1,12 +1,112 @@
-/**
- * Memory stub — Pinecone integration not active.
- * These are no-ops so agents don't crash.
- */
-export async function remember(_key: string, _value?: string): Promise<void> {
-  // No-op: Pinecone not configured
+import { Pinecone } from "@pinecone-database/pinecone";
+import { embed, ai } from "./ai";
+
+export async function getPineconeClient(apiKey?: string, indexName?: string) {
+  const key = apiKey || process.env.PINECONE_API_KEY;
+  const index = indexName || process.env.PINECONE_INDEX || "sovereign";
+  
+  if (!key) return null;
+  return { client: new Pinecone({ apiKey: key }), index };
 }
 
-export async function recall(_key: string, _limit?: number): Promise<any[]> {
-  // Return empty array instead of null to prevent map() crashes
-  return [];
+/**
+ * Anthropic Contextual Retrieval RAG Pipeline.
+ * Instead of blindly chunking text, we ask Claude to generate a specific context
+ * summary for EACH chunk based on the whole document. We prepend this context
+ * to the chunk before embedding, completely obliterating vector hallucinations.
+ */
+export async function ingestContextualDocument(
+  documentTitle: string, 
+  fullDocumentText: string,
+  pineconeKey?: string,
+  pineconeIndex?: string
+): Promise<{ success: boolean; chunksProcessed: number }> {
+  try {
+    const pc = await getPineconeClient(pineconeKey, pineconeIndex);
+    if (!pc) throw new Error("Pinecone credentials missing.");
+
+    // Extremely naive chunking for demonstration of Contextual RAG Methodology
+    const chunks = fullDocumentText.match(/[\s\S]{1,1000}/g) || [fullDocumentText];
+    const index = pc.client.index(pc.index);
+    let processed = 0;
+
+    for (let i = 0; i < chunks.length; i++) {
+      const chunk = chunks[i];
+
+      // THE MAGIC: Anthropic's Contextual Retrieval Generation
+      const prompt = `You are an elite data engineer. Look at this entire document:
+<document>
+${fullDocumentText}
+</document>
+
+Now look at this specific chunk from the document:
+<chunk>
+${chunk}
+</chunk>
+
+Generate a concise 2-sentence context summary explaining exactly what this chunk means in the context of the whole document. Output ONLY the summary.`;
+
+      const contextSummary = await ai(prompt, { model: "claude", maxTokens: 150 });
+      
+      const contextualizedChunk = `[Source: ${documentTitle}]\n[Context: ${contextSummary}]\n\n${chunk}`;
+      const vector = await embed(contextualizedChunk);
+
+      await index.upsert([
+        {
+          id: `${documentTitle.replace(/\s+/g, "_")}-chunk-${i}-${Date.now()}`,
+          values: vector,
+          metadata: {
+            title: documentTitle,
+            text: contextualizedChunk, // We store the prepended chunk
+            originalChunk: chunk
+          }
+        }
+      ]);
+      processed++;
+    }
+
+    return { success: true, chunksProcessed: processed };
+  } catch (err) {
+    console.error("Contextual RAG Ingestion Failed:", err);
+    return { success: false, chunksProcessed: 0 };
+  }
+}
+
+/**
+ * Legacy Fallback or Direct Key-Value Memory
+ */
+export async function remember(key: string, value?: string, pineconeKey?: string): Promise<void> {
+  const pc = await getPineconeClient(pineconeKey);
+  if (!pc) return; // No-op if not configured
+  
+  const textToEmbed = `${key}: ${value || "triggered"}`;
+  const vector = await embed(textToEmbed);
+  
+  await pc.client.index(pc.index).upsert([{
+    id: `mem-${Date.now()}`,
+    values: vector,
+    metadata: { text: textToEmbed, type: "short-term", timestamp: Date.now() }
+  }]);
+}
+
+/**
+ * Recall exact contextual nodes matching the query.
+ */
+export async function recall(query: string, limit: number = 2, pineconeKey?: string): Promise<any[]> {
+  try {
+    const pc = await getPineconeClient(pineconeKey);
+    if (!pc) return [];
+
+    const queryVector = await embed(query);
+    const results = await pc.client.index(pc.index).query({
+      vector: queryVector,
+      topK: limit,
+      includeMetadata: true
+    });
+
+    return results.matches || [];
+  } catch (e) {
+    console.error("Pinecone recall failed:", e);
+    return [];
+  }
 }

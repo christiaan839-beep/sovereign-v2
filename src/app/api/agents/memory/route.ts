@@ -139,6 +139,7 @@ export async function POST(request: Request) {
       if (memories.length === 0) {
         return NextResponse.json({ success: true, summary: "No memories stored yet." });
       }
+      if (!await getNimKey()) {
         return NextResponse.json({ summary: `${memories.length} memories stored. Configure NVIDIA_NIM_API_KEY for AI summary.` });
       }
 

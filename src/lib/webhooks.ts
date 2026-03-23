@@ -57,7 +57,7 @@ const MOCK_DB_WEBHOOKS = [
   { id: "wh_2", trigger: "campaign_kill", url: "https://echo.free.beeceptor.com", active: true },
 ];
 
-export async function triggerWebhook(event: "hot_lead" | "new_sale" | "campaign_kill" | "report_ready", data: any) {
+export async function triggerWebhook(event: "hot_lead" | "new_sale" | "campaign_kill" | "report_ready", data: Record<string, unknown>) {
   const activeHooks = MOCK_DB_WEBHOOKS.filter(h => h.trigger === event && h.active);
   
   if (activeHooks.length === 0) return { delivered: 0, failed: 0 };

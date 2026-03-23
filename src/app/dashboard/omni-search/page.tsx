@@ -6,6 +6,7 @@ import { Search, Database, Layers, FileText } from "lucide-react";
 
 export default function OmniSearchPage() {
   const [query, setQuery] = useState("");
+  const [status, setStatus] = useState<"idle" | "searching" | "complete">("idle");
   const [result, setResult] = useState<string>("");
   const [sources, setSources] = useState<Array<{title: string; score: string}>>([]);
 

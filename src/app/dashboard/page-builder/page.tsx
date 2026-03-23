@@ -252,7 +252,7 @@ export default function PageBuilderPage() {
                   viewMode === "preview" ? "bg-violet-600 text-white shadow-lg" : "text-[#5C667A] hover:text-white"
                 }`}
               >
-                <Eye className="w-3 h-3" /> Live Render
+                <Eye className="w-3 h-3" /> Anthropic Artifacts Engine
               </button>
               <button
                 onClick={() => setViewMode("code")}

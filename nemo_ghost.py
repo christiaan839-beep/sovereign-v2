@@ -1,20 +1,21 @@
 """
-Sovereign Matrix | NemoClaw Ghost Protocol v1.0
-Operating Designation: Physical GUI Hijack & Autonomous Web Navigation
-Architecture: Anthropic/NVIDIA Computer Use API + PyAutoGUI + Quartz (macOS)
+Sovereign Matrix | NemoClaw Ghost Protocol v2.0 (Local Daemon)
+Operating Designation: Secure Local OS Execution & Physical GUI Hijack
+Architecture: Flask API + Subprocess Shell + PyAutoGUI
 """
 
 import time
 import logging
 import os
-# Note: This is an architectural stub for the client's local machine.
-# Require: pip install pyautogui pillow requests
+import subprocess
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+
 try:
     import pyautogui
     from PIL import ImageGrab
 except ImportError:
-    print("[CRITICAL] Missing dependencies. Run: pip install pyautogui pillow requests")
-    exit(1)
+    print("[WARNING] Missing GUI control dependencies. Run: pip install pyautogui pillow")
 
 # Configure Sovereign Telemetry
 logging.basicConfig(
@@ -23,71 +24,103 @@ logging.basicConfig(
     handlers=[logging.StreamHandler()]
 )
 
-SOVEREIGN_CLOUD_URL = os.getenv("SOVEREIGN_CLOUD_URL", "https://umbra-v2.vercel.app")
-API_KEY = os.getenv("CARTEL_API_KEY")
+app = Flask(__name__)
+# Allow requests from the local Next.js dev server and the production domain
+CORS(app, resources={r"/*": {"origins": ["http://localhost:3000", "http://127.0.0.1:3000", "https://umbra-v2.vercel.app"]}})
 
 def capture_retina_buffer():
     """Extract physical pixel buffer from the macOS display."""
     logging.info("Capturing Retina mesh buffer...")
-    screenshot = ImageGrab.grab()
-    # In production, this image is compressed and sent to the NVIDIA Vision model via API
-    # The Vision model returns X, Y coordinates and a semantic action (e.g. CLICK, TYPE)
-    return screenshot
+    try:
+        screenshot = ImageGrab.grab()
+        return screenshot
+    except Exception as e:
+        logging.error(f"Failed to capture screen: {e}")
+        return None
 
 def execute_physical_vector(action, x=None, y=None, payload=None):
     """Physically command the Apple Silicon hardware."""
-    if action == "CLICK" and x and y:
-        logging.info(f"Executing physical mouse hijack: CLICK at ({x}, {y})")
-        pyautogui.moveTo(x, y, duration=0.3, tween=pyautogui.easeInOutQuad)
-        pyautogui.click()
-    elif action == "TYPE" and payload:
-        logging.info(f"Injecting keystrokes: '{payload}'")
-        pyautogui.write(payload, interval=0.05)
-    elif action == "SCROLL":
-        logging.info("Executing physical scroll vector")
-        pyautogui.scroll(-500)
+    try:
+        if action == "CLICK" and x and y:
+            logging.info(f"Executing physical mouse hijack: CLICK at ({x}, {y})")
+            pyautogui.moveTo(x, y, duration=0.3, tween=pyautogui.easeInOutQuad)
+            pyautogui.click()
+        elif action == "TYPE" and payload:
+            logging.info(f"Injecting keystrokes: '{payload}'")
+            pyautogui.write(payload, interval=0.05)
+        elif action == "SCROLL":
+            logging.info("Executing physical scroll vector")
+            pyautogui.scroll(-500)
+    except Exception as e:
+        logging.error(f"Physical execution failed: {e}")
 
-def main():
+@app.route('/health', methods=['GET'])
+def health_check():
+    """Verify daemon status."""
+    return jsonify({
+        "status": "active",
+        "version": "2.0.0",
+        "system": os.uname().sysname if hasattr(os, 'uname') else "macOS",
+        "message": "NemoClaw Ghost Protocol online."
+    })
+
+@app.route('/execute', methods=['POST'])
+def execute_command():
+    """Execute secure OS-level commands natively on the host machine."""
+    data = request.json
+    command = data.get('command')
+    
+    if not command:
+        return jsonify({"success": False, "error": "No command provided."}), 400
+        
+    logging.info(f"Edge Terminal Command Received: {command}")
+    
+    # Intercept physical vector commands for PyAutoGUI
+    if command.startswith("/physical"):
+        logging.info("Triggering physical UI override...")
+        execute_physical_vector("SCROLL") # Example default
+        return jsonify({
+            "success": True, 
+            "output": "[GHOST PROTOCOL] Physical UI override executed successfully."
+        })
+        
+    # Execute standard shell commands
+    try:
+        # Security Note: This runs raw commands on the user's local machine.
+        # This is strictly designed for local enterprise deployment.
+        result = subprocess.run(
+            command, 
+            shell=True, 
+            capture_output=True, 
+            text=True, 
+            timeout=15,
+            cwd=os.path.expanduser('~') # Run in user's home directory by default
+        )
+        
+        output = result.stdout if result.returncode == 0 else result.stderr
+        
+        # If output is empty but command succeeded (like 'mkdir')
+        if not output.strip() and result.returncode == 0:
+            output = f"Command '{command}' executed successfully (no output)."
+            
+        return jsonify({
+            "success": result.returncode == 0,
+            "output": output.strip(),
+            "code": result.returncode
+        })
+        
+    except subprocess.TimeoutExpired:
+        return jsonify({"success": False, "error": "Command execution timed out."}), 408
+    except Exception as e:
+        logging.error(f"Execution failed: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+if __name__ == "__main__":
     print("====================================================")
-    print(" NEMOCLAW GHOST PROTOCOL INITIATED ")
-    print(" WARNING: Autonomous Mouse/Keyboard Control ACTIVE")
+    print(" NEMOCLAW GHOST PROTOCOL API DAEMON ")
+    print(" PORT: 8001 | AWAITING DASHBOARD TELEMETRY")
     print(" Press CMD+C in this terminal to abort.")
     print("====================================================")
     
-    if not API_KEY:
-        logging.warning("CARTEL_API_KEY environment variable missing. Running in local diagnostic mode.")
-
-    try:
-        # Simulated Loop for execution
-        time.sleep(3)
-        
-        # 1. Open Browser (Spotlight Search Hijack)
-        execute_physical_vector("CLICK", 1000, 1000) # Open Spotlight (Example Coord)
-        execute_physical_vector("TYPE", payload="Google Chrome\n")
-        time.sleep(2)
-
-        # 2. Extract Display Memory & Send to Vision Model
-        _ = capture_retina_buffer()
-        logging.info("Transmitting visual buffer to Sovereign Cloud...")
-        time.sleep(1) # Fake API latency from NVIDIA NIM Vision
-        
-        # 3. Model returns command: Click the URL bar
-        logging.info("NVIDIA Vision Protocol: Locate URL Bar")
-        execute_physical_vector("CLICK", 450, 80)
-        
-        # 4. Model returns command: Navigate to Target
-        execute_physical_vector("TYPE", payload="https://target-competitor-crm.internal.local\n")
-        
-        # 5. Extract DOM logic / Click extract buttons physically
-        time.sleep(4)
-        logging.info("Target lock acquired. Executing data extraction protocol...")
-        _ = capture_retina_buffer()
-        execute_physical_vector("SCROLL")
-        
-        logging.info("Mission Accomplished. Returning mouse control to human operator.")
-        
-    except KeyboardInterrupt:
-        logging.error("User initiated physical override. Shutting down Ghost Protocol.")
-
-if __name__ == "__main__":
-    main()
+    # Run the local API server
+    app.run(host="127.0.0.1", port=8001, debug=False)

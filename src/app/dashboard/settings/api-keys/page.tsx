@@ -10,6 +10,7 @@ export default function ApiKeysPage() {
     gemini: "",
     anthropic: "",
     grok: "",
+    groq: "",
     tavily: "",
     stripe: "",
     ollama: "",

@@ -1,4 +1,4 @@
-import { nimChat, getNimKey } from "@/lib/nvidia";
+import { getNimKey } from "@/lib/nvidia";
 import { NextResponse } from "next/server";
 
 /**
@@ -27,6 +27,8 @@ const MODEL_REGISTRY: ModelProfile[] = [
   { id: "nvidia/devstral-2-123b-instruct-2512", name: "Devstral 2 123B", strengths: ["code", "html", "css", "javascript", "page-building"], avg_speed_ms: 4000, quality_score: 9, cost_tier: "free" },
   { id: "nvidia/nemotron-content-safety-reasoning-4b", name: "Content Safety 4B", strengths: ["pii", "safety", "moderation", "compliance", "guardrails"], avg_speed_ms: 800, quality_score: 8, cost_tier: "free" },
   { id: "nvidia/nemotron-voicechat", name: "Nemotron Voicechat", strengths: ["voice", "conversation", "phone", "support", "sales-call"], avg_speed_ms: 1500, quality_score: 8, cost_tier: "free" },
+  { id: "groq/deepseek-r1-distill-llama-70b", name: "DeepSeek-R1 (Groq LPU)", strengths: ["deep-reasoning", "math", "logic", "strategy", "analysis"], avg_speed_ms: 1200, quality_score: 10, cost_tier: "free" },
+  { id: "groq/llama-3.1-8b-instant", name: "Llama 3.1 8B (Groq LPU)", strengths: ["chat", "email", "outreach", "summarization", "instruction-following"], avg_speed_ms: 200, quality_score: 7, cost_tier: "free" },
 ];
 
 const TASK_CATEGORY_MAP: Record<string, string[]> = {
@@ -40,6 +42,7 @@ const TASK_CATEGORY_MAP: Record<string, string[]> = {
   "legal": ["complex-reasoning", "legal", "compliance", "technical"],
   "debate": ["synthesis", "debate", "consensus"],
   "summarization": ["summarization", "chat"],
+  "deep-reasoning": ["deep-reasoning", "math", "logic", "strategy"],
 };
 
 function findBestModel(taskType: string, priority: "speed" | "quality" = "quality"): ModelProfile {
@@ -89,25 +92,8 @@ export async function POST(request: Request) {
 
     const bestModel = findBestModel(resolvedType, priority);
 
-    // If prompt provided, also execute the call
-    if (prompt) {
-        return NextResponse.json({ model_selected: bestModel, error: "NVIDIA_NIM_API_KEY not set — returning model selection only." });
-      }
-
-      const start = Date.now();
-      const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${await getNimKey()}` },
-        body: JSON.stringify({
-          model: bestModel.id,
-          messages: [{ role: "user", content: prompt }],
-          max_tokens: 1024,
-          temperature: 0.7,
-        }),
-      });
-
-      const data = await res.json();
-
+    // If no prompt provided, just return the routing metadata
+    if (!prompt) {
       return NextResponse.json({
         success: true,
         routing: {
@@ -116,12 +102,93 @@ export async function POST(request: Request) {
           model_selected: bestModel.name,
           model_id: bestModel.id,
           quality_score: bestModel.quality_score,
-          reason: `Best match for "${resolvedType}" tasks with ${priority} priority`,
+          avg_speed_ms: bestModel.avg_speed_ms,
+          strengths: bestModel.strengths,
         },
-        result: data?.choices?.[0]?.message?.content || "",
-        duration_ms: Date.now() - start,
       });
     }
+
+    const nimKey = await getNimKey();
+    if (!nimKey) {
+      return NextResponse.json({ error: "NVIDIA_NIM_API_KEY not set" }, { status: 500 });
+    }
+
+    // ==========================================
+    // LONG-TERM SWARM MEMORY (PINECONE + NEMOTRON RAG)
+    // ==========================================
+    let contextMemory = "";
+    
+    // Using a try-catch so routing never fails even if memory is offline
+    try {
+      const pineconeKey = process.env.PINECONE_API_KEY;
+      if (pineconeKey) {
+        // 1. Embed the user's prompt using free Nemotron 1B
+        const embedRes = await fetch("https://integrate.api.nvidia.com/v1/embeddings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${nimKey}` },
+          body: JSON.stringify({
+            model: "nvidia/llama-3.2-nv-embedqa-1b-v2",
+            input: [prompt],
+            input_type: "query",
+            encoding_format: "float",
+            truncate: "NONE"
+          }),
+        });
+        
+        if (embedRes.ok) {
+          const embedData = await embedRes.json();
+          const vector = embedData.data[0].embedding;
+          
+          // 2. Query Pinecone for relevant past interactions (simulated HTTP endpoint structure)
+          const pcHost = process.env.PINECONE_HOST || "sovereign-memory.svc.pinecone.io";
+          const queryRes = await fetch(`https://${pcHost}/query`, {
+            method: "POST",
+            headers: { "Api-Key": pineconeKey, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              vector,
+              topK: 3,
+              includeMetadata: true
+            })
+          });
+          
+          if (queryRes.ok) {
+            const memoryData = await queryRes.json();
+            if (memoryData.matches?.length > 0) {
+              contextMemory = "PAST SWARM MEMORY:\n" + memoryData.matches
+                .map((m: { metadata?: { text?: string }; id: string }) => `- ${m.metadata?.text || m.id}`)
+                .join("\n");
+            }
+          }
+        }
+      }
+    } catch (memLogErr) {
+      console.error("Swarm Memory Context Fail:", memLogErr);
+    }
+
+    // ==========================================
+    // EXECUTE AGENT WITH MEMORY
+    // ==========================================
+    const start = Date.now();
+    const systemPrompt = contextMemory 
+      ? `You are an elite expert agent. Use the following past memory context to inform your answer if relevant.\n\n${contextMemory}`
+      : `You are an elite expert agent.`;
+
+    const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${nimKey}` },
+      body: JSON.stringify({
+        model: bestModel.id,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: prompt }
+        ],
+        max_tokens: 1024,
+        temperature: 0.7,
+      }),
+    });
+
+    const data = await res.json();
+    const finalResult = data?.choices?.[0]?.message?.content || String(data.error?.message || "Generation failed.");
 
     return NextResponse.json({
       success: true,
@@ -131,9 +198,10 @@ export async function POST(request: Request) {
         model_selected: bestModel.name,
         model_id: bestModel.id,
         quality_score: bestModel.quality_score,
-        avg_speed_ms: bestModel.avg_speed_ms,
-        strengths: bestModel.strengths,
+        memory_loaded: !!contextMemory
       },
+      result: finalResult,
+      duration_ms: Date.now() - start,
     });
   } catch (error) {
     return NextResponse.json({ error: "Router error", details: String(error) }, { status: 500 });

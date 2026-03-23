@@ -2,9 +2,9 @@
 
 import React, { useState } from "react";
 import {
-  Phone, Mail, Shield, Globe, FileSearch, ImageIcon, Mic, Video,
-  Cpu, Zap, Play, CheckCircle2, Loader2, AlertCircle, ChevronRight,
-  Send, Lock, Languages, Database, Paintbrush, Clapperboard, BotMessageSquare
+  Phone, Mail, Shield, FileSearch, ImageIcon, Mic,
+  Cpu, Zap, Play, Loader2, AlertCircle, ChevronRight,
+  Lock, Languages, Database, Paintbrush, Clapperboard, BotMessageSquare
 } from "lucide-react";
 
 interface Agent {
@@ -164,6 +164,30 @@ export default function AgentCommandCenter() {
   const [targetLang, setTargetLang] = useState("es");
   const [results, setResults] = useState<Record<string, { loading: boolean; data: unknown; error?: string }>>({});
 
+  const [showMetaPrompt, setShowMetaPrompt] = useState(false);
+  const [metaPromptInput, setMetaPromptInput] = useState("");
+  const [metaPromptResult, setMetaPromptResult] = useState("");
+  const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
+
+  const generateMetaPrompt = async () => {
+    if (!metaPromptInput) return;
+    setIsGeneratingPrompt(true);
+    setMetaPromptResult("");
+    try {
+      const res = await fetch("/api/agents/meta-prompt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ task: metaPromptInput })
+      });
+      const data = await res.json();
+      setMetaPromptResult(data.prompt);
+    } catch {
+      setMetaPromptResult("Error generating prompt. Ensure LLM routes are active.");
+    } finally {
+      setIsGeneratingPrompt(false);
+    }
+  };
+
   const filteredAgents = activeCategory === "All" ? AGENTS : AGENTS.filter(a => a.category === activeCategory);
 
   const executeAgent = async (agent: Agent) => {
@@ -213,7 +237,7 @@ export default function AgentCommandCenter() {
       <div className="max-w-7xl mx-auto space-y-8">
 
         {/* Header */}
-        <header className="border-b border-white/10 pb-6">
+        <header className="border-b border-white/10 pb-6 flex flex-col md:flex-row md:items-start justify-between gap-4">
           <div className="flex items-center gap-4 mb-3">
             <div className="w-10 h-10 rounded-xl bg-[#00ff66]/10 border border-[#00ff66]/30 flex items-center justify-center">
               <BotMessageSquare className="w-5 h-5 text-[#00ff66]" />
@@ -223,7 +247,46 @@ export default function AgentCommandCenter() {
               <p className="text-neutral-500 text-xs uppercase tracking-widest">{AGENTS.length} Autonomous Agents · All Systems Operational</p>
             </div>
           </div>
+          
+          <button 
+            onClick={() => setShowMetaPrompt(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-[#00B7FF]/10 text-[#00B7FF] border border-[#00B7FF]/30 rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-[#00B7FF]/20 transition-colors"
+          >
+            <Cpu className="w-4 h-4" /> Anthropic Meta-Prompt Engine
+          </button>
         </header>
+
+        {showMetaPrompt && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+            <div className="bg-[#0A0A0A] border border-white/10 w-full max-w-2xl p-6 relative">
+              <button onClick={() => setShowMetaPrompt(false)} className="absolute top-4 right-4 text-neutral-500 hover:text-white">Close</button>
+              <h2 className="text-lg font-bold text-white mb-2 flex items-center gap-2"><Cpu className="text-[#00B7FF] w-5 h-5" /> God-Brain Auto-Orchestrator</h2>
+              <p className="text-xs text-neutral-400 mb-6">Describe an AI agent&apos;s purpose. The system will use Anthropic&apos;s open-source Meta-Prompt methodology to generate a flawless XML-structured system instruction.</p>
+              
+              <textarea
+                value={metaPromptInput}
+                onChange={e => setMetaPromptInput(e.target.value)}
+                placeholder="e.g. I need an agent that reviews Python code for security vulnerabilities and outputs strict JSON..."
+                className="w-full bg-black border border-white/10 rounded-lg p-3 text-sm text-white mb-4 focus:outline-none focus:border-[#00B7FF]/50 min-h-[100px]"
+              />
+              
+              <button 
+                onClick={generateMetaPrompt}
+                disabled={isGeneratingPrompt || !metaPromptInput}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white text-black font-bold text-xs uppercase tracking-widest hover:bg-neutral-200 transition-colors mb-4 disabled:opacity-50"
+              >
+                {isGeneratingPrompt ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+                Generate Enterprise Prompt
+              </button>
+
+              {metaPromptResult && (
+                <div className="mt-4 border border-white/10 bg-black p-4 rounded-lg max-h-[300px] overflow-y-auto custom-scrollbar">
+                  <pre className="text-[10px] text-[#00ff66] font-mono whitespace-pre-wrap">{metaPromptResult}</pre>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Stats Bar */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

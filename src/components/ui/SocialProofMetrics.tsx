@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 
 interface Stats {
@@ -10,9 +10,48 @@ interface Stats {
   uptimePercent: string;
 }
 
+function AnimatedNumber({ target, suffix = "" }: { target: number | string; suffix?: string }) {
+  const [display, setDisplay] = useState(0);
+  const ref = useRef<HTMLDivElement>(null);
+  const hasAnimated = useRef(false);
+
+  useEffect(() => {
+    const numTarget = typeof target === "string" ? parseFloat(target) || 0 : target;
+    if (numTarget === 0 || hasAnimated.current) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !hasAnimated.current) {
+          hasAnimated.current = true;
+          const duration = 2000;
+          const start = performance.now();
+          const animate = (now: number) => {
+            const elapsed = now - start;
+            const progress = Math.min(elapsed / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3); // easeOutCubic
+            setDisplay(Math.round(eased * numTarget));
+            if (progress < 1) requestAnimationFrame(animate);
+          };
+          requestAnimationFrame(animate);
+        }
+      },
+      { threshold: 0.3 }
+    );
+
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [target]);
+
+  return (
+    <div ref={ref} className="text-2xl md:text-3xl font-bold text-white font-mono">
+      {display}{suffix}
+    </div>
+  );
+}
+
 /**
  * SocialProofMetrics — Fetches real platform metrics from /api/agents/analytics
- * and displays them on the landing page. No fake numbers.
+ * and displays them on the landing page with animated count-up. No fake numbers.
  */
 export function SocialProofMetrics() {
   const [stats, setStats] = useState<Stats>({
@@ -69,9 +108,7 @@ export function SocialProofMetrics() {
             transition={{ delay: i * 0.1 }}
             className="bg-[#10B981]/5 border border-[#10B981]/20 p-6 rounded-2xl text-center"
           >
-            <div className="text-2xl md:text-3xl font-bold text-white font-mono">
-              {stat.value}{stat.suffix}
-            </div>
+            <AnimatedNumber target={stat.value} suffix={stat.suffix} />
             <div className="text-[10px] uppercase tracking-[0.2em] text-[#10B981] mt-2 font-bold">
               {stat.label}
             </div>

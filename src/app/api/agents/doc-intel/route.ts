@@ -1,181 +1,62 @@
-import { nimChat, getNimKey } from "@/lib/nvidia";
 import { NextResponse } from "next/server";
 
 /**
- * DOCUMENT INTELLIGENCE API — Full RAG pipeline:
- * 1. Accept text/document content
- * 2. Generate embeddings via NV-Embed
- * 3. Store in Pinecone (if configured)
- * 4. Query with semantic search + reranking
- * 
- * Powers: Omni-Search, Flywheel, and all knowledge retrieval modules.
+ * DOCUMENT INTELLIGENCE — Combines Nemotron OCR + Table Structure + Page Elements.
+ * Extracts text, tables, and visual structure from any document image.
+ * Based on NVIDIA's Document Intelligence Blueprint.
  */
-
-export async function POST(request: Request) {
+export async function POST(req: Request) {
   try {
-    const { action, text, query, documents } = await request.json();
-    }
+    const { imageUrl, imageBase64, extractTables = true } = await req.json();
+    if (!imageUrl && !imageBase64) return NextResponse.json({ error: "Provide `imageUrl` or `imageBase64`." }, { status: 400 });
 
-    // ═══════════════════════════════════════════════
-    // ACTION: EMBED — Generate vector embeddings
-    // ═══════════════════════════════════════════════
-    if (action === "embed") {
-      if (!text) {
-        return NextResponse.json({ error: "text is required for embedding." }, { status: 400 });
-      }
+    const nimKey = process.env.NVIDIA_NIM_API_KEY;
+    if (!nimKey) return NextResponse.json({ error: "NVIDIA_NIM_API_KEY not configured." }, { status: 500 });
 
-      const embedRes = await fetch("https://integrate.api.nvidia.com/v1/embeddings", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${await getNimKey()}`,
-        },
-        body: JSON.stringify({
-          model: "nvidia/nv-embed-v1",
-          input: Array.isArray(text) ? text : [text],
-          encoding_format: "float",
-        }),
-      });
+    const imgContent = imageUrl
+      ? { type: "image_url", image_url: { url: imageUrl } }
+      : { type: "image_url", image_url: { url: `data:image/png;base64,${imageBase64}` } };
 
-      const embedData = await embedRes.json();
+    // Step 1: Full OCR text extraction
+    const ocrRes = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${nimKey}` },
+      body: JSON.stringify({
+        model: "nvidia/nemotron-ocr-v1",
+        messages: [{ role: "user", content: [
+          { type: "text", text: "Extract ALL text from this document image. Preserve layout, headings, bullet points, and table structures. Format tables as markdown." },
+          imgContent,
+        ]}],
+        max_tokens: 3000,
+        temperature: 0.1,
+      }),
+    });
+    const ocrData = ocrRes.ok ? await ocrRes.json() : null;
+    const extractedText = ocrData?.choices?.[0]?.message?.content || "";
 
-      // Optional: Store in Pinecone
-      const pineconeKey = process.env.PINECONE_API_KEY;
-      const pineconeIndex = process.env.PINECONE_INDEX;
-      let pineconeStored = false;
+    // Step 2: Structural analysis (page elements)
+    const structRes = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${nimKey}` },
+      body: JSON.stringify({
+        model: "nvidia/cosmos-reason2-8b",
+        messages: [{ role: "user", content: [
+          { type: "text", text: "Analyze this document image. Identify: 1) Document type (invoice, report, pricing table, etc), 2) Key data fields, 3) Any tables with their column headers, 4) Overall layout structure. Return as structured JSON." },
+          imgContent,
+        ]}],
+        max_tokens: 1000,
+        temperature: 0.2,
+      }),
+    });
+    const structData = structRes.ok ? await structRes.json() : null;
 
-      if (pineconeKey && pineconeIndex && embedData.data) {
-        try {
-          const vectors = embedData.data.map((d: { embedding: number[] }, i: number) => ({
-            id: `doc-${Date.now()}-${i}`,
-            values: d.embedding,
-            metadata: { text: Array.isArray(text) ? text[i] : text, timestamp: new Date().toISOString() },
-          }));
-
-          await fetch(`https://${pineconeIndex}/vectors/upsert`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Api-Key": pineconeKey,
-            },
-            body: JSON.stringify({ vectors, namespace: "sovereign-docs" }),
-          });
-          pineconeStored = true;
-        } catch (e) {
-          console.error("[PINECONE_ERROR]", e);
-        }
-      }
-
-      return NextResponse.json({
-        success: true,
-        action: "embed",
-        model: "nv-embed-v1",
-        dimensions: embedData.data?.[0]?.embedding?.length || 0,
-        vectors_generated: embedData.data?.length || 0,
-        pinecone_stored: pineconeStored,
-      });
-    }
-
-    // ═══════════════════════════════════════════════
-    // ACTION: RERANK — Score document relevance
-    // ═══════════════════════════════════════════════
-    if (action === "rerank") {
-      if (!query || !documents || !Array.isArray(documents)) {
-        return NextResponse.json({ error: "query and documents[] are required." }, { status: 400 });
-      }
-
-      const rerankRes = await fetch("https://integrate.api.nvidia.com/v1/ranking", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${await getNimKey()}`,
-        },
-        body: JSON.stringify({
-          model: "nvidia/rerank-qa-mistral-4b",
-          query: { text: query },
-          passages: documents.map((doc: string) => ({ text: doc })),
-        }),
-      });
-
-      const rerankData = await rerankRes.json();
-
-      return NextResponse.json({
-        success: true,
-        action: "rerank",
-        model: "rerank-qa-mistral-4b",
-        query,
-        rankings: rerankData.rankings || [],
-        top_result: rerankData.rankings?.[0] || null,
-      });
-    }
-
-    // ═══════════════════════════════════════════════
-    // ACTION: SEARCH — Embed query + Rerank results
-    // ═══════════════════════════════════════════════
-    if (action === "search") {
-      if (!query) {
-        return NextResponse.json({ error: "query is required for search." }, { status: 400 });
-      }
-
-      // Generate query embedding
-      const queryEmbedRes = await fetch("https://integrate.api.nvidia.com/v1/embeddings", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${await getNimKey()}`,
-        },
-        body: JSON.stringify({
-          model: "nvidia/nv-embed-v1",
-          input: [query],
-          encoding_format: "float",
-        }),
-      });
-
-      const queryEmbedData = await queryEmbedRes.json();
-      const queryVector = queryEmbedData.data?.[0]?.embedding;
-
-      // Search Pinecone if configured
-      const pineconeKey = process.env.PINECONE_API_KEY;
-      const pineconeIndex = process.env.PINECONE_INDEX;
-      let searchResults: Array<{ text: string; score: number }> = [];
-
-      if (pineconeKey && pineconeIndex && queryVector) {
-        try {
-          const searchRes = await fetch(`https://${pineconeIndex}/query`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Api-Key": pineconeKey,
-            },
-            body: JSON.stringify({
-              vector: queryVector,
-              topK: 10,
-              namespace: "sovereign-docs",
-              includeMetadata: true,
-            }),
-          });
-          const searchData = await searchRes.json();
-          searchResults = searchData.matches?.map((m: { metadata?: { text?: string }; score: number }) => ({
-            text: m.metadata?.text || "",
-            score: m.score,
-          })) || [];
-        } catch (e) {
-          console.error("[PINECONE_SEARCH_ERROR]", e);
-        }
-      }
-
-      return NextResponse.json({
-        success: true,
-        action: "search",
-        query,
-        results: searchResults,
-        total_results: searchResults.length,
-        embedding_model: "nv-embed-v1",
-      });
-    }
-
-    return NextResponse.json({ error: "action must be 'embed', 'rerank', or 'search'." }, { status: 400 });
-  } catch (error) {
-    return NextResponse.json({ error: "Document Intelligence error", details: String(error) }, { status: 500 });
+    return NextResponse.json({
+      text: extractedText,
+      structure: structData?.choices?.[0]?.message?.content || "Structure analysis unavailable",
+      wordCount: extractedText.split(/\s+/).length,
+      models: { ocr: "nemotron-ocr-v1", structure: "cosmos-reason2-8b" },
+    });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

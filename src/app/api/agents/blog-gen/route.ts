@@ -36,7 +36,6 @@ export async function POST(request: Request) {
     }
 
     // Step 2: Generate the blog post via NIM
-    }
 
     const nimRes = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
       method: "POST",

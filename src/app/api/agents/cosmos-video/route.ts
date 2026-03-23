@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     if (!prompt) {
       return NextResponse.json({ error: "Prompt is required." }, { status: 400 });
     }
-    }
+    
 
     const modelId = mode === "transfer"
       ? "nvidia/cosmos-transfer2.5-2b"

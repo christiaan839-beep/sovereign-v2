@@ -1,4 +1,4 @@
-import { nimChat, getNimKey } from "@/lib/nvidia";
+import { getNimKey } from "@/lib/nvidia";
 import { NextResponse } from "next/server";
 
 /**
@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     if (!prompt) {
       return NextResponse.json({ error: "Prompt is required." }, { status: 400 });
     }
-    }
+    
 
     const nimRes = await fetch("https://integrate.api.nvidia.com/v1/images/generations", {
       method: "POST",
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
         "Authorization": `Bearer ${await getNimKey()}`,
       },
       body: JSON.stringify({
-        model: "stabilityai/stable-diffusion-3-medium",
+        model: "black-forest-labs/flux1-schnell",
         prompt: `${prompt}, ultra high quality, professional photography, 8k resolution, sharp focus`,
         negative_prompt: `${negative_prompt}, blurry, low quality, pixelated, watermark, text`,
         width: Math.min(width, 1024),
@@ -46,7 +46,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      model: "stable-diffusion-3-medium",
+      model: "flux1-schnell",
       prompt,
       image: data.data?.[0] || null,
       dimensions: `${width}x${height}`,

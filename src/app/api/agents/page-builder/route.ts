@@ -20,6 +20,7 @@ export async function POST(request: Request) {
 
     if (!stitchKey) {
       // Fallback: Use NVIDIA NIM to generate HTML via code generation model
+      if (!await getNimKey()) {
         return NextResponse.json({ error: "Neither STITCH_API_KEY nor NVIDIA_NIM_API_KEY is configured." }, { status: 500 });
       }
 

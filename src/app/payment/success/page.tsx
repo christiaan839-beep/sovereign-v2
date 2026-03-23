@@ -5,30 +5,39 @@ import { CheckCircle2, ArrowRight, Sparkles, Zap, Shield } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-function ConfettiParticle({ delay, x }: { delay: number; x: number }) {
-  const colors = ["#10B981", "#00B7FF", "#a855f7", "#f59e0b", "#f43f5e"];
-  const color = colors[Math.floor(Math.random() * colors.length)];
+interface ParticleProps {
+  id: number;
+  delay: number;
+  startX: number;
+  targetX: number;
+  color: string;
+}
+
+function ConfettiParticle({ p }: { p: ParticleProps }) {
   return (
     <motion.div
       className="absolute w-2 h-2 rounded-full"
-      style={{ backgroundColor: color, left: `${x}%`, top: -10 }}
+      style={{ backgroundColor: p.color, left: `${p.startX}%`, top: -10 }}
       initial={{ y: -20, opacity: 1, rotate: 0 }}
-      animate={{ y: 600, opacity: 0, rotate: 720, x: (Math.random() - 0.5) * 200 }}
-      transition={{ duration: 2.5, delay, ease: "easeOut" }}
+      animate={{ y: 600, opacity: 0, rotate: 720, x: p.targetX }}
+      transition={{ duration: 2.5, delay: p.delay, ease: "easeOut" }}
     />
   );
 }
 
 export default function PaymentSuccessPage() {
-  const [particles, setParticles] = useState<{ id: number; delay: number; x: number }[]>([]);
+  const [particles, setParticles] = useState<ParticleProps[]>([]);
 
   useEffect(() => {
+    const colors = ["#10B981", "#00B7FF", "#a855f7", "#f59e0b", "#f43f5e"];
     const p = Array.from({ length: 40 }, (_, i) => ({
       id: i,
       delay: Math.random() * 0.8,
-      x: Math.random() * 100,
+      startX: Math.random() * 100,
+      targetX: (Math.random() - 0.5) * 200,
+      color: colors[Math.floor(Math.random() * colors.length)],
     }));
-    setParticles(p);
+    setTimeout(() => setParticles(p), 0);
   }, []);
 
   return (
@@ -36,7 +45,7 @@ export default function PaymentSuccessPage() {
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-emerald-500/10 rounded-full blur-[200px]" />
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         {particles.map((p) => (
-          <ConfettiParticle key={p.id} delay={p.delay} x={p.x} />
+          <ConfettiParticle key={p.id} p={p} />
         ))}
       </div>
 

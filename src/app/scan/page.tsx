@@ -23,29 +23,37 @@ export default function AGIAuditorPage() {
       if (currentProgress < 25) {
         interval = setTimeout(() => setProgress(p => p + 1), 60);
       } else {
-        setStage('ANALYZING_PIXELS');
-        setLogs(prev => [...prev, `[TARGET LOCKED] ${targetUrl}`, 'Initiating payload: Meta Pixel Extraction...']);
+        setTimeout(() => {
+          setStage('ANALYZING_PIXELS');
+          setLogs(prev => [...prev, `[TARGET LOCKED] ${targetUrl}`, 'Initiating payload: Meta Pixel Extraction...']);
+        }, 0);
       }
     } else if (stage === 'ANALYZING_PIXELS') {
       if (currentProgress < 50) {
         interval = setTimeout(() => setProgress(p => p + 1), 70);
       } else {
-        setStage('FRICTION_MAPPING');
-        setLogs(prev => [...prev, 'Pixels Extracted. 4 critical drop-offs detected.', 'Mapping funnel surface area...']);
+        setTimeout(() => {
+          setStage('FRICTION_MAPPING');
+          setLogs(prev => [...prev, 'Pixels Extracted. 4 critical drop-offs detected.', 'Mapping funnel surface area...']);
+        }, 0);
       }
     } else if (stage === 'FRICTION_MAPPING') {
       if (currentProgress < 85) {
         interval = setTimeout(() => setProgress(p => p + 1), 50);
       } else {
-        setStage('CALCULATING_LOSS');
-        setLogs(prev => [...prev, 'Friction mapped: 72% conversion leakage.', 'Calculating exact lost capital velocity...']);
+        setTimeout(() => {
+          setStage('CALCULATING_LOSS');
+          setLogs(prev => [...prev, 'Friction mapped: 72% conversion leakage.', 'Calculating exact lost capital velocity...']);
+        }, 0);
       }
     } else if (stage === 'CALCULATING_LOSS') {
       if (currentProgress < 100) {
         interval = setTimeout(() => setProgress(p => p + 1), 40);
       } else {
-        setStage('COMPLETE');
-        setLogs(prev => [...prev, 'CALCULATION COMPLETE. Generating final threat report...']);
+        setTimeout(() => {
+          setStage('COMPLETE');
+          setLogs(prev => [...prev, 'CALCULATION COMPLETE. Generating final threat report...']);
+        }, 0);
       }
     }
 

@@ -1,4 +1,4 @@
-import { nimChat, getNimKey } from "@/lib/nvidia";
+import { getNimKey } from "@/lib/nvidia";
 import { NextResponse } from "next/server";
 
 /**
@@ -13,7 +13,6 @@ export async function POST(request: Request) {
 
     if (!text) {
       return NextResponse.json({ error: "Text is required." }, { status: 400 });
-    }
     }
 
     const modelId = voice === "zeroshot"

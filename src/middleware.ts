@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { apiLogger } from '@/lib/api-logger';
 
 /**
  * SOVEREIGN MATRIX — UNIFIED EDGE MIDDLEWARE
@@ -26,6 +27,15 @@ export function middleware(request: NextRequest) {
     const clientIp = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'anonymous';
     const clientId = apiKey || clientIp;
 
+    // Log the incoming request
+    apiLogger.log({
+      route: url.pathname,
+      method: request.method,
+      status: 202, // Accepted/processing (middleware)
+      durationMs: 0,
+      clientIp
+    });
+
     // Rate limiting: 100 requests per minute per client
     const now = Date.now();
     const limit = rateLimits.get(clientId);
@@ -33,6 +43,14 @@ export function middleware(request: NextRequest) {
     if (limit && now < limit.resetAt) {
       limit.count += 1;
       if (limit.count > 100) {
+        apiLogger.log({
+          route: url.pathname,
+          method: request.method,
+          status: 429,
+          durationMs: 0,
+          clientIp,
+          error: "Rate limit exceeded"
+        });
         return NextResponse.json(
           { error: 'Rate limit exceeded. Max 100 requests per minute.', retry_after_seconds: Math.ceil((limit.resetAt - now) / 1000) },
           { status: 429 }

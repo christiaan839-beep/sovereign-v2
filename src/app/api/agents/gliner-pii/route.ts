@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     if (!text) {
       return NextResponse.json({ error: "text is required." }, { status: 400 });
     }
-    }
+    
 
     const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
       method: "POST",

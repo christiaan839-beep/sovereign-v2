@@ -13,7 +13,7 @@ export async function POST(request: Request) {
     if (!image_url) {
       return NextResponse.json({ error: "image_url is required." }, { status: 400 });
     }
-    }
+    
 
     const prompts: Record<string, string> = {
       caption: "Describe this image in detail. Include all visible text, objects, colors, and layout.",

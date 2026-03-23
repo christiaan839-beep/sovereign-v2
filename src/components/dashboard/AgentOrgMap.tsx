@@ -78,13 +78,29 @@ export function AgentOrgMap() {
         </motion.div>
 
         {/* Connecting Line Down */}
-        <div className="w-px h-12 bg-gradient-to-b from-[#00B7FF]/40 to-white/10 z-10" />
+        <div className="w-px h-12 bg-[#00B7FF]/20 relative z-10 overflow-hidden">
+          <motion.div
+             className="absolute top-0 left-0 w-full h-4 bg-gradient-to-b from-transparent via-[#00B7FF] to-transparent"
+             animate={{ top: ['-50%', '150%'] }}
+             transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
+          />
+        </div>
 
         {/* Horizontal Distributor Line */}
-        <div className="w-[80%] max-w-4xl h-px bg-white/10 relative z-10">
-           <div className="absolute left-0 top-0 w-px h-6 bg-white/10" />
-           <div className="absolute left-1/2 top-0 w-px h-6 bg-white/10 -translate-x-1/2" />
-           <div className="absolute right-0 top-0 w-px h-6 bg-white/10" />
+        <div className="w-[80%] max-w-4xl h-px bg-[#00B7FF]/20 relative z-10">
+           {/* Packets moving left and right from center */}
+           <motion.div className="absolute top-0 left-1/2 w-8 h-[1px] bg-gradient-to-l from-transparent via-[#00ff66] to-transparent" animate={{ left: ['50%', '-2%'] }} transition={{ duration: 1.2, repeat: Infinity, ease: 'linear', delay: 0.6 }} />
+           <motion.div className="absolute top-0 right-1/2 w-8 h-[1px] bg-gradient-to-r from-transparent via-[#00ff66] to-transparent" animate={{ right: ['50%', '-2%'] }} transition={{ duration: 1.2, repeat: Infinity, ease: 'linear', delay: 0.6 }} />
+
+           <div className="absolute left-0 top-0 w-px h-6 bg-[#00B7FF]/20 overflow-hidden">
+               <motion.div className="absolute top-0 left-0 w-full h-4 bg-gradient-to-b from-transparent via-[#00ff66] to-transparent" animate={{ top: ['-100%', '200%'] }} transition={{ duration: 0.8, repeat: Infinity, ease: 'linear', delay: 1.8 }} />
+           </div>
+           <div className="absolute left-1/2 top-0 w-px h-6 bg-[#00B7FF]/20 -translate-x-1/2 overflow-hidden">
+               <motion.div className="absolute top-0 left-0 w-full h-4 bg-gradient-to-b from-transparent via-[#00B7FF] to-transparent" animate={{ top: ['-100%', '200%'] }} transition={{ duration: 0.8, repeat: Infinity, ease: 'linear', delay: 0.6 }} />
+           </div>
+           <div className="absolute right-0 top-0 w-px h-6 bg-[#00B7FF]/20 overflow-hidden">
+               <motion.div className="absolute top-0 left-0 w-full h-4 bg-gradient-to-b from-transparent via-[#00ff66] to-transparent" animate={{ top: ['-100%', '200%'] }} transition={{ duration: 0.8, repeat: Infinity, ease: 'linear', delay: 1.8 }} />
+           </div>
         </div>
         <div className="w-[80%] max-w-4xl flex justify-between mt-6 relative z-20 gap-6">
            {SQUADS.map((squad, i) => (

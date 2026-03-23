@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import Anthropic from "@anthropic-ai/sdk";
+import Groq from "groq-sdk";
 import { tavily } from "@tavily/core";
 import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@/db";
@@ -10,9 +11,10 @@ import type { AIOptions } from "@/types";
 
 const globalGeminiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY || "";
 const globalAnthropicKey = process.env.ANTHROPIC_API_KEY || "";
+const globalGroqKey = process.env.GROQ_API_KEY || "";
 const globalTavilyKey = process.env.TAVILY_API_KEY || "tvly-demo";
 
-async function getUserKeys(): Promise<{ gemini?: string, tavily?: string, anthropic?: string, ollama?: string, nvidia?: string }> {
+async function getUserKeys(): Promise<{ gemini?: string, tavily?: string, anthropic?: string, ollama?: string, nvidia?: string, groq?: string }> {
   try {
     const user = await currentUser();
     if (user?.primaryEmailAddress?.emailAddress) {
@@ -31,7 +33,6 @@ async function getUserKeys(): Promise<{ gemini?: string, tavily?: string, anthro
 
 // Fallback global clients
 const globalGenAI = new GoogleGenerativeAI(globalGeminiKey);
-const globalAnthropic = new Anthropic({ apiKey: globalAnthropicKey });
 
 /**
  * Unified AI text generation router.
@@ -58,12 +59,22 @@ export async function ai(prompt: string, options: AIOptions = {}): Promise<strin
     return nimText(prompt, system, maxTokens);
   }
 
-  // 3. Claude (BYOK only)
-  if (model === "claude" || (userKeys.anthropic && !userKeys.gemini)) {
+  // 3. Claude (BYOK only) - Opus or Sonnet
+  if (model === "claude" || (userKeys.anthropic && !userKeys.gemini && !userKeys.groq)) {
     return claudeText(prompt, system, maxTokens, userKeys);
   }
 
-  // 4. Gemini (default — Google free tier)
+  // 4. Mistral Large 2 (EU Compliance / Open Weights via NIM)
+  if (model === "mistral") {
+    return mistralText(prompt, system, maxTokens);
+  }
+
+  // 5. Groq (DeepSeek-R1, Qwen 2.5 Coder, Llama 3.1)
+  if (model === "groq" || model === "deepseek" || model === "qwen" || (userKeys.groq && !userKeys.gemini)) {
+    return groqText(prompt, system, maxTokens, userKeys, model);
+  }
+
+  // 5. Gemini (default — Google free tier)
   return geminiText(prompt, system, maxTokens, userKeys);
 }
 
@@ -76,7 +87,7 @@ async function nimText(prompt: string, system?: string, maxTokens: number = 2000
     ...(system ? [{ role: "system", content: system }] : []),
     { role: "user", content: prompt }
   ];
-  return nimChat("nvidia/llama-3.1-nemotron-ultra-253b", messages, { maxTokens, temperature: 0.6 });
+  return nimChat("nvidia/llama-3.1-nemotron-ultra-253b", messages, { maxTokens, temperature: 0.6 }) as Promise<string>;
 }
 
 async function ollamaText(prompt: string, system?: string, ollamaUrl: string = "http://localhost:11434"): Promise<string> {
@@ -116,15 +127,127 @@ async function geminiText(prompt: string, system?: string, maxTokens: number = 2
 
 async function claudeText(prompt: string, system?: string, maxTokens: number = 2000, userKeys: { anthropic?: string } = {}): Promise<string> {
   const keys = Object.keys(userKeys).length > 0 ? userKeys : await getUserKeys();
-  const client = keys.anthropic ? new Anthropic({ apiKey: keys.anthropic }) : globalAnthropic;
+  const apiKey = keys.anthropic || globalAnthropicKey;
+  
+  const client = new Anthropic({ 
+    apiKey,
+    defaultHeaders: { "anthropic-beta": "prompt-caching-2024-07-31" }
+  });
+
+  // Inject ephemeral caching on the system prompt to slash token costs by 90%
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const systemParam: any = system ? [
+    { type: "text", text: system, cache_control: { type: "ephemeral" } }
+  ] : undefined;
 
   const response = await client.messages.create({
-    model: "claude-sonnet-4-20250514",
+    model: "claude-3-5-sonnet-20241022",
     max_tokens: maxTokens,
-    ...(system ? { system } : {}),
+    ...(systemParam ? { system: systemParam } : {}),
     messages: [{ role: "user", content: prompt }],
   });
+  
   return response.content[0].type === "text" ? response.content[0].text : "";
+}
+
+async function groqText(prompt: string, system?: string, maxTokens: number = 2000, userKeys: { groq?: string } = {}, modelTarget: string = "groq"): Promise<string> {
+  const keys = Object.keys(userKeys).length > 0 ? userKeys : await getUserKeys();
+  const apiKey = keys.groq || globalGroqKey;
+  
+  const client = new Groq({ apiKey });
+  
+  // Decide actual model based on route
+  let groqModel = "llama-3.1-8b-instant";
+  if (modelTarget === "deepseek") {
+    groqModel = "deepseek-r1-distill-llama-70b"; // DeepSeek reasoning logic
+  } else if (modelTarget === "qwen") {
+    groqModel = "qwen-2.5-coder-32b"; // Super-fast dedicated code generation
+  }
+
+  const messages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [];
+  if (system) messages.push({ role: "system" as const, content: system });
+  messages.push({ role: "user" as const, content: prompt });
+
+  const completion = await client.chat.completions.create({
+    messages,
+    model: groqModel,
+    max_tokens: maxTokens,
+  });
+
+  return completion.choices[0]?.message?.content || "";
+}
+
+/**
+ * Mistral Large 2 — European Sovereign AI via NIM.
+ */
+async function mistralText(prompt: string, system?: string, maxTokens: number = 2000): Promise<string> {
+  const messages = [
+    ...(system ? [{ role: "system", content: system }] : []),
+    { role: "user", content: prompt }
+  ];
+  return nimChat("mistralai/mistral-large-2-instruct", messages, { maxTokens, temperature: 0.4 }) as Promise<string>;
+}
+
+/**
+ * Whisper v3 Turbo — Ultra-fast audio transcription via Groq.
+ * Transcribes 1 hour of audio in ~3 seconds at fractions of a penny.
+ */
+export async function groqTranscribe(audioBuffer: Uint8Array, filename: string = "audio.wav"): Promise<string> {
+  const userKeys = await getUserKeys();
+  const apiKey = userKeys.groq || globalGroqKey;
+  if (!apiKey) throw new Error("Groq API key required for Whisper transcription.");
+
+  const client = new Groq({ apiKey });
+
+  const blob = new Blob([audioBuffer.buffer as ArrayBuffer], { type: "audio/wav" });
+  const file = new File([blob], filename, { type: "audio/wav" });
+
+  const transcription = await client.audio.transcriptions.create({
+    file,
+    model: "whisper-large-v3-turbo",
+    language: "en",
+    response_format: "text",
+  });
+
+  return typeof transcription === "string" ? transcription : String(transcription);
+}
+
+/**
+ * Claude Tool Use — Agentic function calling for structured outputs.
+ * Uses Anthropic's native tool_use to let Claude call predefined functions.
+ */
+export async function claudeToolUse(
+  prompt: string,
+  tools: Array<{ name: string; description: string; input_schema: Record<string, unknown> }>,
+  system?: string,
+  maxTokens: number = 4096
+): Promise<{ text: string; toolCalls: Array<{ name: string; input: Record<string, unknown> }> }> {
+  const userKeys = await getUserKeys();
+  const apiKey = userKeys.anthropic || globalAnthropicKey;
+  const client = new Anthropic({ apiKey });
+
+  const response = await client.messages.create({
+    model: "claude-3-5-sonnet-20241022",
+    max_tokens: maxTokens,
+    ...(system ? { system } : {}),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    tools: tools as any,
+    messages: [{ role: "user", content: prompt }],
+  });
+
+  const text = response.content
+    .filter(b => b.type === "text")
+    .map(b => (b as { type: "text"; text: string }).text)
+    .join("");
+
+  const toolCalls = response.content
+    .filter(b => b.type === "tool_use")
+    .map(b => {
+      const tu = b as { type: "tool_use"; name: string; input: Record<string, unknown> };
+      return { name: tu.name, input: tu.input };
+    });
+
+  return { text, toolCalls };
 }
 
 /**

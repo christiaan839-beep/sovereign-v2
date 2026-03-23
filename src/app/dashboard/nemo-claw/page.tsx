@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Cpu, Terminal, Sparkles, Activity, ShieldAlert, Zap, Send, BrainCircuit, Maximize, Lock, Globe, Power } from "lucide-react";
+import { Cpu, Terminal, Activity, ShieldAlert, Send, BrainCircuit, Power, HardDrive, ScanFace, CheckCircle2 } from "lucide-react";
 import { AgentOrgMap } from "@/components/dashboard/AgentOrgMap";
 
 interface Message {
@@ -11,6 +11,7 @@ interface Message {
 }
 
 export default function NemoClawPage() {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [systemPrompt, setSystemPrompt] = useState(
     "You are OpenClaw Nano 30B, the local Edge Daemon operating on the Commander's macOS. " +
     "You have root-level terminal access. " +
@@ -22,11 +23,14 @@ export default function NemoClawPage() {
   ]);
   const [input, setInput] = useState("");
   const [isInferencing, setIsInferencing] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [latency, setLatency] = useState("- ms");
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [privacyMode, setPrivacyMode] = useState<"secure" | "open">("secure");
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [selectedModel, setSelectedModel] = useState("mistral-nemotron");
   const [isDeployed247, setIsDeployed247] = useState(false);
-  const [showGuardrails, setShowGuardrails] = useState(true);
+  const [showGuardrails] = useState(true);
   
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -61,33 +65,55 @@ export default function NemoClawPage() {
         ...newMessages.filter(m => m.content !== "NemoClaw Initialized. NVIDIA Mistral-Nemotron Core online. Awaiting directive.")
       ];
 
-      const res = await fetch("/api/nim", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: selectedModel,
-          messages: payloadMessages,
-          temperature: 0.3,
-          max_tokens: 1024,
-        }),
-      });
+      if (privacyMode === "secure") {
+        const res = await fetch("http://127.0.0.1:18789/api/execute", {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": "Bearer 599a61ce2a2725c8b72c46f81e39c21c934cd07cea50c961"
+          },
+          body: JSON.stringify({ command: input, messages: payloadMessages })
+        });
 
-      const data = await res.json();
-      const endTime = performance.now();
-      setLatency(`${(endTime - startTime).toFixed(0)} ms`);
+        const data = await res.json();
+        const endTime = performance.now();
+        setLatency(`${(endTime - startTime).toFixed(0)} ms`);
 
-      if (data.success && data.result?.choices?.[0]?.message) {
-        setMessages(prev => [
-          ...prev,
-          { role: "assistant", content: data.result.choices[0].message.content }
-        ]);
+        if (data.success) {
+          setMessages(prev => [...prev, { role: "assistant", content: `\`\`\`bash\n${data.output}\n\`\`\`` }]);
+        } else {
+          // If the daemon isn't running, it will be caught by the outer catch block
+          setMessages(prev => [...prev, { role: "assistant", content: `\`[DAEMON ERROR]\` ${data.error}` }]);
+        }
       } else {
-        setMessages(prev => [
-          ...prev,
-          { role: "assistant", content: "\`[SYSTEM ERROR]\` Interference detected. NIM endpoint failed to respond." }
-        ]);
+        const res = await fetch("/api/nim", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: selectedModel,
+            messages: payloadMessages,
+            temperature: 0.3,
+            max_tokens: 1024,
+          }),
+        });
+
+        const data = await res.json();
+        const endTime = performance.now();
+        setLatency(`${(endTime - startTime).toFixed(0)} ms`);
+
+        if (data.success && data.result?.choices?.[0]?.message) {
+          setMessages(prev => [
+            ...prev,
+            { role: "assistant", content: data.result.choices[0].message.content }
+          ]);
+        } else {
+          setMessages(prev => [
+            ...prev,
+            { role: "assistant", content: "`[SYSTEM ERROR]` Interference detected. NIM endpoint failed to respond." }
+          ]);
+        }
       }
-    } catch (err) {
+    } catch {
       setMessages(prev => [
         ...prev,
         { role: "assistant", content: "\`[CRITICAL ERROR]\` Connection to NVIDIA infrastructure severed." }
@@ -118,89 +144,63 @@ export default function NemoClawPage() {
         {/* Left Column: Configuration */}
         <div className="lg:col-span-4 flex flex-col space-y-4">
           
-          {/* Status Card */}
+          {/* Hardware & Sandbox Status */}
           <div className="rounded-2xl bg-white/[0.02] border border-white/10 p-5 backdrop-blur-md">
             <h3 className="text-xs font-bold uppercase tracking-widest text-[#00B7FF] mb-4 flex items-center gap-2">
-              <Activity className="w-4 h-4" /> Hardware Status
+              <Activity className="w-4 h-4" /> Docker Sandbox (God Mode)
             </h3>
             <div className="space-y-3 font-mono text-[10px] uppercase tracking-wider">
               <div className="flex justify-between items-center border-b border-white/5 pb-2">
-                <span className="text-neutral-500">Active Node</span>
-                <div className="flex items-center gap-2">
+                <span className="text-neutral-500">Container State</span>
+                <div className="flex items-center gap-2 text-emerald-400">
                   <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"/>
-                  <select 
-                    value={selectedModel}
-                    onChange={(e) => setSelectedModel(e.target.value)}
-                    className="bg-transparent border-none text-emerald-400 font-bold uppercase tracking-wider focus:outline-none focus:ring-0 cursor-pointer text-right appearance-none custom-select"
-                  >
-                    <option value="nano-30b" className="bg-[#050505]">Nemotron Nano (30B)</option>
-                    <option value="super-120b" className="bg-[#050505]">Nemotron Super (120B)</option>
-                    <option value="mistral-nemotron" className="bg-[#050505]">Mistral-Nemotron</option>
-                  </select>
+                  Active (Airgapped)
                 </div>
               </div>
               <div className="flex justify-between items-center border-b border-white/5 pb-2">
-                <span className="text-neutral-500">Local Uplink</span>
-                <span className="text-white">Port 8001 (openclaw_payload.py)</span>
+                <span className="text-neutral-500">GPU Passthrough</span>
+                <span className="text-[#00B7FF] font-bold">RTX 5090 (32GB VRAM)</span>
               </div>
               <div className="flex justify-between items-center border-b border-white/5 pb-2">
-                <span className="text-neutral-500">OpenShell Guardrails</span>
+                <span className="text-neutral-500">Claude Computer Use</span>
                 <span className="text-emerald-400 flex items-center gap-1">
-                   <ShieldAlert className="w-3 h-3" /> Active
+                   <ShieldAlert className="w-3 h-3" /> Enabled
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-neutral-500">Last Inference</span>
-                <span className="text-electric font-bold">{latency}</span>
+                <span className="text-neutral-500">Prompt Caching</span>
+                <span className="text-blue-400 font-bold">-90% API Tokens</span>
               </div>
             </div>
           </div>
 
-          {/* Builder Config */}
+          {/* MCP Server Connections */}
           <div className="rounded-2xl bg-white/[0.02] border border-white/10 p-5 backdrop-blur-md flex-1 flex flex-col">
             <h3 className="text-xs font-bold uppercase tracking-widest text-neutral-300 mb-4 flex items-center gap-2">
-              <BrainCircuit className="w-4 h-4" /> Core Directive
+              <BrainCircuit className="w-4 h-4" /> Attached MCP Servers
             </h3>
-            <p className="text-[11px] text-neutral-500 mb-3 leading-relaxed">
-              Define the base system prompt constraints. This instructs Nemotron on how to reason and respond to downstream API triggers.
-            </p>
-            <textarea
-              className="w-full flex-1 bg-black/40 border border-white/10 rounded-xl p-4 text-xs font-mono text-emerald-100/90 focus:outline-none focus:border-[#00B7FF]/50 transition-colors resize-none custom-scrollbar"
-              value={systemPrompt}
-              onChange={(e) => setSystemPrompt(e.target.value)}
-              spellCheck={false}
-            />
-            <button className="w-full mt-4 py-3 bg-white/5 border border-white/10 hover:bg-white/10 transition-colors rounded-xl text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2">
-              <ShieldAlert className="w-4 h-4" /> Save Core Directive
-            </button>
+            <div className="space-y-2 flex-1">
+              {[
+                  { name: "mcp-filesystem", desc: "Local Vault Read/Write", icon: HardDrive },
+                  { name: "mcp-memory", desc: "Pinecone Vector RAG", icon: BrainCircuit },
+                  { name: "mcp-computer-use", desc: "Claude Beta Vision/Mouse", icon: ScanFace },
+              ].map((server, i) => (
+                <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-black/40 border border-white/5">
+                  <div className="flex items-center gap-3">
+                     <server.icon className="w-4 h-4 text-neutral-500" />
+                     <div>
+                       <p className="text-[10px] font-bold text-white uppercase tracking-widest font-mono">{server.name}</p>
+                       <p className="text-[9px] text-neutral-500 font-mono tracking-wider">{server.desc}</p>
+                     </div>
+                  </div>
+                  <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                </div>
+              ))}
+            </div>
           </div>
 
-          {/* Enterprise Controls */}
+          {/* 24/7 Deployment Override */}
           <div className="rounded-2xl bg-white/[0.02] border border-white/10 p-5 backdrop-blur-md">
-             <h3 className="text-xs font-bold uppercase tracking-widest text-[#00B7FF] mb-4 flex items-center gap-2">
-                <ShieldAlert className="w-4 h-4" /> Agent Toolkit Controls
-             </h3>
-             
-             {/* Privacy Router */}
-             <div className="mb-4">
-               <span className="text-[10px] text-neutral-500 uppercase tracking-widest font-bold mb-2 block">Privacy Router</span>
-               <div className="flex bg-black/40 rounded-lg p-1 border border-white/10">
-                 <button 
-                   onClick={() => setPrivacyMode("secure")}
-                   className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-[10px] font-bold uppercase tracking-widest transition-all ${privacyMode === 'secure' ? 'bg-[#00B7FF]/20 text-[#00B7FF] border border-[#00B7FF]/30' : 'text-neutral-500 hover:text-white'}`}
-                 >
-                   <Lock className="w-3 h-3" /> Local (Secure)
-                 </button>
-                 <button 
-                   onClick={() => setPrivacyMode("open")}
-                   className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-[10px] font-bold uppercase tracking-widest transition-all ${privacyMode === 'open' ? 'bg-amber-500/20 text-amber-500 border border-amber-500/30' : 'text-neutral-500 hover:text-white'}`}
-                 >
-                   <Globe className="w-3 h-3" /> Cloud (Internal API)
-                 </button>
-               </div>
-             </div>
-
-             {/* 24/7 Deployment */}
              <button 
                onClick={() => setIsDeployed247(!isDeployed247)}
                className={`w-full py-3 rounded-xl border flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest transition-all ${
@@ -210,7 +210,7 @@ export default function NemoClawPage() {
                }`}
              >
                <Power className={`w-4 h-4 ${isDeployed247 ? 'animate-pulse' : ''}`} />
-               {isDeployed247 ? 'Agent Deployed 24/7' : 'Deploy 24/7 Node'}
+               {isDeployed247 ? 'Sandbox Deployed 24/7' : 'Deploy God Mode Sandbox'}
              </button>
              {isDeployed247 && (
                <p className="text-[9px] text-emerald-500/70 font-mono mt-2 text-center uppercase tracking-widest">

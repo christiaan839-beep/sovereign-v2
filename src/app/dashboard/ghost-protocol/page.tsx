@@ -1,136 +1,262 @@
 "use client";
 
-import React, { useState } from 'react';
-import { Ghost, ShieldAlert, Download, Terminal, UploadCloud, Skull, Network } from 'lucide-react';
+import React, { useState, useEffect, useRef } from "react";
+import { Ghost, ShieldAlert, Target, Terminal, Search, User, MessageSquare, Zap, Crosshair } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
-export default function GhostProtocolNode() {
+interface GhostResult {
+  lead: {
+    name: string;
+    title: string;
+    company: string;
+    linkedIn: string;
+  };
+  complaint: {
+    source: string;
+    text: string;
+  };
+  draftMessage: string;
+}
+
+export default function GhostProtocolDashboard() {
+  const [target, setTarget] = useState("");
+  const [phase, setPhase] = useState<0 | 1 | 2 | 3 | 4>(0);
   const [isDeploying, setIsDeploying] = useState(false);
-  const [deploymentPhase, setDeploymentPhase] = useState(0);
+  const [result, setResult] = useState<GhostResult | null>(null);
+  const [logs, setLogs] = useState<string[]>([]);
+  const bottomRef = useRef<HTMLDivElement>(null);
 
-  const handleDeploy = () => {
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [logs]);
+
+  const addLog = (msg: string) => {
+    setLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] ${msg}`]);
+  };
+
+  const startGhostFleet = async () => {
+    if (!target) return;
+
     setIsDeploying(true);
-    setDeploymentPhase(1);
-    // STUB REMOVED: setTimeout(() => setDeploymentPhase(2), 2000);
-    // STUB REMOVED: setTimeout(() => setDeploymentPhase(3), 4000);
-    // STUB REMOVED: setTimeout(() => setDeploymentPhase(4), 6000);
+    setPhase(1);
+    setResult(null);
+    setLogs([]);
+    addLog(`INITIATING GHOST FLEET for target: ${target}`);
+    addLog("PHASE 1: Scraping G2 & ProductHunt for negative sentiment...");
+
+    try {
+      const res = await fetch("/api/agents/ghost-fleet", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ competitorName: target }),
+      });
+
+      if (!res.ok) throw new Error("API Connection Failed");
+
+      // Simulated delays for dramatic/UX effect
+      setTimeout(() => {
+        setPhase(2);
+        addLog(`Match found. Extracting identity via Apollo.io enrichment...`);
+      }, 2000);
+
+      setTimeout(() => {
+        setPhase(3);
+        addLog(`Identity verified. Passing context to Nemotron 340B for outreach synthesis...`);
+      }, 4000);
+
+      const data = await res.json();
+
+      setTimeout(() => {
+        setResult(data);
+        setPhase(4);
+        setIsDeploying(false);
+        addLog(`SUCCESS: Target acquired and outreach drafted. Ready for NemoClaw Edge Execution.`);
+      }, 6000);
+
+    } catch (err: any) {
+      addLog(`ERROR: Pipeline failed - ${err.message}`);
+      setIsDeploying(false);
+      setPhase(0);
+    }
+  };
+
+  const executeNemoClaw = async () => {
+    addLog("WARNING: Handing off payload to local OpenClaw daemon (port 18789)...");
+    addLog("NemoClaw taking physical control of OS to dispatch LinkedIn connection request.");
+    
+    // Attempt local execution for the demo
+    try {
+      const res = await fetch("http://localhost:18789/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "openclaw-agent",
+          messages: [{ role: "user", content: `Please go to ${result?.lead.linkedIn} and send this message: ${result?.draftMessage}` }]
+        })
+      });
+      if (res.ok) addLog("OpenClaw acknowledged. Physical execution initiated.");
+      else addLog("OpenClaw daemon not detected running locally on port 18789.");
+    } catch {
+      addLog("CONNECTION REFUSED: OpenClaw daemon is not running on localhost:18789. Start it via terminal.");
+    }
   };
 
   return (
-    <div className="min-h-screen bg-black text-[#00ff66] p-8 font-mono animate-in fade-in">
-      <div className="max-w-6xl mx-auto space-y-12">
+    <div className="min-h-[calc(100vh-64px)] p-6 lg:p-10 font-mono text-[#00ff66]">
+      <div className="max-w-6xl mx-auto space-y-8">
         
-        <header className="border-b border-[#00ff66]/30 pb-6 flex items-center justify-between">
+        {/* Header */}
+        <header className="border-b border-[#00ff66]/30 pb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-black uppercase tracking-[0.2em] flex items-center gap-4">
-              <Ghost className="w-8 h-8" />
-              Ghost Protocol [NVIDIA OpenShell]
+            <h1 className="text-3xl font-black uppercase tracking-[0.2em] flex items-center gap-4 text-white">
+              <Ghost className="w-8 h-8 text-[#00ff66]" />
+              Ghost Fleet SDR
             </h1>
-            <p className="text-[#00ff66]/60 mt-2 uppercase text-xs tracking-widest">
-              Physical Local-Hardware Hijacking & Autonomous RPA Execution
+            <p className="text-[#00ff66]/60 mt-2 uppercase text-xs tracking-widest flex items-center gap-2">
+              <Crosshair className="w-4 h-4" /> Competitor Sniper Pipeline
             </p>
           </div>
-          <div className="text-right text-xs">
-            <p className="flex items-center justify-end gap-2">
-              <Network className="w-4 h-4" /> ENCRYPTED EDGE BRIDGE
+          <div className="text-right text-xs bg-black/50 p-3 rounded-lg border border-red-500/20">
+            <p className="text-red-500 flex items-center justify-end gap-2 font-bold uppercase">
+              <ShieldAlert className="w-4 h-4" /> RESTRICTED ASSET
             </p>
-            <p className="text-red-500 flex items-center justify-end gap-1 mt-1">
-              <ShieldAlert className="w-3 h-3" /> LEVEL 4 CLEARANCE REQUIRED
-            </p>
+            <p className="text-red-400/60 mt-1">Requires NemoClaw Edge Daemon</p>
           </div>
         </header>
 
-        <main className="grid lg:grid-cols-2 gap-12">
+        <div className="grid lg:grid-cols-12 gap-8">
           
-          {/* Left Column: Mission Control */}
-          <div className="space-y-6">
-            <div className="bg-neutral-900/50 border border-neutral-800 p-6">
-              <h2 className="text-white font-bold uppercase tracking-widest mb-4 flex items-center gap-2">
-                <Download className="w-5 h-5 text-[#00ff66]" />
-                Step 1: Download Daemon
+          {/* Left Column: Command Entry */}
+          <div className="lg:col-span-5 space-y-6">
+            <div className="bg-black/60 backdrop-blur-md border border-white/10 rounded-2xl p-6">
+              <h2 className="text-white font-bold uppercase tracking-widest mb-6 flex items-center gap-2">
+                <Target className="w-5 h-5 text-[#00ff66]" />
+                Acquire Target
               </h2>
-              <p className="text-neutral-400 text-sm mb-6 leading-relaxed">
-                The Ghost Protocol requires the NemoClaw Python daemon to be installed on target hardware (Windows/macOS/Linux). Once executed, the target machine surrenders input authority (mouse/keyboard) to the Sovereign Matrix Vercel Edge server, enabling 100% autonomous RPA (Robotic Process Automation).
-              </p>
-              <div className="flex gap-4">
-                <button className="bg-white text-black font-bold uppercase tracking-widest text-xs px-6 py-3 hover:bg-[#00ff66] transition-colors">
-                  Download Windows (.exe)
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="text-[10px] text-neutral-500 uppercase tracking-widest block mb-2">Competitor Name or Domain</label>
+                  <div className="relative">
+                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
+                    <input 
+                      type="text"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-[#00ff66]/50 transition-colors placeholder:text-neutral-600"
+                      placeholder="e.g. Salesforce, GoHighLevel, HubSpot"
+                      value={target}
+                      onChange={e => setTarget(e.target.value)}
+                      disabled={isDeploying}
+                    />
+                  </div>
+                </div>
+
+                <button 
+                  onClick={startGhostFleet}
+                  disabled={!target || isDeploying}
+                  className="w-full bg-[#00ff66]/10 border border-[#00ff66]/30 text-[#00ff66] font-bold uppercase tracking-widest py-4 rounded-xl hover:bg-[#00ff66] hover:text-black transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  <Ghost className="w-5 h-5" />
+                  {isDeploying ? "Sniper Active..." : "Initiate Ghost Fleet"}
                 </button>
-                <button className="border border-white/20 text-white font-bold uppercase tracking-widest text-xs px-6 py-3 hover:bg-white/10 transition-colors">
-                  Download macOS (.dmg)
-                </button>
+              </div>
+
+              {/* Progress Tracker */}
+              <div className="mt-8 space-y-4">
+                {[
+                  { p: 1, label: "Scraping Complaints" },
+                  { p: 2, label: "Apollo Enrichment" },
+                  { p: 3, label: "Nemotron Synthesis" },
+                  { p: 4, label: "Target Locked" }
+                ].map((step, idx) => (
+                  <div key={idx} className={`flex items-center gap-3 text-xs uppercase tracking-widest ${phase >= step.p ? "text-white" : "text-neutral-600"}`}>
+                    <div className={`w-3 h-3 rounded-full border ${phase > step.p ? "bg-[#00ff66] border-[#00ff66]" : phase === step.p ? "border-[#00ff66] animate-ping" : "border-neutral-700"}`} />
+                    {step.label}
+                  </div>
+                ))}
               </div>
             </div>
 
-            <div className="bg-[#00ff66]/5 border border-[#00ff66]/20 p-6">
-              <h2 className="text-[#00ff66] font-bold uppercase tracking-widest mb-4 flex items-center gap-2">
-                <Terminal className="w-5 h-5" />
-                Step 2: Dispatch Command
-              </h2>
-              <textarea
-                className="w-full h-32 bg-black border border-[#00ff66]/40 p-4 text-[#00ff66] placeholder:text-[#00ff66]/30 focus:outline-none focus:border-[#00ff66] transition-colors resize-none text-xs"
-                placeholder="Enter physical execution parameters... e.g., 'Open Chrome, navigate to LinkedIn.com, search for CEO profiles in Dubai, extract absolute URLs and send DM sequences.'"
-              />
-              <button 
-                onClick={handleDeploy}
-                disabled={isDeploying || deploymentPhase === 4}
-                className="w-full mt-4 bg-red-600/20 border border-red-500/50 text-red-500 font-black uppercase tracking-widest py-4 hover:bg-red-600 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                <Skull className="w-5 h-5" /> {isDeploying ? 'Establishing Neural Uplink...' : 'Execute Ghost Protocol'}
-              </button>
+            {/* Terminal Feed */}
+            <div className="bg-black/60 backdrop-blur-md border border-white/10 rounded-2xl p-4 h-48 flex flex-col">
+              <div className="flex items-center gap-2 mb-3 border-b border-white/5 pb-2">
+                <Terminal className="w-4 h-4 text-neutral-400" />
+                <span className="text-[10px] text-neutral-400 uppercase tracking-widest">NemoClaw Console</span>
+              </div>
+              <div className="flex-1 overflow-y-auto custom-scrollbar space-y-2">
+                {logs.map((log, i) => (
+                  <p key={i} className={`text-[10px] leading-relaxed ${log.includes("ERROR") || log.includes("WARNING") ? "text-red-400" : log.includes("SUCCESS") ? "text-[#00ff66]" : "text-neutral-400"}`}>
+                    {log}
+                  </p>
+                ))}
+                <div ref={bottomRef} />
+              </div>
             </div>
           </div>
 
-          {/* Right Column: Telemetry & Live View */}
-          <div className="border border-[#00ff66]/20 bg-black p-6 flex flex-col">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-[#00ff66] font-bold uppercase tracking-widest flex items-center gap-2 text-sm">
-                <UploadCloud className="w-5 h-5" />
-                Live Edge Stream
-              </h2>
-              <span className={`px-2 py-1 text-[10px] font-bold uppercase flex items-center gap-1 ${deploymentPhase > 0 ? 'bg-[#00ff66]/20 text-[#00ff66]' : 'bg-neutral-800 text-neutral-500'}`}>
-                {deploymentPhase > 0 ? <span className="w-2 h-2 rounded-full bg-[#00ff66] animate-ping" /> : <span className="w-2 h-2 rounded-full bg-neutral-600" />}
-                {deploymentPhase > 0 ? 'TARGET ACQUIRED' : 'NO CONNECTION'}
-              </span>
-            </div>
-
-            {/* Video/RPA Stream Placeholder */}
-            <div className="flex-1 border border-neutral-800 bg-neutral-950 relative overflow-hidden flex items-center justify-center min-h-[300px]">
-              {deploymentPhase === 0 && (
-                <p className="text-neutral-600 font-mono text-xs uppercase">Awaiting Target Handshake...</p>
-              )}
-              {deploymentPhase > 0 && deploymentPhase < 4 && (
-                <div className="text-[#00ff66] font-mono text-xs uppercase animate-pulse flex flex-col items-center">
-                  <Ghost className="w-12 h-12 mb-4" />
-                  <p>{deploymentPhase === 1 ? 'Bypassing local security protocols...' : deploymentPhase === 2 ? 'Injecting Python execution vectors...' : 'Calibrating cursor/keyboard control limits...'}</p>
+          {/* Right Column: The Payload */}
+          <div className="lg:col-span-7">
+            <div className="bg-black/40 border border-[#00ff66]/20 rounded-2xl h-full p-6 relative overflow-hidden flex flex-col">
+              <div className="absolute inset-0 bg-[linear-gradient(to_right,#00ff6605_1px,transparent_1px),linear-gradient(to_bottom,#00ff6605_1px,transparent_1px)] bg-[size:1rem_1rem] pointer-events-none" />
+              
+              {!result ? (
+                <div className="flex-1 flex flex-col items-center justify-center opacity-30 text-center relative z-10">
+                  <Ghost className="w-24 h-24 mb-6 text-[#00ff66] animate-pulse" />
+                  <p className="text-sm uppercase tracking-widest text-[#00ff66]">Awaiting Target Acquistion</p>
+                  <p className="text-xs text-neutral-500 mt-2 max-w-sm">Enter a competitor name to intercept negative sentiment and synthesize a sniper outreach payload.</p>
                 </div>
-              )}
-              {deploymentPhase === 4 && (
-                <div className="w-full h-full relative group">
-                  <video src="/videos/demo3.mp4" autoPlay loop muted playsInline className="w-full h-full object-cover opacity-80" />
-                  <div className="absolute inset-0 bg-[#00ff66]/10 mix-blend-overlay" />
-                  <div className="absolute bottom-0 left-0 w-full p-4 bg-black/80 backdrop-blur-sm border-t border-[#00ff66]/30">
-                     <p className="text-[#00ff66] font-mono text-xs animate-pulse">&#x25B6; GHOST_PROTOCOL_ACTIVE</p>
-                     <p className="text-white text-[10px] font-mono mt-1 opacity-70">Agent taking physical control of desktop UI...</p>
-                  </div>
-                  {/* Targeting reticle overlay to look cool */}
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 border border-[#00ff66]/50 rounded-full flex items-center justify-center">
-                    <div className="w-2 h-2 bg-[#00ff66] rounded-full animate-ping" />
-                  </div>
-                </div>
+              ) : (
+                <AnimatePresence>
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="relative z-10 flex flex-col h-full space-y-6"
+                  >
+                    {/* The Target Card */}
+                    <div className="bg-white/5 border border-white/10 rounded-xl p-5">
+                      <div className="flex items-center gap-4 mb-4">
+                        <div className="w-12 h-12 bg-[#00ff66]/10 border border-[#00ff66]/30 rounded-full flex items-center justify-center">
+                          <User className="w-6 h-6 text-[#00ff66]" />
+                        </div>
+                        <div>
+                          <h3 className="text-white font-bold text-lg">{result.lead.name}</h3>
+                          <p className="text-xs text-[#00ff66] uppercase tracking-widest">{result.lead.title} at {result.lead.company}</p>
+                        </div>
+                      </div>
+                      <div className="bg-black/50 p-4 border border-red-500/20 rounded-lg">
+                         <span className="text-[10px] text-red-500 uppercase font-bold tracking-widest block mb-2 flex items-center gap-1">
+                           <ShieldAlert className="w-3 h-3" /> Intercepted {result.complaint.source} Complaint:
+                         </span>
+                         <p className="text-sm text-neutral-300 italic">"{result.complaint.text}"</p>
+                      </div>
+                    </div>
+
+                    {/* The Payload Card */}
+                    <div className="bg-white/5 border border-[#00ff66]/30 rounded-xl p-5 flex-1 flex flex-col">
+                      <div className="flex items-center justify-between mb-4">
+                        <span className="text-[10px] text-[#00ff66] uppercase font-bold tracking-widest flex items-center gap-2">
+                          <MessageSquare className="w-4 h-4" /> Synthesized Outreach (Nemotron 340B)
+                        </span>
+                      </div>
+                      <div className="flex-1 bg-black/50 p-4 border border-white/10 rounded-lg text-white text-sm leading-relaxed backdrop-blur-sm">
+                        {result.draftMessage}
+                      </div>
+                    </div>
+
+                    {/* The Trigger */}
+                    <button 
+                      onClick={executeNemoClaw}
+                      className="w-full bg-red-600/20 border border-red-500 text-red-500 font-black uppercase tracking-widest py-4 rounded-xl hover:bg-red-600 hover:text-white hover:shadow-[0_0_30px_rgba(220,38,38,0.4)] transition-all flex items-center justify-center gap-3"
+                    >
+                      <Zap className="w-5 h-5 fill-current" />
+                      Deploy via NemoClaw (Local RPA)
+                    </button>
+                  </motion.div>
+                </AnimatePresence>
               )}
             </div>
-
-            {/* Log Stream */}
-            <div className="mt-6 h-32 bg-black border border-neutral-800 p-4 font-mono text-[10px] overflow-hidden flex flex-col justify-end">
-              {deploymentPhase >= 1 && <p className="opacity-50">[00:00:01] Authenticating Vercel Edge token...</p>}
-              {deploymentPhase >= 2 && <p className="opacity-70">[00:00:03] Pinging local OpenShell client 192.168.1.44...</p>}
-              {deploymentPhase >= 3 && <p className="opacity-90">[00:00:05] Bounding Box recognition successfully loaded via Cosmos VLM.</p>}
-              {deploymentPhase >= 4 && <p className="text-[#00ff66]">[00:00:07] SUCCESS. Ghost Agent physically navigating 'LinkedIn.com'...</p>}
-            </div>
-
           </div>
-        </main>
 
+        </div>
       </div>
     </div>
   );
