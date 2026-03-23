@@ -1,21 +1,21 @@
 "use client";
 
-import { useRef, useEffect, useState, useMemo } from 'react';
+import { useRef, useEffect, useMemo } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 
 /**
- * SOVEREIGN MATRIX — Enhanced Hero Background
+ * SOVEREIGN MATRIX — Clean Immersive Background
+ * Inspired by NVIDIA's smooth, subtle WebGL aesthetics.
  *
- * Features:
- * - 3000 core particles + 2000 outer haze with additive blending
- * - Bloom post-processing for cinematic glow
- * - Connection lines between nearby particles (neural network aesthetic)
- * - Mouse-reactive color shifting (blue → emerald near cursor)
- * - Scroll parallax (core 1x, haze 0.5x)
- * - Animated grid floor for depth
- * - Orbital ring geometry
+ * - Smooth particle field (no flashing)
+ * - Soft connection lines (neural mesh)
+ * - Single gentle orbital ring
+ * - Mouse-reactive glow (emerald shift)
+ * - Scroll parallax
+ * - Subtle grid floor
+ * - Low bloom for cinematic depth
  */
 
 function useScrollY() {
@@ -41,19 +41,19 @@ function useMouseNDC() {
   return mouse;
 }
 
-// ─── Core Particles with Mouse Color Reactivity ───
-function CoreParticles({ scrollY }: { scrollY: React.MutableRefObject<number> }) {
+// ─── Core Particle Field ───
+function ParticleField({ scrollY }: { scrollY: React.MutableRefObject<number> }) {
   const ref = useRef<THREE.Points>(null);
   const geomRef = useRef<THREE.BufferGeometry>(null);
   const mouse = useMouseNDC();
-  const count = 3000;
+  const count = 2000;
 
   const positions = useMemo(() => {
     const p = new Float32Array(count * 3);
     for (let i = 0; i < count; i++) {
       const theta = Math.random() * 2.0 * Math.PI;
       const phi = Math.acos(2.0 * Math.random() - 1.0);
-      const r = Math.cbrt(Math.random()) * 2.2;
+      const r = Math.cbrt(Math.random()) * 3.0;
       p[i * 3] = r * Math.sin(phi) * Math.cos(theta);
       p[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
       p[i * 3 + 2] = r * Math.cos(phi);
@@ -63,11 +63,11 @@ function CoreParticles({ scrollY }: { scrollY: React.MutableRefObject<number> })
 
   const initColors = useMemo(() => {
     const c = new Float32Array(count * 3);
-    const blue = new THREE.Color("#10B981");
+    const base = new THREE.Color("#10B981");
     for (let i = 0; i < count; i++) {
-      c[i * 3] = blue.r;
-      c[i * 3 + 1] = blue.g;
-      c[i * 3 + 2] = blue.b;
+      c[i * 3] = base.r;
+      c[i * 3 + 1] = base.g;
+      c[i * 3 + 2] = base.b;
     }
     return c;
   }, []);
@@ -79,8 +79,8 @@ function CoreParticles({ scrollY }: { scrollY: React.MutableRefObject<number> })
     }
   }, [positions, initColors]);
 
-  const blue = useMemo(() => new THREE.Color("#10B981"), []);
-  const emerald = useMemo(() => new THREE.Color("#34D399"), []);
+  const baseColor = useMemo(() => new THREE.Color("#10B981"), []);
+  const hoverColor = useMemo(() => new THREE.Color("#6EE7B7"), []);
   const tmp = useMemo(() => new THREE.Color(), []);
   const mouseWorld = useMemo(() => new THREE.Vector3(), []);
   const pv = useMemo(() => new THREE.Vector3(), []);
@@ -88,11 +88,15 @@ function CoreParticles({ scrollY }: { scrollY: React.MutableRefObject<number> })
 
   useFrame((_, delta) => {
     if (!ref.current || !geomRef.current) return;
-    ref.current.rotation.y -= delta / 25;
-    ref.current.rotation.x -= delta / 40;
-    ref.current.position.y = -(scrollY.current * 0.0008);
+    // Very slow rotation — smooth and clean
+    ref.current.rotation.y -= delta * 0.02;
+    ref.current.rotation.x -= delta * 0.01;
+    ref.current.position.y = -(scrollY.current * 0.0006);
 
-    // Mouse-reactive colors
+    // Mouse glow — update every 4th frame for performance
+    const frame = Math.round(performance.now() / 16);
+    if (frame % 4 !== 0) return;
+
     const dir = new THREE.Vector3(mouse.current.x * 3, mouse.current.y * 3, 0)
       .unproject(camera).sub(camera.position).normalize();
     mouseWorld.copy(camera.position).add(dir.multiplyScalar(7));
@@ -101,16 +105,12 @@ function CoreParticles({ scrollY }: { scrollY: React.MutableRefObject<number> })
     const posAttr = geomRef.current.getAttribute('position') as THREE.BufferAttribute;
     if (!colorAttr || !posAttr) return;
 
-    // Only update every 3rd frame for performance
-    const frame = Math.round(performance.now() / 16);
-    if (frame % 3 !== 0) return;
-
     for (let i = 0; i < count; i++) {
       pv.set(posAttr.getX(i), posAttr.getY(i), posAttr.getZ(i))
         .applyMatrix4(ref.current.matrixWorld);
       const dist = pv.distanceTo(mouseWorld);
-      const influence = Math.max(0, 1 - dist / 2.5);
-      tmp.copy(blue).lerp(emerald, influence * influence);
+      const influence = Math.max(0, 1 - dist / 3);
+      tmp.copy(baseColor).lerp(hoverColor, influence * influence);
       colorAttr.setXYZ(i, tmp.r, tmp.g, tmp.b);
     }
     colorAttr.needsUpdate = true;
@@ -119,30 +119,30 @@ function CoreParticles({ scrollY }: { scrollY: React.MutableRefObject<number> })
   return (
     <points ref={ref}>
       <bufferGeometry ref={geomRef} />
-      <pointsMaterial size={0.014} vertexColors transparent opacity={0.5} depthWrite={false} blending={THREE.AdditiveBlending} />
+      <pointsMaterial size={0.012} vertexColors transparent opacity={0.4} depthWrite={false} blending={THREE.AdditiveBlending} />
     </points>
   );
 }
 
-// ─── Connection Lines ───
-function ConnectionLines({ scrollY }: { scrollY: React.MutableRefObject<number> }) {
+// ─── Soft Connection Mesh ───
+function ConnectionMesh({ scrollY }: { scrollY: React.MutableRefObject<number> }) {
   const ref = useRef<THREE.LineSegments>(null);
 
   const linePositions = useMemo(() => {
-    const nodeCount = 500;
-    const maxDist = 0.55;
+    const nodeCount = 300;
+    const maxDist = 0.7;
     const nodes = new Float32Array(nodeCount * 3);
     for (let i = 0; i < nodeCount; i++) {
       const theta = Math.random() * 2.0 * Math.PI;
       const phi = Math.acos(2.0 * Math.random() - 1.0);
-      const r = Math.cbrt(Math.random()) * 2.0;
+      const r = Math.cbrt(Math.random()) * 2.5;
       nodes[i * 3] = r * Math.sin(phi) * Math.cos(theta);
       nodes[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
       nodes[i * 3 + 2] = r * Math.cos(phi);
     }
     const lines: number[] = [];
-    for (let i = 0; i < nodeCount && lines.length < 6000; i++) {
-      for (let j = i + 1; j < nodeCount && lines.length < 6000; j++) {
+    for (let i = 0; i < nodeCount && lines.length < 3000; i++) {
+      for (let j = i + 1; j < nodeCount && lines.length < 3000; j++) {
         const dx = nodes[i * 3] - nodes[j * 3];
         const dy = nodes[i * 3 + 1] - nodes[j * 3 + 1];
         const dz = nodes[i * 3 + 2] - nodes[j * 3 + 2];
@@ -156,9 +156,9 @@ function ConnectionLines({ scrollY }: { scrollY: React.MutableRefObject<number> 
 
   useFrame((_, delta) => {
     if (ref.current) {
-      ref.current.rotation.y -= delta / 25;
-      ref.current.rotation.x -= delta / 40;
-      ref.current.position.y = -(scrollY.current * 0.0008);
+      ref.current.rotation.y -= delta * 0.02;
+      ref.current.rotation.x -= delta * 0.01;
+      ref.current.position.y = -(scrollY.current * 0.0006);
     }
   });
 
@@ -168,22 +168,23 @@ function ConnectionLines({ scrollY }: { scrollY: React.MutableRefObject<number> 
         {/* @ts-expect-error — R3F declarative bufferAttribute type mismatch */}
         <bufferAttribute attach="attributes-position" count={linePositions.length / 3} array={linePositions} itemSize={3} />
       </bufferGeometry>
-      <lineBasicMaterial color="#10B981" transparent opacity={0.05} depthWrite={false} blending={THREE.AdditiveBlending} />
+      <lineBasicMaterial color="#10B981" transparent opacity={0.04} depthWrite={false} blending={THREE.AdditiveBlending} />
     </lineSegments>
   );
 }
 
-// ─── Outer Haze ───
-function OuterHaze({ scrollY }: { scrollY: React.MutableRefObject<number> }) {
+// ─── Ambient Haze ───
+function AmbientHaze({ scrollY }: { scrollY: React.MutableRefObject<number> }) {
   const ref = useRef<THREE.Points>(null);
   const geomRef = useRef<THREE.BufferGeometry>(null);
-  const count = 2000;
+  const count = 800;
+
   const positions = useMemo(() => {
     const p = new Float32Array(count * 3);
     for (let i = 0; i < count; i++) {
       const theta = Math.random() * 2 * Math.PI;
       const phi = Math.acos(2 * Math.random() - 1);
-      const r = 2.5 + Math.random() * 2.0;
+      const r = 3 + Math.random() * 2.5;
       p[i * 3] = r * Math.sin(phi) * Math.cos(theta);
       p[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
       p[i * 3 + 2] = r * Math.cos(phi);
@@ -197,160 +198,55 @@ function OuterHaze({ scrollY }: { scrollY: React.MutableRefObject<number> }) {
 
   useFrame((_, delta) => {
     if (ref.current) {
-      ref.current.rotation.y += delta / 50;
-      ref.current.position.y = -(scrollY.current * 0.0004);
+      ref.current.rotation.y += delta * 0.008;
+      ref.current.position.y = -(scrollY.current * 0.0003);
     }
   });
 
   return (
     <points ref={ref}>
       <bufferGeometry ref={geomRef} />
-      <pointsMaterial size={0.008} color="#34D399" transparent opacity={0.12} depthWrite={false} blending={THREE.AdditiveBlending} />
+      <pointsMaterial size={0.006} color="#34D399" transparent opacity={0.08} depthWrite={false} blending={THREE.AdditiveBlending} />
     </points>
   );
 }
 
-// ─── Orbital Rings ───
+// ─── Single Orbital Ring ───
 function OrbitalRing() {
   const ref = useRef<THREE.Mesh>(null);
-  useFrame((_, d) => { if (ref.current) ref.current.rotation.z += d * 0.08; });
+  useFrame((_, d) => { if (ref.current) ref.current.rotation.z += d * 0.03; });
   return (
     <mesh ref={ref} rotation={[Math.PI / 3, 0, 0]}>
-      <torusGeometry args={[3.2, 0.004, 8, 128]} />
-      <meshBasicMaterial color="#10B981" transparent opacity={0.12} />
+      <torusGeometry args={[3.5, 0.003, 8, 160]} />
+      <meshBasicMaterial color="#10B981" transparent opacity={0.08} depthWrite={false} />
     </mesh>
   );
 }
 
-function OrbitalRingSecondary() {
-  const ref = useRef<THREE.Mesh>(null);
-  useFrame((_, d) => { if (ref.current) ref.current.rotation.z -= d * 0.06; });
-  return (
-    <mesh ref={ref} rotation={[Math.PI / 5, Math.PI / 4, 0]}>
-      <torusGeometry args={[3.6, 0.003, 8, 128]} />
-      <meshBasicMaterial color="#34D399" transparent opacity={0.06} />
-    </mesh>
-  );
-}
-
-// ─── Energy Pulse Rings ───
-function EnergyPulse() {
-  const ring1 = useRef<THREE.Mesh>(null);
-  const ring2 = useRef<THREE.Mesh>(null);
-  const ring3 = useRef<THREE.Mesh>(null);
-
-  useFrame(({ clock }) => {
-    const t = clock.getElapsedTime();
-    // Each ring pulses outward on a staggered cycle
-    [ring1, ring2, ring3].forEach((ref, i) => {
-      if (!ref.current) return;
-      const phase = (t * 0.4 + i * 2.1) % 6; // 6-second cycle
-      const scale = 0.3 + phase * 0.7;
-      const opacity = Math.max(0, 1 - phase / 6) * 0.15;
-      ref.current.scale.set(scale, scale, scale);
-      (ref.current.material as THREE.MeshBasicMaterial).opacity = opacity;
-    });
-  });
-
-  return (
-    <>
-      {[ring1, ring2, ring3].map((ref, i) => (
-        <mesh key={i} ref={ref} rotation={[Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[2.8, 0.008, 8, 96]} />
-          <meshBasicMaterial color={i === 1 ? "#34D399" : "#10B981"} transparent opacity={0.15} depthWrite={false} blending={THREE.AdditiveBlending} />
-        </mesh>
-      ))}
-    </>
-  );
-}
-
-// ─── Flowing Data Stream Particles ───
-function DataStreams() {
-  const ref = useRef<THREE.Points>(null);
-  const geomRef = useRef<THREE.BufferGeometry>(null);
-  const count = 400;
-
-  // Create particles along spiral paths
-  const { positions, velocities } = useMemo(() => {
-    const p = new Float32Array(count * 3);
-    const v = new Float32Array(count * 3);
-    for (let i = 0; i < count; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const r = 0.5 + Math.random() * 2.5;
-      p[i * 3] = Math.cos(angle) * r;
-      p[i * 3 + 1] = (Math.random() - 0.5) * 3;
-      p[i * 3 + 2] = Math.sin(angle) * r;
-      // Velocity: spiral inward
-      const speed = 0.002 + Math.random() * 0.004;
-      v[i * 3] = -Math.sin(angle) * speed;
-      v[i * 3 + 1] = (Math.random() - 0.5) * speed * 0.5;
-      v[i * 3 + 2] = Math.cos(angle) * speed;
-    }
-    return { positions: p, velocities: v };
-  }, []);
-
-  useEffect(() => {
-    if (geomRef.current) {
-      geomRef.current.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    }
-  }, [positions]);
-
-  useFrame(() => {
-    if (!geomRef.current) return;
-    const posAttr = geomRef.current.getAttribute('position') as THREE.BufferAttribute;
-    if (!posAttr) return;
-    const arr = posAttr.array as Float32Array;
-
-    for (let i = 0; i < count; i++) {
-      arr[i * 3] += velocities[i * 3];
-      arr[i * 3 + 1] += velocities[i * 3 + 1];
-      arr[i * 3 + 2] += velocities[i * 3 + 2];
-
-      // Reset particles that get too close to center
-      const dist = Math.sqrt(arr[i * 3] ** 2 + arr[i * 3 + 2] ** 2);
-      if (dist < 0.3 || dist > 4) {
-        const angle = Math.random() * Math.PI * 2;
-        const r = 2 + Math.random() * 1.5;
-        arr[i * 3] = Math.cos(angle) * r;
-        arr[i * 3 + 1] = (Math.random() - 0.5) * 3;
-        arr[i * 3 + 2] = Math.sin(angle) * r;
-      }
-    }
-    posAttr.needsUpdate = true;
-  });
-
-  return (
-    <points ref={ref}>
-      <bufferGeometry ref={geomRef} />
-      <pointsMaterial size={0.018} color="#6EE7B7" transparent opacity={0.3} depthWrite={false} blending={THREE.AdditiveBlending} />
-    </points>
-  );
-}
-
-// ─── Grid Floor ───
+// ─── Subtle Grid Floor ───
 function GridFloor({ scrollY }: { scrollY: React.MutableRefObject<number> }) {
   const ref = useRef<THREE.Mesh>(null);
   const matRef = useRef<THREE.ShaderMaterial>(null);
-  const uniforms = useMemo(() => ({ uTime: { value: 0 }, uOpacity: { value: 0.06 } }), []);
+  const uniforms = useMemo(() => ({ uTime: { value: 0 }, uOpacity: { value: 0.03 } }), []);
 
   useFrame((_, delta) => {
-    if (matRef.current) matRef.current.uniforms.uTime.value += delta * 0.3;
-    if (ref.current) ref.current.position.y = -2.5 - scrollY.current * 0.0006;
+    if (matRef.current) matRef.current.uniforms.uTime.value += delta * 0.15;
+    if (ref.current) ref.current.position.y = -3 - scrollY.current * 0.0004;
   });
 
   return (
-    <mesh ref={ref} rotation={[-Math.PI / 2, 0, 0]} position={[0, -2.5, 0]}>
-      <planeGeometry args={[20, 20, 1, 1]} />
+    <mesh ref={ref} rotation={[-Math.PI / 2, 0, 0]} position={[0, -3, 0]}>
+      <planeGeometry args={[24, 24, 1, 1]} />
       <shaderMaterial ref={matRef} transparent depthWrite={false} uniforms={uniforms}
         vertexShader={`varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`}
         fragmentShader={`
           uniform float uTime; uniform float uOpacity; varying vec2 vUv;
           void main() {
-            vec2 uv = (vUv - 0.5) * 20.0; uv.y += uTime;
+            vec2 uv = (vUv - 0.5) * 24.0; uv.y += uTime;
             float gx = abs(fract(uv.x) - 0.5) * 2.0;
             float gy = abs(fract(uv.y) - 0.5) * 2.0;
-            float line = 1.0 - min(smoothstep(0.0, 0.06, gx), smoothstep(0.0, 0.06, gy));
-            float fade = 1.0 - length(vUv - 0.5) * 1.8;
+            float line = 1.0 - min(smoothstep(0.0, 0.04, gx), smoothstep(0.0, 0.04, gy));
+            float fade = 1.0 - length(vUv - 0.5) * 1.6;
             gl_FragColor = vec4(0.063, 0.725, 0.506, line * clamp(fade, 0.0, 1.0) * uOpacity);
           }
         `}
@@ -363,17 +259,14 @@ function GridFloor({ scrollY }: { scrollY: React.MutableRefObject<number> }) {
 function Scene({ scrollY }: { scrollY: React.MutableRefObject<number> }) {
   return (
     <>
-      <ambientLight intensity={0.3} />
+      <ambientLight intensity={0.2} />
       <OrbitalRing />
-      <OrbitalRingSecondary />
-      <EnergyPulse />
-      <DataStreams />
-      <ConnectionLines scrollY={scrollY} />
-      <CoreParticles scrollY={scrollY} />
-      <OuterHaze scrollY={scrollY} />
+      <ConnectionMesh scrollY={scrollY} />
+      <ParticleField scrollY={scrollY} />
+      <AmbientHaze scrollY={scrollY} />
       <GridFloor scrollY={scrollY} />
       <EffectComposer>
-        <Bloom luminanceThreshold={0.15} luminanceSmoothing={0.9} intensity={0.6} mipmapBlur />
+        <Bloom luminanceThreshold={0.2} luminanceSmoothing={0.95} intensity={0.4} mipmapBlur />
       </EffectComposer>
     </>
   );
@@ -383,9 +276,9 @@ export function ImmersiveNodeLayer() {
   const scrollY = useScrollY();
   return (
     <div className="absolute inset-0 z-0 pointer-events-none">
-      <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent to-black z-10" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,black_80%)] z-10 opacity-60" />
-      <Canvas camera={{ position: [0, 0, 7], fov: 55 }} gl={{ antialias: true, alpha: true }} dpr={[1, 1.5]}>
+      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black z-10" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,black_75%)] z-10 opacity-50" />
+      <Canvas camera={{ position: [0, 0, 8], fov: 50 }} gl={{ antialias: true, alpha: true }} dpr={[1, 1.5]}>
         <Scene scrollY={scrollY} />
       </Canvas>
     </div>
