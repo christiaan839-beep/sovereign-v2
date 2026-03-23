@@ -147,6 +147,24 @@ const ROUTES: Array<{
     label: "Vision Analyzer",
     extractParam: (t) => ({ imageUrl: extractUrl(t) || "", question: t }),
   },
+  {
+    keywords: ["think hard", "reason through", "complex problem", "extended thinking", "chain of thought"],
+    endpoint: "/api/agents/claude-think",
+    label: "Claude Extended Thinking",
+    extractParam: (t) => ({ problem: t }),
+  },
+  {
+    keywords: ["generate photo", "photorealistic", "imagen", "high quality image"],
+    endpoint: "/api/agents/imagen",
+    label: "Imagen 3",
+    extractParam: (t) => ({ prompt: stripKeywords(t, ["generate", "create", "photo", "photorealistic", "imagen"]) }),
+  },
+  {
+    keywords: ["enterprise search", "find sources", "cited research", "grounded answer"],
+    endpoint: "/api/agents/vertex-search",
+    label: "Enterprise Search",
+    extractParam: (t) => ({ query: t }),
+  },
 ];
 
 /**
