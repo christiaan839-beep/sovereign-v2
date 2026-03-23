@@ -10,6 +10,8 @@ import { SovereignLogo } from "@/components/ui/SovereignLogo";
 import { Pricing } from "@/components/ui/Pricing";
 import { ImmersiveNodeLayer } from "@/components/3d/ImmersiveNodeLayer";
 import { ToolShowcase } from "@/components/ui/SocialProof";
+import { TiltCard } from "@/components/ui/TiltCard";
+import { MouseGradient } from "@/components/ui/MouseGradient";
 
 import { AgentOrgMap } from "@/components/dashboard/AgentOrgMap";
 import { InteractiveHeroStrike } from "@/components/ui/InteractiveHeroStrike";
@@ -170,13 +172,9 @@ export default function Home() {
       </motion.nav>
 
       <main className="pt-32 md:pt-44 pb-20 px-6 relative overflow-hidden flex flex-col items-center min-h-[100vh] justify-center">
+         <MouseGradient />
          <div className="absolute inset-0 pointer-events-none z-0">
-           {/* Emerald Matrix gradient system — matches logo aesthetic */}
-           <div className="absolute top-[-30%] left-[10%] w-[60%] h-[60%] rounded-full bg-emerald-950/30 blur-[200px]" />
-           <div className="absolute top-[20%] right-[-15%] w-[40%] h-[40%] rounded-full bg-green-950/20 blur-[180px]" />
-           <div className="absolute bottom-[-20%] left-[30%] w-[50%] h-[50%] rounded-full bg-emerald-950/15 blur-[200px]" />
-           <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(16,185,129,0.06),transparent)]" />
-           <div className="absolute inset-0 noise-overlay" />
+           <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(16,185,129,0.04),transparent)]" />
          </div>
 
         <ImmersiveNodeLayer />
@@ -317,16 +315,17 @@ export default function Home() {
                 { icon: Globe, title: "Voice Agents", desc: "AI makes calls for you. Qualifies leads, books meetings, follows up. Sub-200ms response time. Sounds like a real person." },
                 { icon: ShieldAlert, title: "Built-in Safety", desc: "Every agent goes through 5 checks before responding: jailbreak detection, topic control, content safety, PII scan, quality scoring." }
               ].map((feature, i) => (
-                <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.6 }}
-                  className="bg-white/[0.02] border border-white/5 p-8 rounded-3xl group hover:border-white/15 hover:bg-white/[0.04] transition-all duration-500 backdrop-blur-xl relative overflow-hidden shadow-2xl hover:shadow-[0_8px_40px_rgba(255,255,255,0.03)] hover:-translate-y-1">
-                  <div className="absolute -top-6 -right-6 p-4 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity transform group-hover:scale-110 duration-700">
-                    <feature.icon className="w-40 h-40 text-white" />
-                  </div>
-                  <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mb-6 relative z-10 shadow-inner group-hover:border-white/20 transition-colors duration-500">
-                    <feature.icon className="w-5 h-5 text-white group-hover:text-emerald-300 transition-colors duration-500" />
-                  </div>
-                  <h3 className="text-lg font-bold text-white mb-3 tracking-tight relative z-10">{feature.title}</h3>
-                  <p className="text-sm text-neutral-400 leading-relaxed font-medium relative z-10">{feature.desc}</p>
+                <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.6 }}>
+                  <TiltCard className="bg-white/[0.02] border border-white/5 p-8 rounded-3xl group hover:border-emerald-500/20 hover:bg-white/[0.04] transition-all duration-500 backdrop-blur-xl relative overflow-hidden shadow-2xl" glareColor="rgba(16,185,129,0.12)" tiltIntensity={8}>
+                    <div className="absolute -top-6 -right-6 p-4 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity transform group-hover:scale-110 duration-700">
+                      <feature.icon className="w-40 h-40 text-white" />
+                    </div>
+                    <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mb-6 relative z-20 shadow-inner group-hover:border-emerald-500/30 transition-colors duration-500">
+                      <feature.icon className="w-5 h-5 text-white group-hover:text-emerald-300 transition-colors duration-500" />
+                    </div>
+                    <h3 className="text-lg font-bold text-white mb-3 tracking-tight relative z-20">{feature.title}</h3>
+                    <p className="text-sm text-neutral-400 leading-relaxed font-medium relative z-20">{feature.desc}</p>
+                  </TiltCard>
                 </motion.div>
               ))}
            </div>
@@ -347,16 +346,17 @@ export default function Home() {
               { icon: Globe, title: "Code & Deploy", desc: "Describe what you want built. The agent writes the code, reviews it for bugs, and prepares it for deployment.", tag: "CODE" },
               { icon: MessageSquare, title: "Mobile Control", desc: "Send a WhatsApp message to your agent. Get a competitive report back in 30 seconds. Works from your phone, anywhere.", tag: "MOBILE" },
             ].map((feature, i) => (
-              <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.08 }}
-                className="bg-[#050505] p-8 border border-white/5 hover:border-white/15 rounded-3xl transition-all duration-500 shadow-xl hover:shadow-[0_4px_30px_rgba(255,255,255,0.02)] hover:-translate-y-0.5 group">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center shadow-inner">
-                    <feature.icon className="w-4 h-4 text-white drop-shadow-md" />
+              <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.08 }}>
+                <TiltCard className="bg-[#050505] p-8 border border-white/5 hover:border-emerald-500/15 rounded-3xl transition-all duration-500 shadow-xl relative overflow-hidden group" glareColor="rgba(16,185,129,0.08)" tiltIntensity={6}>
+                  <div className="flex items-center justify-between mb-6 relative z-20">
+                    <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center shadow-inner">
+                      <feature.icon className="w-4 h-4 text-white drop-shadow-md" />
+                    </div>
+                    <span className="text-[9px] uppercase tracking-widest text-neutral-400 font-bold border border-white/10 bg-white/5 backdrop-blur-md px-3 py-1 rounded-full">{feature.tag}</span>
                   </div>
-                   <span className="text-[9px] uppercase tracking-widest text-neutral-400 font-bold border border-white/10 bg-white/5 backdrop-blur-md px-3 py-1 rounded-full">{feature.tag}</span>
-                </div>
-                <h3 className="text-lg font-bold text-white mb-2 tracking-tight">{feature.title}</h3>
-                <p className="text-sm text-neutral-400 font-medium leading-relaxed">{feature.desc}</p>
+                  <h3 className="text-lg font-bold text-white mb-2 tracking-tight relative z-20">{feature.title}</h3>
+                  <p className="text-sm text-neutral-400 font-medium leading-relaxed relative z-20">{feature.desc}</p>
+                </TiltCard>
               </motion.div>
             ))}
           </div>
