@@ -4,95 +4,16 @@ import { motion, AnimatePresence } from "framer-motion";
 import { BrainCircuit, CheckCircle2, Cpu, Globe, Target, ShieldAlert, ChevronDown, XCircle, MessageSquare, Activity, Zap, Lock } from "lucide-react";
 import Link from "next/link";
 import { SignInButton } from "@clerk/nextjs";
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 
 import { SovereignLogo } from "@/components/ui/SovereignLogo";
 import { Pricing } from "@/components/ui/Pricing";
-import { ImmersiveNodeLayer } from "@/components/3d/ImmersiveNodeLayer";
-import { ToolShowcase } from "@/components/ui/SocialProof";
+import { Testimonials } from "@/components/ui/SocialProof";
 import { TiltCard } from "@/components/ui/TiltCard";
-import { MouseGradient } from "@/components/ui/MouseGradient";
 
-import { AgentOrgMap } from "@/components/dashboard/AgentOrgMap";
 import { InteractiveHeroStrike } from "@/components/ui/InteractiveHeroStrike";
-import { AIDemoShowcase } from "@/components/ui/AIDemoShowcase";
 import { SocialProofMetrics } from "@/components/ui/SocialProofMetrics";
 
-// ─── Animated Counter (counts up on scroll into view) ───
-function AnimatedCounter({ end, suffix = "", label }: { end: number; suffix?: string; label: string }) {
-  const [count, setCount] = useState(0);
-  const ref = useRef<HTMLDivElement>(null);
-  const started = useRef(false);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting && !started.current) {
-        started.current = true;
-        const duration = 1800;
-        const startTime = performance.now();
-        const animate = (now: number) => {
-          const elapsed = now - startTime;
-          const progress = Math.min(elapsed / duration, 1);
-          // Ease out cubic
-          const eased = 1 - Math.pow(1 - progress, 3);
-          setCount(Math.round(eased * end));
-          if (progress < 1) requestAnimationFrame(animate);
-        };
-        requestAnimationFrame(animate);
-      }
-    }, { threshold: 0.3 });
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [end]);
-
-  return (
-    <div ref={ref} className="text-center">
-      <div className="text-4xl md:text-5xl font-black text-white tracking-tight tabular-nums">
-        {count}{suffix}
-      </div>
-      <div className="text-xs text-neutral-500 mt-2 uppercase tracking-widest font-semibold">{label}</div>
-    </div>
-  );
-}
-
-// ─── Live Agent Status Ticker ───
-function AgentStatusTicker() {
-  const agents = [
-    { name: "SEO Dominator", status: "active" },
-    { name: "Content Engine", status: "active" },
-    { name: "Lead Qualifier", status: "active" },
-    { name: "NemoClaw OS", status: "active" },
-    { name: "Voice Dialer", status: "standby" },
-    { name: "Code Reviewer", status: "active" },
-    { name: "PII Guard", status: "active" },
-    { name: "Meeting Notes", status: "standby" },
-    { name: "Smart Router", status: "active" },
-    { name: "Brand Audit", status: "active" },
-    { name: "Doc Intel", status: "active" },
-    { name: "Translator", status: "standby" },
-  ];
-
-  return (
-    <div className="relative overflow-hidden w-full py-4">
-      <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-black to-transparent z-10" />
-      <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-black to-transparent z-10" />
-      <motion.div
-        className="flex gap-3 whitespace-nowrap"
-        animate={{ x: [0, -1200] }}
-        transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-      >
-        {[...agents, ...agents, ...agents].map((agent, i) => (
-          <div key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/5 bg-white/[0.02] text-xs font-medium text-neutral-400 shrink-0">
-            <span className={`w-1.5 h-1.5 rounded-full ${agent.status === "active" ? "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.6)]" : "bg-amber-500/60"}`} />
-            {agent.name}
-          </div>
-        ))}
-      </motion.div>
-    </div>
-  );
-}
 
 function FAQItem({ question, answer }: { question: string; answer: string }) {
   const [open, setOpen] = useState(false);
@@ -172,12 +93,10 @@ export default function Home() {
       </motion.nav>
 
       <main className="pt-32 md:pt-44 pb-20 px-6 relative overflow-hidden flex flex-col items-center min-h-[100vh] justify-center">
-         <MouseGradient />
          <div className="absolute inset-0 pointer-events-none z-0">
-           <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(16,185,129,0.04),transparent)]" />
+           <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(16,185,129,0.06),transparent)]" />
+           <div className="absolute inset-0 bg-[radial-gradient(ellipse_50%_30%_at_50%_80%,rgba(16,185,129,0.03),transparent)]" />
          </div>
-
-        <ImmersiveNodeLayer />
 
         <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }} className="relative z-10 w-full max-w-5xl mx-auto text-center">
 
@@ -237,24 +156,6 @@ export default function Home() {
             <InteractiveHeroStrike />
           </div>
 
-          <div className="w-full max-w-6xl mx-auto mb-20 hidden md:block">
-            {/* Gradient border card — $100M aesthetic */}
-            <div className="relative rounded-2xl p-[1px] bg-gradient-to-b from-white/15 via-white/5 to-transparent">
-              <div className="rounded-2xl bg-[#0A0A0A] overflow-hidden">
-                <div className="flex items-center justify-between px-5 py-3 border-b border-white/5 bg-[#080808]">
-                  <div className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
-                    <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-neutral-500 font-mono">Live Agent Network</span>
-                  </div>
-                  <span className="text-[10px] text-neutral-600 font-mono">109 agents deployed</span>
-                </div>
-                <div className="p-4">
-                  <AgentOrgMap />
-                </div>
-              </div>
-            </div>
-          </div>
-
           {/* Trust Badges — emerald accent */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -276,29 +177,7 @@ export default function Home() {
             ))}
           </motion.div>
 
-          {/* Live Agent Ticker */}
-          <div className="w-full max-w-3xl mx-auto mb-20">
-            <AgentStatusTicker />
-          </div>
-
-          {/* Animated Metrics — clean, minimal */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="grid grid-cols-2 md:grid-cols-4 gap-12 w-full max-w-3xl mx-auto mb-24"
-          >
-            <AnimatedCounter end={109} suffix="" label="Agents" />
-            <AnimatedCounter end={39} label="Models" />
-            <AnimatedCounter end={12} label="Languages" />
-            <AnimatedCounter end={3} suffix="" label="Payment Methods" />
-          </motion.div>
-
           <SocialProofMetrics />
-          
-          <div className="w-full max-w-5xl mx-auto mb-20 mt-20">
-             <AIDemoShowcase />
-          </div>
 
         </motion.div>
 
@@ -427,10 +306,12 @@ export default function Home() {
          </div>
       </section>
 
+      {/* Testimonials */}
+      <section className="py-24 bg-[#050505] px-6 border-t border-white/5">
+        <Testimonials />
+      </section>
+
       <section id="pricing" className="py-24 bg-[#000000] relative border-t border-white/5">
-         <div className="mb-24">
-           <ToolShowcase />
-         </div>
          <Pricing />
       </section>
 
