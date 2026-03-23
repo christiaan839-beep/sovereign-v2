@@ -7,8 +7,8 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Users, Settings, Shield, DollarSign, Target,
   Layers, Globe2, Network, Search, ChevronDown, Rocket, Palette, Factory, 
-  X, Menu, Cpu, Mic, ScanFace, Video, Swords, ShieldAlert, Database, Headphones, 
-  FileVideo, Cuboid, Briefcase, Ghost, Zap, CircuitBoard, BarChart3, RefreshCcw
+  X, Menu, Cpu, Mic, ScanFace, Video, Swords, ShieldAlert, Database, Headphones,
+  FileVideo, Cuboid, Briefcase, Ghost, Zap, CircuitBoard, BarChart3, RefreshCcw, Sparkles
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { UserButton, useUser } from "@clerk/nextjs";
@@ -30,6 +30,7 @@ const NAV_GROUPS = [
     icon: LayoutDashboard,
     items: [
       { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
+      { href: "/dashboard/build", label: "Build Mode", icon: Sparkles },
       { href: "/dashboard/agent-command", label: "Agent Command", icon: Zap },
       { href: "/dashboard/workflows", label: "Workflows", icon: CircuitBoard },
       { href: "/dashboard/war-room", label: "War Room", icon: Swords },
