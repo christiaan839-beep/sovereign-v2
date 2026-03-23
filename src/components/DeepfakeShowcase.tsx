@@ -1,10 +1,39 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { PlayCircle, Film } from 'lucide-react';
+import { PlayCircle, Film, Loader2 } from 'lucide-react';
 
 export default function DeepfakeShowcase() {
+    const [prompt, setPrompt] = useState("");
+    const [generating, setGenerating] = useState(false);
+    const [status, setStatus] = useState("");
+
+    const handleGenerate = async () => {
+        if (!prompt) return;
+        setGenerating(true);
+        setStatus("Initializing Luma Dream Machine...");
+        
+        try {
+            const res = await fetch("/api/agents/video-gen", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ prompt, provider: "luma" })
+            });
+            const data = await res.json();
+            
+            if (res.ok) {
+                setStatus(`Success! Render queued. Task ID: ${data.task_id}`);
+            } else {
+                setStatus(`Error: ${data.error || "Generation failed"}`);
+            }
+        } catch (err) {
+            console.error(err);
+            setStatus("Network error reaching generation node.");
+        } finally {
+            setGenerating(false);
+        }
+    };
     // Cinematic Defense-Grade Payloads
     const videoDemos = [
         { id: 1, title: 'Synthetic Outbound Node', tech: 'Audio2Face + TensorRT', src: 'https://cdn.pixabay.com/video/2021/08/04/83902-584742469_tiny.mp4' },
@@ -33,6 +62,31 @@ export default function DeepfakeShowcase() {
                         Do not hire human videographers. Our Filmmaker Agents utilize NVIDIA Cosmos and elite TTS synthesis to manufacture hyper-realistic B2B cinematic content directly on the edge.
                     </p>
                 </div>
+
+                <motion.div initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="max-w-xl mx-auto mb-20 bg-[#0A0A0A] border border-white/10 p-2 rounded-2xl flex items-center shadow-2xl relative z-20">
+                    <input 
+                        type="text" 
+                        value={prompt}
+                        onChange={(e) => setPrompt(e.target.value)}
+                        disabled={generating}
+                        placeholder="e.g. Cinematic corporate montage, neon lighting, 4k..."
+                        className="bg-transparent border-none outline-none text-white px-4 py-3 flex-1 text-sm placeholder:text-neutral-600 focus:ring-0 disabled:opacity-50"
+                    />
+                    <button 
+                        onClick={handleGenerate}
+                        disabled={generating || !prompt}
+                        className="bg-white text-black px-6 py-3 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-neutral-200 transition-colors disabled:opacity-50"
+                    >
+                        {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Film className="w-4 h-4" />}
+                        {generating ? "Rendering..." : "Generate VSL"}
+                    </button>
+                </motion.div>
+                
+                {status && (
+                    <div className="text-center mb-10 text-xs font-mono text-emerald-400">
+                        {status}
+                    </div>
+                )}
 
                 <div className="grid md:grid-cols-2 gap-8">
                     {videoDemos.map((demo, idx) => (
