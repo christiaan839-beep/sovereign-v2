@@ -23,15 +23,17 @@ function EnergyOrb() {
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] md:w-[400px] md:h-[400px] rounded-full border border-emerald-500/[0.06] animate-[spin_60s_linear_infinite]" />
       {/* Outer ring */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] md:w-[700px] md:h-[700px] rounded-full border border-emerald-500/[0.03] animate-[spin_90s_linear_infinite_reverse]" />
-      {/* Floating particles */}
-      {[...Array(6)].map((_, i) => (
+      {/* Floating particles — fixed positions to avoid hydration mismatch */}
+      {[
+        { top: "15%", left: "25%" },
+        { top: "35%", left: "70%" },
+        { top: "60%", left: "20%" },
+        { top: "25%", left: "55%" },
+        { top: "70%", left: "40%" },
+        { top: "45%", left: "75%" },
+      ].map((pos, i) => (
         <div key={i} className="absolute w-1 h-1 bg-emerald-400/40 rounded-full animate-pulse"
-          style={{
-            top: `${20 + Math.sin(i * 1.2) * 40}%`,
-            left: `${20 + Math.cos(i * 1.2) * 40}%`,
-            animationDelay: `${i * 0.5}s`,
-            animationDuration: `${2 + i * 0.3}s`,
-          }} />
+          style={{ ...pos, animationDelay: `${i * 0.5}s`, animationDuration: `${2 + i * 0.3}s` }} />
       ))}
     </div>
   );
