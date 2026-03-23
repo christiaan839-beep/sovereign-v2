@@ -135,6 +135,18 @@ const ROUTES: Array<{
     label: "Code Sandbox",
     extractParam: (t) => ({ task: t }),
   },
+  {
+    keywords: ["workflow", "automation", "pipeline", "chain agents", "sequence"],
+    endpoint: "/api/agents/workflow-engine",
+    label: "Workflow Engine",
+    extractParam: (t) => ({ workflow: { nodes: [], edges: [] }, description: t }),
+  },
+  {
+    keywords: ["analyze image", "screenshot", "what is this image", "read this photo"],
+    endpoint: "/api/agents/vision-analyze",
+    label: "Vision Analyzer",
+    extractParam: (t) => ({ imageUrl: extractUrl(t) || "", question: t }),
+  },
 ];
 
 /**
