@@ -10,21 +10,21 @@ validateEnvironment();
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://sovereignmatrix.agency"),
-  title: "Sovereign OS | The Ultimate Open-Source Agentic Platform",
-  description: "The premier enterprise alternative to CrewAI, AutoGen, and LangGraph. Deploy 80+ autonomous AI agents via the Sovereign Vector Matrix with $0 inference costs using NVIDIA NIM. Replace your agency.",
-  keywords: ["CrewAI alternative", "AutoGen UI", "LangGraph enterprise", "OpenAI Swarm alternative", "AI agent OS", "autonomous marketing", "NVIDIA NIM agents", "open-source agentic AI", "sovereign matrix"],
-  authors: [{ name: "Sovereign Matrix - Edge" }],
+  title: "Sovereign Matrix | AI Agent Platform for Agencies",
+  description: "109 AI agents. 39 open-source models. One dashboard. Replace your entire tech stack with autonomous AI agents powered by NVIDIA NIM at zero inference cost.",
+  keywords: ["AI agents", "agency automation", "NVIDIA NIM", "AI platform", "marketing automation", "sovereign matrix", "open-source AI"],
+  authors: [{ name: "Sovereign Matrix" }],
   openGraph: {
-    title: "Sovereign OS | The Ultimate Open-Source Agentic Platform",
-    description: "The enterprise alternative to CrewAI, AutoGen, and OpenAI Swarm. Deploy 80+ autonomous AI agents powered by NVIDIA NIM without vendor lock-in.",
+    title: "Sovereign Matrix | AI Agent Platform for Agencies",
+    description: "109 AI agents, 39 models, zero inference cost. One platform to replace your content, SEO, leads, voice, and automation tools.",
     type: "website",
-    siteName: "Sovereign OS",
-    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Sovereign OS — Enterprise Agent Platform" }],
+    siteName: "Sovereign Matrix",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Sovereign Matrix — AI Agent Platform" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Sovereign OS | The Ultimate Open-Source Agentic Platform",
-    description: "The #1 Enterprise Alternative to CrewAI and AutoGen. Deploy 80+ autonomous agents with zero API costs.",
+    title: "Sovereign Matrix | AI Agent Platform for Agencies",
+    description: "109 AI agents, 39 models, zero inference cost. Replace your entire tech stack.",
   },
   other: {
     "theme-color": "#050505",
@@ -59,15 +59,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             __html: JSON.stringify({
               "@context": "https://schema.org",
               "@type": "SoftwareApplication",
-              "name": "Sovereign OS",
+              "name": "Sovereign Matrix",
               "applicationCategory": "BusinessApplication",
               "operatingSystem": "Web",
               "offers": {
                 "@type": "Offer",
-                "price": "299.00",
-                "priceCurrency": "USD"
+                "price": "0",
+                "priceCurrency": "ZAR"
               },
-              "description": "The premier enterprise alternative to CrewAI, AutoGen, and LangGraph. Deploy 80+ autonomous AI agents via the Sovereign Vector Matrix with $0 inference costs using NVIDIA NIM."
+              "description": "AI agent platform for agencies. 109 agents, 39 open-source models, zero inference cost. Replace your content, SEO, leads, and automation tools."
             })
           }}
         />

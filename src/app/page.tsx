@@ -402,7 +402,7 @@ export default function Home() {
 
               <div className="bg-[#111111] p-8 border border-white/10 rounded-2xl relative overflow-hidden">
                 <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-white" /> 2nd Gen: Agentic AI (Sovereign OS)
+                  <CheckCircle2 className="w-5 h-5 text-white" /> 2nd Gen: Agentic AI (Sovereign Matrix)
                 </h3>
                 <p className="text-neutral-400 font-mono text-sm mb-8">Goal-Oriented Autonomous Swarms</p>
                 

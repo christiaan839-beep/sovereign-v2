@@ -6,12 +6,12 @@ import { Activity, Network, ShieldCheck, Database, Zap, Terminal } from "lucide-
 import { useUser } from "@clerk/nextjs";
 
 const BOOT_SEQUENCE = [
-  { id: 1, text: "Initializing Secure Vector Databases...", icon: Database, delay: 0 },
-  { id: 2, text: "Authenticating God-Brain Node Credentials...", icon: ShieldCheck, delay: 0.8 },
-  { id: 3, text: "Connecting to Local NemoClaw Core...", icon: Network, delay: 1.6 },
-  { id: 4, text: "Warming up Gemini 2.5 Pro Inference Pipelines...", icon: Zap, delay: 2.4 },
-  { id: 5, text: "Establishing Live Telemetry WebSocket...", icon: Activity, delay: 3.2 },
-  { id: 6, text: "Neural Network Online. Handing over control.", icon: Terminal, delay: 4.0 },
+  { id: 1, text: "Connecting to database...", icon: Database, delay: 0 },
+  { id: 2, text: "Verifying authentication...", icon: ShieldCheck, delay: 0.8 },
+  { id: 3, text: "Loading AI models...", icon: Network, delay: 1.6 },
+  { id: 4, text: "Preparing agents...", icon: Zap, delay: 2.4 },
+  { id: 5, text: "Checking system health...", icon: Activity, delay: 3.2 },
+  { id: 6, text: "Ready.", icon: Terminal, delay: 4.0 },
 ];
 
 export function CinematicOnboarding({ children }: { children: React.ReactNode }) {
@@ -22,7 +22,7 @@ export function CinematicOnboarding({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     // Check session storage to only run once per session
-    const ranThisSession = sessionStorage.getItem("umbra_v3_onboarded");
+    const ranThisSession = sessionStorage.getItem("sovereign_onboarded");
     if (!ranThisSession) {
       setHasRun(false);
     } else {
@@ -42,7 +42,7 @@ export function CinematicOnboarding({ children }: { children: React.ReactNode })
       } else {
         clearInterval(interval);
         setTimeout(() => {
-          sessionStorage.setItem("umbra_v3_onboarded", "true");
+          sessionStorage.setItem("sovereign_onboarded", "true");
           setShowChildren(true);
         }, 1000);
       }

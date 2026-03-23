@@ -148,7 +148,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     })).filter(group => group.items.length > 0);
   }, [searchQuery]);
 
-  const nodeId = user ? `UMB-NX-${user.id.slice(-5).toUpperCase()}` : 'UMB-NX-OFFLINE';
+  const nodeId = user ? `SM-${user.id.slice(-5).toUpperCase()}` : 'SM-OFFLINE';
 
   const renderNavContent = (isMobile: boolean) => (
     <>
@@ -237,7 +237,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="p-6 border-b border-white/5 z-10 flex items-center justify-between">
             <Link href="/" className="flex items-center gap-3">
               <Image src="/logo.png" alt="Matrix" width={24} height={24} className="rounded-md opacity-90 grayscale hover:grayscale-0 transition-all duration-500" />
-              <span className="text-sm font-semibold tracking-wide text-white">Sovereign OS</span>
+              <span className="text-sm font-semibold tracking-wide text-white">Sovereign Matrix</span>
             </Link>
           </div>
 
@@ -317,7 +317,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               className="lg:hidden fixed inset-0 z-[100] bg-[#000000] flex flex-col"
             >
               <div className="flex items-center justify-between p-6 border-b border-white/10">
-                <span className="text-sm font-semibold tracking-wide text-white">Sovereign OS</span>
+                <span className="text-sm font-semibold tracking-wide text-white">Sovereign Matrix</span>
                 <button onClick={() => setMobileMenuOpen(false)} className="p-2 text-neutral-400 hover:text-white">
                   <X className="w-5 h-5" />
                 </button>

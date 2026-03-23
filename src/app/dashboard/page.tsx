@@ -25,7 +25,7 @@ const TOOLS = [
   },
   {
     label: "SEO Tools",
-    description: "Competitor X-Ray, content gap analysis, schema audit, and GBP hijack.",
+    description: "Competitor analysis, content gap detection, schema audit, and local SEO.",
     href: "/dashboard/seo-dominator",
     icon: Search,
     color: "text-rose-400",
@@ -52,7 +52,7 @@ const TOOLS = [
   },
   {
     label: "Competitor Intel",
-    description: "AI-powered competitive analysis with threat detection and counter-strategies.",
+    description: "AI-powered competitive analysis — tech stack, SEO gaps, and actionable moves.",
     href: "/dashboard/competitor",
     icon: Swords,
     color: "text-[#00B7FF]",
@@ -123,8 +123,8 @@ export default function DashboardOverview() {
       {/* Global Strike Visualization (Palantir Architecture) */}
       <motion.div {...fade(0.5)} className="bg-black border border-emerald-500/20 rounded-3xl p-8 relative overflow-hidden">
          <div className="absolute top-6 left-6 z-20">
-            <h2 className="text-xl font-serif font-bold text-white">Global Reconnaissance</h2>
-            <p className="text-xs text-neutral-500 font-mono tracking-widest uppercase mt-1">Live Strike Nodes</p>
+            <h2 className="text-xl font-serif font-bold text-white">Agent Network</h2>
+            <p className="text-xs text-neutral-500 font-mono tracking-widest uppercase mt-1">Active Connections</p>
          </div>
          <GlobalStrikeMap />
       </motion.div>
@@ -197,20 +197,20 @@ export default function DashboardOverview() {
       {/* ROI Comparison */}
       <motion.div {...fade(13)} className="bg-black/40 backdrop-blur-3xl border border-[#00B7FF]/10 rounded-2xl p-6">
         <h2 className="text-[10px] uppercase tracking-[0.2em] text-neutral-400 font-bold mb-6 flex items-center gap-2">
-          <TrendingUp className="w-3 h-3" /> Your Savings
+          <TrendingUp className="w-3 h-3" /> Platform Stats
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-          <div className="p-4 rounded-xl bg-red-500/5 border border-red-500/10">
-            <p className="text-lg font-mono font-bold text-red-400 line-through">R15,000+</p>
-            <p className="text-[10px] text-neutral-500 uppercase tracking-widest mt-1">Traditional Agency</p>
-          </div>
-          <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/10">
-            <p className="text-lg font-mono font-bold text-amber-400 line-through">R25,000+</p>
-            <p className="text-[10px] text-neutral-500 uppercase tracking-widest mt-1">In-House Team</p>
-          </div>
           <div className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
-            <p className="text-lg font-mono font-bold text-emerald-400">Free to Start</p>
-            <p className="text-[10px] text-neutral-500 uppercase tracking-widest mt-1">SOVEREIGN Platform</p>
+            <p className="text-lg font-mono font-bold text-emerald-400">109</p>
+            <p className="text-[10px] text-neutral-500 uppercase tracking-widest mt-1">AI Agents Available</p>
+          </div>
+          <div className="p-4 rounded-xl bg-[#00B7FF]/5 border border-[#00B7FF]/10">
+            <p className="text-lg font-mono font-bold text-[#00B7FF]">39</p>
+            <p className="text-[10px] text-neutral-500 uppercase tracking-widest mt-1">Open-Source Models</p>
+          </div>
+          <div className="p-4 rounded-xl bg-violet-500/5 border border-violet-500/10">
+            <p className="text-lg font-mono font-bold text-violet-400">$0</p>
+            <p className="text-[10px] text-neutral-500 uppercase tracking-widest mt-1">Per-Token Cost</p>
           </div>
         </div>
       </motion.div>
