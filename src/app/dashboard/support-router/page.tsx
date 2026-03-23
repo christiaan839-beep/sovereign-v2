@@ -19,7 +19,7 @@ export default function SupportRouterPage() {
   const [activeTicket, setActiveTicket] = useState<TicketPayload | null>(null);
 
   const triggerIngestion = async () => {
-    setIngestionStatus("ingesting");
+    setPipelineState("ingesting");
     try {
       const res = await fetch("/api/agents/smart-router", {
         method: "POST",
@@ -27,10 +27,10 @@ export default function SupportRouterPage() {
         body: JSON.stringify({ prompt: "Analyze and classify support tickets for routing", task_type: "analysis" }),
       });
       const data = await res.json();
-      if (data.success) setIngestionStatus("complete");
-      else setIngestionStatus("idle");
+      if (data.success) setPipelineState("analyzing");
+      else setPipelineState("idle");
     } catch {
-      setIngestionStatus("idle");
+      setPipelineState("idle");
     }
   };
 

@@ -95,7 +95,7 @@ export async function POST(request: Request) {
               { role: "user", content: `Task: ${task}\n\nDeliberation record:\n${deliberationLog}` },
             ],
             { maxTokens: 1024, temperature: 0.3, stream: true } // STREAM ACTIVATED
-          ) as Response;
+          ) as unknown as Response;
 
           if (response.body) {
             const reader = response.body.getReader();

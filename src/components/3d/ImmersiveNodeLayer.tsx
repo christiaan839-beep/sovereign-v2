@@ -165,6 +165,7 @@ function ConnectionLines({ scrollY }: { scrollY: React.MutableRefObject<number> 
   return (
     <lineSegments ref={ref}>
       <bufferGeometry>
+        {/* @ts-expect-error — R3F declarative bufferAttribute type mismatch */}
         <bufferAttribute attach="attributes-position" count={linePositions.length / 3} array={linePositions} itemSize={3} />
       </bufferGeometry>
       <lineBasicMaterial color="#60A5FA" transparent opacity={0.04} depthWrite={false} blending={THREE.AdditiveBlending} />
@@ -232,6 +233,100 @@ function OrbitalRingSecondary() {
   );
 }
 
+// ─── Energy Pulse Rings ───
+function EnergyPulse() {
+  const ring1 = useRef<THREE.Mesh>(null);
+  const ring2 = useRef<THREE.Mesh>(null);
+  const ring3 = useRef<THREE.Mesh>(null);
+
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime();
+    // Each ring pulses outward on a staggered cycle
+    [ring1, ring2, ring3].forEach((ref, i) => {
+      if (!ref.current) return;
+      const phase = (t * 0.4 + i * 2.1) % 6; // 6-second cycle
+      const scale = 0.3 + phase * 0.7;
+      const opacity = Math.max(0, 1 - phase / 6) * 0.15;
+      ref.current.scale.set(scale, scale, scale);
+      (ref.current.material as THREE.MeshBasicMaterial).opacity = opacity;
+    });
+  });
+
+  return (
+    <>
+      {[ring1, ring2, ring3].map((ref, i) => (
+        <mesh key={i} ref={ref} rotation={[Math.PI / 2, 0, 0]}>
+          <torusGeometry args={[2.8, 0.008, 8, 96]} />
+          <meshBasicMaterial color={i === 1 ? "#34D399" : "#60A5FA"} transparent opacity={0.15} depthWrite={false} blending={THREE.AdditiveBlending} />
+        </mesh>
+      ))}
+    </>
+  );
+}
+
+// ─── Flowing Data Stream Particles ───
+function DataStreams() {
+  const ref = useRef<THREE.Points>(null);
+  const geomRef = useRef<THREE.BufferGeometry>(null);
+  const count = 400;
+
+  // Create particles along spiral paths
+  const { positions, velocities } = useMemo(() => {
+    const p = new Float32Array(count * 3);
+    const v = new Float32Array(count * 3);
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const r = 0.5 + Math.random() * 2.5;
+      p[i * 3] = Math.cos(angle) * r;
+      p[i * 3 + 1] = (Math.random() - 0.5) * 3;
+      p[i * 3 + 2] = Math.sin(angle) * r;
+      // Velocity: spiral inward
+      const speed = 0.002 + Math.random() * 0.004;
+      v[i * 3] = -Math.sin(angle) * speed;
+      v[i * 3 + 1] = (Math.random() - 0.5) * speed * 0.5;
+      v[i * 3 + 2] = Math.cos(angle) * speed;
+    }
+    return { positions: p, velocities: v };
+  }, []);
+
+  useEffect(() => {
+    if (geomRef.current) {
+      geomRef.current.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    }
+  }, [positions]);
+
+  useFrame(() => {
+    if (!geomRef.current) return;
+    const posAttr = geomRef.current.getAttribute('position') as THREE.BufferAttribute;
+    if (!posAttr) return;
+    const arr = posAttr.array as Float32Array;
+
+    for (let i = 0; i < count; i++) {
+      arr[i * 3] += velocities[i * 3];
+      arr[i * 3 + 1] += velocities[i * 3 + 1];
+      arr[i * 3 + 2] += velocities[i * 3 + 2];
+
+      // Reset particles that get too close to center
+      const dist = Math.sqrt(arr[i * 3] ** 2 + arr[i * 3 + 2] ** 2);
+      if (dist < 0.3 || dist > 4) {
+        const angle = Math.random() * Math.PI * 2;
+        const r = 2 + Math.random() * 1.5;
+        arr[i * 3] = Math.cos(angle) * r;
+        arr[i * 3 + 1] = (Math.random() - 0.5) * 3;
+        arr[i * 3 + 2] = Math.sin(angle) * r;
+      }
+    }
+    posAttr.needsUpdate = true;
+  });
+
+  return (
+    <points ref={ref}>
+      <bufferGeometry ref={geomRef} />
+      <pointsMaterial size={0.018} color="#A78BFA" transparent opacity={0.35} depthWrite={false} blending={THREE.AdditiveBlending} />
+    </points>
+  );
+}
+
 // ─── Grid Floor ───
 function GridFloor({ scrollY }: { scrollY: React.MutableRefObject<number> }) {
   const ref = useRef<THREE.Mesh>(null);
@@ -271,6 +366,8 @@ function Scene({ scrollY }: { scrollY: React.MutableRefObject<number> }) {
       <ambientLight intensity={0.3} />
       <OrbitalRing />
       <OrbitalRingSecondary />
+      <EnergyPulse />
+      <DataStreams />
       <ConnectionLines scrollY={scrollY} />
       <CoreParticles scrollY={scrollY} />
       <OuterHaze scrollY={scrollY} />

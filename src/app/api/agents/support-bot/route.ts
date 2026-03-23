@@ -35,7 +35,7 @@ export async function POST(req: Request) {
     if (!ragContext) {
       try {
         const { recall } = await import("@/lib/memory");
-        const memories = await recall(question, "support-kb");
+        const memories = await recall(question, 5);
         if (Array.isArray(memories) && memories.length > 0) {
           ragContext = memories
             .slice(0, 5)
@@ -82,7 +82,7 @@ Rules:
     }
 
     // Clean the JSON block from the visible answer
-    const answer = resultStr.replace(/\s*\{["']?confidence["']?:.*\}\s*$/s, "").trim();
+    const answer = resultStr.replace(/\s*\{["']?confidence["']?:.*\}\s*$/, "").trim();
     const shouldEscalate = confidence < 0.5;
 
     return NextResponse.json({

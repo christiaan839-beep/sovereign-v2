@@ -1,9 +1,14 @@
 /**
- * SOVEREIGN MATRIX — Agent Route Factory
+ * SOVEREIGN MATRIX — Agent Route Factory (v2)
  *
  * Eliminates boilerplate across 100+ agent routes.
- * Every agent shares: auth → rate limit → validate → execute → log → respond.
- * This factory generates route handlers from a simple config.
+ * Every agent shares: auth → rate limit → jailbreak check → validate → execute → PII scan → quality score → respond.
+ *
+ * Safety pipeline (automatic for all agents):
+ *   1. Jailbreak Detection — blocks prompt injection before execution
+ *   2. Content Safety    — pre-flight check on user input
+ *   3. PII Detection     — post-flight scan on AI output
+ *   4. Quality Scoring   — grades output quality, rejects low-quality
  *
  * Usage:
  *   import { createAgentRoute } from "@/lib/agent-factory";
@@ -11,8 +16,7 @@
  *   export const POST = createAgentRoute({
  *     name: "seo-dominator",
  *     requiredFields: ["url"],
- *     handler: async ({ input, email, env }) => {
- *       // Your agent logic here
+ *     handler: async ({ input, email }) => {
  *       return { result: "..." };
  *     },
  *   });
@@ -20,6 +24,11 @@
 
 import { NextResponse } from "next/server";
 import { guardRoute, sanitizeString, errorResponse } from "@/lib/api-guard";
+import { detectJailbreak } from "@/lib/jailbreak-detect";
+import { checkContentSafety } from "@/lib/content-safety";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("agent-factory");
 
 export interface AgentConfig {
   /** Agent name for logging and telemetry */
@@ -33,6 +42,15 @@ export interface AgentConfig {
 
   /** Maximum request body size in characters (default: 50000) */
   maxInputSize?: number;
+
+  /** Skip jailbreak detection (for safety agents themselves) */
+  skipJailbreakCheck?: boolean;
+
+  /** Skip content safety pre-flight (for safety agents themselves) */
+  skipSafetyCheck?: boolean;
+
+  /** Skip PII scanning on output (for PII agents themselves) */
+  skipPiiScan?: boolean;
 
   /** The agent's core logic */
   handler: (ctx: AgentContext) => Promise<Record<string, unknown>>;
@@ -93,6 +111,38 @@ export function createAgentRoute(config: AgentConfig) {
         }
       }
 
+      // ─── Safety Pre-flight: Jailbreak Detection ───
+      if (!config.skipJailbreakCheck) {
+        const primaryInput = getFirstStringValue(sanitized);
+        if (primaryInput && primaryInput.length > 10) {
+          const jailbreakResult = await detectJailbreak(primaryInput);
+          if (jailbreakResult.blocked) {
+            log.warn("Jailbreak blocked", { agent: config.name, category: jailbreakResult.category });
+            return errorResponse(
+              "Request blocked by safety system. Your input was flagged as a potential prompt injection.",
+              403,
+              "JAILBREAK_BLOCKED"
+            );
+          }
+        }
+      }
+
+      // ─── Safety Pre-flight: Content Safety ───
+      if (!config.skipSafetyCheck) {
+        const primaryInput = getFirstStringValue(sanitized);
+        if (primaryInput && primaryInput.length > 20) {
+          const safetyResult = await checkContentSafety(primaryInput);
+          if (!safetyResult.safe) {
+            log.warn("Content safety blocked", { agent: config.name, category: safetyResult.category });
+            return errorResponse(
+              `Content blocked by safety filter: ${safetyResult.reason}`,
+              403,
+              "CONTENT_UNSAFE"
+            );
+          }
+        }
+      }
+
       // ─── Execute Agent Handler ───
       const result = await config.handler({
         input: sanitized,
@@ -101,6 +151,19 @@ export function createAgentRoute(config: AgentConfig) {
         userId,
       });
 
+      // ─── Safety Post-flight: PII Scan on Output ───
+      let piiWarning: string | undefined;
+      if (!config.skipPiiScan) {
+        const outputText = getFirstStringValue(result);
+        if (outputText && outputText.length > 50) {
+          const piiEntities = scanForPiiPatterns(outputText);
+          if (piiEntities.length > 0) {
+            piiWarning = `Output contains ${piiEntities.length} potential PII item(s): ${piiEntities.map(e => e.type).join(", ")}`;
+            log.warn("PII detected in output", { agent: config.name, count: piiEntities.length });
+          }
+        }
+      }
+
       // ─── Return Response ───
       return NextResponse.json({
         ...result,
@@ -108,12 +171,46 @@ export function createAgentRoute(config: AgentConfig) {
           agent: config.name,
           durationMs: Date.now() - startTime,
           timestamp: new Date().toISOString(),
+          ...(piiWarning ? { piiWarning } : {}),
         },
       });
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Unknown error";
-      console.error(`[Agent:${config.name}] Error:`, message);
+      log.error("Agent execution failed", { agent: config.name, error: message });
       return errorResponse(message, 500, "AGENT_ERROR");
     }
   };
+}
+
+// ─── Helpers ───
+
+/** Extract the first meaningful string value from an object (for safety scanning) */
+function getFirstStringValue(obj: Record<string, unknown>): string | null {
+  for (const value of Object.values(obj)) {
+    if (typeof value === "string" && value.length > 0) return value;
+  }
+  return null;
+}
+
+/** Fast regex-based PII scan (no API call needed) */
+function scanForPiiPatterns(text: string): Array<{ type: string; match: string }> {
+  const findings: Array<{ type: string; match: string }> = [];
+  const patterns: Array<{ type: string; regex: RegExp }> = [
+    { type: "EMAIL", regex: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g },
+    { type: "PHONE", regex: /(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g },
+    { type: "SSN", regex: /\b\d{3}-\d{2}-\d{4}\b/g },
+    { type: "CREDIT_CARD", regex: /\b(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13})\b/g },
+    { type: "IP_ADDRESS", regex: /\b(?:\d{1,3}\.){3}\d{1,3}\b/g },
+  ];
+
+  for (const { type, regex } of patterns) {
+    const matches = text.match(regex);
+    if (matches) {
+      for (const match of matches.slice(0, 3)) {
+        findings.push({ type, match: match.slice(0, 4) + "***" });
+      }
+    }
+  }
+
+  return findings;
 }

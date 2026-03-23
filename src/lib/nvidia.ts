@@ -41,11 +41,16 @@ export async function getNimKey(): Promise<string> {
  * Pulls the API key from the BYOK vault first, falls back to env variables.
  * All models on NIM are FREE open-source models.
  */
+/**
+ * Generic NVIDIA NIM chat completion — used by ALL NIM agent routes.
+ * When stream is false (default), returns a string.
+ * When stream is true, returns the raw Response for SSE parsing.
+ */
 export async function nimChat(
   model: string,
   messages: Array<{ role: string; content: string | Array<{ type: string; text?: string; image_url?: { url: string } }> }>,
   options: { maxTokens?: number; temperature?: number; stream?: boolean } = {}
-): Promise<string | globalThis.Response> {
+): Promise<string> {
   const apiKey = await getNimKey();
   if (!apiKey) throw new Error("NVIDIA NIM API key not configured. Add it in Settings > API Keys.");
 
@@ -99,7 +104,8 @@ export async function nimChat(
   }
 
   if (options.stream) {
-    return response; // Return raw Response for SSE streaming parsing
+    // For streaming, callers should cast: nimChat(..., { stream: true }) as unknown as Response
+    return response as unknown as string;
   }
 
   const data = await response.json();
