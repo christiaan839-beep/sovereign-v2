@@ -48,6 +48,7 @@ const NAV_GROUPS = [
       { href: "/dashboard/competitor", label: "Competitor Intel", icon: Shield },
       { href: "/dashboard/nemo-claw", label: "Edge Terminal", icon: Cpu },
       { href: "/dashboard/voice-swarm", label: "Voice Swarm", icon: Mic },
+      { href: "/dashboard/voice-assistant", label: "Voice Assistant", icon: Mic },
       { href: "/dashboard/podcast", label: "PDF-to-Podcast", icon: Headphones },
       { href: "/dashboard/omni-search", label: "RAG Search", icon: Database },
       { href: "/dashboard/cyber-audit", label: "Cyber Audit", icon: ShieldAlert },
