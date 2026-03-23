@@ -1,9 +1,13 @@
 /**
  * The AGI Governor Ruleset
- * 
+ *
  * Interception layer for the DSPy optimizer. This module parses autonomous
  * payload generation and prevents SOVEREIGN from triggering algorithmic bans.
  */
+
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("governor");
 
 export interface GovernorCheck {
   isCompliant: boolean;
@@ -33,7 +37,7 @@ export async function evaluateMetaAdCompliance(adCopy: string): Promise<Governor
 
   // 2. Perform DSPy mock TOS Evaluation
   // Simulation: We would run a lightweight local LLM check here to analyze context.
-  console.log(`[GOVERNOR] Scanning payload logic... No immediate TOS violations found.`);
+  log.info("Scanning payload logic... No immediate TOS violations found.");
 
   return { isCompliant: true, riskFactor: 'LOW' };
 }

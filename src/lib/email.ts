@@ -1,11 +1,14 @@
 /**
  * Email Delivery — Resend Integration
- * 
+ *
  * Graceful fallback: if RESEND_API_KEY is not set, logs emails instead of failing.
  * Add RESEND_API_KEY to Vercel env vars to enable real delivery.
- * 
+ *
  * Free tier: 100 emails/day at resend.com
  */
+
+import { createLogger } from "@/lib/logger";
+const log = createLogger("email");
 
 interface EmailOptions {
   to: string;
@@ -34,11 +37,7 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
 
   if (!apiKey) {
     // Graceful fallback — log instead of crash
-    console.log("[Email] No RESEND_API_KEY configured. Simulating email delivery:");
-    console.log(`  To: ${to}`);
-    console.log(`  Subject: ${subject}`);
-    console.log(`  From: ${from || "noreply@umbra.ai"}`);
-    console.log(`  Body length: ${html.length} chars`);
+    log.debug("No RESEND_API_KEY configured, simulating delivery", { to, subject, from: from || "noreply@umbra.ai" });
     return { success: true, id: `sim_${Date.now()}`, simulated: true };
   }
 
@@ -61,13 +60,13 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
     const data = await res.json();
 
     if (!res.ok) {
-      console.error("[Email] Resend error:", data);
+      log.error("Resend API error", { status: res.status, message: data.message });
       return { success: false, error: data.message || "Failed to send" };
     }
 
     return { success: true, id: data.id };
   } catch (err) {
-    console.error("[Email] Send failed:", err);
+    log.error("Email send failed", { error: err instanceof Error ? err.message : "unknown" });
     return { success: false, error: "Network error" };
   }
 }
@@ -90,7 +89,7 @@ export async function sendSequence(
       if (result.success) sent++;
     } else {
       // Log for future delivery (would use job queue in production)
-      console.log(`[Email Queue] Scheduled for day ${email.delayDays}: "${email.subject}" to ${email.to}`);
+      log.debug("Email queued for future delivery", { delayDays: email.delayDays, subject: email.subject, to: email.to });
       queued++;
     }
   }

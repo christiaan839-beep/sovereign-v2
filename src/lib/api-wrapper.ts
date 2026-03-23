@@ -1,4 +1,7 @@
 import { NextResponse } from "next/server";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("api-wrapper");
 
 /**
  * Global API Wrapper
@@ -25,7 +28,7 @@ export async function withProtection(
     return response;
   } catch (err: unknown) {
     const error = err as Error;
-    console.error("[API_WRAPPER_ERROR]", error);
+    log.error("API wrapper error:", error);
     
     const isTimeout = error.message?.includes('timed out');
     const status = isTimeout ? 504 : 500;

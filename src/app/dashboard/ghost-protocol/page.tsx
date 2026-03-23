@@ -45,6 +45,9 @@ export default function GhostProtocolDashboard() {
     addLog("PHASE 1: Scraping G2 & ProductHunt for negative sentiment...");
 
     try {
+      setPhase(2);
+      addLog("Researching competitor data...");
+
       const res = await fetch("/api/agents/ghost-fleet", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -53,28 +56,19 @@ export default function GhostProtocolDashboard() {
 
       if (!res.ok) throw new Error("API Connection Failed");
 
-      // Simulated delays for dramatic/UX effect
-      setTimeout(() => {
-        setPhase(2);
-        addLog(`Match found. Extracting identity via Apollo.io enrichment...`);
-      }, 2000);
-
-      setTimeout(() => {
-        setPhase(3);
-        addLog(`Identity verified. Passing context to Nemotron 340B for outreach synthesis...`);
-      }, 4000);
+      setPhase(3);
+      addLog("Analyzing results and generating outreach...");
 
       const data = await res.json();
 
-      setTimeout(() => {
-        setResult(data);
-        setPhase(4);
-        setIsDeploying(false);
-        addLog(`SUCCESS: Target acquired and outreach drafted. Ready for NemoClaw Edge Execution.`);
-      }, 6000);
+      setResult(data);
+      setPhase(4);
+      setIsDeploying(false);
+      addLog("Analysis complete. Outreach draft ready.");
 
-    } catch (err: any) {
-      addLog(`ERROR: Pipeline failed - ${err.message}`);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      addLog(`ERROR: ${message}`);
       setIsDeploying(false);
       setPhase(0);
     }

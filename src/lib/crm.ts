@@ -41,7 +41,6 @@ export async function createOrUpdateHubSpotLead(email: string, properties: Recor
       return await createRes.json();
     }
   } catch (err) {
-    console.error("HubSpot CRM Error:", err);
     throw err;
   }
 }
@@ -55,7 +54,6 @@ export async function advanceHubSpotDeal(dealId: string, targetStage: string, ap
     });
     return await updateRes.json();
   } catch (err) {
-    console.error("HubSpot Deal Advancement Error:", err);
     throw err;
   }
 }
@@ -73,7 +71,6 @@ export async function createSalesforceLead(data: Record<string, string>, instanc
     });
     return await res.json();
   } catch (err) {
-    console.error("Salesforce Logic Error:", err);
     throw err;
   }
 }

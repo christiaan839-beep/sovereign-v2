@@ -106,7 +106,7 @@ export default function SupportRouterPage() {
                  ) : null}
               </div>
 
-              <div className="p-6 flex-1 flex flex-col bg-[url('/noise.png')] bg-repeat opacity-95">
+              <div className="p-6 flex-1 flex flex-col relative noise-overlay">
                  
                  <AnimatePresence>
                     {activeTicket && (

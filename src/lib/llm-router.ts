@@ -1,4 +1,6 @@
-import { db } from "@/db";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("llm-router");
 
 interface RouterPayload {
   prompt: string;
@@ -38,16 +40,16 @@ export async function routeAgenticExecution({ prompt, systemInstruction }: Route
     if (localRes.ok) {
       const localData = await localRes.json();
       if (localData.response) {
-         console.log("[ROUTER] ✅ Executed via Local Nemotron-Mini-4B");
+         log.info("Executed via Local Nemotron-Mini-4B");
          return localData.response;
       }
     }
   } catch (error) {
-    console.warn("[ROUTER] ⚠️ Local macOS node unreachable (Laptop offline or daemon stopped).");
+    log.warn("Local macOS node unreachable (laptop offline or daemon stopped)");
   }
 
   // 2. Secondary Vector: Google AI Ultra (Gemini 1.5 Pro)
-  console.log("[ROUTER] 🔄 Initiating Failover to Google AI Ultra (Gemini 1.5 Pro)...");
+  log.info("Failover to Google AI Ultra (Gemini 1.5 Pro)");
   
   try {
      const geminiKey = process.env.GEMINI_API_KEY;
@@ -67,12 +69,12 @@ export async function routeAgenticExecution({ prompt, systemInstruction }: Route
          const aiData = await aiRes.json();
          const text = aiData.candidates?.[0]?.content?.parts?.[0]?.text;
          if (text) {
-            console.log("[ROUTER] ✅ Executed via Google AI Ultra Cloud");
+            log.info("Executed via Google AI Ultra Cloud");
             return text;
          }
      }
   } catch (error) {
-     console.error("[ROUTER] ❌ Google AI Ultra failed or key missing.", error);
+     log.error("Google AI Ultra failed or key missing");
   }
 
   return "[SYSTEM FAILURE] All inference vectors offline. Matrix Critical Server Failure.";

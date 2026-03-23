@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { Download, BrainCircuit, Cpu, Code2, Globe, Database, Network, ArrowRight } from "lucide-react";
 import { useState } from "react";
+import { useToast } from "@/components/ui/ToastProvider";
 
 const ANTHROPIC_COOKBOOKS = [
   {
@@ -57,12 +58,13 @@ const ANTHROPIC_COOKBOOKS = [
 
 export default function SovereignArsenalPage() {
   const [deployingId, setDeployingId] = useState<string | null>(null);
+  const toast = useToast();
 
   const handleDeploy = (id: string) => {
     setDeployingId(id);
     setTimeout(() => {
       setDeployingId(null);
-      alert("Anthropic Blueprint Deployed to God-Brain.");
+      toast.success("Blueprint deployed to God-Brain.");
     }, 2000);
   };
 

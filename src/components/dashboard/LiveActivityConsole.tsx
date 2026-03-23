@@ -14,12 +14,10 @@ type LogEntry = {
 };
 
 const LOG_MESSAGES = [
-  { module: 'NemoClaw', message: 'Intercepted payload from competitor origin.', icon: Zap, level: 'info' },
-  { module: 'Twilio X1', message: 'Outbound connection established (Latency: 284ms).', icon: Globe2, level: 'success' },
-  { module: 'Nemotron V3', message: 'Synthesizing voice response envelope.', icon: Activity, level: 'info' },
-  { module: 'Morpheus', message: 'Guardrails enforced. PII scrubbed from execution trace.', icon: ShieldAlert, level: 'success' },
-  { module: 'Neon DB', message: 'Commit successful on leads_index table.', icon: Server, level: 'info' },
-  { module: 'Cosmos VLM', message: 'Extracting semantic hooks from competitor MP4.', icon: Cpu, level: 'warn' },
+  { module: 'System', message: 'Waiting for agent activity...', icon: Activity, level: 'info' },
+  { module: 'Health', message: 'Service health check completed.', icon: Server, level: 'success' },
+  { module: 'Router', message: 'AI model router initialized.', icon: Cpu, level: 'info' },
+  { module: 'Auth', message: 'Session validated successfully.', icon: ShieldAlert, level: 'success' },
 ];
 
 const iconMap: Record<string, React.ElementType> = {

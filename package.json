@@ -21,6 +21,7 @@
     "@pinecone-database/pinecone": "^7.1.0",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
+    "@react-three/postprocessing": "^3.0.4",
     "@tavily/core": "^0.7.2",
     "@types/three": "^0.183.1",
     "@upstash/redis": "^1.37.0",

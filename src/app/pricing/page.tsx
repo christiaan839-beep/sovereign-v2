@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { CheckCircle2, X as XIcon, ArrowRight, Zap, Shield, HelpCircle, Crown } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { AnimatePresence } from "framer-motion";
 
 const fadeIn = (d: number) => ({ initial: { opacity: 0, y: 20 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true }, transition: { delay: d, duration: 0.6 } });
 
@@ -70,6 +71,7 @@ const FAQS = [
 
 export default function PricingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const checkout = async (plan: string) => {
     if (plan === "node") {
@@ -95,14 +97,29 @@ export default function PricingPage() {
         return;
       }
 
-      alert(data.error || "Payment is being set up. Please try again.");
+      setError(data.error || "Payment is being set up. Please try again.");
     } catch {
-      alert("Checkout failed. Please try again.");
+      setError("Checkout failed. Please try again.");
     }
   };
 
   return (
     <div className="min-h-screen bg-[#050505] text-white">
+      <AnimatePresence>
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed top-6 right-6 z-[200] px-4 py-3 rounded-xl border border-rose-500/30 bg-rose-500/10 backdrop-blur-xl shadow-lg flex items-center gap-3"
+          >
+            <span className="text-xs font-medium text-white">{error}</span>
+            <button onClick={() => setError(null)} className="text-neutral-500 hover:text-white">
+              <XIcon className="w-3 h-3" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[radial-gradient(ellipse,rgba(0,183,255,0.06),transparent)] blur-3xl" />
       </div>

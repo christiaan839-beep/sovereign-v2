@@ -1,4 +1,7 @@
 import { ai } from "@/lib/ai";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("competitor");
 
 export interface CompetitorProfile {
   name: string;
@@ -63,10 +66,10 @@ export async function watchCompetitors(
       analyses.push(analysis);
 
       if (analysis.threatLevel === "high") {
-        alerts.push(`🚨 HIGH THREAT: ${competitor.name} — ${analysis.recommendation}`);
+        alerts.push(`HIGH THREAT: ${competitor.name} — ${analysis.recommendation}`);
       }
     } catch (e) {
-      console.error(`[Competitor] Failed to analyze ${competitor.name}:`, e);
+      log.error(`Failed to analyze ${competitor.name}:`, e);
     }
   }
 

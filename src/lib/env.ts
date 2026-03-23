@@ -1,10 +1,14 @@
 /**
  * SOVEREIGN — Centralized Environment Variable Validator
- * 
+ *
  * Validates all required environment variables at startup.
  * Import this module in any API route that needs env validation.
  * Throws descriptive errors if critical keys are missing.
  */
+
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("env");
 
 type EnvKey = {
   name: string;
@@ -37,22 +41,22 @@ export function validateEnv(): { valid: boolean; missing: string[]; warnings: st
     
     if (!value || value === "PLACEHOLDER_BOT_TOKEN" || value === "PLACEHOLDER_CHAT_ID") {
       if (key.required) {
-        missing.push(`❌ MISSING: ${key.name} — ${key.description}`);
+        missing.push(`MISSING: ${key.name} — ${key.description}`);
       } else {
-        warnings.push(`⚠️  OPTIONAL: ${key.name} — ${key.description}`);
+        warnings.push(`OPTIONAL: ${key.name} — ${key.description}`);
       }
     }
   }
 
   if (missing.length > 0) {
-    console.error("\n🔴 SOVEREIGN ENVIRONMENT VALIDATION FAILED");
-    console.error("═══════════════════════════════════════");
-    missing.forEach((m) => console.error(m));
+    log.error("SOVEREIGN ENVIRONMENT VALIDATION FAILED");
+    log.error("═══════════════════════════════════════");
+    missing.forEach((m) => log.error(m));
     if (warnings.length > 0) {
-      console.warn("\n⚠️  Optional keys not configured:");
-      warnings.forEach((w) => console.warn(w));
+      log.warn("Optional keys not configured:");
+      warnings.forEach((w) => log.warn(w));
     }
-    console.error("═══════════════════════════════════════\n");
+    log.error("═══════════════════════════════════════");
   }
 
   return { valid: missing.length === 0, missing, warnings };

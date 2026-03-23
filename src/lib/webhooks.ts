@@ -8,6 +8,9 @@ import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { settings } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("webhooks");
 
 interface WebhookPayload {
   event: string;
@@ -41,24 +44,46 @@ export async function fireUserWebhook(agent: string, task: string, payload: unkn
         userEmail: user.primaryEmailAddress.emailAddress,
         data: { agent, task, payload }
       })
-    }).catch(e => console.error("[Webhook Error]:", e));
+    }).catch(e => log.error("Webhook delivery error:", e));
 
     return true;
   } catch (err) {
-    console.error("[Webhook Exception]:", err);
+    log.error("Webhook exception:", err);
     return false;
   }
 }
 
-// In a real production app, this would be fetched from a database (Supabase/Postgres).
-// For now, we simulate the active webhooks that a user configured in the dashboard.
-const MOCK_DB_WEBHOOKS = [
-  { id: "wh_1", trigger: "hot_lead", url: "https://echo.free.beeceptor.com", active: true },
-  { id: "wh_2", trigger: "campaign_kill", url: "https://echo.free.beeceptor.com", active: true },
-];
+/**
+ * Trigger webhooks for a specific event.
+ * Reads webhook configurations from the user's settings in the database.
+ */
+async function getWebhooksFromDB(event: string): Promise<Array<{ url: string; trigger: string }>> {
+  try {
+    const user = await currentUser();
+    if (!user?.primaryEmailAddress?.emailAddress) return [];
+    const userSettings = await db.query.settings.findFirst({
+      where: eq(settings.userEmail, user.primaryEmailAddress.emailAddress),
+    });
+    if (!userSettings?.webhooks) return [];
+    const webhooks = JSON.parse(userSettings.webhooks);
+    // Support both single webhook URL and array of webhook configs
+    if (typeof webhooks === "string" && webhooks.startsWith("http")) {
+      return [{ url: webhooks, trigger: event }];
+    }
+    if (webhooks.onComplete && event) {
+      return [{ url: webhooks.onComplete, trigger: event }];
+    }
+    if (Array.isArray(webhooks)) {
+      return webhooks.filter((h: { trigger: string; active?: boolean }) => h.trigger === event && h.active !== false);
+    }
+    return [];
+  } catch {
+    return [];
+  }
+}
 
 export async function triggerWebhook(event: "hot_lead" | "new_sale" | "campaign_kill" | "report_ready", data: Record<string, unknown>) {
-  const activeHooks = MOCK_DB_WEBHOOKS.filter(h => h.trigger === event && h.active);
+  const activeHooks = await getWebhooksFromDB(event);
   
   if (activeHooks.length === 0) return { delivered: 0, failed: 0 };
 
@@ -89,7 +114,7 @@ export async function triggerWebhook(event: "hot_lead" | "new_sale" | "campaign_
         else failed++;
       } catch (e) {
         failed++;
-        console.error(`[Webhook Failed] URL: ${hook.url}`, e);
+        log.error(`Webhook failed for URL: ${hook.url}`, e);
       }
     })
   );

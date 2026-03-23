@@ -8,14 +8,14 @@ import { useState } from "react";
 
 import { SovereignLogo } from "@/components/ui/SovereignLogo";
 import { Pricing } from "@/components/ui/Pricing";
-import { SplashIntro } from "@/components/ui/SplashIntro";
+// SplashIntro removed — instant page load
 import { ImmersiveNodeLayer } from "@/components/3d/ImmersiveNodeLayer";
 import { ToolShowcase } from "@/components/ui/SocialProof";
 
 import SovereignCalculator from "@/components/SovereignCalculator";
 import { AgentOrgMap } from "@/components/dashboard/AgentOrgMap";
 
-import DeepfakeShowcase from "@/components/DeepfakeShowcase";
+import VideoShowcase from "@/components/DeepfakeShowcase";
 import { InteractiveHeroStrike } from "@/components/ui/InteractiveHeroStrike";
 import { AIDemoShowcase } from "@/components/ui/AIDemoShowcase";
 import { SocialProofMetrics } from "@/components/ui/SocialProofMetrics";
@@ -41,13 +41,11 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
 }
 
 export default function Home() {
-  const [showSite, setShowSite] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   return (
     <>
-      {!showSite && <SplashIntro onComplete={() => setShowSite(true)} />}
-    <div className={`min-h-screen bg-[#000000] text-white selection:bg-white/20 font-sans transition-opacity duration-700 ${showSite ? 'opacity-100' : 'opacity-0'}`}>
+    <div className="min-h-screen bg-[#000000] text-white selection:bg-white/20 font-sans">
       
       {/* Navigation */}
       <nav className="fixed top-0 inset-x-0 z-50 flex justify-center px-6 py-4 pointer-events-none">
@@ -95,7 +93,7 @@ export default function Home() {
            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-emerald-900/20 blur-[120px]" />
            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-cyan-900/20 blur-[120px]" />
            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.03),transparent_60%)]" />
-           <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.015] mix-blend-overlay" />
+           <div className="absolute inset-0 noise-overlay" />
          </div>
 
         <ImmersiveNodeLayer />
@@ -111,15 +109,15 @@ export default function Home() {
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-cyan-300">100% Data Sovereignty</span>
           </motion.div>
 
-          <h1 className="text-6xl md:text-8xl lg:text-[7rem] font-black mb-8 leading-[1.02] tracking-tighter text-white drop-shadow-2xl">
-            The Autonomous<br/>
+          <h1 className="text-6xl md:text-8xl lg:text-9xl font-black mb-8 leading-[1.02] tracking-tighter text-white drop-shadow-2xl">
+            Your Agents.<br/>
             <span className="bg-clip-text text-transparent bg-gradient-to-br from-white via-neutral-200 to-neutral-600">
-              Enterprise Engine.
+              Your Infrastructure.
             </span>
           </h1>
 
           <p className="text-lg md:text-2xl text-neutral-400 max-w-3xl mx-auto leading-relaxed mb-14 font-medium tracking-tight">
-            Automate engineering, sales, and marketing with a localized swarm of open-source agents. Execute physical workflows without vendor lock-in.
+            100+ AI agents for sales, marketing, and operations — running on open-source models with zero API costs. Self-hosted or cloud. No vendor lock-in.
           </p>
 
           <div className="mb-20">
@@ -166,10 +164,10 @@ export default function Home() {
            
            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
               {[
-                { icon: BrainCircuit, title: "Super 120B Omni-RAG", desc: "Ground your sales and marketing in absolute truth using NVIDIA NeMo Retriever and reasoning models." },
-                { icon: Target, title: "Nano 30B Edge Execution", desc: "Command the swarm locally from your macOS terminal or WhatsApp via the secure OpenClaw Daemon." },
-                { icon: Globe, title: "Nemotron Speech Pipeline", desc: "Deploy ultra-low latency voice closers powered by Nemotron Speech to secure retainers autonomously." },
-                { icon: ShieldAlert, title: "Morpheus Safety Shield", desc: "Real-time PII redaction, brand alignment, and deepfake verification powered natively by NeMo Guardrails." }
+                { icon: BrainCircuit, title: "Enterprise RAG Pipeline", desc: "Ground every AI response in your actual business data using vector retrieval and 120B-parameter reasoning models." },
+                { icon: Target, title: "Local Edge Execution", desc: "Run agents locally from your terminal with zero cloud dependency. Full offline capability via the OpenClaw daemon." },
+                { icon: Globe, title: "Voice Agent Pipeline", desc: "Deploy AI voice agents for outbound calls with sub-200ms latency. Automated qualification, booking, and follow-up." },
+                { icon: ShieldAlert, title: "Safety & Guardrails", desc: "Real-time PII redaction, content safety scoring, and brand alignment powered by NeMo Guardrails." }
               ].map((feature, i) => (
                 <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.6 }}
                   className="bg-white/[0.02] border border-white/5 p-8 rounded-3xl group hover:border-white/10 hover:bg-white/[0.04] transition-all backdrop-blur-xl relative overflow-hidden shadow-2xl">
@@ -188,18 +186,18 @@ export default function Home() {
 
         <div className="w-full max-w-7xl mx-auto relative z-10 mt-32 mb-24">
           <div className="text-center mb-16">
-             <h2 className="text-3xl md:text-5xl font-bold text-white mb-4 tracking-tight">Run Autonomous Agents Safely.</h2>
-             <p className="text-neutral-500 max-w-2xl mx-auto">Sovereign Matrix leverages the open source stack to add absolute privacy and security controls to your enterprise data flywheel.</p>
+             <h2 className="text-3xl md:text-5xl font-bold text-white mb-4 tracking-tight">What The Agents Actually Do.</h2>
+             <p className="text-neutral-500 max-w-2xl mx-auto">Each capability runs on real infrastructure — no simulations, no placeholders. Open-source models you own.</p>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
-              { icon: Cpu, title: "NemoClaw OS Autonomy", desc: "Sovereign Matrix physically controls your Mac's mouse and keyboard. It opens hidden headless Chrome browsers to steal competitor DBs while you sleep.", tag: "DAEMON" },
-              { icon: BrainCircuit, title: "Uncensored Edge RAG", desc: "Upload gigabytes of classified corporate PDFs. Run vector analysis locally on NVMe storage with ChromaDB—bypassing OpenAI API fees entirely.", tag: "LOCAL VECTOR" },
-              { icon: Target, title: "SaaS Sales Domination", desc: "Fire your SDRs. The Matrix executes physical outbound sequences, scraping target lists dynamically and writing Nemotron-powered emails.", tag: "OUTBOUND" },
-              { icon: ShieldAlert, title: "God-Eye Surveillance", desc: "Sell your software to physical retail. Plug the Matrix into RTSP security feeds for sub-millisecond NVIDIA Metropolis theft-detection.", tag: "METROPOLIS" },
-              { icon: Globe, title: "Autonomous Engineering Node", desc: "The Matrix doesn't just market software; it builds it. Summon the local Qwen-Coder model via Aider CLI to physically author and commit production code.", tag: "CODING" },
-              { icon: MessageSquare, title: "Telegram Sub-Command", desc: "Dictate the swarm's targets from your iOS device. Dispatch the Deepfake closer or order a competitor audit via immediate webhook execution.", tag: "MOBILE" },
+              { icon: Cpu, title: "Desktop Automation", desc: "Agents control headless browsers to research competitors, scrape public data, and execute multi-step workflows autonomously.", tag: "DAEMON" },
+              { icon: BrainCircuit, title: "Private Document RAG", desc: "Upload corporate documents and run vector analysis locally. Your data never leaves your infrastructure. Zero per-token API fees.", tag: "LOCAL VECTOR" },
+              { icon: Target, title: "Outbound Sales Engine", desc: "Augment your sales team with AI-powered prospecting, personalized email sequences, and automated lead qualification.", tag: "OUTBOUND" },
+              { icon: ShieldAlert, title: "Spatial Analytics", desc: "Connect video feeds for real-time spatial analysis. Foot traffic counting, occupancy monitoring, and behavioral analytics for retail.", tag: "ANALYTICS" },
+              { icon: Globe, title: "AI Code Generation", desc: "Generate, review, and commit production code using local models. Integrated with your existing git workflow and CI/CD pipelines.", tag: "CODING" },
+              { icon: MessageSquare, title: "Mobile Command", desc: "Control your agent swarm from Telegram or WhatsApp. Trigger competitive analysis, generate reports, or deploy campaigns on the go.", tag: "MOBILE" },
             ].map((feature, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.08 }}
                 className="bg-[#050505] p-8 border border-white/5 hover:border-white/10 rounded-3xl transition-colors shadow-xl">
@@ -220,9 +218,9 @@ export default function Home() {
       <section className="py-32 bg-[#050505] border-y border-white/5 px-6">
          <div className="max-w-5xl mx-auto">
             <div className="text-center mb-16">
-              <h2 className="text-3xl md:text-5xl font-bold text-white mb-6 tracking-tight">Trust Through Supremacy.</h2>
+              <h2 className="text-3xl md:text-5xl font-bold text-white mb-6 tracking-tight">Why Open-Source Architecture.</h2>
               <p className="text-lg text-neutral-500 max-w-2xl mx-auto">
-                Stop battling Python scripts. Sovereign OS is the only production-ready alternative to the first-generation agent frameworks.
+                Most AI tools are chatbots with a wrapper. Sovereign Matrix is a full agent orchestration platform with real autonomy.
               </p>
             </div>
 
@@ -280,7 +278,7 @@ export default function Home() {
          </div>
       </section>
 
-      <DeepfakeShowcase />
+      <VideoShowcase />
 
       <section id="pricing" className="py-24 bg-[#000000] relative border-t border-white/5">
          <div className="mb-24">
@@ -300,14 +298,14 @@ export default function Home() {
                 Engineered for Scale
               </div>
               <h2 className="text-4xl md:text-5xl font-bold text-white mb-6 leading-tight tracking-tight">
-                Become The Chief Agent Officer.
+                Built on Models You Control.
               </h2>
               <div className="w-8 h-px bg-white/20 mb-6" />
               <p className="text-neutral-400 leading-relaxed mb-6 text-sm">
-                Every enterprise is currently hiring for one objective: offloading operations to autonomous systems. As a Chief Agent Officer (CAO), you orchestrate the Sovereign Matrix—a node architecture that replaces traditional retainers.
+                Sovereign Matrix routes tasks across multiple AI providers — local Ollama models, NVIDIA NIM, Google Gemini, Claude, and Groq. Smart routing picks the best model for each task automatically.
               </p>
               <p className="text-neutral-400 leading-relaxed mb-8 text-sm">
-                There is no AI slop. Every node runs on deterministic routing — Gemini 2.5 for reasoning, Nemotron for voice, TensorRT-LLM for latency, and NeMo Guardrails for absolute security.
+                Every agent call is audited, rate-limited, and secured. NeMo Guardrails handle content safety. Vector memory persists context across sessions. You own the data and the infrastructure.
               </p>
               <Link href="/pricing" className="inline-flex items-center justify-center px-6 py-3 rounded-lg bg-white text-black font-semibold text-sm hover:bg-neutral-200 transition-colors">
                 Deploy Infrastructure
@@ -339,23 +337,23 @@ export default function Home() {
       <section className="py-32 bg-[#000000] px-6 border-t border-white/5">
         <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="max-w-3xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-bold text-white mb-4 tracking-tight">Operational Parameters</h2>
-            <p className="text-neutral-500">Declassification of core system mechanics and billing infrastructure.</p>
+            <h2 className="text-3xl md:text-5xl font-bold text-white mb-4 tracking-tight">Common Questions</h2>
+            <p className="text-neutral-500">How the platform works, what it costs, and what you own.</p>
           </div>
-          
+
           <div className="border border-white/5 rounded-2xl bg-[#0A0A0A] p-2">
             {[
               {
-                q: "What defines Sovereign Matrix?",
-                a: "It is an autonomous Omni-Channel orchestrator. It is not a generic chatbot. It is a cluster of 80+ native AI agents generating campaigns and ripping competitive intelligence."
+                q: "What is Sovereign Matrix?",
+                a: "An AI agent orchestration platform with 100+ specialized agents for sales, marketing, content, and operations. It routes tasks across multiple AI models and executes multi-step workflows autonomously."
               },
               {
-                q: "What are the local execution capabilities?",
-                a: "Using the proprietary OpenClaw daemon, the Matrix can execute workflows completely offline and air-gapped using your native macOS terminal and local models."
+                q: "Can agents run locally without cloud?",
+                a: "Yes. The OpenClaw daemon runs on your local machine using Ollama models. You can execute workflows completely offline — your data never leaves your hardware."
               },
               {
-                q: "Can I sever my license connection?",
-                a: "Yes. All infrastructure licenses are deployed on a month-to-month, un-contracted chassis. You may terminate operations via your dashboard instantly without penalty."
+                q: "Is there a contract or lock-in?",
+                a: "No. All plans are month-to-month with no contracts. You can cancel instantly from your dashboard. Your data and configurations are always exportable."
               },
             ].map((faq, i) => (
               <FAQItem key={i} question={faq.q} answer={faq.a} />
@@ -366,10 +364,10 @@ export default function Home() {
 
       <section className="py-32 text-center px-6 bg-[#050505] border-t border-white/5">
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-          <h2 className="text-4xl md:text-6xl font-bold text-white mb-6 tracking-tight">Deployment Imminent.</h2>
-          <p className="text-lg text-neutral-500 max-w-xl mx-auto mb-12">The question isn&apos;t whether to automate. It&apos;s whether you&apos;ll establish sovereignty before your competitors do.</p>
+          <h2 className="text-4xl md:text-6xl font-bold text-white mb-6 tracking-tight">Ready to Deploy.</h2>
+          <p className="text-lg text-neutral-500 max-w-xl mx-auto mb-12">Start with the free tier. Scale when you see results. No credit card required.</p>
           <Link href="/pricing" className="inline-flex px-8 py-4 bg-white text-black font-semibold rounded-full text-sm hover:bg-neutral-200 transition-colors">
-            Initialize Matrix
+            Get Started Free
           </Link>
         </motion.div>
       </section>
@@ -382,7 +380,7 @@ export default function Home() {
                 <SovereignLogo size="sm" />
                 <span className="text-sm font-semibold tracking-wide text-white">Sovereign OS</span>
               </div>
-              <p className="text-sm text-neutral-500 leading-relaxed max-w-xs">An elite, AI-driven defense-grade orchestration platform built to replace traditional marketing agency workflows.</p>
+              <p className="text-sm text-neutral-500 leading-relaxed max-w-xs">Open-source AI agent orchestration for enterprises. Self-hosted or cloud-managed.</p>
             </div>
 
             <div>
@@ -413,8 +411,8 @@ export default function Home() {
           </div>
 
           <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-xs text-neutral-600">© 2026 Sovereign Matrix Protocol. All channels encrypted.</p>
-            <p className="text-xs text-neutral-600">Transacting globally via Secured Pipelines.</p>
+            <p className="text-xs text-neutral-600">© 2026 Sovereign Matrix. All rights reserved.</p>
+            <p className="text-xs text-neutral-600">Built in South Africa.</p>
           </div>
         </div>
       </footer>

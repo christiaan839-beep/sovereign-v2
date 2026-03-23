@@ -153,7 +153,7 @@ export function AIDemoShowcase() {
 
         {/* Right Side: Terminal Output */}
         <div className="bg-[#050505] p-6 lg:p-8 font-mono overflow-y-auto relative">
-           <div className="absolute inset-0 bg-[url('/noise.png')] opacity-20 pointer-events-none" />
+           <div className="absolute inset-0 noise-overlay pointer-events-none" />
 
            <div className="relative z-10 flex flex-col h-full">
               {mode === "idle" ? (

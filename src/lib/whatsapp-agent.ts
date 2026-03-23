@@ -1,13 +1,16 @@
 import { google } from "@ai-sdk/google";
 import { generateText } from "ai";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("whatsapp-agent");
 // import { db } from "@/db";
 // import { conversations } from "@/db/schema";
 
-// ⚡ SOVEREIGN MATRIX // WHATSAPP NEURAL ENGINE
+// SOVEREIGN MATRIX // WHATSAPP NEURAL ENGINE
 // This physically executes absolute memory and context for the $5,000/mo Cartel closer.
 
 export async function handleWhatsAppMessage(incomingPhone: string, messageBody: string) {
-  console.log(`[WHATSAPP NODE] Intercepting transmission from ${incomingPhone}...`);
+  log.info(`Intercepting transmission from ${incomingPhone}...`);
 
   // 1. Retrieve Historical Context (Memory)
   // In full production, this queries Neon Postgres to recall the last 30 days of conversation
@@ -40,6 +43,6 @@ export async function handleWhatsAppMessage(incomingPhone: string, messageBody: 
   // 4. Save to Database (Memory Persistence)
   // await db.insert(conversations).values({ phone: incomingPhone, message: messageBody, response: text, timestamp: new Date() });
 
-  console.log(`[WHATSAPP NODE] Transmission calculated. Yield: ${text.length} bytes.`);
+  log.info(`Transmission calculated. Yield: ${text.length} bytes.`);
   return text;
 }

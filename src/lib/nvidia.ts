@@ -2,8 +2,17 @@ import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { settings } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { createLogger } from "@/lib/logger";
 
+const log = createLogger("nvidia");
 const NVIDIA_BASE_URL = 'https://integrate.api.nvidia.com/v1';
+
+// Failover chain: if requested model fails, try these in order
+const FAILOVER_MODELS = [
+  "nvidia/nemotron-ultra-253b-v1",
+  "deepseek-ai/deepseek-v3-2-0324",
+  "mistralai/mistral-nemotron",
+];
 
 /**
  * Retrieve the NVIDIA NIM API key — checks BYOK vault first, falls back to env.
@@ -57,6 +66,35 @@ export async function nimChat(
 
   if (!response.ok) {
     const errorBody = await response.text().catch(() => "");
+
+    // Automatic failover: try alternative models
+    if (!options.stream) {
+      for (const fallbackModel of FAILOVER_MODELS) {
+        if (fallbackModel === model) continue;
+        try {
+          log.warn("NIM model failed, attempting failover", { failed: model, fallback: fallbackModel });
+          const fallbackRes = await fetch(`${NVIDIA_BASE_URL}/chat/completions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+            body: JSON.stringify({
+              model: fallbackModel,
+              messages,
+              temperature: options.temperature ?? 0.2,
+              max_tokens: options.maxTokens ?? 1024,
+              stream: false,
+            }),
+          });
+          if (fallbackRes.ok) {
+            const fallbackData = await fallbackRes.json();
+            log.info("Failover succeeded", { model: fallbackModel });
+            return fallbackData.choices[0].message.content;
+          }
+        } catch {
+          continue;
+        }
+      }
+    }
+
     throw new Error(`NVIDIA NIM Error (${response.status}): ${response.statusText}. ${errorBody}`);
   }
 

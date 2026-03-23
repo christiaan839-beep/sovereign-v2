@@ -191,7 +191,7 @@ export default function VoiceSwarmPage() {
              </div>
 
              {/* Transcription Area */}
-             <div className="flex-1 p-6 md:p-8 overflow-y-auto bg-[url('/noise.png')] bg-repeat opacity-90 custom-scrollbar">
+             <div className="flex-1 p-6 md:p-8 overflow-y-auto relative noise-overlay custom-scrollbar">
                 {!activeCall && transcripts.length === 0 ? (
                   <div className="h-full flex flex-col items-center justify-center text-center opacity-40">
                     <Activity className="w-16 h-16 text-neutral-600 mb-6" />

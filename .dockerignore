@@ -1,11 +1,14 @@
 node_modules
 npm-debug.log
-README.md
 .next
 .git
+.github
 .env
 .env.*
 !.env.production
 .DS_Store
-server/
-.gemini/
+.claude
+.gemini
+drizzle
+server/python-agents
+*.md

@@ -179,3 +179,19 @@ export const voiceCalls = pgTable("voice_calls", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// ═══════════════════════════════════════════
+// Phase 21: Usage Metering & Token Tracking
+// ═══════════════════════════════════════════
+
+export const usage = pgTable("usage", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull(),
+  agentId: text("agent_id").notNull(),
+  model: text("model").notNull(),
+  tokensUsed: integer("tokens_used").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("usage_user_id_idx").on(table.userId),
+  index("usage_created_at_idx").on(table.createdAt),
+]);
+

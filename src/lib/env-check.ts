@@ -4,6 +4,10 @@
  * Called automatically by root layout or middleware.
  */
 
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("env-check");
+
 export function validateEnvironment() {
   if (typeof window !== "undefined") return; // Only run on server
 
@@ -16,9 +20,9 @@ export function validateEnvironment() {
   const missingCritical = criticalVars.filter(key => !process.env[key]);
 
   if (missingCritical.length > 0) {
-    console.error(`\n[SOVEREIGN MATRIX] 🔴 CRITICAL ERROR: Missing required environment variables:`);
-    missingCritical.forEach(key => console.error(`  - ${key}`));
-    console.error(`Platform operations will fail. Please configure these variables immediately.\n`);
+    log.error("CRITICAL: Missing required environment variables:");
+    missingCritical.forEach(key => log.error(`  - ${key}`));
+    log.error("Platform operations will fail. Please configure these variables immediately.");
   }
 
   const optionalVars = [
@@ -31,8 +35,8 @@ export function validateEnvironment() {
   const missingOptional = optionalVars.filter(key => !process.env[key]);
   
   if (missingOptional.length > 0) {
-    console.warn(`\n[SOVEREIGN MATRIX] 🟡 WARNING: Some optimal features are degraded due to missing optional variables:`);
-    missingOptional.forEach(key => console.warn(`  - ${key}`));
-    console.warn(`Provide these keys to unlock full platform capabilities.\n`);
+    log.warn("Some optimal features are degraded due to missing optional variables:");
+    missingOptional.forEach(key => log.warn(`  - ${key}`));
+    log.warn("Provide these keys to unlock full platform capabilities.");
   }
 }

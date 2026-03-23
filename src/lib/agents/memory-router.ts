@@ -1,13 +1,17 @@
 /**
  * Memory Router (Langchain/LlamaIndex Integration)
- * 
+ *
  * Intercepts AGI generation requests and queries the Omniscient Neural Memory
  * BEFORE synthesizing content.
  */
 
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("memory-router");
+
 export async function queryUnifiedVectorSpace(semanticQuery: string, limit: number = 3) {
-  console.log(`[MEMORY ROUTER] Intercepted DSPy request. Querying vector space for context...`);
-  console.log(`[QUERY] -> "${semanticQuery}"`);
+  log.info("Intercepted DSPy request. Querying vector space for context...");
+  log.debug(`Query: "${semanticQuery}"`);
   
   // Implementation Note:
   // Using LlamaIndex or Langchain, we'd initialize the GeminiEmbedding model
@@ -17,7 +21,7 @@ export async function queryUnifiedVectorSpace(semanticQuery: string, limit: numb
   // const vectorStore = new PineconeVectorStore(pineconeIndex);
   // const results = await vectorStore.similaritySearch(semanticQuery, limit);
 
-  console.log(`[PINECONE] Extracting Top-${limit} multimodal matches from memory lake.`);
+  log.info(`Extracting Top-${limit} multimodal matches from memory lake.`);
   
   // Simulate retrieval
   return [

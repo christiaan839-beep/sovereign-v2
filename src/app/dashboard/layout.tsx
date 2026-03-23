@@ -270,7 +270,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <ErrorBoundary>
               <ToastProvider>
                 <CinematicOnboarding>
-                  {children}
+                  <motion.div
+                    key={pathname}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.15, ease: "easeOut" }}
+                  >
+                    {children}
+                  </motion.div>
                 </CinematicOnboarding>
               </ToastProvider>
             </ErrorBoundary>

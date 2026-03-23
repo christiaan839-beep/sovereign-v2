@@ -1,5 +1,8 @@
 import { Pinecone } from "@pinecone-database/pinecone";
 import { embed, ai } from "./ai";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("memory");
 
 export async function getPineconeClient(apiKey?: string, indexName?: string) {
   const key = apiKey || process.env.PINECONE_API_KEY;
@@ -67,7 +70,7 @@ Generate a concise 2-sentence context summary explaining exactly what this chunk
 
     return { success: true, chunksProcessed: processed };
   } catch (err) {
-    console.error("Contextual RAG Ingestion Failed:", err);
+    log.error("Contextual RAG Ingestion Failed:", err);
     return { success: false, chunksProcessed: 0 };
   }
 }
@@ -106,7 +109,7 @@ export async function recall(query: string, limit: number = 2, pineconeKey?: str
 
     return results.matches || [];
   } catch (e) {
-    console.error("Pinecone recall failed:", e);
+    log.error("Pinecone recall failed:", e);
     return [];
   }
 }

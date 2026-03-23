@@ -6,10 +6,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import { SovereignLogo } from "@/components/ui/SovereignLogo";
 
 export function Pricing() {
+  const [notification, setNotification] = useState<{ message: string; type: "error" | "success" } | null>(null);
+  const showNotification = (message: string, type: "error" | "success" = "error") => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), 4000);
+  };
   const tiers = [
     {
       name: "Sovereign Node",
-      description: "Replace your SDR and Junior Designer entirely. Includes the OpenClaw Ghost Fleet.",
+      description: "Core AI agents for content, SEO, and lead generation. Local execution included.",
       price: "R9,997",
       period: "/mo",
       icon: Zap,
@@ -33,7 +38,7 @@ export function Pricing() {
     },
     {
       name: "Sovereign Array",
-      description: "Replace a full Growth Team. Unlimited generations and priority Nemotron 70B inference.",
+      description: "Unlimited AI generations, voice agents, video creation, and priority processing.",
       price: "R24,997",
       period: "/mo",
       icon: Crown,
@@ -58,7 +63,7 @@ export function Pricing() {
     },
     {
       name: "Cartel License",
-      description: "White-label the Sovereign Matrix to resell autonomous hubs to local businesses.",
+      description: "White-label the platform with your branding. Resell to clients with custom portals.",
       price: "R49,997",
       period: "/mo",
       icon: Server,
@@ -127,9 +132,9 @@ export function Pricing() {
         if (form) form.submit();
         return;
       }
-      alert(data.error || "Deployment authorization failed. Ensure PayFast API keys are set.");
+      showNotification(data.error || "Payment setup incomplete. Please configure PayFast API keys.");
     } catch {
-      alert("Uplink severed. Try again.");
+      showNotification("Connection failed. Please try again.");
     } finally {
       setIsProcessing(false);
     }
@@ -139,13 +144,32 @@ export function Pricing() {
 
   return (
     <div className="w-full max-w-7xl mx-auto py-24 px-6 relative z-10">
+      {/* Inline Notification */}
+      <AnimatePresence>
+        {notification && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className={`fixed top-6 right-6 z-[200] px-4 py-3 rounded-xl border backdrop-blur-xl shadow-lg flex items-center gap-3 ${
+              notification.type === "error" ? "border-rose-500/30 bg-rose-500/10" : "border-emerald-500/30 bg-emerald-500/10"
+            }`}
+          >
+            <span className="text-xs font-medium text-white">{notification.message}</span>
+            <button onClick={() => setNotification(null)} className="text-neutral-500 hover:text-white">
+              <XIcon className="w-3 h-3" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="text-center mb-16 flex flex-col items-center">
         <div className="mb-6 animate-[pulse_4s_ease-in-out_infinite]">
            <SovereignLogo size="lg" />
         </div>
-        <h2 className="text-4xl md:text-5xl font-bold text-white serif-text mb-6">Enterprise Architecture.</h2>
+        <h2 className="text-4xl md:text-5xl font-bold text-white serif-text mb-6">Simple, Transparent Pricing.</h2>
         <p className="text-neutral-400 max-w-2xl mx-auto">
-          Scale your autonomous agency instantly. Deploy a node, authorize an array, or initialize a cartel.
+          Start free, scale when you see results. No contracts, cancel anytime.
         </p>
       </div>
 

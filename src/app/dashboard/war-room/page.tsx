@@ -208,7 +208,7 @@ export default function WarRoomColosseum() {
 
                <div 
                  ref={scrollRef}
-                 className="p-6 lg:p-10 flex-1 overflow-y-auto space-y-8 custom-scrollbar bg-[url('/noise.png')] bg-repeat opacity-95"
+                 className="p-6 lg:p-10 flex-1 overflow-y-auto space-y-8 custom-scrollbar relative noise-overlay"
                >
                   {messages.length === 0 && status === "idle" && (
                     <div className="h-full flex flex-col items-center justify-center text-center opacity-40">

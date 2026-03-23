@@ -1,10 +1,19 @@
 /**
- * SOVEREIGN MATRIX: ANTHROPIC MCP CLIENT (NemoClaw Bridge)
- * 
- * This module enables Sovereign agents to communicate natively with 
- * local or remote Model Context Protocol (MCP) servers (e.g., FileSystem, Postgres, Slack).
- * It bypasses custom API boilerplate and connects directly to the Claude Computer Use Sandbox.
+ * SOVEREIGN MATRIX: MCP TOOL BRIDGE
+ *
+ * Real MCP implementation that wraps existing platform modules
+ * (database, memory, computer-use) as MCP-compatible tool interfaces.
+ *
+ * Instead of running separate MCP server processes, we expose
+ * Drizzle DB queries, Pinecone memory, and Computer Use API
+ * through a unified tool execution interface.
  */
+
+import { db } from "@/db";
+import { sql } from "drizzle-orm";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("mcp");
 
 export interface MCPToolRequest {
   serverId: string;
@@ -16,54 +25,176 @@ export interface MCPResponse {
   success: boolean;
   data?: unknown;
   error?: string;
-  cached?: boolean; // Indicates if Anthropic Prompt Caching caught this
+  latencyMs?: number;
 }
 
-export class AnthropicMCPClient {
-  private static MOCK_LATENCY = 600;
+interface MCPServer {
+  id: string;
+  name: string;
+  status: "operational" | "degraded" | "offline";
+  tools: string[];
+}
 
+// ─── Tool Handlers ───
+
+async function handlePostgres(toolName: string, params: Record<string, unknown>): Promise<MCPResponse> {
+  switch (toolName) {
+    case "query": {
+      const query = params.sql as string;
+      if (!query) return { success: false, error: "Missing 'sql' parameter" };
+      // Only allow SELECT queries for safety
+      if (!query.trim().toUpperCase().startsWith("SELECT")) {
+        return { success: false, error: "Only SELECT queries are allowed via MCP" };
+      }
+      try {
+        const result = await db.execute(sql.raw(query));
+        return { success: true, data: { rows: result, rowCount: Array.isArray(result) ? result.length : 0 } };
+      } catch (err) {
+        return { success: false, error: err instanceof Error ? err.message : "Query failed" };
+      }
+    }
+    case "list_tables": {
+      try {
+        const result = await db.execute(
+          sql`SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name`
+        );
+        return { success: true, data: result };
+      } catch (err) {
+        return { success: false, error: err instanceof Error ? err.message : "Failed to list tables" };
+      }
+    }
+    case "describe_table": {
+      const table = params.table as string;
+      if (!table) return { success: false, error: "Missing 'table' parameter" };
+      try {
+        const result = await db.execute(
+          sql`SELECT column_name, data_type, is_nullable FROM information_schema.columns WHERE table_name = ${table} ORDER BY ordinal_position`
+        );
+        return { success: true, data: result };
+      } catch (err) {
+        return { success: false, error: err instanceof Error ? err.message : "Failed to describe table" };
+      }
+    }
+    default:
+      return { success: false, error: `Unknown postgres tool: ${toolName}` };
+  }
+}
+
+async function handleMemory(toolName: string, params: Record<string, unknown>): Promise<MCPResponse> {
+  switch (toolName) {
+    case "store": {
+      const text = params.text as string;
+      const namespace = (params.namespace as string) || "default";
+      if (!text) return { success: false, error: "Missing 'text' parameter" };
+      try {
+        const { memorize } = await import("@/lib/memory");
+        await memorize(text, namespace);
+        return { success: true, data: { stored: true, namespace } };
+      } catch (err) {
+        return { success: false, error: err instanceof Error ? err.message : "Memory store failed" };
+      }
+    }
+    case "recall": {
+      const query = params.query as string;
+      const namespace = (params.namespace as string) || "default";
+      if (!query) return { success: false, error: "Missing 'query' parameter" };
+      try {
+        const { recall } = await import("@/lib/memory");
+        const results = await recall(query, namespace);
+        return { success: true, data: { results, count: Array.isArray(results) ? results.length : 0 } };
+      } catch (err) {
+        return { success: false, error: err instanceof Error ? err.message : "Memory recall failed" };
+      }
+    }
+    default:
+      return { success: false, error: `Unknown memory tool: ${toolName}` };
+  }
+}
+
+async function handleComputerUse(toolName: string, params: Record<string, unknown>): Promise<MCPResponse> {
+  // Proxy to the computer-use API endpoint
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_URL || "http://localhost:3000";
+    const res = await fetch(`${baseUrl}/api/agents/computer-use`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: toolName, ...params }),
+    });
+    if (!res.ok) return { success: false, error: `Computer use API returned ${res.status}` };
+    const data = await res.json();
+    return { success: true, data };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : "Computer use failed" };
+  }
+}
+
+// ─── Main MCP Client ───
+
+export class AnthropicMCPClient {
   /**
-   * Dispatches an execution command to a designated MCP Server running inside the Sandbox.
+   * Execute a tool on a specific MCP server.
    */
   static async executeTool(request: MCPToolRequest): Promise<MCPResponse> {
-    console.log(`[MCP CLIENT] Connecting to Server: ${request.serverId} -> Tool: ${request.toolName}`);
-    
-    // Simulate network bridge latency to Docker Sandbox
-    await new Promise(resolve => setTimeout(resolve, this.MOCK_LATENCY));
+    const start = Date.now();
+    log.info("Executing MCP tool", { server: request.serverId, tool: request.toolName });
 
-    // Stub for actual implementation connecting to the Sandbox via WebSockets/REST
-    if (request.serverId === "mcp-filesystem" && request.toolName === "read_file") {
-      return {
-        success: true,
-        data: { content: "Sample extracted text from secure vault." },
-        cached: true // Ephemeral cache hitting
-      };
+    let result: MCPResponse;
+
+    switch (request.serverId) {
+      case "mcp-postgres":
+        result = await handlePostgres(request.toolName, request.parameters);
+        break;
+      case "mcp-memory":
+        result = await handleMemory(request.toolName, request.parameters);
+        break;
+      case "mcp-computer-use":
+        result = await handleComputerUse(request.toolName, request.parameters);
+        break;
+      default:
+        result = { success: false, error: `Unknown MCP server: ${request.serverId}` };
     }
 
-    if (request.serverId === "mcp-computer-use") {
-      console.log(`[COMPUTER USE] Dispatching coordinate execution to ${request.parameters.action}`);
-      return {
-        success: true,
-        data: { screenshot: "base64_img_data", status: "completed" },
-        cached: false 
-      };
-    }
-
-    return { success: false, error: "MCP Route Not Established" };
+    result.latencyMs = Date.now() - start;
+    return result;
   }
 
   /**
-   * Retrieves the active list of MCP Tools available to the swarm from the Sandbox.
+   * Discover available MCP tools with live health status.
    */
-  static async discoverTools(): Promise<string[]> {
-    return [
-      "mcp-filesystem:read",
-      "mcp-filesystem:write",
-      "mcp-memory:store",
-      "mcp-computer-use:click",
-      "mcp-computer-use:type",
-      "mcp-postgres:query",
-      "mcp-slack:send"
-    ];
+  static async discoverTools(): Promise<MCPServer[]> {
+    const servers: MCPServer[] = [];
+
+    // Check Postgres
+    try {
+      await db.execute(sql`SELECT 1`);
+      servers.push({
+        id: "mcp-postgres",
+        name: "PostgreSQL (Neon)",
+        status: "operational",
+        tools: ["query", "list_tables", "describe_table"],
+      });
+    } catch {
+      servers.push({ id: "mcp-postgres", name: "PostgreSQL (Neon)", status: "offline", tools: [] });
+    }
+
+    // Check Memory (Pinecone)
+    const hasPinecone = !!(process.env.PINECONE_API_KEY && process.env.PINECONE_INDEX);
+    servers.push({
+      id: "mcp-memory",
+      name: "Vector Memory (Pinecone)",
+      status: hasPinecone ? "operational" : "offline",
+      tools: hasPinecone ? ["store", "recall"] : [],
+    });
+
+    // Check Computer Use (Claude)
+    const hasClaude = !!process.env.ANTHROPIC_API_KEY;
+    servers.push({
+      id: "mcp-computer-use",
+      name: "Computer Use (Claude)",
+      status: hasClaude ? "operational" : "offline",
+      tools: hasClaude ? ["click", "type", "screenshot", "bash"] : [],
+    });
+
+    return servers;
   }
 }

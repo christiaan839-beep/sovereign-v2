@@ -8,6 +8,9 @@ import { settings } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { nimChat } from "./nvidia";
 import type { AIOptions } from "@/types";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("ai");
 
 const globalGeminiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY || "";
 const globalAnthropicKey = process.env.ANTHROPIC_API_KEY || "";
@@ -26,7 +29,7 @@ async function getUserKeys(): Promise<{ gemini?: string, tavily?: string, anthro
       }
     }
   } catch (e) {
-    console.error("Failed to load user API keys in ai.ts:", e);
+    log.error("Failed to load user API keys:", e);
   }
   return {};
 }
@@ -107,7 +110,7 @@ async function ollamaText(prompt: string, system?: string, ollamaUrl: string = "
     const data = await res.json();
     return data.response;
   } catch (err) {
-    console.error("Local Ollama Node failed:", err);
+    log.error("Local Ollama Node failed:", err);
     throw err;
   }
 }
@@ -276,7 +279,7 @@ export async function research_ai(query: string, prompt: string, options: AIOpti
       system: `${options.system || "You are an elite researcher."}\n\nYou have been provided with real-time web search results. Use this data absolutely strictly to answer the user's task. If the search results contradict your training data, trust the search results.` 
     });
   } catch (error) {
-    console.error("[Live Search Error]:", error);
+    log.error("Live Search Error:", error);
     return ai(prompt, options);
   }
 }

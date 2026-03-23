@@ -24,8 +24,23 @@ export default function OnboardingPage() {
 
   const deployAgents = async () => {
     setDeploying(true);
-    // Simulate agent deployment
-    await new Promise(r => setTimeout(r, 2000));
+    try {
+      // Save onboarding config to user settings
+      await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          config: JSON.stringify({
+            companyName,
+            selectedGoals,
+            deployedAgents: selectedAgents,
+            onboardedAt: new Date().toISOString(),
+          }),
+        }),
+      });
+    } catch {
+      // Settings save failed — continue anyway, don't block user
+    }
     setDeploying(false);
     setDeployed(true);
   };

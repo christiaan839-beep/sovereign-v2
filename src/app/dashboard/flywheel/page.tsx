@@ -99,7 +99,7 @@ export default function FlywheelPage() {
                   ) : null}
                </div>
 
-               <div className="p-6 flex-1 bg-[url('/noise.png')] bg-repeat opacity-95">
+               <div className="p-6 flex-1 relative noise-overlay">
                   <div className="mb-6 pb-6 border-b border-white/5">
                      <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
                         <Settings2 className="w-4 h-4 text-neutral-400" /> Guardrail Configuration
