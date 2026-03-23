@@ -46,14 +46,14 @@ const NAV_GROUPS = [
       { href: "/dashboard/seo-dominator", label: "SEO X-Ray", icon: Search },
       { href: "/dashboard/content-factory", label: "Content Factory", icon: Factory },
       { href: "/dashboard/competitor", label: "Competitor Intel", icon: Shield },
-      { href: "/dashboard/nemo-claw", label: "Edge Terminal", icon: Cpu },
+      { href: "/dashboard/nemo-claw", label: "Local AI (NemoClaw)", icon: Cpu },
       { href: "/dashboard/voice-swarm", label: "Voice Swarm", icon: Mic },
       { href: "/dashboard/voice-assistant", label: "Voice Assistant", icon: Mic },
       { href: "/dashboard/podcast", label: "PDF-to-Podcast", icon: Headphones },
       { href: "/dashboard/omni-search", label: "RAG Search", icon: Database },
       { href: "/dashboard/cyber-audit", label: "Cyber Audit", icon: ShieldAlert },
-      { href: "/dashboard/ghost-protocol", label: "Ghost Protocol", icon: Ghost },
-      { href: "/dashboard/flywheel", label: "Anti-Slop Flywheel", icon: RefreshCcw },
+      { href: "/dashboard/ghost-protocol", label: "Stealth Research", icon: Ghost },
+      { href: "/dashboard/flywheel", label: "Quality Engine", icon: RefreshCcw },
     ]
   },
   {
@@ -64,10 +64,10 @@ const NAV_GROUPS = [
       { href: "/dashboard/visual-studio", label: "Visual Studio", icon: Palette },
       { href: "/dashboard/page-builder", label: "Page Builder", icon: Globe2 },
       { href: "/dashboard/avatar", label: "Digital Human", icon: ScanFace },
-      { href: "/dashboard/deepfake-studio", label: "Executive Deepfake", icon: FileVideo },
-      { href: "/dashboard/vsl-hacker", label: "Cosmos VSL", icon: Video },
+      { href: "/dashboard/deepfake-studio", label: "Video Clone", icon: FileVideo },
+      { href: "/dashboard/vsl-hacker", label: "Video Sales Letter", icon: Video },
       { href: "/dashboard/edify-forge", label: "Edify 3D Forge", icon: Cuboid },
-      { href: "/dashboard/holographic-agent", label: "Holographic Agent", icon: CircuitBoard },
+      { href: "/dashboard/holographic-agent", label: "3D Avatar", icon: CircuitBoard },
     ]
   },
   {

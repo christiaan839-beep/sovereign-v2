@@ -191,7 +191,7 @@ export default function Home() {
             </span>
             <span className="text-neutral-400">Trusted by agencies worldwide</span>
             <span className="w-px h-3 bg-white/10" />
-            <span className="text-neutral-500">109 AI agents running now</span>
+            <span className="text-neutral-500">109 agents deployed</span>
           </motion.div>
 
           <motion.h1
@@ -248,7 +248,7 @@ export default function Home() {
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
                     <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-neutral-500 font-mono">Live Agent Network</span>
                   </div>
-                  <span className="text-[10px] text-neutral-600 font-mono">106 agents deployed</span>
+                  <span className="text-[10px] text-neutral-600 font-mono">109 agents deployed</span>
                 </div>
                 <div className="p-4">
                   <AgentOrgMap />
@@ -290,10 +290,10 @@ export default function Home() {
             viewport={{ once: true }}
             className="grid grid-cols-2 md:grid-cols-4 gap-12 w-full max-w-3xl mx-auto mb-24"
           >
-            <AnimatedCounter end={106} suffix="" label="Agents" />
+            <AnimatedCounter end={109} suffix="" label="Agents" />
             <AnimatedCounter end={39} label="Models" />
             <AnimatedCounter end={12} label="Languages" />
-            <AnimatedCounter end={0} suffix="ms" label="Cold Start" />
+            <AnimatedCounter end={3} suffix="" label="Payment Methods" />
           </motion.div>
 
           <SocialProofMetrics />
@@ -467,8 +467,8 @@ export default function Home() {
                   { name: "Anthropic MCP", desc: "Open Tool Standard" },
                   { name: "Claude Computer Use", desc: "OS-Level Automation" },
                   { name: "NemoClaw OS", desc: "Hardware Control" },
-                  { name: "TensorRT", desc: "Microsecond Latency" },
-                  { name: "NeMo Guardrails", desc: "Zero Hallucinations" },
+                  { name: "NVIDIA NIM", desc: "Free Inference" },
+                  { name: "NeMo Guardrails", desc: "Content Safety" },
                 ].map((tech) => (
                   <div key={tech.name} className="p-4 rounded-xl bg-[#0A0A0A] border border-white/5">
                     <p className="text-sm font-semibold text-white mb-1">{tech.name}</p>
@@ -505,7 +505,7 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-20">
             {[
               {
-                metric: "106",
+                metric: "109",
                 label: "Specialized Agents",
                 desc: "Each purpose-built for a specific business function. Not generic chatbots — real autonomous workers."
               },
@@ -615,26 +615,26 @@ export default function Home() {
             <div className="col-span-2 md:col-span-1">
               <div className="flex items-center gap-3 mb-6">
                 <SovereignLogo size="sm" />
-                <span className="text-sm font-semibold tracking-wide text-white">Sovereign OS</span>
+                <span className="text-sm font-semibold tracking-wide text-white">Sovereign Matrix</span>
               </div>
-              <p className="text-sm text-neutral-500 leading-relaxed max-w-xs">Open-source AI agent orchestration for enterprises. Self-hosted or cloud-managed.</p>
+              <p className="text-sm text-neutral-500 leading-relaxed max-w-xs">AI agent platform for agencies. 109 agents, 39 models, one dashboard.</p>
             </div>
 
             <div>
               <h4 className="text-xs font-semibold text-white mb-6">Infrastructure</h4>
               <ul className="space-y-4">
-                <li><Link href="/pricing" className="text-sm text-neutral-500 hover:text-white transition-colors">Architecture Overview</Link></li>
-                <li><Link href="/#pricing" className="text-sm text-neutral-500 hover:text-white transition-colors">Licensing Model</Link></li>
-                <li><Link href="/dashboard" className="text-sm text-neutral-500 hover:text-white transition-colors">Command Terminal</Link></li>
+                <li><Link href="/pricing" className="text-sm text-neutral-500 hover:text-white transition-colors">Pricing</Link></li>
+                <li><Link href="/demo" className="text-sm text-neutral-500 hover:text-white transition-colors">Platform Demo</Link></li>
+                <li><Link href="/dashboard" className="text-sm text-neutral-500 hover:text-white transition-colors">Dashboard</Link></li>
               </ul>
             </div>
 
             <div>
               <h4 className="text-xs font-semibold text-white mb-6">Compliance</h4>
               <ul className="space-y-4">
-                <li><Link href="/privacy" className="text-sm text-neutral-500 hover:text-white transition-colors">Privacy Paradigm</Link></li>
-                <li><Link href="/terms" className="text-sm text-neutral-500 hover:text-white transition-colors">Terms of Operations</Link></li>
-                <li><span className="text-sm text-neutral-600">POPIA Adherent</span></li>
+                <li><Link href="/privacy" className="text-sm text-neutral-500 hover:text-white transition-colors">Privacy Policy</Link></li>
+                <li><Link href="/terms" className="text-sm text-neutral-500 hover:text-white transition-colors">Terms of Service</Link></li>
+                <li><span className="text-sm text-neutral-600">POPIA Compliant</span></li>
               </ul>
             </div>
 
