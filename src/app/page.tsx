@@ -201,22 +201,26 @@ export default function Home() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1, duration: 1, ease: [0.16, 1, 0.3, 1] }}
-            className="text-5xl sm:text-7xl md:text-8xl lg:text-[7rem] font-black mb-8 leading-[0.95] tracking-[-0.04em]"
+            className="text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-black mb-10 leading-[0.9] tracking-[-0.04em]"
           >
-            <span className="text-white">Your Agents.</span>
+            <span className="text-white">Deploy.</span>
             <br/>
-            <span className="bg-clip-text text-transparent bg-[length:200%_auto] animate-[shimmer_8s_ease-in-out_infinite] bg-gradient-to-r from-white via-emerald-400/60 to-white">
-              Your Infrastructure.
+            <span className="bg-clip-text text-transparent bg-[length:200%_auto] animate-[shimmer_8s_ease-in-out_infinite] bg-gradient-to-r from-white via-emerald-400/80 to-white">
+              Automate.
             </span>
+            <br/>
+            <span className="text-white">Dominate.</span>
           </motion.h1>
 
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5, duration: 0.8 }}
-            className="text-base md:text-lg text-neutral-500 max-w-xl mx-auto leading-relaxed mb-16 font-normal"
+            className="text-lg md:text-xl text-neutral-400 max-w-2xl mx-auto leading-relaxed mb-16 font-light"
           >
-            Deploy AI agents across sales, marketing, and operations. Open-source models you own. Infrastructure you control.
+            109 AI agents. 39 models. Zero per-token costs.
+            <br className="hidden sm:block" />
+            <span className="text-neutral-500">The autonomous operating system for agencies and enterprises.</span>
           </motion.p>
 
           <div className="mb-20">
@@ -241,21 +245,22 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Trust Badges — minimal, spaced */}
+          {/* Trust Badges — emerald accent */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.7, duration: 0.8 }}
-            className="flex flex-wrap items-center justify-center gap-6 mb-16 max-w-3xl mx-auto"
+            className="flex flex-wrap items-center justify-center gap-4 mb-16 max-w-4xl mx-auto"
           >
             {[
-              { icon: Lock, label: "Open-Source" },
+              { icon: Lock, label: "Open-Source Models" },
               { icon: Cpu, label: "NVIDIA NIM" },
-              { icon: Zap, label: "Zero Cost" },
+              { icon: Zap, label: "Zero Inference Cost" },
               { icon: Activity, label: "5-Layer Safety" },
+              { icon: Globe, label: "White-Label Ready" },
             ].map((badge) => (
-              <div key={badge.label} className="flex items-center gap-2 text-[11px] font-medium text-neutral-500 cursor-default">
-                <badge.icon className="w-3.5 h-3.5 text-neutral-600" />
+              <div key={badge.label} className="flex items-center gap-2.5 px-4 py-2 rounded-full border border-emerald-500/10 bg-emerald-500/[0.02] text-[11px] font-medium text-neutral-400 cursor-default hover:border-emerald-500/20 transition-colors">
+                <badge.icon className="w-3.5 h-3.5 text-emerald-500/60" />
                 {badge.label}
               </div>
             ))}
@@ -472,7 +477,7 @@ export default function Home() {
       {/* Enterprise Section — ElevenLabs-caliber positioning */}
       <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
       <section className="py-32 md:py-40 bg-[#000000] px-6 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_50%,rgba(99,102,241,0.04),transparent)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_50%,rgba(16,185,129,0.04),transparent)]" />
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
