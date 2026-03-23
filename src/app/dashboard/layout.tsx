@@ -22,6 +22,7 @@ import { UsageBar } from '@/components/ui/UsageBar';
 import { CommandPalette } from '@/components/ui/CommandPalette';
 import { SystemPulseStrip } from '@/components/dashboard/SystemPulseStrip';
 import { SmartContextBar } from '@/components/dashboard/SmartContextBar';
+import { SovereignAssistant } from '@/components/dashboard/SovereignAssistant';
 
 const NAV_GROUPS = [
   {
@@ -287,6 +288,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </main>
 
         <LiveActivityConsole />
+        <SovereignAssistant />
 
         {/* === MOBILE BOTTOM NAV === */}
         <nav className="lg:hidden fixed bottom-6 left-6 right-6 z-50 bg-[#0A0A0A] border border-white/10 rounded-2xl flex items-center justify-around p-3 shadow-2xl">

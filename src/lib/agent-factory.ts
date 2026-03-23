@@ -27,8 +27,12 @@ import { guardRoute, sanitizeString, errorResponse } from "@/lib/api-guard";
 import { detectJailbreak } from "@/lib/jailbreak-detect";
 import { checkContentSafety } from "@/lib/content-safety";
 import { createLogger } from "@/lib/logger";
+import { getAntiSlopRules } from "@/lib/system-prompts";
 
 const log = createLogger("agent-factory");
+
+/** Anti-slop rules injected into agent context */
+export const ANTI_SLOP_RULES = getAntiSlopRules();
 
 export interface AgentConfig {
   /** Agent name for logging and telemetry */

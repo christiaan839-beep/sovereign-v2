@@ -101,6 +101,25 @@ export default function DashboardOverview() {
         </p>
       </motion.div>
 
+      {/* Quick Actions — reduces cognitive overload */}
+      <motion.div {...fade(0.3)} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        {[
+          { icon: Shield, label: "Audit Site", href: "/dashboard/cyber-audit", color: "text-rose-400" },
+          { icon: Factory, label: "Create Content", href: "/dashboard/content-factory", color: "text-emerald-400" },
+          { icon: Users, label: "Find Leads", href: "/dashboard/leads", color: "text-amber-400" },
+          { icon: Globe2, label: "Build Page", href: "/dashboard/page-builder", color: "text-cyan-400" },
+          { icon: Swords, label: "Scan Competitor", href: "/dashboard/competitor", color: "text-violet-400" },
+          { icon: Rocket, label: "Open Assistant", href: "#", color: "text-[#00B7FF]" },
+        ].map((action, i) => (
+          <Link key={i} href={action.href}
+            className="group flex flex-col items-center gap-2 p-4 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10 hover:-translate-y-0.5 transition-all duration-300 text-center"
+          >
+            <action.icon className={`w-5 h-5 ${action.color} group-hover:scale-110 transition-transform`} />
+            <span className="text-xs font-medium text-neutral-400 group-hover:text-white transition-colors">{action.label}</span>
+          </Link>
+        ))}
+      </motion.div>
+
       {/* Global Strike Visualization (Palantir Architecture) */}
       <motion.div {...fade(0.5)} className="bg-black border border-emerald-500/20 rounded-3xl p-8 relative overflow-hidden">
          <div className="absolute top-6 left-6 z-20">
