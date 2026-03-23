@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { BrainCircuit, CheckCircle2, Cpu, Globe, Target, ShieldAlert, ChevronDown, XCircle, DollarSign, MessageSquare, Activity, Zap, Lock } from "lucide-react";
+import { BrainCircuit, CheckCircle2, Cpu, Globe, Target, ShieldAlert, ChevronDown, XCircle, MessageSquare, Activity, Zap, Lock } from "lucide-react";
 import Link from "next/link";
 import { SignInButton } from "@clerk/nextjs";
 import { useState, useEffect, useRef } from "react";
@@ -11,10 +11,7 @@ import { Pricing } from "@/components/ui/Pricing";
 import { ImmersiveNodeLayer } from "@/components/3d/ImmersiveNodeLayer";
 import { ToolShowcase } from "@/components/ui/SocialProof";
 
-import SovereignCalculator from "@/components/SovereignCalculator";
 import { AgentOrgMap } from "@/components/dashboard/AgentOrgMap";
-
-import VideoShowcase from "@/components/DeepfakeShowcase";
 import { InteractiveHeroStrike } from "@/components/ui/InteractiveHeroStrike";
 import { AIDemoShowcase } from "@/components/ui/AIDemoShowcase";
 import { SocialProofMetrics } from "@/components/ui/SocialProofMetrics";
@@ -412,13 +409,8 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="mt-20">
-              <SovereignCalculator />
-            </div>
          </div>
       </section>
-
-      <VideoShowcase />
 
       <section id="pricing" className="py-24 bg-[#000000] relative border-t border-white/5">
          <div className="mb-24">

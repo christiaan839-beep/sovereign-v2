@@ -93,13 +93,13 @@ function HexCore() {
       {/* Inner glow sphere */}
       <mesh>
         <icosahedronGeometry args={[0.6, 2]} />
-        <meshBasicMaterial color="#10B981" transparent opacity={0.04} depthWrite={false} blending={THREE.AdditiveBlending} />
+        <meshBasicMaterial color="#10B981" transparent opacity={0.08} depthWrite={false} blending={THREE.AdditiveBlending} />
       </mesh>
 
-      {/* Core point light effect */}
+      {/* Core point light effect — brighter */}
       <mesh>
-        <sphereGeometry args={[0.15, 16, 16]} />
-        <meshBasicMaterial color="#6EE7B7" transparent opacity={0.8} depthWrite={false} blending={THREE.AdditiveBlending} />
+        <sphereGeometry args={[0.2, 16, 16]} />
+        <meshBasicMaterial color="#6EE7B7" transparent opacity={1.0} depthWrite={false} blending={THREE.AdditiveBlending} />
       </mesh>
     </group>
   );
@@ -201,7 +201,7 @@ function CircuitNodes({ scrollY }: { scrollY: React.MutableRefObject<number> }) 
   return (
     <points ref={ref}>
       <bufferGeometry ref={geomRef} />
-      <pointsMaterial size={0.025} vertexColors transparent opacity={0.7} depthWrite={false} blending={THREE.AdditiveBlending} />
+      <pointsMaterial size={0.03} vertexColors transparent opacity={0.85} depthWrite={false} blending={THREE.AdditiveBlending} />
     </points>
   );
 }
@@ -260,7 +260,7 @@ function CircuitTraces({ scrollY }: { scrollY: React.MutableRefObject<number> })
         {/* @ts-expect-error — R3F declarative bufferAttribute type mismatch */}
         <bufferAttribute attach="attributes-position" count={linePositions.length / 3} array={linePositions} itemSize={3} />
       </bufferGeometry>
-      <lineBasicMaterial color="#10B981" transparent opacity={0.06} depthWrite={false} blending={THREE.AdditiveBlending} />
+      <lineBasicMaterial color="#10B981" transparent opacity={0.12} depthWrite={false} blending={THREE.AdditiveBlending} />
     </lineSegments>
   );
 }
@@ -332,7 +332,7 @@ function CircuitFloor({ scrollY }: { scrollY: React.MutableRefObject<number> }) 
             fade = clamp(fade, 0.0, 1.0);
 
             // Combine
-            float alpha = (grid * 0.06 + subgrid * 0.015 + (pulse1 + pulse2) * 0.08) * fade;
+            float alpha = (grid * 0.1 + subgrid * 0.025 + (pulse1 + pulse2) * 0.15) * fade;
             vec3 color = vec3(0.063, 0.725, 0.506);
 
             gl_FragColor = vec4(color, alpha);
@@ -354,7 +354,7 @@ function Scene({ scrollY }: { scrollY: React.MutableRefObject<number> }) {
       <CircuitNodes scrollY={scrollY} />
       <CircuitFloor scrollY={scrollY} />
       <EffectComposer>
-        <Bloom luminanceThreshold={0.08} luminanceSmoothing={0.9} intensity={1.0} mipmapBlur />
+        <Bloom luminanceThreshold={0.05} luminanceSmoothing={0.85} intensity={1.4} mipmapBlur />
       </EffectComposer>
     </>
   );
@@ -364,8 +364,8 @@ export function ImmersiveNodeLayer() {
   const scrollY = useScrollY();
   return (
     <div className="absolute inset-0 z-0 pointer-events-none">
-      <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black z-10" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,black_65%)] z-10 opacity-35" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/80 z-10" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,black_70%)] z-10 opacity-25" />
       <Canvas camera={{ position: [0, 0.5, 7], fov: 52 }} gl={{ antialias: true, alpha: true }} dpr={[1, 1.5]}>
         <Scene scrollY={scrollY} />
       </Canvas>
