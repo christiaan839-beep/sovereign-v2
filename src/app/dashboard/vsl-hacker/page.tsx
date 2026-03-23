@@ -246,7 +246,7 @@ export default function CosmosVSLHackerPage() {
                   </div>
 
                   {/* Step 3 */}
-                  <div className={`flex items-center gap-4 transition-opacity duration-500 ${pipelineStatus === 'scripting' ? 'opacity-100' : pipelineStatus === 'complete' ? 'opacity-40' : 'opacity-10'}`}>
+                  <div className={`flex items-center gap-4 transition-opacity duration-500 ${pipelineStatus === 'scripting' ? 'opacity-100' : (pipelineStatus as string) === 'complete' ? 'opacity-40' : 'opacity-10'}`}>
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${pipelineStatus === 'scripting' ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'bg-white/5 border-white/10 text-white'}`}>
                       <Cpu className="w-5 h-5" />
                     </div>

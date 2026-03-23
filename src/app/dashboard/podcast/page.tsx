@@ -259,7 +259,7 @@ export default function PodcastBlueprintPage() {
                   </div>
 
                   {/* Step 3 */}
-                  <div className={`flex items-center gap-4 transition-opacity duration-500 ${pipelineStatus === 'generating' ? 'opacity-100' : pipelineStatus === 'complete' ? 'opacity-40' : 'opacity-10'}`}>
+                  <div className={`flex items-center gap-4 transition-opacity duration-500 ${pipelineStatus === 'generating' ? 'opacity-100' : (pipelineStatus as string) === 'complete' ? 'opacity-40' : 'opacity-10'}`}>
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${pipelineStatus === 'generating' ? 'bg-amber-500/20 border-amber-500/50 text-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.3)]' : 'bg-white/5 border-white/10 text-white'}`}>
                       <Waves className="w-5 h-5" />
                     </div>

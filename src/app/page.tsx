@@ -1,14 +1,13 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { BrainCircuit, CheckCircle2, Cpu, Globe, Target, ShieldAlert, ChevronDown, XCircle, DollarSign, MessageSquare } from "lucide-react";
+import { BrainCircuit, CheckCircle2, Cpu, Globe, Target, ShieldAlert, ChevronDown, XCircle, DollarSign, MessageSquare, Activity, Zap, Lock } from "lucide-react";
 import Link from "next/link";
 import { SignInButton } from "@clerk/nextjs";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 import { SovereignLogo } from "@/components/ui/SovereignLogo";
 import { Pricing } from "@/components/ui/Pricing";
-// SplashIntro removed — instant page load
 import { ImmersiveNodeLayer } from "@/components/3d/ImmersiveNodeLayer";
 import { ToolShowcase } from "@/components/ui/SocialProof";
 
@@ -20,7 +19,81 @@ import { InteractiveHeroStrike } from "@/components/ui/InteractiveHeroStrike";
 import { AIDemoShowcase } from "@/components/ui/AIDemoShowcase";
 import { SocialProofMetrics } from "@/components/ui/SocialProofMetrics";
 
+// ─── Animated Counter (counts up on scroll into view) ───
+function AnimatedCounter({ end, suffix = "", label }: { end: number; suffix?: string; label: string }) {
+  const [count, setCount] = useState(0);
+  const ref = useRef<HTMLDivElement>(null);
+  const started = useRef(false);
 
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && !started.current) {
+        started.current = true;
+        const duration = 1800;
+        const startTime = performance.now();
+        const animate = (now: number) => {
+          const elapsed = now - startTime;
+          const progress = Math.min(elapsed / duration, 1);
+          // Ease out cubic
+          const eased = 1 - Math.pow(1 - progress, 3);
+          setCount(Math.round(eased * end));
+          if (progress < 1) requestAnimationFrame(animate);
+        };
+        requestAnimationFrame(animate);
+      }
+    }, { threshold: 0.3 });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [end]);
+
+  return (
+    <div ref={ref} className="text-center">
+      <div className="text-4xl md:text-5xl font-black text-white tracking-tight tabular-nums">
+        {count}{suffix}
+      </div>
+      <div className="text-xs text-neutral-500 mt-2 uppercase tracking-widest font-semibold">{label}</div>
+    </div>
+  );
+}
+
+// ─── Live Agent Status Ticker ───
+function AgentStatusTicker() {
+  const agents = [
+    { name: "SEO Dominator", status: "active" },
+    { name: "Content Engine", status: "active" },
+    { name: "Lead Qualifier", status: "active" },
+    { name: "NemoClaw OS", status: "active" },
+    { name: "Voice Dialer", status: "standby" },
+    { name: "Code Reviewer", status: "active" },
+    { name: "PII Guard", status: "active" },
+    { name: "Meeting Notes", status: "standby" },
+    { name: "Smart Router", status: "active" },
+    { name: "Brand Audit", status: "active" },
+    { name: "Doc Intel", status: "active" },
+    { name: "Translator", status: "standby" },
+  ];
+
+  return (
+    <div className="relative overflow-hidden w-full py-4">
+      <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-black to-transparent z-10" />
+      <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-black to-transparent z-10" />
+      <motion.div
+        className="flex gap-3 whitespace-nowrap"
+        animate={{ x: [0, -1200] }}
+        transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+      >
+        {[...agents, ...agents, ...agents].map((agent, i) => (
+          <div key={i} className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/5 bg-white/[0.02] text-xs font-medium text-neutral-400 shrink-0">
+            <span className={`w-1.5 h-1.5 rounded-full ${agent.status === "active" ? "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.6)]" : "bg-amber-500/60"}`} />
+            {agent.name}
+          </div>
+        ))}
+      </motion.div>
+    </div>
+  );
+}
 
 function FAQItem({ question, answer }: { question: string; answer: string }) {
   const [open, setOpen] = useState(false);
@@ -136,17 +209,37 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-4 mb-24 max-w-4xl mx-auto">
-              <div className="flex items-center gap-2 text-[10px] md:text-xs font-semibold text-neutral-300 border border-white/10 bg-white/[0.02] backdrop-blur-md px-5 py-2.5 rounded-full shadow-inner hover:bg-white/[0.04] transition-colors cursor-default">
-                <ShieldAlert className="w-4 h-4 text-emerald-400" /> Open-Source Architecture
-              </div>
-              <div className="flex items-center gap-2 text-[10px] md:text-xs font-semibold text-neutral-300 border border-white/10 bg-white/[0.02] backdrop-blur-md px-5 py-2.5 rounded-full shadow-inner hover:bg-white/[0.04] transition-colors cursor-default">
-                <Cpu className="w-4 h-4 text-cyan-400" /> Powered by NVIDIA NIM
-              </div>
-              <div className="flex items-center gap-2 text-[10px] md:text-xs font-semibold text-neutral-300 border border-white/10 bg-white/[0.02] backdrop-blur-md px-5 py-2.5 rounded-full shadow-inner hover:bg-white/[0.04] transition-colors cursor-default">
-                <DollarSign className="w-4 h-4 text-green-400" /> Zero Inference Costs
-              </div>
+          <div className="flex flex-wrap items-center justify-center gap-3 mb-16 max-w-4xl mx-auto">
+              {[
+                { icon: Lock, label: "Open-Source Architecture", color: "text-emerald-400" },
+                { icon: Cpu, label: "39 NVIDIA NIM Models", color: "text-cyan-400" },
+                { icon: Zap, label: "Zero Inference Costs", color: "text-amber-400" },
+                { icon: Activity, label: "4-Layer Safety Pipeline", color: "text-violet-400" },
+              ].map((badge) => (
+                <div key={badge.label} className="flex items-center gap-2 text-[10px] md:text-xs font-semibold text-neutral-300 border border-white/10 bg-white/[0.02] backdrop-blur-md px-4 py-2 rounded-full hover:bg-white/[0.04] transition-colors cursor-default">
+                  <badge.icon className={`w-3.5 h-3.5 ${badge.color}`} />
+                  {badge.label}
+                </div>
+              ))}
            </div>
+
+          {/* Live Agent Ticker */}
+          <div className="w-full max-w-4xl mx-auto mb-16">
+            <AgentStatusTicker />
+          </div>
+
+          {/* Animated Metrics */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="grid grid-cols-2 md:grid-cols-4 gap-8 w-full max-w-3xl mx-auto mb-20 py-8 px-6 rounded-2xl border border-white/5 bg-white/[0.01]"
+          >
+            <AnimatedCounter end={100} suffix="+" label="AI Agents" />
+            <AnimatedCounter end={39} label="NIM Models" />
+            <AnimatedCounter end={12} label="Languages" />
+            <AnimatedCounter end={0} suffix="ms" label="Cold Start" />
+          </motion.div>
 
           <SocialProofMetrics />
           
@@ -167,15 +260,15 @@ export default function Home() {
                 { icon: BrainCircuit, title: "Enterprise RAG Pipeline", desc: "Ground every AI response in your actual business data using vector retrieval and 120B-parameter reasoning models." },
                 { icon: Target, title: "Local Edge Execution", desc: "Run agents locally from your terminal with zero cloud dependency. Full offline capability via the OpenClaw daemon." },
                 { icon: Globe, title: "Voice Agent Pipeline", desc: "Deploy AI voice agents for outbound calls with sub-200ms latency. Automated qualification, booking, and follow-up." },
-                { icon: ShieldAlert, title: "Safety & Guardrails", desc: "Real-time PII redaction, content safety scoring, and brand alignment powered by NeMo Guardrails." }
+                { icon: ShieldAlert, title: "Safety & Guardrails", desc: "4-layer pipeline: jailbreak detection, content safety, PII redaction, and output quality scoring. Every agent, automatically." }
               ].map((feature, i) => (
                 <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.6 }}
-                  className="bg-white/[0.02] border border-white/5 p-8 rounded-3xl group hover:border-white/10 hover:bg-white/[0.04] transition-all backdrop-blur-xl relative overflow-hidden shadow-2xl">
-                  <div className="absolute -top-6 -right-6 p-4 opacity-[0.03] group-hover:opacity-10 transition-opacity transform group-hover:scale-110 duration-700">
+                  className="bg-white/[0.02] border border-white/5 p-8 rounded-3xl group hover:border-white/15 hover:bg-white/[0.04] transition-all duration-500 backdrop-blur-xl relative overflow-hidden shadow-2xl hover:shadow-[0_8px_40px_rgba(255,255,255,0.03)] hover:-translate-y-1">
+                  <div className="absolute -top-6 -right-6 p-4 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity transform group-hover:scale-110 duration-700">
                     <feature.icon className="w-40 h-40 text-white" />
                   </div>
-                  <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mb-6 relative z-10 shadow-inner">
-                    <feature.icon className="w-5 h-5 text-white" />
+                  <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mb-6 relative z-10 shadow-inner group-hover:border-white/20 transition-colors duration-500">
+                    <feature.icon className="w-5 h-5 text-white group-hover:text-emerald-300 transition-colors duration-500" />
                   </div>
                   <h3 className="text-lg font-bold text-white mb-3 tracking-tight relative z-10">{feature.title}</h3>
                   <p className="text-sm text-neutral-400 leading-relaxed font-medium relative z-10">{feature.desc}</p>
@@ -200,7 +293,7 @@ export default function Home() {
               { icon: MessageSquare, title: "Mobile Command", desc: "Control your agent swarm from Telegram or WhatsApp. Trigger competitive analysis, generate reports, or deploy campaigns on the go.", tag: "MOBILE" },
             ].map((feature, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.08 }}
-                className="bg-[#050505] p-8 border border-white/5 hover:border-white/10 rounded-3xl transition-colors shadow-xl">
+                className="bg-[#050505] p-8 border border-white/5 hover:border-white/15 rounded-3xl transition-all duration-500 shadow-xl hover:shadow-[0_4px_30px_rgba(255,255,255,0.02)] hover:-translate-y-0.5 group">
                 <div className="flex items-center justify-between mb-6">
                   <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center shadow-inner">
                     <feature.icon className="w-4 h-4 text-white drop-shadow-md" />
@@ -404,7 +497,7 @@ export default function Home() {
             <div>
               <h4 className="text-xs font-semibold text-white mb-6">Communications</h4>
               <ul className="space-y-4">
-                <li><a href="mailto:sysadmin@sovereign-matrix.com" className="text-sm text-neutral-500 hover:text-white transition-colors">sysadmin@sovereign.local</a></li>
+                <li><a href="mailto:hello@sovereignmatrix.agency" className="text-sm text-neutral-500 hover:text-white transition-colors">hello@sovereignmatrix.agency</a></li>
                 <li><span className="text-sm text-neutral-600">Base: Western Cape</span></li>
               </ul>
             </div>

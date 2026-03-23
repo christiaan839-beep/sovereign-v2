@@ -16,7 +16,7 @@ export default function AuditAndDestroyPage() {
     pdfReady: boolean;
   } | null>(null);
   
-  const { addToast } = useToast();
+  const toast = useToast();
 
   const handleScan = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,10 +37,10 @@ export default function AuditAndDestroyPage() {
       
       const data = await res.json();
       setResults(data);
-      addToast("Threat Assessment Generated", "success");
+      toast.success("Threat Assessment Generated");
       
     } catch {
-       addToast("Audit engine encountered firewall resistance. Retrying via proxy...", "error");
+       toast.error("Audit engine encountered firewall resistance. Retrying via proxy...");
     } finally {
       setIsScanning(false);
     }

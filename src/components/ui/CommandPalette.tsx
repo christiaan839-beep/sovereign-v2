@@ -16,7 +16,7 @@ type Action = {
   title: string;
   icon: React.ElementType;
   href?: string;
-  action?: () => Promise<void>;
+  action?: () => Promise<unknown>;
   category: "Navigation" | "AI Agent" | "Workflow" | "Quick Action";
   shortcut?: string;
   description?: string;

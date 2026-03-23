@@ -39,7 +39,7 @@ async function sendTelegramMessage(chatId: string | number, text: string) {
 export async function POST(req: Request) {
   try {
     // 1. Verify Telegram Secret Token for Edge Security
-    const headerPayload = headers();
+    const headerPayload = await headers();
     const secretToken = headerPayload.get('X-Telegram-Bot-Api-Secret-Token');
     
     if (process.env.TELEGRAM_WEBHOOK_SECRET && secretToken !== process.env.TELEGRAM_WEBHOOK_SECRET) {
