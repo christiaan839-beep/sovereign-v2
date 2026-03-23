@@ -575,7 +575,7 @@ export default function Home() {
             {[
               {
                 q: "What is Sovereign Matrix?",
-                a: "An AI agent orchestration platform with 100+ specialized agents for sales, marketing, content, and operations. It routes tasks across multiple AI models and executes multi-step workflows autonomously."
+                a: "An AI agent platform with 109 specialized agents for sales, marketing, content, and operations. It routes tasks across multiple AI models and executes multi-step workflows autonomously."
               },
               {
                 q: "Can agents run locally without cloud?",
