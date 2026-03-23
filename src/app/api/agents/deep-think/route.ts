@@ -1,0 +1,104 @@
+import { createAgentRoute } from "@/lib/agent-factory";
+
+/**
+ * GEMINI DEEP THINK — Advanced reasoning with parallel thought streams.
+ *
+ * Uses Gemini 2.5 Pro's Deep Think mode for problems that need
+ * extended reasoning: strategy, math, code architecture, research.
+ *
+ * Available with Google AI Ultra plan.
+ *
+ * Input: { problem, context?, thinkingBudget? }
+ * Output: { solution, reasoning, confidence }
+ */
+
+export const POST = createAgentRoute({
+  name: "deep-think",
+  requiredFields: ["problem"],
+  handler: async ({ input }) => {
+    const problem = input.problem as string;
+    const context = (input.context as string) || "";
+    const thinkingBudget = (input.thinkingBudget as number) || 8192;
+
+    const geminiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY;
+    if (!geminiKey) {
+      return { error: "Google AI API key not configured." };
+    }
+
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${geminiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: "user",
+              parts: [
+                {
+                  text: context
+                    ? `Background context:\n${context}\n\nProblem to solve:\n${problem}`
+                    : problem,
+                },
+              ],
+            },
+          ],
+          systemInstruction: {
+            parts: [
+              {
+                text: `You are an expert analyst and strategist. Think deeply about the problem before responding. Consider multiple angles, potential pitfalls, and second-order effects. Structure your response as:
+
+1. ANALYSIS — Break down the core problem
+2. APPROACH — Your recommended strategy with rationale
+3. EXECUTION — Step-by-step implementation plan
+4. RISKS — What could go wrong and mitigations
+5. EXPECTED OUTCOME — Measurable results to expect
+
+Be specific. Use numbers. No generic advice.`,
+              },
+            ],
+          },
+          generationConfig: {
+            temperature: 0.4,
+            maxOutputTokens: 4000,
+            thinkingConfig: {
+              thinkingBudget,
+            },
+          },
+        }),
+      }
+    );
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      return { error: `Gemini API error (${res.status})`, details: errorText };
+    }
+
+    const data = await res.json();
+    const candidate = data.candidates?.[0];
+
+    // Separate thinking from final response
+    const parts = candidate?.content?.parts || [];
+    let thinking = "";
+    let solution = "";
+
+    for (const part of parts) {
+      if (part.thought) {
+        thinking += (part.text || "") + "\n";
+      } else {
+        solution += (part.text || "") + "\n";
+      }
+    }
+
+    const tokenUsage = data.usageMetadata;
+
+    return {
+      solution: solution.trim(),
+      thinking: thinking.trim() || undefined,
+      thinkingTokens: tokenUsage?.thoughtsTokenCount || 0,
+      totalTokens: tokenUsage?.totalTokenCount || 0,
+      model: "gemini-2.5-pro-deep-think",
+      mode: "extended-reasoning",
+    };
+  },
+});

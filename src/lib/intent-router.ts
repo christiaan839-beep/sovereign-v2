@@ -105,6 +105,24 @@ const ROUTES: Array<{
     label: "PII Detector",
     extractParam: (t) => ({ text: stripKeywords(t, ["check", "scan", "detect", "pii", "for"]) }),
   },
+  {
+    keywords: ["research", "search for", "find out", "latest", "current", "news about"],
+    endpoint: "/api/agents/grounded-search",
+    label: "Grounded Search",
+    extractParam: (t) => ({ query: stripKeywords(t, ["research", "search", "find", "out", "for"]) }),
+  },
+  {
+    keywords: ["think deeply", "analyze strategy", "solve this", "plan for", "figure out"],
+    endpoint: "/api/agents/deep-think",
+    label: "Deep Think",
+    extractParam: (t) => ({ problem: t }),
+  },
+  {
+    keywords: ["automate", "autonomous", "multi-step", "agent chain", "do everything"],
+    endpoint: "/api/agents/agentic-chain",
+    label: "Agentic Chain",
+    extractParam: (t) => ({ goal: t }),
+  },
 ];
 
 /**
