@@ -104,12 +104,12 @@ export default function DashboardOverview() {
       {/* Quick Actions — reduces cognitive overload */}
       <motion.div {...fade(0.3)} className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {[
-          { icon: Shield, label: "Audit Site", href: "/dashboard/cyber-audit", color: "text-rose-400" },
           { icon: Factory, label: "Create Content", href: "/dashboard/content-factory", color: "text-emerald-400" },
           { icon: Users, label: "Find Leads", href: "/dashboard/leads", color: "text-amber-400" },
-          { icon: Globe2, label: "Build Page", href: "/dashboard/page-builder", color: "text-cyan-400" },
+          { icon: Shield, label: "Audit Site", href: "/dashboard/cyber-audit", color: "text-rose-400" },
           { icon: Swords, label: "Scan Competitor", href: "/dashboard/competitor", color: "text-violet-400" },
-          { icon: Rocket, label: "Open Assistant", href: "#", color: "text-[#00B7FF]" },
+          { icon: Globe2, label: "Build Page", href: "/dashboard/page-builder", color: "text-cyan-400" },
+          { icon: Rocket, label: "Voice Assistant", href: "/dashboard/voice-assistant", color: "text-[#00B7FF]" },
         ].map((action, i) => (
           <Link key={i} href={action.href}
             className="group flex flex-col items-center gap-2 p-4 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10 hover:-translate-y-0.5 transition-all duration-300 text-center"
