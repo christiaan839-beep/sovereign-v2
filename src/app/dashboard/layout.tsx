@@ -31,6 +31,7 @@ const NAV_GROUPS = [
     items: [
       { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
       { href: "/dashboard/agent-command", label: "Agent Command", icon: Zap },
+      { href: "/dashboard/workflows", label: "Workflows", icon: CircuitBoard },
       { href: "/dashboard/war-room", label: "War Room", icon: Swords },
       { href: "/dashboard/leads", label: "Lead Prospector", icon: Users },
       { href: "/dashboard/agent-analytics", label: "Analytics", icon: BarChart3 },
