@@ -8,6 +8,7 @@ export default function VisualStudioNode() {
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationStep, setGenerationStep] = useState(0);
+  const [apiResult, setApiResult] = useState<string | null>(null);
 
   const handleGenerate = async () => {
     if (!prompt) return;
@@ -22,14 +23,15 @@ export default function VisualStudioNode() {
         body: JSON.stringify({ prompt, style: "cinematic_commercial" }),
       });
       const data = await res.json();
-      // Step through generation phases
       setGenerationStep(2);
-      await new Promise(r => setTimeout(r, 500));
       setGenerationStep(3);
-      await new Promise(r => setTimeout(r, 500));
       setGenerationStep(4);
-      await new Promise(r => setTimeout(r, 500));
-      if (!data.success) console.error("Video gen failed:", data.error);
+      if (data.success) {
+        setApiResult(data.result || data.text || JSON.stringify(data, null, 2));
+      } else {
+        console.error("Video gen failed:", data.error);
+        setApiResult(`Generation failed: ${data.error || "Unknown error"}`);
+      }
     } catch (err) {
       console.error("Cosmos video error:", err);
     } finally {
@@ -133,13 +135,13 @@ export default function VisualStudioNode() {
                 </div>
               )}
               {generationStep === 5 && (
-                <div className="w-full h-full p-2">
-                  <div className="w-full h-full bg-black relative group">
-                    <video src="/videos/demo1.mp4" autoPlay loop muted playsInline className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
-                    <div className="absolute bottom-0 left-0 w-full p-4 bg-gradient-to-t from-black to-transparent">
-                       <p className="font-bold uppercase tracking-widest text-[#00ff66]">Final_Asset_v1.mp4</p>
-                       <p className="text-xs text-white opacity-70">4K 60FPS | Cosmos AI Directed</p>
-                    </div>
+                <div className="w-full h-full p-4 overflow-y-auto">
+                  <div className="w-full h-full bg-black/80 border border-[#00ff66]/30 p-6">
+                    <p className="font-bold uppercase tracking-widest text-[#00ff66] mb-2">Generation Result</p>
+                    <p className="text-xs text-white opacity-70 mb-4">Cosmos AI Response</p>
+                    <pre className="text-xs text-[#00ff66]/90 whitespace-pre-wrap break-words leading-relaxed font-mono">
+                      {apiResult || "No response received."}
+                    </pre>
                   </div>
                 </div>
               )}

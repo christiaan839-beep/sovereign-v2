@@ -7,6 +7,8 @@ import { Cuboid, Box, Layers, Download, Zap, Database, Rotate3D } from "lucide-r
 export default function EdifyForgePage() {
   const [prompt, setPrompt] = useState("");
   const [pipelineState, setPipelineState] = useState<"idle" | "generating" | "complete">("idle");
+  const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
+  const [apiResultText, setApiResultText] = useState<string | null>(null);
 
   const startForge = async () => {
     if (!prompt) return;
@@ -19,7 +21,15 @@ export default function EdifyForgePage() {
         body: JSON.stringify({ prompt: `3D mesh generation: ${prompt}`, style: "3d_asset" }),
       });
       const data = await res.json();
-      if (!data.success) console.error("3D generation failed:", data.error);
+      if (data.success) {
+        // Try to extract image URL from response; fall back to text result
+        const imageUrl = data.imageUrl || data.image_url || data.url || null;
+        setGeneratedImageUrl(imageUrl);
+        setApiResultText(data.result || data.text || JSON.stringify(data, null, 2));
+      } else {
+        console.error("3D generation failed:", data.error);
+        setApiResultText(`Generation failed: ${data.error || "Unknown error"}`);
+      }
     } catch (err) {
       console.error("3D forge error:", err);
     } finally {
@@ -110,29 +120,27 @@ export default function EdifyForgePage() {
                   )}
 
                   {pipelineState === "complete" && (
-                     <motion.div 
-                       initial={{ opacity: 0, scale: 0.8 }} 
-                       animate={{ opacity: 1, scale: 1 }} 
+                     <motion.div
+                       initial={{ opacity: 0, scale: 0.8 }}
+                       animate={{ opacity: 1, scale: 1 }}
                        transition={{ duration: 0.5, type: "spring" }}
-                       className="z-10 relative flex flex-col items-center"
+                       className="z-10 relative flex flex-col items-center max-w-lg w-full"
                      >
-                        <div className="w-64 h-64 bg-neutral-900 border border-white/10 rounded-2xl shadow-2xl flex items-center justify-center p-8 mb-6 relative overflow-hidden group">
-                           <div className="absolute inset-0 bg-orange-500/10 blur-3xl rounded-full scale-150 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-                           <img 
-                             src="https://images.unsplash.com/photo-1527961226068-d0554972175c?auto=format&fit=crop&q=80&w=400&h=400" 
-                             className="w-full h-full object-contain filter grayscale contrast-150 drop-shadow-2xl relative z-10 opacity-80"
-                             style={{ mixBlendMode: 'screen' }}
-                             alt="Simulated 3D Model"
-                           />
-                           {/* Wireframe overlay simulation */}
-                           <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-20 mix-blend-overlay z-20 pointer-events-none" />
-                        </div>
-                        
-                        <div className="flex bg-black/50 backdrop-blur-md border border-white/10 rounded-lg p-1 text-[10px] font-mono text-neutral-400 uppercase tracking-widest mb-6 gap-6">
-                           <div className="px-3 py-1 bg-white/5 rounded">Tris: <span className="text-white">124,082</span></div>
-                           <div className="px-3 py-1 bg-white/5 rounded">Format: <span className="text-white">OpenUSD</span></div>
-                           <div className="px-3 py-1 bg-white/5 rounded">Rigged: <span className="text-emerald-400">Yes</span></div>
-                        </div>
+                        {generatedImageUrl ? (
+                          <div className="w-64 h-64 bg-neutral-900 border border-white/10 rounded-2xl shadow-2xl flex items-center justify-center p-4 mb-6 relative overflow-hidden group">
+                             <div className="absolute inset-0 bg-orange-500/10 blur-3xl rounded-full scale-150 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                             <img
+                               src={generatedImageUrl}
+                               className="w-full h-full object-contain drop-shadow-2xl relative z-10"
+                               alt="Generated 3D Asset"
+                             />
+                          </div>
+                        ) : (
+                          <div className="w-full bg-neutral-900/80 border border-white/10 rounded-2xl p-6 mb-6 max-h-64 overflow-y-auto">
+                            <p className="text-xs font-bold uppercase tracking-widest text-orange-400 mb-3">Generation Result</p>
+                            <pre className="text-xs text-neutral-300 whitespace-pre-wrap break-words leading-relaxed font-mono">{apiResultText || "No response received."}</pre>
+                          </div>
+                        )}
 
                         <button className="px-6 py-3 rounded-xl bg-white text-black font-bold uppercase tracking-widest text-xs hover:bg-neutral-200 transition-colors shadow-[0_0_30px_rgba(255,255,255,0.2)] flex items-center gap-2">
                           <Download className="w-4 h-4" /> Export Production File
