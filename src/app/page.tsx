@@ -457,6 +457,89 @@ export default function Home() {
         </motion.div>
       </section>
 
+      {/* Enterprise Section — ElevenLabs-caliber positioning */}
+      <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+      <section className="py-32 md:py-40 bg-[#000000] px-6 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_50%,rgba(99,102,241,0.04),transparent)]" />
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8 }}
+          className="max-w-4xl mx-auto relative z-10"
+        >
+          <div className="text-center mb-20">
+            <p className="text-xs font-medium uppercase tracking-[0.4em] text-neutral-600 mb-6">Enterprise Grade</p>
+            <h2 className="text-3xl md:text-5xl lg:text-6xl font-black text-white mb-8 tracking-tight leading-[1.1]">
+              Real value comes from AI<br className="hidden md:block" /> that delivers results at scale.
+            </h2>
+            <p className="text-base md:text-lg text-neutral-500 max-w-2xl mx-auto leading-relaxed">
+              Sovereign Matrix powers demanding agency workflows with autonomous AI agents, real-time voice pipelines, and multi-model orchestration. All delivered with enterprise-grade reliability, data sovereignty, and zero per-token costs.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-20">
+            {[
+              {
+                metric: "106",
+                label: "Specialized Agents",
+                desc: "Each purpose-built for a specific business function. Not generic chatbots — real autonomous workers."
+              },
+              {
+                metric: "39",
+                label: "Open-Source Models",
+                desc: "NVIDIA NIM, Gemini, Claude, DeepSeek, Mistral. Automatic failover. Zero vendor lock-in."
+              },
+              {
+                metric: "$0",
+                label: "Per-Token Cost",
+                desc: "Run inference on open-source models at zero marginal cost. Scale without scaling your bill."
+              },
+            ].map((item, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.15 }}
+                className="text-center md:text-left"
+              >
+                <div className="text-4xl md:text-5xl font-black text-white mb-3 tracking-tight">{item.metric}</div>
+                <div className="text-sm font-semibold text-white mb-2">{item.label}</div>
+                <p className="text-sm text-neutral-500 leading-relaxed">{item.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {[
+              { label: "5-Layer Safety", desc: "Jailbreak, topic, content, PII, quality" },
+              { label: "White-Label Ready", desc: "Your brand, your domain, your clients" },
+              { label: "Voice Pipeline", desc: "Sub-200ms latency, 12 languages" },
+              { label: "SOC2 Infrastructure", desc: "NVIDIA + Neon + Clerk + Vercel" },
+            ].map((item, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.3 + i * 0.1 }}
+                className="p-5 rounded-xl border border-white/5 bg-white/[0.01]"
+              >
+                <div className="text-sm font-semibold text-white mb-1">{item.label}</div>
+                <p className="text-xs text-neutral-600">{item.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+
+          <div className="mt-16 text-center">
+            <Link href="/partner" className="inline-flex px-8 py-4 bg-white text-black font-bold rounded-full text-sm hover:bg-neutral-100 transition-all hover:shadow-[0_0_30px_rgba(255,255,255,0.15)] hover:scale-[1.02]">
+              Talk to Sales
+            </Link>
+          </div>
+        </motion.div>
+      </section>
+
       <section className="py-32 bg-[#000000] px-6 border-t border-white/5">
         <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="max-w-3xl mx-auto">
           <div className="text-center mb-16">
