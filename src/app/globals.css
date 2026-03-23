@@ -198,6 +198,12 @@ input[type="range"]::-webkit-slider-thumb {
 
 /* Shimmer / scan line effect */
 @keyframes shimmer {
+  0% { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+
+/* Legacy shimmer (translateX variant for pseudo-elements) */
+@keyframes shimmer-slide {
   0% { transform: translateX(-100%); }
   100% { transform: translateX(100%); }
 }
@@ -217,7 +223,7 @@ input[type="range"]::-webkit-slider-thumb {
     rgba(255, 255, 255, 0.03) 50%,
     transparent 100%
   );
-  animation: shimmer 3s ease-in-out infinite;
+  animation: shimmer-slide 3s ease-in-out infinite;
 }
 
 /* Gradient border glow on hover */

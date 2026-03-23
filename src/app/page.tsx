@@ -184,13 +184,13 @@ export default function Home() {
 
           <h1 className="text-6xl md:text-8xl lg:text-9xl font-black mb-8 leading-[1.02] tracking-tighter text-white drop-shadow-2xl">
             Your Agents.<br/>
-            <span className="bg-clip-text text-transparent bg-gradient-to-br from-white via-neutral-200 to-neutral-600">
+            <span className="bg-clip-text text-transparent bg-[length:200%_auto] animate-[shimmer_6s_ease-in-out_infinite] bg-gradient-to-r from-white via-neutral-400 to-white">
               Your Infrastructure.
             </span>
           </h1>
 
-          <p className="text-lg md:text-2xl text-neutral-400 max-w-3xl mx-auto leading-relaxed mb-14 font-medium tracking-tight">
-            100+ AI agents for sales, marketing, and operations — running on open-source models with zero API costs. Self-hosted or cloud. No vendor lock-in.
+          <p className="text-base md:text-xl text-neutral-500 max-w-2xl mx-auto leading-relaxed mb-14 font-normal">
+            Deploy 100+ AI agents across sales, marketing, and operations. Open-source models. Zero inference costs. Your infrastructure, your data.
           </p>
 
           <div className="mb-20">
@@ -455,13 +455,20 @@ export default function Home() {
         </motion.div>
       </section>
 
-      <section className="py-32 text-center px-6 bg-[#050505] border-t border-white/5">
-        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-          <h2 className="text-4xl md:text-6xl font-bold text-white mb-6 tracking-tight">Ready to Deploy.</h2>
-          <p className="text-lg text-neutral-500 max-w-xl mx-auto mb-12">Start with the free tier. Scale when you see results. No credit card required.</p>
-          <Link href="/pricing" className="inline-flex px-8 py-4 bg-white text-black font-semibold rounded-full text-sm hover:bg-neutral-200 transition-colors">
-            Get Started Free
-          </Link>
+      <section className="py-40 text-center px-6 bg-[#050505] border-t border-white/5 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(99,102,241,0.08),transparent_70%)]" />
+        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="relative z-10">
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-neutral-500 mb-6">No credit card required</p>
+          <h2 className="text-4xl md:text-7xl font-black text-white mb-6 tracking-tight leading-[1.05]">Ready to Deploy.</h2>
+          <p className="text-base text-neutral-500 max-w-md mx-auto mb-12">Start with the free tier. Scale when you see results.</p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link href="/pricing" className="inline-flex px-8 py-4 bg-white text-black font-bold rounded-full text-sm hover:bg-neutral-200 transition-all hover:shadow-[0_0_30px_rgba(255,255,255,0.15)] hover:scale-[1.02]">
+              Get Started Free
+            </Link>
+            <Link href="/demo" className="inline-flex px-8 py-4 border border-white/10 text-white font-semibold rounded-full text-sm hover:border-white/20 hover:bg-white/[0.03] transition-all">
+              Watch Demo
+            </Link>
+          </div>
         </motion.div>
       </section>
 
