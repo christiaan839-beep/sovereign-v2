@@ -315,12 +315,16 @@ export default function Home() {
         </div>
       </main>
 
-      <section className="py-32 bg-[#050505] border-y border-white/5 px-6">
+      {/* Section divider */}
+      <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+
+      <section className="py-32 bg-[#050505] px-6">
          <div className="max-w-5xl mx-auto">
             <div className="text-center mb-16">
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-neutral-600 mb-4">The Difference</p>
               <h2 className="text-3xl md:text-5xl font-bold text-white mb-6 tracking-tight">Why Open-Source Architecture.</h2>
-              <p className="text-lg text-neutral-500 max-w-2xl mx-auto">
-                Most AI tools are chatbots with a wrapper. Sovereign Matrix is a full agent orchestration platform with real autonomy.
+              <p className="text-base text-neutral-500 max-w-xl mx-auto">
+                Most AI tools are chatbots with a wrapper. This is a full agent orchestration platform with real autonomy.
               </p>
             </div>
 
