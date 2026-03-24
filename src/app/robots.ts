@@ -6,12 +6,11 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: '*',
       allow: '/',
       disallow: [
-        '/dashboard/', 
+        '/dashboard/',
         '/client-portal/',
-        '/api/cron/', 
-        '/api/agents/'
+        '/api/',
       ],
     },
-    sitemap: 'https://sovereign-matrix.com/sitemap.xml',
+    sitemap: 'https://sovereignmatrix.agency/sitemap.xml',
   };
 }

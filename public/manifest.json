@@ -1,11 +1,11 @@
 {
-  "name": "UMBRA — Autonomous AI Marketing Intelligence",
-  "short_name": "UMBRA",
-  "description": "15 AI engines that market, sell, and scale while you sleep.",
+  "name": "Sovereign Matrix — AI Agent Platform",
+  "short_name": "Sovereign Matrix",
+  "description": "109 AI agents that do the work. Content, SEO, leads, voice, code, vision.",
   "start_url": "/dashboard",
   "display": "standalone",
-  "background_color": "#0a0a0f",
-  "theme_color": "#0a0a0f",
+  "background_color": "#020202",
+  "theme_color": "#020202",
   "orientation": "portrait-primary",
   "categories": ["business", "productivity"],
   "icons": [
@@ -22,22 +22,16 @@
       "purpose": "any maskable"
     }
   ],
-  "screenshots": [],
   "shortcuts": [
     {
       "name": "Dashboard",
       "url": "/dashboard",
-      "description": "Open the UMBRA command dashboard"
+      "description": "Open the Sovereign Matrix dashboard"
     },
     {
-      "name": "AI Scan",
-      "url": "/scan",
-      "description": "Run a free AI marketing scan"
-    },
-    {
-      "name": "Admin Panel",
-      "url": "/dashboard/admin",
-      "description": "View all client nodes"
+      "name": "Demo",
+      "url": "/demo",
+      "description": "Try the platform"
     }
   ]
 }

@@ -1,22 +1,23 @@
 import { MetadataRoute } from 'next';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-    const baseUrl = "https://sovereign-matrix.com";
+    const baseUrl = "https://sovereignmatrix.agency";
 
-    // Static God-Brain structural routes
     const routes = [
         "",
-        "/dashboard/onboarding",
-        "/scan",
-        "/docs"
+        "/pricing",
+        "/demo",
+        "/partner",
+        "/about",
+        "/case-studies",
+        "/privacy",
+        "/terms",
     ];
 
-    const sitemapData = routes.map((route) => ({
+    return routes.map((route) => ({
         url: `${baseUrl}${route}`,
         lastModified: new Date().toISOString(),
-        changeFrequency: "daily" as const,
+        changeFrequency: "weekly" as const,
         priority: route === "" ? 1.0 : 0.8,
     }));
-
-    return sitemapData;
 }

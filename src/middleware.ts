@@ -11,7 +11,7 @@ import { apiLogger } from '@/lib/api-logger';
  */
 
 export const config = {
-  matcher: ['/landing/:path*', '/api/agents/:path*'],
+  matcher: ['/landing/:path*', '/api/agents/:path*', '/dashboard/:path*', '/dashboard'],
 };
 
 // In-memory rate limit tracking (per-edge-instance)
@@ -19,6 +19,18 @@ const rateLimits = new Map<string, { count: number; resetAt: number }>();
 
 export function middleware(request: NextRequest) {
   const url = request.nextUrl;
+
+  // ── DASHBOARD AUTH PROTECTION ──
+  // Clerk sets __session cookie when user is authenticated
+  if (url.pathname.startsWith('/dashboard')) {
+    const sessionToken = request.cookies.get('__session')?.value || request.cookies.get('__clerk_db_jwt')?.value;
+    if (!sessionToken) {
+      // Redirect unauthenticated users to sign-in
+      const signInUrl = new URL('/', request.url);
+      signInUrl.searchParams.set('redirect_url', url.pathname);
+      return NextResponse.redirect(signInUrl);
+    }
+  }
 
   // ── API GATEWAY for /api/agents/* ──
   if (url.pathname.startsWith('/api/agents')) {
@@ -74,7 +86,16 @@ export function middleware(request: NextRequest) {
     response.headers.set('X-RateLimit-Remaining', String(Math.max(0, 100 - (rateLimits.get(clientId)?.count || 0))));
     
     // CORS headers for external integrations (Zapier, Make, n8n)
-    response.headers.set('Access-Control-Allow-Origin', '*');
+    const origin = request.headers.get('origin') || '';
+    const allowedOrigins = [
+      'https://sovereignmatrix.agency',
+      'https://hooks.zapier.com',
+      'https://hook.eu1.make.com',
+      'https://hook.us1.make.com',
+      process.env.NEXT_PUBLIC_APP_URL,
+    ].filter(Boolean);
+    const corsOrigin = allowedOrigins.includes(origin) ? origin : allowedOrigins[0]!;
+    response.headers.set('Access-Control-Allow-Origin', corsOrigin);
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     response.headers.set('Access-Control-Allow-Headers', 'Content-Type, x-api-key, Authorization');
 
