@@ -98,6 +98,7 @@ export default function VoiceSwarmPage() {
         </div>
         <h1 className="text-3xl font-bold font-sans tracking-tight mb-2 flex items-center gap-3">
           Voice Swarm <span className="text-emerald-400 text-xl font-mono uppercase tracking-widest">[Nemotron TTS]</span>
+          <span className="px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-bold uppercase tracking-widest">Demo Mode</span>
         </h1>
         <p className="text-sm text-neutral-400 max-w-2xl leading-relaxed">
           Command and monitor autonomous voice agents powered by NVIDIA NIM and Twilio WebRTC. Sub-200ms TTFB latency ensures deepfake-level human parity for automated outbound sales cadences.
@@ -116,19 +117,19 @@ export default function VoiceSwarmPage() {
             
             <div className="grid grid-cols-2 gap-4 mb-6">
                <div className="bg-black/50 border border-white/5 p-4 rounded-xl">
-                 <div className="text-2xl font-bold font-mono text-emerald-400">142</div>
+                 <div className="text-2xl font-bold font-mono text-neutral-600">&mdash;</div>
                  <div className="text-[9px] uppercase tracking-widest text-neutral-500 mt-1">Calls Today</div>
                </div>
                <div className="bg-black/50 border border-white/5 p-4 rounded-xl">
-                 <div className="text-2xl font-bold font-mono text-white">3.4%</div>
+                 <div className="text-2xl font-bold font-mono text-neutral-600">&mdash;</div>
                  <div className="text-[9px] uppercase tracking-widest text-neutral-500 mt-1">Conversion</div>
                </div>
                <div className="bg-black/50 border border-white/5 p-4 rounded-xl">
-                 <div className="text-2xl font-bold font-mono text-white">180ms</div>
+                 <div className="text-2xl font-bold font-mono text-neutral-600">&mdash;</div>
                  <div className="text-[9px] uppercase tracking-widest text-neutral-500 mt-1">Avg TTFB</div>
                </div>
                <div className="bg-black/50 border border-white/5 p-4 rounded-xl">
-                 <div className="text-2xl font-bold font-mono text-[#00B7FF]">$4.1k</div>
+                 <div className="text-2xl font-bold font-mono text-neutral-600">&mdash;</div>
                  <div className="text-[9px] uppercase tracking-widest text-neutral-500 mt-1">Pipeline Gen</div>
                </div>
             </div>

@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, Building2, ShoppingCart, Utensils, Heart, Code, Truck, Zap } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { useToast } from "@/components/ui/ToastProvider";
 
 const TEMPLATES = [
   {
@@ -77,6 +78,7 @@ const TEMPLATES = [
 export default function MarketplacePage() {
   const [selected, setSelected] = useState<string | null>(null);
   const active = TEMPLATES.find(t => t.id === selected);
+  const toast = useToast();
 
   return (
     <div className="space-y-8">
@@ -139,7 +141,12 @@ export default function MarketplacePage() {
             ))}
           </div>
 
-          <button className={`px-8 py-4 rounded-xl font-bold uppercase tracking-widest text-sm transition-all flex items-center gap-2 bg-white text-black hover:bg-neutral-200`}>
+          <button
+            onClick={() => {
+              toast.success(`To deploy "${active.name}", go to the assistant and describe what you need.`);
+            }}
+            className={`px-8 py-4 rounded-xl font-bold uppercase tracking-widest text-sm transition-all flex items-center gap-2 bg-white text-black hover:bg-neutral-200`}
+          >
             <ArrowRight className="w-4 h-4" /> Deploy {active.name}
           </button>
         </motion.div>

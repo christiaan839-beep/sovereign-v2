@@ -27,8 +27,20 @@ export default function SupportRouterPage() {
         body: JSON.stringify({ prompt: "Analyze and classify support tickets for routing", task_type: "analysis" }),
       });
       const data = await res.json();
-      if (data.success) setPipelineState("analyzing");
-      else setPipelineState("idle");
+      if (data.success) {
+        setPipelineState("analyzing");
+        setActiveTicket({
+          id: data.id || `TKT-${Date.now()}`,
+          customer: data.customer || "Michael Brennan",
+          email: data.email || "m.brennan@industrialparts.com",
+          intent: data.intent || "REFUND_REQUEST + CHURN_RISK",
+          body: data.body || "Your garbage gasket blew out my entire hydraulic line mid-shift. I lost $14,000 in downtime. I want a full refund and a replacement overnighted or I'm switching to Parker.",
+          sentiment: data.sentiment || "HOSTILE (-0.92)",
+          history: data.history || "$42,180 LTV (14 orders)",
+        });
+      } else {
+        setPipelineState("idle");
+      }
     } catch {
       setPipelineState("idle");
     }
@@ -42,6 +54,7 @@ export default function SupportRouterPage() {
         </div>
         <h1 className="text-3xl font-bold font-sans tracking-tight mb-2 flex items-center gap-3">
           The Omni-Closer
+          <span className="text-[10px] font-mono font-normal px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/30 text-amber-400 uppercase tracking-widest">Demo Mode</span>
         </h1>
         <p className="text-sm text-neutral-400 max-w-2xl">
           Powered by Llama-3.1-Nemotron-70B and NeMo Retriever. This node ingests high-volume support emails/tickets, extracts LTV and purchase history, and physically executes refunds, RMAs, or technical support loops with zero human intervention.

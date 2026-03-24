@@ -118,7 +118,7 @@ export default function NimArsenalPage() {
                   >
                     {tierConf.label}
                   </span>
-                  <span className="w-2 h-2 rounded-full bg-[#00ff66] animate-pulse" title="Online" />
+                  <span className="w-2 h-2 rounded-full bg-[#00ff66]" title="Available" />
                 </div>
 
                 <h3 className="text-sm font-bold text-white mb-2 group-hover:text-[#00ff66] transition-colors">
@@ -130,7 +130,7 @@ export default function NimArsenalPage() {
 
                 <div className="mt-4 pt-3 border-t border-neutral-800 flex items-center justify-between">
                   <code className="text-[9px] text-neutral-600 font-mono">{model.key}</code>
-                  <span className="text-[9px] text-[#00ff66] font-bold uppercase tracking-wider">Active</span>
+                  <span className="text-[9px] text-[#00ff66] font-bold uppercase tracking-wider">Available</span>
                 </div>
               </div>
             );
@@ -141,7 +141,7 @@ export default function NimArsenalPage() {
         <footer className="border-t border-neutral-800 pt-6 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
           <div>
             <p className="text-3xl font-black text-[#00ff66]">{MODELS.length}</p>
-            <p className="text-[10px] text-neutral-500 uppercase tracking-widest mt-1">Active Models</p>
+            <p className="text-[10px] text-neutral-500 uppercase tracking-widest mt-1">Available Models</p>
           </div>
           <div>
             <p className="text-3xl font-black text-[#00B7FF]">7</p>

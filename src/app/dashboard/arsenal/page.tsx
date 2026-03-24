@@ -60,12 +60,32 @@ export default function SovereignArsenalPage() {
   const [deployingId, setDeployingId] = useState<string | null>(null);
   const toast = useToast();
 
-  const handleDeploy = (id: string) => {
+  const handleDeploy = async (id: string) => {
+    const blueprint = ANTHROPIC_COOKBOOKS.find(b => b.id === id);
+    if (!blueprint) return;
+
     setDeployingId(id);
-    setTimeout(() => {
+    try {
+      const res = await fetch("/api/agents/god-brain", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: `Deploy the following agent blueprint: "${blueprint.title}" - ${blueprint.description}. Category: ${blueprint.category}. Capabilities: ${blueprint.tags.join(", ")}. Configure and initialize this agent architecture.`,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`Deployment failed (${res.status})`);
+      }
+
+      const data = await res.json();
+      toast.success(data.response?.slice(0, 120) || "Blueprint deployed to God-Brain.");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      toast.error(`Deploy failed: ${message}`);
+    } finally {
       setDeployingId(null);
-      toast.success("Blueprint deployed to God-Brain.");
-    }, 2000);
+    }
   };
 
   return (

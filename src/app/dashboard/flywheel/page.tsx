@@ -1,16 +1,39 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { RefreshCcw, ShieldCheck, ThumbsUp, ThumbsDown, Activity, Settings2, BrainCircuit, FileCheck, CheckCircle2 } from "lucide-react";
 
 export default function FlywheelPage() {
   const [pipelineState, setPipelineState] = useState<"idle" | "optimizing" | "complete">("idle");
   const [metrics, setMetrics] = useState({
-    slopDetected: 142,
-    rlhfEvents: 8904,
-    accuracy: 94.2
+    slopDetected: 0,
+    rlhfEvents: 0,
+    accuracy: 0
   });
+
+  useEffect(() => {
+    const fetchInitialStats = async () => {
+      try {
+        const res = await fetch("/api/agents/flywheel", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "stats" }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          setMetrics({
+            slopDetected: data.slopDetected ?? 0,
+            rlhfEvents: data.rlhfEvents ?? 0,
+            accuracy: data.accuracy ?? 0,
+          });
+        }
+      } catch {
+        // Leave metrics at zero on failure
+      }
+    };
+    fetchInitialStats();
+  }, []);
 
   const triggerOptimization = async () => {
     setPipelineState("optimizing");
@@ -24,15 +47,14 @@ export default function FlywheelPage() {
       const data = await res.json();
       if (data.success) {
         setMetrics({
-          slopDetected: 0,
-          rlhfEvents: metrics.rlhfEvents + (data.optimizations || 142),
-          accuracy: data.accuracy || 98.7,
+          slopDetected: data.slopDetected ?? 0,
+          rlhfEvents: data.rlhfEvents ?? metrics.rlhfEvents,
+          accuracy: data.accuracy ?? metrics.accuracy,
         });
-      } else {
-        setMetrics({ ...metrics, slopDetected: 0, accuracy: 98.7 });
       }
+      // On failure, leave metrics unchanged — don't fake success
     } catch {
-      setMetrics({ ...metrics, slopDetected: 0, accuracy: 98.7 });
+      // Leave metrics unchanged on error
     } finally {
       setPipelineState("complete");
     }
