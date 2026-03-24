@@ -4,29 +4,23 @@ import { motion, useInView } from "framer-motion";
 import { useRef, useState, useEffect } from "react";
 import { Star, Quote } from "lucide-react";
 
-const TESTIMONIALS = [
+const PLATFORM_FACTS = [
   {
-    name: "Marcus van der Berg",
-    role: "CEO, Velocity Digital",
-    avatar: "MV",
-    text: "We replaced a 6-person content team with SOVEREIGN. The AI content engine produces more output in one day than our team did in a month — and the quality is indistinguishable from senior copywriters.",
-    metric: "R847K revenue generated",
-    color: "from-[#00B7FF]/20 to-transparent",
-  },
-  {
-    name: "Naledi Dlamini",
-    role: "Growth Lead, ScaleUp Agency",
-    avatar: "ND",
-    text: "The Funnel X-Ray is insane. We analyzed 40 competitor landing pages in one afternoon and built superior variants for our clients. Our conversion rates jumped 340% in 3 weeks.",
-    metric: "340% conversion lift",
+    metric: "116",
+    label: "Agent Endpoints",
+    desc: "Each calling a real AI model. Zero fakes, zero simulations.",
     color: "from-emerald-400/20 to-transparent",
   },
   {
-    name: "Johan Pretorius",
-    role: "Founder, Apex Marketing Co",
-    avatar: "JP",
-    text: "I was skeptical about AI-generated content until I saw the anti-slop engine. It doesn't read like AI. Our clients can't tell the difference and our output 10x'd overnight.",
-    metric: "10x content output",
+    metric: "$0",
+    label: "Per-Token Cost",
+    desc: "26 NVIDIA NIM models at zero inference cost. Scale without scaling your bill.",
+    color: "from-[#00B7FF]/20 to-transparent",
+  },
+  {
+    metric: "5",
+    label: "Safety Layers",
+    desc: "Jailbreak detection, topic control, content safety, PII scan, quality scoring.",
     color: "from-rose-400/20 to-transparent",
   },
 ];
@@ -77,16 +71,16 @@ export function Testimonials() {
           transition={{ duration: 0.8 }}
         >
           <h2 className="text-4xl md:text-5xl font-bold text-white serif-text mb-4">
-            The Results Speak
+            Built different. Verified.
           </h2>
           <p className="text-neutral-400 text-sm uppercase tracking-[0.2em]">
-            What operators say after deploying the swarm
+            Every number is real. Every agent calls a real AI model.
           </p>
         </motion.div>
       </div>
 
       <div className="grid md:grid-cols-3 gap-6">
-        {TESTIMONIALS.map((t, i) => (
+        {PLATFORM_FACTS.map((t, i) => (
           <motion.div
             key={i}
             initial={{ opacity: 0, y: 30 }}
@@ -95,36 +89,10 @@ export function Testimonials() {
             className="relative group"
           >
             <div className={`absolute inset-0 rounded-3xl bg-gradient-to-b ${t.color} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
-            <div className="relative rounded-3xl border border-white/10 bg-white/[0.02] backdrop-blur-sm p-8 h-full flex flex-col">
-              
-              {/* Stars */}
-              <div className="flex gap-1 mb-4">
-                {[...Array(5)].map((_, j) => (
-                  <Star key={j} className="w-4 h-4 fill-amber-400 text-amber-400" />
-                ))}
-              </div>
-
-              {/* Quote */}
-              <Quote className="w-8 h-8 text-white/10 mb-3" />
-              <p className="text-sm text-neutral-300 leading-relaxed flex-1 mb-6">
-                &ldquo;{t.text}&rdquo;
-              </p>
-
-              {/* Metric badge */}
-              <div className="px-3 py-1.5 rounded-full bg-emerald-400/10 border border-emerald-400/20 text-emerald-400 text-[10px] font-bold uppercase tracking-widest w-fit mb-6">
-                {t.metric}
-              </div>
-
-              {/* Author */}
-              <div className="flex items-center gap-3 pt-4 border-t border-white/5">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-white/10 to-white/5 border border-white/10 flex items-center justify-center text-xs font-bold text-white">
-                  {t.avatar}
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-white">{t.name}</p>
-                  <p className="text-[10px] text-neutral-500 uppercase tracking-widest">{t.role}</p>
-                </div>
-              </div>
+            <div className="relative rounded-2xl border border-white/[0.06] bg-[#080808] p-8 h-full flex flex-col">
+              <div className="text-5xl font-black text-white mb-2 tracking-tight">{t.metric}</div>
+              <div className="text-sm font-semibold text-white mb-3">{t.label}</div>
+              <p className="text-sm text-neutral-500 leading-relaxed">{t.desc}</p>
             </div>
           </motion.div>
         ))}
