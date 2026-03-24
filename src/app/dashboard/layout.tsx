@@ -8,7 +8,7 @@ import {
   LayoutDashboard, Users, Settings, Shield, DollarSign, Target,
   Layers, Globe2, Network, Search, ChevronDown, Rocket, Palette, Factory,
   X, Menu, Cpu, Mic, ScanFace, Video, Swords, ShieldAlert, Database, Headphones,
-  FileVideo, Cuboid, Briefcase, Ghost, Zap, CircuitBoard, BarChart3, RefreshCcw, Sparkles,
+  FileVideo, Cuboid, Ghost, Zap, CircuitBoard, BarChart3, RefreshCcw, Sparkles,
   PanelLeftOpen, PanelLeftClose, Clock, Plug
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -72,15 +72,12 @@ const NAV_GROUPS = [
       { href: "/dashboard/deepfake-studio", label: "Video Clone", icon: FileVideo },
       { href: "/dashboard/vsl-hacker", label: "Video Sales Letter", icon: Video },
       { href: "/dashboard/edify-forge", label: "Edify 3D Forge", icon: Cuboid },
-      { href: "/dashboard/holographic-agent", label: "3D Avatar", icon: CircuitBoard },
     ]
   },
   {
     group: "Platform",
     icon: Settings,
     items: [
-      { href: "/dashboard/marketplace", label: "Marketplace", icon: Globe2 },
-      { href: "/dashboard/agency-hub", label: "Agency Hub", icon: Briefcase },
       { href: "/dashboard/library", label: "My Library", icon: Layers },
       { href: "/dashboard/integrations", label: "Integrations", icon: Plug },
       { href: "/dashboard/billing", label: "Billing", icon: DollarSign },

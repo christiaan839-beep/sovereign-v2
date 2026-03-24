@@ -3,13 +3,32 @@
 import { motion } from "framer-motion";
 import { CreditCard, ExternalLink, Activity, CheckCircle2, Zap, BarChart3 } from "lucide-react";
 import { useUsage } from "@/hooks/useUsage";
+import { useUser } from "@clerk/nextjs";
 
 export default function BillingPortal() {
   const { today, limit, total, plan } = useUsage();
+  const { user } = useUser();
+
+  const handleUpgrade = async (planId: string) => {
+    try {
+      const res = await fetch("/api/payments/payfast/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planId, email: user?.emailAddresses?.[0]?.emailAddress || "" }),
+      });
+      const data = await res.json();
+      if (data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+      }
+    } catch (error) {
+      console.error("Checkout failed:", error);
+    }
+  };
 
   const PLANS = [
     {
       name: "Free",
+      planId: "starter",
       price: "R0",
       period: "/month",
       features: ["10 agent calls/day", "3 NIM models", "Community support", "1 workspace"],
@@ -17,6 +36,7 @@ export default function BillingPortal() {
     },
     {
       name: "Pro",
+      planId: "pro",
       price: "R499",
       period: "/month",
       features: ["100 agent calls/day", "39 NIM models", "Priority support", "5 workspaces", "White-label"],
@@ -25,6 +45,7 @@ export default function BillingPortal() {
     },
     {
       name: "Enterprise",
+      planId: "enterprise",
       price: "Custom",
       period: "",
       features: ["Unlimited calls", "All models + local NemoClaw", "Dedicated support", "Unlimited workspaces", "Custom agents", "SOC2 compliance"],
@@ -114,7 +135,10 @@ export default function BillingPortal() {
                 Contact Sales <ExternalLink className="w-3 h-3" />
               </a>
             ) : (
-              <button className="w-full py-3 rounded-xl bg-white text-black text-sm font-bold hover:bg-neutral-200 transition-colors">
+              <button
+                onClick={() => handleUpgrade(p.planId)}
+                className="w-full py-3 rounded-xl bg-white text-black text-sm font-bold hover:bg-neutral-200 transition-colors"
+              >
                 Upgrade
               </button>
             )}
