@@ -9,7 +9,7 @@ import {
   Layers, Globe2, Network, Search, ChevronDown, Rocket, Palette, Factory,
   X, Menu, Cpu, Mic, ScanFace, Video, Swords, ShieldAlert, Database, Headphones,
   FileVideo, Cuboid, Briefcase, Ghost, Zap, CircuitBoard, BarChart3, RefreshCcw, Sparkles,
-  PanelLeftOpen, PanelLeftClose, Clock
+  PanelLeftOpen, PanelLeftClose, Clock, Plug
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { UserButton, useUser } from "@clerk/nextjs";
@@ -80,6 +80,7 @@ const NAV_GROUPS = [
       { href: "/dashboard/marketplace", label: "Marketplace", icon: Globe2 },
       { href: "/dashboard/agency-hub", label: "Agency Hub", icon: Briefcase },
       { href: "/dashboard/library", label: "My Library", icon: Layers },
+      { href: "/dashboard/integrations", label: "Integrations", icon: Plug },
       { href: "/dashboard/billing", label: "Billing", icon: DollarSign },
       { href: "/dashboard/settings", label: "Settings", icon: Settings },
     ]
