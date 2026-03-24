@@ -248,7 +248,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="flex h-screen bg-[#000000] text-white overflow-hidden font-sans">
         
         {/* === DESKTOP SIDEBAR === */}
-        <aside className={`hidden lg:flex ${sidebarExpanded ? "w-[260px]" : "w-16"} border-r border-[#111111] bg-[#050505] flex-col shrink-0 overflow-hidden relative z-10 transition-all duration-300`}>
+        <aside className={`hidden ${isHome ? "lg:hidden" : "lg:flex"} ${sidebarExpanded ? "w-[260px]" : "w-16"} border-r border-[#111111] bg-[#050505] flex-col shrink-0 overflow-hidden relative z-10 transition-all duration-300`}>
 
           {/* Logo Header */}
           <div className={`border-b border-white/5 z-10 flex items-center ${sidebarExpanded ? "p-6 justify-between" : "p-4 justify-center"}`}>
@@ -310,7 +310,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* === MAIN CONTENT === */}
         <main className="flex-1 overflow-y-auto bg-[#000000] relative z-10 custom-scrollbar">
           <div className="relative z-10 w-full min-h-full max-w-[1600px] mx-auto">
-            <SystemPulseStrip />
+            {!isHome && <SystemPulseStrip />}
             {!isHome && <SmartContextBar />}
             <ErrorBoundary>
               <ToastProvider>
@@ -335,7 +335,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {!isHome && <SovereignAssistant />}
 
         {/* === MOBILE BOTTOM NAV === */}
-        <nav className="lg:hidden fixed bottom-6 left-6 right-6 z-50 bg-[#0A0A0A] border border-white/10 rounded-2xl flex items-center justify-around p-3 shadow-2xl">
+        <nav className={`${isHome ? "hidden" : "lg:hidden"} fixed bottom-6 left-6 right-6 z-50 bg-[#0A0A0A] border border-white/10 rounded-2xl flex items-center justify-around p-3 shadow-2xl`}>
            <Link href="/dashboard" className={`flex flex-col items-center gap-1.5 ${pathname === '/dashboard' ? 'text-white' : 'text-neutral-500'}`}>
               <LayoutDashboard className="w-5 h-5" />
               <span className="text-[9px] font-medium tracking-wide">Home</span>
