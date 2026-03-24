@@ -17,7 +17,24 @@ export async function GET() {
       where: eq(settings.userEmail, userEmail)
     });
 
-    return NextResponse.json({ apiKeys: userSettings?.apiKeys || "{}" });
+    // Mask API keys — never return full keys in GET responses
+    const rawKeys = JSON.parse(userSettings?.apiKeys || "{}");
+    const maskedKeys: Record<string, { configured: boolean; masked: string }> = {};
+    for (const [provider, key] of Object.entries(rawKeys)) {
+      const k = String(key);
+      if (k && k.length > 8) {
+        maskedKeys[provider] = {
+          configured: true,
+          masked: `${k.slice(0, 4)}..${k.slice(-4)}`,
+        };
+      } else if (k) {
+        maskedKeys[provider] = { configured: true, masked: "****" };
+      } else {
+        maskedKeys[provider] = { configured: false, masked: "" };
+      }
+    }
+
+    return NextResponse.json({ apiKeys: maskedKeys });
   } catch (err) {
     console.error("GET /api/settings/api-keys error:", err);
     return NextResponse.json({ error: "Server Error" }, { status: 500 });

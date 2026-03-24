@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 
+function escapeHtml(str: string): string {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 /**
  * CLIENT AUTO-ONBOARD — When a new client pays, this agent:
  * 1. Deploys their vertical template automatically
@@ -68,10 +72,10 @@ export async function POST(request: Request) {
           body: JSON.stringify({
             from: fromEmail,
             to: email,
-            subject: `Welcome to Sovereign Matrix — Your AI Fleet is Live, ${clientName}`,
+            subject: `Welcome to Sovereign Matrix — Your AI Fleet is Live, ${escapeHtml(clientName)}`,
             html: `
               <div style="font-family:system-ui;max-width:600px;margin:0 auto;padding:40px;background:#000;color:#fff">
-                <h1 style="color:#00B7FF;font-size:24px">Welcome, ${clientName} 🚀</h1>
+                <h1 style="color:#00B7FF;font-size:24px">Welcome, ${escapeHtml(clientName)} 🚀</h1>
                 <p style="color:#999;font-size:14px">Your autonomous AI fleet has been deployed and is ready to work.</p>
                 <div style="background:#111;border:1px solid #333;padding:20px;margin:20px 0">
                   <p style="color:#00ff66;font-size:12px;text-transform:uppercase;letter-spacing:2px">Your Setup</p>
@@ -135,6 +139,6 @@ export async function POST(request: Request) {
       steps_total: onboardingSteps.length,
     });
   } catch (error) {
-    return NextResponse.json({ error: "Onboarding error", details: String(error) }, { status: 500 });
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

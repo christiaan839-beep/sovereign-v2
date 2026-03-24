@@ -1,5 +1,6 @@
 import { nimChat, getNimKey } from "@/lib/nvidia";
 import { NextResponse } from "next/server";
+import { requireAuth } from "@/lib/auth-guard";
 
 /**
  * AGENT MEMORY — Pinecone-backed long-term conversational memory.
@@ -31,6 +32,7 @@ function getKey(userId: string, agentId: string): string {
 }
 
 export async function POST(request: Request) {
+  const auth = await requireAuth(); if (auth.error) return auth.error;
   try {
     const { action, userId = "default", agentId = "general", content, type = "conversation", query, limit = 10 } = await request.json();
 
@@ -205,6 +207,7 @@ function calculateImportance(content: string): number {
 }
 
 export async function GET(request: Request) {
+  const auth = await requireAuth(); if (auth.error) return auth.error;
   const url = new URL(request.url);
   const userId = url.searchParams.get("userId") || "default";
 

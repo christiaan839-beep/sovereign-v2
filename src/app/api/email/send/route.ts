@@ -116,9 +116,21 @@ export async function POST(req: Request) {
 }
 
 /**
+ * Escape HTML special characters to prevent XSS in email templates.
+ */
+function escapeHtml(str: string): string {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+/**
  * Built-in branded SOVEREIGN email templates
  */
 function renderTemplate(template: string, data: Record<string, string>): string {
+  // Sanitize all data values before injecting into HTML
+  const safe: Record<string, string> = {};
+  for (const [key, value] of Object.entries(data)) {
+    safe[key] = escapeHtml(String(value || ""));
+  }
   const baseStyle = `
     <div style="font-family: 'Segoe UI', Arial, sans-serif; background: #0A0A0B; color: #E5E5E5; padding: 40px; max-width: 600px; margin: 0 auto;">
       <div style="border-bottom: 1px solid #1a1a1f; padding-bottom: 20px; margin-bottom: 30px;">
@@ -135,32 +147,32 @@ function renderTemplate(template: string, data: Record<string, string>): string 
     welcome: `
       <h2 style="color: #00B7FF; font-weight: 300; font-size: 22px;">Welcome to SOVEREIGN</h2>
       <p>Your autonomous marketing node has been activated.</p>
-      <p>Node ID: <strong style="color: white;">${data.nodeId || "UMB-NX-00000"}</strong></p>
+      <p>Node ID: <strong style="color: white;">${safe.nodeId || "UMB-NX-00000"}</strong></p>
       <p>Your AI marketing engine is now initializing. You'll receive notifications as it learns and executes.</p>
-      <a href="${data.dashboardUrl || "#"}" style="display: inline-block; padding: 12px 30px; background: #00B7FF15; border: 1px solid #00B7FF30; color: #00B7FF; text-decoration: none; border-radius: 8px; font-size: 12px; letter-spacing: 0.15em; text-transform: uppercase; margin-top: 20px;">Enter Command Center →</a>`,
+      <a href="${safe.dashboardUrl || "#"}" style="display: inline-block; padding: 12px 30px; background: #00B7FF15; border: 1px solid #00B7FF30; color: #00B7FF; text-decoration: none; border-radius: 8px; font-size: 12px; letter-spacing: 0.15em; text-transform: uppercase; margin-top: 20px;">Enter Command Center →</a>`,
 
     payment_confirmed: `
       <h2 style="color: #10B981; font-weight: 300; font-size: 22px;">Payment Confirmed</h2>
-      <p>Amount: <strong style="color: white;">${data.amount || "R0"}</strong></p>
-      <p>Plan: <strong style="color: white;">${data.plan || "Sovereign"}</strong></p>
+      <p>Amount: <strong style="color: white;">${safe.amount || "R0"}</strong></p>
+      <p>Plan: <strong style="color: white;">${safe.plan || "Sovereign"}</strong></p>
       <p>Your SOVEREIGN node is now fully operational. All AI engines are active.</p>`,
 
     lead_alert: `
       <h2 style="color: #F97316; font-weight: 300; font-size: 22px;">New Lead Captured</h2>
-      <p>Prospect: <strong style="color: white;">${data.prospect || "Unknown"}</strong></p>
-      <p>Source: <strong style="color: white;">${data.source || "Outbound Engine"}</strong></p>
-      <p>Estimated Value: <strong style="color: white;">${data.value || "$0"}</strong></p>`,
+      <p>Prospect: <strong style="color: white;">${safe.prospect || "Unknown"}</strong></p>
+      <p>Source: <strong style="color: white;">${safe.source || "Outbound Engine"}</strong></p>
+      <p>Estimated Value: <strong style="color: white;">${safe.value || "$0"}</strong></p>`,
 
     weekly_report: `
       <h2 style="color: #A855F7; font-weight: 300; font-size: 22px;">Weekly Intelligence Digest</h2>
       <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-        <tr><td style="padding: 8px 0; border-bottom: 1px solid #1a1a1f; color: #666;">Leads Generated</td><td style="text-align: right; color: white; padding: 8px 0; border-bottom: 1px solid #1a1a1f;">${data.leads || "0"}</td></tr>
-        <tr><td style="padding: 8px 0; border-bottom: 1px solid #1a1a1f; color: #666;">Content Published</td><td style="text-align: right; color: white; padding: 8px 0; border-bottom: 1px solid #1a1a1f;">${data.content || "0"}</td></tr>
-        <tr><td style="padding: 8px 0; border-bottom: 1px solid #1a1a1f; color: #666;">Emails Sent</td><td style="text-align: right; color: white; padding: 8px 0; border-bottom: 1px solid #1a1a1f;">${data.emails || "0"}</td></tr>
-        <tr><td style="padding: 8px 0; color: #666;">Revenue</td><td style="text-align: right; color: #10B981; padding: 8px 0;">${data.revenue || "R0"}</td></tr>
+        <tr><td style="padding: 8px 0; border-bottom: 1px solid #1a1a1f; color: #666;">Leads Generated</td><td style="text-align: right; color: white; padding: 8px 0; border-bottom: 1px solid #1a1a1f;">${safe.leads || "0"}</td></tr>
+        <tr><td style="padding: 8px 0; border-bottom: 1px solid #1a1a1f; color: #666;">Content Published</td><td style="text-align: right; color: white; padding: 8px 0; border-bottom: 1px solid #1a1a1f;">${safe.content || "0"}</td></tr>
+        <tr><td style="padding: 8px 0; border-bottom: 1px solid #1a1a1f; color: #666;">Emails Sent</td><td style="text-align: right; color: white; padding: 8px 0; border-bottom: 1px solid #1a1a1f;">${safe.emails || "0"}</td></tr>
+        <tr><td style="padding: 8px 0; color: #666;">Revenue</td><td style="text-align: right; color: #10B981; padding: 8px 0;">${safe.revenue || "R0"}</td></tr>
       </table>`,
   };
 
-  const content = templates[template] || `<p>${data.message || "No content available."}</p>`;
+  const content = templates[template] || `<p>${safe.message || "No content available."}</p>`;
   return baseStyle.replace("{{CONTENT}}", content);
 }

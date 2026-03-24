@@ -46,6 +46,6 @@ export async function POST(request: Request) {
       license: "NVIDIA Open Model License — commercial use permitted",
     });
   } catch (error) {
-    return NextResponse.json({ error: "Document analyst error", details: String(error) }, { status: 500 });
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
