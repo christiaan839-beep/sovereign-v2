@@ -31,6 +31,7 @@ const NAV_GROUPS = [
     icon: LayoutDashboard,
     items: [
       { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
+      { href: "/dashboard/agent-hq", label: "Agent HQ", icon: Users },
       { href: "/dashboard/build", label: "Build Mode", icon: Sparkles },
       { href: "/dashboard/agent-command", label: "Agent Command", icon: Zap },
       { href: "/dashboard/workflows", label: "Workflows", icon: CircuitBoard },

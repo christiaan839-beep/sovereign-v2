@@ -30,7 +30,8 @@
       "name": "n8n-workflows",
       "runtimeExecutable": "docker",
       "runtimeArgs": ["compose", "up", "n8n"],
-      "port": 5678
+      "port": 5678,
+      "autoPort": true
     }
   ]
 }
