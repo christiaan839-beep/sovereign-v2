@@ -59,14 +59,29 @@ Be specific, actionable, and aggressive. Reference real findings from the resear
       };
     }
 
-    return NextResponse.json({
+    const result = {
       success: true,
       target,
       threat_level: parsed.threat_level,
       vulnerabilities: parsed.vulnerabilities,
       counter_strikes: parsed.counter_strikes,
       duration_ms: Date.now() - start,
-    });
+    };
+
+    // Auto-handoff to report writer
+    fetch(new URL("/api/agents/comms", request.url).toString(), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from: "competitor-scout",
+        to: "client-report",
+        type: "handoff",
+        payload: { intel: result, action: "generate_report" },
+        autoExecute: false
+      })
+    }).catch(() => {}); // Fire and forget
+
+    return NextResponse.json(result);
   } catch (error) {
     return NextResponse.json({ error: "Competitor scan error", details: String(error) }, { status: 500 });
   }

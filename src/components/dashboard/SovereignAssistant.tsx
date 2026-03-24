@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageSquare, X, Send, Sparkles, Globe, FileText, Users, Code2, Search, Zap, Image } from "lucide-react";
+import { MessageSquare, X, Send, Sparkles, Globe, FileText, Users, Code2, Search, Zap, Image, ThumbsUp, ThumbsDown } from "lucide-react";
 import { routeIntent } from "@/lib/intent-router";
 
 interface Message {
@@ -123,11 +123,21 @@ function useSovereignChat() {
     }
   }, [loading]);
 
-  return { messages, input, setInput, loading, sendMessage, scrollRef, inputRef };
+  const submitFeedback = async (messageId: string, rating: number) => {
+    try {
+      await fetch("/api/agents/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "rate", agentId: "assistant", rating, output: messages.find(m => m.id === messageId)?.content || "" })
+      });
+    } catch {}
+  };
+
+  return { messages, input, setInput, loading, sendMessage, scrollRef, inputRef, submitFeedback };
 }
 
 // ─── Message Bubble (shared) ───
-function ChatMessage({ msg, loading }: { msg: Message; loading: boolean }) {
+function ChatMessage({ msg, loading, submitFeedback }: { msg: Message; loading: boolean; submitFeedback: (messageId: string, rating: number) => void }) {
   return (
     <div className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
       <div
@@ -143,6 +153,16 @@ function ChatMessage({ msg, loading }: { msg: Message; loading: boolean }) {
           </span>
         )}
         <div className="whitespace-pre-wrap break-words">{msg.content || (loading ? "Thinking..." : "")}</div>
+        {msg.role === "assistant" && !loading && (
+          <div className="flex items-center gap-1 mt-2">
+            <button onClick={() => submitFeedback(msg.id, 5)} className="p-1 rounded hover:bg-white/5 text-neutral-600 hover:text-emerald-400 transition-colors" title="Good response">
+              <ThumbsUp className="w-3.5 h-3.5" />
+            </button>
+            <button onClick={() => submitFeedback(msg.id, 1)} className="p-1 rounded hover:bg-white/5 text-neutral-600 hover:text-red-400 transition-colors" title="Bad response">
+              <ThumbsDown className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -166,7 +186,7 @@ function LoadingDots() {
 // ─── Floating Widget (existing behavior) ───
 export function SovereignAssistant() {
   const [open, setOpen] = useState(false);
-  const { messages, input, setInput, loading, sendMessage, scrollRef, inputRef } = useSovereignChat();
+  const { messages, input, setInput, loading, sendMessage, scrollRef, inputRef, submitFeedback } = useSovereignChat();
 
   useEffect(() => {
     if (open && inputRef.current) {
@@ -221,7 +241,7 @@ export function SovereignAssistant() {
                   ))}
                 </div>
               )}
-              {messages.map((msg) => <ChatMessage key={msg.id} msg={msg} loading={loading} />)}
+              {messages.map((msg) => <ChatMessage key={msg.id} msg={msg} loading={loading} submitFeedback={submitFeedback} />)}
               {loading && messages[messages.length - 1]?.role === "user" && <LoadingDots />}
             </div>
 
@@ -245,7 +265,7 @@ export function SovereignAssistant() {
 
 // ─── Full-Page Embedded Chat (Claude-like) ───
 export function SovereignAssistantEmbed() {
-  const { messages, input, setInput, loading, sendMessage, scrollRef, inputRef } = useSovereignChat();
+  const { messages, input, setInput, loading, sendMessage, scrollRef, inputRef, submitFeedback } = useSovereignChat();
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -285,7 +305,7 @@ export function SovereignAssistantEmbed() {
         ) : (
           /* Active chat — scrollable messages */
           <div className="max-w-3xl mx-auto w-full px-6 py-8 space-y-6">
-            {messages.map((msg) => <ChatMessage key={msg.id} msg={msg} loading={loading} />)}
+            {messages.map((msg) => <ChatMessage key={msg.id} msg={msg} loading={loading} submitFeedback={submitFeedback} />)}
             {loading && messages[messages.length - 1]?.role === "user" && <LoadingDots />}
           </div>
         )}

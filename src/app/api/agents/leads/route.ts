@@ -54,11 +54,26 @@ Return EXACTLY this JSON structure, and nothing else:
 
       await fireUserWebhook("Leads", "Sweep Completed", { niche, location, count: parsed.reports?.length || 0 });
 
-      return NextResponse.json({
+      const result = {
         success: true,
         prospects_analyzed: parsed.reports?.length || 0,
         reports: parsed.reports || []
-      });
+      };
+
+      // Auto-handoff to outreach agent
+      fetch(new URL("/api/agents/comms", req.url).toString(), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          from: "lead-hunter",
+          to: "outbound",
+          type: "handoff",
+          payload: { leads: result, action: "draft_outreach" },
+          autoExecute: false
+        })
+      }).catch(() => {}); // Fire and forget
+
+      return NextResponse.json(result);
     }
 
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });

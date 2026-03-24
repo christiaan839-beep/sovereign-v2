@@ -26,6 +26,7 @@ import { NextResponse } from "next/server";
 import { guardRoute, sanitizeString, errorResponse } from "@/lib/api-guard";
 import { detectJailbreak } from "@/lib/jailbreak-detect";
 import { checkContentSafety } from "@/lib/content-safety";
+import { scoreOutput, type QualityScore } from "@/lib/quality-scorer";
 import { createLogger } from "@/lib/logger";
 import { getAntiSlopRules } from "@/lib/system-prompts";
 
@@ -55,6 +56,12 @@ export interface AgentConfig {
 
   /** Skip PII scanning on output (for PII agents themselves) */
   skipPiiScan?: boolean;
+
+  /** Skip quality scoring on output (for scoring/safety agents themselves) */
+  skipQualityCheck?: boolean;
+
+  /** Quality score threshold — output below this triggers regeneration (default: 0.6) */
+  qualityThreshold?: number;
 
   /** Allowed topics — agent will refuse off-topic requests (NeMo Guardrails pattern) */
   allowedTopics?: string[];
@@ -191,14 +198,87 @@ export function createAgentRoute(config: AgentConfig) {
         }
       }
 
+      // ─── Quality Scoring & Auto-Regeneration ───
+      let qualityScore: QualityScore | undefined;
+      let finalResult = result;
+
+      if (!config.skipQualityCheck) {
+        const outputText = getFirstStringValue(result);
+        const promptText = getFirstStringValue(sanitized);
+
+        if (outputText && promptText && outputText.length >= 20) {
+          const threshold = config.qualityThreshold ?? 0.6;
+
+          try {
+            qualityScore = await scoreOutput(promptText, outputText, threshold);
+
+            if (!qualityScore.passed) {
+              log.info("Quality below threshold — regenerating", {
+                agent: config.name,
+                score: qualityScore.overall,
+                threshold,
+              });
+
+              // Re-run handler with a refinement hint injected into the input
+              const refinedInput: Record<string, unknown> = {
+                ...sanitized,
+                _qualityRetry: true,
+                _refinementHint:
+                  `Previous response scored ${qualityScore.overall}/1.0. ` +
+                  `Improve: helpfulness=${qualityScore.helpfulness}, coherence=${qualityScore.coherence}, ` +
+                  `correctness=${qualityScore.correctness}, verbosity=${qualityScore.verbosity}. ` +
+                  `Be more precise, accurate, and concise.`,
+              };
+
+              const retryResult = await config.handler({
+                input: refinedInput,
+                request: req,
+                email,
+                userId,
+              });
+
+              // Score the retry attempt
+              const retryText = getFirstStringValue(retryResult);
+              if (retryText && retryText.length >= 20) {
+                const retryScore = await scoreOutput(promptText, retryText, threshold);
+                // Use whichever attempt scored higher
+                if (retryScore.overall >= qualityScore.overall) {
+                  finalResult = retryResult;
+                  qualityScore = retryScore;
+                  log.info("Retry improved quality", {
+                    agent: config.name,
+                    newScore: retryScore.overall,
+                  });
+                } else {
+                  log.info("Retry did not improve — keeping original", {
+                    agent: config.name,
+                    originalScore: qualityScore.overall,
+                    retryScore: retryScore.overall,
+                  });
+                }
+              } else {
+                finalResult = retryResult;
+              }
+            }
+          } catch (scoringError) {
+            // Fail-safe: if scorer breaks, return the original response untouched
+            log.warn("Quality scoring failed — returning original response", {
+              agent: config.name,
+              error: String(scoringError),
+            });
+          }
+        }
+      }
+
       // ─── Return Response ───
       return NextResponse.json({
-        ...result,
+        ...finalResult,
         _meta: {
           agent: config.name,
           durationMs: Date.now() - startTime,
           timestamp: new Date().toISOString(),
           ...(piiWarning ? { piiWarning } : {}),
+          ...(qualityScore ? { qualityScore: qualityScore.overall, qualityPassed: qualityScore.passed } : {}),
         },
       });
     } catch (error: unknown) {

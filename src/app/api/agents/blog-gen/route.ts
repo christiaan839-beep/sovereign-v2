@@ -78,7 +78,7 @@ export async function POST(request: Request) {
     // Generate slug
     const slug = topic.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
-    return NextResponse.json({
+    const result = {
       success: true,
       topic,
       slug,
@@ -92,7 +92,22 @@ export async function POST(request: Request) {
         keywords: keywords.length > 0 ? keywords : [topic],
         slug: `/blog/${slug}`,
       },
-    });
+    };
+
+    // Auto-handoff to SEO agent
+    fetch(new URL("/api/agents/comms", request.url).toString(), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from: "content-writer",
+        to: "seo-dominator",
+        type: "handoff",
+        payload: { content: result, action: "optimize_seo" },
+        autoExecute: false
+      })
+    }).catch(() => {}); // Fire and forget
+
+    return NextResponse.json(result);
   } catch (error) {
     return NextResponse.json({ error: "Blog generator error", details: String(error) }, { status: 500 });
   }
