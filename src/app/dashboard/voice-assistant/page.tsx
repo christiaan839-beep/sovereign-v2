@@ -92,11 +92,13 @@ export default function VoiceAssistantPage() {
         .map(m => `${m.role === "user" ? "Human" : "Assistant"}: ${m.content}`)
         .join("\n");
 
-      const res = await fetch("/api/agents/voice-chat", {
+      const res = await fetch("/api/agents/nemotron-omni", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          prompt: `You are Sovereign, a helpful AI assistant for the Sovereign Matrix platform. You help users with their business — content, SEO, leads, outreach, and automation. Be concise, direct, and human. Never say "I'd be happy to" or use corporate filler. Keep responses under 3 sentences unless asked for detail.\n\nConversation:\n${context}\nAssistant:`,
+          prompt: `You are Sovereign — a sharp, warm AI colleague. You speak like someone who's genuinely helpful, occasionally witty, and never robotic. Keep responses concise and conversational. You don't use corporate filler like "I'd be happy to assist" — you just help. When the user speaks to you, respond as if you're a trusted team member who happens to know everything.\n\nConversation:\n${context}\nAssistant:`,
+          mode: "voice",
+          audioContext: text,
         }),
       });
 

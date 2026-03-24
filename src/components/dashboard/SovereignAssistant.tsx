@@ -235,6 +235,45 @@ function RichContent({ content, contentType }: { content: string; contentType?: 
     );
   }
 
+  // Check for data that could be a chart (numbers, metrics, percentages)
+  const chartMatch = content.match(/(\d+(?:\.\d+)?%|\$[\d,]+|R[\d,]+|\d+ (?:agents?|leads?|requests?|users?))/gi);
+  if (chartMatch && chartMatch.length >= 3) {
+    // Extract metric pairs for a simple bar chart
+    const metrics = content.split('\n')
+      .filter(line => /\d/.test(line) && line.trim().length > 0)
+      .slice(0, 8)
+      .map(line => {
+        const numMatch = line.match(/([\d,.]+%?)/);
+        const label = line.replace(/([\d,.]+%?)/, '').replace(/[:\-|]/g, '').trim().slice(0, 30);
+        return { label: label || 'Metric', value: numMatch ? parseFloat(numMatch[1].replace(/[,%]/g, '')) : 0 };
+      })
+      .filter(m => m.value > 0);
+
+    if (metrics.length >= 2) {
+      const maxVal = Math.max(...metrics.map(m => m.value));
+      return (
+        <div className="space-y-3">
+          <div className="whitespace-pre-wrap break-words text-sm mb-4">{content}</div>
+          <div className="p-4 rounded-xl bg-black/30 border border-white/5">
+            <p className="text-[9px] uppercase tracking-widest text-emerald-500/60 font-bold mb-3">Auto-Generated Chart</p>
+            <div className="space-y-2">
+              {metrics.map((m, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <span className="text-[10px] text-neutral-500 w-24 truncate text-right">{m.label}</span>
+                  <div className="flex-1 h-5 bg-white/[0.03] rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-emerald-500/60 to-emerald-400/40 rounded-full transition-all duration-700"
+                      style={{ width: `${(m.value / maxVal) * 100}%` }} />
+                  </div>
+                  <span className="text-[10px] text-neutral-400 w-12 text-right font-mono">{m.value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    }
+  }
+
   // Default: plain text with whitespace preserved
   return <div className="whitespace-pre-wrap break-words">{content}</div>;
 }

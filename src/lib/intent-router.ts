@@ -165,6 +165,12 @@ const ROUTES: Array<{
     label: "Enterprise Search",
     extractParam: (t) => ({ query: t }),
   },
+  {
+    keywords: ["talk to", "speak", "voice", "listen", "omni", "multimodal"],
+    endpoint: "/api/agents/nemotron-omni",
+    label: "Sovereign Voice",
+    extractParam: (t) => ({ prompt: t, mode: "text" }),
+  },
 ];
 
 /**
