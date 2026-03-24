@@ -9,7 +9,7 @@ import {
   Layers, Globe2, Network, Search, ChevronDown, Rocket, Palette, Factory,
   X, Menu, Cpu, Mic, ScanFace, Video, Swords, ShieldAlert, Database, Headphones,
   FileVideo, Cuboid, Briefcase, Ghost, Zap, CircuitBoard, BarChart3, RefreshCcw, Sparkles,
-  PanelLeftOpen, PanelLeftClose
+  PanelLeftOpen, PanelLeftClose, Clock
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { UserButton, useUser } from "@clerk/nextjs";
@@ -37,6 +37,7 @@ const NAV_GROUPS = [
       { href: "/dashboard/war-room", label: "War Room", icon: Swords },
       { href: "/dashboard/leads", label: "Lead Prospector", icon: Users },
       { href: "/dashboard/agent-analytics", label: "Analytics", icon: BarChart3 },
+      { href: "/dashboard/automations", label: "Automations", icon: Clock },
       { href: "/dashboard/live-terminal", label: "Live Terminal", icon: CircuitBoard },
     ]
   },
