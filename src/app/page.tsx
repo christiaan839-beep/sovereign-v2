@@ -12,6 +12,7 @@ import { Testimonials } from "@/components/ui/SocialProof";
 
 import { InteractiveHeroStrike } from "@/components/ui/InteractiveHeroStrike";
 import { SocialProofMetrics } from "@/components/ui/SocialProofMetrics";
+import { HeroWebGL } from "@/components/ui/HeroWebGL";
 // ─── Animated Energy Orb (enhanced with 3 rings + particle field) ───
 function EnergyOrb() {
   return (
@@ -231,27 +232,8 @@ export default function Home() {
         {/* Fixed background layer — holographic cube with parallax */}
         <div className="sticky top-0 h-screen flex flex-col items-center justify-center overflow-hidden">
 
-          {/* Holographic cube background */}
-          <motion.div
-            style={{ y: useTransform(scrollYProgress, [0, 1], [0, -200]) }}
-            className="absolute inset-0 flex items-center justify-center pointer-events-none"
-          >
-            <div className="relative w-[500px] h-[500px] md:w-[700px] md:h-[700px]">
-              <img
-                src="/hero-cube.jpg"
-                alt=""
-                className="w-full h-full object-contain opacity-30 blur-[1px]"
-              />
-              {/* Glow overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-[#010101] via-transparent to-[#010101]" />
-              <div className="absolute inset-0 bg-gradient-to-r from-[#010101] via-transparent to-[#010101]" />
-              {/* Pulsing glow ring */}
-              <div className="absolute inset-0 rounded-full bg-emerald-500/[0.03] blur-[100px] animate-pulse" />
-            </div>
-          </motion.div>
-
-          {/* Fine grid overlay */}
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(16,185,129,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(16,185,129,0.02)_1px,transparent_1px)] bg-[size:60px_60px] pointer-events-none" />
+          {/* WebGL 3D Background — animated holographic circuit board */}
+          <HeroWebGL />
 
           {/* Vignettes */}
           <div className="absolute top-0 inset-x-0 h-40 bg-gradient-to-b from-[#010101] to-transparent pointer-events-none z-[1]" />
