@@ -224,72 +224,121 @@ export default function Home() {
         </AnimatePresence>
       </motion.nav>
 
-      {/* ═══ HERO — The Superpower Moment ═══ */}
+      {/* ═══ HERO — Cinematic 3D Immersive ═══ */}
       <motion.section ref={heroRef} style={{ opacity: heroOpacity, scale: heroScale }}
-        className="relative min-h-screen flex flex-col items-center justify-center px-6 overflow-hidden">
+        className="relative min-h-[200vh] overflow-hidden">
 
-        <EnergyOrb />
+        {/* Fixed background layer — holographic cube with parallax */}
+        <div className="sticky top-0 h-screen flex flex-col items-center justify-center overflow-hidden">
 
-        {/* Holographic grid overlay — emerald pulsing lines */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(16,185,129,0.025)_1px,transparent_1px),linear-gradient(90deg,rgba(16,185,129,0.025)_1px,transparent_1px)] bg-[size:60px_60px] pointer-events-none" />
-        {/* Secondary fine grid */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,183,255,0.008)_1px,transparent_1px),linear-gradient(90deg,rgba(0,183,255,0.008)_1px,transparent_1px)] bg-[size:15px_15px] pointer-events-none" />
-        {/* Top vignette */}
-        <div className="absolute top-0 inset-x-0 h-40 bg-gradient-to-b from-[#010101] to-transparent pointer-events-none z-[1]" />
-        {/* Bottom vignette */}
-        <div className="absolute bottom-0 inset-x-0 h-40 bg-gradient-to-t from-[#010101] to-transparent pointer-events-none z-[1]" />
-
-        <div className="relative z-10 max-w-4xl mx-auto text-center">
-          {/* Status badge */}
-          <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.6 }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-emerald-500/15 bg-emerald-500/[0.04] mb-10">
-            <span className="relative flex h-1.5 w-1.5">
-              <span className="animate-ping absolute h-full w-full rounded-full bg-emerald-400 opacity-50" />
-              <span className="relative rounded-full h-1.5 w-1.5 bg-emerald-400" />
-            </span>
-            <span className="text-[11px] text-emerald-400/80 font-medium">132 Agents Live</span>
+          {/* Holographic cube background */}
+          <motion.div
+            style={{ y: useTransform(scrollYProgress, [0, 1], [0, -200]) }}
+            className="absolute inset-0 flex items-center justify-center pointer-events-none"
+          >
+            <div className="relative w-[500px] h-[500px] md:w-[700px] md:h-[700px]">
+              <img
+                src="/hero-cube.jpg"
+                alt=""
+                className="w-full h-full object-contain opacity-30 blur-[1px]"
+              />
+              {/* Glow overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-[#010101] via-transparent to-[#010101]" />
+              <div className="absolute inset-0 bg-gradient-to-r from-[#010101] via-transparent to-[#010101]" />
+              {/* Pulsing glow ring */}
+              <div className="absolute inset-0 rounded-full bg-emerald-500/[0.03] blur-[100px] animate-pulse" />
+            </div>
           </motion.div>
 
-          {/* Headline */}
-          <motion.h1 initial={{ opacity: 0, y: 25 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05, duration: 0.9 }}
-            className="text-[clamp(2.5rem,8vw,7rem)] font-black leading-[0.92] tracking-[-0.03em] mb-8">
-            <span className="text-shimmer">
-              The agents are live.
-            </span>
-          </motion.h1>
+          {/* Fine grid overlay */}
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(16,185,129,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(16,185,129,0.02)_1px,transparent_1px)] bg-[size:60px_60px] pointer-events-none" />
 
-          {/* Subtitle */}
-          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4, duration: 0.7 }}
-            className="text-base md:text-lg text-neutral-500 max-w-2xl mx-auto leading-relaxed mb-12">
-            While your competitors hire. You deploy. 132 autonomous agents across 51 open-source models. Zero per-token cost. This is the future of work.
-          </motion.p>
+          {/* Vignettes */}
+          <div className="absolute top-0 inset-x-0 h-40 bg-gradient-to-b from-[#010101] to-transparent pointer-events-none z-[1]" />
+          <div className="absolute bottom-0 inset-x-0 h-60 bg-gradient-to-t from-[#010101] to-transparent pointer-events-none z-[1]" />
 
-          {/* CTAs */}
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 0.6 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-16">
-            <Link href="/dashboard" className="cta-glow group flex items-center gap-2 px-7 py-3.5 bg-white text-black font-semibold rounded-full text-sm hover:shadow-[0_0_40px_rgba(255,255,255,0.12)] transition-all">
-              Start Free <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-            </Link>
-            <Link href="/showcase" className="px-7 py-3.5 border border-white/10 text-neutral-300 font-medium rounded-full text-sm hover:border-white/20 hover:text-white transition-all">
-              Watch Demo
-            </Link>
-          </motion.div>
+          {/* Content overlay */}
+          <div className="relative z-10 max-w-5xl mx-auto text-center px-6">
+            {/* Status badge */}
+            <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.6 }}
+              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-emerald-500/15 bg-emerald-500/[0.04] backdrop-blur-xl mb-10">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="animate-ping absolute h-full w-full rounded-full bg-emerald-400 opacity-50" />
+                <span className="relative rounded-full h-1.5 w-1.5 bg-emerald-400" />
+              </span>
+              <span className="text-[11px] text-emerald-400/80 font-medium">132 Agents Live</span>
+            </motion.div>
 
-          {/* Model badges — shows the power stack */}
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7, duration: 0.6 }}
-            className="flex flex-wrap items-center justify-center gap-2 mb-20">
-            <ModelBadge name="Nemotron Ultra" type="253B" />
-            <ModelBadge name="Claude" type="MCP" />
-            <ModelBadge name="Gemini 2.5" type="PRO" />
-            <ModelBadge name="DeepSeek" type="V3.2" />
-            <ModelBadge name="FLUX" type="IMG" />
-            <ModelBadge name="NemoClaw" type="OS" />
-            <ModelBadge name="Kimi K2.5" type="1T" />
-          </motion.div>
+            {/* Headline — massive cinematic */}
+            <motion.h1 initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05, duration: 1.2, ease: [0.25, 0.46, 0.45, 0.94] }}
+              className="text-[clamp(2.8rem,9vw,8rem)] font-black leading-[0.88] tracking-[-0.04em] mb-8">
+              <span className="text-shimmer">
+                The agents<br />are live.
+              </span>
+            </motion.h1>
 
-          {/* Interactive demo */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8, duration: 0.6 }}>
-            <InteractiveHeroStrike />
+            {/* Subtitle */}
+            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4, duration: 0.7 }}
+              className="text-base md:text-xl text-neutral-400 max-w-2xl mx-auto leading-relaxed mb-12">
+              While your competitors hire. You deploy. 132 autonomous agents across 51 open-source models. Zero per-token cost.
+            </motion.p>
+
+            {/* CTAs — glassmorphic */}
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 0.6 }}
+              className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-16">
+              <Link href="/dashboard" className="group flex items-center gap-2 px-8 py-4 bg-white text-black font-bold rounded-full text-sm hover:shadow-[0_0_60px_rgba(255,255,255,0.15)] transition-all duration-500">
+                Deploy Your First Agent <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </Link>
+              <Link href="/showcase" className="px-8 py-4 rounded-full text-sm font-medium text-neutral-300 border border-white/[0.08] bg-white/[0.02] backdrop-blur-xl hover:border-emerald-500/20 hover:text-white transition-all duration-500">
+                Watch Demo
+              </Link>
+            </motion.div>
+
+            {/* Model badges */}
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7, duration: 0.6 }}
+              className="flex flex-wrap items-center justify-center gap-2">
+              <ModelBadge name="Nemotron Ultra" type="253B" />
+              <ModelBadge name="Claude" type="MCP" />
+              <ModelBadge name="Gemini 2.5" type="PRO" />
+              <ModelBadge name="DeepSeek" type="V3.2" />
+              <ModelBadge name="FLUX" type="IMG" />
+              <ModelBadge name="NemoClaw" type="OS" />
+              <ModelBadge name="Kimi K2.5" type="1T" />
+            </motion.div>
+          </div>
+        </div>
+
+        {/* Scroll-reveal glassmorphic card — floats up as you scroll */}
+        <div className="relative z-20 -mt-[30vh] pb-20 px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 100 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }}
+            className="max-w-4xl mx-auto"
+          >
+            {/* Glassmorphic demo card */}
+            <div className="relative rounded-3xl border border-white/[0.08] bg-[#080808]/80 backdrop-blur-2xl overflow-hidden shadow-[0_0_80px_rgba(16,185,129,0.06)]">
+              {/* Gradient border glow */}
+              <div className="absolute -inset-[1px] rounded-3xl bg-gradient-to-b from-emerald-500/20 via-transparent to-cyan-500/10 pointer-events-none" />
+
+              <div className="relative p-1">
+                <div className="rounded-[22px] overflow-hidden">
+                  {/* Interactive STRIKE */}
+                  <InteractiveHeroStrike />
+                </div>
+              </div>
+            </div>
+
+            {/* Scroll indicator */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
+              className="flex justify-center mt-8"
+            >
+              <ChevronDown className="w-5 h-5 text-neutral-600 animate-bounce" />
+            </motion.div>
           </motion.div>
         </div>
       </motion.section>

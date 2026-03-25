@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     description: "132 autonomous AI agents. 51+ open-source models. $0 per-token cost. White-label ready. The future of agency work.",
     type: "website",
     siteName: "Sovereign Matrix",
-    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Sovereign Matrix — Autonomous AI Agent Platform" }],
+    images: [{ url: "/og-image.jpg", width: 1200, height: 630, alt: "Sovereign Matrix — Autonomous AI Agent Platform" }],
   },
   twitter: {
     card: "summary_large_image",
