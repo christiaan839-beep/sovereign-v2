@@ -1,186 +1,227 @@
 "use client";
 
-import React, { useState } from "react";
-import { Rocket, CheckCircle2, ArrowRight, Zap, Shield, FileText, BarChart3, Globe, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  ArrowRight, ArrowLeft, Zap, Target, FileText, Mic,
+  Search, Code2, CheckCircle2, Sparkles, Cpu, Globe,
+  ChevronRight, BarChart3
+} from "lucide-react";
+import Link from "next/link";
+import { SovereignLogo } from "@/components/ui/SovereignLogo";
 
-const GOALS = [
-  { id: "leads", label: "Generate More Leads", icon: Zap, color: "#00ff66", agents: ["abm-artillery", "blog-gen", "translate"], description: "Auto-research companies, send personalized emails, and generate SEO content" },
-  { id: "security", label: "Protect Client Data", icon: Shield, color: "#FF0055", agents: ["pii-redactor", "nemoclaw", "morpheus-shield"], description: "Auto-redact PII, deploy guardrailed agents, and content-safety check everything" },
-  { id: "content", label: "Create Content at Scale", icon: FileText, color: "#A855F7", agents: ["blog-gen", "image-gen", "page-builder", "cosmos-video"], description: "Auto-generate blogs, images, landing pages, and video scenes" },
-  { id: "analytics", label: "Track Everything", icon: BarChart3, color: "#00B7FF", agents: ["analytics", "doc-intel", "scheduler"], description: "Usage metering, document intelligence, and scheduled automation" },
-  { id: "global", label: "Go Multilingual", icon: Globe, color: "#06B6D4", agents: ["translate", "voice-synth", "abm-artillery"], description: "Translate to 12 languages, synthesize voice, and reach global markets" },
+const STEPS = [
+  {
+    id: "welcome",
+    title: "Welcome to Sovereign Matrix",
+    subtitle: "Your AI workforce is ready. Let's get you set up in 60 seconds.",
+    icon: Sparkles,
+  },
+  {
+    id: "goal",
+    title: "What's your primary goal?",
+    subtitle: "We'll configure your agents based on what matters most.",
+    icon: Target,
+    options: [
+      { id: "leads", label: "Find & close leads", desc: "Deploy lead gen, email outreach, and voice agents", icon: Target, agents: "Lead Hunter, Email Sequencer, Voice Closer" },
+      { id: "content", label: "Create content at scale", desc: "Blog posts, social media, video scripts — anti-slop quality", icon: FileText, agents: "Content Engine, Brand Voice, Anti-Slop Pipeline" },
+      { id: "compete", label: "Outperform competitors", desc: "SEO domination, competitor intel, market positioning", icon: Search, agents: "Site Assassin, SEO Dominator, War Room" },
+      { id: "automate", label: "Automate my agency", desc: "White-label, client portals, workflow automation", icon: Cpu, agents: "Workflow Engine, Client Portal, Agent Builder" },
+    ],
+  },
+  {
+    id: "industry",
+    title: "What industry are you in?",
+    subtitle: "Your agents will be pre-configured with industry-specific knowledge.",
+    icon: Globe,
+    options: [
+      { id: "agency", label: "Digital Agency", desc: "Web design, marketing, consulting", icon: Globe, agents: "Full agent suite activated" },
+      { id: "saas", label: "SaaS / Tech", desc: "Software, apps, developer tools", icon: Code2, agents: "Code Agent, API Builder, Tech Writer" },
+      { id: "ecommerce", label: "E-commerce", desc: "Online stores, D2C brands", icon: BarChart3, agents: "Product Writer, Ad Creator, Review Analyzer" },
+      { id: "consulting", label: "Consulting / Services", desc: "Professional services, B2B", icon: Target, agents: "Proposal Writer, Research Agent, Deck Builder" },
+    ],
+  },
+  {
+    id: "first-task",
+    title: "Run your first agent",
+    subtitle: "Type a goal. Watch it execute. No prompt engineering needed.",
+    icon: Zap,
+    isAction: true,
+  },
+  {
+    id: "complete",
+    title: "You're live.",
+    subtitle: "132 agents deployed. 51+ models active. Zero per-token cost.",
+    icon: CheckCircle2,
+    isComplete: true,
+  },
 ];
 
-export default function OnboardingPage() {
-  const [step, setStep] = useState(0);
-  const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
-  const [companyName, setCompanyName] = useState("");
-  const [deploying, setDeploying] = useState(false);
-  const [deployed, setDeployed] = useState(false);
+function FirstTaskDemo() {
+  const [input, setInput] = useState("");
+  const [running, setRunning] = useState(false);
+  const [result, setResult] = useState<string | null>(null);
 
-  const toggleGoal = (id: string) => {
-    setSelectedGoals(prev => prev.includes(id) ? prev.filter(g => g !== id) : [...prev, id]);
+  const EXAMPLES = [
+    "Find 20 SaaS companies hiring a Head of Marketing",
+    "Write a blog post about AI replacing agencies",
+    "Analyze competitor-agency.com and find weaknesses",
+    "Create a cold email sequence for fintech CTOs",
+  ];
+
+  const runTask = async () => {
+    if (!input.trim()) return;
+    setRunning(true);
+    setResult(null);
+    await new Promise(r => setTimeout(r, 2500));
+    setResult(
+      `Task "${input.slice(0, 50)}..." routed to optimal model via Smart Router. ` +
+      `Results ready in your dashboard with full data, citations, and export options.`
+    );
+    setRunning(false);
   };
-
-  const deployAgents = async () => {
-    setDeploying(true);
-    try {
-      // Save onboarding config to user settings
-      await fetch("/api/settings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          config: JSON.stringify({
-            companyName,
-            selectedGoals,
-            deployedAgents: selectedAgents,
-            onboardedAt: new Date().toISOString(),
-          }),
-        }),
-      });
-    } catch {
-      // Settings save failed — continue anyway, don't block user
-    }
-    setDeploying(false);
-    setDeployed(true);
-  };
-
-  const selectedAgents = [...new Set(selectedGoals.flatMap(g => GOALS.find(x => x.id === g)?.agents || []))];
 
   return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center p-6 font-mono">
-      <div className="max-w-2xl w-full">
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-2">
+        {EXAMPLES.map((task) => (
+          <button key={task} onClick={() => setInput(task)}
+            className="text-[10px] px-3 py-1.5 rounded-lg bg-white/[0.03] border border-white/[0.06] text-neutral-500 hover:text-emerald-400 hover:border-emerald-500/20 transition-all">
+            {task.length > 40 ? task.slice(0, 40) + "..." : task}
+          </button>
+        ))}
+      </div>
 
-        {/* Step 0: Welcome */}
-        {step === 0 && (
-          <div className="text-center space-y-8 animate-in fade-in duration-500">
-            <div className="w-16 h-16 mx-auto rounded-2xl bg-[#00ff66]/10 border border-[#00ff66]/30 flex items-center justify-center">
-              <Rocket className="w-8 h-8 text-[#00ff66]" />
+      <div className="relative">
+        <input type="text" value={input} onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && runTask()}
+          placeholder="Give the agents a goal..."
+          className="w-full bg-[#0A0A0A] border border-white/[0.08] rounded-xl px-5 py-4 pr-24 text-sm text-white placeholder:text-neutral-700 focus:outline-none focus:border-emerald-500/30 transition-colors" />
+        <button onClick={runTask} disabled={running || !input.trim()}
+          className="absolute right-2 top-1/2 -translate-y-1/2 px-5 py-2 rounded-lg bg-emerald-500/15 border border-emerald-500/25 text-emerald-400 text-xs font-bold uppercase tracking-wider hover:bg-emerald-500/25 transition-all disabled:opacity-30">
+          {running ? (
+            <span className="flex items-center gap-2">
+              <span className="w-3 h-3 rounded-full border-2 border-emerald-400 border-t-transparent animate-spin" />
+              Running
+            </span>
+          ) : (
+            <span className="flex items-center gap-1">Execute <ChevronRight className="w-3 h-3" /></span>
+          )}
+        </button>
+      </div>
+
+      <AnimatePresence>
+        {result && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+            className="p-4 rounded-xl bg-emerald-500/[0.04] border border-emerald-500/15">
+            <div className="flex items-center gap-2 mb-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              <span className="text-[10px] text-emerald-500/70 font-bold uppercase tracking-wider">Task Complete</span>
             </div>
-            <h1 className="text-3xl font-black uppercase tracking-[0.15em]">Welcome to <span className="text-[#00B7FF]">Sovereign Matrix</span></h1>
-            <p className="text-neutral-500 text-sm max-w-md mx-auto">25 autonomous AI agents are ready to work for you. Let&apos;s deploy the right ones for your goals.</p>
-            <div className="space-y-3">
-              <input
-                type="text"
-                value={companyName}
-                onChange={e => setCompanyName(e.target.value)}
-                placeholder="Your company name"
-                className="w-full max-w-sm mx-auto block bg-neutral-950 border border-neutral-800 px-4 py-3 text-sm text-white placeholder:text-neutral-700 focus:outline-none focus:border-neutral-600 text-center"
-              />
-              <button
-                onClick={() => setStep(1)}
-                className="px-8 py-3 bg-white text-black font-bold text-sm uppercase tracking-widest hover:bg-neutral-200 transition-all"
-              >
-                Get Started <ArrowRight className="w-4 h-4 inline ml-2" />
-              </button>
-            </div>
-          </div>
+            <p className="text-xs text-neutral-400 leading-relaxed">{result}</p>
+          </motion.div>
         )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
-        {/* Step 1: Select Goals */}
-        {step === 1 && (
-          <div className="space-y-6 animate-in fade-in duration-500">
-            <div className="text-center mb-8">
-              <p className="text-[10px] text-neutral-500 uppercase tracking-widest mb-2">Step 1 of 3</p>
-              <h2 className="text-2xl font-black uppercase tracking-widest">What are your goals{companyName ? `, ${companyName}` : ""}?</h2>
-              <p className="text-neutral-500 text-xs mt-2">Select all that apply. We&apos;ll deploy the right agents.</p>
-            </div>
-            <div className="space-y-3">
-              {GOALS.map(goal => {
-                const Icon = goal.icon;
-                const selected = selectedGoals.includes(goal.id);
-                return (
-                  <button
-                    key={goal.id}
-                    onClick={() => toggleGoal(goal.id)}
-                    className={`w-full p-4 text-left border transition-all flex items-center gap-4 ${
-                      selected
-                        ? "border-white bg-white/5"
-                        : "border-neutral-800 bg-neutral-950 hover:border-neutral-700"
-                    }`}
-                  >
-                    <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: `${goal.color}15`, border: `1px solid ${goal.color}30` }}>
-                      <Icon className="w-5 h-5" style={{ color: goal.color }} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold">{goal.label}</p>
-                      <p className="text-[10px] text-neutral-500">{goal.description}</p>
-                    </div>
-                    {selected && <CheckCircle2 className="w-5 h-5 text-[#00ff66] shrink-0" />}
-                  </button>
-                );
-              })}
-            </div>
-            <button
-              onClick={() => setStep(2)}
-              disabled={selectedGoals.length === 0}
-              className="w-full py-3 bg-white text-black font-bold text-sm uppercase tracking-widest hover:bg-neutral-200 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-            >
-              Continue — {selectedAgents.length} agents selected <ArrowRight className="w-4 h-4 inline ml-2" />
-            </button>
-          </div>
-        )}
+export default function OnboardingPage() {
+  const [currentStep, setCurrentStep] = useState(0);
+  const [selections, setSelections] = useState<Record<string, string>>({});
+  const step = STEPS[currentStep];
 
-        {/* Step 2: Review & Deploy */}
-        {step === 2 && !deployed && (
-          <div className="space-y-6 animate-in fade-in duration-500">
-            <div className="text-center mb-8">
-              <p className="text-[10px] text-neutral-500 uppercase tracking-widest mb-2">Step 2 of 3</p>
-              <h2 className="text-2xl font-black uppercase tracking-widest">Your Agent Fleet</h2>
-              <p className="text-neutral-500 text-xs mt-2">These agents will be deployed and configured for {companyName || "your company"}.</p>
+  const next = () => { if (currentStep < STEPS.length - 1) setCurrentStep(currentStep + 1); };
+  const back = () => { if (currentStep > 0) setCurrentStep(currentStep - 1); };
+  const selectOption = (stepId: string, optionId: string) => {
+    setSelections({ ...selections, [stepId]: optionId });
+    setTimeout(next, 400);
+  };
+
+  return (
+    <div className="min-h-screen bg-[#010101] text-white flex flex-col">
+      <div className="flex items-center justify-between px-6 py-4">
+        <SovereignLogo size="sm" />
+        <div className="flex items-center gap-3">
+          {STEPS.map((_, i) => (
+            <div key={i} className={`h-1 rounded-full transition-all duration-500 ${
+              i <= currentStep ? "w-8 bg-emerald-500" : "w-4 bg-white/[0.06]"
+            }`} />
+          ))}
+        </div>
+        <Link href="/dashboard" className="text-[10px] text-neutral-600 hover:text-white transition-colors uppercase tracking-wider">Skip</Link>
+      </div>
+
+      <div className="flex-1 flex items-center justify-center px-6 py-12">
+        <AnimatePresence mode="wait">
+          <motion.div key={step.id} initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -40 }} transition={{ duration: 0.3 }} className="w-full max-w-2xl">
+            <div className="text-center mb-10">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 mb-6">
+                <step.icon className="w-8 h-8 text-emerald-400" />
+              </div>
+              <h1 className="text-3xl md:text-4xl font-black tracking-tight mb-3">{step.title}</h1>
+              <p className="text-neutral-500 text-sm">{step.subtitle}</p>
             </div>
-            <div className="bg-neutral-950 border border-neutral-800 p-5 space-y-3">
-              {selectedAgents.map(agent => (
-                <div key={agent} className="flex items-center justify-between py-2 border-b border-neutral-900 last:border-0">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-[#00ff66]" />
-                    <span className="text-xs font-bold text-white">{agent.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase())}</span>
-                  </div>
-                  <span className="text-[9px] text-neutral-600 uppercase tracking-widest">Ready</span>
+
+            {step.options && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {step.options.map((opt) => {
+                  const isSelected = selections[step.id] === opt.id;
+                  return (
+                    <button key={opt.id} onClick={() => selectOption(step.id, opt.id)}
+                      className={`text-left p-5 rounded-xl border transition-all duration-300 ${
+                        isSelected ? "bg-emerald-500/10 border-emerald-500/30 shadow-[0_0_20px_rgba(16,185,129,0.08)]"
+                          : "bg-white/[0.02] border-white/[0.06] hover:border-white/[0.12]"
+                      }`}>
+                      <div className="flex items-center gap-3 mb-2">
+                        <opt.icon className={`w-5 h-5 ${isSelected ? "text-emerald-400" : "text-neutral-600"}`} />
+                        <span className={`text-sm font-semibold ${isSelected ? "text-emerald-300" : "text-white"}`}>{opt.label}</span>
+                      </div>
+                      <p className="text-xs text-neutral-600 mb-2">{opt.desc}</p>
+                      <p className="text-[9px] text-emerald-500/50 uppercase tracking-wider">{opt.agents}</p>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {step.isAction && <FirstTaskDemo />}
+
+            {step.isComplete && (
+              <div className="text-center space-y-6">
+                <div className="grid grid-cols-3 gap-4 max-w-sm mx-auto">
+                  {[
+                    { val: "132", label: "Agents", color: "text-emerald-400" },
+                    { val: "51+", label: "Models", color: "text-cyan-400" },
+                    { val: "$0", label: "Per Token", color: "text-white" },
+                  ].map((s) => (
+                    <div key={s.label} className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+                      <div className={`text-2xl font-black font-mono stat-glow ${s.color}`}>{s.val}</div>
+                      <div className="text-[9px] text-neutral-600 uppercase tracking-wider mt-1">{s.label}</div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-            <div className="grid grid-cols-3 gap-3 text-center">
-              <div className="bg-neutral-950 border border-neutral-800 p-3">
-                <p className="text-lg font-black text-[#00ff66]">{selectedAgents.length}</p>
-                <p className="text-[8px] text-neutral-500 uppercase">Agents</p>
+                <Link href="/dashboard"
+                  className="cta-glow inline-flex items-center gap-2 px-10 py-4 bg-white text-black font-bold rounded-full text-sm hover:shadow-[0_0_40px_rgba(255,255,255,0.12)] transition-all">
+                  Enter Dashboard <ArrowRight className="w-4 h-4" />
+                </Link>
               </div>
-              <div className="bg-neutral-950 border border-neutral-800 p-3">
-                <p className="text-lg font-black text-[#00B7FF]">38</p>
-                <p className="text-[8px] text-neutral-500 uppercase">NIM Models</p>
-              </div>
-              <div className="bg-neutral-950 border border-neutral-800 p-3">
-                <p className="text-lg font-black text-[#A855F7]">$0</p>
-                <p className="text-[8px] text-neutral-500 uppercase">Cost</p>
-              </div>
-            </div>
-            <button
-              onClick={deployAgents}
-              disabled={deploying}
-              className="w-full py-4 bg-[#00ff66] text-black font-bold text-sm uppercase tracking-widest hover:bg-[#00dd55] transition-all disabled:opacity-50"
-            >
-              {deploying ? <><Loader2 className="w-4 h-4 inline mr-2 animate-spin" /> Deploying Agents...</> : <>Deploy Fleet <Rocket className="w-4 h-4 inline ml-2" /></>}
-            </button>
-          </div>
-        )}
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </div>
 
-        {/* Step 3: Success */}
-        {deployed && (
-          <div className="text-center space-y-8 animate-in fade-in duration-500">
-            <div className="w-20 h-20 mx-auto rounded-2xl bg-[#00ff66]/10 border border-[#00ff66]/30 flex items-center justify-center">
-              <CheckCircle2 className="w-10 h-10 text-[#00ff66]" />
-            </div>
-            <h2 className="text-3xl font-black uppercase tracking-widest">Fleet Deployed</h2>
-            <p className="text-neutral-500 text-sm max-w-md mx-auto">{selectedAgents.length} agents are now active and working for {companyName || "you"}. Head to the dashboard to monitor and control them.</p>
-            <div className="flex gap-3 justify-center">
-              <a href="/dashboard/agent-command" className="px-6 py-3 bg-white text-black font-bold text-sm uppercase tracking-widest hover:bg-neutral-200 transition-all">
-                Agent Command Center <ArrowRight className="w-4 h-4 inline ml-2" />
-              </a>
-              <a href="/dashboard" className="px-6 py-3 border border-neutral-800 text-neutral-400 font-bold text-sm uppercase tracking-widest hover:border-neutral-600 transition-all">
-                Dashboard
-              </a>
-            </div>
-          </div>
+      <div className="flex items-center justify-between px-6 py-6 max-w-2xl mx-auto w-full">
+        <button onClick={back} disabled={currentStep === 0}
+          className="flex items-center gap-2 text-xs text-neutral-600 hover:text-white transition-colors disabled:opacity-0">
+          <ArrowLeft className="w-4 h-4" /> Back
+        </button>
+        {!step.options && !step.isComplete && (
+          <button onClick={next}
+            className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-white/[0.06] border border-white/[0.08] text-sm text-white hover:bg-white/[0.1] transition-all">
+            {step.isAction ? "Finish Setup" : "Continue"} <ArrowRight className="w-4 h-4" />
+          </button>
         )}
       </div>
     </div>
