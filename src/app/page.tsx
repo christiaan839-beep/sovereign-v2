@@ -12,8 +12,6 @@ import { Testimonials } from "@/components/ui/SocialProof";
 
 import { InteractiveHeroStrike } from "@/components/ui/InteractiveHeroStrike";
 import { SocialProofMetrics } from "@/components/ui/SocialProofMetrics";
-import { HeroSceneWrapper } from "@/components/3d/HeroSceneWrapper";
-
 // ─── Animated Energy Orb (enhanced with 3 rings + particle field) ───
 function EnergyOrb() {
   return (
@@ -226,7 +224,7 @@ export default function Home() {
       <motion.section ref={heroRef} style={{ opacity: heroOpacity, scale: heroScale }}
         className="relative min-h-screen flex flex-col items-center justify-center px-6 overflow-hidden">
 
-        <HeroSceneWrapper />
+        <EnergyOrb />
 
         {/* Holographic grid overlay — emerald pulsing lines */}
         <div className="absolute inset-0 bg-[linear-gradient(rgba(16,185,129,0.025)_1px,transparent_1px),linear-gradient(90deg,rgba(16,185,129,0.025)_1px,transparent_1px)] bg-[size:60px_60px] pointer-events-none" />
