@@ -187,13 +187,13 @@ export default function Home() {
           </Link>
 
           <div className="hidden md:flex items-center gap-6">
-            <Link href="/demo" className="text-xs text-neutral-500 hover:text-white transition-colors">Platform</Link>
-            <Link href="/pricing" className="text-xs text-neutral-500 hover:text-white transition-colors">Pricing</Link>
-            <Link href="/partner" className="text-xs text-neutral-500 hover:text-white transition-colors">Enterprise</Link>
+            <Link href="#capabilities" className="text-xs text-neutral-500 hover:text-white transition-colors">Platform</Link>
+            <Link href="#pricing" className="text-xs text-neutral-500 hover:text-white transition-colors">Pricing</Link>
+            <Link href="#enterprise" className="text-xs text-neutral-500 hover:text-white transition-colors">Enterprise</Link>
             <SignInButton mode="modal" fallbackRedirectUrl="/dashboard">
               <button className="text-xs text-neutral-500 hover:text-white transition-colors">Log in</button>
             </SignInButton>
-            <Link href="/demo" className="px-4 py-1.5 rounded-full bg-white text-xs font-semibold text-black hover:bg-neutral-200 transition-all">
+            <Link href="/dashboard" className="px-4 py-1.5 rounded-full bg-white text-xs font-semibold text-black hover:bg-neutral-200 transition-all">
               Get Started
             </Link>
           </div>
@@ -211,10 +211,10 @@ export default function Home() {
           {mobileNavOpen && (
             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
               className="absolute top-16 left-4 right-4 p-5 rounded-2xl md:hidden bg-[#080808]/95 backdrop-blur-2xl border border-white/[0.06] flex flex-col gap-3 shadow-2xl pointer-events-auto">
-              <Link href="/demo" className="text-sm text-neutral-300 hover:text-white py-1" onClick={() => setMobileNavOpen(false)}>Platform</Link>
-              <Link href="/pricing" className="text-sm text-neutral-300 hover:text-white py-1" onClick={() => setMobileNavOpen(false)}>Pricing</Link>
-              <Link href="/partner" className="text-sm text-neutral-300 hover:text-white py-1" onClick={() => setMobileNavOpen(false)}>Enterprise</Link>
-              <Link href="/demo" className="px-5 py-2.5 rounded-xl bg-white text-sm font-semibold text-black text-center mt-2" onClick={() => setMobileNavOpen(false)}>Get Started</Link>
+              <Link href="#capabilities" className="text-sm text-neutral-300 hover:text-white py-1" onClick={() => setMobileNavOpen(false)}>Platform</Link>
+              <Link href="#pricing" className="text-sm text-neutral-300 hover:text-white py-1" onClick={() => setMobileNavOpen(false)}>Pricing</Link>
+              <Link href="#enterprise" className="text-sm text-neutral-300 hover:text-white py-1" onClick={() => setMobileNavOpen(false)}>Enterprise</Link>
+              <Link href="/dashboard" className="px-5 py-2.5 rounded-xl bg-white text-sm font-semibold text-black text-center mt-2" onClick={() => setMobileNavOpen(false)}>Get Started</Link>
             </motion.div>
           )}
         </AnimatePresence>
@@ -257,8 +257,7 @@ export default function Home() {
           {/* Subtitle */}
           <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4, duration: 0.7 }}
             className="text-base md:text-lg text-neutral-500 max-w-2xl mx-auto leading-relaxed mb-12">
-            132 autonomous AI agents. 51 open-source models. One command center.
-            Built for agencies that refuse to stay small.
+            While your competitors hire. You deploy. 132 autonomous agents across 51 open-source models. Zero per-token cost. This is the future of work.
           </motion.p>
 
           {/* CTAs */}
@@ -291,6 +290,18 @@ export default function Home() {
         </div>
       </motion.section>
 
+      {/* ═══ POWERED BY STRIP ═══ */}
+      <div className="flex items-center justify-center gap-8 py-6 opacity-40">
+        <span className="text-[10px] uppercase tracking-[0.3em] text-neutral-600">Powered by</span>
+        <span className="text-[10px] text-neutral-500">NVIDIA NIM</span>
+        <span className="text-[10px] text-neutral-600">&bull;</span>
+        <span className="text-[10px] text-neutral-500">NemoClaw</span>
+        <span className="text-[10px] text-neutral-600">&bull;</span>
+        <span className="text-[10px] text-neutral-500">Kimi K2.5</span>
+        <span className="text-[10px] text-neutral-600">&bull;</span>
+        <span className="text-[10px] text-neutral-500">DeepSeek R1</span>
+      </div>
+
       {/* ═══ SOCIAL PROOF METRICS ═══ */}
       <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
       <section className="py-20 px-6">
@@ -299,7 +310,7 @@ export default function Home() {
 
       {/* ═══ WHAT IT DOES — 6 Capabilities ═══ */}
       <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
-      <section className="py-24 px-6">
+      <section id="capabilities" className="py-24 px-6">
         <div className="max-w-6xl mx-auto">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
             className="text-center mb-16">
@@ -426,7 +437,7 @@ export default function Home() {
 
       {/* ═══ ENTERPRISE METRICS ═══ */}
       <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
-      <section className="py-32 px-6 relative overflow-hidden">
+      <section id="enterprise" className="py-32 px-6 relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_50%,rgba(16,185,129,0.03),transparent)]" />
         {/* Subtle grid for depth */}
         <div className="absolute inset-0 bg-[linear-gradient(rgba(16,185,129,0.01)_1px,transparent_1px),linear-gradient(90deg,rgba(16,185,129,0.01)_1px,transparent_1px)] bg-[size:80px_80px] pointer-events-none" />
@@ -492,10 +503,10 @@ export default function Home() {
           <h2 className="text-2xl md:text-3xl font-bold text-white mb-12 text-center tracking-tight">Common Questions</h2>
           <div className="rounded-2xl border border-white/[0.06] bg-[#080808] p-1">
             {[
-              { q: "What is Sovereign Matrix?", a: "An AI agent platform with 132 specialized agents that handle sales, marketing, content, and operations. Agents use Nemotron, DeepSeek, Gemini, and 51+ open-source models with automatic routing to the best model for each task. You set goals — agents deliver results." },
-              { q: "Is this just another ChatGPT wrapper?", a: "No. ChatGPT is a chatbot — you type, it replies. Sovereign Matrix is 132 autonomous agents that execute tasks: finding leads, building pages, writing email sequences, qualifying prospects, even making calls. They plan multi-step workflows, use real browsers and APIs, and self-correct without you prompting every step." },
-              { q: "Can agents run locally without cloud?", a: "Yes. The NemoClaw daemon runs on your local machine using Ollama models. Execute workflows completely offline — your data never leaves your hardware. Perfect for sensitive client work or air-gapped environments." },
-              { q: "Is there a contract or lock-in?", a: "No. All plans are month-to-month with no contracts. Cancel instantly from your dashboard. Your data is always exportable. NVIDIA NIM models are free to use — you only pay for premium features if you want them." },
+              { q: "What is Sovereign Matrix?", a: "An autonomous AI agent platform. 132 specialized agents handle sales, marketing, content, and operations end-to-end. A smart router picks the best model from 51+ open-source LLMs per task. You set goals — agents deliver results." },
+              { q: "Is this just another ChatGPT wrapper?", a: "No. ChatGPT is a chatbot. Sovereign Matrix is 132 autonomous agents that execute: finding leads, building pages, writing outreach sequences, qualifying prospects, making calls. They open real browsers, hit real APIs, plan multi-step workflows, and self-correct without manual prompting." },
+              { q: "Can agents run locally without cloud?", a: "Yes. NemoClaw runs on your machine via Ollama. Full offline execution — your data never leaves your hardware. Built for sensitive client work and air-gapped environments." },
+              { q: "Is there a contract or lock-in?", a: "No contracts. Month-to-month. Cancel from your dashboard. Data is always exportable. NVIDIA NIM inference is free — you only pay for premium features." },
             ].map((faq, i) => <FAQItem key={i} question={faq.q} answer={faq.a} />)}
           </div>
         </motion.div>
@@ -535,7 +546,7 @@ export default function Home() {
                 <SovereignLogo size="sm" />
                 <span className="text-sm font-semibold text-white">Sovereign Matrix</span>
               </div>
-              <p className="text-xs text-neutral-600 leading-relaxed">AI agent platform. 132 agents, 51+ models, one command center.</p>
+              <p className="text-xs text-neutral-600 leading-relaxed">The autonomous AI agent platform. 132 agents. 51 models. One command center.</p>
             </div>
             <div>
               <h4 className="text-xs font-semibold text-neutral-400 mb-4">Product</h4>
