@@ -27,21 +27,31 @@ function EnergyOrb() {
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] md:w-[500px] md:h-[500px] rounded-full border border-emerald-500/[0.05] animate-[spin_60s_linear_infinite_reverse]" />
       {/* Outer ring */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] md:w-[700px] md:h-[700px] rounded-full border border-cyan-500/[0.03] animate-[spin_90s_linear_infinite]" />
-      {/* Floating particles — fixed positions to avoid hydration mismatch */}
+      {/* Floating particles — star field effect */}
       {[
-        { top: "10%", left: "20%", size: "w-1 h-1" },
-        { top: "30%", left: "75%", size: "w-1.5 h-1.5" },
-        { top: "65%", left: "15%", size: "w-1 h-1" },
-        { top: "20%", left: "55%", size: "w-0.5 h-0.5" },
-        { top: "75%", left: "45%", size: "w-1 h-1" },
-        { top: "40%", left: "80%", size: "w-0.5 h-0.5" },
-        { top: "50%", left: "10%", size: "w-1.5 h-1.5" },
-        { top: "85%", left: "60%", size: "w-1 h-1" },
-        { top: "15%", left: "40%", size: "w-0.5 h-0.5" },
-        { top: "55%", left: "70%", size: "w-1 h-1" },
+        { top: "10%", left: "20%", size: "w-1 h-1", opacity: "0.4" },
+        { top: "30%", left: "75%", size: "w-1.5 h-1.5", opacity: "0.3" },
+        { top: "65%", left: "15%", size: "w-1 h-1", opacity: "0.5" },
+        { top: "20%", left: "55%", size: "w-0.5 h-0.5", opacity: "0.6" },
+        { top: "75%", left: "45%", size: "w-1 h-1", opacity: "0.3" },
+        { top: "40%", left: "80%", size: "w-0.5 h-0.5", opacity: "0.4" },
+        { top: "50%", left: "10%", size: "w-1.5 h-1.5", opacity: "0.2" },
+        { top: "85%", left: "60%", size: "w-1 h-1", opacity: "0.5" },
+        { top: "15%", left: "40%", size: "w-0.5 h-0.5", opacity: "0.6" },
+        { top: "55%", left: "70%", size: "w-1 h-1", opacity: "0.3" },
+        { top: "5%", left: "85%", size: "w-0.5 h-0.5", opacity: "0.5" },
+        { top: "90%", left: "25%", size: "w-1 h-1", opacity: "0.2" },
+        { top: "35%", left: "5%", size: "w-1.5 h-1.5", opacity: "0.3" },
+        { top: "70%", left: "90%", size: "w-0.5 h-0.5", opacity: "0.6" },
+        { top: "45%", left: "35%", size: "w-1 h-1", opacity: "0.4" },
+        { top: "25%", left: "90%", size: "w-1 h-1", opacity: "0.2" },
+        { top: "80%", left: "80%", size: "w-0.5 h-0.5", opacity: "0.5" },
+        { top: "60%", left: "50%", size: "w-1.5 h-1.5", opacity: "0.2" },
+        { top: "8%", left: "65%", size: "w-1 h-1", opacity: "0.4" },
+        { top: "92%", left: "40%", size: "w-0.5 h-0.5", opacity: "0.6" },
       ].map((pos, i) => (
-        <div key={i} className={`absolute ${pos.size} rounded-full animate-pulse ${i % 3 === 0 ? "bg-cyan-400/30" : "bg-emerald-400/40"}`}
-          style={{ top: pos.top, left: pos.left, animationDelay: `${i * 0.4}s`, animationDuration: `${2 + i * 0.25}s` }} />
+        <div key={i} className={`absolute ${pos.size} rounded-full animate-pulse ${i % 3 === 0 ? "bg-cyan-400" : "bg-emerald-400"}`}
+          style={{ top: pos.top, left: pos.left, opacity: parseFloat(pos.opacity), animationDelay: `${i * 0.3}s`, animationDuration: `${2 + (i % 5) * 0.8}s` }} />
       ))}
     </div>
   );
@@ -111,7 +121,7 @@ function LiveDemoMockup() {
       className="relative max-w-3xl mx-auto"
     >
       {/* Window chrome */}
-      <div className="rounded-2xl border border-white/[0.08] bg-[#0A0A0A] overflow-hidden shadow-[0_0_60px_rgba(16,185,129,0.04)]">
+      <div className="scan-line rounded-2xl border border-white/[0.08] bg-[#0A0A0A] overflow-hidden shadow-[0_0_60px_rgba(16,185,129,0.04)]">
         {/* Title bar */}
         <div className="flex items-center gap-2 px-5 py-3 border-b border-white/[0.06] bg-[#060606]">
           <div className="flex gap-1.5">
@@ -240,24 +250,22 @@ export default function Home() {
           {/* Headline */}
           <motion.h1 initial={{ opacity: 0, y: 25 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05, duration: 0.9 }}
             className="text-[clamp(2.5rem,8vw,7rem)] font-black leading-[0.92] tracking-[-0.03em] mb-8">
-            <span className="text-white">Deploy agents.</span>
-            <br />
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-300 via-emerald-400 to-cyan-400">
-              Dominate markets.
+              The agents are live.
             </span>
           </motion.h1>
 
           {/* Subtitle */}
           <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4, duration: 0.7 }}
-            className="text-base md:text-lg text-neutral-500 max-w-xl mx-auto leading-relaxed mb-12">
-            132 agents that find leads, write content, build pages, and close deals — while you sleep.
-            Powered by NemoClaw, Nemotron, and 50+ open-source models. Zero per-token cost.
+            className="text-base md:text-lg text-neutral-500 max-w-2xl mx-auto leading-relaxed mb-12">
+            132 autonomous AI agents. 51 open-source models. One command center.
+            Built for agencies that refuse to stay small.
           </motion.p>
 
           {/* CTAs */}
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 0.6 }}
             className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-16">
-            <Link href="/dashboard" className="group flex items-center gap-2 px-7 py-3.5 bg-white text-black font-semibold rounded-full text-sm hover:shadow-[0_0_40px_rgba(255,255,255,0.12)] transition-all">
+            <Link href="/dashboard" className="cta-glow group flex items-center gap-2 px-7 py-3.5 bg-white text-black font-semibold rounded-full text-sm hover:shadow-[0_0_40px_rgba(255,255,255,0.12)] transition-all">
               Start Free <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
             </Link>
             <Link href="#demo" className="px-7 py-3.5 border border-white/10 text-neutral-300 font-medium rounded-full text-sm hover:border-white/20 hover:text-white transition-all">
@@ -285,12 +293,14 @@ export default function Home() {
       </motion.section>
 
       {/* ═══ SOCIAL PROOF METRICS ═══ */}
-      <section className="py-20 px-6 border-t border-white/[0.04]">
+      <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
+      <section className="py-20 px-6">
         <SocialProofMetrics />
       </section>
 
       {/* ═══ WHAT IT DOES — 6 Capabilities ═══ */}
-      <section className="py-24 px-6 border-t border-white/[0.04]">
+      <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
+      <section className="py-24 px-6">
         <div className="max-w-6xl mx-auto">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
             className="text-center mb-16">
@@ -299,18 +309,19 @@ export default function Home() {
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <CapabilityCard icon={Cpu} title="Browser Automation" desc="Point an agent at a website. It opens a real browser, navigates, extracts data, and reports back." accent="from-blue-500/[0.04]" />
-            <CapabilityCard icon={BrainCircuit} title="Document Intelligence" desc="Upload PDFs, contracts, reports. Ask questions in plain English. Get answers from your data." accent="from-violet-500/[0.04]" />
+            <CapabilityCard icon={Cpu} title="Browser Automation" desc="Point an agent at a website. It opens a real browser, navigates, extracts data, and reports back." accent="from-emerald-500/[0.04]" />
+            <CapabilityCard icon={BrainCircuit} title="Document Intelligence" desc="Upload PDFs, contracts, reports. Ask questions in plain English. Get answers from your data." accent="from-emerald-400/[0.04]" />
             <CapabilityCard icon={Target} title="Sales Outreach" desc="Find prospects. Write personalized emails. Send sequences. Qualify responses. Book meetings." accent="from-emerald-500/[0.04]" />
-            <CapabilityCard icon={Search} title="Competitor Intel" desc="Paste a URL. Get their tech stack, SEO gaps, content strategy, and moves you can make." accent="from-amber-500/[0.04]" />
-            <CapabilityCard icon={Mic} title="Voice Agents" desc="AI makes calls, qualifies leads, books meetings. Sub-200ms response. Sounds human." accent="from-rose-500/[0.04]" />
-            <CapabilityCard icon={Code2} title="Code & Deploy" desc="Describe what you want built. The agent writes code, reviews it, and prepares deployment." accent="from-cyan-500/[0.04]" />
+            <CapabilityCard icon={Search} title="Competitor Intel" desc="Paste a URL. Get their tech stack, SEO gaps, content strategy, and moves you can make." accent="from-cyan-500/[0.04]" />
+            <CapabilityCard icon={Mic} title="Voice Agents" desc="AI makes calls, qualifies leads, books meetings. Sub-200ms response. Sounds human." accent="from-emerald-600/[0.04]" />
+            <CapabilityCard icon={Code2} title="Code & Deploy" desc="Describe what you want built. The agent writes code, reviews it, and prepares deployment." accent="from-emerald-300/[0.04]" />
           </div>
         </div>
       </section>
 
       {/* ═══ LIVE DEMO ═══ */}
-      <section id="demo" className="py-24 px-6 bg-[#050505] border-t border-white/[0.04]">
+      <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
+      <section id="demo" className="py-24 px-6 bg-[#050505]">
         <div className="max-w-5xl mx-auto">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
             className="text-center mb-14">
@@ -330,16 +341,17 @@ export default function Home() {
       </section>
 
       {/* ═══ HOW IT WORKS — Architecture ═══ */}
-      <section className="py-24 px-6 border-t border-white/[0.04]">
+      <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
+      <section className="py-24 px-6">
         <div className="max-w-5xl mx-auto">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
             className="text-center mb-16">
             <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">Architecture</p>
             <h2 className="text-3xl md:text-5xl font-bold text-white tracking-tight mb-4">Built on models you control.</h2>
-            <p className="text-neutral-500 max-w-xl mx-auto">Smart routing across 50+ open-source models. Automatic failover. Zero vendor lock-in.</p>
+            <p className="text-neutral-500 max-w-xl mx-auto">Smart routing across 51+ open-source models. Automatic failover. Zero vendor lock-in.</p>
           </motion.div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 circuit-grid p-4 rounded-2xl">
             {[
               { name: "Nemotron Ultra 253B", desc: "Complex reasoning & synthesis" },
               { name: "NemoClaw / OpenClaw", desc: "Enterprise autonomous agent platform" },
@@ -366,7 +378,8 @@ export default function Home() {
       </section>
 
       {/* ═══ WHY DIFFERENT — Comparison ═══ */}
-      <section className="py-24 px-6 bg-[#050505] border-t border-white/[0.04]">
+      <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
+      <section className="py-24 px-6 bg-[#050505]">
         <div className="max-w-5xl mx-auto">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
             className="text-center mb-16">
@@ -407,12 +420,14 @@ export default function Home() {
       </section>
 
       {/* ═══ TESTIMONIALS ═══ */}
-      <section className="py-24 px-6 border-t border-white/[0.04]">
+      <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
+      <section className="py-24 px-6">
         <Testimonials />
       </section>
 
       {/* ═══ ENTERPRISE METRICS ═══ */}
-      <section className="py-32 px-6 relative overflow-hidden border-t border-white/[0.04]">
+      <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
+      <section className="py-32 px-6 relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_50%,rgba(16,185,129,0.03),transparent)]" />
         {/* Subtle grid for depth */}
         <div className="absolute inset-0 bg-[linear-gradient(rgba(16,185,129,0.01)_1px,transparent_1px),linear-gradient(90deg,rgba(16,185,129,0.01)_1px,transparent_1px)] bg-[size:80px_80px] pointer-events-none" />
@@ -428,7 +443,7 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
             {[
               { metric: "132", label: "Specialized Agents", desc: "Purpose-built for specific business functions." },
-              { metric: "49", label: "Open-Source Models", desc: "Automatic failover. Zero vendor lock-in." },
+              { metric: "51", label: "Open-Source Models", desc: "Automatic failover. Zero vendor lock-in." },
               { metric: "$0", label: "Per-Token Cost", desc: "Scale inference without scaling your bill." },
             ].map((item, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
@@ -465,18 +480,20 @@ export default function Home() {
       </section>
 
       {/* ═══ PRICING ═══ */}
-      <section id="pricing" className="py-24 border-t border-white/[0.04]">
+      <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
+      <section id="pricing" className="py-24">
         <Pricing />
       </section>
 
       {/* ═══ FAQ ═══ */}
-      <section className="py-24 px-6 bg-[#050505] border-t border-white/[0.04]">
+      <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
+      <section className="py-24 px-6 bg-[#050505]">
         <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
           className="max-w-2xl mx-auto">
           <h2 className="text-2xl md:text-3xl font-bold text-white mb-12 text-center tracking-tight">Common Questions</h2>
           <div className="rounded-2xl border border-white/[0.06] bg-[#080808] p-1">
             {[
-              { q: "What is Sovereign Matrix?", a: "An AI agent platform with 132 specialized agents that handle sales, marketing, content, and operations. Agents use Nemotron, DeepSeek, Gemini, and 49+ open-source models with automatic routing to the best model for each task. You set goals — agents deliver results." },
+              { q: "What is Sovereign Matrix?", a: "An AI agent platform with 132 specialized agents that handle sales, marketing, content, and operations. Agents use Nemotron, DeepSeek, Gemini, and 51+ open-source models with automatic routing to the best model for each task. You set goals — agents deliver results." },
               { q: "Is this just another ChatGPT wrapper?", a: "No. ChatGPT is a chatbot — you type, it replies. Sovereign Matrix is 132 autonomous agents that execute tasks: finding leads, building pages, writing email sequences, qualifying prospects, even making calls. They plan multi-step workflows, use real browsers and APIs, and self-correct without you prompting every step." },
               { q: "Can agents run locally without cloud?", a: "Yes. The NemoClaw daemon runs on your local machine using Ollama models. Execute workflows completely offline — your data never leaves your hardware. Perfect for sensitive client work or air-gapped environments." },
               { q: "Is there a contract or lock-in?", a: "No. All plans are month-to-month with no contracts. Cancel instantly from your dashboard. Your data is always exportable. NVIDIA NIM models are free to use — you only pay for premium features if you want them." },
@@ -486,7 +503,8 @@ export default function Home() {
       </section>
 
       {/* ═══ FINAL CTA ═══ */}
-      <section className="py-32 text-center px-6 relative overflow-hidden border-t border-white/[0.04]">
+      <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
+      <section className="py-32 text-center px-6 relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(16,185,129,0.04),transparent_70%)]" />
         {/* Circuit-style grid accent */}
         <div className="absolute inset-0 bg-[linear-gradient(rgba(0,183,255,0.008)_1px,transparent_1px),linear-gradient(90deg,rgba(0,183,255,0.008)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none" />
@@ -498,7 +516,7 @@ export default function Home() {
             One platform. 132 agents. Zero per-token costs. Free to start.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Link href="/dashboard" className="group flex items-center gap-2 px-7 py-3.5 bg-white text-black font-semibold rounded-full text-sm hover:shadow-[0_0_40px_rgba(255,255,255,0.12)] transition-all">
+            <Link href="/dashboard" className="cta-glow group flex items-center gap-2 px-7 py-3.5 bg-white text-black font-semibold rounded-full text-sm hover:shadow-[0_0_40px_rgba(255,255,255,0.12)] transition-all">
               Start Free <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
             </Link>
             <Link href="#pricing" className="px-7 py-3.5 border border-white/10 text-neutral-300 font-medium rounded-full text-sm hover:border-white/20 hover:text-white transition-all">
@@ -509,7 +527,8 @@ export default function Home() {
       </section>
 
       {/* ═══ FOOTER ═══ */}
-      <footer className="border-t border-white/[0.04] px-6">
+      <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
+      <footer className="px-6">
         <div className="max-w-5xl mx-auto py-14">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
             <div className="col-span-2 md:col-span-1">
@@ -517,7 +536,7 @@ export default function Home() {
                 <SovereignLogo size="sm" />
                 <span className="text-sm font-semibold text-white">Sovereign Matrix</span>
               </div>
-              <p className="text-xs text-neutral-600 leading-relaxed">AI agent platform. 132 agents, 49+ models, one dashboard.</p>
+              <p className="text-xs text-neutral-600 leading-relaxed">AI agent platform. 132 agents, 51+ models, one command center.</p>
             </div>
             <div>
               <h4 className="text-xs font-semibold text-neutral-400 mb-4">Product</h4>

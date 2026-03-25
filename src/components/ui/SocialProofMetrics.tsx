@@ -45,7 +45,7 @@ function AnimatedNumber({
   return (
     <div
       ref={ref}
-      className="text-3xl md:text-4xl font-black text-white font-mono tracking-tight"
+      className="text-4xl md:text-5xl font-black text-white font-mono tracking-tight"
     >
       {prefix}
       {display}
@@ -72,7 +72,7 @@ function StaticMetric({ value }: { value: string }) {
   return (
     <div
       ref={ref}
-      className="text-3xl md:text-4xl font-black text-white font-mono tracking-tight transition-opacity duration-700"
+      className="text-4xl md:text-5xl font-black text-white font-mono tracking-tight transition-opacity duration-700"
       style={{ opacity: visible ? 1 : 0 }}
     >
       {value}
@@ -93,7 +93,7 @@ export function SocialProofMetrics() {
       desc: "Purpose-built for every business function",
     },
     {
-      target: 49,
+      target: 51,
       suffix: "+",
       label: "Open-Source Models",
       desc: "Auto-routed to the best model per task",
@@ -139,7 +139,7 @@ export function SocialProofMetrics() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: i * 0.1 }}
-            className="bg-[#10B981]/5 border border-[#10B981]/20 p-6 rounded-2xl text-center backdrop-blur-sm"
+            className="relative bg-[#10B981]/5 border border-[#10B981]/20 p-6 rounded-2xl text-center backdrop-blur-sm hover:scale-[1.02] transition-transform duration-300 overflow-hidden before:absolute before:top-0 before:left-0 before:right-0 before:h-[2px] before:bg-gradient-to-r before:from-emerald-500/0 before:via-emerald-500/60 before:to-emerald-500/0"
           >
             {"static" in stat && stat.static ? (
               <StaticMetric value={stat.static} />

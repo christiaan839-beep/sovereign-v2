@@ -174,19 +174,19 @@ input[type="range"]::-webkit-slider-thumb {
   animation: gradient-shift 4s ease infinite;
 }
 
-/* Pulsing glow on CTA button */
-@keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 20px rgba(255, 255, 255, 0.1), 0 0 60px rgba(255, 255, 255, 0.05); }
-  50% { box-shadow: 0 0 30px rgba(255, 255, 255, 0.2), 0 0 80px rgba(255, 255, 255, 0.1); }
+/* Pulsing glow on CTA button — emerald brand */
+@keyframes cta-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(16, 185, 129, 0.1), 0 0 40px rgba(16, 185, 129, 0.05); }
+  50% { box-shadow: 0 0 30px rgba(16, 185, 129, 0.2), 0 0 60px rgba(16, 185, 129, 0.1); }
 }
 
 .cta-glow {
-  animation: pulse-glow 3s ease-in-out infinite;
+  animation: cta-glow 3s ease-in-out infinite;
 }
 
 .cta-glow:hover {
   animation: none;
-  box-shadow: 0 0 40px rgba(255, 255, 255, 0.3), 0 0 100px rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 40px rgba(16, 185, 129, 0.3), 0 0 80px rgba(16, 185, 129, 0.15);
 }
 
 /* Floating / breathing animation */
@@ -309,4 +309,38 @@ input[type="range"]::-webkit-slider-thumb {
   background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
   pointer-events: none;
   z-index: 0;
+}
+
+/* ─── Cinematic Scan Line (Live Demo) ────────────── */
+
+.scan-line {
+  position: relative;
+  overflow: hidden;
+}
+
+.scan-line::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(to right, transparent, rgba(16, 185, 129, 0.3), transparent);
+  animation: scan 4s linear infinite;
+  pointer-events: none;
+  z-index: 10;
+}
+
+@keyframes scan {
+  0% { top: 0; }
+  100% { top: 100%; }
+}
+
+/* ─── Circuit Grid (Architecture section) ────────── */
+
+.circuit-grid {
+  background-image:
+    linear-gradient(rgba(16, 185, 129, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(16, 185, 129, 0.05) 1px, transparent 1px);
+  background-size: 40px 40px;
 }
