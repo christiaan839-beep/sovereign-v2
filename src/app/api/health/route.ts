@@ -66,6 +66,20 @@ function checkClerk(): ServiceStatus {
   return { status: configured ? "up" : "not_configured", latencyMs: 0 };
 }
 
+async function checkOllama(): Promise<ServiceStatus> {
+  const start = Date.now();
+  try {
+    const res = await fetch("http://localhost:11434/api/tags", {
+      signal: AbortSignal.timeout(2000),
+    });
+    return { status: res.ok ? "up" : "down", latencyMs: Date.now() - start };
+  } catch {
+    return { status: "down", latencyMs: Date.now() - start, error: "Ollama not running locally" };
+  }
+}
+
+const SERVER_START = Date.now();
+
 export async function GET() {
   const now = Date.now();
 
@@ -77,14 +91,15 @@ export async function GET() {
   const startTime = Date.now();
 
   // Run all deep checks in parallel
-  const [database, nim, pinecone] = await Promise.all([
+  const [database, nim, pinecone, ollama] = await Promise.all([
     checkDatabase(),
     checkNim(),
     checkPinecone(),
+    checkOllama(),
   ]);
   const clerk = checkClerk();
 
-  const services = { database, nim, pinecone, clerk };
+  const services = { database, nim, pinecone, clerk, ollama };
 
   const upCount = Object.values(services).filter(s => s.status === "up").length;
   const overallStatus = upCount >= 3 ? "healthy" : upCount >= 2 ? "degraded" : "critical";
@@ -92,7 +107,8 @@ export async function GET() {
   const result = {
     status: overallStatus,
     platform: "Sovereign Matrix",
-    version: "2.1.0",
+    version: "2.2.0",
+    uptime: Math.floor((Date.now() - SERVER_START) / 1000),
     uptime_check_ms: Date.now() - startTime,
     timestamp: new Date().toISOString(),
     services,
@@ -101,13 +117,13 @@ export async function GET() {
       cache: getCacheStats(),
     },
     capabilities: {
-      agent_apis: 72,
-      dashboard_pages: 43,
-      nim_models: 50,
+      agent_apis: 132,
+      dashboard_pages: 55,
+      nim_models: 51,
       industry_verticals: 6,
-      marketplace_templates: 5,
-      multi_modal_pipelines: 3,
-      payment_gateways: 2,
+      marketplace_templates: 14,
+      multi_modal_pipelines: 4,
+      payment_gateways: 4,
     },
     protection: {
       rate_limiting: "100 req/min per client (Edge Middleware)",
