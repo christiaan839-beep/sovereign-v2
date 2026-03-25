@@ -28,6 +28,13 @@ export const metadata: Metadata = {
     title: "Sovereign Matrix — The Agents Are Live",
     description: "132 autonomous AI agents. 51+ open-source models. $0 per-token cost. White-label ready. The future of agency work.",
   },
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/favicon.ico", sizes: "any" },
+    ],
+    apple: "/icon.svg",
+  },
   other: {
     "theme-color": "#050505",
   },
