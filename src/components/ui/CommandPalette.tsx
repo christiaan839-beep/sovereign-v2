@@ -117,6 +117,7 @@ export function CommandPalette() {
     { id: "n-library", title: "My Library", icon: Layers, href: "/dashboard/library", category: "Tools", keywords: ["files", "assets", "documents", "storage"] },
     { id: "n-marketplace", title: "Marketplace", icon: Globe2, href: "/dashboard/marketplace", category: "Tools", keywords: ["plugins", "apps", "extensions"] },
     { id: "n-terminal", title: "Live Terminal", icon: Terminal, href: "/dashboard/live-terminal", category: "Tools", keywords: ["console", "shell", "cli", "terminal"] },
+    { id: "n-agentbuilder", title: "Agent Builder", icon: Wand2, href: "/dashboard/agent-builder", category: "Tools", keywords: ["agent", "skill", "builder", "custom", "prompt"] },
 
     // ─── INTELLIGENCE ───
     { id: "n-agenthq", title: "Agent HQ", icon: Users, href: "/dashboard/agent-hq", category: "Intelligence", keywords: ["agents", "hub", "central"] },

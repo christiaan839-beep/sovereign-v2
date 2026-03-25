@@ -9,7 +9,8 @@ import {
   Layers, Search, ChevronDown, ChevronRight, Sparkles, Factory,
   X, Menu, Mic, Swords, Database,
   PanelLeftOpen, PanelLeftClose, Clock, Plug, Cpu,
-  BarChart3, CircuitBoard, Eye, Palette, Globe2, Shield, Wrench, LayoutTemplate
+  BarChart3, CircuitBoard, Eye, Palette, Globe2, Shield, Wrench, LayoutTemplate,
+  Wand2
 } from "lucide-react";
 import { useKeyboardShortcuts } from "@/lib/keyboard-shortcuts";
 import { motion, AnimatePresence } from "framer-motion";
@@ -59,6 +60,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/dashboard/visual-studio", label: "Code Studio", icon: Palette },
       { href: "/dashboard/workflows", label: "Workflows", icon: CircuitBoard },
       { href: "/dashboard/automations", label: "Automations", icon: Clock },
+      { href: "/dashboard/agent-builder", label: "Agent Builder", icon: Wand2 },
     ],
   },
   {
