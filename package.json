@@ -47,6 +47,7 @@
     "react-dom": "19.2.3",
     "react-markdown": "^10.1.0",
     "resend": "^6.9.4",
+    "stripe": "^20.4.1",
     "three": "^0.183.2",
     "three-globe": "^2.45.1",
     "twilio": "^5.13.0",
