@@ -1,14 +1,22 @@
 import { NextResponse } from "next/server";
+import { db } from "@/db";
+import { generations } from "@/db/schema";
 
 /**
  * TRANSACTIONAL EMAIL — Resend-compatible email sender.
  * Sends welcome emails, invoices, lead notifications, and drip sequences.
  * Free tier: 100 emails/day via Resend, or falls back to logged-only mode.
+ * All sends are audit-logged to the database.
  */
 export async function POST(req: Request) {
   try {
-    const { to, subject, html, text, template, data } = await req.json();
-    if (!to || !subject) return NextResponse.json({ error: "Missing `to` or `subject`." }, { status: 400 });
+    const { to, subject, html, text, template, data, body: bodyText } = await req.json();
+
+    // Support simplified { to, subject, body } workflow payloads
+    const effectiveSubject = subject;
+    const effectiveText = text || bodyText;
+
+    if (!to || !effectiveSubject) return NextResponse.json({ error: "Missing `to` or `subject`." }, { status: 400 });
 
     const resendKey = process.env.RESEND_API_KEY;
 
@@ -63,13 +71,27 @@ export async function POST(req: Request) {
       }),
     };
 
-    let emailBody = html || text || "";
-    let emailSubject = subject;
+    let emailBody = html || effectiveText || "";
+    let emailSubject = effectiveSubject;
 
     if (template && templates[template]) {
       const tpl = templates[template](data || {});
       emailBody = tpl.html;
       emailSubject = tpl.subject;
+    }
+
+    // Audit log to database (non-blocking)
+    try {
+      await db.insert(generations).values({
+        userEmail: typeof to === "string" ? to : to[0] || "system",
+        tool: "email",
+        action: template || "send",
+        inputSummary: `Email to ${to}: ${emailSubject}`,
+        output: JSON.stringify({ to, subject: emailSubject, template: template || null, provider: resendKey ? "resend" : "log-only" }),
+        tokens: 0,
+      });
+    } catch {
+      // Non-blocking: audit logging failure should not prevent email delivery
     }
 
     // Send via Resend if API key exists

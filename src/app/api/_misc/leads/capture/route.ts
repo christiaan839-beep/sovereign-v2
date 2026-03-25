@@ -1,60 +1,55 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import twilio from "twilio";
-import { persistAppend } from "@/lib/persist";
+import { db } from "@/db";
+import { leads } from "@/db/schema";
 
-// Default Serverless Node.js Runtime (Required for Twilio SDK execution)
+/**
+ * LEAD CAPTURE — /api/leads/capture
+ * Accepts lead data and inserts into the database leads table.
+ * Public endpoint (no auth required) for forms, scrapers, and workflow automations.
+ */
 
-// Zod Schema physically guarantees malformed Python data cannot crash the Postgres DB
 const leadSchema = z.object({
-  name: z.string().min(2),
-  phone: z.string(),
+  name: z.string().min(1),
+  email: z.string().email().optional(),
+  phone: z.string().optional(),
+  company: z.string().optional(),
+  source: z.string().optional(),
+  score: z.union([z.string(), z.number()]).optional(),
+  notes: z.string().optional(),
+  // Legacy fields for backward compatibility
   planId: z.string().optional(),
   title: z.string().optional(),
-  company: z.string().optional(),
-  email: z.string().email().optional(),
-  linkedin: z.string().optional()
+  linkedin: z.string().optional(),
 });
 
 export async function POST(req: Request) {
   try {
-    // Node Authentication intentionally bypassed for public Client-Side initiation from Pricing component.
-
     const rawData = await req.json();
-    
-    // Parse automatically throws if the Python script sends garbage data
-    const lead = leadSchema.parse(rawData);
-    
-    // Example Production execution:
-    // 1. await db.insert(leads).values(lead);
-    // 2. await resend.emails.send({ to: lead.email, subject: "Hyper-personalized line generated via Nemotron" });
-    
-    persistAppend("leads", { email: lead.email, company: lead.company, timestamp: new Date().toISOString() }, 500);
+    const data = leadSchema.parse(rawData);
 
-    // ⚡ THE KILOCLAW SENTINEL DIALER LOGIC
-    // If the lead provided a phone number, physically call them in 3 seconds.
-    if (lead.phone && process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
-       const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-       const myTwilioNumber = process.env.TWILIO_PHONE_NUMBER || "+15550000000";
-       
-       try {
-         await client.calls.create({
-           url: `https://sovereignmatrix.agency/api/webhooks/twilio/voice?name=${encodeURIComponent(lead.name)}`,
-           to: lead.phone,
-           from: myTwilioNumber,
-         });
-          persistAppend("sentinel-calls", { phone: lead.phone, timestamp: new Date().toISOString() }, 200);
-        } catch {
-          // Twilio dial failure — non-blocking
-        }
-    }
+    // Insert into database
+    const [inserted] = await db.insert(leads).values({
+      userEmail: data.email || "anonymous@capture",
+      name: data.name,
+      email: data.email || null,
+      phone: data.phone || null,
+      businessName: data.company || null,
+      source: data.source || "organic",
+      status: "new",
+      score: data.score != null ? String(data.score) : "0",
+      notes: data.notes || (data.title ? `Title: ${data.title}` : null),
+    }).returning({ id: leads.id });
 
-    return NextResponse.json({ success: true, processed: lead.email }, { status: 200 });
-    
+    return NextResponse.json(
+      { success: true, id: inserted.id, processed: data.email || data.name },
+      { status: 200 }
+    );
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: "MALFORMED_LEAD_DATA", details: error.issues }, { status: 400 });
     }
-    return NextResponse.json({ error: "EDGE_MATRIX_FAILURE" }, { status: 500 });
+    console.error("[leads/capture]", error);
+    return NextResponse.json({ error: "LEAD_CAPTURE_FAILURE" }, { status: 500 });
   }
 }
