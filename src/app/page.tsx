@@ -57,14 +57,14 @@ function EnergyOrb() {
 }
 
 // ─── Capability Card (enhanced with emerald hover glow) ───
-function CapabilityCard({ icon: Icon, title, desc, accent }: { icon: React.ComponentType<{ className?: string }>; title: string; desc: string; accent: string }) {
-  return (
+function CapabilityCard({ icon: Icon, title, desc, accent, href }: { icon: React.ComponentType<{ className?: string }>; title: string; desc: string; accent: string; href?: string }) {
+  const content = (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-50px" }}
       transition={{ duration: 0.5 }}
-      className="group relative"
+      className="group relative cursor-pointer"
     >
       <div className="relative p-8 rounded-2xl border border-white/[0.06] bg-[#080808] hover:border-emerald-500/20 transition-all duration-500 overflow-hidden hover:shadow-[0_0_30px_rgba(16,185,129,0.04)]">
         {/* Hover glow */}
@@ -76,10 +76,14 @@ function CapabilityCard({ icon: Icon, title, desc, accent }: { icon: React.Compo
           </div>
           <h3 className="text-base font-semibold text-white mb-2">{title}</h3>
           <p className="text-sm text-neutral-500 leading-relaxed">{desc}</p>
+          <div className="mt-4 flex items-center gap-1 text-[10px] text-emerald-500/50 uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-opacity">
+            Try it <ArrowRight className="w-3 h-3" />
+          </div>
         </div>
       </div>
     </motion.div>
   );
+  return href ? <Link href={href}>{content}</Link> : content;
 }
 
 // ─── FAQ Item ───
@@ -266,7 +270,7 @@ export default function Home() {
             <Link href="/dashboard" className="cta-glow group flex items-center gap-2 px-7 py-3.5 bg-white text-black font-semibold rounded-full text-sm hover:shadow-[0_0_40px_rgba(255,255,255,0.12)] transition-all">
               Start Free <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
             </Link>
-            <Link href="#demo" className="px-7 py-3.5 border border-white/10 text-neutral-300 font-medium rounded-full text-sm hover:border-white/20 hover:text-white transition-all">
+            <Link href="/showcase" className="px-7 py-3.5 border border-white/10 text-neutral-300 font-medium rounded-full text-sm hover:border-white/20 hover:text-white transition-all">
               Watch Demo
             </Link>
           </motion.div>
@@ -319,12 +323,12 @@ export default function Home() {
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <CapabilityCard icon={Cpu} title="Browser Automation" desc="Point an agent at a website. It opens a real browser, navigates, extracts data, and reports back." accent="from-emerald-500/[0.04]" />
-            <CapabilityCard icon={BrainCircuit} title="Document Intelligence" desc="Upload PDFs, contracts, reports. Ask questions in plain English. Get answers from your data." accent="from-emerald-400/[0.04]" />
-            <CapabilityCard icon={Target} title="Sales Outreach" desc="Find prospects. Write personalized emails. Send sequences. Qualify responses. Book meetings." accent="from-emerald-500/[0.04]" />
-            <CapabilityCard icon={Search} title="Competitor Intel" desc="Paste a URL. Get their tech stack, SEO gaps, content strategy, and moves you can make." accent="from-cyan-500/[0.04]" />
-            <CapabilityCard icon={Mic} title="Voice Agents" desc="AI makes calls, qualifies leads, books meetings. Sub-200ms response. Sounds human." accent="from-emerald-600/[0.04]" />
-            <CapabilityCard icon={Code2} title="Code & Deploy" desc="Describe what you want built. The agent writes code, reviews it, and prepares deployment." accent="from-emerald-300/[0.04]" />
+            <CapabilityCard icon={Cpu} title="Browser Automation" desc="Point an agent at a website. It opens a real browser, navigates, extracts data, and reports back." accent="from-emerald-500/[0.04]" href="/showcase" />
+            <CapabilityCard icon={BrainCircuit} title="Document Intelligence" desc="Upload PDFs, contracts, reports. Ask questions in plain English. Get answers from your data." accent="from-emerald-400/[0.04]" href="/dashboard" />
+            <CapabilityCard icon={Target} title="Sales Outreach" desc="Find prospects. Write personalized emails. Send sequences. Qualify responses. Book meetings." accent="from-emerald-500/[0.04]" href="/showcase" />
+            <CapabilityCard icon={Search} title="Competitor Intel" desc="Paste a URL. Get their tech stack, SEO gaps, content strategy, and moves you can make." accent="from-cyan-500/[0.04]" href="/showcase" />
+            <CapabilityCard icon={Mic} title="Voice Agents" desc="AI makes calls, qualifies leads, books meetings. Sub-200ms response. Sounds human." accent="from-emerald-600/[0.04]" href="/dashboard" />
+            <CapabilityCard icon={Code2} title="Code & Deploy" desc="Describe what you want built. The agent writes code, reviews it, and prepares deployment." accent="from-emerald-300/[0.04]" href="/dashboard" />
           </div>
         </div>
       </section>
