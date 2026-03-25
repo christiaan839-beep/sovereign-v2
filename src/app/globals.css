@@ -344,3 +344,72 @@ input[type="range"]::-webkit-slider-thumb {
     linear-gradient(90deg, rgba(16, 185, 129, 0.05) 1px, transparent 1px);
   background-size: 40px 40px;
 }
+
+/* ─── Cinematic Text Shimmer ─────────────────────── */
+
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.text-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(16, 185, 129, 0.6) 0%,
+    rgba(52, 211, 153, 1) 25%,
+    rgba(255, 255, 255, 0.9) 50%,
+    rgba(52, 211, 153, 1) 75%,
+    rgba(16, 185, 129, 0.6) 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 6s linear infinite;
+}
+
+/* ─── Stat Counter Glow ──────────────────────────── */
+
+.stat-glow {
+  text-shadow: 0 0 30px rgba(16, 185, 129, 0.3), 0 0 80px rgba(16, 185, 129, 0.1);
+}
+
+/* ─── Cinematic Card Hover ───────────────────────── */
+
+.card-cinematic {
+  transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.card-cinematic:hover {
+  border-color: rgba(16, 185, 129, 0.15);
+  box-shadow: 0 0 40px rgba(16, 185, 129, 0.05), inset 0 1px 0 rgba(16, 185, 129, 0.1);
+  transform: translateY(-2px);
+}
+
+/* ─── Gradient Border Card ───────────────────────── */
+
+.gradient-border-card {
+  position: relative;
+}
+
+.gradient-border-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), transparent 50%, rgba(0, 183, 255, 0.1));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ─── Pulse Ring (for status indicators) ─────────── */
+
+@keyframes pulse-ring {
+  0% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.5); opacity: 0; }
+  100% { transform: scale(1); opacity: 0; }
+}
