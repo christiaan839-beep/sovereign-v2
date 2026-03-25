@@ -12,21 +12,21 @@ validateEnvironment();
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://sovereignmatrix.agency"),
-  title: "Sovereign Matrix — AI Agent Platform for Agencies",
-  description: "132 AI agents that find leads, write content, build pages, and close deals. 49+ open-source models. Zero per-token cost.",
-  keywords: ["AI agents", "agency automation", "NVIDIA NIM", "lead generation", "content automation", "AI platform", "open-source AI", "autonomous agents"],
+  title: "Sovereign Matrix — Autonomous AI Agent Platform",
+  description: "Deploy 132 AI agents across 51+ open-source models. Find leads, write content, build pages, make calls, close deals. Zero per-token cost via NVIDIA NIM.",
+  keywords: ["AI agents", "autonomous AI", "agency automation", "NVIDIA NIM", "NemoClaw", "lead generation", "content automation", "AI platform", "open-source AI", "white-label AI"],
   authors: [{ name: "Sovereign Matrix" }],
   openGraph: {
-    title: "Sovereign Matrix — AI Agent Platform for Agencies",
-    description: "132 AI agents that find leads, write content, build pages, and close deals. 49+ open-source models. Zero per-token cost.",
+    title: "Sovereign Matrix — The Agents Are Live",
+    description: "132 autonomous AI agents. 51+ open-source models. $0 per-token cost. White-label ready. The future of agency work.",
     type: "website",
     siteName: "Sovereign Matrix",
-    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Sovereign Matrix — AI Agent Platform" }],
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Sovereign Matrix — Autonomous AI Agent Platform" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Sovereign Matrix — AI Agent Platform for Agencies",
-    description: "132 AI agents that find leads, write content, build pages, and close deals. 49+ open-source models. Zero per-token cost.",
+    title: "Sovereign Matrix — The Agents Are Live",
+    description: "132 autonomous AI agents. 51+ open-source models. $0 per-token cost. White-label ready. The future of agency work.",
   },
   other: {
     "theme-color": "#050505",
@@ -76,7 +76,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 applicationCategory: "BusinessApplication",
                 operatingSystem: "Web",
                 offers: { "@type": "Offer", price: "0", priceCurrency: "ZAR" },
-                description: "AI agent platform for agencies. 132 agents, 49+ open-source models, zero per-token cost.",
+                description: "Autonomous AI agent platform. 132 agents, 51+ open-source models, zero per-token cost. Built on NVIDIA NIM and NemoClaw.",
               }),
             }}
           />

@@ -550,14 +550,15 @@ export default function Home() {
                 <SovereignLogo size="sm" />
                 <span className="text-sm font-semibold text-white">Sovereign Matrix</span>
               </div>
-              <p className="text-xs text-neutral-600 leading-relaxed">The autonomous AI agent platform. 132 agents. 51 models. One command center.</p>
+              <p className="text-xs text-neutral-600 leading-relaxed">The autonomous AI agent platform. 132 agents. 51+ models. Zero per-token cost. Built on NVIDIA NIM.</p>
             </div>
             <div>
               <h4 className="text-xs font-semibold text-neutral-400 mb-4">Product</h4>
               <ul className="space-y-2.5">
                 <li><Link href="/pricing" className="text-xs text-neutral-600 hover:text-white transition-colors">Pricing</Link></li>
-                <li><Link href="/demo" className="text-xs text-neutral-600 hover:text-white transition-colors">Demo</Link></li>
+                <li><Link href="/showcase" className="text-xs text-neutral-600 hover:text-white transition-colors">Interactive Demo</Link></li>
                 <li><Link href="/dashboard" className="text-xs text-neutral-600 hover:text-white transition-colors">Dashboard</Link></li>
+                <li><Link href="/onboarding" className="text-xs text-neutral-600 hover:text-white transition-colors">Get Started</Link></li>
               </ul>
             </div>
             <div>
