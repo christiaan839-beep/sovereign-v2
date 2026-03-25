@@ -12,7 +12,6 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'Missing film topic parameter' }, { status: 400 });
     }
 
-    console.log(`[FILMMAKER AGENT] Initiating Cinematic Protocol for: ${topic}`);
 
     // The Anti-Slop God-Prompt for Video Generation
     const systemInstruction = `You are Nova, the Sovereign Filmmaker Agent utilizing Google AI Ultra (Veo 3.1, Imagen, and Music Gen).

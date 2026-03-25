@@ -54,7 +54,7 @@ Generate a concise 2-sentence context summary explaining exactly what this chunk
       const contextualizedChunk = `[Source: ${documentTitle}]\n[Context: ${contextSummary}]\n\n${chunk}`;
       const vector = await embed(contextualizedChunk);
 
-      await index.upsert([
+      await index.upsert({ records: [
         {
           id: `${documentTitle.replace(/\s+/g, "_")}-chunk-${i}-${Date.now()}`,
           values: vector,
@@ -64,13 +64,13 @@ Generate a concise 2-sentence context summary explaining exactly what this chunk
             originalChunk: chunk
           }
         }
-      ]);
+      ] });
       processed++;
     }
 
     return { success: true, chunksProcessed: processed };
   } catch (err) {
-    log.error("Contextual RAG Ingestion Failed:", err);
+    log.error("Contextual RAG Ingestion Failed:", err as Record<string, unknown>);
     return { success: false, chunksProcessed: 0 };
   }
 }
@@ -85,11 +85,21 @@ export async function remember(key: string, value?: string, pineconeKey?: string
   const textToEmbed = `${key}: ${value || "triggered"}`;
   const vector = await embed(textToEmbed);
   
-  await pc.client.index(pc.index).upsert([{
+  await pc.client.index(pc.index).upsert({ records: [{
     id: `mem-${Date.now()}`,
     values: vector,
     metadata: { text: textToEmbed, type: "short-term", timestamp: Date.now() }
-  }]);
+  }] });
+}
+
+/**
+ * Recall exact contextual nodes matching the query.
+ */
+/**
+ * Alias for remember() — used by MCP tool bridge.
+ */
+export async function memorize(text: string, namespace?: string): Promise<void> {
+  return remember(text, namespace);
 }
 
 /**
@@ -109,7 +119,7 @@ export async function recall(query: string, limit: number = 2, pineconeKey?: str
 
     return results.matches || [];
   } catch (e) {
-    log.error("Pinecone recall failed:", e);
+    log.error("Pinecone recall failed:", e as Record<string, unknown>);
     return [];
   }
 }

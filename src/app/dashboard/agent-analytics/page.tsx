@@ -66,7 +66,7 @@ export default function AnalyticsDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white p-6 md:p-8 font-mono">
+    <div className="min-h-screen bg-[#050505] text-white p-6 md:p-8 font-mono">
       <div className="max-w-7xl mx-auto space-y-8">
 
         {/* Header */}
@@ -88,8 +88,8 @@ export default function AnalyticsDashboard() {
         {/* KPI Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="bg-neutral-950 border border-neutral-800 p-5 text-center">
-            <Activity className="w-5 h-5 text-[#00ff66] mx-auto mb-2" />
-            <p className="text-3xl font-black text-[#00ff66]">{data?.total_calls_today || 0}</p>
+            <Activity className="w-5 h-5 text-[#00B7FF] mx-auto mb-2" />
+            <p className="text-3xl font-black text-[#00B7FF]">{data?.total_calls_today || 0}</p>
             <p className="text-[9px] text-neutral-500 uppercase tracking-widest mt-1">Calls Today</p>
           </div>
           <div className="bg-neutral-950 border border-neutral-800 p-5 text-center">

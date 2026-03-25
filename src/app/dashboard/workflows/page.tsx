@@ -148,7 +148,7 @@ export default function WorkflowBuilderPage() {
           <button
             onClick={runWorkflow}
             disabled={running || nodes.length === 0}
-            className="flex items-center gap-2 px-5 py-2 rounded-xl bg-emerald-600 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-30 transition-colors"
+            className="flex items-center gap-2 px-5 py-2 rounded-xl bg-[#00B7FF] text-sm font-semibold text-white hover:bg-[#00B7FF]/90 disabled:opacity-30 transition-colors"
           >
             {running ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
             {running ? "Running..." : "Run Workflow"}

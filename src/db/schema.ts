@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid, integer, index } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, uuid, integer, index, boolean } from "drizzle-orm/pg-core";
 
 export const tenants = pgTable("tenants", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -193,5 +193,54 @@ export const usage = pgTable("usage", {
 }, (table) => [
   index("usage_user_id_idx").on(table.userId),
   index("usage_created_at_idx").on(table.createdAt),
+]);
+
+// ═══════════════════════════════════════════
+// Payments & Subscription Tracking
+// ═══════════════════════════════════════════
+
+export const payments = pgTable("payments", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  clerkUserId: text("clerk_user_id"), // null for pre-auth payments
+  email: text("email").notNull(),
+  gateway: text("gateway").notNull().default("payfast"), // payfast, paystack, stripe
+  externalId: text("external_id"), // PayFast m_payment_id, Stripe pi_xxx
+  plan: text("plan").notNull(), // node, array, cartel
+  amount: text("amount").notNull(), // gross amount as string (R499.00)
+  currency: text("currency").notNull().default("ZAR"),
+  status: text("status").notNull().default("pending"), // pending, complete, failed, refunded
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("payments_email_idx").on(table.email),
+  index("payments_clerk_user_idx").on(table.clerkUserId),
+]);
+
+// ═══════════════════════════════════════════
+// Conversation Persistence
+// ═══════════════════════════════════════════
+
+export const conversations = pgTable("conversations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  clerkUserId: text("clerk_user_id").notNull(),
+  title: text("title").notNull().default("New Mission"),
+  model: text("model").notNull().default("auto"),
+  systemPrompt: text("system_prompt"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  archived: boolean("archived").notNull().default(false),
+}, (table) => [
+  index("conv_clerk_user_idx").on(table.clerkUserId),
+]);
+
+export const chatMessages = pgTable("chat_messages", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  conversationId: uuid("conversation_id").references(() => conversations.id).notNull(),
+  role: text("role").notNull(), // user, assistant
+  content: text("content").notNull(),
+  agentLabel: text("agent_label"),
+  responseTimeMs: integer("response_time_ms"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("msg_conv_idx").on(table.conversationId),
 ]);
 

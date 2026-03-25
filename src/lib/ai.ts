@@ -29,7 +29,7 @@ async function getUserKeys(): Promise<{ gemini?: string, tavily?: string, anthro
       }
     }
   } catch (e) {
-    log.error("Failed to load user API keys:", e);
+    log.error("Failed to load user API keys:", e as Record<string, unknown>);
   }
   return {};
 }
@@ -110,7 +110,7 @@ async function ollamaText(prompt: string, system?: string, ollamaUrl: string = "
     const data = await res.json();
     return data.response;
   } catch (err) {
-    log.error("Local Ollama Node failed:", err);
+    log.error("Local Ollama Node failed:", err as Record<string, unknown>);
     throw err;
   }
 }
@@ -279,7 +279,7 @@ export async function research_ai(query: string, prompt: string, options: AIOpti
       system: `${options.system || "You are an elite researcher."}\n\nYou have been provided with real-time web search results. Use this data absolutely strictly to answer the user's task. If the search results contradict your training data, trust the search results.` 
     });
   } catch (error) {
-    log.error("Live Search Error:", error);
+    log.error("Live Search Error:", error as Record<string, unknown>);
     return ai(prompt, options);
   }
 }

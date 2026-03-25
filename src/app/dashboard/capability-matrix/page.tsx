@@ -10,7 +10,7 @@ interface ModelInfo {
   capabilities: string[];
   agents_using: string[];
   license: string;
-  icon: React.ElementType;
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   color: string;
 }
 
@@ -42,7 +42,7 @@ const CATEGORIES = [
 
 export default function CapabilityMatrixPage() {
   return (
-    <div className="min-h-screen bg-black text-white p-6 md:p-8 font-mono">
+    <div className="min-h-screen bg-[#050505] text-white p-6 md:p-8 font-mono">
       <div className="max-w-6xl mx-auto space-y-10">
         <header className="border-b border-[#76B900]/20 pb-6">
           <div className="flex items-center gap-4">
@@ -57,8 +57,8 @@ export default function CapabilityMatrixPage() {
         </header>
 
         {/* Legal Status */}
-        <div className="bg-[#00ff66]/5 border border-[#00ff66]/20 p-6">
-          <h2 className="text-sm font-bold uppercase tracking-widest text-[#00ff66] mb-3">⚖️ Legal Compliance</h2>
+        <div className="bg-[#00B7FF]/5 border border-[#00B7FF]/20 p-6">
+          <h2 className="text-sm font-bold uppercase tracking-widest text-[#00B7FF] mb-3">⚖️ Legal Compliance</h2>
           <div className="grid md:grid-cols-2 gap-4 text-xs text-neutral-400">
             <div><span className="text-white font-bold">All models used via official NVIDIA NIM API.</span> This is the intended commercial use case explicitly provided by NVIDIA.</div>
             <div><span className="text-white font-bold">Licenses verified:</span> NVIDIA Open Model License, Apache 2.0, DeepSeek License, GLM License, MiniMax Open — all permit commercial use.</div>
@@ -74,7 +74,7 @@ export default function CapabilityMatrixPage() {
             {MODELS.map(m => (
               <div key={m.id} className="bg-neutral-950 border border-neutral-800 p-4 hover:border-neutral-600 transition-all">
                 <div className="flex items-center gap-3 mb-3">
-                  <m.icon className="w-4 h-4" style={{ color: m.color }} />
+                  {React.createElement(m.icon, { className: "w-4 h-4", style: { color: m.color } })}
                   <span className="text-xs font-bold text-white">{m.name}</span>
                 </div>
                 <p className="text-[9px] text-neutral-600 mb-2">{m.provider} · {m.license}</p>
@@ -108,7 +108,7 @@ export default function CapabilityMatrixPage() {
         {/* Platform Stats */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           {[
-            { label: "Agent APIs", value: "72+", color: "#00ff66" },
+            { label: "Agent APIs", value: "72+", color: "#00B7FF" },
             { label: "NIM Models", value: "50+", color: "#76B900" },
             { label: "Dashboard Pages", value: "43", color: "#00B7FF" },
             { label: "Industry Verticals", value: "6", color: "#A855F7" },

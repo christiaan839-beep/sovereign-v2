@@ -73,7 +73,7 @@ export default function LeaderboardPage() {
   const rankIcons = [Crown, Trophy, Trophy];
 
   return (
-    <div className="min-h-screen bg-black text-white p-6 md:p-8 font-mono">
+    <div className="min-h-screen bg-[#050505] text-white p-6 md:p-8 font-mono">
       <div className="max-w-5xl mx-auto space-y-8">
         <header className="border-b border-[#FFD700]/20 pb-6">
           <div className="flex items-center gap-4">
@@ -116,7 +116,7 @@ export default function LeaderboardPage() {
                       <span className="text-sm font-bold text-white">{entry.model}</span>
                       {winner === entry.model && <span className="ml-2 text-[9px] text-[#FFD700] uppercase tracking-widest">⚡ Latest Winner</span>}
                     </td>
-                    <td className="p-4 text-center text-[#00ff66] font-bold">{entry.wins}</td>
+                    <td className="p-4 text-center text-emerald-400 font-bold">{entry.wins}</td>
                     <td className="p-4 text-center text-[#00B7FF] font-bold">{entry.avg_speed_ms ? `${entry.avg_speed_ms}ms` : "—"}</td>
                     <td className="p-4 text-center text-[#A855F7] font-bold">{entry.avg_throughput ? `${entry.avg_throughput} t/s` : "—"}</td>
                     <td className="p-4 text-center text-neutral-500">{entry.runs}</td>
@@ -153,7 +153,7 @@ export default function LeaderboardPage() {
                 {b.model === winner && <div className="h-[2px] bg-[#FFD700] -mt-5 -mx-5 mb-3" />}
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-bold">{b.model}</h3>
-                  <span className={`text-[9px] uppercase tracking-widest ${b.status.includes("✅") ? "text-[#00ff66]" : "text-red-400"}`}>{b.status}</span>
+                  <span className={`text-[9px] uppercase tracking-widest ${b.status.includes("✅") ? "text-emerald-400" : "text-red-400"}`}>{b.status}</span>
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-center">
                   <div><p className="text-lg font-black text-[#00B7FF]">{b.duration_ms}ms</p><p className="text-[8px] text-neutral-600">Speed</p></div>

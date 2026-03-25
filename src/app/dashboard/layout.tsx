@@ -1,110 +1,150 @@
 "use client";
 
-import React, { useState, useMemo, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard, Users, Settings, Shield, DollarSign, Target,
-  Layers, Globe2, Network, Search, ChevronDown, Rocket, Palette, Factory,
-  X, Menu, Cpu, Mic, ScanFace, Video, Swords, ShieldAlert, Database, Headphones,
-  FileVideo, Cuboid, Ghost, Zap, CircuitBoard, BarChart3, RefreshCcw, Sparkles,
-  PanelLeftOpen, PanelLeftClose, Clock, Plug
+  LayoutDashboard, Users, Settings, DollarSign, Target,
+  Layers, Search, ChevronDown, ChevronRight, Sparkles, Factory,
+  X, Menu, Mic, Swords, Database,
+  PanelLeftOpen, PanelLeftClose, Clock, Plug, Cpu,
+  BarChart3, CircuitBoard, Eye, Palette, Globe2, Shield, Wrench, LayoutTemplate
 } from "lucide-react";
+import { useKeyboardShortcuts } from "@/lib/keyboard-shortcuts";
 import { motion, AnimatePresence } from "framer-motion";
-import { UserButton, useUser } from "@clerk/nextjs";
+import { UserButton } from "@clerk/nextjs";
+import { useSafeUser } from "@/lib/safe-clerk";
 import { TelemetryProvider } from '@/components/providers/TelemetryProvider';
 import { JarvisSocket } from '@/components/JarvisSocket';
 import { ToastProvider } from '@/components/ui/ToastProvider';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { CinematicOnboarding } from '@/components/dashboard/CinematicOnboarding';
 import { LiveActivityConsole } from '@/components/dashboard/LiveActivityConsole';
-import { UsageBar } from '@/components/ui/UsageBar';
 import { CommandPalette } from '@/components/ui/CommandPalette';
-import { SystemPulseStrip } from '@/components/dashboard/SystemPulseStrip';
-import { SmartContextBar } from '@/components/dashboard/SmartContextBar';
 import { SovereignAssistant } from '@/components/dashboard/SovereignAssistant';
 
-const NAV_GROUPS = [
-  {
-    group: "Command Center",
-    icon: LayoutDashboard,
-    items: [
-      { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
-      { href: "/dashboard/agent-hq", label: "Agent HQ", icon: Users },
-      { href: "/dashboard/agent-world", label: "Agent World", icon: Network },
-      { href: "/dashboard/build", label: "Build Mode", icon: Sparkles },
-      { href: "/dashboard/agent-command", label: "Agent Command", icon: Zap },
-      { href: "/dashboard/workflows", label: "Workflows", icon: CircuitBoard },
-      { href: "/dashboard/war-room", label: "War Room", icon: Swords },
-      { href: "/dashboard/leads", label: "Lead Prospector", icon: Users },
-      { href: "/dashboard/agent-analytics", label: "Analytics", icon: BarChart3 },
-      { href: "/dashboard/automations", label: "Automations", icon: Clock },
-      { href: "/dashboard/live-terminal", label: "Live Terminal", icon: CircuitBoard },
-    ]
-  },
-  {
-    group: "AI Arsenal",
-    icon: Rocket,
-    items: [
-      { href: "/dashboard/arsenal", label: "Playbook Arsenal", icon: Rocket },
-      { href: "/dashboard/seo-dominator", label: "SEO X-Ray", icon: Search },
-      { href: "/dashboard/content-factory", label: "Content Factory", icon: Factory },
-      { href: "/dashboard/competitor", label: "Competitor Intel", icon: Shield },
-      { href: "/dashboard/nemo-claw", label: "Local AI (NemoClaw)", icon: Cpu },
-      { href: "/dashboard/voice-swarm", label: "Voice Swarm", icon: Mic },
-      { href: "/dashboard/voice-assistant", label: "Voice Assistant", icon: Mic },
-      { href: "/dashboard/podcast", label: "PDF-to-Podcast", icon: Headphones },
-      { href: "/dashboard/omni-search", label: "RAG Search", icon: Database },
-      { href: "/dashboard/cyber-audit", label: "Cyber Audit", icon: ShieldAlert },
-      { href: "/dashboard/ghost-protocol", label: "Stealth Research", icon: Ghost },
-      { href: "/dashboard/flywheel", label: "Quality Engine", icon: RefreshCcw },
-    ]
-  },
-  {
-    group: "Creative Suite",
-    icon: Palette,
-    items: [
-      { href: "/dashboard/designer", label: "Design Studio", icon: Palette },
-      { href: "/dashboard/visual-studio", label: "Visual Studio", icon: Palette },
-      { href: "/dashboard/page-builder", label: "Page Builder", icon: Globe2 },
-      { href: "/dashboard/avatar", label: "Digital Human", icon: ScanFace },
-      { href: "/dashboard/deepfake-studio", label: "Video Clone", icon: FileVideo },
-      { href: "/dashboard/vsl-hacker", label: "Video Sales Letter", icon: Video },
-      { href: "/dashboard/edify-forge", label: "Edify 3D Forge", icon: Cuboid },
-    ]
-  },
-  {
-    group: "Platform",
-    icon: Settings,
-    items: [
-      { href: "/dashboard/library", label: "My Library", icon: Layers },
-      { href: "/dashboard/integrations", label: "Integrations", icon: Plug },
-      { href: "/dashboard/billing", label: "Billing", icon: DollarSign },
-      { href: "/dashboard/settings", label: "Settings", icon: Settings },
-    ]
-  }
+/* ─── Navigation Structure ─── */
+
+interface NavItem {
+  href: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+}
+
+interface NavGroup {
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  items: NavItem[];
+  defaultOpen?: boolean;
+}
+
+const PRIMARY_NAV: NavItem[] = [
+  { href: "/dashboard", label: "Home", icon: LayoutDashboard },
+  { href: "/dashboard/build", label: "Build", icon: Sparkles },
+  { href: "/dashboard/leads", label: "Leads", icon: Target },
+  { href: "/dashboard/content-factory", label: "Content", icon: Factory },
+  { href: "/dashboard/canvas", label: "Canvas", icon: Layers },
+  { href: "/dashboard/templates", label: "Templates", icon: LayoutTemplate },
 ];
+
+const NAV_GROUPS: NavGroup[] = [
+  {
+    label: "Tools",
+    icon: Wrench,
+    items: [
+      { href: "/dashboard/seo-dominator", label: "SEO Dominator", icon: Search },
+      { href: "/dashboard/competitor", label: "Competitor Intel", icon: Shield },
+      { href: "/dashboard/voice-assistant", label: "Voice Assistant", icon: Mic },
+      { href: "/dashboard/visual-studio", label: "Code Studio", icon: Palette },
+      { href: "/dashboard/workflows", label: "Workflows", icon: CircuitBoard },
+      { href: "/dashboard/automations", label: "Automations", icon: Clock },
+    ],
+  },
+  {
+    label: "Intelligence",
+    icon: Cpu,
+    items: [
+      { href: "/dashboard/agent-hq", label: "Agent HQ", icon: Users },
+      { href: "/dashboard/agent-analytics", label: "Analytics", icon: BarChart3 },
+      { href: "/dashboard/war-room", label: "War Room", icon: Swords },
+      { href: "/dashboard/god-eye", label: "God Eye", icon: Eye },
+      { href: "/dashboard/nim-arsenal", label: "NIM Arsenal", icon: Database },
+    ],
+  },
+];
+
+const BOTTOM_NAV: NavItem[] = [
+  { href: "/dashboard/integrations", label: "Integrations", icon: Plug },
+  { href: "/dashboard/billing", label: "Billing", icon: DollarSign },
+  { href: "/dashboard/settings", label: "Settings", icon: Settings },
+];
+
+/* Page label lookup for breadcrumbs */
+const ALL_NAV_ITEMS: NavItem[] = [
+  ...PRIMARY_NAV,
+  ...NAV_GROUPS.flatMap((g) => g.items),
+  ...BOTTOM_NAV,
+];
+
+function getPageLabel(pathname: string): string | null {
+  if (pathname === "/dashboard") return null;
+  const match = ALL_NAV_ITEMS.find(
+    (item) => item.href !== "/dashboard" && pathname.startsWith(item.href)
+  );
+  if (match) return match.label;
+  // Fallback: derive from pathname
+  const segment = pathname.split("/").pop();
+  if (!segment) return null;
+  return segment
+    .split("-")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
+/* ─── Layout Component ─── */
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { user } = useUser();
+  const { user } = useSafeUser();
   const [isConnected, setIsConnected] = useState(false);
   const [ping, setPing] = useState(0);
-  const [searchQuery, setSearchQuery] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [sidebarExpanded, setSidebarExpanded] = useState(false);
+  const [sidebarExpanded, setSidebarExpanded] = useState(true);
   const isHome = pathname === "/dashboard";
+  const pageLabel = getPageLabel(pathname);
+
+  // Collapsible group state — all start collapsed
+  const [openGroups, setOpenGroups] = useState<Set<string>>(() => {
+    if (typeof window === "undefined") return new Set<string>();
+    // Auto-expand group containing the active page
+    for (const group of NAV_GROUPS) {
+      if (group.items.some((i) => pathname.startsWith(i.href))) {
+        return new Set([group.label]);
+      }
+    }
+    return new Set<string>();
+  });
+
+  const toggleGroup = useCallback((label: string) => {
+    setOpenGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(label)) next.delete(label);
+      else next.add(label);
+      return next;
+    });
+  }, []);
 
   // Persist sidebar preference
   useEffect(() => {
     const saved = localStorage.getItem("sidebar-expanded");
-    if (saved === "true") setSidebarExpanded(true);
+    if (saved !== null) setSidebarExpanded(saved === "true");
   }, []);
   useEffect(() => {
     localStorage.setItem("sidebar-expanded", String(sidebarExpanded));
   }, [sidebarExpanded]);
 
+  // Health check
   useEffect(() => {
     const checkHealth = async () => {
       try {
@@ -116,199 +156,272 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       } catch { setIsConnected(false); }
     };
     checkHealth();
-    const interval = setInterval(checkHealth, 30000);
+    const interval = setInterval(checkHealth, 120_000);
     return () => clearInterval(interval);
   }, []);
 
-  const getActiveGroup = useCallback(() => {
-    for (const group of NAV_GROUPS) {
-      if (group.items.some(item => pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href)))) {
-        return group.group;
+  // Keyboard shortcuts
+  useKeyboardShortcuts([
+    { key: "/", meta: true, handler: () => setSidebarExpanded((v) => !v), label: "Toggle sidebar" },
+    { key: "escape", handler: () => setMobileMenuOpen(false), label: "Close panel" },
+  ]);
+
+  /* ── Active state helper ── */
+  const isActive = useCallback(
+    (href: string) =>
+      pathname === href || (href !== "/dashboard" && pathname.startsWith(href)),
+    [pathname]
+  );
+
+  /* ── Nav link component ── */
+  const NavLink = useMemo(() => {
+    const Component = ({
+      item,
+      collapsed,
+      onNavigate,
+    }: {
+      item: NavItem;
+      collapsed?: boolean;
+      onNavigate?: () => void;
+    }) => {
+      const active = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
+      if (collapsed) {
+        return (
+          <Link
+            href={item.href}
+            title={item.label}
+            onClick={onNavigate}
+            className={`flex items-center justify-center w-10 h-10 mx-auto rounded-lg transition-all duration-150 ${
+              active
+                ? "bg-white/10 text-white"
+                : "text-neutral-500 hover:text-white hover:bg-white/5"
+            }`}
+          >
+            <item.icon className="w-4 h-4" />
+          </Link>
+        );
       }
-    }
-    return "Command Center";
+      return (
+        <Link
+          href={item.href}
+          onClick={onNavigate}
+          className={`flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-150 ${
+            active
+              ? "bg-white/10 text-white"
+              : "text-neutral-400 hover:text-white hover:bg-white/[0.04]"
+          }`}
+        >
+          <item.icon className="w-4 h-4 shrink-0" />
+          <span>{item.label}</span>
+        </Link>
+      );
+    };
+    Component.displayName = "NavLink";
+    return Component;
   }, [pathname]);
 
-  const activeGroup = getActiveGroup();
+  /* ── Expanded sidebar content ── */
+  const renderExpandedNav = (isMobile: boolean) => {
+    const onNavigate = isMobile ? () => setMobileMenuOpen(false) : undefined;
+    return (
+      <>
+        {/* Primary nav */}
+        <div className="px-3 pt-4 pb-2 space-y-0.5">
+          {PRIMARY_NAV.map((item) => (
+            <NavLink key={item.href} item={item} onNavigate={onNavigate} />
+          ))}
+        </div>
 
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() => {
-    const initial = new Set<string>();
-    initial.add(activeGroup);
-    initial.add("Command Center");
-    return initial;
-  });
+        <div className="mx-4 border-b border-white/[0.04]" />
 
-  const toggleGroup = (group: string) => {
-    setExpandedGroups(prev => {
-      const next = new Set(prev);
-      if (next.has(group)) {
-        next.delete(group);
-      } else {
-        next.add(group);
-      }
-      return next;
-    });
+        {/* Collapsible groups */}
+        <div className="px-3 pt-3 pb-2 space-y-2 flex-1 overflow-y-auto custom-scrollbar">
+          {NAV_GROUPS.map((group) => {
+            const isOpen = openGroups.has(group.label);
+            const hasActive = group.items.some((i) => isActive(i.href));
+
+            return (
+              <div key={group.label}>
+                <button
+                  onClick={() => toggleGroup(group.label)}
+                  className={`w-full flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] rounded-md transition-colors ${
+                    hasActive
+                      ? "text-neutral-300"
+                      : "text-neutral-500 hover:text-neutral-300"
+                  }`}
+                >
+                  <group.icon className="w-3.5 h-3.5" />
+                  <span className="flex-1 text-left">{group.label}</span>
+                  <motion.div
+                    animate={{ rotate: isOpen ? 0 : -90 }}
+                    transition={{ duration: 0.15 }}
+                  >
+                    <ChevronDown className="w-3 h-3" />
+                  </motion.div>
+                </button>
+
+                <AnimatePresence initial={false}>
+                  {isOpen && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2, ease: "easeInOut" }}
+                      className="overflow-hidden"
+                    >
+                      <div className="pt-1 pb-1 space-y-0.5">
+                        {group.items.map((item) => (
+                          <NavLink key={item.href} item={item} onNavigate={onNavigate} />
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="mx-4 border-b border-white/[0.04]" />
+
+        {/* Bottom settings nav */}
+        <div className="px-3 pt-2 pb-3 space-y-0.5">
+          {BOTTOM_NAV.map((item) => (
+            <NavLink key={item.href} item={item} onNavigate={onNavigate} />
+          ))}
+        </div>
+      </>
+    );
   };
 
-  const filteredGroups = useMemo(() => {
-    if (!searchQuery.trim()) return NAV_GROUPS;
-    const q = searchQuery.toLowerCase();
-    return NAV_GROUPS.map(group => ({
-      ...group,
-      items: group.items.filter(item =>
-        item.label.toLowerCase().includes(q) ||
-        item.href.toLowerCase().includes(q)
-      )
-    })).filter(group => group.items.length > 0);
-  }, [searchQuery]);
-
-  const nodeId = user ? `SM-${user.id.slice(-5).toUpperCase()}` : 'SM-OFFLINE';
-
-  const renderNavContent = (isMobile: boolean) => (
-    <>
-      <div className={`${isMobile ? 'p-4' : 'px-4 pt-6 pb-2 border-b border-white/5'}`}>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
-          <input
-            type="text"
-            placeholder="Search commands..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-[#0A0A0A] border border-white/10 rounded-lg pl-9 pr-3 py-2 text-xs text-white placeholder:text-neutral-600 focus:outline-none focus:border-white/30 transition-colors font-mono"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-white transition-colors"
-            >
-              <X className="w-3 h-3" />
-            </button>
-          )}
-        </div>
-      </div>
-
-      <nav className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
-        {filteredGroups.map((section) => {
-          const isExpanded = expandedGroups.has(section.group) || searchQuery.trim().length > 0;
-          
-          return (
-            <div key={section.group} className="space-y-1">
-              <button
-                onClick={() => toggleGroup(section.group)}
-                className="w-full flex items-center justify-between px-2 py-1 text-[10px] font-bold uppercase tracking-[0.1em] text-neutral-500 hover:text-neutral-300 transition-colors"
-              >
-                <span>{section.group}</span>
-                <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${isExpanded ? 'opacity-100' : '-rotate-90 opacity-0'}`} />
-              </button>
-
-              <AnimatePresence initial={false}>
-                {isExpanded && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.2, ease: "easeInOut" }}
-                    className="overflow-hidden"
-                  >
-                    <div className="py-1 space-y-0.5">
-                      {section.items.map((item) => {
-                        const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
-                        return (
-                          <Link
-                            key={item.href}
-                            href={item.href}
-                            onClick={() => isMobile && setMobileMenuOpen(false)}
-                            className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
-                              isActive
-                                ? "bg-white/10 text-white"
-                                : "text-neutral-400 hover:text-white hover:bg-white/5"
-                            }`}
-                          >
-                            <item.icon className="w-4 h-4 shrink-0" />
-                            {item.label}
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          );
-        })}
-      </nav>
-    </>
+  /* ── Collapsed sidebar (icons only) ── */
+  const renderCollapsedNav = () => (
+    <nav className="flex-1 overflow-y-auto py-3 space-y-1 custom-scrollbar">
+      {PRIMARY_NAV.map((item) => (
+        <NavLink key={item.href} item={item} collapsed />
+      ))}
+      <div className="mx-3 my-2 border-b border-white/[0.04]" />
+      {NAV_GROUPS.flatMap((g) => g.items).map((item) => (
+        <NavLink key={item.href} item={item} collapsed />
+      ))}
+      <div className="mx-3 my-2 border-b border-white/[0.04]" />
+      {BOTTOM_NAV.map((item) => (
+        <NavLink key={item.href} item={item} collapsed />
+      ))}
+    </nav>
   );
 
   return (
     <TelemetryProvider>
       <div className="flex h-screen bg-[#000000] text-white overflow-hidden font-sans">
-        
-        {/* === DESKTOP SIDEBAR === */}
-        <aside className={`hidden ${isHome ? "lg:hidden" : "lg:flex"} ${sidebarExpanded ? "w-[260px]" : "w-16"} border-r border-[#111111] bg-[#050505] flex-col shrink-0 overflow-hidden relative z-10 transition-all duration-300`}>
 
+        {/* === DESKTOP SIDEBAR === */}
+        <aside
+          className={`hidden ${isHome ? "lg:hidden" : "lg:flex"} ${
+            sidebarExpanded ? "w-[240px]" : "w-16"
+          } border-r border-[#111111] bg-[#050505] flex-col shrink-0 overflow-hidden relative z-10 transition-all duration-300`}
+        >
           {/* Logo Header */}
-          <div className={`border-b border-white/5 z-10 flex items-center ${sidebarExpanded ? "p-6 justify-between" : "p-4 justify-center"}`}>
-            <Link href="/dashboard" className="flex items-center gap-3">
-              <Image src="/logo.png" alt="Matrix" width={24} height={24} className="rounded-md opacity-90 grayscale hover:grayscale-0 transition-all duration-500" />
-              {sidebarExpanded && <span className="text-sm font-semibold tracking-wide text-white">Sovereign Matrix</span>}
+          <div
+            className={`border-b border-white/5 z-10 flex items-center ${
+              sidebarExpanded ? "px-5 py-4 justify-between" : "p-4 justify-center"
+            }`}
+          >
+            <Link href="/dashboard" className="flex items-center gap-2.5">
+              <Image
+                src="/logo.png"
+                alt="Sovereign"
+                width={22}
+                height={22}
+                className="rounded-md opacity-90 grayscale hover:grayscale-0 transition-all duration-500"
+              />
+              {sidebarExpanded && (
+                <span className="text-sm font-semibold tracking-wide text-white">
+                  Sovereign
+                </span>
+              )}
             </Link>
+            {sidebarExpanded && (
+              <button
+                onClick={() => setSidebarExpanded(false)}
+                className="p-1 rounded-md text-neutral-500 hover:text-white hover:bg-white/5 transition-colors"
+                title="Collapse sidebar"
+              >
+                <PanelLeftClose className="w-4 h-4" />
+              </button>
+            )}
           </div>
 
-          {sidebarExpanded ? (
-            renderNavContent(false)
-          ) : (
-            /* Collapsed: icon-only nav */
-            <nav className="flex-1 overflow-y-auto py-3 space-y-1 custom-scrollbar">
-              {NAV_GROUPS.flatMap(g => g.items).map((item) => {
-                const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
-                return (
-                  <Link key={item.href} href={item.href} title={item.label}
-                    className={`flex items-center justify-center w-10 h-10 mx-auto rounded-lg transition-colors ${
-                      isActive ? "bg-white/10 text-white" : "text-neutral-500 hover:text-white hover:bg-white/5"
-                    }`}>
-                    <item.icon className="w-4 h-4" />
-                  </Link>
-                );
-              })}
-            </nav>
-          )}
+          {sidebarExpanded ? renderExpandedNav(false) : renderCollapsedNav()}
 
-          {sidebarExpanded && (
-            <div className="px-4 py-2 border-t border-white/5">
-              <UsageBar userId={user?.id} plan="node" />
+          {/* User Footer */}
+          <div
+            className={`border-t border-white/5 bg-[#0A0A0A] ${
+              sidebarExpanded
+                ? "px-4 py-3 flex items-center justify-between"
+                : "p-3 flex flex-col items-center gap-3"
+            }`}
+          >
+            <div className="flex items-center gap-2.5">
+              <UserButton
+                appearance={{
+                  elements: {
+                    userButtonAvatarBox:
+                      "w-7 h-7 rounded-lg outline outline-1 outline-white/10",
+                  },
+                }}
+              />
+              {sidebarExpanded && (
+                <div className="flex flex-col">
+                  <span className="text-xs font-medium text-white truncate max-w-[120px]">
+                    {user?.fullName || "User"}
+                  </span>
+                  <span className="text-[10px] text-neutral-500 flex items-center gap-1.5">
+                    {isConnected ? (
+                      <>
+                        <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
+                        Online
+                      </>
+                    ) : (
+                      <>
+                        <span className="w-1.5 h-1.5 bg-neutral-600 rounded-full" />
+                        Offline
+                      </>
+                    )}
+                  </span>
+                </div>
+              )}
             </div>
-          )}
-
-          {/* User Footer + Toggle */}
-          <div className={`border-t border-white/5 bg-[#0A0A0A] ${sidebarExpanded ? "p-5 flex items-center justify-between" : "p-3 flex flex-col items-center gap-3"}`}>
-            <div className="flex items-center gap-3">
-               <UserButton appearance={{ elements: { userButtonAvatarBox: "w-8 h-8 rounded-lg outline outline-1 outline-white/10" } }} />
-               {sidebarExpanded && (
-                 <div className="flex flex-col">
-                   <span className="text-xs font-medium text-white">{user?.fullName || "Commander"}</span>
-                   <span className="text-[10px] text-neutral-500 font-mono tracking-wider flex items-center gap-1.5 mt-0.5">
-                     {isConnected ? (
-                       <><span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" /> {ping}ms</>
-                     ) : (
-                       <><span className="w-1.5 h-1.5 bg-red-500 rounded-full" /> OFF</>
-                     )}
-                   </span>
-                 </div>
-               )}
-            </div>
-            <button onClick={() => setSidebarExpanded(!sidebarExpanded)} title={sidebarExpanded ? "Collapse sidebar" : "Expand sidebar"}
-              className="p-1.5 rounded-lg text-neutral-500 hover:text-white hover:bg-white/5 transition-colors">
-              {sidebarExpanded ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeftOpen className="w-4 h-4" />}
-            </button>
+            {!sidebarExpanded && (
+              <button
+                onClick={() => setSidebarExpanded(true)}
+                className="p-1.5 rounded-lg text-neutral-500 hover:text-white hover:bg-white/5 transition-colors"
+                title="Expand sidebar"
+              >
+                <PanelLeftOpen className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </aside>
 
         {/* === MAIN CONTENT === */}
         <main className="flex-1 overflow-y-auto bg-[#000000] relative z-10 custom-scrollbar">
           <div className="relative z-10 w-full min-h-full max-w-[1600px] mx-auto">
-            {!isHome && <SystemPulseStrip />}
-            {!isHome && <SmartContextBar />}
+            {/* Breadcrumb Bar */}
+            {!isHome && pageLabel && (
+              <div className="px-6 lg:px-8 pt-3 pb-1 flex items-center gap-1.5">
+                <Link
+                  href="/dashboard"
+                  className="text-[11px] text-neutral-600 hover:text-neutral-400 transition-colors"
+                >
+                  Dashboard
+                </Link>
+                <ChevronRight className="w-3 h-3 text-neutral-700" />
+                <span className="text-[11px] text-neutral-400 font-medium">
+                  {pageLabel}
+                </span>
+              </div>
+            )}
             <ErrorBoundary>
               <ToastProvider>
                 <CinematicOnboarding>
@@ -332,18 +445,49 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {!isHome && <SovereignAssistant />}
 
         {/* === MOBILE BOTTOM NAV === */}
-        <nav className={`${isHome ? "hidden" : "lg:hidden"} fixed bottom-6 left-6 right-6 z-50 bg-[#0A0A0A] border border-white/10 rounded-2xl flex items-center justify-around p-3 shadow-2xl`}>
-           <Link href="/dashboard" className={`flex flex-col items-center gap-1.5 ${pathname === '/dashboard' ? 'text-white' : 'text-neutral-500'}`}>
-              <LayoutDashboard className="w-5 h-5" />
-              <span className="text-[9px] font-medium tracking-wide">Home</span>
-           </Link>
-           <Link href="/dashboard/nemo-claw" className="flex items-center justify-center w-12 h-12 -mt-8 rounded-full bg-white text-black shadow-lg">
-              <Network className="w-5 h-5" />
-           </Link>
-           <button onClick={() => setMobileMenuOpen(true)} className="flex flex-col items-center gap-1.5 text-neutral-500">
-              <Menu className="w-5 h-5" />
-              <span className="text-[9px] font-medium tracking-wide">Menu</span>
-           </button>
+        <nav
+          className={`${
+            isHome ? "hidden" : "lg:hidden"
+          } fixed bottom-6 left-6 right-6 z-50 bg-[#0A0A0A] border border-white/10 rounded-2xl flex items-center justify-around p-3 shadow-2xl`}
+        >
+          <Link
+            href="/dashboard"
+            className={`flex flex-col items-center gap-1.5 ${
+              pathname === "/dashboard" ? "text-white" : "text-neutral-500"
+            }`}
+          >
+            <LayoutDashboard className="w-5 h-5" />
+            <span className="text-[9px] font-medium tracking-wide">Home</span>
+          </Link>
+          <Link
+            href="/dashboard/build"
+            className={`flex flex-col items-center gap-1.5 ${
+              pathname.startsWith("/dashboard/build")
+                ? "text-white"
+                : "text-neutral-500"
+            }`}
+          >
+            <Sparkles className="w-5 h-5" />
+            <span className="text-[9px] font-medium tracking-wide">Build</span>
+          </Link>
+          <Link
+            href="/dashboard/leads"
+            className={`flex flex-col items-center gap-1.5 ${
+              pathname.startsWith("/dashboard/leads")
+                ? "text-white"
+                : "text-neutral-500"
+            }`}
+          >
+            <Target className="w-5 h-5" />
+            <span className="text-[9px] font-medium tracking-wide">Leads</span>
+          </Link>
+          <button
+            onClick={() => setMobileMenuOpen(true)}
+            className="flex flex-col items-center gap-1.5 text-neutral-500"
+          >
+            <Menu className="w-5 h-5" />
+            <span className="text-[9px] font-medium tracking-wide">More</span>
+          </button>
         </nav>
 
         {/* === MOBILE FULL MENU OVERLAY === */}
@@ -355,14 +499,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               exit={{ opacity: 0, y: 10 }}
               className="lg:hidden fixed inset-0 z-[100] bg-[#000000] flex flex-col"
             >
-              <div className="flex items-center justify-between p-6 border-b border-white/10">
-                <span className="text-sm font-semibold tracking-wide text-white">Sovereign Matrix</span>
-                <button onClick={() => setMobileMenuOpen(false)} className="p-2 text-neutral-400 hover:text-white">
+              <div className="flex items-center justify-between p-5 border-b border-white/10">
+                <span className="text-sm font-semibold tracking-wide text-white">
+                  Sovereign
+                </span>
+                <button
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="p-2 text-neutral-400 hover:text-white"
+                >
                   <X className="w-5 h-5" />
                 </button>
               </div>
               <div className="flex-1 overflow-y-auto">
-                {renderNavContent(true)}
+                {renderExpandedNav(true)}
               </div>
             </motion.div>
           )}

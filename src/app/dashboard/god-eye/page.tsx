@@ -37,10 +37,10 @@ export default function GodEyeSurveillancePage() {
   }, []);
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8 min-h-screen">
+    <div className="p-8 max-w-7xl mx-auto space-y-8 min-h-screen bg-[#050505]">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-blue-500/20 bg-blue-500/10 text-blue-400 text-[10px] font-bold uppercase tracking-widest mb-4">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#00B7FF]/20 bg-[#00B7FF]/10 text-[#00B7FF] text-[10px] font-bold uppercase tracking-widest mb-4">
             <ScanEye className="w-3 h-3" /> NVIDIA Metropolis Engine Active
           </div>
           <h1 className="text-4xl font-bold text-white tracking-tight mb-2 font-serif">God-Eye Spatial Array</h1>
@@ -58,7 +58,7 @@ export default function GodEyeSurveillancePage() {
           <div className="w-px h-8 bg-white/10 mx-2" />
           <div className="flex flex-col">
             <span className="text-[10px] text-neutral-500 uppercase tracking-widest font-bold mb-1">Active Nodes</span>
-            <span className="text-2xl font-mono text-blue-400 flex items-center gap-2">
+            <span className="text-2xl font-mono text-[#00B7FF] flex items-center gap-2">
               12/12 <Camera className="w-4 h-4" />
             </span>
           </div>
@@ -142,7 +142,7 @@ export default function GodEyeSurveillancePage() {
             ))}
           </div>
           <div className="p-6 border-t border-white/5">
-             <button className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold uppercase tracking-widest py-3 rounded-xl transition-colors">
+             <button className="w-full bg-[#00B7FF] hover:bg-[#00B7FF]/80 text-white text-xs font-bold uppercase tracking-widest py-3 rounded-xl transition-colors">
                 Analyze Archival Footage
              </button>
           </div>

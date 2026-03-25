@@ -63,8 +63,6 @@ export async function POST(req: Request) {
     }
 
     // 3. Sovereign Command Router
-    console.log(`[MATRIX-NODE] Commander Directive Received: ${text}`);
-
     if (text.startsWith('/metrics')) {
       await sendTelegramMessage(chatId, "📊 *Sovereign Matrix Telemetry*\n\n🟢 Vercel Edge Nodes: Operating\n🟢 Neon Database: Synced\n🟢 PayFast Processor: Unlocked\n🟢 NemoClaw Ghost Nodes: 0 Active\n\n_System is fully optimized and awaiting deployment commands._");
     } 

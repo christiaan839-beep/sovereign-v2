@@ -11,7 +11,7 @@ interface SmartSuggestion {
   description: string;
   action: string;
   href: string;
-  icon: React.ElementType;
+  icon: React.ComponentType<{ className?: string }>;
   priority: "high" | "medium" | "low";
   color: string;
 }

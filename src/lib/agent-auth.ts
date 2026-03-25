@@ -4,9 +4,9 @@ import { auth } from "@clerk/nextjs/server";
 /**
  * AGENT AUTH MIDDLEWARE — Validates Clerk sessions and enforces
  * plan-based rate limits on all agent API calls.
- * 
+ *
  * Usage: Import and call at the top of every agent route.
- * 
+ *
  * Plan limits:
  * - Free/Demo: 5 calls per day (for /demo page)
  * - Node (R9,997): 500 calls per day
@@ -22,8 +22,9 @@ export interface AuthResult {
   error?: string;
 }
 
-// In-memory rate tracking (production: use Redis)
+// In-memory rate tracking with TTL cleanup
 const USAGE_TRACKER = new Map<string, { count: number; reset: number }>();
+let lastTrackerCleanup = Date.now();
 
 const PLAN_LIMITS: Record<string, number> = {
   free: 5,
@@ -32,10 +33,22 @@ const PLAN_LIMITS: Record<string, number> = {
   cartel: Infinity,
 };
 
+// Purge expired entries every 10 minutes (prevents unbounded growth)
+function cleanupTracker() {
+  const now = Date.now();
+  if (now - lastTrackerCleanup < 600_000) return; // 10 min
+  lastTrackerCleanup = now;
+  for (const [key, val] of USAGE_TRACKER) {
+    if (val.reset < now) USAGE_TRACKER.delete(key);
+  }
+}
+
 export async function authorizeAgent(
   request: Request,
   options?: { allowAnonymous?: boolean; agentName?: string }
 ): Promise<AuthResult> {
+  cleanupTracker();
+
   // Check for demo/anonymous access
   if (options?.allowAnonymous) {
     const ip = request.headers.get("x-forwarded-for") || "anonymous";
@@ -56,7 +69,6 @@ export async function authorizeAgent(
       USAGE_TRACKER.set(key, { count: 1, reset: now + 86400000 }); // 24h reset
     }
 
-    // Log the usage
     logUsage("anonymous", ip, options.agentName || "unknown");
 
     return { authorized: true, plan: "free", remaining: PLAN_LIMITS.free - (USAGE_TRACKER.get(key)?.count || 0) };
@@ -71,7 +83,7 @@ export async function authorizeAgent(
     }
 
     // Determine plan from metadata (simplified — production: check Stripe subscription)
-    const plan = "cartel"; // Default to highest for now — when Stripe is wired, check subscription
+    const plan = "cartel"; // Default to highest for now — when billing is wired, check subscription
     const limit = PLAN_LIMITS[plan] || PLAN_LIMITS.free;
 
     const key = `user:${userId}`;
@@ -108,7 +120,7 @@ export async function authorizeAgent(
 }
 
 // ═══════════════════════════════════════════════
-// USAGE LOGGING — Tracks every agent call
+// USAGE LOGGING — Circular buffer (O(1) ops, fixed memory)
 // ═══════════════════════════════════════════════
 
 interface UsageLog {
@@ -120,40 +132,51 @@ interface UsageLog {
   status?: string;
 }
 
-const USAGE_LOGS: UsageLog[] = [];
+const LOG_CAPACITY = 1000;
+const USAGE_LOGS: UsageLog[] = new Array(LOG_CAPACITY);
+let logHead = 0; // Write pointer
+let logCount = 0; // Number of entries stored
 
 function logUsage(userId: string, plan: string, agent: string) {
-  USAGE_LOGS.push({
+  USAGE_LOGS[logHead] = {
     timestamp: new Date().toISOString(),
     userId,
     plan,
     agent,
-  });
-  // Keep only last 10,000 entries in memory
-  if (USAGE_LOGS.length > 10000) {
-    USAGE_LOGS.splice(0, USAGE_LOGS.length - 10000);
-  }
+  };
+  logHead = (logHead + 1) % LOG_CAPACITY;
+  if (logCount < LOG_CAPACITY) logCount++;
 }
 
 export function logAgentExecution(userId: string, agent: string, duration_ms: number, status: string) {
-  USAGE_LOGS.push({
+  USAGE_LOGS[logHead] = {
     timestamp: new Date().toISOString(),
     userId,
     plan: "tracked",
     agent,
     duration_ms,
     status,
-  });
+  };
+  logHead = (logHead + 1) % LOG_CAPACITY;
+  if (logCount < LOG_CAPACITY) logCount++;
+}
+
+function getLogsSnapshot(): UsageLog[] {
+  if (logCount === 0) return [];
+  if (logCount < LOG_CAPACITY) return USAGE_LOGS.slice(0, logCount);
+  // Full buffer — read from oldest to newest
+  return [...USAGE_LOGS.slice(logHead), ...USAGE_LOGS.slice(0, logHead)];
 }
 
 export function getUsageLogs(): UsageLog[] {
-  return USAGE_LOGS;
+  return getLogsSnapshot();
 }
 
 export function getUsageStats() {
+  const logs = getLogsSnapshot();
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-  const todayLogs = USAGE_LOGS.filter(l => l.timestamp >= today);
+  const todayLogs = logs.filter(l => l.timestamp >= today);
 
   const agentCounts: Record<string, number> = {};
   const userCounts: Record<string, number> = {};
@@ -165,7 +188,7 @@ export function getUsageStats() {
 
   return {
     total_calls_today: todayLogs.length,
-    total_calls_all_time: USAGE_LOGS.length,
+    total_calls_all_time: logCount,
     calls_by_agent: agentCounts,
     unique_users_today: Object.keys(userCounts).length,
     top_agents: Object.entries(agentCounts).sort((a, b) => b[1] - a[1]).slice(0, 5),
@@ -174,10 +197,6 @@ export function getUsageStats() {
 
 /**
  * Helper: Quick auth check that returns a NextResponse error if unauthorized.
- * Use at the top of any agent route:
- * 
- * const authCheck = await quickAuth(request, "abm-artillery");
- * if (authCheck) return authCheck; // Returns error response if unauthorized
  */
 export async function quickAuth(request: Request, agentName: string, allowAnonymous = false): Promise<NextResponse | null> {
   const result = await authorizeAgent(request, { agentName, allowAnonymous });

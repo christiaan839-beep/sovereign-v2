@@ -52,30 +52,35 @@ export function middleware(request: NextRequest) {
     const now = Date.now();
     const limit = rateLimits.get(clientId);
 
-    if (limit && now < limit.resetAt) {
-      limit.count += 1;
-      if (limit.count > 100) {
-        apiLogger.log({
-          route: url.pathname,
-          method: request.method,
-          status: 429,
-          durationMs: 0,
-          clientIp,
-          error: "Rate limit exceeded"
-        });
-        return NextResponse.json(
-          { error: 'Rate limit exceeded. Max 100 requests per minute.', retry_after_seconds: Math.ceil((limit.resetAt - now) / 1000) },
-          { status: 429 }
-        );
+    if (limit) {
+      // Skip expired entries — treat as fresh window
+      if (now >= limit.resetAt) {
+        rateLimits.set(clientId, { count: 1, resetAt: now + 60000 });
+      } else {
+        limit.count += 1;
+        if (limit.count > 100) {
+          apiLogger.log({
+            route: url.pathname,
+            method: request.method,
+            status: 429,
+            durationMs: 0,
+            clientIp,
+            error: "Rate limit exceeded"
+          });
+          return NextResponse.json(
+            { error: 'Rate limit exceeded. Max 100 requests per minute.', retry_after_seconds: Math.ceil((limit.resetAt - now) / 1000) },
+            { status: 429 }
+          );
+        }
       }
     } else {
       rateLimits.set(clientId, { count: 1, resetAt: now + 60000 });
     }
 
-    // Cleanup old entries every 1000 requests
-    if (rateLimits.size > 1000) {
-      for (const [key, val] of rateLimits.entries()) {
-        if (now > val.resetAt) rateLimits.delete(key);
+    // Cleanup stale entries at a low threshold to bound memory
+    if (rateLimits.size > 100) {
+      for (const [key, val] of rateLimits) {
+        if (now >= val.resetAt) rateLimits.delete(key);
       }
     }
 

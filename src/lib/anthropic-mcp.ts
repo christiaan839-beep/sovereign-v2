@@ -100,7 +100,7 @@ async function handleMemory(toolName: string, params: Record<string, unknown>): 
       if (!query) return { success: false, error: "Missing 'query' parameter" };
       try {
         const { recall } = await import("@/lib/memory");
-        const results = await recall(query, namespace);
+        const results = await recall(query, parseInt(namespace, 10) || 2);
         return { success: true, data: { results, count: Array.isArray(results) ? results.length : 0 } };
       } catch (err) {
         return { success: false, error: err instanceof Error ? err.message : "Memory recall failed" };

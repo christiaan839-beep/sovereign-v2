@@ -53,7 +53,7 @@ export async function POST(req: Request) {
     
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: "MALFORMED_LEAD_DATA", details: error.errors }, { status: 400 });
+      return NextResponse.json({ error: "MALFORMED_LEAD_DATA", details: error.issues }, { status: 400 });
     }
     return NextResponse.json({ error: "EDGE_MATRIX_FAILURE" }, { status: 500 });
   }

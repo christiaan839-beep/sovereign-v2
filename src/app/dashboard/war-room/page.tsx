@@ -111,7 +111,7 @@ export default function WarRoomColosseum() {
 
       {/* Header */}
       <div className="mb-10 relative z-10">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-bold uppercase tracking-wider mb-3">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#00B7FF]/10 border border-[#00B7FF]/20 text-[#00B7FF] text-xs font-bold uppercase tracking-wider mb-3">
           <Swords className="w-3 h-3" /> 4-Node NVIDIA Protocol
         </div>
         <h1 className="text-4xl font-bold font-sans tracking-tight mb-2 flex items-center gap-3">
@@ -134,13 +134,13 @@ export default function WarRoomColosseum() {
               rows={3}
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
-              className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-sm text-white focus:border-indigo-500/50 outline-none resize-none transition-colors"
+              className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-sm text-white focus:border-[#00B7FF]/50 outline-none resize-none transition-colors"
               placeholder="E.g., Design a LinkedIn outreach sequence..."
             />
             <button 
               onClick={startDebate}
               disabled={status === "debating" || !topic}
-              className="w-full mt-6 py-4 rounded-xl border flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r from-indigo-600/20 to-rose-600/20 text-white border-white/10 hover:border-white/20 hover:shadow-[0_0_30px_rgba(99,102,241,0.2)]"
+              className="w-full mt-6 py-4 rounded-xl border flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r from-[#00B7FF]/20 to-rose-600/20 text-white border-white/10 hover:border-white/20 hover:shadow-[0_0_30px_rgba(0,183,255,0.2)]"
             >
               <Swords className="w-4 h-4" /> Initiate 4-Node Debate
             </button>
@@ -184,7 +184,7 @@ export default function WarRoomColosseum() {
 
         {/* Right Col: The Output Stream */}
         <div className="lg:col-span-8">
-           <div className="h-full min-h-[600px] flex flex-col rounded-3xl bg-[#080808] border border-white/5 overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
+           <div className="h-full min-h-[600px] flex flex-col rounded-3xl bg-[#050505] border border-white/5 overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
                <div className="h-14 border-b border-white/5 bg-white/[0.01] flex items-center justify-between px-6 backdrop-blur-md">
                   <div className="flex items-center gap-3">
                     <div className="flex gap-1.5">

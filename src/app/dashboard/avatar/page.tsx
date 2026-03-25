@@ -20,7 +20,6 @@ export default function DigitalHumanAvatarPage() {
         body: JSON.stringify({ prompt: `Professional photorealistic headshot of ${avatarName}, corporate executive, studio lighting, neutral background`, width: 512, height: 512 }),
       });
       const data = await res.json();
-      console.log("Avatar generated:", data.model);
 
       // Phase 2: Configure voice synthesis
       setPipelineStatus("configuring");
@@ -30,7 +29,6 @@ export default function DigitalHumanAvatarPage() {
         body: JSON.stringify({ message: `Test voice synthesis for digital human avatar ${avatarName}. Say: Hello, I am your AI sales representative. How can I help you today?` }),
       });
       const voiceData = await voiceRes.json();
-      console.log("Voice configured:", voiceData.model);
 
       // Phase 3: Render
       setPipelineStatus("rendering");

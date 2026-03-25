@@ -13,7 +13,6 @@ export async function POST(req: Request) {
 
     if (!userMessage) return NextResponse.json({ status: 'ignored: no message payload' });
 
-    console.log(`[CLOSER AGENT] Inbound message from Lead ${senderId}: ${userMessage}`);
 
     // System Prompt for closing $5k/mo deal using Google AI Ultra (Gemini 1.5 Flash / Pro)
     const systemInstruction = `You are Sovereign, the elite AI executive closer for the Sovereign Matrix.
@@ -51,7 +50,6 @@ Keep responses under 3 sentences. Be ruthless about their time.`;
     const aiData = await response.json();
     const replyText = aiData.candidates?.[0]?.content?.parts?.[0]?.text || "Communication matrix offline. Please hold.";
 
-    console.log(`[CLOSER AGENT] Extracted Response: ${replyText}`);
 
     // Production Meta Hook Dispatch
     if (META_ACCESS_TOKEN && senderId !== "test_lead_id") {

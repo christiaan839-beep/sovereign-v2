@@ -15,7 +15,7 @@ interface Agent {
   name: string;
   description: string;
   status: "Idle" | "Working" | "Listening" | "Always On";
-  icon: React.ElementType;
+  icon: React.ComponentType<{ className?: string }>;
   lastAction: string;
 }
 
@@ -39,7 +39,7 @@ const AGENTS: Agent[] = [
 interface QuickAction {
   label: string;
   href: string;
-  icon: React.ElementType;
+  icon: React.ComponentType<{ className?: string }>;
 }
 
 const QUICK_ACTIONS: QuickAction[] = [
@@ -84,7 +84,7 @@ const containerVariants = {
 
 const cardVariants = {
   hidden: { opacity: 0, y: 16 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" } },
+  show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" as const } },
 };
 
 // --- Page ---
@@ -120,7 +120,7 @@ export default function AgentHQPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#020202] px-4 py-10 sm:px-8 lg:px-12">
+    <div className="min-h-screen bg-[#050505] px-4 py-10 sm:px-8 lg:px-12">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -12 }}
@@ -129,7 +129,7 @@ export default function AgentHQPage() {
         className="mb-10"
       >
         <div className="flex items-center gap-3 mb-2">
-          <Sparkles className="w-5 h-5 text-emerald-500" />
+          <Sparkles className="w-5 h-5 text-[#00B7FF]" />
           <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
             Agent HQ
           </h1>
@@ -154,7 +154,7 @@ export default function AgentHQPage() {
             <motion.div
               key={agent.name}
               variants={cardVariants}
-              className="group relative rounded-xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl p-4 hover:border-emerald-500/20 transition-colors"
+              className="group relative rounded-xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl p-4 hover:border-[#00B7FF]/20 transition-colors"
             >
               {/* Top row */}
               <div className="flex items-start gap-3 mb-3">
@@ -171,7 +171,7 @@ export default function AgentHQPage() {
                     <span className="text-sm font-semibold text-white truncate">
                       {agent.name}
                     </span>
-                    <agent.icon className="w-3.5 h-3.5 text-neutral-600 shrink-0" />
+                    {React.createElement(agent.icon, { className: "w-3.5 h-3.5 text-neutral-600 shrink-0" })}
                   </div>
                   <p className="text-[11px] text-neutral-500 leading-snug mt-0.5 line-clamp-2">
                     {agent.description}
@@ -205,12 +205,12 @@ export default function AgentHQPage() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.3 }}
-          className="rounded-xl border border-white/[0.06] bg-[#080808] overflow-hidden"
+          className="rounded-xl border border-white/[0.06] bg-[#050505] overflow-hidden"
         >
           <div className="max-h-64 overflow-y-auto custom-scrollbar">
             {loadingFeed ? (
               <div className="px-5 py-8 text-center">
-                <div className="inline-block w-4 h-4 border-2 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" />
+                <div className="inline-block w-4 h-4 border-2 border-[#00B7FF]/30 border-t-[#00B7FF] rounded-full animate-spin" />
                 <p className="text-neutral-600 text-xs mt-3 font-mono">
                   Loading activity feed...
                 </p>
@@ -262,15 +262,15 @@ export default function AgentHQPage() {
               key={action.label}
               variants={cardVariants}
               onClick={() => router.push(action.href)}
-              className="group flex items-center gap-4 rounded-xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl px-5 py-4 text-left hover:border-emerald-500/20 transition-all"
+              className="group flex items-center gap-4 rounded-xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl px-5 py-4 text-left hover:border-[#00B7FF]/20 transition-all"
             >
-              <div className="w-9 h-9 rounded-lg bg-white/[0.04] flex items-center justify-center group-hover:bg-emerald-500/10 transition-colors">
-                <action.icon className="w-4 h-4 text-neutral-400 group-hover:text-emerald-400 transition-colors" />
+              <div className="w-9 h-9 rounded-lg bg-white/[0.04] flex items-center justify-center group-hover:bg-[#00B7FF]/10 transition-colors">
+                {React.createElement(action.icon, { className: "w-4 h-4 text-neutral-400 group-hover:text-[#00B7FF] transition-colors" })}
               </div>
               <span className="text-sm font-medium text-neutral-300 group-hover:text-white transition-colors flex-1">
                 {action.label}
               </span>
-              <ArrowRight className="w-4 h-4 text-neutral-700 group-hover:text-emerald-500 transition-colors" />
+              <ArrowRight className="w-4 h-4 text-neutral-700 group-hover:text-[#00B7FF] transition-colors" />
             </motion.button>
           ))}
         </motion.div>

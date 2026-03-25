@@ -63,7 +63,7 @@ export default function FlywheelPage() {
   return (
     <div className="p-8 max-w-7xl mx-auto min-h-screen bg-[#050505] text-white">
       <div className="mb-8">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold uppercase tracking-wider mb-3">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#00B7FF]/10 border border-[#00B7FF]/20 text-[#00B7FF] text-xs font-bold uppercase tracking-wider mb-3">
           <RefreshCcw className="w-3 h-3" /> RLHF Continuous Improvement
         </div>
         <h1 className="text-3xl font-bold font-sans tracking-tight mb-2 flex items-center gap-3">
@@ -85,11 +85,11 @@ export default function FlywheelPage() {
          </div>
          <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
             <div className="flex items-center gap-3 mb-2">
-               <BrainCircuit className="w-5 h-5 text-blue-400" />
+               <BrainCircuit className="w-5 h-5 text-[#00B7FF]" />
                <span className="text-xs font-bold uppercase tracking-widest text-neutral-400">Total RLHF Nuances</span>
             </div>
             <div className="text-3xl font-mono text-white mt-4">{metrics.rlhfEvents.toLocaleString()}</div>
-            <p className="text-[10px] text-blue-400 mt-2 font-bold tracking-wider">Historical Human Preferences</p>
+            <p className="text-[10px] text-[#00B7FF] mt-2 font-bold tracking-wider">Historical Human Preferences</p>
          </div>
          <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
             <div className="flex items-center gap-3 mb-2">
@@ -104,14 +104,14 @@ export default function FlywheelPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Left Col: Setup */}
         <div className="lg:col-span-8">
-           <div className="h-full min-h-[500px] flex flex-col rounded-2xl bg-black border border-blue-500/20 overflow-hidden shadow-[0_0_50px_rgba(59,130,246,0.05)]">
-               <div className="h-12 border-b border-blue-500/20 bg-blue-500/5 flex items-center justify-between px-4">
+           <div className="h-full min-h-[500px] flex flex-col rounded-2xl bg-black border border-[#00B7FF]/20 overflow-hidden shadow-[0_0_50px_rgba(0,183,255,0.05)]">
+               <div className="h-12 border-b border-[#00B7FF]/20 bg-[#00B7FF]/5 flex items-center justify-between px-4">
                   <div className="flex items-center gap-2">
-                    <Activity className="w-4 h-4 text-blue-500" />
-                    <span className="text-[10px] font-mono text-blue-400 tracking-widest uppercase">Nightly DSPy Optimization Pipeline</span>
+                    <Activity className="w-4 h-4 text-[#00B7FF]" />
+                    <span className="text-[10px] font-mono text-[#00B7FF] tracking-widest uppercase">Nightly DSPy Optimization Pipeline</span>
                   </div>
                   {pipelineState === "optimizing" ? (
-                     <div className="flex items-center gap-2 text-[9px] text-blue-500 font-mono uppercase tracking-widest font-bold animate-pulse">
+                     <div className="flex items-center gap-2 text-[9px] text-[#00B7FF] font-mono uppercase tracking-widest font-bold animate-pulse">
                          Rewriting Internal Prompts...
                      </div>
                   ) : pipelineState === "complete" ? (
@@ -129,11 +129,11 @@ export default function FlywheelPage() {
                      <div className="flex gap-4">
                         <div className="bg-white/5 border border-white/10 rounded-lg p-3 flex-1 flex items-center justify-between">
                            <span className="text-xs text-neutral-300 font-mono">Enforce B2B Corporate Tone</span>
-                           <div className="w-8 h-4 bg-blue-500 rounded-full cursor-pointer relative"><div className="w-4 h-4 bg-white rounded-full absolute right-0 shadow" /></div>
+                           <div className="w-8 h-4 bg-[#00B7FF] rounded-full cursor-pointer relative"><div className="w-4 h-4 bg-white rounded-full absolute right-0 shadow" /></div>
                         </div>
                         <div className="bg-white/5 border border-white/10 rounded-lg p-3 flex-1 flex items-center justify-between">
                            <span className="text-xs text-neutral-300 font-mono">Reject Generic &quot;Slop&quot; Adjectives</span>
-                           <div className="w-8 h-4 bg-blue-500 rounded-full cursor-pointer relative"><div className="w-4 h-4 bg-white rounded-full absolute right-0 shadow" /></div>
+                           <div className="w-8 h-4 bg-[#00B7FF] rounded-full cursor-pointer relative"><div className="w-4 h-4 bg-white rounded-full absolute right-0 shadow" /></div>
                         </div>
                      </div>
                   </div>
@@ -151,7 +151,7 @@ export default function FlywheelPage() {
                   {(pipelineState === "optimizing" || pipelineState === "complete") && (
                      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4 font-mono text-xs">
                         {pipelineState === "optimizing" && (
-                          <div className="text-blue-400/80 space-y-2">
+                          <div className="text-[#00B7FF]/80 space-y-2">
                             <p className="animate-pulse">&gt; Fetching telemetry logs where user clicked: <ThumbsDown className="w-3 h-3 inline pb-1"/></p>
                             <p className="animate-pulse delay-75">&gt; Isolating &quot;slop&quot; patterns (e.g., &apos;In today&apos;s fast-paced digital landscape...&apos;)</p>
                             <p className="animate-pulse delay-150">&gt; Triggering DSPy Bootstrapping...</p>
@@ -182,7 +182,7 @@ export default function FlywheelPage() {
            <div className="rounded-2xl border border-white/10 p-6 bg-white/[0.02] flex-1 flex flex-col justify-between">
               <div>
                  <h3 className="text-xs font-bold uppercase tracking-widest text-neutral-300 mb-6 flex items-center gap-2">
-                   <ThumbsUp className="w-4 h-4 text-blue-400" /> Manual Run
+                   <ThumbsUp className="w-4 h-4 text-[#00B7FF]" /> Manual Run
                  </h3>
                  <p className="text-sm text-neutral-400 leading-relaxed mb-6">
                     Every time you or a sub-tenant rejects an output, the system flags it as &quot;Slop&quot;. Running the pipeline triggers NeMo and DSPy to analyze the failures and physically rewrite the agent&apos;s core instructions to ensure it never happens again.
@@ -192,7 +192,7 @@ export default function FlywheelPage() {
               <button 
                  onClick={triggerOptimization}
                  disabled={pipelineState !== "idle"}
-                 className="w-full py-4 rounded-xl font-bold uppercase tracking-widest text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-blue-500 text-white hover:bg-blue-600 shadow-[0_0_20px_rgba(59,130,246,0.3)] flex justify-center items-center gap-2"
+                 className="w-full py-4 rounded-xl font-bold uppercase tracking-widest text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-[#00B7FF] text-white hover:bg-[#00B7FF]/80 shadow-[0_0_20px_rgba(0,183,255,0.3)] flex justify-center items-center gap-2"
               >
                  <RefreshCcw className={`w-4 h-4 ${pipelineState === 'optimizing' ? 'animate-spin' : ''}`} /> Run Overnight Optimizer
               </button>

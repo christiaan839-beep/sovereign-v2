@@ -95,22 +95,22 @@ export default function LiveTerminalPage() {
   const typeColors: Record<string, string> = {
     system: "text-neutral-500",
     input: "text-[#00B7FF]",
-    output: "text-[#00ff66]",
+    output: "text-emerald-400",
     error: "text-red-400",
-    success: "text-[#00ff66]",
+    success: "text-emerald-400",
   };
 
   return (
-    <div className="min-h-screen bg-black text-white p-6 md:p-8 font-mono">
+    <div className="min-h-screen bg-[#050505] text-white p-6 md:p-8 font-mono">
       <div className="max-w-5xl mx-auto space-y-6">
-        <header className="border-b border-[#00ff66]/20 pb-6">
+        <header className="border-b border-[#00B7FF]/20 pb-6">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-[#00ff66]/10 border border-[#00ff66]/30 flex items-center justify-center">
-              <Terminal className="w-6 h-6 text-[#00ff66]" />
+            <div className="w-12 h-12 rounded-xl bg-[#00B7FF]/10 border border-[#00B7FF]/30 flex items-center justify-center">
+              <Terminal className="w-6 h-6 text-[#00B7FF]" />
             </div>
             <div>
               <h1 className="text-2xl font-black uppercase tracking-[0.2em]">Live Agent Terminal</h1>
-              <p className="text-[#00ff66]/60 text-xs uppercase tracking-widest">Real-Time Agent Execution · JSON I/O · Full Audit Trail</p>
+              <p className="text-[#00B7FF]/60 text-xs uppercase tracking-widest">Real-Time Agent Execution · JSON I/O · Full Audit Trail</p>
             </div>
           </div>
         </header>
@@ -123,7 +123,7 @@ export default function LiveTerminalPage() {
               onClick={() => { setSelectedAgent(a.id); setInput(a.placeholder); }}
               className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest border transition-all ${
                 selectedAgent === a.id
-                  ? "bg-[#00ff66] text-black border-[#00ff66]"
+                  ? "bg-[#00B7FF] text-black border-[#00B7FF]"
                   : "bg-transparent text-neutral-500 border-neutral-800 hover:border-neutral-600"
               }`}
             >
@@ -164,7 +164,7 @@ export default function LiveTerminalPage() {
           <button
             onClick={execute}
             disabled={running}
-            className="px-4 py-3 bg-[#00ff66] text-black font-bold text-sm hover:bg-[#00dd55] transition-all disabled:opacity-50 flex items-center gap-2"
+            className="px-4 py-3 bg-[#00B7FF] text-black font-bold text-sm hover:bg-[#00A0E0] transition-all disabled:opacity-50 flex items-center gap-2"
           >
             {running ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Send className="w-4 h-4" /> Run</>}
           </button>
@@ -173,7 +173,7 @@ export default function LiveTerminalPage() {
         {/* Stats Bar */}
         <div className="grid grid-cols-3 gap-3 text-center">
           <div className="bg-neutral-950 border border-neutral-800 p-3">
-            <p className="text-lg font-black text-[#00ff66]">{lines.filter(l => l.type === "success").length}</p>
+            <p className="text-lg font-black text-emerald-400">{lines.filter(l => l.type === "success").length}</p>
             <p className="text-[8px] text-neutral-500 uppercase">Successful Runs</p>
           </div>
           <div className="bg-neutral-950 border border-neutral-800 p-3 flex items-center justify-center gap-2">

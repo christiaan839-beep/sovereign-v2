@@ -120,7 +120,7 @@ export default function PageBuilderPage() {
       {/* Header */}
       <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-400 text-[10px] font-bold uppercase tracking-wider mb-4">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#00B7FF]/10 border border-[#00B7FF]/20 text-[#00B7FF] text-[10px] font-bold uppercase tracking-wider mb-4">
             <Globe2 className="w-3 h-3" /> Autonomous Page Builder v2
           </div>
           <h1 className="text-3xl font-bold font-mono text-white tracking-tight">Framer-Killer Engine</h1>
@@ -134,7 +134,7 @@ export default function PageBuilderPage() {
           <button
             onClick={handleGenerate}
             disabled={!businessName || !offer || generating}
-            className="px-8 py-4 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white font-bold text-xs uppercase tracking-[0.15em] rounded-xl flex items-center gap-3 transition-all shadow-[0_0_30px_rgba(139,92,246,0.3)] group"
+            className="px-8 py-4 bg-[#00B7FF] hover:bg-[#00B7FF]/90 disabled:opacity-50 text-white font-bold text-xs uppercase tracking-[0.15em] rounded-xl flex items-center gap-3 transition-all shadow-[0_0_30px_rgba(0,183,255,0.3)] group"
           >
             <MonitorPlay className="w-4 h-4 group-hover:scale-110 transition-transform" />
             Launch Pipeline
@@ -150,7 +150,7 @@ export default function PageBuilderPage() {
           {/* Config Card */}
           <div className="glass-card border border-glass-border p-6 shrink-0">
             <h3 className="text-xs font-bold uppercase tracking-widest text-[#5C667A] mb-5 flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-violet-400" /> Pipeline Configuration
+              <Sparkles className="w-4 h-4 text-[#00B7FF]" /> Pipeline Configuration
             </h3>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -162,7 +162,7 @@ export default function PageBuilderPage() {
                     onChange={(e) => setBusinessName(e.target.value)}
                     placeholder="NeuroStack"
                     disabled={generating}
-                    className="w-full bg-black/60 border border-glass-border rounded-lg px-3 py-2.5 text-sm text-white font-mono focus:border-violet-500/50 outline-none transition-all disabled:opacity-50"
+                    className="w-full bg-black/60 border border-glass-border rounded-lg px-3 py-2.5 text-sm text-white font-mono focus:border-[#00B7FF]/50 outline-none transition-all disabled:opacity-50"
                   />
                 </div>
                 <div>
@@ -173,7 +173,7 @@ export default function PageBuilderPage() {
                     onChange={(e) => setIndustry(e.target.value)}
                     placeholder="SaaS"
                     disabled={generating}
-                    className="w-full bg-black/60 border border-glass-border rounded-lg px-3 py-2.5 text-sm text-white font-mono focus:border-violet-500/50 outline-none transition-all disabled:opacity-50"
+                    className="w-full bg-black/60 border border-glass-border rounded-lg px-3 py-2.5 text-sm text-white font-mono focus:border-[#00B7FF]/50 outline-none transition-all disabled:opacity-50"
                   />
                 </div>
               </div>
@@ -185,7 +185,7 @@ export default function PageBuilderPage() {
                   placeholder="Free 30-min strategy session for CTOs"
                   rows={2}
                   disabled={generating}
-                  className="w-full bg-black/60 border border-glass-border rounded-lg px-3 py-2.5 text-sm text-white font-mono focus:border-violet-500/50 outline-none transition-all resize-none disabled:opacity-50"
+                  className="w-full bg-black/60 border border-glass-border rounded-lg px-3 py-2.5 text-sm text-white font-mono focus:border-[#00B7FF]/50 outline-none transition-all resize-none disabled:opacity-50"
                 />
               </div>
               <div>
@@ -196,7 +196,7 @@ export default function PageBuilderPage() {
                   onChange={(e) => setTargetAudience(e.target.value)}
                   placeholder="e.g. CMOs of hyper-growth SaaS"
                   disabled={generating}
-                  className="w-full bg-black/60 border border-glass-border rounded-lg px-3 py-2.5 text-sm text-white font-mono focus:border-violet-500/50 outline-none transition-all disabled:opacity-50"
+                  className="w-full bg-black/60 border border-glass-border rounded-lg px-3 py-2.5 text-sm text-white font-mono focus:border-[#00B7FF]/50 outline-none transition-all disabled:opacity-50"
                 />
               </div>
             </div>
@@ -205,7 +205,7 @@ export default function PageBuilderPage() {
           {/* Terminal / Status Card */}
           <div className="glass-card border border-glass-border p-1 flex-1 flex flex-col min-h-0 bg-black/80">
             <div className="px-4 py-3 border-b border-glass-border flex items-center gap-2 bg-white/[0.02]">
-              <Terminal className="w-4 h-4 text-violet-400" />
+              <Terminal className="w-4 h-4 text-[#00B7FF]" />
               <span className="text-[10px] font-bold uppercase tracking-widest text-[#8A95A5]">Command Center</span>
               {generating && (
                 <span className="ml-auto flex items-center gap-2 text-[10px] text-emerald-400 font-mono">
@@ -226,7 +226,7 @@ export default function PageBuilderPage() {
                   <div key={i} className={`
                     ${log.includes('[ERROR]') ? 'text-red-400' : ''}
                     ${log.includes('[SYS]') ? 'text-amber-400/80' : ''}
-                    ${log.includes('[INFO]') ? 'text-violet-300' : ''}
+                    ${log.includes('[INFO]') ? 'text-[#00B7FF]/80' : ''}
                     ${!log.match(/\[(ERROR|SYS|INFO)\]/) ? 'text-emerald-400/70' : ''}
                   `}>
                     <span className="opacity-50 mr-2">{new Date().toLocaleTimeString([], {hour12: false, second: '2-digit'})}</span>
@@ -249,7 +249,7 @@ export default function PageBuilderPage() {
               <button
                 onClick={() => setViewMode("preview")}
                 className={`px-4 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
-                  viewMode === "preview" ? "bg-violet-600 text-white shadow-lg" : "text-[#5C667A] hover:text-white"
+                  viewMode === "preview" ? "bg-[#00B7FF] text-white shadow-lg" : "text-[#5C667A] hover:text-white"
                 }`}
               >
                 <Eye className="w-3 h-3" /> Anthropic Artifacts Engine
@@ -257,7 +257,7 @@ export default function PageBuilderPage() {
               <button
                 onClick={() => setViewMode("code")}
                 className={`px-4 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
-                  viewMode === "code" ? "bg-violet-600 text-white shadow-lg" : "text-[#5C667A] hover:text-white"
+                  viewMode === "code" ? "bg-[#00B7FF] text-white shadow-lg" : "text-[#5C667A] hover:text-white"
                 }`}
               >
                 <Code className="w-3 h-3" /> Raw Source
@@ -299,7 +299,7 @@ export default function PageBuilderPage() {
                   ].map((s) => (
                     <div key={s.s} className="flex items-center gap-4">
                       <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-[10px] font-bold transition-all duration-500 ${
-                        activeStep >= s.s ? "border-violet-500 bg-violet-500 text-white shadow-[0_0_15px_rgba(139,92,246,0.5)]" : "border-glass-border text-[#5C667A] bg-transparent"
+                        activeStep >= s.s ? "border-[#00B7FF] bg-[#00B7FF] text-white shadow-[0_0_15px_rgba(0,183,255,0.5)]" : "border-glass-border text-[#5C667A] bg-transparent"
                       }`}>
                         {activeStep > s.s ? "✓" : s.s}
                       </div>
@@ -310,7 +310,7 @@ export default function PageBuilderPage() {
                         {activeStep === s.s && (
                           <div className="h-0.5 w-full bg-glass-border mt-2 overflow-hidden rounded-full">
                             <motion.div 
-                              className="h-full bg-violet-500" 
+                              className="h-full bg-[#00B7FF]" 
                               initial={{ width: "0%" }} 
                               animate={{ width: "100%" }} 
                               transition={{ duration: 2, repeat: Infinity }}

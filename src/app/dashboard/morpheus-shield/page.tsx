@@ -67,7 +67,7 @@ export default function MorpheusShieldPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white p-8 font-mono">
+    <div className="min-h-screen bg-[#050505] text-white p-8 font-mono">
       <div className="max-w-3xl mx-auto space-y-6">
         {/* Header */}
         <header className="border-b border-red-500/30 pb-6">

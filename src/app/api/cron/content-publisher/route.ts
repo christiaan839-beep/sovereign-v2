@@ -54,7 +54,6 @@ export async function GET() {
           .where(eq(scheduledContent.id, item.id));
 
         published++;
-        console.log(`[Content Publisher] Published: "${item.topic}" to ${item.platform}`);
       } catch (err) {
         // Mark as failed if dispatch errors
         await db

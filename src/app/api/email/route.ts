@@ -89,8 +89,7 @@ export async function POST(req: Request) {
     }
 
     // Fallback: Log mode (no external dependency)
-    console.log(`[EMAIL] To: ${to} | Subject: ${emailSubject} | Size: ${emailBody.length} chars`);
-    return NextResponse.json({ sent: false, provider: "log-only", message: "Email logged. Set RESEND_API_KEY for delivery.", to, subject: emailSubject });
+    return NextResponse.json({ sent: false, provider: "log-only", message: "Set RESEND_API_KEY for delivery.", to, subject: emailSubject });
 
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });

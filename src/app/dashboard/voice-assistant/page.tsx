@@ -159,7 +159,7 @@ export default function VoiceAssistantPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#030303] text-white p-6">
+    <div className="min-h-screen bg-[#050505] text-white p-6">
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
@@ -172,7 +172,7 @@ export default function VoiceAssistantPage() {
             className="p-3 rounded-xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] transition-colors"
             title={voiceEnabled ? "Mute voice responses" : "Enable voice responses"}
           >
-            {voiceEnabled ? <Volume2 className="w-4 h-4 text-emerald-400" /> : <VolumeX className="w-4 h-4 text-neutral-500" />}
+            {voiceEnabled ? <Volume2 className="w-4 h-4 text-[#00B7FF]" /> : <VolumeX className="w-4 h-4 text-neutral-500" />}
           </button>
         </div>
 
@@ -180,8 +180,8 @@ export default function VoiceAssistantPage() {
         <div className="space-y-4 mb-8 min-h-[400px] max-h-[60vh] overflow-y-auto pr-2">
           {messages.length === 0 && (
             <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-6">
-                <Bot className="w-8 h-8 text-emerald-400" />
+              <div className="w-16 h-16 rounded-2xl bg-[#00B7FF]/10 border border-[#00B7FF]/20 flex items-center justify-center mb-6">
+                <Bot className="w-8 h-8 text-[#00B7FF]" />
               </div>
               <h2 className="text-lg font-semibold text-white mb-2">Ready to listen</h2>
               <p className="text-sm text-neutral-500 max-w-sm">
@@ -199,14 +199,14 @@ export default function VoiceAssistantPage() {
               className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
             >
               {msg.role === "assistant" && (
-                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0 mt-1">
-                  <Bot className="w-4 h-4 text-emerald-400" />
+                <div className="w-8 h-8 rounded-lg bg-[#00B7FF]/10 border border-[#00B7FF]/20 flex items-center justify-center shrink-0 mt-1">
+                  <Bot className="w-4 h-4 text-[#00B7FF]" />
                 </div>
               )}
               <div className={`max-w-[80%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${
                 msg.role === "user"
                   ? "bg-white/10 text-white rounded-br-md"
-                  : "bg-emerald-500/[0.06] border border-emerald-500/10 text-neutral-200 rounded-bl-md"
+                  : "bg-[#00B7FF]/[0.06] border border-[#00B7FF]/10 text-neutral-200 rounded-bl-md"
               }`}>
                 {msg.content}
               </div>
@@ -227,14 +227,14 @@ export default function VoiceAssistantPage() {
                 exit={{ opacity: 0 }}
                 className="flex gap-3 items-center"
               >
-                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-                  <Loader2 className="w-4 h-4 text-emerald-400 animate-spin" />
+                <div className="w-8 h-8 rounded-lg bg-[#00B7FF]/10 border border-[#00B7FF]/20 flex items-center justify-center">
+                  <Loader2 className="w-4 h-4 text-[#00B7FF] animate-spin" />
                 </div>
-                <div className="px-4 py-3 rounded-2xl bg-emerald-500/[0.04] border border-emerald-500/10 rounded-bl-md">
+                <div className="px-4 py-3 rounded-2xl bg-[#00B7FF]/[0.04] border border-[#00B7FF]/10 rounded-bl-md">
                   <div className="flex gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400/60 animate-bounce" style={{ animationDelay: "0ms" }} />
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400/60 animate-bounce" style={{ animationDelay: "150ms" }} />
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400/60 animate-bounce" style={{ animationDelay: "300ms" }} />
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#00B7FF]/60 animate-bounce" style={{ animationDelay: "0ms" }} />
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#00B7FF]/60 animate-bounce" style={{ animationDelay: "150ms" }} />
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#00B7FF]/60 animate-bounce" style={{ animationDelay: "300ms" }} />
                   </div>
                 </div>
               </motion.div>
@@ -261,7 +261,7 @@ export default function VoiceAssistantPage() {
         )}
 
         {/* Input Area */}
-        <div className="sticky bottom-0 bg-[#030303] pt-4">
+        <div className="sticky bottom-0 bg-[#050505] pt-4">
           <div className="flex items-center gap-3">
             {/* Mic Button */}
             <button
@@ -270,7 +270,7 @@ export default function VoiceAssistantPage() {
               className={`relative w-14 h-14 rounded-2xl flex items-center justify-center transition-all shrink-0 ${
                 listening
                   ? "bg-red-500/20 border-2 border-red-500/40 shadow-[0_0_30px_rgba(239,68,68,0.2)]"
-                  : "bg-emerald-500/10 border-2 border-emerald-500/20 hover:border-emerald-500/40 hover:shadow-[0_0_30px_rgba(16,185,129,0.15)]"
+                  : "bg-[#00B7FF]/10 border-2 border-[#00B7FF]/20 hover:border-[#00B7FF]/40 hover:shadow-[0_0_30px_rgba(0,183,255,0.15)]"
               } ${thinking ? "opacity-50 cursor-not-allowed" : ""}`}
             >
               {listening ? (
@@ -280,7 +280,7 @@ export default function VoiceAssistantPage() {
                   <span className="absolute inset-0 rounded-2xl border-2 border-red-400/30 animate-ping" />
                 </>
               ) : (
-                <Mic className="w-5 h-5 text-emerald-400" />
+                <Mic className="w-5 h-5 text-[#00B7FF]" />
               )}
             </button>
 
@@ -292,12 +292,12 @@ export default function VoiceAssistantPage() {
                 onChange={e => setTextInput(e.target.value)}
                 placeholder={listening ? "Listening..." : "Or type your message..."}
                 disabled={thinking}
-                className="flex-1 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-emerald-500/30 transition-colors disabled:opacity-50"
+                className="flex-1 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-[#00B7FF]/30 transition-colors disabled:opacity-50"
               />
               <button
                 type="submit"
                 disabled={!textInput.trim() || thinking}
-                className="px-5 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-sm font-semibold text-emerald-400 hover:bg-emerald-500/20 transition-colors disabled:opacity-30"
+                className="px-5 py-3 rounded-xl bg-[#00B7FF]/10 border border-[#00B7FF]/20 text-sm font-semibold text-[#00B7FF] hover:bg-[#00B7FF]/20 transition-colors disabled:opacity-30"
               >
                 Send
               </button>

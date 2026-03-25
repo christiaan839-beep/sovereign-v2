@@ -12,7 +12,7 @@
 
 export interface IntentResult {
   endpoint: string;
-  params: Record<string, string>;
+  params: Record<string, unknown>;
   confidence: number;
   label: string;
 }
@@ -21,7 +21,7 @@ const ROUTES: Array<{
   keywords: string[];
   endpoint: string;
   label: string;
-  extractParam?: (text: string) => Record<string, string>;
+  extractParam?: (text: string) => Record<string, unknown>;
 }> = [
   {
     keywords: ["audit", "scan website", "vulnerability", "security scan"],

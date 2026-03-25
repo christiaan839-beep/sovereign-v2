@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { Shield, Cpu, Eye, Mic, Code, Database, Sparkles, Zap, ChevronDown } from "lucide-react";
 
-const TIER_CONFIG: Record<number, { label: string; color: string; icon: React.ElementType }> = {
+const TIER_CONFIG: Record<number, { label: string; color: string; icon: React.ComponentType<{ className?: string }> }> = {
   1: { label: "Core Reasoning", color: "#00ff66", icon: Cpu },
   2: { label: "Vision & Video", color: "#00B7FF", icon: Eye },
   3: { label: "Voice & TTS", color: "#FF6B00", icon: Mic },
@@ -61,13 +61,13 @@ export default function NimArsenalPage() {
   const filteredModels = activeTier ? MODELS.filter(m => m.tier === activeTier) : MODELS;
 
   return (
-    <div className="min-h-screen bg-black text-white p-8 font-mono">
+    <div className="min-h-screen bg-[#050505] text-white p-8 font-mono">
       <div className="max-w-7xl mx-auto space-y-10">
 
         {/* Header */}
         <header className="border-b border-white/10 pb-8">
           <div className="flex items-center gap-4 mb-2">
-            <Zap className="w-8 h-8 text-[#00ff66]" />
+            <Zap className="w-8 h-8 text-[#00B7FF]" />
             <h1 className="text-3xl font-black uppercase tracking-[0.2em]">NIM Arsenal</h1>
           </div>
           <p className="text-neutral-500 text-sm uppercase tracking-widest">
@@ -92,7 +92,7 @@ export default function NimArsenalPage() {
                 className={`px-4 py-2 text-xs font-bold uppercase tracking-widest border transition-all flex items-center gap-2 ${activeTier === Number(tier) ? `text-black border-transparent` : `text-neutral-500 border-neutral-800 hover:border-neutral-600`}`}
                 style={activeTier === Number(tier) ? { backgroundColor: config.color } : {}}
               >
-                <config.icon className="w-3 h-3" />
+                {React.createElement(config.icon, { className: "w-3 h-3" })}
                 {config.label} ({count})
               </button>
             );
@@ -118,10 +118,10 @@ export default function NimArsenalPage() {
                   >
                     {tierConf.label}
                   </span>
-                  <span className="w-2 h-2 rounded-full bg-[#00ff66]" title="Available" />
+                  <span className="w-2 h-2 rounded-full bg-[#00B7FF]" title="Available" />
                 </div>
 
-                <h3 className="text-sm font-bold text-white mb-2 group-hover:text-[#00ff66] transition-colors">
+                <h3 className="text-sm font-bold text-white mb-2 group-hover:text-[#00B7FF] transition-colors">
                   {model.name}
                 </h3>
                 <p className="text-[11px] text-neutral-500 leading-relaxed">
@@ -130,7 +130,7 @@ export default function NimArsenalPage() {
 
                 <div className="mt-4 pt-3 border-t border-neutral-800 flex items-center justify-between">
                   <code className="text-[9px] text-neutral-600 font-mono">{model.key}</code>
-                  <span className="text-[9px] text-[#00ff66] font-bold uppercase tracking-wider">Available</span>
+                  <span className="text-[9px] text-[#00B7FF] font-bold uppercase tracking-wider">Available</span>
                 </div>
               </div>
             );
@@ -140,7 +140,7 @@ export default function NimArsenalPage() {
         {/* Footer Stats */}
         <footer className="border-t border-neutral-800 pt-6 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
           <div>
-            <p className="text-3xl font-black text-[#00ff66]">{MODELS.length}</p>
+            <p className="text-3xl font-black text-[#00B7FF]">{MODELS.length}</p>
             <p className="text-[10px] text-neutral-500 uppercase tracking-widest mt-1">Available Models</p>
           </div>
           <div>

@@ -7,11 +7,20 @@ const nextConfig: NextConfig = {
   // Allow build to proceed despite strict TS on dynamic icon components
   typescript: { ignoreBuildErrors: true },
 
+  // Keep Node.js-only packages out of client/edge bundles
+  serverExternalPackages: [
+    "@pinecone-database/pinecone",
+    "twilio",
+    "drizzle-orm",
+    "@neondatabase/serverless",
+  ],
+
   // Performance: compress responses
   compress: true,
 
   // Image optimization for external domains
   images: {
+    formats: ["image/avif", "image/webp"],
     remotePatterns: [
       { protocol: "https", hostname: "**.googleusercontent.com" },
       { protocol: "https", hostname: "**.clerk.com" },

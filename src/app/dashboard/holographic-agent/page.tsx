@@ -1,7 +1,11 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { HolographicAgent } from '@/components/3d/HolographicAgent';
+import dynamic from 'next/dynamic';
+const HolographicAgent = dynamic(() => import('@/components/3d/HolographicAgent').then(m => m.HolographicAgent), {
+  ssr: false,
+  loading: () => <div className="w-full h-[300px] rounded-xl bg-white/[0.02] animate-pulse" />,
+});
 import { Mic, PhoneCall, Activity, Server, RadioReceiver } from 'lucide-react';
 
 export default function HolographicAgentDashboard() {
@@ -19,10 +23,10 @@ export default function HolographicAgentDashboard() {
   const isSpeaking = callActive && speakCycle % 2 === 0;
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="border-b border-[#00ff66]/20 pb-6">
+    <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 bg-[#050505]">
+      <div className="border-b border-[#00B7FF]/20 pb-6">
         <h1 className="text-3xl font-bold text-white font-serif uppercase tracking-widest flex items-center gap-3">
-           <Activity className="w-6 h-6 text-[#00ff66]" />
+           <Activity className="w-6 h-6 text-[#00B7FF]" />
            Sentinel Holographic Array
         </h1>
         <p className="text-neutral-400 mt-2 max-w-2xl">
@@ -37,8 +41,8 @@ export default function HolographicAgentDashboard() {
 
         <div className="space-y-6">
           {/* Control Panel */}
-          <div className="bg-black/40 border border-[#00ff66]/20 rounded-2xl p-6 backdrop-blur-md">
-             <h3 className="text-[#00ff66] font-mono text-xs tracking-widest uppercase mb-6 flex items-center gap-2">
+          <div className="bg-black/40 border border-[#00B7FF]/20 rounded-2xl p-6 backdrop-blur-md">
+             <h3 className="text-[#00B7FF] font-mono text-xs tracking-widest uppercase mb-6 flex items-center gap-2">
                <RadioReceiver className="w-4 h-4" />
                Live Intercept Console
              </h3>
@@ -46,7 +50,7 @@ export default function HolographicAgentDashboard() {
              <div className="space-y-4">
                <button 
                  onClick={() => setCallActive(!callActive)}
-                 className={`w-full py-4 rounded-xl font-bold uppercase tracking-widest flex items-center justify-center gap-3 transition-all ${callActive ? 'bg-red-500/20 text-red-500 border border-red-500/50 hover:bg-red-500/30' : 'bg-[#00ff66]/10 text-[#00ff66] border border-[#00ff66]/50 hover:bg-[#00ff66]/20'}`}
+                 className={`w-full py-4 rounded-xl font-bold uppercase tracking-widest flex items-center justify-center gap-3 transition-all ${callActive ? 'bg-red-500/20 text-red-500 border border-red-500/50 hover:bg-red-500/30' : 'bg-[#00B7FF]/10 text-[#00B7FF] border border-[#00B7FF]/50 hover:bg-[#00B7FF]/20'}`}
                >
                  {callActive ? (
                    <><Mic className="w-5 h-5 animate-pulse" /> Terminate Connection</>
@@ -68,9 +72,9 @@ export default function HolographicAgentDashboard() {
                  </div>
                  <div className="flex justify-between text-neutral-400">
                    <span>Voice Sync:</span>
-                   <span className="text-[#00ff66]">Locked (14ms)</span>
+                   <span className="text-[#00B7FF]">Locked (14ms)</span>
                  </div>
-                 <div className="p-4 bg-[#00ff66]/10 rounded-lg border border-[#00ff66]/20 text-[#00ff66] animate-pulse">
+                 <div className="p-4 bg-[#00B7FF]/10 rounded-lg border border-[#00B7FF]/20 text-[#00B7FF] animate-pulse">
                    {isSpeaking ? "Agent is transmitting payload..." : "Agent is analyzing target response..."}
                  </div>
                </div>
@@ -84,19 +88,19 @@ export default function HolographicAgentDashboard() {
              </h3>
              <div className="space-y-3">
                <div className="w-full bg-neutral-900 rounded-full h-1.5 overflow-hidden">
-                 <div className="bg-[#00ff66] h-full w-[94%] animate-pulse" />
+                 <div className="bg-[#00B7FF] h-full w-[94%] animate-pulse" />
                </div>
                <p className="text-xs text-neutral-500 flex justify-between">
                  <span>GPU Alloc</span>
-                 <span className="text-[#00ff66]">94%</span>
+                 <span className="text-[#00B7FF]">94%</span>
                </p>
                
                <div className="w-full bg-neutral-900 rounded-full h-1.5 overflow-hidden mt-4">
-                 <div className="bg-[#00ff66] h-full w-[22%]" />
+                 <div className="bg-[#00B7FF] h-full w-[22%]" />
                </div>
                <p className="text-xs text-neutral-500 flex justify-between">
                  <span>VRAM</span>
-                 <span className="text-[#00ff66]">22%</span>
+                 <span className="text-[#00B7FF]">22%</span>
                </p>
              </div>
           </div>

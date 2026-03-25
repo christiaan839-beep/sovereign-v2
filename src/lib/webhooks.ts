@@ -48,7 +48,7 @@ export async function fireUserWebhook(agent: string, task: string, payload: unkn
 
     return true;
   } catch (err) {
-    log.error("Webhook exception:", err);
+    log.error("Webhook exception:", err as Record<string, unknown>);
     return false;
   }
 }
@@ -114,7 +114,7 @@ export async function triggerWebhook(event: "hot_lead" | "new_sale" | "campaign_
         else failed++;
       } catch (e) {
         failed++;
-        log.error(`Webhook failed for URL: ${hook.url}`, e);
+        log.error(`Webhook failed for URL: ${hook.url}`, e as Record<string, unknown>);
       }
     })
   );

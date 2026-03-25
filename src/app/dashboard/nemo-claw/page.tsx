@@ -13,13 +13,13 @@ interface Message {
 export default function NemoClawPage() {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [systemPrompt, setSystemPrompt] = useState(
-    "You are OpenClaw Nano 30B, the local Edge Daemon operating on the Commander's macOS. " +
-    "You have root-level terminal access. " +
-    "Your objective is to execute OS-level commands, intercept local data, and route heavy reasoning to the Super 120B God-Brain."
+    "You are NemoClaw, NVIDIA's enterprise-grade autonomous AI agent powered by the OpenClaw framework. " +
+    "You execute tasks, make decisions, and take actions on the Commander's local infrastructure. " +
+    "Your objective is to autonomously complete complex multi-step workflows using NVIDIA OpenShell security protocols."
   );
   
   const [messages, setMessages] = useState<Message[]>([
-    { role: "assistant", content: "OpenClaw Daemon Initialized. Mac OS connection established. Awaiting root directive." }
+    { role: "assistant", content: "NemoClaw Agent Initialized. OpenClaw framework active. NVIDIA OpenShell security enforced. Awaiting directive." }
   ]);
   const [input, setInput] = useState("");
   const [isInferencing, setIsInferencing] = useState(false);
@@ -62,7 +62,7 @@ export default function NemoClawPage() {
         { role: "system", content: systemPrompt },
         // Skip the initial assistant greeting for the payload, 
         // just send the actual user messages and assistant replies
-        ...newMessages.filter(m => m.content !== "NemoClaw Initialized. NVIDIA Mistral-Nemotron Core online. Awaiting directive.")
+        ...newMessages.filter(m => m.content !== "NemoClaw Agent Initialized. OpenClaw framework active. NVIDIA OpenShell security enforced. Awaiting directive.")
       ];
 
       if (privacyMode === "secure") {
@@ -131,12 +131,20 @@ export default function NemoClawPage() {
           <Activity className="w-3 h-3 animate-pulse" /> Edge Telemetry Active
         </div>
         <h1 className="text-3xl font-bold font-sans tracking-tight mb-2 flex items-center gap-3">
-          NemoClaw God-Chain <span className="text-emerald-400 text-xl font-mono uppercase tracking-widest">[Agentic Grounding]</span>
+          NemoClaw <span className="text-emerald-400 text-xl font-mono uppercase tracking-widest">[OpenClaw]</span>
         </h1>
-        <p className="text-sm text-neutral-400 max-w-2xl">
-          Autonomous orchestration of your entire local macOS environment. Execute OS-level commands natively 
-          using structured Agentic Grounding principles. Bypass the cloud entirely.
+        <p className="text-sm text-neutral-400 max-w-2xl mb-4">
+          NVIDIA&apos;s enterprise-grade autonomous AI agent platform, built on OpenClaw — the fastest-growing
+          open source project in history. Agents that execute tasks, make decisions, and take actions.
+          Runs on your hardware with NVIDIA OpenShell security.
         </p>
+        <div className="flex flex-wrap gap-2 mb-2">
+          {["Autonomous Task Execution", "Multi-Step Decision Making", "OpenShell Security", "On-Premise Hardware"].map((cap) => (
+            <span key={cap} className="text-[9px] px-2 py-1 rounded-md bg-[#76B900]/10 text-[#76B900] border border-[#76B900]/20 font-mono uppercase tracking-wider">
+              {cap}
+            </span>
+          ))}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[75vh]">
@@ -147,7 +155,7 @@ export default function NemoClawPage() {
           {/* Hardware & Sandbox Status */}
           <div className="rounded-2xl bg-white/[0.02] border border-white/10 p-5 backdrop-blur-md">
             <h3 className="text-xs font-bold uppercase tracking-widest text-[#00B7FF] mb-4 flex items-center gap-2">
-              <Activity className="w-4 h-4" /> Docker Sandbox (God Mode)
+              <Activity className="w-4 h-4" /> NemoClaw Runtime Environment
             </h3>
             <div className="space-y-3 font-mono text-[10px] uppercase tracking-wider">
               <div className="flex justify-between items-center border-b border-white/5 pb-2">
@@ -210,11 +218,11 @@ export default function NemoClawPage() {
                }`}
              >
                <Power className={`w-4 h-4 ${isDeployed247 ? 'animate-pulse' : ''}`} />
-               {isDeployed247 ? 'Sandbox Deployed 24/7' : 'Deploy God Mode Sandbox'}
+               {isDeployed247 ? 'NemoClaw Agent Active 24/7' : 'Deploy NemoClaw Agent'}
              </button>
              {isDeployed247 && (
                <p className="text-[9px] text-emerald-500/70 font-mono mt-2 text-center uppercase tracking-widest">
-                  Autonomous background process active.
+                  NemoClaw autonomous agent process active.
                </p>
              )}
           </div>
@@ -227,7 +235,7 @@ export default function NemoClawPage() {
           <div className="h-12 border-b border-white/10 bg-white/[0.02] flex items-center justify-between px-4">
             <div className="flex items-center gap-2">
               <Terminal className="w-4 h-4 text-neutral-500" />
-              <span className="text-[10px] font-mono text-neutral-400 tracking-widest uppercase">macOS openclaw_daemon@local</span>
+              <span className="text-[10px] font-mono text-neutral-400 tracking-widest uppercase">NemoClaw Agent Runtime — OpenClaw v1.0</span>
             </div>
             <div className="flex gap-2">
               <div className="w-2.5 h-2.5 rounded-full bg-neutral-800" />

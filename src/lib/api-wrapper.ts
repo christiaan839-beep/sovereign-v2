@@ -28,7 +28,7 @@ export async function withProtection(
     return response;
   } catch (err: unknown) {
     const error = err as Error;
-    log.error("API wrapper error:", error);
+    log.error("API wrapper error:", { message: error.message, name: error.name });
     
     const isTimeout = error.message?.includes('timed out');
     const status = isTimeout ? 504 : 500;

@@ -32,7 +32,6 @@ export async function POST(req: Request) {
        stream: false
     };
 
-    console.log("[*] Initiating TensorRT-LLM pipeline to NVIDIA NIM Framework...");
     const nimRes = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
        method: "POST",
        headers: { 

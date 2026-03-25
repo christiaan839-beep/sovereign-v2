@@ -8,12 +8,12 @@ import { Globe2 } from "lucide-react";
 
 export default function OmnipresenceNode() {
   return (
-    <div className="max-w-6xl mx-auto space-y-8 p-4 lg:p-8">
+    <div className="max-w-6xl mx-auto space-y-8 p-4 lg:p-8 bg-[#050505] min-h-screen">
       {/* Header */}
-      <header className="border-b border-emerald-500/20 pb-8 flex items-end justify-between">
+      <header className="border-b border-[#00B7FF]/20 pb-8 flex items-end justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center">
-            <Globe2 className="w-6 h-6 text-emerald-500" />
+          <div className="w-12 h-12 rounded-xl bg-[#00B7FF]/10 border border-[#00B7FF]/30 flex items-center justify-center">
+            <Globe2 className="w-6 h-6 text-[#00B7FF]" />
           </div>
           <div>
              <h1 className="text-3xl font-serif font-bold text-white">Omnipresence Matrix</h1>

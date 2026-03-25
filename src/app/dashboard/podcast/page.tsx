@@ -67,7 +67,6 @@ export default function PodcastBlueprintPage() {
         }),
       });
       const scriptData = await scriptRes.json();
-      console.log("Script generated:", scriptData.model);
       if (scriptData.success) {
         setScriptResult(scriptData.result || scriptData.text || JSON.stringify(scriptData, null, 2));
       } else {
@@ -87,7 +86,7 @@ export default function PodcastBlueprintPage() {
     <div className="p-8 max-w-7xl mx-auto min-h-screen bg-[#050505] text-white">
       {/* Header */}
       <div className="mb-8">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-bold uppercase tracking-wider mb-3">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#00B7FF]/10 border border-[#00B7FF]/20 text-[#00B7FF] text-xs font-bold uppercase tracking-wider mb-3">
           <Headphones className="w-3 h-3" /> Gen-Audio Architecture
         </div>
         <h1 className="text-3xl font-bold font-sans tracking-tight mb-2 flex items-center gap-3">
@@ -106,24 +105,24 @@ export default function PodcastBlueprintPage() {
           {/* Upload Zone */}
           <div className="rounded-2xl bg-white/[0.02] border border-white/10 p-6 backdrop-blur-md">
             <h3 className="text-xs font-bold uppercase tracking-widest text-neutral-300 mb-4 flex items-center gap-2">
-              <UploadCloud className="w-4 h-4 text-indigo-400" /> Source Document
+              <UploadCloud className="w-4 h-4 text-[#00B7FF]" /> Source Document
             </h3>
             
             <div 
               onClick={fileStatus === "idle" ? triggerUpload : undefined}
               className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-all ${
                 fileStatus === "idle" 
-                  ? "border-white/10 hover:border-indigo-500/50 hover:bg-indigo-500/5 cursor-pointer" 
+                  ? "border-white/10 hover:border-[#00B7FF]/50 hover:bg-[#00B7FF]/5 cursor-pointer" 
                   : fileStatus === "uploading"
-                    ? "border-indigo-500/30 bg-indigo-500/5"
+                    ? "border-[#00B7FF]/30 bg-[#00B7FF]/5"
                     : "border-emerald-500/30 bg-emerald-500/5"
               }`}
             >
               <AnimatePresence mode="wait">
                 {fileStatus === "idle" && (
                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                    <div className="w-12 h-12 rounded-full bg-indigo-500/10 flex items-center justify-center mb-3 mx-auto">
-                      <FileText className="w-6 h-6 text-indigo-400" />
+                    <div className="w-12 h-12 rounded-full bg-[#00B7FF]/10 flex items-center justify-center mb-3 mx-auto">
+                      <FileText className="w-6 h-6 text-[#00B7FF]" />
                     </div>
                     <p className="text-sm font-bold text-white mb-1">Click to drop PDF</p>
                     <p className="text-[10px] text-neutral-500 uppercase tracking-wider font-mono">Max 100 pages</p>
@@ -132,11 +131,11 @@ export default function PodcastBlueprintPage() {
                 
                 {fileStatus === "uploading" && (
                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full">
-                    <Waves className="w-6 h-6 text-indigo-400 animate-pulse mx-auto mb-3" />
-                    <p className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-3">Uploading Securely...</p>
+                    <Waves className="w-6 h-6 text-[#00B7FF] animate-pulse mx-auto mb-3" />
+                    <p className="text-xs font-bold text-[#00B7FF] uppercase tracking-widest mb-3">Uploading Securely...</p>
                     <div className="h-1.5 w-full bg-black/50 rounded-full overflow-hidden">
                       <div 
-                        className="h-full bg-indigo-500 transition-all duration-200"
+                        className="h-full bg-[#00B7FF] transition-all duration-200"
                         style={{ width: `${progress}%` }}
                       />
                     </div>
@@ -159,7 +158,7 @@ export default function PodcastBlueprintPage() {
           {/* Config */}
           <div className="rounded-2xl bg-white/[0.02] border border-white/10 p-6 backdrop-blur-md">
              <h3 className="text-xs font-bold uppercase tracking-widest text-neutral-300 mb-4 flex items-center gap-2">
-              <Settings className="w-4 h-4 text-indigo-400" /> Podcast Config
+              <Settings className="w-4 h-4 text-[#00B7FF]" /> Podcast Config
             </h3>
             
             <div className="space-y-4">
@@ -168,7 +167,7 @@ export default function PodcastBlueprintPage() {
                 <select 
                   value={hostVoice}
                   onChange={(e) => setHostVoice(e.target.value)}
-                  className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-xs text-white focus:border-indigo-500/50 outline-none"
+                  className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-xs text-white focus:border-[#00B7FF]/50 outline-none"
                 >
                   <option value="nvidia/magpie-tts-flow-male-1">Deep Male (Magpie TTS)</option>
                   <option value="nvidia/magpie-tts-flow-female-1">Professional Female (Magpie TTS)</option>
@@ -181,13 +180,13 @@ export default function PodcastBlueprintPage() {
                 <div className="flex bg-black/40 rounded-lg p-1 border border-white/10">
                   <button 
                     onClick={() => setFormat("solo")}
-                    className={`flex-1 py-2 rounded-md text-[10px] font-bold uppercase tracking-widest transition-all ${format === 'solo' ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 'text-neutral-500 hover:text-white'}`}
+                    className={`flex-1 py-2 rounded-md text-[10px] font-bold uppercase tracking-widest transition-all ${format === 'solo' ? 'bg-[#00B7FF]/20 text-[#00B7FF] border border-[#00B7FF]/30' : 'text-neutral-500 hover:text-white'}`}
                   >
                     Solo Deep-Dive
                   </button>
                   <button 
                     onClick={() => setFormat("interview")}
-                    className={`flex-1 py-2 rounded-md text-[10px] font-bold uppercase tracking-widest transition-all ${format === 'interview' ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 'text-neutral-500 hover:text-white'}`}
+                    className={`flex-1 py-2 rounded-md text-[10px] font-bold uppercase tracking-widest transition-all ${format === 'interview' ? 'bg-[#00B7FF]/20 text-[#00B7FF] border border-[#00B7FF]/30' : 'text-neutral-500 hover:text-white'}`}
                   >
                     2-Host Chat
                   </button>
@@ -199,7 +198,7 @@ export default function PodcastBlueprintPage() {
                 <select 
                   value={length}
                   onChange={(e) => setLength(e.target.value)}
-                  className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-xs text-white focus:border-indigo-500/50 outline-none"
+                  className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-xs text-white focus:border-[#00B7FF]/50 outline-none"
                 >
                   <option value="5">5 Minutes (Summary)</option>
                   <option value="10">10 Minutes (Standard)</option>
@@ -211,7 +210,7 @@ export default function PodcastBlueprintPage() {
             <button 
               onClick={startPipeline}
               disabled={fileStatus !== "uploaded" || pipelineStatus !== "idle"}
-              className="w-full mt-6 py-3 rounded-xl border flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-indigo-500/20 text-indigo-400 border-indigo-500/30 hover:bg-indigo-500/30 shadow-[0_0_20px_rgba(99,102,241,0.15)]"
+              className="w-full mt-6 py-3 rounded-xl border flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-[#00B7FF]/20 text-[#00B7FF] border-[#00B7FF]/30 hover:bg-[#00B7FF]/30 shadow-[0_0_20px_rgba(0,183,255,0.15)]"
             >
               <Mic className="w-4 h-4" /> Start Generation
             </button>
@@ -220,7 +219,7 @@ export default function PodcastBlueprintPage() {
 
         {/* Right Column: Execution Engine */}
         <div className="lg:col-span-8 flex flex-col space-y-6">
-          <div className="flex-1 rounded-2xl bg-black border border-white/10 overflow-hidden relative shadow-[0_0_50px_rgba(99,102,241,0.05)] flex flex-col">
+          <div className="flex-1 rounded-2xl bg-black border border-white/10 overflow-hidden relative shadow-[0_0_50px_rgba(0,183,255,0.05)] flex flex-col">
             <div className="h-12 border-b border-white/10 bg-white/[0.02] flex items-center justify-between px-4">
               <div className="flex items-center gap-2">
                 <Zap className="w-4 h-4 text-emerald-400" />
@@ -246,14 +245,14 @@ export default function PodcastBlueprintPage() {
                 <div className="w-full max-w-lg space-y-8">
                   {/* Step 1 */}
                   <div className={`flex items-center gap-4 transition-opacity duration-500 ${pipelineStatus === 'extracting' ? 'opacity-100' : 'opacity-40'}`}>
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${pipelineStatus === 'extracting' ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400 shadow-[0_0_15px_rgba(99,102,241,0.3)]' : 'bg-white/5 border-white/10 text-white'}`}>
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${pipelineStatus === 'extracting' ? 'bg-[#00B7FF]/20 border-[#00B7FF]/50 text-[#00B7FF] shadow-[0_0_15px_rgba(99,102,241,0.3)]' : 'bg-white/5 border-white/10 text-white'}`}>
                       <ShieldAlert className="w-5 h-5" />
                     </div>
                     <div className="flex-1">
                       <h4 className="text-sm font-bold text-white mb-1">Pass 1: Visual Extraction</h4>
                       <p className="text-[10px] text-neutral-400 uppercase tracking-widest font-mono">Running \`Nemotron-OCR-v1\` over 32 pages...</p>
                     </div>
-                    {pipelineStatus === 'extracting' && <div className="w-4 h-4 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />}
+                    {pipelineStatus === 'extracting' && <div className="w-4 h-4 border-2 border-[#00B7FF] border-t-transparent rounded-full animate-spin" />}
                   </div>
 
                   {/* Step 2 */}
@@ -292,7 +291,7 @@ export default function PodcastBlueprintPage() {
 
                   {blogGenResult && (
                     <div className="mb-4">
-                      <h4 className="text-xs font-bold uppercase tracking-widest text-indigo-400 mb-2">Blog-Gen Output</h4>
+                      <h4 className="text-xs font-bold uppercase tracking-widest text-[#00B7FF] mb-2">Blog-Gen Output</h4>
                       <div className="bg-black/50 border border-white/5 rounded-xl p-4">
                         <pre className="text-xs text-neutral-300 whitespace-pre-wrap break-words leading-relaxed font-mono">{blogGenResult}</pre>
                       </div>

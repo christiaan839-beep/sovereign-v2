@@ -14,8 +14,6 @@ export async function POST(req: Request) {
         // $5k USD retainer is functionally ~R90,000 ZAR. Amount is set in cents (9000000).
         const zarAmountCents = 9000000; 
 
-        console.log(`[PAYSTACK PIPELINE] Generating R90,000 Autonomous Invoice for ${email}...`);
-
         const paystackResponse = await fetch('https://api.paystack.co/transaction/initialize', {
             method: 'POST',
             headers: {

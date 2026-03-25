@@ -10,7 +10,7 @@ type LogEntry = {
   module: string;
   message: string;
   level: 'info' | 'warn' | 'success';
-  icon: React.ElementType;
+  icon: React.ComponentType<{ className?: string }>;
 };
 
 const LOG_MESSAGES = [

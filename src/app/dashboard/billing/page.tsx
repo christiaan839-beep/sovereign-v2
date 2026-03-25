@@ -3,11 +3,11 @@
 import { motion } from "framer-motion";
 import { CreditCard, ExternalLink, Activity, CheckCircle2, Zap, BarChart3 } from "lucide-react";
 import { useUsage } from "@/hooks/useUsage";
-import { useUser } from "@clerk/nextjs";
+import { useSafeUser } from "@/lib/safe-clerk";
 
 export default function BillingPortal() {
   const { today, limit, total, plan } = useUsage();
-  const { user } = useUser();
+  const { user } = useSafeUser();
 
   const handleUpgrade = async (planId: string) => {
     try {

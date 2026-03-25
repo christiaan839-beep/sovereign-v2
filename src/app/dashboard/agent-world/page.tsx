@@ -10,6 +10,7 @@ import { AgentNode } from "@/components/dashboard/AgentNode";
 const nodeTypes = { agent: AgentNode };
 
 interface AgentMeta {
+  [key: string]: unknown;
   label: string;
   icon: string;
   status: "active" | "idle" | "always-on";
@@ -230,7 +231,7 @@ export default function AgentWorldPage() {
             onNodeClick={onNodeClick}
             fitView
             proOptions={{ hideAttribution: true }}
-            style={{ background: "#020202" }}
+            style={{ background: "#050505" }}
             minZoom={0.3}
             maxZoom={1.5}
           >
@@ -250,7 +251,7 @@ export default function AgentWorldPage() {
               animate={{ width: 320, opacity: 1 }}
               exit={{ width: 0, opacity: 0 }}
               transition={{ duration: 0.25, ease: "easeInOut" }}
-              className="border-l border-white/[0.06] bg-[#080808] overflow-hidden shrink-0"
+              className="border-l border-white/[0.06] bg-[#050505] overflow-hidden shrink-0"
             >
               <div className="w-80 p-6 overflow-y-auto h-full">
                 {/* Close */}
@@ -312,7 +313,7 @@ export default function AgentWorldPage() {
                 {/* Run Agent Button */}
                 <button
                   onClick={() => router.push(selectedMeta.route)}
-                  className="w-full py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition-colors"
+                  className="w-full py-2.5 rounded-lg bg-[#00B7FF] hover:bg-[#00B7FF]/80 text-white text-xs font-semibold transition-colors"
                 >
                   Open {selectedMeta.label}
                 </button>

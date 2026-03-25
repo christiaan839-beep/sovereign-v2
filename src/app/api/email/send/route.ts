@@ -55,7 +55,7 @@ async function sendViaGmail(payload: EmailPayload): Promise<{ success: boolean; 
   const pass = process.env.GMAIL_APP_PASSWORD;
   if (!user || !pass) throw new Error("Gmail credentials not configured");
 
-  console.log("[Email/Gmail] Would send via Gmail:", { to: payload.to, subject: payload.subject });
+  // Gmail sending not yet implemented — stub for fallback
   return { success: true, id: `gmail_${Date.now()}` };
 }
 
@@ -64,7 +64,7 @@ const emailLimiter = rateLimit({ interval: 60, limit: 10 }); // 10 emails per mi
 export async function POST(req: Request) {
   const auth = await requireAuth(); if (auth.error) return auth.error;
   try {
-    const limited = emailLimiter.check(req);
+    const limited = await emailLimiter.check(req);
     if (limited) return limited;
 
     const body = await req.json();
@@ -98,7 +98,6 @@ export async function POST(req: Request) {
         result = await sendViaGmail(payload);
         break;
       default:
-        console.log("[Email/Console]:", JSON.stringify(payload, null, 2));
         result = { success: true, id: `console_${Date.now()}` };
     }
 

@@ -23,7 +23,7 @@ interface AutomationTemplate {
   endpoint: string;
   schedule: string;
   cron: string;
-  icon: React.ElementType;
+  icon: React.ComponentType<{ className?: string }>;
   color: string;
 }
 
@@ -179,7 +179,7 @@ export default function AutomationsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#080808] p-6 md:p-10">
+    <div className="min-h-screen bg-[#050505] p-6 md:p-10">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
@@ -188,8 +188,8 @@ export default function AutomationsPage() {
         className="mb-10"
       >
         <div className="flex items-center gap-3 mb-2">
-          <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-            <Clock className="w-5 h-5 text-emerald-400" />
+          <div className="p-2 rounded-lg bg-[#00B7FF]/10 border border-[#00B7FF]/20">
+            <Clock className="w-5 h-5 text-[#00B7FF]" />
           </div>
           <h1 className="text-2xl font-bold text-white tracking-tight">
             Automations
@@ -251,7 +251,7 @@ export default function AutomationsPage() {
                   <div
                     className={`shrink-0 p-2.5 rounded-lg ${colors.bg} border ${colors.border}`}
                   >
-                    <Icon className={`w-5 h-5 ${colors.text}`} />
+                    {React.createElement(Icon, { className: `w-5 h-5 ${colors.text}` })}
                   </div>
 
                   <div className="flex-1 min-w-0">

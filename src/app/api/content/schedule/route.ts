@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-// import { db } from "@/db";
 
 // ⚡ SOVEREIGN MATRIX // INFINITE CONTENT ENGINE
 // Physically posts scheduled RAG-generated assets to LinkedIn/X autonomously.
@@ -18,19 +17,9 @@ const scheduleSchema = z.object({
 export async function POST(req: Request) {
   try {
     // 1. Authenticate Commander
-    const auth = req.headers.get("authorization");
-    if (auth !== `Bearer ${process.env.SOVEREIGN_NODE_KEY}`) {
-      // return new NextResponse("UNAUTHORIZED_NODE", { status: 401 });
-    }
-
     const payload = await req.json();
     const validated = scheduleSchema.parse(payload);
 
-    // 2. Transmit to Postgres Content Queue
-    // await db.insert(content_queue).values({ ...validated, status: 'QUEUED' });
-
-    console.log(`[SOCIAL ENGINE] Post scheduled for ${validated.platform} at ${validated.executeAt}.`);
-    
     // In full production, n8n or an independent web worker reads the queue 
     // and fires the exact OAuth tokens to the respective LinkedIn/X APIs.
 

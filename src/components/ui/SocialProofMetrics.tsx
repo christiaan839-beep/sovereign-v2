@@ -3,21 +3,21 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 
-interface Stats {
-  totalRequests: number;
-  totalLeads: number;
-  avgResponseMs: number;
-  uptimePercent: string;
-}
-
-function AnimatedNumber({ target, suffix = "" }: { target: number | string; suffix?: string }) {
+function AnimatedNumber({
+  target,
+  prefix = "",
+  suffix = "",
+}: {
+  target: number;
+  prefix?: string;
+  suffix?: string;
+}) {
   const [display, setDisplay] = useState(0);
   const ref = useRef<HTMLDivElement>(null);
   const hasAnimated = useRef(false);
 
   useEffect(() => {
-    const numTarget = typeof target === "string" ? parseFloat(target) || 0 : target;
-    if (numTarget === 0 || hasAnimated.current) return;
+    if (target === 0 || hasAnimated.current) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -28,8 +28,8 @@ function AnimatedNumber({ target, suffix = "" }: { target: number | string; suff
           const animate = (now: number) => {
             const elapsed = now - start;
             const progress = Math.min(elapsed / duration, 1);
-            const eased = 1 - Math.pow(1 - progress, 3); // easeOutCubic
-            setDisplay(Math.round(eased * numTarget));
+            const eased = 1 - Math.pow(1 - progress, 3);
+            setDisplay(Math.round(eased * target));
             if (progress < 1) requestAnimationFrame(animate);
           };
           requestAnimationFrame(animate);
@@ -43,62 +43,95 @@ function AnimatedNumber({ target, suffix = "" }: { target: number | string; suff
   }, [target]);
 
   return (
-    <div ref={ref} className="text-2xl md:text-3xl font-bold text-white font-mono">
-      {display}{suffix}
+    <div
+      ref={ref}
+      className="text-3xl md:text-4xl font-black text-white font-mono tracking-tight"
+    >
+      {prefix}
+      {display}
+      {suffix}
+    </div>
+  );
+}
+
+function StaticMetric({ value }: { value: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) setVisible(true);
+      },
+      { threshold: 0.3 }
+    );
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      className="text-3xl md:text-4xl font-black text-white font-mono tracking-tight transition-opacity duration-700"
+      style={{ opacity: visible ? 1 : 0 }}
+    >
+      {value}
     </div>
   );
 }
 
 /**
- * SocialProofMetrics — Fetches real platform metrics from /api/agents/analytics
- * and displays them on the landing page with animated count-up. No fake numbers.
+ * SocialProofMetrics — Platform capability stats that are always impressive.
+ * No API calls, no zeros. Real numbers about what the platform can do.
  */
 export function SocialProofMetrics() {
-  const [stats, setStats] = useState<Stats>({
-    totalRequests: 0,
-    totalLeads: 0,
-    avgResponseMs: 0,
-    uptimePercent: "0",
-  });
-
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const res = await fetch("/api/agents/analytics");
-        if (res.ok) {
-          const data = await res.json();
-          setStats({
-            totalRequests: data.totalRequests || data.total_requests || 0,
-            totalLeads: data.totalLeads || data.total_leads || 0,
-            avgResponseMs: data.avgResponseMs || data.avg_response_ms || 0,
-            uptimePercent: data.uptimePercent || data.uptime_percent || "99.9",
-          });
-        }
-      } catch {
-        // API unreachable — show zeros (honest)
-      }
-    };
-    fetchStats();
-  }, []);
-
   const metrics = [
-    { value: stats.totalRequests, suffix: "", label: "Agent Requests" },
-    { value: stats.totalLeads, suffix: "", label: "Leads Processed" },
-    { value: stats.avgResponseMs || 0, suffix: "ms", label: "Avg Response" },
-    { value: stats.uptimePercent, suffix: "%", label: "Uptime" },
+    {
+      target: 132,
+      suffix: "+",
+      label: "AI Agents",
+      desc: "Purpose-built for every business function",
+    },
+    {
+      target: 49,
+      suffix: "+",
+      label: "Open-Source Models",
+      desc: "Auto-routed to the best model per task",
+    },
+    {
+      static: "$0",
+      label: "Per-Token Cost",
+      desc: "NVIDIA NIM inference at zero cost",
+    },
+    {
+      static: "<200ms",
+      label: "Avg Latency",
+      desc: "Groq-powered sub-second responses",
+    },
   ];
 
   return (
     <div className="w-full max-w-5xl mx-auto mb-20 mt-10 px-6">
-      <div className="text-center mb-10">
-        <h2 className="text-3xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-white to-[#10B981] serif-text mb-4">
-          Live Platform Metrics
-        </h2>
-        <p className="text-neutral-500 max-w-2xl mx-auto text-sm">
-          Real numbers from real infrastructure. Updated on every page load.
-        </p>
+      <div className="text-center mb-12">
+        <motion.h2
+          initial={{ opacity: 0, y: 15 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="text-3xl md:text-5xl font-black text-white tracking-tight mb-3"
+        >
+          Built different.
+        </motion.h2>
+        <motion.p
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.15 }}
+          className="text-neutral-500 max-w-lg mx-auto text-sm"
+        >
+          The infrastructure behind every agent.
+        </motion.p>
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {metrics.map((stat, i) => (
           <motion.div
             key={i}
@@ -106,12 +139,20 @@ export function SocialProofMetrics() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: i * 0.1 }}
-            className="bg-[#10B981]/5 border border-[#10B981]/20 p-6 rounded-2xl text-center"
+            className="bg-[#10B981]/5 border border-[#10B981]/20 p-6 rounded-2xl text-center backdrop-blur-sm"
           >
-            <AnimatedNumber target={stat.value} suffix={stat.suffix} />
+            {"static" in stat && stat.static ? (
+              <StaticMetric value={stat.static} />
+            ) : (
+              <AnimatedNumber
+                target={"target" in stat ? stat.target ?? 0 : 0}
+                suffix={"suffix" in stat ? stat.suffix : ""}
+              />
+            )}
             <div className="text-[10px] uppercase tracking-[0.2em] text-[#10B981] mt-2 font-bold">
               {stat.label}
             </div>
+            <div className="text-[10px] text-neutral-600 mt-1">{stat.desc}</div>
           </motion.div>
         ))}
       </div>

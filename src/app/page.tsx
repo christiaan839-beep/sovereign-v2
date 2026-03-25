@@ -13,34 +13,42 @@ import { Testimonials } from "@/components/ui/SocialProof";
 import { InteractiveHeroStrike } from "@/components/ui/InteractiveHeroStrike";
 import { SocialProofMetrics } from "@/components/ui/SocialProofMetrics";
 
-// ─── Animated Energy Orb ───
+// ─── Animated Energy Orb (enhanced with 3 rings + particle field) ───
 function EnergyOrb() {
   return (
     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0">
-      {/* Core glow */}
-      <div className="w-[600px] h-[600px] md:w-[800px] md:h-[800px] rounded-full bg-emerald-500/[0.03] blur-[120px] animate-pulse" />
+      {/* Core glow — emerald */}
+      <div className="w-[600px] h-[600px] md:w-[800px] md:h-[800px] rounded-full bg-emerald-500/[0.04] blur-[120px] animate-pulse" />
+      {/* Secondary core — cyan accent */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] md:w-[500px] md:h-[500px] rounded-full bg-cyan-500/[0.02] blur-[100px] animate-pulse" style={{ animationDelay: "1.5s" }} />
       {/* Inner ring */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] md:w-[400px] md:h-[400px] rounded-full border border-emerald-500/[0.06] animate-[spin_60s_linear_infinite]" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[200px] h-[200px] md:w-[300px] md:h-[300px] rounded-full border border-emerald-500/[0.08] animate-[spin_40s_linear_infinite]" />
+      {/* Middle ring */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] md:w-[500px] md:h-[500px] rounded-full border border-emerald-500/[0.05] animate-[spin_60s_linear_infinite_reverse]" />
       {/* Outer ring */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] md:w-[700px] md:h-[700px] rounded-full border border-emerald-500/[0.03] animate-[spin_90s_linear_infinite_reverse]" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] md:w-[700px] md:h-[700px] rounded-full border border-cyan-500/[0.03] animate-[spin_90s_linear_infinite]" />
       {/* Floating particles — fixed positions to avoid hydration mismatch */}
       {[
-        { top: "15%", left: "25%" },
-        { top: "35%", left: "70%" },
-        { top: "60%", left: "20%" },
-        { top: "25%", left: "55%" },
-        { top: "70%", left: "40%" },
-        { top: "45%", left: "75%" },
+        { top: "10%", left: "20%", size: "w-1 h-1" },
+        { top: "30%", left: "75%", size: "w-1.5 h-1.5" },
+        { top: "65%", left: "15%", size: "w-1 h-1" },
+        { top: "20%", left: "55%", size: "w-0.5 h-0.5" },
+        { top: "75%", left: "45%", size: "w-1 h-1" },
+        { top: "40%", left: "80%", size: "w-0.5 h-0.5" },
+        { top: "50%", left: "10%", size: "w-1.5 h-1.5" },
+        { top: "85%", left: "60%", size: "w-1 h-1" },
+        { top: "15%", left: "40%", size: "w-0.5 h-0.5" },
+        { top: "55%", left: "70%", size: "w-1 h-1" },
       ].map((pos, i) => (
-        <div key={i} className="absolute w-1 h-1 bg-emerald-400/40 rounded-full animate-pulse"
-          style={{ ...pos, animationDelay: `${i * 0.5}s`, animationDuration: `${2 + i * 0.3}s` }} />
+        <div key={i} className={`absolute ${pos.size} rounded-full animate-pulse ${i % 3 === 0 ? "bg-cyan-400/30" : "bg-emerald-400/40"}`}
+          style={{ top: pos.top, left: pos.left, animationDelay: `${i * 0.4}s`, animationDuration: `${2 + i * 0.25}s` }} />
       ))}
     </div>
   );
 }
 
-// ─── Capability Card ───
-function CapabilityCard({ icon: Icon, title, desc, accent }: { icon: React.ElementType; title: string; desc: string; accent: string }) {
+// ─── Capability Card (enhanced with emerald hover glow) ───
+function CapabilityCard({ icon: Icon, title, desc, accent }: { icon: React.ComponentType<{ className?: string }>; title: string; desc: string; accent: string }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
@@ -49,13 +57,13 @@ function CapabilityCard({ icon: Icon, title, desc, accent }: { icon: React.Eleme
       transition={{ duration: 0.5 }}
       className="group relative"
     >
-      <div className="relative p-8 rounded-2xl border border-white/[0.06] bg-[#080808] hover:border-white/[0.12] transition-all duration-500 overflow-hidden">
+      <div className="relative p-8 rounded-2xl border border-white/[0.06] bg-[#080808] hover:border-emerald-500/20 transition-all duration-500 overflow-hidden hover:shadow-[0_0_30px_rgba(16,185,129,0.04)]">
         {/* Hover glow */}
         <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 bg-gradient-to-br ${accent} to-transparent`} />
 
         <div className="relative z-10">
-          <div className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center mb-5 group-hover:border-white/20 transition-colors">
-            <Icon className="w-5 h-5 text-neutral-400 group-hover:text-white transition-colors" />
+          <div className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center mb-5 group-hover:border-emerald-500/20 transition-colors">
+            <Icon className="w-5 h-5 text-neutral-400 group-hover:text-emerald-400 transition-colors" />
           </div>
           <h3 className="text-base font-semibold text-white mb-2">{title}</h3>
           <p className="text-sm text-neutral-500 leading-relaxed">{desc}</p>
@@ -74,21 +82,75 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
         <span className="text-sm md:text-base font-medium text-white group-hover:text-neutral-400 transition-colors pr-4">{question}</span>
         <ChevronDown className={`w-5 h-5 text-neutral-500 transition-transform flex-shrink-0 ${open ? 'rotate-180' : ''}`} />
       </button>
-      <div className={`overflow-hidden transition-all duration-300 ${open ? 'max-h-40 pb-6' : 'max-h-0'}`}>
+      <div className={`overflow-hidden transition-all duration-300 ${open ? 'max-h-60 pb-6' : 'max-h-0'}`}>
         <p className="text-sm text-neutral-500 leading-relaxed">{answer}</p>
       </div>
     </div>
   );
 }
 
-// ─── Model Badge ───
+// ─── Model Badge (enhanced with subtle glow) ───
 function ModelBadge({ name, type }: { name: string; type: string }) {
   return (
-    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">
-      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_4px_rgba(16,185,129,0.5)]" />
+    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.03] border border-white/[0.06] hover:border-emerald-500/15 transition-all duration-300">
+      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.6)]" />
       <span className="text-xs font-medium text-neutral-300">{name}</span>
       <span className="text-[9px] text-neutral-600 uppercase">{type}</span>
     </div>
+  );
+}
+
+// ─── Live Demo Mockup ───
+function LiveDemoMockup() {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-50px" }}
+      transition={{ duration: 0.7 }}
+      className="relative max-w-3xl mx-auto"
+    >
+      {/* Window chrome */}
+      <div className="rounded-2xl border border-white/[0.08] bg-[#0A0A0A] overflow-hidden shadow-[0_0_60px_rgba(16,185,129,0.04)]">
+        {/* Title bar */}
+        <div className="flex items-center gap-2 px-5 py-3 border-b border-white/[0.06] bg-[#060606]">
+          <div className="flex gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-white/[0.08]" />
+            <span className="w-2.5 h-2.5 rounded-full bg-white/[0.08]" />
+            <span className="w-2.5 h-2.5 rounded-full bg-white/[0.08]" />
+          </div>
+          <span className="text-[10px] text-neutral-600 ml-3 font-mono">sovereign-matrix.agency/dashboard</span>
+        </div>
+
+        {/* Chat content */}
+        <div className="p-6 space-y-4">
+          {/* User message */}
+          <div className="flex justify-end">
+            <div className="max-w-[80%] px-4 py-3 rounded-2xl rounded-br-md bg-emerald-500/10 border border-emerald-500/15">
+              <p className="text-sm text-emerald-200">Find 50 leads in fintech — Series A, US-based, with open CMO roles.</p>
+            </div>
+          </div>
+
+          {/* Agent response */}
+          <div className="flex justify-start">
+            <div className="max-w-[85%] px-4 py-3 rounded-2xl rounded-bl-md bg-white/[0.03] border border-white/[0.06]">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-[10px] text-emerald-500/70 font-medium uppercase tracking-wider">Lead Agent</span>
+              </div>
+              <p className="text-sm text-neutral-300 leading-relaxed mb-3">
+                Found 53 matches. Enriched with LinkedIn profiles, funding data, and email verification. 48 have validated emails.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <span className="text-[10px] px-2 py-1 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/15">53 leads found</span>
+                <span className="text-[10px] px-2 py-1 rounded-md bg-cyan-500/10 text-cyan-400 border border-cyan-500/15">48 verified emails</span>
+                <span className="text-[10px] px-2 py-1 rounded-md bg-white/[0.04] text-neutral-400 border border-white/[0.06]">CSV ready</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </motion.div>
   );
 }
 
@@ -100,7 +162,7 @@ export default function Home() {
   const heroScale = useTransform(scrollYProgress, [0, 0.5], [1, 0.95]);
 
   return (
-    <div className="min-h-screen bg-[#020202] text-white selection:bg-emerald-500/20 font-sans antialiased">
+    <div className="relative min-h-screen bg-[#010101] text-white selection:bg-emerald-500/20 font-sans antialiased">
 
       {/* ═══ NAVIGATION ═══ */}
       <motion.nav
@@ -155,8 +217,14 @@ export default function Home() {
 
         <EnergyOrb />
 
-        {/* Grid overlay */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(16,185,129,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(16,185,129,0.015)_1px,transparent_1px)] bg-[size:60px_60px] pointer-events-none" />
+        {/* Holographic grid overlay — emerald pulsing lines */}
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(16,185,129,0.025)_1px,transparent_1px),linear-gradient(90deg,rgba(16,185,129,0.025)_1px,transparent_1px)] bg-[size:60px_60px] pointer-events-none" />
+        {/* Secondary fine grid */}
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,183,255,0.008)_1px,transparent_1px),linear-gradient(90deg,rgba(0,183,255,0.008)_1px,transparent_1px)] bg-[size:15px_15px] pointer-events-none" />
+        {/* Top vignette */}
+        <div className="absolute top-0 inset-x-0 h-40 bg-gradient-to-b from-[#010101] to-transparent pointer-events-none z-[1]" />
+        {/* Bottom vignette */}
+        <div className="absolute bottom-0 inset-x-0 h-40 bg-gradient-to-t from-[#010101] to-transparent pointer-events-none z-[1]" />
 
         <div className="relative z-10 max-w-4xl mx-auto text-center">
           {/* Status badge */}
@@ -166,34 +234,34 @@ export default function Home() {
               <span className="animate-ping absolute h-full w-full rounded-full bg-emerald-400 opacity-50" />
               <span className="relative rounded-full h-1.5 w-1.5 bg-emerald-400" />
             </span>
-            <span className="text-[11px] text-emerald-400/80 font-medium">109 Agents Live</span>
+            <span className="text-[11px] text-emerald-400/80 font-medium">132 Agents Live</span>
           </motion.div>
 
           {/* Headline */}
           <motion.h1 initial={{ opacity: 0, y: 25 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05, duration: 0.9 }}
             className="text-[clamp(2.5rem,8vw,7rem)] font-black leading-[0.92] tracking-[-0.03em] mb-8">
-            <span className="text-white">One platform.</span>
+            <span className="text-white">Deploy agents.</span>
             <br />
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-300 via-emerald-400 to-teal-400">
-              Every agent.
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-300 via-emerald-400 to-cyan-400">
+              Dominate markets.
             </span>
           </motion.h1>
 
           {/* Subtitle */}
           <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4, duration: 0.7 }}
             className="text-base md:text-lg text-neutral-500 max-w-xl mx-auto leading-relaxed mb-12">
-            Content. SEO. Leads. Voice. Code. Vision. 109 AI agents that do the work —
-            powered by Nemotron, Claude, and Gemini. Zero per-token cost.
+            132 agents that find leads, write content, build pages, and close deals — while you sleep.
+            Powered by NemoClaw, Nemotron, and 50+ open-source models. Zero per-token cost.
           </motion.p>
 
           {/* CTAs */}
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 0.6 }}
             className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-16">
-            <Link href="/demo" className="group flex items-center gap-2 px-7 py-3.5 bg-white text-black font-semibold rounded-full text-sm hover:shadow-[0_0_40px_rgba(255,255,255,0.12)] transition-all">
-              Start Building <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+            <Link href="/dashboard" className="group flex items-center gap-2 px-7 py-3.5 bg-white text-black font-semibold rounded-full text-sm hover:shadow-[0_0_40px_rgba(255,255,255,0.12)] transition-all">
+              Start Free <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
             </Link>
-            <Link href="/pricing" className="px-7 py-3.5 border border-white/10 text-neutral-300 font-medium rounded-full text-sm hover:border-white/20 hover:text-white transition-all">
-              View Pricing
+            <Link href="#demo" className="px-7 py-3.5 border border-white/10 text-neutral-300 font-medium rounded-full text-sm hover:border-white/20 hover:text-white transition-all">
+              Watch Demo
             </Link>
           </motion.div>
 
@@ -206,6 +274,7 @@ export default function Home() {
             <ModelBadge name="DeepSeek" type="V3.2" />
             <ModelBadge name="FLUX" type="IMG" />
             <ModelBadge name="NemoClaw" type="OS" />
+            <ModelBadge name="Kimi K2.5" type="1T" />
           </motion.div>
 
           {/* Interactive demo */}
@@ -240,20 +309,40 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ═══ LIVE DEMO ═══ */}
+      <section id="demo" className="py-24 px-6 bg-[#050505] border-t border-white/[0.04]">
+        <div className="max-w-5xl mx-auto">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+            className="text-center mb-14">
+            <div className="inline-flex items-center gap-2 mb-4">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute h-full w-full rounded-full bg-emerald-400 opacity-50" />
+                <span className="relative rounded-full h-2 w-2 bg-emerald-400" />
+              </span>
+              <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60">Live Demo</p>
+            </div>
+            <h2 className="text-3xl md:text-5xl font-bold text-white tracking-tight mb-4">See it in action.</h2>
+            <p className="text-neutral-500 max-w-lg mx-auto">Give a goal. Watch agents deliver. No prompting required.</p>
+          </motion.div>
+
+          <LiveDemoMockup />
+        </div>
+      </section>
+
       {/* ═══ HOW IT WORKS — Architecture ═══ */}
-      <section className="py-24 px-6 bg-[#050505] border-t border-white/[0.04]">
+      <section className="py-24 px-6 border-t border-white/[0.04]">
         <div className="max-w-5xl mx-auto">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
             className="text-center mb-16">
             <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">Architecture</p>
             <h2 className="text-3xl md:text-5xl font-bold text-white tracking-tight mb-4">Built on models you control.</h2>
-            <p className="text-neutral-500 max-w-xl mx-auto">Smart routing across 39 open-source models. Automatic failover. Zero vendor lock-in.</p>
+            <p className="text-neutral-500 max-w-xl mx-auto">Smart routing across 50+ open-source models. Automatic failover. Zero vendor lock-in.</p>
           </motion.div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {[
               { name: "Nemotron Ultra 253B", desc: "Complex reasoning & synthesis" },
-              { name: "NemoClaw OS", desc: "Local hardware execution" },
+              { name: "NemoClaw / OpenClaw", desc: "Enterprise autonomous agent platform" },
               { name: "Claude MCP", desc: "Tool use & computer control" },
               { name: "Gemini 2.5 Pro", desc: "Cognitive engine & grounding" },
               { name: "NVIDIA NIM", desc: "Free inference at scale" },
@@ -264,9 +353,9 @@ export default function Home() {
             ].map((tech, i) => (
               <motion.div key={tech.name} initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }} transition={{ delay: i * 0.05 }}
-                className="p-5 rounded-xl bg-[#0A0A0A] border border-white/[0.06] hover:border-emerald-500/15 transition-colors group">
+                className="p-5 rounded-xl bg-[#0A0A0A] border border-white/[0.06] hover:border-emerald-500/20 transition-all duration-300 group hover:shadow-[0_0_20px_rgba(16,185,129,0.03)]">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/60 group-hover:bg-emerald-400 transition-colors" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/60 group-hover:bg-emerald-400 group-hover:shadow-[0_0_6px_rgba(16,185,129,0.5)] transition-all" />
                   <p className="text-sm font-semibold text-white">{tech.name}</p>
                 </div>
                 <p className="text-xs text-neutral-600">{tech.desc}</p>
@@ -277,7 +366,7 @@ export default function Home() {
       </section>
 
       {/* ═══ WHY DIFFERENT — Comparison ═══ */}
-      <section className="py-24 px-6 border-t border-white/[0.04]">
+      <section className="py-24 px-6 bg-[#050505] border-t border-white/[0.04]">
         <div className="max-w-5xl mx-auto">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
             className="text-center mb-16">
@@ -292,7 +381,7 @@ export default function Home() {
               </h3>
               <p className="text-neutral-600 text-xs mb-6">What everyone else sells</p>
               <ul className="space-y-3">
-                {["Humans must prompt every step", "No memory between sessions", "Cannot use external tools", "Zero autonomous decision making"].map((item, i) => (
+                {["You type every prompt manually", "Forgets everything between sessions", "Cannot open a browser or send an email", "You do the thinking — it just types"].map((item, i) => (
                   <li key={i} className="flex items-start gap-2.5 text-neutral-500 text-sm">
                     <XCircle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-neutral-700" /> {item}
                   </li>
@@ -300,13 +389,13 @@ export default function Home() {
               </ul>
             </div>
 
-            <div className="p-8 rounded-2xl bg-[#0A0A0A] border border-emerald-500/10">
+            <div className="p-8 rounded-2xl bg-[#0A0A0A] border border-emerald-500/10 hover:border-emerald-500/20 transition-all duration-300 hover:shadow-[0_0_30px_rgba(16,185,129,0.04)]">
               <h3 className="text-lg font-semibold text-white mb-1 flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Sovereign Matrix
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Agent-Powered Execution
               </h3>
-              <p className="text-emerald-500/50 text-xs mb-6">What we built</p>
+              <p className="text-emerald-500/50 text-xs mb-6">What your business actually needs</p>
               <ul className="space-y-3">
-                {["Give a goal — agents plan and execute", "Persistent memory via vector DBs", "Controls browsers, hardware, APIs", "Self-correcting autonomous loops"].map((item, i) => (
+                {["Set a goal — agents deliver results autonomously", "Remembers your business context across sessions", "Finds leads, writes content, builds pages for you", "Catches its own mistakes and self-corrects"].map((item, i) => (
                   <li key={i} className="flex items-start gap-2.5 text-neutral-300 text-sm">
                     <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5 text-emerald-400" /> {item}
                   </li>
@@ -318,13 +407,15 @@ export default function Home() {
       </section>
 
       {/* ═══ TESTIMONIALS ═══ */}
-      <section className="py-24 px-6 bg-[#050505] border-t border-white/[0.04]">
+      <section className="py-24 px-6 border-t border-white/[0.04]">
         <Testimonials />
       </section>
 
       {/* ═══ ENTERPRISE METRICS ═══ */}
       <section className="py-32 px-6 relative overflow-hidden border-t border-white/[0.04]">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_50%,rgba(16,185,129,0.03),transparent)]" />
+        {/* Subtle grid for depth */}
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(16,185,129,0.01)_1px,transparent_1px),linear-gradient(90deg,rgba(16,185,129,0.01)_1px,transparent_1px)] bg-[size:80px_80px] pointer-events-none" />
         <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
           className="max-w-4xl mx-auto relative z-10">
           <div className="text-center mb-20">
@@ -336,13 +427,13 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
             {[
-              { metric: "109", label: "Specialized Agents", desc: "Purpose-built for specific business functions." },
-              { metric: "39", label: "Open-Source Models", desc: "Automatic failover. Zero vendor lock-in." },
+              { metric: "132", label: "Specialized Agents", desc: "Purpose-built for specific business functions." },
+              { metric: "49", label: "Open-Source Models", desc: "Automatic failover. Zero vendor lock-in." },
               { metric: "$0", label: "Per-Token Cost", desc: "Scale inference without scaling your bill." },
             ].map((item, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }} transition={{ delay: i * 0.1 }} className="text-center">
-                <div className="text-5xl md:text-6xl font-black text-white mb-2 tracking-tight">{item.metric}</div>
+                <div className="text-5xl md:text-6xl font-black text-white mb-2 tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-white to-neutral-400">{item.metric}</div>
                 <div className="text-sm font-semibold text-white mb-1">{item.label}</div>
                 <p className="text-xs text-neutral-600">{item.desc}</p>
               </motion.div>
@@ -358,7 +449,7 @@ export default function Home() {
             ].map((item, i) => (
               <motion.div key={i} initial={{ opacity: 0 }} whileInView={{ opacity: 1 }}
                 viewport={{ once: true }} transition={{ delay: 0.2 + i * 0.08 }}
-                className="p-4 rounded-xl border border-white/[0.06] bg-white/[0.01]">
+                className="p-4 rounded-xl border border-white/[0.06] bg-white/[0.01] hover:border-emerald-500/15 transition-all duration-300">
                 <div className="text-xs font-semibold text-white mb-0.5">{item.label}</div>
                 <p className="text-[10px] text-neutral-600">{item.desc}</p>
               </motion.div>
@@ -385,10 +476,10 @@ export default function Home() {
           <h2 className="text-2xl md:text-3xl font-bold text-white mb-12 text-center tracking-tight">Common Questions</h2>
           <div className="rounded-2xl border border-white/[0.06] bg-[#080808] p-1">
             {[
-              { q: "What is Sovereign Matrix?", a: "An AI agent platform with 109 specialized agents for sales, marketing, content, and operations. It routes tasks across multiple AI models and executes multi-step workflows autonomously." },
-              { q: "Can agents run locally without cloud?", a: "Yes. The NemoClaw daemon runs on your local machine using Ollama models. You can execute workflows completely offline — your data never leaves your hardware." },
-              { q: "Is there a contract or lock-in?", a: "No. All plans are month-to-month with no contracts. Cancel instantly from your dashboard. Your data is always exportable." },
-              { q: "How is this different from ChatGPT or Jasper?", a: "Those are prompt-based tools — you type, they respond. Sovereign Matrix agents are autonomous — give them a goal and they plan, execute, and report back without step-by-step prompting." },
+              { q: "What is Sovereign Matrix?", a: "An AI agent platform with 132 specialized agents that handle sales, marketing, content, and operations. Agents use Nemotron, DeepSeek, Gemini, and 49+ open-source models with automatic routing to the best model for each task. You set goals — agents deliver results." },
+              { q: "Is this just another ChatGPT wrapper?", a: "No. ChatGPT is a chatbot — you type, it replies. Sovereign Matrix is 132 autonomous agents that execute tasks: finding leads, building pages, writing email sequences, qualifying prospects, even making calls. They plan multi-step workflows, use real browsers and APIs, and self-correct without you prompting every step." },
+              { q: "Can agents run locally without cloud?", a: "Yes. The NemoClaw daemon runs on your local machine using Ollama models. Execute workflows completely offline — your data never leaves your hardware. Perfect for sensitive client work or air-gapped environments." },
+              { q: "Is there a contract or lock-in?", a: "No. All plans are month-to-month with no contracts. Cancel instantly from your dashboard. Your data is always exportable. NVIDIA NIM models are free to use — you only pay for premium features if you want them." },
             ].map((faq, i) => <FAQItem key={i} question={faq.q} answer={faq.a} />)}
           </div>
         </motion.div>
@@ -397,18 +488,20 @@ export default function Home() {
       {/* ═══ FINAL CTA ═══ */}
       <section className="py-32 text-center px-6 relative overflow-hidden border-t border-white/[0.04]">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(16,185,129,0.04),transparent_70%)]" />
+        {/* Circuit-style grid accent */}
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,183,255,0.008)_1px,transparent_1px),linear-gradient(90deg,rgba(0,183,255,0.008)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none" />
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="relative z-10">
           <h2 className="text-4xl md:text-6xl font-black text-white mb-5 tracking-tight leading-[1.05]">
             Stop paying for tools<br className="hidden md:block" /> that don&apos;t scale.
           </h2>
           <p className="text-neutral-500 max-w-md mx-auto mb-10">
-            One platform. 109 agents. Zero per-token costs. Free to start.
+            One platform. 132 agents. Zero per-token costs. Free to start.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Link href="/demo" className="group flex items-center gap-2 px-7 py-3.5 bg-white text-black font-semibold rounded-full text-sm hover:shadow-[0_0_40px_rgba(255,255,255,0.12)] transition-all">
-              Start Building <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+            <Link href="/dashboard" className="group flex items-center gap-2 px-7 py-3.5 bg-white text-black font-semibold rounded-full text-sm hover:shadow-[0_0_40px_rgba(255,255,255,0.12)] transition-all">
+              Start Free <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
             </Link>
-            <Link href="/pricing" className="px-7 py-3.5 border border-white/10 text-neutral-300 font-medium rounded-full text-sm hover:border-white/20 hover:text-white transition-all">
+            <Link href="#pricing" className="px-7 py-3.5 border border-white/10 text-neutral-300 font-medium rounded-full text-sm hover:border-white/20 hover:text-white transition-all">
               Compare Plans
             </Link>
           </div>
@@ -424,7 +517,7 @@ export default function Home() {
                 <SovereignLogo size="sm" />
                 <span className="text-sm font-semibold text-white">Sovereign Matrix</span>
               </div>
-              <p className="text-xs text-neutral-600 leading-relaxed">AI agent platform. 109 agents, 39 models, one dashboard.</p>
+              <p className="text-xs text-neutral-600 leading-relaxed">AI agent platform. 132 agents, 49+ models, one dashboard.</p>
             </div>
             <div>
               <h4 className="text-xs font-semibold text-neutral-400 mb-4">Product</h4>

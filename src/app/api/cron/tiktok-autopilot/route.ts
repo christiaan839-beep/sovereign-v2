@@ -10,8 +10,6 @@ export async function GET(req: Request) {
     }
 
     try {
-        console.log("[TIKTOK AUTOPILOT] Synthesizing daily viral marketing payload...");
-
         const systemInstruction = `You are Sovereign, an elite Faceless TikTok/Reels architect.
 Write a 15-second hyper-aggressive, contrarian video script explaining exactly how traditional digital marketing agencies and human SDRs are extinct because of Autonomous AI Swarms.
 Tone: Palantir, cold, elite, matrix software aesthetic. No hype. Only authority.
@@ -43,9 +41,6 @@ Format: Return exactly a JSON object containing { "hook_text": "...", "voiceover
             console.error("Gemini JSON parse failed:", rawContent);
             return NextResponse.json({ error: "Failed to parse synthesized script" }, { status: 500 });
         }
-
-        // Successfully built the script geometry. Dispatch to HeyGen/Pipecat or N8N 
-        console.log(`[TIKTOK AUTOPILOT SCRIPT LOCK] Hook: ${scriptObject.hook_text}`);
 
         return NextResponse.json({
             status: "tiktok_payload_queued",

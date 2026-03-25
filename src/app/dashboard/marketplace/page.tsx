@@ -81,7 +81,7 @@ export default function MarketplacePage() {
   const toast = useToast();
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 bg-[#050505] min-h-screen p-8">
       <div>
         <h1 className="text-3xl font-bold text-white serif-text flex items-center gap-3">
           <Zap className="w-7 h-7 text-emerald-400" /> Marketplace Templates

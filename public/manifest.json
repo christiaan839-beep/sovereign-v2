@@ -1,11 +1,11 @@
 {
-  "name": "Sovereign Matrix — AI Agent Platform",
-  "short_name": "Sovereign Matrix",
-  "description": "109 AI agents that do the work. Content, SEO, leads, voice, code, vision.",
+  "name": "Sovereign Matrix",
+  "short_name": "Sovereign",
+  "description": "132 AI agents that find leads, write content, build pages, and close deals. 49+ open-source models.",
   "start_url": "/dashboard",
   "display": "standalone",
-  "background_color": "#020202",
-  "theme_color": "#020202",
+  "background_color": "#000000",
+  "theme_color": "#050505",
   "orientation": "portrait-primary",
   "categories": ["business", "productivity"],
   "icons": [

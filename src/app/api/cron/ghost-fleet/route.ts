@@ -14,8 +14,6 @@ export async function GET(req: Request) {
     }
 
     try {
-        console.log("[GHOST FLEET] Commencing Autonomous Social Strike...");
-
         // The Anti-Slop God-Prompt for Social DOMINATION
         const systemInstruction = `You are Sovereign, the elite Ghost Fleet intelligence node navigating X (Twitter) and LinkedIn.
 Your objective is to write ONE highly controversial, authoritative hook and a 3-part thread exposing the inefficiency of traditional human marketing agencies, pivoting to the absolute superiority of the Sovereign God-Brain AI architecture.
@@ -58,12 +56,8 @@ Return the exact JSON array of strings (the tweets in sequence) without any mark
             return NextResponse.json({ error: "Failed to parse synthesized thread" }, { status: 500 });
         }
 
-        // Console Output (Simulation of successful dispatch)
-        console.log(`[GHOST FLEET SUCCESS] Synthesized Thread:`, threadArray);
-
-        // Production X / LinkedIn Dispatch 
+        // Production X / LinkedIn Dispatch
         if (X_API_KEY) {
-            console.log("X API Authenticated. Dispatching payload to X natively...");
              // Execute native X.com API POST logic to publish the thread array
              // await Twitter.v2.tweetThread(threadArray);
         }

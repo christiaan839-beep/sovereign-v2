@@ -56,7 +56,7 @@ export default function CosmosVSLHackerPage() {
         body: JSON.stringify({ imageUrl: "https://via.placeholder.com/640x360", question: `Analyze this competitor video ad frame. Identify visual hooks, text overlays, emotional triggers, and production quality for audience: ${targetAudience}` }),
       });
       const visionData = await visionRes.json();
-      console.log("Vision analysis:", visionData.model);
+
       setVisionResult(visionData.success ? (visionData.result || visionData.text || JSON.stringify(visionData, null, 2)) : `Error: ${visionData.error || "Unknown"}`);
 
       // Phase 2: Emotional Cadence Mapping
@@ -77,7 +77,7 @@ export default function CosmosVSLHackerPage() {
         body: JSON.stringify({ message: `Write a superior counter-script for a video sales letter. Target: ${targetAudience}. Tone: ${aggressiveness}. The counter-script should have: 1) A better hook, 2) Value-driven body copy, 3) Authority-based CTA. Avoid generic AI slop.` }),
       });
       const scriptData = await scriptRes.json();
-      console.log("Script generated:", scriptData.model);
+
       setScriptResult(scriptData.success ? (scriptData.result || scriptData.text || JSON.stringify(scriptData, null, 2)) : `Error: ${scriptData.error || "Unknown"}`);
 
       setPipelineStatus("complete");
@@ -284,13 +284,13 @@ export default function CosmosVSLHackerPage() {
                   </div>
 
                   {/* Generated Script Output */}
-                  <div className="flex-1 bg-indigo-500/5 border border-indigo-500/20 p-5 rounded-xl flex flex-col h-full relative">
-                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-t-xl" />
-                     <h3 className="text-xs font-bold uppercase tracking-widest text-[#00B7FF] mb-4 pb-2 border-b border-indigo-500/20">Counter-Script Result</h3>
+                  <div className="flex-1 bg-[#00B7FF]/5 border border-[#00B7FF]/20 p-5 rounded-xl flex flex-col h-full relative">
+                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#00B7FF] to-purple-500 rounded-t-xl" />
+                     <h3 className="text-xs font-bold uppercase tracking-widest text-[#00B7FF] mb-4 pb-2 border-b border-[#00B7FF]/20">Counter-Script Result</h3>
                      <div className="flex-1 overflow-y-auto custom-scrollbar pr-2">
-                       <pre className="text-xs leading-relaxed text-indigo-100 whitespace-pre-wrap break-words font-mono">{scriptResult || "No response received."}</pre>
+                       <pre className="text-xs leading-relaxed text-neutral-200 whitespace-pre-wrap break-words font-mono">{scriptResult || "No response received."}</pre>
                      </div>
-                     <button className="w-full mt-4 py-2 bg-indigo-500 hover:bg-indigo-600 transition-colors rounded-lg flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest text-white">
+                     <button className="w-full mt-4 py-2 bg-[#00B7FF] hover:bg-[#00B7FF]/90 transition-colors rounded-lg flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest text-white">
                       <Download className="w-3 h-3" /> Export Script & Storyboard
                     </button>
                   </div>

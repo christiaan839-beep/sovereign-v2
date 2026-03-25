@@ -10,7 +10,6 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Missing phone number payload' }, { status: 400 });
         }
 
-        console.log(`[VOICE AGENT] Connecting Telephony Swarm Uplink to Target: ${target_number}`);
 
         // The Elite God-Prompt for Outbound Corporate Telemetry
         const systemInstruction = `You are Sovereign, an elite AI tele-agent executing high-ticket B2B closures ($5,000/mo).
@@ -32,14 +31,6 @@ Keep it under 4 sentences. Tone: Ruthless, concise, authoritative, Palantir logi
         const aiData = await response.json();
         const generatedScript = aiData.candidates?.[0]?.content?.parts?.[0]?.text || "Communication relay offline.";
 
-        console.log(`[VOICE AGENT EXTRACTED SCRIPT]: ${generatedScript}`);
-
-        // Real-World Implementation: Dispatch the script + number to Retell AI / Twilio + Pipecat Backend
-        // const webrtcPipeline = await VoiceEngine.startCall({
-        //     number: target_number,
-        //     script: generatedScript,
-        //     voice: "elevenlabs_deep_male_01"
-        // });
 
         return NextResponse.json({ 
             status: 'voice_strike_authorized',

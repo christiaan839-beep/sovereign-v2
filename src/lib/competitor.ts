@@ -69,7 +69,7 @@ export async function watchCompetitors(
         alerts.push(`HIGH THREAT: ${competitor.name} — ${analysis.recommendation}`);
       }
     } catch (e) {
-      log.error(`Failed to analyze ${competitor.name}:`, e);
+      log.error(`Failed to analyze ${competitor.name}:`, e as Record<string, unknown>);
     }
   }
 

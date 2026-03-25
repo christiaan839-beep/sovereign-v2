@@ -11,14 +11,6 @@ export async function POST(req: Request) {
   try {
     const payload = await req.json();
     
-    // In HubSpot, payload is an array of event objects
-    console.log("[CRM WEBHOOK] Event Received:", JSON.stringify(payload, null, 2));
-
-    // Example routing logic:
-    // if (payload[0].propertyName === "dealstage" && payload[0].propertyValue === "closedwon") {
-    //    fetch("http://localhost:3000/api/agents/workflows", { body: JSON.stringify({ action: "onboard_client", dealId: payload[0].objectId }) })
-    // }
-
     return NextResponse.json({ success: true, status: "CRM State Logged by Sovereign Matrix" });
   } catch (error) {
     console.error("CRM Webhook Parsing Error:", error);

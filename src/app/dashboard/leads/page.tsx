@@ -86,11 +86,11 @@ export default function LeadsDashboard() {
   };
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto h-[calc(100vh-6rem)] flex flex-col">
+    <div className="space-y-6 max-w-7xl mx-auto h-[calc(100vh-6rem)] flex flex-col bg-[#050505]">
       {/* Header */}
       <div className="shrink-0 flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold uppercase tracking-wider mb-3">
+           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#00B7FF]/10 border border-[#00B7FF]/20 text-[#00B7FF] text-xs font-bold uppercase tracking-wider mb-3">
               <Search className="w-3 h-3" /> Outbound Node
            </div>
            <h1 className="text-3xl font-bold font-serif tracking-wide flex items-center gap-3 text-white">
@@ -139,7 +139,7 @@ export default function LeadsDashboard() {
                        </div>
                        <button 
                            type="submit" disabled={isSweeping || !niche || !location}
-                           className="w-full mt-4 bg-gradient-to-r from-blue-600 to-electric text-white font-bold py-3.5 rounded-lg flex items-center justify-center gap-2 uppercase tracking-widest text-xs disabled:opacity-50 transition-all hover:shadow-[0_0_20px_rgba(45,110,255,0.3)]"
+                           className="w-full mt-4 bg-gradient-to-r from-[#00B7FF] to-electric text-white font-bold py-3.5 rounded-lg flex items-center justify-center gap-2 uppercase tracking-widest text-xs disabled:opacity-50 transition-all hover:shadow-[0_0_20px_rgba(0,183,255,0.3)]"
                        >
                            {isSweeping ? <><Loader2 className="w-4 h-4 animate-spin" /> Sweeping Sector...</> : <><Search className="w-4 h-4" /> Execute Sweep</>}
                        </button>
@@ -174,7 +174,7 @@ export default function LeadsDashboard() {
           <div className="lg:col-span-2 glass-card border border-glass-border h-full flex flex-col overflow-hidden">
                <div className="p-5 border-b border-glass-border flex items-center justify-between shrink-0 bg-onyx/20">
                     <h2 className="text-sm font-bold uppercase tracking-widest text-white flex items-center gap-2">
-                        <Database className="w-4 h-4 text-blue-400" /> Acquired Targets
+                        <Database className="w-4 h-4 text-[#00B7FF]" /> Acquired Targets
                     </h2>
                     {reports.length > 0 && (
                         <div className="text-[10px] font-mono text-stone-400 flex items-center gap-2">
@@ -211,7 +211,7 @@ export default function LeadsDashboard() {
                         {reports.map((report, idx) => (
                              <motion.div 
                                  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.1 }}
-                                 key={idx} className="bg-onyx/60 border border-glass-border rounded-xl p-5 hover:border-blue-500/30 transition-colors"
+                                 key={idx} className="bg-onyx/60 border border-glass-border rounded-xl p-5 hover:border-[#00B7FF]/30 transition-colors"
                              >
                                  {/* Header */}
                                  <div className="flex justify-between items-start mb-4 border-b border-glass-border/50 pb-4">
@@ -220,7 +220,7 @@ export default function LeadsDashboard() {
                                               {report.business_name}
                                               <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                                           </h3>
-                                          <a href={report.website} target="_blank" rel="noreferrer" className="text-xs text-blue-400 hover:underline font-mono">
+                                          <a href={report.website} target="_blank" rel="noreferrer" className="text-xs text-[#00B7FF] hover:underline font-mono">
                                               {report.website}
                                           </a>
                                       </div>
@@ -242,9 +242,9 @@ export default function LeadsDashboard() {
                                       <span className="text-emerald-400">Domain Pinged</span>
                                     </div>
                                     <ArrowRight className="w-2 h-2 text-stone-700 shrink-0" />
-                                    <div className="flex items-center gap-1.5 shrink-0 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">
-                                      <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
-                                      <span className="text-blue-400 glow-text">Gemini 2.5 Researched</span>
+                                    <div className="flex items-center gap-1.5 shrink-0 bg-[#00B7FF]/10 px-2 py-0.5 rounded border border-[#00B7FF]/20">
+                                      <div className="w-1.5 h-1.5 rounded-full bg-[#00B7FF] shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
+                                      <span className="text-[#00B7FF] glow-text">Gemini 2.5 Researched</span>
                                     </div>
                                     <ArrowRight className="w-2 h-2 text-stone-700 shrink-0" />
                                     <div className={`flex items-center gap-1.5 shrink-0 ${report.phone ? 'bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20' : ''}`}>

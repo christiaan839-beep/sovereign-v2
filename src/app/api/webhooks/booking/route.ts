@@ -33,8 +33,6 @@ export async function POST(req: Request) {
     const email = attendee.email || "";
     const startTime = booking.startTime || new Date().toISOString();
 
-    console.log(`[BOOKING] ${event} — ${name} <${email}> at ${startTime}`);
-
     // Auto-trigger welcome email
     if (event === "BOOKING_CREATED" && email) {
       try {

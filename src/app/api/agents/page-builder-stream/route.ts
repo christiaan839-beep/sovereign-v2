@@ -16,11 +16,22 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { businessName, industry, offer, targetAudience } = await req.json();
+  const { businessName, industry, offer, targetAudience, vibe } = await req.json();
 
   if (!businessName || !offer) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
+
+  // Vibe design instruction — shapes the aesthetic of generated pages
+  const vibeInstruction = vibe ? `\n\nDESIGN VIBE: "${vibe}" — Match this aesthetic feeling throughout. ${
+    vibe === "minimalist" ? "Maximum whitespace, muted colors, thin typography, Stripe-like."
+    : vibe === "premium" ? "Ultra-dark, rich gradients, glassmorphism, luxury feel."
+    : vibe === "playful" ? "Bright colors, rounded shapes, large illustrations, fun and approachable."
+    : vibe === "corporate" ? "Professional blue tones, structured grid, conservative typography."
+    : vibe === "brutalist" ? "Raw, high contrast, bold type, stark black/white, unpolished edges."
+    : vibe === "gen-z" ? "Gradients, neon accents, modern sans-serif, trendy animations, bold colors."
+    : `Match the "${vibe}" aesthetic.`
+  }` : "";
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -90,9 +101,10 @@ export async function POST(req: Request) {
         emit("log", { message: "[SYS] Compiling components into unified VDOM" });
 
         const codePrompt = `Create a visually stunning, premium, modern landing page using HTML5 and Tailwind CSS.
-        
+
         BUSINESS: ${businessName}
         INDUSTRY: ${industry}
+        ${vibeInstruction}
         
         USE THIS EXACT COPY:
         ${copyData}

@@ -12,7 +12,7 @@ interface Agent {
   name: string;
   description: string;
   endpoint: string;
-  icon: React.ElementType;
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   color: string;
   category: string;
   nimModel: string;
@@ -233,14 +233,14 @@ export default function AgentCommandCenter() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white p-6 md:p-8 font-mono">
+    <div className="min-h-screen bg-[#050505] text-white p-6 md:p-8 font-mono">
       <div className="max-w-7xl mx-auto space-y-8">
 
         {/* Header */}
         <header className="border-b border-white/10 pb-6 flex flex-col md:flex-row md:items-start justify-between gap-4">
           <div className="flex items-center gap-4 mb-3">
-            <div className="w-10 h-10 rounded-xl bg-[#00ff66]/10 border border-[#00ff66]/30 flex items-center justify-center">
-              <BotMessageSquare className="w-5 h-5 text-[#00ff66]" />
+            <div className="w-10 h-10 rounded-xl bg-[#00B7FF]/10 border border-[#00B7FF]/30 flex items-center justify-center">
+              <BotMessageSquare className="w-5 h-5 text-[#00B7FF]" />
             </div>
             <div>
               <h1 className="text-2xl font-black uppercase tracking-[0.2em]">Agent Command Center</h1>
@@ -281,7 +281,7 @@ export default function AgentCommandCenter() {
 
               {metaPromptResult && (
                 <div className="mt-4 border border-white/10 bg-black p-4 rounded-lg max-h-[300px] overflow-y-auto custom-scrollbar">
-                  <pre className="text-[10px] text-[#00ff66] font-mono whitespace-pre-wrap">{metaPromptResult}</pre>
+                  <pre className="text-[10px] text-[#00B7FF] font-mono whitespace-pre-wrap">{metaPromptResult}</pre>
                 </div>
               )}
             </div>
@@ -291,7 +291,7 @@ export default function AgentCommandCenter() {
         {/* Stats Bar */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="bg-neutral-950 border border-neutral-800 p-4 text-center">
-            <p className="text-2xl font-black text-[#00ff66]">{AGENTS.length}</p>
+            <p className="text-2xl font-black text-[#00B7FF]">{AGENTS.length}</p>
             <p className="text-[9px] text-neutral-500 uppercase tracking-widest mt-1">Active Agents</p>
           </div>
           <div className="bg-neutral-950 border border-neutral-800 p-4 text-center">
@@ -348,7 +348,7 @@ export default function AgentCommandCenter() {
                         className="w-9 h-9 rounded-lg flex items-center justify-center"
                         style={{ backgroundColor: `${agent.color}15`, border: `1px solid ${agent.color}30` }}
                       >
-                        <Icon className="w-4 h-4" style={{ color: agent.color }} />
+                        {React.createElement(Icon, { className: "w-4 h-4", style: { color: agent.color } })}
                       </div>
                       <div>
                         <h3 className="text-sm font-bold text-white">{agent.name}</h3>
@@ -408,10 +408,10 @@ export default function AgentCommandCenter() {
                       </div>
 
                       {/* Result Display */}
-                      {result && !result.loading && result.data && (
+                      {result && !result.loading && !!result.data && (
                         <div className="bg-black border border-neutral-800 p-3 max-h-48 overflow-y-auto">
                           <pre className="text-[10px] text-neutral-400 whitespace-pre-wrap font-mono">
-                            {JSON.stringify(result.data, null, 2)}
+                            {JSON.stringify(result.data, null, 2) as string}
                           </pre>
                         </div>
                       )}
