@@ -17,9 +17,9 @@ export async function POST(request: Request) {
     }
 
     const agents = participants || [
-      { model: "deepseek-ai/deepseek-v3.2", name: "Strategist", role: "You are a strategic thinker. Focus on long-term impact, market positioning, and competitive advantage." },
+      { model: "nvidia/llama-3.1-nemotron-ultra-253b", name: "Strategist", role: "You are a strategic thinker. Focus on long-term impact, market positioning, and competitive advantage." },
       { model: "mistralai/mistral-nemotron", name: "Operator", role: "You are a practical operator. Focus on execution feasibility, resource requirements, and implementation steps." },
-      { model: "z-ai/glm-4.7", name: "Critic", role: "You are a devil's advocate. Challenge assumptions, identify risks, and find weaknesses in every proposal." },
+      { model: "qwen/qwen3-235b-a22b", name: "Critic", role: "You are a devil's advocate. Challenge assumptions, identify risks, and find weaknesses in every proposal." },
     ];
 
     const encoder = new TextEncoder();

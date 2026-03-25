@@ -294,7 +294,7 @@ const AVAILABLE_MODELS = {
   // TIER 8 — FRONTIER FREE MODELS (RECENTLY ADDED)
   // ═══════════════════════════════════════════════════════════
   "glm-4.7": {
-    id: "z-ai/glm-4.7",
+    id: "thudm/glm-4-9b-chat",
     name: "GLM-4.7",
     category: "Frontier Free",
     tier: 8,

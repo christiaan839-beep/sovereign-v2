@@ -21,7 +21,7 @@ export async function POST(request: Request) {
     const swarmAgents = agents || [
       { model: "deepseek-ai/deepseek-v3.2", name: "DeepSeek V3.2" },
       { model: "mistralai/mistral-nemotron", name: "Mistral Nemotron" },
-      { model: "z-ai/glm-4.7", name: "GLM-4.7" },
+      { model: "thudm/glm-4-9b-chat", name: "GLM-4.7" },
     ];
 
     // Spawn all agents in parallel

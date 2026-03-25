@@ -69,7 +69,7 @@ const PREBUILT: AgentTemplate[] = [
     name: "24/7 Support Agent",
     description: "Handles customer support inquiries with empathy and accuracy.",
     author: "Sovereign Matrix",
-    model: "z-ai/glm-4.7",
+    model: "thudm/glm-4-9b-chat",
     system_prompt: "You are a friendly customer support agent. Help users resolve issues, answer questions about the product, and escalate complex issues to a human agent. Always be empathetic and solution-oriented.",
     guardrails: ["no-financial-advice", "no-medical-advice", "topic-lock", "no-prompt-injection"],
     category: "Support",

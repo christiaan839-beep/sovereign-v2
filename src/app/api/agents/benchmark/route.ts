@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     const models = [
       { id: "deepseek-ai/deepseek-v3.2", name: "DeepSeek V3.2" },
       { id: "mistralai/mistral-nemotron", name: "Mistral Nemotron" },
-      { id: "z-ai/glm-4.7", name: "GLM 4.7" },
+      { id: "thudm/glm-4-9b-chat", name: "GLM 4.7" },
     ];
 
     const benchmarks = await Promise.all(

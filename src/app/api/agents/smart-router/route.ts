@@ -47,7 +47,7 @@ const MODEL_REGISTRY: ModelProfile[] = [
   // ─── Existing Open Source ───
   { id: "deepseek-ai/deepseek-v3.2", name: "DeepSeek V3.2", strengths: ["reasoning", "analysis", "writing", "code", "strategy", "thinking"], avg_speed_ms: 3500, quality_score: 9, cost_tier: "free" },
   { id: "mistralai/mistral-nemotron", name: "Mistral Nemotron", strengths: ["instruction-following", "chat", "summarization", "email", "outreach"], avg_speed_ms: 2800, quality_score: 8, cost_tier: "free" },
-  { id: "z-ai/glm-4.7", name: "GLM 4.7", strengths: ["multilingual", "translation", "creative", "brainstorming"], avg_speed_ms: 2200, quality_score: 7, cost_tier: "free" },
+  { id: "thudm/glm-4-9b-chat", name: "GLM 4.7", strengths: ["multilingual", "translation", "creative", "brainstorming"], avg_speed_ms: 2200, quality_score: 7, cost_tier: "free" },
   // ─── Groq (Ultra-Fast Inference) ───
   { id: "groq/deepseek-r1-distill-llama-70b", name: "DeepSeek-R1 (Groq)", strengths: ["deep-reasoning", "math", "logic", "strategy", "analysis", "thinking"], avg_speed_ms: 1200, quality_score: 10, cost_tier: "free" },
   { id: "groq/llama-3.1-8b-instant", name: "Llama 3.1 8B (Groq)", strengths: ["chat", "email", "outreach", "summarization", "instruction-following"], avg_speed_ms: 200, quality_score: 7, cost_tier: "free" },
