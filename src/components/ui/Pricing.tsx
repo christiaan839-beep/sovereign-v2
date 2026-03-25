@@ -14,7 +14,7 @@ export function Pricing() {
   const tiers = [
     {
       name: "Sovereign Node",
-      description: "Core AI agents for content, SEO, and lead generation. Local execution included.",
+      description: "Core AI agents for content, SEO, and lead generation. Local execution via NemoClaw OS.",
       price: "R9,997",
       period: "/mo",
       icon: Zap,
@@ -29,7 +29,7 @@ export function Pricing() {
         { name: "Morpheus Shield Integration", included: true },
         { name: "Single macOS Node License", included: true },
         { name: "Bring Your Own API Key", included: true },
-        { name: "Unlimited generations", included: false },
+        { name: "Unlimited generations (open-source)", included: true },
         { name: "White-label Reseller Hub", included: false },
       ],
       planId: "node",
@@ -38,7 +38,7 @@ export function Pricing() {
     },
     {
       name: "Sovereign Array",
-      description: "Unlimited AI generations, voice agents, video creation, and priority processing.",
+      description: "Sub-200ms voice agents, Cosmos VLM video, War Room red-teaming, and 24h priority processing.",
       price: "R24,997",
       period: "/mo",
       icon: Crown,
@@ -48,7 +48,7 @@ export function Pricing() {
       isPopular: true,
       features: [
         { name: "Everything in Node", included: true },
-        { name: "Unlimited AI generations", included: true },
+        { name: "Voice Agents (sub-200ms)", included: true },
         { name: "Cosmos VLM Video Generation", included: true },
         { name: "Priority AI processing", included: true },
         { name: "War Room Red-Teaming", included: true },
