@@ -5,8 +5,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Wand2, Plus, Play, Pencil, Trash2, Copy, Send,
   Bot, Briefcase, FileText, Code2, MessageSquare, Loader2,
-  ChevronDown, X, Clock, Sparkles,
+  ChevronDown, X, Clock, Sparkles, Upload, Check,
 } from "lucide-react";
+import { useToast } from "@/components/ui/ToastProvider";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { MODEL_REGISTRY } from "@/config/models";
 import type { ModelConfig } from "@/config/models";
@@ -138,6 +139,11 @@ export default function AgentBuilderPage() {
   const [runResult, setRunResult] = useState<RunResult | null>(null);
   const [runOpen, setRunOpen] = useState<string | null>(null);
 
+  // Publish state
+  const [publishingId, setPublishingId] = useState<string | null>(null);
+  const [publishedIds, setPublishedIds] = useState<Set<string>>(new Set());
+  const toast = useToast();
+
   // Fetch skills
   const fetchSkills = useCallback(async () => {
     try {
@@ -236,6 +242,40 @@ export default function AgentBuilderPage() {
     setSystemPrompt(template.systemPrompt);
     setEditingId(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  // Publish to marketplace
+  const handlePublish = async (skill: Skill) => {
+    setPublishingId(skill.id);
+    try {
+      const res = await fetch("/api/marketplace", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          skillId: skill.id,
+          name: skill.name,
+          description: skill.description || `Custom agent: ${skill.name}`,
+          category: "automation",
+          systemPrompt: skill.systemPrompt,
+        }),
+      });
+      if (res.ok) {
+        setPublishedIds((prev) => new Set(prev).add(skill.id));
+        toast.success("Published to marketplace!");
+      } else {
+        const data = await res.json();
+        if (res.status === 409) {
+          setPublishedIds((prev) => new Set(prev).add(skill.id));
+          toast.success("Already published!");
+        } else {
+          toast.error(data.error || "Failed to publish.");
+        }
+      }
+    } catch {
+      toast.error("Publish failed. Please try again.");
+    } finally {
+      setPublishingId(null);
+    }
   };
 
   const selectedModelConfig = MODEL_REGISTRY.find((m) => m.id === selectedModel) || MODEL_REGISTRY[0];
@@ -478,6 +518,24 @@ export default function AgentBuilderPage() {
                         title="Run"
                       >
                         <Play className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handlePublish(skill)}
+                        disabled={publishingId === skill.id || publishedIds.has(skill.id)}
+                        className={`p-2 rounded-lg transition-colors ${
+                          publishedIds.has(skill.id)
+                            ? "text-emerald-400 cursor-default"
+                            : "text-neutral-400 hover:text-cyan-400 hover:bg-cyan-500/10"
+                        } disabled:opacity-70`}
+                        title={publishedIds.has(skill.id) ? "Published" : "Publish to Marketplace"}
+                      >
+                        {publishingId === skill.id ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : publishedIds.has(skill.id) ? (
+                          <Check className="w-3.5 h-3.5" />
+                        ) : (
+                          <Upload className="w-3.5 h-3.5" />
+                        )}
                       </button>
                       <button
                         onClick={() => startEdit(skill)}

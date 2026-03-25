@@ -244,3 +244,60 @@ export const chatMessages = pgTable("chat_messages", {
   index("msg_conv_idx").on(table.conversationId),
 ]);
 
+// ═══════════════════════════════════════════
+// Agent Marketplace
+// ═══════════════════════════════════════════
+
+export const marketplaceAgents = pgTable("marketplace_agents", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  skillId: uuid("skill_id").references(() => customSkills.id),
+  authorEmail: text("author_email").notNull(),
+  authorName: text("author_name").notNull(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  category: text("category").notNull(), // sales, content, seo, code, automation, research
+  systemPrompt: text("system_prompt").notNull(),
+  isPublic: boolean("is_public").notNull().default(true),
+  installs: integer("installs").notNull().default(0),
+  rating: integer("rating").default(0), // 0-5
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// ═══════════════════════════════════════════
+// Stripe Subscriptions
+// ═══════════════════════════════════════════
+
+export const subscriptions = pgTable("subscriptions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull(),
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  plan: text("plan").notNull().default("free"),
+  status: text("status").notNull().default("active"),
+  currentPeriodEnd: timestamp("current_period_end"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// ═══════════════════════════════════════════
+// Team / Organization Workspaces
+// ═══════════════════════════════════════════
+
+export const organizations = pgTable("organizations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  ownerId: text("owner_id").notNull(), // Clerk user ID
+  plan: text("plan").notNull().default("free"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const orgMembers = pgTable("org_members", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  orgId: uuid("org_id").references(() => organizations.id).notNull(),
+  userId: text("user_id").notNull(),
+  email: text("email").notNull(),
+  role: text("role").notNull().default("member"), // owner, admin, member, viewer
+  joinedAt: timestamp("joined_at").defaultNow(),
+});
+
