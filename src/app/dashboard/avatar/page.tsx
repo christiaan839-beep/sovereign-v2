@@ -14,7 +14,7 @@ export default function DigitalHumanAvatarPage() {
     
     try {
       // Phase 1: Generate avatar image via FLUX
-      const res = await fetch("/api/agents/flux-image", {
+      const res = await fetch("/api/agents/image-gen", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt: `Professional photorealistic headshot of ${avatarName}, corporate executive, studio lighting, neutral background`, width: 512, height: 512 }),

@@ -265,7 +265,7 @@ export default function LeadsDashboard() {
                                               <span className="text-[10px] text-electric uppercase tracking-widest flex items-center gap-1"><Zap className="w-3 h-3" /> Generated Outreach Script</span>
                                               <div className="flex gap-3">
                                                 <button 
-                                                  onClick={() => router.push(`/dashboard/voice?phone=${encodeURIComponent(report.phone || '')}&context=${encodeURIComponent(`Offer: Free SEO Audit + Review Sweeper based on diagnosis: ${report.detected_gap}`)}`)}
+                                                  onClick={() => router.push(`/dashboard/voice-assistant?phone=${encodeURIComponent(report.phone || '')}&context=${encodeURIComponent(`Offer: Free SEO Audit + Review Sweeper based on diagnosis: ${report.detected_gap}`)}`)}
                                                   className="text-[10px] text-emerald-400 hover:text-emerald-300 font-bold uppercase transition-colors flex items-center gap-1"
                                                 >
                                                   <Phone className="w-3 h-3" /> Deploy Voice Swarm

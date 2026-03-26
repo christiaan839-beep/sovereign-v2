@@ -14,7 +14,7 @@ const AGENTS = [
   { id: "pii-redactor", label: "PII Redactor", placeholder: '{"text":"John Smith, john@email.com"}' },
   { id: "blog-gen", label: "Blog Generator", placeholder: '{"topic":"AI marketing trends 2026"}' },
   { id: "swarm", label: "Multi-Agent Swarm", placeholder: '{"task":"Best growth strategy for SaaS"}' },
-  { id: "voicechat", label: "Voice Agent", placeholder: '{"text":"Hi, I need to book an appointment"}' },
+  { id: "voice-chat", label: "Voice Agent", placeholder: '{"text":"Hi, I need to book an appointment"}' },
   { id: "gliner-pii", label: "GLiNER PII", placeholder: '{"text":"Jane Doe, 123-45-6789, jane@corp.com"}' },
   { id: "benchmark", label: "Model Benchmark", placeholder: '{"prompt":"Explain quantum computing in 100 words"}' },
   { id: "case-study", label: "Case Study", placeholder: '{"clientName":"Acme Corp","industry":"Tech"}' },

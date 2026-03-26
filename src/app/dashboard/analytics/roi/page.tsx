@@ -97,6 +97,7 @@ function formatRelativeTime(dateStr: string): string {
 // ─── Component ──────────────────────────────────────────────
 export default function ROIAnalyticsPage() {
   const [loading, setLoading] = useState(true);
+  const [isDemo, setIsDemo] = useState(false);
   const [kpis, setKpis] = useState<KPIData>({ totalLeads: 0, contentPieces: 0, agentCalls: 0, timeSavedHours: 0 });
   const [agents, setAgents] = useState<AgentPerformance[]>([]);
   const [timeline, setTimeline] = useState<TelemetryEvent[]>([]);
@@ -115,9 +116,11 @@ export default function ROIAnalyticsPage() {
         if (data.monthlyTrend) setMonthlyTrend(data.monthlyTrend);
       } else {
         // Fallback: generate demo data for presentation
+        setIsDemo(true);
         loadDemoData();
       }
     } catch {
+      setIsDemo(true);
       loadDemoData();
     } finally {
       setLoading(false);
@@ -221,6 +224,11 @@ export default function ROIAnalyticsPage() {
           <p className="text-sm text-neutral-400 mt-1">
             Real-time intelligence on the value Sovereign Matrix delivers to your agency.
           </p>
+          {isDemo && (
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-bold uppercase tracking-wider mt-2">
+              Sample Data — Connect your agents to see real metrics
+            </div>
+          )}
         </div>
         <button
           onClick={fetchData}

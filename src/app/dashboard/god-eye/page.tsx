@@ -78,29 +78,25 @@ export default function GodEyeSurveillancePage() {
               <span className="text-xs font-bold text-emerald-400 uppercase tracking-widest font-mono">SAFEGUARD ACTIVE</span>
             </div>
             
-            {/* Fake Video Feed using generic Pexels or stock CCTV look */}
-            <div className="aspect-video bg-neutral-900 relative">
-              <video 
-                src="https://cdn.pixabay.com/video/2020/05/25/40141-426176378_tiny.mp4"
-                autoPlay loop muted playsInline
-                className="absolute inset-0 w-full h-full object-cover opacity-80 mix-blend-luminosity"
-              />
-              {/* Simulated Bounding Boxes Overlay */}
-              <motion.div 
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 2 }}
-                className="absolute inset-0 z-10"
-              >
-                <div className="absolute top-1/4 left-1/3 w-32 h-48 border-2 border-emerald-500/50 bg-emerald-500/10" />
-                <div className="absolute top-1/4 left-1/3 -mt-6 bg-emerald-500 text-black text-[9px] font-bold px-1 py-0.5 font-mono">
-                  PERSON [98%] ID: 4921
+            {/* System Monitoring Feed — Real infrastructure status */}
+            <div className="aspect-video bg-neutral-900 relative flex items-center justify-center">
+              <div className="absolute inset-0 bg-[linear-gradient(rgba(16,185,129,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(16,185,129,0.02)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none" />
+              <div className="relative z-10 text-center space-y-4 p-8">
+                <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 2, repeat: Infinity }} className="w-16 h-16 mx-auto rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                  <ScanEye className="w-8 h-8 text-emerald-400" />
+                </motion.div>
+                <div>
+                  <p className="text-sm font-bold text-white">System Monitoring Active</p>
+                  <p className="text-xs text-neutral-500 mt-1">
+                    {systemHealth ? `${Object.keys(systemHealth.services || {}).length} services tracked` : "Connecting to infrastructure..."}
+                  </p>
                 </div>
-                
-                <div className="absolute top-1/2 right-1/4 w-24 h-40 border-2 border-red-500/50 bg-red-500/10" />
-                <div className="absolute top-1/2 right-1/4 -mt-6 bg-red-500 text-white text-[9px] font-bold px-1 py-0.5 font-mono">
-                  LOITERING [94%] ID: 4922
+                <div className="flex items-center justify-center gap-4">
+                  <span className="text-[10px] px-2 py-1 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">
+                    {systemHealth?.status === "ok" ? "ALL SYSTEMS NOMINAL" : "CHECKING..."}
+                  </span>
                 </div>
-              </motion.div>
-              <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none" />
+              </div>
             </div>
           </div>
           
