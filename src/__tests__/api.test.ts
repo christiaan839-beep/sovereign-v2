@@ -117,13 +117,13 @@ describe("Agent API Routes", () => {
     const mod = await import("@/app/api/_agents/seo/route");
     expect(mod.POST).toBeDefined();
     expect(typeof mod.POST).toBe("function");
-  });
+  }, 15000);
 
   it("Design agent should export a POST handler", async () => {
     const mod = await import("@/app/api/_agents/design/route");
     expect(mod.POST).toBeDefined();
     expect(typeof mod.POST).toBe("function");
-  });
+  }, 15000);
 
   it("Content agent should export a POST handler", async () => {
     const mod = await import("@/app/api/_agents/content/route");

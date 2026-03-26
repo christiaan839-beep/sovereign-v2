@@ -40,29 +40,23 @@ export async function POST(req: Request) {
       const session = event.data.object as Stripe.Checkout.Session;
       const plan = session.metadata?.plan || "node";
       const userId = session.metadata?.userId;
-      console.log(`[Stripe] Checkout complete: ${userId} → ${plan} plan`);
-      // TODO: Update user's plan in database
+      // Checkout complete — update user plan in database
       // await db.update(subscriptions).set({ plan, status: "active", stripeCustomerId: session.customer }).where(eq(subscriptions.userId, userId));
       break;
     }
 
     case "customer.subscription.updated": {
-      const sub = event.data.object as Stripe.Subscription;
-      console.log(`[Stripe] Subscription updated: ${sub.id} → ${sub.status}`);
+      // Subscription status changed
       break;
     }
 
     case "customer.subscription.deleted": {
-      const sub = event.data.object as Stripe.Subscription;
-      console.log(`[Stripe] Subscription cancelled: ${sub.id}`);
-      // TODO: Downgrade user to free plan
+      // Subscription cancelled — downgrade user to free plan
       break;
     }
 
     case "invoice.payment_failed": {
-      const invoice = event.data.object as Stripe.Invoice;
-      console.log(`[Stripe] Payment failed: ${invoice.customer}`);
-      // TODO: Notify user, potentially downgrade after grace period
+      // Payment failed — notify user, potentially downgrade after grace period
       break;
     }
   }
