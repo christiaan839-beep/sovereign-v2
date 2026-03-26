@@ -13,6 +13,7 @@ import { Testimonials } from "@/components/ui/SocialProof";
 import { InteractiveHeroStrike } from "@/components/ui/InteractiveHeroStrike";
 import { SocialProofMetrics } from "@/components/ui/SocialProofMetrics";
 import { AgentWorld } from "@/components/ui/AgentWorld";
+import { LandingAgent } from "@/components/ui/LandingAgent";
 
 // ─── Capability Card (enhanced with emerald hover glow) ───
 function CapabilityCard({ icon: Icon, title, desc, accent, href }: { icon: React.ComponentType<{ className?: string }>; title: string; desc: string; accent: string; href?: string }) {
@@ -697,6 +698,9 @@ export default function Home() {
           </div>
         </div>
       </footer>
+
+      {/* Floating conversational AI agent */}
+      <LandingAgent />
     </div>
   );
 }
