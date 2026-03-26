@@ -206,6 +206,7 @@ export function Pricing() {
             </div>
 
             <button
+              type="button"
               onClick={() => initiateCheckout(tier.planId)}
               className={`w-full py-4 rounded-xl font-bold uppercase tracking-widest text-sm transition-all mb-8 flex items-center justify-center gap-2 ${tier.buttonStyle}`}
             >
