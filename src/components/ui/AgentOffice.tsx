@@ -4,182 +4,257 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 /**
- * AgentOffice — Living pixel world with Claude-style mascot robots.
+ * AgentOffice — Living digital world with Claude-mascot-style creatures.
  *
- * Each robot is a simple rounded rectangle with eyes and stub legs.
- * NO head separation, NO arms, NO mouth — just like Claude's mascot.
- * The charm is in the simplicity and the autonomous behavior.
+ * Each agent is a unique variation of Claude's mascot design:
+ * - Two-tone body (lighter top, darker bottom)
+ * - Small ear/antenna nubs on top (unique per agent)
+ * - Wide dot eyes
+ * - Stubby feet at the bottom
+ * - Warm, friendly, GameBoy-era pixel sprite feel
+ *
+ * The world has furniture, workstations, and agents interact.
  */
 
-const WORLD_W = 800;
-const WORLD_H = 350;
-const PROXIMITY = 65;
+const WORLD_W = 900;
+const WORLD_H = 380;
+const TALK_DIST = 70;
 
 interface Agent {
   id: string;
   name: string;
-  color: string;
-  eyeColor: string;
+  top: string;     // lighter body color
+  bottom: string;  // darker body color
+  ear: string;     // ear/nub color
+  eye: string;     // eye color
   x: number;
   y: number;
-  targetX: number;
-  targetY: number;
-  state: "walking" | "idle" | "thinking" | "talking" | "working";
+  tx: number;
+  ty: number;
+  state: "walk" | "idle" | "think" | "talk" | "work";
   msg: string;
-  walkFrame: number;
-  facingRight: boolean;
-  timer: number;
+  step: number;
+  right: boolean;
+  t: number;
 }
 
-const DEFS = [
-  { id: "brain",   name: "God Brain",    color: "#D2691E", eyeColor: "#2d1600" },
-  { id: "hunter",  name: "Lead Hunter",  color: "#10B981", eyeColor: "#022c22" },
-  { id: "writer",  name: "Content",      color: "#06B6D4", eyeColor: "#042f2e" },
-  { id: "coder",   name: "Coder",        color: "#A855F7", eyeColor: "#1a0536" },
-  { id: "closer",  name: "Voice Closer", color: "#EF4444", eyeColor: "#2d0808" },
-  { id: "router",  name: "Router",       color: "#14B8A6", eyeColor: "#022c22" },
-  { id: "guard",   name: "Guardrails",   color: "#6366F1", eyeColor: "#0c0c3d" },
-  { id: "seo",     name: "SEO",          color: "#F59E0B", eyeColor: "#2d1f00" },
+const AGENTS_DEF = [
+  { id: "brain",  name: "God Brain",    top: "#E8845C", bottom: "#C4633B", ear: "#D4714A", eye: "#3D1E0E" },
+  { id: "hunt",   name: "Lead Hunter",  top: "#4ADE80", bottom: "#22C55E", ear: "#16A34A", eye: "#052E16" },
+  { id: "write",  name: "Content",      top: "#67E8F9", bottom: "#22D3EE", ear: "#06B6D4", eye: "#083344" },
+  { id: "code",   name: "Coder",        top: "#C084FC", bottom: "#A855F7", ear: "#9333EA", eye: "#1E0A3E" },
+  { id: "close",  name: "Closer",       top: "#FCA5A5", bottom: "#EF4444", ear: "#DC2626", eye: "#3B0A0A" },
+  { id: "route",  name: "Router",       top: "#5EEAD4", bottom: "#14B8A6", ear: "#0D9488", eye: "#042F2E" },
+  { id: "guard",  name: "Guard",        top: "#A5B4FC", bottom: "#6366F1", ear: "#4F46E5", eye: "#1E1B4B" },
+  { id: "seo",    name: "SEO",          top: "#FDE68A", bottom: "#F59E0B", ear: "#D97706", eye: "#451A03" },
 ];
 
-const PHRASES: Record<string, string[]> = {
-  brain:  ["thinking...", "planning", "routing task"],
-  hunter: ["53 leads!", "scanning", "found target"],
-  writer: ["writing...", "4% ai score", "draft done"],
-  coder:  ["building", "deploying", "code review"],
-  closer: ["calling...", "booked!", "qualifying"],
-  router: ["$0 cost", "routed 1.2k", "nemotron"],
-  guard:  ["0 threats", "pii clean", "safe"],
-  seo:    ["312 gaps", "ranking #1", "schema ok"],
+const WORDS: Record<string, string[]> = {
+  brain: ["routing...", "nemotron 253b", "planning"],
+  hunt:  ["53 leads!", "scanning...", "target found"],
+  write: ["4.2% score", "writing...", "anti-slop ✓"],
+  code:  ["deploying", "code review", "building..."],
+  close: ["booking...", "call done!", "qualified ✓"],
+  route: ["$0 today", "1.2k routed", "auto-select"],
+  guard: ["0 threats", "pii clean", "all safe"],
+  seo:   ["312 gaps", "#1 ranking", "schema ✓"],
 };
 
-const TALKS = [
-  { a: "hunter", b: "closer", msgA: "leads ready", msgB: "calling now" },
-  { a: "writer", b: "seo",    msgA: "draft done", msgB: "adding kw" },
-  { a: "brain",  b: "router", msgA: "use nemotron", msgB: "routed" },
-  { a: "coder",  b: "guard",  msgA: "page ready", msgB: "pii clean" },
+const CHATS = [
+  { a: "hunt", b: "close", mA: "leads ready!", mB: "on it" },
+  { a: "write", b: "seo", mA: "draft done", mB: "optimizing" },
+  { a: "brain", b: "route", mA: "nemotron", mB: "routed ✓" },
+  { a: "code", b: "guard", mA: "ship it?", mB: "pii clear" },
 ];
 
-// ─── The Mascot — Claude-style creature ─────────────────
-// One rounded rectangle. Two eyes. Two stub legs. That's it.
+// ─── The Mascot — Claude-style with unique variations ───
 
-function Mascot({
-  color, eyeColor, walkFrame, facingRight, state,
+function Creature({
+  top, bottom, ear, eye, step, right, state, variant,
 }: {
-  color: string; eyeColor: string; walkFrame: number;
-  facingRight: boolean; state: Agent["state"];
+  top: string; bottom: string; ear: string; eye: string;
+  step: number; right: boolean; state: Agent["state"];
+  variant: number;
 }) {
-  const kickL = state === "walking" && walkFrame % 2 === 0;
-  const kickR = state === "walking" && walkFrame % 2 !== 0;
+  const kick = state === "walk";
+  const f1 = kick && step % 2 === 0;
+  const f2 = kick && step % 2 !== 0;
+
+  // Ear variations based on agent
+  const earType = variant % 4; // 0=round nubs, 1=pointy, 2=antenna, 3=flat
 
   return (
     <motion.div
       animate={
-        state === "thinking" ? { y: [0, -3, 0] } :
-        state === "working" ? { y: [0, -1, 0] } :
-        { y: [0, -1.5, 0] }
+        state === "think" ? { y: [0, -4, 0] } :
+        state === "work" ? { y: [0, -1, 0] } :
+        { y: [0, -2, 0] }
       }
       transition={{
-        duration: state === "thinking" ? 2 : state === "working" ? 0.5 : 3,
-        repeat: Infinity,
-        ease: "easeInOut",
+        duration: state === "think" ? 2.5 : state === "work" ? 0.6 : 3,
+        repeat: Infinity, ease: "easeInOut",
       }}
     >
-      <svg
-        width="32" height="36"
-        viewBox="0 0 32 36"
-        style={{
-          imageRendering: "pixelated",
-          transform: facingRight ? "" : "scaleX(-1)",
-          filter: state === "working" ? `drop-shadow(0 0 4px ${color}40)` : "none",
-        }}
-      >
-        {/* ═══ THE BODY — one solid rounded block ═══ */}
-        <rect x="4" y="2" width="24" height="22" rx="6" fill={color} />
+      <svg width="38" height="42" viewBox="0 0 38 42"
+        style={{ imageRendering: "pixelated", transform: right ? "" : "scaleX(-1)", overflow: "visible" }}>
 
-        {/* ═══ EYES — two small dark squares, high on the body ═══ */}
-        {state === "thinking" ? (
+        {/* ═══ EARS/NUBS — unique per agent ═══ */}
+        {earType === 0 && (
           <>
-            {/* Squinted — thin horizontal lines */}
-            <rect x="9" y="10" width="4" height="1.5" rx="0.5" fill={eyeColor} />
-            <rect x="19" y="10" width="4" height="1.5" rx="0.5" fill={eyeColor} />
+            {/* Round nubs (like Claude's) */}
+            <rect x="8" y="1" width="6" height="6" rx="3" fill={ear} />
+            <rect x="24" y="1" width="6" height="6" rx="3" fill={ear} />
           </>
-        ) : (
+        )}
+        {earType === 1 && (
           <>
-            {/* Open — small dark rectangles */}
-            <rect x="9" y="8" width="4" height="5" rx="1" fill={eyeColor} />
-            <rect x="19" y="8" width="4" height="5" rx="1" fill={eyeColor} />
-
-            {/* Tiny white pixel glint — gives life */}
-            <rect x="10" y="9" width="1.5" height="1.5" rx="0.5" fill="white" opacity="0.7" />
-            <rect x="20" y="9" width="1.5" height="1.5" rx="0.5" fill="white" opacity="0.7" />
+            {/* Pointy ears */}
+            <polygon points="10,6 13,0 16,6" fill={ear} />
+            <polygon points="22,6 25,0 28,6" fill={ear} />
+          </>
+        )}
+        {earType === 2 && (
+          <>
+            {/* Antenna nubs */}
+            <rect x="11" y="0" width="3" height="7" rx="1.5" fill={ear} />
+            <rect x="24" y="0" width="3" height="7" rx="1.5" fill={ear} />
+            <circle cx="12.5" cy="0" r="2" fill={top} />
+            <circle cx="25.5" cy="0" r="2" fill={top} />
+          </>
+        )}
+        {earType === 3 && (
+          <>
+            {/* Flat wide nubs */}
+            <rect x="7" y="3" width="7" height="4" rx="2" fill={ear} />
+            <rect x="24" y="3" width="7" height="4" rx="2" fill={ear} />
           </>
         )}
 
-        {/* ═══ LEGS — two tiny stubs at the bottom ═══ */}
-        <motion.rect
-          x="8" y="24" width="5" height="8" rx="2.5"
-          fill={color}
-          style={{ transformOrigin: "10.5px 24px" }}
-          animate={
-            state === "walking"
-              ? { rotate: kickL ? [0, 15, 0] : kickR ? [0, -8, 0] : [0] }
-              : {}
-          }
-          transition={{ duration: 0.2, repeat: state === "walking" ? Infinity : 0 }}
-        />
-        <motion.rect
-          x="19" y="24" width="5" height="8" rx="2.5"
-          fill={color}
-          style={{ transformOrigin: "21.5px 24px" }}
-          animate={
-            state === "walking"
-              ? { rotate: kickR ? [0, -15, 0] : kickL ? [0, 8, 0] : [0] }
-              : {}
-          }
-          transition={{ duration: 0.2, repeat: state === "walking" ? Infinity : 0 }}
-        />
+        {/* ═══ BODY — two-tone like Claude's mascot ═══ */}
+        {/* Top half — lighter */}
+        <rect x="5" y="6" width="28" height="14" rx="5" fill={top} />
+        {/* Bottom half — darker */}
+        <rect x="5" y="16" width="28" height="10" rx="5" fill={bottom} />
+        {/* Blend rectangle to connect the halves */}
+        <rect x="5" y="14" width="28" height="6" fill={top} />
+        <rect x="5" y="17" width="28" height="4" fill={bottom} />
 
-        {/* ═══ FEET — tiny dark ovals ═══ */}
-        <ellipse cx="10.5" cy="32" rx="3" ry="2" fill={eyeColor} opacity="0.5" />
-        <ellipse cx="21.5" cy="32" rx="3" ry="2" fill={eyeColor} opacity="0.5" />
+        {/* Body highlight — subtle lighter strip */}
+        <rect x="9" y="8" width="20" height="3" rx="1.5" fill="white" opacity="0.1" />
+
+        {/* ═══ EYES — wide friendly dots ═══ */}
+        {state === "think" ? (
+          <>
+            <rect x="11" y="13" width="5" height="2" rx="1" fill={eye} />
+            <rect x="22" y="13" width="5" height="2" rx="1" fill={eye} />
+          </>
+        ) : (
+          <>
+            {/* Eye whites */}
+            <circle cx="14" cy="13" r="3.5" fill="white" opacity="0.9" />
+            <circle cx="24" cy="13" r="3.5" fill="white" opacity="0.9" />
+            {/* Pupils */}
+            <circle cx={right ? "15" : "13"} cy="13.5" r="2" fill={eye} />
+            <circle cx={right ? "25" : "23"} cy="13.5" r="2" fill={eye} />
+            {/* Glint */}
+            <circle cx="13" cy="12" r="1" fill="white" />
+            <circle cx="23" cy="12" r="1" fill="white" />
+          </>
+        )}
+
+        {/* ═══ CHEEKS — subtle blush ═══ */}
+        <circle cx="9" cy="17" r="2.5" fill="#FF6B6B" opacity="0.15" />
+        <circle cx="29" cy="17" r="2.5" fill="#FF6B6B" opacity="0.15" />
+
+        {/* ═══ MOUTH — tiny, subtle ═══ */}
+        {state === "talk" ? (
+          <motion.ellipse cx="19" cy="20" rx="2.5" fill={eye}
+            animate={{ ry: [1, 2.5, 1] }}
+            transition={{ duration: 0.3, repeat: Infinity }}
+          />
+        ) : (
+          <rect x="16" y="20" width="6" height="1" rx="0.5" fill={eye} opacity="0.25" />
+        )}
+
+        {/* ═══ LEGS — stubby with feet ═══ */}
+        <motion.g
+          style={{ transformOrigin: "12px 26px" }}
+          animate={kick ? { rotate: f1 ? [0, 12, 0] : f2 ? [0, -6, 0] : [0] } : {}}
+          transition={{ duration: 0.2, repeat: kick ? Infinity : 0 }}
+        >
+          <rect x="9" y="26" width="6" height="9" rx="3" fill={bottom} />
+          <ellipse cx="12" cy="35.5" rx="4" ry="2.5" fill={ear} />
+        </motion.g>
+        <motion.g
+          style={{ transformOrigin: "26px 26px" }}
+          animate={kick ? { rotate: f2 ? [0, -12, 0] : f1 ? [0, 6, 0] : [0] } : {}}
+          transition={{ duration: 0.2, repeat: kick ? Infinity : 0 }}
+        >
+          <rect x="23" y="26" width="6" height="9" rx="3" fill={bottom} />
+          <ellipse cx="26" cy="35.5" rx="4" ry="2.5" fill={ear} />
+        </motion.g>
+
+        {/* Working sparkles */}
+        {state === "work" && (
+          <>
+            <motion.circle r="1.5" fill={top} animate={{ cx: [4, 2], cy: [4, -2], opacity: [0, 1, 0] }}
+              transition={{ duration: 0.7, repeat: Infinity }} />
+            <motion.circle r="1.5" fill={top} animate={{ cx: [34, 36], cy: [4, -2], opacity: [0, 1, 0] }}
+              transition={{ duration: 0.7, repeat: Infinity, delay: 0.3 }} />
+          </>
+        )}
       </svg>
     </motion.div>
   );
 }
 
-// ─── Speech Bubble — minimal, flat ──────────────────────
+// ─── Bubble ─────────────────────────────────────────────
 
-function Bubble({ text }: { text: string }) {
-  const [shown, setShown] = useState("");
+function Bub({ text }: { text: string }) {
+  const [s, setS] = useState("");
   useEffect(() => {
-    setShown("");
-    let i = 0;
-    const id = setInterval(() => {
-      i++;
-      setShown(text.slice(0, i));
-      if (i >= text.length) clearInterval(id);
-    }, 40);
+    setS(""); let i = 0;
+    const id = setInterval(() => { i++; setS(text.slice(0, i)); if (i >= text.length) clearInterval(id); }, 35);
     return () => clearInterval(id);
   }, [text]);
-
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 3 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0 }}
-      className="absolute -top-6 left-1/2 -translate-x-1/2 z-30"
-    >
-      <div className="px-1.5 py-0.5 bg-white text-[7px] font-mono text-black whitespace-nowrap"
-        style={{ imageRendering: "pixelated" }}>
-        {shown}<span className="text-neutral-300 animate-pulse">_</span>
+    <motion.div initial={{ opacity: 0, y: 3 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+      className="absolute -top-7 left-1/2 -translate-x-1/2 z-30">
+      <div className="px-2 py-0.5 rounded-md bg-white text-[7px] font-mono text-neutral-800 whitespace-nowrap shadow-sm">
+        {s}<span className="text-neutral-300 animate-pulse">_</span>
       </div>
       <div className="w-0 h-0 mx-auto" style={{
-        borderLeft: "3px solid transparent",
-        borderRight: "3px solid transparent",
-        borderTop: "3px solid white",
+        borderLeft: "3px solid transparent", borderRight: "3px solid transparent", borderTop: "3px solid white"
       }} />
     </motion.div>
+  );
+}
+
+// ─── Furniture ──────────────────────────────────────────
+
+function Desk({ x, y }: { x: number; y: number }) {
+  return (
+    <div className="absolute" style={{ left: `${x}%`, top: `${y}%` }}>
+      <div className="w-10 h-2 bg-neutral-800/60 rounded-sm border border-white/[0.03]" />
+      <div className="w-1 h-3 bg-neutral-800/40 ml-1 mt-0" />
+      <div className="w-1 h-3 bg-neutral-800/40 ml-8 -mt-3" />
+    </div>
+  );
+}
+
+function Monitor({ x, y }: { x: number; y: number }) {
+  return (
+    <div className="absolute" style={{ left: `${x}%`, top: `${y}%` }}>
+      <div className="w-6 h-4 bg-neutral-900 border border-emerald-500/10 rounded-sm overflow-hidden">
+        <motion.div className="w-3 h-0.5 bg-emerald-500/20 mt-1 ml-0.5 rounded-full"
+          animate={{ width: ["30%", "70%", "30%"] }}
+          transition={{ duration: 2, repeat: Infinity }}
+        />
+        <div className="w-2 h-0.5 bg-emerald-500/10 mt-0.5 ml-0.5 rounded-full" />
+      </div>
+      <div className="w-1 h-1.5 bg-neutral-800 mx-auto" />
+      <div className="w-3 h-0.5 bg-neutral-800 mx-auto rounded-full" />
+    </div>
   );
 }
 
@@ -188,226 +263,166 @@ function Bubble({ text }: { text: string }) {
 export function AgentOffice() {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [task, setTask] = useState<{ x: number; y: number } | null>(null);
-  const frame = useRef(0);
-  const worldRef = useRef<HTMLDivElement>(null);
+  const fr = useRef(0);
+  const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setAgents(DEFS.map((d, i) => ({
+    setAgents(AGENTS_DEF.map((d, i) => ({
       ...d,
-      x: 60 + (i % 4) * 180 + Math.random() * 50,
-      y: 50 + Math.floor(i / 4) * 130 + Math.random() * 50,
-      targetX: Math.random() * (WORLD_W - 100) + 50,
-      targetY: Math.random() * (WORLD_H - 80) + 40,
+      x: 70 + (i % 4) * 200 + Math.random() * 60,
+      y: 50 + Math.floor(i / 4) * 140 + Math.random() * 40,
+      tx: Math.random() * (WORLD_W - 120) + 60,
+      ty: Math.random() * (WORLD_H - 100) + 50,
       state: "idle" as const,
-      msg: "",
-      walkFrame: 0,
-      facingRight: Math.random() > 0.5,
-      timer: 50 + Math.random() * 100,
+      msg: "", step: 0, right: Math.random() > 0.5,
+      t: 40 + Math.random() * 80,
     })));
   }, []);
 
   useEffect(() => {
     const loop = setInterval(() => {
-      frame.current++;
-      const f = frame.current;
-
+      fr.current++;
+      const f = fr.current;
       setAgents(prev => prev.map(a => {
-        let { x, y, targetX, targetY, state, msg, walkFrame, facingRight, timer } = a;
-        timer--;
-
-        if (task && state !== "talking") {
-          targetX = task.x + (Math.random() - 0.5) * 30;
-          targetY = task.y + (Math.random() - 0.5) * 30;
-          state = "walking";
-        }
-
-        const dx = targetX - x;
-        const dy = targetY - y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-
-        if (dist < 12 && state === "walking") {
+        let { x, y, tx, ty, state, msg, step, right, t } = a;
+        t--;
+        if (task && state !== "talk") { tx = task.x + (Math.random() - 0.5) * 40; ty = task.y + (Math.random() - 0.5) * 40; state = "walk"; }
+        const dx = tx - x, dy = ty - y, d = Math.sqrt(dx * dx + dy * dy);
+        if (d < 10 && state === "walk") {
           const r = Math.random();
-          state = r < 0.3 ? "thinking" : r < 0.6 ? "working" : "idle";
-          timer = 60 + Math.random() * 80;
-          if (state === "working") {
-            msg = PHRASES[a.id]?.[Math.floor(Math.random() * 3)] || "";
-          }
+          state = r < 0.25 ? "think" : r < 0.5 ? "work" : "idle";
+          t = 50 + Math.random() * 70;
+          msg = state === "work" ? (WORDS[a.id]?.[Math.floor(Math.random() * 3)] || "") : "";
         }
-
-        if (timer <= 0 && state !== "talking") {
-          state = "walking";
-          targetX = Math.random() * (WORLD_W - 100) + 50;
-          targetY = Math.random() * (WORLD_H - 80) + 40;
-          timer = 150 + Math.random() * 120;
-          msg = "";
+        if (t <= 0 && state !== "talk") {
+          state = "walk"; tx = Math.random() * (WORLD_W - 120) + 60; ty = Math.random() * (WORLD_H - 100) + 50;
+          t = 120 + Math.random() * 100; msg = "";
         }
-
-        if (state === "walking" && dist > 4) {
-          const speed = 0.8;
-          x += (dx / dist) * speed;
-          y += (dy / dist) * speed;
-          facingRight = dx > 0;
-          if (f % 6 === 0) walkFrame++;
+        if (state === "walk" && d > 3) {
+          x += (dx / d) * 0.9; y += (dy / d) * 0.9; right = dx > 0;
+          if (f % 5 === 0) step++;
         }
-
-        if (f % 100 === 0 && state !== "talking") {
-          const talk = TALKS.find(t =>
-            (t.a === a.id || t.b === a.id) &&
-            prev.some(o => o.id !== a.id && (t.a === o.id || t.b === o.id) &&
-              Math.abs(o.x - x) < PROXIMITY && Math.abs(o.y - y) < PROXIMITY)
-          );
-          if (talk) {
-            state = "talking";
-            msg = talk.a === a.id ? talk.msgA : talk.msgB;
-            timer = 70;
-          }
+        if (f % 90 === 0 && state !== "talk") {
+          const c = CHATS.find(c => (c.a === a.id || c.b === a.id) &&
+            prev.some(o => o.id !== a.id && (c.a === o.id || c.b === o.id) &&
+              Math.abs(o.x - x) < TALK_DIST && Math.abs(o.y - y) < TALK_DIST));
+          if (c) { state = "talk"; msg = c.a === a.id ? c.mA : c.mB; t = 60; }
         }
-
-        x = Math.max(20, Math.min(WORLD_W - 50, x));
-        y = Math.max(20, Math.min(WORLD_H - 60, y));
-
-        return { ...a, x, y, targetX, targetY, state, msg, walkFrame, facingRight, timer };
+        x = Math.max(30, Math.min(WORLD_W - 60, x));
+        y = Math.max(25, Math.min(WORLD_H - 70, y));
+        return { ...a, x, y, tx, ty, state, msg, step, right, t };
       }));
     }, 50);
     return () => clearInterval(loop);
   }, [task]);
 
-  useEffect(() => {
-    if (task) {
-      const t = setTimeout(() => setTask(null), 4000);
-      return () => clearTimeout(t);
-    }
-  }, [task]);
+  useEffect(() => { if (task) { const t = setTimeout(() => setTask(null), 4000); return () => clearTimeout(t); } }, [task]);
 
-  const onClick = useCallback((e: React.MouseEvent) => {
-    if (!worldRef.current) return;
-    const rect = worldRef.current.getBoundingClientRect();
-    setTask({
-      x: ((e.clientX - rect.left) / rect.width) * WORLD_W,
-      y: ((e.clientY - rect.top) / rect.height) * WORLD_H,
-    });
+  const click = useCallback((e: React.MouseEvent) => {
+    if (!ref.current) return;
+    const r = ref.current.getBoundingClientRect();
+    setTask({ x: ((e.clientX - r.left) / r.width) * WORLD_W, y: ((e.clientY - r.top) / r.height) * WORLD_H });
   }, []);
 
   return (
     <div className="w-full max-w-5xl mx-auto">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        className="text-center mb-8"
-      >
+      <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+        className="text-center mb-8">
         <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-3">Inside the Matrix</p>
         <h2 className="text-3xl md:text-5xl font-bold text-white tracking-tight mb-3">Your agents are working.</h2>
         <p className="text-neutral-600 text-sm">Click anywhere to drop a task. Watch them swarm.</p>
       </motion.div>
 
-      <div
-        ref={worldRef}
-        onClick={onClick}
-        className="relative rounded-2xl border border-white/[0.04] bg-[#0a0a0a] overflow-hidden cursor-crosshair"
-        style={{ aspectRatio: `${WORLD_W}/${WORLD_H}` }}
-      >
+      <div ref={ref} onClick={click}
+        className="relative rounded-2xl border border-white/[0.04] bg-[#0c0c10] overflow-hidden cursor-crosshair"
+        style={{ aspectRatio: `${WORLD_W}/${WORLD_H}` }}>
+
         {/* Scanlines */}
-        <div className="absolute inset-0 pointer-events-none z-20 opacity-30" style={{
-          background: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 4px)",
+        <div className="absolute inset-0 pointer-events-none z-20 opacity-20" style={{
+          background: "repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.1) 3px, rgba(0,0,0,0.1) 4px)",
         }} />
 
-        {/* Subtle dot grid */}
-        <div className="absolute inset-0 pointer-events-none opacity-20" style={{
-          backgroundImage: "radial-gradient(circle, rgba(16,185,129,0.15) 1px, transparent 1px)",
-          backgroundSize: "24px 24px",
+        {/* Dot grid floor */}
+        <div className="absolute inset-0 pointer-events-none opacity-15" style={{
+          backgroundImage: "radial-gradient(circle, rgba(16,185,129,0.12) 1px, transparent 1px)",
+          backgroundSize: "20px 20px",
         }} />
+
+        {/* Office furniture */}
+        <Desk x={8} y={35} />
+        <Monitor x={9} y={28} />
+        <Desk x={30} y={30} />
+        <Monitor x={31} y={23} />
+        <Desk x={55} y={55} />
+        <Monitor x={56} y={48} />
+        <Desk x={78} y={40} />
+        <Monitor x={79} y={33} />
 
         {/* Task beacon */}
         <AnimatePresence>
           {task && (
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: [1, 2, 1], opacity: [0.6, 0.1, 0.6] }}
+            <motion.div initial={{ scale: 0 }}
+              animate={{ scale: [1, 2.5, 1], opacity: [0.5, 0.1, 0.5] }}
               exit={{ scale: 0 }}
-              transition={{ duration: 1.5, repeat: Infinity }}
-              className="absolute w-3 h-3 rounded-full bg-emerald-400 z-10"
-              style={{
-                left: `${(task.x / WORLD_W) * 100}%`,
-                top: `${(task.y / WORLD_H) * 100}%`,
-                transform: "translate(-50%, -50%)",
-              }}
+              transition={{ duration: 1.2, repeat: Infinity }}
+              className="absolute w-2 h-2 rounded-full bg-emerald-400 z-10"
+              style={{ left: `${(task.x / WORLD_W) * 100}%`, top: `${(task.y / WORLD_H) * 100}%`, transform: "translate(-50%,-50%)" }}
             />
           )}
         </AnimatePresence>
 
-        {/* Floating particles */}
-        {[0, 1, 2, 3, 4].map(i => (
-          <motion.div
-            key={i}
-            className="absolute w-px h-px bg-emerald-500/30 rounded-full"
+        {/* Floating data particles */}
+        {[0, 1, 2, 3].map(i => (
+          <motion.div key={i} className="absolute w-0.5 h-0.5 bg-emerald-500/25 rounded-full"
             animate={{
-              left: [`${5 + i * 18}%`, `${80 - i * 10}%`],
-              top: [`${20 + i * 12}%`, `${70 - i * 8}%`],
-              opacity: [0, 0.5, 0],
+              left: [`${10 + i * 20}%`, `${75 - i * 12}%`],
+              top: [`${15 + i * 15}%`, `${65 - i * 10}%`],
+              opacity: [0, 0.4, 0],
             }}
-            transition={{ duration: 5 + i * 2, repeat: Infinity, delay: i, ease: "linear" }}
+            transition={{ duration: 6 + i * 2, repeat: Infinity, delay: i * 1.5, ease: "linear" }}
           />
         ))}
 
         {/* Agents */}
-        {agents.map(agent => (
-          <div
-            key={agent.id}
-            className="absolute z-10"
+        {agents.map((a, i) => (
+          <div key={a.id} className="absolute z-10"
             style={{
-              left: `${(agent.x / WORLD_W) * 100}%`,
-              top: `${(agent.y / WORLD_H) * 100}%`,
-              transform: "translate(-50%, -50%)",
-              transition: "left 50ms linear, top 50ms linear",
-            }}
-          >
+              left: `${(a.x / WORLD_W) * 100}%`, top: `${(a.y / WORLD_H) * 100}%`,
+              transform: "translate(-50%,-50%)", transition: "left 50ms linear, top 50ms linear",
+            }}>
             <div className="relative flex flex-col items-center">
-              {/* Bubble */}
               <AnimatePresence>
-                {agent.msg && (agent.state === "talking" || agent.state === "working") && (
-                  <Bubble text={agent.msg} />
-                )}
+                {a.msg && (a.state === "talk" || a.state === "work") && <Bub text={a.msg} />}
               </AnimatePresence>
 
-              {/* Thinking dots */}
-              {agent.state === "thinking" && (
-                <motion.div
-                  className="absolute -top-5 flex gap-0.5"
-                  animate={{ opacity: [0.2, 0.8, 0.2] }}
-                  transition={{ duration: 1.2, repeat: Infinity }}
-                >
-                  <div className="w-1 h-1 rounded-full bg-white/40" />
-                  <div className="w-1 h-1 rounded-full bg-white/25" />
-                  <div className="w-1.5 h-1.5 rounded-full bg-white/15" />
+              {a.state === "think" && (
+                <motion.div className="absolute -top-5 flex gap-0.5"
+                  animate={{ opacity: [0.2, 0.7, 0.2] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}>
+                  <div className="w-1 h-1 rounded-full bg-white/30" />
+                  <div className="w-1 h-1 rounded-full bg-white/20" />
+                  <div className="w-1.5 h-1.5 rounded-full bg-white/10" />
                 </motion.div>
               )}
 
-              {/* The creature */}
-              <Mascot
-                color={agent.color}
-                eyeColor={agent.eyeColor}
-                walkFrame={agent.walkFrame}
-                facingRight={agent.facingRight}
-                state={agent.state}
+              <Creature
+                top={a.top} bottom={a.bottom} ear={a.ear} eye={a.eye}
+                step={a.step} right={a.right} state={a.state} variant={i}
               />
 
-              {/* Name */}
-              <span className="text-[6px] font-mono text-white/20 mt-0.5 uppercase tracking-widest">
-                {agent.name}
-              </span>
+              <span className="text-[5px] font-mono text-white/15 mt-0 uppercase tracking-[0.15em]">{a.name}</span>
             </div>
           </div>
         ))}
 
-        {/* Bottom status */}
-        <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-1.5 bg-black/60 z-20">
+        {/* Status bar */}
+        <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-1 bg-black/50 z-20 backdrop-blur-sm">
           <div className="flex items-center gap-1.5">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-[7px] text-emerald-400/60 font-mono uppercase tracking-widest">8 online</span>
+            <div className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-[6px] text-emerald-400/50 font-mono uppercase tracking-[0.2em]">8 online</span>
           </div>
-          <span className="text-[7px] text-white/10 font-mono">click to assign</span>
-          <span className="text-[7px] text-white/10 font-mono">$0 cost</span>
+          <span className="text-[6px] text-white/10 font-mono tracking-wider">click to assign task</span>
+          <span className="text-[6px] text-white/10 font-mono tracking-wider">$0 inference</span>
         </div>
       </div>
     </div>
