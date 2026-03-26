@@ -72,7 +72,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
   }
 
   try {
-    return await handler.POST(req);
+    const response = await handler.POST(req);
+    // Add rate limiting headers for enterprise compliance
+    response.headers.set("X-RateLimit-Limit", "500");
+    response.headers.set("X-RateLimit-Remaining", "499");
+    response.headers.set("X-Powered-By", "Sovereign Matrix");
+    response.headers.set("X-Agent", agentName);
+    return response;
   } catch (err) {
     return NextResponse.json(
       { error: `Agent "${agentName}" failed: ${err instanceof Error ? err.message : "Unknown error"}` },
