@@ -271,10 +271,10 @@ export default function Home() {
 
       {/* ═══ HERO — Cinematic 3D Immersive ═══ */}
       <motion.section ref={heroRef} style={{ opacity: heroOpacity, scale: heroScale }}
-        className="relative min-h-screen overflow-hidden">
+        className="relative h-screen overflow-hidden">
 
-        {/* Fixed background layer — holographic cube with parallax */}
-        <div className="sticky top-0 h-screen flex flex-col items-center justify-center overflow-hidden">
+        {/* Background layer — holographic cube */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center overflow-hidden">
 
           {/* Immersive layered background — depth + glassmorphism */}
           <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -366,7 +366,7 @@ export default function Home() {
         </div>
 
         {/* Scroll-reveal glassmorphic card — floats up as you scroll */}
-        <div className="relative z-20 -mt-[10vh] pb-12 px-6">
+        <div className="relative z-20 -mt-[5vh] pb-12 px-6">
           <motion.div
             initial={{ opacity: 0, y: 100 }}
             whileInView={{ opacity: 1, y: 0 }}
