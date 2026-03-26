@@ -175,6 +175,39 @@ export function HeroWebGL() {
     }
     scene.add(nodeGroup);
 
+    // ─── Connection Lines Between Nodes ────────────────────
+    const connectionGroup = new THREE.Group();
+    const connMat = new THREE.LineBasicMaterial({ color: EMERALD, transparent: true, opacity: 0.06 });
+    const nodes = nodeGroup.children;
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        const dist = nodes[i].position.distanceTo(nodes[j].position);
+        if (dist < 6) {
+          const points = [nodes[i].position.clone(), nodes[j].position.clone()];
+          const geo = new THREE.BufferGeometry().setFromPoints(points);
+          connectionGroup.add(new THREE.Line(geo, connMat.clone()));
+        }
+      }
+    }
+    scene.add(connectionGroup);
+
+    // ─── Pulsing Energy Rings ────────────────────────────
+    const ringGroup = new THREE.Group();
+    for (let i = 0; i < 3; i++) {
+      const ringGeo = new THREE.RingGeometry(2.2 + i * 0.8, 2.25 + i * 0.8, 64);
+      const ringMat = new THREE.MeshBasicMaterial({
+        color: i === 1 ? CYAN : EMERALD,
+        transparent: true,
+        opacity: 0.04,
+        side: THREE.DoubleSide,
+      });
+      const ring = new THREE.Mesh(ringGeo, ringMat);
+      ring.userData.speed = 0.3 + i * 0.15;
+      ring.userData.axis = i;
+      ringGroup.add(ring);
+    }
+    scene.add(ringGroup);
+
     // ─── Mouse Tracking ──────────────────────────────────
     const onMouseMove = (e: MouseEvent) => {
       mouseRef.current.x = (e.clientX / window.innerWidth - 0.5) * 2;
@@ -208,6 +241,21 @@ export function HeroWebGL() {
         const o = node.userData.offset;
         node.position.y += Math.sin(t * s + o) * 0.001;
         node.rotation.z = t * s * 0.3;
+      });
+
+      // Animate energy rings
+      ringGroup.children.forEach((ring, i) => {
+        const s = ring.userData.speed;
+        if (i === 0) ring.rotation.x = t * s;
+        else if (i === 1) ring.rotation.y = t * s;
+        else ring.rotation.z = t * s;
+        (ring as THREE.Mesh).material && ((ring as THREE.Mesh).material as THREE.MeshBasicMaterial).opacity !== undefined &&
+          (((ring as THREE.Mesh).material as THREE.MeshBasicMaterial).opacity = 0.03 + Math.sin(t * 1.5 + i) * 0.02);
+      });
+
+      // Update connection line opacity
+      connectionGroup.children.forEach((line, i) => {
+        ((line as THREE.Line).material as THREE.LineBasicMaterial).opacity = 0.04 + Math.sin(t * 0.8 + i * 0.5) * 0.03;
       });
 
       // Drift particles

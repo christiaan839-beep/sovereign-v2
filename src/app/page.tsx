@@ -255,14 +255,14 @@ export default function Home() {
             <motion.h1 initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05, duration: 1.2, ease: [0.25, 0.46, 0.45, 0.94] }}
               className="text-[clamp(2.8rem,9vw,8rem)] font-black leading-[0.88] tracking-[-0.04em] mb-8">
               <span className="text-shimmer">
-                The agents<br />are live.
+                Your AI<br />workforce.
               </span>
             </motion.h1>
 
             {/* Subtitle */}
             <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4, duration: 0.7 }}
               className="text-base md:text-xl text-neutral-400 max-w-2xl mx-auto leading-relaxed mb-12">
-              While your competitors hire. You deploy. 132 autonomous agents across 51 open-source models. Zero per-token cost.
+              132 autonomous agents that find leads, write content, build pages, make calls, and close deals. Powered by 51+ open-source models with unlimited inference.
             </motion.p>
 
             {/* CTAs — glassmorphic */}
