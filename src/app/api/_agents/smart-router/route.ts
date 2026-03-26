@@ -1,5 +1,6 @@
 import { getNimKey } from "@/lib/nvidia";
 import { NextResponse } from "next/server";
+import { enhanceWithSkills } from "@/lib/skill-engine";
 
 /**
  * INTELLIGENT MODEL ROUTER — Automatically selects the best NIM model
@@ -236,12 +237,32 @@ export async function POST(request: Request) {
     }
 
     // ==========================================
-    // EXECUTE AGENT WITH MEMORY
+    // SKILL AUTO-ACTIVATION (Google-inspired)
+    // ==========================================
+    let skillContext = "";
+    let activatedSkillNames: string[] = [];
+    try {
+      const skillResult = await enhanceWithSkills(prompt, {
+        maxSkills: 2,
+        enableGrounding: false, // Skip URL fetching for speed
+      });
+      skillContext = skillResult.context;
+      activatedSkillNames = skillResult.activatedSkills.map(s => s.skill.name);
+    } catch {
+      // Skills are optional — never block routing
+    }
+
+    // ==========================================
+    // EXECUTE AGENT WITH MEMORY + SKILLS
     // ==========================================
     const start = Date.now();
-    const systemPrompt = contextMemory 
-      ? `You are an elite expert agent. Use the following past memory context to inform your answer if relevant.\n\n${contextMemory}`
-      : `You are an elite expert agent.`;
+    let systemPrompt = "You are an elite expert agent.";
+    if (contextMemory) {
+      systemPrompt += `\n\nUse the following past memory context to inform your answer if relevant:\n${contextMemory}`;
+    }
+    if (skillContext) {
+      systemPrompt += skillContext;
+    }
 
     const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
       method: "POST",
@@ -284,7 +305,8 @@ export async function POST(request: Request) {
         model_selected: bestModel.name,
         model_id: bestModel.id,
         quality_score: bestModel.quality_score,
-        memory_loaded: !!contextMemory
+        memory_loaded: !!contextMemory,
+        skills_activated: activatedSkillNames,
       },
       result: finalResult,
       duration_ms: Date.now() - start,
