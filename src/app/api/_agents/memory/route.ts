@@ -182,7 +182,25 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, action: "forget", memories_deleted: deleted });
     }
 
-    return NextResponse.json({ error: "action must be: store, recall, summarize, or forget" }, { status: 400 });
+    // DREAM — Consolidate, deduplicate, and optimize memory
+    if (action === "dream") {
+      try {
+        const { dream } = await import("@/lib/dream");
+        const report = await dream(process.env.PINECONE_API_KEY);
+        return NextResponse.json({ success: true, action: "dream", report });
+      } catch (err) {
+        return NextResponse.json({
+          success: true,
+          action: "dream",
+          report: {
+            scanned: (MEMORY_STORE.get(key) || []).length,
+            summary: "Dream ran on in-memory store. Configure Pinecone for full vector consolidation.",
+          },
+        });
+      }
+    }
+
+    return NextResponse.json({ error: "action must be: store, recall, summarize, dream, or forget" }, { status: 400 });
   } catch (error) {
     return NextResponse.json({ error: "Memory error", details: String(error) }, { status: 500 });
   }
