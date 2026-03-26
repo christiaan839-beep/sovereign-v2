@@ -1,268 +1,336 @@
 "use client";
 
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect } from "react";
 
 /**
- * AgentOffice — A living, breathing digital workspace where robot agents
- * work, move around, interact with objects, and collaborate.
+ * AgentOffice — A living pixel-art digital world where Claude-style robots
+ * wander, think, talk, work, and interact autonomously.
  *
- * NOT a static grid. This is an animated SCENE with:
- * - Desks, monitors, phones, servers
- * - Robots sitting at desks typing
- * - Robots walking between stations
- * - Robots handing files to each other
- * - A phone ringing and a robot answering
- * - Live status updates in speech bubbles
+ * Inspired by: Claude Code's pixel mascot + Tamagotchi + terminal aesthetic
+ *
+ * Features:
+ * - 8 pixel-art robots that wander autonomously
+ * - Proximity detection — agents talk when near each other
+ * - Walking animation (2-frame leg cycle)
+ * - Thinking state with thought bubbles
+ * - Speech bubbles with typewriter text
+ * - Retro CRT scanline overlay
+ * - Desks, monitors, server racks as landmarks
+ * - Data particles flowing between agents
+ * - Click to drop a "task" that agents swarm toward
  */
 
-// ─── Tiny Robot Component (Claude-style) ─────────────────
+// ─── Constants ──────────────────────────────────────────
 
-function Robot({
-  color,
-  darkColor,
-  x,
-  y,
-  activity,
-  accessory,
-  label,
-  speech,
-  flip,
-}: {
+const WORLD_W = 800;
+const WORLD_H = 340;
+const PROXIMITY = 60;
+const MOVE_SPEED = 0.4;
+const PX = 3; // pixel scale
+
+// ─── Agent Data ─────────────────────────────────────────
+
+interface Agent {
+  id: string;
+  name: string;
+  role: string;
   color: string;
-  darkColor: string;
+  dark: string;
   x: number;
   y: number;
-  activity: "sitting" | "typing" | "walking" | "calling" | "scanning" | "thinking" | "handing" | "waving";
-  accessory?: "headset" | "antenna" | "hat" | "scope" | "glasses";
-  label: string;
-  speech?: string;
-  flip?: boolean;
+  targetX: number;
+  targetY: number;
+  state: "walking" | "idle" | "thinking" | "talking" | "working";
+  msg: string;
+  walkFrame: number;
+  facingRight: boolean;
+  stateTimer: number;
+}
+
+const AGENT_DEFS = [
+  { id: "brain",   name: "God Brain",      role: "Strategy",      color: "#EC4899", dark: "#9D174D" },
+  { id: "hunter",  name: "Lead Hunter",    role: "Sales",         color: "#10B981", dark: "#047857" },
+  { id: "writer",  name: "Content",        role: "Marketing",     color: "#06B6D4", dark: "#0E7490" },
+  { id: "coder",   name: "Code Agent",     role: "Engineering",   color: "#A855F7", dark: "#6B21A8" },
+  { id: "closer",  name: "Voice Closer",   role: "Sales Calls",   color: "#EF4444", dark: "#991B1B" },
+  { id: "router",  name: "Smart Router",   role: "Infrastructure",color: "#14B8A6", dark: "#0F766E" },
+  { id: "guard",   name: "Guardrails",     role: "Security",      color: "#6366F1", dark: "#3730A3" },
+  { id: "seo",     name: "SEO Dom",        role: "Growth",        color: "#F59E0B", dark: "#92400E" },
+];
+
+const PHRASES: Record<string, string[]> = {
+  brain:  ["Synthesizing...", "Planning strategy", "Routing to Nemotron"],
+  hunter: ["53 leads found!", "Scanning LinkedIn", "Hot lead detected"],
+  writer: ["4.2% AI score ✓", "Blog draft done", "Anti-slop: passed"],
+  coder:  ["Building page...", "Code review done", "Deploying now"],
+  closer: ["Booking meeting", "Call connected", "Lead qualified"],
+  router: ["1,247 routed", "$0 cost today", "Model: Nemotron"],
+  guard:  ["0 threats", "PII scan clean", "Jailbreak blocked"],
+  seo:    ["312 gaps found", "Rank #1 target", "Schema added"],
+};
+
+const CONVOS = [
+  { a: "hunter", b: "closer", msgA: "53 leads ready", msgB: "Starting calls" },
+  { a: "writer", b: "seo",    msgA: "Draft done", msgB: "Adding keywords" },
+  { a: "brain",  b: "router", msgA: "Use Nemotron", msgB: "Routing now" },
+  { a: "coder",  b: "guard",  msgA: "Page ready", msgB: "PII scan clean" },
+];
+
+// ─── Pixel Bot SVG ──────────────────────────────────────
+
+function PixelBot({
+  color, dark, walkFrame, facingRight, state, size = 1,
+}: {
+  color: string; dark: string; walkFrame: number; facingRight: boolean;
+  state: Agent["state"]; size?: number;
 }) {
-  const [blink, setBlink] = useState(false);
+  const s = PX * size;
+  const w = 8 * s;
+  const h = 11 * s;
+  const flip = facingRight ? "" : `translate(${w}, 0) scale(-1, 1)`;
+  const legOffset = walkFrame % 2 === 0;
+
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${8 * s} ${11 * s}`}
+      style={{ imageRendering: "pixelated", overflow: "visible" }}>
+      <g transform={flip}>
+        {/* Head */}
+        <rect x={1*s} y={0} width={6*s} height={5*s} rx={s/2} fill={color} />
+        {/* Head highlight */}
+        <rect x={2*s} y={s*0.5} width={4*s} height={s} fill="white" opacity="0.15" rx={s/3} />
+        {/* Eyes */}
+        <rect x={2*s} y={2*s} width={s} height={state === "thinking" ? s*0.3 : s*1.2} fill="white" rx={s/4} />
+        <rect x={5*s} y={2*s} width={s} height={state === "thinking" ? s*0.3 : s*1.2} fill="white" rx={s/4} />
+        {/* Pupils */}
+        {state !== "thinking" && (
+          <>
+            <rect x={2.3*s} y={2.4*s} width={s*0.5} height={s*0.5} fill={dark} rx={s/6} />
+            <rect x={5.3*s} y={2.4*s} width={s*0.5} height={s*0.5} fill={dark} rx={s/6} />
+          </>
+        )}
+        {/* Mouth */}
+        {state === "talking" ? (
+          <rect x={3*s} y={3.8*s} width={2*s} height={s*0.8} rx={s/4} fill={dark} />
+        ) : (
+          <rect x={3*s} y={3.8*s} width={2*s} height={s*0.4} rx={s/4} fill={dark} opacity="0.4" />
+        )}
+
+        {/* Body */}
+        <rect x={1*s} y={5*s} width={6*s} height={4*s} rx={s/2} fill={color} />
+        <rect x={2*s} y={5.5*s} width={4*s} height={s} fill="white" opacity="0.08" rx={s/3} />
+
+        {/* Left arm */}
+        <motion.rect
+          x={0} y={5.5*s} width={s} height={3*s} rx={s/3} fill={color}
+          style={{ transformOrigin: `${s/2}px ${5.5*s}px` }}
+          animate={
+            state === "working" ? { rotate: [-20, -35, -20] } :
+            state === "walking" ? { rotate: [10, -10] } :
+            state === "talking" ? { rotate: [-10, -25, -10] } :
+            { rotate: [0, 3, 0] }
+          }
+          transition={
+            state === "working" ? { duration: 0.3, repeat: Infinity } :
+            state === "walking" ? { duration: 0.25, repeat: Infinity, repeatType: "reverse" } :
+            state === "talking" ? { duration: 0.6, repeat: Infinity } :
+            { duration: 2, repeat: Infinity }
+          }
+        />
+        {/* Right arm */}
+        <motion.rect
+          x={7*s} y={5.5*s} width={s} height={3*s} rx={s/3} fill={color}
+          style={{ transformOrigin: `${7*s + s/2}px ${5.5*s}px` }}
+          animate={
+            state === "working" ? { rotate: [20, 35, 20] } :
+            state === "walking" ? { rotate: [-10, 10] } :
+            { rotate: [0, -3, 0] }
+          }
+          transition={
+            state === "working" ? { duration: 0.35, repeat: Infinity } :
+            state === "walking" ? { duration: 0.25, repeat: Infinity, repeatType: "reverse" } :
+            { duration: 2, repeat: Infinity, delay: 0.3 }
+          }
+        />
+
+        {/* Legs — 2-frame walk cycle */}
+        <rect x={2*s} y={9*s} width={s*1.2} height={2*s} rx={s/3}
+          fill={dark} transform={state === "walking" && legOffset ? `rotate(10, ${2.6*s}, ${9*s})` : ""} />
+        <rect x={5*s} y={9*s} width={s*1.2} height={2*s} rx={s/3}
+          fill={dark} transform={state === "walking" && !legOffset ? `rotate(-10, ${5.6*s}, ${9*s})` : ""} />
+      </g>
+    </svg>
+  );
+}
+
+// ─── Speech Bubble ──────────────────────────────────────
+
+function SpeechBubble({ text, color }: { text: string; color: string }) {
+  const [displayed, setDisplayed] = useState("");
 
   useEffect(() => {
-    const id = setInterval(() => {
-      setBlink(true);
-      setTimeout(() => setBlink(false), 120);
-    }, 2500 + Math.random() * 2000);
-    return () => clearInterval(id);
-  }, []);
-
-  // Walking animation — actually moves the robot
-  const positionAnim = activity === "walking"
-    ? { x: [x, x + 30, x + 30, x], y: [y, y, y - 5, y], transition: { duration: 6, repeat: Infinity, ease: "linear" } }
-    : {};
+    setDisplayed("");
+    let i = 0;
+    const interval = setInterval(() => {
+      i++;
+      setDisplayed(text.slice(0, i));
+      if (i >= text.length) clearInterval(interval);
+    }, 30);
+    return () => clearInterval(interval);
+  }, [text]);
 
   return (
-    <motion.g
-      style={{ transform: `translate(${x}px, ${y}px)${flip ? " scaleX(-1)" : ""}` }}
-      animate={positionAnim}
+    <motion.div
+      initial={{ opacity: 0, y: 5, scale: 0.8 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.8 }}
+      className="absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap z-30"
     >
-      {/* Speech bubble */}
-      {speech && (
-        <motion.g
-          initial={{ opacity: 0, y: 5 }}
-          animate={{ opacity: [0, 1, 1, 0], y: [0, -2, -2, -5] }}
-          transition={{ duration: 4, repeat: Infinity, repeatDelay: 3 }}
-        >
-          <rect x={flip ? -70 : -5} y="-22" width={speech.length * 3.8 + 10} height="14" rx="4" fill="white" opacity="0.9" />
-          <polygon points={flip ? "-15,-8 -10,-8 -12,-3" : "5,-8 10,-8 8,-3"} fill="white" opacity="0.9" />
-          <text x={flip ? -65 : 0} y="-12" fontSize="5" fill="#111" fontFamily="monospace">{speech}</text>
-        </motion.g>
-      )}
-
-      {/* Shadow */}
-      <ellipse cx="10" cy="35" rx="7" ry="2" fill="rgba(0,0,0,0.2)" />
-
-      {/* Left arm */}
-      <motion.rect
-        x="-2" y="14" width="4" height="10" rx="2" fill={color}
-        style={{ transformOrigin: "0px 14px" }}
-        animate={
-          activity === "typing" ? { rotate: [-15, -30, -15], transition: { duration: 0.25, repeat: Infinity } } :
-          activity === "calling" ? { rotate: [-60], transition: { duration: 0.5 } } :
-          activity === "waving" || activity === "handing" ? { rotate: [-40, -70, -40], transition: { duration: 0.6, repeat: Infinity } } :
-          activity === "walking" ? { rotate: [10, -10], transition: { duration: 0.3, repeat: Infinity, repeatType: "reverse" } } :
-          { rotate: [0, 3, 0], transition: { duration: 2, repeat: Infinity } }
-        }
-      />
-
-      {/* Right arm */}
-      <motion.rect
-        x="18" y="14" width="4" height="10" rx="2" fill={color}
-        style={{ transformOrigin: "20px 14px" }}
-        animate={
-          activity === "typing" ? { rotate: [15, 30, 15], transition: { duration: 0.3, repeat: Infinity } } :
-          activity === "calling" ? { rotate: [0, 5, 0], transition: { duration: 1, repeat: Infinity } } :
-          activity === "handing" ? { rotate: [30, 60, 30], transition: { duration: 0.8, repeat: Infinity } } :
-          activity === "walking" ? { rotate: [-10, 10], transition: { duration: 0.3, repeat: Infinity, repeatType: "reverse" } } :
-          { rotate: [0, -3, 0], transition: { duration: 2, repeat: Infinity, delay: 0.3 } }
-        }
-      />
-
-      {/* Body */}
-      <rect x="3" y="12" width="14" height="16" rx="3" fill={color} />
-      <rect x="4" y="13" width="12" height="5" rx="2" fill="white" opacity="0.1" />
-
-      {/* Legs */}
-      <motion.g animate={
-        activity === "walking"
-          ? { rotate: [5, -5], transition: { duration: 0.3, repeat: Infinity, repeatType: "reverse" } }
-          : {}
-      } style={{ transformOrigin: "7px 28px" }}>
-        <rect x="4" y="28" width="4" height="6" rx="1.5" fill={darkColor} />
-      </motion.g>
-      <motion.g animate={
-        activity === "walking"
-          ? { rotate: [-5, 5], transition: { duration: 0.3, repeat: Infinity, repeatType: "reverse" } }
-          : {}
-      } style={{ transformOrigin: "13px 28px" }}>
-        <rect x="12" y="28" width="4" height="6" rx="1.5" fill={darkColor} />
-      </motion.g>
-
-      {/* Head */}
-      <motion.g animate={
-        activity === "thinking"
-          ? { y: [0, -1, 0], transition: { duration: 2, repeat: Infinity } }
-          : activity === "scanning"
-          ? { rotate: [-3, 3, -3], transition: { duration: 1.5, repeat: Infinity } }
-          : { y: [0, -0.5, 0], transition: { duration: 3, repeat: Infinity } }
-      } style={{ transformOrigin: "10px 6px" }}>
-        <rect x="3" y="0" width="14" height="12" rx="4" fill={color} />
-
-        {/* Eyes */}
-        <rect x="6" y={blink ? "5" : "4"} width="3" height={blink ? "1" : "3"} rx="1" fill="white" />
-        <rect x="11" y={blink ? "5" : "4"} width="3" height={blink ? "1" : "3"} rx="1" fill="white" />
-        {!blink && (
-          <>
-            <rect x="7" y="5" width="1.5" height="1.5" rx="0.5" fill={darkColor} />
-            <rect x="12" y="5" width="1.5" height="1.5" rx="0.5" fill={darkColor} />
-          </>
-        )}
-
-        {/* Mouth */}
-        {activity === "calling" || activity === "waving" ? (
-          <motion.ellipse cx="10" cy="9" rx="2" fill={darkColor}
-            animate={{ ry: [0.5, 1.5, 0.5] }}
-            transition={{ duration: 0.4, repeat: Infinity }}
-          />
-        ) : (
-          <rect x="7" y="9" width="6" height="1" rx="0.5" fill={darkColor} opacity="0.4" />
-        )}
-
-        {/* Accessories */}
-        {accessory === "headset" && (
-          <>
-            <path d="M2 5 Q2 -2 10 -2 Q18 -2 18 5" stroke={darkColor} strokeWidth="1.5" fill="none" />
-            <rect x="0" y="4" width="3" height="4" rx="1" fill={darkColor} />
-            <rect x="17" y="4" width="3" height="4" rx="1" fill={darkColor} />
-          </>
-        )}
-        {accessory === "antenna" && (
-          <motion.g animate={{ rotate: [-3, 3, -3] }} transition={{ duration: 1.5, repeat: Infinity }}
-            style={{ transformOrigin: "10px 0px" }}>
-            <line x1="10" y1="0" x2="10" y2="-5" stroke={darkColor} strokeWidth="1.5" />
-            <motion.circle cx="10" cy="-6" r="2" fill={color}
-              animate={{ opacity: [0.5, 1, 0.5] }}
-              transition={{ duration: 1, repeat: Infinity }}
-            />
-          </motion.g>
-        )}
-        {accessory === "hat" && (
-          <>
-            <rect x="1" y="-1" width="18" height="3" rx="1" fill={darkColor} />
-            <rect x="4" y="-3" width="12" height="3" rx="2" fill={color} />
-          </>
-        )}
-        {accessory === "scope" && (
-          <motion.g animate={{ rotate: 360 }} transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-            style={{ transformOrigin: "16px -2px" }}>
-            <circle cx="16" cy="-2" r="3" stroke={color} strokeWidth="1" fill="none" />
-            <circle cx="16" cy="-2" r="1" fill={color} />
-          </motion.g>
-        )}
-        {accessory === "glasses" && (
-          <>
-            <circle cx="7" cy="5" r="2.5" stroke={darkColor} strokeWidth="0.8" fill="none" />
-            <circle cx="13" cy="5" r="2.5" stroke={darkColor} strokeWidth="0.8" fill="none" />
-            <line x1="9.5" y1="5" x2="10.5" y2="5" stroke={darkColor} strokeWidth="0.8" />
-          </>
-        )}
-      </motion.g>
-
-      {/* Thinking dots */}
-      {activity === "thinking" && (
-        <motion.g animate={{ opacity: [0, 1, 0] }} transition={{ duration: 2, repeat: Infinity }}>
-          <circle cx="22" cy="-2" r="1" fill="white" opacity="0.4" />
-          <circle cx="25" cy="-5" r="1.5" fill="white" opacity="0.3" />
-          <circle cx="29" cy="-8" r="2" fill="white" opacity="0.2" />
-        </motion.g>
-      )}
-
-      {/* Label */}
-      <text x="10" y="42" textAnchor="middle" fontSize="4" fill="rgba(255,255,255,0.4)" fontFamily="monospace" fontWeight="bold">
-        {label}
-      </text>
-    </motion.g>
+      <div className="px-2 py-1 rounded text-[8px] font-mono font-bold border shadow-lg"
+        style={{
+          backgroundColor: "#0a0a0f",
+          borderColor: color + "40",
+          color: color,
+          boxShadow: `0 0 10px ${color}20`,
+        }}
+      >
+        {displayed}<span className="animate-pulse">▋</span>
+      </div>
+      {/* Bubble tail */}
+      <div className="w-0 h-0 mx-auto" style={{
+        borderLeft: "4px solid transparent",
+        borderRight: "4px solid transparent",
+        borderTop: `4px solid ${color}40`,
+      }} />
+    </motion.div>
   );
 }
 
-// ─── Office Furniture ─────────────────────────────────────
-
-function Desk({ x, y, width = 30 }: { x: number; y: number; width?: number }) {
-  return (
-    <g>
-      <rect x={x} y={y} width={width} height="3" rx="1" fill="#1a1a2e" stroke="rgba(16,185,129,0.1)" strokeWidth="0.5" />
-      <rect x={x + 2} y={y + 3} width="2" height="8" fill="#0f0f1a" />
-      <rect x={x + width - 4} y={y + 3} width="2" height="8" fill="#0f0f1a" />
-    </g>
-  );
-}
-
-function Monitor({ x, y }: { x: number; y: number }) {
-  return (
-    <g>
-      <rect x={x} y={y} width="12" height="8" rx="1" fill="#111122" stroke="rgba(16,185,129,0.15)" strokeWidth="0.5" />
-      <motion.rect x={x + 1} y={y + 1} width="10" height="6" rx="0.5" fill="#0a0a15"
-        animate={{ opacity: [0.8, 1, 0.8] }}
-        transition={{ duration: 2, repeat: Infinity }}
-      />
-      {/* Screen glow lines */}
-      <motion.rect x={x + 2} y={y + 2} width="6" height="0.5" rx="0.25" fill="rgba(16,185,129,0.3)"
-        animate={{ width: [4, 8, 4] }}
-        transition={{ duration: 1.5, repeat: Infinity }}
-      />
-      <rect x={x + 2} y={y + 3.5} width="4" height="0.5" rx="0.25" fill="rgba(16,185,129,0.15)" />
-      <rect x={x + 2} y={y + 5} width="5" height="0.5" rx="0.25" fill="rgba(16,185,129,0.1)" />
-      {/* Stand */}
-      <rect x={x + 5} y={y + 8} width="2" height="3" fill="#111122" />
-      <rect x={x + 3} y={y + 11} width="6" height="1" rx="0.5" fill="#111122" />
-    </g>
-  );
-}
-
-function ServerRack({ x, y }: { x: number; y: number }) {
-  return (
-    <g>
-      <rect x={x} y={y} width="15" height="25" rx="2" fill="#0a0a15" stroke="rgba(16,185,129,0.1)" strokeWidth="0.5" />
-      {[0, 1, 2, 3, 4].map((i) => (
-        <g key={i}>
-          <rect x={x + 1} y={y + 2 + i * 4.5} width="13" height="3.5" rx="0.5" fill="#111122" />
-          <motion.circle cx={x + 12} cy={y + 3.5 + i * 4.5} r="0.8" fill="#10B981"
-            animate={{ opacity: [0.3, 1, 0.3] }}
-            transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
-          />
-        </g>
-      ))}
-    </g>
-  );
-}
-
-// ─── Main Scene ──────────────────────────────────────────
+// ─── Main Component ─────────────────────────────────────
 
 export function AgentOffice() {
-  const [activeAgent, setActiveAgent] = useState<string | null>(null);
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [clickTask, setClickTask] = useState<{ x: number; y: number } | null>(null);
+  const frameRef = useRef(0);
+  const worldRef = useRef<HTMLDivElement>(null);
+
+  // Initialize agents at random positions
+  useEffect(() => {
+    const initial: Agent[] = AGENT_DEFS.map((def, i) => ({
+      ...def,
+      x: 80 + (i % 4) * 170 + Math.random() * 40,
+      y: 60 + Math.floor(i / 4) * 120 + Math.random() * 40,
+      targetX: Math.random() * (WORLD_W - 100) + 50,
+      targetY: Math.random() * (WORLD_H - 100) + 50,
+      state: "idle" as const,
+      msg: "",
+      walkFrame: 0,
+      facingRight: Math.random() > 0.5,
+      stateTimer: Math.random() * 100,
+    }));
+    setAgents(initial);
+  }, []);
+
+  // Game loop — move agents, check proximity, trigger conversations
+  useEffect(() => {
+    const loop = setInterval(() => {
+      frameRef.current++;
+      const frame = frameRef.current;
+
+      setAgents(prev => prev.map(agent => {
+        let { x, y, targetX, targetY, state, msg, walkFrame, facingRight, stateTimer } = agent;
+        stateTimer--;
+
+        // Handle click task — swarm toward it
+        if (clickTask && state !== "talking") {
+          targetX = clickTask.x + (Math.random() - 0.5) * 40;
+          targetY = clickTask.y + (Math.random() - 0.5) * 40;
+        }
+
+        const dx = targetX - x;
+        const dy = targetY - y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        // At target — pick new state
+        if (dist < 15 && state === "walking") {
+          const roll = Math.random();
+          if (roll < 0.3) {
+            state = "thinking";
+            stateTimer = 80 + Math.random() * 60;
+          } else if (roll < 0.5) {
+            state = "working";
+            stateTimer = 100 + Math.random() * 80;
+            msg = PHRASES[agent.id]?.[Math.floor(Math.random() * 3)] || "";
+          } else {
+            state = "idle";
+            stateTimer = 40 + Math.random() * 30;
+          }
+        }
+
+        // Timer expired — go somewhere new
+        if (stateTimer <= 0 && state !== "talking") {
+          state = "walking";
+          targetX = Math.random() * (WORLD_W - 120) + 60;
+          targetY = Math.random() * (WORLD_H - 80) + 40;
+          stateTimer = 200 + Math.random() * 100;
+          msg = "";
+        }
+
+        // Move toward target
+        if (state === "walking" && dist > 5) {
+          x += dx * MOVE_SPEED / Math.max(dist, 1) * 2;
+          y += dy * MOVE_SPEED / Math.max(dist, 1) * 2;
+          facingRight = dx > 0;
+          if (frame % 8 === 0) walkFrame++;
+        }
+
+        // Proximity conversations
+        if (frame % 120 === 0 && state !== "talking") {
+          const convo = CONVOS.find(c =>
+            (c.a === agent.id || c.b === agent.id) &&
+            prev.some(other =>
+              other.id !== agent.id &&
+              (c.a === other.id || c.b === other.id) &&
+              Math.abs(other.x - x) < PROXIMITY &&
+              Math.abs(other.y - y) < PROXIMITY
+            )
+          );
+          if (convo) {
+            state = "talking";
+            msg = convo.a === agent.id ? convo.msgA : convo.msgB;
+            stateTimer = 80;
+          }
+        }
+
+        // Boundary clamp
+        x = Math.max(20, Math.min(WORLD_W - 40, x));
+        y = Math.max(20, Math.min(WORLD_H - 60, y));
+
+        return { ...agent, x, y, targetX, targetY, state, msg, walkFrame, facingRight, stateTimer };
+      }));
+    }, 50);
+
+    return () => clearInterval(loop);
+  }, [clickTask]);
+
+  // Clear click task after agents reach it
+  useEffect(() => {
+    if (clickTask) {
+      const timer = setTimeout(() => setClickTask(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [clickTask]);
+
+  const handleWorldClick = useCallback((e: React.MouseEvent) => {
+    if (!worldRef.current) return;
+    const rect = worldRef.current.getBoundingClientRect();
+    const scaleX = WORLD_W / rect.width;
+    const scaleY = WORLD_H / rect.height;
+    setClickTask({
+      x: (e.clientX - rect.left) * scaleX,
+      y: (e.clientY - rect.top) * scaleY,
+    });
+  }, []);
 
   return (
     <div className="relative w-full max-w-5xl mx-auto">
@@ -274,179 +342,124 @@ export function AgentOffice() {
       >
         <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-3">Inside the Matrix</p>
         <h2 className="text-3xl md:text-5xl font-bold text-white tracking-tight mb-3">Your agents are working.</h2>
-        <p className="text-neutral-500 max-w-lg mx-auto text-sm">Right now. Autonomously. No prompts needed.</p>
+        <p className="text-neutral-500 max-w-md mx-auto text-sm">Click anywhere to assign a task. Watch them swarm.</p>
       </motion.div>
 
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        whileInView={{ opacity: 1, scale: 1 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.8 }}
-        className="relative rounded-3xl border border-white/[0.06] bg-[#050508] overflow-hidden"
-        style={{ aspectRatio: "16/7" }}
+      <div
+        ref={worldRef}
+        onClick={handleWorldClick}
+        className="relative rounded-3xl border border-white/[0.06] bg-[#08080f] overflow-hidden cursor-crosshair"
+        style={{ aspectRatio: `${WORLD_W}/${WORLD_H}` }}
       >
-        {/* Floor grid */}
-        <div className="absolute inset-0" style={{
-          backgroundImage: `
-            linear-gradient(rgba(16,185,129,0.02) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(16,185,129,0.02) 1px, transparent 1px)
-          `,
-          backgroundSize: "20px 20px",
-          transform: "perspective(400px) rotateX(15deg)",
-          transformOrigin: "center bottom",
+        {/* CRT Scanline overlay */}
+        <div className="absolute inset-0 pointer-events-none z-20" style={{
+          background: "linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.15) 50%)",
+          backgroundSize: "100% 4px",
         }} />
 
-        <svg viewBox="0 0 400 175" className="w-full h-full" preserveAspectRatio="xMidYMid meet">
-          {/* Office furniture */}
-          <Desk x={30} y={90} width={35} />
-          <Monitor x={38} y={78} />
-          <Desk x={100} y={80} width={35} />
-          <Monitor x={108} y={68} />
-          <Desk x={220} y={85} width={35} />
-          <Monitor x={228} y={73} />
-          <ServerRack x={340} y={55} />
-          <Desk x={280} y={100} width={30} />
+        {/* Grid floor */}
+        <div className="absolute inset-0 pointer-events-none" style={{
+          backgroundImage: `
+            linear-gradient(rgba(16,185,129,0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(16,185,129,0.03) 1px, transparent 1px)
+          `,
+          backgroundSize: "30px 30px",
+        }} />
 
-          {/* Phone on desk */}
-          <rect x={290} y={97} width="8" height="5" rx="1" fill="#1a1a2e" />
-          <motion.circle cx={294} cy={96} r="1" fill="#EF4444"
-            animate={{ opacity: [0, 1, 0] }}
-            transition={{ duration: 0.5, repeat: Infinity }}
-          />
-
-          {/* Coffee mug on desk */}
-          <rect x={55} y={88} width="4" height="5" rx="1" fill="#2a2a3e" />
-          <rect x={54} y={87} width="6" height="2" rx="1" fill="#2a2a3e" />
-
-          {/* ═══ THE AGENTS ═══ */}
-
-          {/* God Brain — sitting at desk, thinking, antenna glowing */}
-          <Robot
-            color="#EC4899" darkColor="#9D174D"
-            x={40} y={55}
-            activity="thinking"
-            accessory="antenna"
-            label="GOD BRAIN"
-            speech="Synthesizing strategy..."
-          />
-
-          {/* Content Engine — typing at desk */}
-          <Robot
-            color="#06B6D4" darkColor="#0E7490"
-            x={110} y={45}
-            activity="typing"
-            accessory="glasses"
-            label="CONTENT"
-            speech="4.2% AI score ✓"
-          />
-
-          {/* Lead Hunter — scanning, walking between desks */}
-          <Robot
-            color="#10B981" darkColor="#047857"
-            x={170} y={65}
-            activity="walking"
-            accessory="scope"
-            label="HUNTER"
-            speech="53 leads found!"
-          />
-
-          {/* Voice Closer — on the phone at desk */}
-          <Robot
-            color="#EF4444" darkColor="#991B1B"
-            x={285} y={65}
-            activity="calling"
-            accessory="headset"
-            label="CLOSER"
-            speech="Booking meeting..."
-          />
-
-          {/* Code Agent — typing code at desk */}
-          <Robot
-            color="#A855F7" darkColor="#6B21A8"
-            x={230} y={50}
-            activity="typing"
-            label="CODER"
-            speech="Building page..."
-          />
-
-          {/* Smart Router — standing by server rack */}
-          <Robot
-            color="#14B8A6" darkColor="#0F766E"
-            x={350} y={40}
-            activity="scanning"
-            label="ROUTER"
-            speech="1,247 routed ($0)"
-            flip
-          />
-
-          {/* SEO Dominator — walking with data */}
-          <Robot
-            color="#F59E0B" darkColor="#92400E"
-            x={80} y={110}
-            activity="walking"
-            accessory="scope"
-            label="SEO"
-          />
-
-          {/* Guardrails — standing guard near server */}
-          <Robot
-            color="#6366F1" darkColor="#3730A3"
-            x={310} y={80}
-            activity="sitting"
-            label="GUARD"
-            speech="0 threats"
-          />
-
-          {/* File being handed between agents — floating document */}
-          <motion.g
-            animate={{
-              x: [180, 250, 250, 180],
-              y: [80, 65, 65, 80],
-              opacity: [0, 1, 1, 0],
-            }}
-            transition={{ duration: 5, repeat: Infinity, repeatDelay: 2 }}
-          >
-            <rect x="0" y="0" width="8" height="10" rx="1" fill="white" opacity="0.15" />
-            <rect x="1" y="2" width="6" height="0.5" fill="rgba(16,185,129,0.3)" />
-            <rect x="1" y="3.5" width="4" height="0.5" fill="rgba(16,185,129,0.2)" />
-            <rect x="1" y="5" width="5" height="0.5" fill="rgba(16,185,129,0.15)" />
-          </motion.g>
-
-          {/* Data stream particles — flowing between desks */}
-          {[0, 1, 2, 3, 4].map((i) => (
-            <motion.circle
-              key={`particle-${i}`}
-              r="1"
-              fill="#10B981"
-              opacity="0.3"
-              animate={{
-                cx: [50 + i * 20, 350],
-                cy: [100 - i * 5, 60 + i * 3],
-                opacity: [0, 0.4, 0],
-              }}
-              transition={{
-                duration: 3 + i * 0.5,
-                repeat: Infinity,
-                delay: i * 0.8,
-                ease: "linear",
+        {/* Click task beacon */}
+        <AnimatePresence>
+          {clickTask && (
+            <motion.div
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: [1, 1.5, 1], opacity: [0.8, 0.3, 0.8] }}
+              exit={{ scale: 0, opacity: 0 }}
+              transition={{ duration: 1, repeat: Infinity }}
+              className="absolute w-4 h-4 rounded-full bg-emerald-500/30 border border-emerald-500/50 z-10"
+              style={{
+                left: `${(clickTask.x / WORLD_W) * 100}%`,
+                top: `${(clickTask.y / WORLD_H) * 100}%`,
+                transform: "translate(-50%, -50%)",
               }}
             />
-          ))}
-        </svg>
+          )}
+        </AnimatePresence>
 
-        {/* Status bar at bottom */}
-        <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-5 py-2.5 bg-[#050508]/90 backdrop-blur-sm border-t border-white/[0.04]">
+        {/* Data particles */}
+        {[0, 1, 2].map(i => (
+          <motion.div
+            key={`p-${i}`}
+            className="absolute w-1 h-1 rounded-full bg-emerald-500/40 z-10"
+            animate={{
+              left: [`${10 + i * 20}%`, `${70 + i * 10}%`],
+              top: [`${30 + i * 15}%`, `${60 - i * 10}%`],
+              opacity: [0, 0.6, 0],
+            }}
+            transition={{ duration: 4 + i, repeat: Infinity, delay: i * 1.5, ease: "linear" }}
+          />
+        ))}
+
+        {/* Agents */}
+        {agents.map(agent => (
+          <div
+            key={agent.id}
+            className="absolute z-10 transition-none"
+            style={{
+              left: `${(agent.x / WORLD_W) * 100}%`,
+              top: `${(agent.y / WORLD_H) * 100}%`,
+              transform: "translate(-50%, -50%)",
+            }}
+          >
+            {/* Speech bubble */}
+            <AnimatePresence>
+              {agent.msg && (agent.state === "talking" || agent.state === "working") && (
+                <SpeechBubble text={agent.msg} color={agent.color} />
+              )}
+            </AnimatePresence>
+
+            {/* Thinking dots */}
+            {agent.state === "thinking" && (
+              <motion.div
+                className="absolute -top-6 left-1/2 -translate-x-1/2 flex gap-1 z-30"
+                animate={{ opacity: [0.3, 1, 0.3] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              >
+                <div className="w-1 h-1 rounded-full" style={{ backgroundColor: agent.color }} />
+                <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: agent.color, opacity: 0.6 }} />
+                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: agent.color, opacity: 0.3 }} />
+              </motion.div>
+            )}
+
+            {/* The robot */}
+            <PixelBot
+              color={agent.color}
+              dark={agent.dark}
+              walkFrame={agent.walkFrame}
+              facingRight={agent.facingRight}
+              state={agent.state}
+            />
+
+            {/* Name tag */}
+            <div className="text-center mt-0.5">
+              <span className="text-[7px] font-mono font-bold uppercase tracking-wider" style={{ color: agent.color + "80" }}>
+                {agent.name}
+              </span>
+            </div>
+          </div>
+        ))}
+
+        {/* Status bar */}
+        <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-2 bg-[#08080f]/80 backdrop-blur-sm border-t border-white/[0.04] z-20">
           <div className="flex items-center gap-2">
             <span className="relative flex h-1.5 w-1.5">
               <span className="animate-ping absolute h-full w-full rounded-full bg-emerald-400 opacity-50" />
               <span className="relative rounded-full h-1.5 w-1.5 bg-emerald-400" />
             </span>
-            <span className="text-[9px] text-emerald-400/70 font-mono uppercase tracking-wider">8 Agents Active</span>
+            <span className="text-[8px] text-emerald-400/70 font-mono uppercase tracking-widest">8 agents online</span>
           </div>
-          <span className="text-[9px] text-neutral-600 font-mono">sovereign-matrix.agency/office</span>
-          <span className="text-[9px] text-neutral-600 font-mono">$0 inference cost</span>
+          <span className="text-[8px] text-neutral-600 font-mono">click to assign task</span>
+          <span className="text-[8px] text-neutral-600 font-mono">$0 inference</span>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }
