@@ -67,7 +67,7 @@ function CapabilityCard({ icon: Icon, title, desc, accent, href }: { icon: React
       transition={{ duration: 0.5 }}
       className="group relative cursor-pointer"
     >
-      <div className="relative p-8 rounded-2xl border border-white/[0.06] bg-[#080808] hover:border-emerald-500/20 transition-all duration-500 overflow-hidden hover:shadow-[0_0_30px_rgba(16,185,129,0.04)]">
+      <div className="relative p-8 rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl hover:border-emerald-500/20 transition-all duration-500 overflow-hidden hover:shadow-[0_0_40px_rgba(16,185,129,0.06)] hover:bg-white/[0.04]">
         {/* Hover glow */}
         <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 bg-gradient-to-br ${accent} to-transparent`} />
 
@@ -106,10 +106,10 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
 // ─── Model Badge (enhanced with subtle glow) ───
 function ModelBadge({ name, type }: { name: string; type: string }) {
   return (
-    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.03] border border-white/[0.06] hover:border-emerald-500/15 transition-all duration-300">
-      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.6)]" />
-      <span className="text-xs font-medium text-neutral-300">{name}</span>
-      <span className="text-[9px] text-neutral-600 uppercase">{type}</span>
+    <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.02] border border-white/[0.06] backdrop-blur-xl hover:border-emerald-500/20 hover:bg-emerald-500/[0.03] transition-all duration-500 group">
+      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] group-hover:shadow-[0_0_12px_rgba(16,185,129,0.8)] transition-shadow" />
+      <span className="text-xs font-medium text-neutral-300 group-hover:text-white transition-colors">{name}</span>
+      <span className="text-[9px] text-emerald-500/40 uppercase font-mono">{type}</span>
     </div>
   );
 }
@@ -232,18 +232,38 @@ export default function Home() {
         {/* Fixed background layer — holographic cube with parallax */}
         <div className="sticky top-0 h-screen flex flex-col items-center justify-center overflow-hidden">
 
-          {/* NVIDIA-inspired gradient mesh background */}
+          {/* Immersive layered background — depth + glassmorphism */}
           <div className="absolute inset-0 pointer-events-none overflow-hidden">
-            {/* Primary gradient orb — emerald */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[900px] rounded-full bg-emerald-500/[0.07] blur-[180px] animate-pulse" />
-            {/* Secondary orb — warm gold accent (NVIDIA-inspired) */}
-            <div className="absolute top-[30%] left-[60%] w-[400px] h-[400px] rounded-full bg-amber-500/[0.03] blur-[120px] animate-pulse" style={{ animationDelay: "2s" }} />
-            {/* Tertiary orb — cyan depth */}
-            <div className="absolute top-[70%] left-[30%] w-[500px] h-[500px] rounded-full bg-cyan-500/[0.02] blur-[140px] animate-pulse" style={{ animationDelay: "4s" }} />
-            {/* Subtle grid — like NVIDIA's build page */}
-            <div className="absolute inset-0 bg-[linear-gradient(rgba(16,185,129,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(16,185,129,0.015)_1px,transparent_1px)] bg-[size:80px_80px]" />
-            {/* Radial fade from center */}
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,transparent_0%,#010101_70%)]" />
+            {/* Layer 1: Deep space gradient */}
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_120%_80%_at_50%_-20%,rgba(16,185,129,0.08)_0%,transparent_50%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_120%_at_80%_80%,rgba(6,182,212,0.04)_0%,transparent_40%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_60%_at_20%_60%,rgba(139,92,246,0.03)_0%,transparent_40%)]" />
+
+            {/* Layer 2: Animated aurora — slow moving gradient */}
+            <div className="absolute top-0 left-0 w-full h-full opacity-40">
+              <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[50%] rounded-full bg-emerald-500/[0.06] blur-[150px] animate-[float_20s_ease-in-out_infinite]" />
+              <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[40%] rounded-full bg-cyan-500/[0.04] blur-[130px] animate-[float_25s_ease-in-out_infinite_reverse]" />
+            </div>
+
+            {/* Layer 3: Perspective grid — vanishing point */}
+            <div className="absolute inset-0" style={{
+              backgroundImage: `
+                linear-gradient(rgba(16,185,129,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(16,185,129,0.03) 1px, transparent 1px)
+              `,
+              backgroundSize: '60px 60px',
+              maskImage: 'radial-gradient(ellipse 80% 60% at 50% 50%, black 20%, transparent 70%)',
+              WebkitMaskImage: 'radial-gradient(ellipse 80% 60% at 50% 50%, black 20%, transparent 70%)',
+            }} />
+
+            {/* Layer 4: Floating glass shards */}
+            <div className="absolute top-[15%] left-[10%] w-32 h-32 rounded-2xl border border-white/[0.03] bg-white/[0.01] backdrop-blur-sm rotate-12 animate-[float_15s_ease-in-out_infinite]" />
+            <div className="absolute top-[60%] right-[8%] w-24 h-24 rounded-xl border border-emerald-500/[0.05] bg-emerald-500/[0.01] backdrop-blur-sm -rotate-6 animate-[float_18s_ease-in-out_infinite_reverse]" />
+            <div className="absolute top-[40%] left-[75%] w-16 h-16 rounded-lg border border-cyan-500/[0.04] bg-cyan-500/[0.01] backdrop-blur-sm rotate-45 animate-[float_22s_ease-in-out_infinite]" />
+            <div className="absolute top-[75%] left-[20%] w-20 h-20 rounded-xl border border-white/[0.02] bg-white/[0.005] backdrop-blur-sm -rotate-12 animate-[float_20s_ease-in-out_infinite_reverse]" />
+
+            {/* Layer 5: Radial vignette */}
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,transparent_0%,#010101_75%)]" />
           </div>
 
           {/* Vignettes */}
