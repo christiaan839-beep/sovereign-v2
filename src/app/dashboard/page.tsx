@@ -8,6 +8,7 @@ import {
   Mic, Cpu, Swords, LayoutTemplate, BarChart3, Clock,
 } from "lucide-react";
 import { SovereignAssistantEmbed } from "@/components/dashboard/SovereignAssistant";
+import { LiveExecutionStream } from "@/components/dashboard/LiveExecutionStream";
 
 const ONBOARDING_KEY = "sovereign_onboarding";
 
@@ -243,6 +244,36 @@ export default function DashboardHome() {
 
       {/* Discover Section — shown after onboarding */}
       {!showWelcome && <DiscoverSection />}
+
+      {/* Live Agent Execution — try an agent right from the dashboard */}
+      {!showWelcome && (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.2 }}
+          className="px-6 py-4"
+        >
+          <div className="max-w-3xl mx-auto">
+            <h2 className="text-xs font-semibold uppercase tracking-[0.15em] text-neutral-500 mb-3">
+              Try an Agent
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <LiveExecutionStream
+                agentType="lead-gen"
+                goal="Find 10 qualified leads in SaaS"
+                apiEndpoint="/api/agents/leads"
+                compact
+              />
+              <LiveExecutionStream
+                agentType="competitor-intel"
+                goal="Analyze competitor website"
+                apiEndpoint="/api/agents/site-assassin"
+                compact
+              />
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       <div className="flex-1 min-h-0">
         <SovereignAssistantEmbed />
