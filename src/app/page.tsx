@@ -175,7 +175,7 @@ export default function Home() {
               <Link href="#capabilities" className="text-sm text-neutral-300 hover:text-white py-1" onClick={() => setMobileNavOpen(false)}>Platform</Link>
               <Link href="#pricing" className="text-sm text-neutral-300 hover:text-white py-1" onClick={() => setMobileNavOpen(false)}>Pricing</Link>
               <Link href="#enterprise" className="text-sm text-neutral-300 hover:text-white py-1" onClick={() => setMobileNavOpen(false)}>Enterprise</Link>
-              <Link href="/dashboard" className="px-5 py-2.5 rounded-xl bg-white text-sm font-semibold text-black text-center mt-2" onClick={() => setMobileNavOpen(false)}>Get Started</Link>
+              <Link href="/onboarding" className="px-5 py-2.5 rounded-xl bg-white text-sm font-semibold text-black text-center mt-2" onClick={() => setMobileNavOpen(false)}>Get Started</Link>
             </motion.div>
           )}
         </AnimatePresence>
@@ -183,7 +183,7 @@ export default function Home() {
 
       {/* ═══ HERO — Cinematic 3D Immersive ═══ */}
       <motion.section ref={heroRef} style={{ opacity: heroOpacity, scale: heroScale }}
-        className="relative min-h-[200vh] overflow-hidden">
+        className="relative min-h-screen overflow-hidden">
 
         {/* Fixed background layer — holographic cube with parallax */}
         <div className="sticky top-0 h-screen flex flex-col items-center justify-center overflow-hidden">
@@ -242,7 +242,7 @@ export default function Home() {
             <motion.h1 initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05, duration: 1.2, ease: [0.25, 0.46, 0.45, 0.94] }}
               className="text-[clamp(2.8rem,9vw,8rem)] font-black leading-[0.88] tracking-[-0.04em] mb-8">
               <span className="text-shimmer">
-                Your AI<br />workforce.
+                Your AI{" "}<br />workforce.
               </span>
             </motion.h1>
 
@@ -268,10 +268,10 @@ export default function Home() {
               className="flex flex-wrap items-center justify-center gap-2">
               <ModelBadge name="Nemotron Ultra" type="253B" />
               <ModelBadge name="Claude" type="MCP" />
-              <ModelBadge name="Gemini 2.5" type="PRO" />
+              <ModelBadge name="Gemini 2.5" type="Pro" />
               <ModelBadge name="DeepSeek" type="V3.2" />
-              <ModelBadge name="FLUX" type="IMG" />
-              <ModelBadge name="NemoClaw" type="OS" />
+              <ModelBadge name="FLUX.2" type="IMG" />
+              <ModelBadge name="NemoClaw" type="AGT" />
               <ModelBadge name="Kimi K2.5" type="1T" />
             </motion.div>
           </div>
@@ -321,7 +321,7 @@ export default function Home() {
         <span className="text-[10px] text-neutral-600">&bull;</span>
         <span className="text-[10px] text-neutral-500">Kimi K2.5</span>
         <span className="text-[10px] text-neutral-600">&bull;</span>
-        <span className="text-[10px] text-neutral-500">DeepSeek R1</span>
+        <span className="text-[10px] text-neutral-500">DeepSeek V3.2</span>
       </div>
 
       {/* ═══ SOCIAL PROOF METRICS ═══ */}
