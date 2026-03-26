@@ -89,7 +89,7 @@ function LiveDemoMockup() {
             <span className="w-2.5 h-2.5 rounded-full bg-white/[0.08]" />
             <span className="w-2.5 h-2.5 rounded-full bg-white/[0.08]" />
           </div>
-          <span className="text-[10px] text-neutral-600 ml-3 font-mono">sovereign-matrix.agency/dashboard</span>
+          <span className="text-[10px] text-neutral-500 ml-3 font-mono">sovereign-matrix.agency/dashboard</span>
         </div>
 
         {/* Chat content */}
@@ -154,7 +154,7 @@ export default function Home() {
             <SignInButton mode="modal" fallbackRedirectUrl="/dashboard">
               <button className="text-xs text-neutral-500 hover:text-white transition-colors">Log in</button>
             </SignInButton>
-            <Link href="/dashboard" className="px-4 py-1.5 rounded-full bg-white text-xs font-semibold text-black hover:bg-neutral-200 transition-all">
+            <Link href="/onboarding" className="px-4 py-1.5 rounded-full bg-white text-xs font-semibold text-black hover:bg-neutral-200 transition-all">
               Get Started
             </Link>
           </div>
@@ -255,7 +255,7 @@ export default function Home() {
             {/* CTAs — glassmorphic */}
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 0.6 }}
               className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-16">
-              <Link href="/dashboard" className="group flex items-center gap-2 px-8 py-4 bg-white text-black font-bold rounded-full text-sm hover:shadow-[0_0_60px_rgba(255,255,255,0.15)] transition-all duration-500">
+              <Link href="/onboarding" className="group flex items-center gap-2 px-8 py-4 bg-white text-black font-bold rounded-full text-sm hover:shadow-[0_0_60px_rgba(255,255,255,0.15)] transition-all duration-500">
                 Deploy Your First Agent <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Link>
               <Link href="/showcase" className="px-8 py-4 rounded-full text-sm font-medium text-neutral-300 border border-white/[0.08] bg-white/[0.02] backdrop-blur-xl hover:border-emerald-500/20 hover:text-white transition-all duration-500">
@@ -278,7 +278,7 @@ export default function Home() {
         </div>
 
         {/* Scroll-reveal glassmorphic card — floats up as you scroll */}
-        <div className="relative z-20 -mt-[30vh] pb-20 px-6">
+        <div className="relative z-20 -mt-[10vh] pb-12 px-6">
           <motion.div
             initial={{ opacity: 0, y: 100 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -306,7 +306,7 @@ export default function Home() {
               transition={{ delay: 0.5 }}
               className="flex justify-center mt-8"
             >
-              <ChevronDown className="w-5 h-5 text-neutral-600 animate-bounce" />
+              <ChevronDown className="w-5 h-5 text-neutral-500 animate-bounce" />
             </motion.div>
           </motion.div>
         </div>
@@ -314,13 +314,13 @@ export default function Home() {
 
       {/* ═══ POWERED BY STRIP ═══ */}
       <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8 py-6 px-4 opacity-40">
-        <span className="text-[10px] uppercase tracking-[0.3em] text-neutral-600">Powered by</span>
+        <span className="text-[10px] uppercase tracking-[0.3em] text-neutral-500">Powered by</span>
         <span className="text-[10px] text-neutral-500">NVIDIA NIM</span>
-        <span className="text-[10px] text-neutral-600">&bull;</span>
+        <span className="text-[10px] text-neutral-500">&bull;</span>
         <span className="text-[10px] text-neutral-500">NemoClaw</span>
-        <span className="text-[10px] text-neutral-600">&bull;</span>
+        <span className="text-[10px] text-neutral-500">&bull;</span>
         <span className="text-[10px] text-neutral-500">Kimi K2.5</span>
-        <span className="text-[10px] text-neutral-600">&bull;</span>
+        <span className="text-[10px] text-neutral-500">&bull;</span>
         <span className="text-[10px] text-neutral-500">DeepSeek V3.2</span>
       </div>
 
@@ -386,7 +386,7 @@ export default function Home() {
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 circuit-grid p-4 rounded-2xl">
             {[
               { name: "Nemotron Ultra 253B", desc: "Complex reasoning & synthesis" },
-              { name: "NemoClaw / OpenClaw", desc: "Enterprise autonomous agent platform" },
+              { name: "NemoClaw", desc: "Enterprise autonomous agent framework" },
               { name: "Claude MCP", desc: "Tool use & computer control" },
               { name: "Gemini 2.5 Pro", desc: "Cognitive engine & grounding" },
               { name: "NVIDIA NIM", desc: "Free inference at scale" },
@@ -402,7 +402,7 @@ export default function Home() {
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/60 group-hover:bg-emerald-400 group-hover:shadow-[0_0_6px_rgba(16,185,129,0.5)] transition-all" />
                   <p className="text-sm font-semibold text-white">{tech.name}</p>
                 </div>
-                <p className="text-xs text-neutral-600">{tech.desc}</p>
+                <p className="text-xs text-neutral-500">{tech.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -422,9 +422,9 @@ export default function Home() {
           <div className="grid md:grid-cols-2 gap-4">
             <div className="p-8 rounded-2xl bg-[#080808] border border-white/[0.04]">
               <h3 className="text-lg font-semibold text-neutral-400 mb-1 flex items-center gap-2">
-                <XCircle className="w-4 h-4 text-neutral-600" /> Prompt-Based AI
+                <XCircle className="w-4 h-4 text-neutral-500" /> Prompt-Based AI
               </h3>
-              <p className="text-neutral-600 text-xs mb-6">What everyone else sells</p>
+              <p className="text-neutral-500 text-xs mb-6">What everyone else sells</p>
               <ul className="space-y-3">
                 {["You type every prompt manually", "Forgets everything between sessions", "Cannot open a browser or send an email", "You do the thinking — it just types"].map((item, i) => (
                   <li key={i} className="flex items-start gap-2.5 text-neutral-500 text-sm">
@@ -475,14 +475,14 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
             {[
               { metric: "132", label: "Specialized Agents", desc: "Purpose-built for specific business functions." },
-              { metric: "51", label: "Open-Source Models", desc: "Automatic failover. Zero vendor lock-in." },
+              { metric: "51+", label: "Open-Source Models", desc: "Automatic failover. Zero vendor lock-in." },
               { metric: "$0", label: "Per-Token Cost", desc: "Scale inference without scaling your bill." },
             ].map((item, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }} transition={{ delay: i * 0.1 }} className="text-center">
                 <div className="text-5xl md:text-6xl font-black text-white mb-2 tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-white to-neutral-400">{item.metric}</div>
                 <div className="text-sm font-semibold text-white mb-1">{item.label}</div>
-                <p className="text-xs text-neutral-600">{item.desc}</p>
+                <p className="text-xs text-neutral-500">{item.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -498,7 +498,7 @@ export default function Home() {
                 viewport={{ once: true }} transition={{ delay: 0.2 + i * 0.08 }}
                 className="p-4 rounded-xl border border-white/[0.06] bg-white/[0.01] hover:border-emerald-500/15 transition-all duration-300">
                 <div className="text-xs font-semibold text-white mb-0.5">{item.label}</div>
-                <p className="text-[10px] text-neutral-600">{item.desc}</p>
+                <p className="text-[10px] text-neutral-500">{item.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -548,7 +548,7 @@ export default function Home() {
             One platform. 132 agents. Zero per-token costs. Free to start.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Link href="/dashboard" className="cta-glow group flex items-center gap-2 px-7 py-3.5 bg-white text-black font-semibold rounded-full text-sm hover:shadow-[0_0_40px_rgba(255,255,255,0.12)] transition-all">
+            <Link href="/onboarding" className="cta-glow group flex items-center gap-2 px-7 py-3.5 bg-white text-black font-semibold rounded-full text-sm hover:shadow-[0_0_40px_rgba(255,255,255,0.12)] transition-all">
               Start Free <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
             </Link>
             <Link href="#pricing" className="px-7 py-3.5 border border-white/10 text-neutral-300 font-medium rounded-full text-sm hover:border-white/20 hover:text-white transition-all">
@@ -568,29 +568,29 @@ export default function Home() {
                 <SovereignLogo size="sm" />
                 <span className="text-sm font-semibold text-white">Sovereign Matrix</span>
               </div>
-              <p className="text-xs text-neutral-600 leading-relaxed">The autonomous AI agent platform. 132 agents. 51+ models. Zero per-token cost. Built on NVIDIA NIM.</p>
+              <p className="text-xs text-neutral-500 leading-relaxed">The autonomous AI agent platform. 132 agents. 51+ models. Zero per-token cost. Built on NVIDIA NIM.</p>
             </div>
             <div>
               <h4 className="text-xs font-semibold text-neutral-400 mb-4">Product</h4>
               <ul className="space-y-2.5">
-                <li><Link href="/pricing" className="text-xs text-neutral-600 hover:text-white transition-colors">Pricing</Link></li>
-                <li><Link href="/showcase" className="text-xs text-neutral-600 hover:text-white transition-colors">Interactive Demo</Link></li>
-                <li><Link href="/dashboard" className="text-xs text-neutral-600 hover:text-white transition-colors">Dashboard</Link></li>
-                <li><Link href="/onboarding" className="text-xs text-neutral-600 hover:text-white transition-colors">Get Started</Link></li>
+                <li><Link href="/pricing" className="text-xs text-neutral-500 hover:text-white transition-colors">Pricing</Link></li>
+                <li><Link href="/showcase" className="text-xs text-neutral-500 hover:text-white transition-colors">Interactive Demo</Link></li>
+                <li><Link href="/dashboard" className="text-xs text-neutral-500 hover:text-white transition-colors">Dashboard</Link></li>
+                <li><Link href="/onboarding" className="text-xs text-neutral-500 hover:text-white transition-colors">Get Started</Link></li>
               </ul>
             </div>
             <div>
               <h4 className="text-xs font-semibold text-neutral-400 mb-4">Legal</h4>
               <ul className="space-y-2.5">
-                <li><Link href="/privacy" className="text-xs text-neutral-600 hover:text-white transition-colors">Privacy</Link></li>
-                <li><Link href="/terms" className="text-xs text-neutral-600 hover:text-white transition-colors">Terms</Link></li>
+                <li><Link href="/privacy" className="text-xs text-neutral-500 hover:text-white transition-colors">Privacy</Link></li>
+                <li><Link href="/terms" className="text-xs text-neutral-500 hover:text-white transition-colors">Terms</Link></li>
                 <li><span className="text-xs text-neutral-500">POPIA Compliant</span></li>
               </ul>
             </div>
             <div>
               <h4 className="text-xs font-semibold text-neutral-400 mb-4">Contact</h4>
               <ul className="space-y-2.5">
-                <li><a href="mailto:hello@sovereignmatrix.agency" className="text-xs text-neutral-600 hover:text-white transition-colors">hello@sovereignmatrix.agency</a></li>
+                <li><a href="mailto:hello@sovereignmatrix.agency" className="text-xs text-neutral-500 hover:text-white transition-colors">hello@sovereignmatrix.agency</a></li>
                 <li><span className="text-xs text-neutral-500">Cape Town, South Africa</span></li>
               </ul>
             </div>
