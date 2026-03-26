@@ -563,10 +563,14 @@ export default function Home() {
         <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
           className="max-w-4xl mx-auto relative z-10">
           <div className="text-center mb-20">
-            <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">Enterprise</p>
+            <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">Sovereign AI</p>
             <h2 className="text-3xl md:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.1] mb-6">
-              Real value comes from AI<br className="hidden md:block" /> that delivers at scale.
+              Your data. Your infrastructure.<br className="hidden md:block" /> Your autonomous workforce.
             </h2>
+            <p className="text-sm text-neutral-400 max-w-2xl mx-auto leading-relaxed">
+              Built on the same NVIDIA NIM and NemoClaw stack trusted by Google, Cisco, and CrowdStrike.
+              Air-gapped deployment. Zero data residency violations. Enterprise-grade from day one.
+            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
@@ -586,10 +590,10 @@ export default function Home() {
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
-              { label: "5-Layer Safety", desc: "Jailbreak, topic, content, PII, quality" },
-              { label: "White-Label", desc: "Your brand, your domain, your clients" },
-              { label: "Voice Pipeline", desc: "Sub-200ms, 12 languages" },
-              { label: "SOC2 Stack", desc: "NVIDIA + Neon + Clerk + Vercel" },
+              { label: "Air-Gapped Execution", desc: "Run entirely on your own hardware via NemoClaw" },
+              { label: "5-Layer NeMo Guardrails", desc: "Jailbreak, topic, content, PII, quality" },
+              { label: "White-Label Franchise", desc: "Your brand, your domain, your clients" },
+              { label: "NVIDIA + Google Stack", desc: "NIM, Nemotron, Gemini, Blackwell-ready" },
             ].map((item, i) => (
               <motion.div key={i} initial={{ opacity: 0 }} whileInView={{ opacity: 1 }}
                 viewport={{ once: true }} transition={{ delay: 0.2 + i * 0.08 }}
