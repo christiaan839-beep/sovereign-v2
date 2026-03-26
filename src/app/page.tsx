@@ -12,6 +12,7 @@ import { Testimonials } from "@/components/ui/SocialProof";
 
 import { InteractiveHeroStrike } from "@/components/ui/InteractiveHeroStrike";
 import { SocialProofMetrics } from "@/components/ui/SocialProofMetrics";
+import { AgentWorld } from "@/components/ui/AgentWorld";
 
 // ─── Capability Card (enhanced with emerald hover glow) ───
 function CapabilityCard({ icon: Icon, title, desc, accent, href }: { icon: React.ComponentType<{ className?: string }>; title: string; desc: string; accent: string; href?: string }) {
@@ -435,6 +436,12 @@ export default function Home() {
             <CapabilityCard icon={Code2} title="Code & Deploy" desc="Describe a feature in plain English. The agent writes production code, reviews it for bugs, and prepares it for deployment." accent="from-emerald-300/[0.04]" href="/dashboard" />
           </div>
         </div>
+      </section>
+
+      {/* ═══ AGENT WORLD — Digital workspace visualization ═══ */}
+      <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
+      <section className="py-24 px-6 bg-[#030303]">
+        <AgentWorld />
       </section>
 
       {/* ═══ LIVE DEMO ═══ */}
