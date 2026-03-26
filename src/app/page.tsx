@@ -222,6 +222,11 @@ export default function Home() {
   return (
     <div className="relative min-h-screen bg-[#010101] text-white selection:bg-emerald-500/20 font-sans antialiased">
 
+      {/* Skip to content — accessibility */}
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[200] focus:px-4 focus:py-2 focus:bg-emerald-500 focus:text-black focus:rounded-lg focus:text-sm focus:font-bold">
+        Skip to main content
+      </a>
+
       {/* ═══ NAVIGATION ═══ */}
       <motion.nav
         initial={{ opacity: 0, y: -20 }}
@@ -270,7 +275,7 @@ export default function Home() {
       </motion.nav>
 
       {/* ═══ HERO — Cinematic 3D Immersive ═══ */}
-      <motion.section ref={heroRef} style={{ opacity: heroOpacity, scale: heroScale }}
+      <motion.section id="main-content" ref={heroRef} style={{ opacity: heroOpacity, scale: heroScale }}
         className="relative h-screen overflow-hidden">
 
         {/* Background layer — holographic cube */}
