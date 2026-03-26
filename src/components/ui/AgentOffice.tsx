@@ -61,6 +61,29 @@ const TALKS = [
   { a: "code", b: "guard", mA: "deploy?", mB: "clear ✓" },
 ];
 
+// Real LLM conversation fetcher
+async function fetchRealChat(agentA: string, agentB: string): Promise<{ a: string; b: string } | null> {
+  try {
+    const res = await fetch("/api/agents/smart-router", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        prompt: `You are two AI agents meeting in a digital office. Agent "${agentA}" meets Agent "${agentB}". Write a 2-line exchange (max 4 words each). Format: A: [message]\nB: [message]. Be specific to their roles. No generic greetings.`,
+        task_type: "creative",
+      }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const text = data.result || data.response || "";
+    const lines = text.split("\n").filter((l: string) => l.trim());
+    const lineA = lines[0]?.replace(/^[AB]:\s*/i, "").trim().slice(0, 20) || "";
+    const lineB = lines[1]?.replace(/^[AB]:\s*/i, "").trim().slice(0, 20) || "";
+    return lineA && lineB ? { a: lineA, b: lineB } : null;
+  } catch {
+    return null;
+  }
+}
+
 // ═══════════════════════════════════════════════════════
 // THE MASCOT — Claude exact. Solid block. Dot eyes. Feet.
 // ═══════════════════════════════════════════════════════
@@ -123,6 +146,8 @@ function Mascot({ color, frame, faceR, mode }: {
 export function AgentOffice() {
   const [bots, setBots] = useState<Bot[]>([]);
   const [task, setTask] = useState<{ x: number; y: number } | null>(null);
+  const [realChat, setRealChat] = useState<{ pair: string; a: string; b: string } | null>(null);
+  const chatCooldown = useRef(false);
   const fr = useRef(0);
   const wRef = useRef<HTMLDivElement>(null);
 
@@ -162,10 +187,38 @@ export function AgentOffice() {
           if (f % 5 === 0) frame++;
         }
         if (f % 80 === 0 && mode !== "chat") {
-          const c = TALKS.find(t => (t.a === b.id || t.b === b.id) &&
-            prev.some(o => o.id !== b.id && (t.a === o.id || t.b === o.id) &&
-              Math.abs(o.x - x) < 65 && Math.abs(o.y - y) < 65));
-          if (c) { mode = "chat"; msg = c.a === b.id ? c.mA : c.mB; cd = 55; }
+          // Check proximity with any other agent
+          const nearby = prev.find(o => o.id !== b.id &&
+            Math.abs(o.x - x) < 65 && Math.abs(o.y - y) < 65 && o.mode !== "chat");
+          if (nearby) {
+            // Try canned message first (instant)
+            const c = TALKS.find(t => (t.a === b.id || t.b === b.id) &&
+              (t.a === nearby.id || t.b === nearby.id));
+            if (c) {
+              mode = "chat"; msg = c.a === b.id ? c.mA : c.mB; cd = 55;
+            } else {
+              // Fallback: random status message
+              mode = "chat"; msg = MSGS[b.id]?.[Math.floor(Math.random() * 3)] || "hey"; cd = 55;
+            }
+
+            // Fire real LLM chat in background (updates bubble async)
+            if (!chatCooldown.current) {
+              chatCooldown.current = true;
+              const pairKey = [b.id, nearby.id].sort().join("-");
+              fetchRealChat(b.name, nearby.name).then(result => {
+                if (result) {
+                  setRealChat({ pair: pairKey, a: result.a, b: result.b });
+                  // Update the speaking agent's message with the real response
+                  setBots(p => p.map(bot => {
+                    if (bot.id === b.id) return { ...bot, msg: result.a };
+                    if (bot.id === nearby.id) return { ...bot, msg: result.b, mode: "chat" as const, cd: 55 };
+                    return bot;
+                  }));
+                }
+                setTimeout(() => { chatCooldown.current = false; }, 15000); // 15s cooldown
+              });
+            }
+          }
         }
         x = Math.max(30, Math.min(W - 50, x)); y = Math.max(30, Math.min(H - 70, y));
         return { ...b, x, y, tx, ty, mode, msg, frame, faceR, cd };
