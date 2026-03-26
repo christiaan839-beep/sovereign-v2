@@ -16,7 +16,7 @@
     },
     {
       "name": "ghost-protocol",
-      "runtimeExecutable": "python",
+      "runtimeExecutable": "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
       "runtimeArgs": ["nemo_ghost.py"],
       "port": 8001
     },
