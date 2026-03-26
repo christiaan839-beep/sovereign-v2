@@ -125,8 +125,8 @@ export async function routeAgenticExecution({
     try {
       const nimKey = process.env.NVIDIA_NIM_API_KEY;
       if (nimKey) {
-        // Pick NIM model based on task
-        const nimModel = taskType === "code" ? "nvidia/llama-3.1-nemotron-70b-instruct"
+        // Pick NIM model based on task — March 2026 frontier models
+        const nimModel = taskType === "code" ? "nvidia/nemotron-3-super-120b"
           : taskType === "reasoning" ? "nvidia/llama-3.1-nemotron-ultra-253b-v1"
           : taskType === "creative" ? "nvidia/llama-3.1-nemotron-70b-instruct"
           : "nvidia/llama-3.1-nemotron-70b-instruct";

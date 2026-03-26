@@ -17,7 +17,7 @@ export interface ModelConfig {
   color: string; // provider accent color
 }
 
-export type ModelTag = "reasoning" | "code" | "vision" | "thinking" | "fast" | "streaming" | "agentic" | "long-context" | "free" | "tools" | "voice" | "multilingual" | "creative";
+export type ModelTag = "reasoning" | "code" | "vision" | "thinking" | "fast" | "streaming" | "agentic" | "long-context" | "free" | "tools" | "voice" | "multilingual" | "creative" | "speech" | "video";
 
 export const PROVIDER_COLORS: Record<ModelConfig["provider"], string> = {
   nvidia: "#76B900",
@@ -79,11 +79,11 @@ export const MODEL_REGISTRY: ModelConfig[] = [
   },
   {
     id: "deepseek",
-    name: "DeepSeek V3",
+    name: "DeepSeek V3.2",
     provider: "deepseek",
-    description: "Deep reasoning + code generation",
-    tags: ["reasoning", "code", "free"],
-    contextWindow: 65536,
+    description: "Best open-source for reasoning + agentic workloads",
+    tags: ["reasoning", "code", "agentic", "free"],
+    contextWindow: 131072,
     speedTier: "standard",
     costTier: "free",
     color: PROVIDER_COLORS.deepseek,
@@ -208,6 +208,51 @@ export const MODEL_REGISTRY: ModelConfig[] = [
     contextWindow: 262144,
     speedTier: "standard" as const,
     costTier: "free" as const,
+    color: PROVIDER_COLORS.local,
+  },
+  // ─── March 2026 Wave 4 — Latest Releases ───
+  {
+    id: "qwen3.5-small",
+    name: "Qwen 3.5 Small",
+    provider: "alibaba",
+    description: "9B multimodal (text+image+video) — runs on any Mac",
+    tags: ["vision", "fast", "multilingual", "free"],
+    contextWindow: 131072,
+    speedTier: "instant",
+    costTier: "free",
+    color: PROVIDER_COLORS.alibaba,
+  },
+  {
+    id: "nemotron-speech",
+    name: "Nemotron Speech",
+    provider: "nvidia",
+    description: "Real-time low-latency speech recognition",
+    tags: ["speech", "voice", "fast", "free"],
+    contextWindow: 16384,
+    speedTier: "instant",
+    costTier: "free",
+    color: PROVIDER_COLORS.nvidia,
+  },
+  {
+    id: "ltx-2.3",
+    name: "LTX 2.3",
+    provider: "local",
+    description: "22B — 4K video generation with synchronized audio",
+    tags: ["video", "creative", "free"],
+    contextWindow: 8192,
+    speedTier: "slow",
+    costTier: "free",
+    color: PROVIDER_COLORS.local,
+  },
+  {
+    id: "helios",
+    name: "Helios",
+    provider: "local",
+    description: "60-second video at real-time speed on 1 GPU",
+    tags: ["video", "creative", "fast", "free"],
+    contextWindow: 8192,
+    speedTier: "fast",
+    costTier: "free",
     color: PROVIDER_COLORS.local,
   },
 ];
