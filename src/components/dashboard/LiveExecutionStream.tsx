@@ -180,7 +180,7 @@ export function LiveExecutionStream({
   const [apiResult, setApiResult] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const startTime = useRef<number>(0);
-  const timerRef = useRef<ReturnType<typeof setInterval>>();
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Auto-scroll to latest step
   useEffect(() => {
