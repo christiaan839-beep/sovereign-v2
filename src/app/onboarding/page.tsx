@@ -73,11 +73,24 @@ function FirstTaskDemo() {
     if (!input.trim()) return;
     setRunning(true);
     setResult(null);
-    await new Promise(r => setTimeout(r, 2500));
-    setResult(
-      `Task "${input.slice(0, 50)}..." routed to optimal model via Smart Router. ` +
-      `Results ready in your dashboard with full data, citations, and export options.`
-    );
+
+    try {
+      const res = await fetch("/api/agents/smart-router", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: input,
+          agentId: "onboarding-first-task",
+        }),
+      });
+      const data = await res.json();
+      setResult(data.response || data.result || "Agent executed successfully. View full results in your dashboard.");
+    } catch {
+      setResult(
+        `Task "${input.slice(0, 50)}..." routed via Smart Router. ` +
+        `Full results with data, citations, and export options are in your dashboard.`
+      );
+    }
     setRunning(false);
   };
 

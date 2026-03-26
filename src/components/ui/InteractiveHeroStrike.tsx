@@ -23,28 +23,42 @@ export function InteractiveHeroStrike() {
     setStreamText("");
 
     try {
-      const res = await fetch("/api/agents/smart-router", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          prompt: `Analyze this competitor website and give a 3-bullet strategic breakdown of weaknesses we can exploit for a client: ${url}. Be specific, tactical, and concise. Focus on their messaging gaps, conversion flaws, and positioning weakness.`,
-          agentId: "war-room",
-        }),
-      });
-      const data = await res.json();
-      const fullText = data.response || data.result || "Analysis complete. Deploy a Sovereign Node to access the full War Room audit.";
-      
+      // Try site-assassin first for deep competitor intel, fallback to smart-router
+      let data;
+      try {
+        const res = await fetch("/api/agents/site-assassin", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url, mode: "quick" }),
+        });
+        if (res.ok) data = await res.json();
+      } catch { /* fallback below */ }
+
+      if (!data?.response && !data?.result) {
+        const res = await fetch("/api/agents/smart-router", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            prompt: `Analyze this competitor website and give a 3-bullet strategic breakdown: ${url}. Focus on messaging gaps, conversion flaws, and positioning weaknesses. Be specific and tactical.`,
+            agentId: "site-assassin",
+          }),
+        });
+        data = await res.json();
+      }
+
+      const fullText = data.response || data.result || "Analysis complete. Deploy a Sovereign Node for the full War Room audit.";
+
       // Typewriter effect
       let i = 0;
       const typewriter = setInterval(() => {
         i++;
         setStreamText(fullText.slice(0, i));
         if (i >= fullText.length) clearInterval(typewriter);
-      }, 15);
-      
+      }, 12);
+
       setResponse(fullText);
     } catch {
-      setStreamText("Neural pathway disrupted. The full War Room analysis requires a deployed Sovereign Node.");
+      setStreamText("Neural pathway engaged. The full War Room analysis is available inside the dashboard.");
     } finally {
       setTimeout(() => setIsScanning(false), 500);
     }

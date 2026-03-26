@@ -12,21 +12,26 @@ validateEnvironment();
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://sovereignmatrix.agency"),
-  title: "Sovereign Matrix — Autonomous AI Agent Platform",
-  description: "Deploy 132 AI agents across 51+ open-source models. Find leads, write content, build pages, make calls, close deals. Zero per-token cost via NVIDIA NIM.",
-  keywords: ["AI agents", "autonomous AI", "agency automation", "NVIDIA NIM", "NemoClaw", "lead generation", "content automation", "AI platform", "open-source AI", "white-label AI"],
-  authors: [{ name: "Sovereign Matrix" }],
+  title: "Sovereign Matrix — The Agents Are Live",
+  description: "Deploy 132 autonomous AI agents. 51+ open-source models. $0 per-token cost. Find leads, write content, build pages, make calls, close deals — all on autopilot. Built on NVIDIA NIM and NemoClaw.",
+  keywords: ["AI agents", "autonomous AI", "agency automation", "NVIDIA NIM", "NemoClaw", "lead generation", "content automation", "AI platform", "open-source AI", "white-label AI", "AI agency", "agentic AI"],
+  authors: [{ name: "Sovereign Matrix", url: "https://sovereignmatrix.agency" }],
+  creator: "Sovereign Matrix",
+  publisher: "Sovereign Matrix",
   openGraph: {
     title: "Sovereign Matrix — The Agents Are Live",
-    description: "132 autonomous AI agents. 51+ open-source models. $0 per-token cost. White-label ready. The future of agency work.",
+    description: "132 autonomous AI agents. 51+ models. $0 per token. White-label ready. Your competitors hire. You deploy.",
     type: "website",
     siteName: "Sovereign Matrix",
-    images: [{ url: "/og-image.jpg", width: 1200, height: 630, alt: "Sovereign Matrix — Autonomous AI Agent Platform" }],
+    locale: "en_US",
+    url: "https://sovereignmatrix.agency",
+    images: [{ url: "/og-image.jpg", width: 1200, height: 1200, alt: "Sovereign Matrix — Autonomous AI Agent Platform" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Sovereign Matrix — The Agents Are Live",
-    description: "132 autonomous AI agents. 51+ open-source models. $0 per-token cost. White-label ready. The future of agency work.",
+    description: "132 autonomous AI agents. 51+ models. $0 per token. White-label ready. Your competitors hire. You deploy.",
+    images: ["/og-image.jpg"],
   },
   icons: {
     icon: [
@@ -37,6 +42,7 @@ export const metadata: Metadata = {
   },
   other: {
     "theme-color": "#050505",
+    "msapplication-TileColor": "#050505",
   },
 };
 
