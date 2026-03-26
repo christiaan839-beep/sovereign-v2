@@ -22,7 +22,7 @@
     },
     {
       "name": "nemoclaw-daemon",
-      "runtimeExecutable": "python",
+      "runtimeExecutable": "/Library/Frameworks/Python.framework/Versions/3.12/bin/python3",
       "runtimeArgs": ["server/python-agents/nemoclaw_os.py"],
       "port": 9090
     },
