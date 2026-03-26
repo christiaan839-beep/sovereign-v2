@@ -301,3 +301,52 @@ export const orgMembers = pgTable("org_members", {
   joinedAt: timestamp("joined_at").defaultNow(),
 });
 
+// ─── Client Projects ───────────────────────────────────────
+export const clientProjects = pgTable("client_projects", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull(),
+  name: text("name").notNull(),
+  clientName: text("client_name").notNull(),
+  industry: text("industry"),
+  website: text("website"),
+  status: text("status").notNull().default("active"), // active, paused, completed
+  color: text("color").default("#10b981"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// ─── Scheduled Agent Runs ──────────────────────────────────
+export const scheduledRuns = pgTable("scheduled_runs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull(),
+  projectId: uuid("project_id"),
+  agentType: text("agent_type").notNull(), // lead-gen, content, seo, etc.
+  agentName: text("agent_name").notNull(),
+  prompt: text("prompt").notNull(),
+  schedule: text("schedule").notNull(), // cron expression
+  timezone: text("timezone").default("UTC"),
+  enabled: boolean("enabled").notNull().default(true),
+  lastRunAt: timestamp("last_run_at"),
+  nextRunAt: timestamp("next_run_at"),
+  runCount: integer("run_count").default(0),
+  lastResult: text("last_result"),
+  lastStatus: text("last_status").default("pending"), // pending, running, success, failed
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// ─── Agent Activity Log (Smart Inbox) ──────────────────────
+export const agentActivity = pgTable("agent_activity", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull(),
+  projectId: uuid("project_id"),
+  agentName: text("agent_name").notNull(),
+  agentType: text("agent_type").notNull(),
+  action: text("action").notNull(), // executed, completed, failed, scheduled
+  summary: text("summary").notNull(),
+  result: text("result"),
+  metadata: text("metadata"), // JSON string for extra data
+  isRead: boolean("is_read").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
