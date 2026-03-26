@@ -55,10 +55,17 @@ Output a highly structured JSON array of 5 exact visual prompts to be fed into V
     // In a live environment, this brief would trigger Google Flow / Whisk Animate APIs
     // await GoogleVeoAPI.submitJob(JSON.parse(productionBrief));
 
-    return NextResponse.json({ 
-        status: 'production_scheduled', 
+    let brief;
+    try {
+      brief = JSON.parse(productionBrief);
+    } catch {
+      brief = { raw: productionBrief };
+    }
+
+    return NextResponse.json({
+        status: 'production_scheduled',
         pipeline: 'Google Flow (Veo 3.1 + Imagen)',
-        orchestration_brief: JSON.parse(productionBrief)
+        orchestration_brief: brief
     });
 
   } catch (error) {
