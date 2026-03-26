@@ -4,163 +4,210 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 /**
- * AgentOffice — 3D isometric digital world with Claude-exact mascots.
- *
- * THE MASCOT: A solid rounded rectangle. Two dot eyes. Two stub feet.
- * NOTHING ELSE. No ears. No mouth. No arms. No cheeks. No highlights.
- * Each agent = different color. That's the only variation.
- *
- * THE WORLD: Isometric 3D perspective with depth, shadows,
- * glowing floor tiles, holographic screens, and ambient particles.
+ * AgentOffice — A miniature isometric digital city.
+ * Each agent has their own workspace/station.
+ * They move between stations, interact, and produce visible output.
+ * The whole thing feels like looking inside a living machine.
  */
 
-const W = 900;
-const H = 420;
+const W = 950;
+const H = 450;
+
+// ─── Agent definitions ──────────────────────────────────
 
 interface Bot {
-  id: string;
-  name: string;
-  color: string;
-  x: number;
-  y: number;
-  tx: number;
-  ty: number;
-  mode: "walk" | "sit" | "think" | "chat" | "work";
-  msg: string;
-  frame: number;
-  faceR: boolean;
-  cd: number;
+  id: string; name: string; color: string;
+  homeX: number; homeY: number; // their workstation position
+  x: number; y: number; tx: number; ty: number;
+  mode: "walk" | "home" | "think" | "chat" | "work";
+  msg: string; frame: number; faceR: boolean; cd: number;
 }
 
-const BOTS = [
-  { id: "brain",  name: "God Brain",    color: "#D4845A" },
-  { id: "hunt",   name: "Lead Hunter",  color: "#34D399" },
-  { id: "write",  name: "Content",      color: "#22D3EE" },
-  { id: "code",   name: "Coder",        color: "#A78BFA" },
-  { id: "voice",  name: "Closer",       color: "#F87171" },
-  { id: "route",  name: "Router",       color: "#2DD4BF" },
-  { id: "guard",  name: "Guard",        color: "#818CF8" },
-  { id: "seo",    name: "SEO",          color: "#FBBF24" },
+const DEFS = [
+  { id: "brain", name: "God Brain",    color: "#D4845A", homeX: 120, homeY: 80 },
+  { id: "hunt",  name: "Lead Hunter",  color: "#34D399", homeX: 350, homeY: 70 },
+  { id: "write", name: "Content",      color: "#22D3EE", homeX: 580, homeY: 80 },
+  { id: "code",  name: "Coder",        color: "#A78BFA", homeX: 800, homeY: 70 },
+  { id: "voice", name: "Closer",       color: "#F87171", homeX: 120, homeY: 280 },
+  { id: "route", name: "Router",       color: "#2DD4BF", homeX: 350, homeY: 290 },
+  { id: "guard", name: "Guard",        color: "#818CF8", homeX: 580, homeY: 280 },
+  { id: "seo",   name: "SEO",          color: "#FBBF24", homeX: 800, homeY: 290 },
 ];
 
-const MSGS: Record<string, string[]> = {
-  brain: ["thinking...", "planning", "routing"],
-  hunt:  ["53 leads!", "scanning", "found!"],
-  write: ["writing...", "4.2% AI", "done ✓"],
-  code:  ["building", "deployed", "reviewed"],
-  voice: ["calling...", "booked!", "qual'd ✓"],
-  route: ["$0 cost", "routed", "nemotron"],
-  guard: ["secure", "clean", "safe ✓"],
-  seo:   ["312 gaps", "rank #1", "indexed"],
+const STATUS: Record<string, string[]> = {
+  brain: ["synthesizing strategy", "routing to nemotron", "planning campaign"],
+  hunt:  ["53 leads enriched", "scanning linkedin", "scoring prospects"],
+  write: ["blog: 4.2% AI score", "email sequence done", "landing copy ready"],
+  code:  ["page deployed ✓", "code review passed", "component built"],
+  voice: ["call #23 connected", "meeting booked!", "lead qualified ✓"],
+  route: ["1,247 tasks routed", "$0 inference today", "nemotron selected"],
+  guard: ["0 threats detected", "pii scan: clean", "jailbreak blocked"],
+  seo:   ["312 keyword gaps", "ranking improved", "schema validated"],
 };
 
-const TALKS = [
-  { a: "hunt", b: "voice", mA: "leads!", mB: "calling" },
-  { a: "write", b: "seo", mA: "draft", mB: "keywords" },
-  { a: "brain", b: "route", mA: "nemotron", mB: "routed" },
-  { a: "code", b: "guard", mA: "deploy?", mB: "clear ✓" },
-];
+// ─── Claude-style Mascot ────────────────────────────────
 
-// Real LLM conversation fetcher
-async function fetchRealChat(agentA: string, agentB: string): Promise<{ a: string; b: string } | null> {
-  try {
-    const res = await fetch("/api/agents/smart-router", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        prompt: `You are two AI agents meeting in a digital office. Agent "${agentA}" meets Agent "${agentB}". Write a 2-line exchange (max 4 words each). Format: A: [message]\nB: [message]. Be specific to their roles. No generic greetings.`,
-        task_type: "creative",
-      }),
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
-    const text = data.result || data.response || "";
-    const lines = text.split("\n").filter((l: string) => l.trim());
-    const lineA = lines[0]?.replace(/^[AB]:\s*/i, "").trim().slice(0, 20) || "";
-    const lineB = lines[1]?.replace(/^[AB]:\s*/i, "").trim().slice(0, 20) || "";
-    return lineA && lineB ? { a: lineA, b: lineB } : null;
-  } catch {
-    return null;
-  }
-}
-
-// ═══════════════════════════════════════════════════════
-// THE MASCOT — Claude exact. Solid block. Dot eyes. Feet.
-// ═══════════════════════════════════════════════════════
-
-function Mascot({ color, frame, faceR, mode }: {
+function Bot({ color, frame, faceR, mode }: {
   color: string; frame: number; faceR: boolean; mode: Bot["mode"];
 }) {
-  const walking = mode === "walk";
-  const f1 = walking && frame % 2 === 0;
-  const f2 = walking && frame % 2 !== 0;
+  const walk = mode === "walk";
+  const f1 = walk && frame % 2 === 0;
+  const f2 = walk && frame % 2 !== 0;
 
   return (
-    <svg width="28" height="32" viewBox="0 0 28 32"
+    <svg width="24" height="28" viewBox="0 0 24 28"
       style={{ imageRendering: "pixelated", transform: faceR ? "" : "scaleX(-1)" }}>
-
-      {/* Shadow on ground */}
-      <ellipse cx="14" cy="31" rx="9" ry="2" fill="rgba(0,0,0,0.3)" />
-
-      {/* BODY — one solid rounded rectangle. That's it. */}
-      <rect x="3" y="3" width="22" height="20" rx="5" ry="5" fill={color} />
-
-      {/* EYES — two tiny dark dots. Nothing else. */}
+      <ellipse cx="12" cy="27" rx="7" ry="1.5" fill="rgba(0,0,0,0.25)" />
+      <rect x="3" y="2" width="18" height="17" rx="4" fill={color} />
       {mode === "think" ? (
         <>
-          <line x1="8" y1="12" x2="12" y2="12" stroke="#000" strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
-          <line x1="16" y1="12" x2="20" y2="12" stroke="#000" strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
+          <rect x="7" y="9" width="3" height="1.5" rx="0.5" fill="#000" opacity="0.5" />
+          <rect x="14" y="9" width="3" height="1.5" rx="0.5" fill="#000" opacity="0.5" />
         </>
       ) : (
         <>
-          <circle cx="10" cy="12" r="2" fill="#000" opacity="0.7" />
-          <circle cx="18" cy="12" r="2" fill="#000" opacity="0.7" />
+          <circle cx="9" cy="10" r="1.8" fill="#000" opacity="0.6" />
+          <circle cx="15" cy="10" r="1.8" fill="#000" opacity="0.6" />
         </>
       )}
-
-      {/* FEET — two stubby ovals at the bottom. Same color, slightly darker. */}
-      <motion.ellipse
-        cx="9" cy="25" rx="4" ry="3.5"
-        fill={color}
-        stroke="rgba(0,0,0,0.1)" strokeWidth="0.5"
-        style={{ transformOrigin: "9px 23px" }}
-        animate={walking ? { rotate: f1 ? [0, 15, 0] : f2 ? [0, -8, 0] : [0] } : {}}
-        transition={{ duration: 0.15, repeat: walking ? Infinity : 0 }}
+      <motion.ellipse cx="8" cy="21" rx="3.5" ry="3" fill={color}
+        style={{ transformOrigin: "8px 19px" }}
+        animate={walk ? { rotate: f1 ? [0, 12] : f2 ? [0, -8] : [0] } : {}}
+        transition={{ duration: 0.15, repeat: walk ? Infinity : 0 }}
       />
-      <motion.ellipse
-        cx="19" cy="25" rx="4" ry="3.5"
-        fill={color}
-        stroke="rgba(0,0,0,0.1)" strokeWidth="0.5"
-        style={{ transformOrigin: "19px 23px" }}
-        animate={walking ? { rotate: f2 ? [0, -15, 0] : f1 ? [0, 8, 0] : [0] } : {}}
-        transition={{ duration: 0.15, repeat: walking ? Infinity : 0 }}
+      <motion.ellipse cx="16" cy="21" rx="3.5" ry="3" fill={color}
+        style={{ transformOrigin: "16px 19px" }}
+        animate={walk ? { rotate: f2 ? [0, -12] : f1 ? [0, 8] : [0] } : {}}
+        transition={{ duration: 0.15, repeat: walk ? Infinity : 0 }}
       />
     </svg>
   );
 }
 
-// ═══════════════════════════════════════════════════════
-// THE WORLD
-// ═══════════════════════════════════════════════════════
+// ─── Workstation Components ─────────────────────────────
+
+function CommandCenter({ x, y, active }: { x: number; y: number; active: boolean }) {
+  return (
+    <g transform={`translate(${x - 30}, ${y - 20})`}>
+      {/* Platform */}
+      <rect x="0" y="30" width="60" height="15" rx="3" fill="#111118" stroke="rgba(16,185,129,0.08)" strokeWidth="0.5" />
+      {/* Main screen */}
+      <rect x="10" y="5" width="40" height="25" rx="2" fill="#0a0a12" stroke="rgba(16,185,129,0.12)" strokeWidth="0.5" />
+      {active && <>
+        <motion.rect x="14" y="9" width="15" rx="1" fill="rgba(16,185,129,0.2)"
+          animate={{ width: [10, 32, 10] }} transition={{ duration: 2, repeat: Infinity }} height="2" />
+        <rect x="14" y="13" width="20" height="1.5" rx="0.5" fill="rgba(16,185,129,0.1)" />
+        <rect x="14" y="16" width="12" height="1.5" rx="0.5" fill="rgba(16,185,129,0.08)" />
+        <motion.rect x="14" y="19" width="8" height="1.5" rx="0.5" fill="rgba(236,72,153,0.15)"
+          animate={{ opacity: [0.3, 0.8, 0.3] }} transition={{ duration: 1.5, repeat: Infinity }} />
+        <motion.circle cx="44" cy="10" r="2" fill="rgba(16,185,129,0.3)"
+          animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1, repeat: Infinity }} />
+      </>}
+      <text x="30" y="48" textAnchor="middle" fontSize="3.5" fill="rgba(255,255,255,0.12)" fontFamily="monospace">COMMAND</text>
+    </g>
+  );
+}
+
+function RadarStation({ x, y, active }: { x: number; y: number; active: boolean }) {
+  return (
+    <g transform={`translate(${x - 25}, ${y - 20})`}>
+      <rect x="0" y="30" width="50" height="12" rx="3" fill="#111118" stroke="rgba(52,211,153,0.08)" strokeWidth="0.5" />
+      <circle cx="25" cy="20" r="15" fill="#0a0a12" stroke="rgba(52,211,153,0.1)" strokeWidth="0.5" />
+      {active && <>
+        <motion.line x1="25" y1="20" x2="25" y2="6" stroke="rgba(52,211,153,0.3)" strokeWidth="0.8"
+          style={{ transformOrigin: "25px 20px" }}
+          animate={{ rotate: 360 }} transition={{ duration: 3, repeat: Infinity, ease: "linear" }} />
+        <motion.circle cx="32" cy="14" r="1.5" fill="rgba(52,211,153,0.5)"
+          animate={{ opacity: [0, 1, 0] }} transition={{ duration: 2, repeat: Infinity }} />
+        <motion.circle cx="18" cy="25" r="1" fill="rgba(52,211,153,0.4)"
+          animate={{ opacity: [0, 1, 0] }} transition={{ duration: 2, repeat: Infinity, delay: 0.7 }} />
+      </>}
+      <text x="25" y="46" textAnchor="middle" fontSize="3.5" fill="rgba(255,255,255,0.12)" fontFamily="monospace">RADAR</text>
+    </g>
+  );
+}
+
+function Terminal({ x, y, active, label }: { x: number; y: number; active: boolean; label: string }) {
+  return (
+    <g transform={`translate(${x - 20}, ${y - 15})`}>
+      <rect x="0" y="25" width="40" height="10" rx="2" fill="#111118" stroke="rgba(167,139,250,0.08)" strokeWidth="0.5" />
+      <rect x="5" y="3" width="30" height="22" rx="2" fill="#0a0a12" stroke="rgba(167,139,250,0.1)" strokeWidth="0.5" />
+      {active && <>
+        <motion.rect x="8" y="7" width="12" height="1" fill="rgba(167,139,250,0.2)" rx="0.5"
+          animate={{ width: [8, 24, 8] }} transition={{ duration: 1.5, repeat: Infinity }} />
+        <rect x="8" y="10" width="18" height="1" fill="rgba(167,139,250,0.1)" rx="0.5" />
+        <rect x="8" y="13" width="10" height="1" fill="rgba(52,211,153,0.12)" rx="0.5" />
+        <motion.rect x="8" y="16" width="6" height="1" fill="rgba(167,139,250,0.15)" rx="0.5"
+          animate={{ width: [4, 20, 4] }} transition={{ duration: 2, repeat: Infinity, delay: 0.5 }} />
+        <motion.rect x="8" y="19" width="14" height="1" fill="rgba(167,139,250,0.08)" rx="0.5"
+          animate={{ opacity: [0.3, 0.8, 0.3] }} transition={{ duration: 1, repeat: Infinity }} />
+      </>}
+      <text x="20" y="38" textAnchor="middle" fontSize="3.5" fill="rgba(255,255,255,0.12)" fontFamily="monospace">{label}</text>
+    </g>
+  );
+}
+
+function PhoneBooth({ x, y, active }: { x: number; y: number; active: boolean }) {
+  return (
+    <g transform={`translate(${x - 15}, ${y - 20})`}>
+      <rect x="0" y="5" width="30" height="35" rx="3" fill="#111118" stroke="rgba(248,113,113,0.08)" strokeWidth="0.5" />
+      <rect x="3" y="8" width="24" height="15" rx="2" fill="#0a0a12" />
+      {active && <>
+        <motion.circle cx="15" cy="15" r="4" fill="none" stroke="rgba(248,113,113,0.2)" strokeWidth="0.8"
+          animate={{ r: [4, 8, 4], opacity: [0.5, 0, 0.5] }} transition={{ duration: 1.5, repeat: Infinity }} />
+        <circle cx="15" cy="15" r="2" fill="rgba(248,113,113,0.3)" />
+      </>}
+      <rect x="8" y="26" width="14" height="3" rx="1" fill="#1a1a22" />
+      <text x="15" y="44" textAnchor="middle" fontSize="3.5" fill="rgba(255,255,255,0.12)" fontFamily="monospace">VOICE</text>
+    </g>
+  );
+}
+
+function ServerRack({ x, y, active }: { x: number; y: number; active: boolean }) {
+  return (
+    <g transform={`translate(${x - 15}, ${y - 20})`}>
+      <rect x="0" y="0" width="30" height="38" rx="2" fill="#0a0a12" stroke="rgba(45,212,191,0.08)" strokeWidth="0.5" />
+      {[0, 1, 2, 3, 4].map(i => (
+        <g key={i}>
+          <rect x="2" y={3 + i * 6.5} width="26" height="5" rx="1" fill="#111118" />
+          {active && <motion.circle cx="25" cy={5.5 + i * 6.5} r="1.2"
+            fill={i % 2 === 0 ? "rgba(45,212,191,0.6)" : "rgba(16,185,129,0.4)"}
+            animate={{ opacity: [0.3, 1, 0.3] }}
+            transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.15 }} />}
+        </g>
+      ))}
+      <text x="15" y="44" textAnchor="middle" fontSize="3.5" fill="rgba(255,255,255,0.12)" fontFamily="monospace">SERVERS</text>
+    </g>
+  );
+}
+
+// ─── Main Component ─────────────────────────────────────
 
 export function AgentOffice() {
   const [bots, setBots] = useState<Bot[]>([]);
   const [task, setTask] = useState<{ x: number; y: number } | null>(null);
-  const [realChat, setRealChat] = useState<{ pair: string; a: string; b: string } | null>(null);
-  const chatCooldown = useRef(false);
+  const [log, setLog] = useState<string[]>(["system online", "8 agents initialized", "nemotron connected"]);
   const fr = useRef(0);
   const wRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setBots(BOTS.map((b, i) => ({
-      ...b,
-      x: 80 + (i % 4) * 190 + Math.random() * 50,
-      y: 70 + Math.floor(i / 4) * 140 + Math.random() * 40,
-      tx: Math.random() * (W - 120) + 60,
-      ty: Math.random() * (H - 120) + 60,
-      mode: "sit" as const, msg: "", frame: 0,
-      faceR: Math.random() > 0.5, cd: 30 + Math.random() * 80,
+    setBots(DEFS.map(d => ({
+      ...d, x: d.homeX, y: d.homeY,
+      tx: d.homeX, ty: d.homeY,
+      mode: "home" as const, msg: "", frame: 0,
+      faceR: true, cd: 30 + Math.random() * 60,
     })));
+  }, []);
+
+  // Activity log updater
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const agent = DEFS[Math.floor(Math.random() * DEFS.length)];
+      const msgs = STATUS[agent.id] || ["working..."];
+      const msg = msgs[Math.floor(Math.random() * msgs.length)];
+      setLog(prev => [`${agent.name}: ${msg}`, ...prev.slice(0, 4)]);
+    }, 3000);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -168,59 +215,61 @@ export function AgentOffice() {
       fr.current++;
       const f = fr.current;
       setBots(prev => prev.map(b => {
-        let { x, y, tx, ty, mode, msg, frame, faceR, cd } = b;
+        let { x, y, tx, ty, mode, msg, frame, faceR, cd, homeX, homeY } = b;
         cd--;
-        if (task && mode !== "chat") { tx = task.x + (Math.random() - 0.5) * 50; ty = task.y + (Math.random() - 0.5) * 50; mode = "walk"; }
-        const dx = tx - x, dy = ty - y, d = Math.sqrt(dx * dx + dy * dy);
-        if (d < 10 && mode === "walk") {
-          const r = Math.random();
-          mode = r < 0.3 ? "think" : r < 0.55 ? "work" : "sit";
-          cd = 50 + Math.random() * 60;
-          msg = mode === "work" ? (MSGS[b.id]?.[Math.floor(Math.random() * 3)] || "") : "";
-        }
-        if (cd <= 0 && mode !== "chat") {
-          mode = "walk"; tx = Math.random() * (W - 120) + 60; ty = Math.random() * (H - 120) + 60;
-          cd = 100 + Math.random() * 80; msg = "";
-        }
-        if (mode === "walk" && d > 3) {
-          x += (dx / d) * 0.7; y += (dy / d) * 0.7; faceR = dx > 0;
-          if (f % 5 === 0) frame++;
-        }
-        if (f % 80 === 0 && mode !== "chat") {
-          // Check proximity with any other agent
-          const nearby = prev.find(o => o.id !== b.id &&
-            Math.abs(o.x - x) < 65 && Math.abs(o.y - y) < 65 && o.mode !== "chat");
-          if (nearby) {
-            // Try canned message first (instant)
-            const c = TALKS.find(t => (t.a === b.id || t.b === b.id) &&
-              (t.a === nearby.id || t.b === nearby.id));
-            if (c) {
-              mode = "chat"; msg = c.a === b.id ? c.mA : c.mB; cd = 55;
-            } else {
-              // Fallback: random status message
-              mode = "chat"; msg = MSGS[b.id]?.[Math.floor(Math.random() * 3)] || "hey"; cd = 55;
-            }
 
-            // Fire real LLM chat in background (updates bubble async)
-            if (!chatCooldown.current) {
-              chatCooldown.current = true;
-              const pairKey = [b.id, nearby.id].sort().join("-");
-              fetchRealChat(b.name, nearby.name).then(result => {
-                if (result) {
-                  setRealChat({ pair: pairKey, a: result.a, b: result.b });
-                  // Update the speaking agent's message with the real response
-                  setBots(p => p.map(bot => {
-                    if (bot.id === b.id) return { ...bot, msg: result.a };
-                    if (bot.id === nearby.id) return { ...bot, msg: result.b, mode: "chat" as const, cd: 55 };
-                    return bot;
-                  }));
-                }
-                setTimeout(() => { chatCooldown.current = false; }, 15000); // 15s cooldown
-              });
-            }
+        if (task) { tx = task.x + (Math.random() - 0.5) * 50; ty = task.y + (Math.random() - 0.5) * 50; mode = "walk"; }
+
+        const dx = tx - x, dy = ty - y, d = Math.sqrt(dx * dx + dy * dy);
+
+        // Arrived
+        if (d < 8 && mode === "walk") {
+          if (Math.abs(x - homeX) < 20 && Math.abs(y - homeY) < 20) {
+            mode = "home"; cd = 60 + Math.random() * 80;
+            msg = STATUS[b.id]?.[Math.floor(Math.random() * 3)] || "";
+          } else {
+            mode = "think"; cd = 30 + Math.random() * 40; msg = "";
           }
         }
-        x = Math.max(30, Math.min(W - 50, x)); y = Math.max(30, Math.min(H - 70, y));
+
+        // Timer up — decide next action
+        if (cd <= 0) {
+          const r = Math.random();
+          if (r < 0.4) {
+            // Go visit another agent's station
+            const other = DEFS[Math.floor(Math.random() * DEFS.length)];
+            tx = other.homeX + (Math.random() - 0.5) * 30;
+            ty = other.homeY + (Math.random() - 0.5) * 20;
+            mode = "walk"; cd = 150;
+          } else if (r < 0.7) {
+            // Go home
+            tx = homeX; ty = homeY; mode = "walk"; cd = 100;
+          } else {
+            // Work at current spot
+            mode = "work";
+            msg = STATUS[b.id]?.[Math.floor(Math.random() * 3)] || "";
+            cd = 60 + Math.random() * 50;
+          }
+        }
+
+        // Movement
+        if (mode === "walk" && d > 4) {
+          x += (dx / d) * 0.8; y += (dy / d) * 0.8;
+          faceR = dx > 0;
+          if (f % 5 === 0) frame++;
+        }
+
+        // Proximity chat
+        if (f % 100 === 0 && mode !== "chat" && mode !== "walk") {
+          const near = prev.find(o => o.id !== b.id &&
+            Math.abs(o.x - x) < 50 && Math.abs(o.y - y) < 50 && o.mode !== "walk");
+          if (near) {
+            mode = "chat"; msg = STATUS[b.id]?.[Math.floor(Math.random() * 3)] || "syncing"; cd = 50;
+          }
+        }
+
+        x = Math.max(25, Math.min(W - 40, x));
+        y = Math.max(25, Math.min(H - 50, y));
         return { ...b, x, y, tx, ty, mode, msg, frame, faceR, cd };
       }));
     }, 50);
@@ -241,72 +290,72 @@ export function AgentOffice() {
         className="text-center mb-8">
         <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-3">Inside the Matrix</p>
         <h2 className="text-3xl md:text-5xl font-bold text-white tracking-tight mb-3">Your agents are working.</h2>
-        <p className="text-neutral-600 text-sm">Click anywhere to drop a task. Watch them swarm.</p>
+        <p className="text-neutral-600 text-sm">Click anywhere to assign a task. Watch them respond.</p>
       </motion.div>
 
       <div ref={wRef} onClick={click}
-        className="relative rounded-2xl overflow-hidden cursor-crosshair"
-        style={{ aspectRatio: `${W}/${H}`, perspective: "800px" }}>
+        className="relative rounded-2xl overflow-hidden cursor-crosshair border border-white/[0.04]"
+        style={{ aspectRatio: `${W}/${H}` }}>
 
-        {/* 3D isometric floor */}
-        <div className="absolute inset-0" style={{
-          background: "#0a0a0f",
-          transform: "rotateX(5deg)",
-          transformOrigin: "center bottom",
-        }}>
-          {/* Glowing grid lines */}
-          <div className="absolute inset-0" style={{
-            backgroundImage: `
-              linear-gradient(rgba(16,185,129,0.06) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(16,185,129,0.06) 1px, transparent 1px)
-            `,
-            backgroundSize: "40px 40px",
-          }} />
+        {/* Background */}
+        <div className="absolute inset-0 bg-[#08080d]" />
 
-          {/* Radial glow from center */}
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_80%,rgba(16,185,129,0.08)_0%,transparent_70%)]" />
-        </div>
+        {/* Grid floor with perspective */}
+        <div className="absolute inset-0 pointer-events-none" style={{
+          backgroundImage: `
+            linear-gradient(rgba(16,185,129,0.04) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(16,185,129,0.04) 1px, transparent 1px)
+          `,
+          backgroundSize: "35px 35px",
+        }} />
 
-        {/* Ambient floating particles */}
-        {Array.from({ length: 12 }).map((_, i) => (
-          <motion.div key={i}
-            className="absolute rounded-full"
-            style={{
-              width: 1 + Math.random() * 2,
-              height: 1 + Math.random() * 2,
-              backgroundColor: `rgba(16,185,129,${0.1 + Math.random() * 0.2})`,
-            }}
-            animate={{
-              left: [`${Math.random() * 100}%`, `${Math.random() * 100}%`],
-              top: [`${Math.random() * 100}%`, `${Math.random() * 100}%`],
-              opacity: [0, 0.4, 0],
-            }}
-            transition={{ duration: 8 + Math.random() * 10, repeat: Infinity, delay: i * 0.7, ease: "linear" }}
-          />
-        ))}
+        {/* Radial ambient light */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_50%_40%_at_50%_50%,rgba(16,185,129,0.04)_0%,transparent_70%)] pointer-events-none" />
 
-        {/* Holographic screen panels in the background */}
-        {[
-          { x: 5, y: 10, w: 50, h: 35 },
-          { x: 75, y: 8, w: 55, h: 30 },
-          { x: 40, y: 65, w: 45, h: 28 },
-        ].map((panel, i) => (
-          <div key={i} className="absolute rounded border border-emerald-500/[0.06] bg-emerald-500/[0.015] backdrop-blur-sm"
-            style={{ left: `${panel.x}px`, top: `${panel.y}px`, width: `${panel.w}px`, height: `${panel.h}px` }}>
-            <motion.div className="w-3/4 h-1 bg-emerald-500/10 rounded-full m-1.5"
-              animate={{ width: ["40%", "80%", "40%"] }}
-              transition={{ duration: 3, repeat: Infinity, delay: i * 0.5 }}
+        {/* Scanlines */}
+        <div className="absolute inset-0 pointer-events-none z-30 opacity-15" style={{
+          background: "repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.08) 3px, rgba(0,0,0,0.08) 4px)",
+        }} />
+
+        {/* ═══ WORKSTATIONS (SVG layer) ═══ */}
+        <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet">
+          {/* Connection paths between stations */}
+          <path d={`M120,100 Q235,120 350,90`} stroke="rgba(16,185,129,0.04)" strokeWidth="1" fill="none" strokeDasharray="4 4" />
+          <path d={`M350,90 Q465,100 580,100`} stroke="rgba(16,185,129,0.04)" strokeWidth="1" fill="none" strokeDasharray="4 4" />
+          <path d={`M580,100 Q690,100 800,90`} stroke="rgba(16,185,129,0.04)" strokeWidth="1" fill="none" strokeDasharray="4 4" />
+          <path d={`M120,100 Q120,190 120,300`} stroke="rgba(16,185,129,0.03)" strokeWidth="1" fill="none" strokeDasharray="4 4" />
+          <path d={`M350,90 Q350,190 350,310`} stroke="rgba(16,185,129,0.03)" strokeWidth="1" fill="none" strokeDasharray="4 4" />
+          <path d={`M580,100 Q580,190 580,300`} stroke="rgba(16,185,129,0.03)" strokeWidth="1" fill="none" strokeDasharray="4 4" />
+          <path d={`M800,90 Q800,190 800,310`} stroke="rgba(16,185,129,0.03)" strokeWidth="1" fill="none" strokeDasharray="4 4" />
+
+          {/* Data flowing along paths */}
+          {[0, 1, 2].map(i => (
+            <motion.circle key={`data-${i}`} r="1.5" fill="rgba(16,185,129,0.3)"
+              animate={{
+                cx: [120, 350, 580, 800, 580, 350, 120],
+                cy: [100, 90, 100, 90, 280, 310, 300],
+                opacity: [0, 0.5, 0.3, 0.5, 0.3, 0.5, 0],
+              }}
+              transition={{ duration: 12 + i * 3, repeat: Infinity, delay: i * 4, ease: "linear" }}
             />
-            <div className="w-1/2 h-0.5 bg-emerald-500/5 rounded-full m-1.5" />
-            <div className="w-2/3 h-0.5 bg-emerald-500/5 rounded-full m-1.5" />
-          </div>
-        ))}
+          ))}
+
+          {/* Workstations */}
+          <CommandCenter x={120} y={80} active={bots.some(b => b.id === "brain" && (b.mode === "home" || b.mode === "work"))} />
+          <RadarStation x={350} y={70} active={bots.some(b => b.id === "hunt" && (b.mode === "home" || b.mode === "work"))} />
+          <Terminal x={580} y={80} active={bots.some(b => b.id === "write" && (b.mode === "home" || b.mode === "work"))} label="CONTENT" />
+          <Terminal x={800} y={70} active={bots.some(b => b.id === "code" && (b.mode === "home" || b.mode === "work"))} label="CODE" />
+          <PhoneBooth x={120} y={280} active={bots.some(b => b.id === "voice" && (b.mode === "home" || b.mode === "work"))} />
+          <ServerRack x={350} y={290} active={bots.some(b => b.id === "route" && (b.mode === "home" || b.mode === "work"))} />
+          <Terminal x={580} y={280} active={bots.some(b => b.id === "guard" && (b.mode === "home" || b.mode === "work"))} label="SHIELD" />
+          <Terminal x={800} y={290} active={bots.some(b => b.id === "seo" && (b.mode === "home" || b.mode === "work"))} label="SEO" />
+        </svg>
 
         {/* Task beacon */}
         <AnimatePresence>
           {task && (
             <motion.div initial={{ scale: 0 }}
-              animate={{ scale: [1, 3, 1], opacity: [0.6, 0, 0.6] }}
+              animate={{ scale: [1, 3, 1], opacity: [0.5, 0, 0.5] }}
               exit={{ scale: 0 }}
               transition={{ duration: 1, repeat: Infinity }}
               className="absolute w-2 h-2 rounded-full bg-emerald-400 z-10"
@@ -315,27 +364,34 @@ export function AgentOffice() {
           )}
         </AnimatePresence>
 
+        {/* Ambient particles */}
+        {Array.from({ length: 8 }).map((_, i) => (
+          <motion.div key={i} className="absolute rounded-full"
+            style={{ width: 1 + Math.random(), height: 1 + Math.random(), backgroundColor: `rgba(16,185,129,${0.08 + Math.random() * 0.12})` }}
+            animate={{
+              left: [`${Math.random() * 100}%`, `${Math.random() * 100}%`],
+              top: [`${Math.random() * 100}%`, `${Math.random() * 100}%`],
+              opacity: [0, 0.3, 0],
+            }}
+            transition={{ duration: 10 + Math.random() * 8, repeat: Infinity, delay: i * 0.8, ease: "linear" }}
+          />
+        ))}
+
         {/* ═══ THE BOTS ═══ */}
         {bots.map(b => (
           <div key={b.id} className="absolute z-10"
             style={{
               left: `${(b.x / W) * 100}%`, top: `${(b.y / H) * 100}%`,
-              transform: "translate(-50%,-50%)",
-              transition: "left 50ms linear, top 50ms linear",
-              zIndex: Math.round(b.y), // depth sorting!
+              transform: "translate(-50%,-50%)", transition: "left 50ms linear, top 50ms linear",
+              zIndex: Math.round(b.y),
             }}>
             <div className="relative flex flex-col items-center">
-
-              {/* Speech bubble */}
+              {/* Speech */}
               <AnimatePresence>
-                {b.msg && (b.mode === "chat" || b.mode === "work") && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 3, scale: 0.9 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    className="absolute -top-6 left-1/2 -translate-x-1/2 z-30"
-                  >
-                    <div className="px-1.5 py-0.5 rounded bg-white text-[6px] font-mono text-neutral-700 whitespace-nowrap">
+                {b.msg && (b.mode === "chat" || b.mode === "work" || b.mode === "home") && (
+                  <motion.div initial={{ opacity: 0, y: 3 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                    className="absolute -top-5 left-1/2 -translate-x-1/2 z-30">
+                    <div className="px-1.5 py-0.5 rounded bg-white text-[5px] font-mono text-neutral-700 whitespace-nowrap">
                       {b.msg}
                     </div>
                     <div className="w-0 h-0 mx-auto" style={{
@@ -345,53 +401,55 @@ export function AgentOffice() {
                 )}
               </AnimatePresence>
 
-              {/* Thinking dots */}
+              {/* Think dots */}
               {b.mode === "think" && (
                 <motion.div className="absolute -top-4 flex gap-[2px]"
                   animate={{ opacity: [0.2, 0.6, 0.2] }}
                   transition={{ duration: 1.2, repeat: Infinity }}>
-                  <div className="w-[3px] h-[3px] rounded-full bg-white/30" />
-                  <div className="w-[3px] h-[3px] rounded-full bg-white/20" />
-                  <div className="w-[4px] h-[4px] rounded-full bg-white/10" />
+                  <div className="w-[2px] h-[2px] rounded-full bg-white/30" />
+                  <div className="w-[2px] h-[2px] rounded-full bg-white/20" />
+                  <div className="w-[3px] h-[3px] rounded-full bg-white/10" />
                 </motion.div>
               )}
 
-              {/* The mascot */}
               <motion.div
                 animate={
-                  b.mode === "think" ? { y: [0, -3, 0] } :
-                  b.mode === "work" ? { y: [0, -1, 0] } :
-                  b.mode === "sit" ? { y: [0, -1, 0] } :
-                  {}
+                  b.mode === "home" || b.mode === "work" ? { y: [0, -1, 0] } :
+                  b.mode === "think" ? { y: [0, -2, 0] } : {}
                 }
-                transition={{
-                  duration: b.mode === "think" ? 2 : 3,
-                  repeat: Infinity, ease: "easeInOut",
-                }}
+                transition={{ duration: b.mode === "think" ? 2 : 3, repeat: Infinity, ease: "easeInOut" }}
               >
-                <Mascot color={b.color} frame={b.frame} faceR={b.faceR} mode={b.mode} />
+                <Bot color={b.color} frame={b.frame} faceR={b.faceR} mode={b.mode} />
               </motion.div>
 
-              {/* Name */}
-              <span className="text-[5px] font-mono text-white/15 uppercase tracking-[0.12em] mt-[-2px]">
-                {b.name}
-              </span>
+              <span className="text-[4px] font-mono text-white/10 uppercase tracking-[0.1em] mt-[-1px]">{b.name}</span>
             </div>
           </div>
         ))}
 
-        {/* Bottom status bar */}
-        <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 py-1.5 bg-gradient-to-t from-black/60 to-transparent z-20">
-          <div className="flex items-center gap-1.5">
-            <div className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-[7px] text-emerald-400/50 font-mono uppercase tracking-[0.2em]">8 agents live</span>
+        {/* ═══ ACTIVITY LOG — scrolling ticker ═══ */}
+        <div className="absolute bottom-0 left-0 right-0 z-20">
+          <div className="flex items-center h-6 bg-black/70 backdrop-blur-sm border-t border-white/[0.04] px-3 gap-3 overflow-hidden">
+            <div className="flex items-center gap-1 shrink-0">
+              <div className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-[6px] text-emerald-400/50 font-mono uppercase tracking-[0.15em]">live</span>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <motion.div
+                key={log[0]}
+                initial={{ y: 10, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                className="text-[6px] text-white/25 font-mono truncate"
+              >
+                {log[0]}
+              </motion.div>
+            </div>
+            <span className="text-[6px] text-white/10 font-mono shrink-0">117 agents · $0 cost</span>
           </div>
-          <span className="text-[7px] text-white/10 font-mono">click to assign task</span>
-          <span className="text-[7px] text-white/10 font-mono">$0 inference</span>
         </div>
 
-        {/* Top vignette for depth */}
-        <div className="absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-[#0a0a0f] to-transparent pointer-events-none z-10" />
+        {/* Top fade */}
+        <div className="absolute top-0 left-0 right-0 h-10 bg-gradient-to-b from-[#08080d] to-transparent pointer-events-none z-10" />
       </div>
     </div>
   );
