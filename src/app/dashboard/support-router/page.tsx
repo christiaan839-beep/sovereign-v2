@@ -80,7 +80,7 @@ export default function SupportRouterPage() {
                     <div className="w-full">
                        <div className="flex items-center justify-between mb-2">
                           <span className="text-[10px] text-[#00B7FF] uppercase font-bold tracking-widest animate-pulse">Incoming Payload Detected</span>
-                          <span className="text-[10px] text-neutral-500 font-mono">WSS://{Date.now()}</span>
+                          <span className="text-[10px] text-neutral-500 font-mono">WSS://sovereign-matrix</span>
                        </div>
                        <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
                           <motion.div 
@@ -147,7 +147,7 @@ export default function SupportRouterPage() {
                                    <div className="text-[10px] text-rose-400 font-mono">{activeTicket.email}</div>
                                 </div>
                              </div>
-                             <p className="text-sm text-rose-100/80 leading-relaxed">"{activeTicket.body}"</p>
+                             <p className="text-sm text-rose-100/80 leading-relaxed">&quot;{activeTicket.body}&quot;</p>
                           </div>
                        </motion.div>
                     )}
@@ -183,7 +183,7 @@ export default function SupportRouterPage() {
                                 <ArrowRight className="w-3 h-3" /> Autonomous Email Dispatch
                              </div>
                              <p className="text-sm text-emerald-100 leading-relaxed font-sans">
-                                "Hi Michael. I am incredibly sorry to hear the gasket on Order #4401-B ruptured. Because you've been a loyal partner to us for 14 orders, I have proactively bypassed our return department and issued a full refund to your card ending in 4492 right now. I have also FedEx overnighted the replacement unit. It will arrive by 9AM tomorrow so your assembly line doesn't stall. Please accept my personal apology."
+                                &quot;Hi Michael. I am incredibly sorry to hear the gasket on Order #4401-B ruptured. Because you&apos;ve been a loyal partner to us for 14 orders, I have proactively bypassed our return department and issued a full refund to your card ending in 4492 right now. I have also FedEx overnighted the replacement unit. It will arrive by 9AM tomorrow so your assembly line doesn&apos;t stall. Please accept my personal apology.&quot;
                              </p>
                           </div>
                        </motion.div>

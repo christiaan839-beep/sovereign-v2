@@ -42,9 +42,10 @@ export function useToast() {
 /* ── Progress bar sub-component ────────────────────────────────── */
 function ProgressBar({ duration, onComplete }: { duration: number; onComplete: () => void }) {
   const [progress, setProgress] = useState(100);
-  const startRef = useRef(Date.now());
+  const startRef = useRef(0);
 
   useEffect(() => {
+    startRef.current = Date.now();
     const frame = () => {
       const elapsed = Date.now() - startRef.current;
       const remaining = Math.max(0, 100 - (elapsed / duration) * 100);

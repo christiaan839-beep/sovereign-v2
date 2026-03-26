@@ -71,7 +71,7 @@ export default function VideoOutreachStudioPage() {
           </h1>
           <p className="text-neutral-400 mt-2 max-w-2xl">
             Autonomous cinematic synthesis. Render hyper-realistic, 4K digital executives reciting 
-            the "Audit & Destroy" pitch. Zero slop. Maximum psychological impact.
+            the &quot;Audit &amp; Destroy&quot; pitch. Zero slop. Maximum psychological impact.
           </p>
         </div>
       </div>

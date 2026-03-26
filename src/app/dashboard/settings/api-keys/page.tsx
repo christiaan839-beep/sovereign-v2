@@ -66,7 +66,7 @@ export default function ApiKeysPage() {
           <Key className="w-6 h-6 text-rose-400" /> Bring Your Own Key (BYOK)
         </h1>
         <p className="text-neutral-400">
-          Enter your own API keys to bypass SOVEREIGN's global rate limits. If you provide a key here, the Swarm will use it instead of our master keys. 
+          Enter your own API keys to bypass SOVEREIGN&apos;s global rate limits. If you provide a key here, the Swarm will use it instead of our master keys.
           <strong className="text-white ml-1">Your keys are encrypted at rest.</strong>
         </p>
       </div>

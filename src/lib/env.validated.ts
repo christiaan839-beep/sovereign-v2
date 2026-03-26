@@ -1,9 +1,14 @@
 /**
  * SOVEREIGN MATRIX — Validated Environment Configuration
  *
- * Type-safe environment variable access with runtime validation.
- * Import `env` instead of using `process.env` directly.
+ * Single source of truth for all environment variables.
+ * Import `env` for type-safe access, `capabilities` for feature checks,
+ * and call `validateEnvironment()` at startup for missing-key warnings.
  */
+
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("env");
 
 type EnvConfig = {
   // ─── Critical (platform won't function without these) ───
@@ -116,6 +121,34 @@ function getEnv(): EnvConfig {
 
 /** Type-safe environment config — use this instead of process.env */
 export const env = getEnv();
+
+/**
+ * Validate critical environment variables at startup.
+ * Call once in the root layout or middleware. Logs warnings for missing keys.
+ */
+export function validateEnvironment() {
+  if (typeof window !== "undefined") return; // Server only
+
+  const critical = ["NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "CLERK_SECRET_KEY", "DATABASE_URL"] as const;
+  const missingCritical = critical.filter((key) => !process.env[key]);
+
+  if (missingCritical.length > 0) {
+    log.error("CRITICAL: Missing required environment variables:");
+    missingCritical.forEach((key) => log.error(`  - ${key}`));
+    log.error("Platform operations will fail. Configure these in .env.local (see .env.example).");
+  }
+
+  const optional = [
+    "GOOGLE_GENERATIVE_AI_API_KEY", "NVIDIA_NIM_API_KEY",
+    "RESEND_API_KEY", "STRIPE_SECRET_KEY", "TELEGRAM_BOT_TOKEN",
+  ] as const;
+  const missingOptional = optional.filter((key) => !process.env[key]);
+
+  if (missingOptional.length > 0) {
+    log.warn("Some features are degraded due to missing optional variables:");
+    missingOptional.forEach((key) => log.warn(`  - ${key}`));
+  }
+}
 
 /**
  * Check if a specific capability is available based on env configuration.

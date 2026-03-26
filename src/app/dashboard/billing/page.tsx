@@ -18,7 +18,7 @@ export default function BillingPortal() {
       });
       const data = await res.json();
       if (data.checkoutUrl) {
-        window.location.href = data.checkoutUrl;
+        window.location.assign(data.checkoutUrl);
       }
     } catch (error) {
       console.error("Checkout failed:", error);

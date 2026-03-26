@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useMemo } from "react";
+import { useRef, useState } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
@@ -38,7 +38,7 @@ function InnerIcosahedron() {
 function ParticleRing() {
   const ref = useRef<THREE.Points>(null!);
 
-  const positions = useMemo(() => {
+  const [positions] = useState(() => {
     const count = 200;
     const pos = new Float32Array(count * 3);
     for (let i = 0; i < count; i++) {
@@ -52,7 +52,7 @@ function ParticleRing() {
       pos[i * 3 + 2] = radius * Math.cos(phi);
     }
     return pos;
-  }, []);
+  });
 
   useFrame(() => {
     ref.current.rotation.y += 0.0003;

@@ -162,11 +162,13 @@ function ChatDemo({ scenario }: { scenario: typeof SCENARIOS[0] }) {
   }, [currentStep, started, scenario.agentSteps]);
 
   // Reset when scenario changes
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     setStarted(false);
     setCurrentStep(-1);
     setShowResult(false);
   }, [scenario.id]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   return (
     <div className="relative">

@@ -140,7 +140,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // Persist sidebar preference
   useEffect(() => {
     const saved = localStorage.getItem("sidebar-expanded");
-    if (saved !== null) setSidebarExpanded(saved === "true");
+    if (saved !== null) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSidebarExpanded(saved === "true");
+    }
   }, []);
   useEffect(() => {
     localStorage.setItem("sidebar-expanded", String(sidebarExpanded));
@@ -218,7 +221,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </Link>
       );
     };
-    Component.displayName = "NavLink";
     return Component;
   }, [pathname]);
 

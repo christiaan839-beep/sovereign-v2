@@ -236,7 +236,7 @@ export default function AgentBuilderPage() {
   };
 
   // Use template
-  const useTemplate = (template: (typeof STARTER_TEMPLATES)[number]) => {
+  const applyTemplate = (template: (typeof STARTER_TEMPLATES)[number]) => {
     setName(template.name);
     setDescription(template.description);
     setSystemPrompt(template.systemPrompt);
@@ -641,7 +641,7 @@ export default function AgentBuilderPage() {
                 {template.description}
               </p>
               <button
-                onClick={() => useTemplate(template)}
+                onClick={() => applyTemplate(template)}
                 className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-neutral-300 hover:text-white hover:bg-emerald-500/10 hover:border-emerald-500/20 transition-all"
               >
                 <Copy className="w-3.5 h-3.5" />

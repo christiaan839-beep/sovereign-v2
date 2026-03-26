@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, startTransition } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Briefcase, User, Rocket, Building2, Code2,
@@ -22,12 +22,14 @@ const STORAGE_KEY = "sovereign_onboarding";
 export function useOnboardingComplete(): boolean {
   const [complete, setComplete] = useState(true); // default true to prevent flash
   useEffect(() => {
+    let isComplete = false;
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      setComplete(raw ? JSON.parse(raw).completedAt != null : false);
+      isComplete = raw ? JSON.parse(raw).completedAt != null : false;
     } catch {
-      setComplete(false);
+      // default to incomplete
     }
+    startTransition(() => setComplete(isComplete));
   }, []);
   return complete;
 }
@@ -66,14 +68,16 @@ export function GuidedSetup({ children }: { children: React.ReactNode }) {
   const [finishing, setFinishing] = useState(false);
 
   useEffect(() => {
+    let shouldShow = true;
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw || !JSON.parse(raw).completedAt) {
-        setShow(true);
+      if (raw && JSON.parse(raw).completedAt) {
+        shouldShow = false;
       }
     } catch {
-      setShow(true);
+      // default to showing
     }
+    startTransition(() => setShow(shouldShow));
   }, []);
 
   const toggleNeed = (id: string) => {

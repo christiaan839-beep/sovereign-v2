@@ -41,7 +41,7 @@ Provide specific, actionable recommendations. No fluff.`;
       platform,
       timestamp: new Date().toISOString(),
     });
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json(
       { success: false, error: "Failed to generate report" },
       { status: 500 }

@@ -10,6 +10,7 @@ export default function VoiceSwarmPage() {
   const [callDuration, setCallDuration] = useState(0);
 
   // Real Voice Agent — Uses NIM voice-chat for agent responses
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     let timer: NodeJS.Timeout;
 
@@ -82,6 +83,7 @@ export default function VoiceSwarmPage() {
       clearInterval(timer);
     };
   }, [activeCall]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60).toString().padStart(2, '0');

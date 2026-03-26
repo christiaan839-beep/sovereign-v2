@@ -1,6 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, startTransition } from "react";
+
+function formatTime(timestamp: string): string {
+  return new Date(timestamp).toLocaleTimeString();
+}
 import {
   BarChart3, Activity, Zap, Users, Clock, TrendingUp,
   RefreshCcw, Loader2, Calendar, Play, ToggleLeft, ToggleRight
@@ -38,11 +42,14 @@ export default function AnalyticsDashboard() {
     ]);
     const analyticsData = await analyticsRes.json();
     const jobsData = await jobsRes.json();
-    setData(analyticsData);
-    setJobs(jobsData.jobs || []);
-    setLoading(false);
+    startTransition(() => {
+      setData(analyticsData);
+      setJobs(jobsData.jobs || []);
+      setLoading(false);
+    });
   };
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { refresh(); }, []);
 
   const triggerJob = async (jobId: string) => {
@@ -172,7 +179,7 @@ export default function AnalyticsDashboard() {
                     <span className="w-1.5 h-1.5 rounded-full bg-[#00ff66]" />
                     <span className="text-white font-bold">{log.agent}</span>
                   </div>
-                  <span className="text-neutral-600">{new Date(log.timestamp).toLocaleTimeString()}</span>
+                  <span className="text-neutral-600">{formatTime(log.timestamp)}</span>
                 </div>
               ))}
               {(!data?.recent_activity || data.recent_activity.length === 0) && (

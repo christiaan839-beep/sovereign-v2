@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, startTransition } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -114,7 +114,8 @@ function DiscoverSection() {
 
   useEffect(() => {
     const done = localStorage.getItem(ONBOARDING_KEY) === "true";
-    if (done) setVisible(true);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    startTransition(() => setVisible(done));
   }, []);
 
   if (!visible) return null;
@@ -156,20 +157,17 @@ function DiscoverSection() {
 
 export default function DashboardHome() {
   const router = useRouter();
-  const [showWelcome, setShowWelcome] = useState(false);
-  const [loaded, setLoaded] = useState(false);
+  const [state, setState] = useState({ showWelcome: false, loaded: false });
 
   useEffect(() => {
     const seen = localStorage.getItem(ONBOARDING_KEY);
-    if (!seen) {
-      setShowWelcome(true);
-    }
-    setLoaded(true);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    startTransition(() => setState({ showWelcome: !seen, loaded: true }));
   }, []);
 
   const dismissWelcome = () => {
     localStorage.setItem(ONBOARDING_KEY, "true");
-    setShowWelcome(false);
+    setState(prev => ({ ...prev, showWelcome: false }));
   };
 
   const handleQuickAction = (action: QuickAction) => {
@@ -185,12 +183,12 @@ export default function DashboardHome() {
     }
   };
 
-  if (!loaded) return null;
+  if (!state.loaded) return null;
 
   return (
     <div className="flex flex-col h-full">
       <AnimatePresence>
-        {showWelcome && (
+        {state.showWelcome && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -242,7 +240,7 @@ export default function DashboardHome() {
       </AnimatePresence>
 
       {/* Discover Section — shown after onboarding */}
-      {!showWelcome && <DiscoverSection />}
+      {!state.showWelcome && <DiscoverSection />}
 
       <div className="flex-1 min-h-0">
         <SovereignAssistantEmbed />

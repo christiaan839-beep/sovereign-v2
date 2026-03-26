@@ -174,7 +174,7 @@ export function AgentWorld() {
                     className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-52 p-3 rounded-xl bg-[#0A0A0A]/95 backdrop-blur-xl border border-white/[0.1] shadow-2xl z-50"
                   >
                     <div className="flex items-center gap-2 mb-2">
-                      <StatusDot status={agent.status} />
+                      <span className={`inline-block w-2 h-2 rounded-full ${agent.status === "working" ? "bg-green-400" : agent.status === "thinking" ? "bg-yellow-400" : agent.status === "collaborating" ? "bg-blue-400" : "bg-neutral-500"}`} />
                       <span className="text-[10px] font-bold text-white uppercase tracking-wider">{agent.role}</span>
                     </div>
                     <p className="text-[10px] text-neutral-400 leading-relaxed">{agent.currentTask}</p>

@@ -64,7 +64,7 @@ export default function WhitelabelPage() {
           <Palette className="w-6 h-6 text-violet-400" /> White-Label Exports
         </h1>
         <p className="text-neutral-400">
-          Customize the SOVEREIGN portal and AI-generated PDF reports with your own agency's branding, colors, and logos.
+          Customize the SOVEREIGN portal and AI-generated PDF reports with your own agency&apos;s branding, colors, and logos.
         </p>
       </div>
 

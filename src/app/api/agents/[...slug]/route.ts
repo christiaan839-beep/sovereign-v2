@@ -12,8 +12,10 @@ import { NextRequest, NextResponse } from "next/server";
  * This is a single serverless function that handles all agent requests.
  */
 
+type RouteHandler = (req: NextRequest) => Promise<NextResponse> | NextResponse;
+
 // Build a registry of all agent handlers at module load time
-const agentHandlers: Record<string, { POST?: Function; GET?: Function; PUT?: Function; DELETE?: Function }> = {};
+const agentHandlers: Record<string, { POST?: RouteHandler; GET?: RouteHandler; PUT?: RouteHandler; DELETE?: RouteHandler }> = {};
 
 // Dynamically import all agent route files
 function getAgentHandler(slug: string) {

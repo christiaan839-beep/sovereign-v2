@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 /**
@@ -191,6 +191,7 @@ export function AgentOffice() {
   const wRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setBots(DEFS.map(d => ({
       ...d, x: d.homeX, y: d.homeY,
       tx: d.homeX, ty: d.homeY,
@@ -215,7 +216,8 @@ export function AgentOffice() {
       fr.current++;
       const f = fr.current;
       setBots(prev => prev.map(b => {
-        let { x, y, tx, ty, mode, msg, frame, faceR, cd, homeX, homeY } = b;
+        const { homeX, homeY } = b;
+        let { x, y, tx, ty, mode, msg, frame, faceR, cd } = b;
         cd--;
 
         if (task) { tx = task.x + (Math.random() - 0.5) * 50; ty = task.y + (Math.random() - 0.5) * 50; mode = "walk"; }
@@ -284,6 +286,23 @@ export function AgentOffice() {
     setTask({ x: ((e.clientX - r.left) / r.width) * W, y: ((e.clientY - r.top) / r.height) * H });
   }, []);
 
+  // Pre-compute random values for render to avoid impure calls during render
+  const [rainData] = useState(() => Array.from({ length: 15 }, () => ({
+    duration: 6 + Math.random() * 8,
+    char: String.fromCharCode(0x30A0 + Math.random() * 96),
+  })));
+
+  const [particleData] = useState(() => Array.from({ length: 8 }, () => ({
+    width: 1 + Math.random(),
+    height: 1 + Math.random(),
+    bgAlpha: 0.08 + Math.random() * 0.12,
+    leftFrom: `${Math.random() * 100}%`,
+    leftTo: `${Math.random() * 100}%`,
+    topFrom: `${Math.random() * 100}%`,
+    topTo: `${Math.random() * 100}%`,
+    duration: 10 + Math.random() * 8,
+  })));
+
   return (
     <div className="w-full max-w-5xl mx-auto">
       <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
@@ -330,15 +349,15 @@ export function AgentOffice() {
         />
 
         {/* Matrix rain — falling characters */}
-        {Array.from({ length: 15 }).map((_, i) => (
+        {rainData.map((rd, i) => (
           <motion.div
             key={`rain-${i}`}
             className="absolute text-[6px] font-mono text-emerald-500/10 pointer-events-none select-none"
             style={{ left: `${5 + i * 6.5}%` }}
             animate={{ top: ["-5%", "105%"], opacity: [0, 0.15, 0] }}
-            transition={{ duration: 6 + Math.random() * 8, repeat: Infinity, delay: i * 0.4, ease: "linear" }}
+            transition={{ duration: rd.duration, repeat: Infinity, delay: i * 0.4, ease: "linear" }}
           >
-            {String.fromCharCode(0x30A0 + Math.random() * 96)}
+            {rd.char}
           </motion.div>
         ))}
 
@@ -430,15 +449,15 @@ export function AgentOffice() {
         </AnimatePresence>
 
         {/* Ambient particles */}
-        {Array.from({ length: 8 }).map((_, i) => (
+        {particleData.map((pd, i) => (
           <motion.div key={i} className="absolute rounded-full"
-            style={{ width: 1 + Math.random(), height: 1 + Math.random(), backgroundColor: `rgba(16,185,129,${0.08 + Math.random() * 0.12})` }}
+            style={{ width: pd.width, height: pd.height, backgroundColor: `rgba(16,185,129,${pd.bgAlpha})` }}
             animate={{
-              left: [`${Math.random() * 100}%`, `${Math.random() * 100}%`],
-              top: [`${Math.random() * 100}%`, `${Math.random() * 100}%`],
+              left: [pd.leftFrom, pd.leftTo],
+              top: [pd.topFrom, pd.topTo],
               opacity: [0, 0.3, 0],
             }}
-            transition={{ duration: 10 + Math.random() * 8, repeat: Infinity, delay: i * 0.8, ease: "linear" }}
+            transition={{ duration: pd.duration, repeat: Infinity, delay: i * 0.8, ease: "linear" }}
           />
         ))}
 

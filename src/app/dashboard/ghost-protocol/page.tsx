@@ -220,7 +220,7 @@ export default function GhostProtocolDashboard() {
                          <span className="text-[10px] text-red-500 uppercase font-bold tracking-widest block mb-2 flex items-center gap-1">
                            <ShieldAlert className="w-3 h-3" /> Intercepted {result.complaint.source} Complaint:
                          </span>
-                         <p className="text-sm text-neutral-300 italic">"{result.complaint.text}"</p>
+                         <p className="text-sm text-neutral-300 italic">&quot;{result.complaint.text}&quot;</p>
                       </div>
                     </div>
 

@@ -47,7 +47,7 @@ export default function WorkflowBuilderPage() {
     setNodes((prev) => [
       ...prev,
       {
-        id: `node-${Date.now()}`,
+        id: `node-${crypto.randomUUID()}`,
         agentId: agent.id,
         name: agent.name,
         icon: agent.icon,
@@ -74,7 +74,7 @@ export default function WorkflowBuilderPage() {
     setResults([]);
     setCurrentStep(0);
 
-    const workflowResults: WorkflowResult[] = [];
+    let workflowResults: WorkflowResult[] = [];
 
     for (let i = 0; i < nodes.length; i++) {
       setCurrentStep(i);
@@ -95,7 +95,7 @@ export default function WorkflowBuilderPage() {
         }
       }
 
-      const start = Date.now();
+      const start = performance.now();
       try {
         const res = await fetch(`/api/agents/${node.agentId}`, {
           method: "POST",
@@ -108,19 +108,19 @@ export default function WorkflowBuilderPage() {
         const output = data.result || data.answer || data.response || data.analysis || data.text ||
           data.code || data.translation?.text || JSON.stringify(data, null, 2);
 
-        workflowResults.push({
+        workflowResults = [...workflowResults, {
           nodeId: node.id,
           status: "success",
           output: typeof output === "string" ? output.slice(0, 3000) : JSON.stringify(output).slice(0, 3000),
-          durationMs: Date.now() - start,
-        });
+          durationMs: Math.round(performance.now() - start),
+        }];
       } catch (err) {
-        workflowResults.push({
+        workflowResults = [...workflowResults, {
           nodeId: node.id,
           status: "error",
           output: err instanceof Error ? err.message : "Failed",
-          durationMs: Date.now() - start,
-        });
+          durationMs: Math.round(performance.now() - start),
+        }];
       }
 
       setResults([...workflowResults]);
@@ -189,7 +189,7 @@ export default function WorkflowBuilderPage() {
             <Plus className="w-6 h-6 text-neutral-600" />
           </div>
           <p className="text-neutral-500 text-sm mb-2">No steps yet</p>
-          <p className="text-neutral-600 text-xs">Click "Add Step" to start building your workflow</p>
+          <p className="text-neutral-600 text-xs">Click &quot;Add Step&quot; to start building your workflow</p>
         </div>
       ) : (
         <div className="space-y-3">

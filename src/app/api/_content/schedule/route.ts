@@ -29,7 +29,7 @@ export async function POST(req: Request) {
        targetPlatform: validated.platform 
     });
 
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json({ error: "TRANSMISSION_FAILED" }, { status: 500 });
   }
 }

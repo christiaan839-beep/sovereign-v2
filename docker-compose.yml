@@ -18,15 +18,15 @@ services:
     depends_on:
       - db
 
-  # 2. Local Highly-Secured Postgres Database
+  # 2. Local Postgres Database
   db:
     image: postgres:15-alpine
     container_name: sovereign-db
     restart: always
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=sovereign-db
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      - POSTGRES_DB=${POSTGRES_DB:-sovereign-db}
     ports:
       - "5432:5432"
     volumes:
@@ -44,8 +44,11 @@ services:
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - GOOGLE_GENERATIVE_AI_API_KEY=${GOOGLE_GENERATIVE_AI_API_KEY}
-    # NemoClaw needs extra privileges for specific X11/Headless Chromium scraping capabilities
-    privileged: true
+    # Chromium headless scraping — use specific capabilities instead of privileged mode
+    cap_add:
+      - SYS_ADMIN
+    security_opt:
+      - seccomp=unconfined
 
   # 4. N8N Webhook/Workflow Automation Engine (The Nervous System)
   n8n:
