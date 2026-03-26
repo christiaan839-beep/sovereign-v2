@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bot, Brain, Target, Code2, Mic, Search, FileText, Shield, Zap, MessageSquare } from "lucide-react";
+import { MessageSquare } from "lucide-react";
+import { AgentAvatar, type AgentPersonality } from "@/components/ui/AgentAvatar";
 
 /**
  * AgentWorld — An animated digital workspace visualization showing
@@ -17,8 +18,7 @@ interface AgentNode {
   id: string;
   name: string;
   role: string;
-  icon: React.ComponentType<{ className?: string }>;
-  color: string;
+  personality: AgentPersonality;
   x: number;
   y: number;
   status: "working" | "thinking" | "collaborating" | "idle";
@@ -26,14 +26,14 @@ interface AgentNode {
 }
 
 const AGENTS: AgentNode[] = [
-  { id: "lead", name: "Lead Hunter", role: "Sales", icon: Target, color: "#10B981", x: 15, y: 20, status: "working", currentTask: "Scanning 847 fintech companies..." },
-  { id: "content", name: "Content Engine", role: "Marketing", icon: FileText, color: "#06B6D4", x: 55, y: 15, status: "working", currentTask: "Writing blog post (4.2% AI score)" },
-  { id: "code", name: "Code Agent", role: "Engineering", icon: Code2, color: "#A855F7", x: 80, y: 30, status: "thinking", currentTask: "Building landing page component..." },
-  { id: "seo", name: "SEO Dominator", role: "Growth", icon: Search, color: "#F59E0B", x: 25, y: 55, status: "collaborating", currentTask: "Found 312 keyword gaps" },
-  { id: "voice", name: "Voice Closer", role: "Sales", icon: Mic, color: "#EF4444", x: 65, y: 50, status: "working", currentTask: "Cold-calling lead #23 (booking)" },
-  { id: "guard", name: "Guardrails", role: "Security", icon: Shield, color: "#6366F1", x: 45, y: 75, status: "idle", currentTask: "5-layer pipeline active. 0 threats." },
-  { id: "brain", name: "God Brain", role: "Strategy", icon: Brain, color: "#EC4899", x: 10, y: 80, status: "thinking", currentTask: "Synthesizing War Room debate..." },
-  { id: "router", name: "Smart Router", role: "Infrastructure", icon: Zap, color: "#14B8A6", x: 85, y: 70, status: "working", currentTask: "Routed 1,247 tasks today ($0 cost)" },
+  { id: "lead", name: "Lead Hunter", role: "Sales", personality: "hunter", x: 15, y: 20, status: "working", currentTask: "Scanning 847 fintech companies..." },
+  { id: "content", name: "Content Engine", role: "Marketing", personality: "creator", x: 55, y: 15, status: "working", currentTask: "Writing blog post (4.2% AI score)" },
+  { id: "code", name: "Code Agent", role: "Engineering", personality: "coder", x: 80, y: 30, status: "thinking", currentTask: "Building landing page component..." },
+  { id: "seo", name: "SEO Dominator", role: "Growth", personality: "analyst", x: 25, y: 55, status: "collaborating", currentTask: "Found 312 keyword gaps" },
+  { id: "voice", name: "Voice Closer", role: "Sales", personality: "caller", x: 65, y: 50, status: "working", currentTask: "Cold-calling lead #23 (booking)" },
+  { id: "guard", name: "Guardrails", role: "Security", personality: "defender", x: 45, y: 75, status: "idle", currentTask: "5-layer pipeline active. 0 threats." },
+  { id: "brain", name: "God Brain", role: "Strategy", personality: "strategist", x: 10, y: 80, status: "thinking", currentTask: "Synthesizing War Room debate..." },
+  { id: "router", name: "Smart Router", role: "Infrastructure", personality: "router", x: 85, y: 70, status: "working", currentTask: "Routed 1,247 tasks today ($0 cost)" },
 ];
 
 const CONVERSATIONS = [
@@ -46,23 +46,6 @@ const CONVERSATIONS = [
   { from: "Smart Router", to: "God Brain", message: "Nemotron Ultra responded in 2.1s. Quality: 9.8/10." },
   { from: "Guardrails", to: "Code Agent", message: "PII scan passed. Zero sensitive data detected. Clear to deploy." },
 ];
-
-function StatusDot({ status }: { status: AgentNode["status"] }) {
-  const colors = {
-    working: "bg-emerald-400",
-    thinking: "bg-amber-400",
-    collaborating: "bg-cyan-400",
-    idle: "bg-neutral-500",
-  };
-  return (
-    <span className="relative flex h-2 w-2">
-      {status !== "idle" && (
-        <span className={`animate-ping absolute h-full w-full rounded-full ${colors[status]} opacity-40`} />
-      )}
-      <span className={`relative rounded-full h-2 w-2 ${colors[status]}`} />
-    </span>
-  );
-}
 
 export function AgentWorld() {
   const [activeConvo, setActiveConvo] = useState(0);
@@ -163,27 +146,18 @@ export function AgentWorld() {
             onMouseEnter={() => setHoveredAgent(agent.id)}
             onMouseLeave={() => setHoveredAgent(null)}
           >
-            {/* Agent card */}
+            {/* Agent avatar */}
             <motion.div
               animate={{ y: [0, -4, 0] }}
               transition={{ duration: 3 + i * 0.5, repeat: Infinity, ease: "easeInOut" }}
               className="relative group cursor-pointer"
             >
-              <div className={`
-                w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center
-                border transition-all duration-300
-                ${hoveredAgent === agent.id
-                  ? "border-white/20 bg-white/[0.08] shadow-[0_0_30px_rgba(16,185,129,0.15)]"
-                  : "border-white/[0.06] bg-white/[0.03]"
-                }
-              `}>
-                <agent.icon className="w-5 h-5 md:w-6 md:h-6" style={{ color: agent.color }} />
-              </div>
-
-              {/* Status dot */}
-              <div className="absolute -top-1 -right-1">
-                <StatusDot status={agent.status} />
-              </div>
+              <AgentAvatar
+                personality={agent.personality}
+                size="md"
+                isActive={agent.status !== "idle"}
+                isThinking={agent.status === "thinking"}
+              />
 
               {/* Name label */}
               <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 whitespace-nowrap">
