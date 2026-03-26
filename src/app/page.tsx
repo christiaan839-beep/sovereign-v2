@@ -70,8 +70,66 @@ function ModelBadge({ name, type }: { name: string; type: string }) {
   );
 }
 
-// ─── Live Demo Mockup ───
-function LiveDemoMockup() {
+// ─── Interactive Demo with Tabs ───
+const DEMO_SCENARIOS = [
+  {
+    id: "leads",
+    label: "Lead Gen",
+    icon: Target,
+    prompt: "Find 50 leads in fintech — Series A, US-based, with open CMO roles.",
+    agent: "Lead Agent",
+    response: "Found 53 matches. Enriched with LinkedIn profiles, funding data, and email verification. 48 have validated emails.",
+    badges: [
+      { text: "53 leads found", color: "emerald" },
+      { text: "48 verified emails", color: "cyan" },
+      { text: "CSV ready", color: "neutral" },
+    ],
+  },
+  {
+    id: "content",
+    label: "Content",
+    icon: FileText,
+    prompt: "Write a 1,500-word blog post about AI agents replacing agency work. Anti-slop. Sound human.",
+    agent: "Content Agent",
+    response: "Draft complete. 1,487 words. AI detection score: 4.2% (human-passing). Readability: Grade 8. SEO optimized for 3 target keywords.",
+    badges: [
+      { text: "4.2% AI score", color: "emerald" },
+      { text: "1,487 words", color: "cyan" },
+      { text: "SEO optimized", color: "neutral" },
+    ],
+  },
+  {
+    id: "competitor",
+    label: "Competitor Intel",
+    icon: Search,
+    prompt: "Analyze competitor hubspot.com — tech stack, SEO gaps, content strategy weaknesses.",
+    agent: "Site Assassin",
+    response: "Tech stack: React, Next.js, Contentful CMS. SEO gaps: 847 uncontested long-tail keywords. Weakness: No AI agent content. Counter-strategy: 12 tactical moves identified.",
+    badges: [
+      { text: "847 keyword gaps", color: "emerald" },
+      { text: "12 counter-moves", color: "cyan" },
+      { text: "Full report", color: "neutral" },
+    ],
+  },
+  {
+    id: "voice",
+    label: "Voice Call",
+    icon: Mic,
+    prompt: "Cold-call the top 10 leads from today's search. Qualify for budget and timeline. Book meetings.",
+    agent: "Voice Closer",
+    response: "10 calls completed in 4m 32s. 6 answered. 3 qualified (budget confirmed). 2 meetings booked directly to your calendar for Thursday.",
+    badges: [
+      { text: "3 qualified", color: "emerald" },
+      { text: "2 meetings booked", color: "cyan" },
+      { text: "< 200ms latency", color: "neutral" },
+    ],
+  },
+];
+
+function InteractiveDemo() {
+  const [active, setActive] = useState(0);
+  const scenario = DEMO_SCENARIOS[active];
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
@@ -80,9 +138,27 @@ function LiveDemoMockup() {
       transition={{ duration: 0.7 }}
       className="relative max-w-3xl mx-auto"
     >
+      {/* Tabs */}
+      <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-2 scrollbar-hide">
+        {DEMO_SCENARIOS.map((s, i) => (
+          <button
+            key={s.id}
+            type="button"
+            onClick={() => setActive(i)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium transition-all duration-300 whitespace-nowrap ${
+              active === i
+                ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                : "bg-white/[0.02] text-neutral-500 border border-white/[0.06] hover:text-white hover:border-white/[0.12]"
+            }`}
+          >
+            <s.icon className="w-3.5 h-3.5" />
+            {s.label}
+          </button>
+        ))}
+      </div>
+
       {/* Window chrome */}
-      <div className="scan-line rounded-2xl border border-white/[0.08] bg-[#0A0A0A] overflow-hidden shadow-[0_0_60px_rgba(16,185,129,0.04)]">
-        {/* Title bar */}
+      <div className="rounded-2xl border border-white/[0.08] bg-[#0A0A0A] overflow-hidden shadow-[0_0_60px_rgba(16,185,129,0.04)]">
         <div className="flex items-center gap-2 px-5 py-3 border-b border-white/[0.06] bg-[#060606]">
           <div className="flex gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-white/[0.08]" />
@@ -92,33 +168,43 @@ function LiveDemoMockup() {
           <span className="text-[10px] text-neutral-500 ml-3 font-mono">sovereign-matrix.agency/dashboard</span>
         </div>
 
-        {/* Chat content */}
-        <div className="p-6 space-y-4">
-          {/* User message */}
-          <div className="flex justify-end">
-            <div className="max-w-[80%] px-4 py-3 rounded-2xl rounded-br-md bg-emerald-500/10 border border-emerald-500/15">
-              <p className="text-sm text-emerald-200">Find 50 leads in fintech — Series A, US-based, with open CMO roles.</p>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={scenario.id}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
+            className="p-6 space-y-4"
+          >
+            {/* User message */}
+            <div className="flex justify-end">
+              <div className="max-w-[80%] px-4 py-3 rounded-2xl rounded-br-md bg-emerald-500/10 border border-emerald-500/15">
+                <p className="text-sm text-emerald-200">{scenario.prompt}</p>
+              </div>
             </div>
-          </div>
 
-          {/* Agent response */}
-          <div className="flex justify-start">
-            <div className="max-w-[85%] px-4 py-3 rounded-2xl rounded-bl-md bg-white/[0.03] border border-white/[0.06]">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-[10px] text-emerald-500/70 font-medium uppercase tracking-wider">Lead Agent</span>
-              </div>
-              <p className="text-sm text-neutral-300 leading-relaxed mb-3">
-                Found 53 matches. Enriched with LinkedIn profiles, funding data, and email verification. 48 have validated emails.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <span className="text-[10px] px-2 py-1 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/15">53 leads found</span>
-                <span className="text-[10px] px-2 py-1 rounded-md bg-cyan-500/10 text-cyan-400 border border-cyan-500/15">48 verified emails</span>
-                <span className="text-[10px] px-2 py-1 rounded-md bg-white/[0.04] text-neutral-400 border border-white/[0.06]">CSV ready</span>
+            {/* Agent response */}
+            <div className="flex justify-start">
+              <div className="max-w-[85%] px-4 py-3 rounded-2xl rounded-bl-md bg-white/[0.03] border border-white/[0.06]">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-[10px] text-emerald-500/70 font-medium uppercase tracking-wider">{scenario.agent}</span>
+                </div>
+                <p className="text-sm text-neutral-300 leading-relaxed mb-3">{scenario.response}</p>
+                <div className="flex flex-wrap gap-2">
+                  {scenario.badges.map((b, i) => (
+                    <span key={i} className={`text-[10px] px-2 py-1 rounded-md ${
+                      b.color === "emerald" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/15" :
+                      b.color === "cyan" ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/15" :
+                      "bg-white/[0.04] text-neutral-400 border border-white/[0.06]"
+                    }`}>{b.text}</span>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </AnimatePresence>
       </div>
     </motion.div>
   );
@@ -368,7 +454,7 @@ export default function Home() {
             <p className="text-neutral-500 max-w-lg mx-auto">Give a goal. Watch agents deliver. No prompting required.</p>
           </motion.div>
 
-          <LiveDemoMockup />
+          <InteractiveDemo />
         </div>
       </section>
 

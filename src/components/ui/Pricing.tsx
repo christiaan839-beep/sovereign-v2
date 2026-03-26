@@ -13,6 +13,29 @@ export function Pricing() {
   };
   const tiers = [
     {
+      name: "Free",
+      description: "Try Sovereign Matrix with 3 agents and 50 tasks. No credit card required.",
+      price: "R0",
+      period: "/forever",
+      icon: Shield,
+      color: "text-neutral-400",
+      bg: "bg-white/[0.02]",
+      border: "border-white/[0.08]",
+      features: [
+        { name: "3 core agents (Content, SEO, Leads)", included: true },
+        { name: "50 tasks per month", included: true },
+        { name: "Smart Router (auto model selection)", included: true },
+        { name: "Community support", included: true },
+        { name: "STRIKE competitor analysis", included: true },
+        { name: "Voice agents", included: false },
+        { name: "White-label", included: false },
+        { name: "Local execution", included: false },
+      ],
+      planId: "free",
+      buttonText: "Start Free",
+      buttonStyle: "bg-white/5 hover:bg-white/10 text-white border border-white/10",
+    },
+    {
       name: "Sovereign Node",
       description: "Core AI agents for content, SEO, and lead generation. Local execution via NemoClaw OS.",
       price: "R9,997",
