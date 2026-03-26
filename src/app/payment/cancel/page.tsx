@@ -32,13 +32,13 @@ export default function PaymentCancelPage() {
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link
             href="/pricing"
-            className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-white text-black font-bold uppercase tracking-widest text-xs hover:bg-neutral-200 transition-all"
+            className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-white text-black font-bold uppercase tracking-widest text-xs hover:bg-neutral-200 transition-gpu"
           >
             <RefreshCw className="w-4 h-4" /> Retry Deployment
           </Link>
           <Link
             href="/"
-            className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-white/5 border border-white/10 text-white font-bold uppercase tracking-widest text-xs hover:bg-white/10 transition-all"
+            className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-white/5 border border-white/10 text-white font-bold uppercase tracking-widest text-xs hover:bg-white/10 transition-gpu"
           >
             <ArrowLeft className="w-4 h-4" /> Return to Base
           </Link>

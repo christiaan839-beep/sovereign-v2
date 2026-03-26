@@ -97,7 +97,7 @@ function ActionButton({ action, onExecute }: { action: Action; onExecute: (actio
     <button
       onClick={execute}
       disabled={loading}
-      className="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-semibold hover:bg-emerald-500/20 transition-all disabled:opacity-50"
+      className="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-semibold hover:bg-emerald-500/20 transition-gpu disabled:opacity-50"
     >
       {loading ? (
         <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -341,7 +341,7 @@ Respond helpfully and concisely. If the user asks to execute a task, describe wh
           <button
             key={q.label}
             onClick={() => { setInput(q.prompt); inputRef.current?.focus(); }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.03] border border-white/[0.06] text-[10px] text-neutral-500 hover:text-emerald-400 hover:border-emerald-500/20 transition-all"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.03] border border-white/[0.06] text-[10px] text-neutral-500 hover:text-emerald-400 hover:border-emerald-500/20 transition-gpu"
           >
             <Lightbulb className="w-3 h-3" /> {q.label}
           </button>
@@ -388,7 +388,7 @@ Respond helpfully and concisely. If the user asks to execute a task, describe wh
         <button
           onClick={sendMessage}
           disabled={!input.trim() || isThinking}
-          className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center text-emerald-400 hover:bg-emerald-500/25 transition-all disabled:opacity-30"
+          className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center text-emerald-400 hover:bg-emerald-500/25 transition-gpu disabled:opacity-30"
         >
           <Send className="w-4 h-4" />
         </button>

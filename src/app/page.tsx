@@ -25,7 +25,7 @@ function CapabilityCard({ icon: Icon, title, desc, accent, href }: { icon: React
       transition={{ duration: 0.5 }}
       className="group relative cursor-pointer"
     >
-      <div className="relative p-8 rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl hover:border-emerald-500/20 transition-all duration-500 overflow-hidden hover:shadow-[0_0_40px_rgba(16,185,129,0.06)] hover:bg-white/[0.04]">
+      <div className="relative p-8 rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl hover:border-emerald-500/20 transition-gpu duration-500 overflow-hidden hover:shadow-[0_0_40px_rgba(16,185,129,0.06)] hover:bg-white/[0.04]">
         {/* Hover glow */}
         <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 bg-gradient-to-br ${accent} to-transparent`} />
 
@@ -54,7 +54,7 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
         <span className="text-sm md:text-base font-medium text-white group-hover:text-neutral-400 transition-colors pr-4">{question}</span>
         <ChevronDown className={`w-5 h-5 text-neutral-500 transition-transform flex-shrink-0 ${open ? 'rotate-180' : ''}`} />
       </button>
-      <div className={`overflow-hidden transition-all duration-300 ${open ? 'max-h-60 pb-6' : 'max-h-0'}`}>
+      <div className={`overflow-hidden transition-gpu duration-300 ${open ? 'max-h-60 pb-6' : 'max-h-0'}`}>
         <p className="text-sm text-neutral-500 leading-relaxed">{answer}</p>
       </div>
     </div>
@@ -64,7 +64,7 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
 // ─── Model Badge (enhanced with subtle glow) ───
 function ModelBadge({ name, type }: { name: string; type: string }) {
   return (
-    <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.02] border border-white/[0.06] backdrop-blur-xl hover:border-emerald-500/20 hover:bg-emerald-500/[0.03] transition-all duration-500 group">
+    <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.02] border border-white/[0.06] backdrop-blur-xl hover:border-emerald-500/20 hover:bg-emerald-500/[0.03] transition-gpu duration-500 group">
       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] group-hover:shadow-[0_0_12px_rgba(16,185,129,0.8)] transition-shadow" />
       <span className="text-xs font-medium text-neutral-300 group-hover:text-white transition-colors">{name}</span>
       <span className="text-[9px] text-emerald-500/40 uppercase font-mono">{type}</span>
@@ -147,7 +147,7 @@ function InteractiveDemo() {
             key={s.id}
             type="button"
             onClick={() => setActive(i)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium transition-all duration-300 whitespace-nowrap ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium transition-gpu duration-300 whitespace-nowrap ${
               active === i
                 ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
                 : "bg-white/[0.02] text-neutral-500 border border-white/[0.06] hover:text-white hover:border-white/[0.12]"
@@ -247,16 +247,16 @@ export default function Home() {
             <SignInButton mode="modal" fallbackRedirectUrl="/dashboard">
               <button className="text-xs text-neutral-500 hover:text-white transition-colors">Log in</button>
             </SignInButton>
-            <Link href="/onboarding" className="px-4 py-1.5 rounded-full bg-white text-xs font-semibold text-black hover:bg-neutral-200 transition-all">
+            <Link href="/onboarding" className="px-4 py-1.5 rounded-full bg-white text-xs font-semibold text-black hover:bg-neutral-200 transition-gpu">
               Get Started
             </Link>
           </div>
 
           <button className="md:hidden p-2" onClick={() => setMobileNavOpen(!mobileNavOpen)} aria-label="Toggle menu">
             <div className="space-y-1.5">
-              <span className={`block w-5 h-[1.5px] bg-white transition-all ${mobileNavOpen ? 'rotate-45 translate-y-[7px]' : ''}`} />
-              <span className={`block w-5 h-[1.5px] bg-white transition-all ${mobileNavOpen ? 'opacity-0' : ''}`} />
-              <span className={`block w-5 h-[1.5px] bg-white transition-all ${mobileNavOpen ? '-rotate-45 -translate-y-[7px]' : ''}`} />
+              <span className={`block w-5 h-[1.5px] bg-white transition-gpu ${mobileNavOpen ? 'rotate-45 translate-y-[7px]' : ''}`} />
+              <span className={`block w-5 h-[1.5px] bg-white transition-gpu ${mobileNavOpen ? 'opacity-0' : ''}`} />
+              <span className={`block w-5 h-[1.5px] bg-white transition-gpu ${mobileNavOpen ? '-rotate-45 -translate-y-[7px]' : ''}`} />
             </div>
           </button>
         </div>
@@ -348,10 +348,10 @@ export default function Home() {
             {/* CTAs — glassmorphic */}
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 0.6 }}
               className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-16">
-              <Link href="/onboarding" className="group flex items-center gap-2 px-8 py-4 bg-white text-black font-bold rounded-full text-sm hover:shadow-[0_0_60px_rgba(255,255,255,0.15)] transition-all duration-500">
+              <Link href="/onboarding" className="group flex items-center gap-2 px-8 py-4 bg-white text-black font-bold rounded-full text-sm hover:shadow-[0_0_60px_rgba(255,255,255,0.15)] transition-gpu duration-500">
                 Deploy Your First Agent <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Link>
-              <Link href="/showcase" className="px-8 py-4 rounded-full text-sm font-medium text-neutral-300 border border-white/[0.08] bg-white/[0.02] backdrop-blur-xl hover:border-emerald-500/20 hover:text-white transition-all duration-500">
+              <Link href="/showcase" className="px-8 py-4 rounded-full text-sm font-medium text-neutral-300 border border-white/[0.08] bg-white/[0.02] backdrop-blur-xl hover:border-emerald-500/20 hover:text-white transition-gpu duration-500">
                 Watch Demo
               </Link>
             </motion.div>
@@ -499,9 +499,9 @@ export default function Home() {
             ].map((tech, i) => (
               <motion.div key={tech.name} initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }} transition={{ delay: i * 0.05 }}
-                className="p-5 rounded-xl bg-[#0A0A0A] border border-white/[0.06] hover:border-emerald-500/20 transition-all duration-300 group hover:shadow-[0_0_20px_rgba(16,185,129,0.03)]">
+                className="p-5 rounded-xl bg-[#0A0A0A] border border-white/[0.06] hover:border-emerald-500/20 transition-gpu duration-300 group hover:shadow-[0_0_20px_rgba(16,185,129,0.03)]">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/60 group-hover:bg-emerald-400 group-hover:shadow-[0_0_6px_rgba(16,185,129,0.5)] transition-all" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/60 group-hover:bg-emerald-400 group-hover:shadow-[0_0_6px_rgba(16,185,129,0.5)] transition-gpu" />
                   <p className="text-sm font-semibold text-white">{tech.name}</p>
                 </div>
                 <p className="text-xs text-neutral-500">{tech.desc}</p>
@@ -536,7 +536,7 @@ export default function Home() {
               </ul>
             </div>
 
-            <div className="p-8 rounded-2xl bg-[#0A0A0A] border border-emerald-500/10 hover:border-emerald-500/20 transition-all duration-300 hover:shadow-[0_0_30px_rgba(16,185,129,0.04)]">
+            <div className="p-8 rounded-2xl bg-[#0A0A0A] border border-emerald-500/10 hover:border-emerald-500/20 transition-gpu duration-300 hover:shadow-[0_0_30px_rgba(16,185,129,0.04)]">
               <h3 className="text-lg font-semibold text-white mb-1 flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Agent-Powered Execution
               </h3>
@@ -602,7 +602,7 @@ export default function Home() {
             ].map((item, i) => (
               <motion.div key={i} initial={{ opacity: 0 }} whileInView={{ opacity: 1 }}
                 viewport={{ once: true }} transition={{ delay: 0.2 + i * 0.08 }}
-                className="p-4 rounded-xl border border-white/[0.06] bg-white/[0.01] hover:border-emerald-500/15 transition-all duration-300">
+                className="p-4 rounded-xl border border-white/[0.06] bg-white/[0.01] hover:border-emerald-500/15 transition-gpu duration-300">
                 <div className="text-xs font-semibold text-white mb-0.5">{item.label}</div>
                 <p className="text-[10px] text-neutral-500">{item.desc}</p>
               </motion.div>
@@ -610,7 +610,7 @@ export default function Home() {
           </div>
 
           <div className="mt-12 text-center">
-            <Link href="/partner" className="group inline-flex items-center gap-2 px-7 py-3.5 bg-white text-black font-semibold rounded-full text-sm hover:shadow-[0_0_40px_rgba(255,255,255,0.12)] transition-all">
+            <Link href="/partner" className="group inline-flex items-center gap-2 px-7 py-3.5 bg-white text-black font-semibold rounded-full text-sm hover:shadow-[0_0_40px_rgba(255,255,255,0.12)] transition-gpu">
               Book a Strategy Call <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
             </Link>
           </div>
@@ -654,10 +654,10 @@ export default function Home() {
             One platform. 132 agents. Zero per-token costs. Free to start.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Link href="/onboarding" className="cta-glow group flex items-center gap-2 px-7 py-3.5 bg-white text-black font-semibold rounded-full text-sm hover:shadow-[0_0_40px_rgba(255,255,255,0.12)] transition-all">
+            <Link href="/onboarding" className="cta-glow group flex items-center gap-2 px-7 py-3.5 bg-white text-black font-semibold rounded-full text-sm hover:shadow-[0_0_40px_rgba(255,255,255,0.12)] transition-gpu">
               Start Free <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
             </Link>
-            <Link href="#pricing" className="px-7 py-3.5 border border-white/10 text-neutral-300 font-medium rounded-full text-sm hover:border-white/20 hover:text-white transition-all">
+            <Link href="#pricing" className="px-7 py-3.5 border border-white/10 text-neutral-300 font-medium rounded-full text-sm hover:border-white/20 hover:text-white transition-gpu">
               Compare Plans
             </Link>
           </div>

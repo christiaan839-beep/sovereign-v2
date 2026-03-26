@@ -103,7 +103,7 @@ export default function VideoOutreachStudioPage() {
                        <button 
                          key={av.id}
                          onClick={() => setSelectedAvatar(av.id)}
-                         className={`p-3 rounded-xl border text-left transition-all ${
+                         className={`p-3 rounded-xl border text-left transition-gpu ${
                            selectedAvatar === av.id 
                              ? 'bg-[#00B7FF]/10 border-[#00B7FF] shadow-[0_0_15px_rgba(0,183,255,0.2)]'
                              : 'bg-black/40 border-white/10 hover:border-white/20'
@@ -166,7 +166,7 @@ export default function VideoOutreachStudioPage() {
             <button 
               onClick={handleGenerate}
               disabled={status !== "idle" || !targetScript}
-              className={`w-full mt-6 py-4 rounded-xl font-bold uppercase tracking-wider text-xs flex items-center justify-center gap-2 transition-all duration-300 ${
+              className={`w-full mt-6 py-4 rounded-xl font-bold uppercase tracking-wider text-xs flex items-center justify-center gap-2 transition-gpu duration-300 ${
                 status === "idle" && targetScript 
                 ? "bg-gradient-to-r from-purple-500 to-[#00B7FF] text-white shadow-[0_0_20px_rgba(0,183,255,0.3)] hover:-translate-y-1" 
                 : "bg-white/5 border border-white/10 text-neutral-500 cursor-not-allowed"

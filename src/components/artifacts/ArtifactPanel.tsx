@@ -351,7 +351,7 @@ export function ArtifactPanel({ artifacts, onClose }: ArtifactPanelProps) {
             <button
               key={i}
               onClick={() => setActiveIndex(i)}
-              className={`px-3 py-1 rounded-lg text-[10px] font-medium whitespace-nowrap transition-all ${
+              className={`px-3 py-1 rounded-lg text-[10px] font-medium whitespace-nowrap transition-gpu ${
                 i === activeIndex
                   ? "bg-white/[0.06] text-white border border-white/[0.08]"
                   : "text-neutral-500 hover:text-neutral-300 hover:bg-white/[0.03]"

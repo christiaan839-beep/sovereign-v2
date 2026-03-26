@@ -115,7 +115,7 @@ export default function CosmosVSLHackerPage() {
             
             <div 
               onClick={fileStatus === "idle" ? triggerUpload : undefined}
-              className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-all ${
+              className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-gpu ${
                 fileStatus === "idle" 
                   ? "border-white/10 hover:border-amber-500/50 hover:bg-amber-500/5 cursor-pointer" 
                   : fileStatus === "uploading"
@@ -140,7 +140,7 @@ export default function CosmosVSLHackerPage() {
                     <p className="text-xs font-bold text-amber-400 uppercase tracking-widest mb-3">Uploading Video...</p>
                     <div className="h-1.5 w-full bg-black/50 rounded-full overflow-hidden">
                       <div 
-                        className="h-full bg-amber-500 transition-all duration-200"
+                        className="h-full bg-amber-500 transition-gpu duration-200"
                         style={{ width: `${progress}%` }}
                       />
                     </div>
@@ -194,7 +194,7 @@ export default function CosmosVSLHackerPage() {
             <button 
               onClick={startPipeline}
               disabled={fileStatus !== "uploaded" || pipelineStatus !== "idle"}
-              className="w-full mt-6 py-3 rounded-xl border flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-amber-500/20 text-amber-400 border-amber-500/30 hover:bg-amber-500/30 shadow-[0_0_20px_rgba(245,158,11,0.15)]"
+              className="w-full mt-6 py-3 rounded-xl border flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest transition-gpu disabled:opacity-50 disabled:cursor-not-allowed bg-amber-500/20 text-amber-400 border-amber-500/30 hover:bg-amber-500/30 shadow-[0_0_20px_rgba(245,158,11,0.15)]"
             >
               <Search className="w-4 h-4" /> Run Cosmos Extraction
             </button>

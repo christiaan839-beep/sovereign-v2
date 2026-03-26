@@ -238,7 +238,7 @@ export default function BuildModePage() {
                   <button
                     key={i}
                     onClick={() => send(s.prompt)}
-                    className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.06] hover:border-[#00B7FF]/20 transition-all text-left group"
+                    className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.06] hover:border-[#00B7FF]/20 transition-gpu text-left group"
                   >
                     <s.icon className="w-4 h-4 text-neutral-500 group-hover:text-[#00B7FF] transition-colors shrink-0" />
                     <span className="text-xs text-neutral-400 group-hover:text-white transition-colors">{s.text}</span>
@@ -308,7 +308,7 @@ export default function BuildModePage() {
             <button
               onClick={() => send(input)}
               disabled={!input.trim() || loading}
-              className="p-1.5 rounded-lg bg-[#00B7FF]/20 text-[#00B7FF] hover:bg-[#00B7FF]/30 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              className="p-1.5 rounded-lg bg-[#00B7FF]/20 text-[#00B7FF] hover:bg-[#00B7FF]/30 disabled:opacity-30 disabled:cursor-not-allowed transition-gpu"
             >
               <Send className="w-4 h-4" />
             </button>

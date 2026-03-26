@@ -74,7 +74,7 @@ export function VoiceCanvas({ onResult, disabled }: VoiceCanvasProps) {
       <button
         onClick={listening ? stopListening : startListening}
         disabled={disabled}
-        className={`p-2.5 rounded-xl transition-all shrink-0 ${
+        className={`p-2.5 rounded-xl transition-gpu shrink-0 ${
           listening
             ? "bg-red-500/20 text-red-400 border border-red-500/30 animate-pulse"
             : "hover:bg-white/[0.05] text-neutral-500 hover:text-white"

@@ -35,7 +35,7 @@ export function ScreenNode({ id, data }: NodeProps) {
       <Handle type="target" position={Position.Left} className="!bg-[#00B7FF]/60 !w-2.5 !h-2.5 !border-2 !border-[#050505]" />
       <Handle type="source" position={Position.Right} className="!bg-[#00B7FF]/60 !w-2.5 !h-2.5 !border-2 !border-[#050505]" />
 
-      <div className="rounded-2xl border border-white/[0.08] bg-[#0A0A0A] shadow-2xl shadow-black/40 overflow-hidden hover:border-[#00B7FF]/20 transition-all" style={{ width: DEVICE_WIDTHS[device] + 0 }}>
+      <div className="rounded-2xl border border-white/[0.08] bg-[#0A0A0A] shadow-2xl shadow-black/40 overflow-hidden hover:border-[#00B7FF]/20 transition-gpu" style={{ width: DEVICE_WIDTHS[device] + 0 }}>
         {/* Title bar */}
         <div className="flex items-center justify-between px-3 py-2 border-b border-white/[0.06] bg-white/[0.02]">
           <div className="flex items-center gap-2 min-w-0">
@@ -77,7 +77,7 @@ export function ScreenNode({ id, data }: NodeProps) {
               <span className="text-[10px] text-neutral-400">Generating...</span>
               {d.progress !== undefined && (
                 <div className="w-32 h-1 bg-white/[0.06] rounded-full mt-2 overflow-hidden">
-                  <div className="h-full bg-[#00B7FF]/60 rounded-full transition-all duration-500" style={{ width: `${d.progress}%` }} />
+                  <div className="h-full bg-[#00B7FF]/60 rounded-full transition-gpu duration-500" style={{ width: `${d.progress}%` }} />
                 </div>
               )}
             </div>

@@ -194,7 +194,7 @@ export default function InboxPage() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={markAllRead}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-sm text-neutral-400 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-sm text-neutral-400 hover:text-white hover:bg-white/10 transition-gpu cursor-pointer"
             >
               <CheckCheck className="w-4 h-4" />
               Mark All Read
@@ -220,7 +220,7 @@ export default function InboxPage() {
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all cursor-pointer ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-gpu cursor-pointer ${
                 isActive
                   ? "bg-white/10 text-white border border-white/15"
                   : "bg-white/[0.03] text-neutral-500 border border-transparent hover:bg-white/5 hover:text-neutral-300"
@@ -276,7 +276,7 @@ export default function InboxPage() {
                 >
                   <div
                     onClick={() => toggleExpand(item.id)}
-                    className={`group rounded-2xl border backdrop-blur-xl transition-all cursor-pointer ${
+                    className={`group rounded-2xl border backdrop-blur-xl transition-gpu cursor-pointer ${
                       item.status === "new"
                         ? "bg-white/[0.04] border-white/10 shadow-lg"
                         : "bg-white/[0.02] border-white/[0.06]"

@@ -110,7 +110,7 @@ export default function PodcastBlueprintPage() {
             
             <div 
               onClick={fileStatus === "idle" ? triggerUpload : undefined}
-              className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-all ${
+              className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-gpu ${
                 fileStatus === "idle" 
                   ? "border-white/10 hover:border-[#00B7FF]/50 hover:bg-[#00B7FF]/5 cursor-pointer" 
                   : fileStatus === "uploading"
@@ -135,7 +135,7 @@ export default function PodcastBlueprintPage() {
                     <p className="text-xs font-bold text-[#00B7FF] uppercase tracking-widest mb-3">Uploading Securely...</p>
                     <div className="h-1.5 w-full bg-black/50 rounded-full overflow-hidden">
                       <div 
-                        className="h-full bg-[#00B7FF] transition-all duration-200"
+                        className="h-full bg-[#00B7FF] transition-gpu duration-200"
                         style={{ width: `${progress}%` }}
                       />
                     </div>
@@ -180,13 +180,13 @@ export default function PodcastBlueprintPage() {
                 <div className="flex bg-black/40 rounded-lg p-1 border border-white/10">
                   <button 
                     onClick={() => setFormat("solo")}
-                    className={`flex-1 py-2 rounded-md text-[10px] font-bold uppercase tracking-widest transition-all ${format === 'solo' ? 'bg-[#00B7FF]/20 text-[#00B7FF] border border-[#00B7FF]/30' : 'text-neutral-500 hover:text-white'}`}
+                    className={`flex-1 py-2 rounded-md text-[10px] font-bold uppercase tracking-widest transition-gpu ${format === 'solo' ? 'bg-[#00B7FF]/20 text-[#00B7FF] border border-[#00B7FF]/30' : 'text-neutral-500 hover:text-white'}`}
                   >
                     Solo Deep-Dive
                   </button>
                   <button 
                     onClick={() => setFormat("interview")}
-                    className={`flex-1 py-2 rounded-md text-[10px] font-bold uppercase tracking-widest transition-all ${format === 'interview' ? 'bg-[#00B7FF]/20 text-[#00B7FF] border border-[#00B7FF]/30' : 'text-neutral-500 hover:text-white'}`}
+                    className={`flex-1 py-2 rounded-md text-[10px] font-bold uppercase tracking-widest transition-gpu ${format === 'interview' ? 'bg-[#00B7FF]/20 text-[#00B7FF] border border-[#00B7FF]/30' : 'text-neutral-500 hover:text-white'}`}
                   >
                     2-Host Chat
                   </button>
@@ -210,7 +210,7 @@ export default function PodcastBlueprintPage() {
             <button 
               onClick={startPipeline}
               disabled={fileStatus !== "uploaded" || pipelineStatus !== "idle"}
-              className="w-full mt-6 py-3 rounded-xl border flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-[#00B7FF]/20 text-[#00B7FF] border-[#00B7FF]/30 hover:bg-[#00B7FF]/30 shadow-[0_0_20px_rgba(0,183,255,0.15)]"
+              className="w-full mt-6 py-3 rounded-xl border flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest transition-gpu disabled:opacity-50 disabled:cursor-not-allowed bg-[#00B7FF]/20 text-[#00B7FF] border-[#00B7FF]/30 hover:bg-[#00B7FF]/30 shadow-[0_0_20px_rgba(0,183,255,0.15)]"
             >
               <Mic className="w-4 h-4" /> Start Generation
             </button>

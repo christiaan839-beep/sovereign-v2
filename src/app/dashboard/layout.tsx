@@ -195,7 +195,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             href={item.href}
             title={item.label}
             onClick={onNavigate}
-            className={`flex items-center justify-center w-10 h-10 mx-auto rounded-lg transition-all duration-150 ${
+            className={`flex items-center justify-center w-10 h-10 mx-auto rounded-lg transition-gpu duration-150 ${
               active
                 ? "bg-white/10 text-white"
                 : "text-neutral-500 hover:text-white hover:bg-white/5"
@@ -209,7 +209,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <Link
           href={item.href}
           onClick={onNavigate}
-          className={`flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-150 ${
+          className={`flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-gpu duration-150 ${
             active
               ? "bg-white/10 text-white"
               : "text-neutral-400 hover:text-white hover:bg-white/[0.04]"
@@ -323,7 +323,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <aside
           className={`hidden ${isHome ? "lg:hidden" : "lg:flex"} ${
             sidebarExpanded ? "w-[240px]" : "w-16"
-          } border-r border-[#111111] bg-[#050505] flex-col shrink-0 overflow-hidden relative z-10 transition-all duration-300`}
+          } border-r border-[#111111] bg-[#050505] flex-col shrink-0 overflow-hidden relative z-10 transition-gpu duration-300`}
         >
           {/* Logo Header */}
           <div
@@ -337,7 +337,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 alt="Sovereign"
                 width={22}
                 height={22}
-                className="rounded-md opacity-90 grayscale hover:grayscale-0 transition-all duration-500"
+                className="rounded-md opacity-90 grayscale hover:grayscale-0 transition-gpu duration-500"
               />
               {sidebarExpanded && (
                 <span className="text-sm font-semibold tracking-wide text-white">

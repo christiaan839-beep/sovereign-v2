@@ -218,7 +218,7 @@ export default function TemplatesPage() {
               onClick={() => setFilter(tab.key)}
               className={`
                 flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold
-                transition-all duration-200
+                transition-gpu duration-200
                 ${
                   active
                     ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30"
@@ -249,7 +249,7 @@ export default function TemplatesPage() {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.35, delay: i * 0.04 }}
-                className="group relative flex flex-col justify-between rounded-2xl border border-white/[0.06] bg-white/[0.03] p-6 backdrop-blur-sm transition-all duration-300 hover:border-emerald-500/20 hover:scale-[1.02]"
+                className="group relative flex flex-col justify-between rounded-2xl border border-white/[0.06] bg-white/[0.03] p-6 backdrop-blur-sm transition-gpu duration-300 hover:border-emerald-500/20 hover:scale-[1.02]"
               >
                 {/* Icon + Category */}
                 <div>
@@ -274,7 +274,7 @@ export default function TemplatesPage() {
                 {/* CTA */}
                 <button
                   onClick={() => router.push(template.route)}
-                  className="mt-5 w-full rounded-xl bg-white py-2 text-xs font-semibold text-black transition-all duration-200 hover:bg-neutral-200 active:scale-[0.98]"
+                  className="mt-5 w-full rounded-xl bg-white py-2 text-xs font-semibold text-black transition-gpu duration-200 hover:bg-neutral-200 active:scale-[0.98]"
                 >
                   Use Template
                 </button>

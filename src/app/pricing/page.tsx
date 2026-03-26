@@ -131,7 +131,7 @@ export default function PricingPage() {
         </Link>
         <div className="flex items-center gap-6 text-xs text-neutral-400">
           <Link href="/" className="hover:text-white transition-colors">Home</Link>
-          <Link href="/dashboard" className="px-4 py-2 bg-white/5 border border-white/10 text-white rounded-full hover:bg-white/10 transition-all font-bold tracking-wider uppercase">Dashboard</Link>
+          <Link href="/dashboard" className="px-4 py-2 bg-white/5 border border-white/10 text-white rounded-full hover:bg-white/10 transition-gpu font-bold tracking-wider uppercase">Dashboard</Link>
         </div>
       </nav>
 
@@ -168,7 +168,7 @@ export default function PricingPage() {
                 ))}
               </ul>
               <button onClick={() => checkout(t.plan)}
-                className={`w-full py-3 font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${
+                className={`w-full py-3 font-bold rounded-xl transition-gpu flex items-center justify-center gap-2 ${
                   t.featured
                     ? "bg-gradient-to-r from-[#00B7FF] to-purple-500 text-white hover:opacity-90"
                     : t.plan === "node"
@@ -227,7 +227,7 @@ export default function PricingPage() {
         <motion.div {...fadeIn(0)}>
           <h2 className="text-2xl font-bold mb-4">Initialize the Swarm?</h2>
           <p className="text-sm text-neutral-400 mb-6">Enterprise autonomous agents ready for direct OS execution.</p>
-          <Link href="/dashboard" className="inline-flex items-center gap-2 px-8 py-4 bg-white text-black font-bold text-sm uppercase tracking-[0.15em] rounded-full hover:bg-neutral-200 transition-all">
+          <Link href="/dashboard" className="inline-flex items-center gap-2 px-8 py-4 bg-white text-black font-bold text-sm uppercase tracking-[0.15em] rounded-full hover:bg-neutral-200 transition-gpu">
             <Zap className="w-4 h-4" /> Initialize Dashboard
           </Link>
         </motion.div>

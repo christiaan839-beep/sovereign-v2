@@ -29,7 +29,7 @@ const sizeStyles: Record<ButtonSize, string> = {
 export function Button({ children, variant = "primary", size = "md", loading, icon, className = "", disabled, ...props }: ButtonProps) {
   return (
     <button
-      className={`inline-flex items-center justify-center font-medium transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed ${variantStyles[variant]} ${sizeStyles[size]} ${className}`}
+      className={`inline-flex items-center justify-center font-medium transition-gpu duration-200 disabled:opacity-40 disabled:cursor-not-allowed ${variantStyles[variant]} ${sizeStyles[size]} ${className}`}
       disabled={disabled || loading}
       {...props}
     >

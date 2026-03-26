@@ -106,7 +106,7 @@ export default function DemoPage() {
               <span className="text-xs font-mono text-neutral-400">{formatTime(timeLeft)} remaining</span>
             </div>
             <span className="text-xs font-mono text-neutral-600">{queriesUsed}/5 queries</span>
-            <Link href="/pricing" className="px-4 py-2 rounded-lg bg-white text-black text-xs font-bold uppercase tracking-widest hover:bg-neutral-200 transition-all">
+            <Link href="/pricing" className="px-4 py-2 rounded-lg bg-white text-black text-xs font-bold uppercase tracking-widest hover:bg-neutral-200 transition-gpu">
               Upgrade
             </Link>
           </div>
@@ -127,7 +127,7 @@ export default function DemoPage() {
             <button
               key={agent.id}
               onClick={() => { setSelectedAgent(agent); setStreamText(""); }}
-              className={`p-4 rounded-xl border transition-all text-left ${selectedAgent.id === agent.id ? `${agent.border} bg-white/[0.04] ring-1 ring-white/10` : "border-white/5 bg-white/[0.01] hover:bg-white/[0.03]"}`}
+              className={`p-4 rounded-xl border transition-gpu text-left ${selectedAgent.id === agent.id ? `${agent.border} bg-white/[0.04] ring-1 ring-white/10` : "border-white/5 bg-white/[0.01] hover:bg-white/[0.03]"}`}
             >
               <agent.icon className={`w-5 h-5 ${agent.color} mb-2`} />
               <div className="text-sm font-bold text-white">{agent.name}</div>
@@ -145,7 +145,7 @@ export default function DemoPage() {
           <button
             onClick={handleRun}
             disabled={isRunning || timeLeft <= 0 || queriesUsed >= 5}
-            className="px-8 py-4 rounded-xl bg-white text-black font-bold uppercase tracking-widest text-xs hover:bg-neutral-200 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-2"
+            className="px-8 py-4 rounded-xl bg-white text-black font-bold uppercase tracking-widest text-xs hover:bg-neutral-200 transition-gpu disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {isRunning ? <><Cpu className="w-4 h-4 animate-spin" /> Processing...</> : <><Zap className="w-4 h-4" /> Execute Agent</>}
           </button>
@@ -173,7 +173,7 @@ export default function DemoPage() {
             <Lock className="w-12 h-12 text-neutral-600 mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-white serif-text mb-3">Sandbox Expired</h2>
             <p className="text-neutral-500 mb-8 max-w-md mx-auto">You&apos;ve seen what 5 queries can do. Imagine 72 agents running 24/7.</p>
-            <Link href="/pricing" className="inline-flex items-center gap-2 px-10 py-5 rounded-2xl bg-white text-black font-bold uppercase tracking-widest text-sm hover:bg-neutral-200 transition-all shadow-[0_0_40px_rgba(255,255,255,0.15)] group">
+            <Link href="/pricing" className="inline-flex items-center gap-2 px-10 py-5 rounded-2xl bg-white text-black font-bold uppercase tracking-widest text-sm hover:bg-neutral-200 transition-gpu shadow-[0_0_40px_rgba(255,255,255,0.15)] group">
               Deploy Your Node <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
           </motion.div>

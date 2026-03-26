@@ -139,7 +139,7 @@ function DiscoverSection() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: i * 0.06, ease: "easeOut" }}
               onClick={() => router.push(card.href)}
-              className={`group relative bg-gradient-to-br ${card.accent} border border-white/[0.06] ${card.border} rounded-xl p-3.5 text-left transition-all duration-200 hover:scale-[1.02] backdrop-blur-sm`}
+              className={`group relative bg-gradient-to-br ${card.accent} border border-white/[0.06] ${card.border} rounded-xl p-3.5 text-left transition-gpu duration-200 hover:scale-[1.02] backdrop-blur-sm`}
             >
               <div className="flex items-start justify-between mb-1.5">
                 <card.icon className="w-4 h-4 text-white/70" />
@@ -214,7 +214,7 @@ export default function DashboardHome() {
                 <button
                   key={action.title}
                   onClick={() => handleQuickAction(action)}
-                  className={`group relative bg-gradient-to-br ${action.gradient} border border-white/[0.06] rounded-xl p-4 text-left transition-all duration-200 hover:border-white/[0.15] hover:scale-[1.02]`}
+                  className={`group relative bg-gradient-to-br ${action.gradient} border border-white/[0.06] rounded-xl p-4 text-left transition-gpu duration-200 hover:border-white/[0.15] hover:scale-[1.02]`}
                 >
                   <div className="flex items-start justify-between">
                     <action.icon className="w-5 h-5 text-white/80 mb-2" />

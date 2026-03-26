@@ -147,7 +147,7 @@ export default function ClientPortalPage() {
             </div>
             <a
               href="/dashboard/settings/whitelabel"
-              className="flex items-center gap-2 px-4 py-2 bg-amber-500/10 border border-amber-500/20 rounded-lg text-xs text-amber-400 hover:bg-amber-500/20 transition-all"
+              className="flex items-center gap-2 px-4 py-2 bg-amber-500/10 border border-amber-500/20 rounded-lg text-xs text-amber-400 hover:bg-amber-500/20 transition-gpu"
             >
               Set up your brand <ArrowRight className="w-3 h-3" />
             </a>
@@ -310,7 +310,7 @@ export default function ClientPortalPage() {
         <div className="flex gap-3">
           <button
             onClick={handleCopyLink}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest transition-all"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest transition-gpu"
             style={{
               background: `${accentColor}15`,
               border: `1px solid ${accentColor}30`,

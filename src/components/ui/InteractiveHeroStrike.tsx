@@ -67,7 +67,7 @@ export function InteractiveHeroStrike() {
   return (
     <div className="w-full max-w-2xl mx-auto flex flex-col items-center gap-6">
       <form onSubmit={handleStrike} className="w-full relative group">
-        <div className="absolute -inset-1 bg-gradient-to-r from-[#10B981]/20 via-indigo-500/20 to-emerald-600/20 rounded-[2rem] blur-xl group-hover:blur-2xl transition-all duration-500 opacity-50" />
+        <div className="absolute -inset-1 bg-gradient-to-r from-[#10B981]/20 via-indigo-500/20 to-emerald-600/20 rounded-[2rem] blur-xl group-hover:blur-2xl transition-gpu duration-500 opacity-50" />
         <div className="relative flex items-center bg-[#0a0a0a] border border-white/10 rounded-[2rem] p-2 shadow-2xl">
           <div className="pl-6 pr-4 hidden sm:flex items-center justify-center border-r border-white/10">
             <Target className="w-6 h-6 text-neutral-500 group-hover:text-[#10B981] transition-colors" />
@@ -84,7 +84,7 @@ export function InteractiveHeroStrike() {
           <button
             type="submit"
             disabled={isScanning || !url}
-            className="px-8 py-4 rounded-full bg-white text-black font-bold uppercase tracking-widest text-xs flex items-center gap-3 hover:bg-neutral-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-8 py-4 rounded-full bg-white text-black font-bold uppercase tracking-widest text-xs flex items-center gap-3 hover:bg-neutral-200 transition-gpu disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isScanning ? (
                <><Cpu className="w-4 h-4 animate-spin text-[#10B981]" /> Analyzing...</>

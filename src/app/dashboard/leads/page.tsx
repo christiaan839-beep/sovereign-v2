@@ -139,7 +139,7 @@ export default function LeadsDashboard() {
                        </div>
                        <button 
                            type="submit" disabled={isSweeping || !niche || !location}
-                           className="w-full mt-4 bg-gradient-to-r from-[#00B7FF] to-electric text-white font-bold py-3.5 rounded-lg flex items-center justify-center gap-2 uppercase tracking-widest text-xs disabled:opacity-50 transition-all hover:shadow-[0_0_20px_rgba(0,183,255,0.3)]"
+                           className="w-full mt-4 bg-gradient-to-r from-[#00B7FF] to-electric text-white font-bold py-3.5 rounded-lg flex items-center justify-center gap-2 uppercase tracking-widest text-xs disabled:opacity-50 transition-gpu hover:shadow-[0_0_20px_rgba(0,183,255,0.3)]"
                        >
                            {isSweeping ? <><Loader2 className="w-4 h-4 animate-spin" /> Sweeping Sector...</> : <><Search className="w-4 h-4" /> Execute Sweep</>}
                        </button>

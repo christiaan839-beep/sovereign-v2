@@ -59,7 +59,7 @@ export function VibeBar({ onGenerate, onAddNote, generating }: VibeBarProps) {
               <button
                 key={vibe.id}
                 onClick={() => { setSelectedVibe(vibe.id); setShowVibes(false); }}
-                className={`px-3 py-1.5 rounded-full text-[10px] font-semibold transition-all ${
+                className={`px-3 py-1.5 rounded-full text-[10px] font-semibold transition-gpu ${
                   selectedVibe === vibe.id
                     ? "bg-[#00B7FF]/15 text-[#00B7FF] border border-[#00B7FF]/30"
                     : "bg-white/[0.04] text-neutral-400 border border-white/[0.06] hover:border-white/[0.12] hover:text-white"
@@ -87,7 +87,7 @@ export function VibeBar({ onGenerate, onAddNote, generating }: VibeBarProps) {
         {/* Vibe button */}
         <button
           onClick={() => setShowVibes(!showVibes)}
-          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-semibold shrink-0 transition-all ${
+          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-semibold shrink-0 transition-gpu ${
             showVibes ? "bg-[#00B7FF]/10 text-[#00B7FF] border border-[#00B7FF]/20" : "bg-white/[0.04] text-neutral-400 border border-white/[0.06] hover:text-white"
           }`}
         >
@@ -112,7 +112,7 @@ export function VibeBar({ onGenerate, onAddNote, generating }: VibeBarProps) {
         <button
           onClick={handleSubmit}
           disabled={!prompt.trim() || generating}
-          className="p-2.5 rounded-xl bg-[#00B7FF] text-white hover:bg-[#33C5FF] disabled:opacity-30 transition-all shrink-0"
+          className="p-2.5 rounded-xl bg-[#00B7FF] text-white hover:bg-[#33C5FF] disabled:opacity-30 transition-gpu shrink-0"
         >
           {generating ? (
             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />

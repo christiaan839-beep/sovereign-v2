@@ -292,7 +292,7 @@ export function LiveExecutionStream({
   };
 
   return (
-    <div className={`rounded-2xl border overflow-hidden transition-all duration-300 ${
+    <div className={`rounded-2xl border overflow-hidden transition-gpu duration-300 ${
       execution.status === "running"
         ? "border-emerald-500/30 bg-emerald-950/10"
         : execution.status === "complete"
@@ -375,7 +375,7 @@ export function LiveExecutionStream({
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.05 }}
-                  className={`flex items-start gap-3 py-2 px-3 rounded-lg transition-all duration-300 ${
+                  className={`flex items-start gap-3 py-2 px-3 rounded-lg transition-gpu duration-300 ${
                     step.status === "running"
                       ? "bg-emerald-500/5"
                       : step.status === "complete"
@@ -472,7 +472,7 @@ export function LiveExecutionStream({
               {execution.status === "idle" && (
                 <button
                   onClick={executeSteps}
-                  className="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-sm font-bold hover:opacity-90 transition-all flex items-center justify-center gap-2"
+                  className="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-sm font-bold hover:opacity-90 transition-gpu flex items-center justify-center gap-2"
                 >
                   <Zap className="w-4 h-4" />
                   Execute {template.name}

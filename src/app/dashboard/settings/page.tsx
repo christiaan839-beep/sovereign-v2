@@ -212,7 +212,7 @@ export default function SettingsPage() {
                   value={keys[field.key] || ""}
                   onChange={(e) => setKeys((prev) => ({ ...prev, [field.key]: e.target.value }))}
                   placeholder={masked[field.key] || field.placeholder}
-                  className="w-full bg-black/60 border border-[#00B7FF]/10 rounded-xl px-4 py-3 text-sm text-white font-mono placeholder:text-neutral-600 focus:outline-none focus:border-[#00B7FF]/30 focus:ring-1 focus:ring-[#00B7FF]/20 transition-all pr-10"
+                  className="w-full bg-black/60 border border-[#00B7FF]/10 rounded-xl px-4 py-3 text-sm text-white font-mono placeholder:text-neutral-600 focus:outline-none focus:border-[#00B7FF]/30 focus:ring-1 focus:ring-[#00B7FF]/20 transition-gpu pr-10"
                 />
                 <button
                   onClick={() => toggleShow(field.key)}
@@ -235,7 +235,7 @@ export default function SettingsPage() {
         <button
           onClick={handleSave}
           disabled={saving || Object.values(keys).every((v) => !v?.trim())}
-          className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#00B7FF] to-purple-500 text-white font-bold text-xs uppercase tracking-wider hover:opacity-90 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+          className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#00B7FF] to-purple-500 text-white font-bold text-xs uppercase tracking-wider hover:opacity-90 transition-gpu disabled:opacity-30 disabled:cursor-not-allowed"
         >
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
           {saving ? "Saving..." : "Save API Keys"}

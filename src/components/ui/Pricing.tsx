@@ -200,7 +200,7 @@ export function Pricing() {
         {tiers.map((tier) => (
           <div
             key={tier.name}
-            className={`relative rounded-3xl p-8 backdrop-blur-3xl border ${tier.border} ${tier.bg} transition-all duration-300 hover:-translate-y-2 gradient-border-card ${tier.isPopular ? "shadow-[0_0_50px_rgba(16,185,129,0.15)] ring-1 ring-emerald-500/50" : "hover:shadow-[0_0_30px_rgba(0,0,0,0.5)]"}`}
+            className={`relative rounded-3xl p-8 backdrop-blur-3xl border ${tier.border} ${tier.bg} transition-gpu duration-300 hover:-translate-y-2 gradient-border-card ${tier.isPopular ? "shadow-[0_0_50px_rgba(16,185,129,0.15)] ring-1 ring-emerald-500/50" : "hover:shadow-[0_0_30px_rgba(0,0,0,0.5)]"}`}
           >
             {tier.isPopular && (
               <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-emerald-500 to-emerald-400 text-black text-[10px] font-black uppercase tracking-widest rounded-full shadow-[0_0_20px_rgba(52,211,153,0.5)]">
@@ -231,7 +231,7 @@ export function Pricing() {
             <button
               type="button"
               onClick={() => initiateCheckout(tier.planId)}
-              className={`w-full py-4 rounded-xl font-bold uppercase tracking-widest text-sm transition-all mb-8 flex items-center justify-center gap-2 ${tier.buttonStyle}`}
+              className={`w-full py-4 rounded-xl font-bold uppercase tracking-widest text-sm transition-gpu mb-8 flex items-center justify-center gap-2 ${tier.buttonStyle}`}
             >
               <ArrowRight className="w-4 h-4" /> {tier.buttonText}
             </button>
@@ -317,7 +317,7 @@ export function Pricing() {
                 <button 
                   type="submit" 
                   disabled={isProcessing || !leadPhone}
-                  className="w-full mt-4 py-4 rounded-xl bg-white text-black font-bold uppercase tracking-widest text-sm hover:bg-neutral-200 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="w-full mt-4 py-4 rounded-xl bg-white text-black font-bold uppercase tracking-widest text-sm hover:bg-neutral-200 transition-gpu flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {isProcessing ? <><Loader2 className="w-4 h-4 animate-spin" /> Authorizing...</> : "Initiate Handshake"}
                 </button>

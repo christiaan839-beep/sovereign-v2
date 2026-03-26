@@ -54,7 +54,7 @@ export default async function ProgrammaticLocationPage({ params }: Props) {
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-electric to-rose-glow flex items-center justify-center text-xs font-bold text-white shadow-[0_0_15px_rgba(45,110,255,0.3)]">U</div>
             <span className="text-xl font-bold tracking-[0.15em] uppercase text-white">SOVEREIGN</span>
           </div>
-          <button className="px-6 py-2.5 rounded-full bg-white text-midnight text-sm font-bold shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.5)] transition-all">
+          <button className="px-6 py-2.5 rounded-full bg-white text-midnight text-sm font-bold shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.5)] transition-gpu">
             Get Pricing
           </button>
         </div>
@@ -80,11 +80,11 @@ export default async function ProgrammaticLocationPage({ params }: Props) {
           </h2>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-20">
-             <button className="w-full sm:w-auto px-8 py-4 rounded-full bg-gradient-to-r from-electric to-rose-glow text-white font-bold text-lg shadow-[0_0_20px_rgba(45,110,255,0.4)] hover:shadow-[0_0_40px_rgba(45,110,255,0.6)] transition-all flex items-center justify-center gap-2 group">
+             <button className="w-full sm:w-auto px-8 py-4 rounded-full bg-gradient-to-r from-electric to-rose-glow text-white font-bold text-lg shadow-[0_0_20px_rgba(45,110,255,0.4)] hover:shadow-[0_0_40px_rgba(45,110,255,0.6)] transition-gpu flex items-center justify-center gap-2 group">
               <Sparkles className="w-5 h-5 group-hover:animate-pulse" />
               Claim {payload.city} Market
             </button>
-            <button className="w-full sm:w-auto px-8 py-4 rounded-full border border-glass-border bg-glass-bg text-white font-bold text-lg hover:bg-white/5 transition-all flex items-center justify-center gap-2 group">
+            <button className="w-full sm:w-auto px-8 py-4 rounded-full border border-glass-border bg-glass-bg text-white font-bold text-lg hover:bg-white/5 transition-gpu flex items-center justify-center gap-2 group">
               View Case Studies
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </button>

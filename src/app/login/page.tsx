@@ -93,11 +93,11 @@ export default function LoginPage() {
             <button 
               type="submit" 
               disabled={loading || !email || !password}
-              className="w-full py-3.5 mt-2 bg-white text-midnight font-bold rounded-xl hover:bg-gray-200 transition-all disabled:opacity-50 flex items-center justify-center gap-2 group"
+              className="w-full py-3.5 mt-2 bg-white text-midnight font-bold rounded-xl hover:bg-gray-200 transition-gpu disabled:opacity-50 flex items-center justify-center gap-2 group"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : isLogin ? <LogIn className="w-4 h-4" /> : <Zap className="w-4 h-4" />}
               {loading ? "Authenticating..." : isLogin ? "Sign In" : "Create Account"}
-              {!loading && <ArrowRight className="w-4 h-4 ml-1 opacity-50 group-hover:translate-x-1 transition-all" />}
+              {!loading && <ArrowRight className="w-4 h-4 ml-1 opacity-50 group-hover:translate-x-1 transition-gpu" />}
             </button>
           </form>
 

@@ -245,7 +245,7 @@ export default function MarketplacePage() {
           <button
             key={cat.id}
             onClick={() => setActiveCategory(cat.id)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium transition-all duration-200 ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium transition-gpu duration-200 ${
               activeCategory === cat.id
                 ? "bg-white/[0.1] text-white border border-white/[0.15]"
                 : "bg-white/[0.03] text-neutral-500 border border-white/[0.04] hover:bg-white/[0.05] hover:text-neutral-300"
@@ -463,7 +463,7 @@ function AgentCard({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.3, delay: index * 0.05 }}
-      className={`bg-white/[0.03] border border-white/[0.06] rounded-2xl p-5 flex flex-col hover:border-white/[0.12] transition-all duration-200 ${
+      className={`bg-white/[0.03] border border-white/[0.06] rounded-2xl p-5 flex flex-col hover:border-white/[0.12] transition-gpu duration-200 ${
         featured ? "min-w-[320px] max-w-[360px] flex-shrink-0" : ""
       } ${style.glow}`}
     >

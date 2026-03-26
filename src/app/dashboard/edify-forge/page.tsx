@@ -74,7 +74,7 @@ export default function EdifyForgePage() {
             <button 
               onClick={startForge}
               disabled={pipelineState === "generating" || !prompt}
-              className="w-full mt-6 py-4 rounded-xl font-bold uppercase tracking-widest text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-orange-500 text-white hover:bg-orange-600 shadow-[0_0_20px_rgba(249,115,22,0.3)] flex justify-center items-center gap-2"
+              className="w-full mt-6 py-4 rounded-xl font-bold uppercase tracking-widest text-xs transition-gpu disabled:opacity-50 disabled:cursor-not-allowed bg-orange-500 text-white hover:bg-orange-600 shadow-[0_0_20px_rgba(249,115,22,0.3)] flex justify-center items-center gap-2"
             >
               <Zap className="w-4 h-4" /> Synthesize 3D Mesh
             </button>

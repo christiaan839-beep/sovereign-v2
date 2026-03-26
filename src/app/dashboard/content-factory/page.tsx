@@ -182,7 +182,7 @@ export default function ContentFactoryPage() {
               setResult(null);
               setFormData({});
             }}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest transition-all flex-1 justify-center ${
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest transition-gpu flex-1 justify-center ${
               activeTab === tab.id
                 ? `${tab.bg} ${tab.color} ${tab.border} border`
                 : "text-neutral-500 hover:text-neutral-300"
@@ -232,7 +232,7 @@ export default function ContentFactoryPage() {
           <button
             onClick={handleExecute}
             disabled={loading}
-            className="w-full py-3 rounded-xl bg-gradient-to-r from-[#00B7FF] to-[#0090CC] text-white font-bold text-xs uppercase tracking-widest hover:from-[#00B7FF]/90 hover:to-[#0090CC]/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-[0_0_30px_rgba(0,183,255,0.3)]"
+            className="w-full py-3 rounded-xl bg-gradient-to-r from-[#00B7FF] to-[#0090CC] text-white font-bold text-xs uppercase tracking-widest hover:from-[#00B7FF]/90 hover:to-[#0090CC]/90 transition-gpu disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-[0_0_30px_rgba(0,183,255,0.3)]"
           >
             {loading ? (
               <>
@@ -264,7 +264,7 @@ export default function ContentFactoryPage() {
             <p className="text-xs text-neutral-400 mb-4 max-w-sm mx-auto">{error}</p>
             <button
               onClick={() => { setError(null); handleExecute(); }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-bold uppercase tracking-wider hover:bg-rose-500/20 transition-all"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-bold uppercase tracking-wider hover:bg-rose-500/20 transition-gpu"
             >
               Try Again
             </button>

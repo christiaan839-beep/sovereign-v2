@@ -99,7 +99,7 @@ export default function BillingPortal() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 + i * 0.1 }}
-            className={`p-6 rounded-2xl border transition-all ${
+            className={`p-6 rounded-2xl border transition-gpu ${
               p.current
                 ? "border-emerald-500/30 bg-emerald-500/5"
                 : p.recommended

@@ -16,7 +16,7 @@ export function AgentNode({ data }: NodeProps) {
   const glowClass = d.status === "always-on" ? "shadow-[0_0_12px_rgba(16,185,129,0.4)]" : d.status === "active" ? "shadow-[0_0_8px_rgba(251,191,36,0.3)]" : "";
 
   return (
-    <div className={`px-4 py-3 rounded-xl border border-white/[0.08] bg-[#0A0A0A] min-w-[160px] ${glowClass} hover:border-emerald-500/20 transition-all`}>
+    <div className={`px-4 py-3 rounded-xl border border-white/[0.08] bg-[#0A0A0A] min-w-[160px] ${glowClass} hover:border-emerald-500/20 transition-gpu`}>
       <Handle type="target" position={Position.Top} className="!bg-emerald-500/50 !w-2 !h-2 !border-0" />
       <Handle type="source" position={Position.Bottom} className="!bg-emerald-500/50 !w-2 !h-2 !border-0" />
 

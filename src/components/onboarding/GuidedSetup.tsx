@@ -164,7 +164,7 @@ export function GuidedSetup({ children }: { children: React.ReactNode }) {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.06, ...spring }}
                       onClick={() => setRole(r.id)}
-                      className={`flex items-center gap-4 p-4 rounded-xl border text-left transition-all duration-200 ${
+                      className={`flex items-center gap-4 p-4 rounded-xl border text-left transition-gpu duration-200 ${
                         role === r.id
                           ? "bg-emerald-500/10 border-emerald-500/30 shadow-[0_0_20px_rgba(16,185,129,0.08)]"
                           : "bg-white/[0.02] border-white/[0.06] hover:border-white/[0.12]"
@@ -221,7 +221,7 @@ export function GuidedSetup({ children }: { children: React.ReactNode }) {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: i * 0.04, ...spring }}
                         onClick={() => toggleNeed(n.id)}
-                        className={`flex flex-col items-center gap-3 p-4 rounded-xl border text-center transition-all duration-200 ${
+                        className={`flex flex-col items-center gap-3 p-4 rounded-xl border text-center transition-gpu duration-200 ${
                           selected
                             ? "bg-emerald-500/10 border-emerald-500/30"
                             : "bg-white/[0.02] border-white/[0.06] hover:border-white/[0.12]"

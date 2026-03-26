@@ -87,7 +87,7 @@ export default function VisualStudioNode() {
                <button
                  onClick={handleGenerate}
                  disabled={!prompt || isGenerating}
-                 className="w-full mt-4 bg-[#00B7FF] text-black font-black uppercase tracking-widest py-4 hover:bg-white transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                 className="w-full mt-4 bg-[#00B7FF] text-black font-black uppercase tracking-widest py-4 hover:bg-white transition-gpu disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                >
                  {isGenerating ? <><Zap className="w-5 h-5 animate-bounce" /> Executing Pipeline...</> : <><Sparkles className="w-5 h-5" /> Generate Commercial</>}
                </button>
@@ -106,7 +106,7 @@ export default function VisualStudioNode() {
                    <p>&#x25B6; CURRENT THREAD: {steps[generationStep]}</p>
                    <div className="w-full h-1 bg-black border border-[#00B7FF]/50 mt-4">
                      <div 
-                       className="h-full bg-[#00B7FF] transition-all duration-1000 ease-out"
+                       className="h-full bg-[#00B7FF] transition-gpu duration-1000 ease-out"
                        style={{ width: `${(generationStep / 4) * 100}%` }}
                      />
                    </div>

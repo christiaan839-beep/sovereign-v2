@@ -206,7 +206,7 @@ Answer concisely and specifically. Do not be generic. Reference real features of
               </div>
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-1.5 rounded-lg text-neutral-500 hover:text-white hover:bg-white/[0.05] transition-all"
+                className="p-1.5 rounded-lg text-neutral-500 hover:text-white hover:bg-white/[0.05] transition-gpu"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -258,7 +258,7 @@ Answer concisely and specifically. Do not be generic. Reference real features of
                       key={action}
                       type="button"
                       onClick={() => sendMessage(action)}
-                      className="px-3 py-1.5 rounded-full text-[10px] font-medium text-neutral-400 border border-white/[0.06] bg-white/[0.02] hover:border-emerald-500/20 hover:text-emerald-400 transition-all"
+                      className="px-3 py-1.5 rounded-full text-[10px] font-medium text-neutral-400 border border-white/[0.06] bg-white/[0.02] hover:border-emerald-500/20 hover:text-emerald-400 transition-gpu"
                     >
                       {action}
                     </button>
@@ -282,7 +282,7 @@ Answer concisely and specifically. Do not be generic. Reference real features of
                 <button
                   type="submit"
                   disabled={!input.trim() || isThinking}
-                  className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-gpu disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                   <Send className="w-4 h-4" />
                 </button>

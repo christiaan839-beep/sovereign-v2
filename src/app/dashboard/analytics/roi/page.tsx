@@ -194,7 +194,7 @@ export default function ROIAnalyticsPage() {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.08, duration: 0.35 }}
-      className="bg-white/[0.03] backdrop-blur-xl border border-white/[0.06] rounded-xl p-5 hover:bg-white/[0.05] hover:border-white/[0.12] transition-all group"
+      className="bg-white/[0.03] backdrop-blur-xl border border-white/[0.06] rounded-xl p-5 hover:bg-white/[0.05] hover:border-white/[0.12] transition-gpu group"
     >
       <div className="flex items-center justify-between mb-4">
         <div
@@ -233,7 +233,7 @@ export default function ROIAnalyticsPage() {
         <button
           onClick={fetchData}
           disabled={loading}
-          className="flex items-center gap-2 px-4 py-2 bg-white/[0.04] border border-white/[0.08] rounded-lg text-xs text-neutral-400 hover:text-white hover:border-white/[0.15] transition-all"
+          className="flex items-center gap-2 px-4 py-2 bg-white/[0.04] border border-white/[0.08] rounded-lg text-xs text-neutral-400 hover:text-white hover:border-white/[0.15] transition-gpu"
         >
           {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCcw className="w-3.5 h-3.5" />}
           Refresh
@@ -278,7 +278,7 @@ export default function ROIAnalyticsPage() {
                       <span className="text-xs text-neutral-400 w-32 truncate">{agent.agent}</span>
                       <div className="flex-1 h-7 rounded-md overflow-hidden" style={{ background: "rgba(255,255,255,0.03)" }}>
                         <div
-                          className="h-full rounded-md flex items-center justify-end pr-2 transition-all duration-700"
+                          className="h-full rounded-md flex items-center justify-end pr-2 transition-gpu duration-700"
                           style={{ width: `${Math.max(pct, 4)}%`, background: bg, borderRight: `2px solid ${color}` }}
                         >
                           <span className="text-[10px] font-bold tabular-nums" style={{ color }}>

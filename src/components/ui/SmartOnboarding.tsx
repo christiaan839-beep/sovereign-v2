@@ -55,7 +55,7 @@ export function SmartOnboarding({ onComplete }: { onComplete: (industry: string)
                 <button
                   key={ind.id}
                   onClick={() => setSelectedIndustry(ind)}
-                  className={`p-4 rounded-xl border transition-all text-left ${selectedIndustry?.id === ind.id ? "border-emerald-500/30 bg-emerald-500/5 ring-1 ring-emerald-500/10" : "border-white/5 bg-white/[0.02] hover:bg-white/[0.04]"}`}
+                  className={`p-4 rounded-xl border transition-gpu text-left ${selectedIndustry?.id === ind.id ? "border-emerald-500/30 bg-emerald-500/5 ring-1 ring-emerald-500/10" : "border-white/5 bg-white/[0.02] hover:bg-white/[0.04]"}`}
                 >
                   <ind.icon className={`w-5 h-5 ${ind.color} mb-2`} />
                   <div className="text-xs font-bold text-white">{ind.name}</div>
@@ -66,7 +66,7 @@ export function SmartOnboarding({ onComplete }: { onComplete: (industry: string)
             <button
               onClick={() => selectedIndustry && setStep(1)}
               disabled={!selectedIndustry}
-              className="px-8 py-4 rounded-xl bg-white text-black font-bold uppercase tracking-widest text-xs hover:bg-neutral-200 transition-all disabled:opacity-30 flex items-center gap-2 mx-auto"
+              className="px-8 py-4 rounded-xl bg-white text-black font-bold uppercase tracking-widest text-xs hover:bg-neutral-200 transition-gpu disabled:opacity-30 flex items-center gap-2 mx-auto"
             >
               Continue <ArrowRight className="w-4 h-4" />
             </button>
@@ -105,7 +105,7 @@ export function SmartOnboarding({ onComplete }: { onComplete: (industry: string)
             <button
               onClick={handleDeploy}
               disabled={isDeploying}
-              className="w-full px-8 py-4 rounded-xl bg-white text-black font-bold uppercase tracking-widest text-xs hover:bg-neutral-200 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              className="w-full px-8 py-4 rounded-xl bg-white text-black font-bold uppercase tracking-widest text-xs hover:bg-neutral-200 transition-gpu disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {isDeploying ? (
                 <><Zap className="w-4 h-4 animate-spin" /> Deploying {selectedIndustry.name} Stack...</>

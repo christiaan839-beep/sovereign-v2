@@ -64,7 +64,7 @@ export default function OmniSearchPage() {
             onChange={(e) => setQuery(e.target.value)}
             disabled={status === "searching"}
             placeholder="E.g., What objections did the Roofing lead in Austin have last week?"
-            className="w-full bg-black/80 border border-white/10 rounded-2xl pl-16 pr-6 py-6 text-lg text-white focus:border-emerald-500/50 outline-none shadow-[0_0_50px_rgba(16,185,129,0.05)] transition-all font-mono placeholder:font-sans placeholder:text-neutral-600"
+            className="w-full bg-black/80 border border-white/10 rounded-2xl pl-16 pr-6 py-6 text-lg text-white focus:border-emerald-500/50 outline-none shadow-[0_0_50px_rgba(16,185,129,0.05)] transition-gpu font-mono placeholder:font-sans placeholder:text-neutral-600"
          />
          <button type="submit" className="hidden" />
       </form>

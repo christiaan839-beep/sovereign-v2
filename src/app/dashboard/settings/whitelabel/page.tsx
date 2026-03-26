@@ -151,7 +151,7 @@ export default function WhitelabelPage() {
             <button 
               onClick={handleSave}
               disabled={isSaving}
-              className="px-8 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 text-white font-bold uppercase tracking-widest text-sm hover:shadow-[0_0_30px_rgba(139,92,246,0.3)] transition-all flex items-center gap-2 disabled:opacity-50"
+              className="px-8 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 text-white font-bold uppercase tracking-widest text-sm hover:shadow-[0_0_30px_rgba(139,92,246,0.3)] transition-gpu flex items-center gap-2 disabled:opacity-50"
             >
               {isSaving ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</> : <><Save className="w-4 h-4" /> Save Brand Identity</>}
             </button>

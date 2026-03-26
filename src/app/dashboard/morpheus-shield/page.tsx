@@ -120,7 +120,7 @@ export default function MorpheusShieldPage() {
             <button
               onClick={handleSend}
               disabled={isLoading || !input.trim()}
-              className="px-6 py-3 bg-red-500/20 border border-red-500/50 text-red-500 hover:bg-red-500 hover:text-white transition-all disabled:opacity-50"
+              className="px-6 py-3 bg-red-500/20 border border-red-500/50 text-red-500 hover:bg-red-500 hover:text-white transition-gpu disabled:opacity-50"
             >
               <Send className="w-4 h-4" />
             </button>

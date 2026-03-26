@@ -140,7 +140,7 @@ export default function WarRoomColosseum() {
             <button 
               onClick={startDebate}
               disabled={status === "debating" || !topic}
-              className="w-full mt-6 py-4 rounded-xl border flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r from-[#00B7FF]/20 to-rose-600/20 text-white border-white/10 hover:border-white/20 hover:shadow-[0_0_30px_rgba(0,183,255,0.2)]"
+              className="w-full mt-6 py-4 rounded-xl border flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest transition-gpu disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r from-[#00B7FF]/20 to-rose-600/20 text-white border-white/10 hover:border-white/20 hover:shadow-[0_0_30px_rgba(0,183,255,0.2)]"
             >
               <Swords className="w-4 h-4" /> Initiate 4-Node Debate
             </button>
@@ -149,7 +149,7 @@ export default function WarRoomColosseum() {
           {/* 4 Node Grid */}
           <div className="grid grid-cols-2 gap-4">
              <motion.div 
-               className={`rounded-2xl border p-5 flex flex-col items-center justify-center text-center transition-all duration-500 ${status === 'debating' && messages.find(m => m.agent === 'DeepSeek') && !messages.find(m => m.agent === 'Nemotron') ? 'border-indigo-500/50 bg-indigo-500/10 shadow-[0_0_20px_rgba(99,102,241,0.2)]' : 'border-white/5 bg-white/[0.01]'}`}
+               className={`rounded-2xl border p-5 flex flex-col items-center justify-center text-center transition-gpu duration-500 ${status === 'debating' && messages.find(m => m.agent === 'DeepSeek') && !messages.find(m => m.agent === 'Nemotron') ? 'border-indigo-500/50 bg-indigo-500/10 shadow-[0_0_20px_rgba(99,102,241,0.2)]' : 'border-white/5 bg-white/[0.01]'}`}
              >
                 <Terminal className={`w-8 h-8 mb-3 ${status === 'debating' && !messages.find(m => m.agent === 'Nemotron') ? 'text-indigo-400 animate-pulse' : 'text-neutral-600'}`} />
                 <h4 className="text-xs font-bold uppercase tracking-widest text-white mb-1">DeepSeek-R1</h4>
@@ -157,7 +157,7 @@ export default function WarRoomColosseum() {
              </motion.div>
 
              <motion.div 
-               className={`rounded-2xl border p-5 flex flex-col items-center justify-center text-center transition-all duration-500 ${status === 'debating' && messages.find(m => m.agent === 'Llama') && !messages.find(m => m.agent === 'Nemotron') ? 'border-amber-500/50 bg-amber-500/10 shadow-[0_0_20px_rgba(245,158,11,0.2)]' : 'border-white/5 bg-white/[0.01]'}`}
+               className={`rounded-2xl border p-5 flex flex-col items-center justify-center text-center transition-gpu duration-500 ${status === 'debating' && messages.find(m => m.agent === 'Llama') && !messages.find(m => m.agent === 'Nemotron') ? 'border-amber-500/50 bg-amber-500/10 shadow-[0_0_20px_rgba(245,158,11,0.2)]' : 'border-white/5 bg-white/[0.01]'}`}
              >
                 <ShieldAlert className={`w-8 h-8 mb-3 ${status === 'debating' && !messages.find(m => m.agent === 'Nemotron') ? 'text-amber-400 animate-pulse' : 'text-neutral-600'}`} />
                 <h4 className="text-xs font-bold uppercase tracking-widest text-white mb-1">Llama 3.3</h4>
@@ -165,7 +165,7 @@ export default function WarRoomColosseum() {
              </motion.div>
 
              <motion.div 
-               className={`rounded-2xl border p-5 flex flex-col items-center justify-center text-center transition-all duration-500 ${status === 'debating' && messages.find(m => m.agent === 'Kosmos') && !messages.find(m => m.agent === 'Nemotron') ? 'border-pink-500/50 bg-pink-500/10 shadow-[0_0_20px_rgba(236,72,153,0.2)]' : 'border-white/5 bg-white/[0.01]'}`}
+               className={`rounded-2xl border p-5 flex flex-col items-center justify-center text-center transition-gpu duration-500 ${status === 'debating' && messages.find(m => m.agent === 'Kosmos') && !messages.find(m => m.agent === 'Nemotron') ? 'border-pink-500/50 bg-pink-500/10 shadow-[0_0_20px_rgba(236,72,153,0.2)]' : 'border-white/5 bg-white/[0.01]'}`}
              >
                 <Eye className={`w-8 h-8 mb-3 ${status === 'debating' && !messages.find(m => m.agent === 'Nemotron') ? 'text-pink-400 animate-pulse' : 'text-neutral-600'}`} />
                 <h4 className="text-xs font-bold uppercase tracking-widest text-white mb-1">Kosmos-2</h4>
@@ -173,7 +173,7 @@ export default function WarRoomColosseum() {
              </motion.div>
 
              <motion.div 
-               className={`rounded-2xl border p-5 flex flex-col items-center justify-center text-center transition-all duration-500 ${status === 'consensus' || messages.find(m => m.agent === 'Nemotron') ? 'border-[#10B981]/70 bg-[#10B981]/10 shadow-[0_0_30px_rgba(0,183,255,0.3)]' : 'border-white/5 bg-white/[0.01]'}`}
+               className={`rounded-2xl border p-5 flex flex-col items-center justify-center text-center transition-gpu duration-500 ${status === 'consensus' || messages.find(m => m.agent === 'Nemotron') ? 'border-[#10B981]/70 bg-[#10B981]/10 shadow-[0_0_30px_rgba(0,183,255,0.3)]' : 'border-white/5 bg-white/[0.01]'}`}
              >
                 <Network className={`w-8 h-8 mb-3 ${status === 'consensus' || messages.find(m => m.agent === 'Nemotron') ? 'text-[#10B981] animate-pulse drop-shadow-[0_0_10px_rgba(0,183,255,0.8)]' : 'text-neutral-600'}`} />
                 <h4 className="text-xs font-bold uppercase tracking-widest text-white mb-1">Nemotron 340B</h4>
@@ -250,7 +250,7 @@ export default function WarRoomColosseum() {
 
                   {status === "consensus" && (
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="pt-8">
-                       <button className="w-full py-5 rounded-2xl bg-white text-black flex items-center justify-center gap-3 font-bold uppercase tracking-[0.2em] text-xs hover:bg-neutral-200 transition-all shadow-[0_0_40px_rgba(255,255,255,0.2)]">
+                       <button className="w-full py-5 rounded-2xl bg-white text-black flex items-center justify-center gap-3 font-bold uppercase tracking-[0.2em] text-xs hover:bg-neutral-200 transition-gpu shadow-[0_0_40px_rgba(255,255,255,0.2)]">
                          <Play className="w-4 h-4 fill-black" /> Transmit to n8n Queue
                        </button>
                     </motion.div>

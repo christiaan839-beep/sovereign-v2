@@ -137,7 +137,7 @@ export function ToolShowcase() {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={isInView ? { opacity: 1, scale: 1 } : {}}
             transition={{ duration: 0.5, delay: i * 0.1 }}
-            className={`relative rounded-2xl p-6 border transition-all duration-500 cursor-pointer group ${
+            className={`relative rounded-2xl p-6 border transition-gpu duration-500 cursor-pointer group ${
               activeIndex === i
                 ? "border-white/20 bg-white/[0.05] scale-105 shadow-[0_0_40px_rgba(0,183,255,0.1)]"
                 : "border-white/5 bg-white/[0.01] hover:border-white/10 hover:bg-white/[0.03]"
@@ -145,7 +145,7 @@ export function ToolShowcase() {
             onClick={() => setActiveIndex(i)}
           >
             {/* Gradient bar */}
-            <div className={`h-1 w-12 rounded-full bg-gradient-to-r ${tool.gradient} mb-4 transition-all duration-500 ${
+            <div className={`h-1 w-12 rounded-full bg-gradient-to-r ${tool.gradient} mb-4 transition-gpu duration-500 ${
               activeIndex === i ? "w-full" : "w-12"
             }`} />
 

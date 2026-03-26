@@ -149,7 +149,7 @@ export default function SovereignArsenalPage() {
               <button
                 onClick={() => handleDeploy(blueprint.id)}
                 disabled={deployingId !== null}
-                className={`shrink-0 flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest border transition-all ${
+                className={`shrink-0 flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest border transition-gpu ${
                   deployingId === blueprint.id 
                     ? "bg-[#00B7FF]/20 text-[#00B7FF] border-[#00B7FF]/30" 
                     : "bg-white text-black hover:bg-neutral-200 border-white"

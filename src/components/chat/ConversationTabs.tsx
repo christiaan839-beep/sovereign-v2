@@ -17,7 +17,7 @@ export function ConversationTabs({ conversations, activeId, onSelect, onNew, onC
         <button
           key={c.id}
           onClick={() => onSelect(c.id)}
-          className={`group flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
+          className={`group flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-gpu ${
             c.id === activeId
               ? "bg-white/[0.06] text-white border border-white/[0.08]"
               : "text-neutral-500 hover:text-neutral-300 hover:bg-white/[0.03]"

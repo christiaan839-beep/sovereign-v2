@@ -40,13 +40,13 @@ export default function NotFound() {
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link 
             href="/" 
-            className="inline-flex items-center justify-center gap-2 px-8 py-3 rounded-full bg-gradient-to-r from-[#00B7FF] to-[#a855f7] text-white font-bold cta-glow transition-all hover:-translate-y-0.5"
+            className="inline-flex items-center justify-center gap-2 px-8 py-3 rounded-full bg-gradient-to-r from-[#00B7FF] to-[#a855f7] text-white font-bold cta-glow transition-gpu hover:-translate-y-0.5"
           >
             <Home className="w-4 h-4" /> Go Home
           </Link>
           <Link 
             href="/dashboard" 
-            className="inline-flex items-center justify-center gap-2 px-8 py-3 rounded-full border border-glass-border bg-glass-bg text-white font-bold hover:bg-white/5 transition-all"
+            className="inline-flex items-center justify-center gap-2 px-8 py-3 rounded-full border border-glass-border bg-glass-bg text-white font-bold hover:bg-white/5 transition-gpu"
           >
             <ArrowLeft className="w-4 h-4" /> Dashboard
           </Link>

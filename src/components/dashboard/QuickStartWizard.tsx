@@ -117,7 +117,7 @@ export function QuickStartWizard() {
               return (
                 <div
                   key={i}
-                  className={`rounded-xl p-4 border transition-all ${
+                  className={`rounded-xl p-4 border transition-gpu ${
                     isComplete
                       ? "bg-emerald-500/5 border-emerald-500/20 opacity-60"
                       : `${step.bg} ${step.border} hover:-translate-y-1`
@@ -143,7 +143,7 @@ export function QuickStartWizard() {
                     <Link
                       href={step.href}
                       onClick={() => markComplete(i)}
-                      className={`text-xs font-bold uppercase tracking-wider ${step.color} flex items-center gap-1 hover:gap-2 transition-all`}
+                      className={`text-xs font-bold uppercase tracking-wider ${step.color} flex items-center gap-1 hover:gap-2 transition-gpu`}
                     >
                       {step.cta} <ArrowRight className="w-3 h-3" />
                     </Link>

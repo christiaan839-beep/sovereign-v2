@@ -136,7 +136,7 @@ function RichContent({ content, contentType }: { content: string; contentType?: 
                   <span className="text-[10px] text-neutral-500 w-24 truncate text-right">{m.label}</span>
                   <div className="flex-1 h-5 bg-white/[0.03] rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-gradient-to-r from-emerald-500/60 to-emerald-400/40 rounded-full transition-all duration-700"
+                      className="h-full bg-gradient-to-r from-emerald-500/60 to-emerald-400/40 rounded-full transition-gpu duration-700"
                       style={{ width: `${(m.value / maxVal) * 100}%` }}
                     />
                   </div>

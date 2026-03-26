@@ -170,7 +170,7 @@ export default function WorkflowBuilderPage() {
                 <button
                   key={agent.id}
                   onClick={() => addNode(agent)}
-                  className="flex flex-col items-center gap-2 p-4 rounded-xl border border-white/5 hover:border-white/15 hover:bg-white/[0.04] transition-all text-center group"
+                  className="flex flex-col items-center gap-2 p-4 rounded-xl border border-white/5 hover:border-white/15 hover:bg-white/[0.04] transition-gpu text-center group"
                 >
                   <agent.icon className={`w-5 h-5 ${agent.color} group-hover:scale-110 transition-transform`} />
                   <span className="text-xs font-medium text-white">{agent.name}</span>
@@ -202,7 +202,7 @@ export default function WorkflowBuilderPage() {
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className={`p-5 rounded-2xl border transition-all ${
+                  className={`p-5 rounded-2xl border transition-gpu ${
                     isRunning
                       ? "border-emerald-500/30 bg-emerald-500/5"
                       : result?.status === "success"

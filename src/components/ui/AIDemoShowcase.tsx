@@ -99,7 +99,7 @@ export function AIDemoShowcase() {
           <div className="flex flex-col gap-3 flex-1">
             <button 
               onClick={() => startSimulation("antigravity")}
-              className={`p-4 rounded-xl border flex items-center gap-4 transition-all text-left group ${mode === "antigravity" ? 'border-[#10B981] bg-[#10B981]/10' : 'border-white/10 bg-white/[0.02] hover:border-white/20'}`}
+              className={`p-4 rounded-xl border flex items-center gap-4 transition-gpu text-left group ${mode === "antigravity" ? 'border-[#10B981] bg-[#10B981]/10' : 'border-white/10 bg-white/[0.02] hover:border-white/20'}`}
             >
               <div className={`p-2 rounded-lg ${mode === "antigravity" ? 'bg-[#10B981]/20 text-[#10B981]' : 'bg-white/5 text-neutral-400'}`}>
                  <Cpu className="w-5 h-5" />
@@ -112,7 +112,7 @@ export function AIDemoShowcase() {
 
             <button 
               onClick={() => startSimulation("calling")}
-              className={`p-4 rounded-xl border flex items-center gap-4 transition-all text-left group ${mode === "calling" ? 'border-emerald-500 bg-emerald-500/10' : 'border-white/10 bg-white/[0.02] hover:border-white/20'}`}
+              className={`p-4 rounded-xl border flex items-center gap-4 transition-gpu text-left group ${mode === "calling" ? 'border-emerald-500 bg-emerald-500/10' : 'border-white/10 bg-white/[0.02] hover:border-white/20'}`}
             >
               <div className={`p-2 rounded-lg ${mode === "calling" ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/5 text-neutral-400'}`}>
                  <Phone className="w-5 h-5" />
@@ -125,7 +125,7 @@ export function AIDemoShowcase() {
 
             <button 
               onClick={() => startSimulation("scraping")}
-              className={`p-4 rounded-xl border flex items-center gap-4 transition-all text-left group ${mode === "scraping" ? 'border-amber-500 bg-amber-500/10' : 'border-white/10 bg-white/[0.02] hover:border-white/20'}`}
+              className={`p-4 rounded-xl border flex items-center gap-4 transition-gpu text-left group ${mode === "scraping" ? 'border-amber-500 bg-amber-500/10' : 'border-white/10 bg-white/[0.02] hover:border-white/20'}`}
             >
               <div className={`p-2 rounded-lg ${mode === "scraping" ? 'bg-amber-500/20 text-amber-400' : 'bg-white/5 text-neutral-400'}`}>
                  <Globe className="w-5 h-5" />
@@ -138,7 +138,7 @@ export function AIDemoShowcase() {
 
              <button 
               onClick={() => startSimulation("warroom")}
-              className={`p-4 rounded-xl border flex items-center gap-4 transition-all text-left group ${mode === "warroom" ? 'border-rose-500 bg-rose-500/10' : 'border-white/10 bg-white/[0.02] hover:border-white/20'}`}
+              className={`p-4 rounded-xl border flex items-center gap-4 transition-gpu text-left group ${mode === "warroom" ? 'border-rose-500 bg-rose-500/10' : 'border-white/10 bg-white/[0.02] hover:border-white/20'}`}
             >
               <div className={`p-2 rounded-lg ${mode === "warroom" ? 'bg-rose-500/20 text-rose-400' : 'bg-white/5 text-neutral-400'}`}>
                  <BrainCircuit className="w-5 h-5" />

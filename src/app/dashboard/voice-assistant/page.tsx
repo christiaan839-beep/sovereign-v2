@@ -267,7 +267,7 @@ export default function VoiceAssistantPage() {
             <button
               onClick={listening ? stopListening : startListening}
               disabled={thinking}
-              className={`relative w-14 h-14 rounded-2xl flex items-center justify-center transition-all shrink-0 ${
+              className={`relative w-14 h-14 rounded-2xl flex items-center justify-center transition-gpu shrink-0 ${
                 listening
                   ? "bg-red-500/20 border-2 border-red-500/40 shadow-[0_0_30px_rgba(239,68,68,0.2)]"
                   : "bg-[#00B7FF]/10 border-2 border-[#00B7FF]/20 hover:border-[#00B7FF]/40 hover:shadow-[0_0_30px_rgba(0,183,255,0.15)]"

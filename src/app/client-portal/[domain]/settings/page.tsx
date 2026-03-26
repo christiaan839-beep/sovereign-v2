@@ -82,7 +82,7 @@ export default function WhiteLabelSettings({ params }: PageProps) {
             onClick={handleSave}
             disabled={isSaving}
             whileTap={{ scale: 0.98 }}
-            className="w-full px-6 py-4 bg-gradient-to-r from-cyan-500/10 to-cyan-500/5 border border-cyan-500/30 text-cyan-400 rounded-xl flex items-center justify-center gap-3 uppercase tracking-widest font-bold font-mono text-xs disabled:opacity-50 hover:from-cyan-500/20 transition-all"
+            className="w-full px-6 py-4 bg-gradient-to-r from-cyan-500/10 to-cyan-500/5 border border-cyan-500/30 text-cyan-400 rounded-xl flex items-center justify-center gap-3 uppercase tracking-widest font-bold font-mono text-xs disabled:opacity-50 hover:from-cyan-500/20 transition-gpu"
           >
             {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : saved ? <CheckCircle2 className="w-4 h-4" /> : <Save className="w-4 h-4" />}
             {isSaving ? "Saving Configuration..." : saved ? "Configuration Saved" : "Save Changes"}

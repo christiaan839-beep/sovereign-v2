@@ -79,7 +79,7 @@ export default function NimArsenalPage() {
         <div className="flex flex-wrap gap-3">
           <button
             onClick={() => setActiveTier(null)}
-            className={`px-4 py-2 text-xs font-bold uppercase tracking-widest border transition-all ${!activeTier ? "bg-white text-black border-white" : "bg-transparent text-neutral-500 border-neutral-800 hover:border-neutral-600"}`}
+            className={`px-4 py-2 text-xs font-bold uppercase tracking-widest border transition-gpu ${!activeTier ? "bg-white text-black border-white" : "bg-transparent text-neutral-500 border-neutral-800 hover:border-neutral-600"}`}
           >
             All ({MODELS.length})
           </button>
@@ -89,7 +89,7 @@ export default function NimArsenalPage() {
               <button
                 key={tier}
                 onClick={() => setActiveTier(activeTier === Number(tier) ? null : Number(tier))}
-                className={`px-4 py-2 text-xs font-bold uppercase tracking-widest border transition-all flex items-center gap-2 ${activeTier === Number(tier) ? `text-black border-transparent` : `text-neutral-500 border-neutral-800 hover:border-neutral-600`}`}
+                className={`px-4 py-2 text-xs font-bold uppercase tracking-widest border transition-gpu flex items-center gap-2 ${activeTier === Number(tier) ? `text-black border-transparent` : `text-neutral-500 border-neutral-800 hover:border-neutral-600`}`}
                 style={activeTier === Number(tier) ? { backgroundColor: config.color } : {}}
               >
                 {React.createElement(config.icon, { className: "w-3 h-3" })}
@@ -106,7 +106,7 @@ export default function NimArsenalPage() {
             return (
               <div
                 key={model.key}
-                className="bg-neutral-950 border border-neutral-800 p-5 hover:border-neutral-600 transition-all group relative overflow-hidden"
+                className="bg-neutral-950 border border-neutral-800 p-5 hover:border-neutral-600 transition-gpu group relative overflow-hidden"
               >
                 {/* Tier accent bar */}
                 <div className="absolute top-0 left-0 w-full h-[2px]" style={{ backgroundColor: tierConf.color }} />

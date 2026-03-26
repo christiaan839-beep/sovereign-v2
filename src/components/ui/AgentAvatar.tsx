@@ -304,7 +304,7 @@ export function AgentIdentityCard({
     <motion.div
       whileHover={{ scale: 1.02, y: -2 }}
       onClick={onClick}
-      className="p-5 rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl hover:border-emerald-500/20 transition-all duration-300 cursor-pointer group"
+      className="p-5 rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl hover:border-emerald-500/20 transition-gpu duration-300 cursor-pointer group"
     >
       <div className="flex items-center gap-4">
         <AgentAvatar

@@ -162,7 +162,7 @@ export function SmartContextBar() {
               <div className="flex items-center gap-3 relative z-10 shrink-0">
                 <Link
                   href={currentSuggestion.href}
-                  className="px-4 py-2 rounded-xl bg-white/10 border border-white/10 text-xs font-bold uppercase tracking-widest text-white hover:bg-white/20 transition-all flex items-center gap-2"
+                  className="px-4 py-2 rounded-xl bg-white/10 border border-white/10 text-xs font-bold uppercase tracking-widest text-white hover:bg-white/20 transition-gpu flex items-center gap-2"
                 >
                   {currentSuggestion.action} <ArrowRight className="w-3 h-3" />
                 </Link>

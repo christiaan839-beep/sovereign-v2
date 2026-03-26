@@ -121,7 +121,7 @@ export default function LiveTerminalPage() {
             <button
               key={a.id}
               onClick={() => { setSelectedAgent(a.id); setInput(a.placeholder); }}
-              className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest border transition-all ${
+              className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest border transition-gpu ${
                 selectedAgent === a.id
                   ? "bg-[#00B7FF] text-black border-[#00B7FF]"
                   : "bg-transparent text-neutral-500 border-neutral-800 hover:border-neutral-600"
@@ -164,7 +164,7 @@ export default function LiveTerminalPage() {
           <button
             onClick={execute}
             disabled={running}
-            className="px-4 py-3 bg-[#00B7FF] text-black font-bold text-sm hover:bg-[#00A0E0] transition-all disabled:opacity-50 flex items-center gap-2"
+            className="px-4 py-3 bg-[#00B7FF] text-black font-bold text-sm hover:bg-[#00A0E0] transition-gpu disabled:opacity-50 flex items-center gap-2"
           >
             {running ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Send className="w-4 h-4" /> Run</>}
           </button>

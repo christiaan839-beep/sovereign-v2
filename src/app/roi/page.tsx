@@ -83,7 +83,7 @@ export default function ROICalculatorPage() {
               <div className="flex justify-between text-neutral-500"><span>Sovereign Matrix cost</span><span className="text-[#00ff66] font-bold">R{sovereignCost.toLocaleString()}</span></div>
               <div className="border-t border-neutral-800 pt-2 flex justify-between font-bold text-white"><span>Net monthly impact</span><span className="text-[#00ff66]">+R{(revenueIncrease + (savings > 0 ? savings : 0)).toLocaleString()}</span></div>
             </div>
-            <a href="/pricing" className="block w-full py-4 bg-white text-black font-bold text-sm uppercase tracking-widest text-center hover:bg-neutral-200 transition-all">
+            <a href="/pricing" className="block w-full py-4 bg-white text-black font-bold text-sm uppercase tracking-widest text-center hover:bg-neutral-200 transition-gpu">
               View Plans <ArrowRight className="w-4 h-4 inline ml-2" />
             </a>
           </div>

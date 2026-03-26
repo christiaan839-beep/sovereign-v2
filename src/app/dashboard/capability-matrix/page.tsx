@@ -72,7 +72,7 @@ export default function CapabilityMatrixPage() {
           <h2 className="text-sm font-bold uppercase tracking-widest text-neutral-500 mb-4">Model Registry</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
             {MODELS.map(m => (
-              <div key={m.id} className="bg-neutral-950 border border-neutral-800 p-4 hover:border-neutral-600 transition-all">
+              <div key={m.id} className="bg-neutral-950 border border-neutral-800 p-4 hover:border-neutral-600 transition-gpu">
                 <div className="flex items-center gap-3 mb-3">
                   {React.createElement(m.icon, { className: "w-4 h-4", style: { color: m.color } })}
                   <span className="text-xs font-bold text-white">{m.name}</span>

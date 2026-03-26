@@ -35,7 +35,7 @@ export default function ClientPortalPage() {
           </p>
 
           <SignInButton mode="modal" fallbackRedirectUrl="/dashboard">
-            <button className="inline-flex items-center gap-3 px-10 py-5 rounded-2xl bg-white text-black font-bold uppercase tracking-widest text-sm hover:bg-neutral-200 transition-all shadow-[0_0_40px_rgba(255,255,255,0.15)] group">
+            <button className="inline-flex items-center gap-3 px-10 py-5 rounded-2xl bg-white text-black font-bold uppercase tracking-widest text-sm hover:bg-neutral-200 transition-gpu shadow-[0_0_40px_rgba(255,255,255,0.15)] group">
               <Building2 className="w-5 h-5" />
               Access Portal
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -54,7 +54,7 @@ export default function ClientPortalPage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.1 }}
-              className="bg-white/[0.02] border border-white/5 rounded-2xl p-8 hover:border-white/10 transition-all group"
+              className="bg-white/[0.02] border border-white/5 rounded-2xl p-8 hover:border-white/10 transition-gpu group"
             >
               <div className={`w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mb-5 ${f.color}`}>
                 <f.icon className="w-6 h-6" />

@@ -83,7 +83,7 @@ export default function PaymentSuccessPage() {
 
         <Link
           href="/dashboard"
-          className="inline-flex items-center gap-3 px-10 py-5 rounded-2xl bg-white text-black font-bold uppercase tracking-widest text-sm hover:bg-neutral-200 transition-all shadow-[0_0_40px_rgba(255,255,255,0.2)] group"
+          className="inline-flex items-center gap-3 px-10 py-5 rounded-2xl bg-white text-black font-bold uppercase tracking-widest text-sm hover:bg-neutral-200 transition-gpu shadow-[0_0_40px_rgba(255,255,255,0.2)] group"
         >
           Enter Command Center
           <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />

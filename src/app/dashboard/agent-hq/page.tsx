@@ -262,7 +262,7 @@ export default function AgentHQPage() {
               key={action.label}
               variants={cardVariants}
               onClick={() => router.push(action.href)}
-              className="group flex items-center gap-4 rounded-xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl px-5 py-4 text-left hover:border-[#00B7FF]/20 transition-all"
+              className="group flex items-center gap-4 rounded-xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl px-5 py-4 text-left hover:border-[#00B7FF]/20 transition-gpu"
             >
               <div className="w-9 h-9 rounded-lg bg-white/[0.04] flex items-center justify-center group-hover:bg-[#00B7FF]/10 transition-colors">
                 {React.createElement(action.icon, { className: "w-4 h-4 text-neutral-400 group-hover:text-[#00B7FF] transition-colors" })}

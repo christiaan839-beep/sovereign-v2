@@ -123,7 +123,7 @@ export default function AGIAuditorPage() {
                 <button 
                   type="submit"
                   disabled={!targetUrl}
-                  className="mr-2 my-2 px-8 py-4 bg-white text-black font-semibold rounded-xl hover:bg-[#00B7FF] hover:text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="mr-2 my-2 px-8 py-4 bg-white text-black font-semibold rounded-xl hover:bg-[#00B7FF] hover:text-white transition-gpu duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   INITIATE
                   <ArrowRight className="w-5 h-5" />
@@ -240,7 +240,7 @@ export default function AGIAuditorPage() {
                     <input 
                       type="email" 
                       placeholder="your@email.com"
-                      className="flex-1 bg-white/5 border border-white/10 rounded-xl px-6 py-4 text-white placeholder-neutral-500 outline-none focus:border-[#00B7FF]/50 transition-all"
+                      className="flex-1 bg-white/5 border border-white/10 rounded-xl px-6 py-4 text-white placeholder-neutral-500 outline-none focus:border-[#00B7FF]/50 transition-gpu"
                       id="scan-email"
                     />
                     <button 
@@ -269,7 +269,7 @@ export default function AGIAuditorPage() {
                           window.location.href = demo.portalUrl;
                         }
                       }}
-                      className="group relative inline-flex items-center gap-3 px-8 py-4 bg-white text-black rounded-xl overflow-hidden transition-all hover:scale-105 active:scale-95 shadow-[0_0_40px_rgba(255,255,255,0.3)] font-bold tracking-wide uppercase text-sm"
+                      className="group relative inline-flex items-center gap-3 px-8 py-4 bg-white text-black rounded-xl overflow-hidden transition-gpu hover:scale-105 active:scale-95 shadow-[0_0_40px_rgba(255,255,255,0.3)] font-bold tracking-wide uppercase text-sm"
                     >
                       See My Demo <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                     </button>

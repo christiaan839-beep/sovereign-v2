@@ -47,7 +47,7 @@ function AgentNode({ name, icon: Icon, color, active, delay = 0 }: {
       transition={{ delay, duration: 0.5 }}
       className={`flex flex-col items-center gap-2 ${active ? "" : "opacity-30"}`}
     >
-      <div className={`relative w-14 h-14 rounded-xl border flex items-center justify-center transition-all duration-500 ${
+      <div className={`relative w-14 h-14 rounded-xl border flex items-center justify-center transition-gpu duration-500 ${
         active
           ? `bg-${color}-500/10 border-${color}-500/30 shadow-[0_0_20px_rgba(16,185,129,0.15)]`
           : "bg-white/[0.02] border-white/[0.06]"
@@ -201,7 +201,7 @@ function ChatDemo({ scenario }: { scenario: typeof SCENARIOS[0] }) {
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center justify-center h-full">
                 <button
                   onClick={startDemo}
-                  className="group flex items-center gap-3 px-8 py-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/15 hover:border-emerald-500/30 transition-all"
+                  className="group flex items-center gap-3 px-8 py-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/15 hover:border-emerald-500/30 transition-gpu"
                 >
                   <Zap className="w-5 h-5 text-emerald-400" />
                   <span className="text-sm font-semibold text-emerald-300">Execute Agent Workflow</span>
@@ -223,7 +223,7 @@ function ChatDemo({ scenario }: { scenario: typeof SCENARIOS[0] }) {
                     transition={{ duration: 0.3 }}
                     className="flex items-start gap-3"
                   >
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 border transition-all ${
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 border transition-gpu ${
                       isDone
                         ? "bg-emerald-500/10 border-emerald-500/20"
                         : isActive
@@ -334,7 +334,7 @@ export default function ShowcasePage() {
             <SovereignLogo size="sm" />
             <span className="text-sm font-semibold text-white">Showcase</span>
           </Link>
-          <Link href="/dashboard" className="px-4 py-1.5 rounded-full bg-white text-xs font-semibold text-black hover:bg-neutral-200 transition-all">
+          <Link href="/dashboard" className="px-4 py-1.5 rounded-full bg-white text-xs font-semibold text-black hover:bg-neutral-200 transition-gpu">
             Try It Live
           </Link>
         </div>
@@ -364,7 +364,7 @@ export default function ShowcasePage() {
             <button
               key={s.id}
               onClick={() => setActiveScenario(i)}
-              className={`flex-1 px-5 py-4 rounded-xl border text-left transition-all duration-300 ${
+              className={`flex-1 px-5 py-4 rounded-xl border text-left transition-gpu duration-300 ${
                 activeScenario === i
                   ? "bg-emerald-500/10 border-emerald-500/25 shadow-[0_0_20px_rgba(16,185,129,0.08)]"
                   : "bg-white/[0.02] border-white/[0.06] hover:border-white/[0.1]"
@@ -472,10 +472,10 @@ export default function ShowcasePage() {
           <h2 className="text-3xl md:text-4xl font-black text-white mb-4">Ready to deploy?</h2>
           <p className="text-neutral-500 mb-8 text-sm">132 agents. 51+ models. Zero per-token cost. Start free.</p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Link href="/dashboard" className="cta-glow group flex items-center gap-2 px-8 py-4 bg-white text-black font-semibold rounded-full text-sm hover:shadow-[0_0_40px_rgba(255,255,255,0.12)] transition-all">
+            <Link href="/dashboard" className="cta-glow group flex items-center gap-2 px-8 py-4 bg-white text-black font-semibold rounded-full text-sm hover:shadow-[0_0_40px_rgba(255,255,255,0.12)] transition-gpu">
               Start Free <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
             </Link>
-            <Link href="/" className="px-8 py-4 border border-white/10 text-neutral-300 font-medium rounded-full text-sm hover:border-white/20 hover:text-white transition-all">
+            <Link href="/" className="px-8 py-4 border border-white/10 text-neutral-300 font-medium rounded-full text-sm hover:border-white/20 hover:text-white transition-gpu">
               Back to Home
             </Link>
           </div>

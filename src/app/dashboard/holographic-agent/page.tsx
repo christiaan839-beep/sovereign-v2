@@ -50,7 +50,7 @@ export default function HolographicAgentDashboard() {
              <div className="space-y-4">
                <button 
                  onClick={() => setCallActive(!callActive)}
-                 className={`w-full py-4 rounded-xl font-bold uppercase tracking-widest flex items-center justify-center gap-3 transition-all ${callActive ? 'bg-red-500/20 text-red-500 border border-red-500/50 hover:bg-red-500/30' : 'bg-[#00B7FF]/10 text-[#00B7FF] border border-[#00B7FF]/50 hover:bg-[#00B7FF]/20'}`}
+                 className={`w-full py-4 rounded-xl font-bold uppercase tracking-widest flex items-center justify-center gap-3 transition-gpu ${callActive ? 'bg-red-500/20 text-red-500 border border-red-500/50 hover:bg-red-500/30' : 'bg-[#00B7FF]/10 text-[#00B7FF] border border-[#00B7FF]/50 hover:bg-[#00B7FF]/20'}`}
                >
                  {callActive ? (
                    <><Mic className="w-5 h-5 animate-pulse" /> Terminate Connection</>

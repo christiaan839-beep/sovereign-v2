@@ -314,7 +314,7 @@ export default function AgentCommandCenter() {
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
-              className={`px-4 py-2 text-[10px] font-bold uppercase tracking-widest border transition-all ${
+              className={`px-4 py-2 text-[10px] font-bold uppercase tracking-widest border transition-gpu ${
                 activeCategory === cat
                   ? "bg-white text-black border-white"
                   : "bg-transparent text-neutral-500 border-neutral-800 hover:border-neutral-600"
@@ -335,7 +335,7 @@ export default function AgentCommandCenter() {
             return (
               <div
                 key={agent.id}
-                className="bg-neutral-950 border border-neutral-800 hover:border-neutral-700 transition-all overflow-hidden group"
+                className="bg-neutral-950 border border-neutral-800 hover:border-neutral-700 transition-gpu overflow-hidden group"
               >
                 {/* Accent bar */}
                 <div className="h-[2px]" style={{ backgroundColor: agent.color }} />
@@ -400,7 +400,7 @@ export default function AgentCommandCenter() {
                         <button
                           onClick={() => executeAgent(agent)}
                           disabled={result?.loading}
-                          className="px-4 py-2.5 text-xs font-bold uppercase tracking-widest transition-all disabled:opacity-50"
+                          className="px-4 py-2.5 text-xs font-bold uppercase tracking-widest transition-gpu disabled:opacity-50"
                           style={{ backgroundColor: `${agent.color}20`, color: agent.color, border: `1px solid ${agent.color}40` }}
                         >
                           {result?.loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Play className="w-3 h-3" />}

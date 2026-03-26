@@ -131,7 +131,7 @@ export default function LibraryPage() {
           <p className="text-[10px] uppercase tracking-widest text-neutral-500 font-bold mb-1">Usage</p>
           <div className="w-full h-2 bg-white/5 rounded-full mt-2 overflow-hidden">
             <div
-              className={`h-full rounded-full transition-all ${usage.remaining > 5 ? "bg-emerald-500" : usage.remaining > 0 ? "bg-amber-500" : "bg-rose-500"}`}
+              className={`h-full rounded-full transition-gpu ${usage.remaining > 5 ? "bg-emerald-500" : usage.remaining > 0 ? "bg-amber-500" : "bg-rose-500"}`}
               style={{ width: `${Math.min(100, (usage.today / usage.limit) * 100)}%` }}
             />
           </div>
@@ -145,7 +145,7 @@ export default function LibraryPage() {
         </div>
         <button
           onClick={() => setFilterTool("")}
-          className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${!filterTool ? "bg-[#00B7FF]/10 border border-[#00B7FF]/20 text-[#00B7FF]" : "bg-white/5 border border-white/10 text-neutral-500 hover:text-white"}`}
+          className={`px-3 py-1 rounded-lg text-xs font-bold transition-gpu ${!filterTool ? "bg-[#00B7FF]/10 border border-[#00B7FF]/20 text-[#00B7FF]" : "bg-white/5 border border-white/10 text-neutral-500 hover:text-white"}`}
         >
           All
         </button>
@@ -153,7 +153,7 @@ export default function LibraryPage() {
           <button
             key={key}
             onClick={() => setFilterTool(key)}
-            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${filterTool === key ? "bg-[#00B7FF]/10 border border-[#00B7FF]/20 text-[#00B7FF]" : "bg-white/5 border border-white/10 text-neutral-500 hover:text-white"}`}
+            className={`px-3 py-1 rounded-lg text-xs font-bold transition-gpu ${filterTool === key ? "bg-[#00B7FF]/10 border border-[#00B7FF]/20 text-[#00B7FF]" : "bg-white/5 border border-white/10 text-neutral-500 hover:text-white"}`}
           >
             {label}
           </button>

@@ -207,7 +207,7 @@ export default function NemoClawPage() {
           <div className="rounded-2xl bg-white/[0.02] border border-white/10 p-5 backdrop-blur-md">
              <button 
                onClick={() => setIsDeployed247(!isDeployed247)}
-               className={`w-full py-3 rounded-xl border flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest transition-all ${
+               className={`w-full py-3 rounded-xl border flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest transition-gpu ${
                  isDeployed247 
                    ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30 shadow-[0_0_20px_rgba(16,185,129,0.2)]'
                    : 'bg-white/5 border-white/10 text-white hover:bg-white/10'

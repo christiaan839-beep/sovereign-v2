@@ -96,7 +96,7 @@ export default function CyberAuditPage() {
             <button 
               onClick={startAudit}
               disabled={pipelineStatus !== "idle" || !targetUrl}
-              className="w-full mt-6 py-3 rounded-xl border flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-red-500/20 text-red-500 border-red-500/30 hover:bg-red-500/30 shadow-[0_0_20px_rgba(239,68,68,0.15)]"
+              className="w-full mt-6 py-3 rounded-xl border flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest transition-gpu disabled:opacity-50 disabled:cursor-not-allowed bg-red-500/20 text-red-500 border-red-500/30 hover:bg-red-500/30 shadow-[0_0_20px_rgba(239,68,68,0.15)]"
             >
               <Fingerprint className="w-4 h-4" /> Execute Vulnerability Sweep
             </button>

@@ -66,7 +66,7 @@ export function SystemPromptEditor({ prompt, onChange, isOpen, onToggle }: Syste
                         setLocalValue(newPrompt);
                         onChange(newPrompt);
                       }}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-medium whitespace-nowrap transition-all ${
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-medium whitespace-nowrap transition-gpu ${
                         isActive
                           ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
                           : "bg-white/[0.03] text-neutral-500 border border-white/[0.06] hover:border-white/[0.12]"

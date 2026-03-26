@@ -20,7 +20,7 @@ const variantStyles: Record<CardVariant, string> = {
 };
 
 export function Card({ children, variant = "default", className = "", onClick, animate = false }: CardProps) {
-  const baseClasses = `rounded-2xl p-5 transition-all duration-300 ${variantStyles[variant]} ${onClick ? "cursor-pointer hover:scale-[1.01]" : ""} ${className}`;
+  const baseClasses = `rounded-2xl p-5 transition-gpu duration-300 ${variantStyles[variant]} ${onClick ? "cursor-pointer hover:scale-[1.01]" : ""} ${className}`;
 
   if (animate) {
     return (

@@ -64,7 +64,7 @@ function ServiceCard({ name, icon: Icon, service, desc }: {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`p-5 rounded-xl border transition-all duration-300 ${
+      className={`p-5 rounded-xl border transition-gpu duration-300 ${
         service.status === "up"
           ? "bg-emerald-500/[0.03] border-emerald-500/15"
           : service.status === "down"
@@ -104,7 +104,7 @@ function ServiceCard({ name, icon: Icon, service, desc }: {
         {service.status === "up" && (
           <div className="h-1 w-16 rounded-full bg-emerald-500/20 overflow-hidden">
             <div
-              className="h-full bg-emerald-400 rounded-full transition-all"
+              className="h-full bg-emerald-400 rounded-full transition-gpu"
               style={{ width: `${Math.max(10, 100 - service.latencyMs / 10)}%` }}
             />
           </div>

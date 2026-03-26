@@ -139,7 +139,7 @@ export default function LeaderboardPage() {
           <button
             onClick={runBenchmark}
             disabled={running}
-            className="w-full py-3 bg-[#FFD700] text-black font-bold text-sm uppercase tracking-widest hover:bg-[#FFD700]/90 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+            className="w-full py-3 bg-[#FFD700] text-black font-bold text-sm uppercase tracking-widest hover:bg-[#FFD700]/90 transition-gpu disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {running ? <><Loader2 className="w-4 h-4 animate-spin" /> Benchmarking 3 Models...</> : <><Zap className="w-4 h-4" /> Run Benchmark</>}
           </button>

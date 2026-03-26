@@ -119,7 +119,7 @@ export function FlowExport({ open, onClose, screens }: FlowExportProps) {
                 <button
                   key={i}
                   onClick={() => setActiveIndex(i)}
-                  className={`w-2 h-2 rounded-full transition-all ${i === activeIndex ? "bg-[#00B7FF] scale-125" : "bg-white/[0.15] hover:bg-white/[0.3]"}`}
+                  className={`w-2 h-2 rounded-full transition-gpu ${i === activeIndex ? "bg-[#00B7FF] scale-125" : "bg-white/[0.15] hover:bg-white/[0.3]"}`}
                 />
               ))}
             </div>

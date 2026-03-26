@@ -134,7 +134,7 @@ export default function PageBuilderPage() {
           <button
             onClick={handleGenerate}
             disabled={!businessName || !offer || generating}
-            className="px-8 py-4 bg-[#00B7FF] hover:bg-[#00B7FF]/90 disabled:opacity-50 text-white font-bold text-xs uppercase tracking-[0.15em] rounded-xl flex items-center gap-3 transition-all shadow-[0_0_30px_rgba(0,183,255,0.3)] group"
+            className="px-8 py-4 bg-[#00B7FF] hover:bg-[#00B7FF]/90 disabled:opacity-50 text-white font-bold text-xs uppercase tracking-[0.15em] rounded-xl flex items-center gap-3 transition-gpu shadow-[0_0_30px_rgba(0,183,255,0.3)] group"
           >
             <MonitorPlay className="w-4 h-4 group-hover:scale-110 transition-transform" />
             Launch Pipeline
@@ -162,7 +162,7 @@ export default function PageBuilderPage() {
                     onChange={(e) => setBusinessName(e.target.value)}
                     placeholder="NeuroStack"
                     disabled={generating}
-                    className="w-full bg-black/60 border border-glass-border rounded-lg px-3 py-2.5 text-sm text-white font-mono focus:border-[#00B7FF]/50 outline-none transition-all disabled:opacity-50"
+                    className="w-full bg-black/60 border border-glass-border rounded-lg px-3 py-2.5 text-sm text-white font-mono focus:border-[#00B7FF]/50 outline-none transition-gpu disabled:opacity-50"
                   />
                 </div>
                 <div>
@@ -173,7 +173,7 @@ export default function PageBuilderPage() {
                     onChange={(e) => setIndustry(e.target.value)}
                     placeholder="SaaS"
                     disabled={generating}
-                    className="w-full bg-black/60 border border-glass-border rounded-lg px-3 py-2.5 text-sm text-white font-mono focus:border-[#00B7FF]/50 outline-none transition-all disabled:opacity-50"
+                    className="w-full bg-black/60 border border-glass-border rounded-lg px-3 py-2.5 text-sm text-white font-mono focus:border-[#00B7FF]/50 outline-none transition-gpu disabled:opacity-50"
                   />
                 </div>
               </div>
@@ -185,7 +185,7 @@ export default function PageBuilderPage() {
                   placeholder="Free 30-min strategy session for CTOs"
                   rows={2}
                   disabled={generating}
-                  className="w-full bg-black/60 border border-glass-border rounded-lg px-3 py-2.5 text-sm text-white font-mono focus:border-[#00B7FF]/50 outline-none transition-all resize-none disabled:opacity-50"
+                  className="w-full bg-black/60 border border-glass-border rounded-lg px-3 py-2.5 text-sm text-white font-mono focus:border-[#00B7FF]/50 outline-none transition-gpu resize-none disabled:opacity-50"
                 />
               </div>
               <div>
@@ -196,7 +196,7 @@ export default function PageBuilderPage() {
                   onChange={(e) => setTargetAudience(e.target.value)}
                   placeholder="e.g. CMOs of hyper-growth SaaS"
                   disabled={generating}
-                  className="w-full bg-black/60 border border-glass-border rounded-lg px-3 py-2.5 text-sm text-white font-mono focus:border-[#00B7FF]/50 outline-none transition-all disabled:opacity-50"
+                  className="w-full bg-black/60 border border-glass-border rounded-lg px-3 py-2.5 text-sm text-white font-mono focus:border-[#00B7FF]/50 outline-none transition-gpu disabled:opacity-50"
                 />
               </div>
             </div>
@@ -248,7 +248,7 @@ export default function PageBuilderPage() {
             <div className="flex items-center gap-1 bg-white/[0.03] p-1 rounded-lg border border-white/[0.05]">
               <button
                 onClick={() => setViewMode("preview")}
-                className={`px-4 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
+                className={`px-4 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider transition-gpu flex items-center gap-2 ${
                   viewMode === "preview" ? "bg-[#00B7FF] text-white shadow-lg" : "text-[#5C667A] hover:text-white"
                 }`}
               >
@@ -256,7 +256,7 @@ export default function PageBuilderPage() {
               </button>
               <button
                 onClick={() => setViewMode("code")}
-                className={`px-4 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
+                className={`px-4 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider transition-gpu flex items-center gap-2 ${
                   viewMode === "code" ? "bg-[#00B7FF] text-white shadow-lg" : "text-[#5C667A] hover:text-white"
                 }`}
               >
@@ -267,7 +267,7 @@ export default function PageBuilderPage() {
             {generatedHtml && (
               <button
                 onClick={handleCopy}
-                className="flex items-center gap-2 px-4 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-[10px] font-bold uppercase tracking-wider text-emerald-400 hover:bg-emerald-500/20 transition-all"
+                className="flex items-center gap-2 px-4 py-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-[10px] font-bold uppercase tracking-wider text-emerald-400 hover:bg-emerald-500/20 transition-gpu"
               >
                 {copied ? <><CheckCircle2 className="w-3 h-3" /> Copied!</> : <><Copy className="w-3 h-3" /> Export HTML</>}
               </button>
@@ -298,7 +298,7 @@ export default function PageBuilderPage() {
                     { s: 8, label: "Final Build" },
                   ].map((s) => (
                     <div key={s.s} className="flex items-center gap-4">
-                      <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-[10px] font-bold transition-all duration-500 ${
+                      <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-[10px] font-bold transition-gpu duration-500 ${
                         activeStep >= s.s ? "border-[#00B7FF] bg-[#00B7FF] text-white shadow-[0_0_15px_rgba(0,183,255,0.5)]" : "border-glass-border text-[#5C667A] bg-transparent"
                       }`}>
                         {activeStep > s.s ? "✓" : s.s}

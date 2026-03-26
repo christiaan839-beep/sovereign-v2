@@ -192,7 +192,7 @@ export default function FlywheelPage() {
               <button 
                  onClick={triggerOptimization}
                  disabled={pipelineState !== "idle"}
-                 className="w-full py-4 rounded-xl font-bold uppercase tracking-widest text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-[#00B7FF] text-white hover:bg-[#00B7FF]/80 shadow-[0_0_20px_rgba(0,183,255,0.3)] flex justify-center items-center gap-2"
+                 className="w-full py-4 rounded-xl font-bold uppercase tracking-widest text-xs transition-gpu disabled:opacity-50 disabled:cursor-not-allowed bg-[#00B7FF] text-white hover:bg-[#00B7FF]/80 shadow-[0_0_20px_rgba(0,183,255,0.3)] flex justify-center items-center gap-2"
               >
                  <RefreshCcw className={`w-4 h-4 ${pipelineState === 'optimizing' ? 'animate-spin' : ''}`} /> Run Overnight Optimizer
               </button>

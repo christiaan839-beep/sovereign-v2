@@ -64,7 +64,7 @@ function QuickActionsBar({ onSubmit }: { onSubmit: (text: string) => void }) {
             key={action.id}
             layoutId={action.id}
             onClick={() => setExpanded(action.id)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.02] border border-white/[0.06] text-[10px] text-neutral-500 hover:border-emerald-500/15 hover:text-neutral-300 transition-all whitespace-nowrap shrink-0"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.02] border border-white/[0.06] text-[10px] text-neutral-500 hover:border-emerald-500/15 hover:text-neutral-300 transition-gpu whitespace-nowrap shrink-0"
           >
             <Icon className="w-3 h-3" />
             {action.label}
@@ -120,7 +120,7 @@ export function InputBar({ loading, selectedModel, onModelChange, onSend }: Inpu
             <button
               type="submit"
               disabled={loading || !input.trim()}
-              className="w-12 h-12 rounded-2xl bg-white text-black flex items-center justify-center hover:bg-neutral-200 disabled:opacity-30 transition-all shrink-0"
+              className="w-12 h-12 rounded-2xl bg-white text-black flex items-center justify-center hover:bg-neutral-200 disabled:opacity-30 transition-gpu shrink-0"
             >
               <Send className="w-5 h-5" />
             </button>

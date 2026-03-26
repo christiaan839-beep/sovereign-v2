@@ -204,7 +204,7 @@ export default function ScheduledRunsPage() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => setShowModal(true)}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-sm font-semibold shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30 transition-all cursor-pointer"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-sm font-semibold shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30 transition-gpu cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             Create Schedule
@@ -263,7 +263,7 @@ export default function ScheduledRunsPage() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.3, delay: index * 0.05 }}
-                  className={`rounded-2xl border backdrop-blur-xl p-5 transition-all ${
+                  className={`rounded-2xl border backdrop-blur-xl p-5 transition-gpu ${
                     schedule.active
                       ? "bg-white/[0.04] border-white/10"
                       : "bg-white/[0.02] border-white/[0.06] opacity-60"
@@ -328,7 +328,7 @@ export default function ScheduledRunsPage() {
                       <button
                         onClick={() => runNow(schedule.id)}
                         disabled={isRunning}
-                        className="p-2 rounded-lg hover:bg-white/5 text-neutral-500 hover:text-emerald-400 transition-all cursor-pointer disabled:opacity-50"
+                        className="p-2 rounded-lg hover:bg-white/5 text-neutral-500 hover:text-emerald-400 transition-gpu cursor-pointer disabled:opacity-50"
                         title="Run Now"
                       >
                         <Play
@@ -336,14 +336,14 @@ export default function ScheduledRunsPage() {
                         />
                       </button>
                       <button
-                        className="p-2 rounded-lg hover:bg-white/5 text-neutral-500 hover:text-blue-400 transition-all cursor-pointer"
+                        className="p-2 rounded-lg hover:bg-white/5 text-neutral-500 hover:text-blue-400 transition-gpu cursor-pointer"
                         title="Edit"
                       >
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => deleteSchedule(schedule.id)}
-                        className="p-2 rounded-lg hover:bg-white/5 text-neutral-500 hover:text-red-400 transition-all cursor-pointer"
+                        className="p-2 rounded-lg hover:bg-white/5 text-neutral-500 hover:text-red-400 transition-gpu cursor-pointer"
                         title="Delete"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -385,7 +385,7 @@ export default function ScheduledRunsPage() {
                 </div>
                 <button
                   onClick={() => setShowModal(false)}
-                  className="p-2 rounded-lg hover:bg-white/5 text-neutral-500 hover:text-white transition-all cursor-pointer"
+                  className="p-2 rounded-lg hover:bg-white/5 text-neutral-500 hover:text-white transition-gpu cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -424,7 +424,7 @@ export default function ScheduledRunsPage() {
                       <button
                         key={opt}
                         onClick={() => setFrequency(opt)}
-                        className={`px-3 py-2 rounded-xl text-xs font-medium transition-all cursor-pointer ${
+                        className={`px-3 py-2 rounded-xl text-xs font-medium transition-gpu cursor-pointer ${
                           frequency === opt
                             ? "bg-emerald-500/15 border border-emerald-500/30 text-emerald-400"
                             : "bg-white/[0.03] border border-white/[0.06] text-neutral-500 hover:bg-white/5 hover:text-neutral-300"
@@ -469,13 +469,13 @@ export default function ScheduledRunsPage() {
               <div className="p-6 border-t border-white/[0.06] flex items-center justify-end gap-3">
                 <button
                   onClick={() => setShowModal(false)}
-                  className="px-4 py-2.5 rounded-xl text-sm text-neutral-400 hover:text-white hover:bg-white/5 transition-all cursor-pointer"
+                  className="px-4 py-2.5 rounded-xl text-sm text-neutral-400 hover:text-white hover:bg-white/5 transition-gpu cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={createSchedule}
-                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-sm font-semibold shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30 transition-all cursor-pointer"
+                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-sm font-semibold shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30 transition-gpu cursor-pointer"
                 >
                   Create Schedule
                 </button>

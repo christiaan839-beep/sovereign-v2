@@ -187,7 +187,7 @@ export default function IntegrationsPage() {
             {/* Action Button */}
             <button
               onClick={() => handleConnect(integration)}
-              className={`w-full py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${
+              className={`w-full py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest transition-gpu ${
                 integration.connected
                   ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20"
                   : "bg-white/5 text-neutral-300 border border-white/10 hover:bg-white/10 hover:text-white"

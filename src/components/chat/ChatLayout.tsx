@@ -36,7 +36,7 @@ function ChatLayoutInner() {
   return (
     <div className="h-screen flex bg-[#050505]">
       {/* Chat area */}
-      <div className={`flex flex-col transition-all duration-300 ${previewContent ? "w-full lg:w-[60%]" : "w-full"}`}>
+      <div className={`flex flex-col transition-gpu duration-300 ${previewContent ? "w-full lg:w-[60%]" : "w-full"}`}>
         <ConversationTabs
           conversations={conversations}
           activeId={activeConversationId}

@@ -193,7 +193,7 @@ export function SovereignAssistant() {
     <>
       <button
         onClick={() => setOpen(!open)}
-        className={`fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 shadow-2xl ${
+        className={`fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full flex items-center justify-center transition-gpu duration-300 shadow-2xl ${
           open
             ? "bg-white/10 border border-white/20 backdrop-blur-xl"
             : "bg-white text-black hover:bg-neutral-200 hover:scale-105 hover:shadow-[0_0_30px_rgba(255,255,255,0.15)]"
@@ -231,7 +231,7 @@ export function SovereignAssistant() {
                     <button
                       key={i}
                       onClick={() => sendMessage(s.prompt)}
-                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10 transition-all text-left group"
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/10 transition-gpu text-left group"
                     >
                       <s.icon className="w-4 h-4 text-neutral-500 group-hover:text-white transition-colors shrink-0" />
                       <span className="text-sm text-neutral-400 group-hover:text-white transition-colors">{s.text}</span>
@@ -288,7 +288,7 @@ export function SovereignAssistant() {
                 <button
                   type="submit"
                   disabled={loading || !input.trim()}
-                  className="w-10 h-10 rounded-xl bg-white text-black flex items-center justify-center hover:bg-neutral-200 disabled:opacity-30 transition-all shrink-0"
+                  className="w-10 h-10 rounded-xl bg-white text-black flex items-center justify-center hover:bg-neutral-200 disabled:opacity-30 transition-gpu shrink-0"
                 >
                   <Send className="w-4 h-4" />
                 </button>

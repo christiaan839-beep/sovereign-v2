@@ -80,7 +80,7 @@ export default function AnalyticsDashboard() {
               <p className="text-[#00B7FF]/60 text-xs uppercase tracking-widest">Usage Metering · Telemetry · Scheduled Jobs</p>
             </div>
           </div>
-          <button onClick={refresh} className="p-2 border border-neutral-800 hover:border-neutral-600 transition-all">
+          <button onClick={refresh} className="p-2 border border-neutral-800 hover:border-neutral-600 transition-gpu">
             <RefreshCcw className={`w-4 h-4 text-neutral-500 ${loading ? "animate-spin" : ""}`} />
           </button>
         </header>
@@ -152,7 +152,7 @@ export default function AnalyticsDashboard() {
                 <button
                   onClick={() => triggerJob(job.id)}
                   disabled={triggering === job.id}
-                  className="w-full py-1.5 text-[9px] font-bold uppercase tracking-widest bg-[#00B7FF]/10 border border-[#00B7FF]/30 text-[#00B7FF] hover:bg-[#00B7FF]/20 transition-all disabled:opacity-50"
+                  className="w-full py-1.5 text-[9px] font-bold uppercase tracking-widest bg-[#00B7FF]/10 border border-[#00B7FF]/30 text-[#00B7FF] hover:bg-[#00B7FF]/20 transition-gpu disabled:opacity-50"
                 >
                   {triggering === job.id ? <Loader2 className="w-3 h-3 animate-spin mx-auto" /> : <><Play className="w-3 h-3 inline mr-1" /> Trigger Now</>}
                 </button>

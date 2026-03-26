@@ -84,7 +84,7 @@ export default function CompetitorAssassination() {
             <button 
               type="submit" 
               disabled={!target || scanning}
-              className="bg-rose-500 hover:bg-rose-600 text-white font-bold uppercase tracking-widest text-xs px-8 py-4 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="bg-rose-500 hover:bg-rose-600 text-white font-bold uppercase tracking-widest text-xs px-8 py-4 rounded-xl transition-gpu disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {scanning ? (
                  <><Radar className="w-4 h-4 animate-spin" /> Syping Target...</>

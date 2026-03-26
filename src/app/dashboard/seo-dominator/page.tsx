@@ -183,7 +183,7 @@ export default function SEODominatorPage() {
             }}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className={`text-left p-6 rounded-2xl border transition-all ${
+            className={`text-left p-6 rounded-2xl border transition-gpu ${
               activeAction === action.id
                 ? `${action.bg} ${action.border} border shadow-[0_0_30px_rgba(0,0,0,0.5)]`
                 : "bg-black/40 border-[#00B7FF]/10 hover:border-[#00B7FF]/30"
@@ -243,7 +243,7 @@ export default function SEODominatorPage() {
             <button
               onClick={handleExecute}
               disabled={loading}
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-rose-600 to-rose-500 text-white font-bold text-xs uppercase tracking-widest hover:from-rose-500 hover:to-rose-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-[0_0_30px_rgba(244,63,94,0.3)]"
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-rose-600 to-rose-500 text-white font-bold text-xs uppercase tracking-widest hover:from-rose-500 hover:to-rose-400 transition-gpu disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-[0_0_30px_rgba(244,63,94,0.3)]"
             >
               {loading ? (
                 <>
@@ -275,7 +275,7 @@ export default function SEODominatorPage() {
             <p className="text-xs text-neutral-400 mb-4 max-w-sm mx-auto">{error}</p>
             <button
               onClick={() => { setError(null); handleExecute(); }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-bold uppercase tracking-wider hover:bg-rose-500/20 transition-all"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-bold uppercase tracking-wider hover:bg-rose-500/20 transition-gpu"
             >
               Try Again
             </button>

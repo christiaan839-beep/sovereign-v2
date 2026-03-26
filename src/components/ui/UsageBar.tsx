@@ -54,7 +54,7 @@ export function UsageBar({ userId, plan = "node" }: { userId?: string; plan?: st
       {!isUnlimited && (
         <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
           <div
-            className={`h-full ${barColor} rounded-full transition-all duration-500`}
+            className={`h-full ${barColor} rounded-full transition-gpu duration-500`}
             style={{ width: `${Math.min(percent, 100)}%` }}
           />
         </div>

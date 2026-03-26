@@ -164,7 +164,7 @@ export default function DesignerPage() {
             }}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className={`text-left p-6 rounded-2xl border transition-all ${
+            className={`text-left p-6 rounded-2xl border transition-gpu ${
               activeAction === action.id
                 ? `${action.bg} ${action.border} border shadow-[0_0_30px_rgba(0,0,0,0.5)]`
                 : "bg-black/40 border-[#00B7FF]/10 hover:border-[#00B7FF]/30"
@@ -224,7 +224,7 @@ export default function DesignerPage() {
             <button
               onClick={handleExecute}
               disabled={loading}
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-violet-600 to-pink-500 text-white font-bold text-xs uppercase tracking-widest hover:from-violet-500 hover:to-pink-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-[0_0_30px_rgba(139,92,246,0.3)]"
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-violet-600 to-pink-500 text-white font-bold text-xs uppercase tracking-widest hover:from-violet-500 hover:to-pink-400 transition-gpu disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-[0_0_30px_rgba(139,92,246,0.3)]"
             >
               {loading ? (
                 <>

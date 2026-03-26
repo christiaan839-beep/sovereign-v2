@@ -67,7 +67,7 @@ export default function DocsPage() {
 
         <div className="flex flex-wrap gap-2">
           {CATEGORIES.map(cat => (
-            <button key={cat} onClick={() => setFilter(cat)} className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest border transition-all ${filter === cat ? "bg-[#00B7FF] text-white border-[#00B7FF]" : "bg-transparent text-neutral-500 border-neutral-800 hover:border-neutral-600"}`}>
+            <button key={cat} onClick={() => setFilter(cat)} className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest border transition-gpu ${filter === cat ? "bg-[#00B7FF] text-white border-[#00B7FF]" : "bg-transparent text-neutral-500 border-neutral-800 hover:border-neutral-600"}`}>
               {cat}
             </button>
           ))}
@@ -78,7 +78,7 @@ export default function DocsPage() {
             const isExpanded = expanded === ep.path;
             return (
               <div key={ep.path} className="bg-neutral-950 border border-neutral-800 overflow-hidden">
-                <button onClick={() => setExpanded(isExpanded ? null : ep.path)} className="w-full p-4 flex items-center gap-3 text-left hover:bg-neutral-900 transition-all">
+                <button onClick={() => setExpanded(isExpanded ? null : ep.path)} className="w-full p-4 flex items-center gap-3 text-left hover:bg-neutral-900 transition-gpu">
                   <span className={`px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest ${ep.method === "GET" ? "bg-[#00ff66]/10 text-[#00ff66] border border-[#00ff66]/30" : "bg-[#00B7FF]/10 text-[#00B7FF] border border-[#00B7FF]/30"}`}>{ep.method}</span>
                   <code className="text-xs text-white flex-1">{ep.path}</code>
                   <span className="text-[9px] text-neutral-600 uppercase tracking-widest hidden md:block">{ep.category}</span>

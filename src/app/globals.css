@@ -70,7 +70,10 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 1rem;
   backdrop-filter: blur(16px);
-  transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    opacity 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    border-color 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    box-shadow 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .glass-card:hover {
@@ -137,6 +140,33 @@ input[type="range"]::-webkit-slider-thumb {
   cursor: pointer;
   border: 2px solid var(--color-midnight);
   box-shadow: 0 0 12px rgba(168, 85, 247, 0.4);
+}
+
+/* ─── GPU-Composited Transitions ─────────────────── */
+/* Use instead of transition-all to avoid layout thrashing */
+
+.transition-gpu {
+  transition-property: transform, opacity, box-shadow, border-color, background-color, color, fill, stroke, filter, backdrop-filter;
+  transition-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition-duration: 0.3s;
+}
+
+/* ─── Reduced Motion ─────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ─── Off-Screen Performance ─────────────────────── */
+
+.perf-contain {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 700px;
 }
 
 /* ─── Animations ──────────────────────────────────── */

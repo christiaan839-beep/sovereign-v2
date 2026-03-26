@@ -239,7 +239,7 @@ export default function AutomationsPage() {
                 delay: index * 0.07,
                 ease: "easeOut",
               }}
-              className={`relative rounded-xl border bg-[#0A0A0A] p-5 transition-all duration-300 ${
+              className={`relative rounded-xl border bg-[#0A0A0A] p-5 transition-gpu duration-300 ${
                 isActive
                   ? `${colors.border} shadow-lg ${colors.glow}`
                   : "border-white/[0.06] hover:border-white/10"
@@ -297,7 +297,7 @@ export default function AutomationsPage() {
                 <button
                   onClick={() => toggleAutomation(template)}
                   disabled={isLoading}
-                  className={`shrink-0 p-1 rounded-lg transition-all duration-200 ${
+                  className={`shrink-0 p-1 rounded-lg transition-gpu duration-200 ${
                     isLoading ? "opacity-50 cursor-wait" : "cursor-pointer hover:bg-white/5"
                   }`}
                   title={isActive ? "Disable automation" : "Enable automation"}

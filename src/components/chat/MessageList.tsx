@@ -61,7 +61,7 @@ export function MessageList({ messages, loading, activeAgent, onSend, submitFeed
               <button
                 key={s.text}
                 onClick={() => onSend(s.prompt)}
-                className="group flex items-center gap-3 p-4 rounded-xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.05] hover:border-emerald-500/20 transition-all duration-300 text-left hover:scale-[1.02]"
+                className="group flex items-center gap-3 p-4 rounded-xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.05] hover:border-emerald-500/20 transition-gpu duration-300 text-left hover:scale-[1.02]"
               >
                 <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center group-hover:border-emerald-500/30 transition-colors">
                   <s.icon className="w-4 h-4 text-neutral-500 group-hover:text-emerald-400 transition-colors" />

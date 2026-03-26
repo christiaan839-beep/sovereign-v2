@@ -98,10 +98,10 @@ export default function AboutPage() {
         <motion.div {...fadeIn(0.3)} className="text-center">
           <h3 className="text-2xl serif-text font-light mb-4">See It In Action</h3>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link href="/demo" className="px-8 py-3 bg-white text-midnight font-bold rounded-xl flex items-center justify-center gap-2 group hover:bg-gray-200 transition-all">
+            <Link href="/demo" className="px-8 py-3 bg-white text-midnight font-bold rounded-xl flex items-center justify-center gap-2 group hover:bg-gray-200 transition-gpu">
               Try Live Demo <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
-            <Link href="/case-studies" className="px-8 py-3 border border-glass-border text-white font-medium rounded-xl text-center hover:bg-glass-bg transition-all">View Results</Link>
+            <Link href="/case-studies" className="px-8 py-3 border border-glass-border text-white font-medium rounded-xl text-center hover:bg-glass-bg transition-gpu">View Results</Link>
           </div>
         </motion.div>
       </section>

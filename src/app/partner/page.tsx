@@ -28,7 +28,7 @@ export default function PartnerPage() {
             <SovereignLogo size="sm" />
             <span className="hidden sm:block text-sm font-bold tracking-[0.2em] uppercase text-white font-serif">Partners</span>
           </Link>
-          <a href="#apply" className="px-6 py-2.5 rounded-full bg-white text-black text-xs font-bold uppercase tracking-widest hover:bg-neutral-200 transition-all">
+          <a href="#apply" className="px-6 py-2.5 rounded-full bg-white text-black text-xs font-bold uppercase tracking-widest hover:bg-neutral-200 transition-gpu">
             Apply Now
           </a>
         </div>
@@ -106,7 +106,7 @@ export default function PartnerPage() {
       <div id="apply" className="py-24 text-center px-6 border-t border-white/5">
         <h2 className="text-3xl md:text-4xl font-bold text-white serif-text mb-4">Ready to earn?</h2>
         <p className="text-neutral-500 mb-10 max-w-md mx-auto">Join the partner program and start earning recurring revenue from day one.</p>
-        <a href="mailto:partners@sovereignmatrix.agency?subject=Partner Program Application" className="inline-flex items-center gap-3 px-10 py-5 rounded-2xl bg-white text-black font-bold uppercase tracking-widest text-sm hover:bg-neutral-200 transition-all shadow-[0_0_40px_rgba(255,255,255,0.15)] group">
+        <a href="mailto:partners@sovereignmatrix.agency?subject=Partner Program Application" className="inline-flex items-center gap-3 px-10 py-5 rounded-2xl bg-white text-black font-bold uppercase tracking-widest text-sm hover:bg-neutral-200 transition-gpu shadow-[0_0_40px_rgba(255,255,255,0.15)] group">
           Apply Now <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
         </a>
       </div>

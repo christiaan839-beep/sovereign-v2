@@ -68,7 +68,7 @@ export default function DigitalHumanAvatarPage() {
               {/* Image Upload */}
               <div>
                 <label className="text-[10px] text-neutral-500 uppercase tracking-widest font-bold mb-2 block">Source Image Mesh</label>
-                <div className="border-2 border-dashed border-white/10 rounded-xl p-6 flex flex-col items-center justify-center text-center hover:border-rose-500/50 hover:bg-rose-500/5 transition-all cursor-pointer">
+                <div className="border-2 border-dashed border-white/10 rounded-xl p-6 flex flex-col items-center justify-center text-center hover:border-rose-500/50 hover:bg-rose-500/5 transition-gpu cursor-pointer">
                   <div className="w-10 h-10 rounded-full bg-rose-500/10 flex items-center justify-center mb-2">
                     <Upload className="w-5 h-5 text-rose-400" />
                   </div>
@@ -121,7 +121,7 @@ export default function DigitalHumanAvatarPage() {
             <button 
               onClick={startPipeline}
               disabled={pipelineStatus !== "idle"}
-              className="w-full mt-6 py-3 rounded-xl border flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-rose-500/20 text-rose-400 border-rose-500/30 hover:bg-rose-500/30 shadow-[0_0_20px_rgba(244,63,94,0.15)]"
+              className="w-full mt-6 py-3 rounded-xl border flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest transition-gpu disabled:opacity-50 disabled:cursor-not-allowed bg-rose-500/20 text-rose-400 border-rose-500/30 hover:bg-rose-500/30 shadow-[0_0_20px_rgba(244,63,94,0.15)]"
             >
               <Cpu className="w-4 h-4" /> Instantiate Digital Human
             </button>
@@ -196,7 +196,7 @@ export default function DigitalHumanAvatarPage() {
                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-neutral-900 flex flex-col items-center justify-center">
                     {/* Simulated live video feed */}
                     <div className="relative w-full h-full">
-                       <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=2676&auto=format&fit=crop')] bg-cover bg-center bg-no-repeat opacity-50 grayscale transition-all duration-1000" />
+                       <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=2676&auto=format&fit=crop')] bg-cover bg-center bg-no-repeat opacity-50 grayscale transition-gpu duration-1000" />
                        <div className="absolute inset-0 bg-black/40" />
                        
                        {/* UI Overlay */}

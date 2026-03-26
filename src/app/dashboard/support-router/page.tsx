@@ -96,7 +96,7 @@ export default function SupportRouterPage() {
               <button 
                  onClick={triggerIngestion}
                  disabled={pipelineState !== "idle"}
-                 className="w-full py-4 rounded-xl font-bold uppercase tracking-widest text-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed bg-[#00B7FF]/20 text-[#00B7FF] border border-[#00B7FF]/30 hover:bg-[#00B7FF]/30 shadow-[0_0_20px_rgba(0,183,255,0.15)] flex justify-center items-center gap-2"
+                 className="w-full py-4 rounded-xl font-bold uppercase tracking-widest text-xs transition-gpu disabled:opacity-50 disabled:cursor-not-allowed bg-[#00B7FF]/20 text-[#00B7FF] border border-[#00B7FF]/30 hover:bg-[#00B7FF]/30 shadow-[0_0_20px_rgba(0,183,255,0.15)] flex justify-center items-center gap-2"
               >
                  Simulate Angry Customer Threat
               </button>
