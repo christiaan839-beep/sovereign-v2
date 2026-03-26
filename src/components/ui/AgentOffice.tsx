@@ -294,49 +294,99 @@ export function AgentOffice() {
       </motion.div>
 
       <div ref={wRef} onClick={click}
-        className="relative rounded-2xl overflow-hidden cursor-crosshair border border-white/[0.04]"
+        className="relative rounded-2xl overflow-hidden cursor-crosshair group"
         style={{ aspectRatio: `${W}/${H}` }}>
 
-        {/* Background */}
-        <div className="absolute inset-0 bg-[#08080d]" />
+        {/* Outer glow border — neon emerald */}
+        <div className="absolute -inset-[1px] rounded-2xl bg-gradient-to-b from-emerald-500/20 via-emerald-500/5 to-cyan-500/10 pointer-events-none z-0" />
+        <div className="absolute inset-0 rounded-2xl ring-1 ring-emerald-500/10 pointer-events-none z-0" />
 
-        {/* Grid floor with perspective */}
+        {/* Background with depth */}
+        <div className="absolute inset-0 bg-[#06060a] rounded-2xl" />
+
+        {/* Grid floor — perspective transform for 3D depth */}
         <div className="absolute inset-0 pointer-events-none" style={{
           backgroundImage: `
-            linear-gradient(rgba(16,185,129,0.04) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(16,185,129,0.04) 1px, transparent 1px)
+            linear-gradient(rgba(16,185,129,0.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(16,185,129,0.05) 1px, transparent 1px)
           `,
           backgroundSize: "35px 35px",
+          maskImage: "linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%)",
+          WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%)",
         }} />
 
-        {/* Radial ambient light */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_50%_40%_at_50%_50%,rgba(16,185,129,0.04)_0%,transparent_70%)] pointer-events-none" />
+        {/* Multi-layer ambient lighting */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_40%_30%_at_15%_20%,rgba(16,185,129,0.06)_0%,transparent_60%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_40%_30%_at_85%_80%,rgba(6,182,212,0.04)_0%,transparent_60%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_50%_40%_at_50%_50%,rgba(16,185,129,0.03)_0%,transparent_70%)]" />
+        </div>
 
-        {/* Scanlines */}
-        <div className="absolute inset-0 pointer-events-none z-30 opacity-15" style={{
-          background: "repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.08) 3px, rgba(0,0,0,0.08) 4px)",
+        {/* Animated pulse ring — like a heartbeat for the matrix */}
+        <motion.div
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-emerald-500/10 pointer-events-none"
+          animate={{ width: [100, 600, 100], height: [60, 350, 60], opacity: [0.15, 0, 0.15] }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+        />
+
+        {/* Matrix rain — falling characters */}
+        {Array.from({ length: 15 }).map((_, i) => (
+          <motion.div
+            key={`rain-${i}`}
+            className="absolute text-[6px] font-mono text-emerald-500/10 pointer-events-none select-none"
+            style={{ left: `${5 + i * 6.5}%` }}
+            animate={{ top: ["-5%", "105%"], opacity: [0, 0.15, 0] }}
+            transition={{ duration: 6 + Math.random() * 8, repeat: Infinity, delay: i * 0.4, ease: "linear" }}
+          >
+            {String.fromCharCode(0x30A0 + Math.random() * 96)}
+          </motion.div>
+        ))}
+
+        {/* Scanlines — CRT effect */}
+        <div className="absolute inset-0 pointer-events-none z-30 opacity-10" style={{
+          background: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.1) 2px, rgba(0,0,0,0.1) 3px)",
         }} />
 
         {/* ═══ WORKSTATIONS (SVG layer) ═══ */}
         <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet">
-          {/* Connection paths between stations */}
-          <path d={`M120,100 Q235,120 350,90`} stroke="rgba(16,185,129,0.04)" strokeWidth="1" fill="none" strokeDasharray="4 4" />
-          <path d={`M350,90 Q465,100 580,100`} stroke="rgba(16,185,129,0.04)" strokeWidth="1" fill="none" strokeDasharray="4 4" />
-          <path d={`M580,100 Q690,100 800,90`} stroke="rgba(16,185,129,0.04)" strokeWidth="1" fill="none" strokeDasharray="4 4" />
-          <path d={`M120,100 Q120,190 120,300`} stroke="rgba(16,185,129,0.03)" strokeWidth="1" fill="none" strokeDasharray="4 4" />
-          <path d={`M350,90 Q350,190 350,310`} stroke="rgba(16,185,129,0.03)" strokeWidth="1" fill="none" strokeDasharray="4 4" />
-          <path d={`M580,100 Q580,190 580,300`} stroke="rgba(16,185,129,0.03)" strokeWidth="1" fill="none" strokeDasharray="4 4" />
-          <path d={`M800,90 Q800,190 800,310`} stroke="rgba(16,185,129,0.03)" strokeWidth="1" fill="none" strokeDasharray="4 4" />
+          {/* Connection paths — glowing energy lines */}
+          <defs>
+            <linearGradient id="pathGlow" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="rgba(16,185,129,0.15)" />
+              <stop offset="50%" stopColor="rgba(6,182,212,0.08)" />
+              <stop offset="100%" stopColor="rgba(16,185,129,0.15)" />
+            </linearGradient>
+            <filter id="pathGlowFilter" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="2" result="blur" />
+              <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+            </filter>
+          </defs>
+          {/* Horizontal paths */}
+          <path d="M120,100 Q235,115 350,90" stroke="url(#pathGlow)" strokeWidth="1" fill="none" />
+          <path d="M350,90 Q465,100 580,100" stroke="url(#pathGlow)" strokeWidth="1" fill="none" />
+          <path d="M580,100 Q690,95 800,90" stroke="url(#pathGlow)" strokeWidth="1" fill="none" />
+          <path d="M120,300 Q235,310 350,310" stroke="url(#pathGlow)" strokeWidth="1" fill="none" />
+          <path d="M350,310 Q465,300 580,300" stroke="url(#pathGlow)" strokeWidth="1" fill="none" />
+          <path d="M580,300 Q690,305 800,310" stroke="url(#pathGlow)" strokeWidth="1" fill="none" />
+          {/* Vertical paths */}
+          <path d="M120,100 L120,300" stroke="rgba(16,185,129,0.06)" strokeWidth="0.5" fill="none" strokeDasharray="3 6" />
+          <path d="M350,90 L350,310" stroke="rgba(16,185,129,0.06)" strokeWidth="0.5" fill="none" strokeDasharray="3 6" />
+          <path d="M580,100 L580,300" stroke="rgba(16,185,129,0.06)" strokeWidth="0.5" fill="none" strokeDasharray="3 6" />
+          <path d="M800,90 L800,310" stroke="rgba(16,185,129,0.06)" strokeWidth="0.5" fill="none" strokeDasharray="3 6" />
+          {/* Cross connections */}
+          <path d="M120,100 Q460,200 800,310" stroke="rgba(16,185,129,0.03)" strokeWidth="0.5" fill="none" />
+          <path d="M800,90 Q460,200 120,300" stroke="rgba(6,182,212,0.03)" strokeWidth="0.5" fill="none" />
 
-          {/* Data flowing along paths */}
-          {[0, 1, 2].map(i => (
-            <motion.circle key={`data-${i}`} r="1.5" fill="rgba(16,185,129,0.3)"
+          {/* Energy pulses along paths — glowing data packets */}
+          {[0, 1, 2, 3, 4].map(i => (
+            <motion.circle key={`data-${i}`} r={1.5 + (i % 2)} fill={i % 2 === 0 ? "rgba(16,185,129,0.5)" : "rgba(6,182,212,0.4)"}
+              filter="url(#pathGlowFilter)"
               animate={{
-                cx: [120, 350, 580, 800, 580, 350, 120],
-                cy: [100, 90, 100, 90, 280, 310, 300],
-                opacity: [0, 0.5, 0.3, 0.5, 0.3, 0.5, 0],
+                cx: i < 3 ? [120, 350, 580, 800, 580, 350, 120] : [800, 580, 350, 120, 350, 580, 800],
+                cy: i < 3 ? [100, 90, 100, 90, 300, 310, 300] : [310, 300, 310, 300, 90, 100, 90],
+                opacity: [0, 0.7, 0.4, 0.7, 0.4, 0.7, 0],
               }}
-              transition={{ duration: 12 + i * 3, repeat: Infinity, delay: i * 4, ease: "linear" }}
+              transition={{ duration: 10 + i * 2, repeat: Infinity, delay: i * 2.5, ease: "linear" }}
             />
           ))}
 
@@ -351,16 +401,31 @@ export function AgentOffice() {
           <Terminal x={800} y={290} active={bots.some(b => b.id === "seo" && (b.mode === "home" || b.mode === "work"))} label="SEO" />
         </svg>
 
-        {/* Task beacon */}
+        {/* Task beacon — dramatic pulsing target */}
         <AnimatePresence>
           {task && (
-            <motion.div initial={{ scale: 0 }}
-              animate={{ scale: [1, 3, 1], opacity: [0.5, 0, 0.5] }}
-              exit={{ scale: 0 }}
-              transition={{ duration: 1, repeat: Infinity }}
-              className="absolute w-2 h-2 rounded-full bg-emerald-400 z-10"
-              style={{ left: `${(task.x / W) * 100}%`, top: `${(task.y / H) * 100}%`, transform: "translate(-50%,-50%)" }}
-            />
+            <div className="absolute z-10" style={{ left: `${(task.x / W) * 100}%`, top: `${(task.y / H) * 100}%`, transform: "translate(-50%,-50%)" }}>
+              {/* Outer ring */}
+              <motion.div initial={{ scale: 0 }}
+                animate={{ scale: [1, 4, 1], opacity: [0.3, 0, 0.3] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+                className="absolute w-3 h-3 rounded-full border border-emerald-400/40 -translate-x-1/2 -translate-y-1/2"
+              />
+              {/* Middle ring */}
+              <motion.div
+                animate={{ scale: [1, 2.5, 1], opacity: [0.5, 0, 0.5] }}
+                transition={{ duration: 1, repeat: Infinity, delay: 0.2 }}
+                className="absolute w-2 h-2 rounded-full border border-emerald-400/50 -translate-x-1/2 -translate-y-1/2"
+              />
+              {/* Core dot */}
+              <motion.div
+                animate={{ opacity: [0.8, 0.4, 0.8] }}
+                transition={{ duration: 0.5, repeat: Infinity }}
+                exit={{ scale: 0 }}
+                className="absolute w-1.5 h-1.5 rounded-full bg-emerald-400 -translate-x-1/2 -translate-y-1/2"
+                style={{ boxShadow: "0 0 8px rgba(16,185,129,0.5), 0 0 20px rgba(16,185,129,0.2)" }}
+              />
+            </div>
           )}
         </AnimatePresence>
 
