@@ -25,13 +25,13 @@ export const metadata: Metadata = {
     siteName: "Sovereign Matrix",
     locale: "en_US",
     url: "https://sovereignmatrix.agency",
-    images: [{ url: "/og-image.jpg", width: 1200, height: 630, alt: "Sovereign Matrix — Autonomous AI Agent Platform" }],
+    images: [{ url: "https://sovereignmatrix.agency/og-image.jpg", width: 1024, height: 1024, alt: "Sovereign Matrix — Your AI Workforce" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Sovereign Matrix — Your AI Workforce",
     description: "132 autonomous AI agents. 51+ open-source models. $0 per-token cost. White-label ready. Your competitors hire. You deploy.",
-    images: ["/og-image.jpg"],
+    images: ["https://sovereignmatrix.agency/og-image.jpg"],
   },
   icons: {
     icon: [
