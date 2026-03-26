@@ -12,7 +12,7 @@ import { Testimonials } from "@/components/ui/SocialProof";
 
 import { InteractiveHeroStrike } from "@/components/ui/InteractiveHeroStrike";
 import { SocialProofMetrics } from "@/components/ui/SocialProofMetrics";
-import { HeroWebGL } from "@/components/ui/HeroWebGL";
+// HeroWebGL available at @/components/ui/HeroWebGL if 3D mode needed
 // ─── Animated Energy Orb (enhanced with 3 rings + particle field) ───
 function EnergyOrb() {
   return (
@@ -232,8 +232,19 @@ export default function Home() {
         {/* Fixed background layer — holographic cube with parallax */}
         <div className="sticky top-0 h-screen flex flex-col items-center justify-center overflow-hidden">
 
-          {/* WebGL 3D Background — animated holographic circuit board */}
-          <HeroWebGL />
+          {/* NVIDIA-inspired gradient mesh background */}
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            {/* Primary gradient orb — emerald */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[900px] rounded-full bg-emerald-500/[0.07] blur-[180px] animate-pulse" />
+            {/* Secondary orb — warm gold accent (NVIDIA-inspired) */}
+            <div className="absolute top-[30%] left-[60%] w-[400px] h-[400px] rounded-full bg-amber-500/[0.03] blur-[120px] animate-pulse" style={{ animationDelay: "2s" }} />
+            {/* Tertiary orb — cyan depth */}
+            <div className="absolute top-[70%] left-[30%] w-[500px] h-[500px] rounded-full bg-cyan-500/[0.02] blur-[140px] animate-pulse" style={{ animationDelay: "4s" }} />
+            {/* Subtle grid — like NVIDIA's build page */}
+            <div className="absolute inset-0 bg-[linear-gradient(rgba(16,185,129,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(16,185,129,0.015)_1px,transparent_1px)] bg-[size:80px_80px]" />
+            {/* Radial fade from center */}
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,transparent_0%,#010101_70%)]" />
+          </div>
 
           {/* Vignettes */}
           <div className="absolute top-0 inset-x-0 h-40 bg-gradient-to-b from-[#010101] to-transparent pointer-events-none z-[1]" />
