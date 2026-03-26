@@ -341,12 +341,12 @@ export default function Home() {
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <CapabilityCard icon={Cpu} title="Browser Automation" desc="Point an agent at a website. It opens a real browser, navigates, extracts data, and reports back." accent="from-emerald-500/[0.04]" href="/showcase" />
-            <CapabilityCard icon={BrainCircuit} title="Document Intelligence" desc="Upload PDFs, contracts, reports. Ask questions in plain English. Get answers from your data." accent="from-emerald-400/[0.04]" href="/dashboard" />
-            <CapabilityCard icon={Target} title="Sales Outreach" desc="Find prospects. Write personalized emails. Send sequences. Qualify responses. Book meetings." accent="from-emerald-500/[0.04]" href="/showcase" />
-            <CapabilityCard icon={Search} title="Competitor Intel" desc="Paste a URL. Get their tech stack, SEO gaps, content strategy, and moves you can make." accent="from-cyan-500/[0.04]" href="/showcase" />
-            <CapabilityCard icon={Mic} title="Voice Agents" desc="AI makes calls, qualifies leads, books meetings. Sub-200ms response. Sounds human." accent="from-emerald-600/[0.04]" href="/dashboard" />
-            <CapabilityCard icon={Code2} title="Code & Deploy" desc="Describe what you want built. The agent writes code, reviews it, and prepares deployment." accent="from-emerald-300/[0.04]" href="/dashboard" />
+            <CapabilityCard icon={Cpu} title="Browser Automation" desc="Point an agent at any website. It opens a real browser, clicks through pages, extracts data, and delivers a structured report." accent="from-emerald-500/[0.04]" href="/showcase" />
+            <CapabilityCard icon={BrainCircuit} title="Document Intelligence" desc="Upload PDFs, contracts, or reports. Ask questions in plain English. Get precise answers backed by your own data." accent="from-emerald-400/[0.04]" href="/dashboard" />
+            <CapabilityCard icon={Target} title="Sales Outreach" desc="Find 50 prospects in 30 seconds. Write personalized cold emails. Send sequences. Qualify responses. Book meetings automatically." accent="from-emerald-500/[0.04]" href="/showcase" />
+            <CapabilityCard icon={Search} title="Competitor Intel" desc="Paste a competitor URL. Get their full tech stack, SEO gaps, content strategy, and specific counter-moves you can execute." accent="from-cyan-500/[0.04]" href="/showcase" />
+            <CapabilityCard icon={Mic} title="Voice Agents" desc="AI cold-calls prospects, qualifies leads, and books meetings directly onto your calendar. Sub-200ms response in 12 languages." accent="from-emerald-600/[0.04]" href="/dashboard" />
+            <CapabilityCard icon={Code2} title="Code & Deploy" desc="Describe a feature in plain English. The agent writes production code, reviews it for bugs, and prepares it for deployment." accent="from-emerald-300/[0.04]" href="/dashboard" />
           </div>
         </div>
       </section>
@@ -383,7 +383,7 @@ export default function Home() {
             <p className="text-neutral-500 max-w-xl mx-auto">Smart routing across 51+ open-source models. Automatic failover. Zero vendor lock-in.</p>
           </motion.div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 circuit-grid p-4 rounded-2xl">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 circuit-grid p-4 rounded-2xl">
             {[
               { name: "Nemotron Ultra 253B", desc: "Complex reasoning & synthesis" },
               { name: "NemoClaw", desc: "Enterprise autonomous agent framework" },
@@ -393,7 +393,10 @@ export default function Home() {
               { name: "NeMo Guardrails", desc: "5-layer safety pipeline" },
               { name: "DeepSeek V3.2", desc: "Long-form content generation" },
               { name: "FLUX.2", desc: "Image generation" },
-              { name: "Cosmos", desc: "Video & visual reasoning" },
+              { name: "Cosmos VLM", desc: "Video generation & visual reasoning" },
+              { name: "Kimi K2.5", desc: "1T parameter multimodal reasoning" },
+              { name: "DeepSeek R1", desc: "Advanced chain-of-thought reasoning" },
+              { name: "Ollama", desc: "Local air-gapped execution" },
             ].map((tech, i) => (
               <motion.div key={tech.name} initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }} transition={{ delay: i * 0.05 }}
@@ -426,7 +429,7 @@ export default function Home() {
               </h3>
               <p className="text-neutral-500 text-xs mb-6">What everyone else sells</p>
               <ul className="space-y-3">
-                {["You type every prompt manually", "Forgets everything between sessions", "Cannot open a browser or send an email", "You do the thinking — it just types"].map((item, i) => (
+                {["You write a prompt. Copy the output. Paste it somewhere. Repeat 50 times.", "Forgets your business, your brand, your last conversation.", "Cannot open a browser, send an email, or make a phone call.", "You plan every step. It just types what you tell it to."].map((item, i) => (
                   <li key={i} className="flex items-start gap-2.5 text-neutral-500 text-sm">
                     <XCircle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-neutral-500" /> {item}
                   </li>
@@ -440,7 +443,7 @@ export default function Home() {
               </h3>
               <p className="text-emerald-500/50 text-xs mb-6">What your business actually needs</p>
               <ul className="space-y-3">
-                {["Set a goal — agents deliver results autonomously", "Remembers your business context across sessions", "Finds leads, writes content, builds pages for you", "Catches its own mistakes and self-corrects"].map((item, i) => (
+                {["Type one goal. 132 agents plan, execute, and deliver the result.", "Remembers your brand voice, past strategies, and client preferences.", "Opens browsers, sends emails, makes calls, writes code, builds pages.", "Catches its own mistakes, retries failed steps, and self-corrects."].map((item, i) => (
                   <li key={i} className="flex items-start gap-2.5 text-neutral-300 text-sm">
                     <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5 text-emerald-400" /> {item}
                   </li>
