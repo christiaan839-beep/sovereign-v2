@@ -80,85 +80,118 @@ const CONVOS = [
 // ─── Pixel Bot SVG ──────────────────────────────────────
 
 function PixelBot({
-  color, dark, walkFrame, facingRight, state, size = 1,
+  color, dark, walkFrame, facingRight, state,
 }: {
   color: string; dark: string; walkFrame: number; facingRight: boolean;
-  state: Agent["state"]; size?: number;
+  state: Agent["state"];
 }) {
-  const s = PX * size;
-  const w = 8 * s;
-  const h = 11 * s;
-  const flip = facingRight ? "" : `translate(${w}, 0) scale(-1, 1)`;
-  const legOffset = walkFrame % 2 === 0;
+  // Claude-bot proportions: wide, chunky, short body, tiny stub legs
+  // Viewbox is 28x28 — scaled up via CSS with image-rendering: pixelated
+  const legL = state === "walking" && walkFrame % 2 === 0;
+  const legR = state === "walking" && walkFrame % 2 !== 0;
 
   return (
-    <svg width={w} height={h} viewBox={`0 0 ${8 * s} ${11 * s}`}
-      style={{ imageRendering: "pixelated", overflow: "visible" }}>
-      <g transform={flip}>
-        {/* Head */}
-        <rect x={1*s} y={0} width={6*s} height={5*s} rx={s/2} fill={color} />
-        {/* Head highlight */}
-        <rect x={2*s} y={s*0.5} width={4*s} height={s} fill="white" opacity="0.15" rx={s/3} />
-        {/* Eyes */}
-        <rect x={2*s} y={2*s} width={s} height={state === "thinking" ? s*0.3 : s*1.2} fill="white" rx={s/4} />
-        <rect x={5*s} y={2*s} width={s} height={state === "thinking" ? s*0.3 : s*1.2} fill="white" rx={s/4} />
-        {/* Pupils */}
-        {state !== "thinking" && (
-          <>
-            <rect x={2.3*s} y={2.4*s} width={s*0.5} height={s*0.5} fill={dark} rx={s/6} />
-            <rect x={5.3*s} y={2.4*s} width={s*0.5} height={s*0.5} fill={dark} rx={s/6} />
-          </>
-        )}
-        {/* Mouth */}
-        {state === "talking" ? (
-          <rect x={3*s} y={3.8*s} width={2*s} height={s*0.8} rx={s/4} fill={dark} />
-        ) : (
-          <rect x={3*s} y={3.8*s} width={2*s} height={s*0.4} rx={s/4} fill={dark} opacity="0.4" />
-        )}
+    <svg
+      width={36} height={36}
+      viewBox="0 0 28 28"
+      style={{ imageRendering: "pixelated", overflow: "visible", transform: facingRight ? "" : "scaleX(-1)" }}
+    >
+      {/* ── Main body: one chunky rounded rectangle ── */}
+      <rect x="4" y="4" width="20" height="16" rx="5" fill={color} />
 
-        {/* Body */}
-        <rect x={1*s} y={5*s} width={6*s} height={4*s} rx={s/2} fill={color} />
-        <rect x={2*s} y={5.5*s} width={4*s} height={s} fill="white" opacity="0.08" rx={s/3} />
+      {/* Body sheen/highlight */}
+      <rect x="6" y="5" width="16" height="4" rx="3" fill="white" opacity="0.12" />
 
-        {/* Left arm */}
-        <motion.rect
-          x={0} y={5.5*s} width={s} height={3*s} rx={s/3} fill={color}
-          style={{ transformOrigin: `${s/2}px ${5.5*s}px` }}
-          animate={
-            state === "working" ? { rotate: [-20, -35, -20] } :
-            state === "walking" ? { rotate: [10, -10] } :
-            state === "talking" ? { rotate: [-10, -25, -10] } :
-            { rotate: [0, 3, 0] }
-          }
-          transition={
-            state === "working" ? { duration: 0.3, repeat: Infinity } :
-            state === "walking" ? { duration: 0.25, repeat: Infinity, repeatType: "reverse" } :
-            state === "talking" ? { duration: 0.6, repeat: Infinity } :
-            { duration: 2, repeat: Infinity }
-          }
+      {/* ── Eyes: simple, friendly, Claude-style ── */}
+      {state === "thinking" ? (
+        <>
+          {/* Squinted thinking eyes — horizontal lines */}
+          <rect x="9" y="11" width="4" height="1.5" rx="0.75" fill="white" />
+          <rect x="16" y="11" width="4" height="1.5" rx="0.75" fill="white" />
+        </>
+      ) : (
+        <>
+          {/* Big round friendly eyes */}
+          <circle cx="11" cy="11" r="2.5" fill="white" />
+          <circle cx="18" cy="11" r="2.5" fill="white" />
+          {/* Pupils — offset slightly for life */}
+          <circle cx={state === "walking" ? "11.8" : "11.5"} cy="11.3" r="1.2" fill={dark} />
+          <circle cx={state === "walking" ? "18.8" : "18.5"} cy="11.3" r="1.2" fill={dark} />
+          {/* Eye shine */}
+          <circle cx="10.3" cy="10.2" r="0.6" fill="white" opacity="0.8" />
+          <circle cx="17.3" cy="10.2" r="0.6" fill="white" opacity="0.8" />
+        </>
+      )}
+
+      {/* ── Mouth ── */}
+      {state === "talking" ? (
+        <motion.ellipse cx="14" cy="16" rx="2.5" fill={dark}
+          animate={{ ry: [0.8, 2, 0.8] }}
+          transition={{ duration: 0.3, repeat: Infinity }}
         />
-        {/* Right arm */}
-        <motion.rect
-          x={7*s} y={5.5*s} width={s} height={3*s} rx={s/3} fill={color}
-          style={{ transformOrigin: `${7*s + s/2}px ${5.5*s}px` }}
-          animate={
-            state === "working" ? { rotate: [20, 35, 20] } :
-            state === "walking" ? { rotate: [-10, 10] } :
-            { rotate: [0, -3, 0] }
-          }
-          transition={
-            state === "working" ? { duration: 0.35, repeat: Infinity } :
-            state === "walking" ? { duration: 0.25, repeat: Infinity, repeatType: "reverse" } :
-            { duration: 2, repeat: Infinity, delay: 0.3 }
-          }
-        />
+      ) : (
+        <rect x="11" y="15.5" width="6" height="1.2" rx="0.6" fill={dark} opacity="0.35" />
+      )}
 
-        {/* Legs — 2-frame walk cycle */}
-        <rect x={2*s} y={9*s} width={s*1.2} height={2*s} rx={s/3}
-          fill={dark} transform={state === "walking" && legOffset ? `rotate(10, ${2.6*s}, ${9*s})` : ""} />
-        <rect x={5*s} y={9*s} width={s*1.2} height={2*s} rx={s/3}
-          fill={dark} transform={state === "walking" && !legOffset ? `rotate(-10, ${5.6*s}, ${9*s})` : ""} />
-      </g>
+      {/* ── Stubby arms ── */}
+      <motion.rect
+        x="1" y="10" width="4" height="7" rx="2" fill={color}
+        style={{ transformOrigin: "3px 10px" }}
+        animate={
+          state === "working" ? { rotate: [-15, -30, -15] } :
+          state === "walking" ? { rotate: [8, -8] } :
+          state === "talking" ? { rotate: [-8, -20, -8] } :
+          { rotate: [0, 3, 0] }
+        }
+        transition={
+          state === "working" ? { duration: 0.3, repeat: Infinity } :
+          state === "walking" ? { duration: 0.25, repeat: Infinity, repeatType: "reverse" } :
+          state === "talking" ? { duration: 0.5, repeat: Infinity } :
+          { duration: 2.5, repeat: Infinity }
+        }
+      />
+      <motion.rect
+        x="23" y="10" width="4" height="7" rx="2" fill={color}
+        style={{ transformOrigin: "25px 10px" }}
+        animate={
+          state === "working" ? { rotate: [15, 30, 15] } :
+          state === "walking" ? { rotate: [-8, 8] } :
+          { rotate: [0, -3, 0] }
+        }
+        transition={
+          state === "working" ? { duration: 0.35, repeat: Infinity } :
+          state === "walking" ? { duration: 0.25, repeat: Infinity, repeatType: "reverse" } :
+          { duration: 2.5, repeat: Infinity, delay: 0.3 }
+        }
+      />
+
+      {/* ── Tiny stub legs (Claude-bot style) ── */}
+      <rect
+        x="8" y="20" width="4" height="5" rx="2" fill={dark}
+        transform={legL ? "rotate(12, 10, 20)" : legR ? "rotate(-6, 10, 20)" : ""}
+      />
+      <rect
+        x="16" y="20" width="4" height="5" rx="2" fill={dark}
+        transform={legR ? "rotate(-12, 18, 20)" : legL ? "rotate(6, 18, 20)" : ""}
+      />
+
+      {/* ── Feet (tiny rounded) ── */}
+      <ellipse cx={legL ? "11" : "10"} cy="25" rx="2.5" ry="1.5" fill={dark} />
+      <ellipse cx={legR ? "17" : "18"} cy="25" rx="2.5" ry="1.5" fill={dark} />
+
+      {/* ── Working sparkles ── */}
+      {state === "working" && (
+        <>
+          <motion.circle cx="2" cy="6" r="1" fill={color}
+            animate={{ opacity: [0, 1, 0], y: [-2, -6] }}
+            transition={{ duration: 0.8, repeat: Infinity }}
+          />
+          <motion.circle cx="26" cy="4" r="0.8" fill={color}
+            animate={{ opacity: [0, 1, 0], y: [-1, -5] }}
+            transition={{ duration: 0.8, repeat: Infinity, delay: 0.3 }}
+          />
+        </>
+      )}
     </svg>
   );
 }
