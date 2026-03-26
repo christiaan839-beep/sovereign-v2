@@ -11,7 +11,6 @@ interface Message {
 }
 
 export default function NemoClawPage() {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [systemPrompt, setSystemPrompt] = useState(
     "You are NemoClaw, NVIDIA's enterprise-grade autonomous AI agent powered by the OpenClaw framework. " +
     "You execute tasks, make decisions, and take actions on the Commander's local infrastructure. " +
@@ -23,11 +22,8 @@ export default function NemoClawPage() {
   ]);
   const [input, setInput] = useState("");
   const [isInferencing, setIsInferencing] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [latency, setLatency] = useState("- ms");
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [privacyMode, setPrivacyMode] = useState<"secure" | "open">("secure");
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [selectedModel, setSelectedModel] = useState("mistral-nemotron");
   const [isDeployed247, setIsDeployed247] = useState(false);
   const [showGuardrails] = useState(true);
