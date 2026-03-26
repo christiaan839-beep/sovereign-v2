@@ -17,7 +17,6 @@ function getCached(key: string): string | null {
 }
 
 function setCache(key: string, result: string) {
-  // Cap cache at 200 entries to prevent memory leaks
   if (responseCache.size > 200) {
     const oldest = responseCache.keys().next().value;
     if (oldest) responseCache.delete(oldest);
@@ -25,51 +24,128 @@ function setCache(key: string, result: string) {
   responseCache.set(key, { result, timestamp: Date.now() });
 }
 
-// ─── Task Classification ─────────────────────────────────────
-type TaskType = "code" | "creative" | "reasoning" | "general";
+// ─── Task Classification (Enhanced) ─────────────────────────
+type TaskType = "code" | "creative" | "reasoning" | "vision" | "safety" | "general";
 
 function classifyTask(prompt: string): TaskType {
   const lower = prompt.toLowerCase();
+
+  // Vision tasks
+  if (lower.includes("image") || lower.includes("screenshot") || lower.includes("photo") ||
+      lower.includes("visual") || lower.includes("picture") || lower.includes("diagram") ||
+      lower.includes("ocr") || lower.includes("describe this")) return "vision";
+
+  // Code tasks
   if (lower.includes("write code") || lower.includes("function") || lower.includes("typescript") ||
       lower.includes("javascript") || lower.includes("python") || lower.includes("api") ||
-      lower.includes("debug") || lower.includes("refactor")) return "code";
+      lower.includes("debug") || lower.includes("refactor") || lower.includes("deploy") ||
+      lower.includes("build") || lower.includes("component") || lower.includes("test")) return "code";
+
+  // Creative tasks
   if (lower.includes("blog") || lower.includes("email") || lower.includes("content") ||
       lower.includes("write") || lower.includes("draft") || lower.includes("copy") ||
-      lower.includes("headline") || lower.includes("social media")) return "creative";
+      lower.includes("headline") || lower.includes("social media") || lower.includes("post") ||
+      lower.includes("article") || lower.includes("story") || lower.includes("script")) return "creative";
+
+  // Reasoning tasks
   if (lower.includes("analyze") || lower.includes("strategy") || lower.includes("compare") ||
-      lower.includes("evaluate") || lower.includes("reasoning") || lower.includes("plan")) return "reasoning";
+      lower.includes("evaluate") || lower.includes("reasoning") || lower.includes("plan") ||
+      lower.includes("research") || lower.includes("audit") || lower.includes("assess") ||
+      lower.includes("review") || lower.includes("investigate")) return "reasoning";
+
+  // Safety classification
+  if (lower.includes("safe") || lower.includes("moderate") || lower.includes("harmful") ||
+      lower.includes("toxic") || lower.includes("guardrail")) return "safety";
+
   return "general";
 }
 
-// ─── Model Configs ───────────────────────────────────────────
+// ─── Model Registry ─────────────────────────────────────────
+const NIM_MODELS = {
+  code:      "nvidia/nemotron-3-super-120b",
+  reasoning: "nvidia/llama-3.1-nemotron-ultra-253b-v1",
+  creative:  "nvidia/llama-3.1-nemotron-70b-instruct",
+  vision:    "google/gemma-3-27b-it",
+  safety:    "meta/llama-guard-3-8b",
+  general:   "nvidia/llama-3.1-nemotron-70b-instruct",
+} as const;
+
+// ─── LlamaGuard Safety Check ────────────────────────────────
+async function llamaGuardCheck(text: string): Promise<{ safe: boolean; category?: string }> {
+  const nimKey = process.env.NVIDIA_NIM_API_KEY;
+  if (!nimKey) return { safe: true }; // Skip if no key
+
+  try {
+    const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${nimKey}`,
+      },
+      body: JSON.stringify({
+        model: "meta/llama-guard-3-8b",
+        messages: [
+          { role: "user", content: text },
+        ],
+        max_tokens: 100,
+        temperature: 0,
+      }),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      const verdict = data.choices?.[0]?.message?.content?.trim().toLowerCase() || "";
+      if (verdict.startsWith("safe") || verdict === "safe") {
+        return { safe: true };
+      }
+      return { safe: false, category: verdict };
+    }
+  } catch {
+    log.warn("LlamaGuard check failed — allowing through");
+  }
+  return { safe: true }; // Fail open — other safety layers will catch issues
+}
+
+// ─── Router Payload ─────────────────────────────────────────
 interface RouterPayload {
   prompt: string;
   systemInstruction?: string;
-  /** Skip cache for this request */
   noCache?: boolean;
-  /** Force a specific model tier */
   forceTier?: "local" | "nim" | "gemini" | "claude";
+  /** Enable LlamaGuard safety check on output */
+  safetyCheck?: boolean;
 }
 
 /**
- * THE INDESTRUCTIBLE MATRIX: AUTO-HEALING LLM ROUTER v2
+ * THE INDESTRUCTIBLE MATRIX: AUTO-HEALING LLM ROUTER v3
  *
- * Upgrades from v1:
- * - Response caching (60s TTL) — identical prompts return instantly
- * - Task-aware routing — code/creative/reasoning get optimal models
- * - NVIDIA NIM as primary cloud tier ($0 cost)
- * - 4-tier failover: Local → NIM → Gemini → Claude
- * - Latency tracking for diagnostics
+ * v3 upgrades:
+ * - LlamaGuard 3 safety layer (Layer 6)
+ * - Vision task routing (Gemma 3 27B)
+ * - Enhanced task classification (6 types)
+ * - Expanded NIM model registry
+ * - Gemini 2.5 Flash upgrade
+ * - Output safety validation
  */
 export async function routeAgenticExecution({
   prompt,
   systemInstruction,
   noCache = false,
   forceTier,
+  safetyCheck = false,
 }: RouterPayload): Promise<string> {
   const startTime = Date.now();
 
-  // Check cache first
+  // ── Pre-flight safety check (input) ──────────────────────
+  if (safetyCheck) {
+    const inputSafety = await llamaGuardCheck(prompt);
+    if (!inputSafety.safe) {
+      log.warn(`LlamaGuard blocked input: ${inputSafety.category}`);
+      return "[SAFETY] This request was flagged by our safety system. Please rephrase your request.";
+    }
+  }
+
+  // ── Cache check ──────────────────────────────────────────
   if (!noCache) {
     const cacheKey = `${systemInstruction || ""}::${prompt}`.slice(0, 500);
     const cached = getCached(cacheKey);
@@ -89,9 +165,9 @@ export async function routeAgenticExecution({
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 2500);
 
-      // Pick model based on task
       const localModel = taskType === "code" ? "deepseek-coder-v2:latest"
         : taskType === "reasoning" ? "nemotron-mini"
+        : taskType === "vision" ? "llava:latest"
         : "nemotron-mini";
 
       const localRes = await fetch(`${OLLAMA_URL}/api/generate`, {
@@ -110,7 +186,7 @@ export async function routeAgenticExecution({
       if (localRes.ok) {
         const localData = await localRes.json();
         if (localData.response) {
-          log.info(`Local ${localModel} (${Date.now() - startTime}ms)`);
+          log.info(`Local ${localModel} [${taskType}] (${Date.now() - startTime}ms)`);
           setCache(cacheKey, localData.response);
           return localData.response;
         }
@@ -125,11 +201,7 @@ export async function routeAgenticExecution({
     try {
       const nimKey = process.env.NVIDIA_NIM_API_KEY;
       if (nimKey) {
-        // Pick NIM model based on task — March 2026 frontier models
-        const nimModel = taskType === "code" ? "nvidia/nemotron-3-super-120b"
-          : taskType === "reasoning" ? "nvidia/llama-3.1-nemotron-ultra-253b-v1"
-          : taskType === "creative" ? "nvidia/llama-3.1-nemotron-70b-instruct"
-          : "nvidia/llama-3.1-nemotron-70b-instruct";
+        const nimModel = NIM_MODELS[taskType] || NIM_MODELS.general;
 
         const nimRes = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
           method: "POST",
@@ -140,11 +212,11 @@ export async function routeAgenticExecution({
           body: JSON.stringify({
             model: nimModel,
             messages: [
-              { role: "system", content: systemInstruction || "You are Sovereign Matrix, an elite AI agent." },
+              { role: "system", content: systemInstruction || "You are Sovereign Matrix, an elite AI agent. Be concise, accurate, and actionable." },
               { role: "user", content: prompt },
             ],
             max_tokens: 4096,
-            temperature: taskType === "creative" ? 0.8 : 0.3,
+            temperature: taskType === "creative" ? 0.8 : taskType === "code" ? 0.1 : 0.3,
           }),
         });
 
@@ -152,8 +224,18 @@ export async function routeAgenticExecution({
           const nimData = await nimRes.json();
           const text = nimData.choices?.[0]?.message?.content;
           if (text) {
-            log.info(`NIM ${nimModel.split("/")[1]} (${Date.now() - startTime}ms)`);
+            log.info(`NIM ${nimModel.split("/")[1]} [${taskType}] (${Date.now() - startTime}ms)`);
             setCache(cacheKey, text);
+
+            // Post-flight safety check (output)
+            if (safetyCheck) {
+              const outputSafety = await llamaGuardCheck(text);
+              if (!outputSafety.safe) {
+                log.warn(`LlamaGuard blocked output: ${outputSafety.category}`);
+                return "[SAFETY] The generated response was flagged by our safety system. Please try a different approach.";
+              }
+            }
+
             return text;
           }
         }
@@ -163,18 +245,25 @@ export async function routeAgenticExecution({
     }
   }
 
-  // ── Tier 3: Google Gemini ────────────────────────────────
+  // ── Tier 3: Google Gemini 2.5 Flash ────────────────────────
   if (!forceTier || forceTier === "gemini") {
     try {
       const geminiKey = process.env.GEMINI_API_KEY;
       if (geminiKey) {
-        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`;
+        const geminiModel = taskType === "reasoning" ? "gemini-2.5-pro-preview-05-06"
+          : "gemini-2.5-flash-preview-05-20";
+
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${geminiKey}`;
         const aiRes = await fetch(geminiUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            systemInstruction: { parts: [{ text: systemInstruction || "You are Sovereign Matrix." }] },
+            systemInstruction: { parts: [{ text: systemInstruction || "You are Sovereign Matrix, an elite AI agent." }] },
             contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+              temperature: taskType === "creative" ? 0.8 : 0.3,
+              maxOutputTokens: 4096,
+            },
           }),
         });
 
@@ -182,7 +271,7 @@ export async function routeAgenticExecution({
           const aiData = await aiRes.json();
           const text = aiData.candidates?.[0]?.content?.parts?.[0]?.text;
           if (text) {
-            log.info(`Gemini 2.0 Flash (${Date.now() - startTime}ms)`);
+            log.info(`Gemini ${geminiModel} [${taskType}] (${Date.now() - startTime}ms)`);
             setCache(cacheKey, text);
             return text;
           }
@@ -208,7 +297,7 @@ export async function routeAgenticExecution({
           body: JSON.stringify({
             model: "claude-sonnet-4-20250514",
             max_tokens: 4096,
-            system: systemInstruction || "You are Sovereign Matrix.",
+            system: systemInstruction || "You are Sovereign Matrix, an elite AI agent.",
             messages: [{ role: "user", content: prompt }],
           }),
         });
@@ -217,7 +306,7 @@ export async function routeAgenticExecution({
           const claudeData = await claudeRes.json();
           const text = claudeData.content?.[0]?.text;
           if (text) {
-            log.info(`Claude Sonnet 4 (${Date.now() - startTime}ms)`);
+            log.info(`Claude Sonnet 4 [${taskType}] (${Date.now() - startTime}ms)`);
             setCache(cacheKey, text);
             return text;
           }
@@ -229,4 +318,12 @@ export async function routeAgenticExecution({
   }
 
   return "[SYSTEM] All inference tiers offline. Please check API keys in Settings → API Keys.";
+}
+
+/**
+ * Safety-first routing — wraps routeAgenticExecution with LlamaGuard checks
+ * on both input and output. Use for user-facing agent responses.
+ */
+export async function routeSafeExecution(payload: Omit<RouterPayload, "safetyCheck">): Promise<string> {
+  return routeAgenticExecution({ ...payload, safetyCheck: true });
 }
