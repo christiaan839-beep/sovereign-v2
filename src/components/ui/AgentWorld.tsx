@@ -67,6 +67,33 @@ function StatusDot({ status }: { status: AgentNode["status"] }) {
 export function AgentWorld() {
   const [activeConvo, setActiveConvo] = useState(0);
   const [hoveredAgent, setHoveredAgent] = useState<string | null>(null);
+  const [systemStatus, setSystemStatus] = useState<"online" | "offline" | "checking">("checking");
+  const [agentCount, setAgentCount] = useState(132);
+
+  // Check real system health
+  useEffect(() => {
+    const check = async () => {
+      try {
+        const res = await fetch("/api/health");
+        if (res.ok) {
+          setSystemStatus("online");
+          // Try to get real agent count
+          try {
+            const agentRes = await fetch("/api/agents/smart-router");
+            if (agentRes.ok) {
+              const data = await agentRes.json();
+              if (data.agents?.length) setAgentCount(data.agents.length);
+            }
+          } catch { /* use default */ }
+        } else {
+          setSystemStatus("offline");
+        }
+      } catch {
+        setSystemStatus("offline");
+      }
+    };
+    check();
+  }, []);
 
   // Cycle through conversations
   useEffect(() => {
@@ -87,7 +114,15 @@ export function AgentWorld() {
         viewport={{ once: true }}
         className="text-center mb-12"
       >
-        <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">Inside the Matrix</p>
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-emerald-500/15 bg-emerald-500/[0.04] mb-4">
+          <span className="relative flex h-1.5 w-1.5">
+            {systemStatus === "online" && <span className="animate-ping absolute h-full w-full rounded-full bg-emerald-400 opacity-50" />}
+            <span className={`relative rounded-full h-1.5 w-1.5 ${systemStatus === "online" ? "bg-emerald-400" : systemStatus === "checking" ? "bg-amber-400" : "bg-neutral-500"}`} />
+          </span>
+          <span className="text-[10px] text-emerald-400/80 font-medium">
+            {systemStatus === "online" ? `${agentCount} Agents Active` : systemStatus === "checking" ? "Connecting..." : "Offline Mode"}
+          </span>
+        </div>
         <h2 className="text-3xl md:text-5xl font-bold text-white tracking-tight mb-4">Your agents are working.</h2>
         <p className="text-neutral-500 max-w-lg mx-auto">Right now. Autonomously. No prompts needed.</p>
       </motion.div>
