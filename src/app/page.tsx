@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
-import { BrainCircuit, CheckCircle2, Cpu, Globe, Target, ShieldAlert, ChevronDown, XCircle, MessageSquare, Activity, Zap, Lock, ArrowRight, Mic, Code2, Search, FileText } from "lucide-react";
+import { BrainCircuit, CheckCircle2, Cpu, Target, ChevronDown, XCircle, ArrowRight, Mic, Code2, Search, FileText } from "lucide-react";
 import Link from "next/link";
 import { SignInButton } from "@clerk/nextjs";
 import { useState, useRef } from "react";
@@ -12,50 +12,6 @@ import { Testimonials } from "@/components/ui/SocialProof";
 
 import { InteractiveHeroStrike } from "@/components/ui/InteractiveHeroStrike";
 import { SocialProofMetrics } from "@/components/ui/SocialProofMetrics";
-// HeroWebGL available at @/components/ui/HeroWebGL if 3D mode needed
-// ─── Animated Energy Orb (enhanced with 3 rings + particle field) ───
-function EnergyOrb() {
-  return (
-    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0">
-      {/* Core glow — emerald */}
-      <div className="w-[600px] h-[600px] md:w-[800px] md:h-[800px] rounded-full bg-emerald-500/[0.04] blur-[120px] animate-pulse" />
-      {/* Secondary core — cyan accent */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] md:w-[500px] md:h-[500px] rounded-full bg-cyan-500/[0.02] blur-[100px] animate-pulse" style={{ animationDelay: "1.5s" }} />
-      {/* Inner ring */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[200px] h-[200px] md:w-[300px] md:h-[300px] rounded-full border border-emerald-500/[0.08] animate-[spin_40s_linear_infinite]" />
-      {/* Middle ring */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] md:w-[500px] md:h-[500px] rounded-full border border-emerald-500/[0.05] animate-[spin_60s_linear_infinite_reverse]" />
-      {/* Outer ring */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] md:w-[700px] md:h-[700px] rounded-full border border-cyan-500/[0.03] animate-[spin_90s_linear_infinite]" />
-      {/* Floating particles — star field effect */}
-      {[
-        { top: "10%", left: "20%", size: "w-1 h-1", opacity: "0.4" },
-        { top: "30%", left: "75%", size: "w-1.5 h-1.5", opacity: "0.3" },
-        { top: "65%", left: "15%", size: "w-1 h-1", opacity: "0.5" },
-        { top: "20%", left: "55%", size: "w-0.5 h-0.5", opacity: "0.6" },
-        { top: "75%", left: "45%", size: "w-1 h-1", opacity: "0.3" },
-        { top: "40%", left: "80%", size: "w-0.5 h-0.5", opacity: "0.4" },
-        { top: "50%", left: "10%", size: "w-1.5 h-1.5", opacity: "0.2" },
-        { top: "85%", left: "60%", size: "w-1 h-1", opacity: "0.5" },
-        { top: "15%", left: "40%", size: "w-0.5 h-0.5", opacity: "0.6" },
-        { top: "55%", left: "70%", size: "w-1 h-1", opacity: "0.3" },
-        { top: "5%", left: "85%", size: "w-0.5 h-0.5", opacity: "0.5" },
-        { top: "90%", left: "25%", size: "w-1 h-1", opacity: "0.2" },
-        { top: "35%", left: "5%", size: "w-1.5 h-1.5", opacity: "0.3" },
-        { top: "70%", left: "90%", size: "w-0.5 h-0.5", opacity: "0.6" },
-        { top: "45%", left: "35%", size: "w-1 h-1", opacity: "0.4" },
-        { top: "25%", left: "90%", size: "w-1 h-1", opacity: "0.2" },
-        { top: "80%", left: "80%", size: "w-0.5 h-0.5", opacity: "0.5" },
-        { top: "60%", left: "50%", size: "w-1.5 h-1.5", opacity: "0.2" },
-        { top: "8%", left: "65%", size: "w-1 h-1", opacity: "0.4" },
-        { top: "92%", left: "40%", size: "w-0.5 h-0.5", opacity: "0.6" },
-      ].map((pos, i) => (
-        <div key={i} className={`absolute ${pos.size} rounded-full animate-pulse ${i % 3 === 0 ? "bg-cyan-400" : "bg-emerald-400"}`}
-          style={{ top: pos.top, left: pos.left, opacity: parseFloat(pos.opacity), animationDelay: `${i * 0.3}s`, animationDuration: `${2 + (i % 5) * 0.8}s` }} />
-      ))}
-    </div>
-  );
-}
 
 // ─── Capability Card (enhanced with emerald hover glow) ───
 function CapabilityCard({ icon: Icon, title, desc, accent, href }: { icon: React.ComponentType<{ className?: string }>; title: string; desc: string; accent: string; href?: string }) {
@@ -357,7 +313,7 @@ export default function Home() {
       </motion.section>
 
       {/* ═══ POWERED BY STRIP ═══ */}
-      <div className="flex items-center justify-center gap-8 py-6 opacity-40">
+      <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8 py-6 px-4 opacity-40">
         <span className="text-[10px] uppercase tracking-[0.3em] text-neutral-600">Powered by</span>
         <span className="text-[10px] text-neutral-500">NVIDIA NIM</span>
         <span className="text-[10px] text-neutral-600">&bull;</span>
@@ -370,7 +326,7 @@ export default function Home() {
 
       {/* ═══ SOCIAL PROOF METRICS ═══ */}
       <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
-      <section className="py-20 px-6">
+      <section className="py-24 px-6">
         <SocialProofMetrics />
       </section>
 
@@ -472,7 +428,7 @@ export default function Home() {
               <ul className="space-y-3">
                 {["You type every prompt manually", "Forgets everything between sessions", "Cannot open a browser or send an email", "You do the thinking — it just types"].map((item, i) => (
                   <li key={i} className="flex items-start gap-2.5 text-neutral-500 text-sm">
-                    <XCircle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-neutral-700" /> {item}
+                    <XCircle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-neutral-500" /> {item}
                   </li>
                 ))}
               </ul>
@@ -628,20 +584,20 @@ export default function Home() {
               <ul className="space-y-2.5">
                 <li><Link href="/privacy" className="text-xs text-neutral-600 hover:text-white transition-colors">Privacy</Link></li>
                 <li><Link href="/terms" className="text-xs text-neutral-600 hover:text-white transition-colors">Terms</Link></li>
-                <li><span className="text-xs text-neutral-700">POPIA Compliant</span></li>
+                <li><span className="text-xs text-neutral-500">POPIA Compliant</span></li>
               </ul>
             </div>
             <div>
               <h4 className="text-xs font-semibold text-neutral-400 mb-4">Contact</h4>
               <ul className="space-y-2.5">
                 <li><a href="mailto:hello@sovereignmatrix.agency" className="text-xs text-neutral-600 hover:text-white transition-colors">hello@sovereignmatrix.agency</a></li>
-                <li><span className="text-xs text-neutral-700">Cape Town, South Africa</span></li>
+                <li><span className="text-xs text-neutral-500">Cape Town, South Africa</span></li>
               </ul>
             </div>
           </div>
           <div className="pt-6 border-t border-white/[0.04] flex items-center justify-between">
-            <p className="text-[10px] text-neutral-700">&copy; 2026 Sovereign Matrix</p>
-            <p className="text-[10px] text-neutral-700">Powered by NVIDIA NIM</p>
+            <p className="text-[10px] text-neutral-500">&copy; 2026 Sovereign Matrix</p>
+            <p className="text-[10px] text-neutral-500">Powered by NVIDIA NIM</p>
           </div>
         </div>
       </footer>

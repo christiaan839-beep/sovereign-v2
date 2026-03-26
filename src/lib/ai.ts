@@ -90,7 +90,7 @@ async function nimText(prompt: string, system?: string, maxTokens: number = 2000
     ...(system ? [{ role: "system", content: system }] : []),
     { role: "user", content: prompt }
   ];
-  return nimChat("nvidia/llama-3.1-nemotron-ultra-253b", messages, { maxTokens, temperature: 0.6 }) as Promise<string>;
+  return nimChat("nvidia/llama-3.1-nemotron-ultra-253b-v1", messages, { maxTokens, temperature: 0.6 }) as Promise<string>;
 }
 
 async function ollamaText(prompt: string, system?: string, ollamaUrl: string = "http://localhost:11434"): Promise<string> {
@@ -144,12 +144,12 @@ async function claudeText(prompt: string, system?: string, maxTokens: number = 2
   ] : undefined;
 
   const response = await client.messages.create({
-    model: "claude-3-5-sonnet-20241022",
+    model: "claude-sonnet-4-20250514",
     max_tokens: maxTokens,
     ...(systemParam ? { system: systemParam } : {}),
     messages: [{ role: "user", content: prompt }],
   });
-  
+
   return response.content[0].type === "text" ? response.content[0].text : "";
 }
 
@@ -230,7 +230,7 @@ export async function claudeToolUse(
   const client = new Anthropic({ apiKey });
 
   const response = await client.messages.create({
-    model: "claude-3-5-sonnet-20241022",
+    model: "claude-sonnet-4-20250514",
     max_tokens: maxTokens,
     ...(system ? { system } : {}),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

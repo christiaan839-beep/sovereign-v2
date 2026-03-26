@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ScanEye, AlertTriangle, ShieldCheck, Activity, Camera, Video, Zap, Database } from "lucide-react";
-import Image from 'next/image';
+
 
 export default function GodEyeSurveillancePage() {
   const [incidents, setIncidents] = useState<any[]>([]);

@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { readdirSync, existsSync } from "fs";
-import { join } from "path";
 
 /**
  * UNIFIED AGENT ROUTER — Single serverless function for ALL 117 agents.
@@ -39,7 +37,7 @@ const KNOWN_AGENTS = [
   "content", "content-safety", "collab-room", "workflows", "marketplace",
   "nemoclaw", "nemoclaw-setup", "page-builder", "image-gen", "imagen",
   "analytics", "audit", "benchmark", "memory", "orchestrator",
-  "prospector", "email-sequence", "closer", "comms", "competitive-radar",
+  "email-sequence", "closer", "comms", "competitive-radar",
   "deep-think", "reasoning-chain", "vision", "vision-analyze", "ocr",
   "embed", "rerank", "omni-search", "grounded-search", "translate",
   "voice", "voice-chat", "voice-assistant", "webhook-gateway", "weekly-report",
@@ -111,12 +109,26 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ slug
   const { slug } = await params;
   const handler = getAgentHandler(slug.join("/"));
   if (!handler?.PUT) return NextResponse.json({ error: "Method not supported" }, { status: 405 });
-  return handler.PUT(req);
+  try {
+    return await handler.PUT(req);
+  } catch (err) {
+    return NextResponse.json(
+      { error: `Agent "${slug.join("/")}" PUT failed: ${err instanceof Error ? err.message : "Unknown error"}` },
+      { status: 500 }
+    );
+  }
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ slug: string[] }> }) {
   const { slug } = await params;
   const handler = getAgentHandler(slug.join("/"));
   if (!handler?.DELETE) return NextResponse.json({ error: "Method not supported" }, { status: 405 });
-  return handler.DELETE(req);
+  try {
+    return await handler.DELETE(req);
+  } catch (err) {
+    return NextResponse.json(
+      { error: `Agent "${slug.join("/")}" DELETE failed: ${err instanceof Error ? err.message : "Unknown error"}` },
+      { status: 500 }
+    );
+  }
 }
