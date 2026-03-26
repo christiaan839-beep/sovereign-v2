@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Users, Settings, DollarSign, Target,
   Layers, Search, ChevronDown, ChevronRight, Sparkles, Factory,
-  X, Menu, Mic, Swords, Database,
+  X, Menu, Mic, Swords, Database, Inbox, CalendarClock,
   PanelLeftOpen, PanelLeftClose, Clock, Plug, Cpu,
   BarChart3, CircuitBoard, Eye, Palette, Globe2, Shield, Wrench, LayoutTemplate,
   Wand2
@@ -42,6 +42,7 @@ interface NavGroup {
 
 const PRIMARY_NAV: NavItem[] = [
   { href: "/dashboard", label: "Home", icon: LayoutDashboard },
+  { href: "/dashboard/inbox", label: "Inbox", icon: Inbox },
   { href: "/dashboard/build", label: "Build", icon: Sparkles },
   { href: "/dashboard/leads", label: "Leads", icon: Target },
   { href: "/dashboard/content-factory", label: "Content", icon: Factory },
@@ -60,6 +61,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/dashboard/visual-studio", label: "Code Studio", icon: Palette },
       { href: "/dashboard/workflows", label: "Workflows", icon: CircuitBoard },
       { href: "/dashboard/automations", label: "Automations", icon: Clock },
+      { href: "/dashboard/scheduled", label: "Scheduled Runs", icon: CalendarClock },
       { href: "/dashboard/agent-builder", label: "Agent Builder", icon: Wand2 },
     ],
   },

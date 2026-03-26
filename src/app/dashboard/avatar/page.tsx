@@ -30,9 +30,9 @@ export default function DigitalHumanAvatarPage() {
       });
       const voiceData = await voiceRes.json();
 
-      // Phase 3: Render
+      // Phase 3: Render complete
       setPipelineStatus("rendering");
-      await new Promise(r => setTimeout(r, 3000));
+      // Pipeline is done — transition to live
       setPipelineStatus("live");
     } catch (err) {
       console.error("Pipeline error:", err);

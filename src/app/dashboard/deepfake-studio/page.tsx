@@ -23,16 +23,20 @@ export default function VideoOutreachStudioPage() {
       });
       const data = await res.json();
       if (data.success) {
-        const company = targetDomain.replace('.com', '').replace('www.', '').toUpperCase();
         const audit = data.audit || {};
+        const company = audit.company_name || targetDomain;
         setScrapedData({
-          name: "Target Executive",
+          name: audit.contact_name || "Contact not found",
           company,
-          tech: audit.market_position || "Identified via NIM analysis",
+          tech: audit.market_position || audit.tech_stack || "Analysis pending",
         });
-        setTargetScript(`I'm the AI infrastructure lead at Sovereign. We autonomously audited ${company}'s technology stack. UX Score: ${audit.ux_score || 'N/A'}/100. We identified ${(audit.weaknesses || []).length} critical vulnerabilities. I am sending the technical teardown to your inbox now.`);
+        setTargetScript(
+          audit.ux_score != null || (audit.weaknesses && audit.weaknesses.length > 0)
+            ? `We audited ${company}'s technology stack. UX Score: ${audit.ux_score ?? 'N/A'}/100. We identified ${(audit.weaknesses || []).length} area(s) for improvement. I can send the full teardown to your inbox.`
+            : `We analyzed ${company}. Full audit results are available for review.`
+        );
       } else {
-        setScrapedData({ name: "Unknown", company: targetDomain, tech: "Scan failed" });
+        setScrapedData({ name: "N/A", company: targetDomain, tech: data.error || "Analysis could not be completed" });
       }
     } catch {
       setScrapedData({ name: "Unknown", company: targetDomain, tech: "Network error" });
