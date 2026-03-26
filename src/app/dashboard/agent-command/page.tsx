@@ -29,7 +29,7 @@ const AGENTS: Agent[] = [
     icon: Phone,
     color: "#00ff66",
     category: "Sales",
-    nimModel: "Twilio Voice + Polly Neural",
+    nimModel: "nemotron-voicechat",
     inputType: "none",
   },
   {
@@ -64,7 +64,7 @@ const AGENTS: Agent[] = [
     icon: Zap,
     color: "#F472B6",
     category: "Intelligence",
-    nimModel: "minimax-m2.7-highspeed",
+    nimModel: "mistral-nemotron",
     inputType: "text",
     placeholder: "Send a prompt to MiniMax M2.7...",
   },
@@ -100,7 +100,7 @@ const AGENTS: Agent[] = [
     icon: Languages,
     color: "#06B6D4",
     category: "Outreach",
-    nimModel: "riva-translate-4b",
+    nimModel: "qwen3-235b",
     inputType: "translate",
     placeholder: "Enter text to translate...",
   },
@@ -112,7 +112,7 @@ const AGENTS: Agent[] = [
     icon: Database,
     color: "#FACC15",
     category: "Intelligence",
-    nimModel: "nv-embed-v1 + rerank-qa-4b",
+    nimModel: "llama-3.2-nv-embedqa-1b",
     inputType: "text",
     placeholder: "Enter text to embed or a query to search...",
   },
@@ -124,7 +124,7 @@ const AGENTS: Agent[] = [
     icon: ImageIcon,
     color: "#10B981",
     category: "Creative",
-    nimModel: "stable-diffusion-3-medium",
+    nimModel: "flux-schnell",
     inputType: "text",
     placeholder: "Describe the image to generate...",
   },
@@ -136,7 +136,7 @@ const AGENTS: Agent[] = [
     icon: Mic,
     color: "#FF6B00",
     category: "Creative",
-    nimModel: "magpie-tts-flow",
+    nimModel: "elevenlabs-tts",
     inputType: "text",
     placeholder: "Enter text to speak...",
   },
@@ -148,7 +148,7 @@ const AGENTS: Agent[] = [
     icon: Clapperboard,
     color: "#00B7FF",
     category: "Creative",
-    nimModel: "cosmos-predict1-5b",
+    nimModel: "cosmos-predict-1",
     inputType: "text",
     placeholder: "Describe the video scene...",
   },
@@ -295,7 +295,7 @@ export default function AgentCommandCenter() {
             <p className="text-[9px] text-neutral-500 uppercase tracking-widest mt-1">Active Agents</p>
           </div>
           <div className="bg-neutral-950 border border-neutral-800 p-4 text-center">
-            <p className="text-2xl font-black text-[#00B7FF]">38</p>
+            <p className="text-2xl font-black text-[#00B7FF]">51+</p>
             <p className="text-[9px] text-neutral-500 uppercase tracking-widest mt-1">NIM Models</p>
           </div>
           <div className="bg-neutral-950 border border-neutral-800 p-4 text-center">
@@ -431,7 +431,7 @@ export default function AgentCommandCenter() {
         {/* Footer */}
         <footer className="border-t border-neutral-800 pt-6 text-center">
           <p className="text-[10px] text-neutral-600 uppercase tracking-widest">
-            Sovereign Matrix · Agent Command Center · Powered by 38 NVIDIA NIM Models · $0 Infrastructure Cost
+            Sovereign Matrix · Agent Command Center · Powered by 51+ NVIDIA NIM Models · $0 Infrastructure Cost
           </p>
         </footer>
       </div>

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { FileVideo, ShieldAlert, Play, Database, Wand2, MonitorPlay } from "lucide-react";
 
-export default function DeepfakeStudioPage() {
+export default function VideoOutreachStudioPage() {
   const [targetDomain, setTargetDomain] = useState("");
   const [targetScript, setTargetScript] = useState("");
   const [selectedAvatar, setSelectedAvatar] = useState("avatar-1");
@@ -67,7 +67,7 @@ export default function DeepfakeStudioPage() {
         <div>
           <h1 className="text-3xl font-bold text-white serif-text tracking-tight flex items-center gap-3">
             <FileVideo className="w-8 h-8 text-[#00B7FF]" />
-            Deepfake Prospector Studio
+            Video Outreach Studio
           </h1>
           <p className="text-neutral-400 mt-2 max-w-2xl">
             Autonomous cinematic synthesis. Render hyper-realistic, 4K digital executives reciting 

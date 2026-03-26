@@ -159,7 +159,7 @@ export default function VoiceSwarmPage() {
                </div>
                <div className="flex items-center justify-between">
                  <div className="flex items-center gap-2"><Database className="w-3 h-3 text-neutral-500" /> NVIDIA NIM 340B</div>
-                 <div className="text-emerald-400 flex items-center gap-1"><div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" /> Latency: 42ms</div>
+                 <div className="text-emerald-400 flex items-center gap-1"><div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" /> Ready</div>
                </div>
                <div className="flex items-center justify-between">
                  <div className="flex items-center gap-2"><ArrowRightLeft className="w-3 h-3 text-neutral-500" /> WebSockets</div>
