@@ -12,9 +12,8 @@ import { Testimonials } from "@/components/ui/SocialProof";
 
 import { InteractiveHeroStrike } from "@/components/ui/InteractiveHeroStrike";
 import { SocialProofMetrics } from "@/components/ui/SocialProofMetrics";
-import { AgentWorld } from "@/components/ui/AgentWorld";
 import { LandingAgent } from "@/components/ui/LandingAgent";
-import { AgentCharacterGrid } from "@/components/ui/AgentCharacter";
+import { AgentOffice } from "@/components/ui/AgentOffice";
 
 // ─── Capability Card (enhanced with emerald hover glow) ───
 function CapabilityCard({ icon: Icon, title, desc, accent, href }: { icon: React.ComponentType<{ className?: string }>; title: string; desc: string; accent: string; href?: string }) {
@@ -440,22 +439,10 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ═══ AGENT WORLD — Digital workspace visualization ═══ */}
+      {/* ═══ AGENT OFFICE — Living digital workspace ═══ */}
       <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
       <section className="py-24 px-6 bg-[#030303]">
-        <AgentWorld />
-      </section>
-
-      {/* ═══ MEET THE AGENTS — Character grid ═══ */}
-      <section className="py-16 px-6 bg-[#020202]">
-        <div className="max-w-4xl mx-auto">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-            className="text-center mb-10">
-            <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-3">Meet the Team</p>
-            <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight">11 specialized agents. Each with a mission.</h2>
-          </motion.div>
-          <AgentCharacterGrid size={52} />
-        </div>
+        <AgentOffice />
       </section>
 
       {/* ═══ LIVE DEMO ═══ */}
