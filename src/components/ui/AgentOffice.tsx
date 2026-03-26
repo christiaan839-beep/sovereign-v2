@@ -85,120 +85,104 @@ function PixelBot({
   color: string; dark: string; walkFrame: number; facingRight: boolean;
   state: Agent["state"];
 }) {
-  // Claude-bot proportions: wide, chunky, short body, tiny stub legs
-  // Viewbox is 28x28 — scaled up via CSS with image-rendering: pixelated
-  const legL = state === "walking" && walkFrame % 2 === 0;
-  const legR = state === "walking" && walkFrame % 2 !== 0;
+  /*
+   * TRUE pixel art — no gradients, no glow, no shine.
+   * Drawn on a 16x16 grid using only rectangles.
+   * Matches Claude Code's mascot: flat, blocky, charming.
+   * Scaled up with image-rendering: pixelated for crisp edges.
+   */
+  const p = 2; // pixel unit size
+  const legKickL = state === "walking" && walkFrame % 2 === 0;
+  const legKickR = state === "walking" && walkFrame % 2 !== 0;
 
   return (
     <svg
-      width={36} height={36}
-      viewBox="0 0 28 28"
-      style={{ imageRendering: "pixelated", overflow: "visible", transform: facingRight ? "" : "scaleX(-1)" }}
+      width={40} height={40}
+      viewBox="0 0 32 32"
+      className="select-none"
+      style={{
+        imageRendering: "pixelated",
+        overflow: "visible",
+        transform: facingRight ? "" : "scaleX(-1)",
+      }}
     >
-      {/* ── Main body: one chunky rounded rectangle ── */}
-      <rect x="4" y="4" width="20" height="16" rx="5" fill={color} />
+      {/* ══ BODY — one solid blocky rectangle ══ */}
+      <rect x={6*p} y={3*p} width={8*p} height={7*p} rx={p} fill={color} />
 
-      {/* Body sheen/highlight */}
-      <rect x="6" y="5" width="16" height="4" rx="3" fill="white" opacity="0.12" />
-
-      {/* ── Eyes: simple, friendly, Claude-style ── */}
+      {/* ══ EYES — simple 2x2 pixel squares ══ */}
       {state === "thinking" ? (
         <>
-          {/* Squinted thinking eyes — horizontal lines */}
-          <rect x="9" y="11" width="4" height="1.5" rx="0.75" fill="white" />
-          <rect x="16" y="11" width="4" height="1.5" rx="0.75" fill="white" />
+          <rect x={8*p} y={5*p} width={2*p} height={p*0.5} fill="#111" />
+          <rect x={12*p} y={5*p} width={2*p} height={p*0.5} fill="#111" />
         </>
       ) : (
         <>
-          {/* Big round friendly eyes */}
-          <circle cx="11" cy="11" r="2.5" fill="white" />
-          <circle cx="18" cy="11" r="2.5" fill="white" />
-          {/* Pupils — offset slightly for life */}
-          <circle cx={state === "walking" ? "11.8" : "11.5"} cy="11.3" r="1.2" fill={dark} />
-          <circle cx={state === "walking" ? "18.8" : "18.5"} cy="11.3" r="1.2" fill={dark} />
-          {/* Eye shine */}
-          <circle cx="10.3" cy="10.2" r="0.6" fill="white" opacity="0.8" />
-          <circle cx="17.3" cy="10.2" r="0.6" fill="white" opacity="0.8" />
+          <rect x={8*p} y={4*p} width={p*1.5} height={2*p} fill="#111" />
+          <rect x={12*p} y={4*p} width={p*1.5} height={2*p} fill="#111" />
+          {/* Tiny white pixel highlight in each eye */}
+          <rect x={8*p} y={4*p} width={p*0.5} height={p*0.5} fill="white" opacity="0.6" />
+          <rect x={12*p} y={4*p} width={p*0.5} height={p*0.5} fill="white" opacity="0.6" />
         </>
       )}
 
-      {/* ── Mouth ── */}
+      {/* ══ MOUTH ══ */}
       {state === "talking" ? (
-        <motion.ellipse cx="14" cy="16" rx="2.5" fill={dark}
-          animate={{ ry: [0.8, 2, 0.8] }}
-          transition={{ duration: 0.3, repeat: Infinity }}
+        <motion.rect x={10*p} y={7*p} width={2*p} rx={p*0.3} fill="#111"
+          animate={{ height: [p*0.5, p*1.5, p*0.5] }}
+          transition={{ duration: 0.25, repeat: Infinity }}
         />
       ) : (
-        <rect x="11" y="15.5" width="6" height="1.2" rx="0.6" fill={dark} opacity="0.35" />
+        <rect x={10*p} y={7*p} width={2*p} height={p*0.5} fill="#111" opacity="0.3" />
       )}
 
-      {/* ── Stubby arms ── */}
+      {/* ══ ARMS — short pixel stubs ══ */}
       <motion.rect
-        x="1" y="10" width="4" height="7" rx="2" fill={color}
-        style={{ transformOrigin: "3px 10px" }}
+        x={4*p} y={5*p} width={2*p} height={4*p} rx={p*0.5} fill={color}
+        style={{ transformOrigin: `${5*p}px ${5*p}px` }}
         animate={
-          state === "working" ? { rotate: [-15, -30, -15] } :
+          state === "working" ? { rotate: [-12, -25, -12] } :
           state === "walking" ? { rotate: [8, -8] } :
-          state === "talking" ? { rotate: [-8, -20, -8] } :
-          { rotate: [0, 3, 0] }
+          state === "talking" ? { rotate: [-5, -18, -5] } :
+          { rotate: [0, 2, 0] }
+        }
+        transition={
+          state === "working" ? { duration: 0.25, repeat: Infinity } :
+          state === "walking" ? { duration: 0.2, repeat: Infinity, repeatType: "reverse" } :
+          state === "talking" ? { duration: 0.4, repeat: Infinity } :
+          { duration: 3, repeat: Infinity }
+        }
+      />
+      <motion.rect
+        x={14*p} y={5*p} width={2*p} height={4*p} rx={p*0.5} fill={color}
+        style={{ transformOrigin: `${15*p}px ${5*p}px` }}
+        animate={
+          state === "working" ? { rotate: [12, 25, 12] } :
+          state === "walking" ? { rotate: [-8, 8] } :
+          { rotate: [0, -2, 0] }
         }
         transition={
           state === "working" ? { duration: 0.3, repeat: Infinity } :
-          state === "walking" ? { duration: 0.25, repeat: Infinity, repeatType: "reverse" } :
-          state === "talking" ? { duration: 0.5, repeat: Infinity } :
-          { duration: 2.5, repeat: Infinity }
-        }
-      />
-      <motion.rect
-        x="23" y="10" width="4" height="7" rx="2" fill={color}
-        style={{ transformOrigin: "25px 10px" }}
-        animate={
-          state === "working" ? { rotate: [15, 30, 15] } :
-          state === "walking" ? { rotate: [-8, 8] } :
-          { rotate: [0, -3, 0] }
-        }
-        transition={
-          state === "working" ? { duration: 0.35, repeat: Infinity } :
-          state === "walking" ? { duration: 0.25, repeat: Infinity, repeatType: "reverse" } :
-          { duration: 2.5, repeat: Infinity, delay: 0.3 }
+          state === "walking" ? { duration: 0.2, repeat: Infinity, repeatType: "reverse" } :
+          { duration: 3, repeat: Infinity, delay: 0.2 }
         }
       />
 
-      {/* ── Tiny stub legs (Claude-bot style) ── */}
+      {/* ══ LEGS — tiny pixel stubs ══ */}
       <rect
-        x="8" y="20" width="4" height="5" rx="2" fill={dark}
-        transform={legL ? "rotate(12, 10, 20)" : legR ? "rotate(-6, 10, 20)" : ""}
+        x={8*p} y={10*p} width={p*1.5} height={3*p} rx={p*0.3} fill={dark}
+        transform={legKickL ? `rotate(15, ${8.75*p}, ${10*p})` : legKickR ? `rotate(-8, ${8.75*p}, ${10*p})` : ""}
       />
       <rect
-        x="16" y="20" width="4" height="5" rx="2" fill={dark}
-        transform={legR ? "rotate(-12, 18, 20)" : legL ? "rotate(6, 18, 20)" : ""}
+        x={12*p} y={10*p} width={p*1.5} height={3*p} rx={p*0.3} fill={dark}
+        transform={legKickR ? `rotate(-15, ${12.75*p}, ${10*p})` : legKickL ? `rotate(8, ${12.75*p}, ${10*p})` : ""}
       />
-
-      {/* ── Feet (tiny rounded) ── */}
-      <ellipse cx={legL ? "11" : "10"} cy="25" rx="2.5" ry="1.5" fill={dark} />
-      <ellipse cx={legR ? "17" : "18"} cy="25" rx="2.5" ry="1.5" fill={dark} />
-
-      {/* ── Working sparkles ── */}
-      {state === "working" && (
-        <>
-          <motion.circle cx="2" cy="6" r="1" fill={color}
-            animate={{ opacity: [0, 1, 0], y: [-2, -6] }}
-            transition={{ duration: 0.8, repeat: Infinity }}
-          />
-          <motion.circle cx="26" cy="4" r="0.8" fill={color}
-            animate={{ opacity: [0, 1, 0], y: [-1, -5] }}
-            transition={{ duration: 0.8, repeat: Infinity, delay: 0.3 }}
-          />
-        </>
-      )}
     </svg>
   );
 }
 
 // ─── Speech Bubble ──────────────────────────────────────
 
-function SpeechBubble({ text, color }: { text: string; color: string }) {
+function SpeechBubble({ text }: { text: string; color: string }) {
   const [displayed, setDisplayed] = useState("");
 
   useEffect(() => {
@@ -208,33 +192,26 @@ function SpeechBubble({ text, color }: { text: string; color: string }) {
       i++;
       setDisplayed(text.slice(0, i));
       if (i >= text.length) clearInterval(interval);
-    }, 30);
+    }, 35);
     return () => clearInterval(interval);
   }, [text]);
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 5, scale: 0.8 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.8 }}
-      className="absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap z-30"
+      initial={{ opacity: 0, y: 4 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0 }}
+      className="absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap z-30"
     >
-      <div className="px-2 py-1 rounded text-[8px] font-mono font-bold border shadow-lg"
-        style={{
-          backgroundColor: "#0a0a0f",
-          borderColor: color + "40",
-          color: color,
-          boxShadow: `0 0 10px ${color}20`,
-        }}
+      {/* Simple flat pixel bubble — no glow, no shadow */}
+      <div className="px-1.5 py-0.5 bg-white text-[7px] font-mono text-black border border-black/20"
+        style={{ imageRendering: "pixelated" }}
       >
-        {displayed}<span className="animate-pulse">▋</span>
+        {displayed}<span className="animate-pulse text-neutral-400">_</span>
       </div>
-      {/* Bubble tail */}
-      <div className="w-0 h-0 mx-auto" style={{
-        borderLeft: "4px solid transparent",
-        borderRight: "4px solid transparent",
-        borderTop: `4px solid ${color}40`,
-      }} />
+      <div className="w-0 h-0 mx-auto"
+        style={{ borderLeft: "3px solid transparent", borderRight: "3px solid transparent", borderTop: "3px solid white" }}
+      />
     </motion.div>
   );
 }
