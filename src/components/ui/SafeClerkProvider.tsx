@@ -36,6 +36,7 @@ function useSuppressExternalErrors() {
     console.warn = function (...args: unknown[]) {
       const first = args[0];
       if (typeof first === "string" && first.includes("non-static position")) return;
+      if (typeof first === "string" && first.includes("has been deprecated")) return;
       return origWarn.apply(console, args);
     };
 
