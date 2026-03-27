@@ -14,6 +14,10 @@ import { InteractiveHeroStrike } from "@/components/ui/InteractiveHeroStrike";
 import { SocialProofMetrics } from "@/components/ui/SocialProofMetrics";
 import { LandingAgent } from "@/components/ui/LandingAgent";
 import { AgentOffice } from "@/components/ui/AgentOffice";
+import dynamic from "next/dynamic";
+import { TextMorph } from "@/components/ui/TextMorph";
+
+const HeroParticles = dynamic(() => import("@/components/ui/HeroParticles").then(m => ({ default: m.HeroParticles })), { ssr: false });
 
 // ─── Capability Card (enhanced with emerald hover glow) ───
 function CapabilityCard({ icon: Icon, title, desc, accent, href }: { icon: React.ComponentType<{ className?: string }>; title: string; desc: string; accent: string; href?: string }) {
@@ -278,6 +282,9 @@ export default function Home() {
       <motion.section id="main-content" ref={heroRef} style={{ opacity: heroOpacity, scale: heroScale }}
         className="relative h-screen overflow-hidden">
 
+        {/* 3D Particle Matrix — Three.js WebGL background */}
+        <HeroParticles />
+
         {/* Background layer — holographic cube */}
         <div className="absolute inset-0 flex flex-col items-center justify-center overflow-hidden">
 
@@ -335,7 +342,7 @@ export default function Home() {
             <motion.h1 initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05, duration: 1.2, ease: [0.25, 0.46, 0.45, 0.94] }}
               className="text-[clamp(2.8rem,9vw,8rem)] font-black leading-[0.88] tracking-[-0.04em] mb-8">
               <span className="text-shimmer">
-                Your AI{" "}<br />workforce.
+                Your AI{" "}<br /><TextMorph />
               </span>
             </motion.h1>
 
@@ -635,6 +642,10 @@ export default function Home() {
               { q: "Is this just another ChatGPT wrapper?", a: "No. ChatGPT is a chatbot. Sovereign Matrix is 132 autonomous agents that execute: finding leads, building pages, writing outreach sequences, qualifying prospects, making calls. They open real browsers, hit real APIs, plan multi-step workflows, and self-correct without manual prompting." },
               { q: "Can agents run locally without cloud?", a: "Yes. NemoClaw runs on your machine via Ollama. Full offline execution — your data never leaves your hardware. Built for sensitive client work and air-gapped environments." },
               { q: "Is there a contract or lock-in?", a: "No contracts. Month-to-month. Cancel from your dashboard. Data is always exportable. NVIDIA NIM inference is free — you only pay for premium features." },
+              { q: "How long does setup take?", a: "Under 60 seconds. Sign up, complete the 5-step onboarding wizard, and deploy your first agent immediately. No Docker, no terminal commands, no technical setup required for the cloud version." },
+              { q: "What integrations are supported?", a: "NVIDIA NIM, Ollama (local models), ElevenLabs (voice), Pinecone (vector memory), Clerk (auth), Neon PostgreSQL (database), Vercel (hosting), PayFast, and Stripe. A public API at /api/v1/ is available for custom integrations." },
+              { q: "Is my data safe?", a: "Yes. A 5-layer NeMo Guardrails safety pipeline protects every interaction: jailbreak detection, topic control, content safety, PII scanning, and quality scoring. Plus local execution means data never touches the cloud if you choose." },
+              { q: "What is the white-label Cartel license?", a: "The Cartel license lets agencies rebrand the entire platform as their own. Custom domain, client portals, your logo. Clients think you built the technology. It is an agency-in-a-box franchise model — resell at whatever margin you choose." },
             ].map((faq, i) => <FAQItem key={i} question={faq.q} answer={faq.a} />)}
           </div>
         </motion.div>
@@ -690,13 +701,13 @@ export default function Home() {
               <ul className="space-y-2.5">
                 <li><Link href="/privacy" className="text-xs text-neutral-500 hover:text-white transition-colors">Privacy</Link></li>
                 <li><Link href="/terms" className="text-xs text-neutral-500 hover:text-white transition-colors">Terms</Link></li>
-                <li><span className="text-xs text-neutral-500">POPIA Compliant</span></li>
+                <li><Link href="/privacy#popia" className="text-xs text-neutral-500 hover:text-white transition-colors">POPIA Compliant</Link></li>
               </ul>
             </div>
             <div>
               <h4 className="text-xs font-semibold text-neutral-400 mb-4">Contact</h4>
               <ul className="space-y-2.5">
-                <li><a href="mailto:hello@sovereignmatrix.agency" className="text-xs text-neutral-500 hover:text-white transition-colors">hello@sovereignmatrix.agency</a></li>
+                <li><a href="mailto:christiaan@sovereignmatrix.agency" className="text-xs text-neutral-500 hover:text-white transition-colors">christiaan@sovereignmatrix.agency</a></li>
                 <li><span className="text-xs text-neutral-500">Cape Town, South Africa</span></li>
               </ul>
             </div>
