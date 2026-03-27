@@ -88,12 +88,16 @@ export default function PricingPage() {
       const data = await res.json();
 
       if (data.success && data.formHtml) {
-        const container = document.createElement("div");
-        container.innerHTML = data.formHtml;
-        container.style.display = "none";
-        document.body.appendChild(container);
-        const form = container.querySelector("form");
-        if (form) form.submit();
+        // Sanitize: parse safely and strip scripts to prevent XSS
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(data.formHtml, "text/html");
+        doc.querySelectorAll("script").forEach((el) => el.remove());
+        const form = doc.querySelector("form");
+        if (form) {
+          form.style.display = "none";
+          document.body.appendChild(form);
+          form.submit();
+        }
         return;
       }
 

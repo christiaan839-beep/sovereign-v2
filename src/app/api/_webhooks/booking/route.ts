@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
+import { createHmac } from "crypto";
 
 /**
  * BOOKING WEBHOOK — Cal.com integration for Ghost Fleet and lead management.
  * Receives booking events and triggers downstream automation.
  * GET: returns available link and status.
  * POST: receives Cal.com webhook payloads.
+ *
+ * Security: Verifies Cal.com webhook signing secret when configured.
  */
 export async function GET() {
   const calUrl = process.env.CALCOM_BOOKING_URL || "https://cal.com/your-link";
@@ -22,9 +25,25 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  // Verify Cal.com webhook signature when secret is configured
+  const calSecret = process.env.CALCOM_WEBHOOK_SECRET;
+  let payload: Record<string, unknown>;
+
+  if (calSecret) {
+    const signature = req.headers.get("x-cal-signature-256") || "";
+    const body = await req.text();
+    const expected = createHmac("sha256", calSecret).update(body).digest("hex");
+    if (signature !== expected) {
+      console.error("[Booking Webhook] Invalid Cal.com signature — rejecting");
+      return NextResponse.json({ error: "Invalid signature" }, { status: 403 });
+    }
+    payload = JSON.parse(body);
+  } else {
+    payload = await req.json();
+  }
+
   try {
-    const payload = await req.json();
-    const event = payload.triggerEvent || payload.event || "unknown";
+    const event = (payload as any).triggerEvent || (payload as any).event || "unknown";
 
     // Cal.com sends: BOOKING_CREATED, BOOKING_CANCELLED, BOOKING_RESCHEDULED
     const booking = payload.payload || payload;

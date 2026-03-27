@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { quickAuth } from "@/lib/agent-auth";
 
 /**
  * UNIFIED AGENT ROUTER — Single serverless function for ALL 117 agents.
@@ -9,7 +10,8 @@ import { NextRequest, NextResponse } from "next/server";
  * URL: /api/agents/smart-router → loads src/app/api/_agents/smart-router/route.ts
  * URL: /api/agents/blog-gen → loads src/app/api/_agents/blog-gen/route.ts
  *
- * This is a single serverless function that handles all agent requests.
+ * SECURITY: All requests are authenticated via Clerk before reaching individual handlers.
+ * Internal-only requests (from other agents via X-Sovereign-Internal header) bypass auth.
  */
 
 // Build a registry of all agent handlers at module load time
@@ -63,6 +65,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
   const { slug } = await params;
   const agentName = slug.join("/");
 
+  // Authenticate — skip for internal agent-to-agent calls
+  const isInternal = req.headers.get("X-Sovereign-Internal") === "v1-proxy";
+  if (!isInternal) {
+    const authError = await quickAuth(req, agentName);
+    if (authError) return authError;
+  }
+
   const handler = getAgentHandler(agentName);
   if (!handler?.POST) {
     return NextResponse.json(
@@ -81,7 +90,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
     return response;
   } catch (err) {
     return NextResponse.json(
-      { error: `Agent "${agentName}" failed: ${err instanceof Error ? err.message : "Unknown error"}` },
+      { error: `Agent "${agentName}" execution failed` },
       { status: 500 }
     );
   }
@@ -91,9 +100,15 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
   const { slug } = await params;
   const agentName = slug.join("/");
 
+  // Authenticate GET requests too
+  const isInternal = req.headers.get("X-Sovereign-Internal") === "v1-proxy";
+  if (!isInternal) {
+    const authError = await quickAuth(req, agentName);
+    if (authError) return authError;
+  }
+
   const handler = getAgentHandler(agentName);
   if (!handler?.GET) {
-    // Return agent list for discovery
     return NextResponse.json({
       agents: KNOWN_AGENTS,
       count: KNOWN_AGENTS.length,
@@ -104,8 +119,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
   try {
     return await handler.GET(req);
   } catch (err) {
+    console.error(`[agent-router] ${agentName} GET failed:`, err);
     return NextResponse.json(
-      { error: `Agent "${agentName}" GET failed: ${err instanceof Error ? err.message : "Unknown error"}` },
+      { error: `Agent "${agentName}" GET failed` },
       { status: 500 }
     );
   }
@@ -119,7 +135,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ slug
     return await handler.PUT(req);
   } catch (err) {
     return NextResponse.json(
-      { error: `Agent "${slug.join("/")}" PUT failed: ${err instanceof Error ? err.message : "Unknown error"}` },
+      { error: `Agent "${slug.join("/")}" PUT failed` },
       { status: 500 }
     );
   }
@@ -133,7 +149,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ s
     return await handler.DELETE(req);
   } catch (err) {
     return NextResponse.json(
-      { error: `Agent "${slug.join("/")}" DELETE failed: ${err instanceof Error ? err.message : "Unknown error"}` },
+      { error: `Agent "${slug.join("/")}" DELETE failed` },
       { status: 500 }
     );
   }
