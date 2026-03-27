@@ -21,6 +21,12 @@ export function useGsapReveal<T extends HTMLElement = HTMLDivElement>(
     const el = ref.current;
     if (!el) return;
 
+    // Respect reduced-motion preference
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      gsap.set(el, { opacity: 1, scale: 1, y: 0 });
+      return;
+    }
+
     gsap.fromTo(
       el,
       { opacity: 0, scale, y: 40 },

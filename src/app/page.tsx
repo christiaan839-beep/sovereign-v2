@@ -18,18 +18,21 @@ import dynamic from "next/dynamic";
 import { TextMorph } from "@/components/ui/TextMorph";
 import { AgentTicker } from "@/components/ui/AgentTicker";
 import { useGsapReveal } from "@/lib/hooks/use-gsap-reveal";
+import { METRICS } from "@/lib/constants";
+
+const CommandTerminal = dynamic(() => import("@/components/cinematic/CommandTerminal").then(m => ({ default: m.CommandTerminal })), { ssr: false });
 
 const HeroWebGL = dynamic(() => import("@/components/ui/HeroWebGL").then(m => ({ default: m.HeroWebGL })), { ssr: false });
 const GlobalStrikeMap = dynamic(() => import("@/components/3d/GlobalStrikeMap").then(m => ({ default: m.GlobalStrikeMap })), { ssr: false });
 
 // ─── Capability Card (enhanced with emerald hover glow) ───
-function CapabilityCard({ icon: Icon, title, desc, accent, href }: { icon: React.ComponentType<{ className?: string }>; title: string; desc: string; accent: string; href?: string }) {
+function CapabilityCard({ icon: Icon, title, desc, accent, href, delay = 0 }: { icon: React.ComponentType<{ className?: string }>; title: string; desc: string; accent: string; href?: string; delay?: number }) {
   const content = (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-50px" }}
-      transition={{ duration: 0.5 }}
+      transition={{ duration: 0.6, delay, ease: [0.25, 0.46, 0.45, 0.94] }}
       className="group relative cursor-pointer"
     >
       <div className="relative p-8 rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl hover:border-emerald-500/20 transition-gpu duration-500 overflow-hidden hover:shadow-[0_0_40px_rgba(16,185,129,0.06)] hover:bg-white/[0.04]">
@@ -342,7 +345,7 @@ export default function Home() {
                 <span className="animate-ping absolute h-full w-full rounded-full bg-emerald-400 opacity-50" />
                 <span className="relative rounded-full h-1.5 w-1.5 bg-emerald-400" />
               </span>
-              <span className="text-[11px] text-emerald-400/80 font-medium">132 Agents Live</span>
+              <span className="text-[11px] text-emerald-400/80 font-medium">{METRICS.agentCount} Agents Live</span>
             </motion.div>
 
             {/* Headline — massive cinematic */}
@@ -356,7 +359,7 @@ export default function Home() {
             {/* Subtitle */}
             <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4, duration: 0.7 }}
               className="text-base md:text-xl text-neutral-400 max-w-2xl mx-auto leading-relaxed mb-12">
-              132 autonomous agents that find leads, write content, build pages, make calls, and close deals. Powered by 51+ open-source models with unlimited inference.
+              {METRICS.agentCount} autonomous agents that find leads, write content, build pages, make calls, and close deals. Powered by {METRICS.modelCount} open-source models with unlimited inference.
             </motion.p>
 
             {/* CTAs — glassmorphic */}
@@ -451,12 +454,12 @@ export default function Home() {
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <CapabilityCard icon={Cpu} title="Browser Automation" desc="Point an agent at any website. It opens a real browser, clicks through pages, extracts data, and delivers a structured report." accent="from-emerald-500/[0.04]" href="/showcase" />
-            <CapabilityCard icon={BrainCircuit} title="Document Intelligence" desc="Upload PDFs, contracts, or reports. Ask questions in plain English. Get precise answers backed by your own data." accent="from-emerald-400/[0.04]" href="/dashboard" />
-            <CapabilityCard icon={Target} title="Sales Outreach" desc="Find 50 prospects in 30 seconds. Write personalized cold emails. Send sequences. Qualify responses. Book meetings automatically." accent="from-emerald-500/[0.04]" href="/showcase" />
-            <CapabilityCard icon={Search} title="Competitor Intel" desc="Paste a competitor URL. Get their full tech stack, SEO gaps, content strategy, and specific counter-moves you can execute." accent="from-cyan-500/[0.04]" href="/showcase" />
-            <CapabilityCard icon={Mic} title="Voice Agents" desc="AI cold-calls prospects, qualifies leads, and books meetings directly onto your calendar. Sub-200ms response in 12 languages." accent="from-emerald-600/[0.04]" href="/dashboard" />
-            <CapabilityCard icon={Code2} title="Code & Deploy" desc="Describe a feature in plain English. The agent writes production code, reviews it for bugs, and prepares it for deployment." accent="from-emerald-300/[0.04]" href="/dashboard" />
+            <CapabilityCard icon={Cpu} title="Browser Automation" desc="Point an agent at any website. It opens a real browser, clicks through pages, extracts data, and delivers a structured report." accent="from-emerald-500/[0.04]" href="/showcase" delay={0} />
+            <CapabilityCard icon={BrainCircuit} title="Document Intelligence" desc="Upload PDFs, contracts, or reports. Ask questions in plain English. Get precise answers backed by your own data." accent="from-emerald-400/[0.04]" href="/dashboard" delay={0.08} />
+            <CapabilityCard icon={Target} title="Sales Outreach" desc="Find 50 prospects in 30 seconds. Write personalized cold emails. Send sequences. Qualify responses. Book meetings automatically." accent="from-emerald-500/[0.04]" href="/showcase" delay={0.16} />
+            <CapabilityCard icon={Search} title="Competitor Intel" desc="Paste a competitor URL. Get their full tech stack, SEO gaps, content strategy, and specific counter-moves you can execute." accent="from-cyan-500/[0.04]" href="/showcase" delay={0.24} />
+            <CapabilityCard icon={Mic} title="Voice Agents" desc="AI cold-calls prospects, qualifies leads, and books meetings directly onto your calendar. Sub-200ms response in 12 languages." accent="from-emerald-600/[0.04]" href="/dashboard" delay={0.32} />
+            <CapabilityCard icon={Code2} title="Code & Deploy" desc="Describe a feature in plain English. The agent writes production code, reviews it for bugs, and prepares it for deployment." accent="from-emerald-300/[0.04]" href="/dashboard" delay={0.4} />
           </div>
         </div>
       </section>
@@ -525,6 +528,21 @@ export default function Home() {
               </motion.div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ═══ COMMAND TERMINAL — Watch Agents Execute ═══ */}
+      <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
+      <section className="py-24 px-6 bg-[#030303] relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_50%,rgba(16,185,129,0.02),transparent)]" />
+        <div className="max-w-5xl mx-auto relative z-10">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+            className="text-center mb-12">
+            <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">Watch It Work</p>
+            <h2 className="text-3xl md:text-5xl font-bold text-white tracking-tight">Autonomous execution in real time.</h2>
+            <p className="text-sm text-neutral-500 mt-4 max-w-lg mx-auto">Four agents. Four missions. Zero human intervention. Scroll down and watch.</p>
+          </motion.div>
+          <CommandTerminal />
         </div>
       </section>
 
@@ -678,7 +696,7 @@ export default function Home() {
             Stop paying for tools<br className="hidden md:block" /> that don&apos;t scale.
           </h2>
           <p className="text-neutral-500 max-w-md mx-auto mb-10">
-            One platform. 132 agents. Zero per-token costs. Free to start.
+            One platform. {METRICS.agentCount} agents. Zero per-token costs. Free to start.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link href="/onboarding" className="cta-glow group flex items-center gap-2 px-7 py-3.5 bg-white text-black font-semibold rounded-full text-sm hover:shadow-[0_0_40px_rgba(255,255,255,0.12)] transition-gpu">
@@ -701,7 +719,7 @@ export default function Home() {
                 <SovereignLogo size="sm" />
                 <span className="text-sm font-semibold text-white">Sovereign Matrix</span>
               </div>
-              <p className="text-xs text-neutral-500 leading-relaxed">The autonomous AI agent platform. 132 agents. 51+ models. Zero per-token cost. Built on NVIDIA NIM.</p>
+              <p className="text-xs text-neutral-500 leading-relaxed">The autonomous AI agent platform. {METRICS.agentCount} agents. {METRICS.modelCount} models. Zero per-token cost. Built on NVIDIA NIM.</p>
             </div>
             <div>
               <h4 className="text-xs font-semibold text-neutral-400 mb-4">Product</h4>
