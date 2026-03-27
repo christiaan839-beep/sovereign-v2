@@ -803,7 +803,7 @@ export default function Home() {
               { q: "How long does setup take?", a: "Under 60 seconds. Sign up, complete the 5-step onboarding wizard, and deploy your first agent immediately. No Docker, no terminal commands, no technical setup required for the cloud version." },
               { q: "What integrations are supported?", a: "NVIDIA NIM, Ollama (local models), ElevenLabs (voice), Pinecone (vector memory), Clerk (auth), Neon PostgreSQL (database), Vercel (hosting), PayFast, and Stripe. A public API at /api/v1/ is available for custom integrations." },
               { q: "Is my data safe?", a: "Yes. A 5-layer NeMo Guardrails safety pipeline protects every interaction: jailbreak detection, topic control, content safety, PII scanning, and quality scoring. Plus local execution means data never touches the cloud if you choose." },
-              { q: "What is the white-label Cartel license?", a: "The Cartel license lets agencies rebrand the entire platform as their own. Custom domain, client portals, your logo. Clients think you built the technology. It is an agency-in-a-box franchise model — resell at whatever margin you choose." },
+              { q: "What is the white-label Sovereign Network license?", a: "The Sovereign Network license lets agencies rebrand the entire platform as their own. Custom domain, client portals, your logo. Clients think you built the technology. It is an agency-in-a-box franchise model — resell at whatever margin you choose." },
             ].map((faq, i) => <FAQItem key={i} question={faq.q} answer={faq.a} />)}
           </div>
         </motion.div>

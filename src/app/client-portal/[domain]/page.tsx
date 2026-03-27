@@ -3,7 +3,7 @@ import { ShieldAlert, Target, DollarSign, Activity, CheckCircle2, TrendingUp, Za
 import { SovereignLogo } from "@/components/ui/SovereignLogo";
 import WhiteLabelLogFeed from "./WhiteLabelLogFeed";
 
-// ⚡ BULLETPROOF EDGE RUNTIME: Zero cold starts, microsecond latency.
+// ⚡ BULLETPROOF EDGE RUNTIME: Zero cold starts, sub-200ms latency.
 export const runtime = "edge";
 
 export default function ClientPortal({ params }: { params: { domain: string } }) {
