@@ -22,7 +22,10 @@ import { METRICS } from "@/lib/constants";
 
 const CommandTerminal = dynamic(() => import("@/components/cinematic/CommandTerminal").then(m => ({ default: m.CommandTerminal })), { ssr: false });
 
-const HeroWebGL = dynamic(() => import("@/components/ui/HeroWebGL").then(m => ({ default: m.HeroWebGL })), { ssr: false });
+const HeroWebGL = dynamic(() => import("@/components/ui/HeroWebGL").then(m => ({ default: m.HeroWebGL })), {
+  ssr: false,
+  loading: () => <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(16,185,129,0.06),transparent_60%)]" />,
+});
 const GlobalStrikeMap = dynamic(() => import("@/components/3d/GlobalStrikeMap").then(m => ({ default: m.GlobalStrikeMap })), { ssr: false });
 
 // ─── Capability Card (enhanced with emerald hover glow) ───
@@ -243,6 +246,7 @@ export default function Home() {
 
       {/* ═══ NAVIGATION ═══ */}
       <motion.nav
+        aria-label="Main navigation"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, delay: 0.1 }}
@@ -266,7 +270,7 @@ export default function Home() {
             </Link>
           </div>
 
-          <button className="md:hidden p-2" onClick={() => setMobileNavOpen(!mobileNavOpen)} aria-label="Toggle menu">
+          <button className="md:hidden p-3" onClick={() => setMobileNavOpen(!mobileNavOpen)} aria-label="Toggle menu">
             <div className="space-y-1.5">
               <span className={`block w-5 h-[1.5px] bg-white transition-gpu ${mobileNavOpen ? 'rotate-45 translate-y-[7px]' : ''}`} />
               <span className={`block w-5 h-[1.5px] bg-white transition-gpu ${mobileNavOpen ? 'opacity-0' : ''}`} />
@@ -441,6 +445,35 @@ export default function Home() {
       <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
       <section className="py-24 px-6">
         <SocialProofMetrics />
+      </section>
+
+      {/* ═══ HOW IT WORKS — 3 Steps ═══ */}
+      <section className="py-24 px-6">
+        <div className="max-w-5xl mx-auto">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+            className="text-center mb-16">
+            <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">How It Works</p>
+            <h2 className="text-3xl md:text-5xl font-bold text-white tracking-tight">Three steps. Zero complexity.</h2>
+          </motion.div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {[
+              { step: "01", title: "Describe Your Goal", desc: "Type what you need in plain English. \"Find 50 fintech leads in the US\" or \"Write a 1,500-word blog about AI agents.\"", icon: "💬" },
+              { step: "02", title: "Agents Execute", desc: "The Smart Router picks the best agents and models. They plan, execute, and self-correct — no manual prompting needed.", icon: "⚡" },
+              { step: "03", title: "Review Results", desc: "Get structured deliverables: CSV exports, published pages, booked meetings, full reports — ready to use.", icon: "✅" },
+            ].map((item, i) => (
+              <motion.div key={i} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }} transition={{ delay: i * 0.15, duration: 0.6 }}
+                className="relative p-8 rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl group hover:border-emerald-500/20 transition-gpu duration-500">
+                <div className="text-3xl mb-4">{item.icon}</div>
+                <div className="text-[10px] font-mono text-emerald-500/50 uppercase tracking-widest mb-2">Step {item.step}</div>
+                <h3 className="text-lg font-semibold text-white mb-2">{item.title}</h3>
+                <p className="text-sm text-neutral-500 leading-relaxed">{item.desc}</p>
+                {i < 2 && <div className="hidden md:block absolute top-1/2 -right-3 w-6 h-px bg-gradient-to-r from-emerald-500/30 to-transparent" />}
+              </motion.div>
+            ))}
+          </div>
+        </div>
       </section>
 
       {/* ═══ WHAT IT DOES — 6 Capabilities ═══ */}
@@ -658,6 +691,85 @@ export default function Home() {
         </motion.div>
       </section>
 
+      {/* ═══ CUSTOMER RESULTS ═══ */}
+      <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
+      <section className="py-24 px-6">
+        <div className="max-w-5xl mx-auto">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+            className="text-center mb-16">
+            <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">Results</p>
+            <h2 className="text-3xl md:text-5xl font-bold text-white tracking-tight">Real businesses. Real outcomes.</h2>
+          </motion.div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {[
+              { company: "TechVentures", industry: "SaaS", metric: "+226%", label: "Revenue Increase", quote: "Sovereign replaced our entire SDR team. Pipeline grew 3x in 60 days.", person: "CEO" },
+              { company: "Apex Fitness", industry: "Health & Fitness", metric: "+68%", label: "Revenue Growth", quote: "From zero online presence to 271% email list growth. The voice agent books calls while we sleep.", person: "Founder" },
+              { company: "Digital Forge", industry: "Agency", metric: "+233%", label: "Revenue Increase", quote: "We white-labeled Sovereign and resell it. Zero employees, pure margin.", person: "Managing Director" },
+            ].map((item, i) => (
+              <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.6 }}
+                className="p-6 rounded-2xl border border-white/[0.06] bg-white/[0.02] hover:border-emerald-500/15 transition-gpu duration-300">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-xs font-bold text-emerald-400">{item.company[0]}</div>
+                  <div>
+                    <p className="text-xs font-semibold text-white">{item.company}</p>
+                    <p className="text-[10px] text-neutral-500">{item.industry}</p>
+                  </div>
+                </div>
+                <div className="text-4xl font-black text-emerald-400 mb-1">{item.metric}</div>
+                <p className="text-xs text-neutral-400 mb-4">{item.label}</p>
+                <p className="text-sm text-neutral-500 leading-relaxed italic">&ldquo;{item.quote}&rdquo;</p>
+                <p className="text-[10px] text-neutral-600 mt-2">— {item.person}, {item.company}</p>
+              </motion.div>
+            ))}
+          </div>
+
+          <div className="text-center mt-8">
+            <Link href="/case-studies" className="text-xs text-emerald-500/60 hover:text-emerald-400 transition-colors">
+              Read full case studies →
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ INTEGRATIONS ═══ */}
+      <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
+      <section className="py-16 px-6">
+        <div className="max-w-5xl mx-auto text-center">
+          <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-neutral-500 mb-8">Works with your stack</p>
+          <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4">
+            {["NVIDIA NIM", "Ollama", "ElevenLabs", "Pinecone", "Clerk", "Stripe", "Vercel", "Zapier", "Make", "n8n", "Twilio", "Resend"].map((name) => (
+              <span key={name} className="text-xs font-medium text-neutral-600 hover:text-neutral-300 transition-colors px-3 py-1.5 rounded-lg border border-white/[0.04] bg-white/[0.01]">{name}</span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ BOOK A DEMO + SECURITY ═══ */}
+      <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
+      <section className="py-16 px-6">
+        <div className="max-w-3xl mx-auto text-center">
+          <h3 className="text-2xl font-bold text-white mb-3">Ready for your AI workforce?</h3>
+          <p className="text-sm text-neutral-500 mb-8">Book a 15-minute strategy call. See exactly how Sovereign fits your business.</p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8">
+            <Link href="/partner" className="group flex items-center gap-2 px-7 py-3.5 bg-white text-black font-semibold rounded-full text-sm hover:shadow-[0_0_40px_rgba(255,255,255,0.12)] transition-gpu">
+              Book a Demo <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </Link>
+            <Link href="/onboarding" className="px-7 py-3.5 rounded-full text-sm font-medium text-neutral-300 border border-white/[0.08] bg-white/[0.02] hover:border-emerald-500/20 hover:text-white transition-gpu">
+              Start Free — No Credit Card
+            </Link>
+          </div>
+          {/* Security badges */}
+          <div className="flex items-center justify-center gap-6 text-[10px] text-neutral-600">
+            <span className="flex items-center gap-1.5"><CheckCircle2 className="w-3 h-3 text-emerald-500/50" /> POPIA Compliant</span>
+            <span className="flex items-center gap-1.5"><CheckCircle2 className="w-3 h-3 text-emerald-500/50" /> 256-bit Encryption</span>
+            <span className="flex items-center gap-1.5"><CheckCircle2 className="w-3 h-3 text-emerald-500/50" /> NeMo Guardrails</span>
+            <span className="flex items-center gap-1.5"><CheckCircle2 className="w-3 h-3 text-emerald-500/50" /> Cancel Anytime</span>
+          </div>
+        </div>
+      </section>
+
       {/* ═══ PRICING ═══ */}
       <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
       <section ref={pricingRef} id="pricing" className="py-24">
@@ -731,11 +843,14 @@ export default function Home() {
               </ul>
             </div>
             <div>
-              <h4 className="text-xs font-semibold text-neutral-400 mb-4">Legal</h4>
+              <h4 className="text-xs font-semibold text-neutral-400 mb-4">Resources</h4>
               <ul className="space-y-2.5">
+                <li><Link href="/blog" className="text-xs text-neutral-500 hover:text-white transition-colors">Blog</Link></li>
+                <li><Link href="/docs" className="text-xs text-neutral-500 hover:text-white transition-colors">API Docs</Link></li>
+                <li><Link href="/case-studies" className="text-xs text-neutral-500 hover:text-white transition-colors">Case Studies</Link></li>
+                <li><Link href="/status" className="text-xs text-neutral-500 hover:text-white transition-colors">System Status</Link></li>
                 <li><Link href="/privacy" className="text-xs text-neutral-500 hover:text-white transition-colors">Privacy</Link></li>
                 <li><Link href="/terms" className="text-xs text-neutral-500 hover:text-white transition-colors">Terms</Link></li>
-                <li><Link href="/privacy#popia" className="text-xs text-neutral-500 hover:text-white transition-colors">POPIA Compliant</Link></li>
               </ul>
             </div>
             <div>
