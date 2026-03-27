@@ -499,7 +499,7 @@ export default function Home() {
             className="text-center mb-16">
             <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">Architecture</p>
             <h2 className="text-3xl md:text-5xl font-bold text-white tracking-tight mb-4">Built on models you control.</h2>
-            <p className="text-neutral-500 max-w-xl mx-auto">Smart routing across 51+ open-source models. Automatic failover. Zero vendor lock-in.</p>
+            <p className="text-neutral-500 max-w-xl mx-auto">Smart routing across {METRICS.modelCount} open-source models. Automatic failover. Zero vendor lock-in.</p>
           </motion.div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 circuit-grid p-4 rounded-2xl">
@@ -577,7 +577,7 @@ export default function Home() {
               </h3>
               <p className="text-emerald-500/50 text-xs mb-6">What your business actually needs</p>
               <ul className="space-y-3">
-                {["Type one goal. 132 agents plan, execute, and deliver the result.", "Remembers your brand voice, past strategies, and client preferences.", "Opens browsers, sends emails, makes calls, writes code, builds pages.", "Catches its own mistakes, retries failed steps, and self-corrects."].map((item, i) => (
+                {[`Type one goal. ${METRICS.agentCount} agents plan, execute, and deliver the result.`, "Remembers your brand voice, past strategies, and client preferences.", "Opens browsers, sends emails, makes calls, writes code, builds pages.", "Catches its own mistakes, retries failed steps, and self-corrects."].map((item, i) => (
                   <li key={i} className="flex items-start gap-2.5 text-neutral-300 text-sm">
                     <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5 text-emerald-400" /> {item}
                   </li>
@@ -615,8 +615,8 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
             {[
-              { metric: "132", label: "Specialized Agents", desc: "Purpose-built for specific business functions." },
-              { metric: "51+", label: "Open-Source Models", desc: "Automatic failover. Zero vendor lock-in." },
+              { metric: String(METRICS.agentCount), label: "Specialized Agents", desc: "Purpose-built for specific business functions." },
+              { metric: METRICS.modelCount, label: "Open-Source Models", desc: "Automatic failover. Zero vendor lock-in." },
               { metric: "$0", label: "Per-Token Cost", desc: "Scale inference without scaling your bill." },
             ].map((item, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
@@ -672,8 +672,8 @@ export default function Home() {
           <h2 className="text-2xl md:text-3xl font-bold text-white mb-12 text-center tracking-tight">Common Questions</h2>
           <div className="rounded-2xl border border-white/[0.06] bg-[#080808] p-1">
             {[
-              { q: "What is Sovereign Matrix?", a: "An autonomous AI agent platform. 132 specialized agents handle sales, marketing, content, and operations end-to-end. A smart router picks the best model from 51+ open-source LLMs per task. You set goals — agents deliver results." },
-              { q: "Is this just another ChatGPT wrapper?", a: "No. ChatGPT is a chatbot. Sovereign Matrix is 132 autonomous agents that execute: finding leads, building pages, writing outreach sequences, qualifying prospects, making calls. They open real browsers, hit real APIs, plan multi-step workflows, and self-correct without manual prompting." },
+              { q: "What is Sovereign Matrix?", a: `An autonomous AI agent platform. ${METRICS.agentCount} specialized agents handle sales, marketing, content, and operations end-to-end. A smart router picks the best model from ${METRICS.modelCount} open-source LLMs per task. You set goals — agents deliver results.` },
+              { q: "Is this just another ChatGPT wrapper?", a: `No. ChatGPT is a chatbot. Sovereign Matrix is ${METRICS.agentCount} autonomous agents that execute: finding leads, building pages, writing outreach sequences, qualifying prospects, making calls. They open real browsers, hit real APIs, plan multi-step workflows, and self-correct without manual prompting.` },
               { q: "Can agents run locally without cloud?", a: "Yes. NemoClaw runs on your machine via Ollama. Full offline execution — your data never leaves your hardware. Built for sensitive client work and air-gapped environments." },
               { q: "Is there a contract or lock-in?", a: "No contracts. Month-to-month. Cancel from your dashboard. Data is always exportable. NVIDIA NIM inference is free — you only pay for premium features." },
               { q: "How long does setup take?", a: "Under 60 seconds. Sign up, complete the 5-step onboarding wizard, and deploy your first agent immediately. No Docker, no terminal commands, no technical setup required for the cloud version." },

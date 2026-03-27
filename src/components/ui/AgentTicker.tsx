@@ -48,7 +48,7 @@ export function AgentTicker() {
       <div className="flex animate-[ticker_60s_linear_infinite]">
         {/* Double the items for seamless loop */}
         {[...ACTIVITIES, ...ACTIVITIES].map((item, i) => (
-          <TickerItem key={i} {...item} />
+          <TickerItem key={`${item.agent}-${i}`} {...item} />
         ))}
       </div>
     </div>

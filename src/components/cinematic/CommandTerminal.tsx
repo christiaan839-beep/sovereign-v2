@@ -64,13 +64,21 @@ function useTypewriter(text: string, speed: number = 18, active: boolean = false
 function TerminalLineComponent({ line, active, onDone }: { line: TerminalLine; active: boolean; onDone: () => void }) {
   const isCommand = line.type === "command";
   const { displayed, done } = useTypewriter(line.text, isCommand ? 14 : 8, active);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Handle non-command lines (output/info/separator) — auto-advance after calculated duration
   useEffect(() => {
+    if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
     if (!active) return;
-    if (line.type === "separator") { const t = setTimeout(onDone, 100); return () => clearTimeout(t); }
-    if (!isCommand && active) { const t = setTimeout(onDone, line.text.length * 8 + 100); return () => clearTimeout(t); }
+    if (line.type === "separator") {
+      timerRef.current = setTimeout(onDone, 100);
+    } else if (!isCommand) {
+      timerRef.current = setTimeout(onDone, line.text.length * 8 + 100);
+    }
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [active, isCommand, line, onDone]);
 
+  // Handle command lines — advance when typewriter finishes
   useEffect(() => {
     if (done && isCommand) onDone();
   }, [done, isCommand, onDone]);
@@ -97,13 +105,20 @@ function TerminalLineComponent({ line, active, onDone }: { line: TerminalLine; a
 export function CommandTerminal() {
   const ref = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
   const [currentLine, setCurrentLine] = useState(-1);
   const [visibleLines, setVisibleLines] = useState<number[]>([]);
 
+  // Cleanup all pending timers on unmount
+  useEffect(() => {
+    return () => { if (advanceTimer.current) clearTimeout(advanceTimer.current); };
+  }, []);
+
+  // Trigger first line when scrolled into view
   useEffect(() => {
     if (isInView && currentLine === -1) {
-      setTimeout(() => setCurrentLine(0), 600);
+      advanceTimer.current = setTimeout(() => setCurrentLine(0), 600);
     }
   }, [isInView, currentLine]);
 
@@ -113,9 +128,10 @@ export function CommandTerminal() {
       setVisibleLines((v) => [...v, prev]);
       if (next < SEQUENCE.length) {
         const delay = SEQUENCE[next].delay || 200;
-        setTimeout(() => setCurrentLine(next), delay);
+        if (advanceTimer.current) clearTimeout(advanceTimer.current);
+        advanceTimer.current = setTimeout(() => setCurrentLine(next), delay);
       }
-      return prev; // keep current until timeout advances it
+      return prev;
     });
   }, []);
 
