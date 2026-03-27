@@ -16,8 +16,11 @@ import { LandingAgent } from "@/components/ui/LandingAgent";
 import { AgentOffice } from "@/components/ui/AgentOffice";
 import dynamic from "next/dynamic";
 import { TextMorph } from "@/components/ui/TextMorph";
+import { AgentTicker } from "@/components/ui/AgentTicker";
+import { useGsapReveal } from "@/lib/hooks/use-gsap-reveal";
 
-const HeroParticles = dynamic(() => import("@/components/ui/HeroParticles").then(m => ({ default: m.HeroParticles })), { ssr: false });
+const HeroWebGL = dynamic(() => import("@/components/ui/HeroWebGL").then(m => ({ default: m.HeroWebGL })), { ssr: false });
+const GlobalStrikeMap = dynamic(() => import("@/components/3d/GlobalStrikeMap").then(m => ({ default: m.GlobalStrikeMap })), { ssr: false });
 
 // ─── Capability Card (enhanced with emerald hover glow) ───
 function CapabilityCard({ icon: Icon, title, desc, accent, href }: { icon: React.ComponentType<{ className?: string }>; title: string; desc: string; accent: string; href?: string }) {
@@ -223,6 +226,10 @@ export default function Home() {
   const heroOpacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
   const heroScale = useTransform(scrollYProgress, [0, 0.5], [1, 0.95]);
 
+  // GSAP cinematic reveals for high-impact sections
+  const pricingRef = useGsapReveal<HTMLElement>({ scale: 0.93, duration: 1.0 });
+  const ctaRef = useGsapReveal<HTMLElement>({ scale: 0.9, duration: 1.1, delay: 0.1 });
+
   return (
     <div className="relative min-h-screen bg-[#010101] text-white selection:bg-emerald-500/20 font-sans antialiased">
 
@@ -283,7 +290,7 @@ export default function Home() {
         className="relative h-screen overflow-hidden">
 
         {/* 3D Particle Matrix — Three.js WebGL background */}
-        <HeroParticles />
+        <HeroWebGL />
 
         {/* Background layer — holographic cube */}
         <div className="absolute inset-0 flex flex-col items-center justify-center overflow-hidden">
@@ -423,6 +430,9 @@ export default function Home() {
         <span className="text-[10px] text-neutral-500">&bull;</span>
         <span className="text-[10px] text-neutral-500">DeepSeek V3.2</span>
       </div>
+
+      {/* ═══ LIVE AGENT ACTIVITY TICKER ═══ */}
+      <AgentTicker />
 
       {/* ═══ SOCIAL PROOF METRICS ═══ */}
       <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
@@ -600,6 +610,12 @@ export default function Home() {
             ))}
           </div>
 
+          {/* 3D Globe — Global Agent Operations */}
+          <div className="relative mx-auto mb-16 h-[300px] md:h-[400px] w-full max-w-lg">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(16,185,129,0.08),transparent_70%)] pointer-events-none" />
+            <GlobalStrikeMap />
+          </div>
+
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
               { label: "Air-Gapped Execution", desc: "Run entirely on your own hardware via NemoClaw" },
@@ -626,7 +642,7 @@ export default function Home() {
 
       {/* ═══ PRICING ═══ */}
       <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
-      <section id="pricing" className="py-24">
+      <section ref={pricingRef} id="pricing" className="py-24">
         <Pricing />
       </section>
 
@@ -653,7 +669,7 @@ export default function Home() {
 
       {/* ═══ FINAL CTA ═══ */}
       <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
-      <section className="py-32 text-center px-6 relative overflow-hidden">
+      <section ref={ctaRef} className="py-32 text-center px-6 relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(16,185,129,0.04),transparent_70%)]" />
         {/* Circuit-style grid accent */}
         <div className="absolute inset-0 bg-[linear-gradient(rgba(0,183,255,0.008)_1px,transparent_1px),linear-gradient(90deg,rgba(0,183,255,0.008)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none" />

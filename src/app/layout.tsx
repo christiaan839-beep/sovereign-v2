@@ -8,6 +8,7 @@ import { SafeClerkProvider } from "@/components/ui/SafeClerkProvider";
 import { CustomCursor } from "@/components/cinematic/CustomCursor";
 import { ScrollProgress } from "@/components/cinematic/ScrollProgress";
 import { BackToTop } from "@/components/cinematic/BackToTop";
+import { SmoothScroll } from "@/components/providers/SmoothScroll";
 import "./globals.css";
 
 // Run environment validation on server startup
@@ -85,10 +86,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <SafeClerkProvider>
         <body className="relative bg-midnight text-white antialiased">
-          <CustomCursor />
-          <ScrollProgress />
-          {children}
-          <BackToTop />
+          <SmoothScroll>
+            <CustomCursor />
+            <ScrollProgress />
+            {children}
+            <BackToTop />
+          </SmoothScroll>
           {process.env.NODE_ENV === "production" && <Analytics />}
           {process.env.NODE_ENV === "production" && <SpeedInsights />}
           <Script
