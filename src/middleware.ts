@@ -4,28 +4,79 @@ import { apiLogger } from '@/lib/api-logger';
 
 /**
  * SOVEREIGN MATRIX — UNIFIED EDGE MIDDLEWARE
- * 
- * Handles TWO concerns at the Vercel Edge:
- * 1. A/B Testing for /landing/* routes
+ *
+ * Handles THREE concerns at the Vercel Edge:
+ * 1. Dashboard auth protection (Clerk session check)
  * 2. API Gateway for /api/agents/* routes — rate limiting, metering, CORS
+ * 3. A/B Testing for /landing/* routes
+ *
+ * Rate limiting: Uses Upstash Redis when configured, falls back to in-memory.
+ * In-memory resets on cold starts (Vercel serverless), so Redis is required for production.
  */
 
 export const config = {
   matcher: ['/landing/:path*', '/api/agents/:path*', '/dashboard/:path*', '/dashboard'],
 };
 
-// In-memory rate limit tracking (per-edge-instance)
-const rateLimits = new Map<string, { count: number; resetAt: number }>();
+// In-memory rate limit fallback (per-edge-instance — resets on cold start)
+const memoryLimits = new Map<string, { count: number; resetAt: number }>();
 
-export function middleware(request: NextRequest) {
+/**
+ * Check rate limit via Upstash Redis REST API (works in Edge Runtime).
+ * Returns null if Redis is not configured (falls back to in-memory).
+ */
+async function checkRedisRateLimit(clientId: string): Promise<{ allowed: boolean; count: number } | null> {
+  const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
+  const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!redisUrl || !redisToken) return null;
+
+  try {
+    const window = Math.floor(Date.now() / 60000); // 1-minute windows
+    const key = `rl:mw:${clientId}:${window}`;
+
+    const res = await fetch(`${redisUrl}/pipeline`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${redisToken}`, "Content-Type": "application/json" },
+      body: JSON.stringify([["INCR", key], ["EXPIRE", key, 120]]),
+    });
+
+    if (!res.ok) return null;
+    const data = await res.json();
+    const count = data?.[0]?.result ?? 1;
+    return { allowed: count <= 100, count };
+  } catch {
+    return null; // Redis down — fall back to in-memory
+  }
+}
+
+function checkMemoryRateLimit(clientId: string): { allowed: boolean; count: number } {
+  const now = Date.now();
+  const entry = memoryLimits.get(clientId);
+
+  if (entry && now < entry.resetAt) {
+    entry.count += 1;
+    return { allowed: entry.count <= 100, count: entry.count };
+  }
+
+  memoryLimits.set(clientId, { count: 1, resetAt: now + 60000 });
+
+  // Cleanup stale entries to bound memory
+  if (memoryLimits.size > 200) {
+    for (const [key, val] of memoryLimits) {
+      if (now >= val.resetAt) memoryLimits.delete(key);
+    }
+  }
+
+  return { allowed: true, count: 1 };
+}
+
+export async function middleware(request: NextRequest) {
   const url = request.nextUrl;
 
   // ── DASHBOARD AUTH PROTECTION ──
-  // Clerk sets __session cookie when user is authenticated
   if (url.pathname.startsWith('/dashboard')) {
     const sessionToken = request.cookies.get('__session')?.value || request.cookies.get('__clerk_db_jwt')?.value;
     if (!sessionToken) {
-      // Redirect unauthenticated users to sign-in
       const signInUrl = new URL('/', request.url);
       signInUrl.searchParams.set('redirect_url', url.pathname);
       return NextResponse.redirect(signInUrl);
@@ -34,63 +85,45 @@ export function middleware(request: NextRequest) {
 
   // ── API GATEWAY for /api/agents/* ──
   if (url.pathname.startsWith('/api/agents')) {
-    // Extract client identifier (API key, IP, or session)
     const apiKey = request.headers.get('x-api-key') || '';
     const clientIp = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'anonymous';
     const clientId = apiKey || clientIp;
 
-    // Log the incoming request
     apiLogger.log({
       route: url.pathname,
       method: request.method,
-      status: 202, // Accepted/processing (middleware)
+      status: 202,
       durationMs: 0,
       clientIp
     });
 
     // Rate limiting: 100 requests per minute per client
-    const now = Date.now();
-    const limit = rateLimits.get(clientId);
+    // Try Redis first (persists across deploys), fall back to in-memory
+    const redisResult = await checkRedisRateLimit(clientId);
+    const rateResult = redisResult ?? checkMemoryRateLimit(clientId);
 
-    if (limit) {
-      // Skip expired entries — treat as fresh window
-      if (now >= limit.resetAt) {
-        rateLimits.set(clientId, { count: 1, resetAt: now + 60000 });
-      } else {
-        limit.count += 1;
-        if (limit.count > 100) {
-          apiLogger.log({
-            route: url.pathname,
-            method: request.method,
-            status: 429,
-            durationMs: 0,
-            clientIp,
-            error: "Rate limit exceeded"
-          });
-          return NextResponse.json(
-            { error: 'Rate limit exceeded. Max 100 requests per minute.', retry_after_seconds: Math.ceil((limit.resetAt - now) / 1000) },
-            { status: 429 }
-          );
-        }
-      }
-    } else {
-      rateLimits.set(clientId, { count: 1, resetAt: now + 60000 });
-    }
-
-    // Cleanup stale entries at a low threshold to bound memory
-    if (rateLimits.size > 100) {
-      for (const [key, val] of rateLimits) {
-        if (now >= val.resetAt) rateLimits.delete(key);
-      }
+    if (!rateResult.allowed) {
+      apiLogger.log({
+        route: url.pathname,
+        method: request.method,
+        status: 429,
+        durationMs: 0,
+        clientIp,
+        error: "Rate limit exceeded"
+      });
+      return NextResponse.json(
+        { error: 'Rate limit exceeded. Max 100 requests per minute.', retry_after_seconds: 60 },
+        { status: 429 }
+      );
     }
 
     // Add metering headers
     const response = NextResponse.next();
     response.headers.set('X-Sovereign-Agent', url.pathname.replace('/api/agents/', ''));
     response.headers.set('X-Sovereign-Timestamp', new Date().toISOString());
-    response.headers.set('X-RateLimit-Remaining', String(Math.max(0, 100 - (rateLimits.get(clientId)?.count || 0))));
-    
-    // CORS headers for external integrations (Zapier, Make, n8n)
+    response.headers.set('X-RateLimit-Remaining', String(Math.max(0, 100 - rateResult.count)));
+
+    // CORS headers for external integrations
     const origin = request.headers.get('origin') || '';
     const allowedOrigins = [
       'https://sovereignmatrix.agency',
@@ -109,7 +142,7 @@ export function middleware(request: NextRequest) {
 
   // ── A/B TESTING for /landing/* ──
   let cohort = request.cookies.get('sovereign_cohort')?.value;
-  
+
   if (!cohort) {
     cohort = Math.random() > 0.5 ? 'variant_alpha' : 'variant_beta';
   }

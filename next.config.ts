@@ -4,8 +4,7 @@ const nextConfig: NextConfig = {
   // NOTE: "standalone" removed — incompatible with Vercel serverless deployment.
   // Only needed for Docker/self-hosted. Vercel auto-splits into lambdas.
 
-  // Allow build to proceed despite strict TS on dynamic icon components
-  typescript: { ignoreBuildErrors: true },
+  // TypeScript errors enforced — no silent failures in production
 
   // Keep Node.js-only packages out of client/edge bundles
   serverExternalPackages: [

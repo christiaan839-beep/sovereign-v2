@@ -185,7 +185,7 @@ export function createAgentRoute(config: AgentConfig) {
         userId,
       });
 
-      // ─── Safety Post-flight: PII Scan on Output ───
+      // ─── Safety Post-flight: PII Scan on Output (Fail-Closed) ───
       let piiWarning: string | undefined;
       if (!config.skipPiiScan) {
         const outputText = getFirstStringValue(result);
@@ -193,7 +193,21 @@ export function createAgentRoute(config: AgentConfig) {
           const piiEntities = scanForPiiPatterns(outputText);
           if (piiEntities.length > 0) {
             piiWarning = `Output contains ${piiEntities.length} potential PII item(s): ${piiEntities.map(e => e.type).join(", ")}`;
-            log.warn("PII detected in output", { agent: config.name, count: piiEntities.length });
+            log.warn("PII detected in output — redacting", { agent: config.name, count: piiEntities.length, types: piiEntities.map(e => e.type) });
+
+            // Redact PII from output before sending to client
+            let redactedOutput = outputText;
+            for (const entity of piiEntities) {
+              if (entity.match) {
+                redactedOutput = redactedOutput.replaceAll(entity.match, `[REDACTED_${entity.type}]`);
+              }
+            }
+
+            // Replace the PII-containing value in the result
+            const outputKey = Object.keys(result).find(k => typeof result[k] === "string" && (result[k] as string) === outputText);
+            if (outputKey) {
+              (result as Record<string, unknown>)[outputKey] = redactedOutput;
+            }
           }
         }
       }

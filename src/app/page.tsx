@@ -4,7 +4,8 @@ import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion"
 import { BrainCircuit, CheckCircle2, Cpu, Target, ChevronDown, XCircle, ArrowRight, Mic, Code2, Search, FileText } from "lucide-react";
 import Link from "next/link";
 import { SignInButton } from "@clerk/nextjs";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { useIsMobile } from "@/lib/hooks/use-is-mobile";
 
 import { SovereignLogo } from "@/components/ui/SovereignLogo";
 import { Pricing } from "@/components/ui/Pricing";
@@ -20,13 +21,19 @@ import { AgentTicker } from "@/components/ui/AgentTicker";
 import { useGsapReveal } from "@/lib/hooks/use-gsap-reveal";
 import { METRICS } from "@/lib/constants";
 
-const CommandTerminal = dynamic(() => import("@/components/cinematic/CommandTerminal").then(m => ({ default: m.CommandTerminal })), { ssr: false });
+const CommandTerminal = dynamic(() => import("@/components/cinematic/CommandTerminal").then(m => ({ default: m.CommandTerminal })), {
+  ssr: false,
+  loading: () => <div className="max-w-3xl mx-auto h-[380px] rounded-2xl border border-white/[0.08] bg-[#0A0A0A] animate-pulse" />,
+});
 
 const HeroWebGL = dynamic(() => import("@/components/ui/HeroWebGL").then(m => ({ default: m.HeroWebGL })), {
   ssr: false,
   loading: () => <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(16,185,129,0.06),transparent_60%)]" />,
 });
-const GlobalStrikeMap = dynamic(() => import("@/components/3d/GlobalStrikeMap").then(m => ({ default: m.GlobalStrikeMap })), { ssr: false });
+const GlobalStrikeMap = dynamic(() => import("@/components/3d/GlobalStrikeMap").then(m => ({ default: m.GlobalStrikeMap })), {
+  ssr: false,
+  loading: () => <div className="w-full h-full rounded-full bg-[radial-gradient(circle,rgba(16,185,129,0.06),transparent_60%)] animate-pulse" />,
+});
 
 // ─── Capability Card (enhanced with emerald hover glow) ───
 function CapabilityCard({ icon: Icon, title, desc, accent, href, delay = 0 }: { icon: React.ComponentType<{ className?: string }>; title: string; desc: string; accent: string; href?: string; delay?: number }) {
@@ -227,6 +234,7 @@ function InteractiveDemo() {
 
 export default function Home() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const isMobile = useIsMobile();
   const heroRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
   const heroOpacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
@@ -297,7 +305,10 @@ export default function Home() {
         className="relative h-screen overflow-hidden">
 
         {/* 3D Particle Matrix — Three.js WebGL background */}
-        <HeroWebGL />
+        {/* 3D hero — disabled on mobile to prevent WebGL crashes */}
+        {!isMobile ? <HeroWebGL /> : (
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(16,185,129,0.08),transparent_60%)]" />
+        )}
 
         {/* Background layer — holographic cube */}
         <div className="absolute inset-0 flex flex-col items-center justify-center overflow-hidden">
@@ -664,7 +675,8 @@ export default function Home() {
           {/* 3D Globe — Global Agent Operations */}
           <div className="relative mx-auto mb-16 h-[300px] md:h-[400px] w-full max-w-lg">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(16,185,129,0.08),transparent_70%)] pointer-events-none" />
-            <GlobalStrikeMap />
+            {/* 3D globe — skip on mobile to avoid dual WebGL context crash */}
+            {!isMobile && <GlobalStrikeMap />}
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

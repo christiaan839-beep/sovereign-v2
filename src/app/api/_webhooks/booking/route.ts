@@ -27,7 +27,8 @@ export async function GET() {
 export async function POST(req: Request) {
   // Verify Cal.com webhook signature when secret is configured
   const calSecret = process.env.CALCOM_WEBHOOK_SECRET;
-  let payload: Record<string, unknown>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let payload: any;
 
   if (calSecret) {
     const signature = req.headers.get("x-cal-signature-256") || "";
@@ -43,7 +44,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const event = (payload as any).triggerEvent || (payload as any).event || "unknown";
+    const event = payload.triggerEvent || payload.event || "unknown";
 
     // Cal.com sends: BOOKING_CREATED, BOOKING_CANCELLED, BOOKING_RESCHEDULED
     const booking = payload.payload || payload;
