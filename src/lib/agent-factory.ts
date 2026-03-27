@@ -27,6 +27,7 @@ import { guardRoute, sanitizeString, errorResponse } from "@/lib/api-guard";
 import { detectJailbreak } from "@/lib/jailbreak-detect";
 import { checkContentSafety } from "@/lib/content-safety";
 import { scoreOutput, type QualityScore } from "@/lib/quality-scorer";
+import { recordExecution, getLearnedDirectives, getAdaptiveThreshold, persistLearning } from "@/lib/adaptive-engine";
 import { createLogger } from "@/lib/logger";
 import { getAntiSlopRules } from "@/lib/system-prompts";
 
@@ -185,7 +186,7 @@ export function createAgentRoute(config: AgentConfig) {
         userId,
       });
 
-      // ─── Safety Post-flight: PII Scan on Output ───
+      // ─── Safety Post-flight: PII Scan on Output (Fail-Closed) ───
       let piiWarning: string | undefined;
       if (!config.skipPiiScan) {
         const outputText = getFirstStringValue(result);
@@ -193,7 +194,21 @@ export function createAgentRoute(config: AgentConfig) {
           const piiEntities = scanForPiiPatterns(outputText);
           if (piiEntities.length > 0) {
             piiWarning = `Output contains ${piiEntities.length} potential PII item(s): ${piiEntities.map(e => e.type).join(", ")}`;
-            log.warn("PII detected in output", { agent: config.name, count: piiEntities.length });
+            log.warn("PII detected in output — redacting", { agent: config.name, count: piiEntities.length, types: piiEntities.map(e => e.type) });
+
+            // Redact PII from output before sending to client
+            let redactedOutput = outputText;
+            for (const entity of piiEntities) {
+              if (entity.match) {
+                redactedOutput = redactedOutput.replaceAll(entity.match, `[REDACTED_${entity.type}]`);
+              }
+            }
+
+            // Replace the PII-containing value in the result
+            const outputKey = Object.keys(result).find(k => typeof result[k] === "string" && (result[k] as string) === outputText);
+            if (outputKey) {
+              (result as Record<string, unknown>)[outputKey] = redactedOutput;
+            }
           }
         }
       }
@@ -207,7 +222,8 @@ export function createAgentRoute(config: AgentConfig) {
         const promptText = getFirstStringValue(sanitized);
 
         if (outputText && promptText && outputText.length >= 20) {
-          const threshold = config.qualityThreshold ?? 0.6;
+          // Adaptive threshold: learns from historical agent performance
+          const threshold = config.qualityThreshold ?? getAdaptiveThreshold(config.name);
 
           try {
             qualityScore = await scoreOutput(promptText, outputText, threshold);
@@ -270,12 +286,44 @@ export function createAgentRoute(config: AgentConfig) {
         }
       }
 
+      // ─── Record Execution for Adaptive Learning ───
+      const durationMs = Date.now() - startTime;
+      try {
+        recordExecution({
+          agentName: config.name,
+          taskType: config.name.split("-")[0] || "general",
+          model: (finalResult as Record<string, unknown>).model as string || "auto",
+          qualityScore: qualityScore?.overall ?? 0.7,
+          dimensions: {
+            helpfulness: qualityScore?.helpfulness ?? 0.7,
+            coherence: qualityScore?.coherence ?? 0.7,
+            correctness: qualityScore?.correctness ?? 0.7,
+            verbosity: qualityScore?.verbosity ?? 0.5,
+          },
+          inputPreview: (getFirstStringValue(sanitized) || "").slice(0, 200),
+          outputPreview: (getFirstStringValue(finalResult) || "").slice(0, 200),
+          durationMs,
+          success: true,
+          timestamp: new Date().toISOString(),
+        });
+
+        // Persist learnings to Pinecone every 100 executions
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const g = globalThis as any;
+        const persistCounter = g.__sovereignExecCount = (g.__sovereignExecCount || 0) + 1;
+        if (persistCounter % 100 === 0) {
+          persistLearning().catch(() => {}); // Fire and forget
+        }
+      } catch {
+        // Non-blocking: don't fail the response if recording fails
+      }
+
       // ─── Return Response ───
       return NextResponse.json({
         ...finalResult,
         _meta: {
           agent: config.name,
-          durationMs: Date.now() - startTime,
+          durationMs,
           timestamp: new Date().toISOString(),
           ...(piiWarning ? { piiWarning } : {}),
           ...(qualityScore ? { qualityScore: qualityScore.overall, qualityPassed: qualityScore.passed } : {}),

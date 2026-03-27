@@ -11,7 +11,7 @@ import { auth } from "@clerk/nextjs/server";
  * - Free/Demo: 5 calls per day (for /demo page)
  * - Node (R9,997): 500 calls per day
  * - Array (R24,997): 2,000 calls per day
- * - Cartel (R49,997): Unlimited
+ * - Sovereign Network (R49,997): Unlimited
  */
 
 export interface AuthResult {
@@ -114,8 +114,8 @@ export async function authorizeAgent(
       remaining: limit - (USAGE_TRACKER.get(key)?.count || 0),
     };
   } catch {
-    // If Clerk fails, allow access but log it
-    return { authorized: true, plan: "unknown" };
+    // If Clerk fails, deny access (fail-closed) to prevent unauthorized access
+    return { authorized: false, error: "Authentication service unavailable. Please try again." };
   }
 }
 

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createHash } from "crypto";
 import { db } from "@/db";
 import { usage } from "@/db/schema";
 
@@ -36,12 +37,22 @@ function extractApiKey(request: NextRequest): string | null {
   return null;
 }
 
+// Known valid API key prefixes — keys must be at least 20 chars to prevent brute-force guessing
+const MIN_API_KEY_LENGTH = 20;
+
 function checkRateLimit(apiKey: string): {
   allowed: boolean;
   remaining: number;
   plan: string;
 } {
-  // Determine plan from key prefix convention: sk_free_, sk_pro_, sk_ent_
+  // Enforce minimum key length to prevent trivially forged keys
+  if (apiKey.length < MIN_API_KEY_LENGTH) {
+    return { allowed: false, remaining: 0, plan: "invalid" };
+  }
+
+  // TODO: Validate API keys against the database instead of prefix-based plan detection.
+  // Current prefix-based approach (sk_free_, sk_pro_, sk_ent_) can be bypassed by forging keys.
+  // Until DB validation is implemented, all unknown keys default to "free" tier rate limits.
   let plan = "free";
   if (apiKey.startsWith("sk_pro_")) plan = "pro";
   else if (apiKey.startsWith("sk_ent_")) plan = "enterprise";
@@ -120,8 +131,8 @@ async function handleRequest(
       method: request.method,
       headers: {
         "Content-Type": request.headers.get("content-type") || "application/json",
-        // Pass through a system marker so internal routes know this is trusted
-        "X-Sovereign-Internal": "v1-proxy",
+        // Pass through service secret so internal routes can verify this is a trusted proxy call
+        "X-Sovereign-Internal": process.env.INTERNAL_SERVICE_SECRET || "v1-proxy",
       },
       body,
     });
@@ -140,7 +151,7 @@ async function handleRequest(
     try {
       const agentId = path.join("/");
       await db.insert(usage).values({
-        userId: apiKey.slice(0, 20), // Use truncated key as user identifier
+        userId: createHash("sha256").update(apiKey).digest("hex").slice(0, 16), // Hashed key identifier — never log raw keys
         agentId,
         model: (data as Record<string, unknown>)?.model as string || "unknown",
         tokensUsed: (data as Record<string, unknown>)?.tokensUsed as number || 0,

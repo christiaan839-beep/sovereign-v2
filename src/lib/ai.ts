@@ -9,6 +9,7 @@ import { eq } from "drizzle-orm";
 import { nimChat } from "./nvidia";
 import type { AIOptions } from "@/types";
 import { createLogger } from "@/lib/logger";
+import { safeDecrypt } from "@/lib/crypto";
 
 const log = createLogger("ai");
 
@@ -25,7 +26,7 @@ async function getUserKeys(): Promise<{ gemini?: string, tavily?: string, anthro
         where: eq(settings.userEmail, user.primaryEmailAddress.emailAddress)
       });
       if (userSettings?.apiKeys) {
-        return JSON.parse(userSettings.apiKeys);
+        return JSON.parse(safeDecrypt(userSettings.apiKeys));
       }
     }
   } catch (e) {

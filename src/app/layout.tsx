@@ -8,6 +8,7 @@ import { SafeClerkProvider } from "@/components/ui/SafeClerkProvider";
 import { CustomCursor } from "@/components/cinematic/CustomCursor";
 import { ScrollProgress } from "@/components/cinematic/ScrollProgress";
 import { BackToTop } from "@/components/cinematic/BackToTop";
+import { SmoothScroll } from "@/components/providers/SmoothScroll";
 import "./globals.css";
 
 // Run environment validation on server startup
@@ -85,10 +86,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <SafeClerkProvider>
         <body className="relative bg-midnight text-white antialiased">
-          <CustomCursor />
-          <ScrollProgress />
-          {children}
-          <BackToTop />
+          <SmoothScroll>
+            <CustomCursor />
+            <ScrollProgress />
+            {children}
+            <BackToTop />
+          </SmoothScroll>
           {process.env.NODE_ENV === "production" && <Analytics />}
           {process.env.NODE_ENV === "production" && <SpeedInsights />}
           <Script
@@ -127,7 +130,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     {
                       "@type": "Question",
                       name: "How much does Sovereign Matrix cost?",
-                      acceptedAnswer: { "@type": "Answer", text: "Sovereign Matrix offers a free tier with 3 agents and 50 tasks per month. Paid plans start at R9,997/mo (Sovereign Node), R24,997/mo (Sovereign Array with voice agents), and R49,997/mo (Cartel License with white-label). Month-to-month, no contracts." },
+                      acceptedAnswer: { "@type": "Answer", text: "Sovereign Matrix offers a free tier with 3 agents and 50 tasks per month. Paid plans start at R9,997/mo (Sovereign Node), R24,997/mo (Sovereign Array with voice agents), and R49,997/mo (Sovereign Network with white-label). Month-to-month, no contracts." },
                     },
                     {
                       "@type": "Question",
@@ -141,8 +144,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     },
                     {
                       "@type": "Question",
-                      name: "What is the white-label Cartel license?",
-                      acceptedAnswer: { "@type": "Answer", text: "The Cartel license lets agencies rebrand the entire platform as their own. Custom domain, client portals, your logo. Clients think you built the technology. It is an agency-in-a-box franchise model." },
+                      name: "What is the white-label Sovereign Network license?",
+                      acceptedAnswer: { "@type": "Answer", text: "The Sovereign Network license lets agencies rebrand the entire platform as their own. Custom domain, client portals, your logo. Clients think you built the technology. It is an agency-in-a-box franchise model." },
                     },
                     {
                       "@type": "Question",

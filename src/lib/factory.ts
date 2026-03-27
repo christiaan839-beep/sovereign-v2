@@ -44,7 +44,39 @@ async () => {
     // Clean markdown wrappers
     generatedCode = generatedCode.replace(/^```(js|javascript)?\s*/i, "").replace(/```$/i, "").trim();
 
-    // Execute in sandboxed context
+    // Safety: Block dangerous patterns before execution (defense-in-depth)
+    const dangerousPatterns = [
+      /process\.env/i,
+      /globalThis/i,              // Bypass for process.env via globalThis.process
+      /require\s*\(/i,
+      /import\s*\(/i,
+      /child_process/i,
+      /\beval\s*\(/i,
+      /Function\s*\(/i,
+      /fs\./i,
+      /\.exec\s*\(/i,
+      /\.spawn\s*\(/i,
+      /\.constructor/i,           // Prototype chain access
+      /\b__proto__\b/i,           // Prototype pollution
+      /XMLHttpRequest/i,          // Data exfiltration via XHR
+      /WebSocket\s*\(/i,          // Data exfiltration via WebSocket
+      /navigator\./i,             // Browser fingerprinting
+      /document\./i,              // DOM access
+      /window\./i,                // Window access
+    ];
+    for (const pattern of dangerousPatterns) {
+      if (pattern.test(generatedCode)) {
+        return {
+          objective,
+          generatedCode,
+          result: null,
+          error: `Generated code contains blocked pattern: ${pattern.source}`,
+          executionTimeMs: Date.now() - start,
+        };
+      }
+    }
+
+    // Execute in sandboxed context (limited to safe globals)
     const execute = new Function(`return (${generatedCode})();`);
     const result = await execute();
 

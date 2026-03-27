@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { requireAuth } from '@/lib/auth-guard';
 import { db } from '@/db';
 import { whitelabelConfig } from '@/db/schema';
 
@@ -6,15 +7,16 @@ const VERCEL_API_URL = 'https://api.vercel.com';
 const SOURCE_REPO = 'christiaan839-beep/sovereign-matrix'; // The master template
 
 export async function POST(req: Request) {
+  // Require authentication — this endpoint creates Vercel projects and assigns domains
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
+
   try {
-    // const authHeader = req.headers.get('Authorization');
-    // In production, you would verify a Clerk JWT here. For the Cartel API, we'll use a direct internal check or a secure webhook approach.
-    
     const body = await req.json();
     const { userEmail, agencyName, requestedDomain } = body;
 
     if (!userEmail || !agencyName) {
-      return NextResponse.json({ error: 'Missing required fields for Cartel Provisioning' }, { status: 400 });
+      return NextResponse.json({ error: 'Missing required fields for Network Provisioning' }, { status: 400 });
     }
 
     const vercelToken = process.env.VERCEL_ACCESS_TOKEN;
@@ -104,13 +106,13 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      message: 'Cartel Node Provisioned',
+      message: 'Sovereign Network Node Provisioned',
       projectId: projectData.id,
       url: `https://${projectSlug}.vercel.app`
     });
 
   } catch (error) {
-    console.error('Cartel Provisioning Fault:', error);
-    return NextResponse.json({ error: 'Internal Server Error', details: (error as Error).message }, { status: 500 });
+    console.error('Network Provisioning Fault:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

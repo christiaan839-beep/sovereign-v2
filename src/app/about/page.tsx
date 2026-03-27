@@ -10,12 +10,12 @@ const VALUES = [
   { icon: Cpu, title: "Autonomy Over Manual", desc: "Every feature we build must work without human intervention. If it needs babysitting, it doesn't ship." },
   { icon: Brain, title: "Intelligence That Compounds", desc: "Every success is stored. Every failure is learned from. The system gets smarter with every campaign it runs." },
   { icon: Shield, title: "Your Data, Your System", desc: "SOVEREIGN runs on your infrastructure, with your API keys. We never see your data. Period." },
-  { icon: Code, title: "Build in Public", desc: "15 engines, 53 routes, open architecture. We don't hide behind a black box. You see everything." },
+  { icon: Code, title: "Build in Public", desc: "132 agents, 117 API routes, open architecture. We don't hide behind a black box. You see everything." },
 ];
 
 const STATS = [
-  { value: "15", label: "AI Engines" },
-  { value: "53+", label: "Routes" },
+  { value: "132", label: "AI Agents" },
+  { value: "117+", label: "API Routes" },
   { value: "R2.3M", label: "Revenue Generated" },
   { value: "0", label: "Human Employees Needed" },
 ];
@@ -43,7 +43,7 @@ export default function AboutPage() {
         <motion.div {...fadeIn(0)} className="text-center mb-16">
           <h1 className="text-4xl md:text-5xl serif-text font-light mb-6">We Build Autonomous<br /><span className="bg-gradient-to-r from-electric to-rose-glow bg-clip-text text-transparent font-medium">Intelligence Systems</span></h1>
           <p className="text-text-secondary max-w-xl mx-auto leading-relaxed">
-            SOVEREIGN was born from a simple question: what if your marketing team never slept, never forgot, and got better every single day? We built the answer — 15 AI engines that run your entire marketing operation autonomously.
+            SOVEREIGN was born from a simple question: what if your marketing team never slept, never forgot, and got better every single day? We built the answer — 132 AI agents that run your entire business operation autonomously.
           </p>
         </motion.div>
 
@@ -63,7 +63,7 @@ export default function AboutPage() {
           <div className="space-y-4 text-sm text-text-secondary leading-relaxed">
             <p>Marketing agencies charge R100-250k per month for a team that works 9-5, takes holidays, and forgets what worked last quarter. AI tools like Jasper or Copy.ai solve one problem each — but your marketing needs a system, not a typewriter.</p>
             <p>We asked: what if one platform could replace the entire team? Not just write copy — but analyze competitors, debate ad variations with itself, test prompts against each other, kill underperforming ads while you sleep, and remember every winning pattern forever?</p>
-            <p className="text-white font-medium">That&apos;s SOVEREIGN. 15 engines. Zero employees. Fully autonomous.</p>
+            <p className="text-white font-medium">That&apos;s SOVEREIGN. 132 agents. Zero employees. Fully autonomous.</p>
           </div>
         </motion.div>
 
@@ -85,12 +85,12 @@ export default function AboutPage() {
         <motion.div {...fadeIn(0.25)} className="mb-20">
           <h2 className="text-xs font-bold uppercase tracking-widest text-electric mb-6">The Architecture</h2>
           <div className="glass-card p-6 text-xs font-mono text-text-secondary space-y-2">
-            <p><span className="text-electric">Framework:</span> Next.js 15 · React 19 · TypeScript</p>
-            <p><span className="text-electric">AI Models:</span> Gemini 2.5 Pro + Claude 3.5 (unified router)</p>
-            <p><span className="text-electric">Engines:</span> 15 autonomous agents operating in parallel</p>
+            <p><span className="text-electric">Framework:</span> Next.js 16 · React 19 · TypeScript</p>
+            <p><span className="text-electric">AI Models:</span> 51+ models — Nemotron Ultra, Claude, Gemini, DeepSeek, Groq (unified router)</p>
+            <p><span className="text-electric">Agents:</span> 132 autonomous agents operating in parallel</p>
             <p><span className="text-electric">Deployment:</span> Vercel Edge Network (global CDN)</p>
-            <p><span className="text-electric">Auth:</span> Cookie-based with middleware route guards</p>
-            <p><span className="text-electric">Payments:</span> Paystack with HMAC-SHA512 webhook verification</p>
+            <p><span className="text-electric">Auth:</span> Clerk authentication with Edge middleware</p>
+            <p><span className="text-electric">Payments:</span> PayFast + Stripe with signature verification</p>
           </div>
         </motion.div>
 

@@ -16,6 +16,7 @@ export function Pricing() {
       name: "Free",
       description: "Try Sovereign Matrix with 3 agents and 50 tasks. No credit card required.",
       price: "R0",
+      priceUsd: "$0",
       period: "/forever",
       icon: Shield,
       color: "text-neutral-400",
@@ -39,6 +40,7 @@ export function Pricing() {
       name: "Sovereign Node",
       description: "Core AI agents for content, SEO, and lead generation. Local execution via NemoClaw OS.",
       price: "R9,997",
+      priceUsd: "~$550",
       period: "/mo",
       icon: Zap,
       color: "text-[#00B7FF]",
@@ -63,6 +65,7 @@ export function Pricing() {
       name: "Sovereign Array",
       description: "Sub-200ms voice agents, Cosmos VLM video, War Room red-teaming, and 24h priority processing.",
       price: "R24,997",
+      priceUsd: "~$1,375",
       period: "/mo",
       icon: Crown,
       color: "text-emerald-400",
@@ -78,16 +81,17 @@ export function Pricing() {
         { name: "Competitor monitoring", included: true },
         { name: "Direct Comm-Link (24h)", included: true },
         { name: "White-label Reseller Hub", included: false },
-        { name: "Cartel Sub-Licenses", included: false },
+        { name: "Network Sub-Licenses", included: false },
       ],
       planId: "array",
       buttonText: "Deploy Array",
       buttonStyle: "bg-emerald-400 hover:bg-emerald-300 text-black shadow-[0_0_20px_rgba(52,211,153,0.3)]",
     },
     {
-      name: "Cartel License",
+      name: "Sovereign Network",
       description: "White-label the platform with your branding. Resell to clients with custom portals.",
       price: "R49,997",
+      priceUsd: "~$2,750",
       period: "/mo",
       icon: Server,
       color: "text-violet-400",
@@ -101,11 +105,11 @@ export function Pricing() {
         { name: "API access for Integrations", included: true },
         { name: "Dedicated Setup & Onboarding", included: true },
         { name: "Custom domain branding", included: true },
-        { name: "Cartel Sub-Licenses (5 included)", included: true },
+        { name: "Network Sub-Licenses (5 included)", included: true },
         { name: "SLA guarantee", included: true },
       ],
       planId: "cartel",
-      buttonText: "Initialize Cartel",
+      buttonText: "Initialize Network",
       buttonStyle: "bg-white/5 hover:bg-white/10 text-white border border-white/10",
     },
   ];
@@ -147,12 +151,17 @@ export function Pricing() {
       const data = await res.json();
 
       if (data.success && data.formHtml) {
-        const container = document.createElement("div");
-        container.innerHTML = data.formHtml;
-        container.style.display = "none";
-        document.body.appendChild(container);
-        const form = container.querySelector("form");
-        if (form) form.submit();
+        // Sanitize: only allow form elements, strip scripts to prevent XSS
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(data.formHtml, "text/html");
+        // Remove all script tags from parsed HTML
+        doc.querySelectorAll("script").forEach((el) => el.remove());
+        const form = doc.querySelector("form");
+        if (form) {
+          form.style.display = "none";
+          document.body.appendChild(form);
+          form.submit();
+        }
         return;
       }
       showNotification(data.error || "Payment setup incomplete. Please configure PayFast API keys.");
@@ -226,6 +235,9 @@ export function Pricing() {
                   <span className="text-neutral-500 font-bold tracking-widest uppercase text-xs mb-2">{tier.period}</span>
                 )}
               </div>
+              {tier.priceUsd && tier.priceUsd !== "$0" && (
+                <p className="text-[10px] text-neutral-600 font-mono">{tier.priceUsd} USD</p>
+              )}
             </div>
 
             <button
@@ -284,7 +296,7 @@ export function Pricing() {
               </div>
 
               <p className="text-sm text-neutral-400 mb-6">
-                To authorize your deployment, the Sovereign Matrix requires a direct WhatsApp line. A verification packet will be sent to this number bounding your Cartel license to you physically.
+                To authorize your deployment, the Sovereign Matrix requires a direct WhatsApp line. A verification packet will be sent to this number bounding your Sovereign Network license to you physically.
               </p>
 
               <form onSubmit={processSecureUplink} className="space-y-4">

@@ -32,19 +32,19 @@ const TIERS = [
     features: [
       { name: "Everything in Node", included: true },
       { name: "Unlimited AI generations", included: true },
-      { name: "Nemotron Voice Cartel (TTS CRM)", included: true },
+      { name: "Nemotron Voice Network (TTS CRM)", included: true },
       { name: "NVIDIA Continuous Data Flywheel", included: true },
       { name: "Optical Character Pricing Assassin", included: true },
       { name: "Competitor VLM Core (90B Vision)", included: true },
       { name: "Direct Comm-Link (24h)", included: true },
       { name: "White-label Reseller Hub", included: false },
-      { name: "Cartel Sub-Licenses", included: false },
+      { name: "Network Sub-Licenses", included: false },
     ],
   },
   {
-    name: "Cartel License", price: "R49,997", period: "/mo", plan: "cartel", featured: false,
+    name: "Sovereign Network", price: "R49,997", period: "/mo", plan: "cartel", featured: false,
     tagline: "White-label the Sovereign Matrix to resell autonomous hubs.",
-    cta: "Initialize Cartel",
+    cta: "Initialize Network",
     features: [
       { name: "Everything in Array", included: true },
       { name: "White-label Exascale Dashboard", included: true },
@@ -53,7 +53,7 @@ const TIERS = [
       { name: "API access for Integrations", included: true },
       { name: "Dedicated Setup & Onboarding", included: true },
       { name: "Custom domain branding", included: true },
-      { name: "Cartel Sub-Licenses (5 included)", included: true },
+      { name: "Network Sub-Licenses (5 included)", included: true },
       { name: "SLA guarantee", included: true },
     ],
   },
@@ -88,12 +88,16 @@ export default function PricingPage() {
       const data = await res.json();
 
       if (data.success && data.formHtml) {
-        const container = document.createElement("div");
-        container.innerHTML = data.formHtml;
-        container.style.display = "none";
-        document.body.appendChild(container);
-        const form = container.querySelector("form");
-        if (form) form.submit();
+        // Sanitize: parse safely and strip scripts to prevent XSS
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(data.formHtml, "text/html");
+        doc.querySelectorAll("script").forEach((el) => el.remove());
+        const form = doc.querySelector("form");
+        if (form) {
+          form.style.display = "none";
+          document.body.appendChild(form);
+          form.submit();
+        }
         return;
       }
 

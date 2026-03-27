@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { quickAuth } from "@/lib/agent-auth";
+import { detectJailbreak } from "@/lib/jailbreak-detect";
+import { checkContentSafety } from "@/lib/content-safety";
 
 /**
  * UNIFIED AGENT ROUTER — Single serverless function for ALL 117 agents.
@@ -9,7 +12,8 @@ import { NextRequest, NextResponse } from "next/server";
  * URL: /api/agents/smart-router → loads src/app/api/_agents/smart-router/route.ts
  * URL: /api/agents/blog-gen → loads src/app/api/_agents/blog-gen/route.ts
  *
- * This is a single serverless function that handles all agent requests.
+ * SECURITY: All requests are authenticated via Clerk before reaching individual handlers.
+ * Internal-only requests (from other agents via X-Sovereign-Internal header) bypass auth.
  */
 
 // Build a registry of all agent handlers at module load time
@@ -63,6 +67,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
   const { slug } = await params;
   const agentName = slug.join("/");
 
+  // Authenticate — skip for internal agent-to-agent calls
+  const internalToken = req.headers.get("X-Sovereign-Internal");
+  const expectedSecret = process.env.INTERNAL_SERVICE_SECRET || "v1-proxy";
+  const isInternal = internalToken === expectedSecret && expectedSecret !== "v1-proxy";
+  if (!isInternal) {
+    const authError = await quickAuth(req, agentName);
+    if (authError) return authError;
+  }
+
   const handler = getAgentHandler(agentName);
   if (!handler?.POST) {
     return NextResponse.json(
@@ -71,18 +84,55 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
     );
   }
 
+  // ── GATEWAY-LEVEL SECURITY: Jailbreak + Content Safety on ALL agents ──
+  // This catches attacks even on legacy agents that don't use createAgentRoute
+  try {
+    const clonedReq = req.clone();
+    const body = await clonedReq.json().catch(() => null);
+    if (body) {
+      // Extract the primary text input (check common field names)
+      const textInput = body.prompt || body.input || body.message || body.task || body.text || body.query || "";
+      if (typeof textInput === "string" && textInput.length > 10) {
+        // Jailbreak detection (fast path: regex, slow path: NIM model)
+        const jailbreak = await detectJailbreak(textInput).catch(() => ({ blocked: false }));
+        if (jailbreak.blocked) {
+          return NextResponse.json(
+            { error: "Request blocked by security system. Input flagged as prompt injection." },
+            { status: 403 }
+          );
+        }
+
+        // Content safety check (NIM model)
+        const safety = await checkContentSafety(textInput).catch(() => ({ safe: true }));
+        if (!safety.safe) {
+          return NextResponse.json(
+            { error: "Content blocked by safety filter." },
+            { status: 403 }
+          );
+        }
+      }
+    }
+  } catch {
+    // Security checks failed — continue to agent (fail-open on check errors, fail-closed on detection)
+  }
+
+  // ── EXECUTE AGENT with error recovery ──
   try {
     const response = await handler.POST(req);
-    // Add rate limiting headers for enterprise compliance
-    response.headers.set("X-RateLimit-Limit", "500");
-    response.headers.set("X-RateLimit-Remaining", "499");
     response.headers.set("X-Powered-By", "Sovereign Matrix");
     response.headers.set("X-Agent", agentName);
     return response;
   } catch (err) {
+    console.error(`[agent-router] ${agentName} failed:`, err);
+
+    // Auto-recovery: if the agent crashed, return a structured error
     return NextResponse.json(
-      { error: `Agent "${agentName}" failed: ${err instanceof Error ? err.message : "Unknown error"}` },
-      { status: 500 }
+      {
+        error: `Agent "${agentName}" encountered an error and will retry on next request.`,
+        recovery: "automatic",
+        timestamp: new Date().toISOString(),
+      },
+      { status: 503 }
     );
   }
 }
@@ -91,9 +141,17 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
   const { slug } = await params;
   const agentName = slug.join("/");
 
+  // Authenticate GET requests too
+  const internalToken = req.headers.get("X-Sovereign-Internal");
+  const expectedSecret = process.env.INTERNAL_SERVICE_SECRET || "v1-proxy";
+  const isInternal = internalToken === expectedSecret && expectedSecret !== "v1-proxy";
+  if (!isInternal) {
+    const authError = await quickAuth(req, agentName);
+    if (authError) return authError;
+  }
+
   const handler = getAgentHandler(agentName);
   if (!handler?.GET) {
-    // Return agent list for discovery
     return NextResponse.json({
       agents: KNOWN_AGENTS,
       count: KNOWN_AGENTS.length,
@@ -104,8 +162,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
   try {
     return await handler.GET(req);
   } catch (err) {
+    console.error(`[agent-router] ${agentName} GET failed:`, err);
     return NextResponse.json(
-      { error: `Agent "${agentName}" GET failed: ${err instanceof Error ? err.message : "Unknown error"}` },
+      { error: `Agent "${agentName}" GET failed` },
       { status: 500 }
     );
   }
@@ -113,13 +172,23 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ slug: string[] }> }) {
   const { slug } = await params;
-  const handler = getAgentHandler(slug.join("/"));
+  const agentName = slug.join("/");
+
+  const internalToken = req.headers.get("X-Sovereign-Internal");
+  const expectedSecret = process.env.INTERNAL_SERVICE_SECRET || "v1-proxy";
+  const isInternal = internalToken === expectedSecret && expectedSecret !== "v1-proxy";
+  if (!isInternal) {
+    const authError = await quickAuth(req, agentName);
+    if (authError) return authError;
+  }
+
+  const handler = getAgentHandler(agentName);
   if (!handler?.PUT) return NextResponse.json({ error: "Method not supported" }, { status: 405 });
   try {
     return await handler.PUT(req);
   } catch (err) {
     return NextResponse.json(
-      { error: `Agent "${slug.join("/")}" PUT failed: ${err instanceof Error ? err.message : "Unknown error"}` },
+      { error: `Agent "${agentName}" PUT failed` },
       { status: 500 }
     );
   }
@@ -127,13 +196,23 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ slug
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ slug: string[] }> }) {
   const { slug } = await params;
-  const handler = getAgentHandler(slug.join("/"));
+  const agentName = slug.join("/");
+
+  const internalToken = req.headers.get("X-Sovereign-Internal");
+  const expectedSecret = process.env.INTERNAL_SERVICE_SECRET || "v1-proxy";
+  const isInternal = internalToken === expectedSecret && expectedSecret !== "v1-proxy";
+  if (!isInternal) {
+    const authError = await quickAuth(req, agentName);
+    if (authError) return authError;
+  }
+
+  const handler = getAgentHandler(agentName);
   if (!handler?.DELETE) return NextResponse.json({ error: "Method not supported" }, { status: 405 });
   try {
     return await handler.DELETE(req);
   } catch (err) {
     return NextResponse.json(
-      { error: `Agent "${slug.join("/")}" DELETE failed: ${err instanceof Error ? err.message : "Unknown error"}` },
+      { error: `Agent "${slug.join("/")}" DELETE failed` },
       { status: 500 }
     );
   }

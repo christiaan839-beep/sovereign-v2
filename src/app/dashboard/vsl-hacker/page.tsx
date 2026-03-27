@@ -53,7 +53,7 @@ export default function CosmosVSLHackerPage() {
       const visionRes = await fetch("/api/agents/visual-reason", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageUrl: "https://via.placeholder.com/640x360", question: `Analyze this competitor video ad frame. Identify visual hooks, text overlays, emotional triggers, and production quality for audience: ${targetAudience}` }),
+        body: JSON.stringify({ prompt: `Analyze a competitor video ad for the "${targetAudience}" audience. Identify visual hooks, text overlays, emotional triggers, pacing, and production quality. Provide specific counter-strategies.` }),
       });
       const visionData = await visionRes.json();
 

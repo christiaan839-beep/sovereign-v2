@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
+import { requireAuth } from "@/lib/auth-guard";
 
 export async function GET() {
+  // Protect environment status from unauthenticated access — prevents reconnaissance
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
   const criticalVars = [
     { key: "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", required: true },
     { key: "CLERK_SECRET_KEY", required: true },

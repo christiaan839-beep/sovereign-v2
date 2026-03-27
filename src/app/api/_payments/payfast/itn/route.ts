@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { persistAppend } from "@/lib/persist";
+import { createHash } from "crypto";
 
 /**
  * PAYFAST ITN (Instant Transaction Notification) — Webhook callback
  * that PayFast calls when a payment completes, cancels, or fails.
- * 
+ *
  * On successful payment:
  * 1. Validates the signature
  * 2. Activates the client's plan
@@ -12,11 +13,31 @@ import { persistAppend } from "@/lib/persist";
  * 4. Logs the transaction
  */
 
+function verifyPayFastSignature(data: Record<string, string>, passphrase?: string): boolean {
+  const signature = data.signature;
+  if (!signature) return false;
+
+  const sigString = Object.entries(data)
+    .filter(([key]) => key !== "signature")
+    .map(([key, val]) => `${key}=${encodeURIComponent(val.trim()).replace(/%20/g, "+")}`)
+    .join("&");
+
+  const fullString = passphrase ? `${sigString}&passphrase=${encodeURIComponent(passphrase.trim()).replace(/%20/g, "+")}` : sigString;
+  return createHash("md5").update(fullString).digest("hex") === signature;
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.text();
     const params = new URLSearchParams(body);
     const data = Object.fromEntries(params.entries());
+
+    // Verify PayFast signature to prevent spoofed webhooks
+    const passphrase = process.env.PAYFAST_PASSPHRASE || process.env.PAYFAST_MERCHANT_KEY;
+    if (!verifyPayFastSignature(data, passphrase)) {
+      console.error("[PayFast ITN] Invalid signature — rejecting request");
+      return new Response("Invalid signature", { status: 403 });
+    }
 
     const paymentStatus = data.payment_status;
     const paymentId = data.m_payment_id || "";

@@ -1,5 +1,6 @@
 import { nimChat, getNimKey } from "@/lib/nvidia";
 import { NextResponse } from "next/server";
+import { requireAuth } from "@/lib/auth-guard";
 
 /**
  * SEO BLOG AUTO-GENERATOR — Autonomous content pipeline.
@@ -9,6 +10,9 @@ import { NextResponse } from "next/server";
  */
 
 export async function POST(request: Request) {
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
+
   try {
     const { topic, keywords = [], tone = "professional" } = await request.json();
 
@@ -109,6 +113,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(result);
   } catch (error) {
-    return NextResponse.json({ error: "Blog generator error", details: String(error) }, { status: 500 });
+    console.error("[blog-gen]", error);
+    return NextResponse.json({ error: "Blog generator error" }, { status: 500 });
   }
 }

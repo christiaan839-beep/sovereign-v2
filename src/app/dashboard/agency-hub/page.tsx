@@ -25,7 +25,7 @@ export default function AgencyHubPage() {
         <div>
           <h1 className="text-3xl font-bold text-white serif-text tracking-tight flex items-center gap-3">
             <Briefcase className="w-8 h-8 text-[#00B7FF]" />
-            Agency Cartel Hub
+            Agency Network Hub
           </h1>
           <p className="text-neutral-400 mt-2 max-w-2xl">
             Sovereign Monetization Engine. Manage your 100% white-labeled sub-agencies. 

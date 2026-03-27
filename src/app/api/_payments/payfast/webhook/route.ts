@@ -3,11 +3,31 @@ import { persistAppend } from "@/lib/persist";
 import { db } from "@/db";
 import { payments, tenants } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { createHash } from "crypto";
 
 /**
  * PayFast ITN (Instant Transaction Notification) Webhook.
  * On COMPLETE: records payment in DB + upgrades tenant plan.
+ *
+ * Security: Verifies PayFast signature to prevent webhook spoofing.
  */
+
+function verifyPayFastSignature(data: Record<string, string>, passphrase?: string): boolean {
+  const signature = data.signature;
+  if (!signature) return false;
+
+  // Build the signature string from all fields except 'signature', in submission order
+  const sigString = Object.entries(data)
+    .filter(([key]) => key !== "signature")
+    .map(([key, val]) => `${key}=${encodeURIComponent(val.trim()).replace(/%20/g, "+")}`)
+    .join("&");
+
+  const fullString = passphrase ? `${sigString}&passphrase=${encodeURIComponent(passphrase.trim()).replace(/%20/g, "+")}` : sigString;
+  const expectedSig = createHash("md5").update(fullString).digest("hex");
+
+  return expectedSig === signature;
+}
+
 export async function POST(req: Request) {
   try {
     const formData = await req.formData();
@@ -15,6 +35,13 @@ export async function POST(req: Request) {
     formData.forEach((value, key) => {
       data[key] = value.toString();
     });
+
+    // Verify PayFast signature — reject spoofed webhooks
+    const passphrase = process.env.PAYFAST_PASSPHRASE || process.env.PAYFAST_MERCHANT_KEY;
+    if (!verifyPayFastSignature(data, passphrase)) {
+      console.error("[PayFast Webhook] Invalid signature — possible spoofed request");
+      return new NextResponse("Invalid signature", { status: 403 });
+    }
 
     const status = data.payment_status;
     const email = data.email_address || "";

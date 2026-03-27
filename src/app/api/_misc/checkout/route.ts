@@ -1,14 +1,23 @@
 import { NextResponse } from 'next/server';
+import { requireAuth } from "@/lib/auth-guard";
+
+/**
+ * @deprecated Legacy Paystack checkout — primary payment flow uses PayFast.
+ * Kept for backwards compatibility; will be removed in a future release.
+ */
 
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
 
 export async function POST(req: Request) {
+    // Require auth to prevent phishing/email enumeration attacks
+    const auth = await requireAuth();
+    if (auth.error) return auth.error;
+
     try {
         const { email, lead_id } = await req.json();
 
         if (!PAYSTACK_SECRET_KEY) {
-            console.error("[PAYSTACK API] Missing PAYSTACK_SECRET_KEY.");
-            return NextResponse.json({ error: "Paystack API Offline" }, { status: 500 });
+            return NextResponse.json({ error: "Paystack API not configured. Use PayFast checkout instead." }, { status: 503 });
         }
 
         // $5k USD retainer is functionally ~R90,000 ZAR. Amount is set in cents (9000000).

@@ -4,7 +4,8 @@ import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion"
 import { BrainCircuit, CheckCircle2, Cpu, Target, ChevronDown, XCircle, ArrowRight, Mic, Code2, Search, FileText } from "lucide-react";
 import Link from "next/link";
 import { SignInButton } from "@clerk/nextjs";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { useIsMobile } from "@/lib/hooks/use-is-mobile";
 
 import { SovereignLogo } from "@/components/ui/SovereignLogo";
 import { Pricing } from "@/components/ui/Pricing";
@@ -16,17 +17,32 @@ import { LandingAgent } from "@/components/ui/LandingAgent";
 import { AgentOffice } from "@/components/ui/AgentOffice";
 import dynamic from "next/dynamic";
 import { TextMorph } from "@/components/ui/TextMorph";
+import { AgentTicker } from "@/components/ui/AgentTicker";
+import { useGsapReveal } from "@/lib/hooks/use-gsap-reveal";
+import { METRICS } from "@/lib/constants";
 
-const HeroParticles = dynamic(() => import("@/components/ui/HeroParticles").then(m => ({ default: m.HeroParticles })), { ssr: false });
+const CommandTerminal = dynamic(() => import("@/components/cinematic/CommandTerminal").then(m => ({ default: m.CommandTerminal })), {
+  ssr: false,
+  loading: () => <div className="max-w-3xl mx-auto h-[380px] rounded-2xl border border-white/[0.08] bg-[#0A0A0A] animate-pulse" />,
+});
+
+const HeroWebGL = dynamic(() => import("@/components/ui/HeroWebGL").then(m => ({ default: m.HeroWebGL })), {
+  ssr: false,
+  loading: () => <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(16,185,129,0.06),transparent_60%)]" />,
+});
+const GlobalStrikeMap = dynamic(() => import("@/components/3d/GlobalStrikeMap").then(m => ({ default: m.GlobalStrikeMap })), {
+  ssr: false,
+  loading: () => <div className="w-full h-full rounded-full bg-[radial-gradient(circle,rgba(16,185,129,0.06),transparent_60%)] animate-pulse" />,
+});
 
 // ─── Capability Card (enhanced with emerald hover glow) ───
-function CapabilityCard({ icon: Icon, title, desc, accent, href }: { icon: React.ComponentType<{ className?: string }>; title: string; desc: string; accent: string; href?: string }) {
+function CapabilityCard({ icon: Icon, title, desc, accent, href, delay = 0 }: { icon: React.ComponentType<{ className?: string }>; title: string; desc: string; accent: string; href?: string; delay?: number }) {
   const content = (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-50px" }}
-      transition={{ duration: 0.5 }}
+      transition={{ duration: 0.6, delay, ease: [0.25, 0.46, 0.45, 0.94] }}
       className="group relative cursor-pointer"
     >
       <div className="relative p-8 rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl hover:border-emerald-500/20 transition-gpu duration-500 overflow-hidden hover:shadow-[0_0_40px_rgba(16,185,129,0.06)] hover:bg-white/[0.04]">
@@ -218,10 +234,15 @@ function InteractiveDemo() {
 
 export default function Home() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const isMobile = useIsMobile();
   const heroRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
   const heroOpacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
   const heroScale = useTransform(scrollYProgress, [0, 0.5], [1, 0.95]);
+
+  // GSAP cinematic reveals for high-impact sections
+  const pricingRef = useGsapReveal<HTMLElement>({ scale: 0.93, duration: 1.0 });
+  const ctaRef = useGsapReveal<HTMLElement>({ scale: 0.9, duration: 1.1, delay: 0.1 });
 
   return (
     <div className="relative min-h-screen bg-[#010101] text-white selection:bg-emerald-500/20 font-sans antialiased">
@@ -233,6 +254,7 @@ export default function Home() {
 
       {/* ═══ NAVIGATION ═══ */}
       <motion.nav
+        aria-label="Main navigation"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, delay: 0.1 }}
@@ -256,7 +278,7 @@ export default function Home() {
             </Link>
           </div>
 
-          <button className="md:hidden p-2" onClick={() => setMobileNavOpen(!mobileNavOpen)} aria-label="Toggle menu">
+          <button className="md:hidden p-3" onClick={() => setMobileNavOpen(!mobileNavOpen)} aria-label="Toggle menu">
             <div className="space-y-1.5">
               <span className={`block w-5 h-[1.5px] bg-white transition-gpu ${mobileNavOpen ? 'rotate-45 translate-y-[7px]' : ''}`} />
               <span className={`block w-5 h-[1.5px] bg-white transition-gpu ${mobileNavOpen ? 'opacity-0' : ''}`} />
@@ -283,7 +305,10 @@ export default function Home() {
         className="relative h-screen overflow-hidden">
 
         {/* 3D Particle Matrix — Three.js WebGL background */}
-        <HeroParticles />
+        {/* 3D hero — disabled on mobile to prevent WebGL crashes */}
+        {!isMobile ? <HeroWebGL /> : (
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(16,185,129,0.08),transparent_60%)]" />
+        )}
 
         {/* Background layer — holographic cube */}
         <div className="absolute inset-0 flex flex-col items-center justify-center overflow-hidden">
@@ -335,7 +360,7 @@ export default function Home() {
                 <span className="animate-ping absolute h-full w-full rounded-full bg-emerald-400 opacity-50" />
                 <span className="relative rounded-full h-1.5 w-1.5 bg-emerald-400" />
               </span>
-              <span className="text-[11px] text-emerald-400/80 font-medium">132 Agents Live</span>
+              <span className="text-[11px] text-emerald-400/80 font-medium">{METRICS.agentCount} Agents Live</span>
             </motion.div>
 
             {/* Headline — massive cinematic */}
@@ -349,7 +374,7 @@ export default function Home() {
             {/* Subtitle */}
             <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4, duration: 0.7 }}
               className="text-base md:text-xl text-neutral-400 max-w-2xl mx-auto leading-relaxed mb-12">
-              132 autonomous agents that find leads, write content, build pages, make calls, and close deals. Powered by 51+ open-source models with unlimited inference.
+              {METRICS.agentCount} autonomous agents that find leads, write content, build pages, make calls, and close deals. Powered by {METRICS.modelCount} open-source models with unlimited inference.
             </motion.p>
 
             {/* CTAs — glassmorphic */}
@@ -424,10 +449,42 @@ export default function Home() {
         <span className="text-[10px] text-neutral-500">DeepSeek V3.2</span>
       </div>
 
+      {/* ═══ LIVE AGENT ACTIVITY TICKER ═══ */}
+      <AgentTicker />
+
       {/* ═══ SOCIAL PROOF METRICS ═══ */}
       <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
       <section className="py-24 px-6">
         <SocialProofMetrics />
+      </section>
+
+      {/* ═══ HOW IT WORKS — 3 Steps ═══ */}
+      <section className="py-24 px-6">
+        <div className="max-w-5xl mx-auto">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+            className="text-center mb-16">
+            <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">How It Works</p>
+            <h2 className="text-3xl md:text-5xl font-bold text-white tracking-tight">Three steps. Zero complexity.</h2>
+          </motion.div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {[
+              { step: "01", title: "Describe Your Goal", desc: "Type what you need in plain English. \"Find 50 fintech leads in the US\" or \"Write a 1,500-word blog about AI agents.\"", icon: "💬" },
+              { step: "02", title: "Agents Execute", desc: "The Smart Router picks the best agents and models. They plan, execute, and self-correct — no manual prompting needed.", icon: "⚡" },
+              { step: "03", title: "Review Results", desc: "Get structured deliverables: CSV exports, published pages, booked meetings, full reports — ready to use.", icon: "✅" },
+            ].map((item, i) => (
+              <motion.div key={i} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }} transition={{ delay: i * 0.15, duration: 0.6 }}
+                className="relative p-8 rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl group hover:border-emerald-500/20 transition-gpu duration-500">
+                <div className="text-3xl mb-4">{item.icon}</div>
+                <div className="text-[10px] font-mono text-emerald-500/50 uppercase tracking-widest mb-2">Step {item.step}</div>
+                <h3 className="text-lg font-semibold text-white mb-2">{item.title}</h3>
+                <p className="text-sm text-neutral-500 leading-relaxed">{item.desc}</p>
+                {i < 2 && <div className="hidden md:block absolute top-1/2 -right-3 w-6 h-px bg-gradient-to-r from-emerald-500/30 to-transparent" />}
+              </motion.div>
+            ))}
+          </div>
+        </div>
       </section>
 
       {/* ═══ WHAT IT DOES — 6 Capabilities ═══ */}
@@ -441,12 +498,12 @@ export default function Home() {
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <CapabilityCard icon={Cpu} title="Browser Automation" desc="Point an agent at any website. It opens a real browser, clicks through pages, extracts data, and delivers a structured report." accent="from-emerald-500/[0.04]" href="/showcase" />
-            <CapabilityCard icon={BrainCircuit} title="Document Intelligence" desc="Upload PDFs, contracts, or reports. Ask questions in plain English. Get precise answers backed by your own data." accent="from-emerald-400/[0.04]" href="/dashboard" />
-            <CapabilityCard icon={Target} title="Sales Outreach" desc="Find 50 prospects in 30 seconds. Write personalized cold emails. Send sequences. Qualify responses. Book meetings automatically." accent="from-emerald-500/[0.04]" href="/showcase" />
-            <CapabilityCard icon={Search} title="Competitor Intel" desc="Paste a competitor URL. Get their full tech stack, SEO gaps, content strategy, and specific counter-moves you can execute." accent="from-cyan-500/[0.04]" href="/showcase" />
-            <CapabilityCard icon={Mic} title="Voice Agents" desc="AI cold-calls prospects, qualifies leads, and books meetings directly onto your calendar. Sub-200ms response in 12 languages." accent="from-emerald-600/[0.04]" href="/dashboard" />
-            <CapabilityCard icon={Code2} title="Code & Deploy" desc="Describe a feature in plain English. The agent writes production code, reviews it for bugs, and prepares it for deployment." accent="from-emerald-300/[0.04]" href="/dashboard" />
+            <CapabilityCard icon={Cpu} title="Browser Automation" desc="Point an agent at any website. It opens a real browser, clicks through pages, extracts data, and delivers a structured report." accent="from-emerald-500/[0.04]" href="/showcase" delay={0} />
+            <CapabilityCard icon={BrainCircuit} title="Document Intelligence" desc="Upload PDFs, contracts, or reports. Ask questions in plain English. Get precise answers backed by your own data." accent="from-emerald-400/[0.04]" href="/dashboard" delay={0.08} />
+            <CapabilityCard icon={Target} title="Sales Outreach" desc="Find 50 prospects in 30 seconds. Write personalized cold emails. Send sequences. Qualify responses. Book meetings automatically." accent="from-emerald-500/[0.04]" href="/showcase" delay={0.16} />
+            <CapabilityCard icon={Search} title="Competitor Intel" desc="Paste a competitor URL. Get their full tech stack, SEO gaps, content strategy, and specific counter-moves you can execute." accent="from-cyan-500/[0.04]" href="/showcase" delay={0.24} />
+            <CapabilityCard icon={Mic} title="Voice Agents" desc="AI cold-calls prospects, qualifies leads, and books meetings directly onto your calendar. Sub-200ms response in 12 languages." accent="from-emerald-600/[0.04]" href="/dashboard" delay={0.32} />
+            <CapabilityCard icon={Code2} title="Code & Deploy" desc="Describe a feature in plain English. The agent writes production code, reviews it for bugs, and prepares it for deployment." accent="from-emerald-300/[0.04]" href="/dashboard" delay={0.4} />
           </div>
         </div>
       </section>
@@ -486,7 +543,7 @@ export default function Home() {
             className="text-center mb-16">
             <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">Architecture</p>
             <h2 className="text-3xl md:text-5xl font-bold text-white tracking-tight mb-4">Built on models you control.</h2>
-            <p className="text-neutral-500 max-w-xl mx-auto">Smart routing across 51+ open-source models. Automatic failover. Zero vendor lock-in.</p>
+            <p className="text-neutral-500 max-w-xl mx-auto">Smart routing across {METRICS.modelCount} open-source models. Automatic failover. Zero vendor lock-in.</p>
           </motion.div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 circuit-grid p-4 rounded-2xl">
@@ -515,6 +572,21 @@ export default function Home() {
               </motion.div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ═══ COMMAND TERMINAL — Watch Agents Execute ═══ */}
+      <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
+      <section className="py-24 px-6 bg-[#030303] relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_50%,rgba(16,185,129,0.02),transparent)]" />
+        <div className="max-w-5xl mx-auto relative z-10">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+            className="text-center mb-12">
+            <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">Watch It Work</p>
+            <h2 className="text-3xl md:text-5xl font-bold text-white tracking-tight">Autonomous execution in real time.</h2>
+            <p className="text-sm text-neutral-500 mt-4 max-w-lg mx-auto">Four agents. Four missions. Zero human intervention. Scroll down and watch.</p>
+          </motion.div>
+          <CommandTerminal />
         </div>
       </section>
 
@@ -549,7 +621,7 @@ export default function Home() {
               </h3>
               <p className="text-emerald-500/50 text-xs mb-6">What your business actually needs</p>
               <ul className="space-y-3">
-                {["Type one goal. 132 agents plan, execute, and deliver the result.", "Remembers your brand voice, past strategies, and client preferences.", "Opens browsers, sends emails, makes calls, writes code, builds pages.", "Catches its own mistakes, retries failed steps, and self-corrects."].map((item, i) => (
+                {[`Type one goal. ${METRICS.agentCount} agents plan, execute, and deliver the result.`, "Remembers your brand voice, past strategies, and client preferences.", "Opens browsers, sends emails, makes calls, writes code, builds pages.", "Catches its own mistakes, retries failed steps, and self-corrects."].map((item, i) => (
                   <li key={i} className="flex items-start gap-2.5 text-neutral-300 text-sm">
                     <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5 text-emerald-400" /> {item}
                   </li>
@@ -587,8 +659,8 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
             {[
-              { metric: "132", label: "Specialized Agents", desc: "Purpose-built for specific business functions." },
-              { metric: "51+", label: "Open-Source Models", desc: "Automatic failover. Zero vendor lock-in." },
+              { metric: String(METRICS.agentCount), label: "Specialized Agents", desc: "Purpose-built for specific business functions." },
+              { metric: METRICS.modelCount, label: "Open-Source Models", desc: "Automatic failover. Zero vendor lock-in." },
               { metric: "$0", label: "Per-Token Cost", desc: "Scale inference without scaling your bill." },
             ].map((item, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
@@ -598,6 +670,13 @@ export default function Home() {
                 <p className="text-xs text-neutral-500">{item.desc}</p>
               </motion.div>
             ))}
+          </div>
+
+          {/* 3D Globe — Global Agent Operations */}
+          <div className="relative mx-auto mb-16 h-[300px] md:h-[400px] w-full max-w-lg">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(16,185,129,0.08),transparent_70%)] pointer-events-none" />
+            {/* 3D globe — skip on mobile to avoid dual WebGL context crash */}
+            {!isMobile && <GlobalStrikeMap />}
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -624,9 +703,88 @@ export default function Home() {
         </motion.div>
       </section>
 
+      {/* ═══ CUSTOMER RESULTS ═══ */}
+      <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
+      <section className="py-24 px-6">
+        <div className="max-w-5xl mx-auto">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+            className="text-center mb-16">
+            <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">Results</p>
+            <h2 className="text-3xl md:text-5xl font-bold text-white tracking-tight">Real businesses. Real outcomes.</h2>
+          </motion.div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {[
+              { company: "TechVentures", industry: "SaaS", metric: "+226%", label: "Revenue Increase", quote: "Sovereign replaced our entire SDR team. Pipeline grew 3x in 60 days.", person: "CEO" },
+              { company: "Apex Fitness", industry: "Health & Fitness", metric: "+68%", label: "Revenue Growth", quote: "From zero online presence to 271% email list growth. The voice agent books calls while we sleep.", person: "Founder" },
+              { company: "Digital Forge", industry: "Agency", metric: "+233%", label: "Revenue Increase", quote: "We white-labeled Sovereign and resell it. Zero employees, pure margin.", person: "Managing Director" },
+            ].map((item, i) => (
+              <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.6 }}
+                className="p-6 rounded-2xl border border-white/[0.06] bg-white/[0.02] hover:border-emerald-500/15 transition-gpu duration-300">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-xs font-bold text-emerald-400">{item.company[0]}</div>
+                  <div>
+                    <p className="text-xs font-semibold text-white">{item.company}</p>
+                    <p className="text-[10px] text-neutral-500">{item.industry}</p>
+                  </div>
+                </div>
+                <div className="text-4xl font-black text-emerald-400 mb-1">{item.metric}</div>
+                <p className="text-xs text-neutral-400 mb-4">{item.label}</p>
+                <p className="text-sm text-neutral-500 leading-relaxed italic">&ldquo;{item.quote}&rdquo;</p>
+                <p className="text-[10px] text-neutral-600 mt-2">— {item.person}, {item.company}</p>
+              </motion.div>
+            ))}
+          </div>
+
+          <div className="text-center mt-8">
+            <Link href="/case-studies" className="text-xs text-emerald-500/60 hover:text-emerald-400 transition-colors">
+              Read full case studies →
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ INTEGRATIONS ═══ */}
+      <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
+      <section className="py-16 px-6">
+        <div className="max-w-5xl mx-auto text-center">
+          <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-neutral-500 mb-8">Works with your stack</p>
+          <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4">
+            {["NVIDIA NIM", "Ollama", "ElevenLabs", "Pinecone", "Clerk", "Stripe", "Vercel", "Zapier", "Make", "n8n", "Twilio", "Resend"].map((name) => (
+              <span key={name} className="text-xs font-medium text-neutral-600 hover:text-neutral-300 transition-colors px-3 py-1.5 rounded-lg border border-white/[0.04] bg-white/[0.01]">{name}</span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ BOOK A DEMO + SECURITY ═══ */}
+      <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
+      <section className="py-16 px-6">
+        <div className="max-w-3xl mx-auto text-center">
+          <h3 className="text-2xl font-bold text-white mb-3">Ready for your AI workforce?</h3>
+          <p className="text-sm text-neutral-500 mb-8">Book a 15-minute strategy call. See exactly how Sovereign fits your business.</p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8">
+            <Link href="/partner" className="group flex items-center gap-2 px-7 py-3.5 bg-white text-black font-semibold rounded-full text-sm hover:shadow-[0_0_40px_rgba(255,255,255,0.12)] transition-gpu">
+              Book a Demo <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </Link>
+            <Link href="/onboarding" className="px-7 py-3.5 rounded-full text-sm font-medium text-neutral-300 border border-white/[0.08] bg-white/[0.02] hover:border-emerald-500/20 hover:text-white transition-gpu">
+              Start Free — No Credit Card
+            </Link>
+          </div>
+          {/* Security badges */}
+          <div className="flex items-center justify-center gap-6 text-[10px] text-neutral-600">
+            <span className="flex items-center gap-1.5"><CheckCircle2 className="w-3 h-3 text-emerald-500/50" /> POPIA Compliant</span>
+            <span className="flex items-center gap-1.5"><CheckCircle2 className="w-3 h-3 text-emerald-500/50" /> 256-bit Encryption</span>
+            <span className="flex items-center gap-1.5"><CheckCircle2 className="w-3 h-3 text-emerald-500/50" /> NeMo Guardrails</span>
+            <span className="flex items-center gap-1.5"><CheckCircle2 className="w-3 h-3 text-emerald-500/50" /> Cancel Anytime</span>
+          </div>
+        </div>
+      </section>
+
       {/* ═══ PRICING ═══ */}
       <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
-      <section id="pricing" className="py-24">
+      <section ref={pricingRef} id="pricing" className="py-24">
         <Pricing />
       </section>
 
@@ -638,14 +796,14 @@ export default function Home() {
           <h2 className="text-2xl md:text-3xl font-bold text-white mb-12 text-center tracking-tight">Common Questions</h2>
           <div className="rounded-2xl border border-white/[0.06] bg-[#080808] p-1">
             {[
-              { q: "What is Sovereign Matrix?", a: "An autonomous AI agent platform. 132 specialized agents handle sales, marketing, content, and operations end-to-end. A smart router picks the best model from 51+ open-source LLMs per task. You set goals — agents deliver results." },
-              { q: "Is this just another ChatGPT wrapper?", a: "No. ChatGPT is a chatbot. Sovereign Matrix is 132 autonomous agents that execute: finding leads, building pages, writing outreach sequences, qualifying prospects, making calls. They open real browsers, hit real APIs, plan multi-step workflows, and self-correct without manual prompting." },
+              { q: "What is Sovereign Matrix?", a: `An autonomous AI agent platform. ${METRICS.agentCount} specialized agents handle sales, marketing, content, and operations end-to-end. A smart router picks the best model from ${METRICS.modelCount} open-source LLMs per task. You set goals — agents deliver results.` },
+              { q: "Is this just another ChatGPT wrapper?", a: `No. ChatGPT is a chatbot. Sovereign Matrix is ${METRICS.agentCount} autonomous agents that execute: finding leads, building pages, writing outreach sequences, qualifying prospects, making calls. They open real browsers, hit real APIs, plan multi-step workflows, and self-correct without manual prompting.` },
               { q: "Can agents run locally without cloud?", a: "Yes. NemoClaw runs on your machine via Ollama. Full offline execution — your data never leaves your hardware. Built for sensitive client work and air-gapped environments." },
               { q: "Is there a contract or lock-in?", a: "No contracts. Month-to-month. Cancel from your dashboard. Data is always exportable. NVIDIA NIM inference is free — you only pay for premium features." },
               { q: "How long does setup take?", a: "Under 60 seconds. Sign up, complete the 5-step onboarding wizard, and deploy your first agent immediately. No Docker, no terminal commands, no technical setup required for the cloud version." },
               { q: "What integrations are supported?", a: "NVIDIA NIM, Ollama (local models), ElevenLabs (voice), Pinecone (vector memory), Clerk (auth), Neon PostgreSQL (database), Vercel (hosting), PayFast, and Stripe. A public API at /api/v1/ is available for custom integrations." },
               { q: "Is my data safe?", a: "Yes. A 5-layer NeMo Guardrails safety pipeline protects every interaction: jailbreak detection, topic control, content safety, PII scanning, and quality scoring. Plus local execution means data never touches the cloud if you choose." },
-              { q: "What is the white-label Cartel license?", a: "The Cartel license lets agencies rebrand the entire platform as their own. Custom domain, client portals, your logo. Clients think you built the technology. It is an agency-in-a-box franchise model — resell at whatever margin you choose." },
+              { q: "What is the white-label Sovereign Network license?", a: "The Sovereign Network license lets agencies rebrand the entire platform as their own. Custom domain, client portals, your logo. Clients think you built the technology. It is an agency-in-a-box franchise model — resell at whatever margin you choose." },
             ].map((faq, i) => <FAQItem key={i} question={faq.q} answer={faq.a} />)}
           </div>
         </motion.div>
@@ -653,7 +811,7 @@ export default function Home() {
 
       {/* ═══ FINAL CTA ═══ */}
       <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
-      <section className="py-32 text-center px-6 relative overflow-hidden">
+      <section ref={ctaRef} className="py-32 text-center px-6 relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(16,185,129,0.04),transparent_70%)]" />
         {/* Circuit-style grid accent */}
         <div className="absolute inset-0 bg-[linear-gradient(rgba(0,183,255,0.008)_1px,transparent_1px),linear-gradient(90deg,rgba(0,183,255,0.008)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none" />
@@ -662,7 +820,7 @@ export default function Home() {
             Stop paying for tools<br className="hidden md:block" /> that don&apos;t scale.
           </h2>
           <p className="text-neutral-500 max-w-md mx-auto mb-10">
-            One platform. 132 agents. Zero per-token costs. Free to start.
+            One platform. {METRICS.agentCount} agents. Zero per-token costs. Free to start.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link href="/onboarding" className="cta-glow group flex items-center gap-2 px-7 py-3.5 bg-white text-black font-semibold rounded-full text-sm hover:shadow-[0_0_40px_rgba(255,255,255,0.12)] transition-gpu">
@@ -685,7 +843,7 @@ export default function Home() {
                 <SovereignLogo size="sm" />
                 <span className="text-sm font-semibold text-white">Sovereign Matrix</span>
               </div>
-              <p className="text-xs text-neutral-500 leading-relaxed">The autonomous AI agent platform. 132 agents. 51+ models. Zero per-token cost. Built on NVIDIA NIM.</p>
+              <p className="text-xs text-neutral-500 leading-relaxed">The autonomous AI agent platform. {METRICS.agentCount} agents. {METRICS.modelCount} models. Zero per-token cost. Built on NVIDIA NIM.</p>
             </div>
             <div>
               <h4 className="text-xs font-semibold text-neutral-400 mb-4">Product</h4>
@@ -697,11 +855,14 @@ export default function Home() {
               </ul>
             </div>
             <div>
-              <h4 className="text-xs font-semibold text-neutral-400 mb-4">Legal</h4>
+              <h4 className="text-xs font-semibold text-neutral-400 mb-4">Resources</h4>
               <ul className="space-y-2.5">
+                <li><Link href="/blog" className="text-xs text-neutral-500 hover:text-white transition-colors">Blog</Link></li>
+                <li><Link href="/docs" className="text-xs text-neutral-500 hover:text-white transition-colors">API Docs</Link></li>
+                <li><Link href="/case-studies" className="text-xs text-neutral-500 hover:text-white transition-colors">Case Studies</Link></li>
+                <li><Link href="/status" className="text-xs text-neutral-500 hover:text-white transition-colors">System Status</Link></li>
                 <li><Link href="/privacy" className="text-xs text-neutral-500 hover:text-white transition-colors">Privacy</Link></li>
                 <li><Link href="/terms" className="text-xs text-neutral-500 hover:text-white transition-colors">Terms</Link></li>
-                <li><Link href="/privacy#popia" className="text-xs text-neutral-500 hover:text-white transition-colors">POPIA Compliant</Link></li>
               </ul>
             </div>
             <div>

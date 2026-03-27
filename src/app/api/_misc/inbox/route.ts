@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { agentActivity } from "@/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 
 // GET — Get agent activity feed (Smart Inbox)
 export async function GET(req: NextRequest) {
-  const userId = req.headers.get("x-user-id") || "anonymous";
+  const { userId: clerkUserId } = await auth();
+  if (!clerkUserId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userId = clerkUserId;
   const { searchParams } = new URL(req.url);
   const limit = parseInt(searchParams.get("limit") || "50");
   const unreadOnly = searchParams.get("unread") === "true";
@@ -37,7 +40,9 @@ export async function GET(req: NextRequest) {
 
 // POST — Log a new agent activity
 export async function POST(req: NextRequest) {
-  const userId = req.headers.get("x-user-id") || "anonymous";
+  const { userId: clerkId } = await auth();
+  if (!clerkId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userId = clerkId;
   const body = await req.json();
 
   const { agentName, agentType, action, summary, result, projectId, metadata } = body;
@@ -75,7 +80,9 @@ export async function POST(req: NextRequest) {
 
 // PUT — Mark activities as read
 export async function PUT(req: NextRequest) {
-  const userId = req.headers.get("x-user-id") || "anonymous";
+  const { userId: clerkId } = await auth();
+  if (!clerkId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userId = clerkId;
   const body = await req.json();
   const { ids, markAll } = body;
 

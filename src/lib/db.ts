@@ -27,15 +27,11 @@ users.set("admin@umbra.ai", {
   createdAt: new Date().toISOString(),
 });
 
-/** Simple hash for MVP — replace with bcrypt in production */
+/** Password hashing using HMAC-SHA256 with a per-app salt */
 function hashPassword(password: string): string {
-  let hash = 0;
-  for (let i = 0; i < password.length; i++) {
-    const chr = password.charCodeAt(i);
-    hash = ((hash << 5) - hash) + chr;
-    hash |= 0;
-  }
-  return `h_${Math.abs(hash).toString(36)}`;
+  const { createHmac, randomBytes } = require("crypto");
+  const salt = process.env.PASSWORD_SALT || "sovereign-default-salt-change-me";
+  return createHmac("sha256", salt).update(password).digest("hex");
 }
 
 export const db = {

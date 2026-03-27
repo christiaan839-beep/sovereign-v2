@@ -85,8 +85,8 @@ export default function StatusPage() {
         {/* Platform Stats */}
         <div className="grid grid-cols-3 gap-3">
           {[
-            { label: "Agent APIs", value: "72+" },
-            { label: "NIM Models", value: "50+" },
+            { label: "Agent APIs", value: "117+" },
+            { label: "NIM Models", value: "51+" },
             { label: "Uptime Target", value: "99.9%" },
           ].map(s => (
             <div key={s.label} className="bg-neutral-950 border border-neutral-800 p-4 text-center">

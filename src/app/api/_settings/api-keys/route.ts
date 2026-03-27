@@ -3,6 +3,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { settings } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { safeEncrypt, safeDecrypt } from "@/lib/crypto";
 
 export async function GET() {
   const user = await currentUser();
@@ -17,8 +18,8 @@ export async function GET() {
       where: eq(settings.userEmail, userEmail)
     });
 
-    // Mask API keys — never return full keys in GET responses
-    const rawKeys = JSON.parse(userSettings?.apiKeys || "{}");
+    // Decrypt and mask API keys — never return full keys in GET responses
+    const rawKeys = JSON.parse(safeDecrypt(userSettings?.apiKeys || "{}"));
     const maskedKeys: Record<string, { configured: boolean; masked: string }> = {};
     for (const [provider, key] of Object.entries(rawKeys)) {
       const k = String(key);
@@ -51,7 +52,8 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    const apiKeysString = JSON.stringify(body);
+    // Encrypt API keys before storing in database
+    const apiKeysString = safeEncrypt(JSON.stringify(body));
 
     const existing = await db.query.settings.findFirst({
       where: eq(settings.userEmail, userEmail)

@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useRef, useCallback, ReactNode } from "react";
 
 // ⚡ SOVEREIGN MATRIX // TELEMETRY SYNC ⚡
 // This physically bridges the Vercel Frontend UI to the Local Python Swarm.
@@ -36,15 +36,26 @@ export function TelemetryProvider({ children }: { children: ReactNode }) {
      return () => clearInterval(pollStatus);
   }, [state]);
 
-  const triggerTelemetryUpdate = (action: string, newYield?: number) => {
+  const transmitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Clean up pending timer on unmount
+  useEffect(() => {
+    return () => {
+      if (transmitTimer.current) clearTimeout(transmitTimer.current);
+    };
+  }, []);
+
+  const triggerTelemetryUpdate = useCallback((action: string, newYield?: number) => {
      setLastAction(action);
      setState("TRANSMITTING");
      if (newYield) setDataYield(prev => prev + newYield);
-     
-     setTimeout(() => {
+
+     // Clear any pending timer to prevent stacking
+     if (transmitTimer.current) clearTimeout(transmitTimer.current);
+     transmitTimer.current = setTimeout(() => {
         setState("IDLE");
      }, 3000);
-  };
+  }, []);
 
   return (
     <TelemetryContext.Provider value={{ state, activePipelines, dataYield, lastAction, triggerTelemetryUpdate }}>

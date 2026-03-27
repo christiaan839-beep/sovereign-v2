@@ -131,7 +131,7 @@ export default function BillingPortal() {
                 Active
               </button>
             ) : p.name === "Enterprise" ? (
-              <a href="mailto:hello@sovereignmatrix.agency" className="w-full py-3 rounded-xl border border-white/10 text-white text-sm font-semibold hover:bg-white/5 transition-colors flex items-center justify-center gap-2">
+              <a href="mailto:christiaan@sovereignmatrix.agency" className="w-full py-3 rounded-xl border border-white/10 text-white text-sm font-semibold hover:bg-white/5 transition-colors flex items-center justify-center gap-2">
                 Contact Sales <ExternalLink className="w-3 h-3" />
               </a>
             ) : (

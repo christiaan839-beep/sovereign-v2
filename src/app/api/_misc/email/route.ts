@@ -1,14 +1,28 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { generations } from "@/db/schema";
+import { requireAuth } from "@/lib/auth-guard";
 
 /**
  * TRANSACTIONAL EMAIL — Resend-compatible email sender.
  * Sends welcome emails, invoices, lead notifications, and drip sequences.
  * Free tier: 100 emails/day via Resend, or falls back to logged-only mode.
  * All sends are audit-logged to the database.
+ *
+ * Requires authentication to prevent abuse (spam, phishing).
+ * Internal agent-to-agent calls use a shared secret for verification.
  */
 export async function POST(req: Request) {
+  // Allow internal agent calls with verified secret (not just a header value anyone can set)
+  const internalToken = req.headers.get("X-Sovereign-Internal");
+  const expectedSecret = process.env.INTERNAL_SERVICE_SECRET || "v1-proxy";
+  const isInternal = internalToken === expectedSecret && expectedSecret !== "v1-proxy";
+
+  if (!isInternal) {
+    const auth = await requireAuth();
+    if (auth.error) return auth.error;
+  }
+
   try {
     const { to, subject, html, text, template, data, body: bodyText } = await req.json();
 

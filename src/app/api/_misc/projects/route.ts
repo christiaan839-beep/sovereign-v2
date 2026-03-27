@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { clientProjects } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 
 // GET — List all client projects
 export async function GET(req: NextRequest) {
-  const userId = req.headers.get("x-user-id") || "anonymous";
+  const { userId: clerkUserId } = await auth();
+  if (!clerkUserId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userId = clerkUserId;
 
   try {
     const projects = await db
@@ -22,7 +25,9 @@ export async function GET(req: NextRequest) {
 
 // POST — Create a new client project
 export async function POST(req: NextRequest) {
-  const userId = req.headers.get("x-user-id") || "anonymous";
+  const { userId: clerkId } = await auth();
+  if (!clerkId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userId = clerkId;
   const body = await req.json();
 
   const { name, clientName, industry, website, color, notes } = body;
@@ -59,7 +64,9 @@ export async function POST(req: NextRequest) {
 
 // PUT — Update a project
 export async function PUT(req: NextRequest) {
-  const userId = req.headers.get("x-user-id") || "anonymous";
+  const { userId: clerkId } = await auth();
+  if (!clerkId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userId = clerkId;
   const body = await req.json();
   const { id, ...updates } = body;
 
@@ -85,7 +92,9 @@ export async function PUT(req: NextRequest) {
 
 // DELETE — Remove a project
 export async function DELETE(req: NextRequest) {
-  const userId = req.headers.get("x-user-id") || "anonymous";
+  const { userId: clerkId } = await auth();
+  if (!clerkId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userId = clerkId;
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");
 

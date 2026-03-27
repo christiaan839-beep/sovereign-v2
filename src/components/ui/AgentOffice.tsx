@@ -509,7 +509,7 @@ export function AgentOffice() {
                 {log[0]}
               </motion.div>
             </div>
-            <span className="text-[6px] text-white/10 font-mono shrink-0">117 agents · $0 cost</span>
+            <span className="text-[6px] text-white/10 font-mono shrink-0">132 agents · $0 cost</span>
           </div>
         </div>
 

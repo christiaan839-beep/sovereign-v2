@@ -9,7 +9,7 @@ export const PLATFORM = {
   name: "Sovereign Matrix",
   tagline: "Your AI workforce.",
   url: "https://sovereignmatrix.agency",
-  email: "hello@sovereignmatrix.agency",
+  email: "christiaan@sovereignmatrix.agency",
   location: "Cape Town, South Africa",
   year: 2026,
 } as const;
@@ -21,7 +21,7 @@ export const METRICS = {
   avgLatency: "<200ms",
   safetyLayers: 5,
   nimModelCount: 26,
-  agentEndpoints: 118,
+  agentEndpoints: 117,
 } as const;
 
 export const MODELS = {
@@ -41,7 +41,7 @@ export const PRICING = {
   currency: "ZAR",
   node: { name: "Sovereign Node", price: "R9,997", priceUsd: "~$550", period: "/mo" },
   array: { name: "Sovereign Array", price: "R24,997", priceUsd: "~$1,375", period: "/mo" },
-  cartel: { name: "Cartel License", price: "R49,997", priceUsd: "~$2,750", period: "/mo" },
+  cartel: { name: "Sovereign Network", price: "R49,997", priceUsd: "~$2,750", period: "/mo" },
 } as const;
 
 export const LINKS = {
