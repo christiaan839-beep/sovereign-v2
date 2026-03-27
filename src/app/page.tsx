@@ -9,6 +9,7 @@ import { useState, useRef } from "react";
 import { SovereignLogo } from "@/components/ui/SovereignLogo";
 import { Pricing } from "@/components/ui/Pricing";
 import { Testimonials } from "@/components/ui/SocialProof";
+import { CinematicLoader } from "@/components/ui/CinematicLoader";
 
 import { InteractiveHeroStrike } from "@/components/ui/InteractiveHeroStrike";
 import { SocialProofMetrics } from "@/components/ui/SocialProofMetrics";
@@ -224,6 +225,7 @@ export default function Home() {
   const heroScale = useTransform(scrollYProgress, [0, 0.5], [1, 0.95]);
 
   return (
+    <CinematicLoader>
     <div className="relative min-h-screen bg-[#010101] text-white selection:bg-emerald-500/20 font-sans antialiased">
 
       {/* Skip to content — accessibility */}
@@ -722,5 +724,6 @@ export default function Home() {
       {/* Floating conversational AI agent */}
       <LandingAgent />
     </div>
+    </CinematicLoader>
   );
 }
