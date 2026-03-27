@@ -218,7 +218,7 @@ export function SovereignAssistant() {
                 </div>
                 <div>
                   <h3 className="text-sm font-semibold text-white">Sovereign Assistant</h3>
-                  <p className="text-[10px] text-neutral-500">Routes to 109 AI agents</p>
+                  <p className="text-[10px] text-neutral-500">Routes to 132 AI agents</p>
                 </div>
               </div>
             </div>

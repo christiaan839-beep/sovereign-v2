@@ -127,7 +127,7 @@ export function InputBar({ loading, selectedModel, onModelChange, onSend }: Inpu
           </div>
           <div className="flex items-center justify-between mt-2">
             <ModelSwitcher selected={selectedModel} onChange={onModelChange} />
-            <p className="text-[10px] text-neutral-600">109 Agents &middot; 39 Models</p>
+            <p className="text-[10px] text-neutral-600">132 Agents &middot; 51+ Models</p>
           </div>
         </form>
       </div>

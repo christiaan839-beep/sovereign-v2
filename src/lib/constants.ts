@@ -9,7 +9,7 @@ export const PLATFORM = {
   name: "Sovereign Matrix",
   tagline: "Your AI workforce.",
   url: "https://sovereignmatrix.agency",
-  email: "hello@sovereignmatrix.agency",
+  email: "christiaan@sovereignmatrix.agency",
   location: "Cape Town, South Africa",
   year: 2026,
 } as const;
@@ -21,7 +21,7 @@ export const METRICS = {
   avgLatency: "<200ms",
   safetyLayers: 5,
   nimModelCount: 26,
-  agentEndpoints: 118,
+  agentEndpoints: 117,
 } as const;
 
 export const MODELS = {

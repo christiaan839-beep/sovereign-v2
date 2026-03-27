@@ -1,7 +1,7 @@
 {
   "name": "Sovereign Matrix",
   "short_name": "Sovereign",
-  "description": "132 AI agents that find leads, write content, build pages, and close deals. 49+ open-source models.",
+  "description": "132 AI agents that find leads, write content, build pages, and close deals. 51+ open-source models.",
   "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#000000",

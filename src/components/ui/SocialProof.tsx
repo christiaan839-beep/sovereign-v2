@@ -122,7 +122,7 @@ export function ToolShowcase() {
           transition={{ duration: 0.8 }}
         >
           <h2 className="text-4xl md:text-5xl font-bold text-white serif-text mb-4">
-            109 AI Agents. One Dashboard.
+            132 AI Agents. One Dashboard.
           </h2>
           <p className="text-neutral-400 text-sm uppercase tracking-[0.2em]">
             Every tool you need to dominate your market
