@@ -3,22 +3,23 @@
 import { motion, useInView } from "framer-motion";
 import { useRef, useState, useEffect } from "react";
 import { Star, Quote } from "lucide-react";
+import { METRICS } from "@/lib/constants";
 
 const PLATFORM_FACTS = [
   {
-    metric: "116",
+    metric: String(METRICS.agentEndpoints),
     label: "Agent Endpoints",
     desc: "Each calling a real AI model. Zero fakes, zero simulations.",
     color: "from-emerald-400/20 to-transparent",
   },
   {
-    metric: "$0",
+    metric: METRICS.perTokenCost,
     label: "Per-Token Cost",
-    desc: "26 NVIDIA NIM models at zero inference cost. Scale without scaling your bill.",
+    desc: `${METRICS.nimModelCount} NVIDIA NIM models at zero inference cost. Scale without scaling your bill.`,
     color: "from-[#00B7FF]/20 to-transparent",
   },
   {
-    metric: "5",
+    metric: String(METRICS.safetyLayers),
     label: "Safety Layers",
     desc: "Jailbreak detection, topic control, content safety, PII scan, quality scoring.",
     color: "from-rose-400/20 to-transparent",
@@ -122,7 +123,7 @@ export function ToolShowcase() {
           transition={{ duration: 0.8 }}
         >
           <h2 className="text-4xl md:text-5xl font-bold text-white serif-text mb-4">
-            132 AI Agents. One Dashboard.
+            {METRICS.agentCount} AI Agents. One Dashboard.
           </h2>
           <p className="text-neutral-400 text-sm uppercase tracking-[0.2em]">
             Every tool you need to dominate your market

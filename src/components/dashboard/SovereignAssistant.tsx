@@ -14,6 +14,7 @@ import { routeIntent } from "@/lib/intent-router";
 import { ChatLayout } from "@/components/chat";
 import type { Message } from "@/components/chat/types";
 import { detectContentType } from "@/components/chat/types";
+import { METRICS } from "@/lib/constants";
 
 // ── Re-export the modular chat as the embedded version ──
 export { ChatLayout as SovereignAssistantEmbed };
@@ -218,7 +219,7 @@ export function SovereignAssistant() {
                 </div>
                 <div>
                   <h3 className="text-sm font-semibold text-white">Sovereign Assistant</h3>
-                  <p className="text-[10px] text-neutral-500">Routes to 132 AI agents</p>
+                  <p className="text-[10px] text-neutral-500">Routes to {METRICS.agentCount} AI agents</p>
                 </div>
               </div>
             </div>

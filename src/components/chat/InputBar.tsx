@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Send, Globe, FileText, Users, Image as ImageIcon, Zap, X, ArrowRight } from "lucide-react";
+import { METRICS } from "@/lib/constants";
 import { ModelSwitcher } from "./ModelSwitcher";
 
 // ── Quick Actions ──
@@ -127,7 +128,7 @@ export function InputBar({ loading, selectedModel, onModelChange, onSend }: Inpu
           </div>
           <div className="flex items-center justify-between mt-2">
             <ModelSwitcher selected={selectedModel} onChange={onModelChange} />
-            <p className="text-[10px] text-neutral-600">132 Agents &middot; 51+ Models</p>
+            <p className="text-[10px] text-neutral-600">{METRICS.agentCount} Agents &middot; {METRICS.modelCount} Models</p>
           </div>
         </form>
       </div>
