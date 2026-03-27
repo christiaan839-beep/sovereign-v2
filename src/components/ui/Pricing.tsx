@@ -16,6 +16,7 @@ export function Pricing() {
       name: "Free",
       description: "Try Sovereign Matrix with 3 agents and 50 tasks. No credit card required.",
       price: "R0",
+      priceUsd: "$0",
       period: "/forever",
       icon: Shield,
       color: "text-neutral-400",
@@ -39,6 +40,7 @@ export function Pricing() {
       name: "Sovereign Node",
       description: "Core AI agents for content, SEO, and lead generation. Local execution via NemoClaw OS.",
       price: "R9,997",
+      priceUsd: "~$550",
       period: "/mo",
       icon: Zap,
       color: "text-[#00B7FF]",
@@ -63,6 +65,7 @@ export function Pricing() {
       name: "Sovereign Array",
       description: "Sub-200ms voice agents, Cosmos VLM video, War Room red-teaming, and 24h priority processing.",
       price: "R24,997",
+      priceUsd: "~$1,375",
       period: "/mo",
       icon: Crown,
       color: "text-emerald-400",
@@ -88,6 +91,7 @@ export function Pricing() {
       name: "Sovereign Network",
       description: "White-label the platform with your branding. Resell to clients with custom portals.",
       price: "R49,997",
+      priceUsd: "~$2,750",
       period: "/mo",
       icon: Server,
       color: "text-violet-400",
@@ -231,6 +235,9 @@ export function Pricing() {
                   <span className="text-neutral-500 font-bold tracking-widest uppercase text-xs mb-2">{tier.period}</span>
                 )}
               </div>
+              {tier.priceUsd && tier.priceUsd !== "$0" && (
+                <p className="text-[10px] text-neutral-600 font-mono">{tier.priceUsd} USD</p>
+              )}
             </div>
 
             <button

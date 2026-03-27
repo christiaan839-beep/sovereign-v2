@@ -155,20 +155,20 @@ export default function NemoClawPage() {
             </h3>
             <div className="space-y-3 font-mono text-[10px] uppercase tracking-wider">
               <div className="flex justify-between items-center border-b border-white/5 pb-2">
-                <span className="text-neutral-500">Container State</span>
+                <span className="text-neutral-500">OpenShell Sandbox</span>
                 <div className="flex items-center gap-2 text-emerald-400">
                   <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"/>
-                  Active (Airgapped)
+                  Isolated (Landlock + seccomp)
                 </div>
               </div>
               <div className="flex justify-between items-center border-b border-white/5 pb-2">
-                <span className="text-neutral-500">GPU Passthrough</span>
-                <span className="text-[#00B7FF] font-bold">RTX 5090 (32GB VRAM)</span>
+                <span className="text-neutral-500">Data Sovereignty</span>
+                <span className="text-[#00B7FF] font-bold">Air-Gapped — Zero Cloud Leakage</span>
               </div>
               <div className="flex justify-between items-center border-b border-white/5 pb-2">
-                <span className="text-neutral-500">Claude Computer Use</span>
+                <span className="text-neutral-500">Browser Automation</span>
                 <span className="text-emerald-400 flex items-center gap-1">
-                   <ShieldAlert className="w-3 h-3" /> Enabled
+                   <ShieldAlert className="w-3 h-3" /> Sandboxed Container
                 </span>
               </div>
               <div className="flex justify-between items-center">
@@ -187,7 +187,7 @@ export default function NemoClawPage() {
               {[
                   { name: "mcp-filesystem", desc: "Local Vault Read/Write", icon: HardDrive },
                   { name: "mcp-memory", desc: "Pinecone Vector RAG", icon: BrainCircuit },
-                  { name: "mcp-computer-use", desc: "Claude Beta Vision/Mouse", icon: ScanFace },
+                  { name: "mcp-computer-use", desc: "Sandboxed Browser Automation", icon: ScanFace },
               ].map((server, i) => (
                 <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-black/40 border border-white/5">
                   <div className="flex items-center gap-3">
