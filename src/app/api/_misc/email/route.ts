@@ -10,11 +10,14 @@ import { requireAuth } from "@/lib/auth-guard";
  * All sends are audit-logged to the database.
  *
  * Requires authentication to prevent abuse (spam, phishing).
- * Internal agent-to-agent calls should use the internal X-Sovereign-Internal header.
+ * Internal agent-to-agent calls use a shared secret for verification.
  */
 export async function POST(req: Request) {
-  // Allow internal agent calls (e.g., booking webhook triggering email)
-  const isInternal = req.headers.get("X-Sovereign-Internal") === "v1-proxy";
+  // Allow internal agent calls with verified secret (not just a header value anyone can set)
+  const internalToken = req.headers.get("X-Sovereign-Internal");
+  const expectedSecret = process.env.INTERNAL_SERVICE_SECRET || "v1-proxy";
+  const isInternal = internalToken === expectedSecret && expectedSecret !== "v1-proxy";
+
   if (!isInternal) {
     const auth = await requireAuth();
     if (auth.error) return auth.error;

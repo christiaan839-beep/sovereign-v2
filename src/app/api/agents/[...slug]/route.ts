@@ -66,7 +66,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
   const agentName = slug.join("/");
 
   // Authenticate — skip for internal agent-to-agent calls
-  const isInternal = req.headers.get("X-Sovereign-Internal") === "v1-proxy";
+  const internalToken = req.headers.get("X-Sovereign-Internal");
+  const expectedSecret = process.env.INTERNAL_SERVICE_SECRET || "v1-proxy";
+  const isInternal = internalToken === expectedSecret && expectedSecret !== "v1-proxy";
   if (!isInternal) {
     const authError = await quickAuth(req, agentName);
     if (authError) return authError;
@@ -101,7 +103,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
   const agentName = slug.join("/");
 
   // Authenticate GET requests too
-  const isInternal = req.headers.get("X-Sovereign-Internal") === "v1-proxy";
+  const internalToken = req.headers.get("X-Sovereign-Internal");
+  const expectedSecret = process.env.INTERNAL_SERVICE_SECRET || "v1-proxy";
+  const isInternal = internalToken === expectedSecret && expectedSecret !== "v1-proxy";
   if (!isInternal) {
     const authError = await quickAuth(req, agentName);
     if (authError) return authError;
@@ -129,13 +133,23 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ slug: string[] }> }) {
   const { slug } = await params;
-  const handler = getAgentHandler(slug.join("/"));
+  const agentName = slug.join("/");
+
+  const internalToken = req.headers.get("X-Sovereign-Internal");
+  const expectedSecret = process.env.INTERNAL_SERVICE_SECRET || "v1-proxy";
+  const isInternal = internalToken === expectedSecret && expectedSecret !== "v1-proxy";
+  if (!isInternal) {
+    const authError = await quickAuth(req, agentName);
+    if (authError) return authError;
+  }
+
+  const handler = getAgentHandler(agentName);
   if (!handler?.PUT) return NextResponse.json({ error: "Method not supported" }, { status: 405 });
   try {
     return await handler.PUT(req);
   } catch (err) {
     return NextResponse.json(
-      { error: `Agent "${slug.join("/")}" PUT failed` },
+      { error: `Agent "${agentName}" PUT failed` },
       { status: 500 }
     );
   }
@@ -143,7 +157,17 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ slug
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ slug: string[] }> }) {
   const { slug } = await params;
-  const handler = getAgentHandler(slug.join("/"));
+  const agentName = slug.join("/");
+
+  const internalToken = req.headers.get("X-Sovereign-Internal");
+  const expectedSecret = process.env.INTERNAL_SERVICE_SECRET || "v1-proxy";
+  const isInternal = internalToken === expectedSecret && expectedSecret !== "v1-proxy";
+  if (!isInternal) {
+    const authError = await quickAuth(req, agentName);
+    if (authError) return authError;
+  }
+
+  const handler = getAgentHandler(agentName);
   if (!handler?.DELETE) return NextResponse.json({ error: "Method not supported" }, { status: 405 });
   try {
     return await handler.DELETE(req);

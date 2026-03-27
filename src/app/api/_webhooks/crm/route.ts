@@ -22,8 +22,6 @@ export async function POST(req: Request) {
         console.error("[CRM Webhook] Invalid signature — rejecting");
         return NextResponse.json({ error: "Invalid signature" }, { status: 403 });
       }
-      // Re-parse body since we consumed the stream
-      const payload = JSON.parse(body);
       return NextResponse.json({ success: true, status: "CRM State Logged by Sovereign Matrix" });
     }
 

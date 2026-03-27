@@ -131,8 +131,8 @@ async function handleRequest(
       method: request.method,
       headers: {
         "Content-Type": request.headers.get("content-type") || "application/json",
-        // Pass through a system marker so internal routes know this is trusted
-        "X-Sovereign-Internal": "v1-proxy",
+        // Pass through service secret so internal routes can verify this is a trusted proxy call
+        "X-Sovereign-Internal": process.env.INTERNAL_SERVICE_SECRET || "v1-proxy",
       },
       body,
     });
