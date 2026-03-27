@@ -59,7 +59,7 @@ export default function CompetitorAssassination() {
             <Swords className="w-6 h-6 text-rose-500" />
           </div>
           <div>
-            <h1 className="text-3xl font-serif font-bold text-white">Cartel Target Lock</h1>
+            <h1 className="text-3xl font-serif font-bold text-white">Competitor Target Lock</h1>
             <p className="text-neutral-500 font-mono text-xs uppercase tracking-widest mt-1">Competitor Assassination Matrix</p>
           </div>
         </div>

@@ -17,7 +17,7 @@ export default function ClientPortal({ params }: { params: { domain: string } })
       <nav className="fixed top-0 inset-x-0 h-16 border-b border-white/5 bg-black/80 backdrop-blur-xl z-50 flex items-center justify-between px-6">
         <div className="flex items-center gap-3 opacity-50">
           <SovereignLogo size="sm" />
-          <span className="text-xs font-bold uppercase tracking-[0.2em] font-mono">Cartel Node // {clientName}</span>
+          <span className="text-xs font-bold uppercase tracking-[0.2em] font-mono">Network Node // {clientName}</span>
         </div>
         <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
           <ShieldAlert className="w-3 h-3 text-emerald-500" />

@@ -25,7 +25,7 @@ export const PLANS = {
     features: ["Everything in Node", "Unlimited AI generations", "Cosmos VLM Video", "Priority processing", "War Room Red-Teaming", "Direct Comm-Link (24h)"],
   },
   cartel: {
-    name: "Cartel License",
+    name: "Sovereign Network",
     priceZAR: 4999700,
     priceDisplay: "R49,997",
     monthlyAmount: 49997,

@@ -16,7 +16,7 @@ export async function POST(req: Request) {
     const { userEmail, agencyName, requestedDomain } = body;
 
     if (!userEmail || !agencyName) {
-      return NextResponse.json({ error: 'Missing required fields for Cartel Provisioning' }, { status: 400 });
+      return NextResponse.json({ error: 'Missing required fields for Network Provisioning' }, { status: 400 });
     }
 
     const vercelToken = process.env.VERCEL_ACCESS_TOKEN;
@@ -106,13 +106,13 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      message: 'Cartel Node Provisioned',
+      message: 'Sovereign Network Node Provisioned',
       projectId: projectData.id,
       url: `https://${projectSlug}.vercel.app`
     });
 
   } catch (error) {
-    console.error('Cartel Provisioning Fault:', error);
+    console.error('Network Provisioning Fault:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
