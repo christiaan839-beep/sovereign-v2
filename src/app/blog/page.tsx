@@ -95,36 +95,40 @@ export default function BlogPage() {
         {/* Featured Articles */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-12">
           {featured.map((a, i) => (
-            <motion.article key={a.slug} {...fadeIn(i * 0.1)} className="glass-card p-6 group hover:border-electric/30 transition-gpu cursor-pointer">
-              <div className="flex items-center gap-3 mb-4">
-                <span className="px-2 py-0.5 rounded-full bg-electric/10 border border-electric/20 text-electric text-[10px] font-bold uppercase">{a.category}</span>
-                <span className="text-[10px] text-text-secondary flex items-center gap-1"><Clock className="w-2.5 h-2.5" />{a.readTime}</span>
-              </div>
-              <h2 className="text-lg font-bold text-white mb-3 group-hover:text-electric transition-colors leading-snug">{a.title}</h2>
-              <p className="text-sm text-text-secondary leading-relaxed mb-4">{a.excerpt}</p>
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] text-text-secondary flex items-center gap-1"><Calendar className="w-2.5 h-2.5" />{a.date}</span>
-                <span className="text-xs text-electric font-bold flex items-center gap-1 group-hover:gap-2 transition-gpu">Read <ArrowRight className="w-3 h-3" /></span>
-              </div>
-            </motion.article>
+            <Link key={a.slug} href={`/blog/${a.slug}`}>
+              <motion.article {...fadeIn(i * 0.1)} className="glass-card p-6 group hover:border-electric/30 transition-gpu cursor-pointer h-full">
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="px-2 py-0.5 rounded-full bg-electric/10 border border-electric/20 text-electric text-[10px] font-bold uppercase">{a.category}</span>
+                  <span className="text-[10px] text-text-secondary flex items-center gap-1"><Clock className="w-2.5 h-2.5" />{a.readTime}</span>
+                </div>
+                <h2 className="text-lg font-bold text-white mb-3 group-hover:text-electric transition-colors leading-snug">{a.title}</h2>
+                <p className="text-sm text-text-secondary leading-relaxed mb-4">{a.excerpt}</p>
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-text-secondary flex items-center gap-1"><Calendar className="w-2.5 h-2.5" />{a.date}</span>
+                  <span className="text-xs text-electric font-bold flex items-center gap-1 group-hover:gap-2 transition-gpu">Read <ArrowRight className="w-3 h-3" /></span>
+                </div>
+              </motion.article>
+            </Link>
           ))}
         </div>
 
         {/* All Articles */}
         <div className="space-y-4">
           {regular.map((a, i) => (
-            <motion.article key={a.slug} {...fadeIn(i * 0.05)} className="glass-card p-5 flex items-center gap-5 group hover:border-electric/30 transition-gpu cursor-pointer">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-3 mb-2">
-                  <span className="px-2 py-0.5 rounded-full bg-onyx border border-glass-border text-text-secondary text-[9px] font-bold uppercase">{a.category}</span>
-                  <span className="text-[10px] text-text-secondary flex items-center gap-1"><Clock className="w-2.5 h-2.5" />{a.readTime}</span>
-                  <span className="text-[10px] text-text-secondary">{a.date}</span>
+            <Link key={a.slug} href={`/blog/${a.slug}`}>
+              <motion.article {...fadeIn(i * 0.05)} className="glass-card p-5 flex items-center gap-5 group hover:border-electric/30 transition-gpu cursor-pointer">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="px-2 py-0.5 rounded-full bg-onyx border border-glass-border text-text-secondary text-[9px] font-bold uppercase">{a.category}</span>
+                    <span className="text-[10px] text-text-secondary flex items-center gap-1"><Clock className="w-2.5 h-2.5" />{a.readTime}</span>
+                    <span className="text-[10px] text-text-secondary">{a.date}</span>
+                  </div>
+                  <h3 className="text-sm font-bold text-white group-hover:text-electric transition-colors mb-1">{a.title}</h3>
+                  <p className="text-xs text-text-secondary leading-relaxed line-clamp-2">{a.excerpt}</p>
                 </div>
-                <h3 className="text-sm font-bold text-white group-hover:text-electric transition-colors mb-1">{a.title}</h3>
-                <p className="text-xs text-text-secondary leading-relaxed line-clamp-2">{a.excerpt}</p>
-              </div>
-              <ArrowRight className="w-4 h-4 text-text-secondary group-hover:text-electric shrink-0 transition-colors" />
-            </motion.article>
+                <ArrowRight className="w-4 h-4 text-text-secondary group-hover:text-electric shrink-0 transition-colors" />
+              </motion.article>
+            </Link>
           ))}
         </div>
       </section>
