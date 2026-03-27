@@ -1,22 +1,10 @@
 import { NextResponse } from "next/server";
+import { createAgentRoute } from "@/lib/agent-factory";
 
 /**
  * USAGE-BASED BILLING — Calculates per-agent-call charges.
  * Tracks consumption and generates invoices.
- * 
- * Pricing per call (ZAR):
- * - Translate: R0.50
- * - PII Redactor: R1.00
- * - Blog Gen: R5.00
- * - Swarm: R10.00
- * - Collab Room: R15.00
- * - Case Study: R5.00
- * - Page Builder: R3.00
- * - Image Gen: R2.00
- * - Voice Synth: R1.50
- * - Voicechat: R2.00
- * - Benchmark: R3.00
- * - Other: R0.50
+ * POST wrapped in security factory for auth + safety pipeline.
  */
 
 interface UsageRecord {
@@ -47,39 +35,36 @@ const AGENT_PRICING: Record<string, number> = {
   "abm-artillery": 3.00,
 };
 
-export async function POST(request: Request) {
-  try {
-    const { action, clientId, agent } = await request.json();
+export const POST = createAgentRoute({
+  name: "billing",
+  requiredFields: ["action"],
+  skipJailbreakCheck: true,   // Billing data, not user prompts
+  skipSafetyCheck: true,
+  skipQualityCheck: true,
+  handler: async ({ input }) => {
+    const action = input.action as string;
+    const clientId = input.clientId as string;
+    const agent = input.agent as string;
 
     if (action === "record") {
-      if (!clientId || !agent) {
-        return NextResponse.json({ error: "clientId and agent required." }, { status: 400 });
-      }
+      if (!clientId || !agent) throw new Error("clientId and agent required");
 
       const cost = AGENT_PRICING[agent] || 0.50;
-      const record: UsageRecord = {
-        clientId,
-        agent,
-        cost,
-        timestamp: new Date().toISOString(),
-      };
+      const record: UsageRecord = { clientId, agent, cost, timestamp: new Date().toISOString() };
 
       const existing = BILLING_STORE.get(clientId) || [];
       existing.push(record);
       BILLING_STORE.set(clientId, existing);
 
-      return NextResponse.json({ success: true, recorded: record, total_usage: existing.length });
+      return { success: true, recorded: record, total_usage: existing.length };
     }
 
     if (action === "invoice") {
-      if (!clientId) {
-        return NextResponse.json({ error: "clientId required." }, { status: 400 });
-      }
+      if (!clientId) throw new Error("clientId required");
 
       const records = BILLING_STORE.get(clientId) || [];
       const totalCost = records.reduce((sum, r) => sum + r.cost, 0);
 
-      // Group by agent
       const byAgent: Record<string, { calls: number; cost: number }> = {};
       for (const r of records) {
         if (!byAgent[r.agent]) byAgent[r.agent] = { calls: 0, cost: 0 };
@@ -87,37 +72,28 @@ export async function POST(request: Request) {
         byAgent[r.agent].cost += r.cost;
       }
 
-      return NextResponse.json({
+      return {
         success: true,
         invoice: {
           clientId,
           period: `${records[0]?.timestamp?.substring(0, 10) || "N/A"} → ${records[records.length - 1]?.timestamp?.substring(0, 10) || "N/A"}`,
           total_calls: records.length,
           total_cost_zar: totalCost,
-          breakdown: Object.entries(byAgent).map(([agent, data]) => ({
-            agent,
-            calls: data.calls,
-            unit_price: AGENT_PRICING[agent] || 0.50,
-            total: data.cost,
-          })).sort((a, b) => b.total - a.total),
+          breakdown: Object.entries(byAgent)
+            .map(([agent, data]) => ({ agent, calls: data.calls, unit_price: AGENT_PRICING[agent] || 0.50, total: data.cost }))
+            .sort((a, b) => b.total - a.total),
         },
-      });
+      };
     }
 
-    return NextResponse.json({ error: "action must be 'record' or 'invoice'." }, { status: 400 });
-  } catch (error) {
-    return NextResponse.json({ error: "Billing error", details: String(error) }, { status: 500 });
-  }
-}
+    throw new Error("action must be 'record' or 'invoice'");
+  },
+});
 
 export async function GET() {
   const allClients: Array<{ clientId: string; calls: number; spend: number }> = [];
   for (const [clientId, records] of BILLING_STORE.entries()) {
-    allClients.push({
-      clientId,
-      calls: records.length,
-      spend: records.reduce((s, r) => s + r.cost, 0),
-    });
+    allClients.push({ clientId, calls: records.length, spend: records.reduce((s, r) => s + r.cost, 0) });
   }
 
   return NextResponse.json({

@@ -1,23 +1,19 @@
-import { nimChat, getNimKey } from "@/lib/nvidia";
-import { NextResponse } from "next/server";
+import { createAgentRoute } from "@/lib/agent-factory";
+import { getNimKey } from "@/lib/nvidia";
 
 /**
- * MINIMAX M2.5 CODE AGENT — Coding-optimized model for better
- * code generation than general-purpose LLMs.
- * 
- * Specializes in: HTML, CSS, JS, Python, TypeScript, React,
- * SQL queries, shell scripts, and code debugging.
- * 
- * LICENSE: MiniMax Open License — commercial use permitted.
+ * MINIMAX M2.5 CODE AGENT — Coding-optimized model for production code generation.
+ * Now wrapped in createAgentRoute for full security pipeline:
+ * auth → jailbreak check → content safety → execute → PII scan → quality score
  */
 
-export async function POST(request: Request) {
-  try {
-    const { task, language = "typescript", context = "" } = await request.json();
-
-    if (!task) {
-      return NextResponse.json({ error: "task is required." }, { status: 400 });
-    }
+export const POST = createAgentRoute({
+  name: "code-agent",
+  requiredFields: ["task"],
+  handler: async ({ input }) => {
+    const task = input.task as string;
+    const language = (input.language as string) || "typescript";
+    const context = (input.context as string) || "";
 
     const start = Date.now();
     const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
@@ -39,15 +35,12 @@ export async function POST(request: Request) {
 
     const data = await res.json();
 
-    return NextResponse.json({
+    return {
       success: true,
       model: "MiniMax M2.5 (Code-Optimized)",
       language,
       code: data?.choices?.[0]?.message?.content || "",
       duration_ms: Date.now() - start,
-      license: "MiniMax Open License — commercial use permitted",
-    });
-  } catch (error) {
-    return NextResponse.json({ error: "Code agent error", details: String(error) }, { status: 500 });
-  }
-}
+    };
+  },
+});

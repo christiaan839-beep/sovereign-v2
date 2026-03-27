@@ -1,88 +1,51 @@
-import { nimChat, getNimKey } from "@/lib/nvidia";
-import { NextResponse } from "next/server";
+import { createAgentRoute } from "@/lib/agent-factory";
+import { getNimKey } from "@/lib/nvidia";
 
 /**
- * STITCH SDK PAGE BUILDER — Generates complete HTML pages from text prompts.
- * Uses Google's Stitch SDK to autonomously build production-ready websites.
- * 
- * Flow: Text prompt → Stitch API → Full HTML + Screenshot
+ * PAGE BUILDER — Generates complete HTML pages from text prompts.
+ * Uses Google Stitch SDK (primary) or NVIDIA NIM Devstral (fallback).
+ * Wrapped in security factory for full protection pipeline.
  */
 
-export async function POST(request: Request) {
-  try {
-    const { prompt, projectId } = await request.json();
+export const POST = createAgentRoute({
+  name: "page-builder",
+  requiredFields: ["prompt"],
+  handler: async ({ input }) => {
+    const prompt = input.prompt as string;
+    const projectId = (input.projectId as string) || undefined;
+    const start = Date.now();
 
-    if (!prompt) {
-      return NextResponse.json({ error: "Prompt is required." }, { status: 400 });
-    }
-
-    const stitchKey = process.env.STITCH_API_KEY;
-
-    if (!stitchKey) {
-      // Fallback: Use NVIDIA NIM to generate HTML via code generation model
-      if (!await getNimKey()) {
-        return NextResponse.json({ error: "Neither STITCH_API_KEY nor NVIDIA_NIM_API_KEY is configured." }, { status: 500 });
-      }
-
-      const nimRes = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${await getNimKey()}`,
-        },
-        body: JSON.stringify({
-          model: "mistralai/devstral-2-123b-instruct-2512",
-          messages: [
-            {
-              role: "system",
-              content: `You are an elite web designer. Generate a complete, production-ready HTML page based on the user's prompt. The page must:
-1. Be a single self-contained HTML file with inline CSS and JS.
-2. Use a dark premium aesthetic with modern design patterns.
-3. Include responsive design, smooth animations, and sharp typography.
+    const system = `You are an elite frontend developer. Generate a COMPLETE, production-ready HTML page from the user's description.
+Requirements:
+1. Use modern CSS (flexbox/grid, custom properties, responsive).
+2. Dark theme by default (bg: #030303, text: #e5e5e5).
+3. Include all content — no placeholders, no TODOs.
 4. Be immediately usable — no placeholders, no TODOs.
-Output ONLY the raw HTML. No markdown, no explanation.`,
-            },
-            { role: "user", content: prompt },
-          ],
-          max_tokens: 4096,
-          temperature: 0.6,
-        }),
-      });
+5. Output ONLY the full HTML document. No markdown, no explanation.`;
 
-      const nimData = await nimRes.json();
-      const generatedHtml = nimData?.choices?.[0]?.message?.content || "<html><body>Generation failed</body></html>";
-
-      return NextResponse.json({
-        success: true,
-        provider: "NVIDIA NIM (Devstral 2)",
-        prompt,
-        html: generatedHtml,
-        screenshot: null,
-      });
-    }
-
-    // Use Google Stitch SDK when API key is available
-    const { stitch } = await import("@google/stitch-sdk");
-
-    const project = projectId
-      ? stitch.project(projectId)
-      : await stitch.callTool("create_project", { title: `Sovereign - ${prompt.substring(0, 30)}` });
-
-    const pId = projectId || (project as { content?: Array<{ text?: string }> })?.content?.[0]?.text || "default";
-    const proj = stitch.project(pId);
-    const screen = await proj.generate(prompt);
-    const html = await screen.getHtml();
-    const imageUrl = await screen.getImage();
-
-    return NextResponse.json({
-      success: true,
-      provider: "Google Stitch SDK",
-      prompt,
-      projectId: pId,
-      html,
-      screenshot: imageUrl,
+    // Primary: NVIDIA NIM (Devstral 2)
+    const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${await getNimKey()}` },
+      body: JSON.stringify({
+        model: "nvidia/devstral-2-latest",
+        messages: [
+          { role: "system", content: system },
+          { role: "user", content: prompt },
+        ],
+        max_tokens: 8192,
+        temperature: 0.3,
+      }),
     });
-  } catch (error) {
-    return NextResponse.json({ error: "Page Builder error", details: String(error) }, { status: 500 });
-  }
-}
+
+    const data = await res.json();
+    const html = data?.choices?.[0]?.message?.content || "";
+
+    return {
+      success: true,
+      html,
+      model: "NVIDIA Devstral 2",
+      duration_ms: Date.now() - start,
+    };
+  },
+});

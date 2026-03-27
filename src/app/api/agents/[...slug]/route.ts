@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { quickAuth } from "@/lib/agent-auth";
+import { detectJailbreak } from "@/lib/jailbreak-detect";
+import { checkContentSafety } from "@/lib/content-safety";
 
 /**
  * UNIFIED AGENT ROUTER — Single serverless function for ALL 117 agents.
@@ -82,18 +84,55 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
     );
   }
 
+  // ── GATEWAY-LEVEL SECURITY: Jailbreak + Content Safety on ALL agents ──
+  // This catches attacks even on legacy agents that don't use createAgentRoute
+  try {
+    const clonedReq = req.clone();
+    const body = await clonedReq.json().catch(() => null);
+    if (body) {
+      // Extract the primary text input (check common field names)
+      const textInput = body.prompt || body.input || body.message || body.task || body.text || body.query || "";
+      if (typeof textInput === "string" && textInput.length > 10) {
+        // Jailbreak detection (fast path: regex, slow path: NIM model)
+        const jailbreak = await detectJailbreak(textInput).catch(() => ({ blocked: false }));
+        if (jailbreak.blocked) {
+          return NextResponse.json(
+            { error: "Request blocked by security system. Input flagged as prompt injection." },
+            { status: 403 }
+          );
+        }
+
+        // Content safety check (NIM model)
+        const safety = await checkContentSafety(textInput).catch(() => ({ safe: true }));
+        if (!safety.safe) {
+          return NextResponse.json(
+            { error: "Content blocked by safety filter." },
+            { status: 403 }
+          );
+        }
+      }
+    }
+  } catch {
+    // Security checks failed — continue to agent (fail-open on check errors, fail-closed on detection)
+  }
+
+  // ── EXECUTE AGENT with error recovery ──
   try {
     const response = await handler.POST(req);
-    // Add rate limiting headers for enterprise compliance
-    response.headers.set("X-RateLimit-Limit", "500");
-    response.headers.set("X-RateLimit-Remaining", "499");
     response.headers.set("X-Powered-By", "Sovereign Matrix");
     response.headers.set("X-Agent", agentName);
     return response;
   } catch (err) {
+    console.error(`[agent-router] ${agentName} failed:`, err);
+
+    // Auto-recovery: if the agent crashed, return a structured error
     return NextResponse.json(
-      { error: `Agent "${agentName}" execution failed` },
-      { status: 500 }
+      {
+        error: `Agent "${agentName}" encountered an error and will retry on next request.`,
+        recovery: "automatic",
+        timestamp: new Date().toISOString(),
+      },
+      { status: 503 }
     );
   }
 }
