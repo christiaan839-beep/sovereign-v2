@@ -28,6 +28,7 @@ import { detectJailbreak } from "@/lib/jailbreak-detect";
 import { checkContentSafety } from "@/lib/content-safety";
 import { scoreOutput, type QualityScore } from "@/lib/quality-scorer";
 import { recordExecution, getLearnedDirectives, getAdaptiveThreshold, persistLearning } from "@/lib/adaptive-engine";
+import { logAgentExecution, logSecurityEvent } from "@/lib/audit-trail";
 import { createLogger } from "@/lib/logger";
 import { getAntiSlopRules } from "@/lib/system-prompts";
 
@@ -133,6 +134,7 @@ export function createAgentRoute(config: AgentConfig) {
           const jailbreakResult = await detectJailbreak(primaryInput);
           if (jailbreakResult.blocked) {
             log.warn("Jailbreak blocked", { agent: config.name, category: jailbreakResult.category });
+            logSecurityEvent(userId, "jailbreak_blocked", config.name, `Jailbreak attempt blocked: ${jailbreakResult.category}`, { category: jailbreakResult.category }).catch(() => {});
             return errorResponse(
               "Request blocked by safety system. Your input was flagged as a potential prompt injection.",
               403,
@@ -314,6 +316,13 @@ export function createAgentRoute(config: AgentConfig) {
         if (persistCounter % 100 === 0) {
           persistLearning().catch(() => {}); // Fire and forget
         }
+        // Persistent audit trail (database)
+        logAgentExecution(
+          userId, config.name, durationMs,
+          qualityScore?.overall ?? 0.7,
+          (finalResult as Record<string, unknown>).model as string || "auto",
+          true
+        ).catch(() => {});
       } catch {
         // Non-blocking: don't fail the response if recording fails
       }
