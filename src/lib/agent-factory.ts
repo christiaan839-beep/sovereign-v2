@@ -29,6 +29,7 @@ import { checkContentSafety } from "@/lib/content-safety";
 import { scoreOutput, type QualityScore } from "@/lib/quality-scorer";
 import { createLogger } from "@/lib/logger";
 import { getAntiSlopRules } from "@/lib/system-prompts";
+import { trackAgentExecution } from "@/lib/analytics";
 
 const log = createLogger("agent-factory");
 
@@ -270,7 +271,9 @@ export function createAgentRoute(config: AgentConfig) {
         }
       }
 
-      // ─── Return Response ───
+      // ─── Track & Return Response ───
+      trackAgentExecution(config.name, Date.now() - startTime, true);
+
       return NextResponse.json({
         ...finalResult,
         _meta: {
@@ -282,6 +285,7 @@ export function createAgentRoute(config: AgentConfig) {
         },
       });
     } catch (error: unknown) {
+      trackAgentExecution(config.name, Date.now() - startTime, false);
       const message = error instanceof Error ? error.message : "Unknown error";
       log.error("Agent execution failed", { agent: config.name, error: message });
       return errorResponse(message, 500, "AGENT_ERROR");

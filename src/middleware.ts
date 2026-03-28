@@ -11,7 +11,7 @@ import { apiLogger } from '@/lib/api-logger';
  */
 
 export const config = {
-  matcher: ['/landing/:path*', '/api/agents/:path*', '/dashboard/:path*', '/dashboard'],
+  matcher: ['/', '/landing/:path*', '/api/agents/:path*', '/dashboard/:path*', '/dashboard'],
 };
 
 // In-memory rate limit tracking (per-edge-instance)
@@ -28,8 +28,27 @@ function applySecurityHeaders(response: NextResponse): NextResponse {
   return response;
 }
 
+/** Main domains — everything else is treated as a white-label custom domain */
+const MAIN_DOMAINS = new Set([
+  'sovereignmatrix.agency',
+  'www.sovereignmatrix.agency',
+  'localhost',
+]);
+
 export function middleware(request: NextRequest) {
   const url = request.nextUrl;
+
+  // ── WHITE-LABEL DOMAIN ROUTING ──
+  // If the hostname is not a known main domain, tag the request so pages
+  // can read X-Whitelabel-Domain and customise branding accordingly.
+  const hostname = request.headers.get('host')?.split(':')[0] ?? '';
+  const isWhitelabel = hostname && !MAIN_DOMAINS.has(hostname) && !hostname.endsWith('.vercel.app');
+  if (isWhitelabel) {
+    const response = NextResponse.next();
+    response.headers.set('X-Whitelabel-Domain', hostname);
+    // Still apply security headers for white-label requests
+    return applySecurityHeaders(response);
+  }
 
   // ── DASHBOARD AUTH PROTECTION ──
   // Clerk sets __session cookie when user is authenticated

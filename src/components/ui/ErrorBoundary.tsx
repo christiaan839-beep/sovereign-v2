@@ -2,6 +2,7 @@
 
 import React, { Component, ErrorInfo, ReactNode } from "react";
 import { AlertTriangle, RefreshCw } from "lucide-react";
+import { reportError } from "@/lib/error-reporter";
 
 interface Props {
   children: ReactNode;
@@ -29,6 +30,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error("[SOVEREIGN ErrorBoundary]:", error, errorInfo);
+    reportError(error, `ErrorBoundary — ${errorInfo.componentStack?.slice(0, 200) ?? "no stack"}`);
   }
 
   render() {

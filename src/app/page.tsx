@@ -363,7 +363,7 @@ export default function Home() {
 
           {/* Model strip — understated, not flashy */}
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8, duration: 0.6 }}
-            className="flex flex-wrap items-center justify-center gap-2">
+            className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 px-2 max-w-full overflow-x-auto">
             <ModelBadge name="Nemotron Ultra" type="253B" />
             <ModelBadge name="Llama 4 Scout" type="10M" />
             <ModelBadge name="Claude 4.6" type="MCP" />

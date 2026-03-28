@@ -116,13 +116,47 @@ export function Pricing() {
   const [leadPhone, setLeadPhone] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const initiateCheckout = (planId: string) => {
-    if (planId === "node") {
-      window.location.assign("/dashboard");
+  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+
+  const initiateCheckout = async (planId: string) => {
+    // Free plan — go straight to onboarding
+    if (planId === "free") {
+      window.location.assign("/onboarding");
       return;
     }
-    setSelectedPlan(planId);
-    setShowModal(true);
+
+    // Try Stripe checkout first
+    setCheckoutLoading(planId);
+    try {
+      const res = await fetch("/api/payments/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: planId }),
+      });
+      const data = await res.json();
+
+      if (res.ok && data.url) {
+        window.location.assign(data.url);
+        return;
+      }
+
+      // Stripe not configured (503) — fall through to PayFast modal
+      if (res.status === 503) {
+        setSelectedPlan(planId);
+        setShowModal(true);
+        return;
+      }
+
+      // Other Stripe error — fall through to PayFast modal
+      setSelectedPlan(planId);
+      setShowModal(true);
+    } catch {
+      // Network error — fall through to PayFast modal
+      setSelectedPlan(planId);
+      setShowModal(true);
+    } finally {
+      setCheckoutLoading(null);
+    }
   };
 
   const processSecureUplink = async (e: React.FormEvent) => {
@@ -230,10 +264,15 @@ export function Pricing() {
 
             <button
               type="button"
+              disabled={checkoutLoading === tier.planId}
               onClick={() => initiateCheckout(tier.planId)}
-              className={`w-full py-4 rounded-xl font-bold uppercase tracking-widest text-sm transition-gpu mb-8 flex items-center justify-center gap-2 ${tier.buttonStyle}`}
+              className={`w-full py-4 rounded-xl font-bold uppercase tracking-widest text-sm transition-gpu mb-8 flex items-center justify-center gap-2 disabled:opacity-50 ${tier.buttonStyle}`}
             >
-              <ArrowRight className="w-4 h-4" /> {tier.buttonText}
+              {checkoutLoading === tier.planId ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Processing...</>
+              ) : (
+                <><ArrowRight className="w-4 h-4" /> {tier.buttonText}</>
+              )}
             </button>
 
             <ul className="space-y-3">

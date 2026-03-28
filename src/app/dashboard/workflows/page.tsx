@@ -187,7 +187,7 @@ export default function WorkflowBuilderPage() {
       <AnimatePresence>
         {showCatalog && (
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
-            <div className="grid grid-cols-3 md:grid-cols-5 gap-2.5 p-4 rounded-2xl border border-white/[0.06] bg-white/[0.02]">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5 p-4 rounded-2xl border border-white/[0.06] bg-white/[0.02]">
               {AGENTS.map((a) => (
                 <button key={a.id} onClick={() => addAgent(a)}
                   className="flex flex-col items-center gap-2 p-3 rounded-xl border border-white/[0.06] hover:border-white/15 hover:bg-white/[0.04] transition-all text-center group">
@@ -202,7 +202,7 @@ export default function WorkflowBuilderPage() {
       </AnimatePresence>
 
       {/* Canvas */}
-      <div className="rounded-2xl border border-white/[0.06] bg-[#0A0A0A] overflow-auto relative" style={{ minHeight: 340 }}>
+      <div className="rounded-2xl border border-white/[0.06] bg-[#0A0A0A] overflow-x-auto relative" style={{ minHeight: 340 }}>
         {/* Grid pattern */}
         <div className="absolute inset-0 opacity-[0.03]"
           style={{ backgroundImage: "radial-gradient(circle, #fff 1px, transparent 1px)", backgroundSize: "24px 24px" }} />
@@ -223,13 +223,15 @@ export default function WorkflowBuilderPage() {
               </linearGradient>
             </defs>
 
-            {/* Connection lines */}
-            {connections.map((c) => (
-              <motion.path key={c.key} d={c.path} fill="none"
-                stroke={c.active ? "url(#line-active)" : "rgba(255,255,255,0.06)"}
-                strokeWidth={c.active ? 2 : 1.5} strokeDasharray={c.active ? "none" : "6 4"}
-                initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.5 }} />
-            ))}
+            {/* Connection lines — hidden on mobile where absolute positioning overflows */}
+            <g className="hidden md:block">
+              {connections.map((c) => (
+                <motion.path key={c.key} d={c.path} fill="none"
+                  stroke={c.active ? "url(#line-active)" : "rgba(255,255,255,0.06)"}
+                  strokeWidth={c.active ? 2 : 1.5} strokeDasharray={c.active ? "none" : "6 4"}
+                  initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.5 }} />
+              ))}
+            </g>
 
             {/* Nodes */}
             {nodes.map((node) => {

@@ -107,15 +107,15 @@ export default function GodEyePage() {
   return (
     <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-6" role="main" aria-label="God Eye agent command center">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="min-w-0">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-emerald-500/20 bg-emerald-500/5 text-emerald-400 text-[10px] font-bold uppercase tracking-widest mb-3">
             <Eye className="w-3 h-3" /> God Eye — Live
           </div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Agent Command Center</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Agent Command Center</h1>
           <p className="text-sm text-neutral-500 mt-1">Real-time monitoring of all {totalAgents} agents across 6 categories</p>
         </div>
-        <div className="text-right">
+        <div className="text-left sm:text-right shrink-0">
           <div className="text-[10px] text-neutral-600 uppercase tracking-widest mb-1">System Time</div>
           <div className="text-sm font-mono text-neutral-400">{now.toLocaleTimeString()}</div>
         </div>
@@ -225,17 +225,18 @@ export default function GodEyePage() {
             { agent: "Voice Synth", action: "Synthesized 45s audio clip via Kokoro", time: "38s ago", status: "success" },
             { agent: "SEO Dominator", action: "Found 234 uncontested keywords for client", time: "44s ago", status: "success" },
           ].map((event, i) => (
-            <div key={i} className="px-5 py-3 flex items-center justify-between hover:bg-white/[0.02] transition-colors">
-              <div className="flex items-center gap-3">
-                {event.status === "success" ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> :
-                 event.status === "warning" ? <AlertTriangle className="w-3.5 h-3.5 text-amber-500" /> :
-                 <XCircle className="w-3.5 h-3.5 text-red-400" />}
-                <div>
+            <div key={i} className="px-3 sm:px-5 py-3 flex items-center justify-between gap-3 hover:bg-white/[0.02] transition-colors">
+              <div className="flex items-center gap-3 min-w-0">
+                {event.status === "success" ? <CheckCircle2 className="w-3.5 h-3.5 shrink-0 text-emerald-500" /> :
+                 event.status === "warning" ? <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-amber-500" /> :
+                 <XCircle className="w-3.5 h-3.5 shrink-0 text-red-400" />}
+                <div className="min-w-0">
                   <span className="text-xs font-medium text-neutral-300">{event.agent}</span>
-                  <span className="text-xs text-neutral-500 ml-2">{event.action}</span>
+                  <span className="text-xs text-neutral-500 ml-2 hidden sm:inline">{event.action}</span>
+                  <p className="text-xs text-neutral-500 sm:hidden truncate">{event.action}</p>
                 </div>
               </div>
-              <span className="text-[10px] text-neutral-600 font-mono whitespace-nowrap">{event.time}</span>
+              <span className="text-[10px] text-neutral-600 font-mono whitespace-nowrap shrink-0">{event.time}</span>
             </div>
           ))}
         </div>

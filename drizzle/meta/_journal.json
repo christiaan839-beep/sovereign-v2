@@ -8,6 +8,13 @@
       "when": 1774443695309,
       "tag": "0000_organic_celestials",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1774697115671,
+      "tag": "0001_aromatic_cloak",
+      "breakpoints": true
     }
   ]
 }
