@@ -9,7 +9,7 @@ export default function ClientPortalPage() {
     { icon: BarChart3, title: "Campaign Analytics", desc: "Real-time ROI tracking across all active AI agents. See exactly what your investment generates.", color: "text-emerald-400" },
     { icon: Bot, title: "Agent Outputs", desc: "Browse every piece of content, email, and creative your AI swarm has generated this month.", color: "text-violet-400" },
     { icon: FileText, title: "Weekly Reports", desc: "AI-generated PDF performance reports delivered every Monday. Board-ready intelligence.", color: "text-blue-400" },
-    { icon: Globe, title: "White-Label Access", desc: "Cartel license holders get a fully branded client portal with custom domain and logo.", color: "text-orange-400" },
+    { icon: Globe, title: "White-Label Access", desc: "Enterprise license holders get a fully branded client portal with custom domain and logo.", color: "text-orange-400" },
   ];
 
   return (

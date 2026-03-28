@@ -22,7 +22,7 @@ export async function POST(req: Request) {
     const planName = (data.item_name || "node").toLowerCase();
 
     // Normalize plan name from PayFast item_name
-    const plan = planName.includes("cartel") ? "cartel"
+    const plan = planName.includes("enterprise") ? "enterprise"
       : planName.includes("array") ? "array"
       : "node";
 

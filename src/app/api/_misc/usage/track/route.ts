@@ -20,7 +20,7 @@ const PLAN_LIMITS: Record<string, number> = {
   sniper: 10,
   node: 100,
   array: 500,
-  cartel: -1, // unlimited
+  enterprise: -1, // unlimited
 };
 
 export async function GET(req: Request) {

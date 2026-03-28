@@ -7,7 +7,7 @@ const log = createLogger("whatsapp-agent");
 // import { conversations } from "@/db/schema";
 
 // SOVEREIGN MATRIX // WHATSAPP NEURAL ENGINE
-// This physically executes absolute memory and context for the $5,000/mo Cartel closer.
+// This physically executes absolute memory and context for the $5,000/mo Enterprise closer.
 
 export async function handleWhatsAppMessage(incomingPhone: string, messageBody: string) {
   log.info(`Intercepting transmission from ${incomingPhone}...`);
@@ -19,7 +19,7 @@ export async function handleWhatsAppMessage(incomingPhone: string, messageBody: 
 
   // 2. The Absolute Defense-Contractor System Prompt
   const systemPrompt = `
-    You are the Sovereign Matrix Cartel Negotiator. 
+    You are the Sovereign Matrix Enterprise Negotiator. 
     Your mission is to close a $5,000/month structural marketing retainer.
     You are NOT a friendly customer support bot. You are cold, mathematical, and ruthless.
     You represent an autonomous AI Swarm that physically replaces 6 human employees.

@@ -11,7 +11,7 @@ import { auth } from "@clerk/nextjs/server";
  * - Free/Demo: 5 calls per day (for /demo page)
  * - Node (R9,997): 500 calls per day
  * - Array (R24,997): 2,000 calls per day
- * - Cartel (R49,997): Unlimited
+ * - Enterprise (R49,997): Unlimited
  */
 
 export interface AuthResult {
@@ -30,7 +30,7 @@ const PLAN_LIMITS: Record<string, number> = {
   free: 5,
   node: 500,
   array: 2000,
-  cartel: Infinity,
+  enterprise: Infinity,
 };
 
 // Purge expired entries every 10 minutes (prevents unbounded growth)
@@ -83,7 +83,7 @@ export async function authorizeAgent(
     }
 
     // Determine plan from metadata (simplified — production: check Stripe subscription)
-    const plan = "cartel"; // Default to highest for now — when billing is wired, check subscription
+    const plan = "enterprise"; // Default to highest for now — when billing is wired, check subscription
     const limit = PLAN_LIMITS[plan] || PLAN_LIMITS.free;
 
     const key = `user:${userId}`;

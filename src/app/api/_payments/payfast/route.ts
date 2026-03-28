@@ -7,7 +7,7 @@ import crypto from "crypto";
  * Plans:
  * - Node Plan:   R4,997/mo  (500 agent calls/day)
  * - Array Plan:  R9,997/mo  (2,000 agent calls/day)
- * - Cartel Plan: R49,997/mo (Unlimited + white-label)
+ * - Enterprise Plan: R49,997/mo (Unlimited + white-label)
  * 
  * Env vars needed:
  * - PAYFAST_MERCHANT_ID
@@ -28,7 +28,7 @@ interface Plan {
 const PLANS: Plan[] = [
   { id: "node", name: "Node Plan", amount: 4997, description: "500 agent calls/day, 41 NIM models, email support", agents_per_day: 500 },
   { id: "array", name: "Array Plan", amount: 9997, description: "2,000 agent calls/day, all agents, priority support, 6 verticals", agents_per_day: 2000 },
-  { id: "cartel", name: "Cartel Plan", amount: 49997, description: "Unlimited calls, white-label, dedicated infra, 24/7 support", agents_per_day: -1 },
+  { id: "enterprise", name: "Enterprise Plan", amount: 49997, description: "Unlimited calls, white-label, dedicated infra, 24/7 support", agents_per_day: -1 },
 ];
 
 export async function POST(request: Request) {

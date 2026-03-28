@@ -146,7 +146,7 @@ export function CommandPalette() {
     { id: "n-auditdestroy", title: "Audit & Destroy", icon: ShieldAlert, href: "/dashboard/audit-destroy", category: "Advanced", keywords: ["audit", "destroy", "teardown"] },
     { id: "n-omnipresence", title: "Omnipresence", icon: Globe2, href: "/dashboard/omnipresence", category: "Advanced", keywords: ["omnichannel", "presence", "everywhere"] },
     { id: "n-support", title: "Support Router", icon: Headphones, href: "/dashboard/support-router", category: "Advanced", keywords: ["support", "helpdesk", "tickets", "customer"] },
-    { id: "n-agencyhub", title: "Agency Cartel Hub", icon: Briefcase, href: "/dashboard/agency-hub", category: "Advanced", keywords: ["agency", "clients", "cartel", "white label"] },
+    { id: "n-agencyhub", title: "Agency Enterprise Hub", icon: Briefcase, href: "/dashboard/agency-hub", category: "Advanced", keywords: ["agency", "clients", "enterprise", "white label"] },
     { id: "n-clientportal", title: "Client Portal", icon: MonitorSmartphone, href: "/dashboard/client-portal", category: "Advanced", keywords: ["client", "portal", "dashboard"] },
     { id: "n-arsenal", title: "Arsenal", icon: Boxes, href: "/dashboard/arsenal", category: "Advanced", keywords: ["tools", "weapons", "arsenal"] },
 

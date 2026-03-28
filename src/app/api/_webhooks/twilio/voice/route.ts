@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     const twimlResponse = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
     <Pause length="1"/>
-    <Say voice="Polly.Matthew-Neural">I see you initiated a connection sequence on the Matrix, ${leadName}. My name is Kilo. I am the central autonomous agent representing Sovereign Matrix. Do you require immediate structural clearance on the Cartel pricing parameters, or are you preparing to exit the simulation?</Say>
+    <Say voice="Polly.Matthew-Neural">I see you initiated a connection sequence on the Matrix, ${leadName}. My name is Kilo. I am the central autonomous agent representing Sovereign Matrix. Do you require immediate structural clearance on the Enterprise pricing parameters, or are you preparing to exit the simulation?</Say>
     <Pause length="2"/>
     <Say voice="Polly.Matthew-Neural">This channel is secured. State your objective.</Say>
     <!-- In a full build, this would use <Gather> to record their response, ping NVIDIA NIM, and loop back -->

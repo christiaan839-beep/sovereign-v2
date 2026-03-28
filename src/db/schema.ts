@@ -208,7 +208,7 @@ export const payments = pgTable("payments", {
   email: text("email").notNull(),
   gateway: text("gateway").notNull().default("payfast"), // payfast, paystack, stripe
   externalId: text("external_id"), // PayFast m_payment_id, Stripe pi_xxx
-  plan: text("plan").notNull(), // node, array, cartel
+  plan: text("plan").notNull(), // node, array, enterprise
   amount: text("amount").notNull(), // gross amount as string (R499.00)
   currency: text("currency").notNull().default("ZAR"),
   status: text("status").notNull().default("pending"), // pending, complete, failed, refunded

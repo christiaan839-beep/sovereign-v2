@@ -3,7 +3,7 @@
 import createGlobe from "cobe";
 import { useEffect, useRef } from "react";
 
-// ⚡ SOVEREIGN CARTEL //
+// ⚡ SOVEREIGN ENTERPRISE //
 // This renders a mathematically perfect 3D Earth, spinning at 60fps 
 // using WebGL. It visualizes global data strikes running asynchronously.
 

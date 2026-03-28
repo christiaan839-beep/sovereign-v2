@@ -24,8 +24,8 @@ export const PLANS = {
     monthlyAmount: 24997,
     features: ["Everything in Node", "Unlimited AI generations", "Cosmos VLM Video", "Priority processing", "War Room Red-Teaming", "Direct Comm-Link (24h)"],
   },
-  cartel: {
-    name: "Cartel License",
+  enterprise: {
+    name: "Enterprise License",
     priceZAR: 4999700,
     priceDisplay: "R49,997",
     monthlyAmount: 49997,

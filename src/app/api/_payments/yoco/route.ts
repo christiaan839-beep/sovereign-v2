@@ -16,7 +16,7 @@ import { persistAppend } from "@/lib/persist";
 const PLANS: Record<string, { name: string; amountCents: number }> = {
   node: { name: "Sovereign Node", amountCents: 999700 },
   array: { name: "Sovereign Array", amountCents: 2499700 },
-  cartel: { name: "Cartel License", amountCents: 4999700 },
+  enterprise: { name: "Enterprise License", amountCents: 4999700 },
 };
 
 export async function GET() {

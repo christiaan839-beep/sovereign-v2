@@ -10,7 +10,7 @@ import { createCheckoutSession } from "@/lib/stripe";
 const PRICE_MAP: Record<string, string | undefined> = {
   node: process.env.STRIPE_PRICE_NODE,
   array: process.env.STRIPE_PRICE_ARRAY,
-  cartel: process.env.STRIPE_PRICE_CARTEL,
+  enterprise: process.env.STRIPE_PRICE_ENTERPRISE,
 };
 
 export async function POST(request: Request) {

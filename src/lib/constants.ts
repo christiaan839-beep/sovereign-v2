@@ -41,7 +41,7 @@ export const PRICING = {
   currency: "ZAR",
   node: { name: "Sovereign Node", price: "R9,997", priceUsd: "~$550", period: "/mo" },
   array: { name: "Sovereign Array", price: "R24,997", priceUsd: "~$1,375", period: "/mo" },
-  cartel: { name: "Cartel License", price: "R49,997", priceUsd: "~$2,750", period: "/mo" },
+  enterprise: { name: "Enterprise License", price: "R49,997", priceUsd: "~$2,750", period: "/mo" },
 } as const;
 
 export const LINKS = {

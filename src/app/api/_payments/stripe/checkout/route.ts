@@ -12,7 +12,7 @@ import { auth } from "@clerk/nextjs/server";
  *    STRIPE_SECRET_KEY=sk_live_...
  *    STRIPE_PRICE_NODE=price_...
  *    STRIPE_PRICE_ARRAY=price_...
- *    STRIPE_PRICE_CARTEL=price_...
+ *    STRIPE_PRICE_ENTERPRISE=price_...
  *    NEXT_PUBLIC_APP_URL=https://sovereignmatrix.agency
  * 4. Set up webhook endpoint in Stripe: /api/payments/stripe/webhook
  */
@@ -20,7 +20,7 @@ import { auth } from "@clerk/nextjs/server";
 const PLAN_PRICES: Record<string, string | undefined> = {
   node: process.env.STRIPE_PRICE_NODE,
   array: process.env.STRIPE_PRICE_ARRAY,
-  cartel: process.env.STRIPE_PRICE_CARTEL,
+  enterprise: process.env.STRIPE_PRICE_ENTERPRISE,
 };
 
 export async function POST(req: Request) {

@@ -8,13 +8,13 @@ const SOURCE_REPO = 'christiaan839-beep/sovereign-matrix'; // The master templat
 export async function POST(req: Request) {
   try {
     // const authHeader = req.headers.get('Authorization');
-    // In production, you would verify a Clerk JWT here. For the Cartel API, we'll use a direct internal check or a secure webhook approach.
+    // In production, you would verify a Clerk JWT here. For the Enterprise API, we'll use a direct internal check or a secure webhook approach.
     
     const body = await req.json();
     const { userEmail, agencyName, requestedDomain } = body;
 
     if (!userEmail || !agencyName) {
-      return NextResponse.json({ error: 'Missing required fields for Cartel Provisioning' }, { status: 400 });
+      return NextResponse.json({ error: 'Missing required fields for Enterprise Provisioning' }, { status: 400 });
     }
 
     const vercelToken = process.env.VERCEL_ACCESS_TOKEN;
@@ -104,13 +104,13 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      message: 'Cartel Node Provisioned',
+      message: 'Enterprise Node Provisioned',
       projectId: projectData.id,
       url: `https://${projectSlug}.vercel.app`
     });
 
   } catch (error) {
-    console.error('Cartel Provisioning Fault:', error);
+    console.error('Enterprise Provisioning Fault:', error);
     return NextResponse.json({ error: 'Internal Server Error', details: (error as Error).message }, { status: 500 });
   }
 }

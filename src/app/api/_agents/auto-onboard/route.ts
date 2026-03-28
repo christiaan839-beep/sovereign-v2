@@ -121,7 +121,7 @@ export async function POST(request: Request) {
     onboardingSteps.push({
       step: "Activate Usage Metering",
       status: "✅",
-      detail: `Plan limits active: ${plan === "cartel" ? "Unlimited" : plan === "array" ? "2,000/day" : "500/day"}`,
+      detail: `Plan limits active: ${plan === "enterprise" ? "Unlimited" : plan === "array" ? "2,000/day" : "500/day"}`,
     });
 
     return NextResponse.json({
