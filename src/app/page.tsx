@@ -280,103 +280,71 @@ export default function Home() {
         </AnimatePresence>
       </motion.nav>
 
-      {/* ═══ HERO — Cinematic 3D Immersive ═══ */}
+      {/* ═══ HERO ═══ */}
       <motion.section id="main-content" ref={heroRef} style={{ opacity: heroOpacity, scale: heroScale }}
-        className="relative h-screen overflow-hidden">
+        className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden">
 
-        {/* 3D Particle Matrix — Three.js WebGL background */}
+        {/* 3D Particle background */}
         <HeroParticles />
 
-        {/* Background layer — holographic cube */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center overflow-hidden">
+        {/* Single ambient glow — not 5 layered gradients */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full bg-emerald-500/[0.04] blur-[200px]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,transparent_0%,#010101_70%)]" />
+        </div>
 
-          {/* Immersive layered background — depth + glassmorphism */}
-          <div className="absolute inset-0 pointer-events-none overflow-hidden">
-            {/* Layer 1: Deep space gradient */}
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_120%_80%_at_50%_-20%,rgba(16,185,129,0.08)_0%,transparent_50%)]" />
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_120%_at_80%_80%,rgba(6,182,212,0.04)_0%,transparent_40%)]" />
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_60%_at_20%_60%,rgba(139,92,246,0.03)_0%,transparent_40%)]" />
+        {/* Vignettes */}
+        <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-[#010101] to-transparent pointer-events-none z-[1]" />
+        <div className="absolute bottom-0 inset-x-0 h-48 bg-gradient-to-t from-[#010101] to-transparent pointer-events-none z-[1]" />
 
-            {/* Layer 2: Animated aurora — slow moving gradient */}
-            <div className="absolute top-0 left-0 w-full h-full opacity-40">
-              <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[50%] rounded-full bg-emerald-500/[0.06] blur-[150px] animate-[float_20s_ease-in-out_infinite]" />
-              <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[40%] rounded-full bg-cyan-500/[0.04] blur-[130px] animate-[float_25s_ease-in-out_infinite_reverse]" />
-            </div>
+        {/* Content */}
+        <div className="relative z-10 max-w-4xl mx-auto text-center px-6">
+          {/* Status — minimal */}
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3, duration: 0.8 }}
+            className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/[0.06] mb-8">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="animate-ping absolute h-full w-full rounded-full bg-emerald-400 opacity-40" />
+              <span className="relative rounded-full h-1.5 w-1.5 bg-emerald-400" />
+            </span>
+            <span className="text-[11px] text-neutral-400 font-medium">132 agents deployed</span>
+          </motion.div>
 
-            {/* Layer 3: Perspective grid — vanishing point */}
-            <div className="absolute inset-0" style={{
-              backgroundImage: `
-                linear-gradient(rgba(16,185,129,0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(16,185,129,0.03) 1px, transparent 1px)
-              `,
-              backgroundSize: '60px 60px',
-              maskImage: 'radial-gradient(ellipse 80% 60% at 50% 50%, black 20%, transparent 70%)',
-              WebkitMaskImage: 'radial-gradient(ellipse 80% 60% at 50% 50%, black 20%, transparent 70%)',
-            }} />
+          {/* Headline — clean, massive, no clutter */}
+          <motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 1, ease: [0.25, 0.46, 0.45, 0.94] }}
+            className="text-[clamp(2.5rem,8vw,7rem)] font-black leading-[0.9] tracking-[-0.03em] mb-6">
+            <span className="text-shimmer">
+              Your AI{" "}<br /><TextMorph />
+            </span>
+          </motion.h1>
 
-            {/* Layer 4: Floating glass shards */}
-            <div className="absolute top-[15%] left-[10%] w-32 h-32 rounded-2xl border border-white/[0.03] bg-white/[0.01] backdrop-blur-sm rotate-12 animate-[float_15s_ease-in-out_infinite]" />
-            <div className="absolute top-[60%] right-[8%] w-24 h-24 rounded-xl border border-emerald-500/[0.05] bg-emerald-500/[0.01] backdrop-blur-sm -rotate-6 animate-[float_18s_ease-in-out_infinite_reverse]" />
-            <div className="absolute top-[40%] left-[75%] w-16 h-16 rounded-lg border border-cyan-500/[0.04] bg-cyan-500/[0.01] backdrop-blur-sm rotate-45 animate-[float_22s_ease-in-out_infinite]" />
-            <div className="absolute top-[75%] left-[20%] w-20 h-20 rounded-xl border border-white/[0.02] bg-white/[0.005] backdrop-blur-sm -rotate-12 animate-[float_20s_ease-in-out_infinite_reverse]" />
+          {/* Subtitle — specific, not generic */}
+          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5, duration: 0.7 }}
+            className="text-lg md:text-xl text-neutral-500 max-w-xl mx-auto leading-relaxed mb-10">
+            Paste a competitor URL. Get their full strategy in 30 seconds.
+            No prompting. No copying. No manual work.
+          </motion.p>
 
-            {/* Layer 5: Radial vignette */}
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,transparent_0%,#010101_75%)]" />
-          </div>
+          {/* CTAs — one primary, one secondary */}
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6, duration: 0.5 }}
+            className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-14">
+            <Link href="/onboarding" className="group flex items-center gap-2 px-7 py-3.5 bg-white text-black font-semibold rounded-full text-sm hover:shadow-[0_0_40px_rgba(255,255,255,0.1)] transition-gpu duration-500">
+              Deploy Your First Agent <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+            </Link>
+            <Link href="/showcase" className="px-7 py-3.5 rounded-full text-sm font-medium text-neutral-400 border border-white/[0.06] hover:border-white/[0.12] hover:text-white transition-gpu duration-300">
+              Watch Demo
+            </Link>
+          </motion.div>
 
-          {/* Vignettes */}
-          <div className="absolute top-0 inset-x-0 h-40 bg-gradient-to-b from-[#010101] to-transparent pointer-events-none z-[1]" />
-          <div className="absolute bottom-0 inset-x-0 h-60 bg-gradient-to-t from-[#010101] to-transparent pointer-events-none z-[1]" />
-
-          {/* Content overlay */}
-          <div className="relative z-10 max-w-5xl mx-auto text-center px-6">
-            {/* Status badge */}
-            <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.6 }}
-              className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-emerald-500/15 bg-emerald-500/[0.04] backdrop-blur-xl mb-10">
-              <span className="relative flex h-1.5 w-1.5">
-                <span className="animate-ping absolute h-full w-full rounded-full bg-emerald-400 opacity-50" />
-                <span className="relative rounded-full h-1.5 w-1.5 bg-emerald-400" />
-              </span>
-              <span className="text-[11px] text-emerald-400/80 font-medium">132 Agents Live</span>
-            </motion.div>
-
-            {/* Headline — massive cinematic */}
-            <motion.h1 initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05, duration: 1.2, ease: [0.25, 0.46, 0.45, 0.94] }}
-              className="text-[clamp(2.8rem,9vw,8rem)] font-black leading-[0.88] tracking-[-0.04em] mb-8">
-              <span className="text-shimmer">
-                Your AI{" "}<br /><TextMorph />
-              </span>
-            </motion.h1>
-
-            {/* Subtitle */}
-            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4, duration: 0.7 }}
-              className="text-base md:text-xl text-neutral-400 max-w-2xl mx-auto leading-relaxed mb-12">
-              132 autonomous agents that find leads, write content, build pages, make calls, and close deals. Powered by 51+ open-source models with unlimited inference.
-            </motion.p>
-
-            {/* CTAs — glassmorphic */}
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5, duration: 0.6 }}
-              className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-16">
-              <Link href="/onboarding" className="group flex items-center gap-2 px-8 py-4 bg-white text-black font-bold rounded-full text-sm hover:shadow-[0_0_60px_rgba(255,255,255,0.15)] transition-gpu duration-500">
-                Deploy Your First Agent <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </Link>
-              <Link href="/showcase" className="px-8 py-4 rounded-full text-sm font-medium text-neutral-300 border border-white/[0.08] bg-white/[0.02] backdrop-blur-xl hover:border-emerald-500/20 hover:text-white transition-gpu duration-500">
-                Watch Demo
-              </Link>
-            </motion.div>
-
-            {/* Model badges */}
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7, duration: 0.6 }}
-              className="flex flex-wrap items-center justify-center gap-2">
-              <ModelBadge name="Nemotron Ultra" type="253B" />
-              <ModelBadge name="Claude" type="MCP" />
-              <ModelBadge name="Gemini 2.5" type="Pro" />
-              <ModelBadge name="DeepSeek" type="V3.2" />
-              <ModelBadge name="FLUX.2" type="IMG" />
-              <ModelBadge name="NemoClaw" type="AGT" />
-              <ModelBadge name="Kimi K2.5" type="1T" />
-            </motion.div>
-          </div>
+          {/* Model strip — understated, not flashy */}
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8, duration: 0.6 }}
+            className="flex flex-wrap items-center justify-center gap-2">
+            <ModelBadge name="Nemotron Ultra" type="253B" />
+            <ModelBadge name="Claude" type="MCP" />
+            <ModelBadge name="Gemini 2.5" type="Pro" />
+            <ModelBadge name="DeepSeek" type="R1" />
+            <ModelBadge name="NemoClaw" type="AGT" />
+            <ModelBadge name="Kimi K2.5" type="1T" />
+          </motion.div>
         </div>
 
         {/* Scroll-reveal glassmorphic card — floats up as you scroll */}
@@ -414,16 +382,12 @@ export default function Home() {
         </div>
       </motion.section>
 
-      {/* ═══ POWERED BY STRIP ═══ */}
-      <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8 py-6 px-4 opacity-40">
-        <span className="text-[10px] uppercase tracking-[0.3em] text-neutral-500">Powered by</span>
-        <span className="text-[10px] text-neutral-500">NVIDIA NIM</span>
-        <span className="text-[10px] text-neutral-500">&bull;</span>
-        <span className="text-[10px] text-neutral-500">NemoClaw</span>
-        <span className="text-[10px] text-neutral-500">&bull;</span>
-        <span className="text-[10px] text-neutral-500">Kimi K2.5</span>
-        <span className="text-[10px] text-neutral-500">&bull;</span>
-        <span className="text-[10px] text-neutral-500">DeepSeek V3.2</span>
+      {/* ═══ POWERED BY — minimal trust strip ═══ */}
+      <div className="flex items-center justify-center gap-6 py-8 px-4">
+        <span className="text-[10px] uppercase tracking-[0.25em] text-neutral-600">Built on</span>
+        {["NVIDIA NIM", "NemoClaw", "Ollama", "Vercel", "Neon"].map((name) => (
+          <span key={name} className="text-[10px] text-neutral-600 hover:text-neutral-400 transition-colors cursor-default">{name}</span>
+        ))}
       </div>
 
       {/* ═══ SOCIAL PROOF METRICS ═══ */}
@@ -537,7 +501,7 @@ export default function Home() {
               </h3>
               <p className="text-neutral-500 text-xs mb-6">What everyone else sells</p>
               <ul className="space-y-3">
-                {["You write a prompt. Copy the output. Paste it somewhere. Repeat 50 times.", "Forgets your business, your brand, your last conversation.", "Cannot open a browser, send an email, or make a phone call.", "You plan every step. It just types what you tell it to."].map((item, i) => (
+                {["You type a prompt. Copy the response. Paste into Gmail. Repeat 50 times a day.", "Forgets your brand, your clients, and everything you told it yesterday.", "Cannot open a browser, send an email, make a call, or push code to production.", "You do the planning. You do the quality check. You do the formatting. It just types."].map((item, i) => (
                   <li key={i} className="flex items-start gap-2.5 text-neutral-500 text-sm">
                     <XCircle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-neutral-500" /> {item}
                   </li>
@@ -551,7 +515,7 @@ export default function Home() {
               </h3>
               <p className="text-emerald-500/50 text-xs mb-6">What your business actually needs</p>
               <ul className="space-y-3">
-                {["Type one goal. 132 agents plan, execute, and deliver the result.", "Remembers your brand voice, past strategies, and client preferences.", "Opens browsers, sends emails, makes calls, writes code, builds pages.", "Catches its own mistakes, retries failed steps, and self-corrects."].map((item, i) => (
+                {["Type one goal. Walk away. 132 agents plan the steps, execute them, and deliver finished work.", "Remembers your brand voice, your client preferences, and what failed last time.", "Opens real browsers. Sends real emails. Makes real phone calls. Deploys real code.", "Catches its own errors, retries with a different approach, and self-corrects — no human needed."].map((item, i) => (
                   <li key={i} className="flex items-start gap-2.5 text-neutral-300 text-sm">
                     <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5 text-emerald-400" /> {item}
                   </li>
@@ -661,10 +625,10 @@ export default function Home() {
         <div className="absolute inset-0 bg-[linear-gradient(rgba(0,183,255,0.008)_1px,transparent_1px),linear-gradient(90deg,rgba(0,183,255,0.008)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none" />
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="relative z-10">
           <h2 className="text-4xl md:text-6xl font-black text-white mb-5 tracking-tight leading-[1.05]">
-            Stop paying for tools<br className="hidden md:block" /> that don&apos;t scale.
+            Your competitors hire.<br className="hidden md:block" /> You deploy.
           </h2>
-          <p className="text-neutral-500 max-w-md mx-auto mb-10">
-            One platform. 132 agents. Zero per-token costs. Free to start.
+          <p className="text-neutral-500 max-w-lg mx-auto mb-10">
+            132 agents. 51+ models. Zero per-token cost. Deploy your first agent in 60 seconds.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link href="/onboarding" className="cta-glow group flex items-center gap-2 px-7 py-3.5 bg-white text-black font-semibold rounded-full text-sm hover:shadow-[0_0_40px_rgba(255,255,255,0.12)] transition-gpu">
