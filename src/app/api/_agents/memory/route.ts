@@ -1,4 +1,4 @@
-import { nimChat, getNimKey } from "@/lib/nvidia";
+import { getNimKey } from "@/lib/nvidia";
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth-guard";
 
@@ -188,7 +188,7 @@ export async function POST(request: Request) {
         const { dream } = await import("@/lib/dream");
         const report = await dream(process.env.PINECONE_API_KEY);
         return NextResponse.json({ success: true, action: "dream", report });
-      } catch (err) {
+      } catch (_err) {
         return NextResponse.json({
           success: true,
           action: "dream",

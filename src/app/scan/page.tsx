@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShieldAlert, Crosshair, Zap, DollarSign, ArrowRight, Lock, Activity, AlertTriangle } from 'lucide-react';
-import Link from 'next/link';
 
 type ScanStage = 'IDLE' | 'RESOLVING' | 'ANALYZING_PIXELS' | 'FRICTION_MAPPING' | 'CALCULATING_LOSS' | 'COMPLETE';
 

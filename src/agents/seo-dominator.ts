@@ -1,4 +1,4 @@
-import { ai, research_ai } from "@/lib/ai";
+import { research_ai } from "@/lib/ai";
 import { remember } from "@/lib/memory";
 import type { AgentResult } from "@/types";
 

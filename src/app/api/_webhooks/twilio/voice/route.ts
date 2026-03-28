@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
       headers: { "Content-Type": "text/xml" },
     });
 
-  } catch (err: unknown) {
+  } catch (_err: unknown) {
     console.error("[SENTINEL_VOICE_ERROR] Failed to compile TwiML");
     return new NextResponse('<?xml version="1.0" encoding="UTF-8"?><Response><Say>System error. Terminating connection.</Say></Response>', { 
       status: 200, 

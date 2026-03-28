@@ -56,7 +56,7 @@ const PIPELINES: Pipeline[] = [
     description: "Metrics → Case Study → Voice Summary → Infographic",
     steps: [
       { name: "Generate Case Study", agent: "case-study", transform: (input) => ({ clientName: input.clientName || "Client", industry: input.industry || "Technology", metrics: input.metrics }) },
-      { name: "Create Voice Summary", agent: "voice-synth", transform: (input, prev) => {
+      { name: "Create Voice Summary", agent: "voice-synth", transform: (input, _prev) => {
         return { text: `Executive summary for ${input.clientName || "our client"}. Key results: Revenue increased, operations streamlined, and autonomous AI agents deployed successfully.` };
       }},
       { name: "Generate Infographic", agent: "image-gen", transform: (input) => ({ prompt: `Clean, minimal data infographic showing business growth metrics for ${input.clientName || "client"}: revenue up, costs down, efficiency improved. Dark theme, green accents.` }) },

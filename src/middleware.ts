@@ -17,6 +17,17 @@ export const config = {
 // In-memory rate limit tracking (per-edge-instance)
 const rateLimits = new Map<string, { count: number; resetAt: number }>();
 
+/** Apply enterprise security headers to all responses */
+function applySecurityHeaders(response: NextResponse): NextResponse {
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('X-Frame-Options', 'DENY');
+  response.headers.set('X-XSS-Protection', '1; mode=block');
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  response.headers.set('Permissions-Policy', 'camera=(), microphone=(self), geolocation=()');
+  response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  return response;
+}
+
 export function middleware(request: NextRequest) {
   const url = request.nextUrl;
 
@@ -115,7 +126,7 @@ export function middleware(request: NextRequest) {
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     response.headers.set('Access-Control-Allow-Headers', 'Content-Type, x-api-key, Authorization');
 
-    return response;
+    return applySecurityHeaders(response);
   }
 
   // ── A/B TESTING for /landing/* ──

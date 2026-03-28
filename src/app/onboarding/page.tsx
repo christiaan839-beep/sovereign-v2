@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ArrowRight, ArrowLeft, Zap, Target, FileText, Mic,
+  ArrowRight, ArrowLeft, Zap, Target, FileText,
   Search, Code2, CheckCircle2, Sparkles, Cpu, Globe,
   ChevronRight, BarChart3
 } from "lucide-react";

@@ -1,13 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Shield, CheckCircle2, XCircle, Loader2, AlertTriangle, Activity } from "lucide-react";
-
-interface ServiceStatus {
-  name: string;
-  status: string;
-  configured: boolean;
-}
+import { CheckCircle2, XCircle, Loader2, AlertTriangle, Activity } from "lucide-react";
 
 export default function StatusPage() {
   const [health, setHealth] = useState<Record<string, unknown> | null>(null);

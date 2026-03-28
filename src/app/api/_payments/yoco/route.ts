@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { persistAppend, persistRead } from "@/lib/persist";
+import { persistAppend } from "@/lib/persist";
 
 /**
  * YOCO PAYMENT GATEWAY — South African card + QR payment processing.

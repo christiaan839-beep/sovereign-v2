@@ -37,7 +37,7 @@ Format: Return exactly a JSON object containing { "hook_text": "...", "voiceover
         let scriptObject: any = {};
         try {
             scriptObject = JSON.parse(rawContent);
-        } catch (e) {
+        } catch (_e) {
             console.error("Gemini JSON parse failed:", rawContent);
             return NextResponse.json({ error: "Failed to parse synthesized script" }, { status: 500 });
         }

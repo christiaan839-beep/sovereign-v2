@@ -2,7 +2,6 @@
 
 import { motion } from "framer-motion";
 import { Building2, BarChart3, FileText, Bot, Globe, Lock, ArrowRight } from "lucide-react";
-import Link from "next/link";
 import { SignInButton } from "@clerk/nextjs";
 
 export default function ClientPortalPage() {

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Zap, Brain, Shield, Code, ArrowRight, Globe, Clock, Cpu } from "lucide-react";
+import { Brain, Shield, Code, ArrowRight, Cpu } from "lucide-react";
 import Link from "next/link";
 
 const fadeIn = (d: number) => ({ initial: { opacity: 0, y: 20 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true }, transition: { delay: d, duration: 0.6 } });

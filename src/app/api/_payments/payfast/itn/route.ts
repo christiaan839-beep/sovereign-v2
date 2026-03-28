@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import { persistAppend } from "@/lib/persist";
 
 /**
@@ -68,7 +67,7 @@ export async function POST(request: Request) {
     }
 
     return new Response("OK", { status: 200 });
-  } catch (error) {
+  } catch (_error) {
     return new Response("Error", { status: 500 });
   }
 }

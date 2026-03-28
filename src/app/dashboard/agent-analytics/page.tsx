@@ -43,7 +43,7 @@ export default function AnalyticsDashboard() {
     setLoading(false);
   };
 
-  useEffect(() => { refresh(); }, []);
+  useEffect(() => { void refresh(); }, []);
 
   const triggerJob = async (jobId: string) => {
     setTriggering(jobId);

@@ -1,4 +1,4 @@
-import { ai, research_ai } from "@/lib/ai";
+import { research_ai } from "@/lib/ai";
 
 export async function analyzeCompetitor(companyName: string) {
   const query = `${companyName} marketing strategy, pricing, weaknesses, recent news`;

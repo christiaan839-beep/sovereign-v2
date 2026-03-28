@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight, Zap, TrendingUp, DollarSign, Users, Star, Clock, CheckCircle2 } from "lucide-react";
+import { ArrowRight, TrendingUp, Star, Clock } from "lucide-react";
 import Link from "next/link";
 
 const fadeIn = (d: number) => ({ initial: { opacity: 0, y: 20 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true }, transition: { delay: d, duration: 0.6 } });

@@ -1,4 +1,4 @@
-import { nimChat, getNimKey } from "@/lib/nvidia";
+import { getNimKey } from "@/lib/nvidia";
 import { NextResponse } from "next/server";
 
 /**

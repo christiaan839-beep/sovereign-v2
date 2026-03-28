@@ -10,32 +10,6 @@ import {
 import Link from "next/link";
 import { SovereignLogo } from "@/components/ui/SovereignLogo";
 
-// ─── Typing Effect ───
-function useTypingEffect(text: string, speed = 30, startDelay = 0) {
-  const [displayed, setDisplayed] = useState("");
-  const [done, setDone] = useState(false);
-
-  useEffect(() => {
-    setDisplayed("");
-    setDone(false);
-    const timeout = setTimeout(() => {
-      let i = 0;
-      const interval = setInterval(() => {
-        setDisplayed(text.slice(0, i + 1));
-        i++;
-        if (i >= text.length) {
-          clearInterval(interval);
-          setDone(true);
-        }
-      }, speed);
-      return () => clearInterval(interval);
-    }, startDelay);
-    return () => clearTimeout(timeout);
-  }, [text, speed, startDelay]);
-
-  return { displayed, done };
-}
-
 // ─── Agent Node (visual) ───
 function AgentNode({ name, icon: Icon, color, active, delay = 0 }: {
   name: string; icon: React.ComponentType<{ className?: string }>; color: string; active: boolean; delay?: number;

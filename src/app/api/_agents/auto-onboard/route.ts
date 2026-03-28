@@ -138,7 +138,7 @@ export async function POST(request: Request) {
       steps_completed: onboardingSteps.filter(s => s.status === "✅").length,
       steps_total: onboardingSteps.length,
     });
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

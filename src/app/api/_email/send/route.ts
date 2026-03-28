@@ -50,7 +50,7 @@ async function sendViaResend(payload: EmailPayload): Promise<{ success: boolean;
   return { success: true, id: data.id };
 }
 
-async function sendViaGmail(payload: EmailPayload): Promise<{ success: boolean; id?: string; error?: string }> {
+async function sendViaGmail(_payload: EmailPayload): Promise<{ success: boolean; id?: string; error?: string }> {
   const user = process.env.GMAIL_USER;
   const pass = process.env.GMAIL_APP_PASSWORD;
   if (!user || !pass) throw new Error("Gmail credentials not configured");

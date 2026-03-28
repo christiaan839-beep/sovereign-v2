@@ -51,7 +51,7 @@ Return the exact JSON array of strings (the tweets in sequence) without any mark
         let threadArray = [];
         try {
             threadArray = JSON.parse(rawContent);
-        } catch (e) {
+        } catch (_e) {
             console.error("Failed to parse Gemini output as JSON Array.", rawContent);
             return NextResponse.json({ error: "Failed to parse synthesized thread" }, { status: 500 });
         }

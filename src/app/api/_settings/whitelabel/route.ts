@@ -18,7 +18,7 @@ export async function GET() {
     });
 
     return NextResponse.json({ config: config || null });
-  } catch (err) {
+  } catch (_err) {
     return NextResponse.json({ error: "Server Error" }, { status: 500 });
   }
 }
@@ -54,7 +54,7 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ success: true });
-  } catch (err) {
+  } catch (_err) {
     return NextResponse.json({ error: "Server Error" }, { status: 500 });
   }
 }

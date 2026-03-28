@@ -1,4 +1,3 @@
-import { ai } from "@/lib/ai";
 import { recall } from "@/lib/memory";
 import { adSwarm } from "@/lib/swarm";
 import type { GhostAction, Campaign } from "@/types";

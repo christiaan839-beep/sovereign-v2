@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth-guard";
 import { db } from "@/db";
-import { marketplaceAgents, customSkills } from "@/db/schema";
+import { marketplaceAgents } from "@/db/schema";
 import { eq, desc, and } from "drizzle-orm";
 
 export async function GET(req: NextRequest) {
