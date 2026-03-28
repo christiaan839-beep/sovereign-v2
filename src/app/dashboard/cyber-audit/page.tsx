@@ -59,7 +59,7 @@ export default function CyberAuditPage() {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto min-h-screen bg-[#050505] text-white">
+    <div className="p-8 max-w-7xl mx-auto min-h-screen bg-[#050505] text-white" role="main" aria-label="AI cyber auditor">
       <div className="mb-8">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-bold uppercase tracking-wider mb-3">
           <ShieldAlert className="w-3 h-3" /> Container Security Analysis
@@ -83,10 +83,11 @@ export default function CyberAuditPage() {
             <div className="space-y-4">
                <div>
                   <label className="text-[10px] text-neutral-500 uppercase tracking-widest font-bold mb-2 block">Target Architecture URL / IP</label>
-                  <input 
+                  <input
                     type="text"
                     value={targetUrl}
                     onChange={(e) => setTargetUrl(e.target.value)}
+                    aria-label="Target architecture URL or IP"
                     className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-sm text-white focus:border-red-500/50 outline-none font-mono"
                     placeholder="https://client-infrastructure.com"
                   />
@@ -188,7 +189,7 @@ export default function CyberAuditPage() {
                            ))}
                         </div>
 
-                        <button className="w-full mt-6 py-4 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold uppercase tracking-widest text-xs transition-colors shadow-[0_0_30px_rgba(239,68,68,0.3)] flex justify-center items-center gap-2">
+                        <button aria-label="Generate executive PDF report" className="w-full mt-6 py-4 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold uppercase tracking-widest text-xs transition-colors shadow-[0_0_30px_rgba(239,68,68,0.3)] flex justify-center items-center gap-2">
                            Generate Executive PDF Report
                         </button>
                      </motion.div>

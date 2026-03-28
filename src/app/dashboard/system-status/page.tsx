@@ -145,7 +145,7 @@ export default function SystemStatusPage() {
   );
 
   return (
-    <div className="min-h-screen p-6 md:p-10 max-w-5xl mx-auto">
+    <div className="min-h-screen p-6 md:p-10 max-w-5xl mx-auto" role="main" aria-label="System status dashboard">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>

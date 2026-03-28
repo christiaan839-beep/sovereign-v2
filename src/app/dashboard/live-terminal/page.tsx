@@ -101,7 +101,7 @@ export default function LiveTerminalPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white p-6 md:p-8 font-mono">
+    <div className="min-h-screen bg-[#050505] text-white p-6 md:p-8 font-mono" role="main" aria-label="Live agent terminal">
       <div className="max-w-5xl mx-auto space-y-6">
         <header className="border-b border-[#00B7FF]/20 pb-6">
           <div className="flex items-center gap-4">
@@ -133,7 +133,7 @@ export default function LiveTerminalPage() {
         </div>
 
         {/* Terminal Output */}
-        <div ref={terminalRef} className="bg-neutral-950 border border-neutral-800 p-4 h-[400px] overflow-y-auto font-mono text-[11px] leading-relaxed">
+        <div ref={terminalRef} className="bg-neutral-950 border border-neutral-800 p-4 h-[400px] overflow-y-auto font-mono text-[11px] leading-relaxed" aria-live="polite">
           {lines.map((line, i) => (
             <div key={i} className={`flex gap-3 ${typeColors[line.type]}`}>
               <span className="text-neutral-700 shrink-0">[{line.time}]</span>
@@ -159,11 +159,13 @@ export default function LiveTerminalPage() {
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => e.key === "Enter" && execute()}
             placeholder="Enter JSON payload..."
+            aria-label="Agent JSON payload input"
             className="flex-1 bg-neutral-950 border border-neutral-800 px-4 py-3 text-xs text-white placeholder:text-neutral-700 focus:outline-none focus:border-neutral-600 font-mono"
           />
           <button
             onClick={execute}
             disabled={running}
+            aria-label="Run agent command"
             className="px-4 py-3 bg-[#00B7FF] text-black font-bold text-sm hover:bg-[#00A0E0] transition-gpu disabled:opacity-50 flex items-center gap-2"
           >
             {running ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Send className="w-4 h-4" /> Run</>}

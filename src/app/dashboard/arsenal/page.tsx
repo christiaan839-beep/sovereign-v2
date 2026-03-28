@@ -185,7 +185,7 @@ export default function SovereignArsenalPage() {
             Don&apos;t see a playbook for your use-case? Describe your ideal agent in plain English, and the Sovereign Matrix will route your request through Anthropic&apos;s open-source Meta-Prompt architecture to construct a flawless XML-structured system instruction automatically.
           </p>
         </div>
-        <button className="relative z-10 whitespace-nowrap px-8 py-4 bg-[#00B7FF] text-black font-bold uppercase tracking-widest text-xs rounded-xl hover:bg-[#00B7FF]/90 transition-colors shadow-[0_0_30px_rgba(0,183,255,0.3)] flex items-center gap-2">
+        <button aria-label="Launch Anthropic Meta-Prompt Engine" className="relative z-10 whitespace-nowrap px-8 py-4 bg-[#00B7FF] text-black font-bold uppercase tracking-widest text-xs rounded-xl hover:bg-[#00B7FF]/90 transition-colors shadow-[0_0_30px_rgba(0,183,255,0.3)] flex items-center gap-2">
           Launch Prompt Engine <ArrowRight className="w-4 h-4" />
         </button>
       </div>

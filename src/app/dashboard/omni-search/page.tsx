@@ -41,7 +41,7 @@ export default function OmniSearchPage() {
   };
 
   return (
-    <div className="p-8 max-w-5xl mx-auto min-h-screen bg-[#050505] text-white">
+    <div className="p-8 max-w-5xl mx-auto min-h-screen bg-[#050505] text-white" role="main" aria-label="Global knowledge retrieval search">
       <div className="text-center mb-12 mt-10">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold uppercase tracking-wider mb-4">
           <Database className="w-3 h-3" /> Omni-Search RAG Architecture
@@ -58,12 +58,13 @@ export default function OmniSearchPage() {
          <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none">
             <Search className={`w-6 h-6 ${status === 'searching' ? 'text-emerald-400 animate-pulse' : 'text-neutral-500'}`} />
          </div>
-         <input 
+         <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             disabled={status === "searching"}
             placeholder="E.g., What objections did the Roofing lead in Austin have last week?"
+            aria-label="Search query"
             className="w-full bg-black/80 border border-white/10 rounded-2xl pl-16 pr-6 py-6 text-lg text-white focus:border-emerald-500/50 outline-none shadow-[0_0_50px_rgba(16,185,129,0.05)] transition-gpu font-mono placeholder:font-sans placeholder:text-neutral-600"
          />
          <button type="submit" className="hidden" />

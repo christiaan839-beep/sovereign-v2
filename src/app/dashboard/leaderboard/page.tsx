@@ -73,7 +73,7 @@ export default function LeaderboardPage() {
   const rankIcons = [Crown, Trophy, Trophy];
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white p-6 md:p-8 font-mono">
+    <div className="min-h-screen bg-[#050505] text-white p-6 md:p-8 font-mono" role="main" aria-label="AI agent leaderboard">
       <div className="max-w-5xl mx-auto space-y-8">
         <header className="border-b border-[#FFD700]/20 pb-6">
           <div className="flex items-center gap-4">
@@ -134,6 +134,7 @@ export default function LeaderboardPage() {
             value={prompt}
             onChange={e => setPrompt(e.target.value)}
             rows={3}
+            aria-label="Benchmark prompt"
             className="w-full bg-black border border-neutral-800 px-4 py-3 text-xs text-white placeholder:text-neutral-700 focus:outline-none focus:border-neutral-600 font-mono resize-none"
           />
           <button

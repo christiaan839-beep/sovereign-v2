@@ -96,7 +96,7 @@ export default function GhostProtocolDashboard() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-64px)] p-6 lg:p-10 font-mono text-[#00B7FF] bg-[#050505]">
+    <div className="min-h-[calc(100vh-64px)] p-6 lg:p-10 font-mono text-[#00B7FF] bg-[#050505]" role="main" aria-label="Ghost fleet SDR pipeline">
       <div className="max-w-6xl mx-auto space-y-8">
         
         {/* Header */}
@@ -133,8 +133,9 @@ export default function GhostProtocolDashboard() {
                   <label className="text-[10px] text-neutral-500 uppercase tracking-widest block mb-2">Competitor Name or Domain</label>
                   <div className="relative">
                     <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" />
-                    <input 
+                    <input
                       type="text"
+                      aria-label="Competitor name or domain"
                       className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-[#00B7FF]/50 transition-colors placeholder:text-neutral-600"
                       placeholder="e.g. Salesforce, GoHighLevel, HubSpot"
                       value={target}

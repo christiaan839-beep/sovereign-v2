@@ -6,7 +6,7 @@ import { Phone, Mic, Activity, ShieldAlert, BarChart3, ArrowRightLeft, Globe, Da
 export default function VoiceSwarmPage() {
 
   return (
-    <div className="p-8 max-w-7xl mx-auto min-h-screen bg-[#050505] text-white">
+    <div className="p-8 max-w-7xl mx-auto min-h-screen bg-[#050505] text-white" role="main" aria-label="Voice swarm module">
       {/* Header */}
       <div className="mb-8">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-neutral-500/10 border border-neutral-500/20 text-neutral-400 text-xs font-bold uppercase tracking-wider mb-3">

@@ -304,7 +304,7 @@ Respond helpfully and concisely. If the user asks to execute a task, describe wh
   };
 
   return (
-    <div className="min-h-screen flex flex-col max-w-4xl mx-auto p-4 md:p-8">
+    <div className="min-h-screen flex flex-col max-w-4xl mx-auto p-4 md:p-8" role="main" aria-label="Sovereign AI assistant">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
@@ -352,6 +352,7 @@ Respond helpfully and concisely. If the user asks to execute a task, describe wh
       <div
         ref={scrollRef}
         className="flex-1 overflow-y-auto space-y-4 mb-4 min-h-[400px] max-h-[60vh] custom-scrollbar"
+        aria-live="polite"
       >
         <AnimatePresence>
           {messages.map((msg) => (
@@ -383,11 +384,13 @@ Respond helpfully and concisely. If the user asks to execute a task, describe wh
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && sendMessage()}
           placeholder="Ask Sovereign AI anything..."
+          aria-label="Message to Sovereign AI"
           className="w-full bg-[#0A0A0A] border border-white/[0.08] rounded-xl px-5 py-4 pr-14 text-sm text-white placeholder:text-neutral-700 focus:outline-none focus:border-emerald-500/30 transition-colors"
         />
         <button
           onClick={sendMessage}
           disabled={!input.trim() || isThinking}
+          aria-label="Send message"
           className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center text-emerald-400 hover:bg-emerald-500/25 transition-gpu disabled:opacity-30"
         >
           <Send className="w-4 h-4" />

@@ -120,7 +120,7 @@ export default function NemoClawPage() {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto min-h-screen bg-[#050505] text-white">
+    <div className="p-8 max-w-7xl mx-auto min-h-screen bg-[#050505] text-white" role="main" aria-label="NemoClaw autonomous agent">
       {/* Header */}
       <div className="mb-8">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold uppercase tracking-wider mb-3">
@@ -294,18 +294,20 @@ export default function NemoClawPage() {
           {/* Input Area */}
           <div className="p-4 border-t border-white/10 bg-white/[0.02]">
             <div className="relative flex items-center">
-              <input 
+              <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSend()}
                 placeholder="Initialize sequence... [Press Enter]"
+                aria-label="NemoClaw command input"
                 className="w-full bg-black/50 border border-white/10 focus:border-[#00B7FF]/50 rounded-xl py-4 flex-1 pl-4 pr-14 text-sm font-mono text-white outline-none transition-colors"
                 disabled={isInferencing || isDeployed247}
               />
-              <button 
+              <button
                 onClick={handleSend}
                 disabled={!input.trim() || isInferencing || isDeployed247}
+                aria-label="Send command"
                 className="absolute right-2 p-2 bg-white/10 hover:bg-white/20 text-white rounded-lg disabled:opacity-30 transition-colors"
               >
                 <Send className="w-4 h-4" />

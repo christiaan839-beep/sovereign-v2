@@ -67,7 +67,7 @@ export default function MorpheusShieldPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white p-8 font-mono">
+    <div className="min-h-screen bg-[#050505] text-white p-8 font-mono" role="main" aria-label="Morpheus shield chatbot">
       <div className="max-w-3xl mx-auto space-y-6">
         {/* Header */}
         <header className="border-b border-red-500/30 pb-6">
@@ -114,12 +114,14 @@ export default function MorpheusShieldPage() {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSend()}
               placeholder="State your inquiry..."
+              aria-label="Chat message to Morpheus Shield"
               className="flex-1 bg-black border border-neutral-800 px-4 py-3 text-white placeholder:text-neutral-600 focus:outline-none focus:border-red-500/50 transition-colors text-sm"
               disabled={isLoading}
             />
             <button
               onClick={handleSend}
               disabled={isLoading || !input.trim()}
+              aria-label="Send message"
               className="px-6 py-3 bg-red-500/20 border border-red-500/50 text-red-500 hover:bg-red-500 hover:text-white transition-gpu disabled:opacity-50"
             >
               <Send className="w-4 h-4" />
