@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
-  Activity, Database, Cloud, Shield, Cpu, Globe, Zap,
+  Activity, Database, Shield, Cpu, Globe, Zap,
   CheckCircle2, XCircle, AlertTriangle, RefreshCw, Wifi
 } from "lucide-react";
 

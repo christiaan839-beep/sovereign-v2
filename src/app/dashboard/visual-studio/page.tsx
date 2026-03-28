@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Video, Sparkles, Wand2, Upload, Play, Terminal, Zap } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Video, Sparkles, Wand2, Terminal, Zap } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export default function VisualStudioNode() {
   const [prompt, setPrompt] = useState('');

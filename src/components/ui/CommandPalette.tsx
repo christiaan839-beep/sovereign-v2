@@ -7,10 +7,10 @@ import {
   Search, Command, ArrowRight, Zap, Target, Shield, LayoutDashboard, Settings,
   Rocket, Palette, Factory, Cpu, Mic, ScanFace, Video, Swords, ShieldAlert,
   Database, Headphones, FileVideo, Cuboid, Briefcase, Ghost, RefreshCcw,
-  BarChart3, CircuitBoard, Globe2, Users, DollarSign, Layers, Network,
-  Play, Sparkles, Brain, Mail, Clock, Plug, Eye, Wrench, LayoutTemplate,
-  Terminal, Hash, Image, PenTool, Bot, Boxes, MonitorSmartphone, Webhook,
-  Key, Wand2,
+  BarChart3, CircuitBoard, Globe2, Users, DollarSign, Layers,
+  Play, Sparkles, Brain, Mail, Clock, Plug, Eye, LayoutTemplate,
+  Terminal, Image, PenTool, Boxes, MonitorSmartphone,
+  Wand2,
 } from "lucide-react";
 
 /* ═══════════ Types ═══════════ */

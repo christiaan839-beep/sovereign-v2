@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Headphones, Mail, User, Phone, CheckCircle2, ShieldCheck, CreditCard, RotateCcw, AlertCircle, ArrowRight } from "lucide-react";
+import { Headphones, Mail, User, CheckCircle2, ShieldCheck, CreditCard, AlertCircle, ArrowRight } from "lucide-react";
 
 interface TicketPayload {
   id: string;

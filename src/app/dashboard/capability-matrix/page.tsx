@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Cpu, Zap, Shield, Brain, Eye, Mic, Code, PenTool, FileText, Search, Users, BarChart3 } from "lucide-react";
+import { Cpu, Zap, Shield, Brain, Eye, Mic, Code, PenTool, FileText, Search, Users } from "lucide-react";
 
 interface ModelInfo {
   name: string;

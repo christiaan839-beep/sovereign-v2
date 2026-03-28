@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, MicOff, Volume2, VolumeX, Bot, User, Loader2, Settings2 } from "lucide-react";
+import { Mic, MicOff, Volume2, VolumeX, Bot, User, Loader2 } from "lucide-react";
 
 type Message = {
   role: "user" | "assistant";

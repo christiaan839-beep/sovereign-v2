@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import { usage, generations, leads, globalTelemetry } from "@/db/schema";
-import { sql, gte, lte, and, count, sum, avg } from "drizzle-orm";
+import { sql, gte, lte, and, count, sum } from "drizzle-orm";
 import { ai } from "@/lib/ai";
 
 // ─── Types ──────────────────────────────────────────────────

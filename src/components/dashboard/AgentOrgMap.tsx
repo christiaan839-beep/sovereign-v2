@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { Cpu, Network, Database, Users, Code, Mail, Mic, Shield, Globe } from 'lucide-react';
+import { Cpu, Network, Database, Code, Mail, Mic, Shield, Globe } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const AGENT_NODES = [
@@ -117,7 +117,7 @@ export function AgentOrgMap() {
                </div>
 
                <div className="space-y-3">
-                 {squad.agents.map((agent, j) => (
+                 {squad.agents.map((agent) => (
                    <div key={agent.name} className="bg-white/[0.03] border border-white/5 rounded-xl p-3 flex items-center justify-between hover:bg-white/[0.05] hover:border-white/10 transition-colors group cursor-crosshair">
                      <div className="flex items-center gap-3">
                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${agent.status === 'active' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-neutral-800 text-neutral-500'}`}>

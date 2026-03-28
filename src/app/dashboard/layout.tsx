@@ -9,7 +9,7 @@ import {
   Layers, Search, ChevronDown, ChevronRight, Sparkles, Factory,
   X, Menu, Mic, Swords, Database, Inbox, CalendarClock,
   PanelLeftOpen, PanelLeftClose, Clock, Plug, Cpu,
-  BarChart3, CircuitBoard, Eye, Palette, Globe2, Shield, Wrench, LayoutTemplate,
+  BarChart3, CircuitBoard, Eye, Palette, Shield, Wrench, LayoutTemplate,
   Wand2
 } from "lucide-react";
 import { useKeyboardShortcuts } from "@/lib/keyboard-shortcuts";

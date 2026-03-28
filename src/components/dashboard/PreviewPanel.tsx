@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { X, Copy, ExternalLink, Code2, Image as ImageIcon, Globe } from "lucide-react";
+import { X, Copy, Code2, Image as ImageIcon, Globe } from "lucide-react";
 import { useState } from "react";
 
 interface PreviewPanelProps {

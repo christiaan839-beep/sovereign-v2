@@ -2,7 +2,7 @@
 
 import { motion, useInView } from "framer-motion";
 import { useRef, useState, useEffect } from "react";
-import { Star, Quote } from "lucide-react";
+
 
 const PLATFORM_FACTS = [
   {

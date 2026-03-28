@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Trophy, Zap, Clock, BarChart3, RefreshCcw, Loader2, Crown } from "lucide-react";
+import React, { useState } from "react";
+import { Trophy, Zap, Loader2, Crown } from "lucide-react";
 
 interface BenchmarkResult {
   model: string;
@@ -148,7 +148,7 @@ export default function LeaderboardPage() {
         {/* Latest Results */}
         {benchmarks.length > 0 && (
           <div className="grid md:grid-cols-3 gap-4">
-            {benchmarks.map((b, i) => (
+            {benchmarks.map((b) => (
               <div key={b.model} className={`bg-neutral-950 border p-5 space-y-3 ${b.model === winner ? "border-[#FFD700]/50" : "border-neutral-800"}`}>
                 {b.model === winner && <div className="h-[2px] bg-[#FFD700] -mt-5 -mx-5 mb-3" />}
                 <div className="flex items-center justify-between">

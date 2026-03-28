@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageSquare, X, Send, Bot, Sparkles, ArrowRight } from "lucide-react";
+import { MessageSquare, X, Send, Bot } from "lucide-react";
 
 /**
  * LandingAgent — Conversational AI assistant on the landing page.

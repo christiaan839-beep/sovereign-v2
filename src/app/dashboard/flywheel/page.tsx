@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { RefreshCcw, ShieldCheck, ThumbsUp, ThumbsDown, Activity, Settings2, BrainCircuit, FileCheck, CheckCircle2 } from "lucide-react";
 
 export default function FlywheelPage() {

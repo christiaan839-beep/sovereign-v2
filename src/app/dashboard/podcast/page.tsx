@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Headphones, FileText, UploadCloud, Settings, Mic, Waves, CheckCircle2, Play, Download, ShieldAlert, Zap } from "lucide-react";
+import { Headphones, FileText, UploadCloud, Settings, Mic, Waves, CheckCircle2, ShieldAlert, Zap } from "lucide-react";
 
 export default function PodcastBlueprintPage() {
   const [fileStatus, setFileStatus] = useState<"idle" | "uploading" | "uploaded">("idle");

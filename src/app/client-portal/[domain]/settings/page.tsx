@@ -8,7 +8,7 @@ interface PageProps {
   params: Promise<{ domain: string }>;
 }
 
-export default function WhiteLabelSettings({ params }: PageProps) {
+export default function WhiteLabelSettings({ params: _params }: PageProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 

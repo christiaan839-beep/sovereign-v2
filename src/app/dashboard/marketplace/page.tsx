@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Download, Star, Eye, Search, Users, TrendingUp,
   Briefcase, FileText, BarChart3, Code2, Zap, FlaskConical,
-  Sparkles, ArrowRight, Loader2, X, Bot, ChevronRight,
+  Sparkles, ArrowRight, Loader2, X, Bot,
 } from "lucide-react";
 import Link from "next/link";
 import { useToast } from "@/components/ui/ToastProvider";

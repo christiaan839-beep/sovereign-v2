@@ -49,14 +49,6 @@ const STEP_ICONS: Record<string, React.ComponentType<{ className?: string }>> = 
   default: Zap,
 };
 
-function getStepIcon(label: string): React.ComponentType<{ className?: string }> {
-  const lower = label.toLowerCase();
-  for (const [key, icon] of Object.entries(STEP_ICONS)) {
-    if (lower.includes(key)) return icon;
-  }
-  return STEP_ICONS.default;
-}
-
 /* ─── Agent Execution Templates ─── */
 
 const AGENT_TEMPLATES: Record<string, {

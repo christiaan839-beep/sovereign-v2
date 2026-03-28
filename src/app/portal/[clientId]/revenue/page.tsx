@@ -33,7 +33,7 @@ export default function RevenueAttributionPage({ params }: Props) {
         if (result.success) {
           setData(result);
         }
-      } catch (err) {
+      } catch (_err) {
       } finally {
         setLoading(false);
       }

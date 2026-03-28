@@ -4,8 +4,8 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Bot, Send, Sparkles, Zap, Target, BarChart3,
-  Shield, Globe, AlertTriangle, CheckCircle2, Loader2,
-  ArrowRight, Lightbulb, TrendingUp, RefreshCw
+  Shield, Globe, AlertTriangle, Loader2,
+  Lightbulb, RefreshCw
 } from "lucide-react";
 
 interface Message {

@@ -21,9 +21,9 @@ export default function WebhooksPage() {
           try {
             const parsed = JSON.parse(data.webhooks);
             setWebhooks(prev => ({ ...prev, ...parsed }));
-          } catch (e) {}
+          } catch (_e) {}
         }
-      } catch (err) {
+      } catch (_err) {
       } finally {
         setIsLoading(false);
       }
@@ -45,7 +45,7 @@ export default function WebhooksPage() {
       } else {
         throw new Error("Failed to save");
       }
-    } catch (err) {
+    } catch (_err) {
       setMessage({ type: "error", text: "Failed to save webhook." });
     } finally {
       setIsSaving(false);

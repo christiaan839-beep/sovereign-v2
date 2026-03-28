@@ -35,7 +35,7 @@ export default async function ProgrammaticLocationPage({ params }: Props) {
   let benefits = [];
   try {
      benefits = typeof payload.benefits === "string" ? JSON.parse(payload.benefits) : payload.benefits;
-  } catch(e) {
+  } catch(_e) {
      benefits = ["Elite AI Services", "24/7 Automation", "Guaranteed ROI"];
   }
 

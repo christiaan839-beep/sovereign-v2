@@ -1,4 +1,4 @@
-import type { User, Campaign, Lead, MemoryEntry } from "@/types";
+import type { User, Campaign, Lead } from "@/types";
 
 /**
  * SOVEREIGN Database Abstraction Layer

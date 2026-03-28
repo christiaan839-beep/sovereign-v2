@@ -6,7 +6,7 @@ import { detectContentType } from "./types";
 import { streamChat } from "./StreamHandler";
 import { routeIntent } from "@/lib/intent-router";
 import { getSystemPrompt } from "@/lib/system-prompts";
-import { getModel, MODEL_REGISTRY } from "@/config/models";
+import { getModel } from "@/config/models";
 import { detectAIPatterns } from "@/lib/ai-detect";
 import { refineOutputClient } from "@/lib/output-refiner-client";
 

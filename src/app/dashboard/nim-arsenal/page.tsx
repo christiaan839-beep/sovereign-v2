@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Shield, Cpu, Eye, Mic, Code, Database, Sparkles, Zap, ChevronDown } from "lucide-react";
+import { Shield, Cpu, Eye, Mic, Code, Database, Sparkles, Zap } from "lucide-react";
 
 const TIER_CONFIG: Record<number, { label: string; color: string; icon: React.ComponentType<{ className?: string }> }> = {
   1: { label: "Core Reasoning", color: "#00ff66", icon: Cpu },

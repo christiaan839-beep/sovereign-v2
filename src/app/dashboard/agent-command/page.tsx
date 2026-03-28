@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import {
-  Phone, Mail, Shield, FileSearch, ImageIcon, Mic,
+  Phone, Mail, Shield, ImageIcon, Mic,
   Cpu, Zap, Play, Loader2, AlertCircle, ChevronRight,
   Lock, Languages, Database, Paintbrush, Clapperboard, BotMessageSquare
 } from "lucide-react";

@@ -28,9 +28,9 @@ export default function ApiKeysPage() {
           try {
             const parsed = JSON.parse(data.apiKeys);
             setKeys(prev => ({ ...prev, ...parsed }));
-          } catch (e) {}
+          } catch (_e) {}
         }
-      } catch (err) {
+      } catch (_err) {
       } finally {
         setIsLoading(false);
       }
@@ -52,7 +52,7 @@ export default function ApiKeysPage() {
       } else {
         throw new Error("Failed to save");
       }
-    } catch (err) {
+    } catch (_err) {
       setMessage({ type: "error", text: "Failed to save API keys." });
     } finally {
       setIsSaving(false);

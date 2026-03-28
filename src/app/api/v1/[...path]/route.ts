@@ -103,8 +103,11 @@ async function handleRequest(
     );
   }
 
-  // Rate limit check
-  const rateCheck = checkRateLimit(apiKey);
+  // Validate key against DB (falls back to prefix convention if DB unavailable)
+  const keyInfo = await validateApiKey(apiKey);
+
+  // Rate limit check — use DB-resolved plan if available
+  const rateCheck = checkRateLimit(apiKey, keyInfo?.plan);
   if (!rateCheck.allowed) {
     return NextResponse.json(
       {

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Video, ShieldAlert, Cpu, UploadCloud, FileVideo, Waves, CheckCircle2, Play, Download, Search, Sparkles } from "lucide-react";
+import { Video, Cpu, UploadCloud, FileVideo, Waves, CheckCircle2, Search, Sparkles, Download } from "lucide-react";
 
 export default function CosmosVSLHackerPage() {
   const [fileStatus, setFileStatus] = useState<"idle" | "uploading" | "uploaded">("idle");

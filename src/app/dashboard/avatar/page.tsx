@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Video, ShieldAlert, Cpu, Mic, Settings, User, Play, Download, ScanFace, Upload, Fingerprint } from "lucide-react";
+import { motion } from "framer-motion";
+import { Video, Cpu, Mic, Settings, User, ScanFace, Upload, Fingerprint } from "lucide-react";
 
 export default function DigitalHumanAvatarPage() {
   const [pipelineStatus, setPipelineStatus] = useState<"idle" | "uploading" | "configuring" | "rendering" | "live">("idle");

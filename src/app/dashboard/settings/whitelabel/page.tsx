@@ -28,7 +28,7 @@ export default function WhitelabelPage() {
             supportEmail: data.config.supportEmail || "",
           });
         }
-      } catch (err) {
+      } catch (_err) {
       } finally {
         setIsLoading(false);
       }
@@ -50,7 +50,7 @@ export default function WhitelabelPage() {
       } else {
         throw new Error("Failed to save");
       }
-    } catch (err) {
+    } catch (_err) {
       setMessage({ type: "error", text: "Failed to save brand settings." });
     } finally {
       setIsSaving(false);

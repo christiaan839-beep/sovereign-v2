@@ -70,18 +70,6 @@ const EVENT_ICONS: Record<string, typeof Target> = {
 };
 
 // ─── Helpers ────────────────────────────────────────────────
-function categorizeAgent(agentId: string): AgentPerformance["category"] {
-  const id = agentId.toLowerCase();
-  if (id.includes("content") || id.includes("seo") || id.includes("blog") || id.includes("email") || id.includes("vsl"))
-    return "content";
-  if (id.includes("lead") || id.includes("prospect") || id.includes("booking"))
-    return "leads";
-  if (id.includes("code") || id.includes("build") || id.includes("page-builder"))
-    return "code";
-  if (id.includes("research") || id.includes("war-room") || id.includes("god-brain"))
-    return "research";
-  return "other";
-}
 
 function formatRelativeTime(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
