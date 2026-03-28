@@ -7,35 +7,55 @@ import { Swords, Target, Crosshair, Radar, AlertTriangle, Terminal, Zap } from "
 export default function CompetitorAssassination() {
   const [target, setTarget] = useState("");
   const [scanning, setScanning] = useState(false);
+  const [useWarRoom, setUseWarRoom] = useState(false);
   const [intel, setIntel] = useState<{domain: string, threatLevel: string, vulnerabilities: string[], counterStrikes: string[]} | null>(null);
+  const [warRoomResult, setWarRoomResult] = useState<{synthesis: string, perspectives: Array<{role: string, analysis: string}>, confidence: number, duration: string} | null>(null);
 
   const initiateTacticalScan = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!target) return;
     setScanning(true);
     setIntel(null);
+    setWarRoomResult(null);
 
     try {
-      const res = await fetch("/api/agents/competitor-scan", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ target }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setIntel({
-          domain: target,
-          threatLevel: data.threat_level || "HIGH",
-          vulnerabilities: data.vulnerabilities || [],
-          counterStrikes: data.counter_strikes || [],
+      if (useWarRoom) {
+        // Full Agent Team — 4 specialists analyze in parallel + debate
+        const res = await fetch("/api/agents/war-room", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ objective: `Deep competitive analysis of ${target}. Find weaknesses, pricing gaps, technical vulnerabilities, and growth opportunities we can exploit.`, team: "war-room" }),
+        });
+        const data = await res.json();
+        setWarRoomResult({
+          synthesis: data.synthesis || data.result?.synthesis || "Analysis complete.",
+          perspectives: data.perspectives || data.result?.perspectives || [],
+          confidence: data.confidence || data.result?.confidence || 0.75,
+          duration: data.duration || data.result?.duration || "—",
         });
       } else {
-        setIntel({
-          domain: target,
-          threatLevel: "UNKNOWN",
-          vulnerabilities: ["Scan failed — check your API keys in Settings."],
-          counterStrikes: ["Ensure a Tavily or Gemini key is configured."],
+        // Quick single-agent scan
+        const res = await fetch("/api/agents/competitor-scan", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ target }),
         });
+        const data = await res.json();
+        if (data.success) {
+          setIntel({
+            domain: target,
+            threatLevel: data.threat_level || "HIGH",
+            vulnerabilities: data.vulnerabilities || [],
+            counterStrikes: data.counter_strikes || [],
+          });
+        } else {
+          setIntel({
+            domain: target,
+            threatLevel: "UNKNOWN",
+            vulnerabilities: ["Scan failed — check your API keys in Settings."],
+            counterStrikes: ["Ensure a Tavily or Gemini key is configured."],
+          });
+        }
       }
     } catch {
       setIntel({
@@ -70,6 +90,24 @@ export default function CompetitorAssassination() {
          <h2 className="text-xl font-bold font-serif mb-6 flex items-center gap-2">
             <Crosshair className="w-5 h-5 text-rose-500" /> Establish Target Vector
          </h2>
+         {/* War Room Toggle */}
+         <div className="flex items-center gap-3 mb-6">
+           <button
+             type="button"
+             onClick={() => setUseWarRoom(false)}
+             className={`px-4 py-2 rounded-lg text-xs font-semibold transition-colors ${!useWarRoom ? "bg-rose-500/20 text-rose-400 border border-rose-500/30" : "bg-white/[0.02] text-neutral-500 border border-white/[0.06]"}`}
+           >
+             Quick Scan
+           </button>
+           <button
+             type="button"
+             onClick={() => setUseWarRoom(true)}
+             className={`px-4 py-2 rounded-lg text-xs font-semibold transition-colors flex items-center gap-2 ${useWarRoom ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "bg-white/[0.02] text-neutral-500 border border-white/[0.06]"}`}
+           >
+             <Swords className="w-3 h-3" /> War Room (4 Agents)
+           </button>
+         </div>
+
          <form onSubmit={initiateTacticalScan} className="flex flex-col md:flex-row gap-4">
             <div className="relative flex-1">
                <Terminal className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-rose-500/50" />
@@ -137,6 +175,42 @@ export default function CompetitorAssassination() {
                  ))}
               </ul>
            </div>
+        </motion.div>
+      )}
+      {/* War Room Multi-Agent Results */}
+      {warRoomResult && !scanning && (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+          {/* Confidence + Duration */}
+          <div className="flex items-center gap-4 text-sm">
+            <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-semibold">
+              {Math.round(warRoomResult.confidence * 100)}% Confidence
+            </span>
+            <span className="text-neutral-600 text-xs font-mono">{warRoomResult.duration}</span>
+            <span className="text-neutral-600 text-xs">{warRoomResult.perspectives.length} agent perspectives</span>
+          </div>
+
+          {/* Synthesis */}
+          <div className="bg-black/60 border border-emerald-500/20 rounded-3xl p-8">
+            <h2 className="text-xl font-bold font-serif text-white mb-4 flex items-center gap-2">
+              <Zap className="w-5 h-5 text-emerald-500" /> Battle Plan (Synthesized)
+            </h2>
+            <div className="prose prose-invert prose-sm max-w-none">
+              <pre className="whitespace-pre-wrap text-sm text-neutral-300 leading-relaxed font-sans">{warRoomResult.synthesis}</pre>
+            </div>
+          </div>
+
+          {/* Individual Perspectives */}
+          <div className="grid lg:grid-cols-2 gap-4">
+            {warRoomResult.perspectives.map((p, i) => (
+              <div key={i} className="bg-black/40 border border-white/[0.06] rounded-2xl p-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                  <span className="text-xs font-bold text-white uppercase tracking-widest">{p.role}</span>
+                </div>
+                <pre className="whitespace-pre-wrap text-xs text-neutral-400 leading-relaxed font-sans max-h-48 overflow-y-auto custom-scrollbar">{p.analysis}</pre>
+              </div>
+            ))}
+          </div>
         </motion.div>
       )}
     </div>
