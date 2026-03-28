@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Swords, Target, Crosshair, Radar, AlertTriangle, Terminal, Zap } from "lucide-react";
 
-export default function CompetitorAssassination() {
+export default function MarketIntelligence() {
   const [target, setTarget] = useState("");
   const [scanning, setScanning] = useState(false);
   const [useWarRoom, setUseWarRoom] = useState(false);
@@ -72,23 +72,23 @@ export default function CompetitorAssassination() {
   return (
     <div className="max-w-6xl mx-auto space-y-8 p-4 lg:p-8" role="main" aria-label="Competitor analysis">
       
-      {/* 🔴 TACTICAL ELITE HEADER */}
-      <header className="border-b border-rose-500/20 pb-8">
+      {/* Header */}
+      <header className="border-b border-emerald-500/20 pb-8">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-12 h-12 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center">
-            <Swords className="w-6 h-6 text-rose-500" />
+          <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center">
+            <Swords className="w-6 h-6 text-emerald-400" />
           </div>
           <div>
-            <h1 className="text-3xl font-serif font-bold text-white">Cartel Target Lock</h1>
-            <p className="text-neutral-500 font-mono text-xs uppercase tracking-widest mt-1">Competitor Assassination Matrix</p>
+            <h1 className="text-3xl font-serif font-bold text-white">Market Intelligence</h1>
+            <p className="text-neutral-500 font-mono text-xs uppercase tracking-widest mt-1">Deep Analysis Engine</p>
           </div>
         </div>
       </header>
 
-      {/* 🔴 TARGET ACQUISITION FORM */}
-      <div className="bg-black/60 backdrop-blur-3xl border border-rose-500/20 rounded-3xl p-8 shadow-[0_0_50px_rgba(244,63,94,0.05)]">
+      {/* Analysis Form */}
+      <div className="bg-black/60 backdrop-blur-3xl border border-emerald-500/20 rounded-3xl p-8 shadow-[0_0_50px_rgba(16,185,129,0.05)]">
          <h2 className="text-xl font-bold font-serif mb-6 flex items-center gap-2">
-            <Crosshair className="w-5 h-5 text-rose-500" /> Establish Target Vector
+            <Crosshair className="w-5 h-5 text-emerald-400" /> Analyze a Market or Company
          </h2>
          {/* War Room Toggle */}
          <div className="flex items-center gap-3 mb-6">
@@ -110,23 +110,23 @@ export default function CompetitorAssassination() {
 
          <form onSubmit={initiateTacticalScan} className="flex flex-col md:flex-row gap-4">
             <div className="relative flex-1">
-               <Terminal className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-rose-500/50" />
+               <Terminal className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-emerald-500/50" />
                <input
                  type="text"
-                 placeholder="e.g., legacy-agency.com"
+                 placeholder="e.g., example.com"
                  value={target}
                  onChange={(e) => setTarget(e.target.value)}
-                 aria-label="Competitor domain to scan"
-                 className="w-full bg-rose-500/5 border border-rose-500/20 rounded-xl py-4 pl-12 pr-4 text-white font-mono placeholder:text-neutral-600 focus:outline-none focus:border-rose-500/50 transition-colors"
+                 aria-label="Website or company to analyze"
+                 className="w-full bg-emerald-500/5 border border-emerald-500/20 rounded-xl py-4 pl-12 pr-4 text-white font-mono placeholder:text-neutral-600 focus:outline-none focus:border-emerald-500/50 transition-colors"
                />
             </div>
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={!target || scanning}
-              className="bg-rose-500 hover:bg-rose-600 text-white font-bold uppercase tracking-widest text-xs px-8 py-4 rounded-xl transition-gpu disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold uppercase tracking-widest text-xs px-8 py-4 rounded-xl transition-gpu disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {scanning ? (
-                 <><Radar className="w-4 h-4 animate-spin" /> Syping Target...</>
+                 <><Radar className="w-4 h-4 animate-spin" /> Analyzing...</>
               ) : (
                  <><Target className="w-4 h-4" /> Initiate Scan</>
               )}
@@ -134,22 +134,22 @@ export default function CompetitorAssassination() {
          </form>
       </div>
 
-      {/* 🔴 ACTIVE INTEL RENDER */}
+      {/* Analysis Loading */}
       {scanning && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-20 border border-rose-500/20 bg-black/40 rounded-3xl" aria-live="polite">
-           <Radar className="w-12 h-12 text-rose-500 animate-spin mx-auto mb-6 opacity-80" />
-           <h3 className="text-xl font-bold font-serif text-white mb-2">Extracting Enemy Telemetry</h3>
-           <p className="text-neutral-500 text-sm font-mono">Initiating NIM Playwright Crawl... Extracting Visual Payload via nemotron-90b-vision... Ripping Architectures via nemotron-ocr-v1...</p>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-20 border border-emerald-500/20 bg-black/40 rounded-3xl" aria-live="polite">
+           <Radar className="w-12 h-12 text-emerald-400 animate-spin mx-auto mb-6 opacity-80" />
+           <h3 className="text-xl font-bold font-serif text-white mb-2">Analyzing Market Data</h3>
+           <p className="text-neutral-500 text-sm font-mono">Crawling website structure... Extracting positioning data... Identifying opportunities...</p>
         </motion.div>
       )}
 
       {intel && !scanning && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="grid lg:grid-cols-2 gap-6" aria-live="polite">
-           {/* Structural Weaknesses */}
+           {/* Opportunities */}
            <div className="bg-black/60 border border-amber-500/20 rounded-3xl p-8">
               <div className="flex items-center gap-3 mb-8">
                  <AlertTriangle className="w-6 h-6 text-amber-500" />
-                 <h2 className="text-xl font-bold font-serif text-white">Identified Vulnerabilities</h2>
+                 <h2 className="text-xl font-bold font-serif text-white">Market Gaps Identified</h2>
               </div>
               <ul className="space-y-4">
                  {intel.vulnerabilities.map((vuln: string, i: number) => (
@@ -161,11 +161,11 @@ export default function CompetitorAssassination() {
               </ul>
            </div>
 
-           {/* Autonomous Counter-Strikes */}
+           {/* Strategic Opportunities */}
            <div className="bg-black/60 border border-emerald-500/20 rounded-3xl p-8">
               <div className="flex items-center gap-3 mb-8">
                  <Zap className="w-6 h-6 text-emerald-500" />
-                 <h2 className="text-xl font-bold font-serif text-white">Offensive Blueprints</h2>
+                 <h2 className="text-xl font-bold font-serif text-white">Strategic Opportunities</h2>
               </div>
               <ul className="space-y-4">
                  {intel.counterStrikes.map((strike: string, i: number) => (

@@ -110,15 +110,15 @@ const DEMO_SCENARIOS = [
     ],
   },
   {
-    id: "competitor",
-    label: "Competitor Intel",
+    id: "market-intel",
+    label: "Market Intel",
     icon: Search,
-    prompt: "Analyze competitor hubspot.com — tech stack, SEO gaps, content strategy weaknesses.",
-    agent: "Site Assassin",
-    response: "Tech stack: React, Next.js, Contentful CMS. SEO gaps: 847 uncontested long-tail keywords. Weakness: No AI agent content. Counter-strategy: 12 tactical moves identified.",
+    prompt: "Analyze hubspot.com — tech stack, market positioning, and untapped opportunities.",
+    agent: "Market Analyst",
+    response: "Tech stack: React, Next.js, Contentful CMS. Found 847 uncontested keyword opportunities. Identified 12 positioning angles in underserved segments.",
     badges: [
-      { text: "847 keyword gaps", color: "emerald" },
-      { text: "12 counter-moves", color: "cyan" },
+      { text: "847 opportunities", color: "emerald" },
+      { text: "12 positioning angles", color: "cyan" },
       { text: "Full report", color: "neutral" },
     ],
   },
@@ -340,8 +340,8 @@ export default function Home() {
           {/* Subtitle — specific, not generic */}
           <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5, duration: 0.7 }}
             className="text-lg md:text-xl text-neutral-500 max-w-xl mx-auto leading-relaxed mb-10">
-            Paste a competitor URL. Get their full strategy in 30 seconds.
-            No prompting. No copying. No manual work.
+            Describe any business goal. Agents plan, execute, and deliver.
+            No prompting. No manual work. Just results.
           </motion.p>
 
           {/* CTAs — one primary, one secondary */}
@@ -437,7 +437,7 @@ export default function Home() {
             <CapabilityCard icon={Cpu} title="Browser Automation" desc="Point an agent at any website. It opens a real browser, clicks through pages, extracts data, and delivers a structured report." accent="from-emerald-500/[0.04]" href="/showcase" />
             <CapabilityCard icon={BrainCircuit} title="Document Intelligence" desc="Upload PDFs, contracts, or reports. Ask questions in plain English. Get precise answers backed by your own data." accent="from-emerald-400/[0.04]" href="/dashboard" />
             <CapabilityCard icon={Target} title="Sales Outreach" desc="Find 50 prospects in 30 seconds. Write personalized cold emails. Send sequences. Qualify responses. Book meetings automatically." accent="from-emerald-500/[0.04]" href="/showcase" />
-            <CapabilityCard icon={Search} title="Competitor Intel" desc="Paste a competitor URL. Get their full tech stack, SEO gaps, content strategy, and specific counter-moves you can execute." accent="from-cyan-500/[0.04]" href="/showcase" />
+            <CapabilityCard icon={Search} title="Market Intelligence" desc="Analyze any website or market. Get tech stack breakdowns, positioning gaps, untapped keyword opportunities, and actionable insights." accent="from-cyan-500/[0.04]" href="/showcase" />
             <CapabilityCard icon={Mic} title="Voice Agents" desc="AI cold-calls prospects, qualifies leads, and books meetings directly onto your calendar. Sub-200ms response in 12 languages." accent="from-emerald-600/[0.04]" href="/dashboard" />
             <CapabilityCard icon={Code2} title="Code & Deploy" desc="Describe a feature in plain English. The agent writes production code, reviews it for bugs, and prepares it for deployment." accent="from-emerald-300/[0.04]" href="/dashboard" />
           </StaggerChildren>
@@ -459,7 +459,7 @@ export default function Home() {
               {
                 step: "01",
                 title: "Describe your goal",
-                desc: "Type what you need in plain English. \"Find 50 leads in fintech\" or \"Audit competitor.com\" — no prompt engineering required.",
+                desc: "Type what you need in plain English. \"Find 50 leads in fintech\" or \"Analyze this market\" — no prompt engineering required.",
                 gradient: "from-emerald-500/10 to-emerald-500/0",
               },
               {
@@ -471,7 +471,7 @@ export default function Home() {
               {
                 step: "03",
                 title: "Get finished output",
-                desc: "Leads enriched with emails. Blog post SEO-optimized. Competitor report with counter-moves. Real work — delivered, not drafted.",
+                desc: "Leads enriched with emails. Blog post SEO-optimized. Market report with opportunities. Real work — delivered, not drafted.",
                 gradient: "from-emerald-400/10 to-emerald-400/0",
               },
             ].map((item) => (
@@ -560,20 +560,20 @@ export default function Home() {
       <section className="py-24 px-6 bg-[#050505]">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
-            <RevealText as="p" className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">The Difference</RevealText>
+            <RevealText as="p" className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">A New Paradigm</RevealText>
             <div className="overflow-hidden">
-              <TextDecrypt text="Not another chatbot." className="text-3xl md:text-5xl font-bold text-white tracking-tight" as="h2" speed={20} delay={200} />
+              <TextDecrypt text="From prompting to deploying." className="text-3xl md:text-5xl font-bold text-white tracking-tight" as="h2" speed={20} delay={200} />
             </div>
           </div>
 
           <div className="grid md:grid-cols-2 gap-4">
             <div className="p-8 rounded-2xl bg-[#080808] border border-white/[0.04]">
               <h3 className="text-lg font-semibold text-neutral-400 mb-1 flex items-center gap-2">
-                <XCircle className="w-4 h-4 text-neutral-500" /> Prompt-Based AI
+                <XCircle className="w-4 h-4 text-neutral-500" /> The Old Way
               </h3>
-              <p className="text-neutral-500 text-xs mb-6">What everyone else sells</p>
+              <p className="text-neutral-500 text-xs mb-6">Prompt, copy, paste, repeat</p>
               <ul className="space-y-3">
-                {["You type a prompt. Copy the response. Paste into Gmail. Repeat 50 times a day.", "Forgets your brand, your clients, and everything you told it yesterday.", "Cannot open a browser, send an email, make a call, or push code to production.", "You do the planning. You do the quality check. You do the formatting. It just types."].map((item, i) => (
+                {["You type a prompt. Copy the response. Paste it somewhere else. Repeat 50 times a day.", "Every session starts from zero — no memory of your brand, clients, or past work.", "Limited to text generation — can't browse the web, send emails, or execute tasks.", "You do the planning, quality checking, and formatting. The AI just generates text."].map((item, i) => (
                   <li key={i} className="flex items-start gap-2.5 text-neutral-500 text-sm">
                     <XCircle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-neutral-500" /> {item}
                   </li>
@@ -583,11 +583,11 @@ export default function Home() {
 
             <div className="p-8 rounded-2xl bg-[#0A0A0A] border border-emerald-500/10 hover:border-emerald-500/20 transition-gpu duration-300 hover:shadow-[0_0_30px_rgba(16,185,129,0.04)]">
               <h3 className="text-lg font-semibold text-white mb-1 flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Agent-Powered Execution
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" /> The Autonomous Way
               </h3>
-              <p className="text-emerald-500/50 text-xs mb-6">What your business actually needs</p>
+              <p className="text-emerald-500/50 text-xs mb-6">Set the goal. Agents deliver.</p>
               <ul className="space-y-3">
-                {["Type one goal. Walk away. 132 agents plan the steps, execute them, and deliver finished work.", "Remembers your brand voice, your client preferences, and what failed last time.", "Opens real browsers. Sends real emails. Makes real phone calls. Deploys real code.", "Catches its own errors, retries with a different approach, and self-corrects — no human needed."].map((item, i) => (
+                {["Describe one goal. 132 agents plan the steps, execute in parallel, and deliver finished work.", "Learns your brand voice, remembers client preferences, and improves with every interaction.", "Opens real browsers. Sends real emails. Generates real content. Deploys real code.", "Self-corrects errors, retries with different approaches, and optimizes its own performance over time."].map((item, i) => (
                   <li key={i} className="flex items-start gap-2.5 text-neutral-300 text-sm">
                     <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5 text-emerald-400" /> {item}
                   </li>
@@ -641,7 +641,7 @@ export default function Home() {
             {[
               { label: "Air-Gapped Execution", desc: "Run entirely on your own hardware via NemoClaw" },
               { label: "5-Layer NeMo Guardrails", desc: "Jailbreak, topic, content, PII, quality" },
-              { label: "White-Label Franchise", desc: "Your brand, your domain, your clients" },
+              { label: "White-Label Platform", desc: "Your brand, your domain, your clients" },
               { label: "NVIDIA + Google Stack", desc: "NIM, Nemotron, Gemini, Blackwell-ready" },
             ].map((item, i) => (
               <motion.div key={i} initial={{ opacity: 0 }} whileInView={{ opacity: 1 }}
@@ -684,7 +684,7 @@ export default function Home() {
               { q: "How long does setup take?", a: "Under 60 seconds. Sign up, complete the 5-step onboarding wizard, and deploy your first agent immediately. No Docker, no terminal commands, no technical setup required for the cloud version." },
               { q: "What integrations are supported?", a: "NVIDIA NIM, Ollama (local models), ElevenLabs (voice), Pinecone (vector memory), Clerk (auth), Neon PostgreSQL (database), Vercel (hosting), PayFast, and Stripe. A public API at /api/v1/ is available for custom integrations." },
               { q: "Is my data safe?", a: "Yes. A 5-layer NeMo Guardrails safety pipeline protects every interaction: jailbreak detection, topic control, content safety, PII scanning, and quality scoring. Plus local execution means data never touches the cloud if you choose." },
-              { q: "What is the white-label Cartel license?", a: "The Cartel license lets agencies rebrand the entire platform as their own. Custom domain, client portals, your logo. Clients think you built the technology. It is an agency-in-a-box franchise model — resell at whatever margin you choose." },
+              { q: "What is the white-label Enterprise license?", a: "The Enterprise license lets agencies rebrand the entire platform as their own. Custom domain, client portals, your logo. It is a complete AI business-in-a-box — deploy under your brand and scale your agency without hiring." },
             ].map((faq, i) => <FAQItem key={i} question={faq.q} answer={faq.a} />)}
           </div>
         </motion.div>
@@ -698,10 +698,10 @@ export default function Home() {
         <div className="absolute inset-0 bg-[linear-gradient(rgba(0,183,255,0.008)_1px,transparent_1px),linear-gradient(90deg,rgba(0,183,255,0.008)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none" />
         <div className="relative z-10">
           <RevealText as="h2" className="text-4xl md:text-6xl font-black text-white mb-5 tracking-tight leading-[1.05]">
-            Your competitors hire.
+            The future of work
           </RevealText>
           <div className="overflow-hidden mb-5">
-            <TextDecrypt text="You deploy." className="text-4xl md:text-6xl font-black text-white tracking-tight leading-[1.05]" as="h2" speed={20} delay={400} />
+            <TextDecrypt text="is autonomous." className="text-4xl md:text-6xl font-black text-white tracking-tight leading-[1.05]" as="h2" speed={20} delay={400} />
           </div>
           <RevealText as="p" delay={0.3} className="text-neutral-500 max-w-lg mx-auto mb-10">
             132 agents. 51+ models. Zero per-token cost. Deploy your first agent in 60 seconds.
