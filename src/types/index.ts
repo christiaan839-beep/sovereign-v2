@@ -11,6 +11,8 @@ export interface AIOptions {
   maxTokens?: number;
   /** Enable Claude Extended Thinking for deep reasoning tasks */
   thinking?: boolean;
+  /** Use Claude Opus 4.6 for maximum reasoning (higher cost, BYOK recommended) */
+  useOpus?: boolean;
 }
 
 // ─── Agents ──────────────────────────────────────────

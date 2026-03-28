@@ -48,7 +48,7 @@ const globalGenAI = new GoogleGenerativeAI(globalGeminiKey);
  * 4. Claude (Anthropic) — if explicitly selected or BYOK key exists
  */
 export async function ai(prompt: string, options: AIOptions = {}): Promise<string> {
-  const { model = "gemini", system, maxTokens = 2000, thinking } = options;
+  const { model = "gemini", system, maxTokens = 2000, thinking, useOpus } = options;
   
   const userKeys = await getUserKeys();
 
@@ -64,7 +64,7 @@ export async function ai(prompt: string, options: AIOptions = {}): Promise<strin
 
   // 3. Claude (BYOK only) - Opus or Sonnet
   if (model === "claude" || (userKeys.anthropic && !userKeys.gemini && !userKeys.groq)) {
-    return claudeText(prompt, system, maxTokens, userKeys, thinking);
+    return claudeText(prompt, system, maxTokens, userKeys, thinking, useOpus);
   }
 
   // 4. Mistral Large 2 (EU Compliance / Open Weights via NIM)
@@ -128,7 +128,7 @@ async function geminiText(prompt: string, system?: string, maxTokens: number = 2
   return result.response.text();
 }
 
-async function claudeText(prompt: string, system?: string, maxTokens: number = 2000, userKeys: { anthropic?: string } = {}, thinking?: boolean): Promise<string> {
+async function claudeText(prompt: string, system?: string, maxTokens: number = 2000, userKeys: { anthropic?: string } = {}, thinking?: boolean, useOpus?: boolean): Promise<string> {
   const keys = Object.keys(userKeys).length > 0 ? userKeys : await getUserKeys();
   const apiKey = keys.anthropic || globalAnthropicKey;
 
@@ -149,9 +149,11 @@ async function claudeText(prompt: string, system?: string, maxTokens: number = 2
   ] : undefined;
 
   // Extended thinking and max_tokens are incompatible — use one or the other
+  // Opus 4.6: strongest reasoning, 1M context, 128K output — use for God Brain, deep analysis
+  // Sonnet 4.6: best balance of speed/quality — default for all other agents
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const requestParams: any = {
-    model: "claude-sonnet-4-6-20250514",
+    model: useOpus ? "claude-opus-4-6-20250514" : "claude-sonnet-4-6-20250514",
     ...(systemParam ? { system: systemParam } : {}),
     messages: [{ role: "user", content: prompt }],
   };

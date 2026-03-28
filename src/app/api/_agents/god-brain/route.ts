@@ -76,6 +76,7 @@ export async function POST(req: Request) {
           {
             model: "claude",
             thinking: true,
+            useOpus: true, // God Brain uses Opus 4.6 for maximum reasoning depth
             system: "You are a master strategist performing deep analysis. Think through multiple angles, consider second-order effects, and identify non-obvious insights. Be specific and actionable.",
           }
         );
