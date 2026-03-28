@@ -51,10 +51,10 @@ Output ONLY valid JSON.`;
         { maxTokens: 3000, temperature: 0.1 }
       );
     } catch {
-      // Fallback to BYOK ai() engine
+      // Fallback to BYOK ai() engine — use Claude Extended Thinking for thorough legal analysis
       result = await ai(
         `Analyze this contract:\n\n${document.substring(0, 50000)}`,
-        { system: systemPrompt, maxTokens: 3000 }
+        { system: systemPrompt, maxTokens: 3000, model: "claude", thinking: true }
       );
     }
 

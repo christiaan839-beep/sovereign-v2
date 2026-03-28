@@ -9,6 +9,8 @@ export interface AIOptions {
   system?: string;
   taskType?: TaskType;
   maxTokens?: number;
+  /** Enable Claude Extended Thinking for deep reasoning tasks */
+  thinking?: boolean;
 }
 
 // ─── Agents ──────────────────────────────────────────

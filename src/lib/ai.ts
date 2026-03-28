@@ -48,7 +48,7 @@ const globalGenAI = new GoogleGenerativeAI(globalGeminiKey);
  * 4. Claude (Anthropic) — if explicitly selected or BYOK key exists
  */
 export async function ai(prompt: string, options: AIOptions = {}): Promise<string> {
-  const { model = "gemini", system, maxTokens = 2000 } = options;
+  const { model = "gemini", system, maxTokens = 2000, thinking } = options;
   
   const userKeys = await getUserKeys();
 
@@ -64,7 +64,7 @@ export async function ai(prompt: string, options: AIOptions = {}): Promise<strin
 
   // 3. Claude (BYOK only) - Opus or Sonnet
   if (model === "claude" || (userKeys.anthropic && !userKeys.gemini && !userKeys.groq)) {
-    return claudeText(prompt, system, maxTokens, userKeys);
+    return claudeText(prompt, system, maxTokens, userKeys, thinking);
   }
 
   // 4. Mistral Large 2 (EU Compliance / Open Weights via NIM)

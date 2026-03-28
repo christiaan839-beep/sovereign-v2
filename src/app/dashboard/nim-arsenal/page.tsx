@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Cpu, Zap, ArrowRight, Globe, Mic, Code, Brain, BookOpen, Shield, ChevronRight } from "lucide-react";
+import { Cpu, Zap, ArrowRight, Globe, Mic, Code, Brain, BookOpen, Shield, ChevronRight, Sparkles, Eye, FileText, Monitor, Plug, Database, RotateCcw } from "lucide-react";
 
 const MODELS = [
   { name: "Nemotron Ultra 253B", params: "253B", tag: "Reasoning", provider: "NIM", color: "#00ff66" },
@@ -32,6 +32,16 @@ const FAILOVER = [
   "Qwen 3 235B",
   "Mistral Small 3.1 24B",
   "Mistral-Nemotron",
+];
+
+const CLAUDE_CAPABILITIES: { name: string; detail: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  { name: "Extended Thinking", detail: "enabled", icon: Brain },
+  { name: "Interleaved Thinking", detail: "enabled", icon: Sparkles },
+  { name: "Citations API", detail: "enabled", icon: FileText },
+  { name: "Computer Use", detail: "enabled (2025-11-24)", icon: Monitor },
+  { name: "MCP Server", detail: "enabled (7 tools)", icon: Plug },
+  { name: "Prompt Caching", detail: "enabled (90% savings)", icon: Database },
+  { name: "Agentic Loop", detail: "enabled (10 iterations)", icon: RotateCcw },
 ];
 
 const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.06 } } };
@@ -126,6 +136,26 @@ export default function NimArsenalPage() {
             ))}
           </motion.div>
           <p className="text-[11px] text-neutral-600 mt-2">If the primary model fails, requests cascade through the chain automatically.</p>
+        </section>
+
+        {/* Claude Capabilities */}
+        <section>
+          <h2 className="text-sm font-semibold text-neutral-400 uppercase tracking-widest mb-4">Claude Capabilities</h2>
+          <motion.div variants={stagger} initial="hidden" animate="show" className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+            {CLAUDE_CAPABILITIES.map((cap) => (
+              <motion.div key={cap.name} variants={cardAnim}
+                className="border border-white/[0.06] rounded-lg p-4 bg-white/[0.02] hover:bg-white/[0.04] transition-colors group">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-8 h-8 rounded-md bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
+                    <cap.icon className="w-4 h-4 text-emerald-400" />
+                  </div>
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" title="Enabled" />
+                </div>
+                <h3 className="text-sm font-semibold text-white group-hover:text-emerald-400 transition-colors">{cap.name}</h3>
+                <p className="text-[11px] text-neutral-500 mt-1 font-mono">{cap.detail}</p>
+              </motion.div>
+            ))}
+          </motion.div>
         </section>
 
       </div>

@@ -1,4 +1,5 @@
 import { createAgentRoute } from "@/lib/agent-factory";
+import { ai } from "@/lib/ai";
 
 /**
  * GEMINI DEEP THINK — Advanced reasoning with parallel thought streams.
@@ -19,10 +20,40 @@ export const POST = createAgentRoute({
     const problem = input.problem as string;
     const context = (input.context as string) || "";
     const thinkingBudget = (input.thinkingBudget as number) || 8192;
+    const useClaude = input.useClaude as boolean | undefined;
 
+    // Claude Extended Thinking path — use when explicitly requested or Gemini key unavailable
     const geminiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY;
-    if (!geminiKey) {
-      return { error: "Google AI API key not configured." };
+    if (useClaude || !geminiKey) {
+      const anthropicKey = process.env.ANTHROPIC_API_KEY;
+      if (!anthropicKey && !geminiKey) {
+        return { error: "No AI API key configured. Add GOOGLE_GENERATIVE_AI_API_KEY or ANTHROPIC_API_KEY." };
+      }
+      if (anthropicKey && (useClaude || !geminiKey)) {
+        const prompt = context
+          ? `Background context:\n${context}\n\nProblem to solve:\n${problem}`
+          : problem;
+
+        const solution = await ai(prompt, {
+          model: "claude",
+          thinking: true,
+          system: `You are an expert analyst and strategist. Think deeply about the problem before responding. Consider multiple angles, potential pitfalls, and second-order effects. Structure your response as:
+
+1. ANALYSIS — Break down the core problem
+2. APPROACH — Your recommended strategy with rationale
+3. EXECUTION — Step-by-step implementation plan
+4. RISKS — What could go wrong and mitigations
+5. EXPECTED OUTCOME — Measurable results to expect
+
+Be specific. Use numbers. No generic advice.`,
+        });
+
+        return {
+          solution,
+          model: "claude-sonnet-4-extended-thinking",
+          mode: "extended-reasoning",
+        };
+      }
     }
 
     const res = await fetch(

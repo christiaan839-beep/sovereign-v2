@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { ai } from "@/lib/ai";
 
 /**
  * GOD-BRAIN ORCHESTRATOR — The Game-Changer.
@@ -63,6 +64,25 @@ export async function POST(req: Request) {
       results.analysis = data.choices?.[0]?.message?.content || "";
     }
     timings.analysis_ms = Date.now() - t2;
+
+    // ═══════════════════════════════════════════════
+    // STAGE 2.5: Claude Extended Thinking (Deep Reasoning)
+    // ═══════════════════════════════════════════════
+    if (depth === "deep") {
+      const t25 = Date.now();
+      try {
+        const thinkingAnalysis = await ai(
+          `You have been given preliminary analysis from another model. Now apply deep, multi-step reasoning to refine it.\n\nOriginal input: ${typeof input === 'string' ? input : JSON.stringify(input)}\n\nPreliminary analysis:\n${results.analysis || "No preliminary analysis available."}\n\nProvide a refined, strategic intelligence assessment with second-order implications, hidden risks, and actionable recommendations.`,
+          {
+            model: "claude",
+            thinking: true,
+            system: "You are a master strategist performing deep analysis. Think through multiple angles, consider second-order effects, and identify non-obvious insights. Be specific and actionable.",
+          }
+        );
+        results.deepThinking = thinkingAnalysis;
+      } catch { results.deepThinking = "Extended thinking unavailable (no Anthropic key)"; }
+      timings.deep_thinking_ms = Date.now() - t25;
+    }
 
     // ═══════════════════════════════════════════════
     // STAGE 3: Vector Embedding (Memory Storage Ready)
@@ -151,7 +171,7 @@ export async function POST(req: Request) {
           "nemotron-content-safety-4b",
           "nemotron-3-super-120b",
           "llama-nemotron-embed-1b-v2",
-          ...(depth === "deep" ? ["nemotron-voicechat", "FLUX.2-Klein-4B"] : []),
+          ...(depth === "deep" ? ["claude-sonnet-4-extended-thinking", "nemotron-voicechat", "FLUX.2-Klein-4B"] : []),
         ],
         depth,
         cost: "$0.00 (all free NIM models)",

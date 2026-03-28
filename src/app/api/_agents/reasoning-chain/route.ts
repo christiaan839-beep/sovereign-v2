@@ -1,5 +1,6 @@
 import { getNimKey } from "@/lib/nvidia";
 import { NextResponse } from "next/server";
+import { ai } from "@/lib/ai";
 
 /**
  * NEMOTRON REASONING CHAIN — Multi-step deep reasoning using the
@@ -68,25 +69,41 @@ export async function POST(request: Request) {
     const analysis = analysisData?.choices?.[0]?.message?.content || "";
     steps.push({ step: "Deep Analysis", content: analysis, model: "deepseek-v3.2", duration_ms: Date.now() - analysisStart });
 
-    // Step 3: Synthesize final answer
+    // Step 3: Synthesize final answer — Claude Extended Thinking for deep reasoning, NIM fallback
     const synthStart = Date.now();
-    const synthRes = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${await getNimKey()}` },
-      body: JSON.stringify({
-        model: "nvidia/llama-3.1-nemotron-ultra-253b",
-        messages: [
-          { role: "system", content: "Synthesize the analysis below into a clear, actionable final answer. Be specific, include concrete recommendations, and highlight key insights. Structure with headers." },
-          { role: "user", content: `Question: ${question}\n\nDetailed analysis:\n${analysis}` },
-        ],
-        max_tokens: 1000,
-        temperature: 0.3,
-      }),
-    });
+    let synthesis = "";
+    let synthModel = "nemotron-ultra-253b";
 
-    const synthData = await synthRes.json();
-    const synthesis = synthData?.choices?.[0]?.message?.content || "";
-    steps.push({ step: "Synthesis", content: synthesis, model: "nemotron-ultra-253b", duration_ms: Date.now() - synthStart });
+    try {
+      synthesis = await ai(
+        `Question: ${question}\n\nDetailed analysis:\n${analysis}`,
+        {
+          model: "claude",
+          thinking: true,
+          system: "Synthesize the analysis below into a clear, actionable final answer. Think deeply about the connections between sub-answers. Be specific, include concrete recommendations, and highlight key insights. Structure with headers.",
+        }
+      );
+      synthModel = "claude-sonnet-4-extended-thinking";
+    } catch {
+      // Fallback to NIM if Claude is unavailable
+      const synthRes = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${await getNimKey()}` },
+        body: JSON.stringify({
+          model: "nvidia/llama-3.1-nemotron-ultra-253b",
+          messages: [
+            { role: "system", content: "Synthesize the analysis below into a clear, actionable final answer. Be specific, include concrete recommendations, and highlight key insights. Structure with headers." },
+            { role: "user", content: `Question: ${question}\n\nDetailed analysis:\n${analysis}` },
+          ],
+          max_tokens: 1000,
+          temperature: 0.3,
+        }),
+      });
+
+      const synthData = await synthRes.json();
+      synthesis = synthData?.choices?.[0]?.message?.content || "";
+    }
+    steps.push({ step: "Synthesis", content: synthesis, model: synthModel, duration_ms: Date.now() - synthStart });
 
     // Step 4: Self-critique
     const critiqueStart = Date.now();
@@ -115,7 +132,7 @@ export async function POST(request: Request) {
       domain,
       depth,
       total_duration_ms: Date.now() - startTime,
-      models_used: ["nemotron-ultra-253b", "deepseek-v3.2", "mistral-nemotron"],
+      models_used: ["nemotron-ultra-253b", "deepseek-v3.2", synthModel, "mistral-nemotron"],
       final_answer: synthesis,
       self_critique: critique,
       reasoning_chain: steps.map(s => ({
