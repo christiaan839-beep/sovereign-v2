@@ -10,7 +10,7 @@ import {
   X, Menu, Mic, Swords, Database, Inbox, CalendarClock,
   PanelLeftOpen, PanelLeftClose, Clock, Plug, Cpu,
   BarChart3, CircuitBoard, Eye, Palette, Shield, Wrench, LayoutTemplate,
-  Wand2
+  Wand2, Store
 } from "lucide-react";
 import { useKeyboardShortcuts } from "@/lib/keyboard-shortcuts";
 import { motion, AnimatePresence } from "framer-motion";
@@ -74,6 +74,14 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/dashboard/war-room", label: "War Room", icon: Swords },
       { href: "/dashboard/god-eye", label: "God Eye", icon: Eye },
       { href: "/dashboard/nim-arsenal", label: "NIM Arsenal", icon: Database },
+      { href: "/dashboard/revenue", label: "Revenue", icon: DollarSign },
+    ],
+  },
+  {
+    label: "Community",
+    icon: Store,
+    items: [
+      { href: "/dashboard/agent-marketplace", label: "Marketplace", icon: Store },
     ],
   },
 ];
