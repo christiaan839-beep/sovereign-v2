@@ -148,9 +148,13 @@ export function middleware(request: NextRequest) {
     return applySecurityHeaders(response);
   }
 
-  // ── A/B TESTING for /landing/* ──
+  // ── A/B TESTING for /landing/* only ──
+  if (!url.pathname.startsWith('/landing')) {
+    return applySecurityHeaders(NextResponse.next());
+  }
+
   let cohort = request.cookies.get('sovereign_cohort')?.value;
-  
+
   if (!cohort) {
     cohort = Math.random() > 0.5 ? 'variant_alpha' : 'variant_beta';
   }
