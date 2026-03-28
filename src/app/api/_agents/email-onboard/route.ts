@@ -23,10 +23,11 @@ interface EmailStep {
 }
 
 function buildSequence(clientName: string, plan: string): EmailStep[] {
+  // Default templates used as fallback if AI generation fails
   return [
     {
       day: 0,
-      subject: `Welcome to Sovereign Matrix, ${clientName} 🚀`,
+      subject: `Welcome to Sovereign Matrix, ${clientName}`,
       body: `Hi ${clientName},\n\nYour ${plan} plan is now active. Here's how to get started:\n\n1. **Dashboard**: Visit your dashboard to see all 72+ AI agents ready to work.\n2. **API Keys**: Go to Settings → API Keys to generate your integration key.\n3. **Quick Start**: Try the Smart Router — POST to /api/agents/smart-router with any prompt and it auto-selects the best model.\n\nYour agents are deployed and waiting.\n\n— The Sovereign Matrix Team`,
     },
     {
@@ -42,9 +43,34 @@ function buildSequence(clientName: string, plan: string): EmailStep[] {
     {
       day: 7,
       subject: `How's it going, ${clientName}?`,
-      body: `Hi ${clientName},\n\nYou've been on the ${plan} plan for a week. Quick check-in:\n\n• Have you tried the Capability Matrix? Visit /dashboard/capability-matrix to see all 50+ models.\n• Need more agent calls? Upgrade anytime at /pricing.\n• Questions? Reply to this email — we respond within 2 hours.\n\nBuilding the future together.\n\n— The Sovereign Matrix Team`,
+      body: `Hi ${clientName},\n\nYou've been on the ${plan} plan for a week. Quick check-in:\n\n- Have you tried the Capability Matrix? Visit /dashboard/capability-matrix to see all 50+ models.\n- Need more agent calls? Upgrade anytime at /pricing.\n- Questions? Reply to this email — we respond within 2 hours.\n\nBuilding the future together.\n\n— The Sovereign Matrix Team`,
     },
   ];
+}
+
+async function generateAIEmailBody(clientName: string, plan: string, emailStep: EmailStep): Promise<string> {
+  try {
+    const body = await ai(
+      `Write a personalized onboarding email for a SaaS AI marketing platform called Sovereign Matrix.
+
+CLIENT NAME: ${clientName}
+PLAN: ${plan}
+EMAIL DAY: Day ${emailStep.day} of onboarding sequence
+SUBJECT LINE: ${emailStep.subject}
+TEMPLATE REFERENCE (use as guide for topics, but rewrite with personality):
+${emailStep.body}
+
+Write the email body only. Make it warm, professional, and actionable. Use markdown-style formatting (**bold** for emphasis). Keep it under 300 words. Sign off as "— The Sovereign Matrix Team".`,
+      {
+        system: "You are an expert SaaS onboarding copywriter. Your emails feel personal, not automated. Every email has a clear next action. You write with energy but never hype. Output ONLY the email body text.",
+        maxTokens: 500,
+      }
+    );
+    return body;
+  } catch {
+    // Fall back to template if AI fails
+    return emailStep.body;
+  }
 }
 
 export async function POST(request: Request) {
@@ -61,6 +87,8 @@ export async function POST(request: Request) {
 
     if (action === "send-welcome") {
       const welcomeEmail = sequence[0];
+      // Generate personalized email body via AI
+      welcomeEmail.body = await generateAIEmailBody(clientName, plan, welcomeEmail);
 
       if (resendKey) {
         try {

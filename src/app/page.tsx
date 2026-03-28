@@ -873,7 +873,7 @@ export default function Home() {
             <div>
               <h4 className="text-xs font-semibold text-neutral-400 mb-4">Resources</h4>
               <ul className="space-y-2.5">
-                <li><Link href="/blog" className="text-xs text-neutral-500 hover:text-white transition-colors">Blog</Link></li>
+                <li><Link href="/whitepaper" className="text-xs text-neutral-500 hover:text-white transition-colors">Whitepaper</Link></li>
                 <li><Link href="/changelog" className="text-xs text-neutral-500 hover:text-white transition-colors">Changelog</Link></li>
                 <li><Link href="/status" className="text-xs text-neutral-500 hover:text-white transition-colors">System Status</Link></li>
                 <li><Link href="/partner" className="text-xs text-neutral-500 hover:text-white transition-colors">Partners</Link></li>
