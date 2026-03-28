@@ -104,7 +104,7 @@ export function Pricing() {
         { name: "Enterprise Sub-Licenses (5 included)", included: true },
         { name: "SLA guarantee", included: true },
       ],
-      planId: "cartel",
+      planId: "enterprise",
       buttonText: "Deploy Enterprise",
       buttonStyle: "bg-white/5 hover:bg-white/10 text-white border border-white/10",
     },
