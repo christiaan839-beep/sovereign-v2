@@ -15,6 +15,7 @@ import { InteractiveHeroStrike } from "@/components/ui/InteractiveHeroStrike";
 import { SocialProofMetrics } from "@/components/ui/SocialProofMetrics";
 import { LandingAgent } from "@/components/ui/LandingAgent";
 import { AgentOffice } from "@/components/ui/AgentOffice";
+import { RevealText, ScaleOnScroll, MagneticButton, StaggerChildren, GlowDivider, ScrollProgress } from "@/components/ui/ScrollAnimations";
 import dynamic from "next/dynamic";
 import { TextMorph } from "@/components/ui/TextMorph";
 
@@ -228,6 +229,9 @@ export default function Home() {
     <CinematicLoader>
     <div className="relative min-h-screen bg-[#010101] text-white selection:bg-emerald-500/20 font-sans antialiased">
 
+      {/* Scroll progress bar */}
+      <ScrollProgress />
+
       {/* Skip to content — accessibility */}
       <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[200] focus:px-4 focus:py-2 focus:bg-emerald-500 focus:text-black focus:rounded-lg focus:text-sm focus:font-bold">
         Skip to main content
@@ -327,12 +331,16 @@ export default function Home() {
           {/* CTAs — one primary, one secondary */}
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6, duration: 0.5 }}
             className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-14">
-            <Link href="/onboarding" className="group flex items-center gap-2 px-7 py-3.5 bg-white text-black font-semibold rounded-full text-sm hover:shadow-[0_0_40px_rgba(255,255,255,0.1)] transition-gpu duration-500">
-              Deploy Your First Agent <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-            </Link>
-            <Link href="/showcase" className="px-7 py-3.5 rounded-full text-sm font-medium text-neutral-400 border border-white/[0.06] hover:border-white/[0.12] hover:text-white transition-gpu duration-300">
-              Watch Demo
-            </Link>
+            <MagneticButton href="/onboarding" strength={0.2}>
+              <span className="group flex items-center gap-2 px-7 py-3.5 bg-white text-black font-semibold rounded-full text-sm hover:shadow-[0_0_40px_rgba(255,255,255,0.1)] transition-gpu duration-500 cursor-pointer">
+                Deploy Your First Agent <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+              </span>
+            </MagneticButton>
+            <MagneticButton href="/showcase" strength={0.15}>
+              <span className="px-7 py-3.5 rounded-full text-sm font-medium text-neutral-400 border border-white/[0.06] hover:border-white/[0.12] hover:text-white transition-gpu duration-300 cursor-pointer inline-block">
+                Watch Demo
+              </span>
+            </MagneticButton>
           </motion.div>
 
           {/* Model strip — understated, not flashy */}
@@ -347,15 +355,9 @@ export default function Home() {
           </motion.div>
         </div>
 
-        {/* Scroll-reveal glassmorphic card — floats up as you scroll */}
+        {/* Scroll-reveal glassmorphic card */}
         <div className="relative z-20 -mt-[5vh] pb-12 px-6">
-          <motion.div
-            initial={{ opacity: 0, y: 100 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }}
-            className="max-w-4xl mx-auto"
-          >
+          <ScaleOnScroll className="max-w-4xl mx-auto">
             {/* Glassmorphic demo card */}
             <div className="relative rounded-3xl border border-white/[0.08] bg-[#080808]/80 backdrop-blur-2xl overflow-hidden shadow-[0_0_80px_rgba(16,185,129,0.06)]">
               {/* Gradient border glow */}
@@ -370,15 +372,10 @@ export default function Home() {
             </div>
 
             {/* Scroll indicator */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              transition={{ delay: 0.5 }}
-              className="flex justify-center mt-8"
-            >
-              <ChevronDown className="w-5 h-5 text-neutral-500 animate-bounce" />
-            </motion.div>
-          </motion.div>
+            <div className="flex justify-center mt-8">
+              <ChevronDown className="w-5 h-5 text-neutral-600 animate-bounce" />
+            </div>
+          </ScaleOnScroll>
         </div>
       </motion.section>
 
@@ -391,40 +388,39 @@ export default function Home() {
       </div>
 
       {/* ═══ SOCIAL PROOF METRICS ═══ */}
-      <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
+      <GlowDivider />
       <section className="py-24 px-6">
         <SocialProofMetrics />
       </section>
 
       {/* ═══ WHAT IT DOES — 6 Capabilities ═══ */}
-      <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
+      <GlowDivider />
       <section id="capabilities" className="py-24 px-6">
         <div className="max-w-6xl mx-auto">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-            className="text-center mb-16">
-            <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">Capabilities</p>
-            <h2 className="text-3xl md:text-5xl font-bold text-white tracking-tight">What you can do with it.</h2>
-          </motion.div>
+          <div className="text-center mb-16">
+            <RevealText as="p" className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">Capabilities</RevealText>
+            <RevealText as="h2" delay={0.1} className="text-3xl md:text-5xl font-bold text-white tracking-tight">What you can do with it.</RevealText>
+          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <StaggerChildren className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" staggerDelay={0.06}>
             <CapabilityCard icon={Cpu} title="Browser Automation" desc="Point an agent at any website. It opens a real browser, clicks through pages, extracts data, and delivers a structured report." accent="from-emerald-500/[0.04]" href="/showcase" />
             <CapabilityCard icon={BrainCircuit} title="Document Intelligence" desc="Upload PDFs, contracts, or reports. Ask questions in plain English. Get precise answers backed by your own data." accent="from-emerald-400/[0.04]" href="/dashboard" />
             <CapabilityCard icon={Target} title="Sales Outreach" desc="Find 50 prospects in 30 seconds. Write personalized cold emails. Send sequences. Qualify responses. Book meetings automatically." accent="from-emerald-500/[0.04]" href="/showcase" />
             <CapabilityCard icon={Search} title="Competitor Intel" desc="Paste a competitor URL. Get their full tech stack, SEO gaps, content strategy, and specific counter-moves you can execute." accent="from-cyan-500/[0.04]" href="/showcase" />
             <CapabilityCard icon={Mic} title="Voice Agents" desc="AI cold-calls prospects, qualifies leads, and books meetings directly onto your calendar. Sub-200ms response in 12 languages." accent="from-emerald-600/[0.04]" href="/dashboard" />
             <CapabilityCard icon={Code2} title="Code & Deploy" desc="Describe a feature in plain English. The agent writes production code, reviews it for bugs, and prepares it for deployment." accent="from-emerald-300/[0.04]" href="/dashboard" />
-          </div>
+          </StaggerChildren>
         </div>
       </section>
 
       {/* ═══ AGENT OFFICE — Living digital workspace ═══ */}
-      <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
+      <GlowDivider />
       <section className="py-24 px-6 bg-[#030303]">
         <AgentOffice />
       </section>
 
       {/* ═══ LIVE DEMO ═══ */}
-      <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
+      <GlowDivider />
       <section id="demo" className="py-24 px-6 bg-[#050505]">
         <div className="max-w-5xl mx-auto">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
@@ -445,15 +441,14 @@ export default function Home() {
       </section>
 
       {/* ═══ HOW IT WORKS — Architecture ═══ */}
-      <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
+      <GlowDivider />
       <section className="py-24 px-6">
         <div className="max-w-5xl mx-auto">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-            className="text-center mb-16">
-            <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">Architecture</p>
-            <h2 className="text-3xl md:text-5xl font-bold text-white tracking-tight mb-4">Built on models you control.</h2>
-            <p className="text-neutral-500 max-w-xl mx-auto">Smart routing across 51+ open-source models. Automatic failover. Zero vendor lock-in.</p>
-          </motion.div>
+          <div className="text-center mb-16">
+            <RevealText as="p" className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">Architecture</RevealText>
+            <RevealText as="h2" delay={0.1} className="text-3xl md:text-5xl font-bold text-white tracking-tight mb-4">Built on models you control.</RevealText>
+            <RevealText as="p" delay={0.2} className="text-neutral-500 max-w-xl mx-auto">Smart routing across 51+ open-source models. Automatic failover. Zero vendor lock-in.</RevealText>
+          </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 circuit-grid p-4 rounded-2xl">
             {[
@@ -485,14 +480,13 @@ export default function Home() {
       </section>
 
       {/* ═══ WHY DIFFERENT — Comparison ═══ */}
-      <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
+      <GlowDivider />
       <section className="py-24 px-6 bg-[#050505]">
         <div className="max-w-5xl mx-auto">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-            className="text-center mb-16">
-            <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">The Difference</p>
-            <h2 className="text-3xl md:text-5xl font-bold text-white tracking-tight">Not another chatbot.</h2>
-          </motion.div>
+          <div className="text-center mb-16">
+            <RevealText as="p" className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">The Difference</RevealText>
+            <RevealText as="h2" delay={0.1} className="text-3xl md:text-5xl font-bold text-white tracking-tight">Not another chatbot.</RevealText>
+          </div>
 
           <div className="grid md:grid-cols-2 gap-4">
             <div className="p-8 rounded-2xl bg-[#080808] border border-white/[0.04]">
@@ -527,13 +521,13 @@ export default function Home() {
       </section>
 
       {/* ═══ TESTIMONIALS ═══ */}
-      <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
+      <GlowDivider />
       <section className="py-24 px-6">
         <Testimonials />
       </section>
 
       {/* ═══ ENTERPRISE METRICS ═══ */}
-      <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
+      <GlowDivider />
       <section id="enterprise" className="py-32 px-6 relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_50%,rgba(16,185,129,0.03),transparent)]" />
         {/* Subtle grid for depth */}
@@ -591,13 +585,13 @@ export default function Home() {
       </section>
 
       {/* ═══ PRICING ═══ */}
-      <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
+      <GlowDivider />
       <section id="pricing" className="py-24">
         <Pricing />
       </section>
 
       {/* ═══ FAQ ═══ */}
-      <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
+      <GlowDivider />
       <section className="py-24 px-6 bg-[#050505]">
         <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
           className="max-w-2xl mx-auto">
@@ -618,7 +612,7 @@ export default function Home() {
       </section>
 
       {/* ═══ FINAL CTA ═══ */}
-      <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
+      <GlowDivider />
       <section className="py-32 text-center px-6 relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(16,185,129,0.04),transparent_70%)]" />
         {/* Circuit-style grid accent */}
@@ -631,18 +625,22 @@ export default function Home() {
             132 agents. 51+ models. Zero per-token cost. Deploy your first agent in 60 seconds.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Link href="/onboarding" className="cta-glow group flex items-center gap-2 px-7 py-3.5 bg-white text-black font-semibold rounded-full text-sm hover:shadow-[0_0_40px_rgba(255,255,255,0.12)] transition-gpu">
-              Start Free <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-            </Link>
-            <Link href="#pricing" className="px-7 py-3.5 border border-white/10 text-neutral-300 font-medium rounded-full text-sm hover:border-white/20 hover:text-white transition-gpu">
-              Compare Plans
-            </Link>
+            <MagneticButton href="/onboarding" strength={0.25}>
+              <span className="cta-glow group flex items-center gap-2 px-7 py-3.5 bg-white text-black font-semibold rounded-full text-sm hover:shadow-[0_0_40px_rgba(255,255,255,0.12)] transition-gpu cursor-pointer">
+                Start Free <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+              </span>
+            </MagneticButton>
+            <MagneticButton href="#pricing" strength={0.15}>
+              <span className="px-7 py-3.5 border border-white/10 text-neutral-300 font-medium rounded-full text-sm hover:border-white/20 hover:text-white transition-gpu cursor-pointer inline-block">
+                Compare Plans
+              </span>
+            </MagneticButton>
           </div>
         </motion.div>
       </section>
 
       {/* ═══ FOOTER ═══ */}
-      <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
+      <GlowDivider />
       <footer className="px-6">
         <div className="max-w-5xl mx-auto py-14">
           <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-12">
