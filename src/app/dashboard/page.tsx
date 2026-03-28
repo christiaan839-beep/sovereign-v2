@@ -94,7 +94,7 @@ const DISCOVER_CARDS = [
   {
     title: "Analytics",
     description: "Track your AI ROI",
-    href: "/dashboard/analytics",
+    href: "/dashboard/analytics/roi",
     icon: BarChart3,
     accent: "from-amber-500/20 to-yellow-500/20",
     border: "hover:border-amber-500/30",

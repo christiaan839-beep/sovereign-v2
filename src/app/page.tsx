@@ -15,7 +15,10 @@ import { InteractiveHeroStrike } from "@/components/ui/InteractiveHeroStrike";
 import { SocialProofMetrics } from "@/components/ui/SocialProofMetrics";
 import { LandingAgent } from "@/components/ui/LandingAgent";
 import { AgentOffice } from "@/components/ui/AgentOffice";
-import { RevealText, ScaleOnScroll, MagneticButton, StaggerChildren, GlowDivider, ScrollProgress } from "@/components/ui/ScrollAnimations";
+import { RevealText, ScaleOnScroll, MagneticButton, StaggerChildren, GlowDivider } from "@/components/ui/ScrollAnimations";
+import { TextDecrypt } from "@/components/cinematic/TextDecrypt";
+import { ScrollVelocitySkew, ClipReveal } from "@/components/cinematic/ScrollVelocity";
+import { ParticleBurst } from "@/components/cinematic/ParticleBurst";
 import dynamic from "next/dynamic";
 import { TextMorph } from "@/components/ui/TextMorph";
 
@@ -229,9 +232,6 @@ export default function Home() {
     <CinematicLoader>
     <div className="relative min-h-screen bg-[#010101] text-white selection:bg-emerald-500/20 font-sans antialiased">
 
-      {/* Scroll progress bar */}
-      <ScrollProgress />
-
       {/* Skip to content — accessibility */}
       <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[200] focus:px-4 focus:py-2 focus:bg-emerald-500 focus:text-black focus:rounded-lg focus:text-sm focus:font-bold">
         Skip to main content
@@ -331,11 +331,13 @@ export default function Home() {
           {/* CTAs — one primary, one secondary */}
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6, duration: 0.5 }}
             className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-14">
+            <ParticleBurst>
             <MagneticButton href="/onboarding" strength={0.2}>
               <span className="group flex items-center gap-2 px-7 py-3.5 bg-white text-black font-semibold rounded-full text-sm hover:shadow-[0_0_40px_rgba(255,255,255,0.1)] transition-gpu duration-500 cursor-pointer">
                 Deploy Your First Agent <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
               </span>
             </MagneticButton>
+            </ParticleBurst>
             <MagneticButton href="/showcase" strength={0.15}>
               <span className="px-7 py-3.5 rounded-full text-sm font-medium text-neutral-400 border border-white/[0.06] hover:border-white/[0.12] hover:text-white transition-gpu duration-300 cursor-pointer inline-block">
                 Watch Demo
@@ -395,11 +397,14 @@ export default function Home() {
 
       {/* ═══ WHAT IT DOES — 6 Capabilities ═══ */}
       <GlowDivider />
+      <ScrollVelocitySkew>
       <section id="capabilities" className="py-24 px-6">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <RevealText as="p" className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">Capabilities</RevealText>
-            <RevealText as="h2" delay={0.1} className="text-3xl md:text-5xl font-bold text-white tracking-tight">What you can do with it.</RevealText>
+            <div className="overflow-hidden">
+              <TextDecrypt text="What you can do with it." className="text-3xl md:text-5xl font-bold text-white tracking-tight" as="h2" speed={25} />
+            </div>
           </div>
 
           <StaggerChildren className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" staggerDelay={0.06}>
@@ -412,6 +417,7 @@ export default function Home() {
           </StaggerChildren>
         </div>
       </section>
+      </ScrollVelocitySkew>
 
       {/* ═══ AGENT OFFICE — Living digital workspace ═══ */}
       <GlowDivider />
@@ -450,6 +456,7 @@ export default function Home() {
             <RevealText as="p" delay={0.2} className="text-neutral-500 max-w-xl mx-auto">Smart routing across 51+ open-source models. Automatic failover. Zero vendor lock-in.</RevealText>
           </div>
 
+          <ClipReveal>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 circuit-grid p-4 rounded-2xl">
             {[
               { name: "Nemotron Ultra 253B", desc: "Complex reasoning & synthesis" },
@@ -476,6 +483,7 @@ export default function Home() {
               </motion.div>
             ))}
           </div>
+          </ClipReveal>
         </div>
       </section>
 
@@ -485,7 +493,9 @@ export default function Home() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
             <RevealText as="p" className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">The Difference</RevealText>
-            <RevealText as="h2" delay={0.1} className="text-3xl md:text-5xl font-bold text-white tracking-tight">Not another chatbot.</RevealText>
+            <div className="overflow-hidden">
+              <TextDecrypt text="Not another chatbot." className="text-3xl md:text-5xl font-bold text-white tracking-tight" as="h2" speed={20} delay={200} />
+            </div>
           </div>
 
           <div className="grid md:grid-cols-2 gap-4">
@@ -625,11 +635,13 @@ export default function Home() {
             132 agents. 51+ models. Zero per-token cost. Deploy your first agent in 60 seconds.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <ParticleBurst>
             <MagneticButton href="/onboarding" strength={0.25}>
               <span className="cta-glow group flex items-center gap-2 px-7 py-3.5 bg-white text-black font-semibold rounded-full text-sm hover:shadow-[0_0_40px_rgba(255,255,255,0.12)] transition-gpu cursor-pointer">
                 Start Free <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
               </span>
             </MagneticButton>
+            </ParticleBurst>
             <MagneticButton href="#pricing" strength={0.15}>
               <span className="px-7 py-3.5 border border-white/10 text-neutral-300 font-medium rounded-full text-sm hover:border-white/20 hover:text-white transition-gpu cursor-pointer inline-block">
                 Compare Plans

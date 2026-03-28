@@ -6,6 +6,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { validateEnvironment } from "@/lib/env-check";
 import { SafeClerkProvider } from "@/components/ui/SafeClerkProvider";
 import { CustomCursor } from "@/components/cinematic/CustomCursor";
+import { CursorGlow } from "@/components/cinematic/CursorGlow";
 import { ScrollProgress } from "@/components/cinematic/ScrollProgress";
 import { BackToTop } from "@/components/cinematic/BackToTop";
 import "./globals.css";
@@ -86,6 +87,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <SafeClerkProvider>
         <body className="relative bg-midnight text-white antialiased">
           <CustomCursor />
+          <CursorGlow />
           <ScrollProgress />
           {children}
           <BackToTop />

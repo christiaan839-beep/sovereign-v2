@@ -129,7 +129,7 @@ export function CommandPalette() {
     { id: "n-capability", title: "Capability Matrix", icon: Layers, href: "/dashboard/capability-matrix", category: "Intelligence", keywords: ["skills", "features", "matrix", "abilities"] },
     { id: "n-agentcmd", title: "Agent Command", icon: Zap, href: "/dashboard/agent-command", category: "Intelligence", keywords: ["command", "control", "direct"] },
     { id: "n-agentworld", title: "Agent World", icon: Globe2, href: "/dashboard/agent-world", category: "Intelligence", keywords: ["world", "map", "global"] },
-    { id: "n-roianalytics", title: "ROI Analytics", icon: BarChart3, href: "/dashboard/analytics", category: "Intelligence", keywords: ["roi", "return", "investment", "revenue"] },
+    { id: "n-roianalytics", title: "ROI Analytics", icon: BarChart3, href: "/dashboard/analytics/roi", category: "Intelligence", keywords: ["roi", "return", "investment", "revenue"] },
 
     // ─── ADVANCED ───
     { id: "n-nemoclaw", title: "NemoClaw Sandbox", icon: Cpu, href: "/dashboard/nemo-claw", category: "Advanced", shortcut: "G", keywords: ["nemoclaw", "edge", "local", "sandbox"] },

@@ -33,13 +33,15 @@ export function CinematicLoader({ children }: { children: React.ReactNode }) {
 
   if (phase === "done") return <>{children}</>;
 
+  const showLoader = phase === "loading" || phase === "dissolve";
+
   return (
     <>
       {/* Page content hidden behind loader */}
       <div style={{ opacity: 0 }}>{children}</div>
 
       <AnimatePresence>
-        {phase !== "done" && (
+        {showLoader && (
           <motion.div
             className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#020202]"
             exit={{ opacity: 0 }}
