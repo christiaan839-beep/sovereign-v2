@@ -83,7 +83,7 @@ export default function PodcastBlueprintPage() {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto min-h-screen bg-[#050505] text-white">
+    <div className="p-8 max-w-7xl mx-auto min-h-screen bg-[#050505] text-white" role="main" aria-label="PDF to podcast blueprint">
       {/* Header */}
       <div className="mb-8">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#00B7FF]/10 border border-[#00B7FF]/20 text-[#00B7FF] text-xs font-bold uppercase tracking-wider mb-3">
@@ -164,9 +164,10 @@ export default function PodcastBlueprintPage() {
             <div className="space-y-4">
               <div>
                 <label className="text-[10px] text-neutral-500 uppercase tracking-widest font-bold mb-2 block">Voice Archetype</label>
-                <select 
+                <select
                   value={hostVoice}
                   onChange={(e) => setHostVoice(e.target.value)}
+                  aria-label="Voice archetype"
                   className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-xs text-white focus:border-[#00B7FF]/50 outline-none"
                 >
                   <option value="nvidia/magpie-tts-flow-male-1">Deep Male (Magpie TTS)</option>
@@ -195,9 +196,10 @@ export default function PodcastBlueprintPage() {
 
               <div>
                 <label className="text-[10px] text-neutral-500 uppercase tracking-widest font-bold mb-2 block">Target Length</label>
-                <select 
+                <select
                   value={length}
                   onChange={(e) => setLength(e.target.value)}
+                  aria-label="Target podcast length"
                   className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-xs text-white focus:border-[#00B7FF]/50 outline-none"
                 >
                   <option value="5">5 Minutes (Summary)</option>

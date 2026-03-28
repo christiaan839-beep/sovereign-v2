@@ -41,7 +41,7 @@ export default function DigitalHumanAvatarPage() {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto min-h-screen bg-[#050505] text-white">
+    <div className="p-8 max-w-7xl mx-auto min-h-screen bg-[#050505] text-white" role="main" aria-label="Digital human sales avatar">
       {/* Header */}
       <div className="mb-8">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-bold uppercase tracking-wider mb-3">
@@ -79,10 +79,11 @@ export default function DigitalHumanAvatarPage() {
 
               <div>
                 <label className="text-[10px] text-neutral-500 uppercase tracking-widest font-bold mb-2 block">Avatar Designation</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={avatarName}
                   onChange={(e) => setAvatarName(e.target.value)}
+                  aria-label="Avatar designation name"
                   className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-xs text-white focus:border-rose-500/50 outline-none font-mono"
                 />
               </div>
@@ -97,9 +98,10 @@ export default function DigitalHumanAvatarPage() {
             <div className="space-y-4">
                <div>
                   <label className="text-[10px] text-neutral-500 uppercase tracking-widest font-bold mb-2 block">Voice Synthesis Engine</label>
-                  <select 
+                  <select
                     value={voiceModel}
                     onChange={(e) => setVoiceModel(e.target.value)}
+                    aria-label="Voice synthesis engine"
                     className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-xs text-white focus:border-rose-500/50 outline-none"
                   >
                     <option value="nvidia/riva-tts-expressive">Expressive Female (NVIDIA Riva)</option>
@@ -110,7 +112,7 @@ export default function DigitalHumanAvatarPage() {
 
                 <div>
                   <label className="text-[10px] text-neutral-500 uppercase tracking-widest font-bold mb-2 block">Micro-Expression Smoothing</label>
-                  <input type="range" min="1" max="100" defaultValue="85" className="w-full accent-rose-500" />
+                  <input type="range" min="1" max="100" defaultValue="85" aria-label="Micro-expression smoothing level" className="w-full accent-rose-500" />
                   <div className="flex justify-between text-[9px] text-neutral-500 font-mono mt-1">
                     <span>Rigid</span>
                     <span>Hyper-Realistic</span>
@@ -217,7 +219,7 @@ export default function DigitalHumanAvatarPage() {
                          </div>
 
                          <div className="mt-auto pointer-events-auto w-full max-w-lg mx-auto bg-black/60 backdrop-blur-xl border border-white/10 p-4 rounded-2xl flex items-center gap-4">
-                            <button className="w-12 h-12 bg-white text-black rounded-full flex items-center justify-center flex-shrink-0 hover:scale-105 transition-transform">
+                            <button aria-label="Speak to avatar" className="w-12 h-12 bg-white text-black rounded-full flex items-center justify-center flex-shrink-0 hover:scale-105 transition-transform">
                               <Mic className="w-5 h-5" />
                             </button>
                             <div className="flex-1 bg-black/50 border border-white/5 rounded-xl px-4 py-3">

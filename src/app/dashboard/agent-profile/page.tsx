@@ -174,7 +174,7 @@ export default function AgentProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#000000] px-4 py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#000000] px-4 py-12 sm:px-6 lg:px-8" role="main" aria-label="Agent profiles">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}

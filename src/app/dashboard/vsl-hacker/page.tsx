@@ -88,7 +88,7 @@ export default function CosmosVSLHackerPage() {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto min-h-screen bg-[#050505] text-white">
+    <div className="p-8 max-w-7xl mx-auto min-h-screen bg-[#050505] text-white" role="main" aria-label="Video sales letter hacker">
       {/* Header */}
       <div className="mb-8">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-bold uppercase tracking-wider mb-3">
@@ -169,19 +169,21 @@ export default function CosmosVSLHackerPage() {
             <div className="space-y-4">
               <div>
                 <label className="text-[10px] text-neutral-500 uppercase tracking-widest font-bold mb-2 block">Target Audience</label>
-                <input 
+                <input
                   type="text"
                   value={targetAudience}
                   onChange={(e) => setTargetAudience(e.target.value)}
+                  aria-label="Target audience"
                   className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-xs text-white focus:border-amber-500/50 outline-none"
                 />
               </div>
 
               <div>
                 <label className="text-[10px] text-neutral-500 uppercase tracking-widest font-bold mb-2 block">Copywriting Aggressiveness</label>
-                <select 
+                <select
                   value={aggressiveness}
                   onChange={(e) => setAggressiveness(e.target.value)}
+                  aria-label="Copywriting aggressiveness level"
                   className="w-full bg-black/40 border border-white/10 rounded-lg p-2.5 text-xs text-white focus:border-amber-500/50 outline-none"
                 >
                   <option value="High (Direct Response)">High (Direct Response & Urgency)</option>
@@ -290,7 +292,7 @@ export default function CosmosVSLHackerPage() {
                      <div className="flex-1 overflow-y-auto custom-scrollbar pr-2">
                        <pre className="text-xs leading-relaxed text-neutral-200 whitespace-pre-wrap break-words font-mono">{scriptResult || "No response received."}</pre>
                      </div>
-                     <button className="w-full mt-4 py-2 bg-[#00B7FF] hover:bg-[#00B7FF]/90 transition-colors rounded-lg flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest text-white">
+                     <button aria-label="Export script and storyboard" className="w-full mt-4 py-2 bg-[#00B7FF] hover:bg-[#00B7FF]/90 transition-colors rounded-lg flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest text-white">
                       <Download className="w-3 h-3" /> Export Script & Storyboard
                     </button>
                   </div>

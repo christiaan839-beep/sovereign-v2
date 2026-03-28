@@ -66,7 +66,7 @@ export default function AnalyticsDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white p-6 md:p-8 font-mono">
+    <div className="min-h-screen bg-[#050505] text-white p-6 md:p-8 font-mono" role="main" aria-label="Agent analytics dashboard">
       <div className="max-w-7xl mx-auto space-y-8">
 
         {/* Header */}
@@ -80,7 +80,7 @@ export default function AnalyticsDashboard() {
               <p className="text-[#00B7FF]/60 text-xs uppercase tracking-widest">Usage Metering · Telemetry · Scheduled Jobs</p>
             </div>
           </div>
-          <button onClick={refresh} className="p-2 border border-neutral-800 hover:border-neutral-600 transition-gpu">
+          <button onClick={refresh} aria-label="Refresh analytics data" className="p-2 border border-neutral-800 hover:border-neutral-600 transition-gpu">
             <RefreshCcw className={`w-4 h-4 text-neutral-500 ${loading ? "animate-spin" : ""}`} />
           </button>
         </header>
@@ -141,7 +141,7 @@ export default function AnalyticsDashboard() {
               <div key={job.id} className="border border-neutral-800 p-3 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-white">{job.name}</span>
-                  <button onClick={() => toggleJob(job.id)}>
+                  <button onClick={() => toggleJob(job.id)} aria-label={job.enabled ? `Disable ${job.name}` : `Enable ${job.name}`}>
                     {job.enabled ? <ToggleRight className="w-5 h-5 text-[#00ff66]" /> : <ToggleLeft className="w-5 h-5 text-neutral-600" />}
                   </button>
                 </div>

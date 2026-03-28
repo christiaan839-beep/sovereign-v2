@@ -48,7 +48,7 @@ export default function OmnipresenceNode() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] p-6 md:p-10">
+    <div className="min-h-screen bg-[#0A0A0A] p-6 md:p-10" role="main" aria-label="Omnipresence multi-channel outreach">
       {/* Header */}
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="mb-8">
         <div className="flex items-center gap-3">

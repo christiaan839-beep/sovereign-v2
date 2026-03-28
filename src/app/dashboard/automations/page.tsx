@@ -179,7 +179,7 @@ export default function AutomationsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] p-6 md:p-10">
+    <div className="min-h-screen bg-[#050505] p-6 md:p-10" role="main" aria-label="Automations scheduling">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
@@ -300,7 +300,7 @@ export default function AutomationsPage() {
                   className={`shrink-0 p-1 rounded-lg transition-gpu duration-200 ${
                     isLoading ? "opacity-50 cursor-wait" : "cursor-pointer hover:bg-white/5"
                   }`}
-                  title={isActive ? "Disable automation" : "Enable automation"}
+                  aria-label={isActive ? `Disable ${template.name}` : `Enable ${template.name}`}
                 >
                   {isActive ? (
                     <ToggleRight className="w-8 h-8 text-emerald-400" />

@@ -153,7 +153,7 @@ export default function SEODominatorPage() {
 
 
   return (
-    <div className="w-full max-w-7xl mx-auto space-y-8 relative z-10 p-4 lg:p-8">
+    <div className="w-full max-w-7xl mx-auto space-y-8 relative z-10 p-4 lg:p-8" role="main" aria-label="SEO domination tools">
       {/* Header */}
       <div className="border-b border-rose-500/20 pb-6 backdrop-blur-3xl bg-black/40 p-6 rounded-2xl shadow-[0_0_50px_rgba(244,63,94,0.05)] border-t border-rose-500/10">
         <div className="flex items-center gap-3 mb-2">
@@ -290,6 +290,7 @@ export default function SEODominatorPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="bg-black/60 backdrop-blur-3xl border border-emerald-500/20 rounded-2xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)]"
+            aria-live="polite"
           >
             <div className="bg-[#0a0a0a]/80 border-b border-emerald-500/20 p-3 flex items-center justify-between">
               <div className="flex items-center gap-2">

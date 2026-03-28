@@ -191,7 +191,7 @@ export default function TemplatesPage() {
       : TEMPLATES.filter((t) => t.category === filter);
 
   return (
-    <div className="min-h-screen bg-[#000000] px-4 py-10 sm:px-6 lg:px-10">
+    <div className="min-h-screen bg-[#000000] px-4 py-10 sm:px-6 lg:px-10" role="main" aria-label="Template gallery">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -12 }}

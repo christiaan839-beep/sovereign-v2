@@ -65,7 +65,7 @@ export default function VideoOutreachStudioPage() {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8 relative min-h-screen">
+    <div className="p-8 max-w-7xl mx-auto space-y-8 relative min-h-screen" role="main" aria-label="Video outreach studio">
       {/* Header */}
       <div className="relative z-10 flex items-center justify-between mb-8">
         <div>
@@ -128,11 +128,12 @@ export default function VideoOutreachStudioPage() {
                    <Database className="w-4 h-4" /> Apollo.io Target Scraper
                  </label>
                  <div className="flex gap-2">
-                   <input 
+                   <input
                      type="text"
                      value={targetDomain}
                      onChange={(e) => setTargetDomain(e.target.value)}
                      placeholder="target-agency.com"
+                     aria-label="Target domain to scan"
                      className="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500/50 transition-colors"
                    />
                    <button 
@@ -154,10 +155,11 @@ export default function VideoOutreachStudioPage() {
                  <label className="text-xs uppercase tracking-widest text-neutral-500 font-bold mb-2 flex items-center gap-2">
                    2. Verify Injected Script
                  </label>
-                 <textarea 
+                 <textarea
                    value={targetScript}
                    onChange={(e) => setTargetScript(e.target.value)}
                      placeholder="Enter the payload script. (e.g., 'We audited your tech stack...')"
+                   aria-label="Video outreach script"
                    className="w-full h-32 bg-black/40 border border-white/10 rounded-xl p-4 text-xs font-mono text-emerald-100/90 focus:outline-none focus:border-[#00B7FF]/50 transition-colors resize-none"
                  />
                </div>
@@ -237,7 +239,7 @@ export default function VideoOutreachStudioPage() {
                   {/* Fake Video Player Placeholder */}
                   <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=2000" alt="Executive" className="w-full h-full object-cover opacity-80" />
                   <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors flex items-center justify-center cursor-pointer">
-                    <div className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-md border border-white/30 flex items-center justify-center hover:scale-110 transition-transform">
+                    <div role="button" aria-label="Play video preview" className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-md border border-white/30 flex items-center justify-center hover:scale-110 transition-transform">
                       <Play className="w-6 h-6 text-white ml-1" />
                     </div>
                   </div>
@@ -252,7 +254,7 @@ export default function VideoOutreachStudioPage() {
                           <span className="text-[10px] text-neutral-400 font-mono">1:42s • 4K UHD</span>
                         </div>
                       </div>
-                      <button className="px-5 py-2 rounded-lg bg-[#00B7FF] text-white font-bold text-[10px] uppercase tracking-widest hover:bg-[#00B7FF]/90 transition-colors">
+                      <button aria-label="Deploy video to n8n sequence" className="px-5 py-2 rounded-lg bg-[#00B7FF] text-white font-bold text-[10px] uppercase tracking-widest hover:bg-[#00B7FF]/90 transition-colors">
                         Deploy to n8n Sequence
                       </button>
                     </div>

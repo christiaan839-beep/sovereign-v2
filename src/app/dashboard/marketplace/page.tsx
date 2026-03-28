@@ -202,7 +202,7 @@ export default function MarketplacePage() {
   });
 
   return (
-    <div className="min-h-screen bg-[#000000] px-6 lg:px-8 py-8 pb-32">
+    <div className="min-h-screen bg-[#000000] px-6 lg:px-8 py-8 pb-32" role="main" aria-label="Agent marketplace">
       <PageHeader
         title="Agent Marketplace"
         description="Discover and deploy community-built agents"
@@ -221,11 +221,13 @@ export default function MarketplacePage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search agents by name or description..."
+            aria-label="Search marketplace agents"
             className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl pl-11 pr-4 py-3 text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-white/[0.15] transition-colors"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery("")}
+              aria-label="Clear search"
               className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md text-neutral-500 hover:text-white transition-colors"
             >
               <X className="w-3.5 h-3.5" />
@@ -392,6 +394,7 @@ export default function MarketplacePage() {
                 </div>
                 <button
                   onClick={() => setPreviewAgent(null)}
+                  aria-label="Close agent preview"
                   className="p-2 rounded-lg text-neutral-500 hover:text-white hover:bg-white/5 transition-colors"
                 >
                   <X className="w-4 h-4" />

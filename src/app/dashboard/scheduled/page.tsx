@@ -180,7 +180,7 @@ export default function ScheduledRunsPage() {
   const activeCount = schedules.filter((s) => s.active).length;
 
   return (
-    <div className="min-h-screen bg-[#000000] p-6 md:p-10">
+    <div className="min-h-screen bg-[#000000] p-6 md:p-10" role="main" aria-label="Scheduled agent runs">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
@@ -284,6 +284,7 @@ export default function ScheduledRunsPage() {
                     </div>
                     <button
                       onClick={() => toggleActive(schedule.id)}
+                      aria-label={schedule.active ? `Pause ${schedule.agentName}` : `Activate ${schedule.agentName}`}
                       className={`relative w-11 h-6 rounded-full transition-colors cursor-pointer ${
                         schedule.active ? "bg-emerald-500" : "bg-neutral-700"
                       }`}
@@ -385,6 +386,7 @@ export default function ScheduledRunsPage() {
                 </div>
                 <button
                   onClick={() => setShowModal(false)}
+                  aria-label="Close create schedule dialog"
                   className="p-2 rounded-lg hover:bg-white/5 text-neutral-500 hover:text-white transition-gpu cursor-pointer"
                 >
                   <X className="w-4 h-4" />

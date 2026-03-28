@@ -146,7 +146,7 @@ export default function ClientProjectsPage() {
   }, [projects, searchQuery, statusFilter]);
 
   return (
-    <div className="min-h-screen bg-[#000000] p-6 md:p-8 max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen bg-[#000000] p-6 md:p-8 max-w-7xl mx-auto space-y-8" role="main" aria-label="Client projects">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
@@ -185,6 +185,7 @@ export default function ClientProjectsPage() {
             placeholder="Search clients..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            aria-label="Search client projects"
             className="w-full pl-10 pr-4 py-2.5 bg-white/[0.04] border border-white/10 rounded-xl text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 transition-all"
           />
         </div>

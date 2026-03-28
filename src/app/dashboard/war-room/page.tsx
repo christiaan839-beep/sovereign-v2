@@ -104,7 +104,7 @@ export default function WarRoomColosseum() {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto min-h-screen bg-[#050505] text-white overflow-hidden relative">
+    <div className="p-8 max-w-7xl mx-auto min-h-screen bg-[#050505] text-white overflow-hidden relative" role="main" aria-label="Multi-agent war room">
       {/* Background WebGL-style Glows */}
       <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-[radial-gradient(circle,rgba(99,102,241,0.05),transparent_70%)] rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-[radial-gradient(circle,rgba(0,183,255,0.03),transparent_70%)] rounded-full blur-3xl pointer-events-none" />
@@ -130,10 +130,11 @@ export default function WarRoomColosseum() {
             <h3 className="text-xs font-bold uppercase tracking-widest text-neutral-300 mb-6 flex items-center gap-2">
               <Crosshair className="w-4 h-4 text-rose-500" /> Target Directive
             </h3>
-            <textarea 
+            <textarea
               rows={3}
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
+              aria-label="War room target directive"
               className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-sm text-white focus:border-[#00B7FF]/50 outline-none resize-none transition-colors"
               placeholder="E.g., Design a LinkedIn outreach sequence..."
             />
@@ -206,9 +207,10 @@ export default function WarRoomColosseum() {
                   )}
                </div>
 
-               <div 
+               <div
                  ref={scrollRef}
                  className="p-6 lg:p-10 flex-1 overflow-y-auto space-y-8 custom-scrollbar relative noise-overlay"
+                 aria-live="polite"
                >
                   {messages.length === 0 && status === "idle" && (
                     <div className="h-full flex flex-col items-center justify-center text-center opacity-40">

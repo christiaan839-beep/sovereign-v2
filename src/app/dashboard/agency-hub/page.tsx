@@ -63,7 +63,7 @@ export default function AgencyHubPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] p-6 md:p-10">
+    <div className="min-h-screen bg-[#0A0A0A] p-6 md:p-10" role="main" aria-label="Agency hub white-label control center">
       {/* Header */}
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="mb-8">
         <div className="flex items-center justify-between">
@@ -185,7 +185,7 @@ export default function AgencyHubPage() {
                 <h2 className="text-lg font-semibold text-white flex items-center gap-2">
                   <Plus className="w-4 h-4 text-emerald-400" /> Add Client
                 </h2>
-                <button onClick={() => setShowModal(false)} className="p-2 rounded-lg hover:bg-white/5 text-neutral-500 hover:text-white transition-colors cursor-pointer">
+                <button onClick={() => setShowModal(false)} aria-label="Close add client dialog" className="p-2 rounded-lg hover:bg-white/5 text-neutral-500 hover:text-white transition-colors cursor-pointer">
                   <X className="w-4 h-4" />
                 </button>
               </div>

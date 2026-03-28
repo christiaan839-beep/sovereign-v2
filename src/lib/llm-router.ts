@@ -27,7 +27,7 @@ function setCache(key: string, result: string) {
 // ─── Task Classification (Enhanced) ─────────────────────────
 type TaskType = "code" | "creative" | "reasoning" | "vision" | "safety" | "multilingual" | "long_context" | "general";
 
-function classifyTask(prompt: string): TaskType {
+export function classifyTask(prompt: string): TaskType {
   const lower = prompt.toLowerCase();
 
   // Vision tasks
@@ -72,7 +72,7 @@ function classifyTask(prompt: string): TaskType {
 }
 
 // ─── Model Registry ─────────────────────────────────────────
-const NIM_MODELS = {
+export const NIM_MODELS = {
   code:         "nvidia/nemotron-3-super-120b",
   reasoning:    "deepseek-ai/deepseek-v3-2-0324",
   creative:     "nvidia/llama-3.1-nemotron-70b-instruct",

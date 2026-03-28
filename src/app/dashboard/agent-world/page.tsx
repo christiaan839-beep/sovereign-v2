@@ -212,7 +212,7 @@ export default function AgentWorldPage() {
   };
 
   return (
-    <div className="p-6 pb-0">
+    <div className="p-6 pb-0" role="main" aria-label="Agent world network graph">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-white tracking-tight">Agent World</h1>
@@ -257,6 +257,7 @@ export default function AgentWorldPage() {
                 {/* Close */}
                 <button
                   onClick={() => setSelectedAgent(null)}
+                  aria-label="Close agent details panel"
                   className="mb-4 text-neutral-600 hover:text-white text-xs transition-colors"
                 >
                   Close

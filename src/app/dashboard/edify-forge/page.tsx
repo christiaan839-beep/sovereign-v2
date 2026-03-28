@@ -38,7 +38,7 @@ export default function EdifyForgePage() {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto min-h-screen bg-[#050505] text-white">
+    <div className="p-8 max-w-7xl mx-auto min-h-screen bg-[#050505] text-white" role="main" aria-label="3D design forge">
       <div className="mb-8">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-400 text-xs font-bold uppercase tracking-wider mb-3">
           <Cuboid className="w-3 h-3" /> Edify 3D Generative AI
@@ -61,10 +61,11 @@ export default function EdifyForgePage() {
             <div className="space-y-4">
                <div>
                   <label className="text-[10px] text-neutral-500 uppercase tracking-widest font-bold mb-2 block">Engineering Directives</label>
-                  <textarea 
+                  <textarea
                     rows={6}
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
+                    aria-label="3D mesh generation prompt"
                     className="w-full bg-black/40 border border-white/10 rounded-lg p-3 text-sm text-white focus:border-orange-500/50 outline-none leading-relaxed"
                     placeholder="E.g., Generate an aggressive, matte-black carbon fiber commercial drone chassis with 4 rotors and aerodynamic payload shielding."
                   />
@@ -142,7 +143,7 @@ export default function EdifyForgePage() {
                           </div>
                         )}
 
-                        <button className="px-6 py-3 rounded-xl bg-white text-black font-bold uppercase tracking-widest text-xs hover:bg-neutral-200 transition-colors shadow-[0_0_30px_rgba(255,255,255,0.2)] flex items-center gap-2">
+                        <button aria-label="Export production file" className="px-6 py-3 rounded-xl bg-white text-black font-bold uppercase tracking-widest text-xs hover:bg-neutral-200 transition-colors shadow-[0_0_30px_rgba(255,255,255,0.2)] flex items-center gap-2">
                           <Download className="w-4 h-4" /> Export Production File
                         </button>
                      </motion.div>

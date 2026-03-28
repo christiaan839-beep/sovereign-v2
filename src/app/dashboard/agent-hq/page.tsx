@@ -120,7 +120,7 @@ export default function AgentHQPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#050505] px-4 py-10 sm:px-8 lg:px-12">
+    <div className="min-h-screen bg-[#050505] px-4 py-10 sm:px-8 lg:px-12" role="main" aria-label="Agent headquarters">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -12 }}
@@ -207,7 +207,7 @@ export default function AgentHQPage() {
           transition={{ duration: 0.4, delay: 0.3 }}
           className="rounded-xl border border-white/[0.06] bg-[#050505] overflow-hidden"
         >
-          <div className="max-h-64 overflow-y-auto custom-scrollbar">
+          <div className="max-h-64 overflow-y-auto custom-scrollbar" aria-live="polite">
             {loadingFeed ? (
               <div className="px-5 py-8 text-center">
                 <div className="inline-block w-4 h-4 border-2 border-[#00B7FF]/30 border-t-[#00B7FF] rounded-full animate-spin" />

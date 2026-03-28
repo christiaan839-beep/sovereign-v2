@@ -281,7 +281,7 @@ export default function AgentBuilderPage() {
   const selectedModelConfig = MODEL_REGISTRY.find((m) => m.id === selectedModel) || MODEL_REGISTRY[0];
 
   return (
-    <div className="min-h-screen bg-[#000000] px-6 lg:px-8 py-8 pb-32">
+    <div className="min-h-screen bg-[#000000] px-6 lg:px-8 py-8 pb-32" role="main" aria-label="Agent builder">
       <PageHeader
         title="Agent Builder"
         description="Create custom AI agents with your own instructions, model selection, and tools"
@@ -316,6 +316,7 @@ export default function AgentBuilderPage() {
           {editingId && (
             <button
               onClick={resetForm}
+              aria-label="Cancel editing"
               className="ml-auto p-2 rounded-lg text-neutral-500 hover:text-white hover:bg-white/5 transition-colors"
             >
               <X className="w-4 h-4" />
@@ -367,6 +368,8 @@ export default function AgentBuilderPage() {
             <label className="block text-xs font-medium text-neutral-400 mb-1.5">Model</label>
             <button
               onClick={() => setModelDropdownOpen(!modelDropdownOpen)}
+              aria-expanded={modelDropdownOpen}
+              aria-label="Select model"
               className="w-full flex items-center justify-between bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white hover:border-white/[0.12] transition-colors"
             >
               <div className="flex items-center gap-3">
@@ -516,6 +519,8 @@ export default function AgentBuilderPage() {
                         }}
                         className="p-2 rounded-lg text-emerald-400 hover:bg-emerald-500/10 transition-colors"
                         title="Run"
+                        aria-label={`Run ${skill.name}`}
+                        aria-expanded={runOpen === skill.id}
                       >
                         <Play className="w-3.5 h-3.5" />
                       </button>
@@ -541,6 +546,7 @@ export default function AgentBuilderPage() {
                         onClick={() => startEdit(skill)}
                         className="p-2 rounded-lg text-neutral-400 hover:text-white hover:bg-white/5 transition-colors"
                         title="Edit"
+                        aria-label={`Edit ${skill.name}`}
                       >
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
@@ -548,6 +554,7 @@ export default function AgentBuilderPage() {
                         onClick={() => handleDelete(skill.id)}
                         className="p-2 rounded-lg text-neutral-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
                         title="Delete"
+                        aria-label={`Delete ${skill.name}`}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -571,11 +578,13 @@ export default function AgentBuilderPage() {
                               onChange={(e) => setRunPrompt(e.target.value)}
                               onKeyDown={(e) => e.key === "Enter" && handleRun(skill.id)}
                               placeholder="Enter a prompt to test your agent..."
+                              aria-label="Test prompt for agent"
                               className="flex-1 bg-white/[0.04] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-emerald-500/40 transition-colors"
                             />
                             <button
                               onClick={() => handleRun(skill.id)}
                               disabled={!runPrompt.trim() || runningId === skill.id}
+                              aria-label="Run agent test"
                               className="p-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white transition-colors disabled:opacity-40"
                             >
                               {runningId === skill.id ? (
@@ -591,6 +600,7 @@ export default function AgentBuilderPage() {
                               initial={{ opacity: 0 }}
                               animate={{ opacity: 1 }}
                               className="bg-white/[0.02] border border-white/[0.04] rounded-lg p-3"
+                              aria-live="polite"
                             >
                               <div className="flex items-center gap-2 mb-2">
                                 <span className="text-[9px] font-bold uppercase text-emerald-400 tracking-wider">Result</span>

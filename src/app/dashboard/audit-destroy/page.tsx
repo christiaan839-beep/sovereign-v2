@@ -47,7 +47,7 @@ export default function AuditAndDestroyPage() {
   };
 
   return (
-    <div className="p-8 max-w-6xl mx-auto min-h-screen">
+    <div className="p-8 max-w-6xl mx-auto min-h-screen" role="main" aria-label="Audit and destroy engine">
       <div className="mb-10 flex items-center justify-between">
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-red-500/20 bg-red-500/10 text-red-400 text-[10px] font-bold uppercase tracking-widest mb-4">
@@ -169,7 +169,7 @@ export default function AuditAndDestroyPage() {
                       <p className="text-[10px] text-emerald-400 uppercase tracking-widest font-bold">Vulnerability Scan Complete</p>
                     </div>
                     {results.pdfReady && (
-                      <button className="bg-white text-black px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest flex items-center gap-2 hover:bg-neutral-200 transition-colors">
+                      <button aria-label="Download audit PDF report" className="bg-white text-black px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest flex items-center gap-2 hover:bg-neutral-200 transition-colors">
                         <Download className="w-4 h-4" />
                         Download PDF
                       </button>

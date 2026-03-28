@@ -49,7 +49,7 @@ export default function VisualStudioNode() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#050505] text-[#00B7FF] p-8 font-mono animate-in fade-in">
+    <div className="min-h-screen bg-[#050505] text-[#00B7FF] p-8 font-mono animate-in fade-in" role="main" aria-label="Visual studio video generation">
       <div className="max-w-6xl mx-auto space-y-12">
         
         <header className="border-b border-[#00B7FF]/30 pb-6 flex items-center justify-between">
@@ -83,6 +83,7 @@ export default function VisualStudioNode() {
                  value={prompt}
                  onChange={(e) => setPrompt(e.target.value)}
                  disabled={isGenerating}
+                 aria-label="Video generation prompt"
                />
                <button
                  onClick={handleGenerate}
@@ -94,7 +95,7 @@ export default function VisualStudioNode() {
             </div>
 
             {/* Telemetry Window */}
-            <div className="bg-black border border-[#00B7FF]/20 p-6 font-mono text-xs space-y-3">
+            <div className="bg-black border border-[#00B7FF]/20 p-6 font-mono text-xs space-y-3" aria-live="polite">
                <p className="text-white opacity-50">[SYSTEM LOG::COSMOS_VLM]</p>
                {isGenerating && (
                  <motion.div

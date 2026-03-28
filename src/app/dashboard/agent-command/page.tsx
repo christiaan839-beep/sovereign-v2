@@ -233,7 +233,7 @@ export default function AgentCommandCenter() {
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white p-6 md:p-8 font-mono">
+    <div className="min-h-screen bg-[#050505] text-white p-6 md:p-8 font-mono" role="main" aria-label="Agent command center">
       <div className="max-w-7xl mx-auto space-y-8">
 
         {/* Header */}
@@ -259,7 +259,7 @@ export default function AgentCommandCenter() {
         {showMetaPrompt && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
             <div className="bg-[#0A0A0A] border border-white/10 w-full max-w-2xl p-6 relative">
-              <button onClick={() => setShowMetaPrompt(false)} className="absolute top-4 right-4 text-neutral-500 hover:text-white">Close</button>
+              <button onClick={() => setShowMetaPrompt(false)} aria-label="Close meta-prompt dialog" className="absolute top-4 right-4 text-neutral-500 hover:text-white">Close</button>
               <h2 className="text-lg font-bold text-white mb-2 flex items-center gap-2"><Cpu className="text-[#00B7FF] w-5 h-5" /> God-Brain Auto-Orchestrator</h2>
               <p className="text-xs text-neutral-400 mb-6">Describe an AI agent&apos;s purpose. The system will use Anthropic&apos;s open-source Meta-Prompt methodology to generate a flawless XML-structured system instruction.</p>
               
@@ -267,6 +267,7 @@ export default function AgentCommandCenter() {
                 value={metaPromptInput}
                 onChange={e => setMetaPromptInput(e.target.value)}
                 placeholder="e.g. I need an agent that reviews Python code for security vulnerabilities and outputs strict JSON..."
+                aria-label="Describe the AI agent purpose"
                 className="w-full bg-black border border-white/10 rounded-lg p-3 text-sm text-white mb-4 focus:outline-none focus:border-[#00B7FF]/50 min-h-[100px]"
               />
               
@@ -280,7 +281,7 @@ export default function AgentCommandCenter() {
               </button>
 
               {metaPromptResult && (
-                <div className="mt-4 border border-white/10 bg-black p-4 rounded-lg max-h-[300px] overflow-y-auto custom-scrollbar">
+                <div className="mt-4 border border-white/10 bg-black p-4 rounded-lg max-h-[300px] overflow-y-auto custom-scrollbar" aria-live="polite">
                   <pre className="text-[10px] text-[#00B7FF] font-mono whitespace-pre-wrap">{metaPromptResult}</pre>
                 </div>
               )}
@@ -400,6 +401,7 @@ export default function AgentCommandCenter() {
                         <button
                           onClick={() => executeAgent(agent)}
                           disabled={result?.loading}
+                          aria-label={`Execute ${agent.name}`}
                           className="px-4 py-2.5 text-xs font-bold uppercase tracking-widest transition-gpu disabled:opacity-50"
                           style={{ backgroundColor: `${agent.color}20`, color: agent.color, border: `1px solid ${agent.color}40` }}
                         >
@@ -409,7 +411,7 @@ export default function AgentCommandCenter() {
 
                       {/* Result Display */}
                       {result && !result.loading && !!result.data && (
-                        <div className="bg-black border border-neutral-800 p-3 max-h-48 overflow-y-auto">
+                        <div className="bg-black border border-neutral-800 p-3 max-h-48 overflow-y-auto" aria-live="polite">
                           <pre className="text-[10px] text-neutral-400 whitespace-pre-wrap font-mono">
                             {JSON.stringify(result.data, null, 2) as string}
                           </pre>
