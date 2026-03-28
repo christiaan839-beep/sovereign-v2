@@ -39,7 +39,7 @@ const cardAnim = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0 } };
 
 export default function NimArsenalPage() {
   return (
-    <div className="min-h-screen bg-[#0A0A0A] text-white p-6 md:p-10">
+    <div className="min-h-screen bg-[#0A0A0A] text-white p-6 md:p-10" role="main" aria-label="NIM Arsenal model registry">
       <div className="max-w-7xl mx-auto space-y-12">
 
         {/* Header */}

@@ -105,7 +105,7 @@ export default function GodEyePage() {
   const totalExecs = AGENT_CATEGORIES.reduce((sum, c) => sum + c.agents.reduce((s, a) => s + a.executions, 0), 0);
 
   return (
-    <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
+    <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-6" role="main" aria-label="God Eye agent command center">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -214,7 +214,7 @@ export default function GodEyePage() {
           </div>
           <span className="text-[10px] text-neutral-600 font-mono">{now.toLocaleTimeString()}</span>
         </div>
-        <div className="divide-y divide-white/[0.03] max-h-64 overflow-y-auto">
+        <div className="divide-y divide-white/[0.03] max-h-64 overflow-y-auto" aria-live="polite">
           {[
             { agent: "Smart Router", action: "Routed task to DeepSeek V3.2 (reasoning)", time: "2s ago", status: "success" },
             { agent: "Lead Gen", action: "Found 23 leads in fintech — Austin, TX", time: "8s ago", status: "success" },

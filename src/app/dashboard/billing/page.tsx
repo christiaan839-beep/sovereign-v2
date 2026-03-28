@@ -54,7 +54,7 @@ export default function BillingPortal() {
   ];
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 p-4 lg:p-8">
+    <div className="max-w-5xl mx-auto space-y-8 p-4 lg:p-8" role="main" aria-label="Billing and subscription management">
 
       <header className="pb-8">
         <div className="flex items-center gap-3 mb-2">

@@ -140,7 +140,7 @@ export default function WorkflowBuilderPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-4 lg:p-8 space-y-6">
+    <div className="max-w-6xl mx-auto p-4 lg:p-8 space-y-6" role="main" aria-label="Workflow builder">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
@@ -150,6 +150,8 @@ export default function WorkflowBuilderPage() {
         <div className="flex items-center gap-2">
           <div className="relative">
             <button onClick={() => { setShowTemplates(!showTemplates); setShowCatalog(false); }}
+              aria-expanded={showTemplates}
+              aria-label="Templates menu"
               className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/5 border border-white/[0.06] text-sm text-neutral-300 hover:bg-white/10 transition-colors">
               <LayoutTemplate className="w-4 h-4" /> Templates <ChevronDown className="w-3 h-3" />
             </button>
@@ -168,6 +170,8 @@ export default function WorkflowBuilderPage() {
             </AnimatePresence>
           </div>
           <button onClick={() => { setShowCatalog(!showCatalog); setShowTemplates(false); }}
+            aria-expanded={showCatalog}
+            aria-label="Add agent catalog"
             className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/5 border border-white/[0.06] text-sm text-white hover:bg-white/10 transition-colors">
             <Plus className="w-4 h-4" /> Add Agent
           </button>
@@ -275,7 +279,7 @@ export default function WorkflowBuilderPage() {
 
                   {/* Remove button */}
                   <foreignObject x={node.x + NODE_W - 28} y={node.y + 6} width={20} height={20}>
-                    <button onClick={() => removeNode(node.id)} className="text-neutral-700 hover:text-red-400 transition-colors">
+                    <button onClick={() => removeNode(node.id)} aria-label={`Remove ${node.agent.name}`} className="text-neutral-700 hover:text-red-400 transition-colors">
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </foreignObject>
@@ -291,7 +295,7 @@ export default function WorkflowBuilderPage() {
         {nodes.some((n) => n.output) && (
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
             className="space-y-2">
-            <h2 className="text-sm font-semibold text-neutral-400">Execution Log</h2>
+            <h2 className="text-sm font-semibold text-neutral-400" aria-live="polite">Execution Log</h2>
             {nodes.filter((n) => n.output).map((n) => (
               <div key={n.id} className={`p-3 rounded-xl border ${n.status === "done" ? "border-emerald-500/10 bg-emerald-500/[0.03]" : "border-red-500/10 bg-red-500/[0.03]"}`}>
                 <div className="flex items-center gap-2 mb-1">

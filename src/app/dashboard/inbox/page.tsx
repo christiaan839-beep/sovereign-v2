@@ -167,7 +167,7 @@ export default function InboxPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#000000] p-6 md:p-10">
+    <div className="min-h-screen bg-[#000000] p-6 md:p-10" role="main" aria-label="Smart inbox notifications">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
@@ -276,6 +276,9 @@ export default function InboxPage() {
                 >
                   <div
                     onClick={() => toggleExpand(item.id)}
+                    role="button"
+                    aria-expanded={isExpanded}
+                    aria-label={`${item.agent}: ${item.action}`}
                     className={`group rounded-2xl border backdrop-blur-xl transition-gpu cursor-pointer ${
                       item.status === "new"
                         ? "bg-white/[0.04] border-white/10 shadow-lg"

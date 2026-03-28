@@ -70,7 +70,7 @@ export default function CompetitorAssassination() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 p-4 lg:p-8">
+    <div className="max-w-6xl mx-auto space-y-8 p-4 lg:p-8" role="main" aria-label="Competitor analysis">
       
       {/* 🔴 TACTICAL ELITE HEADER */}
       <header className="border-b border-rose-500/20 pb-8">
@@ -111,11 +111,12 @@ export default function CompetitorAssassination() {
          <form onSubmit={initiateTacticalScan} className="flex flex-col md:flex-row gap-4">
             <div className="relative flex-1">
                <Terminal className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-rose-500/50" />
-               <input 
+               <input
                  type="text"
                  placeholder="e.g., legacy-agency.com"
                  value={target}
                  onChange={(e) => setTarget(e.target.value)}
+                 aria-label="Competitor domain to scan"
                  className="w-full bg-rose-500/5 border border-rose-500/20 rounded-xl py-4 pl-12 pr-4 text-white font-mono placeholder:text-neutral-600 focus:outline-none focus:border-rose-500/50 transition-colors"
                />
             </div>
@@ -135,7 +136,7 @@ export default function CompetitorAssassination() {
 
       {/* 🔴 ACTIVE INTEL RENDER */}
       {scanning && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-20 border border-rose-500/20 bg-black/40 rounded-3xl">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-20 border border-rose-500/20 bg-black/40 rounded-3xl" aria-live="polite">
            <Radar className="w-12 h-12 text-rose-500 animate-spin mx-auto mb-6 opacity-80" />
            <h3 className="text-xl font-bold font-serif text-white mb-2">Extracting Enemy Telemetry</h3>
            <p className="text-neutral-500 text-sm font-mono">Initiating NIM Playwright Crawl... Extracting Visual Payload via nemotron-90b-vision... Ripping Architectures via nemotron-ocr-v1...</p>
@@ -143,7 +144,7 @@ export default function CompetitorAssassination() {
       )}
 
       {intel && !scanning && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="grid lg:grid-cols-2 gap-6">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="grid lg:grid-cols-2 gap-6" aria-live="polite">
            {/* Structural Weaknesses */}
            <div className="bg-black/60 border border-amber-500/20 rounded-3xl p-8">
               <div className="flex items-center gap-3 mb-8">
@@ -179,7 +180,7 @@ export default function CompetitorAssassination() {
       )}
       {/* War Room Multi-Agent Results */}
       {warRoomResult && !scanning && (
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6" aria-live="polite">
           {/* Confidence + Duration */}
           <div className="flex items-center gap-4 text-sm">
             <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-semibold">

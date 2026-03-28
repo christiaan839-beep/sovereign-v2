@@ -141,7 +141,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="p-4 md:p-8 max-w-4xl mx-auto">
+    <div className="p-4 md:p-8 max-w-4xl mx-auto" role="main" aria-label="API keys and configuration settings">
       <div className="mb-8">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#00B7FF]/10 border border-[#00B7FF]/20 text-[#00B7FF] text-xs font-bold uppercase tracking-wider mb-3">
           <Shield className="w-3 h-3" /> Secure Settings
@@ -212,10 +212,12 @@ export default function SettingsPage() {
                   value={keys[field.key] || ""}
                   onChange={(e) => setKeys((prev) => ({ ...prev, [field.key]: e.target.value }))}
                   placeholder={masked[field.key] || field.placeholder}
+                  aria-label={field.label}
                   className="w-full bg-black/60 border border-[#00B7FF]/10 rounded-xl px-4 py-3 text-sm text-white font-mono placeholder:text-neutral-600 focus:outline-none focus:border-[#00B7FF]/30 focus:ring-1 focus:ring-[#00B7FF]/20 transition-gpu pr-10"
                 />
                 <button
                   onClick={() => toggleShow(field.key)}
+                  aria-label={showKeys.has(field.key) ? `Hide ${field.label}` : `Show ${field.label}`}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-white transition-colors"
                 >
                   {showKeys.has(field.key) ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -242,12 +244,12 @@ export default function SettingsPage() {
         </button>
 
         {saveStatus === "success" && (
-          <motion.span initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-1 text-xs text-emerald-400 font-bold">
+          <motion.span initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-1 text-xs text-emerald-400 font-bold" aria-live="polite">
             <CheckCircle2 className="w-4 h-4" /> Saved securely
           </motion.span>
         )}
         {saveStatus === "error" && (
-          <motion.span initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-1 text-xs text-rose-400 font-bold">
+          <motion.span initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-1 text-xs text-rose-400 font-bold" aria-live="polite">
             <AlertTriangle className="w-4 h-4" /> Failed to save
           </motion.span>
         )}

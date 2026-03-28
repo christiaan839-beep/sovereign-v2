@@ -190,7 +190,7 @@ export default function BuildModePage() {
   };
 
   return (
-    <div className={`h-[calc(100vh-4rem)] flex ${fullscreen ? "fixed inset-0 z-50 bg-black" : ""}`}>
+    <div className={`h-[calc(100vh-4rem)] flex ${fullscreen ? "fixed inset-0 z-50 bg-black" : ""}`} role="main" aria-label="Build mode code generator">
       {/* Left: Chat Panel */}
       <div className={`flex flex-col ${showPreview ? "w-1/2" : "w-full"} border-r border-white/[0.06]`}>
         {/* Header */}
@@ -209,6 +209,7 @@ export default function BuildModePage() {
               onClick={() => setShowPreview(!showPreview)}
               className="p-2 rounded-lg hover:bg-white/[0.04] text-neutral-500 hover:text-white transition-colors"
               title={showPreview ? "Hide preview" : "Show preview"}
+              aria-label={showPreview ? "Hide preview" : "Show preview"}
             >
               <Eye className="w-4 h-4" />
             </button>
@@ -216,6 +217,7 @@ export default function BuildModePage() {
               onClick={() => { setMessages([]); setPreviewCode(""); }}
               className="p-2 rounded-lg hover:bg-white/[0.04] text-neutral-500 hover:text-white transition-colors"
               title="New session"
+              aria-label="New session"
             >
               <RotateCcw className="w-4 h-4" />
             </button>
@@ -301,6 +303,7 @@ export default function BuildModePage() {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Describe what you want to build..."
+              aria-label="Build prompt"
               rows={1}
               className="flex-1 bg-transparent text-sm text-white placeholder-neutral-600 outline-none resize-none max-h-32"
               style={{ minHeight: "24px" }}
@@ -308,6 +311,7 @@ export default function BuildModePage() {
             <button
               onClick={() => send(input)}
               disabled={!input.trim() || loading}
+              aria-label="Send build prompt"
               className="p-1.5 rounded-lg bg-[#00B7FF]/20 text-[#00B7FF] hover:bg-[#00B7FF]/30 disabled:opacity-30 disabled:cursor-not-allowed transition-gpu"
             >
               <Send className="w-4 h-4" />
@@ -359,6 +363,7 @@ export default function BuildModePage() {
                   disabled={!previewCode}
                   className="p-1.5 rounded-md hover:bg-white/[0.06] text-neutral-500 hover:text-white transition-colors disabled:opacity-30"
                   title="Copy code"
+                  aria-label="Copy code"
                 >
                   {copied ? <Check className="w-3.5 h-3.5 text-[#00B7FF]" /> : <Copy className="w-3.5 h-3.5" />}
                 </button>
@@ -367,6 +372,7 @@ export default function BuildModePage() {
                   disabled={!previewCode}
                   className="p-1.5 rounded-md hover:bg-white/[0.06] text-neutral-500 hover:text-white transition-colors disabled:opacity-30"
                   title="Download HTML"
+                  aria-label="Download HTML"
                 >
                   <Download className="w-3.5 h-3.5" />
                 </button>
@@ -374,6 +380,7 @@ export default function BuildModePage() {
                   onClick={() => setFullscreen(!fullscreen)}
                   className="p-1.5 rounded-md hover:bg-white/[0.06] text-neutral-500 hover:text-white transition-colors"
                   title={fullscreen ? "Exit fullscreen" : "Fullscreen"}
+                  aria-label={fullscreen ? "Exit fullscreen" : "Fullscreen"}
                 >
                   {fullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
                 </button>
