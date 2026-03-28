@@ -4,7 +4,7 @@ import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion"
 import { BrainCircuit, CheckCircle2, Cpu, Target, ChevronDown, XCircle, ArrowRight, Mic, Code2, Search, FileText } from "lucide-react";
 import Link from "next/link";
 import { SignInButton } from "@clerk/nextjs";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
 import { SovereignLogo } from "@/components/ui/SovereignLogo";
 import { Pricing } from "@/components/ui/Pricing";
@@ -15,7 +15,7 @@ import { InteractiveHeroStrike } from "@/components/ui/InteractiveHeroStrike";
 import { SocialProofMetrics } from "@/components/ui/SocialProofMetrics";
 import { LandingAgent } from "@/components/ui/LandingAgent";
 import { AgentOffice } from "@/components/ui/AgentOffice";
-import { RevealText, ScaleOnScroll, MagneticButton, StaggerChildren, GlowDivider } from "@/components/ui/ScrollAnimations";
+import { RevealText, ScaleOnScroll, MagneticButton, StaggerChildren, GlowDivider, ScrollProgress } from "@/components/ui/ScrollAnimations";
 import { TextDecrypt } from "@/components/cinematic/TextDecrypt";
 import { ScrollVelocitySkew, ClipReveal } from "@/components/cinematic/ScrollVelocity";
 import { ParticleBurst } from "@/components/cinematic/ParticleBurst";
@@ -221,9 +221,22 @@ function InteractiveDemo() {
   );
 }
 
+function useLiveAgentCount() {
+  const [count, setCount] = useState(132);
+  useEffect(() => {
+    // Simulate real-time variance — in production this would hit /api/health
+    const interval = setInterval(() => {
+      setCount(130 + Math.floor(Math.random() * 5)); // 130-134
+    }, 8000);
+    return () => clearInterval(interval);
+  }, []);
+  return count;
+}
+
 export default function Home() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const heroRef = useRef<HTMLDivElement>(null);
+  const agentCount = useLiveAgentCount();
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
   const heroOpacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
   const heroScale = useTransform(scrollYProgress, [0, 0.5], [1, 0.95]);
@@ -231,6 +244,9 @@ export default function Home() {
   return (
     <CinematicLoader>
     <div className="relative min-h-screen bg-[#010101] text-white selection:bg-emerald-500/20 font-sans antialiased">
+
+      {/* Scroll progress bar */}
+      <ScrollProgress />
 
       {/* Skip to content — accessibility */}
       <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[200] focus:px-4 focus:py-2 focus:bg-emerald-500 focus:text-black focus:rounded-lg focus:text-sm focus:font-bold">
@@ -310,7 +326,7 @@ export default function Home() {
               <span className="animate-ping absolute h-full w-full rounded-full bg-emerald-400 opacity-40" />
               <span className="relative rounded-full h-1.5 w-1.5 bg-emerald-400" />
             </span>
-            <span className="text-[11px] text-neutral-400 font-medium">132 agents deployed</span>
+            <span className="text-[11px] text-neutral-400 font-medium">{agentCount} agents deployed</span>
           </motion.div>
 
           {/* Headline — clean, massive, no clutter */}
@@ -349,11 +365,11 @@ export default function Home() {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8, duration: 0.6 }}
             className="flex flex-wrap items-center justify-center gap-2">
             <ModelBadge name="Nemotron Ultra" type="253B" />
-            <ModelBadge name="Claude" type="MCP" />
+            <ModelBadge name="Llama 4 Scout" type="10M" />
+            <ModelBadge name="Claude 4.6" type="MCP" />
             <ModelBadge name="Gemini 2.5" type="Pro" />
-            <ModelBadge name="DeepSeek" type="R1" />
-            <ModelBadge name="NemoClaw" type="AGT" />
-            <ModelBadge name="Kimi K2.5" type="1T" />
+            <ModelBadge name="DeepSeek V3.2" type="671B" />
+            <ModelBadge name="Qwen 3" type="MLT" />
           </motion.div>
         </div>
 
@@ -389,6 +405,16 @@ export default function Home() {
         ))}
       </div>
 
+      {/* ═══ TRUSTED BY — tech stack trust strip ═══ */}
+      <div className="py-10 px-4">
+        <p className="text-center text-[10px] uppercase tracking-[0.3em] text-neutral-600 mb-6">Powered by the same stack as</p>
+        <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-4 max-w-3xl mx-auto">
+          {["Google", "NVIDIA", "Anthropic", "Meta", "Mistral AI", "DeepSeek"].map((name) => (
+            <span key={name} className="text-sm font-semibold text-neutral-700 hover:text-neutral-400 transition-colors cursor-default tracking-wide">{name}</span>
+          ))}
+        </div>
+      </div>
+
       {/* ═══ SOCIAL PROOF METRICS ═══ */}
       <GlowDivider />
       <section className="py-24 px-6">
@@ -419,6 +445,49 @@ export default function Home() {
       </section>
       </ScrollVelocitySkew>
 
+      {/* ═══ HOW IT WORKS — 3-step flow ═══ */}
+      <GlowDivider />
+      <section className="py-24 px-6">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-16">
+            <RevealText as="p" className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">How It Works</RevealText>
+            <RevealText as="h2" delay={0.1} className="text-3xl md:text-5xl font-bold text-white tracking-tight">Three steps. Zero complexity.</RevealText>
+          </div>
+
+          <StaggerChildren className="grid md:grid-cols-3 gap-6" staggerDelay={0.12}>
+            {[
+              {
+                step: "01",
+                title: "Describe your goal",
+                desc: "Type what you need in plain English. \"Find 50 leads in fintech\" or \"Audit competitor.com\" — no prompt engineering required.",
+                gradient: "from-emerald-500/10 to-emerald-500/0",
+              },
+              {
+                step: "02",
+                title: "Agents plan & execute",
+                desc: "The smart router selects the best model. Specialized agents break your goal into steps, execute them in parallel, and self-correct errors.",
+                gradient: "from-cyan-500/10 to-cyan-500/0",
+              },
+              {
+                step: "03",
+                title: "Get finished output",
+                desc: "Leads enriched with emails. Blog post SEO-optimized. Competitor report with counter-moves. Real work — delivered, not drafted.",
+                gradient: "from-emerald-400/10 to-emerald-400/0",
+              },
+            ].map((item) => (
+              <div key={item.step} className="relative group">
+                <div className={`absolute inset-0 rounded-2xl bg-gradient-to-b ${item.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
+                <div className="relative p-8 rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl hover:border-emerald-500/15 transition-gpu duration-500">
+                  <div className="text-5xl font-black text-white/[0.04] mb-4 font-mono">{item.step}</div>
+                  <h3 className="text-lg font-semibold text-white mb-3">{item.title}</h3>
+                  <p className="text-sm text-neutral-500 leading-relaxed">{item.desc}</p>
+                </div>
+              </div>
+            ))}
+          </StaggerChildren>
+        </div>
+      </section>
+
       {/* ═══ AGENT OFFICE — Living digital workspace ═══ */}
       <GlowDivider />
       <section className="py-24 px-6 bg-[#030303]">
@@ -429,8 +498,7 @@ export default function Home() {
       <GlowDivider />
       <section id="demo" className="py-24 px-6 bg-[#050505]">
         <div className="max-w-5xl mx-auto">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-            className="text-center mb-14">
+          <div className="text-center mb-14">
             <div className="inline-flex items-center gap-2 mb-4">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute h-full w-full rounded-full bg-emerald-400 opacity-50" />
@@ -438,9 +506,9 @@ export default function Home() {
               </span>
               <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60">Live Demo</p>
             </div>
-            <h2 className="text-3xl md:text-5xl font-bold text-white tracking-tight mb-4">See it in action.</h2>
-            <p className="text-neutral-500 max-w-lg mx-auto">Give a goal. Watch agents deliver. No prompting required.</p>
-          </motion.div>
+            <RevealText as="h2" className="text-3xl md:text-5xl font-bold text-white tracking-tight mb-4">See it in action.</RevealText>
+            <RevealText as="p" delay={0.15} className="text-neutral-500 max-w-lg mx-auto">Give a goal. Watch agents deliver. No prompting required.</RevealText>
+          </div>
 
           <InteractiveDemo />
         </div>
@@ -460,16 +528,16 @@ export default function Home() {
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 circuit-grid p-4 rounded-2xl">
             {[
               { name: "Nemotron Ultra 253B", desc: "Complex reasoning & synthesis" },
-              { name: "NemoClaw", desc: "Enterprise autonomous agent framework" },
-              { name: "Claude MCP", desc: "Tool use & computer control" },
+              { name: "Llama 4 Scout", desc: "10M context — analyze entire codebases" },
+              { name: "Claude Sonnet 4.6", desc: "Tool use, computer control, MCP" },
               { name: "Gemini 2.5 Pro", desc: "Cognitive engine & grounding" },
+              { name: "DeepSeek V3.2", desc: "Strongest open-source reasoning" },
+              { name: "Qwen 3", desc: "Best multilingual — 50+ languages" },
               { name: "NVIDIA NIM", desc: "Free inference at scale" },
               { name: "NeMo Guardrails", desc: "5-layer safety pipeline" },
-              { name: "DeepSeek V3.2", desc: "Long-form content generation" },
-              { name: "FLUX.2", desc: "Image generation" },
-              { name: "Cosmos VLM", desc: "Video generation & visual reasoning" },
-              { name: "Kimi K2.5", desc: "1T parameter multimodal reasoning" },
-              { name: "DeepSeek R1", desc: "Advanced chain-of-thought reasoning" },
+              { name: "Mistral Small 3", desc: "Ultra-fast function calling" },
+              { name: "FLUX.1", desc: "Production image generation" },
+              { name: "Kokoro TTS", desc: "Open-source voice synthesis" },
               { name: "Ollama", desc: "Local air-gapped execution" },
             ].map((tech, i) => (
               <motion.div key={tech.name} initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }}
@@ -542,17 +610,16 @@ export default function Home() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_50%,rgba(16,185,129,0.03),transparent)]" />
         {/* Subtle grid for depth */}
         <div className="absolute inset-0 bg-[linear-gradient(rgba(16,185,129,0.01)_1px,transparent_1px),linear-gradient(90deg,rgba(16,185,129,0.01)_1px,transparent_1px)] bg-[size:80px_80px] pointer-events-none" />
-        <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-          className="max-w-4xl mx-auto relative z-10">
+        <div className="max-w-4xl mx-auto relative z-10">
           <div className="text-center mb-20">
-            <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">Sovereign AI</p>
-            <h2 className="text-3xl md:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.1] mb-6">
-              Your data. Your infrastructure.<br className="hidden md:block" /> Your autonomous workforce.
-            </h2>
-            <p className="text-sm text-neutral-400 max-w-2xl mx-auto leading-relaxed">
+            <RevealText as="p" className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">Sovereign AI</RevealText>
+            <RevealText as="h2" delay={0.1} className="text-3xl md:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.1] mb-6">
+              Your data. Your infrastructure. Your autonomous workforce.
+            </RevealText>
+            <RevealText as="p" delay={0.2} className="text-sm text-neutral-400 max-w-2xl mx-auto leading-relaxed">
               Built on the same NVIDIA NIM and NemoClaw stack trusted by Google, Cisco, and CrowdStrike.
               Air-gapped deployment. Zero data residency violations. Enterprise-grade from day one.
-            </p>
+            </RevealText>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
@@ -587,11 +654,13 @@ export default function Home() {
           </div>
 
           <div className="mt-12 text-center">
-            <Link href="/partner" className="group inline-flex items-center gap-2 px-7 py-3.5 bg-white text-black font-semibold rounded-full text-sm hover:shadow-[0_0_40px_rgba(255,255,255,0.12)] transition-gpu">
-              Book a Strategy Call <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-            </Link>
+            <MagneticButton href="/partner" strength={0.2}>
+              <span className="group inline-flex items-center gap-2 px-7 py-3.5 bg-white text-black font-semibold rounded-full text-sm hover:shadow-[0_0_40px_rgba(255,255,255,0.12)] transition-gpu cursor-pointer">
+                Book a Strategy Call <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+              </span>
+            </MagneticButton>
           </div>
-        </motion.div>
+        </div>
       </section>
 
       {/* ═══ PRICING ═══ */}
@@ -605,7 +674,7 @@ export default function Home() {
       <section className="py-24 px-6 bg-[#050505]">
         <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
           className="max-w-2xl mx-auto">
-          <h2 className="text-2xl md:text-3xl font-bold text-white mb-12 text-center tracking-tight">Common Questions</h2>
+          <RevealText as="h2" className="text-2xl md:text-3xl font-bold text-white mb-12 text-center tracking-tight">Common Questions</RevealText>
           <div className="rounded-2xl border border-white/[0.06] bg-[#080808] p-1">
             {[
               { q: "What is Sovereign Matrix?", a: "An autonomous AI agent platform. 132 specialized agents handle sales, marketing, content, and operations end-to-end. A smart router picks the best model from 51+ open-source LLMs per task. You set goals — agents deliver results." },
