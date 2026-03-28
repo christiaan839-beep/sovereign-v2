@@ -26,6 +26,7 @@ import { NextResponse } from "next/server";
 import { guardRoute, sanitizeString, errorResponse } from "@/lib/api-guard";
 import { detectJailbreak } from "@/lib/jailbreak-detect";
 import { checkContentSafety } from "@/lib/content-safety";
+import { checkFreeUsage, incrementUsage, getUpgradePrompt } from "@/lib/free-tier";
 import { scoreOutput, type QualityScore } from "@/lib/quality-scorer";
 import { createLogger } from "@/lib/logger";
 import { getAntiSlopRules } from "@/lib/system-prompts";
@@ -96,6 +97,27 @@ export function createAgentRoute(config: AgentConfig) {
         if (!guard.authorized) return guard.response;
         email = guard.email;
         userId = guard.userId;
+      }
+
+      // ─── Free Tier Usage Check ───
+      if (userId) {
+        const usage = checkFreeUsage(userId);
+        if (!usage.allowed) {
+          return new NextResponse(
+            JSON.stringify({
+              error: "Usage limit reached",
+              message: getUpgradePrompt(userId),
+              code: "USAGE_LIMIT_REACHED",
+            }),
+            {
+              status: 429,
+              headers: {
+                "Content-Type": "application/json",
+                "X-Free-Remaining": "0",
+              },
+            }
+          );
+        }
       }
 
       // ─── Parse & Validate Body ───
@@ -271,10 +293,14 @@ export function createAgentRoute(config: AgentConfig) {
         }
       }
 
-      // ─── Track & Return Response ───
+      // ─── Track Usage & Return Response ───
+      if (userId) {
+        incrementUsage(userId);
+      }
       trackAgentExecution(config.name, Date.now() - startTime, true);
 
-      return NextResponse.json({
+      const remaining = userId ? checkFreeUsage(userId).remaining : undefined;
+      const response = NextResponse.json({
         ...finalResult,
         _meta: {
           agent: config.name,
@@ -284,6 +310,12 @@ export function createAgentRoute(config: AgentConfig) {
           ...(qualityScore ? { qualityScore: qualityScore.overall, qualityPassed: qualityScore.passed } : {}),
         },
       });
+
+      if (remaining !== undefined) {
+        response.headers.set("X-Free-Remaining", String(remaining));
+      }
+
+      return response;
     } catch (error: unknown) {
       trackAgentExecution(config.name, Date.now() - startTime, false);
       const message = error instanceof Error ? error.message : "Unknown error";

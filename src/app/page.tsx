@@ -865,7 +865,7 @@ export default function Home() {
               <h4 className="text-xs font-semibold text-neutral-400 mb-4">Product</h4>
               <ul className="space-y-2.5">
                 <li><Link href="/pricing" className="text-xs text-neutral-500 hover:text-white transition-colors">Pricing</Link></li>
-                <li><Link href="/showcase" className="text-xs text-neutral-500 hover:text-white transition-colors">Interactive Demo</Link></li>
+                <li><Link href="/playground" className="text-xs text-neutral-500 hover:text-white transition-colors">API Playground</Link></li>
                 <li><Link href="/docs" className="text-xs text-neutral-500 hover:text-white transition-colors">API Docs</Link></li>
                 <li><Link href="/onboarding" className="text-xs text-neutral-500 hover:text-white transition-colors">Get Started</Link></li>
               </ul>
@@ -874,8 +874,8 @@ export default function Home() {
               <h4 className="text-xs font-semibold text-neutral-400 mb-4">Resources</h4>
               <ul className="space-y-2.5">
                 <li><Link href="/blog" className="text-xs text-neutral-500 hover:text-white transition-colors">Blog</Link></li>
-                <li><Link href="/case-studies" className="text-xs text-neutral-500 hover:text-white transition-colors">Case Studies</Link></li>
-                <li><Link href="/about" className="text-xs text-neutral-500 hover:text-white transition-colors">About</Link></li>
+                <li><Link href="/changelog" className="text-xs text-neutral-500 hover:text-white transition-colors">Changelog</Link></li>
+                <li><Link href="/status" className="text-xs text-neutral-500 hover:text-white transition-colors">System Status</Link></li>
                 <li><Link href="/partner" className="text-xs text-neutral-500 hover:text-white transition-colors">Partners</Link></li>
               </ul>
             </div>

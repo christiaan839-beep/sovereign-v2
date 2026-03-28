@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight, ArrowLeft, Zap, Target, FileText,
   Search, Code2, CheckCircle2, Sparkles, Cpu, Globe,
-  ChevronRight, BarChart3
+  ChevronRight, BarChart3, Gift
 } from "lucide-react";
 import Link from "next/link";
 import { SovereignLogo } from "@/components/ui/SovereignLogo";
@@ -139,6 +139,67 @@ function FirstTaskDemo() {
   );
 }
 
+function ReferralCodeInput() {
+  const [code, setCode] = useState("");
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [message, setMessage] = useState("");
+
+  const submitReferral = async () => {
+    if (!code.trim()) return;
+    setStatus("loading");
+    try {
+      const res = await fetch("/api/referral/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ referralCode: code.trim() }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setStatus("success");
+        setMessage("50 bonus agent runs added!");
+      } else {
+        setStatus("error");
+        setMessage(data.error || "Invalid referral code.");
+      }
+    } catch {
+      setStatus("error");
+      setMessage("Failed to apply referral code.");
+    }
+  };
+
+  return (
+    <div className="mt-6">
+      {status === "success" ? (
+        <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}
+          className="flex items-center gap-2 text-emerald-400 text-xs">
+          <Gift className="w-3.5 h-3.5" />
+          <span>{message}</span>
+        </motion.div>
+      ) : (
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            value={code}
+            onChange={(e) => setCode(e.target.value.toUpperCase())}
+            onKeyDown={(e) => e.key === "Enter" && submitReferral()}
+            placeholder="Have a referral code?"
+            className="bg-white/[0.03] border border-white/[0.06] rounded-lg px-3 py-1.5 text-xs text-white placeholder:text-neutral-700 focus:outline-none focus:border-emerald-500/30 transition-colors w-48"
+          />
+          {code.trim() && (
+            <button onClick={submitReferral} disabled={status === "loading"}
+              className="text-[10px] px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 transition-gpu disabled:opacity-50">
+              {status === "loading" ? "Applying..." : "Apply"}
+            </button>
+          )}
+          {status === "error" && (
+            <span className="text-[10px] text-red-400">{message}</span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function OnboardingPage() {
   const [currentStep, setCurrentStep] = useState(0);
   const [selections, setSelections] = useState<Record<string, string>>({});
@@ -198,6 +259,8 @@ export default function OnboardingPage() {
                 })}
               </div>
             )}
+
+            {step.id === "welcome" && <ReferralCodeInput />}
 
             {step.isAction && <FirstTaskDemo />}
 
