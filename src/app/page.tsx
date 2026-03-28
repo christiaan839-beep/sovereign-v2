@@ -20,10 +20,12 @@ import { TextDecrypt } from "@/components/cinematic/TextDecrypt";
 import { ScrollVelocitySkew, ClipReveal } from "@/components/cinematic/ScrollVelocity";
 import { ParticleBurst } from "@/components/cinematic/ParticleBurst";
 import { Typewriter, GradientFollower, Tilt3D, AnimatedCounter } from "@/components/cinematic/InteractiveEffects";
+import { LiveTicker } from "@/components/cinematic/LiveTicker";
 import dynamic from "next/dynamic";
 import { TextMorph } from "@/components/ui/TextMorph";
 
 const HeroParticles = dynamic(() => import("@/components/ui/HeroParticles").then(m => ({ default: m.HeroParticles })), { ssr: false });
+const HeroOrb = dynamic(() => import("@/components/cinematic/HeroOrb").then(m => ({ default: m.HeroOrb })), { ssr: false });
 
 // ─── Capability Card (enhanced with emerald hover glow) ───
 function CapabilityCard({ icon: Icon, title, desc, accent, href }: { icon: React.ComponentType<{ className?: string }>; title: string; desc: string; accent: string; href?: string }) {
@@ -312,6 +314,9 @@ export default function Home() {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,transparent_0%,#010101_70%)]" />
         </div>
 
+        {/* Reactive 3D Orb — follows mouse */}
+        <HeroOrb />
+
         {/* Vignettes */}
         <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-[#010101] to-transparent pointer-events-none z-[1]" />
         <div className="absolute bottom-0 inset-x-0 h-48 bg-gradient-to-t from-[#010101] to-transparent pointer-events-none z-[1]" />
@@ -408,6 +413,9 @@ export default function Home() {
           </ScaleOnScroll>
         </div>
       </motion.section>
+
+      {/* ═══ LIVE ACTIVITY TICKER ═══ */}
+      <LiveTicker />
 
       {/* ═══ POWERED BY — minimal trust strip ═══ */}
       <div className="flex items-center justify-center gap-6 py-8 px-4">
