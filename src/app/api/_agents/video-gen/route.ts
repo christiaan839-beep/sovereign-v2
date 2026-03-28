@@ -3,24 +3,47 @@ import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { settings } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { ai } from "@/lib/ai";
 
 /**
  * AUTONOMOUS FILMMAKER NODE
  * Cinematic Video Generation via Luma Dream Machine & Runway Gen-3 APIs.
- * Orchestrates text-to-video for autonomous VSL engineering.
+ * Uses AI to enhance prompts into cinematic directives before generation.
  */
 
 export async function POST(req: Request) {
   try {
-    const { prompt, provider = "luma" } = await req.json();
+    const { prompt, provider = "luma", enhance = true } = await req.json();
 
     if (!prompt) {
       return NextResponse.json({ error: "Cinematic prompt required." }, { status: 400 });
     }
 
+    // Use AI to enhance the raw prompt into a cinematic video directive
+    let cinematicPrompt = prompt;
+    if (enhance) {
+      cinematicPrompt = await ai(
+        `Enhance this video generation prompt into a cinematic directive optimized for AI video generation (Luma Dream Machine).
+
+RAW PROMPT: ${prompt}
+
+Return ONLY the enhanced prompt (no explanations). The enhanced prompt should:
+- Describe camera movement (pan, dolly, crane, tracking shot)
+- Specify lighting (golden hour, dramatic shadows, neon glow, studio lighting)
+- Include cinematographic style (anamorphic, shallow depth of field, wide angle)
+- Add atmosphere and mood (cinematic color grading, film grain, lens flare)
+- Keep it under 200 words
+- Be a single paragraph, no bullet points`,
+        {
+          system: "You are a Hollywood cinematographer and visual director. You translate simple ideas into breathtaking cinematic visions. Output ONLY the enhanced prompt text.",
+          maxTokens: 300,
+        }
+      );
+    }
+
     const user = await currentUser();
     let apiKey = process.env.VIDEO_GEN_API_KEY || "";
-    
+
     if (user?.primaryEmailAddress?.emailAddress) {
       const userSettings = await db.query.settings.findFirst({
         where: eq(settings.userEmail, user.primaryEmailAddress.emailAddress)
@@ -37,7 +60,6 @@ export async function POST(req: Request) {
     }
 
     if (provider === "luma") {
-      // 1. Kick off Luma Vision Generation
       const response = await fetch('https://api.lumalabs.ai/dream-machine/v1/generations', {
         method: 'POST',
         headers: {
@@ -45,9 +67,8 @@ export async function POST(req: Request) {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          prompt: prompt,
-          // Aspect Ratio mapping standard for cinematic VSL
-          aspect_ratio: "16:9" 
+          prompt: cinematicPrompt,
+          aspect_ratio: "16:9"
         })
       });
 
@@ -57,13 +78,13 @@ export async function POST(req: Request) {
       }
 
       const lumaData = await response.json();
-      
-      // We return the task ID immediately. The UI will have to poll for completion
-      // in a full production system.
+
       return NextResponse.json({
         success: true,
         task_id: lumaData.id,
         status: "GENERATING",
+        original_prompt: prompt,
+        enhanced_prompt: cinematicPrompt,
         message: "Luma Cinematic Engine Engaged. Awaiting render."
       });
     }

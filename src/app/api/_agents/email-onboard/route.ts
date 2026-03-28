@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { persistAppend } from "@/lib/persist";
+import { ai } from "@/lib/ai";
 
 /**
  * RESEND EMAIL ONBOARDING — Automated welcome and drip sequence.
