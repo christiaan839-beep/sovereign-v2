@@ -31,6 +31,7 @@ import { scoreOutput, type QualityScore } from "@/lib/quality-scorer";
 import { createLogger } from "@/lib/logger";
 import { getAntiSlopRules } from "@/lib/system-prompts";
 import { trackAgentExecution } from "@/lib/analytics";
+import { getMemoryContext, saveMemory } from "@/lib/tenant-memory";
 
 const log = createLogger("agent-factory");
 
@@ -200,6 +201,14 @@ export function createAgentRoute(config: AgentConfig) {
         }
       }
 
+      // ─── Inject Tenant Memory Context ───
+      if (userId) {
+        const memoryCtx = getMemoryContext(userId, config.name);
+        if (memoryCtx) {
+          sanitized._memoryContext = memoryCtx;
+        }
+      }
+
       // ─── Execute Agent Handler ───
       const result = await config.handler({
         input: sanitized,
@@ -289,6 +298,19 @@ export function createAgentRoute(config: AgentConfig) {
               agent: config.name,
               error: String(scoringError),
             });
+          }
+        }
+      }
+
+      // ─── Save to Tenant Memory ───
+      if (userId) {
+        const inputText = getFirstStringValue(sanitized);
+        const outputText = getFirstStringValue(finalResult);
+        if (inputText && outputText) {
+          try {
+            saveMemory(userId, config.name, inputText, outputText);
+          } catch (memErr) {
+            log.warn("Tenant memory save failed", { agent: config.name, error: String(memErr) });
           }
         }
       }

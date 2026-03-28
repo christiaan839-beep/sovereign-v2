@@ -1,6 +1,7 @@
 import { getNimKey } from "@/lib/nvidia";
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth-guard";
+import { getMemoryStats, queryMemory, clearMemory } from "@/lib/tenant-memory";
 
 /**
  * AGENT MEMORY — Pinecone-backed long-term conversational memory.
@@ -200,7 +201,26 @@ export async function POST(request: Request) {
       }
     }
 
-    return NextResponse.json({ error: "action must be: store, recall, summarize, dream, or forget" }, { status: 400 });
+    // TENANT MEMORY — Per-user persistent agent execution history
+    if (action === "tenant_stats") {
+      const stats = getMemoryStats(auth.userId);
+      return NextResponse.json({ success: true, action: "tenant_stats", ...stats });
+    }
+
+    if (action === "tenant_query") {
+      if (!query) {
+        return NextResponse.json({ error: "query is required for tenant_query action." }, { status: 400 });
+      }
+      const results = queryMemory(auth.userId, query, limit);
+      return NextResponse.json({ success: true, action: "tenant_query", results, count: results.length });
+    }
+
+    if (action === "tenant_clear") {
+      const deleted = clearMemory(auth.userId);
+      return NextResponse.json({ success: true, action: "tenant_clear", memories_deleted: deleted });
+    }
+
+    return NextResponse.json({ error: "action must be: store, recall, summarize, dream, forget, tenant_stats, tenant_query, or tenant_clear" }, { status: 400 });
   } catch (error) {
     return NextResponse.json({ error: "Memory error", details: String(error) }, { status: 500 });
   }
@@ -237,6 +257,9 @@ export async function GET(request: Request) {
     }
   }
 
+  // Include tenant memory stats alongside legacy memory
+  const tenantStats = getMemoryStats(auth.userId);
+
   return NextResponse.json({
     status: "Agent Memory — Active",
     userId,
@@ -248,5 +271,6 @@ export async function GET(request: Request) {
     recent: allMemories
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
       .slice(0, 10),
+    tenantMemory: tenantStats,
   });
 }
