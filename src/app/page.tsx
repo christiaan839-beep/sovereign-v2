@@ -681,7 +681,7 @@ export default function Home() {
       <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
       <footer className="px-6">
         <div className="max-w-5xl mx-auto py-14">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-12">
             <div className="col-span-2 md:col-span-1">
               <div className="flex items-center gap-2.5 mb-4">
                 <SovereignLogo size="sm" />
@@ -694,8 +694,17 @@ export default function Home() {
               <ul className="space-y-2.5">
                 <li><Link href="/pricing" className="text-xs text-neutral-500 hover:text-white transition-colors">Pricing</Link></li>
                 <li><Link href="/showcase" className="text-xs text-neutral-500 hover:text-white transition-colors">Interactive Demo</Link></li>
-                <li><Link href="/dashboard" className="text-xs text-neutral-500 hover:text-white transition-colors">Dashboard</Link></li>
+                <li><Link href="/docs" className="text-xs text-neutral-500 hover:text-white transition-colors">API Docs</Link></li>
                 <li><Link href="/onboarding" className="text-xs text-neutral-500 hover:text-white transition-colors">Get Started</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-xs font-semibold text-neutral-400 mb-4">Resources</h4>
+              <ul className="space-y-2.5">
+                <li><Link href="/blog" className="text-xs text-neutral-500 hover:text-white transition-colors">Blog</Link></li>
+                <li><Link href="/case-studies" className="text-xs text-neutral-500 hover:text-white transition-colors">Case Studies</Link></li>
+                <li><Link href="/about" className="text-xs text-neutral-500 hover:text-white transition-colors">About</Link></li>
+                <li><Link href="/partner" className="text-xs text-neutral-500 hover:text-white transition-colors">Partners</Link></li>
               </ul>
             </div>
             <div>

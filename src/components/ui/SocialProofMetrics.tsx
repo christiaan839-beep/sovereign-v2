@@ -119,7 +119,7 @@ export function SocialProofMetrics() {
           viewport={{ once: true }}
           className="text-3xl md:text-5xl font-black text-white tracking-tight mb-3"
         >
-          Built different.
+          The infrastructure behind every agent.
         </motion.h2>
         <motion.p
           initial={{ opacity: 0 }}
@@ -128,7 +128,7 @@ export function SocialProofMetrics() {
           transition={{ delay: 0.15 }}
           className="text-neutral-500 max-w-lg mx-auto text-sm"
         >
-          The infrastructure behind every agent.
+          Every number is real. Every agent is live.
         </motion.p>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -152,7 +152,7 @@ export function SocialProofMetrics() {
             <div className="text-[10px] uppercase tracking-[0.2em] text-[#10B981] mt-2 font-bold">
               {stat.label}
             </div>
-            <div className="text-[10px] text-neutral-600 mt-1">{stat.desc}</div>
+            <div className="text-[10px] text-neutral-500 mt-1">{stat.desc}</div>
           </motion.div>
         ))}
       </div>
