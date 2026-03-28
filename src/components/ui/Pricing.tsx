@@ -78,14 +78,14 @@ export function Pricing() {
         { name: "Competitor monitoring", included: true },
         { name: "Direct Comm-Link (24h)", included: true },
         { name: "White-label Reseller Hub", included: false },
-        { name: "Cartel Sub-Licenses", included: false },
+        { name: "Enterprise Sub-Licenses", included: false },
       ],
       planId: "array",
       buttonText: "Deploy Array",
       buttonStyle: "bg-emerald-400 hover:bg-emerald-300 text-black shadow-[0_0_20px_rgba(52,211,153,0.3)]",
     },
     {
-      name: "Cartel License",
+      name: "Enterprise License",
       description: "White-label the platform with your branding. Resell to clients with custom portals.",
       price: "R49,997",
       period: "/mo",
@@ -101,11 +101,11 @@ export function Pricing() {
         { name: "API access for Integrations", included: true },
         { name: "Dedicated Setup & Onboarding", included: true },
         { name: "Custom domain branding", included: true },
-        { name: "Cartel Sub-Licenses (5 included)", included: true },
+        { name: "Enterprise Sub-Licenses (5 included)", included: true },
         { name: "SLA guarantee", included: true },
       ],
       planId: "cartel",
-      buttonText: "Initialize Cartel",
+      buttonText: "Deploy Enterprise",
       buttonStyle: "bg-white/5 hover:bg-white/10 text-white border border-white/10",
     },
   ];
@@ -323,7 +323,7 @@ export function Pricing() {
               </div>
 
               <p className="text-sm text-neutral-400 mb-6">
-                To authorize your deployment, the Sovereign Matrix requires a direct WhatsApp line. A verification packet will be sent to this number bounding your Cartel license to you physically.
+                To authorize your deployment, the Sovereign Matrix requires a direct WhatsApp line. A verification packet will be sent to this number bounding your Enterprise license to you physically.
               </p>
 
               <form onSubmit={processSecureUplink} className="space-y-4">
