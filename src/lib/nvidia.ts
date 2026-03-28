@@ -11,6 +11,9 @@ const NVIDIA_BASE_URL = 'https://integrate.api.nvidia.com/v1';
 const FAILOVER_MODELS = [
   "nvidia/nemotron-ultra-253b-v1",
   "deepseek-ai/deepseek-v3-2-0324",
+  "meta/llama-4-scout-17b-16e-instruct",
+  "qwen/qwen3-235b-a22b",
+  "mistralai/mistral-small-3-1-24b-instruct",
   "mistralai/mistral-nemotron",
 ];
 

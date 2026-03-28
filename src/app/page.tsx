@@ -627,13 +627,16 @@ export default function Home() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(16,185,129,0.04),transparent_70%)]" />
         {/* Circuit-style grid accent */}
         <div className="absolute inset-0 bg-[linear-gradient(rgba(0,183,255,0.008)_1px,transparent_1px),linear-gradient(90deg,rgba(0,183,255,0.008)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none" />
-        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="relative z-10">
-          <h2 className="text-4xl md:text-6xl font-black text-white mb-5 tracking-tight leading-[1.05]">
-            Your competitors hire.<br className="hidden md:block" /> You deploy.
-          </h2>
-          <p className="text-neutral-500 max-w-lg mx-auto mb-10">
+        <div className="relative z-10">
+          <RevealText as="h2" className="text-4xl md:text-6xl font-black text-white mb-5 tracking-tight leading-[1.05]">
+            Your competitors hire.
+          </RevealText>
+          <div className="overflow-hidden mb-5">
+            <TextDecrypt text="You deploy." className="text-4xl md:text-6xl font-black text-white tracking-tight leading-[1.05]" as="h2" speed={20} delay={400} />
+          </div>
+          <RevealText as="p" delay={0.3} className="text-neutral-500 max-w-lg mx-auto mb-10">
             132 agents. 51+ models. Zero per-token cost. Deploy your first agent in 60 seconds.
-          </p>
+          </RevealText>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <ParticleBurst>
             <MagneticButton href="/onboarding" strength={0.25}>
@@ -648,7 +651,7 @@ export default function Home() {
               </span>
             </MagneticButton>
           </div>
-        </motion.div>
+        </div>
       </section>
 
       {/* ═══ FOOTER ═══ */}

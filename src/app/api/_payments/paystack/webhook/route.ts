@@ -13,13 +13,14 @@ export async function POST(req: Request) {
     const body = await req.text();
     const signature = req.headers.get("x-paystack-signature") || "";
 
-    // Verify webhook signature
-    const secret = process.env.PAYSTACK_SECRET_KEY || "";
-    if (secret) {
-      const hash = crypto.createHmac("sha512", secret).update(body).digest("hex");
-      if (hash !== signature) {
-        return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
-      }
+    // Verify webhook signature — REJECT if secret is not configured
+    const secret = process.env.PAYSTACK_SECRET_KEY;
+    if (!secret) {
+      return NextResponse.json({ error: "Payment webhook not configured" }, { status: 501 });
+    }
+    const hash = crypto.createHmac("sha512", secret).update(body).digest("hex");
+    if (hash !== signature) {
+      return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
     }
 
     const event = JSON.parse(body);

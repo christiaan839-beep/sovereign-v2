@@ -25,7 +25,7 @@ function setCache(key: string, result: string) {
 }
 
 // ─── Task Classification (Enhanced) ─────────────────────────
-type TaskType = "code" | "creative" | "reasoning" | "vision" | "safety" | "general";
+type TaskType = "code" | "creative" | "reasoning" | "vision" | "safety" | "multilingual" | "long_context" | "general";
 
 function classifyTask(prompt: string): TaskType {
   const lower = prompt.toLowerCase();
@@ -53,6 +53,17 @@ function classifyTask(prompt: string): TaskType {
       lower.includes("research") || lower.includes("audit") || lower.includes("assess") ||
       lower.includes("review") || lower.includes("investigate")) return "reasoning";
 
+  // Multilingual tasks
+  if (lower.includes("translate") || lower.includes("multilingual") || lower.includes("language") ||
+      lower.includes("chinese") || lower.includes("spanish") || lower.includes("french") ||
+      lower.includes("german") || lower.includes("japanese") || lower.includes("korean") ||
+      lower.includes("arabic") || lower.includes("localize") || lower.includes("i18n")) return "multilingual";
+
+  // Long-context tasks
+  if (lower.includes("long document") || lower.includes("entire codebase") || lower.includes("full transcript") ||
+      lower.includes("large file") || lower.includes("book") || lower.includes("summarize all") ||
+      lower.includes("comprehensive review") || lower.includes("full context")) return "long_context";
+
   // Safety classification
   if (lower.includes("safe") || lower.includes("moderate") || lower.includes("harmful") ||
       lower.includes("toxic") || lower.includes("guardrail")) return "safety";
@@ -62,12 +73,14 @@ function classifyTask(prompt: string): TaskType {
 
 // ─── Model Registry ─────────────────────────────────────────
 const NIM_MODELS = {
-  code:      "nvidia/nemotron-3-super-120b",
-  reasoning: "nvidia/llama-3.1-nemotron-ultra-253b-v1",
-  creative:  "nvidia/llama-3.1-nemotron-70b-instruct",
-  vision:    "google/gemma-3-27b-it",
-  safety:    "meta/llama-guard-3-8b",
-  general:   "nvidia/llama-3.1-nemotron-70b-instruct",
+  code:         "nvidia/nemotron-3-super-120b",
+  reasoning:    "deepseek-ai/deepseek-v3-2-0324",
+  creative:     "nvidia/llama-3.1-nemotron-70b-instruct",
+  vision:       "google/gemma-3-27b-it",
+  safety:       "meta/llama-guard-3-8b",
+  multilingual: "qwen/qwen3-235b-a22b",
+  long_context: "meta/llama-4-scout-17b-16e-instruct",
+  general:      "nvidia/llama-3.1-nemotron-70b-instruct",
 } as const;
 
 // ─── LlamaGuard Safety Check ────────────────────────────────
@@ -122,8 +135,8 @@ interface RouterPayload {
  * v3 upgrades:
  * - LlamaGuard 3 safety layer (Layer 6)
  * - Vision task routing (Gemma 3 27B)
- * - Enhanced task classification (6 types)
- * - Expanded NIM model registry
+ * - Enhanced task classification (8 types: code, creative, reasoning, vision, safety, multilingual, long_context, general)
+ * - Expanded NIM model registry (DeepSeek V3.2, Llama 4 Scout, Qwen 3)
  * - Gemini 2.5 Flash upgrade
  * - Output safety validation
  */

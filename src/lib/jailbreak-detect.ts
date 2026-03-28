@@ -79,7 +79,7 @@ export async function detectJailbreak(text: string): Promise<JailbreakResult> {
   }
 
   // ─── Slow Path: NIM Model (only for borderline cases) ───
-  if (suspicionScore > 0 && suspicionScore < 0.6) {
+  if (suspicionScore > 0 && suspicionScore < 0.8) {
     try {
       const nimKey = process.env.NVIDIA_NIM_API_KEY;
       if (nimKey) {

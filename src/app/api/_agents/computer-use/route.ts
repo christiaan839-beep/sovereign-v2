@@ -15,7 +15,7 @@ export async function POST(req: Request) {
   try {
     const { 
       instructions, 
-      resolution = { type: "computer_20241022", display_width_px: 1920, display_height_px: 1080 },
+      resolution = { type: "computer_20251124", display_width_px: 1920, display_height_px: 1080 },
       history = []
     } = await req.json();
 
@@ -50,28 +50,28 @@ export async function POST(req: Request) {
 
     // 3. Request Computer Use action
     const response = await anthropic.beta.messages.create({
-      model: "claude-3-5-sonnet-20241022",
+      model: "claude-sonnet-4-6-20250514",
       max_tokens: 1024,
-      betas: ["computer-use-2024-10-22"],
+      betas: ["computer-use-2025-11-24"],
       system: "You are the Sovereign Matrix Ghost Browser. You have access to a virtual Linux desktop. Use the computer tools to navigate the web, analyze competitors, and fulfill the user's instructions. Always verify the UI state with screenshots before clicking.",
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       tools: [
         {
-          type: "computer_20241022",
+          type: "computer_20251124",
           name: "computer",
           display_width_px: resolution.display_width_px,
           display_height_px: resolution.display_height_px,
           display_number: 1,
         },
         {
-          type: "text_editor_20241022",
-          name: "str_replace_editor"
+          type: "text_editor_20250429",
+          name: "str_replace_based_edit_tool"
         },
         {
-          type: "bash_20241022",
+          type: "bash_20250124",
           name: "bash"
         }
-      ],
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ] as any,
       messages: messages as any,
     });
 

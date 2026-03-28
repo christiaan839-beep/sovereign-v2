@@ -286,13 +286,31 @@ export function HeroWebGL() {
     };
     window.addEventListener("resize", onResize);
 
-    // ─── Cleanup ─────────────────────────────────────────
+    // ─── Cleanup — dispose ALL GPU resources ──────────────
     return () => {
       cancelAnimationFrame(frame);
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("resize", onResize);
+
+      // Traverse scene and dispose all geometries + materials
+      scene.traverse((obj) => {
+        if ("geometry" in obj && obj.geometry) {
+          (obj.geometry as THREE.BufferGeometry).dispose();
+        }
+        if ("material" in obj && obj.material) {
+          const mat = obj.material;
+          if (Array.isArray(mat)) {
+            mat.forEach((m: THREE.Material) => m.dispose());
+          } else {
+            (mat as THREE.Material).dispose();
+          }
+        }
+      });
+
       renderer.dispose();
-      container.removeChild(renderer.domElement);
+      if (container.contains(renderer.domElement)) {
+        container.removeChild(renderer.domElement);
+      }
     };
   }, []);
 

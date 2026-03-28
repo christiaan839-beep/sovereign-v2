@@ -120,7 +120,7 @@ async function geminiText(prompt: string, system?: string, maxTokens: number = 2
   const client = keys.gemini ? new GoogleGenerativeAI(keys.gemini) : globalGenAI;
   
   const model = client.getGenerativeModel({ 
-    model: "gemini-2.0-flash",
+    model: "gemini-2.5-flash",
     systemInstruction: system || undefined,
     generationConfig: { maxOutputTokens: maxTokens }
   });
@@ -128,13 +128,18 @@ async function geminiText(prompt: string, system?: string, maxTokens: number = 2
   return result.response.text();
 }
 
-async function claudeText(prompt: string, system?: string, maxTokens: number = 2000, userKeys: { anthropic?: string } = {}): Promise<string> {
+async function claudeText(prompt: string, system?: string, maxTokens: number = 2000, userKeys: { anthropic?: string } = {}, thinking?: boolean): Promise<string> {
   const keys = Object.keys(userKeys).length > 0 ? userKeys : await getUserKeys();
   const apiKey = keys.anthropic || globalAnthropicKey;
-  
-  const client = new Anthropic({ 
+
+  const betaHeaders = ["prompt-caching-2024-07-31"];
+  if (thinking) {
+    betaHeaders.push("interleaved-thinking-2025-05-14");
+  }
+
+  const client = new Anthropic({
     apiKey,
-    defaultHeaders: { "anthropic-beta": "prompt-caching-2024-07-31" }
+    defaultHeaders: { "anthropic-beta": betaHeaders.join(",") }
   });
 
   // Inject ephemeral caching on the system prompt to slash token costs by 90%
@@ -143,14 +148,25 @@ async function claudeText(prompt: string, system?: string, maxTokens: number = 2
     { type: "text", text: system, cache_control: { type: "ephemeral" } }
   ] : undefined;
 
-  const response = await client.messages.create({
+  // Extended thinking and max_tokens are incompatible — use one or the other
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const requestParams: any = {
     model: "claude-sonnet-4-20250514",
-    max_tokens: maxTokens,
     ...(systemParam ? { system: systemParam } : {}),
     messages: [{ role: "user", content: prompt }],
-  });
+  };
 
-  return response.content[0].type === "text" ? response.content[0].text : "";
+  if (thinking) {
+    requestParams.thinking = { type: "enabled", budget_tokens: 10000 };
+  } else {
+    requestParams.max_tokens = maxTokens;
+  }
+
+  const response = await client.messages.create(requestParams);
+
+  // Filter out thinking blocks and return only text content
+  const textBlock = response.content.find((b: { type: string }) => b.type === "text");
+  return textBlock && textBlock.type === "text" ? (textBlock as { type: "text"; text: string }).text : "";
 }
 
 async function groqText(prompt: string, system?: string, maxTokens: number = 2000, userKeys: { groq?: string } = {}, modelTarget: string = "groq"): Promise<string> {
@@ -216,41 +232,81 @@ export async function groqTranscribe(audioBuffer: Uint8Array, filename: string =
 }
 
 /**
- * Claude Tool Use — Agentic function calling for structured outputs.
- * Uses Anthropic's native tool_use to let Claude call predefined functions.
+ * Claude Tool Use — Agentic loop with automatic tool execution.
+ * Calls Claude with tools, executes tool_use blocks via the provided executor,
+ * feeds results back, and repeats until stop_reason === "end_turn" or max iterations.
+ * Falls back to single-call mode when no toolExecutor is provided (legacy compat).
  */
 export async function claudeToolUse(
   prompt: string,
   tools: Array<{ name: string; description: string; input_schema: Record<string, unknown> }>,
   system?: string,
-  maxTokens: number = 4096
+  maxTokens: number = 4096,
+  toolExecutor?: (name: string, input: Record<string, unknown>) => Promise<string>
 ): Promise<{ text: string; toolCalls: Array<{ name: string; input: Record<string, unknown> }> }> {
   const userKeys = await getUserKeys();
   const apiKey = userKeys.anthropic || globalAnthropicKey;
   const client = new Anthropic({ apiKey });
 
-  const response = await client.messages.create({
-    model: "claude-sonnet-4-20250514",
-    max_tokens: maxTokens,
-    ...(system ? { system } : {}),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    tools: tools as any,
-    messages: [{ role: "user", content: prompt }],
-  });
+  const MAX_ITERATIONS = 10;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const messages: any[] = [{ role: "user", content: prompt }];
+  const allToolCalls: Array<{ name: string; input: Record<string, unknown> }> = [];
 
-  const text = response.content
-    .filter(b => b.type === "text")
-    .map(b => (b as { type: "text"; text: string }).text)
-    .join("");
-
-  const toolCalls = response.content
-    .filter(b => b.type === "tool_use")
-    .map(b => {
-      const tu = b as { type: "tool_use"; name: string; input: Record<string, unknown> };
-      return { name: tu.name, input: tu.input };
+  for (let i = 0; i < MAX_ITERATIONS; i++) {
+    const response = await client.messages.create({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: maxTokens,
+      ...(system ? { system } : {}),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      tools: tools as any,
+      messages,
     });
 
-  return { text, toolCalls };
+    // Collect tool calls from this iteration
+    const iterToolCalls = response.content
+      .filter(b => b.type === "tool_use")
+      .map(b => {
+        const tu = b as { type: "tool_use"; id: string; name: string; input: Record<string, unknown> };
+        return { id: tu.id, name: tu.name, input: tu.input };
+      });
+
+    allToolCalls.push(...iterToolCalls.map(({ name, input }) => ({ name, input })));
+
+    // If no tool calls or no executor, return immediately (legacy single-call behavior)
+    if (iterToolCalls.length === 0 || !toolExecutor || response.stop_reason === "end_turn") {
+      const text = response.content
+        .filter(b => b.type === "text")
+        .map(b => (b as { type: "text"; text: string }).text)
+        .join("");
+      return { text, toolCalls: allToolCalls };
+    }
+
+    // Append the assistant's response to the conversation
+    messages.push({ role: "assistant", content: response.content });
+
+    // Execute each tool call and feed results back
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const toolResults: any[] = [];
+    for (const tc of iterToolCalls) {
+      let result: string;
+      try {
+        result = await toolExecutor(tc.name, tc.input);
+      } catch (err) {
+        result = `Error executing tool ${tc.name}: ${String(err)}`;
+      }
+      toolResults.push({
+        type: "tool_result",
+        tool_use_id: tc.id,
+        content: result,
+      });
+    }
+    messages.push({ role: "user", content: toolResults });
+  }
+
+  // Max iterations reached — return whatever text we have
+  log.error("claudeToolUse: max iterations reached", { iterations: MAX_ITERATIONS });
+  return { text: "[Agent loop reached maximum iterations]", toolCalls: allToolCalls };
 }
 
 /**

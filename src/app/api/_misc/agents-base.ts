@@ -7,11 +7,18 @@ import { executeGhostCycle } from "@/agents/ghost-mode";
 import { analyzeCompetitor } from "@/agents/war-room";
 import { requireAuth } from "@/lib/auth-guard";
 
+const VALID_AGENTS = new Set(["coder", "closer", "nurture", "prospector", "ghost", "war-room"]);
+
 /** Dynamic agent router — single endpoint for all agents */
 export async function POST(req: Request) {
   const auth = await requireAuth(); if (auth.error) return auth.error;
   const body = await req.json();
   const { agent } = body;
+
+  // Input validation
+  if (!agent || typeof agent !== "string" || !VALID_AGENTS.has(agent)) {
+    return NextResponse.json({ error: "Invalid agent specified" }, { status: 400 });
+  }
 
   try {
     switch (agent) {
@@ -28,10 +35,10 @@ export async function POST(req: Request) {
       case "war-room":
         return NextResponse.json(await analyzeCompetitor(body.companyName));
       default:
-        return NextResponse.json({ error: `Unknown agent: ${agent}` }, { status: 400 });
+        return NextResponse.json({ error: "Invalid agent specified" }, { status: 400 });
     }
   } catch (error) {
-    console.error(`[Agent ${agent}]:`, error);
+    void error; // logged by error boundary
     return NextResponse.json({ error: "Agent execution failed." }, { status: 500 });
   }
 }

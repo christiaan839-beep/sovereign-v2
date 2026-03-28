@@ -77,10 +77,20 @@ export function middleware(request: NextRequest) {
       rateLimits.set(clientId, { count: 1, resetAt: now + 60000 });
     }
 
-    // Cleanup stale entries at a low threshold to bound memory
-    if (rateLimits.size > 100) {
+    // Cleanup stale entries — cap at 500 to bound memory
+    if (rateLimits.size > 500) {
       for (const [key, val] of rateLimits) {
         if (now >= val.resetAt) rateLimits.delete(key);
+      }
+      // If still over cap after cleanup, remove oldest entries
+      if (rateLimits.size > 500) {
+        const excess = rateLimits.size - 500;
+        let removed = 0;
+        for (const key of rateLimits.keys()) {
+          if (removed >= excess) break;
+          rateLimits.delete(key);
+          removed++;
+        }
       }
     }
 
@@ -99,8 +109,9 @@ export function middleware(request: NextRequest) {
       'https://hook.us1.make.com',
       process.env.NEXT_PUBLIC_APP_URL,
     ].filter(Boolean);
-    const corsOrigin = allowedOrigins.includes(origin) ? origin : allowedOrigins[0]!;
-    response.headers.set('Access-Control-Allow-Origin', corsOrigin);
+    if (allowedOrigins.includes(origin)) {
+      response.headers.set('Access-Control-Allow-Origin', origin);
+    }
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     response.headers.set('Access-Control-Allow-Headers', 'Content-Type, x-api-key, Authorization');
 

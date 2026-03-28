@@ -68,8 +68,13 @@ export async function checkContentSafety(text: string): Promise<SafetyResult> {
       const isSafe = !content.toLowerCase().includes("unsafe") && !content.toLowerCase().includes("violation");
       return { safe: isSafe, reason: content.slice(0, 200), category: "unknown", confidence: 0.5 };
     }
-  } catch {
-    log.warn("Content safety check failed, allowing content");
-    return { safe: true, reason: "Safety check timeout", category: "none", confidence: 0 };
+  } catch (err) {
+    const isTimeout = err instanceof Error && (err.name === "AbortError" || err.message.includes("timeout"));
+    if (isTimeout) {
+      log.warn("Content safety check timed out, allowing content (best-effort)");
+      return { safe: true, reason: "Safety check timeout", category: "none", confidence: 0 };
+    }
+    log.error("Content safety check failed with non-timeout error, blocking content");
+    return { safe: false, reason: "Safety check unavailable", category: "error", confidence: 0 };
   }
 }
