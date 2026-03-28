@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 
-const WORDS = ["workforce.", "advantage.", "empire.", "future."];
+const WORDS = ["workforce.", "co-pilot.", "advantage.", "future."];
 const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%";
 const SCRAMBLE_SPEED = 30;
 const REVEAL_SPEED = 50;

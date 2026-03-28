@@ -337,12 +337,25 @@ export default function Home() {
             </span>
           </motion.h1>
 
-          {/* Subtitle — specific, not generic */}
+          {/* Subtitle — one mind, many agents */}
           <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5, duration: 0.7 }}
-            className="text-lg md:text-xl text-neutral-500 max-w-xl mx-auto leading-relaxed mb-10">
-            Describe any business goal. Agents plan, execute, and deliver.
-            No prompting. No manual work. Just results.
+            className="text-lg md:text-xl text-neutral-500 max-w-xl mx-auto leading-relaxed mb-4">
+            One interface. 132 specialized agents. 51+ models.
+            Describe any goal — they plan, execute, and deliver.
           </motion.p>
+
+          {/* Live agent activity ticker */}
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7, duration: 0.5 }}
+            className="flex items-center justify-center gap-3 mb-10 text-[11px] text-neutral-600">
+            <span className="flex items-center gap-1.5">
+              <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
+              Agents executing now
+            </span>
+            <span className="text-neutral-800">|</span>
+            <span>Multi-model reasoning</span>
+            <span className="text-neutral-800">|</span>
+            <span>Self-correcting pipelines</span>
+          </motion.div>
 
           {/* CTAs — one primary, one secondary */}
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6, duration: 0.5 }}
@@ -421,6 +434,51 @@ export default function Home() {
         <SocialProofMetrics />
       </section>
 
+      {/* ═══ INTELLIGENCE STACK — How it thinks ═══ */}
+      <GlowDivider />
+      <section className="py-20 px-6">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-14">
+            <RevealText as="p" className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">Intelligence Architecture</RevealText>
+            <RevealText as="h2" delay={0.1} className="text-3xl md:text-5xl font-bold text-white tracking-tight mb-4">One mind. Many models.</RevealText>
+            <RevealText as="p" delay={0.2} className="text-neutral-500 max-w-xl mx-auto">Every task is routed to the optimal model. If one fails, the next picks up instantly. No single point of failure.</RevealText>
+          </div>
+
+          <StaggerChildren className="grid md:grid-cols-4 gap-3" staggerDelay={0.06}>
+            {[
+              { label: "You", desc: "Describe a goal in plain English", icon: "01", accent: "white" },
+              { label: "Smart Router", desc: "Classifies task type, selects optimal model", icon: "02", accent: "emerald" },
+              { label: "Agent Team", desc: "Specialized agents execute in parallel", icon: "03", accent: "cyan" },
+              { label: "Quality Gate", desc: "NeMo Guardrails verify, score, and deliver", icon: "04", accent: "emerald" },
+            ].map((step) => (
+              <div key={step.label} className="relative group">
+                <div className="p-6 rounded-xl border border-white/[0.06] bg-white/[0.02] hover:border-emerald-500/20 transition-gpu duration-300">
+                  <div className={`text-3xl font-black font-mono mb-3 ${step.accent === "emerald" ? "text-emerald-500/20" : step.accent === "cyan" ? "text-cyan-500/20" : "text-white/10"}`}>{step.icon}</div>
+                  <div className="text-sm font-semibold text-white mb-1">{step.label}</div>
+                  <div className="text-xs text-neutral-500 leading-relaxed">{step.desc}</div>
+                </div>
+              </div>
+            ))}
+          </StaggerChildren>
+
+          {/* Failover visualization */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="mt-8 flex items-center justify-center gap-2 flex-wrap"
+          >
+            <span className="text-[10px] text-neutral-600 uppercase tracking-widest mr-2">Failover chain:</span>
+            {["Ollama (local)", "NIM (free)", "Gemini", "Claude (BYOK)"].map((model, i) => (
+              <span key={model} className="flex items-center gap-1.5">
+                <span className="text-[10px] text-neutral-500 px-2 py-0.5 rounded-full border border-white/[0.06] bg-white/[0.02]">{model}</span>
+                {i < 3 && <span className="text-neutral-700 text-xs">→</span>}
+              </span>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
       {/* ═══ WHAT IT DOES — 6 Capabilities ═══ */}
       <GlowDivider />
       <ScrollVelocitySkew>
@@ -444,6 +502,58 @@ export default function Home() {
         </div>
       </section>
       </ScrollVelocitySkew>
+
+      {/* ═══ WHY THIS IS DIFFERENT — Innovation pillars ═══ */}
+      <GlowDivider />
+      <section className="py-20 px-6 bg-[#030303]">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-14">
+            <RevealText as="p" className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">Beyond Chat</RevealText>
+            <RevealText as="h2" delay={0.1} className="text-3xl md:text-5xl font-bold text-white tracking-tight">AI that works. Not just talks.</RevealText>
+          </div>
+
+          <StaggerChildren className="grid md:grid-cols-3 gap-5" staggerDelay={0.08}>
+            {[
+              {
+                title: "Multi-Model Intelligence",
+                desc: "Not locked to one model. The smart router picks from 51+ models per task — DeepSeek for reasoning, Qwen for multilingual, Llama 4 for long documents. Each query gets the best mind for the job.",
+                highlight: "51+ models",
+              },
+              {
+                title: "Agent Teams That Debate",
+                desc: "Complex problems get multiple specialists analyzing in parallel. A Devil's Advocate challenges every conclusion. The lead agent synthesizes into a battle-tested plan.",
+                highlight: "Adversarial synthesis",
+              },
+              {
+                title: "Autonomous Execution",
+                desc: "Agents don't just generate text — they open browsers, send emails, qualify leads, book meetings, and deploy code. Real-world actions, not clipboard fodder.",
+                highlight: "Real actions",
+              },
+              {
+                title: "Cross-Agent Learning",
+                desc: "When the SEO agent finds a keyword opportunity, the content agent knows immediately. When a lead is qualified, the email agent starts the sequence. Intelligence flows between agents.",
+                highlight: "Shared intelligence",
+              },
+              {
+                title: "5-Layer Safety",
+                desc: "NeMo Guardrails: jailbreak detection, topic control, PII scanning, hallucination detection, and content moderation. Every input and output passes through five safety gates.",
+                highlight: "Enterprise-grade",
+              },
+              {
+                title: "$0 Local Execution",
+                desc: "Run everything on your own hardware via Ollama. Your data never leaves your network. No API costs. No cloud dependency. Full sovereignty over your AI infrastructure.",
+                highlight: "Air-gapped ready",
+              },
+            ].map((item) => (
+              <div key={item.title} className="p-7 rounded-2xl border border-white/[0.06] bg-white/[0.02] hover:border-emerald-500/15 transition-gpu duration-500 group">
+                <div className="text-[10px] text-emerald-500/60 uppercase tracking-widest mb-3 font-semibold">{item.highlight}</div>
+                <h3 className="text-base font-semibold text-white mb-2">{item.title}</h3>
+                <p className="text-sm text-neutral-500 leading-relaxed">{item.desc}</p>
+              </div>
+            ))}
+          </StaggerChildren>
+        </div>
+      </section>
 
       {/* ═══ HOW IT WORKS — 3-step flow ═══ */}
       <GlowDivider />
