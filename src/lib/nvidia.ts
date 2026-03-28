@@ -17,6 +17,13 @@ const FAILOVER_MODELS = [
   "mistralai/mistral-nemotron",
 ];
 
+// Open-source TTS models available via NIM or self-hosted
+export const TTS_MODELS = {
+  parakeet: "nvidia/parakeet-tdt-0.6b-v2",   // NVIDIA ASR (speech-to-text)
+  kokoro: "kokoro-82m",                       // 82M param TTS — self-hosted via Ollama
+  chatterbox: "resemble-ai/chatterbox",       // Zero-shot voice cloning — MIT license
+} as const;
+
 /**
  * Retrieve the NVIDIA NIM API key — checks BYOK vault first, falls back to env.
  * Exported as getNimKey for use by agent routes that have their own fetch logic.

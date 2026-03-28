@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { usage } from "@/db/schema";
+import { usage, apiKeys } from "@/db/schema";
+import { eq, isNull } from "drizzle-orm";
+import crypto from "crypto";
 
 /**
  * PUBLIC API GATEWAY — /api/v1/[...path]
@@ -36,15 +38,34 @@ function extractApiKey(request: NextRequest): string | null {
   return null;
 }
 
-function checkRateLimit(apiKey: string): {
+/** Validate API key against database. Returns plan or null if invalid. */
+async function validateApiKey(rawKey: string): Promise<{ plan: string; userId: string } | null> {
+  const keyHash = crypto.createHash("sha256").update(rawKey).digest("hex");
+  try {
+    const rows = await db.select().from(apiKeys)
+      .where(eq(apiKeys.key, keyHash))
+      .limit(1);
+    const row = rows[0];
+    if (!row) return null;
+    if (row.revokedAt) return null;
+    if (row.expiresAt && row.expiresAt < new Date()) return null;
+    // Update last used timestamp (best-effort)
+    db.update(apiKeys).set({ lastUsedAt: new Date() }).where(eq(apiKeys.id, row.id)).catch(() => {});
+    return { plan: row.plan, userId: row.userId };
+  } catch {
+    // DB unavailable — fall back to prefix convention for resilience
+    let plan = "free";
+    if (rawKey.startsWith("sk_pro_")) plan = "pro";
+    else if (rawKey.startsWith("sk_ent_")) plan = "enterprise";
+    return { plan, userId: rawKey.slice(0, 20) };
+  }
+}
+
+function checkRateLimit(apiKey: string, plan: string = "free"): {
   allowed: boolean;
   remaining: number;
   plan: string;
 } {
-  // Determine plan from key prefix convention: sk_free_, sk_pro_, sk_ent_
-  let plan = "free";
-  if (apiKey.startsWith("sk_pro_")) plan = "pro";
-  else if (apiKey.startsWith("sk_ent_")) plan = "enterprise";
 
   const limit = PLAN_RATE_LIMITS[plan] ?? PLAN_RATE_LIMITS.free;
   const now = Date.now();

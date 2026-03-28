@@ -108,17 +108,18 @@ export default function LeadsDashboard() {
                   <h2 className="text-sm font-bold uppercase tracking-widest text-white mb-6 flex items-center gap-2">
                       <Target className="w-4 h-4 text-electric" /> Command Sweep
                   </h2>
-                  <form onSubmit={executeSweep} className="space-y-4">
+                  <form onSubmit={executeSweep} aria-label="Lead sweep configuration" className="space-y-4">
                        <div>
                            <label className="text-[10px] text-stone-400 uppercase tracking-widest mb-2 block font-mono">Target Niche</label>
                            <div className="relative">
                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                    <Building2 className="w-4 h-4 text-stone-500" />
                                </div>
-                               <input 
+                               <input
                                    type="text" required
                                    value={niche} onChange={e => setNiche(e.target.value)}
                                    placeholder="e.g., Roofers, Dentists, Med Spas"
+                                   aria-label="Target niche"
                                    className="w-full bg-onyx/50 border border-glass-border rounded-lg pl-10 pr-4 py-3 text-sm text-white focus:border-electric transition-colors"
                                />
                            </div>
@@ -129,16 +130,18 @@ export default function LeadsDashboard() {
                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                    <MapPin className="w-4 h-4 text-stone-500" />
                                </div>
-                               <input 
+                               <input
                                    type="text" required
                                    value={location} onChange={e => setLocation(e.target.value)}
                                    placeholder="e.g., Austin TX, London UK"
+                                   aria-label="Target geo-location"
                                    className="w-full bg-onyx/50 border border-glass-border rounded-lg pl-10 pr-4 py-3 text-sm text-white focus:border-electric transition-colors"
                                />
                            </div>
                        </div>
-                       <button 
+                       <button
                            type="submit" disabled={isSweeping || !niche || !location}
+                           aria-label={isSweeping ? "Sweep in progress" : "Execute lead sweep"}
                            className="w-full mt-4 bg-gradient-to-r from-[#00B7FF] to-electric text-white font-bold py-3.5 rounded-lg flex items-center justify-center gap-2 uppercase tracking-widest text-xs disabled:opacity-50 transition-gpu hover:shadow-[0_0_20px_rgba(0,183,255,0.3)]"
                        >
                            {isSweeping ? <><Loader2 className="w-4 h-4 animate-spin" /> Sweeping Sector...</> : <><Search className="w-4 h-4" /> Execute Sweep</>}
@@ -152,7 +155,7 @@ export default function LeadsDashboard() {
                         <Activity className="w-3 h-3 text-emerald-500 animate-pulse" />
                         <span className="text-[10px] uppercase font-mono text-emerald-500/80 tracking-widest">Prospector Telemetry</span>
                    </div>
-                   <div className="p-4 font-mono text-xs overflow-y-auto space-y-2 text-stone-400 h-full">
+                   <div className="p-4 font-mono text-xs overflow-y-auto space-y-2 text-stone-400 h-full" aria-live="polite" aria-label="Sweep telemetry logs">
                         {logs.length === 0 && <span className="text-stone-600">Awaiting sweep parameters...</span>}
                         {logs.map((log, i) => (
                              <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} key={i} className="flex gap-2">
@@ -184,7 +187,7 @@ export default function LeadsDashboard() {
                     )}
                </div>
 
-               <div className="flex-1 overflow-y-auto p-6 bg-onyx/10">
+               <div className="flex-1 overflow-y-auto p-6 bg-onyx/10" aria-live="polite" aria-label="Acquired targets results">
                     {!isSweeping && reports.length === 0 && (
                          <div className="h-full flex flex-col items-center justify-center text-center text-stone-500 space-y-4">
                              <Search className="w-12 h-12 text-stone-700" />
@@ -264,13 +267,14 @@ export default function LeadsDashboard() {
                                           <div className="flex items-center justify-between mb-3 border-b border-stone-800 pb-2">
                                               <span className="text-[10px] text-electric uppercase tracking-widest flex items-center gap-1"><Zap className="w-3 h-3" /> Generated Outreach Script</span>
                                               <div className="flex gap-3">
-                                                <button 
+                                                <button
                                                   onClick={() => router.push(`/dashboard/voice-assistant?phone=${encodeURIComponent(report.phone || '')}&context=${encodeURIComponent(`Offer: Free SEO Audit + Review Sweeper based on diagnosis: ${report.detected_gap}`)}`)}
+                                                  aria-label={`Deploy voice swarm for ${report.business_name}`}
                                                   className="text-[10px] text-emerald-400 hover:text-emerald-300 font-bold uppercase transition-colors flex items-center gap-1"
                                                 >
                                                   <Phone className="w-3 h-3" /> Deploy Voice Swarm
                                                 </button>
-                                                <button className="text-[10px] text-stone-500 hover:text-white transition-colors flex items-center gap-1">Push to Nexus <ArrowRight className="w-3 h-3" /></button>
+                                                <button aria-label={`Push ${report.business_name} to Nexus`} className="text-[10px] text-stone-500 hover:text-white transition-colors flex items-center gap-1">Push to Nexus <ArrowRight className="w-3 h-3" /></button>
                                               </div>
                                           </div>
                                           <div className="text-xs text-stone-300 space-y-2">

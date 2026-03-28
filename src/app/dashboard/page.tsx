@@ -139,6 +139,7 @@ function DiscoverSection() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: i * 0.06, ease: "easeOut" }}
               onClick={() => router.push(card.href)}
+              aria-label={`${card.title}: ${card.description}`}
               className={`group relative bg-gradient-to-br ${card.accent} border border-white/[0.06] ${card.border} rounded-xl p-3.5 text-left transition-gpu duration-200 hover:scale-[1.02] backdrop-blur-sm`}
             >
               <div className="flex items-start justify-between mb-1.5">
@@ -214,6 +215,7 @@ export default function DashboardHome() {
                 <button
                   key={action.title}
                   onClick={() => handleQuickAction(action)}
+                  aria-label={`${action.title}: ${action.description}`}
                   className={`group relative bg-gradient-to-br ${action.gradient} border border-white/[0.06] rounded-xl p-4 text-left transition-gpu duration-200 hover:border-white/[0.15] hover:scale-[1.02]`}
                 >
                   <div className="flex items-start justify-between">
@@ -233,6 +235,7 @@ export default function DashboardHome() {
             <div className="max-w-2xl mx-auto flex justify-center">
               <button
                 onClick={dismissWelcome}
+                aria-label="Skip welcome introduction"
                 className="text-xs text-neutral-600 hover:text-neutral-400 transition-colors"
               >
                 Skip intro

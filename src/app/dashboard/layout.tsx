@@ -194,6 +194,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <Link
             href={item.href}
             title={item.label}
+            aria-label={item.label}
             onClick={onNavigate}
             className={`flex items-center justify-center w-10 h-10 mx-auto rounded-lg transition-gpu duration-150 ${
               active
@@ -248,6 +249,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <div key={group.label}>
                 <button
                   onClick={() => toggleGroup(group.label)}
+                  aria-expanded={isOpen}
+                  aria-label={`${isOpen ? "Collapse" : "Expand"} ${group.label} section`}
                   className={`w-full flex items-center gap-2 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] rounded-md transition-colors ${
                     hasActive
                       ? "text-neutral-300"
@@ -321,6 +324,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* === DESKTOP SIDEBAR === */}
         <aside
+          role="navigation"
+          aria-label="Main sidebar"
           className={`hidden ${isHome ? "lg:hidden" : "lg:flex"} ${
             sidebarExpanded ? "w-[240px]" : "w-16"
           } border-r border-[#111111] bg-[#050505] flex-col shrink-0 overflow-hidden relative z-10 transition-gpu duration-300`}
@@ -350,6 +355,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 onClick={() => setSidebarExpanded(false)}
                 className="p-1 rounded-md text-neutral-500 hover:text-white hover:bg-white/5 transition-colors"
                 title="Collapse sidebar"
+                aria-label="Collapse sidebar"
               >
                 <PanelLeftClose className="w-4 h-4" />
               </button>
@@ -401,6 +407,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 onClick={() => setSidebarExpanded(true)}
                 className="p-1.5 rounded-lg text-neutral-500 hover:text-white hover:bg-white/5 transition-colors"
                 title="Expand sidebar"
+                aria-label="Expand sidebar"
               >
                 <PanelLeftOpen className="w-4 h-4" />
               </button>
@@ -409,7 +416,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </aside>
 
         {/* === MAIN CONTENT === */}
-        <main className="flex-1 overflow-y-auto bg-[#000000] relative z-10 custom-scrollbar">
+        <main role="main" className="flex-1 overflow-y-auto bg-[#000000] relative z-10 custom-scrollbar">
           <div className="relative z-10 w-full min-h-full max-w-[1600px] mx-auto">
             {/* Breadcrumb Bar */}
             {!isHome && pageLabel && (
@@ -450,6 +457,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* === MOBILE BOTTOM NAV === */}
         <nav
+          aria-label="Mobile navigation"
           className={`${
             isHome ? "hidden" : "lg:hidden"
           } fixed bottom-6 left-6 right-6 z-50 bg-[#0A0A0A] border border-white/10 rounded-2xl flex items-center justify-around p-3 shadow-2xl`}
@@ -487,6 +495,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </Link>
           <button
             onClick={() => setMobileMenuOpen(true)}
+            aria-label="Open navigation menu"
+            aria-expanded={mobileMenuOpen}
             className="flex flex-col items-center gap-1.5 text-neutral-500"
           >
             <Menu className="w-5 h-5" />
@@ -498,6 +508,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <AnimatePresence>
           {mobileMenuOpen && (
             <motion.div
+              role="dialog"
+              aria-label="Navigation menu"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
@@ -509,6 +521,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </span>
                 <button
                   onClick={() => setMobileMenuOpen(false)}
+                  aria-label="Close navigation menu"
                   className="p-2 text-neutral-400 hover:text-white"
                 >
                   <X className="w-5 h-5" />

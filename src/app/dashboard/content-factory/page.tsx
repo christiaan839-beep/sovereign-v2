@@ -173,10 +173,13 @@ export default function ContentFactoryPage() {
       </div>
 
       {/* Tab Bar */}
-      <div className="flex gap-2 p-1 bg-black/40 rounded-xl border border-[#00B7FF]/10 backdrop-blur-xl">
+      <div className="flex gap-2 p-1 bg-black/40 rounded-xl border border-[#00B7FF]/10 backdrop-blur-xl" role="tablist" aria-label="Content type selector">
         {TABS.map((tab) => (
           <button
             key={tab.id}
+            role="tab"
+            aria-selected={activeTab === tab.id}
+            aria-label={tab.label}
             onClick={() => {
               setActiveTab(tab.id);
               setResult(null);

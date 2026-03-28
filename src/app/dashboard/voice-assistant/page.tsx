@@ -171,13 +171,15 @@ export default function VoiceAssistantPage() {
             onClick={() => setVoiceEnabled(!voiceEnabled)}
             className="p-3 rounded-xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] transition-colors"
             title={voiceEnabled ? "Mute voice responses" : "Enable voice responses"}
+            aria-label={voiceEnabled ? "Mute voice responses" : "Enable voice responses"}
+            aria-pressed={voiceEnabled}
           >
             {voiceEnabled ? <Volume2 className="w-4 h-4 text-[#00B7FF]" /> : <VolumeX className="w-4 h-4 text-neutral-500" />}
           </button>
         </div>
 
         {/* Chat Messages */}
-        <div className="space-y-4 mb-8 min-h-[400px] max-h-[60vh] overflow-y-auto pr-2">
+        <div className="space-y-4 mb-8 min-h-[400px] max-h-[60vh] overflow-y-auto pr-2" role="log" aria-label="Chat messages" aria-live="polite">
           {messages.length === 0 && (
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <div className="w-16 h-16 rounded-2xl bg-[#00B7FF]/10 border border-[#00B7FF]/20 flex items-center justify-center mb-6">
@@ -255,7 +257,7 @@ export default function VoiceAssistantPage() {
 
         {/* Error */}
         {error && (
-          <div className="mb-4 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-sm text-red-400">
+          <div role="alert" className="mb-4 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-sm text-red-400">
             {error}
           </div>
         )}
@@ -267,6 +269,8 @@ export default function VoiceAssistantPage() {
             <button
               onClick={listening ? stopListening : startListening}
               disabled={thinking}
+              aria-label={listening ? "Stop listening" : "Start listening"}
+              aria-pressed={listening}
               className={`relative w-14 h-14 rounded-2xl flex items-center justify-center transition-gpu shrink-0 ${
                 listening
                   ? "bg-red-500/20 border-2 border-red-500/40 shadow-[0_0_30px_rgba(239,68,68,0.2)]"
@@ -292,11 +296,13 @@ export default function VoiceAssistantPage() {
                 onChange={e => setTextInput(e.target.value)}
                 placeholder={listening ? "Listening..." : "Or type your message..."}
                 disabled={thinking}
+                aria-label="Type a message to the voice assistant"
                 className="flex-1 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-[#00B7FF]/30 transition-colors disabled:opacity-50"
               />
               <button
                 type="submit"
                 disabled={!textInput.trim() || thinking}
+                aria-label="Send message"
                 className="px-5 py-3 rounded-xl bg-[#00B7FF]/10 border border-[#00B7FF]/20 text-sm font-semibold text-[#00B7FF] hover:bg-[#00B7FF]/20 transition-colors disabled:opacity-30"
               >
                 Send
@@ -307,6 +313,7 @@ export default function VoiceAssistantPage() {
             {speaking && (
               <button
                 onClick={stopSpeaking}
+                aria-label="Stop speaking"
                 className="w-14 h-14 rounded-2xl bg-amber-500/10 border-2 border-amber-500/20 flex items-center justify-center shrink-0"
               >
                 <VolumeX className="w-5 h-5 text-amber-400" />

@@ -44,7 +44,7 @@ export const settings = pgTable("settings", {
 
 export const scheduledContent = pgTable("scheduled_content", {
   id: uuid("id").primaryKey().defaultRandom(),
-  tenantId: uuid("tenant_id").references(() => tenants.id),
+  tenantId: uuid("tenant_id").references(() => tenants.id), // nullable — some routes don't have tenant context
   topic: text("topic").notNull(),
   caption: text("caption"),
   platform: text("platform").notNull().default("instagram"), // instagram, youtube, tiktok
@@ -92,7 +92,10 @@ export const bookings = pgTable("bookings", {
   qualificationNotes: text("qualification_notes"), // AI agent's notes from the conversation
   source: text("source").default("website"), // website, instagram, whatsapp, manual
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => [
+  index("idx_bookings_user").on(table.userEmail),
+  index("idx_bookings_date").on(table.date),
+]);
 
 export const leads = pgTable("leads", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -271,13 +274,16 @@ export const subscriptions = pgTable("subscriptions", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: text("user_id").notNull(),
   stripeCustomerId: text("stripe_customer_id"),
-  stripeSubscriptionId: text("stripe_subscription_id"),
+  stripeSubscriptionId: text("stripe_subscription_id").unique(),
   plan: text("plan").notNull().default("free"),
   status: text("status").notNull().default("active"),
   currentPeriodEnd: timestamp("current_period_end"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (table) => [
+  index("idx_subscriptions_user").on(table.userId),
+  index("idx_subscriptions_stripe").on(table.stripeCustomerId),
+]);
 
 // ═══════════════════════════════════════════
 // Team / Organization Workspaces
@@ -349,4 +355,24 @@ export const agentActivity = pgTable("agent_activity", {
   isRead: boolean("is_read").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+// ═══════════════════════════════════════════
+// API Keys — validated against DB, not prefix
+// ═══════════════════════════════════════════
+
+export const apiKeys = pgTable("api_keys", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull(),
+  key: text("key").notNull().unique(),          // hashed API key
+  keyPrefix: text("key_prefix").notNull(),      // first 8 chars for display (sk_pro_ab)
+  plan: text("plan").notNull().default("free"), // free, pro, enterprise
+  label: text("label"),                         // user-defined label
+  lastUsedAt: timestamp("last_used_at"),
+  expiresAt: timestamp("expires_at"),           // null = never expires
+  revokedAt: timestamp("revoked_at"),           // null = active
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_api_keys_key").on(table.key),
+  index("idx_api_keys_user").on(table.userId),
+]);
 

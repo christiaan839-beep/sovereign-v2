@@ -169,6 +169,72 @@ async function claudeText(prompt: string, system?: string, maxTokens: number = 2
   return textBlock && textBlock.type === "text" ? (textBlock as { type: "text"; text: string }).text : "";
 }
 
+/**
+ * claudeWithCitations — Claude response with source citations.
+ * Pass documents as content blocks; Claude returns text with citation references.
+ * Used by research agents for verifiable, source-grounded output.
+ */
+async function claudeWithCitations(
+  prompt: string,
+  documents: Array<{ title: string; content: string }>,
+  system?: string,
+  maxTokens: number = 4000
+): Promise<{ text: string; citations: Array<{ cited_text: string; document_title: string }> }> {
+  const keys = await getUserKeys();
+  const apiKey = keys.anthropic || globalAnthropicKey;
+
+  const client = new Anthropic({
+    apiKey,
+    defaultHeaders: { "anthropic-beta": "citations-2025-01-24" }
+  });
+
+  // Build document content blocks
+  const documentBlocks = documents.map((doc) => ({
+    type: "document" as const,
+    source: {
+      type: "text" as const,
+      media_type: "text/plain" as const,
+      data: doc.content,
+    },
+    title: doc.title,
+    citations: { enabled: true },
+  }));
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const response = await (client.messages.create as any)({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: maxTokens,
+    ...(system ? { system } : {}),
+    messages: [{
+      role: "user",
+      content: [...documentBlocks, { type: "text", text: prompt }],
+    }],
+  });
+
+  // Extract text and citations from response
+  let fullText = "";
+  const citations: Array<{ cited_text: string; document_title: string }> = [];
+
+  for (const block of response.content) {
+    if (block.type === "text") {
+      fullText += block.text;
+      // Extract citation references if present
+      if ("citations" in block && Array.isArray(block.citations)) {
+        for (const cite of block.citations) {
+          if (cite.cited_text) {
+            citations.push({
+              cited_text: cite.cited_text,
+              document_title: cite.document_title || "Unknown",
+            });
+          }
+        }
+      }
+    }
+  }
+
+  return { text: fullText, citations };
+}
+
 async function groqText(prompt: string, system?: string, maxTokens: number = 2000, userKeys: { groq?: string } = {}, modelTarget: string = "groq"): Promise<string> {
   const keys = Object.keys(userKeys).length > 0 ? userKeys : await getUserKeys();
   const apiKey = keys.groq || globalGroqKey;
@@ -372,8 +438,10 @@ export async function adaptive_ai(prompt: string, options: AIOptions = {}): Prom
 export async function embed(text: string): Promise<number[]> {
   const userKeys = await getUserKeys();
   const client = userKeys.gemini ? new GoogleGenerativeAI(userKeys.gemini) : globalGenAI;
-  
+
   const model = client.getGenerativeModel({ model: "text-embedding-004" });
   const result = await model.embedContent(text);
   return result.embedding.values;
 }
+
+export { claudeWithCitations };

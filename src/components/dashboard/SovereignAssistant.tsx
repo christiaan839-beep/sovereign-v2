@@ -33,8 +33,17 @@ const SUGGESTIONS = [
 
 // ── Lightweight chat hook for the floating widget only ──
 
+const CHAT_STORAGE_KEY = "sovereign-chat-history";
+const MAX_PERSISTED_MESSAGES = 50;
+
 function useWidgetChat() {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const saved = localStorage.getItem(CHAT_STORAGE_KEY);
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -42,6 +51,16 @@ function useWidgetChat() {
   const abortRef = useRef<AbortController | null>(null);
   const streamBufferRef = useRef<string>("");
   const flushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Persist chat history to localStorage
+  useEffect(() => {
+    if (messages.length > 0) {
+      try {
+        const toSave = messages.slice(-MAX_PERSISTED_MESSAGES);
+        localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(toSave));
+      } catch { /* quota exceeded — silently skip */ }
+    }
+  }, [messages]);
 
   useEffect(() => {
     if (scrollRef.current) {
