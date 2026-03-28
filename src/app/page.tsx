@@ -19,6 +19,7 @@ import { RevealText, ScaleOnScroll, MagneticButton, StaggerChildren, GlowDivider
 import { TextDecrypt } from "@/components/cinematic/TextDecrypt";
 import { ScrollVelocitySkew, ClipReveal } from "@/components/cinematic/ScrollVelocity";
 import { ParticleBurst } from "@/components/cinematic/ParticleBurst";
+import { Typewriter, GradientFollower, Tilt3D, AnimatedCounter } from "@/components/cinematic/InteractiveEffects";
 import dynamic from "next/dynamic";
 import { TextMorph } from "@/components/ui/TextMorph";
 
@@ -27,29 +28,25 @@ const HeroParticles = dynamic(() => import("@/components/ui/HeroParticles").then
 // ─── Capability Card (enhanced with emerald hover glow) ───
 function CapabilityCard({ icon: Icon, title, desc, accent, href }: { icon: React.ComponentType<{ className?: string }>; title: string; desc: string; accent: string; href?: string }) {
   const content = (
-    <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-50px" }}
-      transition={{ duration: 0.5 }}
-      className="group relative cursor-pointer"
-    >
-      <div className="relative p-8 rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl hover:border-emerald-500/20 transition-gpu duration-500 overflow-hidden hover:shadow-[0_0_40px_rgba(16,185,129,0.06)] hover:bg-white/[0.04]">
-        {/* Hover glow */}
-        <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 bg-gradient-to-br ${accent} to-transparent`} />
+    <Tilt3D maxTilt={6} scale={1.01}>
+      <div className="group relative cursor-pointer">
+        <div className="relative p-8 rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl hover:border-emerald-500/20 transition-gpu duration-500 overflow-hidden hover:shadow-[0_0_40px_rgba(16,185,129,0.06)] hover:bg-white/[0.04]">
+          {/* Hover glow */}
+          <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 bg-gradient-to-br ${accent} to-transparent`} />
 
-        <div className="relative z-10">
-          <div className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center mb-5 group-hover:border-emerald-500/20 transition-colors">
-            <Icon className="w-5 h-5 text-neutral-400 group-hover:text-emerald-400 transition-colors" />
-          </div>
-          <h3 className="text-base font-semibold text-white mb-2">{title}</h3>
-          <p className="text-sm text-neutral-500 leading-relaxed">{desc}</p>
-          <div className="mt-4 flex items-center gap-1 text-[10px] text-emerald-500/50 uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-opacity">
-            Try it <ArrowRight className="w-3 h-3" />
+          <div className="relative z-10">
+            <div className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center mb-5 group-hover:border-emerald-500/20 transition-colors">
+              <Icon className="w-5 h-5 text-neutral-400 group-hover:text-emerald-400 transition-colors" />
+            </div>
+            <h3 className="text-base font-semibold text-white mb-2">{title}</h3>
+            <p className="text-sm text-neutral-500 leading-relaxed">{desc}</p>
+            <div className="mt-4 flex items-center gap-1 text-[10px] text-emerald-500/50 uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-opacity">
+              Try it <ArrowRight className="w-3 h-3" />
+            </div>
           </div>
         </div>
       </div>
-    </motion.div>
+    </Tilt3D>
   );
   return href ? <Link href={href}>{content}</Link> : content;
 }
@@ -202,7 +199,9 @@ function InteractiveDemo() {
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                   <span className="text-[10px] text-emerald-500/70 font-medium uppercase tracking-wider">{scenario.agent}</span>
                 </div>
-                <p className="text-sm text-neutral-300 leading-relaxed mb-3">{scenario.response}</p>
+                <p className="text-sm text-neutral-300 leading-relaxed mb-3">
+                  <Typewriter key={scenario.id} text={scenario.response} speed={15} />
+                </p>
                 <div className="flex flex-wrap gap-2">
                   {scenario.badges.map((b, i) => (
                     <span key={i} className={`text-[10px] px-2 py-1 rounded-md ${
@@ -506,7 +505,7 @@ export default function Home() {
       {/* ═══ WHY THIS IS DIFFERENT — Innovation pillars ═══ */}
       <GlowDivider />
       <section className="py-20 px-6 bg-[#030303]">
-        <div className="max-w-5xl mx-auto">
+        <GradientFollower className="max-w-5xl mx-auto" color="rgba(16, 185, 129, 0.04)" size={700}>
           <div className="text-center mb-14">
             <RevealText as="p" className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">Beyond Chat</RevealText>
             <RevealText as="h2" delay={0.1} className="text-3xl md:text-5xl font-bold text-white tracking-tight">AI that works. Not just talks.</RevealText>
@@ -552,7 +551,7 @@ export default function Home() {
               </div>
             ))}
           </StaggerChildren>
-        </div>
+        </GradientFollower>
       </section>
 
       {/* ═══ HOW IT WORKS — 3-step flow ═══ */}
@@ -733,18 +732,27 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-            {[
-              { metric: "132", label: "Specialized Agents", desc: "Purpose-built for specific business functions." },
-              { metric: "51+", label: "Open-Source Models", desc: "Automatic failover. Zero vendor lock-in." },
-              { metric: "$0", label: "Per-Token Cost", desc: "Scale inference without scaling your bill." },
-            ].map((item, i) => (
-              <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }} transition={{ delay: i * 0.1 }} className="text-center">
-                <div className="text-5xl md:text-6xl font-black text-white mb-2 tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-white to-neutral-400">{item.metric}</div>
-                <div className="text-sm font-semibold text-white mb-1">{item.label}</div>
-                <p className="text-xs text-neutral-500">{item.desc}</p>
-              </motion.div>
-            ))}
+            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center">
+              <div className="text-5xl md:text-6xl font-black mb-2 tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-white to-neutral-400">
+                <AnimatedCounter target={132} duration={2} />
+              </div>
+              <div className="text-sm font-semibold text-white mb-1">Specialized Agents</div>
+              <p className="text-xs text-neutral-500">Purpose-built for specific business functions.</p>
+            </motion.div>
+            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 }} className="text-center">
+              <div className="text-5xl md:text-6xl font-black mb-2 tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-white to-neutral-400">
+                <AnimatedCounter target={51} suffix="+" duration={1.5} />
+              </div>
+              <div className="text-sm font-semibold text-white mb-1">Open-Source Models</div>
+              <p className="text-xs text-neutral-500">Automatic failover. Zero vendor lock-in.</p>
+            </motion.div>
+            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }} className="text-center">
+              <div className="text-5xl md:text-6xl font-black mb-2 tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-white to-neutral-400">
+                $<AnimatedCounter target={0} duration={0.5} />
+              </div>
+              <div className="text-sm font-semibold text-white mb-1">Per-Token Cost</div>
+              <p className="text-xs text-neutral-500">Scale inference without scaling your bill.</p>
+            </motion.div>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
