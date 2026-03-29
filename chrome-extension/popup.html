@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sovereign Matrix</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      width: 380px;
+      min-height: 520px;
+      background: #010101;
+      color: #e5e5e5;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .header {
+      padding: 20px 16px 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #059669, #10b981);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 16px;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .header-text h1 {
+      font-size: 15px;
+      font-weight: 600;
+      color: #f5f5f5;
+    }
+
+    .header-text p {
+      font-size: 11px;
+      color: #737373;
+    }
+
+    .section {
+      padding: 12px 16px;
+    }
+
+    .api-key-row {
+      display: flex;
+      gap: 8px;
+      padding: 10px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .api-key-row input {
+      flex: 1;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 6px;
+      padding: 7px 10px;
+      color: #e5e5e5;
+      font-size: 12px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .api-key-row input:focus {
+      border-color: #10b981;
+    }
+
+    .api-key-row input::placeholder {
+      color: #525252;
+    }
+
+    .btn-save {
+      background: rgba(16,185,129,0.15);
+      color: #34d399;
+      border: 1px solid rgba(16,185,129,0.25);
+      border-radius: 6px;
+      padding: 7px 12px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-save:hover {
+      background: rgba(16,185,129,0.25);
+    }
+
+    .url-display {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 12px;
+      color: #a3a3a3;
+      word-break: break-all;
+      margin-bottom: 12px;
+    }
+
+    .url-display span {
+      color: #10b981;
+      font-weight: 500;
+    }
+
+    .btn-primary {
+      width: 100%;
+      background: linear-gradient(135deg, #059669, #10b981);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 11px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      letter-spacing: 0.01em;
+    }
+
+    .btn-primary:hover { opacity: 0.9; }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .quick-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .quick-btn {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 8px;
+      padding: 10px 8px;
+      text-align: center;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+      color: #d4d4d4;
+    }
+
+    .quick-btn:hover {
+      background: rgba(16,185,129,0.08);
+      border-color: rgba(16,185,129,0.2);
+    }
+
+    .quick-btn .icon {
+      font-size: 18px;
+      margin-bottom: 4px;
+    }
+
+    .quick-btn .label {
+      font-size: 10px;
+      font-weight: 500;
+      color: #a3a3a3;
+    }
+
+    .results {
+      padding: 12px 16px;
+      display: none;
+    }
+
+    .results.visible { display: block; }
+
+    .results-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .results-header h3 {
+      font-size: 12px;
+      font-weight: 600;
+      color: #a3a3a3;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .btn-clear {
+      background: none;
+      border: none;
+      color: #525252;
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    .btn-clear:hover { color: #a3a3a3; }
+
+    .results-content {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 12px;
+      color: #d4d4d4;
+      line-height: 1.6;
+      max-height: 200px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+
+    .results-content::-webkit-scrollbar { width: 4px; }
+    .results-content::-webkit-scrollbar-track { background: transparent; }
+    .results-content::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+    .loading {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #10b981;
+      font-size: 12px;
+    }
+
+    .spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(16,185,129,0.2);
+      border-top-color: #10b981;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .footer {
+      padding: 12px 16px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .footer a {
+      color: #10b981;
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .footer a:hover { text-decoration: underline; }
+
+    .footer .version {
+      font-size: 10px;
+      color: #404040;
+    }
+
+    .error {
+      color: #f87171;
+      font-size: 12px;
+      margin-top: 8px;
+      display: none;
+    }
+
+    .error.visible { display: block; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">S</div>
+    <div class="header-text">
+      <h1>Sovereign Matrix</h1>
+      <p>132 AI Agents at Your Command</p>
+    </div>
+  </div>
+
+  <div class="api-key-row">
+    <input type="password" id="apiKey" placeholder="Enter API key..." />
+    <button class="btn-save" id="saveKey">Save</button>
+  </div>
+
+  <div class="section">
+    <div class="url-display">
+      <span>Target:</span> <span id="currentUrl">Detecting...</span>
+    </div>
+
+    <button class="btn-primary" id="analyzeBtn">Analyze This Page</button>
+
+    <div class="error" id="error"></div>
+
+    <div class="quick-actions">
+      <div class="quick-btn" data-action="seo-audit">
+        <div class="icon">&#x1F50D;</div>
+        <div class="label">SEO Audit</div>
+      </div>
+      <div class="quick-btn" data-action="market-intel">
+        <div class="icon">&#x1F4CA;</div>
+        <div class="label">Market Intel</div>
+      </div>
+      <div class="quick-btn" data-action="content-ideas">
+        <div class="icon">&#x1F4A1;</div>
+        <div class="label">Content Ideas</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="results" id="results">
+    <div class="results-header">
+      <h3>Agent Response</h3>
+      <button class="btn-clear" id="clearResults">Clear</button>
+    </div>
+    <div class="results-content" id="resultsContent"></div>
+  </div>
+
+  <div class="footer">
+    <a href="https://sovereignmatrix.agency/dashboard" target="_blank">Open Dashboard &rarr;</a>
+    <span class="version">v1.0.0</span>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

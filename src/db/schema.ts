@@ -357,6 +357,21 @@ export const agentActivity = pgTable("agent_activity", {
 });
 
 // ═══════════════════════════════════════════
+// Tenant Memory — persistent agent execution history
+// ═══════════════════════════════════════════
+
+export const tenantMemories = pgTable("tenant_memories", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull(),
+  agentName: text("agent_name").notNull(),
+  inputSummary: text("input_summary"),
+  outputSummary: text("output_summary"),
+  tags: text("tags"),
+  metadata: text("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// ═══════════════════════════════════════════
 // API Keys — validated against DB, not prefix
 // ═══════════════════════════════════════════
 

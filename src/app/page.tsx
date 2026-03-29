@@ -343,10 +343,28 @@ export default function Home() {
 
           {/* Subtitle — one mind, many agents */}
           <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5, duration: 0.7 }}
-            className="text-lg md:text-xl text-neutral-500 max-w-xl mx-auto leading-relaxed mb-4">
-            One interface. 132 specialized agents. 51+ models.
-            Describe any goal — they plan, execute, and deliver.
+            className="text-lg md:text-xl max-w-xl mx-auto leading-relaxed mb-6">
+            <span className="text-neutral-400">One interface. </span>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">132 specialized agents. 51+ models.</span>
+            <br className="hidden sm:block" />
+            <span className="text-neutral-500">Describe any goal — they plan, execute, and deliver.</span>
           </motion.p>
+
+          {/* Stats row — immediate social proof */}
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6, duration: 0.5 }}
+            className="flex items-center justify-center gap-6 mb-8">
+            {[
+              { value: "132", label: "Agents" },
+              { value: "51+", label: "Models" },
+              { value: "$0", label: "Per Token" },
+              { value: "<200ms", label: "Voice" },
+            ].map((stat) => (
+              <div key={stat.label} className="text-center">
+                <div className="text-sm md:text-base font-bold text-white">{stat.value}</div>
+                <div className="text-[9px] text-neutral-600 uppercase tracking-widest">{stat.label}</div>
+              </div>
+            ))}
+          </motion.div>
 
           {/* Live agent activity ticker */}
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7, duration: 0.5 }}

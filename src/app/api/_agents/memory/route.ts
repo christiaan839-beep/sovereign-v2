@@ -203,7 +203,7 @@ export async function POST(request: Request) {
 
     // TENANT MEMORY — Per-user persistent agent execution history
     if (action === "tenant_stats") {
-      const stats = getMemoryStats(auth.userId);
+      const stats = await getMemoryStats(auth.userId);
       return NextResponse.json({ success: true, action: "tenant_stats", ...stats });
     }
 
@@ -211,12 +211,12 @@ export async function POST(request: Request) {
       if (!query) {
         return NextResponse.json({ error: "query is required for tenant_query action." }, { status: 400 });
       }
-      const results = queryMemory(auth.userId, query, limit);
+      const results = await queryMemory(auth.userId, query, limit);
       return NextResponse.json({ success: true, action: "tenant_query", results, count: results.length });
     }
 
     if (action === "tenant_clear") {
-      const deleted = clearMemory(auth.userId);
+      const deleted = await clearMemory(auth.userId);
       return NextResponse.json({ success: true, action: "tenant_clear", memories_deleted: deleted });
     }
 
@@ -258,7 +258,7 @@ export async function GET(request: Request) {
   }
 
   // Include tenant memory stats alongside legacy memory
-  const tenantStats = getMemoryStats(auth.userId);
+  const tenantStats = await getMemoryStats(auth.userId);
 
   return NextResponse.json({
     status: "Agent Memory — Active",

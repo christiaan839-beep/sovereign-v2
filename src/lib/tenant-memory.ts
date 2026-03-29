@@ -6,13 +6,18 @@
  * that get smarter with every use because they remember past interactions.
  *
  * Architecture:
- *   - In-memory Map keyed by userId
- *   - Each user gets up to MAX_ENTRIES_PER_USER entries (oldest evicted)
+ *   - In-memory Map as CACHE layer (fast reads)
+ *   - PostgreSQL (Neon) as persistent storage via Drizzle ORM
+ *   - On save: write to both cache and DB (DB failure non-blocking)
+ *   - On query: cache first, fall back to DB if cache is empty
  *   - Simple keyword search (vector search ready via Pinecone later)
  *   - Formatted context injection for agent system prompts
  */
 
 import { createLogger } from "@/lib/logger";
+import { db } from "@/db";
+import { tenantMemories } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 const log = createLogger("tenant-memory");
 
@@ -30,6 +35,7 @@ export interface MemoryEntry {
 
 export interface MemoryStats {
   totalMemories: number;
+  dbMemories: number;
   topAgents: Array<{ agent: string; count: number }>;
   oldestMemory: number | null;
   newestMemory: number | null;
@@ -41,7 +47,7 @@ const MAX_ENTRIES_PER_USER = 200;
 const INPUT_MAX_LENGTH = 200;
 const OUTPUT_MAX_LENGTH = 500;
 
-// ── In-Memory Store ──
+// ── In-Memory Cache ──
 
 const store = new Map<string, MemoryEntry[]>();
 
@@ -65,10 +71,81 @@ function extractTags(agentName: string, input: string): string[] {
   return [...new Set(tags)];
 }
 
+/** Convert a DB row into a MemoryEntry for the cache */
+function dbRowToEntry(row: typeof tenantMemories.$inferSelect): MemoryEntry {
+  return {
+    id: row.id,
+    userId: row.userId,
+    agentName: row.agentName,
+    input: row.inputSummary ?? "",
+    output: row.outputSummary ?? "",
+    timestamp: row.createdAt ? new Date(row.createdAt).getTime() : Date.now(),
+    tags: row.tags ? row.tags.split(",") : [],
+  };
+}
+
+// ── DB Helpers (non-blocking) ──
+
+async function persistToDb(entry: MemoryEntry, metadata?: Record<string, unknown>): Promise<void> {
+  try {
+    await db.insert(tenantMemories).values({
+      id: entry.id.startsWith("tm_") ? undefined : entry.id, // let DB generate UUID if using old ID format
+      userId: entry.userId,
+      agentName: entry.agentName,
+      inputSummary: entry.input,
+      outputSummary: entry.output,
+      tags: entry.tags.join(","),
+      metadata: metadata ? JSON.stringify(metadata) : null,
+    });
+    log.info(`Memory persisted to DB for ${entry.userId}`, { agent: entry.agentName });
+  } catch (err) {
+    log.info(`DB persist failed (cache still works)`, { error: String(err) });
+  }
+}
+
+async function loadFromDb(userId: string): Promise<MemoryEntry[]> {
+  try {
+    const rows = await db
+      .select()
+      .from(tenantMemories)
+      .where(eq(tenantMemories.userId, userId));
+    return rows.map(dbRowToEntry);
+  } catch (err) {
+    log.info(`DB load failed, returning empty`, { error: String(err) });
+    return [];
+  }
+}
+
+async function deleteFromDb(userId: string): Promise<number> {
+  try {
+    const rows = await db
+      .delete(tenantMemories)
+      .where(eq(tenantMemories.userId, userId))
+      .returning({ id: tenantMemories.id });
+    return rows.length;
+  } catch (err) {
+    log.info(`DB delete failed`, { error: String(err) });
+    return 0;
+  }
+}
+
+async function countInDb(userId: string): Promise<number> {
+  try {
+    const rows = await db
+      .select({ id: tenantMemories.id })
+      .from(tenantMemories)
+      .where(eq(tenantMemories.userId, userId));
+    return rows.length;
+  } catch (err) {
+    return 0;
+  }
+}
+
 // ── Public API ──
 
 /**
  * Store an agent execution in the user's persistent memory.
+ * Writes to both the in-memory cache AND the database.
  */
 export function saveMemory(
   userId: string,
@@ -108,18 +185,33 @@ export function saveMemory(
   store.set(userId, entries);
   log.info(`Memory saved for ${userId}`, { agent: agentName, total: entries.length });
 
+  // Fire-and-forget DB write — cache is the source of truth for speed
+  persistToDb(entry, metadata);
+
   return entry;
 }
 
 /**
  * Search past executions relevant to a query using keyword matching.
+ * Checks cache first; falls back to DB if cache is empty.
  */
-export function queryMemory(
+export async function queryMemory(
   userId: string,
   query: string,
   limit: number = 10
-): MemoryEntry[] {
-  const entries = store.get(userId);
+): Promise<MemoryEntry[]> {
+  let entries = store.get(userId);
+
+  // Fall back to DB if cache is empty
+  if (!entries || entries.length === 0) {
+    const dbEntries = await loadFromDb(userId);
+    if (dbEntries.length > 0) {
+      store.set(userId, dbEntries);
+      entries = dbEntries;
+      log.info(`Cache hydrated from DB for ${userId}`, { count: dbEntries.length });
+    }
+  }
+
   if (!entries || entries.length === 0) return [];
 
   const queryLower = query.toLowerCase();
@@ -174,12 +266,14 @@ export function getMemoryContext(userId: string, agentName: string): string {
 }
 
 /**
- * Get memory statistics for a user.
+ * Get memory statistics for a user. Includes both cache and DB counts.
  */
-export function getMemoryStats(userId: string): MemoryStats {
+export async function getMemoryStats(userId: string): Promise<MemoryStats> {
   const entries = store.get(userId);
+  const dbCount = await countInDb(userId);
+
   if (!entries || entries.length === 0) {
-    return { totalMemories: 0, topAgents: [], oldestMemory: null, newestMemory: null };
+    return { totalMemories: 0, dbMemories: dbCount, topAgents: [], oldestMemory: null, newestMemory: null };
   }
 
   const agentCounts: Record<string, number> = {};
@@ -199,6 +293,7 @@ export function getMemoryStats(userId: string): MemoryStats {
 
   return {
     totalMemories: entries.length,
+    dbMemories: dbCount,
     topAgents,
     oldestMemory: oldest === Infinity ? null : oldest,
     newestMemory: newest === 0 ? null : newest,
@@ -206,12 +301,15 @@ export function getMemoryStats(userId: string): MemoryStats {
 }
 
 /**
- * Clear all memories for a user.
+ * Clear all memories for a user. Clears both cache and DB.
  */
-export function clearMemory(userId: string): number {
+export async function clearMemory(userId: string): Promise<number> {
   const entries = store.get(userId);
-  const count = entries?.length || 0;
+  const cacheCount = entries?.length || 0;
   store.delete(userId);
-  log.info(`Memory cleared for ${userId}`, { deleted: count });
-  return count;
+
+  const dbCount = await deleteFromDb(userId);
+  const total = Math.max(cacheCount, dbCount);
+  log.info(`Memory cleared for ${userId}`, { cache: cacheCount, db: dbCount });
+  return total;
 }
