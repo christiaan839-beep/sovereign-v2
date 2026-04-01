@@ -25,6 +25,7 @@ import { LogoMarquee } from "@/components/cinematic/InfiniteMarquee";
 import { ExitIntent } from "@/components/ui/ExitIntent";
 import dynamic from "next/dynamic";
 import { TextMorph } from "@/components/ui/TextMorph";
+import { InteractiveHeroStrike } from "@/components/ui/InteractiveHeroStrike";
 
 const HeroParticles = dynamic(() => import("@/components/ui/HeroParticles").then(m => ({ default: m.HeroParticles })), { ssr: false });
 const HeroOrb = dynamic(() => import("@/components/cinematic/HeroOrb").then(m => ({ default: m.HeroOrb })), { ssr: false });
@@ -521,47 +522,14 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Product preview — simulated agent output */}
-        <div className="relative z-20 mt-8 pb-6 px-6">
-          <ScaleOnScroll className="max-w-2xl mx-auto">
-            <div className="relative rounded-2xl border border-white/[0.06] bg-[#080808]/90 backdrop-blur-2xl overflow-hidden shadow-[0_0_60px_rgba(16,185,129,0.04)]">
-              <div className="flex items-center gap-2 px-5 py-3 border-b border-white/[0.06] bg-[#060606]">
-                <div className="flex gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-white/[0.08]" />
-                  <span className="w-2.5 h-2.5 rounded-full bg-white/[0.08]" />
-                  <span className="w-2.5 h-2.5 rounded-full bg-white/[0.08]" />
-                </div>
-                <span className="text-[10px] text-neutral-500 ml-3 font-mono">sovereign-matrix.agency/dashboard</span>
-                <span className="ml-auto flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-[10px] text-emerald-500/70">LIVE</span>
-                </span>
-              </div>
-              <div className="p-6 font-mono text-sm space-y-3">
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.0, duration: 0.4 }}
-                  className="text-neutral-300">
-                  <span className="text-emerald-400 mr-2">&gt;</span>Find 50 SaaS leads in the US
-                </motion.div>
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.6, duration: 0.4 }}
-                  className="text-emerald-400 flex items-center gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 shrink-0" /> Found 53 matches in 28 seconds
-                </motion.div>
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 2.2, duration: 0.4 }}
-                  className="text-emerald-400 flex items-center gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 shrink-0" /> 48 emails verified
-                </motion.div>
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 2.8, duration: 0.4 }}
-                  className="text-emerald-400 flex items-center gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 shrink-0" /> Results exported to Google Sheets
-                </motion.div>
-              </div>
-            </div>
+        {/* Interactive demo input — live agent */}
+        <div className="relative z-20 mt-8 pb-6 px-6 w-full">
+          <InteractiveHeroStrike />
 
-            {/* Scroll indicator */}
-            <div className="flex justify-center mt-10">
-              <ChevronDown className="w-5 h-5 text-neutral-500 animate-bounce" aria-hidden="true" />
-            </div>
-          </ScaleOnScroll>
+          {/* Scroll indicator */}
+          <div className="flex justify-center mt-10">
+            <ChevronDown className="w-5 h-5 text-neutral-500 animate-bounce" aria-hidden="true" />
+          </div>
         </div>
       </motion.section>
 

@@ -2,105 +2,142 @@
 
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Target, ArrowRight, Cpu, Sparkles, Search, ShieldAlert } from "lucide-react";
+import { ArrowRight, Cpu, Sparkles, ShieldCheck } from "lucide-react";
+
+const EXAMPLE_PROMPTS = [
+  "Find leads for SaaS companies",
+  "Write a blog about AI",
+  "Audit my website SEO",
+];
 
 /**
- * InteractiveHeroStrike — Wired to real NVIDIA NIM agent.
- * Shows live AI response on the landing page before they pay.
+ * InteractiveHeroStrike — Wired to real AI agent via /api/demo/analyze.
+ * Text input with example prompts, streaming typewriter response.
  */
 export function InteractiveHeroStrike() {
-  const [url, setUrl] = useState("");
-  const [isScanning, setIsScanning] = useState(false);
-  const [response, setResponse] = useState<string | null>(null);
+  const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [streamText, setStreamText] = useState("");
   const responseRef = useRef<HTMLDivElement>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const handleStrike = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!url || isScanning) return;
-    setIsScanning(true);
-    setResponse(null);
+  const handleSubmit = async (prompt: string) => {
+    const text = prompt || input;
+    if (!text.trim() || isLoading) return;
+    setInput(text);
+    setIsLoading(true);
     setStreamText("");
 
+    if (intervalRef.current) clearInterval(intervalRef.current);
+
     try {
-      // Public demo endpoint — no auth required, rate-limited by IP
       const res = await fetch("/api/demo/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify({ prompt: text }),
       });
       const data = await res.json();
 
-      const fullText = data.response || "Analysis complete. Sign up free for the full War Room audit.";
+      const fullText =
+        data.response || "Analysis complete. Sign up free for the full output.";
 
-      // Typewriter effect
       let i = 0;
-      const typewriter = setInterval(() => {
+      intervalRef.current = setInterval(() => {
         i++;
         setStreamText(fullText.slice(0, i));
-        if (i >= fullText.length) clearInterval(typewriter);
+        if (i >= fullText.length && intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
       }, 12);
-
-      setResponse(fullText);
     } catch {
-      setStreamText("Neural pathway engaged. The full War Room analysis is available inside the dashboard.");
+      setStreamText(
+        "Our agents are warming up. Try again in a moment, or sign up for instant access."
+      );
     } finally {
-      setTimeout(() => setIsScanning(false), 500);
+      setTimeout(() => setIsLoading(false), 500);
     }
   };
 
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleSubmit(input);
+  };
+
   return (
-    <div className="w-full max-w-2xl mx-auto flex flex-col items-center gap-6">
-      <form onSubmit={handleStrike} className="w-full relative group">
-        <div className="absolute -inset-1 bg-gradient-to-r from-[#10B981]/20 via-indigo-500/20 to-emerald-600/20 rounded-[2rem] blur-xl group-hover:blur-2xl transition-gpu duration-500 opacity-50" />
-        <div className="relative flex items-center bg-[#0a0a0a] border border-white/10 rounded-[2rem] p-2 shadow-2xl">
-          <div className="pl-6 pr-4 hidden sm:flex items-center justify-center border-r border-white/10">
-            <Target className="w-6 h-6 text-neutral-500 group-hover:text-[#10B981] transition-colors" />
-          </div>
+    <div className="w-full max-w-2xl mx-auto flex flex-col items-center gap-5">
+      {/* Input */}
+      <form onSubmit={handleFormSubmit} className="w-full relative group">
+        <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500/20 via-emerald-600/10 to-emerald-500/20 rounded-2xl blur-xl opacity-40 group-hover:opacity-60 transition-opacity duration-500" />
+        <div className="relative flex items-center bg-[#0a0a0a] border border-white/10 rounded-2xl p-2 shadow-2xl">
           <input
-            type="url"
-            placeholder="Enter any website URL to analyze..."
-            required
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            disabled={isScanning}
-            className="flex-1 bg-transparent text-white px-6 py-4 outline-none placeholder:text-neutral-600 font-mono text-sm disabled:opacity-50"
+            type="text"
+            placeholder="Try it — describe a goal..."
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            disabled={isLoading}
+            className="flex-1 bg-transparent text-white px-5 py-3.5 outline-none placeholder:text-neutral-500 text-sm disabled:opacity-50"
           />
           <button
             type="submit"
-            disabled={isScanning || !url}
-            className="px-8 py-4 rounded-full bg-white text-black font-bold uppercase tracking-widest text-xs flex items-center gap-3 hover:bg-neutral-200 transition-gpu disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={isLoading || !input.trim()}
+            className="px-6 py-3.5 rounded-xl bg-white text-black font-semibold text-sm flex items-center gap-2 hover:bg-neutral-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
           >
-            {isScanning ? (
-               <><Cpu className="w-4 h-4 animate-spin text-[#10B981]" /> Analyzing...</>
+            {isLoading ? (
+              <>
+                <Cpu className="w-4 h-4 animate-spin text-emerald-600" />{" "}
+                Thinking...
+              </>
             ) : (
-               <>Analyze <ArrowRight className="w-4 h-4" /></>
+              <>
+                Run Agent <ArrowRight className="w-4 h-4" />
+              </>
             )}
           </button>
         </div>
       </form>
 
-      {/* Scanning Overlay State */}
+      {/* Example prompts */}
+      {!streamText && (
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          {EXAMPLE_PROMPTS.map((prompt) => (
+            <button
+              key={prompt}
+              type="button"
+              onClick={() => handleSubmit(prompt)}
+              disabled={isLoading}
+              className="px-3.5 py-1.5 text-xs text-neutral-400 border border-white/[0.06] rounded-lg bg-white/[0.02] hover:border-emerald-500/20 hover:text-emerald-400 hover:bg-emerald-500/[0.04] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {prompt}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Loading state */}
       <AnimatePresence>
-        {isScanning && !streamText && (
+        {isLoading && !streamText && (
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="w-full p-4 rounded-2xl bg-[#10B981]/5 border border-[#10B981]/20 flex items-center justify-between"
+            exit={{ opacity: 0, y: -8 }}
+            className="w-full p-4 rounded-xl bg-emerald-500/[0.04] border border-emerald-500/15 flex items-center justify-between"
           >
             <div className="flex items-center gap-3">
-               <ShieldAlert className="w-5 h-5 text-[#10B981] animate-pulse" />
-               <span className="text-xs font-mono text-[#10B981] uppercase tracking-widest">NVIDIA NIM Live Analysis</span>
+              <Cpu className="w-4 h-4 text-emerald-400 animate-pulse" />
+              <span className="text-xs font-mono text-emerald-400/80 uppercase tracking-wider">
+                Agent processing...
+              </span>
             </div>
-            <span className="text-[10px] font-bold text-white font-mono flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#10B981] animate-ping" /> Processing...
+            <span className="flex items-center gap-2 text-[10px] text-emerald-400/60 font-mono">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+              Live
             </span>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Live Response */}
+      {/* Streamed response */}
       <AnimatePresence>
         {streamText && (
           <motion.div
@@ -108,30 +145,40 @@ export function InteractiveHeroStrike() {
             initial={{ opacity: 0, y: 10, height: 0 }}
             animate={{ opacity: 1, y: 0, height: "auto" }}
             exit={{ opacity: 0 }}
-            className="w-full rounded-2xl bg-black/80 border border-[#10B981]/20 p-6 backdrop-blur-xl shadow-[0_0_40px_rgba(16,185,129,0.1)]"
+            className="w-full rounded-xl bg-black/80 border border-emerald-500/15 p-5 backdrop-blur-xl shadow-[0_0_40px_rgba(16,185,129,0.06)]"
           >
-            <div className="flex items-center gap-2 mb-4">
-              <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse" />
-              <span className="text-[10px] font-bold uppercase tracking-widest text-[#10B981] font-mono">War Room Intelligence</span>
+            <div className="flex items-center gap-2 mb-3">
+              <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-emerald-400/70 font-mono">
+                Agent Response
+              </span>
             </div>
-            <p className="text-sm text-neutral-300 leading-relaxed font-mono whitespace-pre-wrap">{streamText}<span className="inline-block w-1.5 h-4 bg-[#10B981] ml-0.5 animate-pulse" /></p>
-            <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between">
-              <span className="text-[10px] text-neutral-600 font-mono">Powered by NVIDIA NIM × Nemotron</span>
-              <a href="/dashboard/war-room" className="text-[10px] font-bold uppercase tracking-widest text-[#10B981] hover:text-emerald-300 transition-colors">Full Audit →</a>
+            <p className="text-sm text-neutral-300 leading-relaxed whitespace-pre-wrap">
+              {streamText}
+              <span className="inline-block w-1.5 h-4 bg-emerald-400 ml-0.5 animate-pulse" />
+            </p>
+            <div className="mt-4 pt-3 border-t border-white/[0.04] flex items-center justify-between">
+              <span className="text-[10px] text-neutral-600 font-mono">
+                Free demo — 5 tries per hour
+              </span>
+              <a
+                href="/signup"
+                className="text-[10px] font-semibold uppercase tracking-widest text-emerald-400 hover:text-emerald-300 transition-colors"
+              >
+                Get Full Access →
+              </a>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Status Bar */}
+      {/* No signup label */}
       {!streamText && (
-        <div className="flex items-center gap-6 mt-4 opacity-40">
-           <span className="text-[10px] uppercase tracking-widest font-mono text-neutral-500 flex items-center gap-2">
-             <Search className="w-3 h-3" /> Try a real analysis
-           </span>
-           <span className="text-[10px] uppercase tracking-widest font-mono text-neutral-500 flex items-center gap-2">
-             <Sparkles className="w-3 h-3" /> Powered by 65+ AI models
-           </span>
+        <div className="flex items-center gap-2 mt-1">
+          <ShieldCheck className="w-3.5 h-3.5 text-emerald-500/50" />
+          <span className="text-[11px] text-neutral-500">
+            No signup required
+          </span>
         </div>
       )}
     </div>
