@@ -44,9 +44,8 @@ export function JarvisSocket() {
             setTranscript("Listening...");
             setResponse(null);
 
-        } catch (err) {
-            console.error("Microphone access denied:", err);
-            setResponse("Audio encryption failed. Check mic permissions.");
+        } catch {
+            setResponse("Microphone access denied. Please check your browser permissions.");
         }
     };
 

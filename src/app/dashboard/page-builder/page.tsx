@@ -58,7 +58,7 @@ export default function PageBuilderPage() {
         try {
           const errData = await res.json();
           errMsg = errData.error || errMsg;
-        } catch {}
+        } catch { /* response may not be JSON */ }
         throw new Error(`Pipeline Authorization/Network Error: ${errMsg}`);
       }
 
@@ -95,13 +95,12 @@ export default function PageBuilderPage() {
               setLogs(prev => [...prev, `[ERROR] ${parsed.data.message}`]);
             }
           } catch {
-            console.error("Error parsing stream chunk:", part);
+            // Skip malformed SSE chunks
           }
         }
       }
-    } catch (err) {
-      console.error("Page generation failed:", err);
-      setLogs(prev => [...prev, "[FATAL ERROR] Pipeline halted unexpectedly."]);
+    } catch {
+      setLogs(prev => [...prev, "[ERROR] Pipeline halted unexpectedly. Please retry."]);
     } finally {
       setGenerating(false);
     }

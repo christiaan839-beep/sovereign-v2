@@ -29,11 +29,10 @@ export default function VisualStudioNode() {
       if (data.success) {
         setApiResult(data.result || data.text || JSON.stringify(data, null, 2));
       } else {
-        console.error("Video gen failed:", data.error);
         setApiResult(`Generation failed: ${data.error || "Unknown error"}`);
       }
-    } catch (err) {
-      console.error("Cosmos video error:", err);
+    } catch {
+      setApiResult("Connection failed. Please try again.");
     } finally {
       setIsGenerating(false);
       setGenerationStep(5);

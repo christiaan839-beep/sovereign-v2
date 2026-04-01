@@ -13,8 +13,8 @@ export default function WhiteLabelKPIGrid({ clientId, primaryColor }: { clientId
         const res = await fetch(`/api/portal/metrics?tenantId=${clientId}`);
         const data = await res.json();
         if (data.success) setMetrics(data.metrics);
-      } catch (err) {
-        console.error("Failed to fetch portal metrics:", err);
+      } catch {
+        // Metrics unavailable — show empty state
       }
     };
     fetchMetrics();

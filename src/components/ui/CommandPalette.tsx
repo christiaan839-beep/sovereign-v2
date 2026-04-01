@@ -304,7 +304,7 @@ export function CommandPalette() {
       action: async () => {
         const res = await fetch("/api/email", { method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ to: "test@example.com", template: "welcome", data: { name: "Commander" } }),
+          body: JSON.stringify({ template: "welcome", data: { name: "Test" } }),
         });
         return (await res.json()).provider === "resend" ? "Email sent!" : "Email logged (set RESEND_API_KEY for delivery)";
       }

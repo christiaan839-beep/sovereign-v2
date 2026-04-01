@@ -31,12 +31,10 @@ export default function PodcastBlueprintPage() {
       if (data.success) {
         setBlogGenResult(data.result || data.text || JSON.stringify(data, null, 2));
       } else {
-        console.error("API error:", data.error);
         setBlogGenResult(`Error: ${data.error || "Unknown error"}`);
       }
-    } catch (err) {
-      console.error("Network error:", err);
-      setBlogGenResult("Network error occurred.");
+    } catch {
+      setBlogGenResult("Failed to connect. Please try again.");
     }
     let p = 0;
     const interval = setInterval(() => {
@@ -76,8 +74,8 @@ export default function PodcastBlueprintPage() {
       // Phase 3: Audio rendering
       setPipelineStatus("generating");
       setPipelineStatus("complete");
-    } catch (err) {
-      console.error("Pipeline error:", err);
+    } catch {
+      setScriptResult("Pipeline failed. Please try again.");
       setPipelineStatus("complete");
     }
   };

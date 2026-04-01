@@ -105,7 +105,7 @@ export default function IntegrationsPage() {
       return;
     }
     toast.info(
-      `${connector.name} integration is coming soon. We'll notify you when it's ready.`
+      `Contact support to enable ${connector.name} integration for your workspace.`
     );
   };
 

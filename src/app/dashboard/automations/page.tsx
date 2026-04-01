@@ -321,7 +321,7 @@ export default function AutomationsPage() {
         transition={{ delay: 0.6 }}
         className="mt-8 text-center text-xs text-neutral-500 font-mono"
       >
-        Automations run on Sovereign Matrix infrastructure. Custom schedules coming soon.
+        Automations run on Sovereign Matrix infrastructure. Configure custom schedules in Settings.
       </motion.p>
     </div>
   );

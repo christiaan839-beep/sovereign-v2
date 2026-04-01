@@ -15,48 +15,48 @@ export default function AGIAuditorPage() {
   useEffect(() => {
     if (stage === 'IDLE' || stage === 'COMPLETE') return;
 
-    let interval: NodeJS.Timeout;
-    const currentProgress = progress;
+    const timers: NodeJS.Timeout[] = [];
+    const track = (fn: () => void, ms: number) => { const t = setTimeout(fn, ms); timers.push(t); };
 
     if (stage === 'RESOLVING') {
-      if (currentProgress < 25) {
-        interval = setTimeout(() => setProgress(p => p + 1), 60);
+      if (progress < 25) {
+        track(() => setProgress(p => p + 1), 60);
       } else {
-        setTimeout(() => {
+        track(() => {
           setStage('ANALYZING_PIXELS');
-          setLogs(prev => [...prev, `[TARGET LOCKED] ${targetUrl}`, 'Initiating payload: Meta Pixel Extraction...']);
+          setLogs(prev => [...prev, `Resolving ${targetUrl}...`, 'Analyzing page structure...']);
         }, 0);
       }
     } else if (stage === 'ANALYZING_PIXELS') {
-      if (currentProgress < 50) {
-        interval = setTimeout(() => setProgress(p => p + 1), 70);
+      if (progress < 50) {
+        track(() => setProgress(p => p + 1), 70);
       } else {
-        setTimeout(() => {
+        track(() => {
           setStage('FRICTION_MAPPING');
-          setLogs(prev => [...prev, 'Pixels Extracted. 4 critical drop-offs detected.', 'Mapping funnel surface area...']);
+          setLogs(prev => [...prev, 'Structure analyzed. Mapping conversion funnel...']);
         }, 0);
       }
     } else if (stage === 'FRICTION_MAPPING') {
-      if (currentProgress < 85) {
-        interval = setTimeout(() => setProgress(p => p + 1), 50);
+      if (progress < 85) {
+        track(() => setProgress(p => p + 1), 50);
       } else {
-        setTimeout(() => {
+        track(() => {
           setStage('CALCULATING_LOSS');
-          setLogs(prev => [...prev, 'Friction mapped: 72% conversion leakage.', 'Calculating exact lost capital velocity...']);
+          setLogs(prev => [...prev, 'Funnel mapped. Calculating optimization potential...']);
         }, 0);
       }
     } else if (stage === 'CALCULATING_LOSS') {
-      if (currentProgress < 100) {
-        interval = setTimeout(() => setProgress(p => p + 1), 40);
+      if (progress < 100) {
+        track(() => setProgress(p => p + 1), 40);
       } else {
-        setTimeout(() => {
+        track(() => {
           setStage('COMPLETE');
-          setLogs(prev => [...prev, 'CALCULATION COMPLETE. Generating final threat report...']);
+          setLogs(prev => [...prev, 'Analysis complete. Generating report...']);
         }, 0);
       }
     }
 
-    return () => clearTimeout(interval);
+    return () => timers.forEach(clearTimeout);
   }, [stage, progress, targetUrl]);
 
   const handleScan = (e: React.FormEvent) => {

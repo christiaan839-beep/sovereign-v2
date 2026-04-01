@@ -258,6 +258,8 @@ export async function POST(request: Request) {
       const pineconeKey = process.env.PINECONE_API_KEY;
       if (pineconeKey) {
         // 1. Embed the user's prompt using free Nemotron 1B
+        const embedCtrl = AbortController ? new AbortController() : undefined;
+        const embedTimeout = setTimeout(() => embedCtrl?.abort(), 15000);
         const embedRes = await fetch("https://integrate.api.nvidia.com/v1/embeddings", {
           method: "POST",
           headers: { "Content-Type": "application/json", "Authorization": `Bearer ${nimKey}` },
@@ -268,7 +270,9 @@ export async function POST(request: Request) {
             encoding_format: "float",
             truncate: "NONE"
           }),
+          signal: embedCtrl?.signal,
         });
+        clearTimeout(embedTimeout);
         
         if (embedRes.ok) {
           const embedData = await embedRes.json();
@@ -276,6 +280,8 @@ export async function POST(request: Request) {
           
           // 2. Query Pinecone for relevant past interactions (simulated HTTP endpoint structure)
           const pcHost = process.env.PINECONE_HOST || "sovereign-memory.svc.pinecone.io";
+          const pcCtrl = new AbortController();
+          const pcTimeout = setTimeout(() => pcCtrl.abort(), 10000);
           const queryRes = await fetch(`https://${pcHost}/query`, {
             method: "POST",
             headers: { "Api-Key": pineconeKey, "Content-Type": "application/json" },
@@ -283,21 +289,23 @@ export async function POST(request: Request) {
               vector,
               topK: 3,
               includeMetadata: true
-            })
+            }),
+            signal: pcCtrl.signal,
           });
+          clearTimeout(pcTimeout);
           
           if (queryRes.ok) {
             const memoryData = await queryRes.json();
             if (memoryData.matches?.length > 0) {
-              contextMemory = "PAST SWARM MEMORY:\n" + memoryData.matches
+              contextMemory = "Relevant context from previous interactions:\n" + memoryData.matches
                 .map((m: { metadata?: { text?: string }; id: string }) => `- ${m.metadata?.text || m.id}`)
                 .join("\n");
             }
           }
         }
       }
-    } catch (memLogErr) {
-      log.error("Swarm memory context fail", memLogErr as Record<string, unknown>);
+    } catch (memErr) {
+      log.error("Memory context lookup failed", memErr as Record<string, unknown>);
     }
 
     // ==========================================
@@ -320,7 +328,7 @@ export async function POST(request: Request) {
     // EXECUTE AGENT WITH MEMORY + SKILLS
     // ==========================================
     const start = Date.now();
-    let systemPrompt = "You are an elite expert agent.";
+    let systemPrompt = "You are a helpful AI assistant. Provide accurate, well-structured responses.";
     if (contextMemory) {
       systemPrompt += `\n\nUse the following past memory context to inform your answer if relevant:\n${contextMemory}`;
     }
@@ -328,6 +336,8 @@ export async function POST(request: Request) {
       systemPrompt += skillContext;
     }
 
+    const nimCtrl = new AbortController();
+    const nimTimeout = setTimeout(() => nimCtrl.abort(), 30000);
     const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": `Bearer ${nimKey}` },
@@ -340,7 +350,9 @@ export async function POST(request: Request) {
         max_tokens: 1024,
         temperature: 0.7,
       }),
+      signal: nimCtrl.signal,
     });
+    clearTimeout(nimTimeout);
 
     const data = await res.json();
     const finalResult = data?.choices?.[0]?.message?.content || String(data.error?.message || "Generation failed.");

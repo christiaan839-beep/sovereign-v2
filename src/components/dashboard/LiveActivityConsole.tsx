@@ -60,8 +60,8 @@ export function LiveActivityConsole() {
           const updated = [...prev, newLog];
           return updated.length > 50 ? updated.slice(updated.length - 50) : updated;
         });
-      } catch (e) {
-        console.error("SSE parse error", e);
+      } catch {
+        // Skip malformed SSE events
       }
     };
 

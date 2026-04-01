@@ -216,14 +216,14 @@ export default function GodEyePage() {
         </div>
         <div className="divide-y divide-white/[0.03] max-h-64 overflow-y-auto" aria-live="polite">
           {[
-            { agent: "Smart Router", action: "Routed task to DeepSeek V3.2 (reasoning)", time: "2s ago", status: "success" },
-            { agent: "Lead Gen", action: "Found 23 leads in fintech — Austin, TX", time: "8s ago", status: "success" },
-            { agent: "PII Guard", action: "Redacted 2 email addresses from output", time: "12s ago", status: "warning" },
-            { agent: "Blog Gen", action: "Generated 1,847-word post on AI agents", time: "15s ago", status: "success" },
-            { agent: "Site Assassin", action: "Completed audit of competitor.com (score: 34/100)", time: "22s ago", status: "success" },
-            { agent: "Jailbreak Detect", action: "Blocked injection attempt (score: 0.92)", time: "31s ago", status: "error" },
-            { agent: "Voice Synth", action: "Synthesized 45s audio clip via Kokoro", time: "38s ago", status: "success" },
-            { agent: "SEO Dominator", action: "Found 234 uncontested keywords for client", time: "44s ago", status: "success" },
+            { agent: "Smart Router", action: "Routed task to optimal model", time: "2s ago", status: "success" },
+            { agent: "Lead Gen", action: "Lead enrichment completed", time: "8s ago", status: "success" },
+            { agent: "PII Guard", action: "Redacted sensitive data from output", time: "12s ago", status: "warning" },
+            { agent: "Blog Gen", action: "Content generation completed", time: "15s ago", status: "success" },
+            { agent: "Site Audit", action: "Website audit completed", time: "22s ago", status: "success" },
+            { agent: "Safety Gate", action: "Blocked prompt injection attempt", time: "31s ago", status: "error" },
+            { agent: "Voice Synth", action: "Audio synthesis completed", time: "38s ago", status: "success" },
+            { agent: "SEO Agent", action: "Keyword analysis completed", time: "44s ago", status: "success" },
           ].map((event, i) => (
             <div key={i} className="px-3 sm:px-5 py-3 flex items-center justify-between gap-3 hover:bg-white/[0.02] transition-colors">
               <div className="flex items-center gap-3 min-w-0">

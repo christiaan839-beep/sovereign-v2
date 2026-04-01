@@ -159,7 +159,7 @@ export async function POST(req: Request) {
             plan,
           }),
         });
-      } catch {}
+      } catch { /* auto-onboard is best-effort */ }
 
       persistAppend("payfast-payments", {
         id: data.m_payment_id || `pf-${Date.now()}`,

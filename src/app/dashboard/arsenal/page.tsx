@@ -99,8 +99,7 @@ export default function SovereignArsenalPage() {
           Sovereign Arsenal <span className="text-[#00B7FF] text-2xl font-mono uppercase tracking-widest">[1-Click Architectures]</span>
         </h1>
         <p className="text-base text-neutral-400 max-w-3xl leading-relaxed">
-          The ultimate marketplace of production-ready agent blueprints. Instantly deploy enterprise-grade workflows 
-          engineered by the minds behind Claude. Every template utilizes Contextual RAG, Prompt Caching, and rigorous Meta-Prompt constraints automatically.
+          Production-ready agent blueprints. Deploy pre-built workflows with Contextual RAG, Prompt Caching, and Meta-Prompt constraints built in.
         </p>
       </div>
 

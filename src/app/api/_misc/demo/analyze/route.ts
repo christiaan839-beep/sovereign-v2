@@ -37,8 +37,8 @@ export async function POST(req: Request) {
       demoLimits.set(ip, { count: 1, resetAt: now + DEMO_WINDOW_MS });
     }
 
-    // Cleanup stale entries
-    if (demoLimits.size > 1000) {
+    // Cleanup stale entries every 100 requests
+    if (demoLimits.size > 100) {
       for (const [k, v] of demoLimits) {
         if (now >= v.resetAt) demoLimits.delete(k);
       }

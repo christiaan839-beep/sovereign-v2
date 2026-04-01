@@ -8,7 +8,7 @@ import { SovereignLogo } from "@/components/ui/SovereignLogo";
 import type { Message, Suggestion } from "./types";
 
 const SUGGESTIONS: Suggestion[] = [
-  { icon: Globe, text: "Audit a website", prompt: "audit example.com" },
+  { icon: Globe, text: "Audit a website", prompt: "audit my website for SEO and performance" },
   { icon: FileText, text: "Write a blog post", prompt: "write a blog about AI agents for business" },
   { icon: Users, text: "Find B2B leads", prompt: "find leads for SaaS companies in fintech" },
   { icon: Code2, text: "Review code", prompt: "review code for security issues" },

@@ -27,11 +27,10 @@ export default function EdifyForgePage() {
         setGeneratedImageUrl(imageUrl);
         setApiResultText(data.result || data.text || JSON.stringify(data, null, 2));
       } else {
-        console.error("3D generation failed:", data.error);
         setApiResultText(`Generation failed: ${data.error || "Unknown error"}`);
       }
-    } catch (err) {
-      console.error("3D forge error:", err);
+    } catch {
+      setApiResultText("Connection failed. Please try again.");
     } finally {
       setPipelineState("complete");
     }

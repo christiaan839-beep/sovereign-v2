@@ -34,8 +34,7 @@ export default function DigitalHumanAvatarPage() {
       setPipelineStatus("rendering");
       // Pipeline is done — transition to live
       setPipelineStatus("live");
-    } catch (err) {
-      console.error("Pipeline error:", err);
+    } catch {
       setPipelineStatus("live"); // Show result even on partial failure
     }
   };

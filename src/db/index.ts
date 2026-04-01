@@ -16,17 +16,13 @@ if (!connectionString && typeof window === "undefined" && process.env.NODE_ENV =
 // Neon free tier auto-pauses after 5 min of inactivity.
 // First connection after pause takes 3-5s ("cold start").
 // fetchOptions.cache: "no-store" prevents stale connection reuse.
-const sql: NeonQueryFunction<boolean, boolean> = neon(connectionString || "postgresql://build:placeholder@localhost/build", {
+const sql: NeonQueryFunction<boolean, boolean> = neon(connectionString || "postgresql://user:pass@localhost/sovereign", {
   fetchOptions: { cache: "no-store" },
 });
 
 export const db = drizzle(sql, { schema });
 
-/**
- * Test database connectivity with a simple query.
- * Returns true if connected, false if not.
- * Handles Neon cold starts gracefully.
- */
+/** Test DB connectivity. Handles Neon cold starts (3-5s). */
 export async function testConnection(): Promise<{ connected: boolean; latencyMs: number }> {
   const t0 = performance.now();
   try {

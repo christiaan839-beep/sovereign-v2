@@ -28,10 +28,10 @@ export default function ApiKeysPage() {
           try {
             const parsed = JSON.parse(data.apiKeys);
             setKeys(prev => ({ ...prev, ...parsed }));
-          } catch (_e) {}
+          } catch { /* keys may not be JSON */ }
         }
-      } catch (_err) {
-      } finally {
+      } catch { /* API unavailable */ }
+      finally {
         setIsLoading(false);
       }
     }

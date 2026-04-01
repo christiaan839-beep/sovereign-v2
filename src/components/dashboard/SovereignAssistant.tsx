@@ -517,7 +517,7 @@ function useWidgetChat() {
           data.redacted_text ||
           (typeof data === "string" ? data : JSON.stringify(data, null, 2));
 
-        if (content.length > 3000) content = content.slice(0, 3000) + "\n\n[Truncated]";
+        if (content.length > 3000) content = content.slice(0, 3000) + "\n\n---\n*Response trimmed for display. Full output available via API.*";
 
         const imageUrl =
           data.images?.[0]?.url || data.imageUrl || data.image_url || data.url;

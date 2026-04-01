@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-// @ai-sdk removed for raw zero-latency fetch to NVIDIA NIM
 import crypto from "crypto";
 
-// ⚡ BULLETPROOF EDGE RUNTIME: Scales to millions of requests instantly.
-// export const runtime = "edge"; // Node.js runtime required for strict crypto validation
+// Node.js runtime required for crypto.createHmac
+// export const runtime = "edge";
 
 /**
- * STRICT SECURITY: Validates the cryptographic HMAC-SHA1 signature from Twilio 
- * so hackers cannot spoof incoming WhatsApp messages to drain API credits.
+ * Twilio WhatsApp Webhook — validates HMAC-SHA1 signature
+ * and routes inbound messages to the WhatsApp agent.
  */
 export function validateTwilioSignature(signature: string | null, url: string, params: Record<string, string>) {
   const token = process.env.TWILIO_AUTH_TOKEN;

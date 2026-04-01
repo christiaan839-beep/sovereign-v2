@@ -56,9 +56,9 @@ export default function VideoOutreachStudioPage() {
         body: JSON.stringify({ text: targetScript, voice: selectedAvatar }),
       });
       const data = await res.json();
-      if (!data.success) console.error("Voice synth failed:", data.error);
-    } catch (err) {
-      console.error("Voice synth error:", err);
+      if (!data.success) setStatus("error");
+    } catch {
+      setStatus("error");
     } finally {
       setStatus("complete");
     }

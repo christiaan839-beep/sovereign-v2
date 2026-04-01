@@ -96,7 +96,7 @@ export async function POST(req: Request) {
                 const data = await res.json();
                 thinkingResult = data?.choices?.[0]?.message?.content || "";
               }
-            } catch {}
+            } catch { /* Groq unavailable — fall through to NIM */ }
 
             // Fallback to NIM
             if (!thinkingResult) {
@@ -157,7 +157,7 @@ export async function POST(req: Request) {
           try {
             controller.enqueue(encoder.encode(`data: [DONE]\n\n`));
             controller.close();
-          } catch {}
+          } catch { /* stream already closed */ }
         }
       },
       cancel() {},
@@ -192,14 +192,14 @@ export async function POST(req: Request) {
           controller.close();
         } catch (err) {
           if (signal.aborted) {
-            try { controller.close(); } catch {}
+            try { controller.close(); } catch { /* already closed */ }
             return;
           }
           log.error("Token iteration error", err as Record<string, unknown>);
           try {
             controller.enqueue(encoder.encode(`data: [DONE]\n\n`));
             controller.close();
-          } catch {}
+          } catch { /* stream already closed */ }
         }
       },
       cancel() {},

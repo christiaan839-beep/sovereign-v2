@@ -131,7 +131,7 @@ export default function NemoClawPage() {
         </h1>
         <p className="text-sm text-neutral-400 max-w-2xl mb-4">
           Run autonomous agents locally on your machine. Requires NemoClaw setup.
-          Built on NVIDIA OpenClaw for enterprise-grade task execution, decision making, and actions
+          Built on NVIDIA OpenClaw for local task execution, decision making, and autonomous actions
           running on your hardware with OpenShell security.
         </p>
         <div className="flex flex-wrap gap-2 mb-2">

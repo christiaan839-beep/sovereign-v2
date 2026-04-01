@@ -28,9 +28,9 @@ export default function CosmosVSLHackerPage() {
         body: JSON.stringify({ prompt: topic || "competitor video ad analysis", content_type: "vsl_script" }),
       });
       const data = await res.json();
-      if (!data.success) console.error("API error:", data.error);
-    } catch (err) {
-      console.error("Network error:", err);
+      if (!data.success) setFileStatus("error");
+    } catch {
+      setFileStatus("error");
     }
     let p = 0;
     const interval = setInterval(() => {
@@ -53,7 +53,7 @@ export default function CosmosVSLHackerPage() {
       const visionRes = await fetch("/api/agents/visual-reason", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageUrl: "https://via.placeholder.com/640x360", question: `Analyze this competitor video ad frame. Identify visual hooks, text overlays, emotional triggers, and production quality for audience: ${targetAudience}` }),
+        body: JSON.stringify({ question: `Analyze a competitor video ad. Identify visual hooks, text overlays, emotional triggers, and production quality for audience: ${targetAudience}` }),
       });
       const visionData = await visionRes.json();
 
@@ -81,8 +81,8 @@ export default function CosmosVSLHackerPage() {
       setScriptResult(scriptData.success ? (scriptData.result || scriptData.text || JSON.stringify(scriptData, null, 2)) : `Error: ${scriptData.error || "Unknown"}`);
 
       setPipelineStatus("complete");
-    } catch (err) {
-      console.error("Pipeline error:", err);
+    } catch {
+      setScriptResult("Pipeline failed. Please try again.");
       setPipelineStatus("complete");
     }
   };
