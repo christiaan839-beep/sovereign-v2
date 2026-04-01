@@ -10,7 +10,7 @@ import {
   X, Menu, Database,
   PanelLeftOpen, PanelLeftClose, Plug, Cpu,
   BarChart3, Eye, Shield, Wrench, LayoutTemplate,
-  Wand2, Workflow, MessageSquare
+  Wand2, Workflow, MessageSquare, Zap
 } from "lucide-react";
 import { useKeyboardShortcuts } from "@/lib/keyboard-shortcuts";
 import { motion, AnimatePresence } from "framer-motion";
@@ -72,6 +72,7 @@ interface NavGroup {
 
 const PRIMARY_NAV: NavItem[] = [
   { href: "/dashboard", label: "Home", icon: LayoutDashboard, tooltip: "Dashboard overview" },
+  { href: "/dashboard/playbooks", label: "Playbooks", icon: Zap, tooltip: "1-click multi-agent workflows" },
   { href: "/chat", label: "Chat", icon: MessageSquare, tooltip: "AI chat assistant" },
   { href: "/dashboard/leads", label: "Leads", icon: Target, tooltip: "Find and manage leads" },
   { href: "/dashboard/content-factory", label: "Content", icon: Factory, tooltip: "Create blog posts and social content" },
