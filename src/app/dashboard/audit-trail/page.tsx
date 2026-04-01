@@ -89,7 +89,7 @@ export default function AuditTrailPage() {
     try {
       const params = new URLSearchParams({ since, page: String(page) });
       if (action) params.set("action", action);
-      const res = await fetch(`/api/_misc/audit-logs?${params}`);
+      const res = await fetch(`/api/audit-logs?${params}`);
       if (!res.ok) throw new Error("Failed to fetch audit logs");
       const data = await res.json();
       setLogs(data.logs || []);

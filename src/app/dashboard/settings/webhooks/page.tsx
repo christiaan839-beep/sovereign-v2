@@ -109,7 +109,7 @@ export default function WebhooksPage() {
   const loadTemplates = useCallback(async () => {
     setTemplatesLoading(true);
     try {
-      const res = await fetch("/api/_integrations/templates");
+      const res = await fetch("/api/integrations/templates");
       const data = await res.json();
       if (data.templates) setTemplates(data.templates);
     } catch (_err) {
@@ -154,7 +154,7 @@ export default function WebhooksPage() {
     setConfigSaving(true);
     setConfigMessage(null);
     try {
-      const res = await fetch("/api/_integrations/templates", {
+      const res = await fetch("/api/integrations/templates", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

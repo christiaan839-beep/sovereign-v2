@@ -73,7 +73,7 @@ export default function IntegrationsPage() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch("/api/_integrations/registry");
+        const res = await fetch("/api/integrations/registry");
         if (!res.ok) throw new Error("Failed to fetch");
         const data = await res.json();
         setIntegrations(data.integrations ?? []);

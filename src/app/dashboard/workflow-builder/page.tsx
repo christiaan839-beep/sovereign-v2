@@ -150,7 +150,7 @@ export default function WorkflowBuilderPage() {
 
     (async () => {
       try {
-        const res = await fetch(`/api/_misc/workflows/${id}`);
+        const res = await fetch(`/api/workflows/${id}`);
         if (!res.ok) return;
         const data = await res.json();
         const wf = data.workflow;
@@ -258,7 +258,7 @@ export default function WorkflowBuilderPage() {
 
   const deleteWorkflow = useCallback(async (id: string) => {
     try {
-      const res = await fetch(`/api/_misc/workflows/${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/workflows/${id}`, { method: "DELETE" });
       if (res.ok) {
         setSavedWorkflows((prev) => prev.filter((w) => w.id !== id));
         if (workflowId === id) {

@@ -57,7 +57,7 @@ export default function EnterprisePage() {
     e.preventDefault();
     setStatus("submitting");
     try {
-      const res = await fetch("/api/_misc/leads/capture", {
+      const res = await fetch("/api/leads/capture", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

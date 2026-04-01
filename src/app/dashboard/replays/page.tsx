@@ -98,7 +98,7 @@ export default function ReplaysPage() {
         since: "30d",
         page: pageNum.toString(),
       });
-      const res = await fetch(`/api/_misc/audit-logs?${params}`);
+      const res = await fetch(`/api/audit-logs?${params}`);
       const data = await res.json();
 
       const logs = data.logs || [];

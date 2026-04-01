@@ -20,7 +20,7 @@ function UnsubscribeForm() {
 
     setStatus("loading");
     try {
-      const res = await fetch("/api/_email/unsubscribe", {
+      const res = await fetch("/api/email/unsubscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),

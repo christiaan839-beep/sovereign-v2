@@ -78,8 +78,8 @@ export default function MemoryViewerPage() {
     try {
       const q = query || debouncedQuery || "all";
       const [memRes, statsRes] = await Promise.all([
-        fetch(`/api/_agents/memory?action=query&q=${encodeURIComponent(q)}&limit=100`),
-        fetch(`/api/_agents/memory?action=stats`),
+        fetch(`/api/agents/memory?action=query&q=${encodeURIComponent(q)}&limit=100`),
+        fetch(`/api/agents/memory?action=stats`),
       ]);
       const memData = await memRes.json();
       const statsData = await statsRes.json();
