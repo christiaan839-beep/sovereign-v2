@@ -8,10 +8,10 @@ import {
 } from "lucide-react";
 
 const STATS = [
-  { label: "Total Revenue Attributed", value: "$44,100", icon: DollarSign, color: "emerald" },
-  { label: "Avg Deal Size", value: "$14,700", icon: TrendingUp, color: "cyan" },
-  { label: "Active Attribution Chains", value: "3", icon: Link2, color: "amber" },
-  { label: "Conversion Rate", value: "18.4%", icon: Percent, color: "emerald" },
+  { label: "Total Revenue Attributed", value: "$0", icon: DollarSign, color: "emerald" },
+  { label: "Avg Deal Size", value: "$0", icon: TrendingUp, color: "cyan" },
+  { label: "Active Attribution Chains", value: "0", icon: Link2, color: "amber" },
+  { label: "Conversion Rate", value: "—", icon: Percent, color: "emerald" },
 ];
 
 const AGENT_ICON: Record<string, React.ComponentType<{ className?: string }>> = {

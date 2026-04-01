@@ -24,11 +24,11 @@ const RECENT_AGENTS_KEY = "sovereign_recent_agents";
 /* ─── Live Status Rotator ─── */
 
 const LIVE_ACTIVITIES = [
-  { text: "Lead Gen found 53 leads", time: "2m ago", color: "text-emerald-400" },
-  { text: "Content Agent wrote 1,487 words", time: "5m ago", color: "text-cyan-400" },
-  { text: "SEO Audit scored 94/100", time: "8m ago", color: "text-violet-400" },
-  { text: "Voice Agent booked 2 meetings", time: "12m ago", color: "text-amber-400" },
-  { text: "Market Analyst found 847 opportunities", time: "15m ago", color: "text-rose-400" },
+  { text: "Lead Gen agent ready", time: "now", color: "text-emerald-400" },
+  { text: "Content pipeline active", time: "now", color: "text-cyan-400" },
+  { text: "SEO tools online", time: "now", color: "text-violet-400" },
+  { text: "Voice agents standing by", time: "now", color: "text-amber-400" },
+  { text: "All systems operational", time: "now", color: "text-rose-400" },
 ];
 
 function LiveStatusRotator() {
