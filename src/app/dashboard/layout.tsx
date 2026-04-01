@@ -10,7 +10,7 @@ import {
   X, Menu, Database,
   PanelLeftOpen, PanelLeftClose, Plug, Cpu,
   BarChart3, Eye, Shield, Wrench, LayoutTemplate,
-  Wand2, Workflow, MessageSquare, Zap
+  Wand2, Workflow, MessageSquare, Zap, Crown
 } from "lucide-react";
 import { useKeyboardShortcuts } from "@/lib/keyboard-shortcuts";
 import { motion, AnimatePresence } from "framer-motion";
@@ -107,6 +107,7 @@ const BOTTOM_NAV: NavItem[] = [
   { href: "/dashboard/integrations", label: "Integrations", icon: Plug, tooltip: "Connect apps and services" },
   { href: "/dashboard/billing", label: "Billing", icon: DollarSign, tooltip: "Plans and payments" },
   { href: "/dashboard/settings", label: "Settings", icon: Settings, tooltip: "Account and team settings" },
+  { href: "/dashboard/admin", label: "Admin", icon: Crown, tooltip: "Platform-wide revenue and metrics" },
 ];
 
 /* Page label lookup for breadcrumbs */
