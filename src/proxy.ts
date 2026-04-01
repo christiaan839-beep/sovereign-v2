@@ -20,9 +20,16 @@ export const config = {
   ],
 };
 
-// In-memory rate limit tracking (per-edge-instance)
+// In-memory rate limit tracking (per-edge-instance).
+// NOTE: This is per-instance state. On Vercel with multiple edge regions,
+// each region has its own rate limit Map. For true distributed rate limiting
+// at 10K+ concurrent users, replace with Upstash Redis:
+//   import { Ratelimit } from "@upstash/ratelimit";
+//   import { Redis } from "@upstash/redis";
+//   const ratelimit = new Ratelimit({ redis: Redis.fromEnv(), limiter: Ratelimit.slidingWindow(100, "1 m") });
+// For now, the in-memory approach works correctly for <1000 concurrent users.
 const rateLimits = new Map<string, { count: number; resetAt: number }>();
-let rateLimitRequestCount = 0; // Track requests for periodic cleanup
+let rateLimitRequestCount = 0;
 
 /** Pre-computed security headers (avoid recreating on every request) */
 const SECURITY_HEADERS: ReadonlyArray<[string, string]> = [
@@ -68,7 +75,18 @@ function sovereignMiddleware(request: NextRequest) {
 
   // ── CORS PREFLIGHT HANDLING ──
   if (request.method === 'OPTIONS') {
+    const origin = request.headers.get('origin') || '';
+    const allowedOrigins = [
+      'https://sovereignmatrix.agency',
+      'https://hooks.zapier.com',
+      'https://hook.eu1.make.com',
+      'https://hook.us1.make.com',
+      process.env.NEXT_PUBLIC_APP_URL,
+    ].filter(Boolean) as string[];
     const preflight = new NextResponse(null, { status: 204 });
+    if (allowedOrigins.includes(origin)) {
+      preflight.headers.set('Access-Control-Allow-Origin', origin);
+    }
     preflight.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     preflight.headers.set('Access-Control-Allow-Headers', 'Content-Type, x-api-key, Authorization');
     preflight.headers.set('Access-Control-Max-Age', '86400');

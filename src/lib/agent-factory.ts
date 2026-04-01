@@ -91,11 +91,11 @@ export interface AgentContext {
 export function createAgentRoute(config: AgentConfig) {
   return async function POST(req: Request) {
     const startTime = Date.now();
+    let email = "";
+    let userId = "";
 
     try {
       // ─── Auth & Rate Limiting ───
-      let email = "";
-      let userId = "";
 
       if (!config.public) {
         const guard = await guardRoute();
