@@ -6,41 +6,37 @@ import { NextRequest, NextResponse } from "next/server";
  * are loaded dynamically from src/app/api/_misc/
  */
 
-async function loadHandler(path: string) {
+type RouteModule = {
+  GET?: (req: NextRequest) => Promise<Response>;
+  POST?: (req: NextRequest) => Promise<Response>;
+  PUT?: (req: NextRequest) => Promise<Response>;
+  DELETE?: (req: NextRequest) => Promise<Response>;
+};
+
+async function tryImport(specifier: string): Promise<RouteModule | null> {
+  try {
+    return await import(/* webpackIgnore: true */ specifier);
+  } catch {
+    return null;
+  }
+}
+
+async function loadHandler(path: string): Promise<RouteModule | null> {
   // Strip known prefixes — e.g., "agents/leads" → try "_agents/leads"
   const strippedPath = path
     .replace(/^agents\//, "")
     .replace(/^payments\//, "")
     .replace(/^integrations\//, "");
 
-  // Try all underscore-prefixed directories
   const prefixes = ["_agents", "_misc", "_settings", "_email", "_content", "_payments", "_billing", "_webhooks", "_cron", "_integrations"];
+  const pathsToTry = [...new Set([path, strippedPath])];
 
-  // First try with the full path
-  for (const prefix of prefixes) {
-    try {
-      return require(`@/app/api/${prefix}/${path}/route`);
-    } catch {
-      try {
-        return require(`@/app/api/${prefix}/${path}`);
-      } catch {
-        continue;
-      }
-    }
-  }
-
-  // Then try with the stripped path (handles "agents/leads" → "_agents/leads")
-  if (strippedPath !== path) {
+  for (const tryPath of pathsToTry) {
     for (const prefix of prefixes) {
-      try {
-        return require(`@/app/api/${prefix}/${strippedPath}/route`);
-      } catch {
-        try {
-          return require(`@/app/api/${prefix}/${strippedPath}`);
-        } catch {
-          continue;
-        }
-      }
+      const mod = await tryImport(`@/app/api/${prefix}/${tryPath}/route`);
+      if (mod) return mod;
+      const mod2 = await tryImport(`@/app/api/${prefix}/${tryPath}`);
+      if (mod2) return mod2;
     }
   }
 

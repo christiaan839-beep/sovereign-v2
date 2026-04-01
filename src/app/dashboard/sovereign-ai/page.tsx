@@ -5,8 +5,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Bot, Send, Sparkles, Zap, Target, BarChart3,
   Shield, Globe, AlertTriangle, Loader2,
-  Lightbulb, RefreshCw
+  Lightbulb, RefreshCw, Play, CheckCircle2, XCircle,
+  ClipboardList, ChevronDown, ChevronUp,
 } from "lucide-react";
+
+// ─── Types ───
 
 interface Message {
   id: string;
@@ -36,6 +39,39 @@ interface HealthData {
   services: Record<string, { status: string; latencyMs: number }>;
   capabilities: Record<string, number>;
 }
+
+interface PlanStep {
+  agent: string;
+  params: Record<string, string>;
+  reason: string;
+}
+
+interface StepResult {
+  step: number;
+  agent: string;
+  reason: string;
+  status: "success" | "failed";
+  data?: unknown;
+  error?: string;
+  duration_ms: number;
+}
+
+interface CoordinatorResponse {
+  goal: string;
+  plan: PlanStep[];
+  auto_execute: boolean;
+  results?: StepResult[];
+  summary?: {
+    total_steps: number;
+    succeeded: number;
+    failed: number;
+    total_duration_ms: number;
+  };
+  error?: string;
+  message?: string;
+}
+
+// ─── Constants ───
 
 const ICON_MAP = {
   zap: Zap,
@@ -177,6 +213,303 @@ function MessageBubble({ message, onAction }: { message: Message; onAction: (act
         </div>
       </div>
     </motion.div>
+  );
+}
+
+// ─── Plan Step Card ───
+function PlanStepCard({
+  step,
+  index,
+  result,
+  isExecuting,
+}: {
+  step: PlanStep;
+  index: number;
+  result?: StepResult;
+  isExecuting: boolean;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const isRunning = isExecuting && !result;
+  const succeeded = result?.status === "success";
+  const failed = result?.status === "failed";
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: -12 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: index * 0.08 }}
+      className={`rounded-xl border p-4 transition-colors ${
+        isRunning
+          ? "border-amber-500/30 bg-amber-500/[0.04]"
+          : succeeded
+            ? "border-emerald-500/25 bg-emerald-500/[0.04]"
+            : failed
+              ? "border-red-500/25 bg-red-500/[0.04]"
+              : "border-white/[0.06] bg-white/[0.02]"
+      }`}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-bold ${
+            isRunning
+              ? "bg-amber-500/15 text-amber-400"
+              : succeeded
+                ? "bg-emerald-500/15 text-emerald-400"
+                : failed
+                  ? "bg-red-500/15 text-red-400"
+                  : "bg-white/[0.06] text-neutral-500"
+          }`}>
+            {isRunning ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : succeeded ? (
+              <CheckCircle2 className="w-3.5 h-3.5" />
+            ) : failed ? (
+              <XCircle className="w-3.5 h-3.5" />
+            ) : (
+              index + 1
+            )}
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-mono font-bold text-white">{step.agent}</span>
+              {result?.duration_ms !== undefined && (
+                <span className="text-[9px] text-neutral-600 font-mono">{result.duration_ms}ms</span>
+              )}
+            </div>
+            <p className="text-[11px] text-neutral-500 mt-0.5 truncate">{step.reason}</p>
+          </div>
+        </div>
+
+        {result?.data && (
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="flex-shrink-0 p-1 rounded hover:bg-white/[0.05] text-neutral-600 hover:text-neutral-400 transition-colors"
+          >
+            {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          </button>
+        )}
+      </div>
+
+      {failed && result?.error && (
+        <p className="text-[10px] text-red-400/70 mt-2 pl-10">{result.error}</p>
+      )}
+
+      <AnimatePresence>
+        {expanded && result?.data && (
+          <motion.pre
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="mt-3 pl-10 text-[10px] text-neutral-500 font-mono overflow-x-auto max-h-48 overflow-y-auto custom-scrollbar"
+          >
+            {JSON.stringify(result.data, null, 2).slice(0, 2000)}
+          </motion.pre>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
+
+// ─── Goal Coordinator Panel ───
+function GoalCoordinator() {
+  const [goal, setGoal] = useState("");
+  const [plan, setPlan] = useState<PlanStep[] | null>(null);
+  const [results, setResults] = useState<StepResult[]>([]);
+  const [isPlanning, setIsPlanning] = useState(false);
+  const [isExecuting, setIsExecuting] = useState(false);
+  const [executingIndex, setExecutingIndex] = useState(-1);
+  const [summary, setSummary] = useState<CoordinatorResponse["summary"] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const reset = () => {
+    setPlan(null);
+    setResults([]);
+    setSummary(null);
+    setError(null);
+    setExecutingIndex(-1);
+  };
+
+  const generatePlan = async () => {
+    if (!goal.trim() || isPlanning) return;
+    reset();
+    setIsPlanning(true);
+    setError(null);
+
+    try {
+      const res = await fetch("/api/agents/coordinator", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ goal: goal.trim(), auto_execute: false }),
+      });
+      const data: CoordinatorResponse = await res.json();
+
+      if (data.error) {
+        setError(data.error);
+      } else if (data.plan) {
+        setPlan(data.plan);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to generate plan");
+    } finally {
+      setIsPlanning(false);
+    }
+  };
+
+  const executePlan = async () => {
+    if (!goal.trim() || isExecuting) return;
+    setResults([]);
+    setSummary(null);
+    setIsExecuting(true);
+    setExecutingIndex(0);
+
+    try {
+      const res = await fetch("/api/agents/coordinator", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ goal: goal.trim(), auto_execute: true }),
+      });
+      const data: CoordinatorResponse = await res.json();
+
+      if (data.error) {
+        setError(data.error);
+      } else {
+        if (data.plan) setPlan(data.plan);
+        if (data.results) setResults(data.results);
+        if (data.summary) setSummary(data.summary);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Execution failed");
+    } finally {
+      setIsExecuting(false);
+      setExecutingIndex(-1);
+    }
+  };
+
+  return (
+    <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl overflow-hidden">
+      {/* Header */}
+      <div className="px-5 py-4 border-b border-white/[0.06] flex items-center gap-3">
+        <div className="w-9 h-9 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
+          <ClipboardList className="w-4.5 h-4.5 text-violet-400" />
+        </div>
+        <div>
+          <h2 className="text-sm font-black text-white">Goal Coordinator</h2>
+          <p className="text-[9px] text-violet-500/60 uppercase tracking-wider">Describe a goal. Get a multi-agent plan.</p>
+        </div>
+      </div>
+
+      {/* Goal Input */}
+      <div className="p-5">
+        <textarea
+          value={goal}
+          onChange={(e) => setGoal(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              generatePlan();
+            }
+          }}
+          placeholder="Describe your goal... e.g. &quot;Find fintech startups in London, research their tech stacks, then write a personalized outreach email sequence&quot;"
+          rows={3}
+          className="w-full bg-black/30 border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white placeholder:text-neutral-700 focus:outline-none focus:border-violet-500/30 transition-colors resize-none"
+        />
+
+        <div className="flex items-center gap-2 mt-3">
+          <button
+            onClick={generatePlan}
+            disabled={!goal.trim() || isPlanning || isExecuting}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-violet-500/10 border border-violet-500/25 text-violet-400 text-xs font-bold hover:bg-violet-500/20 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            {isPlanning ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Sparkles className="w-3.5 h-3.5" />
+            )}
+            {isPlanning ? "Planning..." : "Generate Plan"}
+          </button>
+
+          {plan && plan.length > 0 && (
+            <button
+              onClick={executePlan}
+              disabled={isExecuting || isPlanning}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-bold hover:bg-emerald-500/20 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              {isExecuting ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Play className="w-3.5 h-3.5" />
+              )}
+              {isExecuting ? "Executing..." : "Execute Plan"}
+            </button>
+          )}
+
+          {(plan || error) && (
+            <button
+              onClick={() => { reset(); setGoal(""); }}
+              className="flex items-center gap-1.5 px-3 py-2.5 rounded-lg bg-white/[0.04] border border-white/[0.06] text-[10px] text-neutral-500 hover:text-white transition-colors"
+            >
+              <RefreshCw className="w-3 h-3" /> Clear
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Error */}
+      <AnimatePresence>
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="px-5 pb-4"
+          >
+            <div className="rounded-lg border border-red-500/20 bg-red-500/[0.05] px-4 py-3">
+              <p className="text-xs text-red-400">{error}</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Plan Steps */}
+      <AnimatePresence>
+        {plan && plan.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="px-5 pb-5 space-y-2"
+          >
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[10px] text-neutral-600 uppercase tracking-wider font-bold">
+                Pipeline — {plan.length} step{plan.length !== 1 ? "s" : ""}
+              </span>
+              {summary && (
+                <span className="text-[10px] font-mono text-neutral-600">
+                  {summary.succeeded}/{summary.total_steps} passed
+                  {summary.total_duration_ms ? ` in ${(summary.total_duration_ms / 1000).toFixed(1)}s` : ""}
+                </span>
+              )}
+            </div>
+
+            {plan.map((step, i) => {
+              const result = results.find((r) => r.step === i + 1);
+              const isStepExecuting = isExecuting && !result && (
+                executingIndex === -1 ||
+                i <= (results.length)
+              );
+              return (
+                <PlanStepCard
+                  key={`${step.agent}-${i}`}
+                  step={step}
+                  index={i}
+                  result={result}
+                  isExecuting={isStepExecuting}
+                />
+              );
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
 
@@ -328,6 +661,11 @@ Respond helpfully and concisely. If the user asks to execute a task, describe wh
         >
           <RefreshCw className="w-3 h-3" /> Reset
         </button>
+      </div>
+
+      {/* Goal Coordinator */}
+      <div className="mb-6">
+        <GoalCoordinator />
       </div>
 
       {/* Quick Actions Bar */}

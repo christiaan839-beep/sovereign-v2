@@ -5,10 +5,15 @@ import { apiLogger } from '@/lib/api-logger';
 
 /**
  * SOVEREIGN MATRIX — UNIFIED EDGE MIDDLEWARE
- * 
+ *
  * Handles TWO concerns at the Vercel Edge:
  * 1. A/B Testing for /landing/* routes
  * 2. API Gateway for /api/agents/* routes — rate limiting, metering, CORS
+ *
+ * Rate Limiting Strategy:
+ *   - Production (UPSTASH_REDIS_REST_URL set): Upstash Redis sliding window, 100 req/min.
+ *     Distributed across all Vercel edge regions. Consistent at 10K+ concurrent users.
+ *   - Development / fallback: In-memory Map per edge instance (correct for <1K users).
  */
 
 export const config = {
@@ -20,14 +25,52 @@ export const config = {
   ],
 };
 
-// In-memory rate limit tracking (per-edge-instance).
-// NOTE: This is per-instance state. On Vercel with multiple edge regions,
-// each region has its own rate limit Map. For true distributed rate limiting
-// at 10K+ concurrent users, replace with Upstash Redis:
-//   import { Ratelimit } from "@upstash/ratelimit";
-//   import { Redis } from "@upstash/redis";
-//   const ratelimit = new Ratelimit({ redis: Redis.fromEnv(), limiter: Ratelimit.slidingWindow(100, "1 m") });
-// For now, the in-memory approach works correctly for <1000 concurrent users.
+// ── DISTRIBUTED RATE LIMITER (Upstash Redis) ──────────────────────────────────
+// Upstash Redis is edge-compatible (HTTP REST — no TCP). When UPSTASH_REDIS_REST_URL
+// is set, we use a sliding window across ALL Vercel edge regions. Without it, we
+// fall back to an in-memory Map that works correctly for single-region / dev setups.
+//
+// Lazy singleton: initialized on first request, cached for the lifetime of the
+// edge isolate (avoids module-level async, plays nicely with Next.js edge runtime).
+
+type UpstashLimiter = {
+  limit: (key: string) => Promise<{ success: boolean; remaining: number; reset: number }>;
+};
+
+let _rlCache: UpstashLimiter | null | undefined = undefined; // undefined = not yet initialized
+
+async function getUpstashLimiter(): Promise<UpstashLimiter | null> {
+  if (_rlCache !== undefined) return _rlCache;
+
+  if (
+    !process.env.UPSTASH_REDIS_REST_URL ||
+    !process.env.UPSTASH_REDIS_REST_TOKEN
+  ) {
+    _rlCache = null;
+    return null;
+  }
+
+  try {
+    const { Redis } = await import('@upstash/redis');
+    const { Ratelimit } = await import('@upstash/ratelimit');
+    const redis = new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN,
+    });
+    _rlCache = new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(100, '1 m'),
+      analytics: true,         // stores hit count in Redis for Upstash analytics dashboard
+      prefix: 'sovereign:rl',  // namespace to avoid key collisions
+    });
+  } catch {
+    // Redis init failed (bad env vars, network error) — fall back to in-memory
+    _rlCache = null;
+  }
+  return _rlCache;
+}
+
+// Fallback: in-memory Map (correct for <1K concurrent users, single region)
 const rateLimits = new Map<string, { count: number; resetAt: number }>();
 let rateLimitRequestCount = 0;
 
@@ -70,7 +113,7 @@ export default clerkMiddleware(async (auth, request) => {
   return sovereignMiddleware(request as NextRequest);
 });
 
-function sovereignMiddleware(request: NextRequest) {
+async function sovereignMiddleware(request: NextRequest) {
   const url = request.nextUrl;
 
   // ── CORS PREFLIGHT HANDLING ──
@@ -127,58 +170,79 @@ function sovereignMiddleware(request: NextRequest) {
       clientIp
     });
 
-    // Rate limiting: 100 requests per minute per client
+    // ── RATE LIMITING ────────────────────────────────────────────────────────
     const now = Date.now();
-    const limit = rateLimits.get(clientId);
+    let rateLimited = false;
+    let remaining = 99;
+    let retryAfterSeconds = 60;
 
-    if (limit) {
-      // Skip expired entries — treat as fresh window
-      if (now >= limit.resetAt) {
-        rateLimits.set(clientId, { count: 1, resetAt: now + 60000 });
-      } else {
-        limit.count += 1;
-        if (limit.count > 100) {
-          apiLogger.log({
-            route: url.pathname,
-            method: request.method,
-            status: 429,
-            durationMs: 0,
-            clientIp,
-            error: "Rate limit exceeded"
-          });
-          return NextResponse.json(
-            { error: 'Rate limit exceeded. Max 100 requests per minute.', retry_after_seconds: Math.ceil((limit.resetAt - now) / 1000) },
-            { status: 429 }
-          );
-        }
+    const upstashRatelimit = await getUpstashLimiter();
+    if (upstashRatelimit) {
+      // Distributed sliding window via Upstash Redis
+      const result = await upstashRatelimit.limit(clientId);
+      remaining = result.remaining;
+      if (!result.success) {
+        rateLimited = true;
+        retryAfterSeconds = Math.ceil((result.reset - now) / 1000);
       }
     } else {
-      rateLimits.set(clientId, { count: 1, resetAt: now + 60000 });
-    }
-
-    // Cleanup stale entries every 100th request (avoid checking size on every request)
-    rateLimitRequestCount++;
-    if (rateLimitRequestCount % 100 === 0) {
-      for (const [key, val] of rateLimits) {
-        if (now >= val.resetAt) rateLimits.delete(key);
+      // Fallback: in-memory per-instance (dev / single-region)
+      const limit = rateLimits.get(clientId);
+      if (limit) {
+        if (now >= limit.resetAt) {
+          rateLimits.set(clientId, { count: 1, resetAt: now + 60000 });
+          remaining = 99;
+        } else {
+          limit.count += 1;
+          remaining = Math.max(0, 100 - limit.count);
+          if (limit.count > 100) {
+            rateLimited = true;
+            retryAfterSeconds = Math.ceil((limit.resetAt - now) / 1000);
+          }
+        }
+      } else {
+        rateLimits.set(clientId, { count: 1, resetAt: now + 60000 });
+        remaining = 99;
       }
-      // If still over cap after cleanup, remove oldest entries
-      if (rateLimits.size > 500) {
-        const excess = rateLimits.size - 500;
-        let removed = 0;
-        for (const key of rateLimits.keys()) {
-          if (removed >= excess) break;
-          rateLimits.delete(key);
-          removed++;
+
+      // Cleanup stale in-memory entries every 100th request
+      rateLimitRequestCount++;
+      if (rateLimitRequestCount % 100 === 0) {
+        for (const [key, val] of rateLimits) {
+          if (now >= val.resetAt) rateLimits.delete(key);
+        }
+        if (rateLimits.size > 500) {
+          const excess = rateLimits.size - 500;
+          let removed = 0;
+          for (const key of rateLimits.keys()) {
+            if (removed >= excess) break;
+            rateLimits.delete(key);
+            removed++;
+          }
         }
       }
+    }
+
+    if (rateLimited) {
+      apiLogger.log({
+        route: url.pathname,
+        method: request.method,
+        status: 429,
+        durationMs: 0,
+        clientIp,
+        error: "Rate limit exceeded",
+      });
+      return NextResponse.json(
+        { error: 'Rate limit exceeded. Max 100 requests per minute.', retry_after_seconds: retryAfterSeconds },
+        { status: 429 }
+      );
     }
 
     // Add metering headers
     const response = NextResponse.next();
     response.headers.set('X-Sovereign-Agent', url.pathname.replace('/api/_agents/', '').replace('/api/agents/', ''));
     response.headers.set('X-Sovereign-Timestamp', new Date().toISOString());
-    response.headers.set('X-RateLimit-Remaining', String(Math.max(0, 100 - (rateLimits.get(clientId)?.count || 0))));
+    response.headers.set('X-RateLimit-Remaining', String(remaining));
     
     // CORS headers for external integrations (Zapier, Make, n8n)
     const origin = request.headers.get('origin') || '';

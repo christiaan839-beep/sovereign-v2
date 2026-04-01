@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { FileCode2, Copy, CheckCircle2, ChevronRight } from "lucide-react";
 
 interface EndpointDoc {
@@ -89,7 +90,7 @@ export default function DocsPage() {
                 <p className="text-neutral-500 text-xs uppercase tracking-widest">{ENDPOINTS.length} Endpoints · MCP + REST · All Agent APIs</p>
               </div>
             </div>
-            <a href="/" className="text-xs text-neutral-600 hover:text-white transition-colors">← Back</a>
+            <Link href="/" className="text-xs text-neutral-600 hover:text-white transition-colors">← Back</Link>
           </div>
         </header>
 

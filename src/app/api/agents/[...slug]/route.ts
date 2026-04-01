@@ -17,13 +17,11 @@ type RouteHandler = (req: NextRequest) => Promise<Response>;
 const agentHandlers: Record<string, { POST?: RouteHandler; GET?: RouteHandler; PUT?: RouteHandler; DELETE?: RouteHandler }> = {};
 
 // Dynamically import all agent route files
-function getAgentHandler(slug: string) {
+async function getAgentHandler(slug: string) {
   if (agentHandlers[slug]) return agentHandlers[slug];
 
   try {
-    // Dynamic require from the _agents directory
-    const modulePath = `@/app/api/_agents/${slug}/route`;
-    const mod = require(modulePath);
+    const mod = await import(/* webpackIgnore: true */ `@/app/api/_agents/${slug}/route`);
     agentHandlers[slug] = mod;
     return mod;
   } catch {
@@ -64,7 +62,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
   const { slug } = await params;
   const agentName = slug.join("/");
 
-  const handler = getAgentHandler(agentName);
+  const handler = await getAgentHandler(agentName);
   if (!handler?.POST) {
     return NextResponse.json(
       { error: `Agent "${agentName}" not found`, available: KNOWN_AGENTS.slice(0, 20) },
@@ -92,7 +90,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
   const { slug } = await params;
   const agentName = slug.join("/");
 
-  const handler = getAgentHandler(agentName);
+  const handler = await getAgentHandler(agentName);
   if (!handler?.GET) {
     // Return agent list for discovery
     return NextResponse.json({
@@ -114,7 +112,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ slug: string[] }> }) {
   const { slug } = await params;
-  const handler = getAgentHandler(slug.join("/"));
+  const handler = await getAgentHandler(slug.join("/"));
   if (!handler?.PUT) return NextResponse.json({ error: "Method not supported" }, { status: 405 });
   try {
     return await handler.PUT(req);
@@ -128,7 +126,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ slug
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ slug: string[] }> }) {
   const { slug } = await params;
-  const handler = getAgentHandler(slug.join("/"));
+  const handler = await getAgentHandler(slug.join("/"));
   if (!handler?.DELETE) return NextResponse.json({ error: "Method not supported" }, { status: 405 });
   try {
     return await handler.DELETE(req);

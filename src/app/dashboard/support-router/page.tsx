@@ -147,7 +147,7 @@ export default function SupportRouterPage() {
                                    <div className="text-[10px] text-rose-400 font-mono">{activeTicket.email}</div>
                                 </div>
                              </div>
-                             <p className="text-sm text-rose-100/80 leading-relaxed">"{activeTicket.body}"</p>
+                             <p className="text-sm text-rose-100/80 leading-relaxed">&ldquo;{activeTicket.body}&rdquo;</p>
                           </div>
                        </motion.div>
                     )}
@@ -183,7 +183,7 @@ export default function SupportRouterPage() {
                                 <ArrowRight className="w-3 h-3" /> Autonomous Email Dispatch
                              </div>
                              <p className="text-sm text-emerald-100 leading-relaxed font-sans">
-                                "Hi Michael. I am incredibly sorry to hear the gasket on Order #4401-B ruptured. Because you've been a loyal partner to us for 14 orders, I have proactively bypassed our return department and issued a full refund to your card ending in 4492 right now. I have also FedEx overnighted the replacement unit. It will arrive by 9AM tomorrow so your assembly line doesn't stall. Please accept my personal apology."
+                                &ldquo;Hi Michael. I am incredibly sorry to hear the gasket on Order #4401-B ruptured. Because you&apos;ve been a loyal partner to us for 14 orders, I have proactively bypassed our return department and issued a full refund to your card ending in 4492 right now. I have also FedEx overnighted the replacement unit. It will arrive by 9AM tomorrow so your assembly line doesn&apos;t stall. Please accept my personal apology.&rdquo;
                              </p>
                           </div>
                        </motion.div>
