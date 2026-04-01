@@ -14,7 +14,8 @@ export function validateEnvironment() {
   const criticalVars = [
     "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
     "CLERK_SECRET_KEY",
-    "NVIDIA_NIM_API_KEY"
+    "NVIDIA_NIM_API_KEY",
+    "DATABASE_URL"
   ];
 
   const missingCritical = criticalVars.filter(key => !process.env[key]);
