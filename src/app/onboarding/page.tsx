@@ -42,6 +42,13 @@ const STEPS = [
     ],
   },
   {
+    id: "company-url",
+    title: "Drop your website URL",
+    subtitle: "We'll analyze your brand, find sample prospects, and pre-configure everything.",
+    icon: Globe,
+    isUrlStep: true,
+  },
+  {
     id: "first-task",
     title: "Run your first agent",
     subtitle: "Type a goal. Watch it execute. No prompt engineering needed.",
@@ -129,6 +136,106 @@ function FirstTaskDemo() {
               <span className="text-[10px] text-emerald-500/70 font-bold uppercase tracking-wider">Task Complete</span>
             </div>
             <p className="text-xs text-neutral-400 leading-relaxed">{result}</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function CompanyUrlAnalyzer({ onComplete }: { onComplete: () => void }) {
+  const [url, setUrl] = useState("");
+  const [analyzing, setAnalyzing] = useState(false);
+  const [result, setResult] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const analyze = async () => {
+    if (!url.trim()) return;
+    setAnalyzing(true);
+    setError(null);
+    setResult(null);
+
+    try {
+      const cleanUrl = url.startsWith("http") ? url : `https://${url}`;
+      const res = await fetch("/api/agents/smart-router", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: `Analyze this company website and provide: 1) Company name and what they do (1 sentence), 2) Their target audience, 3) 3 potential lead search queries for finding their ideal customers, 4) 2 blog post topics relevant to their industry. URL: ${cleanUrl}`,
+          task_type: "analysis",
+          confirmed: true,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const output = data.output || data.result || JSON.stringify(data).slice(0, 500);
+        setResult(typeof output === "string" ? output : JSON.stringify(output));
+
+        // Save company info to localStorage for dashboard personalization
+        localStorage.setItem("sovereign_company_url", cleanUrl);
+        localStorage.setItem("sovereign_company_analysis", typeof output === "string" ? output.slice(0, 1000) : "");
+      } else {
+        setError("Could not analyze that URL. You can skip this step and add it later in Settings.");
+      }
+    } catch {
+      setError("Network error. You can skip this step.");
+    }
+    setAnalyzing(false);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="relative">
+        <input
+          type="url"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && analyze()}
+          placeholder="yourcompany.com"
+          className="w-full bg-[#0A0A0A] border border-white/[0.08] rounded-xl px-5 py-4 pr-28 text-sm text-white placeholder:text-neutral-700 focus:outline-none focus:border-emerald-500/30 transition-colors"
+        />
+        <button
+          onClick={analyze}
+          disabled={analyzing || !url.trim()}
+          className="absolute right-2 top-1/2 -translate-y-1/2 px-5 py-2 rounded-lg bg-emerald-500/15 border border-emerald-500/25 text-emerald-400 text-xs font-bold uppercase tracking-wider hover:bg-emerald-500/25 transition-gpu disabled:opacity-30"
+        >
+          {analyzing ? (
+            <span className="flex items-center gap-2">
+              <span className="w-3 h-3 rounded-full border-2 border-emerald-400 border-t-transparent animate-spin" />
+              Analyzing
+            </span>
+          ) : (
+            <span className="flex items-center gap-1">Analyze <ChevronRight className="w-3 h-3" /></span>
+          )}
+        </button>
+      </div>
+
+      <p className="text-[10px] text-neutral-600 text-center">
+        We&apos;ll scan your site to understand your business. No data is stored externally.
+      </p>
+
+      <AnimatePresence>
+        {result && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+            className="p-4 rounded-xl bg-emerald-500/[0.04] border border-emerald-500/15">
+            <div className="flex items-center gap-2 mb-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              <span className="text-[10px] text-emerald-500/70 font-bold uppercase tracking-wider">Analysis Complete</span>
+            </div>
+            <p className="text-xs text-neutral-400 leading-relaxed whitespace-pre-wrap">{result.slice(0, 600)}</p>
+            <button
+              onClick={onComplete}
+              className="mt-3 flex items-center gap-1 text-xs text-emerald-400 hover:text-emerald-300 transition-colors"
+            >
+              Continue <ArrowRight className="w-3 h-3" />
+            </button>
+          </motion.div>
+        )}
+        {error && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+            className="p-3 rounded-xl bg-amber-500/[0.04] border border-amber-500/15 text-xs text-amber-400">
+            {error}
           </motion.div>
         )}
       </AnimatePresence>
@@ -248,6 +355,8 @@ export default function OnboardingPage() {
             )}
 
             {step.id === "welcome" && <ReferralCodeInput />}
+
+            {step.id === "company-url" && <CompanyUrlAnalyzer onComplete={next} />}
 
             {step.isAction && <FirstTaskDemo />}
 
