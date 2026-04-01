@@ -27,8 +27,8 @@ const ANTHROPIC_COOKBOOKS = [
     color: "text-[#00B7FF]",
     bg: "bg-[#00B7FF]/10",
     border: "border-[#00B7FF]/20",
-    description: "Evaluates inbound support tickets, determines user intent via zero-shot classification, and executes API-based refunds via Stripe or assigns to a human fallback.",
-    tags: ["Function Calling", "Sentiment Analysis", "Stripe API"]
+    description: "Evaluates inbound support tickets, determines user intent via zero-shot classification, and executes API-based refunds via Yoco or assigns to a human fallback.",
+    tags: ["Function Calling", "Sentiment Analysis", "Yoco API"]
   },
   {
     id: "anthropic-coder",

@@ -172,7 +172,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     {
                       "@type": "Question",
                       name: "What integrations does Sovereign Matrix support?",
-                      acceptedAnswer: { "@type": "Answer", text: "Sovereign Matrix integrates with NVIDIA NIM, Ollama (local models), ElevenLabs (voice), Pinecone (vector memory), Clerk (auth), Neon PostgreSQL (database), Vercel (hosting), PayFast, and Stripe. A public API is available for custom integrations." },
+                      acceptedAnswer: { "@type": "Answer", text: "Sovereign Matrix integrates with NVIDIA NIM, Ollama (local models), ElevenLabs (voice), Pinecone (vector memory), Clerk (auth), Neon PostgreSQL (database), Vercel (hosting), PayFast, Yoco, and PayStack. A public API is available for custom integrations." },
                     },
                   ],
                 },

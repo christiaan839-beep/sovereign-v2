@@ -74,7 +74,7 @@ export default function SupportRouterPage() {
                  {pipelineState === "idle" ? (
                     <div className="text-center">
                        <ShieldCheck className="w-12 h-12 text-neutral-700 mx-auto mb-3" />
-                       <p className="text-xs text-neutral-500 font-mono uppercase tracking-widest">Awaiting Stripe / Zendesk Webhook</p>
+                       <p className="text-xs text-neutral-500 font-mono uppercase tracking-widest">Awaiting Yoco / Zendesk Webhook</p>
                     </div>
                  ) : (
                     <div className="w-full">
@@ -158,7 +158,7 @@ export default function SupportRouterPage() {
                     {pipelineState === "analyzing" && (
                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-[#00B7FF]/70 space-y-2">
                           <p className="animate-pulse">&gt; Routing payload to Llama-3.1-Nemotron-70B...</p>
-                          <p className="animate-pulse delay-75">&gt; Cross-referencing Stripe payment logs...</p>
+                          <p className="animate-pulse delay-75">&gt; Cross-referencing Yoco payment logs...</p>
                           <p className="animate-pulse delay-150">&gt; Retrieving RMA warehouse authorization matrices...</p>
                        </motion.div>
                     )}
@@ -167,7 +167,7 @@ export default function SupportRouterPage() {
                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-amber-400/80 space-y-3">
                           <p>&gt; <span className="text-emerald-400">RAG Check:</span> High LTV Customer ($42k) detected. Bypassing human approval queue.</p>
                           <div className="flex items-center gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg text-amber-300">
-                             <CreditCard className="w-4 h-4" /> Initiating Stripe Refund Command: chr_9982x...
+                             <CreditCard className="w-4 h-4" /> Initiating Yoco Refund Command: ref_9982x...
                           </div>
                           <p className="animate-pulse">&gt; Generating 3D CAD schematic of replacement gasket...</p>
                           <p className="animate-pulse">&gt; Drafting highly empathetic apology response...</p>

@@ -12,11 +12,11 @@ interface WebhookEvent {
 }
 
 const EVENTS: WebhookEvent[] = [
-  { id: "wh-01", ts: "2026-03-28 14:32:11", dir: "in", service: "Stripe", status: 200, preview: "invoice.payment_succeeded", payload: { event: "invoice.payment_succeeded", customer: "cus_R4x9mK", amount: 4900, currency: "usd" } },
+  { id: "wh-01", ts: "2026-03-28 14:32:11", dir: "in", service: "Yoco", status: 200, preview: "invoice.payment_succeeded", payload: { event: "invoice.payment_succeeded", customer: "cus_R4x9mK", amount: 4900, currency: "usd" } },
   { id: "wh-02", ts: "2026-03-28 14:28:05", dir: "out", service: "Slack", status: 200, preview: "agent.run.completed", payload: { channel: "#alerts", text: "Agent 'SEO Audit' completed", agent_id: "ag_12f", duration_ms: 4230 } },
   { id: "wh-03", ts: "2026-03-28 13:55:42", dir: "in", service: "Twilio", status: 200, preview: "message.received", payload: { from: "+15551234567", body: "Schedule callback", sid: "SM9a8b7c" } },
   { id: "wh-04", ts: "2026-03-28 13:41:18", dir: "out", service: "Zapier", status: 500, preview: "lead.created (FAILED)", payload: { error: "Timeout connecting to downstream", lead_id: "ld_88x", retry_count: 2 } },
-  { id: "wh-05", ts: "2026-03-28 12:15:33", dir: "in", service: "Stripe", status: 200, preview: "customer.subscription.updated", payload: { event: "customer.subscription.updated", subscription: "sub_Qz7", plan: "pro" } },
+  { id: "wh-05", ts: "2026-03-28 12:15:33", dir: "in", service: "Yoco", status: 200, preview: "customer.subscription.updated", payload: { event: "customer.subscription.updated", subscription: "sub_Qz7", plan: "pro" } },
   { id: "wh-06", ts: "2026-03-28 11:58:02", dir: "out", service: "Slack", status: 200, preview: "alert.threshold_reached", payload: { channel: "#ops", text: "Agent runs at 90% capacity", metric: "agent_runs", value: 180 } },
   { id: "wh-07", ts: "2026-03-28 10:42:55", dir: "in", service: "Zapier", status: 200, preview: "form.submission", payload: { form_id: "frm_22", email: "lead@example.com", source: "landing_page" } },
   { id: "wh-08", ts: "2026-03-28 09:11:30", dir: "out", service: "Twilio", status: 502, preview: "sms.send (FAILED)", payload: { error: "Bad gateway from carrier", to: "+15559876543", message_sid: null } },
@@ -27,7 +27,7 @@ const FILTERS: { label: string; value: Filter }[] = [
 ];
 
 const SERVICE_COLORS: Record<string, string> = {
-  Stripe: "text-purple-400", Slack: "text-pink-400", Twilio: "text-red-400", Zapier: "text-orange-400",
+  Yoco: "text-purple-400", Slack: "text-pink-400", Twilio: "text-red-400", Zapier: "text-orange-400",
 };
 
 export default function WebhookLogPage() {

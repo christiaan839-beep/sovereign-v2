@@ -62,7 +62,7 @@ export default function PrivacyPage() {
               </ul>
               <p className="mt-3"><strong className="text-neutral-200">Payments:</strong></p>
               <ul className="list-disc list-inside space-y-1 ml-2">
-                <li>Stripe — International payment processing (USA)</li>
+                <li>Yoco — Payment processing (South Africa)</li>
                 <li>PayFast — South African payment processing (South Africa)</li>
                 <li>PayStack — Nigerian payment processing (Nigeria)</li>
               </ul>

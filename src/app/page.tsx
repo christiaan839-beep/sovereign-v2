@@ -182,7 +182,7 @@ function EnterpriseSection() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
             { label: "Workflow Automation", desc: "Visual builder with branching, parallel, and scheduling" },
-            { label: "25+ Live Integrations", desc: "Slack, Sheets, HubSpot, Stripe, GitHub, Discord, and more" },
+            { label: "25+ Live Integrations", desc: "Slack, Sheets, HubSpot, Yoco, GitHub, Discord, and more" },
             { label: "White-Label Platform", desc: "Custom domains, branding, client portals" },
             { label: "Team Roles & Audit Trail", desc: "RBAC, SOC 2 ready, full activity log" },
           ].map((item, i) => (
@@ -768,7 +768,7 @@ export default function Home() {
               },
               {
                 title: "Connect Everything",
-                desc: "Slack, Google Sheets, Airtable, Notion, HubSpot, Salesforce, Stripe, GitHub, Discord, Twilio, MongoDB, Supabase, and more. Every integration works as a workflow step — find leads, then auto-add to your CRM and notify your team.",
+                desc: "Slack, Google Sheets, Airtable, Notion, HubSpot, Salesforce, Yoco, GitHub, Discord, Twilio, MongoDB, Supabase, and more. Every integration works as a workflow step — find leads, then auto-add to your CRM and notify your team.",
                 highlight: "25+ integrations",
               },
             ].map((item) => (
@@ -1151,7 +1151,7 @@ export default function Home() {
               { q: "Can agents run locally without cloud?", a: "Yes. NemoClaw runs on your machine via Ollama. Full offline execution — your data never leaves your hardware. Built for sensitive client work and air-gapped environments." },
               { q: "Is there a contract or lock-in?", a: "No contracts. Month-to-month. Cancel from your dashboard. Data is always exportable. NVIDIA NIM inference is free — you only pay for premium features." },
               { q: "How long does setup take?", a: "Under 60 seconds. Sign up, complete the 5-step onboarding wizard, and deploy your first agent immediately. No Docker, no terminal commands, no technical setup required for the cloud version." },
-              { q: "What integrations are supported?", a: "NVIDIA NIM, Ollama (local models), ElevenLabs (voice), Pinecone (vector memory), Clerk (auth), Neon PostgreSQL (database), Vercel (hosting), PayFast, and Stripe. A public API at /api/v1/ is available for custom integrations." },
+              { q: "What integrations are supported?", a: "NVIDIA NIM, Ollama (local models), ElevenLabs (voice), Pinecone (vector memory), Clerk (auth), Neon PostgreSQL (database), Vercel (hosting), PayFast, Yoco, and PayStack. A public API is available for custom integrations." },
               { q: "Is my data safe?", a: "Yes. A 5-layer NeMo Guardrails safety pipeline protects every interaction: jailbreak detection, topic control, content safety, PII scanning, and quality scoring. Plus local execution means data never touches the cloud if you choose." },
               { q: "What is the white-label Enterprise license?", a: "The Enterprise license lets agencies rebrand the entire platform as their own. Custom domain, client portals, your logo. It is a complete AI business-in-a-box — deploy under your brand and scale your agency without hiring." },
               { q: "How is this different from ChatGPT?", a: "ChatGPT is a chatbot — you type, it responds with text. Sovereign Matrix has 124 specialized agents that execute real tasks: finding leads with verified emails, sending email sequences, making phone calls, building landing pages, and running SEO audits. The agents work autonomously — you set a goal, they plan and execute without constant prompting." },
