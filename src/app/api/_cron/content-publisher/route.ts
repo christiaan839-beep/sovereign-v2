@@ -12,7 +12,13 @@ const log = createLogger("content-publisher");
  * Checks for content items with status "scheduled" and scheduledAt <= now.
  * Fires the Social Media Swarm for each due item and updates status.
  */
-export async function GET() {
+export async function GET(req: Request) {
+  // Validate CRON_SECRET to prevent unauthorized access
+  const authHeader = req.headers.get("authorization") || "";
+  if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return new NextResponse("Unauthorized", { status: 401 });
+  }
+
   try {
     const now = new Date();
 
