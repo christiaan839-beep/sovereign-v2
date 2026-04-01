@@ -18,18 +18,30 @@ export default function OmniSearchPage() {
     setSources([]);
 
     try {
-      const res = await fetch("/api/agents/smart-router", {
+      const res = await fetch("/api/agents/omni-search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: query, task_type: "analysis", priority: "quality" }),
+        body: JSON.stringify({ query, sources: ["web", "docs", "crm"] }),
       });
       const data = await res.json();
-      if (data.success) {
-        setResult(data.result || "No results found.");
-        setSources([
-          { title: `${data.routing?.model_selected || "NIM"} Analysis`, score: `Quality: ${data.routing?.quality_score || "N/A"}/10` },
-          { title: `Task: ${data.routing?.task_type || "analysis"}`, score: `${data.duration_ms || 0}ms` },
-        ]);
+      if (data.answer || data.result) {
+        setResult(data.answer || data.result || "No results found.");
+        const resultSources = [];
+        if (data.confidence) {
+          resultSources.push({ title: "Confidence", score: data.confidence });
+        }
+        if (data.model) {
+          resultSources.push({ title: `Model: ${data.model}`, score: `${data.tokens_used || 0} tokens` });
+        }
+        if (resultSources.length === 0) {
+          resultSources.push(
+            { title: "NIM Neural Retrieval", score: "Nemotron Ultra" },
+            { title: "Sources", score: "web, docs, CRM" },
+          );
+        }
+        setSources(resultSources);
+      } else if (data.error) {
+        setResult(`Search failed: ${data.error}`);
       } else {
         setResult("Search failed. Ensure your NVIDIA NIM key is configured in Settings.");
       }
@@ -65,7 +77,7 @@ export default function OmniSearchPage() {
             disabled={status === "searching"}
             placeholder="E.g., What objections did the Roofing lead in Austin have last week?"
             aria-label="Search query"
-            className="w-full bg-black/80 border border-white/10 rounded-2xl pl-16 pr-6 py-6 text-lg text-white focus:border-emerald-500/50 outline-none shadow-[0_0_50px_rgba(16,185,129,0.05)] transition-gpu font-mono placeholder:font-sans placeholder:text-neutral-600"
+            className="w-full bg-black/80 border border-white/10 rounded-2xl pl-16 pr-6 py-6 text-lg text-white focus:border-emerald-500/50 outline-none shadow-[0_0_50px_rgba(16,185,129,0.05)] transition-gpu font-mono placeholder:font-sans placeholder:text-neutral-500"
          />
          <button type="submit" className="hidden" />
       </form>

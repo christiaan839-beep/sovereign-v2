@@ -3,6 +3,8 @@ import { db } from "@/db";
 import { usage, apiKeys } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import crypto from "crypto";
+import { createLogger } from "@/lib/logger";
+const log = createLogger("api-v1-proxy");
 
 /**
  * PUBLIC API GATEWAY — /api/v1/[...path]
@@ -189,7 +191,7 @@ async function handleRequest(
       }
     );
   } catch (err) {
-    console.error("[API v1 Proxy]", err);
+    log.error("API v1 Proxy error", err as Record<string, unknown>);
     return NextResponse.json(
       {
         success: false,

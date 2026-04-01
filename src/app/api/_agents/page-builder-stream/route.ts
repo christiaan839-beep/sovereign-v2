@@ -3,6 +3,8 @@ import { currentUser } from "@clerk/nextjs/server";
 import { ai, research_ai } from "@/lib/ai";
 import { ANTI_SLOP_RULES } from "@/lib/content-engine";
 import { fireUserWebhook } from "@/lib/webhooks";
+import { createLogger } from "@/lib/logger";
+const log = createLogger("page-builder-stream");
 
 // Vercel Serverless Function Config
 export const maxDuration = 60; // Max allowed for hobby/pro before timeout
@@ -159,14 +161,14 @@ export async function POST(req: Request) {
             }),
           });
         } catch (dbErr) {
-          console.error("DB Save Error:", dbErr);
+          log.error("DB save error", dbErr as Record<string, unknown>);
         }
 
         emit("progress", { step: 8, message: "Page Generation Complete." });
         emit("complete", { code: cleanCode });
         
       } catch (err: unknown) {
-        console.error("Streaming error:", err);
+        log.error("Streaming error", err as Record<string, unknown>);
         const errorMessage = err instanceof Error ? err.message : "An error occurred during generation.";
         emit("error", { message: errorMessage });
       } finally {

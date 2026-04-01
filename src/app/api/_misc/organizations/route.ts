@@ -3,6 +3,8 @@ import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { organizations, orgMembers } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { createLogger } from "@/lib/logger";
+const log = createLogger("organizations");
 
 /**
  * GET  /api/organizations — List organizations the current user belongs to
@@ -40,7 +42,7 @@ export async function GET() {
 
     return NextResponse.json({ organizations: result });
   } catch (err) {
-    console.error("[Organizations GET]", err);
+    log.error("Organizations GET error", err as Record<string, unknown>);
     return NextResponse.json({ error: "Failed to list organizations." }, { status: 500 });
   }
 }
@@ -94,7 +96,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ organization: org }, { status: 201 });
   } catch (err) {
-    console.error("[Organizations POST]", err);
+    log.error("Organizations POST error", err as Record<string, unknown>);
     return NextResponse.json({ error: "Failed to create organization." }, { status: 500 });
   }
 }

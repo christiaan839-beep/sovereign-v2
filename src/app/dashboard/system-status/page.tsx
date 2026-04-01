@@ -81,7 +81,7 @@ function ServiceCard({ name, icon: Icon, service, desc }: {
           </div>
           <div>
             <h3 className="text-sm font-semibold text-white">{name}</h3>
-            <p className="text-[10px] text-neutral-600">{desc}</p>
+            <p className="text-[10px] text-neutral-500">{desc}</p>
           </div>
         </div>
         <StatusBadge status={service.status} />
@@ -207,7 +207,7 @@ export default function SystemStatusPage() {
           name="NVIDIA NIM"
           icon={Cpu}
           service={services?.nim || { status: "checking", latencyMs: 0 }}
-          desc="51+ open-source models — $0 inference"
+          desc="65+ open-source models — $0 inference"
         />
         <ServiceCard
           name="Pinecone (Vector DB)"
@@ -242,15 +242,15 @@ export default function SystemStatusPage() {
           <div className="grid grid-cols-3 gap-4">
             <div>
               <div className="text-lg font-black text-white font-mono">{health.cache.mode}</div>
-              <div className="text-[9px] text-neutral-600 uppercase tracking-wider">Cache Mode</div>
+              <div className="text-[9px] text-neutral-500 uppercase tracking-wider">Cache Mode</div>
             </div>
             <div>
               <div className="text-lg font-black text-emerald-400 font-mono">{health.cache.hits ?? 0}</div>
-              <div className="text-[9px] text-neutral-600 uppercase tracking-wider">Cache Hits</div>
+              <div className="text-[9px] text-neutral-500 uppercase tracking-wider">Cache Hits</div>
             </div>
             <div>
               <div className="text-lg font-black text-neutral-400 font-mono">{health.cache.misses ?? 0}</div>
-              <div className="text-[9px] text-neutral-600 uppercase tracking-wider">Cache Misses</div>
+              <div className="text-[9px] text-neutral-500 uppercase tracking-wider">Cache Misses</div>
             </div>
           </div>
         </div>

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { createCheckoutSession } from "@/lib/stripe";
+import { createLogger } from "@/lib/logger";
+const log = createLogger("billing-checkout");
 
 /**
  * POST /api/billing/checkout
@@ -58,7 +60,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ url });
   } catch (err) {
-    console.error("[Billing Checkout]", err);
+    log.error("Billing checkout error", err as Record<string, unknown>);
     return NextResponse.json({ error: "Failed to create checkout session." }, { status: 500 });
   }
 }

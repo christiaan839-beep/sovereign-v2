@@ -3,6 +3,8 @@ import { currentUser } from "@clerk/nextjs/server";
 import { ai } from "@/lib/ai";
 import { ANTI_SLOP_RULES } from "@/lib/content-engine";
 import { fireUserWebhook } from "@/lib/webhooks";
+import { createLogger } from "@/lib/logger";
+const log = createLogger("programmatic-seo");
 
 /**
  * Programmatic SEO Swarm API
@@ -105,7 +107,7 @@ Format: Output the complete post in clean markdown.`;
 
     return NextResponse.json({ error: "Invalid action. Use: discover, generate" }, { status: 400 });
   } catch (err) {
-    console.error("[Programmatic SEO] Error:", err);
+    log.error("Programmatic SEO error", err as Record<string, unknown>);
     return NextResponse.json({ error: "Failed" }, { status: 500 });
   }
 }

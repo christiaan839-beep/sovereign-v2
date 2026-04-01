@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/db";
 import { leads } from "@/db/schema";
+import { createLogger } from "@/lib/logger";
+const log = createLogger("leads-capture");
 
 /**
  * LEAD CAPTURE — /api/leads/capture
@@ -49,7 +51,7 @@ export async function POST(req: Request) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: "MALFORMED_LEAD_DATA", details: error.issues }, { status: 400 });
     }
-    console.error("[leads/capture]", error);
+    log.error("Lead capture error", error as Record<string, unknown>);
     return NextResponse.json({ error: "LEAD_CAPTURE_FAILURE" }, { status: 500 });
   }
 }

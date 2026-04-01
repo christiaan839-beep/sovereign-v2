@@ -297,7 +297,7 @@ export default function VoiceAssistantPage() {
                 placeholder={listening ? "Listening..." : "Or type your message..."}
                 disabled={thinking}
                 aria-label="Type a message to the voice assistant"
-                className="flex-1 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-[#00B7FF]/30 transition-colors disabled:opacity-50"
+                className="flex-1 px-4 py-3 rounded-xl bg-white/[0.03] border border-white/10 text-sm text-white placeholder:text-neutral-500 focus:outline-none focus:border-[#00B7FF]/30 transition-colors disabled:opacity-50"
               />
               <button
                 type="submit"
@@ -321,7 +321,7 @@ export default function VoiceAssistantPage() {
             )}
           </div>
 
-          <p className="text-[10px] text-neutral-600 text-center mt-3">
+          <p className="text-[10px] text-neutral-500 text-center mt-3">
             Powered by Nemotron Voicechat. Voice recognition requires Chrome or Edge.
           </p>
         </div>

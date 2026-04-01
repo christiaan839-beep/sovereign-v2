@@ -10,12 +10,19 @@ import crypto from "crypto";
 // ─── Pricing Plans ──────────────────────────────────────────────
 
 export const PLANS = {
+  starter: {
+    name: "Starter",
+    priceZAR: 89700,
+    priceDisplay: "R897",
+    monthlyAmount: 897,
+    features: ["10 core agents", "500 tasks/month", "Smart Router", "BYOK support", "Email sequences (3)", "Priority email support"],
+  },
   node: {
     name: "Sovereign Node",
     priceZAR: 999700,
     priceDisplay: "R9,997",
     monthlyAmount: 9997,
-    features: ["OpenClaw Local Execution", "Apollo Ghost Fleet", "Sovereign Visual Studio", "NVIDIA Edify 3D", "Morpheus Shield", "Single macOS Node License"],
+    features: ["All 124 agents", "Unlimited tasks", "Local execution", "Ghost Fleet", "NVIDIA NIM", "BYOK support"],
   },
   array: {
     name: "Sovereign Array",
@@ -175,11 +182,64 @@ export function verifyPaystackWebhook(body: string, signature: string): boolean 
   return hash === signature;
 }
 
+// ─── Yoco ─────────────────────────────────────────────────────────
+
+function getYocoKey(): string | null {
+  return process.env.YOCO_SECRET_KEY || null;
+}
+
+/**
+ * Yoco Checkout — SA's biggest card payment processor.
+ * Creates a checkout session and returns the redirect URL.
+ * Supports cards, SnapScan, and EFT.
+ */
+export async function initializeYoco(plan: PlanId, email: string, callbackUrl: string) {
+  const key = getYocoKey();
+  if (!key) return null;
+
+  const planData = PLANS[plan];
+
+  const res = await fetch("https://payments.yoco.com/api/checkouts", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${key}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      amount: planData.priceZAR, // Amount in cents
+      currency: "ZAR",
+      successUrl: `${callbackUrl}/payment/success?provider=yoco&plan=${plan}`,
+      cancelUrl: `${callbackUrl}/payment/cancel`,
+      failureUrl: `${callbackUrl}/payment/cancel`,
+      metadata: { plan, planName: planData.name, email },
+    }),
+  });
+
+  const data = await res.json();
+  if (data.redirectUrl) {
+    return {
+      redirectUrl: data.redirectUrl,
+      checkoutId: data.id,
+    };
+  }
+
+  return null;
+}
+
+export function verifyYocoWebhook(body: string, signature: string): boolean {
+  const key = getYocoKey();
+  if (!key) return false;
+
+  const hash = crypto.createHmac("sha256", key).update(body).digest("hex");
+  return hash === signature;
+}
+
 // ─── Provider Detection ─────────────────────────────────────────
 
 export function getAvailableProviders(): string[] {
   const providers: string[] = [];
   if (getPayFastConfig()) providers.push("payfast");
   if (getPaystackKey()) providers.push("paystack");
+  if (getYocoKey()) providers.push("yoco");
   return providers;
 }

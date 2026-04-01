@@ -6,6 +6,8 @@ import {
 } from "@/agents/designer";
 import { fireUserWebhook } from "@/lib/webhooks";
 import { requireAuth } from "@/lib/auth-guard";
+import { createLogger } from "@/lib/logger";
+const log = createLogger("design-agent");
 
 export async function POST(req: NextRequest) {
   const auth = await requireAuth(); if (auth.error) return auth.error;
@@ -67,7 +69,7 @@ export async function POST(req: NextRequest) {
         );
     }
   } catch (error) {
-    console.error("[Design Agent] Error:", error);
+    log.error("Design agent error", error as Record<string, unknown>);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Internal error" },
       { status: 500 }

@@ -8,6 +8,8 @@
  */
 
 import { NextResponse } from "next/server";
+import { createLogger } from "@/lib/logger";
+const log = createLogger("api-guard");
 import { currentUser } from "@clerk/nextjs/server";
 
 // ─── Rate Limiter ───────────────────────────────────────────────
@@ -126,7 +128,7 @@ export async function guardRoute(): Promise<
 // ─── Error Handler ──────────────────────────────────────────────
 
 export function errorResponse(message: string, status = 500, code = "INTERNAL_ERROR") {
-  console.error(`[API Error] ${code}: ${message}`);
+  log.error(`${code}: ${message}`);
   return NextResponse.json(
     { error: message, code, timestamp: new Date().toISOString() },
     { status }

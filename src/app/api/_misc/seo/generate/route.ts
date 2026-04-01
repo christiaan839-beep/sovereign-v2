@@ -4,6 +4,8 @@ import { generateText } from "ai";
 import { db } from "@/db";
 import { globalTelemetry } from "@/db/schema";
 import { requireAuth } from "@/lib/auth-guard";
+import { createLogger } from "@/lib/logger";
+const log = createLogger("seo-generator");
 
 /**
  * Infinite SEO Network Generator
@@ -53,7 +55,7 @@ Output ONLY the raw HTML string. No markdown code blocks.`,
       html: cleanedHtml 
     });
   } catch (error) {
-    console.error("[SEO Generator Error]:", error);
+    log.error("SEO generator error", error as Record<string, unknown>);
     return NextResponse.json({ error: "SEO generation failed" }, { status: 500 });
   }
 }

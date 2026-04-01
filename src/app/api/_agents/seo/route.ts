@@ -3,9 +3,11 @@ import {
   competitorXRay,
   contentGapKiller,
   schemaAudit,
-  gbpHijack,
+  gbpOptimize,
 } from "@/agents/seo-dominator";
 import { fireUserWebhook } from "@/lib/webhooks";
+import { createLogger } from "@/lib/logger";
+const log = createLogger("seo-agent");
 import { requireAuth } from "@/lib/auth-guard";
 
 export async function POST(req: NextRequest) {
@@ -69,7 +71,7 @@ export async function POST(req: NextRequest) {
             { status: 400 }
           );
         }
-        const result = await gbpHijack(business, location, services);
+        const result = await gbpOptimize(business, location, services);
         await fireUserWebhook("SEO Dominator", "GBP Hijack", result);
         return NextResponse.json(result);
       }
@@ -81,7 +83,7 @@ export async function POST(req: NextRequest) {
         );
     }
   } catch (error) {
-    console.error("[SEO Agent] Error:", error);
+    log.error("SEO agent error", error as Record<string, unknown>);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Internal error" },
       { status: 500 }

@@ -296,7 +296,7 @@ export default function AgentCommandCenter() {
             <p className="text-[9px] text-neutral-500 uppercase tracking-widest mt-1">Active Agents</p>
           </div>
           <div className="bg-neutral-950 border border-neutral-800 p-4 text-center">
-            <p className="text-2xl font-black text-[#00B7FF]">51+</p>
+            <p className="text-2xl font-black text-[#00B7FF]">62+</p>
             <p className="text-[9px] text-neutral-500 uppercase tracking-widest mt-1">NIM Models</p>
           </div>
           <div className="bg-neutral-950 border border-neutral-800 p-4 text-center">
@@ -365,7 +365,7 @@ export default function AgentCommandCenter() {
 
                   {/* Model Badge */}
                   <div className="flex items-center justify-between mb-4">
-                    <code className="text-[9px] text-neutral-600 bg-neutral-900 px-2 py-1 rounded">{agent.nimModel}</code>
+                    <code className="text-[9px] text-neutral-500 bg-neutral-900 px-2 py-1 rounded">{agent.nimModel}</code>
                     <button
                       onClick={() => setExpandedAgent(isExpanded ? null : agent.id)}
                       className="text-[10px] font-bold uppercase tracking-widest flex items-center gap-1 transition-colors hover:text-white"
@@ -432,8 +432,8 @@ export default function AgentCommandCenter() {
 
         {/* Footer */}
         <footer className="border-t border-neutral-800 pt-6 text-center">
-          <p className="text-[10px] text-neutral-600 uppercase tracking-widest">
-            Sovereign Matrix · Agent Command Center · Powered by 51+ NVIDIA NIM Models · $0 Infrastructure Cost
+          <p className="text-[10px] text-neutral-500 uppercase tracking-widest">
+            Sovereign Matrix · Agent Command Center · Powered by 65+ NVIDIA NIM Models · $0 Infrastructure Cost
           </p>
         </footer>
       </div>

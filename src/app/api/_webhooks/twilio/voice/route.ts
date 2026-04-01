@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createLogger } from "@/lib/logger";
+const log = createLogger("twilio-voice");
 
 // Default Serverless Node.js Runtime (Edge conflicts with Twilio SDK)
 
@@ -25,7 +27,7 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (_err: unknown) {
-    console.error("[SENTINEL_VOICE_ERROR] Failed to compile TwiML");
+    log.error("Failed to compile TwiML");
     return new NextResponse('<?xml version="1.0" encoding="UTF-8"?><Response><Say>System error. Terminating connection.</Say></Response>', { 
       status: 200, 
       headers: { "Content-Type": "text/xml" }

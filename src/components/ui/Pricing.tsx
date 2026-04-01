@@ -15,8 +15,9 @@ export function Pricing() {
     {
       name: "Free",
       description: "Try Sovereign Matrix with 3 agents and 50 tasks. No credit card required.",
-      price: "R0",
-      period: "/forever",
+      price: "Free",
+      priceUSD: "",
+      period: "Free forever",
       icon: Shield,
       color: "text-neutral-400",
       bg: "bg-white/[0.02]",
@@ -36,9 +37,36 @@ export function Pricing() {
       buttonStyle: "bg-white/5 hover:bg-white/10 text-white border border-white/10",
     },
     {
+      name: "Starter",
+      description: "10 core agents with 500 tasks/month. Perfect for solo operators and small teams.",
+      price: "R897",
+      priceUSD: "~$49",
+      period: "/mo",
+      icon: Zap,
+      color: "text-emerald-400",
+      bg: "bg-emerald-500/10",
+      border: "border-emerald-500/40",
+      isPopular: true,
+      features: [
+        { name: "10 core agents (Sales, Content, SEO, Design, Code)", included: true },
+        { name: "500 tasks per month", included: true },
+        { name: "Smart Router (auto model selection)", included: true },
+        { name: "STRIKE competitor analysis", included: true },
+        { name: "Email sequences (3 active)", included: true },
+        { name: "Bring Your Own Key (BYOK)", included: true },
+        { name: "Priority email support", included: true },
+        { name: "Voice agents", included: false },
+        { name: "White-label", included: false },
+      ],
+      planId: "starter",
+      buttonText: "Subscribe",
+      buttonStyle: "bg-emerald-400 hover:bg-emerald-300 text-black shadow-[0_0_20px_rgba(52,211,153,0.3)]",
+    },
+    {
       name: "Sovereign Node",
-      description: "Core AI agents for content, SEO, and lead generation. Local execution via NemoClaw OS.",
+      description: "All 124 agents with unlimited tasks. Local execution via NemoClaw OS.",
       price: "R9,997",
+      priceUSD: "~$540",
       period: "/mo",
       icon: Zap,
       color: "text-[#00B7FF]",
@@ -56,19 +84,19 @@ export function Pricing() {
         { name: "White-label Reseller Hub", included: false },
       ],
       planId: "node",
-      buttonText: "Deploy Node",
+      buttonText: "Subscribe",
       buttonStyle: "bg-white/5 hover:bg-white/10 text-white border border-white/10",
     },
     {
       name: "Sovereign Array",
       description: "Sub-200ms voice agents, Cosmos VLM video, War Room red-teaming, and 24h priority processing.",
       price: "R24,997",
+      priceUSD: "~$1,350",
       period: "/mo",
       icon: Crown,
       color: "text-emerald-400",
-      bg: "bg-emerald-500/10",
-      border: "border-emerald-500/40",
-      isPopular: true,
+      bg: "bg-emerald-500/5",
+      border: "border-emerald-500/20",
       features: [
         { name: "Everything in Node", included: true },
         { name: "Voice Agents (sub-200ms)", included: true },
@@ -81,13 +109,14 @@ export function Pricing() {
         { name: "Enterprise Sub-Licenses", included: false },
       ],
       planId: "array",
-      buttonText: "Deploy Array",
-      buttonStyle: "bg-emerald-400 hover:bg-emerald-300 text-black shadow-[0_0_20px_rgba(52,211,153,0.3)]",
+      buttonText: "Subscribe",
+      buttonStyle: "bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20",
     },
     {
       name: "Enterprise License",
       description: "White-label the platform with your branding. Resell to clients with custom portals.",
       price: "R49,997",
+      priceUSD: "~$2,700",
       period: "/mo",
       icon: Server,
       color: "text-violet-400",
@@ -105,7 +134,7 @@ export function Pricing() {
         { name: "SLA guarantee", included: true },
       ],
       planId: "enterprise",
-      buttonText: "Deploy Enterprise",
+      buttonText: "Subscribe",
       buttonStyle: "bg-white/5 hover:bg-white/10 text-white border border-white/10",
     },
   ];
@@ -125,35 +154,39 @@ export function Pricing() {
       return;
     }
 
-    // Try Stripe checkout first
+    // Yoco — only payment provider
     setCheckoutLoading(planId);
+
+    const checkoutTimeout = setTimeout(() => {
+      setCheckoutLoading(null);
+      showNotification("Checkout is taking too long. Please try again.", "error");
+    }, 30000);
+
     try {
-      const res = await fetch("/api/payments/stripe/checkout", {
+      const res = await fetch("/api/payments/yoco/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plan: planId }),
       });
       const data = await res.json();
 
-      if (res.ok && data.url) {
-        window.location.assign(data.url);
+      clearTimeout(checkoutTimeout);
+
+      if (res.ok && data.redirectUrl) {
+        window.location.assign(data.redirectUrl);
         return;
       }
 
-      // Stripe not configured (503) — fall through to PayFast modal
+      // Yoco not configured — show error
       if (res.status === 503) {
-        setSelectedPlan(planId);
-        setShowModal(true);
+        showNotification("Payments are being set up. Please try again shortly.", "error");
         return;
       }
 
-      // Other Stripe error — fall through to PayFast modal
-      setSelectedPlan(planId);
-      setShowModal(true);
+      showNotification(data.error || "Checkout failed. Please try again.", "error");
     } catch {
-      // Network error — fall through to PayFast modal
-      setSelectedPlan(planId);
-      setShowModal(true);
+      clearTimeout(checkoutTimeout);
+      showNotification("Connection error. Please check your internet and try again.", "error");
     } finally {
       setCheckoutLoading(null);
     }
@@ -256,10 +289,15 @@ export function Pricing() {
                 <span className="text-4xl font-black text-white font-mono tracking-tighter">
                   {tier.price}
                 </span>
-                {tier.period !== "forever" && (
+                {tier.period === "Free forever" ? (
+                  <span className="text-neutral-500 font-bold tracking-widest uppercase text-xs mb-2">forever</span>
+                ) : (
                   <span className="text-neutral-500 font-bold tracking-widest uppercase text-xs mb-2">{tier.period}</span>
                 )}
               </div>
+              {tier.priceUSD && (
+                <span className="text-[10px] text-neutral-500">{tier.priceUSD} USD</span>
+              )}
             </div>
 
             <button
@@ -294,7 +332,7 @@ export function Pricing() {
       {/* Payment Methods */}
       <div className="mt-12 text-center flex items-center justify-center gap-6">
         <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-bold uppercase tracking-wider"><Shield className="w-3 h-3" /> SSL Secured</span>
-        <span className="text-xs text-neutral-500 uppercase tracking-widest">Secure payments via PayFast (Cards, Instant EFT, Zapper)</span>
+        <span className="text-xs text-neutral-500 uppercase tracking-widest">Secure payments via Yoco (Cards, Apple Pay, Google Pay)</span>
       </div>
 
       {/* Secure Uplink Modal */}

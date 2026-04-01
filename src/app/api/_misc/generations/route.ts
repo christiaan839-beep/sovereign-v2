@@ -3,6 +3,8 @@ import { db } from "@/db";
 import { generations } from "@/db/schema";
 import { eq, desc, sql, and, gte } from "drizzle-orm";
 import { requireAuth } from "@/lib/auth-guard";
+import { createLogger } from "@/lib/logger";
+const log = createLogger("generations");
 
 const DAILY_LIMIT_FREE = 20;
 
@@ -113,7 +115,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
   } catch (error) {
-    console.error("[Generations API Error]:", error);
+    log.error("Generations API error", error as Record<string, unknown>);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

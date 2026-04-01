@@ -6,6 +6,8 @@ import {
   generateVideoScript,
 } from "@/agents/content-factory";
 import { fireUserWebhook } from "@/lib/webhooks";
+import { createLogger } from "@/lib/logger";
+const log = createLogger("content-factory");
 import { requireAuth } from "@/lib/auth-guard";
 
 export async function POST(req: NextRequest) {
@@ -81,7 +83,7 @@ export async function POST(req: NextRequest) {
         );
     }
   } catch (error) {
-    console.error("[Content Factory] Error:", error);
+    log.error("Content factory error", error as Record<string, unknown>);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Internal error" },
       { status: 500 }

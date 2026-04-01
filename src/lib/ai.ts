@@ -7,8 +7,11 @@ import { db } from "@/db";
 import { settings } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { nimChat } from "./nvidia";
+import { safeDecrypt } from "@/lib/crypto";
 import type { AIOptions } from "@/types";
 import { createLogger } from "@/lib/logger";
+import { geminiBreaker, claudeBreaker, groqBreaker } from "@/lib/circuit-breaker";
+import { withRetry } from "@/lib/retry";
 
 const log = createLogger("ai");
 
@@ -25,7 +28,13 @@ async function getUserKeys(): Promise<{ gemini?: string, tavily?: string, anthro
         where: eq(settings.userEmail, user.primaryEmailAddress.emailAddress)
       });
       if (userSettings?.apiKeys) {
-        return JSON.parse(userSettings.apiKeys);
+        try {
+          const decrypted = safeDecrypt(userSettings.apiKeys);
+          return JSON.parse(decrypted);
+        } catch {
+          // Fallback: try parsing as plain JSON (legacy unencrypted data)
+          return JSON.parse(userSettings.apiKeys);
+        }
       }
     }
   } catch (e) {
@@ -48,7 +57,7 @@ const globalGenAI = new GoogleGenerativeAI(globalGeminiKey);
  * 4. Claude (Anthropic) — if explicitly selected or BYOK key exists
  */
 export async function ai(prompt: string, options: AIOptions = {}): Promise<string> {
-  const { model = "gemini", system, maxTokens = 2000, thinking, useOpus } = options;
+  const { model = "gemini", system, maxTokens = 2000, thinking, useOpus, useGeminiPro } = options;
   
   const userKeys = await getUserKeys();
 
@@ -77,8 +86,23 @@ export async function ai(prompt: string, options: AIOptions = {}): Promise<strin
     return groqText(prompt, system, maxTokens, userKeys, model);
   }
 
-  // 5. Gemini (default — Google free tier)
-  return geminiText(prompt, system, maxTokens, userKeys);
+  // 5. Gemini (default) → fallback to NIM → fallback to Groq
+  try {
+    return await geminiText(prompt, system, maxTokens, userKeys, useGeminiPro);
+  } catch (geminiErr) {
+    log.warn("Gemini failed, falling back to NIM", { error: (geminiErr as Error).message });
+    try {
+      return await nimText(prompt, system, maxTokens);
+    } catch (nimErr) {
+      log.warn("NIM failed, falling back to Groq", { error: (nimErr as Error).message });
+      try {
+        return await groqText(prompt, system, maxTokens, userKeys, "groq");
+      } catch (groqErr) {
+        log.error("All AI providers failed", { gemini: (geminiErr as Error).message, nim: (nimErr as Error).message, groq: (groqErr as Error).message });
+        throw new Error("All AI models are temporarily unavailable. Please try again in a few seconds.");
+      }
+    }
+  }
 }
 
 /**
@@ -115,17 +139,23 @@ async function ollamaText(prompt: string, system?: string, ollamaUrl: string = "
   }
 }
 
-async function geminiText(prompt: string, system?: string, maxTokens: number = 2000, userKeys: { gemini?: string } = {}): Promise<string> {
+async function geminiText(prompt: string, system?: string, maxTokens: number = 2000, userKeys: { gemini?: string } = {}, useProModel?: boolean): Promise<string> {
   const keys = Object.keys(userKeys).length > 0 ? userKeys : await getUserKeys();
   const client = keys.gemini ? new GoogleGenerativeAI(keys.gemini) : globalGenAI;
-  
-  const model = client.getGenerativeModel({ 
-    model: "gemini-2.5-flash",
+
+  // Use Gemini 2.5 Pro for complex tasks (available on Google AI Ultra plan)
+  // Fall back to 2.5 Flash for speed-sensitive operations
+  const modelName = useProModel ? "gemini-2.5-pro" : "gemini-2.5-flash";
+
+  const genModel = client.getGenerativeModel({
+    model: modelName,
     systemInstruction: system || undefined,
     generationConfig: { maxOutputTokens: maxTokens }
   });
-  const result = await model.generateContent(prompt);
-  return result.response.text();
+  return geminiBreaker.execute(() => withRetry(async () => {
+    const result = await genModel.generateContent(prompt);
+    return result.response.text();
+  }, { maxRetries: 2, label: "Gemini" }));
 }
 
 async function claudeText(prompt: string, system?: string, maxTokens: number = 2000, userKeys: { anthropic?: string } = {}, thinking?: boolean, useOpus?: boolean): Promise<string> {
@@ -164,11 +194,13 @@ async function claudeText(prompt: string, system?: string, maxTokens: number = 2
     requestParams.max_tokens = maxTokens;
   }
 
-  const response = await client.messages.create(requestParams);
+  return claudeBreaker.execute(() => withRetry(async () => {
+    const response = await client.messages.create(requestParams);
 
-  // Filter out thinking blocks and return only text content
-  const textBlock = response.content.find((b: { type: string }) => b.type === "text");
-  return textBlock && textBlock.type === "text" ? (textBlock as { type: "text"; text: string }).text : "";
+    // Filter out thinking blocks and return only text content
+    const textBlock = response.content.find((b: { type: string }) => b.type === "text");
+    return textBlock && textBlock.type === "text" ? (textBlock as { type: "text"; text: string }).text : "";
+  }, { maxRetries: 2, label: "Claude" }));
 }
 
 /**
@@ -255,13 +287,15 @@ async function groqText(prompt: string, system?: string, maxTokens: number = 200
   if (system) messages.push({ role: "system" as const, content: system });
   messages.push({ role: "user" as const, content: prompt });
 
-  const completion = await client.chat.completions.create({
-    messages,
-    model: groqModel,
-    max_tokens: maxTokens,
-  });
+  return groqBreaker.execute(() => withRetry(async () => {
+    const completion = await client.chat.completions.create({
+      messages,
+      model: groqModel,
+      max_tokens: maxTokens,
+    });
 
-  return completion.choices[0]?.message?.content || "";
+    return completion.choices[0]?.message?.content || "";
+  }, { maxRetries: 2, label: "Groq" }));
 }
 
 /**
@@ -444,6 +478,43 @@ export async function embed(text: string): Promise<number[]> {
   const model = client.getGenerativeModel({ model: "text-embedding-004" });
   const result = await model.embedContent(text);
   return result.embedding.values;
+}
+
+/**
+ * Gemini Grounded Search — Uses Google Search as grounding tool.
+ * Available on Google AI Ultra plan. Combines Gemini's reasoning with live Google Search results.
+ * More accurate than Tavily for general web queries since it uses Google's own index.
+ */
+export async function geminiGroundedSearch(query: string, system?: string): Promise<{ text: string; searchResults?: Array<{ title: string; url: string }> }> {
+  const userKeys = await getUserKeys();
+  const apiKey = userKeys.gemini || globalGeminiKey;
+
+  try {
+    const client = new GoogleGenerativeAI(apiKey);
+    const model = client.getGenerativeModel({
+      model: "gemini-2.5-pro",
+      systemInstruction: system || "You are a research assistant. Provide accurate, well-sourced answers.",
+      // @ts-expect-error — Google Search grounding is a preview feature
+      tools: [{ googleSearch: {} }],
+    });
+
+    const result = await model.generateContent(query);
+    const text = result.response.text();
+
+    // Extract grounding metadata if available
+    const groundingMetadata = result.response.candidates?.[0]?.groundingMetadata;
+    const searchResults = groundingMetadata?.webSearchQueries?.map((q: string) => ({
+      title: q,
+      url: `https://www.google.com/search?q=${encodeURIComponent(q)}`,
+    })) || [];
+
+    return { text, searchResults };
+  } catch (err) {
+    // Fall back to regular Gemini without grounding
+    log.warn("Gemini grounded search failed, falling back to standard", { error: (err as Error).message });
+    const text = await geminiText(query, system, 4000, userKeys, true);
+    return { text, searchResults: [] };
+  }
 }
 
 export { claudeWithCitations };

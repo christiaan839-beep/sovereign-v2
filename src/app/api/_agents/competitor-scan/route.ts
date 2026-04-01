@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { ai, research_ai } from "@/lib/ai";
 
@@ -9,6 +10,8 @@ import { ai, research_ai } from "@/lib/ai";
 
 export async function POST(request: Request) {
   try {
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     const { target } = await request.json();
 
     if (!target) {
@@ -45,7 +48,7 @@ OUTPUT (strict JSON):
 }
 
 Be specific, actionable, and aggressive. Reference real findings from the research. Output ONLY valid JSON.`,
-      { system: "You are a ruthless competitive strategist who finds and exploits competitor weaknesses.", maxTokens: 2000 }
+      { system: "You are a strategic competitive strategist who finds and exploits competitor weaknesses.", maxTokens: 2000 }
     );
 
     let parsed;
@@ -69,7 +72,7 @@ Be specific, actionable, and aggressive. Reference real findings from the resear
     };
 
     // Auto-handoff to report writer
-    fetch(new URL("/api/agents/comms", request.url).toString(), {
+    fetch(new URL("/api/_agents/comms", request.url).toString(), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

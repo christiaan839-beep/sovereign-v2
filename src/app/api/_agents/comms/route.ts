@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
 /**
@@ -38,6 +39,8 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     const { from, to, type = "task", payload, autoExecute = false } = await request.json();
 
     if (!from || !to) {
@@ -60,15 +63,15 @@ export async function POST(request: Request) {
     let executionResult = null;
     if (autoExecute) {
       const agentEndpoints: Record<string, string> = {
-        "abm-artillery": "/api/agents/abm-artillery",
-        "pii-redactor": "/api/agents/pii-redactor",
-        "translate": "/api/agents/translate",
-        "page-builder": "/api/agents/page-builder",
-        "image-gen": "/api/agents/image-gen",
-        "blog-gen": "/api/agents/blog-gen",
-        "case-study": "/api/agents/case-study",
-        "doc-intel": "/api/agents/doc-intel",
-        "swarm": "/api/agents/swarm",
+        "abm-artillery": "/api/_agents/abm-artillery",
+        "pii-redactor": "/api/_agents/pii-redactor",
+        "translate": "/api/_agents/translate",
+        "page-builder": "/api/_agents/page-builder",
+        "image-gen": "/api/_agents/image-gen",
+        "blog-gen": "/api/_agents/blog-gen",
+        "case-study": "/api/_agents/case-study",
+        "doc-intel": "/api/_agents/doc-intel",
+        "swarm": "/api/_agents/swarm",
       };
 
       const endpoint = agentEndpoints[to];

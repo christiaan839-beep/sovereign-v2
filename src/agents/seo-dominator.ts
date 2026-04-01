@@ -170,7 +170,7 @@ Generate AT LEAST 5 schema recommendations with full JSON-LD code.`,
 }
 
 /** GBP Hijack — Generate Google Business Profile posts targeting local buyer-intent keywords */
-export async function gbpHijack(
+export async function gbpOptimize(
   business: string,
   location: string,
   services: string

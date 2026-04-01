@@ -1,6 +1,9 @@
-import { getNimKey } from "@/lib/nvidia";
+import { auth } from "@clerk/nextjs/server";
+import { getNimKey, selectBestModel } from "@/lib/nvidia";
 import { NextResponse } from "next/server";
 import { enhanceWithSkills } from "@/lib/skill-engine";
+import { createLogger } from "@/lib/logger";
+const log = createLogger("smart-router");
 
 /**
  * INTELLIGENT MODEL ROUTER — Automatically selects the best NIM model
@@ -109,8 +112,43 @@ function findBestModel(taskType: string, priority: "speed" | "quality" = "qualit
   return scored[0];
 }
 
+/**
+ * For complex multi-step goals, use Claude to compile a DAG
+ * (Directed Acyclic Graph) of agent tasks.
+ */
+async function compileDAG(prompt: string): Promise<Array<{ agent: string; task: string; dependsOn: string[] }> | null> {
+  const anthropicKey = process.env.ANTHROPIC_API_KEY;
+  if (!anthropicKey) return null;
+
+  // Only compile DAGs for complex, multi-step requests
+  const isComplex = prompt.length > 200 ||
+    (prompt.includes(" and ") && prompt.includes(" then ")) ||
+    prompt.split(/[,;]/).length > 3;
+
+  if (!isComplex) return null;
+
+  try {
+    const { default: Anthropic } = await import("@anthropic-ai/sdk");
+    const client = new Anthropic({ apiKey: anthropicKey });
+
+    const response = await client.messages.create({
+      model: "claude-sonnet-4-6-20250514",
+      max_tokens: 1000,
+      system: "You are a workflow compiler. Break complex goals into a DAG of agent tasks. Available agents: leads, content, seo, email-sequence, voice, competitor, design, page-builder, code-agent, ads. Return ONLY a JSON array.",
+      messages: [{ role: "user", content: `Compile this goal into a workflow DAG:\n\n${prompt}\n\nReturn JSON array: [{"agent": "leads", "task": "Find 50 leads", "dependsOn": []}]` }],
+    });
+
+    const text = response.content[0].type === "text" ? response.content[0].text : "";
+    return JSON.parse(text.replace(/```json?\n?/g, "").replace(/```/g, "").trim());
+  } catch {
+    return null;
+  }
+}
+
 export async function POST(request: Request) {
   try {
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     const { task_type, priority = "quality", prompt } = await request.json();
 
     if (!task_type && !prompt) {
@@ -142,7 +180,33 @@ export async function POST(request: Request) {
       else resolvedType = "analysis";
     }
 
+    // For complex multi-step goals, compile a DAG
+    if (prompt) {
+      const dag = await compileDAG(prompt);
+      if (dag && dag.length > 1) {
+        return NextResponse.json({
+          output: `This goal requires ${dag.length} agent steps. I've compiled a workflow plan:`,
+          dag,
+          suggestWorkflow: true,
+          workflowUrl: `/dashboard/workflow-builder?auto=${encodeURIComponent(JSON.stringify(dag))}`,
+        });
+      }
+    }
+
     const bestModel = findBestModel(resolvedType, priority);
+
+    // Cross-reference with NIM-optimized model selector for task-specific routing.
+    // selectBestModel maps task types to purpose-built NIM models (e.g. GLM-4.7 for tool-use,
+    // Qwen3-Coder for coding). If the registry-scored best model doesn't match the NIM
+    // specialist, log the alternative for observability.
+    const nimOptimalModelId = selectBestModel(resolvedType);
+    if (nimOptimalModelId !== bestModel.id) {
+      log.info("NIM selector suggests alternative model", {
+        registryPick: bestModel.id,
+        nimPick: nimOptimalModelId,
+        taskType: resolvedType,
+      });
+    }
 
     // ── Check route cache for repeated prompts ──
     if (prompt) {
@@ -233,7 +297,7 @@ export async function POST(request: Request) {
         }
       }
     } catch (memLogErr) {
-      console.error("Swarm Memory Context Fail:", memLogErr);
+      log.error("Swarm memory context fail", memLogErr as Record<string, unknown>);
     }
 
     // ==========================================
@@ -308,6 +372,7 @@ export async function POST(request: Request) {
         memory_loaded: !!contextMemory,
         skills_activated: activatedSkillNames,
       },
+      nim_specialist_model: nimOptimalModelId,
       result: finalResult,
       duration_ms: Date.now() - start,
     });

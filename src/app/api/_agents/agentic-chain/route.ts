@@ -1,5 +1,5 @@
 import { createAgentRoute } from "@/lib/agent-factory";
-import { nimChat } from "@/lib/nvidia";
+import { nimChat, nimToolCall } from "@/lib/nvidia";
 import { getAntiSlopRules } from "@/lib/system-prompts";
 
 /**
@@ -16,13 +16,13 @@ import { getAntiSlopRules } from "@/lib/system-prompts";
  */
 
 const AVAILABLE_TOOLS: Record<string, { description: string; endpoint: string; paramKey: string }> = {
-  search: { description: "Search the web for current information", endpoint: "/api/agents/grounded-search", paramKey: "query" },
-  analyze_competitor: { description: "Analyze a competitor website", endpoint: "/api/agents/competitive-radar", paramKey: "url" },
-  generate_content: { description: "Generate marketing content", endpoint: "/api/agents/blog-gen", paramKey: "topic" },
-  generate_image: { description: "Generate an image", endpoint: "/api/agents/flux-image", paramKey: "prompt" },
-  translate: { description: "Translate text to another language", endpoint: "/api/agents/translate", paramKey: "text" },
-  scan_pii: { description: "Check text for personal data", endpoint: "/api/agents/pii-guard", paramKey: "text" },
-  audit_website: { description: "Audit a website for SEO and security", endpoint: "/api/agents/audit", paramKey: "url" },
+  search: { description: "Search the web for current information", endpoint: "/api/_agents/grounded-search", paramKey: "query" },
+  analyze_competitor: { description: "Analyze a competitor website", endpoint: "/api/_agents/competitive-radar", paramKey: "url" },
+  generate_content: { description: "Generate marketing content", endpoint: "/api/_agents/blog-gen", paramKey: "topic" },
+  generate_image: { description: "Generate an image", endpoint: "/api/_agents/flux-image", paramKey: "prompt" },
+  translate: { description: "Translate text to another language", endpoint: "/api/_agents/translate", paramKey: "text" },
+  scan_pii: { description: "Check text for personal data", endpoint: "/api/_agents/pii-guard", paramKey: "text" },
+  audit_website: { description: "Audit a website for SEO and security", endpoint: "/api/_agents/audit", paramKey: "url" },
 };
 
 export const POST = createAgentRoute({
@@ -47,32 +47,75 @@ export const POST = createAgentRoute({
 
 You are an autonomous agent. Your goal: "${goal}"
 
-Available tools:
-${toolList}
-- done: Mark the task as complete
-
 ${context ? `Previous steps:\n${context}\n` : ""}
 
-What is the next step? Respond with JSON only:
-{"action": "brief description", "tool": "tool_name", "input": "the input for the tool"}
-Or if the goal is achieved:
-{"action": "task complete", "tool": "done", "result": "final summary"}`;
+Decide the next step. If the goal is already achieved, call the "done" tool.`;
 
-      const planResult = await nimChat(
-        "mistralai/mistral-nemotron",
-        [{ role: "user", content: planPrompt }],
-        { maxTokens: 300, temperature: 0.2 }
-      );
+      // Build NIM-compatible tool definitions for native function calling
+      const nimTools = [
+        ...enabledTools
+          .filter((t) => AVAILABLE_TOOLS[t])
+          .map((t) => ({
+            type: "function" as const,
+            function: {
+              name: t,
+              description: AVAILABLE_TOOLS[t].description,
+              parameters: {
+                type: "object",
+                properties: { input: { type: "string", description: `The ${AVAILABLE_TOOLS[t].paramKey} to pass to the tool` } },
+                required: ["input"],
+              },
+            },
+          })),
+        {
+          type: "function" as const,
+          function: {
+            name: "done",
+            description: "Mark the task as complete and provide a final summary",
+            parameters: {
+              type: "object",
+              properties: { result: { type: "string", description: "Final summary of what was accomplished" } },
+              required: ["result"],
+            },
+          },
+        },
+      ];
 
-      // Parse the plan
+      // Try nimToolCall first (GLM-4.7 — 90.6% tool use benchmark), fall back to nimChat
       let plan: { action: string; tool: string; input?: string; result?: string };
       try {
-        const cleaned = planResult.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
-        plan = JSON.parse(cleaned);
+        const toolResult = await nimToolCall(planPrompt, nimTools, {
+          system: `You are an autonomous agent. Pick the best tool for each step toward the goal: "${goal}"`,
+          maxTokens: 300,
+        });
+
+        if (toolResult.toolCalls.length > 0) {
+          const tc = toolResult.toolCalls[0];
+          plan = {
+            action: toolResult.text || `Calling ${tc.name}`,
+            tool: tc.name,
+            input: (tc.arguments as Record<string, string>).input,
+            result: (tc.arguments as Record<string, string>).result,
+          };
+        } else {
+          // nimToolCall returned text but no tool calls — parse as done
+          plan = { action: "task complete", tool: "done", result: toolResult.text || "Goal achieved" };
+        }
       } catch {
-        // If parsing fails, treat as done
-        steps.push({ step, action: "Planning failed — completing", observation: planResult });
-        break;
+        // Fallback: use nimChat with manual JSON parsing (original approach)
+        const fallbackPrompt = `${planPrompt}\n\nAvailable tools:\n${toolList}\n- done: Mark the task as complete\n\nRespond with JSON only:\n{"action": "brief description", "tool": "tool_name", "input": "the input for the tool"}\nOr if done: {"action": "task complete", "tool": "done", "result": "final summary"}`;
+        const planResult = await nimChat(
+          "mistralai/mistral-nemotron",
+          [{ role: "user", content: fallbackPrompt }],
+          { maxTokens: 300, temperature: 0.2 }
+        );
+        try {
+          const cleaned = planResult.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
+          plan = JSON.parse(cleaned);
+        } catch {
+          steps.push({ step, action: "Planning failed — completing", observation: planResult });
+          break;
+        }
       }
 
       // ─── Done: Return result ───
@@ -114,7 +157,7 @@ Or if the goal is achieved:
       steps,
       totalSteps: steps.length,
       maxSteps,
-      model: "mistral-nemotron (planner) + multi-tool execution",
+      model: "glm-4.7 (nimToolCall planner) + mistral-nemotron (fallback) + multi-tool execution",
     };
   },
 });

@@ -169,7 +169,7 @@ export default function LibraryPage() {
         <div className="text-center py-16">
           <Library className="w-10 h-10 text-neutral-700 mx-auto mb-3" />
           <p className="text-sm text-neutral-500">No generations yet</p>
-          <p className="text-[10px] text-neutral-600 mt-1">Run a tool and your results will appear here automatically</p>
+          <p className="text-[10px] text-neutral-500 mt-1">Run a tool and your results will appear here automatically</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -192,7 +192,7 @@ export default function LibraryPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-bold text-white">{toolInfo.label}</span>
-                      <span className="text-[10px] text-neutral-600">•</span>
+                      <span className="text-[10px] text-neutral-500">•</span>
                       <span className="text-[10px] text-neutral-500 uppercase tracking-wider">{gen.action}</span>
                     </div>
                     {gen.inputSummary && (
@@ -201,10 +201,10 @@ export default function LibraryPage() {
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
                     <div className="text-right hidden md:block">
-                      <p className="text-[10px] text-neutral-600"><Clock className="w-2.5 h-2.5 inline mr-1" />{formatDate(gen.createdAt)}</p>
+                      <p className="text-[10px] text-neutral-500"><Clock className="w-2.5 h-2.5 inline mr-1" />{formatDate(gen.createdAt)}</p>
                       {gen.tokens && <p className="text-[10px] text-neutral-700">{gen.tokens.toLocaleString()} tokens</p>}
                     </div>
-                    <ChevronRight className={`w-4 h-4 text-neutral-600 transition-transform ${isOpen ? "rotate-90" : ""}`} />
+                    <ChevronRight className={`w-4 h-4 text-neutral-500 transition-transform ${isOpen ? "rotate-90" : ""}`} />
                   </div>
                 </button>
 

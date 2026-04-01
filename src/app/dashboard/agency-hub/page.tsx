@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Briefcase, Building2, Users, Plus, DollarSign, TrendingDown,
-  Palette, Globe, X, CheckCircle2, AlertCircle,
+  Palette, Globe, X, CheckCircle2, AlertCircle, Loader2, Save,
 } from "lucide-react";
 
 interface Client {
@@ -15,14 +15,6 @@ interface Client {
   mrr: number;
 }
 
-const INITIAL_CLIENTS: Client[] = [
-  { id: "1", name: "Apex Marketing Co", domain: "apexmktg.com", status: "active", mrr: 4500 },
-  { id: "2", name: "Nova Digital", domain: "novadigital.io", status: "active", mrr: 3200 },
-  { id: "3", name: "Brightpath Agency", domain: "brightpath.co", status: "onboarding", mrr: 2800 },
-  { id: "4", name: "Zenith Solutions", domain: "zenithsol.com", status: "active", mrr: 5100 },
-  { id: "5", name: "Lunar Labs", domain: "lunarlabs.dev", status: "churned", mrr: 0 },
-];
-
 const STATUS_STYLES: Record<string, { dot: string; text: string; label: string }> = {
   active: { dot: "bg-emerald-500", text: "text-emerald-400", label: "Active" },
   onboarding: { dot: "bg-amber-500", text: "text-amber-400", label: "Onboarding" },
@@ -30,36 +22,132 @@ const STATUS_STYLES: Record<string, { dot: string; text: string; label: string }
 };
 
 export default function AgencyHubPage() {
-  const [clients, setClients] = useState<Client[]>(INITIAL_CLIENTS);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [loadingClients, setLoadingClients] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [brandName, setBrandName] = useState("Sovereign Matrix");
   const [brandColor, setBrandColor] = useState("#00B7FF");
   const [brandDomain, setBrandDomain] = useState("sovereign.agency");
   const [brandLogo, setBrandLogo] = useState("https://sovereign.agency/logo.png");
+  const [savingBrand, setSavingBrand] = useState(false);
+  const [brandSaved, setBrandSaved] = useState(false);
+  const [addingClient, setAddingClient] = useState(false);
 
   // Add client form
   const [newName, setNewName] = useState("");
   const [newDomain, setNewDomain] = useState("");
   const [newMrr, setNewMrr] = useState("");
 
+  // Load clients from API
+  const fetchClients = useCallback(async () => {
+    try {
+      const res = await fetch("/api/clients");
+      const data = await res.json();
+      if (data.success && Array.isArray(data.clients) && data.clients.length > 0) {
+        setClients(data.clients);
+      }
+    } catch {
+      // Silent — keep empty state
+    } finally {
+      setLoadingClients(false);
+    }
+  }, []);
+
+  // Load whitelabel config from API
+  const fetchBrandConfig = useCallback(async () => {
+    try {
+      const res = await fetch("/api/settings/whitelabel");
+      const data = await res.json();
+      if (data.config) {
+        if (data.config.agencyName) setBrandName(data.config.agencyName);
+        if (data.config.logoUrl) setBrandLogo(data.config.logoUrl);
+        if (data.config.primaryColor) setBrandColor(data.config.primaryColor);
+        if (data.config.supportEmail) setBrandDomain(data.config.supportEmail);
+      }
+    } catch {
+      // Silent — keep defaults
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchClients();
+    fetchBrandConfig();
+  }, [fetchClients, fetchBrandConfig]);
+
   const activeClients = clients.filter((c) => c.status === "active").length;
   const totalMrr = clients.filter((c) => c.status !== "churned").reduce((s, c) => s + c.mrr, 0);
   const churnRate = clients.length > 0 ? ((clients.filter((c) => c.status === "churned").length / clients.length) * 100).toFixed(1) : "0";
 
-  const addClient = () => {
+  // Save brand settings to whitelabel API
+  const saveBrandSettings = async () => {
+    setSavingBrand(true);
+    setBrandSaved(false);
+    try {
+      await fetch("/api/settings/whitelabel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          agencyName: brandName,
+          logoUrl: brandLogo,
+          primaryColor: brandColor,
+          supportEmail: brandDomain,
+        }),
+      });
+      setBrandSaved(true);
+      setTimeout(() => setBrandSaved(false), 2000);
+    } catch {
+      // Silent
+    } finally {
+      setSavingBrand(false);
+    }
+  };
+
+  // Add client via API
+  const addClient = async () => {
     if (!newName || !newDomain) return;
-    const client: Client = {
-      id: Date.now().toString(),
-      name: newName,
-      domain: newDomain,
-      status: "onboarding",
-      mrr: Number(newMrr) || 0,
-    };
-    setClients((prev) => [client, ...prev]);
-    setNewName("");
-    setNewDomain("");
-    setNewMrr("");
-    setShowModal(false);
+    setAddingClient(true);
+    try {
+      const res = await fetch("/api/clients", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newName,
+          domain: newDomain,
+          status: "onboarding",
+          mrr: Number(newMrr) || 0,
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.client) {
+        setClients((prev) => [data.client, ...prev]);
+      } else {
+        // Fallback: add locally
+        const client: Client = {
+          id: Date.now().toString(),
+          name: newName,
+          domain: newDomain,
+          status: "onboarding",
+          mrr: Number(newMrr) || 0,
+        };
+        setClients((prev) => [client, ...prev]);
+      }
+    } catch {
+      // Fallback: add locally
+      const client: Client = {
+        id: Date.now().toString(),
+        name: newName,
+        domain: newDomain,
+        status: "onboarding",
+        mrr: Number(newMrr) || 0,
+      };
+      setClients((prev) => [client, ...prev]);
+    } finally {
+      setNewName("");
+      setNewDomain("");
+      setNewMrr("");
+      setShowModal(false);
+      setAddingClient(false);
+    }
   };
 
   return (
@@ -95,7 +183,7 @@ export default function AgencyHubPage() {
               <stat.icon className="w-4 h-4 text-neutral-400" />
             </div>
             <div>
-              <p className="text-[10px] uppercase tracking-wider text-neutral-600">{stat.label}</p>
+              <p className="text-[10px] uppercase tracking-wider text-neutral-500">{stat.label}</p>
               <p className="text-xl font-bold text-white">{stat.value}</p>
             </div>
           </div>
@@ -116,19 +204,29 @@ export default function AgencyHubPage() {
               { label: "Domain", value: brandDomain, set: setBrandDomain },
             ].map((field) => (
               <div key={field.label}>
-                <label className="block text-[10px] uppercase tracking-wider text-neutral-600 mb-1.5">{field.label}</label>
+                <label className="block text-[10px] uppercase tracking-wider text-neutral-500 mb-1.5">{field.label}</label>
                 <input value={field.value} onChange={(e) => field.set(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-white/20 transition-colors" />
+                  className="w-full px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm text-white placeholder:text-neutral-500 focus:outline-none focus:border-white/20 transition-colors" />
               </div>
             ))}
             <div>
-              <label className="block text-[10px] uppercase tracking-wider text-neutral-600 mb-1.5">Primary Color</label>
+              <label className="block text-[10px] uppercase tracking-wider text-neutral-500 mb-1.5">Primary Color</label>
               <div className="flex items-center gap-3">
                 <input type="color" value={brandColor} onChange={(e) => setBrandColor(e.target.value)}
                   className="w-10 h-10 rounded-lg border border-white/10 bg-transparent cursor-pointer" />
                 <span className="text-sm text-neutral-300 font-mono">{brandColor}</span>
               </div>
             </div>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={saveBrandSettings}
+              disabled={savingBrand}
+              className="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-xs font-semibold shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30 transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {savingBrand ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : brandSaved ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />}
+              {savingBrand ? "Saving..." : brandSaved ? "Saved" : "Save Brand Settings"}
+            </motion.button>
           </div>
         </motion.div>
 
@@ -139,6 +237,17 @@ export default function AgencyHubPage() {
             <Building2 className="w-4 h-4 text-neutral-400" /> Client Portfolio
           </h2>
           <div className="space-y-3">
+            {loadingClients && (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-5 h-5 text-neutral-500 animate-spin" />
+              </div>
+            )}
+            {!loadingClients && clients.length === 0 && (
+              <div className="text-center py-8">
+                <Building2 className="w-6 h-6 text-neutral-700 mx-auto mb-2" />
+                <p className="text-xs text-neutral-500">No clients yet. Add your first client to get started.</p>
+              </div>
+            )}
             {clients.map((client, index) => {
               const style = STATUS_STYLES[client.status];
               return (
@@ -157,7 +266,7 @@ export default function AgencyHubPage() {
                   <div className="flex items-center gap-5">
                     <div className="text-right hidden sm:block">
                       <p className="text-sm font-bold text-white">{client.mrr > 0 ? `$${client.mrr.toLocaleString()}` : "--"}</p>
-                      <p className="text-[10px] text-neutral-600">MRR</p>
+                      <p className="text-[10px] text-neutral-500">MRR</p>
                     </div>
                     <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/5 border border-white/[0.06]">
                       <span className={`w-1.5 h-1.5 rounded-full ${style.dot}`} />
@@ -198,15 +307,16 @@ export default function AgencyHubPage() {
                   <div key={field.label}>
                     <label className="block text-xs uppercase tracking-wider text-neutral-500 mb-2">{field.label}</label>
                     <input value={field.value} onChange={(e) => field.set(e.target.value)} placeholder={field.placeholder}
-                      className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm placeholder:text-neutral-600 focus:outline-none focus:border-emerald-500/40 transition-colors" />
+                      className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm placeholder:text-neutral-500 focus:outline-none focus:border-emerald-500/40 transition-colors" />
                   </div>
                 ))}
               </div>
               <div className="p-6 border-t border-white/[0.06] flex items-center justify-end gap-3">
                 <button onClick={() => setShowModal(false)} className="px-4 py-2.5 rounded-xl text-sm text-neutral-400 hover:text-white hover:bg-white/5 transition-all cursor-pointer">Cancel</button>
-                <button onClick={addClient}
-                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-sm font-semibold shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30 transition-all cursor-pointer">
-                  Add Client
+                <button onClick={addClient} disabled={addingClient}
+                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-sm font-semibold shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30 transition-all cursor-pointer disabled:opacity-50 flex items-center gap-2">
+                  {addingClient && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  {addingClient ? "Adding..." : "Add Client"}
                 </button>
               </div>
             </motion.div>

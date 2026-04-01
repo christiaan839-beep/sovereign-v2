@@ -3,14 +3,14 @@
 import React, { useState, useCallback, useEffect, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, Users, Settings, DollarSign, Target,
   Layers, Search, ChevronDown, ChevronRight, Sparkles, Factory,
-  X, Menu, Mic, Swords, Database, Inbox, CalendarClock,
+  X, Menu, Mic, Swords, Database, Inbox,
   PanelLeftOpen, PanelLeftClose, Clock, Plug, Cpu,
   BarChart3, CircuitBoard, Eye, Palette, Shield, Wrench, LayoutTemplate,
-  Wand2, Store
+  Wand2, Store, Workflow, Brain, Play, MessageSquare
 } from "lucide-react";
 import { useKeyboardShortcuts } from "@/lib/keyboard-shortcuts";
 import { motion, AnimatePresence } from "framer-motion";
@@ -24,6 +24,35 @@ import { CinematicOnboarding } from '@/components/dashboard/CinematicOnboarding'
 import { LiveActivityConsole } from '@/components/dashboard/LiveActivityConsole';
 import { CommandPalette } from '@/components/ui/CommandPalette';
 import { SovereignAssistant } from '@/components/dashboard/SovereignAssistant';
+import { NotificationCenter } from '@/components/dashboard/NotificationCenter';
+import { KeyboardShortcutsModal } from '@/components/ui/KeyboardShortcutsModal';
+
+/* ─── "NEW" Badge Helpers ─── */
+
+const NEW_BADGE_ITEMS = new Set([
+  "/dashboard/workflow-builder",
+  "/dashboard/integrations",
+  "/dashboard/audit-trail",
+]);
+
+const NEW_BADGE_STORAGE_PREFIX = "sovereign_new_dismissed_";
+
+function useNewBadge(href: string) {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    if (!NEW_BADGE_ITEMS.has(href)) return;
+    const dismissed = localStorage.getItem(NEW_BADGE_STORAGE_PREFIX + href);
+    if (!dismissed) setVisible(true);
+  }, [href]);
+
+  const dismiss = useCallback(() => {
+    localStorage.setItem(NEW_BADGE_STORAGE_PREFIX + href, "true");
+    setVisible(false);
+  }, [href]);
+
+  return { showNew: visible, dismissNew: dismiss };
+}
 
 /* ─── Navigation Structure ─── */
 
@@ -31,6 +60,7 @@ interface NavItem {
   href: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
+  tooltip?: string;
 }
 
 interface NavGroup {
@@ -41,13 +71,14 @@ interface NavGroup {
 }
 
 const PRIMARY_NAV: NavItem[] = [
-  { href: "/dashboard", label: "Home", icon: LayoutDashboard },
-  { href: "/dashboard/inbox", label: "Inbox", icon: Inbox },
-  { href: "/dashboard/build", label: "Build", icon: Sparkles },
-  { href: "/dashboard/leads", label: "Leads", icon: Target },
-  { href: "/dashboard/content-factory", label: "Content", icon: Factory },
-  { href: "/dashboard/canvas", label: "Canvas", icon: Layers },
-  { href: "/dashboard/templates", label: "Templates", icon: LayoutTemplate },
+  { href: "/dashboard", label: "Home", icon: LayoutDashboard, tooltip: "Dashboard overview and key metrics" },
+  { href: "/chat", label: "Chat", icon: MessageSquare, tooltip: "Open Sovereign AI Chat" },
+  { href: "/dashboard/inbox", label: "Inbox", icon: Inbox, tooltip: "View notifications and messages" },
+  { href: "/dashboard/build", label: "Build", icon: Sparkles, tooltip: "Create content with AI agents" },
+  { href: "/dashboard/leads", label: "Leads", icon: Target, tooltip: "Manage and track sales leads" },
+  { href: "/dashboard/content-factory", label: "Content", icon: Factory, tooltip: "Publish blog posts and social content" },
+  { href: "/dashboard/canvas", label: "Canvas", icon: Layers, tooltip: "Visual page builder and editor" },
+  { href: "/dashboard/templates", label: "Templates", icon: LayoutTemplate, tooltip: "Browse pre-built page templates" },
 ];
 
 const NAV_GROUPS: NavGroup[] = [
@@ -55,41 +86,36 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Tools",
     icon: Wrench,
     items: [
-      { href: "/dashboard/seo-dominator", label: "SEO Dominator", icon: Search },
-      { href: "/dashboard/competitor", label: "Competitor Intel", icon: Shield },
-      { href: "/dashboard/voice-assistant", label: "Voice Assistant", icon: Mic },
-      { href: "/dashboard/visual-studio", label: "Code Studio", icon: Palette },
-      { href: "/dashboard/workflows", label: "Workflows", icon: CircuitBoard },
-      { href: "/dashboard/automations", label: "Automations", icon: Clock },
-      { href: "/dashboard/scheduled", label: "Scheduled Runs", icon: CalendarClock },
-      { href: "/dashboard/agent-builder", label: "Agent Builder", icon: Wand2 },
+      { href: "/dashboard/seo-dominator", label: "SEO Tools", icon: Search, tooltip: "Keyword research, audits, and ranking tools" },
+      { href: "/dashboard/competitor", label: "Competitor Intel", icon: Shield, tooltip: "Analyze competitor websites and strategies" },
+      { href: "/dashboard/voice-assistant", label: "Voice Assistant", icon: Mic, tooltip: "Interact with AI via voice commands" },
+      { href: "/dashboard/visual-studio", label: "Code Studio", icon: Palette, tooltip: "Generate and edit code with AI" },
+      { href: "/dashboard/workflow-builder", label: "Workflow Builder", icon: Workflow, tooltip: "Visually design and deploy multi-step workflows" },
+      { href: "/dashboard/automations", label: "Automations", icon: Clock, tooltip: "Manage triggered automation rules and schedules" },
+      { href: "/dashboard/agent-builder", label: "Create Agent", icon: Wand2, tooltip: "Build a custom AI agent from scratch" },
     ],
   },
   {
     label: "Intelligence",
     icon: Cpu,
     items: [
-      { href: "/dashboard/agent-hq", label: "Agent HQ", icon: Users },
-      { href: "/dashboard/agent-analytics", label: "Analytics", icon: BarChart3 },
-      { href: "/dashboard/war-room", label: "War Room", icon: Swords },
-      { href: "/dashboard/god-eye", label: "God Eye", icon: Eye },
-      { href: "/dashboard/nim-arsenal", label: "NIM Arsenal", icon: Database },
-      { href: "/dashboard/revenue", label: "Revenue", icon: DollarSign },
-    ],
-  },
-  {
-    label: "Community",
-    icon: Store,
-    items: [
-      { href: "/dashboard/agent-marketplace", label: "Marketplace", icon: Store },
+      { href: "/dashboard/agent-hq", label: "Agent HQ", icon: Users, tooltip: "Headquarters for all deployed agents" },
+      { href: "/dashboard/agent-analytics", label: "Analytics", icon: BarChart3, tooltip: "Performance metrics and usage analytics" },
+      { href: "/dashboard/war-room", label: "War Room", icon: Swords, tooltip: "Multi-agent debate and synthesis arena" },
+      { href: "/dashboard/god-eye", label: "Agent Monitor", icon: Eye, tooltip: "Monitor all agents in real-time" },
+      { href: "/dashboard/nim-arsenal", label: "Model Registry", icon: Database, tooltip: "View all AI models, routing rules, and failover chains" },
+      { href: "/dashboard/memory", label: "Agent Memory", icon: Brain, tooltip: "View what agents remember about you" },
+      { href: "/dashboard/replays", label: "Replays", icon: Play, tooltip: "Replay past agent executions step-by-step" },
+      { href: "/dashboard/agent-marketplace", label: "Marketplace", icon: Store, tooltip: "Browse and install community agents" },
     ],
   },
 ];
 
 const BOTTOM_NAV: NavItem[] = [
-  { href: "/dashboard/integrations", label: "Integrations", icon: Plug },
-  { href: "/dashboard/billing", label: "Billing", icon: DollarSign },
-  { href: "/dashboard/settings", label: "Settings", icon: Settings },
+  { href: "/dashboard/integrations", label: "Integrations", icon: Plug, tooltip: "Connect third-party services and APIs" },
+  { href: "/dashboard/audit-trail", label: "Audit Trail", icon: Eye, tooltip: "View all platform activity for compliance" },
+  { href: "/dashboard/billing", label: "Billing", icon: DollarSign, tooltip: "Manage subscription and payment methods" },
+  { href: "/dashboard/settings", label: "Settings", icon: Settings, tooltip: "Account, team, and platform settings" },
 ];
 
 /* Page label lookup for breadcrumbs */
@@ -118,6 +144,7 @@ function getPageLabel(pathname: string): string | null {
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { user } = useSafeUser();
   const [isConnected, setIsConnected] = useState(false);
   const [ping, setPing] = useState(0);
@@ -156,6 +183,49 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     localStorage.setItem("sidebar-expanded", String(sidebarExpanded));
   }, [sidebarExpanded]);
 
+  // Track page visits for Quick Access
+  useEffect(() => {
+    if (pathname === "/dashboard") return;
+    try {
+      const RECENT_KEY = "sovereign_recent_agents";
+      const PAGE_MAP: Record<string, { name: string; iconName: string }> = {
+        "/dashboard/leads": { name: "Lead Gen", iconName: "Target" },
+        "/dashboard/content-factory": { name: "Content Factory", iconName: "Sparkles" },
+        "/dashboard/war-room": { name: "War Room", iconName: "Swords" },
+        "/dashboard/seo-dominator": { name: "SEO Dominator", iconName: "Search" },
+        "/dashboard/voice-assistant": { name: "Voice Agent", iconName: "Mic" },
+        "/dashboard/nemo-claw": { name: "NemoClaw", iconName: "Cpu" },
+        "/dashboard/templates": { name: "Templates", iconName: "LayoutTemplate" },
+        "/dashboard/workflow-builder": { name: "Workflows", iconName: "Workflow" },
+        "/dashboard/integrations": { name: "Integrations", iconName: "Plug" },
+        "/dashboard/automations": { name: "Automations", iconName: "Clock" },
+        "/dashboard/analytics/roi": { name: "Analytics", iconName: "BarChart3" },
+        "/dashboard/god-eye": { name: "Agent Monitor", iconName: "Eye" },
+        "/dashboard/competitor": { name: "Competitor Intel", iconName: "Shield" },
+        "/dashboard/build": { name: "Page Builder", iconName: "Sparkles" },
+        "/dashboard/settings/team": { name: "Team Settings", iconName: "Users" },
+        "/dashboard/ghost-protocol": { name: "Ghost Protocol", iconName: "Shield" },
+        "/dashboard/arsenal": { name: "Arsenal", iconName: "Zap" },
+        "/dashboard/nim-arsenal": { name: "NIM Models", iconName: "Cpu" },
+        "/dashboard/canvas": { name: "Canvas", iconName: "Palette" },
+        "/dashboard/designer": { name: "Designer", iconName: "Palette" },
+        "/dashboard/flywheel": { name: "Flywheel", iconName: "CircuitBoard" },
+        "/dashboard/omni-search": { name: "Omni Search", iconName: "Search" },
+        "/dashboard/billing": { name: "Billing", iconName: "DollarSign" },
+        "/dashboard/agent-hq": { name: "Agent HQ", iconName: "Users" },
+        "/dashboard/settings": { name: "Settings", iconName: "Settings" },
+      };
+      const pageInfo = PAGE_MAP[pathname];
+      if (!pageInfo) return;
+      const raw = localStorage.getItem(RECENT_KEY);
+      let recent: { id: string; name: string; href: string; iconName: string; visitedAt: number }[] = raw ? JSON.parse(raw) : [];
+      recent = recent.filter((r) => r.href !== pathname);
+      recent.unshift({ id: pathname, name: pageInfo.name, href: pathname, iconName: pageInfo.iconName, visitedAt: Date.now() });
+      recent = recent.slice(0, 10);
+      localStorage.setItem(RECENT_KEY, JSON.stringify(recent));
+    } catch { /* ignore */ }
+  }, [pathname]);
+
   // Health check
   useEffect(() => {
     const checkHealth = async () => {
@@ -172,10 +242,54 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return () => clearInterval(interval);
   }, []);
 
+  // Build the Cmd+1-9 navigation targets (top 9 sidebar items)
+  const numNavTargets = useMemo(() => {
+    const allItems = [...PRIMARY_NAV, ...NAV_GROUPS.flatMap((g) => g.items)];
+    return allItems.slice(0, 9);
+  }, []);
+
   // Keyboard shortcuts
   useKeyboardShortcuts([
     { key: "/", meta: true, handler: () => setSidebarExpanded((v) => !v), label: "Toggle sidebar" },
     { key: "escape", handler: () => setMobileMenuOpen(false), label: "Close panel" },
+    // Cmd+\ to focus chat input
+    {
+      key: "\\",
+      meta: true,
+      handler: () => {
+        const chatInput = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(
+          '[data-chat-input="true"], .chat-input, textarea[placeholder*="message"], input[placeholder*="message"]'
+        );
+        if (chatInput) chatInput.focus();
+      },
+      label: "Focus chat input",
+    },
+    // Cmd+Enter to submit current form
+    {
+      key: "enter",
+      meta: true,
+      handler: () => {
+        const focused = document.activeElement as HTMLElement | null;
+        if (focused) {
+          const form = focused.closest("form");
+          if (form) {
+            form.requestSubmit();
+          } else {
+            // Try to find a nearby submit button
+            const btn = document.querySelector<HTMLButtonElement>('button[type="submit"], button.submit-btn');
+            if (btn) btn.click();
+          }
+        }
+      },
+      label: "Submit form",
+    },
+    // Cmd+1 through Cmd+9
+    ...numNavTargets.map((item, i) => ({
+      key: String(i + 1),
+      meta: true,
+      handler: () => router.push(item.href),
+      label: `Go to ${item.label}`,
+    })),
   ]);
 
   /* ── Active state helper ── */
@@ -197,35 +311,51 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       onNavigate?: () => void;
     }) => {
       const active = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
+      const { showNew, dismissNew } = useNewBadge(item.href);
+
+      const handleClick = () => {
+        if (showNew) dismissNew();
+        onNavigate?.();
+      };
+
       if (collapsed) {
         return (
           <Link
             href={item.href}
-            title={item.label}
+            title={item.tooltip || item.label}
             aria-label={item.label}
-            onClick={onNavigate}
-            className={`flex items-center justify-center w-10 h-10 mx-auto rounded-lg transition-gpu duration-150 ${
+            onClick={handleClick}
+            className={`relative flex items-center justify-center w-10 h-10 mx-auto rounded-lg transition-gpu duration-150 ${
               active
-                ? "bg-white/10 text-white"
+                ? "bg-white/10 text-white border-l-2 border-emerald-500 shadow-[inset_3px_0_8px_rgba(16,185,129,0.1)]"
                 : "text-neutral-500 hover:text-white hover:bg-white/5"
             }`}
           >
-            <item.icon className="w-4 h-4" />
+            <item.icon className={`w-4 h-4 ${active ? "animate-pulse" : ""}`} />
+            {showNew && (
+              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-500" />
+            )}
           </Link>
         );
       }
       return (
         <Link
           href={item.href}
-          onClick={onNavigate}
+          title={item.tooltip || item.label}
+          onClick={handleClick}
           className={`flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-gpu duration-150 ${
             active
-              ? "bg-white/10 text-white"
+              ? "bg-white/10 text-white border-l-2 border-emerald-500 shadow-[inset_3px_0_8px_rgba(16,185,129,0.1)]"
               : "text-neutral-400 hover:text-white hover:bg-white/[0.04]"
           }`}
         >
-          <item.icon className="w-4 h-4 shrink-0" />
-          <span>{item.label}</span>
+          <item.icon className={`w-4 h-4 shrink-0 ${active ? "animate-pulse" : ""}`} />
+          <span className="flex-1">{item.label}</span>
+          {showNew && (
+            <span className="px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+              NEW
+            </span>
+          )}
         </Link>
       );
     };
@@ -410,6 +540,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </div>
               )}
             </div>
+            {sidebarExpanded && <NotificationCenter />}
             {!sidebarExpanded && (
               <button
                 onClick={() => setSidebarExpanded(true)}
@@ -431,11 +562,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <div className="px-6 lg:px-8 pt-3 pb-1 flex items-center gap-1.5">
                 <Link
                   href="/dashboard"
-                  className="text-[11px] text-neutral-600 hover:text-neutral-400 transition-colors"
+                  className="text-[11px] text-neutral-500 hover:text-neutral-400 transition-colors"
                 >
                   Dashboard
                 </Link>
-                <ChevronRight className="w-3 h-3 text-neutral-700" />
+                <ChevronRight className="w-3 h-3 text-neutral-500" />
                 <span className="text-[11px] text-neutral-400 font-medium">
                   {pageLabel}
                 </span>
@@ -462,6 +593,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {!isHome && <LiveActivityConsole />}
         {!isHome && <SovereignAssistant />}
+        <KeyboardShortcutsModal />
 
         {/* === MOBILE BOTTOM NAV === */}
         <nav

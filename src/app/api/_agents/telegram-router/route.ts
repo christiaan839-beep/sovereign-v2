@@ -1,4 +1,7 @@
+import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
+import { createLogger } from "@/lib/logger";
+const log = createLogger("telegram-router");
 
 /**
  * TELEGRAM AGENT ROUTER — Routes Telegram commands to the correct agent API.
@@ -18,7 +21,7 @@ import { NextResponse } from "next/server";
 
 const AGENT_ROUTES: Record<string, { endpoint: string; buildBody: (args: string) => Record<string, unknown> }> = {
   "/translate": {
-    endpoint: "/api/agents/translate",
+    endpoint: "/api/_agents/translate",
     buildBody: (args) => {
       const match = args.match(/(.+)\s+to\s+(\w{2})$/i);
       return match
@@ -27,27 +30,27 @@ const AGENT_ROUTES: Record<string, { endpoint: string; buildBody: (args: string)
     },
   },
   "/research": {
-    endpoint: "/api/agents/abm-artillery",
+    endpoint: "/api/_agents/abm-artillery",
     buildBody: (args) => ({ companyName: args }),
   },
   "/pii": {
-    endpoint: "/api/agents/pii-redactor",
+    endpoint: "/api/_agents/pii-redactor",
     buildBody: (args) => ({ text: args }),
   },
   "/blog": {
-    endpoint: "/api/agents/blog-gen",
+    endpoint: "/api/_agents/blog-gen",
     buildBody: (args) => ({ topic: args }),
   },
   "/build": {
-    endpoint: "/api/agents/page-builder",
+    endpoint: "/api/_agents/page-builder",
     buildBody: (args) => ({ prompt: args }),
   },
   "/image": {
-    endpoint: "/api/agents/image-gen",
+    endpoint: "/api/_agents/image-gen",
     buildBody: (args) => ({ prompt: args }),
   },
   "/chain": {
-    endpoint: "/api/agents/chain-reactor",
+    endpoint: "/api/_agents/chain-reactor",
     buildBody: (args) => {
       const parts = args.split(" ");
       const chain = parts[0] || "lead-to-close";
@@ -56,13 +59,15 @@ const AGENT_ROUTES: Record<string, { endpoint: string; buildBody: (args: string)
     },
   },
   "/deploy": {
-    endpoint: "/api/agents/nemoclaw",
+    endpoint: "/api/_agents/nemoclaw",
     buildBody: (args) => ({ action: "deploy", config: { name: args || "TelegramAgent" } }),
   },
 };
 
 export async function POST(request: Request) {
   try {
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     const body = await request.json();
     const message = body?.message;
 
@@ -160,7 +165,7 @@ export async function POST(request: Request) {
     await sendReply(formattedReply);
     return NextResponse.json({ ok: true });
   } catch (error) {
-    console.error("[TELEGRAM_ROUTER_ERROR]", error);
+    log.error("Telegram router error", error as Record<string, unknown>);
     return NextResponse.json({ ok: true });
   }
 }

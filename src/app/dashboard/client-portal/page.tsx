@@ -109,7 +109,7 @@ export default function ClientPortalPage() {
           <Palette className="w-4 h-4" style={{ color: accentColor }} /> Agency Branding
         </h2>
         {loading ? (
-          <div className="h-20 flex items-center justify-center text-neutral-600 text-xs">Loading configuration...</div>
+          <div className="h-20 flex items-center justify-center text-neutral-500 text-xs">Loading configuration...</div>
         ) : config ? (
           <div className="flex items-center gap-6 flex-wrap">
             <div className="flex items-center gap-4">
@@ -230,7 +230,7 @@ export default function ClientPortalPage() {
                   {DEMO_CONTENT.slice(0, 2).map((c) => (
                     <div key={c.title} className="flex items-center justify-between">
                       <span className="text-[10px] text-neutral-400 truncate max-w-[70%]">{c.title}</span>
-                      <span className="text-[10px] text-neutral-600">{c.date}</span>
+                      <span className="text-[10px] text-neutral-500">{c.date}</span>
                     </div>
                   ))}
                 </div>
@@ -252,7 +252,7 @@ export default function ClientPortalPage() {
                   {DEMO_ACTIVITY.slice(0, 2).map((a) => (
                     <div key={a.detail} className="flex items-center justify-between">
                       <span className="text-[10px] text-neutral-400 truncate max-w-[70%]">{a.action}</span>
-                      <span className="text-[10px] text-neutral-600">{a.time}</span>
+                      <span className="text-[10px] text-neutral-500">{a.time}</span>
                     </div>
                   ))}
                 </div>
@@ -282,9 +282,9 @@ export default function ClientPortalPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-xs text-neutral-300">{a.detail}</p>
-                        <p className="text-[10px] text-neutral-600">{a.action}</p>
+                        <p className="text-[10px] text-neutral-500">{a.action}</p>
                       </div>
-                      <span className="text-[10px] text-neutral-600 shrink-0">{a.time}</span>
+                      <span className="text-[10px] text-neutral-500 shrink-0">{a.time}</span>
                     </motion.div>
                   );
                 })}
@@ -328,7 +328,7 @@ export default function ClientPortalPage() {
             )}
           </button>
         </div>
-        <p className="text-[10px] text-neutral-600 mt-3">
+        <p className="text-[10px] text-neutral-500 mt-3">
           Authenticated client portal with granular permissions is shipping in Phase 3 (Enterprise Features).
         </p>
       </motion.div>

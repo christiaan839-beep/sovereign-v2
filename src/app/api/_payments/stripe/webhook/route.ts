@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
+import { db } from "@/db";
+import { subscriptions } from "@/db/schema";
+import { eq } from "drizzle-orm";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("stripe-webhook");
 
 /**
- * STRIPE WEBHOOK — Handles subscription events from Stripe.
+ * STRIPE WEBHOOK — Handles subscription lifecycle events from Stripe.
  *
  * Setup:
  * 1. In Stripe dashboard → Developers → Webhooks
@@ -35,30 +41,77 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
-  switch (event.type) {
-    case "checkout.session.completed": {
-      const session = event.data.object as Stripe.Checkout.Session;
-      const plan = session.metadata?.plan || "node";
-      const userId = session.metadata?.userId;
-      // Checkout complete — update user plan in database
-      // await db.update(subscriptions).set({ plan, status: "active", stripeCustomerId: session.customer }).where(eq(subscriptions.userId, userId));
-      break;
-    }
+  try {
+    switch (event.type) {
+      case "checkout.session.completed": {
+        const session = event.data.object as Stripe.Checkout.Session;
+        const plan = session.metadata?.plan || "node";
+        const userId = session.metadata?.userId;
+        if (userId) {
+          await db.insert(subscriptions).values({
+            userId,
+            plan,
+            status: "active",
+            stripeCustomerId: typeof session.customer === "string" ? session.customer : session.customer?.toString() ?? null,
+            stripeSubscriptionId: typeof session.subscription === "string" ? session.subscription : null,
+          }).onConflictDoUpdate({
+            target: subscriptions.userId,
+            set: {
+              plan,
+              status: "active",
+              stripeCustomerId: typeof session.customer === "string" ? session.customer : null,
+              stripeSubscriptionId: typeof session.subscription === "string" ? session.subscription : null,
+              updatedAt: new Date(),
+            },
+          });
+          log.info("Subscription activated", { userId, plan });
+        }
+        break;
+      }
 
-    case "customer.subscription.updated": {
-      // Subscription status changed
-      break;
-    }
+      case "customer.subscription.updated": {
+        const sub = event.data.object as Stripe.Subscription;
+        const stripeCustomerId = typeof sub.customer === "string" ? sub.customer : sub.customer?.toString();
+        if (stripeCustomerId) {
+          await db.update(subscriptions).set({
+            status: sub.status === "active" ? "active" : sub.status === "past_due" ? "past_due" : "inactive",
+            updatedAt: new Date(),
+          }).where(eq(subscriptions.stripeCustomerId, stripeCustomerId));
+          log.info("Subscription updated", { stripeCustomerId, status: sub.status });
+        }
+        break;
+      }
 
-    case "customer.subscription.deleted": {
-      // Subscription cancelled — downgrade user to free plan
-      break;
-    }
+      case "customer.subscription.deleted": {
+        const sub = event.data.object as Stripe.Subscription;
+        const stripeCustomerId = typeof sub.customer === "string" ? sub.customer : sub.customer?.toString();
+        if (stripeCustomerId) {
+          await db.update(subscriptions).set({
+            status: "cancelled",
+            plan: "free",
+            updatedAt: new Date(),
+          }).where(eq(subscriptions.stripeCustomerId, stripeCustomerId));
+          log.info("Subscription cancelled — downgraded to free", { stripeCustomerId });
+        }
+        break;
+      }
 
-    case "invoice.payment_failed": {
-      // Payment failed — notify user, potentially downgrade after grace period
-      break;
+      case "invoice.payment_failed": {
+        const invoice = event.data.object as Stripe.Invoice;
+        const stripeCustomerId = typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.toString();
+        if (stripeCustomerId) {
+          await db.update(subscriptions).set({
+            status: "past_due",
+            updatedAt: new Date(),
+          }).where(eq(subscriptions.stripeCustomerId, stripeCustomerId));
+          log.error("Payment failed", { stripeCustomerId, invoiceId: invoice.id });
+        }
+        break;
+      }
     }
+  } catch (err) {
+    log.error("Webhook handler error", { eventType: event.type, error: (err as Error).message });
+    return NextResponse.json({ error: "Webhook handler failed" }, { status: 500 });
   }
 
   return NextResponse.json({ received: true });

@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
+import { createLogger } from "@/lib/logger";
+const log = createLogger("n8n-trigger");
 
 export async function POST(req: Request) {
   try {
@@ -31,7 +33,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true, message: "Dispatched successfully to workflow layer." });
   } catch (error) {
-    console.error("[N8N Trigger Error]:", error);
+    log.error("N8N trigger error", error as Record<string, unknown>);
     return NextResponse.json({ success: false, error: "Failed to dispatch to n8n." }, { status: 500 });
   }
 }

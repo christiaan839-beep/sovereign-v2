@@ -13,6 +13,8 @@ export interface AIOptions {
   thinking?: boolean;
   /** Use Claude Opus 4.6 for maximum reasoning (higher cost, BYOK recommended) */
   useOpus?: boolean;
+  /** Use Gemini 2.5 Pro instead of Flash (available on Google AI Ultra plan) */
+  useGeminiPro?: boolean;
 }
 
 // ─── Agents ──────────────────────────────────────────
@@ -65,7 +67,7 @@ export interface SwarmResult {
 // ─── Ghost Mode ──────────────────────────────────────
 export interface GhostAction {
   id: string;
-  type: "LAUNCH" | "KILL" | "SCALE" | "WAIT";
+  type: "LAUNCH" | "STOP" | "SCALE" | "WAIT";
   platform: string;
   budget: number;
   reasoning: string;
@@ -78,7 +80,7 @@ export interface Campaign {
   name: string;
   spend: number;
   revenue: number;
-  status: "ACTIVE" | "PAUSED" | "KILLED";
+  status: "ACTIVE" | "PAUSED" | "STOPPED";
 }
 
 // ─── Auth ────────────────────────────────────────────

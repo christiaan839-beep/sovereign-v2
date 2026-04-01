@@ -1,7 +1,12 @@
+import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
+import { createLogger } from "@/lib/logger";
+const log = createLogger("ghost-fleet-agent");
 
 export async function POST(req: Request) {
   try {
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     const { competitorName } = await req.json();
 
     if (!competitorName) {
@@ -74,8 +79,8 @@ Respond ONLY in strict JSON format:
 
     return NextResponse.json(resultJson);
 
-  } catch (error: any) {
-    console.error("[Ghost Fleet Error]", error);
-    return NextResponse.json({ error: error.message || "Failed to execute Ghost Fleet operations." }, { status: 500 });
+  } catch (error: unknown) {
+    log.error("Ghost fleet error", error as Record<string, unknown>);
+    return NextResponse.json({ error: (error as Error).message || "Failed to execute Ghost Fleet operations." }, { status: 500 });
   }
 }

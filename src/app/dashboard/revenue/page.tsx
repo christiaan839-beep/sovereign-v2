@@ -110,7 +110,7 @@ export default function RevenuePage() {
                           <Icon className="w-3.5 h-3.5 text-emerald-400" />
                           <span className="text-xs text-neutral-300 whitespace-nowrap">{step}</span>
                         </div>
-                        {si < chain.steps.length - 1 && <ChevronRight className="w-3.5 h-3.5 text-neutral-600 shrink-0" />}
+                        {si < chain.steps.length - 1 && <ChevronRight className="w-3.5 h-3.5 text-neutral-500 shrink-0" />}
                       </div>
                     );
                   })}
@@ -144,7 +144,7 @@ export default function RevenuePage() {
                   className="h-full rounded-full" style={{ backgroundColor: agent.color }} />
               </div>
               <span className="text-xs font-semibold text-white w-20 text-right">${agent.revenue.toLocaleString()}</span>
-              <span className="text-[10px] text-neutral-600 w-16 text-right">{agent.deals} deal{agent.deals > 1 ? "s" : ""}</span>
+              <span className="text-[10px] text-neutral-500 w-16 text-right">{agent.deals} deal{agent.deals > 1 ? "s" : ""}</span>
             </div>
           ))}
         </div>

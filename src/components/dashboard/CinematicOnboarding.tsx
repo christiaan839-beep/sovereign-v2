@@ -51,8 +51,10 @@ export function CinematicOnboarding({ children }: { children: React.ReactNode })
     return () => clearInterval(interval);
   }, [hasRun, isLoaded]);
 
-  if (!isLoaded) return null; // Wait for clerk
+  // Don't block dashboard render on Clerk loading
+  // Show children immediately for returning users (hasRun=true from sessionStorage)
   if (showChildren) return <>{children}</>;
+  if (!isLoaded) return <>{children}</>; // Show content even while Clerk loads
 
   return (
     <AnimatePresence>

@@ -3,6 +3,10 @@ import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { settings } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { safeEncrypt, safeDecrypt } from "@/lib/crypto";
+import { auditLog } from "@/lib/audit-log";
+import { createLogger } from "@/lib/logger";
+const log = createLogger("settings-api-keys");
 
 export async function GET() {
   const user = await currentUser();
@@ -17,8 +21,19 @@ export async function GET() {
       where: eq(settings.userEmail, userEmail)
     });
 
-    // Mask API keys — never return full keys in GET responses
-    const rawKeys = JSON.parse(userSettings?.apiKeys || "{}");
+    // Decrypt then mask API keys — never return full keys in GET responses
+    let rawKeys: Record<string, unknown> = {};
+    try {
+      const decrypted = safeDecrypt(userSettings?.apiKeys || "{}");
+      rawKeys = JSON.parse(decrypted);
+    } catch {
+      // Fallback: try parsing as plain JSON (legacy unencrypted data)
+      try {
+        rawKeys = JSON.parse(userSettings?.apiKeys || "{}");
+      } catch {
+        rawKeys = {};
+      }
+    }
     const maskedKeys: Record<string, { configured: boolean; masked: string }> = {};
     for (const [provider, key] of Object.entries(rawKeys)) {
       const k = String(key);
@@ -36,7 +51,7 @@ export async function GET() {
 
     return NextResponse.json({ apiKeys: maskedKeys });
   } catch (err) {
-    console.error("GET /api/settings/api-keys error:", err);
+    log.error("GET /api/settings/api-keys error", err as Record<string, unknown>);
     return NextResponse.json({ error: "Server Error" }, { status: 500 });
   }
 }
@@ -52,6 +67,7 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const apiKeysString = JSON.stringify(body);
+    const encryptedKeys = safeEncrypt(apiKeysString);
 
     const existing = await db.query.settings.findFirst({
       where: eq(settings.userEmail, userEmail)
@@ -59,18 +75,25 @@ export async function POST(req: Request) {
 
     if (existing) {
       await db.update(settings)
-        .set({ apiKeys: apiKeysString })
+        .set({ apiKeys: encryptedKeys })
         .where(eq(settings.userEmail, userEmail));
     } else {
       await db.insert(settings).values({
         userEmail,
-        apiKeys: apiKeysString,
+        apiKeys: encryptedKeys,
       });
     }
 
+    await auditLog({
+      userId: user.id,
+      action: "api_key.create",
+      resource: userEmail,
+      details: { providers: Object.keys(body) },
+    });
+
     return NextResponse.json({ success: true });
   } catch (err) {
-    console.error("POST /api/settings/api-keys error:", err);
+    log.error("POST /api/settings/api-keys error", err as Record<string, unknown>);
     return NextResponse.json({ error: "Server Error" }, { status: 500 });
   }
 }

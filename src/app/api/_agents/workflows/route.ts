@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
 /**
@@ -7,13 +8,15 @@ import { NextResponse } from "next/server";
  */
 export async function POST(req: Request) {
   try {
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     const { workflow, target, count = 5, topic } = await req.json();
     if (!workflow) return NextResponse.json({ error: "Missing `workflow`." }, { status: 400 });
 
     const nimKey = process.env.NVIDIA_NIM_API_KEY;
     const baseUrl = req.url.replace(/\/api\/agents\/workflows$/, "");
 
-    const results: Record<string, any> = {};
+    const results: Record<string, unknown> = {};
     const steps: string[] = [];
 
     switch (workflow) {
@@ -40,7 +43,7 @@ export async function POST(req: Request) {
           body: JSON.stringify({
             model: "nvidia/nemotron-3-super-120b-a12b",
             messages: [
-              { role: "system", content: "You are a ruthless sales strategist. Write a 3-sentence pitch exposing the competitor's weaknesses and positioning our platform as superior." },
+              { role: "system", content: "You are a strategic sales strategist. Write a 3-sentence pitch exposing the competitor's weaknesses and positioning our platform as superior." },
               { role: "user", content: `Competitor: ${target}. Audit results: ${JSON.stringify(results.audit).slice(0, 500)}` },
             ],
             max_tokens: 200,
@@ -180,8 +183,8 @@ export async function POST(req: Request) {
       summary: `Workflow "${workflow}" completed with ${steps.length} steps.`,
       cost: "$0.00",
     });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
   }
 }
 

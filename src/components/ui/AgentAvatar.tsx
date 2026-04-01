@@ -430,8 +430,8 @@ export const AGENT_ROSTER: {
     name: "Smart Router",
     role: "Infrastructure",
     personality: "router",
-    description: "Automatically routes every task to the optimal model from 51+ options. Zero vendor lock-in.",
-    model: "All 51+ models",
+    description: "Automatically routes every task to the optimal model from 62+ options. Zero vendor lock-in.",
+    model: "All 65+ models",
     capabilities: ["Model selection", "Failover", "Load balancing", "Cost optimization"],
   },
   {

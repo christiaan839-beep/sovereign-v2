@@ -19,6 +19,7 @@ vi.mock("@clerk/nextjs/server", () => ({
 
 // Mock database to avoid needing a real connection
 vi.mock("@/db", () => ({
+  testConnection: vi.fn().mockResolvedValue({ connected: true, latencyMs: 5 }),
   db: {
     execute: vi.fn().mockResolvedValue([{ "?column?": 1 }]),
     insert: vi.fn().mockReturnValue({ values: vi.fn().mockReturnValue({ returning: vi.fn().mockResolvedValue([]) }) }),

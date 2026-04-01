@@ -1,5 +1,5 @@
 import { createAgentRoute } from "@/lib/agent-factory";
-import { getNimKey } from "@/lib/nvidia";
+import { getNimKey, multimodalAnalyze } from "@/lib/nvidia";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("vision-analyze");
@@ -87,12 +87,30 @@ export const POST = createAgentRoute({
 
     const nimKey = await getNimKey();
     if (!nimKey) {
-      return { error: "NVIDIA NIM API key not configured." };
+      return { error: "AI model API key not configured. Add it in Settings > API Keys." };
     }
 
     const imageContent = imageUrl
       ? { type: "image_url" as const, image_url: { url: imageUrl } }
       : { type: "image_url" as const, image_url: { url: `data:image/png;base64,${imageBase64}` } };
+
+    // Try Qwen 3.5 VLM 400B (multimodalAnalyze) first — best multimodal model on NIM.
+    // Only when no specific model is preferred and we have a URL (not base64, since
+    // multimodalAnalyze expects a URL).
+    if (!preferredModel && imageUrl) {
+      try {
+        log.info("Trying multimodalAnalyze (Qwen 3.5 VLM 400B)");
+        const result = await multimodalAnalyze(imageUrl, question, { maxTokens: 4096 });
+        if (result) {
+          log.info("multimodalAnalyze succeeded");
+          return { analysis: result, model: "qwen3.5-vl-400b" };
+        }
+      } catch (err) {
+        log.warn("multimodalAnalyze failed, falling back to cascade", {
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
 
     // If caller requested a specific model, try it first
     const modelQueue = preferredModel

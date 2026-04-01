@@ -541,8 +541,8 @@ export function CommandPalette() {
                             data-index={idx}
                             onClick={() => handleSelect(action)}
                             disabled={executing === action.id}
-                            className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-colors group text-left disabled:opacity-50 ${
-                              isSelected ? "bg-white/[0.07]" : "hover:bg-white/[0.04]"
+                            className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-100 group text-left disabled:opacity-50 ${
+                              isSelected ? "bg-white/[0.08] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)]" : "hover:bg-white/[0.05]"
                             }`}
                           >
                             <div className="flex items-center gap-3">
@@ -582,12 +582,17 @@ export function CommandPalette() {
               </div>
 
               {/* Footer */}
-              <div className="bg-black/50 border-t border-white/5 px-4 py-3 flex items-center justify-between text-[10px] text-neutral-500 font-mono uppercase tracking-wider">
-                <span className="flex items-center gap-2"><Command className="w-3 h-3" /> {ACTIONS.length} commands available</span>
-                <span className="flex items-center gap-3">
-                  <span>Navigate ↑↓</span>
-                  <span>Execute ↵</span>
-                  <span className="text-[#00ff66]">/ agents</span>
+              <div className="bg-black/50 border-t border-white/5 px-4 py-3 flex items-center justify-between text-[10px] text-neutral-500 font-mono">
+                <span className="flex items-center gap-2"><Command className="w-3 h-3" /> {ACTIONS.length} commands</span>
+                <span className="flex items-center gap-2">
+                  <kbd className="px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-neutral-400">↑↓</kbd>
+                  <span className="text-neutral-600">navigate</span>
+                  <kbd className="px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-neutral-400">↵</kbd>
+                  <span className="text-neutral-600">select</span>
+                  <kbd className="px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-neutral-400">esc</kbd>
+                  <span className="text-neutral-600">close</span>
+                  <span className="ml-1 text-[#00ff66]">/</span>
+                  <span className="text-neutral-600">agents</span>
                 </span>
               </div>
             </div>

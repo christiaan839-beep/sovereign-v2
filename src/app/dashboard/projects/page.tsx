@@ -218,7 +218,7 @@ export default function ClientProjectsPage() {
             transition={{ duration: 0.3 }}
             className="bg-white/[0.04] backdrop-blur-xl border border-white/10 rounded-2xl p-6 min-h-[400px] flex flex-col items-center justify-center text-center"
           >
-            <FolderOpen className="w-14 h-14 text-neutral-600 mb-4" />
+            <FolderOpen className="w-14 h-14 text-neutral-500 mb-4" />
             <h3 className="text-lg font-bold text-white mb-2">
               No projects found
             </h3>

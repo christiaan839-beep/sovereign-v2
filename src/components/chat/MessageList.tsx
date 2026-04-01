@@ -54,7 +54,7 @@ export function MessageList({ messages, loading, activeAgent, onSend, submitFeed
           </div>
 
           <h2 className="text-xl font-semibold text-white mb-2">What would you like to build?</h2>
-          <p className="text-sm text-neutral-600 mb-10">109 agents ready. Just describe what you need.</p>
+          <p className="text-sm text-neutral-600 mb-10">124 agents ready. Just describe what you need.</p>
 
           <div className="grid grid-cols-2 gap-3 w-full max-w-md">
             {SUGGESTIONS.slice(0, 4).map((s) => (

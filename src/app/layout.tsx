@@ -8,15 +8,18 @@ import { CustomCursor } from "@/components/cinematic/CustomCursor";
 import { CursorGlow } from "@/components/cinematic/CursorGlow";
 import { ScrollProgress } from "@/components/cinematic/ScrollProgress";
 import { BackToTop } from "@/components/cinematic/BackToTop";
+import { CookieConsent } from "@/components/ui/CookieConsent";
 import "./globals.css";
 
 // Run environment validation on server startup
 validateEnvironment();
 
+export const revalidate = 3600; // Revalidate static pages every hour
+
 export const metadata: Metadata = {
   metadataBase: new URL("https://sovereignmatrix.agency"),
   title: "Sovereign Matrix — Your AI Workforce",
-  description: "132 autonomous AI agents. 51+ open-source models. $0 per-token cost. Find leads, write content, build pages, make calls, close deals. Built on NVIDIA NIM.",
+  description: "124 autonomous AI agents. 65+ open-source models. $0 per-token cost. Find leads, write content, build pages, make calls, close deals. Built on NVIDIA NIM.",
   keywords: ["AI agents", "autonomous AI", "agency automation", "NVIDIA NIM", "NemoClaw", "lead generation", "content automation", "AI platform", "open-source AI", "white-label AI", "AI agency", "agentic AI"],
   authors: [{ name: "Sovereign Matrix", url: "https://sovereignmatrix.agency" }],
   creator: "Sovereign Matrix",
@@ -31,7 +34,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "Sovereign Matrix — Your AI Workforce",
-    description: "132 autonomous AI agents. 51+ open-source models. $0 per-token cost. White-label ready. Your competitors hire. You deploy.",
+    description: "124 autonomous AI agents. 65+ open-source models. $0 per-token cost. White-label ready. Your competitors hire. You deploy.",
     type: "website",
     siteName: "Sovereign Matrix",
     locale: "en_US",
@@ -41,7 +44,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Sovereign Matrix — Your AI Workforce",
-    description: "132 autonomous AI agents. 51+ open-source models. $0 per-token cost. White-label ready. Your competitors hire. You deploy.",
+    description: "124 autonomous AI agents. 65+ open-source models. $0 per-token cost. White-label ready. Your competitors hire. You deploy.",
     images: ["https://sovereignmatrix.agency/og-image.jpg"],
   },
   icons: {
@@ -64,6 +67,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        {/* Preconnect to critical API endpoints */}
+        <link rel="preconnect" href="https://integrate.api.nvidia.com" />
+        <link rel="preconnect" href="https://generativelanguage.googleapis.com" />
+        <link rel="dns-prefetch" href="https://api.anthropic.com" />
         <link
           href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Outfit:wght@300;400;500;600;700&display=swap"
           rel="stylesheet"
@@ -75,6 +82,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Sovereign Matrix" />
         <link rel="apple-touch-icon" href="/icon-192.png" />
+        {/* Service Worker registration */}
+        <Script id="sw-register" strategy="afterInteractive">
+          {`if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').catch(() => {});
+          }`}
+        </Script>
         {/* Plausible Analytics — Privacy-friendly, GDPR compliant, no cookies */}
         <Script
           defer
@@ -90,6 +103,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <ScrollProgress />
           {children}
           <BackToTop />
+          <CookieConsent />
           {process.env.NODE_ENV === "production" && <Analytics />}
           {process.env.NODE_ENV === "production" && <SpeedInsights />}
           <Script
@@ -105,7 +119,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   applicationCategory: "BusinessApplication",
                   operatingSystem: "Web",
                   offers: { "@type": "Offer", price: "0", priceCurrency: "ZAR" },
-                  description: "Autonomous AI agent platform. 132 agents, 51+ open-source models, zero per-token cost. Built on NVIDIA NIM and NemoClaw.",
+                  description: "Autonomous AI agent platform. 124 agents, 65+ open-source models, zero per-token cost. Built on NVIDIA NIM and NemoClaw.",
                 },
                 {
                   "@context": "https://schema.org",
@@ -123,7 +137,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     {
                       "@type": "Question",
                       name: "What is Sovereign Matrix?",
-                      acceptedAnswer: { "@type": "Answer", text: "Sovereign Matrix is an autonomous AI agent platform with 132 specialized agents that execute business tasks like lead generation, content creation, SEO, voice calls, and competitor analysis. Built on NVIDIA NIM with 51+ open-source models at zero per-token cost." },
+                      acceptedAnswer: { "@type": "Answer", text: "Sovereign Matrix is an autonomous AI agent platform with 124 specialized agents that execute business tasks like lead generation, content creation, SEO, voice calls, and competitor analysis. Built on NVIDIA NIM with 65+ open-source models at zero per-token cost." },
                     },
                     {
                       "@type": "Question",
@@ -138,7 +152,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     {
                       "@type": "Question",
                       name: "How is this different from ChatGPT or other AI tools?",
-                      acceptedAnswer: { "@type": "Answer", text: "ChatGPT is a chatbot — you type, it responds. Sovereign Matrix deploys autonomous agents that plan, execute, and self-correct without human intervention. 132 agents work simultaneously across lead gen, content, SEO, voice calls, and more." },
+                      acceptedAnswer: { "@type": "Answer", text: "ChatGPT is a chatbot — you type, it responds. Sovereign Matrix deploys autonomous agents that plan, execute, and self-correct without human intervention. 124 agents work simultaneously across lead gen, content, SEO, voice calls, and more." },
                     },
                     {
                       "@type": "Question",

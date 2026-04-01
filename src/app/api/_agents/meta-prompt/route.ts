@@ -1,5 +1,8 @@
+import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { ai } from "@/lib/ai";
+import { createLogger } from "@/lib/logger";
+const log = createLogger("meta-prompt");
 
 // Anthropic's open-source Meta-Prompt methodology translated into a Sovereign constraint.
 const ANTHROPIC_META_PROMPT = `Today you will be writing instructions for an AI AI assistant. 
@@ -11,10 +14,12 @@ Based on the user's task description, construct a prompt that includes:
 3. <output_format>: Exact JSON schema, markdown format, or XML tags the AI must use.
 4. <examples>: (Optional but recommended) 1-2 examples of ideal input/output.
 
-DO NOT output anything other than the generated prompt. DO NOT surround the prompt in markdown code blocks. Just output the raw text of the final system prompt. Keep it between 300 and 800 words. Make it sound extremely professional, ruthless, and elite.`;
+DO NOT output anything other than the generated prompt. DO NOT surround the prompt in markdown code blocks. Just output the raw text of the final system prompt. Keep it between 300 and 800 words. Make it sound extremely professional, strategic, and elite.`;
 
 export async function POST(req: Request) {
   try {
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     const { task } = await req.json();
 
     if (!task) {
@@ -31,7 +36,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ prompt: generatedPrompt });
   } catch (err: unknown) {
-    console.error("Meta Prompt Generation Error:", err);
+    log.error("Meta prompt generation error", err as Record<string, unknown>);
     return NextResponse.json({ error: "Failed to build prompt orchestration." }, { status: 500 });
   }
 }

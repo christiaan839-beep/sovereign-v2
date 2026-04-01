@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { createLogger } from "@/lib/logger";
+const log = createLogger("closer-agent");
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const META_ACCESS_TOKEN = process.env.META_ACCESS_TOKEN; // For Instagram Graph API dispatch
@@ -20,10 +22,10 @@ Your objective is to qualify inbound leads for a $5,000/mo AI infrastructure lea
 Tone: Cold, authoritative, highly competent, matrix-themed (Palantir/Defense contractor style). Do not act like a generic friendly chatbot.
 Rule 1: Ask qualifying questions to determine their monthly revenue and current bottlenecks.
 Rule 2: Once qualified, immediately push them to book a secure clearance call at: https://cal.com/sovereign-matrix
-Keep responses under 3 sentences. Be ruthless about their time.`;
+Keep responses under 3 sentences. Be strategic about their time.`;
     
     if (!GEMINI_API_KEY) {
-        console.error("CRITICAL: GEMINI_API_KEY is missing from environment variables.");
+        log.error("CRITICAL: GEMINI_API_KEY is missing from environment variables");
         return NextResponse.json({ error: "AI Engine Offline" }, { status: 500 });
     }
 
@@ -71,7 +73,7 @@ Keep responses under 3 sentences. Be ruthless about their time.`;
     });
 
   } catch (error) {
-    console.error("[CLOSER AGENT FATAL ERROR]", error);
+    log.error("Closer agent fatal error", error as Record<string, unknown>);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

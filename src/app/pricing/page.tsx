@@ -1,13 +1,16 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { CheckCircle2, X as XIcon, ArrowRight, Zap, Shield, HelpCircle, Crown } from "lucide-react";
+import { CheckCircle2, X as XIcon, ArrowRight, Shield, HelpCircle, Crown, GitCompareArrows } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { AnimatePresence } from "framer-motion";
+import { SovereignLogo } from "@/components/ui/SovereignLogo";
+import { RevealText, GlowDivider, MagneticButton } from "@/components/ui/ScrollAnimations";
 
 const fadeIn = (d: number) => ({ initial: { opacity: 0, y: 20 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true }, transition: { delay: d, duration: 0.6 } });
 
+/* ─── Tier Data ─── */
 const TIERS = [
   {
     name: "Sovereign Node", price: "R9,997", period: "/mo", plan: "node", featured: false,
@@ -69,6 +72,45 @@ const FAQS = [
   { q: "What payment methods do you accept?", a: "We accept credit/debit cards, Instant EFT, Zapper, SnapScan, and bank transfers via PayFast. All payments in South African Rand (ZAR)." },
 ];
 
+/* ─── Comparison Table Data ─── */
+const COMPETITORS = [
+  { name: "Sovereign Matrix", highlight: true },
+  { name: "GoHighLevel", highlight: false },
+  { name: "CrewAI", highlight: false },
+  { name: "n8n", highlight: false },
+  { name: "Lindy.ai", highlight: false },
+];
+
+type CellValue = string | boolean;
+
+interface ComparisonRow {
+  label: string;
+  values: CellValue[];
+}
+
+const COMPARISON_ROWS: ComparisonRow[] = [
+  { label: "Monthly price (entry tier)", values: ["R897/mo ($49)", "$97/mo", "$99/mo", "$24/mo", "$20/mo"] },
+  { label: "AI agents included", values: ["124 agents", "0 AI agents", "Build your own", "AI nodes", "50+ templates"] },
+  { label: "Models available", values: ["65+", "0", "5-10", "5-10", "3-5"] },
+  { label: "Voice agents", values: [true, false, false, false, false] },
+  { label: "White-label", values: [true, true, false, false, false] },
+  { label: "Local execution", values: [true, false, true, true, false] },
+  { label: "Workflow builder", values: [true, false, false, true, true] },
+  { label: "Integrations", values: ["25+", "400+", "Python SDK", "400+", "5000+"] },
+  { label: "Free tier", values: ["Yes (100 runs)", false, false, "Yes (limited)", "Yes (400 credits)"] },
+];
+
+function CellDisplay({ value }: { value: CellValue }) {
+  if (typeof value === "boolean") {
+    return value ? (
+      <CheckCircle2 className="w-5 h-5 text-emerald-400 mx-auto" />
+    ) : (
+      <XIcon className="w-4 h-4 text-neutral-600 mx-auto" />
+    );
+  }
+  return <span className="text-sm text-neutral-300">{value}</span>;
+}
+
 export default function PricingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -87,13 +129,8 @@ export default function PricingPage() {
       });
       const data = await res.json();
 
-      if (data.success && data.formHtml) {
-        const container = document.createElement("div");
-        container.innerHTML = data.formHtml;
-        container.style.display = "none";
-        document.body.appendChild(container);
-        const form = container.querySelector("form");
-        if (form) form.submit();
+      if (data.success && data.redirectUrl) {
+        window.location.assign(data.redirectUrl);
         return;
       }
 
@@ -104,7 +141,7 @@ export default function PricingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white">
+    <div className="min-h-screen bg-[#030303] text-white antialiased">
       <AnimatePresence>
         {error && (
           <motion.div
@@ -120,39 +157,162 @@ export default function PricingPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Background ambience */}
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[radial-gradient(ellipse,rgba(0,183,255,0.06),transparent)] blur-3xl" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[600px] bg-emerald-500/[0.04] rounded-full blur-[250px]" />
+        <div className="absolute top-40 right-1/4 w-[400px] h-[400px] bg-purple-500/[0.03] rounded-full blur-[200px]" />
       </div>
 
-      <nav className="relative z-10 flex items-center justify-between px-8 py-6 max-w-7xl mx-auto">
-        <Link href="/" className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#00B7FF] to-blue-600 flex items-center justify-center text-xs font-bold">U</div>
-          <span className="text-sm font-medium tracking-[0.15em] uppercase">Sovereign Matrix</span>
-        </Link>
-        <div className="flex items-center gap-6 text-xs text-neutral-400">
-          <Link href="/" className="hover:text-white transition-colors">Home</Link>
-          <Link href="/dashboard" className="px-4 py-2 bg-white/5 border border-white/10 text-white rounded-full hover:bg-white/10 transition-gpu font-bold tracking-wider uppercase">Dashboard</Link>
+      {/* ─── Navigation ─── */}
+      <nav className="fixed top-6 inset-x-0 z-50 flex justify-center px-6 pointer-events-none">
+        <div className="bg-white/[0.03] backdrop-blur-2xl border border-white/10 rounded-full px-8 h-16 flex items-center justify-between gap-12 pointer-events-auto max-w-5xl w-full">
+          <Link href="/" className="flex items-center gap-3">
+            <SovereignLogo size="sm" />
+            <span className="hidden sm:block text-sm font-bold tracking-[0.2em] uppercase text-white font-serif">
+              Pricing
+            </span>
+          </Link>
+          <div className="flex items-center gap-4">
+            <Link href="/" className="hidden md:block text-xs text-neutral-400 hover:text-white transition-colors">
+              Home
+            </Link>
+            <Link href="/for-agencies" className="hidden md:block text-xs text-neutral-400 hover:text-white transition-colors">
+              Agencies
+            </Link>
+            <Link
+              href="/dashboard"
+              className="px-6 py-2.5 rounded-full bg-white text-black text-xs font-bold uppercase tracking-widest hover:bg-neutral-200 transition-all"
+            >
+              Dashboard
+            </Link>
+          </div>
         </div>
       </nav>
 
-      <section className="relative z-10 text-center px-8 pt-12 pb-8 max-w-4xl mx-auto">
-        <motion.div {...fadeIn(0)}>
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-neutral-300 text-xs font-medium uppercase tracking-wider mb-8">
-            <Zap className="w-3 h-3" /> Simple, Transparent Pricing
+      {/* ─── Comparison Hero ─── */}
+      <section className="relative pt-40 pb-16 px-6 overflow-hidden">
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          className="relative z-10 max-w-5xl mx-auto text-center"
+        >
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold uppercase tracking-[0.2em] mb-8">
+            <GitCompareArrows className="w-3 h-3" /> Platform Comparison
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">Scale Your Autonomous Swarm.</h1>
-          <p className="text-neutral-400 max-w-xl mx-auto">Deploy enterprise-grade NVIDIA execution pipelines. Replaces entire agency overheads dynamically via high-ticket infrastructure.</p>
+
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white leading-[1.1] mb-6 font-serif">
+            See How We Compare
+          </h1>
+
+          <p className="text-lg md:text-xl text-neutral-400 max-w-3xl mx-auto mb-4 leading-relaxed">
+            The only AI agent platform with{" "}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 font-bold">
+              $0 per-token cost
+            </span>
+          </p>
+          <p className="text-sm text-neutral-500 max-w-xl mx-auto">
+            124 autonomous agents. 65+ open-source models. Local execution. No per-API-call billing surprises.
+          </p>
         </motion.div>
       </section>
 
-      {/* Pricing Cards */}
-      <section className="relative z-10 px-8 pb-20 max-w-5xl mx-auto">
+      <GlowDivider />
+
+      {/* ─── Comparison Table ─── */}
+      <section className="relative z-10 py-20 px-6">
+        <div className="max-w-6xl mx-auto">
+          <RevealText as="h2" className="text-3xl md:text-4xl font-bold text-center mb-4 font-serif">
+            Feature-by-Feature Breakdown
+          </RevealText>
+          <RevealText as="p" className="text-neutral-500 text-center max-w-2xl mx-auto mb-16" delay={0.1}>
+            Honest comparison. No hidden costs. See exactly what you get.
+          </RevealText>
+
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7 }}
+            className="overflow-x-auto rounded-2xl border border-white/[0.06] bg-white/[0.01] backdrop-blur-xl"
+          >
+            <table className="w-full min-w-[800px] border-collapse">
+              {/* Header */}
+              <thead>
+                <tr className="border-b border-white/[0.06]">
+                  <th className="text-left text-xs text-neutral-500 uppercase tracking-widest font-medium p-5 w-48" />
+                  {COMPETITORS.map((c) => (
+                    <th
+                      key={c.name}
+                      className={`text-center p-5 text-sm font-bold uppercase tracking-wider ${
+                        c.highlight
+                          ? "text-emerald-400 bg-emerald-500/[0.06] border-x-2 border-t-2 border-emerald-500/30"
+                          : "text-neutral-400"
+                      }`}
+                    >
+                      {c.highlight && (
+                        <div className="text-[10px] text-emerald-500 font-bold uppercase tracking-[0.2em] mb-1">
+                          Recommended
+                        </div>
+                      )}
+                      {c.name}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+
+              {/* Body */}
+              <tbody>
+                {COMPARISON_ROWS.map((row, i) => (
+                  <motion.tr
+                    key={row.label}
+                    initial={{ opacity: 0, x: -10 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.05, duration: 0.4 }}
+                    className={`border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors ${
+                      i % 2 === 0 ? "bg-white/[0.005]" : ""
+                    }`}
+                  >
+                    <td className="p-5 text-sm text-neutral-300 font-medium">{row.label}</td>
+                    {row.values.map((val, j) => (
+                      <td
+                        key={j}
+                        className={`p-5 text-center ${
+                          j === 0
+                            ? "border-x-2 border-emerald-500/30 bg-emerald-500/[0.06]"
+                            : ""
+                        } ${i === COMPARISON_ROWS.length - 1 && j === 0 ? "border-b-2 border-emerald-500/30" : ""}`}
+                      >
+                        <CellDisplay value={val} />
+                      </td>
+                    ))}
+                  </motion.tr>
+                ))}
+              </tbody>
+            </table>
+          </motion.div>
+        </div>
+      </section>
+
+      <GlowDivider />
+
+      {/* ─── Pricing Cards ─── */}
+      <section className="relative z-10 px-8 py-20 max-w-5xl mx-auto">
+        <RevealText as="h2" className="text-3xl md:text-4xl font-bold text-center mb-4 font-serif">
+          Scale Your Autonomous Swarm
+        </RevealText>
+        <RevealText as="p" className="text-neutral-500 text-center max-w-xl mx-auto mb-16" delay={0.1}>
+          Deploy enterprise-grade NVIDIA execution pipelines. Replaces entire agency overheads.
+        </RevealText>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {TIERS.map((t, i) => (
             <motion.div key={i} {...fadeIn(i * 0.1)}
-              className={`rounded-2xl bg-white/[0.02] backdrop-blur-sm border p-7 flex flex-col ${t.featured ? "border-[#00B7FF]/40 relative overflow-hidden scale-[1.02] shadow-[0_0_40px_rgba(0,183,255,0.1)]" : "border-white/10"}`}>
-              {t.featured && <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#00B7FF] to-purple-500" />}
-              {t.featured && <span className="inline-flex self-start items-center gap-1 px-2 py-0.5 rounded-full bg-[#00B7FF]/10 border border-[#00B7FF]/20 text-[#00B7FF] text-[10px] font-bold uppercase mb-3"><Crown className="w-2.5 h-2.5" /> Most Popular</span>}
+              className={`rounded-2xl bg-white/[0.02] backdrop-blur-xl border p-7 flex flex-col ${t.featured ? "border-emerald-500/40 relative overflow-hidden scale-[1.02] shadow-[0_0_40px_rgba(16,185,129,0.1)]" : "border-white/[0.06]"}`}>
+              {t.featured && <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-500" />}
+              {t.featured && <span className="inline-flex self-start items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase mb-3"><Crown className="w-2.5 h-2.5" /> Most Popular</span>}
               <p className="text-sm font-bold uppercase tracking-widest text-neutral-400 mb-1">{t.name}</p>
               <p className="text-4xl font-bold text-white mb-1">
                 {t.price}
@@ -168,12 +328,12 @@ export default function PricingPage() {
                 ))}
               </ul>
               <button onClick={() => checkout(t.plan)}
-                className={`w-full py-3 font-bold rounded-xl transition-gpu flex items-center justify-center gap-2 ${
+                className={`w-full py-3 font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${
                   t.featured
-                    ? "bg-gradient-to-r from-[#00B7FF] to-purple-500 text-white hover:opacity-90"
+                    ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:opacity-90 shadow-[0_0_20px_rgba(16,185,129,0.2)]"
                     : t.plan === "node"
                     ? "bg-white/5 border border-white/10 text-white hover:bg-white/10"
-                    : "border border-white/10 text-white hover:bg-white/5"
+                    : "border border-white/[0.06] text-white hover:bg-white/5"
                 }`}>
                 {t.cta} <ArrowRight className="w-4 h-4" />
               </button>
@@ -182,9 +342,11 @@ export default function PricingPage() {
         </div>
       </section>
 
+      <GlowDivider />
+
       {/* Guarantee */}
-      <section className="relative z-10 px-8 pb-16 text-center max-w-lg mx-auto">
-        <motion.div {...fadeIn(0)} className="rounded-2xl bg-white/[0.02] border border-white/10 p-8">
+      <section className="relative z-10 px-8 pb-16 pt-20 text-center max-w-lg mx-auto">
+        <motion.div {...fadeIn(0)} className="rounded-2xl bg-white/[0.02] border border-white/[0.06] backdrop-blur-xl p-8">
           <h3 className="text-lg font-bold mb-2">30-Day Money-Back Guarantee</h3>
           <p className="text-sm text-neutral-400 leading-relaxed">
             Try Sovereign Matrix for 30 days. If it doesn&apos;t work for you, we&apos;ll refund you — no questions asked.
@@ -199,12 +361,12 @@ export default function PricingPage() {
       {/* FAQ */}
       <section className="relative z-10 px-8 pb-20 max-w-2xl mx-auto">
         <motion.div {...fadeIn(0)} className="text-center mb-10">
-          <h2 className="text-2xl font-bold mb-2">Frequently Asked Questions</h2>
+          <h2 className="text-2xl font-bold mb-2 font-serif">Frequently Asked Questions</h2>
           <p className="text-sm text-neutral-400">Everything you need to know.</p>
         </motion.div>
         <div className="space-y-3">
           {FAQS.map((faq, i) => (
-            <motion.div key={i} {...fadeIn(i * 0.05)} className="rounded-xl bg-white/[0.02] border border-white/10 overflow-hidden">
+            <motion.div key={i} {...fadeIn(i * 0.05)} className="rounded-xl bg-white/[0.02] border border-white/[0.06] overflow-hidden">
               <button onClick={() => setOpenFaq(openFaq === i ? null : i)} className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-white/[0.02] transition-colors">
                 <span className="text-sm font-medium text-white flex items-center gap-2">
                   <HelpCircle className="w-4 h-4 text-neutral-500 shrink-0" />
@@ -222,19 +384,43 @@ export default function PricingPage() {
         </div>
       </section>
 
-      {/* Final CTA */}
-      <section className="relative z-10 px-8 pb-20 text-center max-w-lg mx-auto">
-        <motion.div {...fadeIn(0)}>
-          <h2 className="text-2xl font-bold mb-4">Initialize the Swarm?</h2>
-          <p className="text-sm text-neutral-400 mb-6">Enterprise autonomous agents ready for direct OS execution.</p>
-          <Link href="/dashboard" className="inline-flex items-center gap-2 px-8 py-4 bg-white text-black font-bold text-sm uppercase tracking-[0.15em] rounded-full hover:bg-neutral-200 transition-gpu">
-            <Zap className="w-4 h-4" /> Initialize Dashboard
-          </Link>
-        </motion.div>
+      <GlowDivider />
+
+      {/* ─── Final CTA ─── */}
+      <section className="relative z-10 py-24 px-6">
+        <div className="max-w-3xl mx-auto text-center">
+          <RevealText as="h2" className="text-3xl md:text-5xl font-bold mb-6 font-serif">
+            Start Free — No Credit Card
+          </RevealText>
+          <RevealText as="p" className="text-neutral-500 mb-10 max-w-xl mx-auto" delay={0.1}>
+            100 free runs. 124 agents. Zero commitment. See what autonomous AI can do for your business.
+          </RevealText>
+          <MagneticButton>
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center gap-2 px-10 py-4 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-sm font-bold uppercase tracking-widest hover:from-emerald-600 hover:to-teal-600 transition-all shadow-[0_0_30px_rgba(16,185,129,0.3)]"
+            >
+              Start Free <ArrowRight className="w-4 h-4" />
+            </Link>
+          </MagneticButton>
+        </div>
       </section>
 
-      <footer className="relative z-10 border-t border-white/5 px-8 py-10 text-center">
-        <p className="text-[10px] text-neutral-600 uppercase tracking-[0.4em]">Sovereign Matrix — AI Marketing Platform</p>
+      {/* ─── Footer ─── */}
+      <footer className="border-t border-white/[0.06] py-12 px-6">
+        <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-3">
+            <SovereignLogo size="sm" />
+            <span className="text-xs text-neutral-500">
+              Sovereign Matrix &mdash; AI Marketing Platform
+            </span>
+          </div>
+          <div className="flex items-center gap-6 text-xs text-neutral-500">
+            <Link href="/" className="hover:text-white transition-colors">Home</Link>
+            <Link href="/for-agencies" className="hover:text-white transition-colors">Agencies</Link>
+            <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>
+          </div>
+        </div>
       </footer>
     </div>
   );

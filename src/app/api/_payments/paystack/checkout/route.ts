@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { initializePaystack, PLANS, PlanId } from "@/lib/payments";
+import { createLogger } from "@/lib/logger";
+const log = createLogger("paystack-checkout");
 
 /**
  * Paystack Checkout — initializes a transaction and returns the authorization URL.
@@ -37,7 +39,7 @@ export async function POST(req: Request) {
       plan: PLANS[plan as PlanId],
     });
   } catch (err) {
-    console.error("[Paystack Checkout] Error:", err);
+    log.error("Paystack checkout error", err as Record<string, unknown>);
     return NextResponse.json({ error: "Failed to create checkout" }, { status: 500 });
   }
 }

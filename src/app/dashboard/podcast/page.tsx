@@ -234,7 +234,7 @@ export default function PodcastBlueprintPage() {
 
             <div className="p-8 flex-1 flex flex-col justify-center items-center">
               {pipelineStatus === "idle" && (
-                <div className="text-center text-neutral-600 font-mono text-xs uppercase tracking-widest">
+                <div className="text-center text-neutral-500 font-mono text-xs uppercase tracking-widest">
                   Awaiting directive... <br/><br/>
                   1. Upload Document <br/>
                   2. NVIDIA Nemotron OCR Extracts Text <br/>

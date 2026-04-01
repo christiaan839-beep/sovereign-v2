@@ -1,4 +1,6 @@
+import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
+import { parseDocument } from "@/lib/nvidia";
 
 /**
  * DOCUMENT INTELLIGENCE — Combines Nemotron OCR + Table Structure + Page Elements.
@@ -7,15 +9,27 @@ import { NextResponse } from "next/server";
  */
 export async function POST(req: Request) {
   try {
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     const { imageUrl, imageBase64, extractTables = true } = await req.json();
     if (!imageUrl && !imageBase64) return NextResponse.json({ error: "Provide `imageUrl` or `imageBase64`." }, { status: 400 });
 
     const nimKey = process.env.NVIDIA_NIM_API_KEY;
     if (!nimKey) return NextResponse.json({ error: "NVIDIA_NIM_API_KEY not configured." }, { status: 500 });
 
+    const resolvedImageUrl = imageUrl || `data:image/png;base64,${imageBase64}`;
     const imgContent = imageUrl
       ? { type: "image_url", image_url: { url: imageUrl } }
       : { type: "image_url", image_url: { url: `data:image/png;base64,${imageBase64}` } };
+
+    // Step 0: Nemotron Parse — structured document extraction (tables + text + layout)
+    // Runs in parallel with OCR and structure analysis below.
+    let parsedDocument = "";
+    const parsePromise = parseDocument(
+      resolvedImageUrl,
+      extractTables ? "all" : "text"
+    ).then(result => { parsedDocument = result; })
+     .catch(() => { /* parseDocument is optional — failure doesn't block the pipeline */ });
 
     // Step 1: Full OCR text extraction
     const ocrRes = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
@@ -50,13 +64,21 @@ export async function POST(req: Request) {
     });
     const structData = structRes.ok ? await structRes.json() : null;
 
+    // Wait for the parallel parseDocument call to complete
+    await parsePromise;
+
     return NextResponse.json({
       text: extractedText,
+      parsedDocument: parsedDocument || undefined,
       structure: structData?.choices?.[0]?.message?.content || "Structure analysis unavailable",
       wordCount: extractedText.split(/\s+/).length,
-      models: { ocr: "nemotron-ocr-v1", structure: "cosmos-reason2-8b" },
+      models: {
+        ocr: "nemotron-ocr-v1",
+        structure: "cosmos-reason2-8b",
+        ...(parsedDocument ? { documentParse: "nemotron-parse-1.1-1b" } : {}),
+      },
     });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
   }
 }

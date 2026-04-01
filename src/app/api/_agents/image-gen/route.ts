@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import { getNimKey } from "@/lib/nvidia";
 import { NextResponse } from "next/server";
 
@@ -10,6 +11,8 @@ import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
   try {
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     const { prompt, negative_prompt = "", width = 1024, height = 1024, steps = 28 } = await request.json();
 
     if (!prompt) {
@@ -37,7 +40,7 @@ export async function POST(request: Request) {
     if (!nimRes.ok) {
       const errorText = await nimRes.text();
       return NextResponse.json({
-        error: `NVIDIA NIM Image Generation Error: ${nimRes.status}`,
+        error: "AI model temporarily unavailable — please try again in a moment.",
         details: errorText,
       }, { status: nimRes.status });
     }

@@ -5,6 +5,8 @@ import { emailSequences, sequenceSteps } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { ai } from "@/lib/ai";
 import { fireUserWebhook } from "@/lib/webhooks";
+import { createLogger } from "@/lib/logger";
+const log = createLogger("email-sequence");
 
 const SEQUENCE_PROMPT = `You are an elite email marketing strategist who builds automated drip sequences that agencies charge $3,000-$5,000 to create.
 
@@ -52,7 +54,7 @@ export async function GET() {
     });
     return NextResponse.json({ sequences });
   } catch (err) {
-    console.error("GET /api/agents/email-sequence error:", err);
+    log.error("GET /api/agents/email-sequence error", err as Record<string, unknown>);
     return NextResponse.json({ error: "Server Error" }, { status: 500 });
   }
 }
@@ -132,7 +134,7 @@ NUMBER OF EMAILS: ${numberOfEmails || 5}`;
 
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
   } catch (err) {
-    console.error("POST /api/agents/email-sequence error:", err);
+    log.error("POST /api/agents/email-sequence error", err as Record<string, unknown>);
     return NextResponse.json({ error: "Server Error" }, { status: 500 });
   }
 }

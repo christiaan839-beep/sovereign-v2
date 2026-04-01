@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from "react";
 const WORDS = ["workforce.", "co-pilot.", "advantage.", "future."];
 const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%";
 const SCRAMBLE_SPEED = 30;
-const REVEAL_SPEED = 50;
+const _REVEAL_SPEED = 50; // Reserved for future character-by-character reveal mode
 const HOLD_TIME = 6000;
 
 export function TextMorph() {
@@ -14,7 +14,7 @@ export function TextMorph() {
 
   const scrambleToWord = useCallback((target: string) => {
     let iteration = 0;
-    const maxLen = Math.max(display.length, target.length);
+    const _maxLen = Math.max(display.length, target.length);
 
     const interval = setInterval(() => {
       setDisplay(

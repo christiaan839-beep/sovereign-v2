@@ -215,7 +215,7 @@ export default function DesignerPage() {
                     onChange={(e) =>
                       setFormData((prev) => ({ ...prev, [field.name]: e.target.value }))
                     }
-                    className="w-full bg-black/60 border border-violet-500/20 rounded-xl px-4 py-3 text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-violet-500/50 transition-colors font-mono"
+                    className="w-full bg-black/60 border border-violet-500/20 rounded-xl px-4 py-3 text-sm text-white placeholder:text-neutral-500 focus:outline-none focus:border-violet-500/50 transition-colors font-mono"
                   />
                 </div>
               ))}

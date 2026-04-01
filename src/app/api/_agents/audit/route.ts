@@ -1,11 +1,16 @@
+import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { google } from '@ai-sdk/google';
 import { generateObject } from 'ai';
 import * as cheerio from 'cheerio';
+import { createLogger } from "@/lib/logger";
+const log = createLogger("audit-engine");
 
 export async function POST(req: Request) {
   try {
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     const { targetUrl } = await req.json();
 
     if (!targetUrl) {
@@ -35,7 +40,7 @@ export async function POST(req: Request) {
         scrapedText = $('body').text().replace(/\s+/g, ' ').trim().slice(0, 15000);
       }
     } catch {
-      console.warn('Scraping firewall hit. Synthesizing based on domain heuristics.');
+      log.warn('Scraping firewall hit. Synthesizing based on domain heuristics.');
     }
 
     // 2. Feed into Google AI Ultra (Gemini 1.5 Pro)
@@ -57,7 +62,7 @@ export async function POST(req: Request) {
     });
 
   } catch (error: unknown) {
-    console.error('[AUDIT_ENGINE_ERROR]', error);
+    log.error('Audit engine error', error as Record<string, unknown>);
     return NextResponse.json(
       { error: (error as Error).message || 'Internal Server Error' },
       { status: 500 }

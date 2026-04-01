@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { rateLimit } from "@/lib/rate-limit";
 import { requireAuth } from "@/lib/auth-guard";
+import { createLogger } from "@/lib/logger";
+const log = createLogger("email-send");
 
 export const maxDuration = 30;
 
@@ -109,7 +111,7 @@ export async function POST(req: Request) {
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    console.error("[Email Sender Error]:", message);
+    log.error("Email sender error", { message });
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

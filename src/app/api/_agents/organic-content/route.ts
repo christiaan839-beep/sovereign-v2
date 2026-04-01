@@ -4,6 +4,8 @@ import { ai } from "@/lib/ai";
 import { ANTI_SLOP_RULES, VOICE_PRESETS, PLATFORM_RULES, QUALITY_SCORER_PROMPT } from "@/lib/content-engine";
 import type { VoicePreset } from "@/lib/content-engine";
 import { fireUserWebhook } from "@/lib/webhooks";
+import { createLogger } from "@/lib/logger";
+const log = createLogger("organic-content");
 
 /**
  * Organic Content Production Engine
@@ -184,7 +186,7 @@ The thread should read like a mini-essay that builds momentum. Each tweet should
     });
 
   } catch (err) {
-    console.error("[Organic Content] Error:", err);
+    log.error("Organic content error", err as Record<string, unknown>);
     return NextResponse.json({ error: "Failed to generate content" }, { status: 500 });
   }
 }

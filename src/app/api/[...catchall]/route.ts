@@ -7,16 +7,44 @@ import { NextRequest, NextResponse } from "next/server";
  */
 
 async function loadHandler(path: string) {
-  try {
-    return require(`@/app/api/_misc/${path}/route`);
-  } catch {
-    // Try without trailing segment for base routes
+  // Strip known prefixes — e.g., "agents/leads" → try "_agents/leads"
+  const strippedPath = path
+    .replace(/^agents\//, "")
+    .replace(/^payments\//, "")
+    .replace(/^integrations\//, "");
+
+  // Try all underscore-prefixed directories
+  const prefixes = ["_agents", "_misc", "_settings", "_email", "_content", "_payments", "_billing", "_webhooks", "_cron", "_integrations"];
+
+  // First try with the full path
+  for (const prefix of prefixes) {
     try {
-      return require(`@/app/api/_misc/${path}`);
+      return require(`@/app/api/${prefix}/${path}/route`);
     } catch {
-      return null;
+      try {
+        return require(`@/app/api/${prefix}/${path}`);
+      } catch {
+        continue;
+      }
     }
   }
+
+  // Then try with the stripped path (handles "agents/leads" → "_agents/leads")
+  if (strippedPath !== path) {
+    for (const prefix of prefixes) {
+      try {
+        return require(`@/app/api/${prefix}/${strippedPath}/route`);
+      } catch {
+        try {
+          return require(`@/app/api/${prefix}/${strippedPath}`);
+        } catch {
+          continue;
+        }
+      }
+    }
+  }
+
+  return null;
 }
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ catchall: string[] }> }) {

@@ -368,11 +368,11 @@ export default function ShowcasePage() {
               {/* Stats */}
               <div className="mt-4 pt-4 border-t border-white/[0.04] grid grid-cols-2 gap-3 px-2">
                 <div>
-                  <div className="text-2xl font-black text-white font-mono stat-glow">132</div>
+                  <div className="text-2xl font-black text-white font-mono stat-glow">123</div>
                   <div className="text-[9px] text-neutral-600 uppercase tracking-wider">Agents Ready</div>
                 </div>
                 <div>
-                  <div className="text-2xl font-black text-emerald-400 font-mono stat-glow">51+</div>
+                  <div className="text-2xl font-black text-emerald-400 font-mono stat-glow">62+</div>
                   <div className="text-[9px] text-neutral-600 uppercase tracking-wider">Models Active</div>
                 </div>
                 <div>
@@ -444,7 +444,7 @@ export default function ShowcasePage() {
       <section className="px-6 pb-24">
         <div className="max-w-2xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-black text-white mb-4">Ready to deploy?</h2>
-          <p className="text-neutral-500 mb-8 text-sm">132 agents. 51+ models. Zero per-token cost. Start free.</p>
+          <p className="text-neutral-500 mb-8 text-sm">124 agents. 65+ models. Zero per-token cost. Start free.</p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link href="/dashboard" className="cta-glow group flex items-center gap-2 px-8 py-4 bg-white text-black font-semibold rounded-full text-sm hover:shadow-[0_0_40px_rgba(255,255,255,0.12)] transition-gpu">
               Start Free <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />

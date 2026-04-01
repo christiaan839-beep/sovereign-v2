@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import { getNimKey } from "@/lib/nvidia";
 import { NextResponse } from "next/server";
 
@@ -10,6 +11,8 @@ import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
   try {
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     const { topic, keywords = [], tone = "professional" } = await request.json();
 
     if (!topic) {
@@ -95,7 +98,7 @@ export async function POST(request: Request) {
     };
 
     // Auto-handoff to SEO agent
-    fetch(new URL("/api/agents/comms", request.url).toString(), {
+    fetch(new URL("/api/_agents/comms", request.url).toString(), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

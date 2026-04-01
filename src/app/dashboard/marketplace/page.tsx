@@ -222,7 +222,7 @@ export default function MarketplacePage() {
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search agents by name or description..."
             aria-label="Search marketplace agents"
-            className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl pl-11 pr-4 py-3 text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-white/[0.15] transition-colors"
+            className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl pl-11 pr-4 py-3 text-sm text-white placeholder:text-neutral-500 focus:outline-none focus:border-white/[0.15] transition-colors"
           />
           {searchQuery && (
             <button
@@ -273,7 +273,7 @@ export default function MarketplacePage() {
             <div className="flex items-center gap-3 mb-5">
               <Star className="w-4 h-4 text-amber-400" />
               <h2 className="text-sm font-bold uppercase tracking-widest text-neutral-300">Featured Agents</h2>
-              <span className="text-[10px] text-neutral-600 font-mono">{filteredFeatured.length} curated</span>
+              <span className="text-[10px] text-neutral-500 font-mono">{filteredFeatured.length} curated</span>
             </div>
 
             <div className="flex gap-4 overflow-x-auto pb-4 -mx-2 px-2 custom-scrollbar">
@@ -299,7 +299,7 @@ export default function MarketplacePage() {
           <Users className="w-4 h-4 text-neutral-400" />
           <h2 className="text-sm font-bold uppercase tracking-widest text-neutral-300">Community Agents</h2>
           {!loading && (
-            <span className="text-[10px] text-neutral-600 font-mono">{filteredCommunity.length} published</span>
+            <span className="text-[10px] text-neutral-500 font-mono">{filteredCommunity.length} published</span>
           )}
         </div>
 
@@ -313,7 +313,7 @@ export default function MarketplacePage() {
             animate={{ opacity: 1 }}
             className="bg-white/[0.02] border border-white/[0.04] border-dashed rounded-2xl py-16 flex flex-col items-center gap-3"
           >
-            <TrendingUp className="w-8 h-8 text-neutral-600" />
+            <TrendingUp className="w-8 h-8 text-neutral-500" />
             <p className="text-sm text-neutral-500">No community agents published yet. Be the first!</p>
             <Link
               href="/dashboard/agent-builder"
@@ -388,7 +388,7 @@ export default function MarketplacePage() {
                       <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border ${CATEGORY_STYLES[previewAgent.category]?.badge || "text-neutral-400 bg-white/5 border-white/10"}`}>
                         {previewAgent.category}
                       </span>
-                      <span className="text-[10px] text-neutral-600">by {previewAgent.authorName}</span>
+                      <span className="text-[10px] text-neutral-500">by {previewAgent.authorName}</span>
                     </div>
                   </div>
                 </div>
@@ -477,7 +477,7 @@ function AgentCard({
           </div>
           <div className="min-w-0">
             <h3 className="text-sm font-semibold text-white truncate">{agent.name}</h3>
-            <span className="text-[10px] text-neutral-600">by {agent.authorName}</span>
+            <span className="text-[10px] text-neutral-500">by {agent.authorName}</span>
           </div>
         </div>
         {featured && (
@@ -495,7 +495,7 @@ function AgentCard({
         <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border ${style.badge}`}>
           {agent.category}
         </span>
-        <div className="flex items-center gap-3 ml-auto text-[10px] text-neutral-600">
+        <div className="flex items-center gap-3 ml-auto text-[10px] text-neutral-500">
           <span className="flex items-center gap-1">
             <Download className="w-3 h-3" /> {agent.installs.toLocaleString()}
           </span>

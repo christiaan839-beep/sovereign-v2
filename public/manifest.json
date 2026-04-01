@@ -1,11 +1,11 @@
 {
   "name": "Sovereign Matrix",
   "short_name": "Sovereign",
-  "description": "132 AI agents that find leads, write content, build pages, and close deals. 49+ open-source models.",
-  "start_url": "/dashboard",
+  "description": "124 AI agents that find leads, write content, build pages, and close deals. 65+ models.",
+  "start_url": "/chat",
   "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#050505",
+  "background_color": "#010101",
+  "theme_color": "#010101",
   "orientation": "portrait-primary",
   "categories": ["business", "productivity"],
   "icons": [
@@ -24,14 +24,19 @@
   ],
   "shortcuts": [
     {
-      "name": "Dashboard",
-      "url": "/dashboard",
-      "description": "Open the Sovereign Matrix dashboard"
+      "name": "Chat",
+      "url": "/chat",
+      "description": "Open Sovereign AI chat"
     },
     {
-      "name": "Demo",
-      "url": "/demo",
-      "description": "Try the platform"
+      "name": "Dashboard",
+      "url": "/dashboard",
+      "description": "Open the full dashboard"
+    },
+    {
+      "name": "Workflows",
+      "url": "/dashboard/workflow-builder",
+      "description": "Build agent workflows"
     }
   ]
 }

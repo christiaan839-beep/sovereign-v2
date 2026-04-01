@@ -243,7 +243,7 @@ export default function ScheduledRunsPage() {
               className="col-span-full flex flex-col items-center justify-center py-24 text-center"
             >
               <div className="p-4 rounded-2xl bg-white/5 border border-white/10 mb-5">
-                <Calendar className="w-8 h-8 text-neutral-600" />
+                <Calendar className="w-8 h-8 text-neutral-500" />
               </div>
               <p className="text-neutral-400 text-sm max-w-md">
                 No scheduled runs yet. Automate your agents to work while you sleep.
@@ -300,13 +300,13 @@ export default function ScheduledRunsPage() {
                   {/* Schedule details */}
                   <div className="grid grid-cols-2 gap-3 mb-4">
                     <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.05]">
-                      <p className="text-[10px] uppercase tracking-wider text-neutral-600 mb-1">
+                      <p className="text-[10px] uppercase tracking-wider text-neutral-500 mb-1">
                         Last Run
                       </p>
                       <p className="text-xs text-neutral-300">{schedule.lastRun}</p>
                     </div>
                     <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.05]">
-                      <p className="text-[10px] uppercase tracking-wider text-neutral-600 mb-1">
+                      <p className="text-[10px] uppercase tracking-wider text-neutral-500 mb-1">
                         Next Run
                       </p>
                       <p className="text-xs text-neutral-300">{schedule.nextRun}</p>
@@ -449,7 +449,7 @@ export default function ScheduledRunsPage() {
                       value={customCron}
                       onChange={(e) => setCustomCron(e.target.value)}
                       placeholder="0 */6 * * *"
-                      className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm font-mono placeholder:text-neutral-600 focus:outline-none focus:border-emerald-500/40 transition-colors"
+                      className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm font-mono placeholder:text-neutral-500 focus:outline-none focus:border-emerald-500/40 transition-colors"
                     />
                   </div>
                 ) : (

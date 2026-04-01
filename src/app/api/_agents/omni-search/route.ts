@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 
 function getNimKey(): string {
@@ -6,6 +7,8 @@ function getNimKey(): string {
 
 export async function POST(req: NextRequest) {
   try {
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     const { query, sources = ["web", "docs"] } = await req.json();
     if (!query) return NextResponse.json({ error: "query required" }, { status: 400 });
 

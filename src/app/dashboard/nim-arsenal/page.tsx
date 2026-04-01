@@ -49,23 +49,23 @@ const cardAnim = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0 } };
 
 export default function NimArsenalPage() {
   return (
-    <div className="min-h-screen bg-[#0A0A0A] text-white p-6 md:p-10" role="main" aria-label="NIM Arsenal model registry">
+    <div className="min-h-screen bg-[#0A0A0A] text-white p-6 md:p-10" role="main" aria-label="Model Registry">
       <div className="max-w-7xl mx-auto space-y-12">
 
         {/* Header */}
         <motion.header initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} className="space-y-2">
           <div className="flex items-center gap-3">
             <Zap className="w-7 h-7 text-[#00ff66]" />
-            <h1 className="text-2xl font-bold tracking-tight">NIM Arsenal</h1>
+            <h1 className="text-2xl font-bold tracking-tight">Model Registry</h1>
           </div>
-          <p className="text-sm text-neutral-500">Model registry, task router, and failover chain</p>
+          <p className="text-sm text-neutral-500">View all 65+ AI models available on the platform. See routing rules, failover chains, and model capabilities.</p>
         </motion.header>
 
         {/* Stats */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}
           className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { val: "51+", label: "Available Models", color: "#00ff66" },
+            { val: "65+", label: "Available Models", color: "#00ff66" },
             { val: "100%", label: "Free / Open-Source", color: "#06B6D4" },
             { val: "8", label: "Task Types", color: "#A855F7" },
             { val: "6", label: "Failover Depth", color: "#FF6B00" },
@@ -113,7 +113,7 @@ export default function NimArsenalPage() {
                 </div>
                 <div className="flex items-center gap-2 min-w-0">
                   <code className="text-xs text-[#00ff66] font-mono">{r.task}</code>
-                  <ArrowRight className="w-3 h-3 text-neutral-600 shrink-0" />
+                  <ArrowRight className="w-3 h-3 text-neutral-500 shrink-0" />
                   <span className="text-xs text-neutral-300 truncate">{r.model}</span>
                 </div>
               </motion.div>
@@ -131,11 +131,11 @@ export default function NimArsenalPage() {
                 <span className={`text-xs font-mono px-3 py-1.5 rounded border ${i === 0 ? "border-[#00ff66]/30 text-[#00ff66] bg-[#00ff66]/5" : "border-white/[0.06] text-neutral-400 bg-white/[0.02]"}`}>
                   {name}
                 </span>
-                {i < FAILOVER.length - 1 && <ChevronRight className="w-3 h-3 text-neutral-600" />}
+                {i < FAILOVER.length - 1 && <ChevronRight className="w-3 h-3 text-neutral-500" />}
               </div>
             ))}
           </motion.div>
-          <p className="text-[11px] text-neutral-600 mt-2">If the primary model fails, requests cascade through the chain automatically.</p>
+          <p className="text-[11px] text-neutral-500 mt-2">If the primary model fails, requests cascade through the chain automatically.</p>
         </section>
 
         {/* Claude Capabilities */}

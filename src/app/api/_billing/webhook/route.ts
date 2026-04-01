@@ -3,6 +3,9 @@ import { getStripe } from "@/lib/stripe";
 import { db } from "@/db";
 import { subscriptions, tenants } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { auditLog } from "@/lib/audit-log";
+import { createLogger } from "@/lib/logger";
+const log = createLogger("stripe-webhook");
 
 /**
  * POST /api/billing/webhook
@@ -35,7 +38,7 @@ export async function POST(request: Request) {
   try {
     event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
   } catch (err) {
-    console.error("[Stripe Webhook] Signature verification failed:", err);
+    log.error("Signature verification failed", err as Record<string, unknown>);
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
@@ -87,6 +90,13 @@ export async function POST(request: Request) {
             .where(eq(tenants.clerkUserId, userId));
         }
 
+        await auditLog({
+          userId: userId || "unknown",
+          action: "subscription.change",
+          resource: session.subscription as string,
+          details: { event: "checkout.session.completed", plan, customerId: session.customer },
+        });
+
         break;
       }
 
@@ -110,6 +120,13 @@ export async function POST(request: Request) {
             updatedAt: new Date(),
           })
           .where(eq(subscriptions.stripeSubscriptionId, sub.id));
+
+        await auditLog({
+          userId: sub.customer as string,
+          action: "subscription.change",
+          resource: sub.id,
+          details: { event: "customer.subscription.updated", plan, status: sub.status },
+        });
 
         break;
       }
@@ -140,13 +157,20 @@ export async function POST(request: Request) {
             .where(eq(tenants.clerkUserId, subRow[0].userId));
         }
 
+        await auditLog({
+          userId: subRow[0]?.userId || sub.customer as string,
+          action: "subscription.change",
+          resource: sub.id,
+          details: { event: "customer.subscription.deleted", plan: "free", status: "canceled" },
+        });
+
         break;
       }
     }
 
     return NextResponse.json({ received: true });
   } catch (err) {
-    console.error("[Stripe Webhook] Processing error:", err);
+    log.error("Processing error", err as Record<string, unknown>);
     return NextResponse.json({ error: "Webhook processing failed" }, { status: 500 });
   }
 }

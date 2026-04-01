@@ -372,6 +372,43 @@ export const tenantMemories = pgTable("tenant_memories", {
 });
 
 // ═══════════════════════════════════════════
+// Audit Logs — SOC 2 Compliance
+// ═══════════════════════════════════════════
+
+export const auditLogs = pgTable("audit_logs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull(),
+  action: text("action").notNull(),
+  resource: text("resource"),
+  details: text("details"),
+  ipAddress: text("ip_address"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_audit_user").on(table.userId),
+  index("idx_audit_action").on(table.action),
+  index("idx_audit_created").on(table.createdAt),
+]);
+
+// ═══════════════════════════════════════════
+// Error Monitoring
+// ═══════════════════════════════════════════
+
+export const errorLogs = pgTable("error_logs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  message: text("message").notNull(),
+  stack: text("stack"),
+  context: text("context"),
+  severity: text("severity").notNull().default("medium"),
+  userId: text("user_id"),
+  agentId: text("agent_id"),
+  url: text("url"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_errors_severity").on(table.severity),
+  index("idx_errors_created").on(table.createdAt),
+]);
+
+// ═══════════════════════════════════════════
 // API Keys — validated against DB, not prefix
 // ═══════════════════════════════════════════
 
@@ -389,5 +426,23 @@ export const apiKeys = pgTable("api_keys", {
 }, (table) => [
   index("idx_api_keys_key").on(table.key),
   index("idx_api_keys_user").on(table.userId),
+]);
+
+// ═══════════════════════════════════════════
+// Workflow Builder — Persistent Pipelines
+// ═══════════════════════════════════════════
+
+export const workflows = pgTable("workflows", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull(),
+  name: text("name").notNull(),
+  nodes: text("nodes").notNull(), // JSON string of AgentNode[]
+  status: text("status").notNull().default("draft"), // draft, active, archived
+  lastRunAt: timestamp("last_run_at"),
+  runCount: integer("run_count").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_workflows_user").on(table.userId),
 ]);
 

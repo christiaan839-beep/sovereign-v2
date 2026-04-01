@@ -21,7 +21,7 @@ export async function POST(req: Request) {
     const resendKey = process.env.RESEND_API_KEY;
 
     // Template system
-    const templates: Record<string, (d: any) => { subject: string; html: string }> = {
+    const templates: Record<string, (d: Record<string, string | undefined>) => { subject: string; html: string }> = {
       welcome: (d) => ({
         subject: `Welcome to Sovereign Matrix, ${d.name || "Operator"}`,
         html: `
@@ -113,7 +113,7 @@ export async function POST(req: Request) {
     // Fallback: Log mode (no external dependency)
     return NextResponse.json({ sent: false, provider: "log-only", message: "Set RESEND_API_KEY for delivery.", to, subject: emailSubject });
 
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
   }
 }

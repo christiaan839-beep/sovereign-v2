@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { nimChat } from "@/lib/nvidia";
 import { research_ai } from "@/lib/ai";
@@ -10,6 +11,8 @@ import { research_ai } from "@/lib/ai";
 
 export async function POST(request: Request) {
   try {
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     const { url, mode = "analyze" } = await request.json();
 
     if (!url) {
@@ -34,7 +37,7 @@ export async function POST(request: Request) {
       const analysis = await nimChat(
         "nvidia/llama-3.1-nemotron-ultra-253b",
         [
-          { role: "system", content: "You are a ruthless UX auditor and conversion rate optimizer. Identify every weakness and score the site." },
+          { role: "system", content: "You are a strategic UX auditor and conversion rate optimizer. Identify every weakness and score the site." },
           { role: "user", content: `Analyze this competitor website and provide a brutal UX audit.\n\nTARGET: ${url}\nINTEL:\n${siteIntel}\n\nOutput JSON:\n{"ux_score": 0-100, "weaknesses": [{"issue": "description", "severity": "CRITICAL|HIGH|MEDIUM|LOW", "fix": "how to exploit this"}], "conversion_killers": ["list"], "speed_estimate": "fast|medium|slow", "mobile_score": 0-100, "overall_verdict": "one sentence"}` },
         ],
         { maxTokens: 2000, temperature: 0.3 }

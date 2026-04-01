@@ -1,23 +1,44 @@
 import { MetadataRoute } from 'next';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-    const baseUrl = "https://sovereignmatrix.agency";
+  const baseUrl = "https://sovereignmatrix.agency";
 
-    const routes = [
-        "",
-        "/pricing",
-        "/demo",
-        "/partner",
-        "/about",
-        "/case-studies",
-        "/privacy",
-        "/terms",
-    ];
+  const pages: Array<{ path: string; priority: number; changeFreq: "daily" | "weekly" | "monthly" }> = [
+    // Core pages (highest priority)
+    { path: "", priority: 1.0, changeFreq: "daily" },
+    { path: "/pricing", priority: 0.9, changeFreq: "weekly" },
+    { path: "/onboarding", priority: 0.9, changeFreq: "monthly" },
+    { path: "/docs", priority: 0.9, changeFreq: "weekly" },
 
-    return routes.map((route) => ({
-        url: `${baseUrl}${route}`,
-        lastModified: new Date().toISOString(),
-        changeFrequency: "weekly" as const,
-        priority: route === "" ? 1.0 : 0.8,
-    }));
+    // Product pages
+    { path: "/showcase", priority: 0.8, changeFreq: "weekly" },
+    { path: "/playground", priority: 0.8, changeFreq: "monthly" },
+    { path: "/developer", priority: 0.8, changeFreq: "weekly" },
+    { path: "/whitepaper", priority: 0.8, changeFreq: "monthly" },
+
+    // Marketing pages
+    { path: "/partner", priority: 0.7, changeFreq: "monthly" },
+    { path: "/roi", priority: 0.7, changeFreq: "monthly" },
+    { path: "/scan", priority: 0.7, changeFreq: "monthly" },
+    { path: "/blog", priority: 0.7, changeFreq: "daily" },
+
+    // Trust & transparency
+    { path: "/status", priority: 0.6, changeFreq: "daily" },
+    { path: "/changelog", priority: 0.6, changeFreq: "weekly" },
+
+    // Legal
+    { path: "/privacy", priority: 0.5, changeFreq: "monthly" },
+    { path: "/terms", priority: 0.5, changeFreq: "monthly" },
+    { path: "/unsubscribe", priority: 0.3, changeFreq: "monthly" },
+
+    // Auth
+    { path: "/login", priority: 0.4, changeFreq: "monthly" },
+  ];
+
+  return pages.map(({ path, priority, changeFreq }) => ({
+    url: `${baseUrl}${path}`,
+    lastModified: new Date().toISOString(),
+    changeFrequency: changeFreq,
+    priority,
+  }));
 }

@@ -71,11 +71,10 @@ export default function VideoOutreachStudioPage() {
         <div>
           <h1 className="text-3xl font-bold text-white serif-text tracking-tight flex items-center gap-3">
             <FileVideo className="w-8 h-8 text-[#00B7FF]" />
-            Video Outreach Studio
+            Video Studio
           </h1>
           <p className="text-neutral-400 mt-2 max-w-2xl">
-            Autonomous cinematic synthesis. Render hyper-realistic, 4K digital executives reciting 
-            the "Audit & Destroy" pitch. Zero slop. Maximum psychological impact.
+            Create personalized AI-generated video outreach using synthetic presenters. Scrape prospect data, generate a script, and render a professional 4K video pitch.
           </p>
         </div>
       </div>
@@ -116,7 +115,7 @@ export default function VideoOutreachStudioPage() {
                          <div className={`text-[10px] font-bold uppercase tracking-widest ${selectedAvatar === av.id ? 'text-[#00B7FF]' : 'text-neutral-300'}`}>
                            {av.name}
                          </div>
-                         <div className="text-[9px] text-neutral-600 font-mono mt-1">{av.desc}</div>
+                         <div className="text-[9px] text-neutral-500 font-mono mt-1">{av.desc}</div>
                        </button>
                     ))}
                  </div>
@@ -196,7 +195,7 @@ export default function VideoOutreachStudioPage() {
              {status === "idle" && (
                 <div className="text-center space-y-4">
                   <div className="w-16 h-16 rounded-full bg-white/5 border border-white/10 mx-auto flex items-center justify-center">
-                    <FileVideo className="w-6 h-6 text-neutral-600" />
+                    <FileVideo className="w-6 h-6 text-neutral-500" />
                   </div>
                   <div className="font-mono text-xs text-neutral-500 uppercase tracking-widest">
                     Awaiting Target Script

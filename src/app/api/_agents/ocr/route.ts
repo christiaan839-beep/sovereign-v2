@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
 /**
@@ -6,6 +7,8 @@ import { NextResponse } from "next/server";
  */
 export async function POST(req: Request) {
   try {
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     const { imageBase64, imageUrl } = await req.json();
     if (!imageBase64 && !imageUrl) {
       return NextResponse.json({ error: "Provide either `imageBase64` or `imageUrl`." }, { status: 400 });
@@ -14,7 +17,7 @@ export async function POST(req: Request) {
     const nimKey = process.env.NVIDIA_NIM_API_KEY;
     if (!nimKey) return NextResponse.json({ error: "NVIDIA_NIM_API_KEY not configured." }, { status: 500 });
 
-    const content: any[] = [
+    const content: ({ type: string; text: string } | { type: string; image_url: { url: string } })[] = [
       { type: "text", text: "Extract all visible text from this image. Return it as clean, structured text. Preserve table layouts if present." }
     ];
 
@@ -48,7 +51,7 @@ export async function POST(req: Request) {
       text: data.choices?.[0]?.message?.content || "",
       model: "nemotron-ocr-v1",
     });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
   }
 }

@@ -67,7 +67,7 @@ export default function DemoPage() {
     setStreamText("");
 
     try {
-      const res = await fetch("/api/agents/smart-router", {
+      const res = await fetch("/api/_agents/smart-router", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt: selectedAgent.prompt, agentId: selectedAgent.id }),

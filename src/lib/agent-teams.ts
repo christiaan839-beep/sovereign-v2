@@ -51,7 +51,7 @@ const TEAMS: Record<string, TeamConfig> = {
     lead: {
       role: "Strategic Commander",
       perspective: "synthesis",
-      systemPrompt: "You are the Strategic Commander. Synthesize multiple expert analyses into a single decisive battle plan. Be ruthless, specific, and actionable. Cut fluff. Prioritize moves by impact.",
+      systemPrompt: "You are the Strategic Commander. Synthesize multiple expert analyses into a single decisive battle plan. Be strategic, specific, and actionable. Cut fluff. Prioritize moves by impact.",
     },
     members: [
       {

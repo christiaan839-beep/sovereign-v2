@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import { getNimKey } from "@/lib/nvidia";
 import { NextResponse } from "next/server";
 
@@ -27,6 +28,8 @@ const AVAILABLE_TOOLS = [
 
 export async function POST(request: Request) {
   try {
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     const { goal, auto_execute = false } = await request.json();
 
     if (!goal) {

@@ -310,10 +310,10 @@ export default function CanvasPage() {
             className="text-center"
           >
             <div className="w-16 h-16 rounded-2xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center mx-auto mb-4">
-              <Layers className="w-7 h-7 text-neutral-600" />
+              <Layers className="w-7 h-7 text-neutral-500" />
             </div>
             <h2 className="text-lg font-semibold text-neutral-400 mb-1">Your canvas is empty</h2>
-            <p className="text-xs text-neutral-600 max-w-xs">
+            <p className="text-xs text-neutral-500 max-w-xs">
               Describe what you want to build below. Each generation appears as a draggable screen on this canvas.
             </p>
           </motion.div>

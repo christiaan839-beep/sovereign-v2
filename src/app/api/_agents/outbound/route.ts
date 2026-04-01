@@ -3,6 +3,8 @@ import { currentUser } from "@clerk/nextjs/server";
 import { ai } from "@/lib/ai";
 import { ANTI_SLOP_RULES } from "@/lib/content-engine";
 import { fireUserWebhook } from "@/lib/webhooks";
+import { createLogger } from "@/lib/logger";
+const log = createLogger("outbound-agent");
 
 /**
  * Outbound Engine API
@@ -77,7 +79,7 @@ Respond in JSON:
 
     return NextResponse.json({ success: true, ...parsed });
   } catch (err) {
-    console.error("[Outbound] Error:", err);
+    log.error("Outbound error", err as Record<string, unknown>);
     return NextResponse.json({ error: "Failed" }, { status: 500 });
   }
 }

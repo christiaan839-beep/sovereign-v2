@@ -3,6 +3,8 @@ import { currentUser } from "@clerk/nextjs/server";
 import { ai } from "@/lib/ai";
 import { ANTI_SLOP_RULES } from "@/lib/content-engine";
 import { fireUserWebhook } from "@/lib/webhooks";
+import { createLogger } from "@/lib/logger";
+const log = createLogger("reputation-agent");
 
 const REPUTATION_PROMPT = `You are a reputation management specialist who protects and grows business reputations online. You handle Google reviews, Yelp reviews, and social mentions with surgical precision.
 
@@ -109,7 +111,7 @@ Rules:
 
     return NextResponse.json({ error: "Invalid action. Use: respond, analyze, generate-request" }, { status: 400 });
   } catch (err) {
-    console.error("[Reputation] Error:", err);
+    log.error("Reputation error", err as Record<string, unknown>);
     return NextResponse.json({ error: "Failed to process" }, { status: 500 });
   }
 }

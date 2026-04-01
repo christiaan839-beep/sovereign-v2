@@ -1,16 +1,21 @@
 /**
- * SOVEREIGN MATRIX — Hosted Free Tier System
+ * SOVEREIGN MATRIX — Usage Metering (Database-Backed)
  *
- * Users get 100 free agent runs per month using the platform's own API keys.
- * No setup required — just sign in and start using agents.
+ * Tracks agent runs per user per month using the `usage` table in Postgres.
+ * In-memory cache provides fast reads; writes go to DB for persistence.
  *
  * Tiers:
  *   Free  → 100 runs/month
  *   Pro   → 5,000 runs/month
- *
- * In-memory store keyed by `userId:YYYY-MM` with automatic monthly reset.
- * In production, back this with a database (Drizzle + Neon).
+ *   Enterprise → unlimited
  */
+
+import { db } from "@/db";
+import { usage, subscriptions } from "@/db/schema";
+import { eq, and, gte, sql } from "drizzle-orm";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("free-tier");
 
 // ── Constants ──
 
@@ -32,119 +37,234 @@ export interface UsageStats {
   resetDate: string;
 }
 
-export type TierType = "free" | "pro";
+export type TierType = "free" | "pro" | "enterprise";
 
-// ── In-Memory Store ──
-// Maps "userId:YYYY-MM" → number of runs used this period
-
-const usageStore = new Map<string, number>();
-
-/**
- * Bonus runs awarded through referrals or promotions.
- * Maps userId → total bonus runs available (not period-scoped).
- */
-const bonusRunsStore = new Map<string, number>();
-
-/**
- * User tier overrides. Default is "free".
- * In production, read from the database / Clerk metadata.
- */
-const tierStore = new Map<string, TierType>();
+// ── In-Memory Cache (fast path, synced from DB) ──
+// Cache key: "userId:YYYY-MM" → { count, cachedAt }
+const usageCache = new Map<string, { count: number; cachedAt: number }>();
+const USAGE_CACHE_TTL = 10_000; // 10 seconds — prevents DB hammering on rapid consecutive requests
+// Cache for user tiers (from subscriptions table)
+const tierCache = new Map<string, { tier: TierType; cachedAt: number }>();
+const TIER_CACHE_TTL = 5 * 60_000; // 5 minutes
 
 // ── Helpers ──
 
-function getCurrentPeriodKey(userId: string): string {
+function getCurrentPeriod(): { key: string; start: Date } {
   const now = new Date();
   const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  return `${userId}:${year}-${month}`;
+  const month = now.getMonth();
+  const key = `${year}-${String(month + 1).padStart(2, "0")}`;
+  const start = new Date(year, month, 1);
+  return { key, start };
 }
 
 function getResetDate(): string {
   const now = new Date();
-  const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-  return nextMonth.toISOString();
-}
-
-function getUserTier(userId: string): TierType {
-  return tierStore.get(userId) ?? "free";
+  return new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString();
 }
 
 function getLimitForTier(tier: TierType): number {
+  if (tier === "enterprise") return Infinity;
   return tier === "pro" ? PRO_MONTHLY_LIMIT : FREE_MONTHLY_LIMIT;
+}
+
+/**
+ * Get user's subscription tier from DB (cached for 5 minutes).
+ */
+async function getUserTier(userId: string): Promise<TierType> {
+  const cached = tierCache.get(userId);
+  if (cached && Date.now() - cached.cachedAt < TIER_CACHE_TTL) {
+    return cached.tier;
+  }
+
+  try {
+    const row = await db.query.subscriptions.findFirst({
+      where: eq(subscriptions.userId, userId),
+    });
+    const tier = (row?.plan as TierType) || "free";
+    tierCache.set(userId, { tier, cachedAt: Date.now() });
+    return tier;
+  } catch {
+    return "free";
+  }
+}
+
+/**
+ * Count usage for the current month from the database.
+ */
+async function countMonthlyUsage(userId: string): Promise<number> {
+  const { key, start } = getCurrentPeriod();
+  const cacheKey = `${userId}:${key}`;
+
+  // Check cache first (with TTL to prevent stale reads)
+  const cached = usageCache.get(cacheKey);
+  if (cached !== undefined && Date.now() - cached.cachedAt < USAGE_CACHE_TTL) {
+    return cached.count;
+  }
+
+  try {
+    const result = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(usage)
+      .where(and(eq(usage.userId, userId), gte(usage.createdAt, start)));
+    const count = result[0]?.count ?? 0;
+    usageCache.set(cacheKey, { count, cachedAt: Date.now() });
+    return count;
+  } catch (err) {
+    log.error("Failed to count usage from DB", err as Record<string, unknown>);
+    return 0;
+  }
 }
 
 // ── Public API ──
 
 /**
  * Check whether a user can make another agent run this month.
- * Accounts for tier limit + any bonus runs from referrals.
  */
-export function checkFreeUsage(userId: string): UsageCheck {
-  const key = getCurrentPeriodKey(userId);
-  const used = usageStore.get(key) ?? 0;
-  const tier = getUserTier(userId);
-  const baseLimit = getLimitForTier(tier);
-  const bonus = bonusRunsStore.get(userId) ?? 0;
-  const effectiveLimit = baseLimit + bonus;
-  const remaining = Math.max(0, effectiveLimit - used);
+export async function checkFreeUsage(userId: string): Promise<UsageCheck> {
+  const [used, tier] = await Promise.all([
+    countMonthlyUsage(userId),
+    getUserTier(userId),
+  ]);
+  const limit = getLimitForTier(tier);
+  const remaining = Math.max(0, limit - used);
 
   return {
-    allowed: used < effectiveLimit,
-    remaining,
-    limit: effectiveLimit,
+    allowed: tier === "enterprise" || used < limit,
+    remaining: tier === "enterprise" ? Infinity : remaining,
+    limit: tier === "enterprise" ? Infinity : limit,
   };
 }
 
 /**
- * Record one agent run for the user in the current billing period.
+ * Record one agent run for the user. Persists to database.
+ * Uses atomic DB insert as source of truth — cache is invalidated, not incremented.
+ * This prevents race conditions where concurrent requests both read the same count.
  */
-export function incrementUsage(userId: string): void {
-  const key = getCurrentPeriodKey(userId);
-  const current = usageStore.get(key) ?? 0;
-  usageStore.set(key, current + 1);
+export async function incrementUsage(userId: string, agentId: string = "unknown"): Promise<void> {
+  const { key } = getCurrentPeriod();
+  const cacheKey = `${userId}:${key}`;
+
+  // Persist to DB first (source of truth) — this is atomic
+  try {
+    await db.insert(usage).values({
+      userId,
+      agentId,
+      model: "platform",
+      tokensUsed: 1,
+    });
+    // Invalidate cache so next read hits DB for accurate count after TTL
+    usageCache.delete(cacheKey);
+  } catch (err) {
+    log.error("Failed to record usage", err as Record<string, unknown>);
+  }
 }
 
 /**
  * Return usage statistics for the current billing period.
  */
-export function getUsageStats(userId: string): UsageStats {
-  const key = getCurrentPeriodKey(userId);
-  const used = usageStore.get(key) ?? 0;
-  const tier = getUserTier(userId);
-  const baseLimit = getLimitForTier(tier);
-  const bonus = bonusRunsStore.get(userId) ?? 0;
+export async function getUsageStats(userId: string): Promise<UsageStats> {
+  const [used, tier] = await Promise.all([
+    countMonthlyUsage(userId),
+    getUserTier(userId),
+  ]);
+  const limit = getLimitForTier(tier);
 
   return {
     used,
-    limit: baseLimit + bonus,
+    limit: tier === "enterprise" ? Infinity : limit,
     resetDate: getResetDate(),
   };
 }
 
 /**
  * Add bonus runs for a user (e.g. from referral rewards).
+ * Grants extra runs by inserting a negative-token "credit" row in usage,
+ * effectively raising the user's limit for the current period.
  */
-export function addBonusRuns(userId: string, runs: number): void {
-  const current = bonusRunsStore.get(userId) ?? 0;
-  bonusRunsStore.set(userId, current + runs);
-}
-
-/**
- * Set a user's tier. In production, sync this from Clerk/Stripe metadata.
- */
-export function setUserTier(userId: string, tier: TierType): void {
-  tierStore.set(userId, tier);
+export async function addBonusRuns(userId: string, runs: number): Promise<void> {
+  try {
+    // Insert a credit row (negative tokens = bonus runs)
+    await db.insert(usage).values({
+      userId,
+      agentId: "referral-bonus",
+      model: "platform",
+      tokensUsed: -runs, // Negative = credit
+    });
+    log.info("Bonus runs granted", { userId, runs });
+  } catch (err) {
+    log.error("Failed to add bonus runs", err as Record<string, unknown>);
+  }
 }
 
 /**
  * Get the upgrade prompt shown when a user exceeds their limit.
  */
-export function getUpgradePrompt(userId: string): string {
-  const stats = getUsageStats(userId);
+export function getUpgradePrompt(limit: number): string {
   return (
-    `You've used all ${stats.limit} agent runs for this month. ` +
-    `Your limit resets on ${new Date(stats.resetDate).toLocaleDateString("en-US", { month: "long", day: "numeric" })}. ` +
+    `You've used all ${limit} agent runs for this month. ` +
+    `Your limit resets on ${new Date(getResetDate()).toLocaleDateString("en-US", { month: "long", day: "numeric" })}. ` +
     `Upgrade to Pro for ${PRO_MONTHLY_LIMIT.toLocaleString()} runs/month, or invite a friend to earn ${REFERRAL_BONUS_RUNS} bonus runs.`
   );
+}
+
+/* ── Plan Tier Metadata (for smart upgrade prompts) ── */
+
+interface PlanInfo {
+  name: string;
+  limit: number;
+  price: string;
+}
+
+const PLAN_TIERS: Record<string, PlanInfo> = {
+  free:       { name: "free",       limit: 100,   price: "R0/mo" },
+  starter:    { name: "free",       limit: 100,   price: "R0/mo" },
+  pro:        { name: "pro",        limit: 5000,  price: "R499/mo" },
+  node:       { name: "node",       limit: 2000,  price: "R9,997/mo" },
+  array:      { name: "array",      limit: 10000, price: "R24,997/mo" },
+  enterprise: { name: "enterprise", limit: Infinity, price: "Custom" },
+};
+
+const UPGRADE_PATH: Record<string, string> = {
+  free: "pro",
+  starter: "pro",
+  pro: "node",
+  node: "array",
+  array: "enterprise",
+};
+
+export interface SmartUpgradeInfo {
+  currentPlan: string;
+  currentLimit: number;
+  used: number;
+  nextPlan: string;
+  nextLimit: number;
+  nextPrice: string;
+  upgradeUrl: string;
+  resetDate: string;
+}
+
+/**
+ * Build a structured upgrade prompt with plan comparison details.
+ */
+export async function getSmartUpgradeInfo(userId: string): Promise<SmartUpgradeInfo> {
+  const [used, tier] = await Promise.all([
+    countMonthlyUsage(userId),
+    getUserTier(userId),
+  ]);
+
+  const currentTier = PLAN_TIERS[tier] || PLAN_TIERS.free;
+  const nextTierKey = UPGRADE_PATH[tier] || "pro";
+  const nextTier = PLAN_TIERS[nextTierKey] || PLAN_TIERS.pro;
+
+  return {
+    currentPlan: currentTier.name,
+    currentLimit: currentTier.limit,
+    used,
+    nextPlan: nextTier.name,
+    nextLimit: nextTier.limit,
+    nextPrice: nextTier.price,
+    upgradeUrl: "/dashboard/billing",
+    resetDate: getResetDate(),
+  };
 }

@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { persistAppend, persistRead } from "@/lib/persist";
 import { ai } from "@/lib/ai";
@@ -36,6 +37,8 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     const { clientEmail, clientName, period } = await req.json().catch(() => ({}));
     const reportPeriod = period || `${new Date().toLocaleDateString("en-ZA")} Weekly Report`;
 

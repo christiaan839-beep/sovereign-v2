@@ -274,7 +274,7 @@ export default function ROIAnalyticsPage() {
                           </span>
                         </div>
                       </div>
-                      <span className="text-[10px] text-neutral-600 w-16 text-right tabular-nums">
+                      <span className="text-[10px] text-neutral-500 w-16 text-right tabular-nums">
                         {(agent.avgResponseMs / 1000).toFixed(1)}s avg
                       </span>
                     </div>
@@ -321,7 +321,7 @@ export default function ROIAnalyticsPage() {
                       borderBottom: "none",
                     }}
                   />
-                  <span className="text-[10px] text-neutral-600">{m.month}</span>
+                  <span className="text-[10px] text-neutral-500">{m.month}</span>
                 </div>
               );
             })}
@@ -340,7 +340,7 @@ export default function ROIAnalyticsPage() {
           <h2 className="text-sm font-semibold text-white flex items-center gap-2">
             <Activity className="w-4 h-4 text-[#00B7FF]" /> Activity Timeline
           </h2>
-          <span className="text-[10px] text-neutral-600 uppercase tracking-widest">Last 20 events</span>
+          <span className="text-[10px] text-neutral-500 uppercase tracking-widest">Last 20 events</span>
         </div>
         <div className="max-h-[400px] overflow-y-auto divide-y divide-white/[0.04]">
           {timeline.map((event, i) => {
@@ -365,16 +365,16 @@ export default function ROIAnalyticsPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs text-neutral-300 truncate">{preview}</p>
-                  <p className="text-[10px] text-neutral-600 font-mono">{event.eventType.replace(/_/g, " ")}</p>
+                  <p className="text-[10px] text-neutral-500 font-mono">{event.eventType.replace(/_/g, " ")}</p>
                 </div>
-                <span className="text-[10px] text-neutral-600 tabular-nums shrink-0">
+                <span className="text-[10px] text-neutral-500 tabular-nums shrink-0">
                   {formatRelativeTime(event.timestamp)}
                 </span>
               </motion.div>
             );
           })}
           {timeline.length === 0 && !loading && (
-            <div className="p-8 text-center text-neutral-600 text-xs">No telemetry events yet.</div>
+            <div className="p-8 text-center text-neutral-500 text-xs">No telemetry events yet.</div>
           )}
         </div>
       </motion.div>

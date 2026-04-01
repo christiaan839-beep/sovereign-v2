@@ -1,4 +1,6 @@
+import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
+import { sendOnboardingEmail } from "@/lib/onboarding-emails";
 
 function escapeHtml(str: string): string {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -15,6 +17,8 @@ function escapeHtml(str: string): string {
 
 export async function POST(request: Request) {
   try {
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     const {
       clientName,
       email,
@@ -97,6 +101,24 @@ export async function POST(request: Request) {
       }
     } else {
       onboardingSteps.push({ step: "Send Welcome Email", status: "⏸️", detail: "RESEND_API_KEY not configured" });
+    }
+
+    // Step 3b: Trigger onboarding email sequence (first email immediately)
+    try {
+      const onboardingSent = await sendOnboardingEmail(email, 0);
+      onboardingSteps.push({
+        step: "Start Onboarding Sequence",
+        status: onboardingSent ? "✅" : "⚠️",
+        detail: onboardingSent
+          ? "3-email onboarding sequence started"
+          : "Onboarding email queued (RESEND_API_KEY may not be set)",
+      });
+    } catch {
+      onboardingSteps.push({
+        step: "Start Onboarding Sequence",
+        status: "⚠️",
+        detail: "Onboarding sequence will retry",
+      });
     }
 
     // Step 4: Store initial memory

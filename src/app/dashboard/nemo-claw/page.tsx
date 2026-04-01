@@ -130,9 +130,9 @@ export default function NemoClawPage() {
           NemoClaw <span className="text-emerald-400 text-xl font-mono uppercase tracking-widest">[OpenClaw]</span>
         </h1>
         <p className="text-sm text-neutral-400 max-w-2xl mb-4">
-          NVIDIA&apos;s enterprise-grade autonomous AI agent platform, built on OpenClaw — the fastest-growing
-          open source project in history. Agents that execute tasks, make decisions, and take actions.
-          Runs on your hardware with NVIDIA OpenShell security.
+          Run autonomous agents locally on your machine. Requires NemoClaw setup.
+          Built on NVIDIA OpenClaw for enterprise-grade task execution, decision making, and actions
+          running on your hardware with OpenShell security.
         </p>
         <div className="flex flex-wrap gap-2 mb-2">
           {["Autonomous Task Execution", "Multi-Step Decision Making", "OpenShell Security", "On-Premise Hardware"].map((cap) => (
@@ -321,7 +321,7 @@ export default function NemoClawPage() {
             )}
 
             <div className="mt-2 text-center">
-               <span className="text-[9px] text-neutral-600 font-mono uppercase tracking-widest">
+               <span className="text-[9px] text-neutral-500 font-mono uppercase tracking-widest">
                  Live connection to NVIDIA NIM (mistral-nemotron)
                </span>
             </div>

@@ -42,9 +42,18 @@ async function handlePostgres(toolName: string, params: Record<string, unknown>)
     case "query": {
       const query = params.sql as string;
       if (!query) return { success: false, error: "Missing 'sql' parameter" };
-      // Only allow SELECT queries for safety
-      if (!query.trim().toUpperCase().startsWith("SELECT")) {
+      // Strict SQL safety: only allow simple SELECT queries
+      const normalized = query.trim().toUpperCase();
+      if (!normalized.startsWith("SELECT")) {
         return { success: false, error: "Only SELECT queries are allowed via MCP" };
+      }
+      // Block dangerous patterns: semicolons (multi-statement), UNION injection, subqueries against sensitive tables
+      if (/;|\bUNION\b|\bINTO\b|\bDROP\b|\bDELETE\b|\bUPDATE\b|\bINSERT\b|\bALTER\b|\bCREATE\b|\bTRUNCATE\b|\bEXEC\b/i.test(query)) {
+        return { success: false, error: "Query contains disallowed SQL keywords" };
+      }
+      // Block access to sensitive tables
+      if (/\b(settings|api_keys|payments|subscriptions)\b/i.test(query)) {
+        return { success: false, error: "Access to this table is restricted via MCP" };
       }
       try {
         const result = await db.execute(sql.raw(query));

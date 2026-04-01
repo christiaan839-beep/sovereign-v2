@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { createLogger } from "@/lib/logger";
+const log = createLogger("paystack-api");
 
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
 
@@ -7,7 +9,7 @@ export async function POST(req: Request) {
         const { email, lead_id } = await req.json();
 
         if (!PAYSTACK_SECRET_KEY) {
-            console.error("[PAYSTACK API] Missing PAYSTACK_SECRET_KEY.");
+            log.error("Missing PAYSTACK_SECRET_KEY");
             return NextResponse.json({ error: "Paystack API Offline" }, { status: 500 });
         }
 
@@ -40,7 +42,7 @@ export async function POST(req: Request) {
         const paystackData = await paystackResponse.json();
 
         if (!paystackResponse.ok || !paystackData.status) {
-            console.error("[PAYSTACK API ERROR]", paystackData);
+            log.error("Paystack API error", paystackData as Record<string, unknown>);
             return NextResponse.json({ error: paystackData.message }, { status: paystackResponse.status || 500 });
         }
 
@@ -52,7 +54,7 @@ export async function POST(req: Request) {
         });
 
     } catch (error) {
-        console.error("[PAYSTACK FATAL ERROR]", error);
+        log.error("Paystack fatal error", error as Record<string, unknown>);
         return NextResponse.json({ error: 'Internal Exec Error' }, { status: 500 });
     }
 }

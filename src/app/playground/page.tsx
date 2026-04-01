@@ -5,11 +5,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Play, ChevronDown, Terminal, Sparkles, Lock, Copy, Check } from "lucide-react";
 
 const AGENTS = [
-  { id: "leads", name: "Lead Gen", endpoint: "/api/agents/leads", example: "Find 25 SaaS founders in Austin, TX with Series A funding" },
-  { id: "blog-gen", name: "Blog Gen", endpoint: "/api/agents/blog-gen", example: "Write a 1500-word article on AI automation for agencies" },
-  { id: "market-intel", name: "Market Intel", endpoint: "/api/agents/market-intel", example: "Analyze the competitive landscape for AI CRM tools in 2026" },
-  { id: "voice-synth", name: "Voice Synth", endpoint: "/api/agents/voice", example: "Generate a 30-second sales pitch script for a SaaS demo" },
-  { id: "seo-audit", name: "SEO Audit", endpoint: "/api/agents/seo-dominator", example: "Run a full SEO audit on example.com with keyword gaps" },
+  { id: "leads", name: "Lead Gen", endpoint: "/api/_agents/leads", example: "Find 25 SaaS founders in Austin, TX with Series A funding" },
+  { id: "blog-gen", name: "Blog Gen", endpoint: "/api/_agents/blog-gen", example: "Write a 1500-word article on AI automation for agencies" },
+  { id: "market-intel", name: "Market Intel", endpoint: "/api/_agents/market-intel", example: "Analyze the competitive landscape for AI CRM tools in 2026" },
+  { id: "voice-synth", name: "Voice Synth", endpoint: "/api/_agents/voice", example: "Generate a 30-second sales pitch script for a SaaS demo" },
+  { id: "seo-audit", name: "SEO Audit", endpoint: "/api/_agents/seo-dominator", example: "Run a full SEO audit on example.com with keyword gaps" },
 ];
 
 export default function PlaygroundPage() {

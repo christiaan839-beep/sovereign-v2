@@ -136,7 +136,7 @@ export default function AuditAndDestroyPage() {
                  initial={{ opacity: 0 }} 
                  animate={{ opacity: 1 }} 
                  exit={{ opacity: 0 }}
-                 className="h-[400px] border border-white/5 border-dashed rounded-2xl flex flex-col items-center justify-center text-neutral-600 bg-white/[0.01]"
+                 className="h-[400px] border border-white/5 border-dashed rounded-2xl flex flex-col items-center justify-center text-neutral-500 bg-white/[0.01]"
                >
                  <ShieldAlert className="w-12 h-12 mb-4 opacity-20" />
                  <p className="text-sm">No target acquired.</p>

@@ -54,7 +54,8 @@ export async function POST(req: Request) {
       max_tokens: 1024,
       betas: ["computer-use-2025-11-24"],
       system: "You are the Sovereign Matrix Ghost Browser. You have access to a virtual Linux desktop. Use the computer tools to navigate the web, analyze competitors, and fulfill the user's instructions. Always verify the UI state with screenshots before clicking.",
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // Anthropic Beta Computer Use requires non-standard tool/message shapes not in stable SDK types
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- beta tool shapes differ from stable SDK
       tools: [
         {
           type: "computer_20251124",
@@ -71,8 +72,8 @@ export async function POST(req: Request) {
           type: "bash_20250124",
           name: "bash"
         }
-      ] as any,
-      messages: messages as any,
+      ] as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+      messages: messages as any, // eslint-disable-line @typescript-eslint/no-explicit-any
     });
 
     // 4. Extract tool calls and text

@@ -80,7 +80,7 @@ export default function DeveloperPage() {
             Sovereign Matrix API
           </h1>
           <p className="text-lg text-neutral-400 max-w-2xl mx-auto">
-            Build on 132 autonomous AI agents. Lead generation, content creation, SEO, page building, voice AI, and more -- all through a single REST API.
+            Build on 124 autonomous AI agents. Lead generation, content creation, SEO, page building, voice AI, and more -- all through a single REST API.
           </p>
         </motion.div>
       </div>

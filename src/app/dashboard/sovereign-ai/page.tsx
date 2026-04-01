@@ -155,7 +155,7 @@ function MessageBubble({ message, onAction }: { message: Message; onAction: (act
                 {message.metrics.map((m) => (
                   <div key={m.label} className="text-center p-2 rounded-lg bg-black/20">
                     <div className="text-base font-black text-white font-mono">{m.value}</div>
-                    <div className="text-[8px] text-neutral-600 uppercase tracking-wider">{m.label}</div>
+                    <div className="text-[8px] text-neutral-500 uppercase tracking-wider">{m.label}</div>
                   </div>
                 ))}
               </div>
@@ -268,7 +268,7 @@ export default function SovereignAIPage() {
         body: JSON.stringify({
           prompt: `You are Sovereign AI, the intelligent assistant for the Sovereign Matrix platform. You help users manage their AI agents, find leads, create content, analyze competitors, and optimize their business.
 
-The platform has 132 AI agents, 51+ models, and costs $0 per token via NVIDIA NIM.
+The platform has 124 AI agents, 65+ models, and costs $0 per token via NVIDIA NIM.
 
 User's request: ${userInput}
 

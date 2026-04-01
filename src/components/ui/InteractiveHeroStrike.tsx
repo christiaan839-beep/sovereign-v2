@@ -23,30 +23,15 @@ export function InteractiveHeroStrike() {
     setStreamText("");
 
     try {
-      // Try site-assassin first for deep competitor intel, fallback to smart-router
-      let data;
-      try {
-        const res = await fetch("/api/agents/site-assassin", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url, mode: "quick" }),
-        });
-        if (res.ok) data = await res.json();
-      } catch { /* fallback below */ }
+      // Public demo endpoint — no auth required, rate-limited by IP
+      const res = await fetch("/api/demo/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+      });
+      const data = await res.json();
 
-      if (!data?.response && !data?.result) {
-        const res = await fetch("/api/agents/smart-router", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            prompt: `Analyze this competitor website and give a 3-bullet strategic breakdown: ${url}. Focus on messaging gaps, conversion flaws, and positioning weaknesses. Be specific and tactical.`,
-            agentId: "site-assassin",
-          }),
-        });
-        data = await res.json();
-      }
-
-      const fullText = data.response || data.result || "Analysis complete. Deploy a Sovereign Node for the full War Room audit.";
+      const fullText = data.response || "Analysis complete. Sign up free for the full War Room audit.";
 
       // Typewriter effect
       let i = 0;
@@ -74,7 +59,7 @@ export function InteractiveHeroStrike() {
           </div>
           <input
             type="url"
-            placeholder="Enter competitor's URL... (e.g. https://uber.com)"
+            placeholder="Enter any website URL to analyze..."
             required
             value={url}
             onChange={(e) => setUrl(e.target.value)}
@@ -89,7 +74,7 @@ export function InteractiveHeroStrike() {
             {isScanning ? (
                <><Cpu className="w-4 h-4 animate-spin text-[#10B981]" /> Analyzing...</>
             ) : (
-               <>Strike <ArrowRight className="w-4 h-4" /></>
+               <>Analyze <ArrowRight className="w-4 h-4" /></>
             )}
           </button>
         </div>
@@ -140,12 +125,12 @@ export function InteractiveHeroStrike() {
 
       {/* Status Bar */}
       {!streamText && (
-        <div className="flex items-center gap-6 mt-4 opacity-50">
-           <span className="text-[10px] font-bold uppercase tracking-widest font-mono text-white flex items-center gap-2">
-             <Search className="w-3 h-3" /> Live OSINT
+        <div className="flex items-center gap-6 mt-4 opacity-40">
+           <span className="text-[10px] uppercase tracking-widest font-mono text-neutral-500 flex items-center gap-2">
+             <Search className="w-3 h-3" /> Try a real analysis
            </span>
-           <span className="text-[10px] font-bold uppercase tracking-widest font-mono text-white flex items-center gap-2">
-             <Sparkles className="w-3 h-3" /> Real AI — Not a Demo
+           <span className="text-[10px] uppercase tracking-widest font-mono text-neutral-500 flex items-center gap-2">
+             <Sparkles className="w-3 h-3" /> Powered by 65+ AI models
            </span>
         </div>
       )}

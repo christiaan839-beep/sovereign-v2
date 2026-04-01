@@ -1,15 +1,22 @@
 import { NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
 import { db } from '@/db';
 import { whitelabelConfig } from '@/db/schema';
+import { auditLog } from '@/lib/audit-log';
+import { createLogger } from '@/lib/logger';
 
+const log = createLogger('provisioning');
 const VERCEL_API_URL = 'https://api.vercel.com';
 const SOURCE_REPO = 'christiaan839-beep/sovereign-matrix'; // The master template
 
 export async function POST(req: Request) {
   try {
-    // const authHeader = req.headers.get('Authorization');
-    // In production, you would verify a Clerk JWT here. For the Enterprise API, we'll use a direct internal check or a secure webhook approach.
-    
+    // Authentication required — only signed-in users on Enterprise plan can provision
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: 'Authentication required for Enterprise Provisioning' }, { status: 401 });
+    }
+
     const body = await req.json();
     const { userEmail, agencyName, requestedDomain } = body;
 
@@ -102,6 +109,13 @@ export async function POST(req: Request) {
         }
     });
 
+    await auditLog({
+      userId: userId,
+      action: "admin.provision",
+      resource: projectData.id,
+      details: { agencyName, domain: requestedDomain || `${projectSlug}.vercel.app`, userEmail },
+    });
+
     return NextResponse.json({
       success: true,
       message: 'Enterprise Node Provisioned',
@@ -110,7 +124,7 @@ export async function POST(req: Request) {
     });
 
   } catch (error) {
-    console.error('Enterprise Provisioning Fault:', error);
+    log.error('Enterprise Provisioning Fault:', error as Record<string, unknown>);
     return NextResponse.json({ error: 'Internal Server Error', details: (error as Error).message }, { status: 500 });
   }
 }

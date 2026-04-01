@@ -105,18 +105,18 @@ export default function GodEyePage() {
   const totalExecs = AGENT_CATEGORIES.reduce((sum, c) => sum + c.agents.reduce((s, a) => s + a.executions, 0), 0);
 
   return (
-    <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-6" role="main" aria-label="God Eye agent command center">
+    <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-6" role="main" aria-label="Agent Monitor dashboard">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="min-w-0">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-emerald-500/20 bg-emerald-500/5 text-emerald-400 text-[10px] font-bold uppercase tracking-widest mb-3">
-            <Eye className="w-3 h-3" /> God Eye — Live
+            <Eye className="w-3 h-3" /> Agent Monitor — Live
           </div>
-          <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Agent Command Center</h1>
-          <p className="text-sm text-neutral-500 mt-1">Real-time monitoring of all {totalAgents} agents across 6 categories</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Agent Monitor</h1>
+          <p className="text-sm text-neutral-500 mt-1">Monitor all {totalAgents} agents in real-time. See which are active, their status, and recent executions.</p>
         </div>
         <div className="text-left sm:text-right shrink-0">
-          <div className="text-[10px] text-neutral-600 uppercase tracking-widest mb-1">System Time</div>
+          <div className="text-[10px] text-neutral-500 uppercase tracking-widest mb-1">System Time</div>
           <div className="text-sm font-mono text-neutral-400">{now.toLocaleTimeString()}</div>
         </div>
       </div>
@@ -189,7 +189,7 @@ export default function GodEyePage() {
                     <StatusDot status={agent.status} />
                     <span className="text-xs text-neutral-300">{agent.name}</span>
                   </div>
-                  <div className="flex items-center gap-4 text-[10px] text-neutral-600">
+                  <div className="flex items-center gap-4 text-[10px] text-neutral-500">
                     <span>{agent.executions.toLocaleString()} runs</span>
                     <span className={agent.avgLatency < 1 ? "text-emerald-500" : agent.avgLatency < 3 ? "text-amber-500" : "text-red-400"}>
                       {agent.avgLatency}s
@@ -212,7 +212,7 @@ export default function GodEyePage() {
             </span>
             <span className="text-sm font-semibold text-white">Live Activity Feed</span>
           </div>
-          <span className="text-[10px] text-neutral-600 font-mono">{now.toLocaleTimeString()}</span>
+          <span className="text-[10px] text-neutral-500 font-mono">{now.toLocaleTimeString()}</span>
         </div>
         <div className="divide-y divide-white/[0.03] max-h-64 overflow-y-auto" aria-live="polite">
           {[
@@ -236,7 +236,7 @@ export default function GodEyePage() {
                   <p className="text-xs text-neutral-500 sm:hidden truncate">{event.action}</p>
                 </div>
               </div>
-              <span className="text-[10px] text-neutral-600 font-mono whitespace-nowrap shrink-0">{event.time}</span>
+              <span className="text-[10px] text-neutral-500 font-mono whitespace-nowrap shrink-0">{event.time}</span>
             </div>
           ))}
         </div>

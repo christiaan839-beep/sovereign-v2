@@ -33,15 +33,23 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    const { agencyName, logoUrl, primaryColor, supportEmail } = body;
+    const { agencyName, logoUrl, primaryColor, supportEmail, domain } = body;
 
     const existing = await db.query.whitelabelConfig.findFirst({
       where: eq(whitelabelConfig.userEmail, userEmail)
     });
 
+    // Build partial update — only set fields that were provided
+    const updates: Record<string, unknown> = { updatedAt: new Date() };
+    if (agencyName !== undefined) updates.agencyName = agencyName;
+    if (logoUrl !== undefined) updates.logoUrl = logoUrl;
+    if (primaryColor !== undefined) updates.primaryColor = primaryColor;
+    if (supportEmail !== undefined) updates.supportEmail = supportEmail;
+    if (domain !== undefined) updates.domain = domain;
+
     if (existing) {
       await db.update(whitelabelConfig)
-        .set({ agencyName, logoUrl, primaryColor, supportEmail, updatedAt: new Date() })
+        .set(updates)
         .where(eq(whitelabelConfig.userEmail, userEmail));
     } else {
       await db.insert(whitelabelConfig).values({
@@ -50,6 +58,7 @@ export async function POST(req: Request) {
         logoUrl,
         primaryColor: primaryColor || "#00B7FF",
         supportEmail,
+        domain: domain || "",
       });
     }
 

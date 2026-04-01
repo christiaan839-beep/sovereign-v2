@@ -117,7 +117,7 @@ export default function MarketIntelligence() {
                  value={target}
                  onChange={(e) => setTarget(e.target.value)}
                  aria-label="Website or company to analyze"
-                 className="w-full bg-emerald-500/5 border border-emerald-500/20 rounded-xl py-4 pl-12 pr-4 text-white font-mono placeholder:text-neutral-600 focus:outline-none focus:border-emerald-500/50 transition-colors"
+                 className="w-full bg-emerald-500/5 border border-emerald-500/20 rounded-xl py-4 pl-12 pr-4 text-white font-mono placeholder:text-neutral-500 focus:outline-none focus:border-emerald-500/50 transition-colors"
                />
             </div>
             <button
@@ -186,8 +186,8 @@ export default function MarketIntelligence() {
             <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-semibold">
               {Math.round(warRoomResult.confidence * 100)}% Confidence
             </span>
-            <span className="text-neutral-600 text-xs font-mono">{warRoomResult.duration}</span>
-            <span className="text-neutral-600 text-xs">{warRoomResult.perspectives.length} agent perspectives</span>
+            <span className="text-neutral-500 text-xs font-mono">{warRoomResult.duration}</span>
+            <span className="text-neutral-500 text-xs">{warRoomResult.perspectives.length} agent perspectives</span>
           </div>
 
           {/* Synthesis */}

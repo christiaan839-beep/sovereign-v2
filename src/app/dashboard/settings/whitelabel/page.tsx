@@ -64,7 +64,7 @@ export default function WhitelabelPage() {
           <Palette className="w-6 h-6 text-violet-400" /> White-Label Exports
         </h1>
         <p className="text-neutral-400">
-          Customize the SOVEREIGN portal and AI-generated PDF reports with your own agency's branding, colors, and logos.
+          Customize the SOVEREIGN portal and AI-generated PDF reports with your own agency&apos;s branding, colors, and logos.
         </p>
       </div>
 
@@ -82,7 +82,7 @@ export default function WhitelabelPage() {
                 value={settings.agencyName}
                 onChange={(e) => setSettings({...settings, agencyName: e.target.value})}
                 placeholder="e.g. Apex Marketing"
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-neutral-600 focus:outline-none focus:border-violet-500/50 transition-colors"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-neutral-500 focus:outline-none focus:border-violet-500/50 transition-colors"
               />
             </div>
 
@@ -93,7 +93,7 @@ export default function WhitelabelPage() {
                 value={settings.supportEmail}
                 onChange={(e) => setSettings({...settings, supportEmail: e.target.value})}
                 placeholder="support@apexmarketing.com"
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-neutral-600 focus:outline-none focus:border-violet-500/50 transition-colors"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-neutral-500 focus:outline-none focus:border-violet-500/50 transition-colors"
               />
             </div>
           </div>
@@ -106,7 +106,7 @@ export default function WhitelabelPage() {
               value={settings.logoUrl}
               onChange={(e) => setSettings({...settings, logoUrl: e.target.value})}
               placeholder="https://yourdomain.com/logo.png"
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-neutral-600 focus:outline-none focus:border-violet-500/50 font-mono transition-colors"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-neutral-500 focus:outline-none focus:border-violet-500/50 font-mono transition-colors"
             />
             {settings.logoUrl && (
               <div className="mt-4 p-4 bg-white/5 rounded-xl border border-white/10 flex items-center justify-center">

@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
 /**
@@ -6,6 +7,8 @@ import { NextResponse } from "next/server";
  */
 export async function POST(req: Request) {
   try {
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     const { audioBase64, language = "en" } = await req.json();
     if (!audioBase64) return NextResponse.json({ error: "Missing audioBase64 payload." }, { status: 400 });
 
@@ -37,7 +40,7 @@ export async function POST(req: Request) {
       confidence: data.confidence || null,
       model: "nemotron-asr-streaming",
     });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
   }
 }

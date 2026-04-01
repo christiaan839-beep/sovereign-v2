@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server';
+import { createLogger } from "@/lib/logger";
+const log = createLogger("ghost-fleet-cron");
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const X_API_KEY = process.env.X_API_KEY;
 
 // Vercel Cron Security
-const CRON_SECRET = process.env.CRON_SECRET; 
+const CRON_SECRET = process.env.CRON_SECRET;
 
 export async function GET(req: Request) {
     // 1. Authenticate Cron Job (Vercel automatically sets this header for authorized cron execution)
@@ -23,7 +25,7 @@ Rule 2: End the thread with the deployment hook and booking link: "Deploy the Ex
 Return the exact JSON array of strings (the tweets in sequence) without any markdown formatting blocks like \`\`\`json.`;
 
         if (!GEMINI_API_KEY) {
-            console.error("GEMINI_API_KEY missing - Swarm Offline.");
+            log.error("GEMINI_API_KEY missing - Swarm Offline");
             return NextResponse.json({ error: "AI Intelligence Core missing" }, { status: 500 });
         }
 
@@ -52,7 +54,7 @@ Return the exact JSON array of strings (the tweets in sequence) without any mark
         try {
             threadArray = JSON.parse(rawContent);
         } catch (_e) {
-            console.error("Failed to parse Gemini output as JSON Array.", rawContent);
+            log.error("Failed to parse Gemini output as JSON Array", { rawContent });
             return NextResponse.json({ error: "Failed to parse synthesized thread" }, { status: 500 });
         }
 
@@ -69,7 +71,7 @@ Return the exact JSON array of strings (the tweets in sequence) without any mark
         });
 
     } catch (err) {
-        console.error("[GHOST FLEET FATAL ERROR]", err);
+        log.error("Ghost fleet fatal error", err as Record<string, unknown>);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }

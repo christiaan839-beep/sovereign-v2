@@ -5,6 +5,8 @@ import { adCreatives } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { ai } from "@/lib/ai";
 import { fireUserWebhook } from "@/lib/webhooks";
+import { createLogger } from "@/lib/logger";
+const log = createLogger("ads-agent");
 
 const AD_CREATOR_PROMPT = `You are SOVEREIGN's elite Performance Creative Strategist — trained on $50M+ in ad spend data across Meta, TikTok, Google, and LinkedIn.
 
@@ -68,7 +70,7 @@ export async function GET() {
     });
     return NextResponse.json({ creatives });
   } catch (err) {
-    console.error("GET /api/agents/ads error:", err);
+    log.error("GET /api/agents/ads error", err as Record<string, unknown>);
     return NextResponse.json({ error: "Server Error" }, { status: 500 });
   }
 }
@@ -125,7 +127,7 @@ Generate the creatives now.`;
 
     return NextResponse.json({ success: true, ...parsed });
   } catch (err) {
-    console.error("POST /api/agents/ads error:", err);
+    log.error("POST /api/agents/ads error", err as Record<string, unknown>);
     return NextResponse.json({ error: "Server Error" }, { status: 500 });
   }
 }

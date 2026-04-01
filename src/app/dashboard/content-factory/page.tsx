@@ -22,7 +22,7 @@ type ContentAction = "blog" | "email" | "social" | "video";
 const TABS: {
   id: ContentAction;
   label: string;
-  icon: any;
+  icon: React.ComponentType<{ className?: string }>;
   color: string;
   bg: string;
   border: string;
@@ -154,7 +154,7 @@ export default function ContentFactoryPage() {
 
 
   return (
-    <div className="w-full max-w-7xl mx-auto space-y-8 relative z-10 p-4 lg:p-8">
+    <div className="w-full max-w-7xl mx-auto space-y-8 relative z-10 p-4 lg:p-8" role="main" aria-label="Content Factory">
       {/* Header */}
       <div className="border-b border-[#00B7FF]/20 pb-6 backdrop-blur-3xl bg-black/40 p-6 rounded-2xl shadow-[0_0_50px_rgba(0,183,255,0.05)] border-t border-[#00B7FF]/10">
         <div className="flex items-center gap-3 mb-2">
@@ -216,17 +216,19 @@ export default function ContentFactoryPage() {
           <div className="space-y-4 mb-6">
             {TABS.find((t) => t.id === activeTab)?.fields.map((field) => (
               <div key={field.name}>
-                <label className="text-[10px] uppercase tracking-widest text-neutral-400 font-bold mb-2 block">
+                <label htmlFor={`content-field-${field.name}`} className="text-[10px] uppercase tracking-widest text-neutral-400 font-bold mb-2 block">
                   {field.label}
                 </label>
                 <input
                   type="text"
+                  id={`content-field-${field.name}`}
                   placeholder={field.placeholder}
                   value={formData[field.name] || ""}
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, [field.name]: e.target.value }))
                   }
-                  className="w-full bg-black/60 border border-[#00B7FF]/20 rounded-xl px-4 py-3 text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-[#00B7FF]/50 transition-colors font-mono"
+                  aria-label={field.label}
+                  className="w-full bg-black/60 border border-[#00B7FF]/20 rounded-xl px-4 py-3 text-sm text-white placeholder:text-neutral-500 focus:outline-none focus:border-[#00B7FF]/50 focus:ring-1 focus:ring-[#00B7FF]/20 transition-colors font-mono"
                 />
               </div>
             ))}
@@ -301,10 +303,10 @@ export default function ContentFactoryPage() {
 
       {/* Empty State */}
       {!result && !error && !loading && (
-        <div className="text-center py-16">
-          <Factory className="w-8 h-8 text-neutral-700 mx-auto mb-3" />
-          <p className="text-sm text-neutral-500">Select a content type above to get started</p>
-          <p className="text-[10px] text-neutral-600 mt-1">Blog posts, email sequences, social packs, or video scripts</p>
+        <div className="text-center py-16 rounded-2xl border border-white/5 bg-white/[0.01]">
+          <Factory className="w-8 h-8 text-neutral-500 mx-auto mb-3" />
+          <p className="text-sm text-neutral-300">Fill in the fields above and hit Produce Content</p>
+          <p className="text-xs text-neutral-400 mt-1">Blog posts, email sequences, social packs, or video scripts</p>
         </div>
       )}
     </div>

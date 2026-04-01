@@ -10,7 +10,7 @@ Based on the live web search data provided, give me:
 3. 3 Critical Weaknesses we can exploit
 4. An aggressive counter-positioning strategy for our agency
 
-Keep it ruthless, actionable, and formatted with clear markdown headers.`;
+Keep it strategic, actionable, and formatted with clear markdown headers.`;
 
   // We use research_ai instead of standard ai to force a web search first
   const report = await research_ai(query, prompt, { 

@@ -3,6 +3,8 @@ import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { conversations, chatMessages } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
+import { createLogger } from "@/lib/logger";
+const log = createLogger("conversations");
 
 /**
  * CONVERSATION PERSISTENCE API
@@ -33,7 +35,7 @@ export async function GET() {
 
     return NextResponse.json({ conversations: result });
   } catch (err) {
-    console.error("[Conversations GET]", err);
+    log.error("Conversations GET error", err as Record<string, unknown>);
     return NextResponse.json({ error: "Failed to load conversations" }, { status: 500 });
   }
 }
@@ -97,7 +99,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ conversationId: convId, saved: true });
   } catch (err) {
-    console.error("[Conversations POST]", err);
+    log.error("Conversations POST error", err as Record<string, unknown>);
     return NextResponse.json({ error: "Failed to save conversation" }, { status: 500 });
   }
 }

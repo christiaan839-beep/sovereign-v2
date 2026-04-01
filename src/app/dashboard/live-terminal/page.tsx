@@ -150,7 +150,7 @@ export default function LiveTerminalPage() {
 
         {/* Input */}
         <div className="flex gap-2">
-          <div className="flex items-center gap-2 px-3 bg-neutral-950 border border-neutral-800 text-neutral-600 text-[10px] font-bold uppercase tracking-widest shrink-0">
+          <div className="flex items-center gap-2 px-3 bg-neutral-950 border border-neutral-800 text-neutral-500 text-[10px] font-bold uppercase tracking-widest shrink-0">
             <Zap className="w-3 h-3" /> {selectedAgent}
           </div>
           <input

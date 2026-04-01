@@ -15,13 +15,13 @@ const SECTIONS = [
     id: "architecture",
     title: "The Autonomous Agency Operating System",
     icon: Cpu,
-    content: "At the core of Sovereign Matrix is a sophisticated interface providing access to 132 purpose-built, specialized agents spanning sales outreach, voice agents with sub-200ms latency across 12 languages, document intelligence with advanced RAG pipelines, autonomous code generation and deployment, and unconstrained browser automation. Rather than offering a generalized conversational interface, the architecture compartmentalizes functionality into distinct, highly optimized operational silos — mirroring traditional corporate structures where specific departments handle distinct operational mandates.",
+    content: "At the core of Sovereign Matrix is a sophisticated interface providing access to 124 purpose-built, specialized agents spanning sales outreach, voice agents with sub-200ms latency across 12 languages, document intelligence with advanced RAG pipelines, autonomous code generation and deployment, and unconstrained browser automation. Rather than offering a generalized conversational interface, the architecture compartmentalizes functionality into distinct, highly optimized operational silos — mirroring traditional corporate structures where specific departments handle distinct operational mandates.",
   },
   {
     id: "routing",
     title: "Smart Routing & Multi-Model Intelligence",
     icon: Zap,
-    content: "The platform implements a proprietary Smart Router that classifies incoming tasks in real-time and dynamically allocates them across 51+ specialized open-source models. DeepSeek V3.2 handles complex reasoning and coding. Qwen 3 powers multilingual operations. Llama 4 Scout processes massive documents with its 10M token context window. A sophisticated failover chain ensures that if a primary model experiences downtime or latency, tasks are instantaneously rerouted to secondary models — guaranteeing high availability across the enterprise automation fabric.",
+    content: "The platform implements a proprietary Smart Router that classifies incoming tasks in real-time and dynamically allocates them across 65+ specialized open-source models. DeepSeek V3.2 handles complex reasoning and coding. Qwen 3 powers multilingual operations. Llama 4 Scout processes massive documents with its 10M token context window. A sophisticated failover chain ensures that if a primary model experiences downtime or latency, tasks are instantaneously rerouted to secondary models — guaranteeing high availability across the enterprise automation fabric.",
   },
   {
     id: "sovereignty",
@@ -44,8 +44,8 @@ const SECTIONS = [
 ];
 
 const METRICS = [
-  { value: "132", label: "Specialized Agents" },
-  { value: "51+", label: "Open-Source Models" },
+  { value: "124", label: "Specialized Agents" },
+  { value: "65+", label: "Open-Source Models" },
   { value: "5", label: "Safety Layers" },
   { value: "12", label: "Languages Supported" },
   { value: "<200ms", label: "Voice Latency" },

@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 
 function getNimKey(): string {
@@ -6,11 +7,13 @@ function getNimKey(): string {
 
 export async function POST(req: NextRequest) {
   try {
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     const { prompt, mode = "text", imageUrl, audioContext } = await req.json();
     if (!prompt) return NextResponse.json({ error: "prompt required" }, { status: 400 });
 
     const key = getNimKey();
-    if (!key) return NextResponse.json({ error: "NVIDIA NIM key not configured" }, { status: 500 });
+    if (!key) return NextResponse.json({ error: "AI model API key not configured. Add it in Settings > API Keys." }, { status: 500 });
 
     // Build messages based on mode
     const messages: Array<{role: string; content: string | Array<{type: string; text?: string; image_url?: {url: string}}>}> = [];

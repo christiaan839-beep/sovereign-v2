@@ -136,7 +136,7 @@ export default function WorkflowBuilderPage() {
     if (s === "running") return <Loader2 className="w-3.5 h-3.5 animate-spin text-cyan-400" />;
     if (s === "done") return <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />;
     if (s === "failed") return <XCircle className="w-3.5 h-3.5 text-red-400" />;
-    return <Clock className="w-3.5 h-3.5 text-neutral-600" />;
+    return <Clock className="w-3.5 h-3.5 text-neutral-500" />;
   };
 
   return (
@@ -193,7 +193,7 @@ export default function WorkflowBuilderPage() {
                   className="flex flex-col items-center gap-2 p-3 rounded-xl border border-white/[0.06] hover:border-white/15 hover:bg-white/[0.04] transition-all text-center group">
                   <a.icon className="w-5 h-5 group-hover:scale-110 transition-transform" style={{ color: a.color }} />
                   <span className="text-xs font-medium text-white">{a.name}</span>
-                  <span className="text-[10px] text-neutral-600 leading-tight">{a.desc}</span>
+                  <span className="text-[10px] text-neutral-500 leading-tight">{a.desc}</span>
                 </button>
               ))}
             </div>
@@ -210,7 +210,7 @@ export default function WorkflowBuilderPage() {
         {nodes.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center relative z-10">
             <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/[0.08] flex items-center justify-center mb-4">
-              <Plus className="w-5 h-5 text-neutral-600" />
+              <Plus className="w-5 h-5 text-neutral-500" />
             </div>
             <p className="text-neutral-500 text-sm">Add agents or load a template to start</p>
           </div>
@@ -303,7 +303,7 @@ export default function WorkflowBuilderPage() {
                 <div className="flex items-center gap-2 mb-1">
                   <n.agent.icon className="w-3.5 h-3.5" style={{ color: n.agent.color }} />
                   <span className="text-xs font-medium text-white">{n.agent.name}</span>
-                  {n.durationMs && <span className="text-[10px] text-neutral-600">{n.durationMs}ms</span>}
+                  {n.durationMs && <span className="text-[10px] text-neutral-500">{n.durationMs}ms</span>}
                 </div>
                 <pre className="text-[11px] text-neutral-500 whitespace-pre-wrap break-words font-mono leading-relaxed">{n.output}</pre>
               </div>

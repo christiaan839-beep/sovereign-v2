@@ -102,7 +102,7 @@ export default function EdifyForgePage() {
                   {pipelineState === "idle" && (
                      <div className="text-center z-10">
                         <Rotate3D className="w-16 h-16 text-neutral-800 mx-auto mb-4" />
-                        <p className="text-neutral-600 font-mono text-xs uppercase tracking-widest">Workspace Empty</p>
+                        <p className="text-neutral-500 font-mono text-xs uppercase tracking-widest">Workspace Empty</p>
                      </div>
                   )}
 

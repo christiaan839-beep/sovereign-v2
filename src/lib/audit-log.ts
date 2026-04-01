@@ -1,0 +1,38 @@
+import { db } from "@/db";
+import { sql } from "drizzle-orm";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("audit");
+
+export type AuditAction =
+  | "user.login"
+  | "user.logout"
+  | "agent.execute"
+  | "settings.update"
+  | "api_key.create"
+  | "api_key.delete"
+  | "subscription.change"
+  | "webhook.received"
+  | "data.export"
+  | "data.delete"
+  | "admin.provision";
+
+interface AuditEntry {
+  userId: string;
+  action: AuditAction;
+  resource?: string;
+  details?: Record<string, unknown>;
+  ipAddress?: string;
+}
+
+export async function auditLog(entry: AuditEntry): Promise<void> {
+  try {
+    await db.execute(
+      sql`INSERT INTO audit_logs (user_id, action, resource, details, ip_address, created_at)
+          VALUES (${entry.userId}, ${entry.action}, ${entry.resource || null}, ${JSON.stringify(entry.details || {})}, ${entry.ipAddress || null}, NOW())`
+    );
+  } catch (err) {
+    // Audit logging should never break the app
+    log.error("Audit log write failed", err as Record<string, unknown>);
+  }
+}

@@ -25,14 +25,14 @@ export async function GET() {
   const tests = [
     { name: "Health Endpoint", endpoint: "/api/health", method: "GET", body: null },
     { name: "PayFast Gateway", endpoint: "/api/payments/payfast", method: "GET", body: null },
-    { name: "Smart Router (GET)", endpoint: "/api/agents/smart-router", method: "GET", body: null },
-    { name: "Agent Memory (GET)", endpoint: "/api/agents/memory?userId=test", method: "GET", body: null },
-    { name: "Billing Status", endpoint: "/api/agents/billing", method: "GET", body: null },
-    { name: "Verticals List", endpoint: "/api/agents/verticals", method: "GET", body: null },
-    { name: "Pipeline List", endpoint: "/api/agents/pipeline", method: "GET", body: null },
-    { name: "Benchmark Config", endpoint: "/api/agents/benchmark", method: "GET", body: null },
-    { name: "Webhook Gateway (GET)", endpoint: "/api/agents/webhook-gateway", method: "GET", body: null },
-    { name: "Translate (POST validation)", endpoint: "/api/agents/translate", method: "POST", body: JSON.stringify({}) },
+    { name: "Smart Router (GET)", endpoint: "/api/_agents/smart-router", method: "GET", body: null },
+    { name: "Agent Memory (GET)", endpoint: "/api/_agents/memory?userId=test", method: "GET", body: null },
+    { name: "Billing Status", endpoint: "/api/_agents/billing", method: "GET", body: null },
+    { name: "Verticals List", endpoint: "/api/_agents/verticals", method: "GET", body: null },
+    { name: "Pipeline List", endpoint: "/api/_agents/pipeline", method: "GET", body: null },
+    { name: "Benchmark Config", endpoint: "/api/_agents/benchmark", method: "GET", body: null },
+    { name: "Webhook Gateway (GET)", endpoint: "/api/_agents/webhook-gateway", method: "GET", body: null },
+    { name: "Translate (POST validation)", endpoint: "/api/_agents/translate", method: "POST", body: JSON.stringify({}) },
   ];
 
   for (const test of tests) {

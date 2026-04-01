@@ -51,7 +51,7 @@ export async function POST(req: Request) {
         // Trigger auto-onboard
         if (email) {
           try {
-            await fetch(`${baseUrl}/api/agents/auto-onboard`, {
+            await fetch(`${baseUrl}/api/_agents/auto-onboard`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({

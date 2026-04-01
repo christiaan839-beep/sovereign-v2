@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { scheduledContent } from "@/db/schema";
 import { eq, lte, and } from "drizzle-orm";
+import { createLogger } from "@/lib/logger";
+const log = createLogger("content-publisher");
 
 /**
  * Cron Content Publisher
@@ -61,7 +63,7 @@ export async function GET() {
           .set({ status: "failed" })
           .where(eq(scheduledContent.id, item.id));
 
-        console.error(`[Content Publisher] Failed to publish "${item.topic}":`, err);
+        log.error(`Failed to publish "${item.topic}"`, err as Record<string, unknown>);
       }
     }
 
@@ -71,7 +73,7 @@ export async function GET() {
       published,
     });
   } catch (error) {
-    console.error("[Content Publisher Error]:", error);
+    log.error("Content publisher error", error as Record<string, unknown>);
     return NextResponse.json({ error: "Content publisher failed" }, { status: 500 });
   }
 }

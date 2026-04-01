@@ -115,7 +115,7 @@ export default function MorpheusShieldPage() {
               onKeyDown={(e) => e.key === "Enter" && handleSend()}
               placeholder="State your inquiry..."
               aria-label="Chat message to Morpheus Shield"
-              className="flex-1 bg-black border border-neutral-800 px-4 py-3 text-white placeholder:text-neutral-600 focus:outline-none focus:border-red-500/50 transition-colors text-sm"
+              className="flex-1 bg-black border border-neutral-800 px-4 py-3 text-white placeholder:text-neutral-500 focus:outline-none focus:border-red-500/50 transition-colors text-sm"
               disabled={isLoading}
             />
             <button
@@ -130,7 +130,7 @@ export default function MorpheusShieldPage() {
         </div>
 
         {/* Security Footer */}
-        <div className="flex items-center justify-center gap-4 text-[10px] text-neutral-600 uppercase tracking-widest">
+        <div className="flex items-center justify-center gap-4 text-[10px] text-neutral-500 uppercase tracking-widest">
           <span className="flex items-center gap-1"><ShieldAlert className="w-3 h-3 text-red-500" /> NeMo Guardrails Active</span>
           <span>·</span>
           <span>Jailbreak Detection: Enabled</span>

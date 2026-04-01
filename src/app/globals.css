@@ -162,11 +162,40 @@ input[type="range"]::-webkit-slider-thumb {
   }
 }
 
+/* ─── Animation Fallback — Content Always Readable ── */
+/* Ensures content is visible even if JS animations fail to trigger.
+   Framer Motion sets opacity:0 as initial state for whileInView —
+   this ensures a graceful fallback after 3 seconds. */
+
+@keyframes ensure-visible {
+  to { opacity: 1; }
+}
+
+section, [role="main"] {
+  animation: ensure-visible 0s 3s forwards;
+}
+
+section *, [role="main"] * {
+  animation: ensure-visible 0s 3.5s forwards;
+}
+
 /* ─── Off-Screen Performance ─────────────────────── */
 
 .perf-contain {
   content-visibility: auto;
   contain-intrinsic-size: auto 700px;
+}
+
+/* Lazy-render sections below the fold — skip paint/layout until near viewport */
+.perf-section {
+  content-visibility: auto;
+  contain-intrinsic-block-size: auto 600px;
+}
+
+/* GPU-accelerated transforms for smooth scrolling effects */
+.will-change-transform {
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
 /* ─── Animations ──────────────────────────────────── */
@@ -255,7 +284,6 @@ input[type="range"]::-webkit-slider-thumb {
   100% { transform: translateX(100%); }
 }
 
-/* shimmer-effect removed — unused */
 
 /* Gradient border glow on hover */
 .gradient-border-card {
@@ -278,7 +306,6 @@ input[type="range"]::-webkit-slider-thumb {
   50% { opacity: 0.8; }
 }
 
-/* trust-badge, marquee-track removed — unused */
 
 /* Smooth section divider glow */
 .section-divider {
@@ -364,14 +391,64 @@ input[type="range"]::-webkit-slider-thumb {
   text-shadow: 0 0 30px rgba(16, 185, 129, 0.3), 0 0 80px rgba(16, 185, 129, 0.1);
 }
 
-/* card-cinematic removed — unused */
 
 /* ─── Pulse Ring (for status indicators) ─────────── */
 
-/* duplicate @keyframes float removed — kept at line ~193 */
 
 @keyframes pulse-ring {
   0% { transform: scale(1); opacity: 0.5; }
   50% { transform: scale(1.5); opacity: 0; }
   100% { transform: scale(1); opacity: 0; }
+}
+
+/* ─── Elite Hover Effects ────────────────────────── */
+
+/* Glassmorphic card with subtle lift on hover */
+.card-elite {
+  transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    box-shadow 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    border-color 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.card-elite:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), 0 0 30px rgba(16, 185, 129, 0.03);
+}
+
+/* Smooth text gradient on hover */
+.text-hover-gradient:hover {
+  background: linear-gradient(135deg, #10b981, #06b6d4);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ─── Premium Focus States ───────────────────────── */
+
+.input-elite {
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.input-elite:focus {
+  border-color: rgba(16, 185, 129, 0.3);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.08), 0 0 20px rgba(16, 185, 129, 0.05);
+  outline: none;
+}
+
+/* ─── Smooth Page Transitions ────────────────────── */
+
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.page-enter {
+  animation: page-enter 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+/* ─── Marquee Animation (for InfiniteMarquee) ────── */
+
+@keyframes marquee-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
 }

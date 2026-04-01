@@ -1,3 +1,4 @@
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { apiLogger } from '@/lib/api-logger';
@@ -11,20 +12,33 @@ import { apiLogger } from '@/lib/api-logger';
  */
 
 export const config = {
-  matcher: ['/', '/landing/:path*', '/api/agents/:path*', '/dashboard/:path*', '/dashboard'],
+  matcher: [
+    // Skip Next.js internals and static files
+    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    // Always run for API routes
+    '/(api|trpc)(.*)',
+  ],
 };
 
 // In-memory rate limit tracking (per-edge-instance)
 const rateLimits = new Map<string, { count: number; resetAt: number }>();
+let rateLimitRequestCount = 0; // Track requests for periodic cleanup
+
+/** Pre-computed security headers (avoid recreating on every request) */
+const SECURITY_HEADERS: ReadonlyArray<[string, string]> = [
+  ['X-Content-Type-Options', 'nosniff'],
+  ['X-Frame-Options', 'DENY'],
+  ['X-XSS-Protection', '1; mode=block'],
+  ['Referrer-Policy', 'strict-origin-when-cross-origin'],
+  ['Permissions-Policy', 'camera=(), microphone=(self), geolocation=()'],
+  ['Strict-Transport-Security', 'max-age=31536000; includeSubDomains'],
+] as const;
 
 /** Apply enterprise security headers to all responses */
 function applySecurityHeaders(response: NextResponse): NextResponse {
-  response.headers.set('X-Content-Type-Options', 'nosniff');
-  response.headers.set('X-Frame-Options', 'DENY');
-  response.headers.set('X-XSS-Protection', '1; mode=block');
-  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-  response.headers.set('Permissions-Policy', 'camera=(), microphone=(self), geolocation=()');
-  response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  for (const [key, value] of SECURITY_HEADERS) {
+    response.headers.set(key, value);
+  }
   return response;
 }
 
@@ -35,8 +49,31 @@ const MAIN_DOMAINS = new Set([
   'localhost',
 ]);
 
-export function middleware(request: NextRequest) {
+const isProtectedRoute = createRouteMatcher(['/dashboard(.*)']);
+
+export default clerkMiddleware(async (auth, request) => {
+  if (isProtectedRoute(request)) {
+    const { userId } = await auth();
+    if (!userId) {
+      const signInUrl = new URL('/login', request.url);
+      signInUrl.searchParams.set('redirect_url', request.nextUrl.pathname);
+      return NextResponse.redirect(signInUrl);
+    }
+  }
+  return sovereignMiddleware(request as NextRequest);
+});
+
+function sovereignMiddleware(request: NextRequest) {
   const url = request.nextUrl;
+
+  // ── CORS PREFLIGHT HANDLING ──
+  if (request.method === 'OPTIONS') {
+    const preflight = new NextResponse(null, { status: 204 });
+    preflight.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    preflight.headers.set('Access-Control-Allow-Headers', 'Content-Type, x-api-key, Authorization');
+    preflight.headers.set('Access-Control-Max-Age', '86400');
+    return applySecurityHeaders(preflight);
+  }
 
   // ── WHITE-LABEL DOMAIN ROUTING ──
   // If the hostname is not a known main domain, tag the request so pages
@@ -46,24 +83,15 @@ export function middleware(request: NextRequest) {
   if (isWhitelabel) {
     const response = NextResponse.next();
     response.headers.set('X-Whitelabel-Domain', hostname);
+    response.headers.set('X-Request-Id', crypto.randomUUID());
     // Still apply security headers for white-label requests
     return applySecurityHeaders(response);
   }
 
-  // ── DASHBOARD AUTH PROTECTION ──
-  // Clerk sets __session cookie when user is authenticated
-  if (url.pathname.startsWith('/dashboard')) {
-    const sessionToken = request.cookies.get('__session')?.value || request.cookies.get('__clerk_db_jwt')?.value;
-    if (!sessionToken) {
-      // Redirect unauthenticated users to sign-in
-      const signInUrl = new URL('/', request.url);
-      signInUrl.searchParams.set('redirect_url', url.pathname);
-      return NextResponse.redirect(signInUrl);
-    }
-  }
+  // Dashboard auth is now handled by clerkMiddleware above via auth.protect()
 
-  // ── API GATEWAY for /api/agents/* ──
-  if (url.pathname.startsWith('/api/agents')) {
+  // ── API GATEWAY for /api/agents/* and /api/_agents/* ──
+  if (url.pathname.startsWith('/api/agents') || url.pathname.startsWith('/api/_agents')) {
     // Extract client identifier (API key, IP, or session)
     const apiKey = request.headers.get('x-api-key') || '';
     const clientIp = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'anonymous';
@@ -107,8 +135,9 @@ export function middleware(request: NextRequest) {
       rateLimits.set(clientId, { count: 1, resetAt: now + 60000 });
     }
 
-    // Cleanup stale entries — cap at 500 to bound memory
-    if (rateLimits.size > 500) {
+    // Cleanup stale entries every 100th request (avoid checking size on every request)
+    rateLimitRequestCount++;
+    if (rateLimitRequestCount % 100 === 0) {
       for (const [key, val] of rateLimits) {
         if (now >= val.resetAt) rateLimits.delete(key);
       }
@@ -126,7 +155,7 @@ export function middleware(request: NextRequest) {
 
     // Add metering headers
     const response = NextResponse.next();
-    response.headers.set('X-Sovereign-Agent', url.pathname.replace('/api/agents/', ''));
+    response.headers.set('X-Sovereign-Agent', url.pathname.replace('/api/_agents/', '').replace('/api/agents/', ''));
     response.headers.set('X-Sovereign-Timestamp', new Date().toISOString());
     response.headers.set('X-RateLimit-Remaining', String(Math.max(0, 100 - (rateLimits.get(clientId)?.count || 0))));
     
@@ -145,12 +174,25 @@ export function middleware(request: NextRequest) {
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     response.headers.set('Access-Control-Allow-Headers', 'Content-Type, x-api-key, Authorization');
 
+    // Add request ID for debugging
+    response.headers.set('X-Request-Id', crypto.randomUUID());
+
+    return applySecurityHeaders(response);
+  }
+
+  // ── STATIC ASSET CACHE HEADERS ──
+  if (!url.pathname.startsWith('/api') && !url.pathname.startsWith('/dashboard')) {
+    const response = NextResponse.next();
+    response.headers.set('Cache-Control', 'public, max-age=3600, s-maxage=86400');
+    response.headers.set('X-Request-Id', crypto.randomUUID());
     return applySecurityHeaders(response);
   }
 
   // ── A/B TESTING for /landing/* only ──
   if (!url.pathname.startsWith('/landing')) {
-    return applySecurityHeaders(NextResponse.next());
+    const response = NextResponse.next();
+    response.headers.set('X-Request-Id', crypto.randomUUID());
+    return applySecurityHeaders(response);
   }
 
   let cohort = request.cookies.get('sovereign_cohort')?.value;
@@ -170,5 +212,6 @@ export function middleware(request: NextRequest) {
     maxAge: 60 * 60 * 24 * 30,
   });
 
+  response.headers.set('X-Request-Id', crypto.randomUUID());
   return response;
 }

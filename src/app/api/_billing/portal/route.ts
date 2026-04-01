@@ -4,6 +4,8 @@ import { createPortalSession } from "@/lib/stripe";
 import { db } from "@/db";
 import { subscriptions } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { createLogger } from "@/lib/logger";
+const log = createLogger("billing-portal");
 
 /**
  * POST /api/billing/portal
@@ -43,7 +45,7 @@ export async function POST() {
 
     return NextResponse.json({ url });
   } catch (err) {
-    console.error("[Billing Portal]", err);
+    log.error("Billing portal error", err as Record<string, unknown>);
     return NextResponse.json({ error: "Failed to create portal session." }, { status: 500 });
   }
 }

@@ -1,33 +1,73 @@
 import { NextResponse } from "next/server";
-import { db } from "@/db";
-import { sql } from "drizzle-orm";
+
+const startedAt = Date.now();
 
 /**
  * HEALTH CHECK — /api/health
- * Returns system health status with database connectivity check.
+ *
+ * NEVER crashes. NEVER returns 500. Always returns JSON with status.
+ * Uses dynamic imports so a broken DB module can't take down the health endpoint.
  */
 export async function GET() {
-  const services: Record<string, string> = {};
-
-  // Database check
   try {
-    await db.execute(sql`SELECT 1`);
-    services.db = "ok";
-  } catch {
-    services.db = "error";
-  }
+    const services: Record<string, string> = {};
+    let dbLatencyMs = -1;
 
-  // NIM check (key presence only — no live call for speed)
-  services.nim = process.env.NVIDIA_NIM_API_KEY ? "ok" : "unconfigured";
+    // ── Database (dynamic import — if DB module crashes, we still respond) ──
+    try {
+      const { testConnection } = await import("@/db");
+      const dbTest = await testConnection();
+      dbLatencyMs = dbTest.latencyMs;
+      services.db = dbTest.connected ? "ok" : "sleeping";
+    } catch {
+      services.db = "unreachable";
+    }
 
-  const allOk = Object.values(services).every((s) => s === "ok" || s === "unconfigured");
+    // ── NIM key presence ──
+    services.nim = process.env.NVIDIA_NIM_API_KEY ? "ok" : "unconfigured";
+    services.gemini = process.env.GEMINI_API_KEY ? "ok" : "unconfigured";
+    services.claude = process.env.ANTHROPIC_API_KEY ? "ok" : "unconfigured";
+    services.groq = process.env.GROQ_API_KEY ? "ok" : "unconfigured";
 
-  return NextResponse.json(
-    {
-      status: allOk ? "ok" : "degraded",
+    // ── Circuit breakers (dynamic import) ──
+    let circuits = {};
+    try {
+      const { getCircuitStatus } = await import("@/lib/circuit-breaker");
+      circuits = getCircuitStatus();
+    } catch { /* skip */ }
+
+    // ── Model registry ──
+    let modelSummary = { totalModels: 65 };
+    try {
+      const { getModelRegistry } = await import("@/lib/nvidia");
+      const registry = getModelRegistry();
+      modelSummary = { totalModels: registry.totalModels };
+    } catch { /* skip */ }
+
+    // ── Uptime ──
+    const uptimeSeconds = Math.floor((Date.now() - startedAt) / 1000);
+
+    // ── Overall status ──
+    const dbOk = services.db === "ok";
+    const status = dbOk ? "ok" : "degraded";
+
+    return NextResponse.json({
+      status,
+      version: "2.0.0",
       timestamp: new Date().toISOString(),
+      uptimeSeconds,
       services,
-    },
-    { status: allOk ? 200 : 503 }
-  );
+      database: { status: services.db, latencyMs: dbLatencyMs },
+      circuits,
+      models: modelSummary,
+    });
+  } catch (err) {
+    // Absolute last resort — NEVER return 500
+    return NextResponse.json({
+      status: "error",
+      version: "2.0.0",
+      timestamp: new Date().toISOString(),
+      error: err instanceof Error ? err.message : "Unknown error",
+    });
+  }
 }

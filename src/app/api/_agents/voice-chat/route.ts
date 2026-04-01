@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
 /**
@@ -6,6 +7,8 @@ import { NextResponse } from "next/server";
  */
 export async function POST(req: Request) {
   try {
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     const { message, conversationHistory = [] } = await req.json();
     if (!message) return NextResponse.json({ error: "Missing message." }, { status: 400 });
 
@@ -13,7 +16,7 @@ export async function POST(req: Request) {
     if (!nimKey) return NextResponse.json({ error: "NVIDIA_NIM_API_KEY not configured." }, { status: 500 });
 
     const messages = [
-      { role: "system", content: "You are Sovereign Copilot, a voice-first AI assistant. Keep responses concise (2-3 sentences max), natural, and conversational. Avoid bullet points and markdown — speak like a human advisor." },
+      { role: "system", content: "You are Sovereign Copilot, a voice-first AI assistant. IMPORTANT: If this is an outbound call, you MUST identify yourself as an AI assistant at the start. Keep responses concise (2-3 sentences max), natural, and conversational. Avoid bullet points and markdown — speak like a human advisor." },
       ...conversationHistory.slice(-10),
       { role: "user", content: message },
     ];
@@ -53,7 +56,7 @@ export async function POST(req: Request) {
       response: data.choices?.[0]?.message?.content || "No response generated.",
       model: "nemotron-voicechat",
     });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
   }
 }

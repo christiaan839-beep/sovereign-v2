@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
 /**
@@ -6,6 +7,8 @@ import { NextResponse } from "next/server";
  */
 export async function POST(req: Request) {
   try {
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     const { query, documents } = await req.json();
     if (!query || !documents || !Array.isArray(documents)) {
       return NextResponse.json({ error: "Missing `query` (string) and `documents` (string[])." }, { status: 400 });
@@ -37,7 +40,7 @@ export async function POST(req: Request) {
       rankings: data.rankings || [],
       model: "llama-nemotron-rerank-1b-v2",
     });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
   }
 }

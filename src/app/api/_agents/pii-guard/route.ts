@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
 /**
@@ -7,6 +8,8 @@ import { NextResponse } from "next/server";
  */
 export async function POST(req: Request) {
   try {
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     const { text, action = "detect" } = await req.json();
     if (!text) return NextResponse.json({ error: "Missing `text`." }, { status: 400 });
 
@@ -37,7 +40,7 @@ export async function POST(req: Request) {
         credit_card: /\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g,
       };
 
-      const piiFound: any[] = [];
+      const piiFound: { type: string; value: string; position: number }[] = [];
       let cleanText = text;
 
       for (const [type, pattern] of Object.entries(patterns)) {
@@ -70,7 +73,7 @@ export async function POST(req: Request) {
     } catch {
       return NextResponse.json({ pii_found: [], clean_text: text, pii_count: 0, model: "gliner-pii", raw: raw.slice(0, 200) });
     }
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
   }
 }

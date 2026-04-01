@@ -3,6 +3,8 @@ import { google } from "@ai-sdk/google";
 import { ai } from "@/lib/ai";
 import { nimChat, getNimKey } from "@/lib/nvidia";
 import { requireAuth } from "@/lib/auth-guard";
+import { createLogger } from "@/lib/logger";
+const log = createLogger("ai-stream");
 
 export async function POST(req: Request) {
   const auth = await requireAuth(); if (auth.error) return auth.error;
@@ -11,6 +13,52 @@ export async function POST(req: Request) {
 
   const encoder = new TextEncoder();
   const signal = req.signal;
+
+  // ─── FAST CHAT PATH: Groq for sub-500ms response ───
+  const isSimpleChat = prompt.length < 500 && !prompt.includes("analyze") && !prompt.includes("research") && !prompt.includes("code") && !prompt.includes("build") && !prompt.includes("find leads");
+
+  if (isSimpleChat && !thinking) {
+    const groqKey = process.env.GROQ_API_KEY;
+    if (groqKey) {
+      const Groq = (await import("groq-sdk")).default;
+      const client = new Groq({ apiKey: groqKey });
+
+      const stream = new ReadableStream({
+        async start(controller) {
+          try {
+            const completion = await client.chat.completions.create({
+              model: "llama-3.1-8b-instant",
+              messages: [
+                ...(systemInstruction ? [{ role: "system" as const, content: systemInstruction }] : []),
+                { role: "user" as const, content: prompt },
+              ],
+              max_tokens: 1000,
+              stream: true,
+            });
+
+            for await (const chunk of completion) {
+              if (signal.aborted) break;
+              const text = chunk.choices[0]?.delta?.content || "";
+              if (text) {
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "text", text })}\n\n`));
+              }
+            }
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "done" })}\n\n`));
+            controller.close();
+          } catch (err) {
+            log.error("Groq fast-path error", err as Record<string, unknown>);
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "error", error: String(err) })}\n\n`));
+            controller.close();
+          }
+        },
+        cancel() {},
+      });
+
+      return new Response(stream, {
+        headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive" },
+      });
+    }
+  }
 
   // ─── THINKING MODE: Stream reasoning first, then answer ───
   if (thinking) {
@@ -104,7 +152,7 @@ export async function POST(req: Request) {
           controller.close();
         } catch (err) {
           if (!signal.aborted) {
-            console.error("[AI Stream] thinking mode error:", err);
+            log.error("Thinking mode error", err as Record<string, unknown>);
           }
           try {
             controller.enqueue(encoder.encode(`data: [DONE]\n\n`));
@@ -147,7 +195,7 @@ export async function POST(req: Request) {
             try { controller.close(); } catch {}
             return;
           }
-          console.error("[AI Stream] token iteration error:", err);
+          log.error("Token iteration error", err as Record<string, unknown>);
           try {
             controller.enqueue(encoder.encode(`data: [DONE]\n\n`));
             controller.close();
@@ -161,7 +209,7 @@ export async function POST(req: Request) {
       headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive" },
     });
   } catch (error) {
-    console.error("[AI Stream] primary streaming failed, falling back:", error);
+    log.error("Primary streaming failed, falling back", error as Record<string, unknown>);
 
     try {
       const useModel = model === "claude" ? "claude" : "gemini";
@@ -198,7 +246,7 @@ export async function POST(req: Request) {
         headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive" },
       });
     } catch (fallbackError) {
-      console.error("[AI Stream] fallback also failed:", fallbackError);
+      log.error("Fallback also failed", fallbackError as Record<string, unknown>);
       return new Response("Stream failed", { status: 500 });
     }
   }

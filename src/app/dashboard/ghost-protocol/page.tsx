@@ -75,12 +75,18 @@ export default function GhostProtocolDashboard() {
   };
 
   const executeNemoClaw = async () => {
-    addLog("WARNING: Handing off payload to local OpenClaw daemon (port 18789)...");
+    const nemoclawUrl = process.env.NEXT_PUBLIC_NEMOCLAW_URL || null;
+    if (!nemoclawUrl) {
+      addLog("NemoClaw is not configured. Go to Settings \u2192 API Keys to set your NemoClaw URL.");
+      addLog("NemoClaw requires a local daemon. This feature is for users running Sovereign Matrix on their own hardware. See docs for setup instructions.");
+      return;
+    }
+
+    addLog("WARNING: Handing off payload to local OpenClaw daemon...");
     addLog("NemoClaw taking physical control of OS to dispatch LinkedIn connection request.");
-    
-    // Attempt local execution for the demo
+
     try {
-      const res = await fetch("http://localhost:18789/v1/chat/completions", {
+      const res = await fetch(`${nemoclawUrl}/v1/chat/completions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -89,9 +95,9 @@ export default function GhostProtocolDashboard() {
         })
       });
       if (res.ok) addLog("OpenClaw acknowledged. Physical execution initiated.");
-      else addLog("OpenClaw daemon not detected running locally on port 18789.");
+      else addLog("OpenClaw daemon did not respond successfully. Check your NemoClaw configuration.");
     } catch {
-      addLog("CONNECTION REFUSED: OpenClaw daemon is not running on localhost:18789. Start it via terminal.");
+      addLog("NemoClaw requires a local daemon. This feature is for users running Sovereign Matrix on their own hardware. See docs for setup instructions.");
     }
   };
 
@@ -107,7 +113,10 @@ export default function GhostProtocolDashboard() {
               Ghost Fleet SDR
             </h1>
             <p className="text-[#00B7FF]/60 mt-2 uppercase text-xs tracking-widest flex items-center gap-2">
-              <Crosshair className="w-4 h-4" /> Competitor Sniper Pipeline
+              <Crosshair className="w-4 h-4" /> Competitor Outreach Pipeline
+            </p>
+            <p className="text-sm text-neutral-400 mt-2 normal-case tracking-normal max-w-xl">
+              Analyze competitor reviews and auto-generate targeted outreach sequences.
             </p>
           </div>
           <div className="text-right text-xs bg-black/50 p-3 rounded-lg border border-red-500/20">
@@ -136,7 +145,7 @@ export default function GhostProtocolDashboard() {
                     <input
                       type="text"
                       aria-label="Competitor name or domain"
-                      className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-[#00B7FF]/50 transition-colors placeholder:text-neutral-600"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-[#00B7FF]/50 transition-colors placeholder:text-neutral-500"
                       placeholder="e.g. Salesforce, GoHighLevel, HubSpot"
                       value={target}
                       onChange={e => setTarget(e.target.value)}
@@ -163,7 +172,7 @@ export default function GhostProtocolDashboard() {
                   { p: 3, label: "Nemotron Synthesis" },
                   { p: 4, label: "Target Locked" }
                 ].map((step, idx) => (
-                  <div key={idx} className={`flex items-center gap-3 text-xs uppercase tracking-widest ${phase >= step.p ? "text-white" : "text-neutral-600"}`}>
+                  <div key={idx} className={`flex items-center gap-3 text-xs uppercase tracking-widest ${phase >= step.p ? "text-white" : "text-neutral-500"}`}>
                     <div className={`w-3 h-3 rounded-full border ${phase > step.p ? "bg-[#00B7FF] border-[#00B7FF]" : phase === step.p ? "border-[#00B7FF] animate-ping" : "border-neutral-700"}`} />
                     {step.label}
                   </div>
@@ -221,7 +230,7 @@ export default function GhostProtocolDashboard() {
                          <span className="text-[10px] text-red-500 uppercase font-bold tracking-widest block mb-2 flex items-center gap-1">
                            <ShieldAlert className="w-3 h-3" /> Intercepted {result.complaint.source} Complaint:
                          </span>
-                         <p className="text-sm text-neutral-300 italic">"{result.complaint.text}"</p>
+                         <p className="text-sm text-neutral-300 italic">&ldquo;{result.complaint.text}&rdquo;</p>
                       </div>
                     </div>
 

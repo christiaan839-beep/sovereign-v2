@@ -4,6 +4,8 @@ import { generateText } from "ai";
 import { db } from "@/db";
 import { globalTelemetry } from "@/db/schema";
 import { requireAuth } from "@/lib/auth-guard";
+import { createLogger } from "@/lib/logger";
+const log = createLogger("launch-outreach");
 
 /**
  * Launch Outreach API
@@ -64,7 +66,7 @@ Output ONLY the JSON.`,
 
     return NextResponse.json({ success: true, email: parsed });
   } catch (error) {
-    console.error("[Launch Outreach Error]:", error);
+    log.error("Launch outreach error", error as Record<string, unknown>);
     return NextResponse.json({ error: "Outreach generation failed" }, { status: 500 });
   }
 }

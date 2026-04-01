@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
+import { createLogger } from "@/lib/logger";
+const log = createLogger("telegram-webhook");
 
 type TelegramUpdate = {
   update_id: number;
@@ -17,7 +19,7 @@ const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 
 async function sendTelegramMessage(chatId: string | number, text: string) {
   if (!TELEGRAM_BOT_TOKEN) {
-    console.error("[MATRIX-NODE] Telegram Bot Token missing.");
+    log.error("Telegram Bot Token missing");
     return;
   }
   
@@ -32,7 +34,7 @@ async function sendTelegramMessage(chatId: string | number, text: string) {
       })
     });
   } catch (error) {
-    console.error("[MATRIX-NODE] Telegram Transport Error:", error);
+    log.error("Telegram transport error", error as Record<string, unknown>);
   }
 }
 
@@ -43,7 +45,7 @@ export async function POST(req: Request) {
     const secretToken = headerPayload.get('X-Telegram-Bot-Api-Secret-Token');
     
     if (process.env.TELEGRAM_WEBHOOK_SECRET && secretToken !== process.env.TELEGRAM_WEBHOOK_SECRET) {
-        console.error("[MATRIX-NODE] Unauthorized Webhook Invocation Detected.");
+        log.error("Unauthorized webhook invocation detected");
         return NextResponse.json({ error: 'Unauthorized Interception' }, { status: 403 });
     }
 
@@ -84,7 +86,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ status: 'executed' });
   } catch (error) {
-    console.error("[MATRIX-NODE] Critical Router Failure:", error);
+    log.error("Critical router failure", error as Record<string, unknown>);
     return NextResponse.json({ error: 'Internal Core Error' }, { status: 500 });
   }
 }

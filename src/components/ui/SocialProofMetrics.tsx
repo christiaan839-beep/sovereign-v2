@@ -87,13 +87,13 @@ function StaticMetric({ value }: { value: string }) {
 export function SocialProofMetrics() {
   const metrics = [
     {
-      target: 132,
-      suffix: "+",
+      target: 124,
+      suffix: "",
       label: "AI Agents",
       desc: "Purpose-built for every business function",
     },
     {
-      target: 51,
+      target: 65,
       suffix: "+",
       label: "Open-Source Models",
       desc: "Auto-routed to the best model per task",

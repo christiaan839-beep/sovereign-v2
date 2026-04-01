@@ -258,7 +258,7 @@ export default function AgentWorldPage() {
                 <button
                   onClick={() => setSelectedAgent(null)}
                   aria-label="Close agent details panel"
-                  className="mb-4 text-neutral-600 hover:text-white text-xs transition-colors"
+                  className="mb-4 text-neutral-500 hover:text-white text-xs transition-colors"
                 >
                   Close
                 </button>
@@ -283,7 +283,7 @@ export default function AgentWorldPage() {
 
                 {/* Last Action */}
                 <div className="mb-6">
-                  <h3 className="text-[10px] font-bold uppercase tracking-widest text-neutral-600 mb-2">
+                  <h3 className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 mb-2">
                     Last Action
                   </h3>
                   <p className="text-xs text-neutral-300 font-mono">{selectedMeta.lastAction}</p>
@@ -292,7 +292,7 @@ export default function AgentWorldPage() {
                 {/* Activities */}
                 {agentActivities.length > 0 && (
                   <div className="mb-6">
-                    <h3 className="text-[10px] font-bold uppercase tracking-widest text-neutral-600 mb-2">
+                    <h3 className="text-[10px] font-bold uppercase tracking-widest text-neutral-500 mb-2">
                       Recent Activity
                     </h3>
                     <div className="space-y-2">
@@ -302,7 +302,7 @@ export default function AgentWorldPage() {
                           className="p-2 rounded-lg bg-white/[0.03] border border-white/[0.04]"
                         >
                           <p className="text-[11px] text-neutral-300">{a.action}</p>
-                          <p className="text-[9px] text-neutral-600 mt-0.5 font-mono">
+                          <p className="text-[9px] text-neutral-500 mt-0.5 font-mono">
                             {a.timestamp}
                           </p>
                         </div>

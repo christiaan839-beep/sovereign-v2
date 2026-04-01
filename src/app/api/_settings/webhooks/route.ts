@@ -3,6 +3,8 @@ import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { settings } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { createLogger } from "@/lib/logger";
+const log = createLogger("settings-webhooks");
 
 export async function GET() {
   const user = await currentUser();
@@ -19,7 +21,7 @@ export async function GET() {
 
     return NextResponse.json({ webhooks: userSettings?.webhooks || "{}" });
   } catch (err) {
-    console.error("GET /api/settings/webhooks error:", err);
+    log.error("GET /api/settings/webhooks error", err as Record<string, unknown>);
     return NextResponse.json({ error: "Server Error" }, { status: 500 });
   }
 }
@@ -53,7 +55,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true });
   } catch (err) {
-    console.error("POST /api/settings/webhooks error:", err);
+    log.error("POST /api/settings/webhooks error", err as Record<string, unknown>);
     return NextResponse.json({ error: "Server Error" }, { status: 500 });
   }
 }

@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
 
     const result = await research_ai(
       `${cleanUrl} marketing strategy SEO website analysis`,
-      `You are the Sovereign Matrix Super 120B God-Brain. Analyze this target competitor agency website in 30 seconds and ruthlessly expose their inefficiencies.
+      `You are the Sovereign Matrix Super 120B God-Brain. Analyze this target competitor agency website in 30 seconds and strategicly expose their inefficiencies.
 
 TARGET: ${cleanUrl}
 

@@ -3,6 +3,8 @@ import { ai } from "@/lib/ai";
 import { ANTI_SLOP_RULES } from "@/lib/content-engine";
 import { fireUserWebhook } from "@/lib/webhooks";
 import { requireAuth } from "@/lib/auth-guard";
+import { createLogger } from "@/lib/logger";
+const log = createLogger("leads-agent");
 
 export async function POST(req: Request) {
   const auth = await requireAuth(); 
@@ -48,7 +50,7 @@ Return EXACTLY this JSON structure, and nothing else:
         const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
         parsed = JSON.parse(cleaned);
       } catch {
-        console.error("Failed to parse prospector AI output:", text);
+        log.error("Failed to parse prospector AI output", { text });
         return NextResponse.json({ error: "AI returned invalid structure." }, { status: 500 });
       }
 
@@ -61,7 +63,7 @@ Return EXACTLY this JSON structure, and nothing else:
       };
 
       // Auto-handoff to outreach agent
-      fetch(new URL("/api/agents/comms", req.url).toString(), {
+      fetch(new URL("/api/_agents/comms", req.url).toString(), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -78,7 +80,7 @@ Return EXACTLY this JSON structure, and nothing else:
 
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
   } catch (error) {
-    console.error("[Leads API Error]:", error);
+    log.error("Leads API error", error as Record<string, unknown>);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

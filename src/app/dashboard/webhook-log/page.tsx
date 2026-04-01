@@ -95,7 +95,7 @@ export default function WebhookLogPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className={`text-xs font-semibold ${SERVICE_COLORS[ev.service] || "text-neutral-400"}`}>{ev.service}</span>
-                      <span className="text-[11px] text-neutral-600">{ev.ts}</span>
+                      <span className="text-[11px] text-neutral-500">{ev.ts}</span>
                     </div>
                     <p className="text-sm text-neutral-300 truncate mt-0.5">{ev.preview}</p>
                   </div>
@@ -105,12 +105,12 @@ export default function WebhookLogPage() {
                   </span>
                   {isFailed && (
                     <button aria-label={`Retry event ${ev.id}`} onClick={(e) => { e.stopPropagation(); }}
-                      className="p-1.5 rounded-lg text-neutral-600 hover:text-amber-400 hover:bg-amber-500/10 transition-colors">
+                      className="p-1.5 rounded-lg text-neutral-500 hover:text-amber-400 hover:bg-amber-500/10 transition-colors">
                       <RefreshCw className="w-3.5 h-3.5" />
                     </button>
                   )}
                   <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.15 }}>
-                    <ChevronDown className="w-4 h-4 text-neutral-600" />
+                    <ChevronDown className="w-4 h-4 text-neutral-500" />
                   </motion.div>
                 </button>
                 {/* Expanded payload */}

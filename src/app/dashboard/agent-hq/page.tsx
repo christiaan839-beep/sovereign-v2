@@ -171,7 +171,7 @@ export default function AgentHQPage() {
                     <span className="text-sm font-semibold text-white truncate">
                       {agent.name}
                     </span>
-                    {React.createElement(agent.icon, { className: "w-3.5 h-3.5 text-neutral-600 shrink-0" })}
+                    {React.createElement(agent.icon, { className: "w-3.5 h-3.5 text-neutral-500 shrink-0" })}
                   </div>
                   <p className="text-[11px] text-neutral-500 leading-snug mt-0.5 line-clamp-2">
                     {agent.description}
@@ -186,7 +186,7 @@ export default function AgentHQPage() {
                 >
                   {agent.status}
                 </span>
-                <span className="text-[10px] text-neutral-600 font-mono">
+                <span className="text-[10px] text-neutral-500 font-mono">
                   {agent.lastAction}
                 </span>
               </div>
@@ -211,7 +211,7 @@ export default function AgentHQPage() {
             {loadingFeed ? (
               <div className="px-5 py-8 text-center">
                 <div className="inline-block w-4 h-4 border-2 border-[#00B7FF]/30 border-t-[#00B7FF] rounded-full animate-spin" />
-                <p className="text-neutral-600 text-xs mt-3 font-mono">
+                <p className="text-neutral-500 text-xs mt-3 font-mono">
                   Loading activity feed...
                 </p>
               </div>
@@ -222,7 +222,7 @@ export default function AgentHQPage() {
                     key={i}
                     className="flex items-start gap-4 px-5 py-3 hover:bg-white/[0.02] transition-colors"
                   >
-                    <span className="text-[10px] text-neutral-600 font-mono whitespace-nowrap pt-0.5">
+                    <span className="text-[10px] text-neutral-500 font-mono whitespace-nowrap pt-0.5">
                       {entry.timestamp || "--:--"}
                     </span>
                     <span className="text-xs font-semibold text-emerald-400 whitespace-nowrap">

@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import { getNimKey } from "@/lib/nvidia";
 import { NextResponse } from "next/server";
 
@@ -21,6 +22,8 @@ const LANGUAGE_NAMES: Record<string, string> = {
 
 export async function POST(request: Request) {
   try {
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     const { text, source_lang = "en", target_lang } = await request.json();
 
     if (!text || !target_lang) {

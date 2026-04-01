@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
 /**
@@ -6,6 +7,8 @@ import { NextResponse } from "next/server";
  */
 export async function POST(req: Request) {
   try {
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     const { texts } = await req.json();
     if (!texts || !Array.isArray(texts) || texts.length === 0) {
       return NextResponse.json({ error: "Missing `texts` array." }, { status: 400 });
@@ -34,11 +37,11 @@ export async function POST(req: Request) {
 
     const data = await res.json();
     return NextResponse.json({
-      embeddings: data.data?.map((d: any) => d.embedding) || [],
+      embeddings: data.data?.map((d: { embedding: number[] }) => d.embedding) || [],
       model: "llama-nemotron-embed-1b-v2",
       usage: data.usage,
     });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
   }
 }

@@ -305,7 +305,7 @@ export default function AutomationsPage() {
                   {isActive ? (
                     <ToggleRight className="w-8 h-8 text-emerald-400" />
                   ) : (
-                    <ToggleLeft className="w-8 h-8 text-neutral-600" />
+                    <ToggleLeft className="w-8 h-8 text-neutral-500" />
                   )}
                 </button>
               </div>
@@ -319,7 +319,7 @@ export default function AutomationsPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.6 }}
-        className="mt-8 text-center text-xs text-neutral-600 font-mono"
+        className="mt-8 text-center text-xs text-neutral-500 font-mono"
       >
         Automations run on Sovereign Matrix infrastructure. Custom schedules coming soon.
       </motion.p>

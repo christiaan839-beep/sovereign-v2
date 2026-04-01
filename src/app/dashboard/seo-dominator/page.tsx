@@ -234,7 +234,7 @@ export default function SEODominatorPage() {
                     onChange={(e) =>
                       setFormData((prev) => ({ ...prev, [field.name]: e.target.value }))
                     }
-                    className="w-full bg-black/60 border border-[#00B7FF]/20 rounded-xl px-4 py-3 text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-[#00B7FF]/50 transition-colors font-mono"
+                    className="w-full bg-black/60 border border-[#00B7FF]/20 rounded-xl px-4 py-3 text-sm text-white placeholder:text-neutral-500 focus:outline-none focus:border-[#00B7FF]/50 transition-colors font-mono"
                   />
                 </div>
               ))}
@@ -313,7 +313,7 @@ export default function SEODominatorPage() {
         <div className="text-center py-16">
           <Search className="w-8 h-8 text-neutral-700 mx-auto mb-3" />
           <p className="text-sm text-neutral-500">Select a tool above to get started</p>
-          <p className="text-[10px] text-neutral-600 mt-1">Choose X-Ray, Gap Killer, Schema Audit, or GBP Hijack</p>
+          <p className="text-[10px] text-neutral-500 mt-1">Choose X-Ray, Gap Killer, Schema Audit, or GBP Hijack</p>
         </div>
       )}
     </div>

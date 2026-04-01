@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { ai, adaptive_ai } from "@/lib/ai";
 import { remember, recall } from "@/lib/memory";
@@ -11,6 +12,8 @@ import { remember, recall } from "@/lib/memory";
 
 export async function POST(request: Request) {
   try {
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     const { action, samples, prompt, brand_name } = await request.json();
 
     // ACTION: LEARN — Ingest sample content to learn the brand voice

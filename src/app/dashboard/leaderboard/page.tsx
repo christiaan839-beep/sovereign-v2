@@ -157,10 +157,10 @@ export default function LeaderboardPage() {
                   <span className={`text-[9px] uppercase tracking-widest ${b.status.includes("✅") ? "text-emerald-400" : "text-red-400"}`}>{b.status}</span>
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-center">
-                  <div><p className="text-lg font-black text-[#00B7FF]">{b.duration_ms}ms</p><p className="text-[8px] text-neutral-600">Speed</p></div>
-                  <div><p className="text-lg font-black text-[#A855F7]">{b.tokens_per_second}</p><p className="text-[8px] text-neutral-600">Tokens/sec</p></div>
+                  <div><p className="text-lg font-black text-[#00B7FF]">{b.duration_ms}ms</p><p className="text-[8px] text-neutral-500">Speed</p></div>
+                  <div><p className="text-lg font-black text-[#A855F7]">{b.tokens_per_second}</p><p className="text-[8px] text-neutral-500">Tokens/sec</p></div>
                 </div>
-                <p className="text-[10px] text-neutral-600 leading-relaxed">{b.output_preview?.substring(0, 120)}...</p>
+                <p className="text-[10px] text-neutral-500 leading-relaxed">{b.output_preview?.substring(0, 120)}...</p>
               </div>
             ))}
           </div>

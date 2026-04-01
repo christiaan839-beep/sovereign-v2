@@ -146,7 +146,7 @@ export default function DigitalHumanAvatarPage() {
 
             <div className="p-8 flex-1 flex flex-col justify-center items-center relative overflow-hidden">
                {pipelineStatus === "idle" && (
-                <div className="text-center text-neutral-600 font-mono text-xs uppercase tracking-widest z-10">
+                <div className="text-center text-neutral-500 font-mono text-xs uppercase tracking-widest z-10">
                   Awaiting instantiation sequence... <br/><br/>
                   1. Audio2Face extracts facial mesh <br/>
                   2. Riva TTS maps phonemes to lip movements <br/>

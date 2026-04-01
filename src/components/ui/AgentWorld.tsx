@@ -10,7 +10,7 @@ import { AgentAvatar, type AgentPersonality } from "@/components/ui/AgentAvatar"
  * AI agents collaborating in real-time. Each agent has a role,
  * workspace, and active conversation/task.
  *
- * Used on the landing page to demonstrate what "132 autonomous agents"
+ * Used on the landing page to demonstrate what "124 autonomous agents"
  * actually looks like in practice.
  */
 
@@ -51,7 +51,7 @@ export function AgentWorld() {
   const [activeConvo, setActiveConvo] = useState(0);
   const [hoveredAgent, setHoveredAgent] = useState<string | null>(null);
   const [systemStatus, setSystemStatus] = useState<"online" | "offline" | "checking">("checking");
-  const [agentCount, setAgentCount] = useState(132);
+  const [agentCount, setAgentCount] = useState(124);
 
   // Check real system health
   useEffect(() => {

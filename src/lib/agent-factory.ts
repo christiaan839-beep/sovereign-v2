@@ -26,9 +26,10 @@ import { NextResponse } from "next/server";
 import { guardRoute, sanitizeString, errorResponse } from "@/lib/api-guard";
 import { detectJailbreak } from "@/lib/jailbreak-detect";
 import { checkContentSafety } from "@/lib/content-safety";
-import { checkFreeUsage, incrementUsage, getUpgradePrompt } from "@/lib/free-tier";
+import { checkFreeUsage, incrementUsage, getUpgradePrompt, getSmartUpgradeInfo } from "@/lib/free-tier";
 import { scoreOutput, type QualityScore } from "@/lib/quality-scorer";
 import { createLogger } from "@/lib/logger";
+import { auditLog } from "@/lib/audit-log";
 import { getAntiSlopRules } from "@/lib/system-prompts";
 import { trackAgentExecution } from "@/lib/analytics";
 import { getMemoryContext, saveMemory } from "@/lib/tenant-memory";
@@ -62,6 +63,9 @@ export interface AgentConfig {
 
   /** Skip quality scoring on output (for scoring/safety agents themselves) */
   skipQualityCheck?: boolean;
+
+  /** Enable/disable Critic Agent QA gate (default: true for all agents) */
+  useCritic?: boolean;
 
   /** Quality score threshold — output below this triggers regeneration (default: 0.6) */
   qualityThreshold?: number;
@@ -102,12 +106,23 @@ export function createAgentRoute(config: AgentConfig) {
 
       // ─── Free Tier Usage Check ───
       if (userId) {
-        const usage = checkFreeUsage(userId);
-        if (!usage.allowed) {
+        const usageCheck = await checkFreeUsage(userId);
+        if (!usageCheck.allowed) {
+          const upgradeInfo = await getSmartUpgradeInfo(userId);
           return new NextResponse(
             JSON.stringify({
               error: "Usage limit reached",
-              message: getUpgradePrompt(userId),
+              message: `You've used all ${upgradeInfo.currentLimit} runs this month on the ${upgradeInfo.currentPlan.charAt(0).toUpperCase() + upgradeInfo.currentPlan.slice(1)} plan.`,
+              upgrade: {
+                currentPlan: upgradeInfo.currentPlan,
+                currentLimit: upgradeInfo.currentLimit,
+                used: upgradeInfo.used,
+                nextPlan: upgradeInfo.nextPlan,
+                nextLimit: upgradeInfo.nextLimit,
+                nextPrice: upgradeInfo.nextPrice,
+                upgradeUrl: upgradeInfo.upgradeUrl,
+                resetDate: upgradeInfo.resetDate,
+              },
               code: "USAGE_LIMIT_REACHED",
             }),
             {
@@ -302,6 +317,26 @@ export function createAgentRoute(config: AgentConfig) {
         }
       }
 
+      // ─── Critic Agent — QA gate for high-value outputs ───
+      if (config.useCritic !== false && finalResult.output && typeof finalResult.output === "string" && finalResult.output.length > 100) {
+        try {
+          const { criticReview } = await import("@/lib/critic");
+          const review = await criticReview(
+            typeof body.prompt === "string" ? body.prompt : config.name,
+            finalResult.output as string,
+            config.name,
+            { threshold: 0.7, autoCorrect: true }
+          );
+          if (review.correctedOutput && !review.approved) {
+            finalResult.output = review.correctedOutput;
+            (finalResult as Record<string, unknown>)._criticFeedback = review.feedback;
+            (finalResult as Record<string, unknown>)._criticScore = review.score;
+          }
+        } catch (criticErr) {
+          log.warn("Critic review skipped", { agent: config.name, error: String(criticErr) });
+        }
+      }
+
       // ─── Save to Tenant Memory ───
       if (userId) {
         const inputText = getFirstStringValue(sanitized);
@@ -315,13 +350,21 @@ export function createAgentRoute(config: AgentConfig) {
         }
       }
 
-      // ─── Track Usage & Return Response ───
+      // ─── Track Usage, Audit Log & Return Response ───
       if (userId) {
-        incrementUsage(userId);
+        await incrementUsage(userId, config.name);
+        // Audit every agent execution (SOC 2 compliance)
+        auditLog({
+          userId,
+          action: "agent.execute",
+          resource: config.name,
+          details: { durationMs: Date.now() - startTime, success: true },
+        }).catch(() => {}); // Non-blocking
       }
       trackAgentExecution(config.name, Date.now() - startTime, true);
 
-      const remaining = userId ? checkFreeUsage(userId).remaining : undefined;
+      const remainingCheck = userId ? await checkFreeUsage(userId) : undefined;
+      const remaining = remainingCheck?.remaining;
       const response = NextResponse.json({
         ...finalResult,
         _meta: {
@@ -342,7 +385,13 @@ export function createAgentRoute(config: AgentConfig) {
       trackAgentExecution(config.name, Date.now() - startTime, false);
       const message = error instanceof Error ? error.message : "Unknown error";
       log.error("Agent execution failed", { agent: config.name, error: message });
-      return errorResponse(message, 500, "AGENT_ERROR");
+
+      // Persist error for monitoring dashboard
+      const { reportError } = await import("@/lib/error-reporter");
+      reportError(error, `agent:${config.name}`, { agentId: config.name, userId: userId ?? undefined, severity: "high" });
+
+      const userMessage = "Something went wrong while running this agent. Our team has been notified. Try again or contact support.";
+      return errorResponse(userMessage, 500, "AGENT_ERROR");
     }
   };
 }

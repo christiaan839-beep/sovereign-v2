@@ -66,7 +66,7 @@ export default function ApiKeysPage() {
           <Key className="w-6 h-6 text-rose-400" /> Bring Your Own Key (BYOK)
         </h1>
         <p className="text-neutral-400">
-          Enter your own API keys to bypass SOVEREIGN's global rate limits. If you provide a key here, the Swarm will use it instead of our master keys. 
+          Enter your own API keys to bypass SOVEREIGN&apos;s global rate limits. If you provide a key here, the Swarm will use it instead of our master keys.
           <strong className="text-white ml-1">Your keys are encrypted at rest.</strong>
         </p>
       </div>
@@ -87,7 +87,7 @@ export default function ApiKeysPage() {
               value={keys.nvidia}
               onChange={(e) => setKeys({...keys, nvidia: e.target.value})}
               placeholder="nvapi-..."
-              className="w-full bg-black/40 border border-emerald-500/20 rounded-xl px-4 py-3 text-white placeholder:text-neutral-600 focus:outline-none focus:border-emerald-500/50 font-mono transition-colors"
+              className="w-full bg-black/40 border border-emerald-500/20 rounded-xl px-4 py-3 text-white placeholder:text-neutral-500 focus:outline-none focus:border-emerald-500/50 font-mono transition-colors"
             />
           </div>
 
@@ -99,7 +99,7 @@ export default function ApiKeysPage() {
               value={keys.gemini}
               onChange={(e) => setKeys({...keys, gemini: e.target.value})}
               placeholder="AIzaSy..."
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-neutral-600 focus:outline-none focus:border-rose-500/50 font-mono transition-colors"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-neutral-500 focus:outline-none focus:border-rose-500/50 font-mono transition-colors"
             />
           </div>
 
@@ -111,7 +111,7 @@ export default function ApiKeysPage() {
               value={keys.tavily}
               onChange={(e) => setKeys({...keys, tavily: e.target.value})}
               placeholder="tvly-..."
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-neutral-600 focus:outline-none focus:border-rose-500/50 font-mono transition-colors"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-neutral-500 focus:outline-none focus:border-rose-500/50 font-mono transition-colors"
             />
           </div>
 
@@ -125,7 +125,7 @@ export default function ApiKeysPage() {
               value={keys.anthropic}
               onChange={(e) => setKeys({...keys, anthropic: e.target.value})}
               placeholder="sk-ant-..."
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-neutral-600 focus:outline-none focus:border-rose-500/50 font-mono transition-colors"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-neutral-500 focus:outline-none focus:border-rose-500/50 font-mono transition-colors"
             />
           </div>
 
@@ -137,7 +137,7 @@ export default function ApiKeysPage() {
               value={keys.grok}
               onChange={(e) => setKeys({...keys, grok: e.target.value})}
               placeholder="xai-..."
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-neutral-600 focus:outline-none focus:border-rose-500/50 font-mono transition-colors"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-neutral-500 focus:outline-none focus:border-rose-500/50 font-mono transition-colors"
             />
           </div>
 
@@ -151,7 +151,7 @@ export default function ApiKeysPage() {
               value={keys.ollama || ""}
               onChange={(e) => setKeys({...keys, ollama: e.target.value})}
               placeholder="http://localhost:11434"
-              className="w-full bg-black/40 border border-electric/20 rounded-xl px-4 py-3 text-white placeholder:text-neutral-600 focus:outline-none focus:border-electric/50 font-mono transition-colors"
+              className="w-full bg-black/40 border border-electric/20 rounded-xl px-4 py-3 text-white placeholder:text-neutral-500 focus:outline-none focus:border-electric/50 font-mono transition-colors"
             />
           </div>
 

@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
 /**
@@ -7,7 +8,7 @@ import { NextResponse } from "next/server";
  * Runs pre-configured agent chains on a schedule.
  * 
  * vercel.json cron config:
- * { "crons": [{ "path": "/api/agents/scheduler", "schedule": "0 7 * * 1" }] }
+ * { "crons": [{ "path": "/api/_agents/scheduler", "schedule": "0 7 * * 1" }] }
  */
 
 interface ScheduledJob {
@@ -63,6 +64,8 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     const { action, jobId } = await request.json();
 
     // Manual trigger

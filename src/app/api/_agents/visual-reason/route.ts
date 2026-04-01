@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
 /**
@@ -6,6 +7,8 @@ import { NextResponse } from "next/server";
  */
 export async function POST(req: Request) {
   try {
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     const { imageUrl, question = "Analyze this image and provide detailed insights." } = await req.json();
     if (!imageUrl) return NextResponse.json({ error: "Missing `imageUrl`." }, { status: 400 });
 
@@ -44,7 +47,7 @@ export async function POST(req: Request) {
       analysis: data.choices?.[0]?.message?.content || "",
       model: "cosmos-reason2-8b",
     });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
   }
 }

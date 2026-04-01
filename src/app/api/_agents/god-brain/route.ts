@@ -1,26 +1,27 @@
 import { NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import { ai } from "@/lib/ai";
 
 /**
- * GOD-BRAIN ORCHESTRATOR — The Game-Changer.
- * 
+ * GOD-BRAIN ORCHESTRATOR
+ *
  * Chains EVERY free NVIDIA NIM model into a single intelligent pipeline.
  * Input: any content (text, URL, image, document).
- * Output: complete intelligence package — analysis, safety check, PII scrub, 
+ * Output: complete intelligence package — analysis, safety check, PII scrub,
  *         embeddings for memory, voice-ready script, and image generation.
- * 
- * This is what makes Sovereign Matrix UNPRECEDENTED:
- * One API call triggers 7 free AI models in sequence.
  */
 export async function POST(req: Request) {
   try {
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+
     const { input, inputType = "text", depth = "standard" } = await req.json();
     if (!input) return NextResponse.json({ error: "Missing `input`." }, { status: 400 });
 
     const nimKey = process.env.NVIDIA_NIM_API_KEY;
     if (!nimKey) return NextResponse.json({ error: "NVIDIA_NIM_API_KEY not configured." }, { status: 500 });
 
-    const results: Record<string, any> = {};
+    const results: Record<string, unknown> = {};
     const timings: Record<string, number> = {};
     const start = Date.now();
 
@@ -178,7 +179,7 @@ export async function POST(req: Request) {
         cost: "$0.00 (all free NIM models)",
       },
     });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
   }
 }

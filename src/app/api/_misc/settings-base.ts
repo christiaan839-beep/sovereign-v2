@@ -3,6 +3,8 @@ import { db } from "@/db";
 import { settings } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { requireAuth } from "@/lib/auth-guard";
+import { createLogger } from "@/lib/logger";
+const log = createLogger("settings-base");
 
 export async function POST(req: Request) {
   const auth = await requireAuth(); if (auth.error) return auth.error;
@@ -75,7 +77,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ error: "Invalid action." }, { status: 400 });
   } catch (error) {
-    console.error("[Settings Postgres API]:", error);
+    log.error("Settings Postgres API error", error as Record<string, unknown>);
     return NextResponse.json({ error: "Failed to process settings." }, { status: 500 });
   }
 }

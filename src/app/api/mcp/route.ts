@@ -178,6 +178,30 @@ const TOOLS: MCPTool[] = [
       required: ["text"],
     },
   },
+  {
+    name: "code-execute",
+    description: "Execute Python code in a secure cloud sandbox. Returns stdout output and any generated visualizations.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        code: { type: "string", description: "Python code to execute" },
+        libraries: { type: "array", items: { type: "string" }, description: "Python packages to install before execution" },
+      },
+      required: ["code"],
+    },
+  },
+  {
+    name: "data-analyze",
+    description: "Analyze data by describing the task in plain English. Generates and executes Python code automatically.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        task: { type: "string", description: "Natural language description of the analysis to perform" },
+        data: { type: "string", description: "CSV or JSON data to analyze (optional)" },
+      },
+      required: ["task"],
+    },
+  },
 ];
 
 // ── JSON-RPC Types ──
@@ -309,6 +333,26 @@ function buildAgentPayload(
           voice: args.voice || "flow",
           speed: args.speed ? parseFloat(String(args.speed)) : 1.0,
           provider: args.provider || "magpie",
+        },
+      };
+
+    case "code-execute":
+      return {
+        slug: "code-sandbox",
+        body: {
+          action: "execute",
+          code: args.code,
+          libraries: args.libraries,
+        },
+      };
+
+    case "data-analyze":
+      return {
+        slug: "code-sandbox",
+        body: {
+          action: "analyze",
+          task: args.task,
+          data: args.data,
         },
       };
 

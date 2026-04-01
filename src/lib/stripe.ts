@@ -1,4 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { createLogger } from "@/lib/logger";
+const log = createLogger("stripe");
 
 /**
  * SOVEREIGN MATRIX -- Stripe Billing Client
@@ -23,7 +25,7 @@ export function getStripe(): any {
       const StripeConstructor = require("stripe").default ?? require("stripe");
       stripeInstance = new StripeConstructor(key);
     } catch {
-      console.warn("[SOVEREIGN] stripe package not installed. Run: npm install stripe");
+      log.warn("stripe package not installed. Run: npm install stripe");
       return null;
     }
   }

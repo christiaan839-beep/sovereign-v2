@@ -4,6 +4,8 @@ import { db } from "@/db";
 import { orgMembers } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { requireOrgAccess } from "@/lib/rbac";
+import { createLogger } from "@/lib/logger";
+const log = createLogger("org-members");
 
 /**
  * GET    /api/organizations/[orgId]/members — List members
@@ -35,7 +37,7 @@ export async function GET(
 
     return NextResponse.json({ members });
   } catch (err) {
-    console.error("[Org Members GET]", err);
+    log.error("Org members GET error", err as Record<string, unknown>);
     return NextResponse.json({ error: "Failed to list members." }, { status: 500 });
   }
 }
@@ -99,7 +101,7 @@ export async function POST(
 
     return NextResponse.json({ member }, { status: 201 });
   } catch (err) {
-    console.error("[Org Members POST]", err);
+    log.error("Org members POST error", err as Record<string, unknown>);
     return NextResponse.json({ error: "Failed to invite member." }, { status: 500 });
   }
 }
@@ -143,7 +145,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (err) {
-    console.error("[Org Members DELETE]", err);
+    log.error("Org members DELETE error", err as Record<string, unknown>);
     return NextResponse.json({ error: "Failed to remove member." }, { status: 500 });
   }
 }

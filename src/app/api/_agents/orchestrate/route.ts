@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAvailablePipelines, runPipeline } from "@/agents/orchestrator";
 import { fireUserWebhook } from "@/lib/webhooks";
 import { requireAuth } from "@/lib/auth-guard";
+import { createLogger } from "@/lib/logger";
+const log = createLogger("orchestrator");
 
 export async function GET() {
   const auth = await requireAuth(); if (auth.error) return auth.error;
@@ -34,7 +36,7 @@ export async function POST(req: NextRequest) {
     await fireUserWebhook("Orchestrator", `Pipeline: ${pipelineId}`, result);
     return NextResponse.json(result);
   } catch (error) {
-    console.error("[Orchestrator] Error:", error);
+    log.error("Orchestrator error", error as Record<string, unknown>);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Internal error" },
       { status: 500 }

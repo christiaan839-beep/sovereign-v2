@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 export const dynamic = 'force-dynamic';
 
 import { nimChat } from "@/lib/nvidia";
@@ -10,7 +11,9 @@ import { nimChat } from "@/lib/nvidia";
 
 export async function POST(request: Request) {
   try {
-    const { task, participants } = await request.json() as { task: string; participants?: any[] };
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+    const { task, participants } = await request.json() as { task: string; participants?: { model: string; name: string; role: string }[] };
 
     if (!task) {
       return new Response(JSON.stringify({ error: "task is required." }), { status: 400 });
@@ -25,7 +28,7 @@ export async function POST(request: Request) {
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
       async start(controller) {
-        const sendEvent = (type: string, data: any) => {
+        const sendEvent = (type: string, data: Record<string, unknown>) => {
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type, ...data })}\n\n`));
         };
         

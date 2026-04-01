@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { nimChat } from "@/lib/nvidia";
 import { research_ai } from "@/lib/ai";
@@ -28,6 +29,8 @@ interface OrchestratorStep {
 
 export async function POST(request: Request) {
   try {
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     const { target, chain_type = "full-audit", custom_instructions } = await request.json();
 
     if (!target) {
@@ -110,7 +113,7 @@ Score each dimension 0-100 and provide specific findings. Output JSON:
     const strategy = await nimChat(
       "deepseek-ai/deepseek-v3.2",
       [
-        { role: "system", content: "You are a ruthless growth strategist. Create battle plans that exploit every competitor weakness." },
+        { role: "system", content: "You are a strategic growth strategist. Create battle plans that exploit every competitor weakness." },
         { role: "user", content: `Create a counter-strike strategy based on this audit.
 
 AUDIT RESULTS:
@@ -123,7 +126,7 @@ Generate a battle plan with:
 4. Recommended content angles to steal their audience
 5. Ad copy that directly exploits their weaknesses
 
-Be specific, actionable, and ruthless.` },
+Be specific, actionable, and strategic.` },
       ],
       { maxTokens: 2000, temperature: 0.5 }
     );

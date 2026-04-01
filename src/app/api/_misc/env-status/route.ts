@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 
 export async function GET() {
+  // This endpoint reveals environment configuration — require admin auth
+  const { userId } = await auth();
+  if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   const criticalVars = [
     { key: "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", required: true },
     { key: "CLERK_SECRET_KEY", required: true },

@@ -115,6 +115,7 @@ export function InputBar({ loading, selectedModel, onModelChange, onSend }: Inpu
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask anything -- audit a site, write content, find leads, build a page..."
               disabled={loading}
+              data-chat-input="true"
               className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 text-base text-white placeholder:text-neutral-600 focus:outline-none focus:border-emerald-500/30 disabled:opacity-50 transition-colors"
             />
             <button
@@ -127,7 +128,7 @@ export function InputBar({ loading, selectedModel, onModelChange, onSend }: Inpu
           </div>
           <div className="flex items-center justify-between mt-2">
             <ModelSwitcher selected={selectedModel} onChange={onModelChange} />
-            <p className="text-[10px] text-neutral-600">109 Agents &middot; 39 Models</p>
+            <p className="text-[10px] text-neutral-600">124 Agents &middot; 65+ Models</p>
           </div>
         </form>
       </div>

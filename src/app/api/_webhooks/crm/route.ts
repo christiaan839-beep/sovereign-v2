@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { createLogger } from "@/lib/logger";
+const log = createLogger("crm-webhook");
 
 /**
  * SOVEREIGN MATRIX CRM WEBHOOK LAYER
@@ -13,7 +15,7 @@ export async function POST(req: Request) {
     
     return NextResponse.json({ success: true, status: "CRM State Logged by Sovereign Matrix" });
   } catch (error) {
-    console.error("CRM Webhook Parsing Error:", error);
+    log.error("CRM webhook parsing error", error as Record<string, unknown>);
     return NextResponse.json({ error: "Failed to parse CRM state mutation" }, { status: 400 });
   }
 }

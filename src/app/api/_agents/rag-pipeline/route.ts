@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
 /**
@@ -7,6 +8,8 @@ import { NextResponse } from "next/server";
  */
 export async function POST(req: Request) {
   try {
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     const { query, documents = [], topK = 3 } = await req.json();
     if (!query) return NextResponse.json({ error: "Missing `query`." }, { status: 400 });
 
@@ -39,9 +42,9 @@ export async function POST(req: Request) {
       if (rerankRes.ok) {
         const rerankData = await rerankRes.json();
         rankedDocs = (rerankData.rankings || [])
-          .sort((a: any, b: any) => b.logit - a.logit)
+          .sort((a: { logit: number }, b: { logit: number }) => b.logit - a.logit)
           .slice(0, topK)
-          .map((r: any) => documents[r.index]);
+          .map((r: { index: number }) => documents[r.index]);
       }
     }
 
@@ -71,7 +74,7 @@ export async function POST(req: Request) {
       queryEmbedding: queryEmbedding.slice(0, 5), // First 5 dims as preview
       models: { embed: "llama-nemotron-embed-1b-v2", rerank: "llama-nemotron-rerank-1b-v2", generate: "nemotron-3-super-120b" },
     });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
   }
 }

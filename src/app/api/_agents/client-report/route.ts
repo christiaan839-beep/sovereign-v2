@@ -3,6 +3,8 @@ import { currentUser } from "@clerk/nextjs/server";
 import { ai } from "@/lib/ai";
 import { ANTI_SLOP_RULES } from "@/lib/content-engine";
 import { fireUserWebhook } from "@/lib/webhooks";
+import { createLogger } from "@/lib/logger";
+const log = createLogger("client-report");
 
 const REPORT_PROMPT = `You are a senior marketing analyst at a premium agency. You create executive-level performance reports that justify $5,000-$15,000/month retainers.
 
@@ -74,7 +76,7 @@ Include sections for:
 
     return NextResponse.json({ success: true, report: parsed });
   } catch (err) {
-    console.error("[Client Report] Error:", err);
+    log.error("Client report error", err as Record<string, unknown>);
     return NextResponse.json({ error: "Failed to generate report" }, { status: 500 });
   }
 }

@@ -60,7 +60,7 @@ export default function BillingHistoryPage() {
               <span className="text-xs text-neutral-400 font-medium">{w.value}</span>
               <motion.div initial={{ height: 0 }} animate={{ height: `${w.pct}%` }} transition={{ duration: 0.6, delay: i * 0.1, ease: "easeOut" }}
                 className="w-full rounded-t-md bg-gradient-to-t from-blue-600/60 to-blue-400/40 min-h-[4px]" />
-              <span className="text-[10px] text-neutral-600">{w.label}</span>
+              <span className="text-[10px] text-neutral-500">{w.label}</span>
             </div>
           ))}
         </div>
@@ -94,7 +94,7 @@ export default function BillingHistoryPage() {
                     </span>
                   </td>
                   <td className="px-5 py-3 text-right">
-                    <button aria-label={`Download invoice ${inv.id}`} className="p-1.5 rounded-lg text-neutral-600 hover:text-white hover:bg-white/[0.06] transition-colors">
+                    <button aria-label={`Download invoice ${inv.id}`} className="p-1.5 rounded-lg text-neutral-500 hover:text-white hover:bg-white/[0.06] transition-colors">
                       <Download className="w-4 h-4" />
                     </button>
                   </td>

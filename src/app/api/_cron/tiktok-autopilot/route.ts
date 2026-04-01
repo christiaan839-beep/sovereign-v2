@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
+import { createLogger } from "@/lib/logger";
+const log = createLogger("tiktok-autopilot");
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const CRON_SECRET = process.env.CRON_SECRET; 
+const CRON_SECRET = process.env.CRON_SECRET;
 
 export async function GET(req: Request) {
     const authHeader = req.headers.get('authorization');
@@ -34,11 +36,11 @@ Format: Return exactly a JSON object containing { "hook_text": "...", "voiceover
         let rawContent = aiData.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
         rawContent = rawContent.replace(/```json/g, "").replace(/```/g, "").trim();
 
-        let scriptObject: any = {};
+        let scriptObject: Record<string, unknown> = {};
         try {
             scriptObject = JSON.parse(rawContent);
         } catch (_e) {
-            console.error("Gemini JSON parse failed:", rawContent);
+            log.error("Gemini JSON parse failed", { rawContent });
             return NextResponse.json({ error: "Failed to parse synthesized script" }, { status: 500 });
         }
 
@@ -48,7 +50,7 @@ Format: Return exactly a JSON object containing { "hook_text": "...", "voiceover
         });
 
     } catch (err) {
-        console.error("[TIKTOK CRON ERROR]", err);
+        log.error("TikTok cron error", err as Record<string, unknown>);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }

@@ -15,7 +15,7 @@ const PROOF_POINTS = [
   { metric: "R49,997", label: "Highest Plan Value", icon: DollarSign },
   { metric: "40%", label: "Max Commission Rate", icon: BarChart3 },
   { metric: "Recurring", label: "Monthly Earnings", icon: Zap },
-  { metric: "109", label: "Agents You Resell", icon: Users },
+  { metric: "124", label: "Agents You Resell", icon: Users },
 ];
 
 export default function PartnerPage() {

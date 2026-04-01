@@ -4,6 +4,8 @@ import { generateText } from "ai";
 import { db } from "@/db";
 import { scheduledContent } from "@/db/schema";
 import { requireAuth } from "@/lib/auth-guard";
+import { createLogger } from "@/lib/logger";
+const log = createLogger("content-generator");
 
 /**
  * Content Auto-Generator API
@@ -88,7 +90,7 @@ Output ONLY the JSON array.`,
       message: `${scheduled.length} posts generated and scheduled for the next 7 days`,
     });
   } catch (error) {
-    console.error("[Content Generator Error]:", error);
+    log.error("Content generator error", error as Record<string, unknown>);
     return NextResponse.json({ error: "Content generation failed" }, { status: 500 });
   }
 }

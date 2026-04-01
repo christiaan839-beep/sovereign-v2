@@ -5,6 +5,8 @@ import { bookings } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { ai } from "@/lib/ai";
 import { fireUserWebhook } from "@/lib/webhooks";
+import { createLogger } from "@/lib/logger";
+const log = createLogger("booking-agent");
 
 const BOOKING_AGENT_PROMPT = `You are SOVEREIGN's elite AI Booking Agent — a world-class digital sales representative with 15+ years of consultative selling experience.
 
@@ -54,7 +56,7 @@ export async function GET() {
     });
     return NextResponse.json({ bookings: userBookings });
   } catch (err) {
-    console.error("GET /api/agents/booking error:", err);
+    log.error("GET /api/agents/booking error", err as Record<string, unknown>);
     return NextResponse.json({ error: "Server Error" }, { status: 500 });
   }
 }
@@ -124,7 +126,7 @@ Qualify this lead and generate the appropriate response.`;
 
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
   } catch (err) {
-    console.error("POST /api/agents/booking error:", err);
+    log.error("POST /api/agents/booking error", err as Record<string, unknown>);
     return NextResponse.json({ error: "Server Error" }, { status: 500 });
   }
 }

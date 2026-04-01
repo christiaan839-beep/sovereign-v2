@@ -105,7 +105,7 @@ export async function memorize(text: string, namespace?: string): Promise<void> 
 /**
  * Recall exact contextual nodes matching the query.
  */
-export async function recall(query: string, limit: number = 2, pineconeKey?: string): Promise<any[]> {
+export async function recall(query: string, limit: number = 2, pineconeKey?: string): Promise<Array<{ entry: { text: string }; score: number }>> {
   try {
     const pc = await getPineconeClient(pineconeKey);
     if (!pc) return [];

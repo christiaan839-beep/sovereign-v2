@@ -95,8 +95,8 @@ export async function runPipeline(
           output: seoResult.output.slice(0, 500) + "...",
           durationMs: Date.now() - step1Start,
         });
-      } catch (e: any) {
-        steps.push({ agent: "seo-dominator", status: "failed", output: e.message, durationMs: Date.now() - step1Start });
+      } catch (e: unknown) {
+        steps.push({ agent: "seo-dominator", status: "failed", output: (e as Error).message, durationMs: Date.now() - step1Start });
       }
 
       // Step 2: Blog Post
@@ -109,8 +109,8 @@ export async function runPipeline(
           output: blogResult.output.slice(0, 500) + "...",
           durationMs: Date.now() - step2Start,
         });
-      } catch (e: any) {
-        steps.push({ agent: "content-factory (blog)", status: "failed", output: e.message, durationMs: Date.now() - step2Start });
+      } catch (e: unknown) {
+        steps.push({ agent: "content-factory (blog)", status: "failed", output: (e as Error).message, durationMs: Date.now() - step2Start });
       }
 
       // Step 3: Social Pack
@@ -123,8 +123,8 @@ export async function runPipeline(
           output: socialResult.output.slice(0, 500) + "...",
           durationMs: Date.now() - step3Start,
         });
-      } catch (e: any) {
-        steps.push({ agent: "content-factory (social)", status: "failed", output: e.message, durationMs: Date.now() - step3Start });
+      } catch (e: unknown) {
+        steps.push({ agent: "content-factory (social)", status: "failed", output: (e as Error).message, durationMs: Date.now() - step3Start });
       }
       break;
     }
@@ -143,8 +143,8 @@ export async function runPipeline(
           output: xrayResult.output.slice(0, 500) + "...",
           durationMs: Date.now() - step1Start,
         });
-      } catch (e: any) {
-        steps.push({ agent: "seo-dominator (x-ray)", status: "failed", output: e.message, durationMs: Date.now() - step1Start });
+      } catch (e: unknown) {
+        steps.push({ agent: "seo-dominator (x-ray)", status: "failed", output: (e as Error).message, durationMs: Date.now() - step1Start });
       }
 
       // Step 2: Close Sequence
@@ -160,8 +160,8 @@ export async function runPipeline(
           output: closeResult.output.slice(0, 500) + "...",
           durationMs: Date.now() - step2Start,
         });
-      } catch (e: any) {
-        steps.push({ agent: "closer", status: "failed", output: e.message, durationMs: Date.now() - step2Start });
+      } catch (e: unknown) {
+        steps.push({ agent: "closer", status: "failed", output: (e as Error).message, durationMs: Date.now() - step2Start });
       }
 
       // Step 3: Email Sequence
@@ -177,8 +177,8 @@ export async function runPipeline(
           output: emailResult.output.slice(0, 500) + "...",
           durationMs: Date.now() - step3Start,
         });
-      } catch (e: any) {
-        steps.push({ agent: "content-factory (email)", status: "failed", output: e.message, durationMs: Date.now() - step3Start });
+      } catch (e: unknown) {
+        steps.push({ agent: "content-factory (email)", status: "failed", output: (e as Error).message, durationMs: Date.now() - step3Start });
       }
       break;
     }
@@ -195,8 +195,8 @@ export async function runPipeline(
         try {
           const result = await ct.fn();
           steps.push({ agent: ct.label, status: "complete", output: result.output.slice(0, 500) + "...", durationMs: Date.now() - start });
-        } catch (e: any) {
-          steps.push({ agent: ct.label, status: "failed", output: e.message, durationMs: Date.now() - start });
+        } catch (e: unknown) {
+          steps.push({ agent: ct.label, status: "failed", output: (e as Error).message, durationMs: Date.now() - start });
         }
       }
       break;
@@ -216,8 +216,8 @@ export async function runPipeline(
         try {
           const result = await agent.fn();
           steps.push({ agent: agent.label, status: "complete", output: result.output.slice(0, 500) + "...", durationMs: Date.now() - start });
-        } catch (e: any) {
-          steps.push({ agent: agent.label, status: "failed", output: e.message, durationMs: Date.now() - start });
+        } catch (e: unknown) {
+          steps.push({ agent: agent.label, status: "failed", output: (e as Error).message, durationMs: Date.now() - start });
         }
       }
       break;

@@ -155,8 +155,30 @@ export default function LeadsDashboard() {
                         <Activity className="w-3 h-3 text-emerald-500 animate-pulse" />
                         <span className="text-[10px] uppercase font-mono text-emerald-500/80 tracking-widest">Prospector Telemetry</span>
                    </div>
+                   {/* Progress Indicator */}
+                   {isSweeping && (
+                     <div className="px-4 pt-3 pb-2 border-b border-glass-border/30 space-y-2">
+                       <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-widest">
+                         <span className="text-[#00B7FF]">
+                           Step {Math.min(logs.length + 1, LOG_MESSAGES.length)}/{LOG_MESSAGES.length}: {logs.length < LOG_MESSAGES.length ? LOG_MESSAGES[logs.length]?.replace("...", "") : "Finalizing"}
+                         </span>
+                         <span className="text-stone-500">
+                           ~{Math.max(0, Math.round((LOG_MESSAGES.length - logs.length) * 1.5))}s remaining
+                         </span>
+                       </div>
+                       <div className="w-full h-1 rounded-full bg-white/5 overflow-hidden">
+                         <motion.div
+                           className="h-full rounded-full bg-gradient-to-r from-[#00B7FF] to-emerald-500"
+                           initial={{ width: "0%" }}
+                           animate={{ width: `${Math.round((logs.length / LOG_MESSAGES.length) * 100)}%` }}
+                           transition={{ duration: 0.5, ease: "easeOut" }}
+                         />
+                       </div>
+                     </div>
+                   )}
+
                    <div className="p-4 font-mono text-xs overflow-y-auto space-y-2 text-stone-400 h-full" aria-live="polite" aria-label="Sweep telemetry logs">
-                        {logs.length === 0 && <span className="text-stone-600">Awaiting sweep parameters...</span>}
+                        {logs.length === 0 && !isSweeping && <span className="text-stone-600">Awaiting sweep parameters...</span>}
                         {logs.map((log, i) => (
                              <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} key={i} className="flex gap-2">
                                   <span className="shrink-0 text-stone-600">{`[+${(i * 1.5).toFixed(1)}s]`}</span>

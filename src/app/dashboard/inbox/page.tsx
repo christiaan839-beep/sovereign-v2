@@ -230,7 +230,7 @@ export default function InboxPage() {
               {tab.label}
               <span
                 className={`text-xs px-1.5 py-0.5 rounded-md ${
-                  isActive ? "bg-white/10 text-neutral-300" : "bg-white/5 text-neutral-600"
+                  isActive ? "bg-white/10 text-neutral-300" : "bg-white/5 text-neutral-500"
                 }`}
               >
                 {count}
@@ -252,7 +252,7 @@ export default function InboxPage() {
               className="flex flex-col items-center justify-center py-24 text-center"
             >
               <div className="p-4 rounded-2xl bg-white/5 border border-white/10 mb-5">
-                <Bot className="w-8 h-8 text-neutral-600" />
+                <Bot className="w-8 h-8 text-neutral-500" />
               </div>
               <p className="text-neutral-400 text-sm max-w-md">
                 Your agents haven&apos;t started working yet. Deploy your first agent to see
@@ -299,8 +299,8 @@ export default function InboxPage() {
                           <span className={`text-xs font-medium ${config.color}`}>
                             {item.agent}
                           </span>
-                          <span className="text-neutral-600 text-xs">·</span>
-                          <span className="text-neutral-600 text-xs">{item.relativeTime}</span>
+                          <span className="text-neutral-500 text-xs">·</span>
+                          <span className="text-neutral-500 text-xs">{item.relativeTime}</span>
                         </div>
                         <p className="text-sm text-neutral-200 truncate">{item.action}</p>
                       </div>
@@ -317,9 +317,9 @@ export default function InboxPage() {
                           </span>
                         )}
                         {isExpanded ? (
-                          <ChevronUp className="w-4 h-4 text-neutral-600" />
+                          <ChevronUp className="w-4 h-4 text-neutral-500" />
                         ) : (
-                          <ChevronDown className="w-4 h-4 text-neutral-600 group-hover:text-neutral-400 transition-colors" />
+                          <ChevronDown className="w-4 h-4 text-neutral-500 group-hover:text-neutral-400 transition-colors" />
                         )}
                       </div>
                     </div>
@@ -360,7 +360,7 @@ export default function InboxPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
-          className="mt-6 flex items-center justify-center gap-2 text-xs text-neutral-600"
+          className="mt-6 flex items-center justify-center gap-2 text-xs text-neutral-500"
         >
           <Sparkles className="w-3 h-3" />
           <span>

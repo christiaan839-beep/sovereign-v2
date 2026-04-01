@@ -3,6 +3,8 @@ import { currentUser } from "@clerk/nextjs/server";
 import { research_ai } from "@/lib/ai";
 import { ANTI_SLOP_RULES } from "@/lib/content-engine";
 import { fireUserWebhook } from "@/lib/webhooks";
+import { createLogger } from "@/lib/logger";
+const log = createLogger("brand-audit");
 
 /**
  * Brand Audit Agent API
@@ -102,7 +104,7 @@ Return ONLY valid JSON.`,
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    console.error("[Brand Audit Error]:", message);
+    log.error("Brand audit error", { message });
     return NextResponse.json({ error: "Brand audit failed", details: message }, { status: 500 });
   }
 }

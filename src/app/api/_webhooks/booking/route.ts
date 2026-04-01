@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { createLogger } from "@/lib/logger";
+const log = createLogger("booking-webhook");
 
 /**
  * BOOKING WEBHOOK — Cal.com integration for Ghost Fleet and lead management.
@@ -47,13 +49,13 @@ export async function POST(req: Request) {
           }),
         });
       } catch (e) {
-        console.error("[BOOKING] Email trigger failed:", e);
+        log.error("Email trigger failed", e as Record<string, unknown>);
       }
     }
 
     // Log to analytics
     try {
-      await fetch(new URL("/api/agents/analytics", req.url).toString(), {
+      await fetch(new URL("/api/_agents/analytics", req.url).toString(), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -64,7 +66,7 @@ export async function POST(req: Request) {
         }),
       });
     } catch (e) {
-      console.error("[BOOKING] Analytics log failed:", e);
+      log.error("Analytics log failed", e as Record<string, unknown>);
     }
 
     return NextResponse.json({ 
@@ -73,7 +75,7 @@ export async function POST(req: Request) {
       lead: { name, email, startTime },
       actions: ["email_sent", "analytics_logged"],
     });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
   }
 }

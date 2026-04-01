@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth-guard";
+import { createLogger } from "@/lib/logger";
+const log = createLogger("page-generator");
 
 /**
  * Landing Page Generator API
@@ -56,7 +58,7 @@ export async function POST(req: Request) {
       metadata: { businessName, industry, offer, generatedAt: new Date().toISOString() },
     });
   } catch (error) {
-    console.error("[Page Generator Error]:", error);
+    log.error("Page generator error", error as Record<string, unknown>);
     return NextResponse.json({ error: "Page generation failed" }, { status: 500 });
   }
 }

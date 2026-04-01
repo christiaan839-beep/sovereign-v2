@@ -117,9 +117,9 @@ export async function GET() {
       cache: getCacheStats(),
     },
     capabilities: {
-      agent_apis: 132,
+      agent_apis: 124,
       dashboard_pages: 55,
-      nim_models: 51,
+      nim_models: 65,
       industry_verticals: 6,
       marketplace_templates: 14,
       multi_modal_pipelines: 4,

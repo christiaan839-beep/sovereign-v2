@@ -1,0 +1,79 @@
+import { NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("music-gen");
+
+/**
+ * MUSIC-GEN AGENT — AI music generation via Google Lyria 3 Pro.
+ * Creates commercially-usable music tracks up to 3 minutes.
+ * Available on Vertex AI (public preview) and Gemini API.
+ * Outputs are watermarked and avoid mimicking existing artists.
+ */
+export async function POST(req: Request) {
+  try {
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+
+    const { prompt, duration = 30, style, instruments } = await req.json();
+    if (!prompt) return NextResponse.json({ error: "Missing music prompt" }, { status: 400 });
+
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) return NextResponse.json({ error: "GEMINI_API_KEY required for Lyria 3 Pro" }, { status: 500 });
+
+    // Build enhanced prompt with style and instruments
+    let enhancedPrompt = prompt;
+    if (style) enhancedPrompt += `. Style: ${style}`;
+    if (instruments) enhancedPrompt += `. Instruments: ${instruments}`;
+
+    // Lyria 3 Pro API via Gemini API
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/lyria-3-pro:generateMusic?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: enhancedPrompt }] }],
+          generationConfig: {
+            durationSeconds: Math.min(duration, 180), // Max 3 minutes
+          },
+        }),
+      }
+    );
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      log.warn("Lyria 3 Pro unavailable", { status: res.status, error: errorText });
+
+      // Fall back to generating a music brief via text AI
+      const { ai } = await import("@/lib/ai");
+      const brief = await ai(
+        `Create a detailed music production brief for: ${enhancedPrompt}. Include BPM, key, structure (intro/verse/chorus/bridge/outro), instrument arrangement, and mixing notes.`,
+        { system: "You are an elite music producer creating professional production briefs.", maxTokens: 1500 }
+      );
+
+      return NextResponse.json({
+        output: brief,
+        model: "text-brief-fallback",
+        note: "Lyria 3 Pro requires Google AI Ultra or Vertex AI. Generated a production brief instead.",
+      });
+    }
+
+    const data = await res.json();
+    // Lyria returns audio data
+    const audioData = data.candidates?.[0]?.content?.parts?.[0];
+
+    return NextResponse.json({
+      output: "Music generated successfully",
+      audio: audioData,
+      model: "lyria-3-pro",
+      duration,
+      prompt: enhancedPrompt,
+      commercial_use: true,
+      watermarked: true,
+    });
+  } catch (err) {
+    log.error("Music generation failed", err as Record<string, unknown>);
+    return NextResponse.json({ error: "Music generation failed" }, { status: 500 });
+  }
+}

@@ -1,4 +1,7 @@
+import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
+import { createLogger } from "@/lib/logger";
+const log = createLogger("claw-queue");
 
 /**
  * NEMOCLAW BATCH QUEUE — Overnight browser automation scheduler.
@@ -10,9 +13,9 @@ import { NextResponse } from "next/server";
 interface QueuedTask {
   id: string;
   type: "competitor-audit" | "social-post" | "lead-scrape" | "form-fill" | "screenshot";
-  payload: Record<string, any>;
+  payload: Record<string, unknown>;
   status: "queued" | "running" | "complete" | "failed";
-  result?: any;
+  result?: unknown;
   createdAt: string;
   completedAt?: string;
 }
@@ -30,7 +33,13 @@ async function processQueue() {
     task.status = "running";
 
     try {
-      const clawUrl = process.env.NEMOCLAW_URL || "http://localhost:18789";
+      const clawUrl = process.env.NEMOCLAW_URL || null;
+      if (!clawUrl) {
+        task.status = "failed";
+        task.result = { error: "NemoClaw is not configured. Set NEMOCLAW_URL in environment variables." };
+        task.completedAt = new Date().toISOString();
+        continue;
+      }
       
       switch (task.type) {
         case "competitor-audit": {
@@ -100,9 +109,9 @@ async function processQueue() {
         }
       }
       task.status = "complete";
-    } catch (error: any) {
+    } catch (error: unknown) {
       task.status = "failed";
-      task.result = { error: error.message };
+      task.result = { error: (error as Error).message };
     }
     task.completedAt = new Date().toISOString();
   }
@@ -124,7 +133,8 @@ export async function GET() {
       failed: taskQueue.filter(t => t.status === "failed").length,
     },
     isProcessing,
-    clawUrl: process.env.NEMOCLAW_URL || "http://localhost:18789",
+    clawUrl: process.env.NEMOCLAW_URL || null,
+    configured: !!process.env.NEMOCLAW_URL,
   });
 }
 
@@ -133,11 +143,16 @@ export async function GET() {
  */
 export async function POST(req: Request) {
   try {
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     const body = await req.json();
 
     // Trigger processing
     if (body.action === "process") {
-      processQueue().catch(console.error);
+      if (!process.env.NEMOCLAW_URL) {
+        return NextResponse.json({ error: "NemoClaw is not configured. Set NEMOCLAW_URL in environment variables." }, { status: 503 });
+      }
+      processQueue().catch((err) => log.error("Queue processing failed", err as Record<string, unknown>));
       return NextResponse.json({ message: "Queue processing started.", queueSize: taskQueue.filter(t => t.status === "queued").length });
     }
 
@@ -150,7 +165,7 @@ export async function POST(req: Request) {
 
     // Add batch
     if (body.action === "batch" && Array.isArray(body.tasks)) {
-      const newTasks: QueuedTask[] = body.tasks.map((t: any, i: number) => ({
+      const newTasks: QueuedTask[] = body.tasks.map((t: { type: QueuedTask["type"]; payload?: Record<string, unknown> }, i: number) => ({
         id: `batch-${Date.now()}-${i}`,
         type: t.type,
         payload: t.payload || {},
@@ -172,7 +187,7 @@ export async function POST(req: Request) {
     taskQueue.push(task);
 
     return NextResponse.json({ queued: true, taskId: task.id, queuePosition: taskQueue.filter(t => t.status === "queued").length });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
   }
 }

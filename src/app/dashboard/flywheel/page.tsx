@@ -141,7 +141,7 @@ export default function FlywheelPage() {
                   {pipelineState === "idle" && (
                     <div className="text-center py-10">
                        <RefreshCcw className="w-12 h-12 text-neutral-800 mx-auto mb-4" />
-                       <p className="text-neutral-600 font-mono text-xs uppercase tracking-widest">
+                       <p className="text-neutral-500 font-mono text-xs uppercase tracking-widest">
                          Ready to process user feedback.<br/>
                          142 flagged responses awaiting DSPy optimization.
                        </p>

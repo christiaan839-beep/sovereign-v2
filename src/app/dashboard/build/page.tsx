@@ -317,7 +317,7 @@ export default function BuildModePage() {
               <Send className="w-4 h-4" />
             </button>
           </div>
-          <p className="text-[10px] text-neutral-600 mt-1.5 px-1">
+          <p className="text-[10px] text-neutral-500 mt-1.5 px-1">
             Powered by Devstral 2 123B + Nemotron Ultra 253B. Enter to send, Shift+Enter for new line.
           </p>
         </div>
@@ -393,7 +393,7 @@ export default function BuildModePage() {
                 <div className="flex flex-col items-center justify-center h-full text-center px-8">
                   <Code2 className="w-10 h-10 text-neutral-700 mb-3" />
                   <p className="text-sm text-neutral-500">Your build will appear here</p>
-                  <p className="text-xs text-neutral-600 mt-1">Live preview with hot reload</p>
+                  <p className="text-xs text-neutral-500 mt-1">Live preview with hot reload</p>
                 </div>
               ) : activeTab === "preview" ? (
                 <iframe

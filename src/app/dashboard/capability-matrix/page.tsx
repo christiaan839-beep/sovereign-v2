@@ -77,7 +77,7 @@ export default function CapabilityMatrixPage() {
                   {React.createElement(m.icon, { className: "w-4 h-4", style: { color: m.color } })}
                   <span className="text-xs font-bold text-white">{m.name}</span>
                 </div>
-                <p className="text-[9px] text-neutral-600 mb-2">{m.provider} · {m.license}</p>
+                <p className="text-[9px] text-neutral-500 mb-2">{m.provider} · {m.license}</p>
                 <div className="flex flex-wrap gap-1 mb-2">
                   {m.capabilities.map(c => (
                     <span key={c} className="text-[8px] px-1.5 py-0.5 bg-white/5 text-neutral-500 border border-neutral-800">{c}</span>
@@ -99,7 +99,7 @@ export default function CapabilityMatrixPage() {
                   <h3 className="text-xs font-bold text-white">{cat.name}</h3>
                   <span className="text-lg font-black text-[#76B900]">{cat.count}</span>
                 </div>
-                <p className="text-[8px] text-neutral-600 leading-relaxed">{cat.agents.join(" · ")}</p>
+                <p className="text-[8px] text-neutral-500 leading-relaxed">{cat.agents.join(" · ")}</p>
               </div>
             ))}
           </div>
@@ -116,7 +116,7 @@ export default function CapabilityMatrixPage() {
           ].map(stat => (
             <div key={stat.label} className="bg-neutral-950 border border-neutral-800 p-4 text-center">
               <p className="text-2xl font-black" style={{ color: stat.color }}>{stat.value}</p>
-              <p className="text-[8px] text-neutral-600 uppercase tracking-widest mt-1">{stat.label}</p>
+              <p className="text-[8px] text-neutral-500 uppercase tracking-widest mt-1">{stat.label}</p>
             </div>
           ))}
         </div>

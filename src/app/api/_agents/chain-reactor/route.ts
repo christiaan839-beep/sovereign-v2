@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
 /**
@@ -23,17 +24,17 @@ const CHAINS: Record<string, { name: string; description: string; steps: ChainSt
     steps: [
       {
         agent: "ABM Artillery",
-        endpoint: "/api/agents/abm-artillery",
+        endpoint: "/api/_agents/abm-artillery",
         transform: (_prev, input) => ({ companyName: input.company || "Unknown Company", targetEmail: input.email }),
       },
       {
         agent: "PII Redactor",
-        endpoint: "/api/agents/pii-redactor",
+        endpoint: "/api/_agents/pii-redactor",
         transform: (prev) => ({ text: JSON.stringify(prev), redact: true }),
       },
       {
         agent: "Document Intelligence",
-        endpoint: "/api/agents/doc-intel",
+        endpoint: "/api/_agents/doc-intel",
         transform: (prev) => ({
           action: "embed",
           text: typeof prev === "object" ? (prev as Record<string, unknown>).redacted_text || JSON.stringify(prev) : String(prev),
@@ -47,12 +48,12 @@ const CHAINS: Record<string, { name: string; description: string; steps: ChainSt
     steps: [
       {
         agent: "ABM Artillery (Research Only)",
-        endpoint: "/api/agents/abm-artillery",
+        endpoint: "/api/_agents/abm-artillery",
         transform: (_prev, input) => ({ companyName: input.topic || "AI Marketing" }),
       },
       {
         agent: "Page Builder (Blog Post)",
-        endpoint: "/api/agents/page-builder",
+        endpoint: "/api/_agents/page-builder",
         transform: (prev) => {
           const intel = (prev as Record<string, unknown>).intelligence || "AI marketing automation";
           return { prompt: `Write a 1500-word SEO blog post about: ${intel}. Include headers, bullet points, and a strong CTA.` };
@@ -60,7 +61,7 @@ const CHAINS: Record<string, { name: string; description: string; steps: ChainSt
       },
       {
         agent: "Image Generator",
-        endpoint: "/api/agents/image-gen",
+        endpoint: "/api/_agents/image-gen",
         transform: (_prev, input) => ({ prompt: `Professional blog header image for article about ${input.topic || "AI marketing"}, dark premium aesthetic, minimal` }),
       },
     ],
@@ -71,7 +72,7 @@ const CHAINS: Record<string, { name: string; description: string; steps: ChainSt
     steps: [
       {
         agent: "PII Redactor",
-        endpoint: "/api/agents/pii-redactor",
+        endpoint: "/api/_agents/pii-redactor",
         transform: (_prev, input) => ({ text: input.content || "", redact: true }),
       },
       {
@@ -103,6 +104,8 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     const { chain, input } = await request.json();
 
     if (!chain || !CHAINS[chain]) {

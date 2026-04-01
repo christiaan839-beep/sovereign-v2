@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import { nimChat } from "@/lib/nvidia";
 
@@ -30,6 +31,8 @@ ${dateRange ? `Date range: ${dateRange}` : ""}
 Provide specific, actionable recommendations. No fluff.`;
 
   try {
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     const result = await nimChat("nvidia/llama-3.1-nemotron-ultra-253b-v1", [
       { role: "system", content: systemPrompt },
       { role: "user", content: prompt },

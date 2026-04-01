@@ -15,6 +15,9 @@ const eslintConfig = defineConfig([
           caughtErrorsIgnorePattern: "^_",
         },
       ],
+      // React 19 compiler purity rule — downgrade to warn for animation components
+      // that intentionally use Math.random() during render for particle effects, delays, etc.
+      "react-hooks/purity": "warn",
     },
   },
   // Override default ignores of eslint-config-next.
@@ -24,6 +27,13 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Build artifacts — never lint minified output
+    ".vercel/**",
+    // Test files handled by their own configs
+    "e2e/**",
+    "playwright.config.ts",
+    // Chrome extension (plain JS, not TypeScript)
+    "chrome-extension/**",
   ]),
 ]);
 

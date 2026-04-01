@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { persistAppend } from "@/lib/persist";
 
@@ -37,6 +38,8 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     const body = await req.text();
     const params = new URLSearchParams(body);
     const callerNumber = params.get("From") || "unknown";
@@ -60,7 +63,7 @@ export async function POST(req: Request) {
     How can I assist you today? You can ask about our autonomous AI agents,
     pricing tiers, or schedule a live demonstration.
   </Say>
-  <Gather input="speech" action="/api/agents/voice-closer" method="POST" speechTimeout="3" language="en-ZA">
+  <Gather input="speech" action="/api/_agents/voice-closer" method="POST" speechTimeout="3" language="en-ZA">
     <Say voice="Polly.Amy">I'm listening.</Say>
   </Gather>
   <Say voice="Polly.Amy">I didn't catch that. Transferring you to a human operator.</Say>
@@ -98,7 +101,7 @@ export async function POST(req: Request) {
     const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Say voice="Polly.Amy">${responseText}</Say>
-  <Gather input="speech" action="/api/agents/voice-closer" method="POST" speechTimeout="3" language="en-ZA">
+  <Gather input="speech" action="/api/_agents/voice-closer" method="POST" speechTimeout="3" language="en-ZA">
     <Say voice="Polly.Amy">Is there anything else I can help you with?</Say>
   </Gather>
   <Say voice="Polly.Amy">Thank you for calling the Sovereign Matrix. Have a great day.</Say>

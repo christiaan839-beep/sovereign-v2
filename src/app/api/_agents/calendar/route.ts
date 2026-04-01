@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { ai } from "@/lib/ai";
 import { ANTI_SLOP_RULES } from "@/lib/content-engine";
+import { createLogger } from "@/lib/logger";
+const log = createLogger("calendar-agent");
 
 /**
  * Content Calendar API
@@ -68,7 +70,7 @@ Respond in JSON:
 
     return NextResponse.json({ success: true, ...parsed });
   } catch (err) {
-    console.error("[Calendar] Error:", err);
+    log.error("Calendar error", err as Record<string, unknown>);
     return NextResponse.json({ error: "Failed" }, { status: 500 });
   }
 }

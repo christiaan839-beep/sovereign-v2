@@ -51,7 +51,7 @@ const STEPS = [
   {
     id: "complete",
     title: "You're live.",
-    subtitle: "132 agents deployed. 51+ models active. Zero per-token cost.",
+    subtitle: "124 agents deployed. 65+ models active. Zero per-token cost.",
     icon: CheckCircle2,
     isComplete: true,
   },
@@ -75,7 +75,7 @@ function FirstTaskDemo() {
     setResult(null);
 
     try {
-      const res = await fetch("/api/agents/smart-router", {
+      const res = await fetch("/api/_agents/smart-router", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -86,10 +86,7 @@ function FirstTaskDemo() {
       const data = await res.json();
       setResult(data.response || data.result || "Agent executed successfully. View full results in your dashboard.");
     } catch {
-      setResult(
-        `Task "${input.slice(0, 50)}..." routed via Smart Router. ` +
-        `Full results with data, citations, and export options are in your dashboard.`
-      );
+      setResult("Something went wrong. Please try again or skip to the dashboard — you can run this task there.");
     }
     setRunning(false);
   };
@@ -144,26 +141,16 @@ function ReferralCodeInput() {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
 
-  const submitReferral = async () => {
+  const submitReferral = () => {
     if (!code.trim()) return;
     setStatus("loading");
     try {
-      const res = await fetch("/api/referral/apply", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ referralCode: code.trim() }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setStatus("success");
-        setMessage("50 bonus agent runs added!");
-      } else {
-        setStatus("error");
-        setMessage(data.error || "Invalid referral code.");
-      }
+      localStorage.setItem("sovereign_referral_code", code.trim());
+      setStatus("success");
+      setMessage("Referral code saved! Bonus runs will be applied after signup.");
     } catch {
       setStatus("error");
-      setMessage("Failed to apply referral code.");
+      setMessage("Failed to save referral code.");
     }
   };
 
@@ -268,8 +255,8 @@ export default function OnboardingPage() {
               <div className="text-center space-y-6">
                 <div className="grid grid-cols-3 gap-4 max-w-sm mx-auto">
                   {[
-                    { val: "132", label: "Agents", color: "text-emerald-400" },
-                    { val: "51+", label: "Models", color: "text-cyan-400" },
+                    { val: "124", label: "Agents", color: "text-emerald-400" },
+                    { val: "65+", label: "Models", color: "text-cyan-400" },
                     { val: "$0", label: "Per Token", color: "text-white" },
                   ].map((s) => (
                     <div key={s.label} className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">
@@ -282,6 +269,9 @@ export default function OnboardingPage() {
                   className="cta-glow inline-flex items-center gap-2 px-10 py-4 bg-white text-black font-bold rounded-full text-sm hover:shadow-[0_0_40px_rgba(255,255,255,0.12)] transition-gpu">
                   Enter Dashboard <ArrowRight className="w-4 h-4" />
                 </Link>
+                <p className="text-[10px] text-neutral-600 mt-4 uppercase tracking-wider">
+                  Payments powered by Yoco
+                </p>
               </div>
             )}
           </motion.div>

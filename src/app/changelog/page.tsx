@@ -12,14 +12,20 @@ const CATEGORIES: Record<string, { color: string; bg: string }> = {
 };
 
 const ENTRIES = [
+  { date: "Mar 30, 2026", title: "65+ Models — GLM-5, FLUX.2, NIM Function Calling", category: "Models", icon: Layers,
+    description: "Added GLM-5 (744B MoE), GLM-4.7 (90.6% tool use), MiniMax M2.5, FLUX.2 Klein, Qwen3-Coder, and NIM native function calling. Smart Router now covers 20+ task types." },
+  { date: "Mar 29, 2026", title: "Production Security Hardening", category: "Safety", icon: Shield,
+    description: "SQL injection protection, encrypted API keys, circuit breakers for all providers, audit logging (SOC 2 prep), PayFast signature verification, and auth on all 124 agent routes." },
+  { date: "Mar 29, 2026", title: "Visual Workflow Builder", category: "Platform", icon: Terminal,
+    description: "Drag-and-drop agent pipeline builder. Chain agents into sequential workflows, customize prompts per step, and execute the full chain with one click." },
   { date: "Mar 28, 2026", title: "API Playground", category: "Platform", icon: Terminal,
     description: "Interactive playground for testing agents without signing up. Pre-filled prompts, syntax-highlighted responses, and 3 free tries for visitors." },
   { date: "Mar 24, 2026", title: "Revenue Attribution Dashboard", category: "Analytics", icon: BarChart3,
     description: "Full-funnel revenue tracking from first touch to closed deal. See exactly which agents drive pipeline and ROI across your entire stack." },
   { date: "Mar 19, 2026", title: "Llama 4 Scout + DeepSeek V3.2", category: "Models", icon: Layers,
     description: "Added Meta Llama 4 Scout and DeepSeek V3.2 to the model registry. Smart Router automatically selects the best model per task." },
-  { date: "Mar 14, 2026", title: "119 Agent Routes", category: "Platform", icon: Route,
-    description: "Scaled to 119 unique agent API routes spanning lead gen, content, SEO, voice, analytics, and marketplace operations." },
+  { date: "Mar 14, 2026", title: "124 Agent Routes", category: "Platform", icon: Route,
+    description: "Scaled to 124 unique agent API routes spanning lead gen, content, SEO, voice, analytics, and marketplace operations." },
   { date: "Mar 10, 2026", title: "Extended Thinking on 5 Agents", category: "Agents", icon: Brain,
     description: "Enabled extended thinking mode on God Brain, War Room, Market Intel, Blog Gen, and SEO Dominator for deeper multi-step reasoning." },
   { date: "Mar 5, 2026", title: "Cross-Agent Learning Loop", category: "Agents", icon: Cpu,

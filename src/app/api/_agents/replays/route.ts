@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { getReplayStore, getReplayById } from "@/lib/agent-reliability";
 

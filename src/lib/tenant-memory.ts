@@ -136,7 +136,7 @@ async function countInDb(userId: string): Promise<number> {
       .from(tenantMemories)
       .where(eq(tenantMemories.userId, userId));
     return rows.length;
-  } catch (err) {
+  } catch (_err) {
     return 0;
   }
 }

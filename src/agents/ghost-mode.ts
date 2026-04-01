@@ -1,6 +1,8 @@
 import { recall } from "@/lib/memory";
 import { adSwarm } from "@/lib/swarm";
 import type { GhostAction, Campaign } from "@/types";
+import { createLogger } from "@/lib/logger";
+const log = createLogger("ghost-mode");
 
 const META_TOKEN = process.env.META_ACCESS_TOKEN;
 const AD_ACCOUNT_ID = process.env.META_AD_ACCOUNT_ID;
@@ -19,7 +21,7 @@ function roas(c: Campaign): number {
 }
 
 /** Helper to call Meta Graph API */
-async function metaApi(endpoint: string, method: string = "GET", body?: any) {
+async function metaApi(endpoint: string, method: string = "GET", body?: Record<string, unknown>) {
   if (!META_TOKEN || !AD_ACCOUNT_ID) return null;
   const url = `https://graph.facebook.com/${API_VER}/${endpoint}`;
   const options: RequestInit = {
@@ -48,13 +50,13 @@ export async function executeGhostCycle(): Promise<GhostAction[]> {
     const campaignROAS = roas(c);
 
     if (campaignROAS < 1.0 && c.spend > 100) {
-      c.status = "KILLED";
+      c.status = "STOPPED";
       if (META_TOKEN) {
         await metaApi(c.id, "POST", { status: "PAUSED" }); // Pause real campaign
       }
       actions.push({
         id: `ga_${Date.now()}`,
-        type: "KILL",
+        type: "STOP",
         platform: "meta",
         budget: 0,
         reasoning: `${c.name}: ROAS ${campaignROAS.toFixed(1)}x below 1.0 threshold after $${c.spend} spend. Killed.`,
@@ -96,7 +98,7 @@ export async function executeGhostCycle(): Promise<GhostAction[]> {
       });
       if (campRes.id) newCampaignId = campRes.id;
     } catch (e) {
-      console.error("[Graph API] Camp creation failed", e);
+      log.error("Graph API camp creation failed", e as Record<string, unknown>);
     }
   }
 
