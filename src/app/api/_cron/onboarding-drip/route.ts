@@ -36,14 +36,14 @@ export async function GET(request: Request) {
       const { dayOffset } = step;
       const stepIndex = DRIP_SEQUENCE.indexOf(step);
 
-      // Find users whose created_at date is exactly `dayOffset` days ago
-      // We compare dates (not timestamps) so the cron can run at any time of day.
+      // Find users who signed up exactly `dayOffset` days ago
+      const targetDate = new Date(now);
+      targetDate.setDate(targetDate.getDate() - dayOffset);
+      const dateStr = targetDate.toISOString().split("T")[0]; // YYYY-MM-DD
       const matchingUsers = await db
         .select({ email: users.email })
         .from(users)
-        .where(
-          sql`date(${users.createdAt}) = date(${now.toISOString()} ::timestamp - interval '${sql.raw(String(dayOffset))} days')`
-        )
+        .where(sql`date(${users.createdAt}) = ${dateStr}`)
         .limit(500);
 
       let sent = 0;

@@ -92,9 +92,12 @@ function sovereignMiddleware(request: NextRequest) {
 
   // ── API GATEWAY for /api/agents/* and /api/_agents/* ──
   if (url.pathname.startsWith('/api/agents') || url.pathname.startsWith('/api/_agents')) {
-    // Extract client identifier (API key, IP, or session)
+    // Extract client identifier (API key or IP)
+    // On Vercel, x-forwarded-for is platform-injected and trusted.
+    // Use the LAST IP in the chain (rightmost = Vercel's value, not user-supplied).
     const apiKey = request.headers.get('x-api-key') || '';
-    const clientIp = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'anonymous';
+    const forwardedFor = request.headers.get('x-forwarded-for') || '';
+    const clientIp = forwardedFor.split(',').pop()?.trim() || request.headers.get('x-real-ip') || 'anonymous';
     const clientId = apiKey || clientIp;
 
     // Log the incoming request
