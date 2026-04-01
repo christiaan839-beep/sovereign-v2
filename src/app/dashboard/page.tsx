@@ -205,12 +205,12 @@ interface QuickAction {
 
 const QUICK_ACTIONS: QuickAction[] = [
   {
-    title: "Generate Content",
-    description: "Blog posts, social media, email sequences",
-    icon: Sparkles,
-    gradient: "from-blue-500/20 to-cyan-500/20",
-    action: "prompt",
-    value: "Write a blog post about ",
+    title: "Run a Playbook",
+    description: "1-click multi-agent workflows",
+    icon: Zap,
+    gradient: "from-violet-500/20 to-emerald-500/20",
+    action: "navigate",
+    value: "/dashboard/playbooks",
   },
   {
     title: "Find Leads",
@@ -221,12 +221,12 @@ const QUICK_ACTIONS: QuickAction[] = [
     value: "Find leads for ",
   },
   {
-    title: "Build a Page",
-    description: "AI-powered landing page builder",
-    icon: Globe2,
-    gradient: "from-violet-500/20 to-purple-500/20",
-    action: "navigate",
-    value: "/dashboard/build",
+    title: "Generate Content",
+    description: "Blog posts, social media, email sequences",
+    icon: Sparkles,
+    gradient: "from-blue-500/20 to-cyan-500/20",
+    action: "prompt",
+    value: "Write a blog post about ",
   },
   {
     title: "Audit a Website",
@@ -237,7 +237,7 @@ const QUICK_ACTIONS: QuickAction[] = [
     value: "Audit the website ",
   },
   {
-    title: "Open Sovereign AI Chat",
+    title: "Open AI Chat",
     description: "Talk to your AI workforce directly",
     icon: MessageSquare,
     gradient: "from-pink-500/20 to-rose-500/20",
@@ -468,11 +468,11 @@ function DiscoverSection() {
 /* ─── Getting Started Checklist ─── */
 
 const CHECKLIST_ITEMS = [
-  { id: "first_agent", label: "Run your first agent", description: "Try Lead Gen, Content, or SEO", href: "/dashboard/leads", icon: Zap },
+  { id: "first_playbook", label: "Run a Playbook", description: "1-click multi-agent workflows", href: "/dashboard/playbooks", icon: Zap },
+  { id: "first_agent", label: "Run your first agent", description: "Try Lead Gen, Content, or SEO", href: "/dashboard/leads", icon: Target },
   { id: "first_workflow", label: "Build a workflow", description: "Chain agents together", href: "/dashboard/workflow-builder", icon: Workflow },
   { id: "add_integration", label: "Connect an integration", description: "Slack, Sheets, Notion", href: "/dashboard/integrations", icon: Plug },
   { id: "invite_team", label: "Invite a team member", description: "Collaborate with your team", href: "/dashboard/settings/team", icon: Users },
-  { id: "explore_templates", label: "Try a workflow template", description: "Pre-built automations", href: "/dashboard/templates", icon: LayoutTemplate },
 ];
 
 function GettingStartedChecklist() {
