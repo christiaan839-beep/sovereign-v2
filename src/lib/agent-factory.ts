@@ -33,6 +33,7 @@ import { auditLog } from "@/lib/audit-log";
 import { getAntiSlopRules } from "@/lib/system-prompts";
 import { trackAgentExecution } from "@/lib/analytics";
 import { getMemoryContext, saveMemory } from "@/lib/tenant-memory";
+import { getActionTier, buildConfirmResponse, buildRestrictedResponse, type ActionTier } from "@/lib/action-tiers";
 
 const log = createLogger("agent-factory");
 
@@ -63,6 +64,9 @@ export interface AgentConfig {
 
   /** Skip quality scoring on output (for scoring/safety agents themselves) */
   skipQualityCheck?: boolean;
+
+  /** Action tier override (1=autonomous, 2=confirm, 3=restricted). Auto-detected if omitted. */
+  actionTier?: ActionTier;
 
   /** Enable/disable Critic Agent QA gate (default: true for all agents) */
   useCritic?: boolean;
@@ -151,6 +155,28 @@ export function createAgentRoute(config: AgentConfig) {
             return errorResponse(`Missing required field: ${field}`, 400, "MISSING_FIELD");
           }
         }
+      }
+
+      // ─── Action Tier Gate ───
+      const tierInfo = getActionTier(config.name);
+      const effectiveTier = config.actionTier ?? tierInfo.tier;
+
+      if (effectiveTier >= 2 && !body.confirmed) {
+        if (effectiveTier === 3) {
+          log.info("Tier 3 agent blocked — admin approval required", { agent: config.name });
+          return NextResponse.json(buildRestrictedResponse(config.name), { status: 403 });
+        }
+        // Tier 2: return a preview asking for confirmation
+        log.info("Tier 2 agent — confirmation required", { agent: config.name });
+        return NextResponse.json(
+          buildConfirmResponse(config.name, {
+            agent: config.name,
+            input: Object.fromEntries(
+              Object.entries(body).filter(([k]) => k !== "confirmed")
+            ),
+          }),
+          { status: 200 }
+        );
       }
 
       // Sanitize string fields
