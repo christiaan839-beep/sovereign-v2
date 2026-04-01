@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import { createAgentRoute } from "@/lib/agent-factory";
 import { nimChat, nimToolCall } from "@/lib/nvidia";
 import { getAntiSlopRules } from "@/lib/system-prompts";

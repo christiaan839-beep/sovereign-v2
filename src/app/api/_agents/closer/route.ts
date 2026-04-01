@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from 'next/server';
 import { createLogger } from "@/lib/logger";
 const log = createLogger("closer-agent");
@@ -7,6 +8,8 @@ const META_ACCESS_TOKEN = process.env.META_ACCESS_TOKEN; // For Instagram Graph 
 
 export async function POST(req: Request) {
   try {
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     const data = await req.json();
     
     // Ingest Meta Graph API / IG Webhook format (or raw JSON for testing)

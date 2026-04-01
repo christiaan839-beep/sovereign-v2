@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { guardRoute, sanitizeString, errorResponse } from "@/lib/api-guard";
 import { nimChat } from "@/lib/nvidia";
@@ -12,6 +13,8 @@ import { nimChat } from "@/lib/nvidia";
  */
 export async function POST(req: Request) {
   try {
+    const { userId } = await auth();
+    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     const guard = await guardRoute();
     if (!guard.authorized) return guard.response;
 

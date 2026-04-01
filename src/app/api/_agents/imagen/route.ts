@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import { createAgentRoute } from "@/lib/agent-factory";
 import { getNimKey } from "@/lib/nvidia";
 
