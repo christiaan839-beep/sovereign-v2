@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { persistAppend } from "@/lib/persist";
 import crypto from "crypto";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("paystack-webhook");
 
 /**
- * Paystack Webhook Handler — Cleaned for production.
- * 
- * Verifies SHA512 HMAC signature, logs events with persistence,
- * and triggers auto-onboard on successful payments.
+ * Paystack Webhook Handler — verifies SHA512 HMAC signature,
+ * logs events with persistence, triggers auto-onboard on successful payments.
  */
 export async function POST(req: Request) {
   try {
@@ -86,7 +87,8 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ received: true });
-  } catch {
+  } catch (err) {
+    log.error("Paystack webhook processing failed", { error: (err as Error).message });
     return NextResponse.json({ error: "Webhook processing failed" }, { status: 500 });
   }
 }

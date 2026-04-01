@@ -143,8 +143,8 @@ export async function POST(req: Request) {
             .where(eq(tenants.id, tenant.id));
           break;
         }
-      } catch {
-        // Non-critical — plan upgrade can be done manually
+      } catch (err) {
+        log.warn("Plan upgrade failed — may need manual intervention", { error: (err as Error).message, email });
       }
 
       // 3. Trigger auto-onboard (best effort)

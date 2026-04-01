@@ -1,6 +1,9 @@
 import { auth } from "@clerk/nextjs/server";
 import { getNimKey } from "@/lib/nvidia";
 import { NextResponse } from "next/server";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("agentic-planner");
 
 /**
  * GLM-5 AGENTIC TOOL-CALLING — Purpose-built for autonomous agent orchestration.
@@ -68,7 +71,8 @@ Output a JSON array of steps. Each step must have: {"tool": "tool_name", "params
     let executionPlan;
     try {
       executionPlan = JSON.parse(rawPlan.replace(/```json?\n?/g, "").replace(/```/g, "").trim());
-    } catch {
+    } catch (err) {
+      log.warn("Plan JSON parse failed, using fallback", { error: (err as Error).message });
       executionPlan = [{ tool: "smart-router", params: { prompt: goal }, reason: "Fallback: Direct routing" }];
     }
 
