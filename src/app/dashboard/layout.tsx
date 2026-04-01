@@ -5,12 +5,12 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  LayoutDashboard, Users, Settings, DollarSign, Target,
-  Layers, Search, ChevronDown, ChevronRight, Sparkles, Factory,
-  X, Menu, Mic, Swords, Database, Inbox,
-  PanelLeftOpen, PanelLeftClose, Clock, Plug, Cpu,
-  BarChart3, CircuitBoard, Eye, Palette, Shield, Wrench, LayoutTemplate,
-  Wand2, Store, Workflow, Brain, Play, MessageSquare
+  LayoutDashboard, Settings, DollarSign, Target,
+  Search, ChevronDown, ChevronRight, Sparkles, Factory,
+  X, Menu, Database,
+  PanelLeftOpen, PanelLeftClose, Plug, Cpu,
+  BarChart3, Eye, Shield, Wrench, LayoutTemplate,
+  Wand2, Workflow, MessageSquare
 } from "lucide-react";
 import { useKeyboardShortcuts } from "@/lib/keyboard-shortcuts";
 import { motion, AnimatePresence } from "framer-motion";
@@ -71,51 +71,41 @@ interface NavGroup {
 }
 
 const PRIMARY_NAV: NavItem[] = [
-  { href: "/dashboard", label: "Home", icon: LayoutDashboard, tooltip: "Dashboard overview and key metrics" },
-  { href: "/chat", label: "Chat", icon: MessageSquare, tooltip: "Open Sovereign AI Chat" },
-  { href: "/dashboard/inbox", label: "Inbox", icon: Inbox, tooltip: "View notifications and messages" },
-  { href: "/dashboard/build", label: "Build", icon: Sparkles, tooltip: "Create content with AI agents" },
-  { href: "/dashboard/leads", label: "Leads", icon: Target, tooltip: "Manage and track sales leads" },
-  { href: "/dashboard/content-factory", label: "Content", icon: Factory, tooltip: "Publish blog posts and social content" },
-  { href: "/dashboard/canvas", label: "Canvas", icon: Layers, tooltip: "Visual page builder and editor" },
-  { href: "/dashboard/templates", label: "Templates", icon: LayoutTemplate, tooltip: "Browse pre-built page templates" },
+  { href: "/dashboard", label: "Home", icon: LayoutDashboard, tooltip: "Dashboard overview" },
+  { href: "/chat", label: "Chat", icon: MessageSquare, tooltip: "AI chat assistant" },
+  { href: "/dashboard/leads", label: "Leads", icon: Target, tooltip: "Find and manage leads" },
+  { href: "/dashboard/content-factory", label: "Content", icon: Factory, tooltip: "Create blog posts and social content" },
+  { href: "/dashboard/build", label: "Page Builder", icon: Sparkles, tooltip: "Build landing pages with AI" },
 ];
 
 const NAV_GROUPS: NavGroup[] = [
   {
     label: "Tools",
     icon: Wrench,
+    defaultOpen: true,
     items: [
-      { href: "/dashboard/seo-dominator", label: "SEO Tools", icon: Search, tooltip: "Keyword research, audits, and ranking tools" },
-      { href: "/dashboard/competitor", label: "Competitor Intel", icon: Shield, tooltip: "Analyze competitor websites and strategies" },
-      { href: "/dashboard/voice-assistant", label: "Voice Assistant", icon: Mic, tooltip: "Interact with AI via voice commands" },
-      { href: "/dashboard/visual-studio", label: "Code Studio", icon: Palette, tooltip: "Generate and edit code with AI" },
-      { href: "/dashboard/workflow-builder", label: "Workflow Builder", icon: Workflow, tooltip: "Visually design and deploy multi-step workflows" },
-      { href: "/dashboard/automations", label: "Automations", icon: Clock, tooltip: "Manage triggered automation rules and schedules" },
-      { href: "/dashboard/agent-builder", label: "Create Agent", icon: Wand2, tooltip: "Build a custom AI agent from scratch" },
+      { href: "/dashboard/seo-dominator", label: "SEO", icon: Search, tooltip: "Keyword research and site audits" },
+      { href: "/dashboard/competitor", label: "Competitors", icon: Shield, tooltip: "Analyze competitor strategies" },
+      { href: "/dashboard/workflow-builder", label: "Workflows", icon: Workflow, tooltip: "Build multi-step automations" },
+      { href: "/dashboard/agent-builder", label: "Custom Agent", icon: Wand2, tooltip: "Create your own AI agent" },
+      { href: "/dashboard/templates", label: "Templates", icon: LayoutTemplate, tooltip: "Pre-built workflows and pages" },
     ],
   },
   {
-    label: "Intelligence",
+    label: "Monitor",
     icon: Cpu,
     items: [
-      { href: "/dashboard/agent-hq", label: "Agent HQ", icon: Users, tooltip: "Headquarters for all deployed agents" },
-      { href: "/dashboard/agent-analytics", label: "Analytics", icon: BarChart3, tooltip: "Performance metrics and usage analytics" },
-      { href: "/dashboard/war-room", label: "War Room", icon: Swords, tooltip: "Multi-agent debate and synthesis arena" },
-      { href: "/dashboard/god-eye", label: "Agent Monitor", icon: Eye, tooltip: "Monitor all agents in real-time" },
-      { href: "/dashboard/nim-arsenal", label: "Model Registry", icon: Database, tooltip: "View all AI models, routing rules, and failover chains" },
-      { href: "/dashboard/memory", label: "Agent Memory", icon: Brain, tooltip: "View what agents remember about you" },
-      { href: "/dashboard/replays", label: "Replays", icon: Play, tooltip: "Replay past agent executions step-by-step" },
-      { href: "/dashboard/agent-marketplace", label: "Marketplace", icon: Store, tooltip: "Browse and install community agents" },
+      { href: "/dashboard/god-eye", label: "Live Agents", icon: Eye, tooltip: "Monitor all running agents" },
+      { href: "/dashboard/agent-analytics", label: "Analytics", icon: BarChart3, tooltip: "Performance and usage metrics" },
+      { href: "/dashboard/nim-arsenal", label: "AI Models", icon: Database, tooltip: "View connected models and routing" },
     ],
   },
 ];
 
 const BOTTOM_NAV: NavItem[] = [
-  { href: "/dashboard/integrations", label: "Integrations", icon: Plug, tooltip: "Connect third-party services and APIs" },
-  { href: "/dashboard/audit-trail", label: "Audit Trail", icon: Eye, tooltip: "View all platform activity for compliance" },
-  { href: "/dashboard/billing", label: "Billing", icon: DollarSign, tooltip: "Manage subscription and payment methods" },
-  { href: "/dashboard/settings", label: "Settings", icon: Settings, tooltip: "Account, team, and platform settings" },
+  { href: "/dashboard/integrations", label: "Integrations", icon: Plug, tooltip: "Connect apps and services" },
+  { href: "/dashboard/billing", label: "Billing", icon: DollarSign, tooltip: "Plans and payments" },
+  { href: "/dashboard/settings", label: "Settings", icon: Settings, tooltip: "Account and team settings" },
 ];
 
 /* Page label lookup for breadcrumbs */
