@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { organizations, orgMembers } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { createLogger } from "@/lib/logger";
 const log = createLogger("organizations");
 
@@ -31,9 +31,13 @@ export async function GET() {
       return NextResponse.json({ organizations: [] });
     }
 
+    // CRITICAL: Only fetch orgs the user is a member of.
+    // Previous code did: SELECT * FROM organizations → filter client-side (exposed ALL orgs).
     const orgIds = memberships.map((m) => m.orgId);
-    const orgs = await db.select().from(organizations);
-    const userOrgs = orgs.filter((o) => orgIds.includes(o.id));
+    const userOrgs = await db
+      .select()
+      .from(organizations)
+      .where(inArray(organizations.id, orgIds));
 
     const result = userOrgs.map((org) => ({
       ...org,

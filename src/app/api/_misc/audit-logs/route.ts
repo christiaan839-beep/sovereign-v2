@@ -22,7 +22,12 @@ export async function GET(req: NextRequest) {
   else if (since === "30d") sinceDate.setDate(sinceDate.getDate() - 30);
   else if (since === "all") sinceDate.setFullYear(2020);
 
-  const conditions = [gte(auditLogs.createdAt, sinceDate)];
+  // CRITICAL: Scope audit logs to the authenticated user.
+  // Without this filter, any authenticated user could read ALL audit logs.
+  const conditions = [
+    eq(auditLogs.userId, userId),
+    gte(auditLogs.createdAt, sinceDate),
+  ];
   if (action) conditions.push(eq(auditLogs.action, action));
 
   const [logs, totalResult, uniqueUsersResult, topActionResult] = await Promise.all([

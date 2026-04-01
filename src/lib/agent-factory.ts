@@ -34,6 +34,7 @@ import { getAntiSlopRules } from "@/lib/system-prompts";
 import { trackAgentExecution } from "@/lib/analytics";
 import { getMemoryContext, saveMemory } from "@/lib/tenant-memory";
 import { getActionTier, buildConfirmResponse, buildRestrictedResponse, type ActionTier } from "@/lib/action-tiers";
+import { resolveTenantId } from "@/lib/tenant-resolver";
 
 const log = createLogger("agent-factory");
 
@@ -90,6 +91,10 @@ export interface AgentContext {
   email: string;
   /** Authenticated user ID (empty string if public route) */
   userId: string;
+  /** Tenant ID for multi-tenant isolation (resolved from userId → tenants table) */
+  tenantId?: string;
+  /** Organization ID if the user scoped the request to an org */
+  orgId?: string;
 }
 
 export function createAgentRoute(config: AgentConfig) {
@@ -250,12 +255,23 @@ export function createAgentRoute(config: AgentConfig) {
         }
       }
 
+      // ─── Resolve Tenant ID for Multi-Tenant Isolation ───
+      let tenantId: string | undefined;
+      if (userId) {
+        tenantId = await resolveTenantId(userId);
+      }
+
+      // Extract orgId from request body if provided (for org-scoped operations)
+      const orgId = typeof sanitized.orgId === "string" ? sanitized.orgId : undefined;
+
       // ─── Execute Agent Handler ───
       const result = await config.handler({
         input: sanitized,
         request: req,
         email,
         userId,
+        tenantId,
+        orgId,
       });
 
       // ─── Safety Post-flight: PII Scan on Output ───
@@ -308,6 +324,8 @@ export function createAgentRoute(config: AgentConfig) {
                 request: req,
                 email,
                 userId,
+                tenantId,
+                orgId,
               });
 
               // Score the retry attempt
