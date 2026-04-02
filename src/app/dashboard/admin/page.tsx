@@ -257,7 +257,7 @@ export default function AdminDashboardPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/_misc/admin/analytics");
+      const res = await fetch("/api/admin/analytics");
       if (!res.ok) {
         throw new Error(`Failed to fetch analytics (${res.status})`);
       }
