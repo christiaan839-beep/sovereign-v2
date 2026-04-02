@@ -22,6 +22,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
         { path: "/onboarding", priority: 0.6, changeFrequency: "monthly" as const },
     ];
 
+    // Comparison pages (high-intent SEO)
+    const comparisonRoutes = [
+        { path: "/vs/crewai", priority: 0.8, changeFrequency: "monthly" as const },
+        { path: "/vs/gohighlevel", priority: 0.8, changeFrequency: "monthly" as const },
+        { path: "/vs/jasper", priority: 0.8, changeFrequency: "monthly" as const },
+    ];
+
     // Legal pages
     const legalRoutes = [
         { path: "/privacy", priority: 0.3, changeFrequency: "yearly" as const },
@@ -49,7 +56,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
         changeFrequency: "weekly" as const,
     }));
 
-    const allRoutes = [...coreRoutes, ...legalRoutes, ...dashboardRoutes];
+    const allRoutes = [...coreRoutes, ...comparisonRoutes, ...legalRoutes, ...dashboardRoutes];
 
     return allRoutes.map((route) => ({
         url: `${baseUrl}${route.path}`,

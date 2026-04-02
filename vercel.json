@@ -3,6 +3,12 @@
   "framework": "nextjs",
   "installCommand": "npm install --force",
   "regions": ["iad1"],
+  "crons": [
+    {
+      "path": "/api/cron/quality-check?secret=${CRON_SECRET}",
+      "schedule": "0 */6 * * *"
+    }
+  ],
   "functions": {
     "app/api/**/*.ts": {
       "maxDuration": 60

@@ -7,6 +7,7 @@ import { SovereignLogo } from "@/components/ui/SovereignLogo";
 
 export function Pricing() {
   const [notification, setNotification] = useState<{ message: string; type: "error" | "success" } | null>(null);
+  const [annual, setAnnual] = useState(false);
   const showNotification = (message: string, type: "error" | "success" = "error") => {
     setNotification({ message, type });
     setTimeout(() => setNotification(null), 4000);
@@ -200,9 +201,25 @@ export function Pricing() {
            <SovereignLogo size="lg" />
         </div>
         <h2 className="text-4xl md:text-5xl font-bold text-white serif-text mb-6">Simple, Transparent Pricing.</h2>
-        <p className="text-neutral-400 max-w-2xl mx-auto">
+        <p className="text-neutral-400 max-w-2xl mx-auto mb-8">
           Start free, scale when you see results. No contracts, cancel anytime.
         </p>
+
+        {/* Annual/Monthly Toggle */}
+        <div className="flex items-center justify-center gap-3">
+          <span className={`text-xs font-medium ${!annual ? "text-white" : "text-neutral-500"}`}>Monthly</span>
+          <button
+            type="button"
+            onClick={() => setAnnual(!annual)}
+            className={`relative w-12 h-6 rounded-full transition-colors ${annual ? "bg-emerald-500" : "bg-neutral-700"}`}
+            aria-label="Toggle annual billing"
+          >
+            <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${annual ? "translate-x-6" : ""}`} />
+          </button>
+          <span className={`text-xs font-medium ${annual ? "text-white" : "text-neutral-500"}`}>
+            Annual <span className="text-emerald-400 font-bold">Save 20%</span>
+          </span>
+        </div>
       </div>
 
       <div className="grid md:grid-cols-3 gap-8 items-start">
@@ -229,14 +246,21 @@ export function Pricing() {
             <div className="mb-8">
               <div className="flex items-end gap-2 mb-1">
                 <span className="text-4xl font-black text-white font-mono tracking-tighter">
-                  {tier.price}
+                  {annual && tier.period === "/mo"
+                    ? tier.price.replace(/[\d,]+/, (n: string) => Math.round(parseInt(n.replace(/,/g, "")) * 0.8).toLocaleString())
+                    : tier.price}
                 </span>
                 {tier.period !== "forever" && (
-                  <span className="text-neutral-500 font-bold tracking-widest uppercase text-xs mb-2">{tier.period}</span>
+                  <span className="text-neutral-500 font-bold tracking-widest uppercase text-xs mb-2">{annual ? "/mo (billed annually)" : tier.period}</span>
                 )}
               </div>
               {tier.priceUsd && tier.priceUsd !== "$0" && (
-                <p className="text-[10px] text-neutral-600 font-mono">{tier.priceUsd} USD</p>
+                <p className="text-[10px] text-neutral-600 font-mono">
+                  {annual
+                    ? tier.priceUsd.replace(/[\d,]+/, (n: string) => Math.round(parseInt(n.replace(/,/g, "")) * 0.8).toLocaleString())
+                    : tier.priceUsd} USD
+                  {annual && <span className="text-emerald-500 ml-1">20% off</span>}
+                </p>
               )}
             </div>
 
