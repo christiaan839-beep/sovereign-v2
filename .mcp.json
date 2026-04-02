@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "sovereign-matrix": {
+      "command": "node",
+      "args": ["mcp-server/dist/index.js"],
+      "env": {
+        "SOVEREIGN_BASE_URL": "https://sovereignmatrix.agency"
+      }
+    }
+  }
+}
