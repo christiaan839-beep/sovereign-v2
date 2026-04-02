@@ -21,33 +21,13 @@ const AGENT_ICON: Record<string, React.ComponentType<{ className?: string }>> = 
   "Voice Closer": Mic,
 };
 
-const CHAINS = [
-  {
-    id: 1, revenue: 12500, status: "Closed Won", date: "Mar 12",
-    steps: ["SEO Agent", "Content Agent", "Lead Gen", "Email", "Voice"],
-  },
-  {
-    id: 2, revenue: 8200, status: "Closed Won", date: "Mar 18",
-    steps: ["Market Intel", "Blog Gen", "Outbound", "Email"],
-  },
-  {
-    id: 3, revenue: 23400, status: "Closed Won", date: "Mar 24",
-    steps: ["Lead Gen", "Email Sequence", "Voice Closer"],
-  },
-];
+// Revenue attribution chains — populated when CRM integrations are connected
+const CHAINS: { id: number; revenue: number; status: string; date: string; steps: string[] }[] = [];
 
-const AGENT_REVENUE = [
-  { name: "Lead Gen", revenue: 35900, deals: 2, color: "#34d399" },
-  { name: "Email / Email Sequence", revenue: 44100, deals: 3, color: "#22d3ee" },
-  { name: "Voice / Voice Closer", revenue: 35900, deals: 2, color: "#f59e0b" },
-  { name: "SEO Agent", revenue: 12500, deals: 1, color: "#818cf8" },
-  { name: "Content Agent", revenue: 12500, deals: 1, color: "#f472b6" },
-  { name: "Blog Gen", revenue: 8200, deals: 1, color: "#a78bfa" },
-  { name: "Market Intel", revenue: 8200, deals: 1, color: "#fb923c" },
-  { name: "Outbound", revenue: 8200, deals: 1, color: "#38bdf8" },
-];
+// Agent revenue attribution — populated from closed deals
+const AGENT_REVENUE: { name: string; revenue: number; deals: number; color: string }[] = [];
 
-const maxRevenue = Math.max(...AGENT_REVENUE.map((a) => a.revenue));
+const maxRevenue = AGENT_REVENUE.length > 0 ? Math.max(...AGENT_REVENUE.map((a) => a.revenue)) : 1;
 
 export default function RevenuePage() {
   const [expandedChain, setExpandedChain] = useState<number | null>(null);
@@ -80,6 +60,13 @@ export default function RevenuePage() {
       {/* Attribution Chains */}
       <div className="space-y-3">
         <h2 className="text-sm font-semibold text-neutral-300">Attribution Chains</h2>
+        {CHAINS.length === 0 ? (
+          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-8 text-center">
+            <Link2 className="w-8 h-8 text-neutral-700 mx-auto mb-3" />
+            <p className="text-sm text-neutral-500">No attribution chains yet</p>
+            <p className="text-xs text-neutral-600 mt-1">Revenue attribution will appear here when you connect a CRM and close deals through agent-sourced leads.</p>
+          </div>
+        ) : null}
         {CHAINS.map((chain, ci) => {
           const isOpen = expandedChain === chain.id;
           return (

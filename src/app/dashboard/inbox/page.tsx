@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Inbox,
@@ -13,6 +13,7 @@ import {
   Bot,
   Sparkles,
   Target,
+  Loader2,
 } from "lucide-react";
 
 type InboxItemType = "leads" | "content" | "system";
@@ -142,10 +143,54 @@ const TABS: { key: TabKey; label: string; icon: React.ComponentType<{ className?
   { key: "system", label: "System", icon: Settings },
 ];
 
+function getRelativeTime(ts?: string): string {
+  if (!ts) return "just now";
+  const diff = Date.now() - new Date(ts).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins} min ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs} hr${hrs > 1 ? "s" : ""} ago`;
+  const days = Math.floor(hrs / 24);
+  return `${days} day${days > 1 ? "s" : ""} ago`;
+}
+
 export default function InboxPage() {
   const [activeTab, setActiveTab] = useState<TabKey>("all");
-  const [items, setItems] = useState<InboxItem[]>(DEMO_ITEMS);
+  const [items, setItems] = useState<InboxItem[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const fetchActivity = useCallback(async () => {
+    try {
+      const res = await fetch("/api/agents/analytics");
+      if (res.ok) {
+        const data = await res.json();
+        const activities = data.recentActivity || data.activity || [];
+        if (Array.isArray(activities) && activities.length > 0) {
+          const mapped: InboxItem[] = activities.slice(0, 20).map((a: Record<string, string>, i: number) => ({
+            id: a.id || String(i),
+            agent: a.agentName || a.agent_name || "Agent",
+            type: (a.agentType === "leads" || a.action?.includes("lead")) ? "leads" as const
+              : (a.agentType === "content" || a.action?.includes("content") || a.action?.includes("blog")) ? "content" as const
+              : "system" as const,
+            action: a.summary || a.action || "Completed task",
+            details: a.result || a.metadata || "",
+            timestamp: a.createdAt || a.created_at || new Date().toISOString(),
+            relativeTime: getRelativeTime(a.createdAt || a.created_at),
+            status: a.isRead ? "reviewed" as const : "new" as const,
+          }));
+          setItems(mapped);
+        }
+      }
+    } catch {
+      // Keep empty state
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchActivity(); }, [fetchActivity]);
 
   const filteredItems =
     activeTab === "all" ? items : items.filter((item) => item.type === activeTab);
@@ -243,7 +288,12 @@ export default function InboxPage() {
       {/* Inbox Items */}
       <div className="space-y-3">
         <AnimatePresence mode="popLayout">
-          {filteredItems.length === 0 ? (
+          {loading ? (
+            <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+              className="flex items-center justify-center py-20">
+              <Loader2 className="w-5 h-5 text-neutral-500 animate-spin" />
+            </motion.div>
+          ) : filteredItems.length === 0 ? (
             <motion.div
               key="empty"
               initial={{ opacity: 0, y: 20 }}

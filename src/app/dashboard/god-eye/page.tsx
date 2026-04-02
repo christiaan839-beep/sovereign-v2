@@ -92,10 +92,11 @@ function StatusDot({ status }: { status: string }) {
 }
 
 export default function GodEyePage() {
-  const [now, setNow] = useState(new Date());
+  const [now, setNow] = useState<Date | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
 
   useEffect(() => {
+    setNow(new Date());
     const interval = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(interval);
   }, []);
@@ -117,7 +118,7 @@ export default function GodEyePage() {
         </div>
         <div className="text-left sm:text-right shrink-0">
           <div className="text-[10px] text-neutral-500 uppercase tracking-widest mb-1">System Time</div>
-          <div className="text-sm font-mono text-neutral-400">{now.toLocaleTimeString()}</div>
+          <div className="text-sm font-mono text-neutral-400">{now?.toLocaleTimeString() ?? "--:--:--"}</div>
         </div>
       </div>
 
@@ -212,7 +213,7 @@ export default function GodEyePage() {
             </span>
             <span className="text-sm font-semibold text-white">Live Activity Feed</span>
           </div>
-          <span className="text-[10px] text-neutral-500 font-mono">{now.toLocaleTimeString()}</span>
+          <span className="text-[10px] text-neutral-500 font-mono">{now?.toLocaleTimeString() ?? "--:--:--"}</span>
         </div>
         <div className="divide-y divide-white/[0.03] max-h-64 overflow-y-auto" aria-live="polite">
           {[

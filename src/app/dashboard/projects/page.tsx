@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Briefcase,
@@ -132,7 +132,25 @@ const cardVariants = {
 export default function ClientProjectsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | "All">("All");
-  const [projects] = useState<ClientProject[]>(DEMO_PROJECTS);
+  const [projects, setProjects] = useState<ClientProject[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchProjects = useCallback(async () => {
+    try {
+      const res = await fetch("/api/projects");
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.projects) && data.projects.length > 0) {
+          setProjects(data.projects);
+          return;
+        }
+      }
+    } catch { /* use empty state */ }
+    setProjects([]);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { fetchProjects().finally(() => setLoading(false)); }, [fetchProjects]);
 
   const filteredProjects = useMemo(() => {
     return projects.filter((project) => {

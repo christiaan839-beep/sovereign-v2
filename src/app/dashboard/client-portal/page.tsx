@@ -29,27 +29,17 @@ interface WhitelabelConfig {
 
 // ─── Demo Data ──────────────────────────────────────────────
 
+// Empty defaults — populated when client data is available
 const DEMO_LEADS = {
-  hot: 12,
-  warm: 34,
-  cold: 18,
-  total: 64,
+  hot: 0,
+  warm: 0,
+  cold: 0,
+  total: 0,
 };
 
-const DEMO_CONTENT = [
-  { title: "Q1 SEO Audit Report", type: "Report", date: "2 days ago" },
-  { title: "Landing Page — Spring Campaign", type: "Page", date: "4 days ago" },
-  { title: "Email Sequence: Welcome Drip", type: "Email", date: "1 week ago" },
-  { title: "Blog: 5 AI Marketing Trends", type: "Blog", date: "1 week ago" },
-];
+const DEMO_CONTENT: { title: string; type: string; date: string }[] = [];
 
-const DEMO_ACTIVITY = [
-  { action: "Lead scored", detail: "Sarah Chen moved to HOT tier", time: "2h ago", icon: TrendingUp },
-  { action: "Content generated", detail: "Blog post: AI marketing trends", time: "5h ago", icon: FileText },
-  { action: "Agent deployed", detail: "SEO Dominator ran audit", time: "1d ago", icon: Sparkles },
-  { action: "Lead captured", detail: "New inbound from website form", time: "1d ago", icon: Users },
-  { action: "Page published", detail: "Spring campaign landing page", time: "2d ago", icon: ExternalLink },
-];
+const DEMO_ACTIVITY: { action: string; detail: string; time: string; icon: React.ComponentType<{ className?: string }> }[] = [];
 
 // ─── Component ──────────────────────────────────────────────
 
