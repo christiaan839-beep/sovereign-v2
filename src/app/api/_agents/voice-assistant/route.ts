@@ -1,4 +1,3 @@
-import { auth } from "@clerk/nextjs/server";
 import { createAgentRoute } from "@/lib/agent-factory";
 import { nimChat } from "@/lib/nvidia";
 import { routeIntent } from "@/lib/intent-router";
@@ -66,7 +65,7 @@ ${agentResult ? `\nYou just executed the "${intent.label}" tool. Here are the re
     );
 
     // Step 4: Generate TTS audio (optional — if voice synthesis is needed)
-    let voiceAudioUrl: string | null = null;
+    let _voiceAudioUrl: string | null = null;
     try {
       const nimKey = process.env.NVIDIA_NIM_API_KEY;
       if (nimKey && response.length < 500) {
@@ -86,7 +85,7 @@ ${agentResult ? `\nYou just executed the "${intent.label}" tool. Here are the re
         if (ttsRes.ok) {
           // Voice chat returns text optimized for speech
           const ttsData = await ttsRes.json();
-          voiceAudioUrl = ttsData.choices?.[0]?.message?.content || null;
+          _voiceAudioUrl = ttsData.choices?.[0]?.message?.content || null;
         }
       }
     } catch {

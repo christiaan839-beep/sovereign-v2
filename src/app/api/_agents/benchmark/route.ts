@@ -1,4 +1,3 @@
-import { auth } from "@clerk/nextjs/server";
 import { getNimKey } from "@/lib/nvidia";
 import { NextResponse } from "next/server";
 

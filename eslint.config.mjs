@@ -34,6 +34,11 @@ const eslintConfig = defineConfig([
     "playwright.config.ts",
     // Chrome extension (plain JS, not TypeScript)
     "chrome-extension/**",
+    // Utility scripts (plain JS, use require())
+    "scripts/**",
+    "server/**",
+    // MCP server (separate TypeScript project)
+    "mcp-server/**",
   ]),
 ]);
 

@@ -92,11 +92,10 @@ function StatusDot({ status }: { status: string }) {
 }
 
 export default function GodEyePage() {
-  const [now, setNow] = useState<Date | null>(null);
+  const [now, setNow] = useState<Date | null>(() => typeof window !== "undefined" ? new Date() : null);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
 
   useEffect(() => {
-    setNow(new Date());
     const interval = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(interval);
   }, []);

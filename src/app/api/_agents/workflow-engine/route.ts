@@ -1,4 +1,3 @@
-import { auth } from "@clerk/nextjs/server";
 import { createAgentRoute } from "@/lib/agent-factory";
 import { createLogger } from "@/lib/logger";
 
@@ -61,7 +60,7 @@ export const POST = createAgentRoute({
   handler: async ({ input }) => {
     const workflow = input.workflow as { nodes: WorkflowNode[]; edges?: WorkflowEdge[] };
     const nodes = workflow.nodes || [];
-    const edges = workflow.edges || [];
+    const _edges = workflow.edges || [];
 
     if (nodes.length === 0) {
       return { error: "Workflow has no nodes." };

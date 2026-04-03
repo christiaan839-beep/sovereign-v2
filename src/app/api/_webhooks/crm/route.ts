@@ -11,7 +11,7 @@ const log = createLogger("crm-webhook");
 
 export async function POST(req: Request) {
   try {
-    const payload = await req.json();
+    const _payload = await req.json();
     
     return NextResponse.json({ success: true, status: "CRM State Logged by Sovereign Matrix" });
   } catch (error) {

@@ -59,7 +59,7 @@ const ARTICLES = [
   },
 ];
 
-const CATEGORIES = ["All", "Industry", "Guide", "Deep Dive", "Case Study", "Technology", "Business"];
+const _CATEGORIES = ["All", "Industry", "Guide", "Deep Dive", "Case Study", "Technology", "Business"];
 
 export default function BlogPage() {
   const featured = ARTICLES.filter(a => a.featured);

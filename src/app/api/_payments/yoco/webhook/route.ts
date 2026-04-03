@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { verifyYocoWebhook } from "@/lib/payments";
 import { db } from "@/db";
 import { subscriptions } from "@/db/schema";
-import { eq } from "drizzle-orm";
 import { createLogger } from "@/lib/logger";
 import { auditLog } from "@/lib/audit-log";
 

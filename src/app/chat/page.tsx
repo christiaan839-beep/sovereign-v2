@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Send, Loader2, Bot, User, ArrowLeft, Sparkles,
+  Send, Loader2, Bot, ArrowLeft, Sparkles,
   ChevronDown, Copy, Check, Zap, Brain, Globe, Code2,
   Target, FileText, Search, Image, Workflow,
   Plus, Clock, CheckCircle2, Mic, MicOff, Volume2, VolumeX,

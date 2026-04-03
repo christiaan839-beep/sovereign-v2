@@ -20,15 +20,15 @@ const STORAGE_KEY = "sovereign_onboarding";
 
 /* ── Hook: check onboarding completion ─────────────────────────── */
 export function useOnboardingComplete(): boolean {
-  const [complete, setComplete] = useState(true); // default true to prevent flash
-  useEffect(() => {
+  const [complete] = useState(() => {
+    if (typeof window === "undefined") return true; // default true to prevent flash
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      setComplete(raw ? JSON.parse(raw).completedAt != null : false);
+      return raw ? JSON.parse(raw).completedAt != null : false;
     } catch {
-      setComplete(false);
+      return false;
     }
-  }, []);
+  });
   return complete;
 }
 
@@ -58,23 +58,20 @@ const spring = { type: "spring" as const, damping: 25, stiffness: 300 };
 
 /* ── Main Component ────────────────────────────────────────────── */
 export function GuidedSetup({ children }: { children: React.ReactNode }) {
-  const [show, setShow] = useState(false);
+  const [show, setShow] = useState(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return !raw || !JSON.parse(raw).completedAt;
+    } catch {
+      return true;
+    }
+  });
   const [step, setStep] = useState(0);
   const [role, setRole] = useState("");
   const [needs, setNeeds] = useState<string[]>([]);
   const [workspaceName, setWorkspaceName] = useState("");
   const [finishing, setFinishing] = useState(false);
-
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw || !JSON.parse(raw).completedAt) {
-        setShow(true);
-      }
-    } catch {
-      setShow(true);
-    }
-  }, []);
 
   const toggleNeed = (id: string) => {
     setNeeds((prev) =>

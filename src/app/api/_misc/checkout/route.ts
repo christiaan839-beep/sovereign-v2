@@ -6,7 +6,7 @@ const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
 
 export async function POST(req: Request) {
     try {
-        const { email, lead_id } = await req.json();
+        const { email, lead_id: _lead_id } = await req.json();
 
         if (!PAYSTACK_SECRET_KEY) {
             log.error("Missing PAYSTACK_SECRET_KEY");

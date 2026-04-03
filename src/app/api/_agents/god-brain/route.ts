@@ -15,7 +15,7 @@ export async function POST(req: Request) {
     const { userId } = await auth();
     if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
 
-    const { input, inputType = "text", depth = "standard" } = await req.json();
+    const { input, inputType: _inputType = "text", depth = "standard" } = await req.json();
     if (!input) return NextResponse.json({ error: "Missing `input`." }, { status: 400 });
 
     const nimKey = process.env.NVIDIA_NIM_API_KEY;

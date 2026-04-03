@@ -4,7 +4,7 @@
  * Validates the in-memory signal bus: emit, retrieve, filter, context, and stats.
  */
 
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect } from "vitest";
 
 // We need a fresh module for each test to reset the in-memory store.
 // Use dynamic imports after resetting the module registry.

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Briefcase, Building2, Users, Plus, DollarSign, TrendingDown,
-  Palette, Globe, X, CheckCircle2, AlertCircle, Loader2, Save,
+  Palette, Globe, X, CheckCircle2, Loader2, Save,
 } from "lucide-react";
 
 interface Client {

@@ -19,7 +19,7 @@ export default function DigitalHumanAvatarPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt: `Professional photorealistic headshot of ${avatarName}, corporate executive, studio lighting, neutral background`, width: 512, height: 512 }),
       });
-      const data = await res.json();
+      const _data = await res.json();
 
       // Phase 2: Configure voice synthesis
       setPipelineStatus("configuring");

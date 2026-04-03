@@ -40,15 +40,20 @@ export default function StatusPage() {
         s[svc.key] = svcStatus === "ok" || svcStatus === "operational" ? "operational" : svcStatus === "degraded" ? "degraded" : "operational";
       });
       setStatuses(s);
+      setLastChecked(new Date());
     } catch {
       const s: Record<string, Status> = {};
       SERVICES.forEach(svc => { s[svc.key] = "operational"; });
       setStatuses(s);
+      setLastChecked(new Date());
     }
-    setLastChecked(new Date());
   }, []);
 
-  useEffect(() => { fetchHealth(); const iv = setInterval(fetchHealth, 30000); return () => clearInterval(iv); }, [fetchHealth]);
+  useEffect(() => {
+    const iv = setInterval(fetchHealth, 30000);
+    const timer = setTimeout(fetchHealth, 0);
+    return () => { clearInterval(iv); clearTimeout(timer); };
+  }, [fetchHealth]);
 
   const allOp = Object.values(statuses).every(s => s === "operational");
   const icon = (s: Status) => s === "operational" ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : s === "degraded" ? <AlertTriangle className="w-4 h-4 text-yellow-400" /> : <XCircle className="w-4 h-4 text-red-400" />;

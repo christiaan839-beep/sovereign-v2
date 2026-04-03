@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { auditLogs } from "@/db/schema";
-import { sql, desc, eq, gte, and, count } from "drizzle-orm";
+import { sql, desc, gte, and, count } from "drizzle-orm";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("agent-analytics");
@@ -14,7 +14,7 @@ export const runtime = "edge";
  * Returns aggregated agent execution analytics from audit_logs.
  * Filters on action = 'agent.execute' (or any action starting with 'agent.').
  */
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);

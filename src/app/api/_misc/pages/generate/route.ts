@@ -12,7 +12,7 @@ const log = createLogger("page-generator");
 export async function POST(req: Request) {
   const auth = await requireAuth(); if (auth.error) return auth.error;
   try {
-    const { businessName, industry, offer, targetAudience, style } = await req.json();
+    const { businessName, industry, offer, targetAudience: _targetAudience, style } = await req.json();
 
     if (!businessName || !offer) {
       return NextResponse.json({ error: "Missing businessName or offer" }, { status: 400 });

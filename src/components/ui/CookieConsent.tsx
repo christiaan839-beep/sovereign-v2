@@ -5,14 +5,10 @@ import { useState, useEffect } from "react";
 const STORAGE_KEY = "sovereign_cookie_consent";
 
 export function CookieConsent() {
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    const consent = localStorage.getItem(STORAGE_KEY);
-    if (!consent) {
-      setVisible(true);
-    }
-  }, []);
+  const [visible, setVisible] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return !localStorage.getItem(STORAGE_KEY);
+  });
 
   function handleAccept() {
     localStorage.setItem(STORAGE_KEY, "accepted");

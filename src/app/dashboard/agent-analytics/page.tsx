@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
-  BarChart3, Activity, Zap, Users, Clock, TrendingUp, TrendingDown,
+  BarChart3, Activity, Zap, Users, TrendingUp,
   RefreshCcw, Loader2, Calendar, Play, ToggleLeft, ToggleRight,
-  CheckCircle, XCircle, Timer, ArrowUp, ArrowDown,
+  CheckCircle, Timer, ArrowUp, ArrowDown,
 } from "lucide-react";
 
 /* ─── Types ─── */

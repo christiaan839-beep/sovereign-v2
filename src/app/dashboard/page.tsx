@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -420,12 +420,10 @@ function StatsPanel() {
 
 function DiscoverSection() {
   const router = useRouter();
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    const done = localStorage.getItem(ONBOARDING_KEY) === "true";
-    if (done) setVisible(true);
-  }, []);
+  const [visible] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem(ONBOARDING_KEY) === "true";
+  });
 
   if (!visible) return null;
 
@@ -476,47 +474,38 @@ const CHECKLIST_ITEMS = [
 ];
 
 function GettingStartedChecklist() {
-  const [completed, setCompleted] = useState<string[]>([]);
-  const [collapsed, setCollapsed] = useState(false);
-  const [dismissed, setDismissed] = useState(true);
-  const [celebrated, setCelebrated] = useState(false);
-
-  // Load state from localStorage
-  useEffect(() => {
-    const stored = localStorage.getItem(CHECKLIST_KEY);
-    if (stored) {
-      try { setCompleted(JSON.parse(stored)); } catch { /* ignore */ }
-    }
-    const wasDismissed = localStorage.getItem(CHECKLIST_DISMISSED_KEY);
-    // Show checklist after onboarding is completed and not permanently dismissed
-    const onboardingDone = localStorage.getItem(ONBOARDING_KEY);
-    if (onboardingDone && !wasDismissed) {
-      setDismissed(false);
-    }
-  }, []);
-
-  // Auto-check items based on page visits (check recent agents for matching hrefs)
-  useEffect(() => {
-    if (dismissed) return;
-    const recentRaw = localStorage.getItem(RECENT_AGENTS_KEY);
-    if (!recentRaw) return;
+  const [completed, setCompleted] = useState<string[]>(() => {
+    if (typeof window === "undefined") return [];
     try {
-      const recent: { href: string }[] = JSON.parse(recentRaw);
-      const visitedPaths = recent.map((r) => r.href);
-      const newCompleted = [...completed];
-      let changed = false;
-      for (const item of CHECKLIST_ITEMS) {
-        if (!newCompleted.includes(item.id) && visitedPaths.includes(item.href)) {
-          newCompleted.push(item.id);
-          changed = true;
+      const stored = localStorage.getItem(CHECKLIST_KEY);
+      const base: string[] = stored ? JSON.parse(stored) : [];
+      // Also auto-check items based on recent page visits
+      const recentRaw = localStorage.getItem(RECENT_AGENTS_KEY);
+      if (recentRaw) {
+        const recent: { href: string }[] = JSON.parse(recentRaw);
+        const visitedPaths = recent.map((r) => r.href);
+        let changed = false;
+        for (const item of CHECKLIST_ITEMS) {
+          if (!base.includes(item.id) && visitedPaths.includes(item.href)) {
+            base.push(item.id);
+            changed = true;
+          }
+        }
+        if (changed) {
+          localStorage.setItem(CHECKLIST_KEY, JSON.stringify(base));
         }
       }
-      if (changed) {
-        setCompleted(newCompleted);
-        localStorage.setItem(CHECKLIST_KEY, JSON.stringify(newCompleted));
-      }
-    } catch { /* ignore */ }
-  }, [dismissed]); // eslint-disable-line react-hooks/exhaustive-deps
+      return base;
+    } catch { return []; }
+  });
+  const [collapsed, setCollapsed] = useState(false);
+  const [dismissed, setDismissed] = useState(() => {
+    if (typeof window === "undefined") return true;
+    const wasDismissed = localStorage.getItem(CHECKLIST_DISMISSED_KEY);
+    const onboardingDone = localStorage.getItem(ONBOARDING_KEY);
+    return !(onboardingDone && !wasDismissed);
+  });
+  const celebratedRef = useRef(false);
 
   const toggleItem = (id: string) => {
     setCompleted((prev) => {
@@ -537,12 +526,12 @@ function GettingStartedChecklist() {
 
   // Show celebration briefly then auto-dismiss
   useEffect(() => {
-    if (allDone && !celebrated) {
-      setCelebrated(true);
+    if (allDone && !celebratedRef.current) {
+      celebratedRef.current = true;
       const timer = setTimeout(() => dismiss(), 8000);
       return () => clearTimeout(timer);
     }
-  }, [allDone, celebrated]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [allDone]);  
 
   if (dismissed) return null;
 
@@ -723,17 +712,17 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
 };
 
 function QuickAccessRow() {
-  const [recentAgents, setRecentAgents] = useState<RecentAgent[]>([]);
-
-  useEffect(() => {
+  const [recentAgents] = useState<RecentAgent[]>(() => {
+    if (typeof window === "undefined") return [];
     try {
       const raw = localStorage.getItem(RECENT_AGENTS_KEY);
       if (raw) {
         const parsed: RecentAgent[] = JSON.parse(raw);
-        setRecentAgents(parsed.slice(0, 6));
+        return parsed.slice(0, 6);
       }
     } catch { /* ignore */ }
-  }, []);
+    return [];
+  });
 
   if (recentAgents.length === 0) return null;
 
@@ -768,22 +757,17 @@ function QuickAccessRow() {
 
 export default function DashboardHome() {
   const router = useRouter();
-  const [showWelcome, setShowWelcome] = useState(false);
-  const [showTour, setShowTour] = useState(false);
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
+  const [showWelcome, setShowWelcome] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return !localStorage.getItem(ONBOARDING_KEY);
+  });
+  const [showTour, setShowTour] = useState(() => {
+    if (typeof window === "undefined") return false;
     const seen = localStorage.getItem(ONBOARDING_KEY);
-    if (!seen) {
-      setShowWelcome(true);
-    }
-    // Show tour for users who have completed onboarding but not the tour
     const tourDone = localStorage.getItem(TOUR_KEY);
-    if (seen && !tourDone) {
-      setShowTour(true);
-    }
-    setLoaded(true);
-  }, []);
+    return !!seen && !tourDone;
+  });
+  const [loaded] = useState(() => typeof window !== "undefined");
 
   const dismissWelcome = () => {
     localStorage.setItem(ONBOARDING_KEY, "true");

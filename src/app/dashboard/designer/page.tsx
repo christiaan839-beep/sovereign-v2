@@ -20,7 +20,7 @@ const ACTIONS: {
   id: DesignAction;
   label: string;
   description: string;
-  icon: any;
+  icon: React.ComponentType<{ className?: string }>;
   color: string;
   bg: string;
   border: string;
@@ -85,7 +85,7 @@ export default function DesignerPage() {
     setResult(null);
 
     const action = ACTIONS.find((a) => a.id === activeAction)!;
-    const params: Record<string, any> = {};
+    const params: Record<string, string> = {};
 
     for (const field of action.fields) {
       const val = formData[field.name] || "";
@@ -118,8 +118,8 @@ export default function DesignerPage() {
         }),
       }).catch(() => {});
       refreshUsage();
-    } catch (e: any) {
-      setResult(`Error: ${e.message}`);
+    } catch (e: unknown) {
+      setResult(`Error: ${e instanceof Error ? e.message : "Unknown error"}`);
     } finally {
       setLoading(false);
     }

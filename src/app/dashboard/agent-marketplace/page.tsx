@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   Store, Search, Star, Download, Crown, Rocket,
-  Target, FileText, Globe2, Mic, Code2, Shield, Sparkles, Loader2, CheckCircle2,
+  Target, FileText, Globe2, Mic, Code2, Shield, Loader2, CheckCircle2,
 } from "lucide-react";
 
 const CATEGORIES = ["All", "Sales", "Content", "SEO", "Intelligence", "Voice", "Code"];

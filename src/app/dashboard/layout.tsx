@@ -38,13 +38,11 @@ const NEW_BADGE_ITEMS = new Set([
 const NEW_BADGE_STORAGE_PREFIX = "sovereign_new_dismissed_";
 
 function useNewBadge(href: string) {
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    if (!NEW_BADGE_ITEMS.has(href)) return;
-    const dismissed = localStorage.getItem(NEW_BADGE_STORAGE_PREFIX + href);
-    if (!dismissed) setVisible(true);
-  }, [href]);
+  const [visible, setVisible] = useState(() => {
+    if (typeof window === "undefined") return false;
+    if (!NEW_BADGE_ITEMS.has(href)) return false;
+    return !localStorage.getItem(NEW_BADGE_STORAGE_PREFIX + href);
+  });
 
   const dismiss = useCallback(() => {
     localStorage.setItem(NEW_BADGE_STORAGE_PREFIX + href, "true");
@@ -141,7 +139,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [isConnected, setIsConnected] = useState(false);
   const [ping, setPing] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [sidebarExpanded, setSidebarExpanded] = useState(true);
+  const [sidebarExpanded, setSidebarExpanded] = useState(() => {
+    if (typeof window === "undefined") return true;
+    const saved = localStorage.getItem("sidebar-expanded");
+    return saved !== null ? saved === "true" : true;
+  });
   const isHome = pathname === "/dashboard";
   const pageLabel = getPageLabel(pathname);
 
@@ -166,11 +168,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     });
   }, []);
 
-  // Persist sidebar preference
-  useEffect(() => {
-    const saved = localStorage.getItem("sidebar-expanded");
-    if (saved !== null) setSidebarExpanded(saved === "true");
-  }, []);
+  // Persist sidebar preference to localStorage
   useEffect(() => {
     localStorage.setItem("sidebar-expanded", String(sidebarExpanded));
   }, [sidebarExpanded]);

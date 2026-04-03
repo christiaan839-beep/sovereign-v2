@@ -147,10 +147,14 @@ export default function ClientProjectsPage() {
       }
     } catch { /* use empty state */ }
     setProjects([]);
-    setLoading(false);
   }, []);
 
-  useEffect(() => { fetchProjects().finally(() => setLoading(false)); }, [fetchProjects]);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchProjects().finally(() => setLoading(false));
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [fetchProjects]);
 
   const filteredProjects = useMemo(() => {
     return projects.filter((project) => {

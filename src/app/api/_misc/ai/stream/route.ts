@@ -68,8 +68,8 @@ export async function POST(req: Request) {
           // Phase 1: Reasoning (uses DeepSeek-R1 or Qwen3 for chain-of-thought)
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "thinking_start" })}\n\n`));
 
-          const thinkingModel = "groq/deepseek-r1-distill-llama-70b";
-          const thinkingPrompt = `Think step by step about this question. Show your reasoning process clearly, then provide a final answer.\n\nQuestion: ${prompt}`;
+          const _thinkingModel = "groq/deepseek-r1-distill-llama-70b";
+          const _thinkingPrompt = `Think step by step about this question. Show your reasoning process clearly, then provide a final answer.\n\nQuestion: ${prompt}`;
 
           const nimKey = await getNimKey();
           let thinkingResult = "";

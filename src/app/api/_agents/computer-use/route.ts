@@ -55,7 +55,7 @@ export async function POST(req: Request) {
       betas: ["computer-use-2025-11-24"],
       system: "You are the Sovereign Matrix Ghost Browser. You have access to a virtual Linux desktop. Use the computer tools to navigate the web, analyze competitors, and fulfill the user's instructions. Always verify the UI state with screenshots before clicking.",
       // Anthropic Beta Computer Use requires non-standard tool/message shapes not in stable SDK types
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- beta tool shapes differ from stable SDK
+      // Anthropic Beta Computer Use tools use non-standard shapes
       tools: [
         {
           type: "computer_20251124",

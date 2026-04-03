@@ -215,7 +215,8 @@ export function AgentOffice() {
       fr.current++;
       const f = fr.current;
       setBots(prev => prev.map(b => {
-        let { x, y, tx, ty, mode, msg, frame, faceR, cd, homeX, homeY } = b;
+        let { x, y, tx, ty, mode, msg, frame, faceR, cd } = b;
+        const { homeX, homeY } = b;
         cd--;
 
         if (task) { tx = task.x + (Math.random() - 0.5) * 50; ty = task.y + (Math.random() - 0.5) * 50; mode = "walk"; }

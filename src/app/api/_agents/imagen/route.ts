@@ -1,4 +1,3 @@
-import { auth } from "@clerk/nextjs/server";
 import { createAgentRoute } from "@/lib/agent-factory";
 import { getNimKey } from "@/lib/nvidia";
 
@@ -65,7 +64,7 @@ export const POST = createAgentRoute({
         }
 
         // Imagen 4 returned an error — log it and fall through to fallback
-        const errorText = await res.text().catch(() => "unknown error");
+        const _errorText = await res.text().catch(() => "unknown error");
         // Imagen 4 failed — falling back to FLUX.1
       } catch {
         // Imagen 4 unavailable — FLUX.1 fallback below

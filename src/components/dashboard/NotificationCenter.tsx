@@ -66,8 +66,12 @@ function timeAgo(timestamp: string): string {
 
 export function NotificationCenter() {
   const [open, setOpen] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [notifications, setNotifications] = useState<Notification[]>(() =>
+    typeof window !== "undefined" ? getNotifications() : []
+  );
+  const [unreadCount, setUnreadCount] = useState(() =>
+    typeof window !== "undefined" ? getUnreadCount() : 0
+  );
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const refreshNotifications = useCallback(() => {
@@ -75,13 +79,10 @@ export function NotificationCenter() {
     setUnreadCount(getUnreadCount());
   }, []);
 
-  // Load on mount + listen for new notifications
+  // Listen for new notifications + poll for cross-tab changes
   useEffect(() => {
-    refreshNotifications();
-
     const handler = () => refreshNotifications();
     window.addEventListener("sovereign:notification", handler);
-    // Also poll periodically to catch cross-tab changes
     const interval = setInterval(refreshNotifications, 5000);
 
     return () => {

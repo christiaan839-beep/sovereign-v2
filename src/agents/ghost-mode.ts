@@ -85,7 +85,7 @@ export async function executeGhostCycle(): Promise<GhostAction[]> {
     "Transformation + Exclusivity"
   );
 
-  let newCampaignId = `sim_${Date.now()}`;
+  let _newCampaignId = `sim_${Date.now()}`;
   
   // Actually create the real Meta Campaign if API keys exist
   if (META_TOKEN && AD_ACCOUNT_ID) {
@@ -96,7 +96,7 @@ export async function executeGhostCycle(): Promise<GhostAction[]> {
         status: "PAUSED", // Create paused initially for safety
         special_ad_categories: [],
       });
-      if (campRes.id) newCampaignId = campRes.id;
+      if (campRes.id) _newCampaignId = campRes.id;
     } catch (e) {
       log.error("Graph API camp creation failed", e as Record<string, unknown>);
     }

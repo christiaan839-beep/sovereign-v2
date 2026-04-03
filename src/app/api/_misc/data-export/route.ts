@@ -119,7 +119,7 @@ export async function GET() {
         "Content-Disposition": `attachment; filename="sovereign-data-export-${new Date().toISOString().slice(0, 10)}.json"`,
       },
     });
-  } catch (err) {
+  } catch (_err) {
     // Error logged via audit trail above
     return NextResponse.json(
       { error: "Failed to generate export. Please try again." },

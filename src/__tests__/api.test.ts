@@ -9,7 +9,7 @@
  * (no Clerk session), so we test for that explicitly.
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 
 // Mock Clerk auth to avoid import errors in test environment
 vi.mock("@clerk/nextjs/server", () => ({

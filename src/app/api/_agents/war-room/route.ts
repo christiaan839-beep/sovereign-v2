@@ -1,4 +1,3 @@
-import { auth } from "@clerk/nextjs/server";
 import { createAgentRoute } from "@/lib/agent-factory";
 import { runAgentTeam, getAvailableTeams } from "@/lib/agent-teams";
 

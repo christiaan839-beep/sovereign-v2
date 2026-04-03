@@ -7,10 +7,8 @@ import {
   leads,
   generations,
   agentActivity,
-  auditLogs,
-  payments,
 } from "@/db/schema";
-import { count, sql, gte, eq, desc, and } from "drizzle-orm";
+import { count, sql, gte, eq, desc } from "drizzle-orm";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("admin-analytics");

@@ -23,7 +23,7 @@ const ACTIONS: {
   id: SEOAction;
   label: string;
   description: string;
-  icon: any;
+  icon: React.ComponentType<{ className?: string }>;
   color: string;
   bg: string;
   border: string;
