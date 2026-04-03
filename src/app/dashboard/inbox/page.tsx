@@ -54,7 +54,7 @@ const TYPE_CONFIG: Record<
   },
 };
 
-const DEMO_ITEMS: InboxItem[] = [
+const _DEMO_ITEMS: InboxItem[] = [
   {
     id: "1",
     agent: "Lead Prospector",

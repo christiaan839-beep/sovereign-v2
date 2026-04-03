@@ -9,12 +9,10 @@ import {
   FileText,
   Activity,
   Link2,
-  ExternalLink,
   Copy,
   Check,
   Sparkles,
   Shield,
-  TrendingUp,
   ArrowRight,
 } from "lucide-react";
 

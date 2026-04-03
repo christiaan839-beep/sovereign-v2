@@ -37,7 +37,7 @@ const SEO_FINDINGS = [
 ];
 
 const COMPETITOR_ANALYSIS = [
-  { category: "Tech Stack", yours: "Next.js 15, Tailwind, Vercel", competitor: "WordPress, Elementor, shared hosting", insight: "Significant performance advantage — leverage in positioning" },
+  { category: "Tech Stack", yours: "Next.js 15, Tailwind, Vercel", competitor: "WordPress, Elementor, shared hosting", insight: "Significant performance advantage — use this to differentiate on speed" },
   { category: "SEO Coverage", yours: "42 ranking keywords", competitor: "127 ranking keywords", insight: "Competitor leads on long-tail content; target their gaps in 'autonomous agents' and 'AI workflow'" },
   { category: "Pricing", yours: "$99-499/mo flat", competitor: "$2,500-10,000/mo retainer", insight: "10x cost advantage — emphasize in sales materials and landing pages" },
   { category: "Content Volume", yours: "8 blog posts", competitor: "64 blog posts", insight: "Content gap is closeable with agent-generated content at scale" },

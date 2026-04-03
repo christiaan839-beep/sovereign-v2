@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Cpu, Zap, ArrowRight, Globe, Mic, Code, Brain, BookOpen, Shield, ChevronRight, Sparkles, Eye, FileText, Monitor, Plug, Database, RotateCcw } from "lucide-react";
+import { Cpu, Zap, ArrowRight, Globe, Code, Brain, BookOpen, Shield, ChevronRight, Sparkles, FileText, Monitor, Plug, Database, RotateCcw } from "lucide-react";
 
 const MODELS = [
   { name: "Nemotron Ultra 253B", params: "253B", tag: "Reasoning", provider: "NIM", color: "#00ff66" },

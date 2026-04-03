@@ -13,7 +13,7 @@ export default function CosmosVSLHackerPage() {
   const [aggressiveness, setAggressiveness] = useState("High (Direct Response)");
 
   const [progress, setProgress] = useState(0);
-  const [topic, setTopic] = useState("");
+  const [topic, _setTopic] = useState("");
   const [visionResult, setVisionResult] = useState<string | null>(null);
   const [cadenceResult, setCadenceResult] = useState<string | null>(null);
   const [scriptResult, setScriptResult] = useState<string | null>(null);

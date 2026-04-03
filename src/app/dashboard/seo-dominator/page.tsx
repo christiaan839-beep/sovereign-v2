@@ -299,7 +299,7 @@ export default function SEODominatorPage() {
                   Intelligence Report
                 </span>
               </div>
-              <ExportButtons content={result || ""} filename="umbra-seo-report" />
+              <ExportButtons content={result || ""} filename="sovereign-seo-report" />
             </div>
             <div className="p-6 max-h-[600px] overflow-y-auto custom-scrollbar">
               <MarkdownRenderer content={result || ""} />

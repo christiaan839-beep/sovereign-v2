@@ -4,7 +4,7 @@ import React from 'react';
 import { Cpu, Network, Database, Code, Mail, Mic, Shield, Globe } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-const AGENT_NODES = [
+const _AGENT_NODES = [
   {
     id: 'core-orchestrator',
     name: 'Sovereign Core',

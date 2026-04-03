@@ -11,7 +11,7 @@ interface Message {
 }
 
 export default function NemoClawPage() {
-  const [systemPrompt, setSystemPrompt] = useState(
+  const [systemPrompt, _setSystemPrompt] = useState(
     "You are NemoClaw, NVIDIA's enterprise-grade autonomous AI agent powered by the OpenClaw framework. " +
     "You execute tasks, make decisions, and take actions on the Commander's local infrastructure. " +
     "Your objective is to autonomously complete complex multi-step workflows using NVIDIA OpenShell security protocols."
@@ -22,9 +22,9 @@ export default function NemoClawPage() {
   ]);
   const [input, setInput] = useState("");
   const [isInferencing, setIsInferencing] = useState(false);
-  const [latency, setLatency] = useState("- ms");
-  const [privacyMode, setPrivacyMode] = useState<"secure" | "open">("secure");
-  const [selectedModel, setSelectedModel] = useState("mistral-nemotron");
+  const [_latency, setLatency] = useState("- ms");
+  const [privacyMode, _setPrivacyMode] = useState<"secure" | "open">("secure");
+  const [selectedModel, _setSelectedModel] = useState("mistral-nemotron");
   const [isDeployed247, setIsDeployed247] = useState(false);
   const [showGuardrails] = useState(true);
   

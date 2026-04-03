@@ -15,7 +15,7 @@ const BOOT_SEQUENCE = [
 ];
 
 export function CinematicOnboarding({ children }: { children: React.ReactNode }) {
-  const { user, isLoaded } = useUser();
+  const { user: _user, isLoaded } = useUser();
   const [showChildren, setShowChildren] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
   const [hasRun, setHasRun] = useState(true); // Default true until mounted

@@ -13,7 +13,7 @@ export default function PodcastBlueprintPage() {
   const [format, setFormat] = useState("interview");
   const [length, setLength] = useState("10");
 
-  const [podcastTopic, setPodcastTopic] = useState("");
+  const [podcastTopic, _setPodcastTopic] = useState("");
   const [progress, setProgress] = useState(0);
   const [blogGenResult, setBlogGenResult] = useState<string | null>(null);
   const [scriptResult, setScriptResult] = useState<string | null>(null);

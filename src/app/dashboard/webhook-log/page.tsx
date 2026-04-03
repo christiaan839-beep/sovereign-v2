@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Webhook, ArrowDownLeft, ArrowUpRight, AlertTriangle, CheckCircle2, XCircle, RefreshCw, ChevronDown, Clock, Activity, Zap } from "lucide-react";
+import { Webhook, ArrowDownLeft, ArrowUpRight, CheckCircle2, RefreshCw, ChevronDown, Clock, Activity, Zap } from "lucide-react";
 
 type Direction = "in" | "out";
 type Filter = "all" | "in" | "out" | "failed";
@@ -18,7 +18,7 @@ const EVENTS: WebhookEvent[] = [
   { id: "wh-04", ts: "2026-03-28 13:41:18", dir: "out", service: "Zapier", status: 500, preview: "lead.created (FAILED)", payload: { error: "Timeout connecting to downstream", lead_id: "ld_88x", retry_count: 2 } },
   { id: "wh-05", ts: "2026-03-28 12:15:33", dir: "in", service: "Yoco", status: 200, preview: "customer.subscription.updated", payload: { event: "customer.subscription.updated", subscription: "sub_Qz7", plan: "pro" } },
   { id: "wh-06", ts: "2026-03-28 11:58:02", dir: "out", service: "Slack", status: 200, preview: "alert.threshold_reached", payload: { channel: "#ops", text: "Agent runs at 90% capacity", metric: "agent_runs", value: 180 } },
-  { id: "wh-07", ts: "2026-03-28 10:42:55", dir: "in", service: "Zapier", status: 200, preview: "form.submission", payload: { form_id: "frm_22", email: "lead@example.com", source: "landing_page" } },
+  { id: "wh-07", ts: "2026-03-28 10:42:55", dir: "in", service: "Zapier", status: 200, preview: "form.submission", payload: { form_id: "frm_22", email: "inbound@lead.co", source: "landing_page" } },
   { id: "wh-08", ts: "2026-03-28 09:11:30", dir: "out", service: "Twilio", status: 502, preview: "sms.send (FAILED)", payload: { error: "Bad gateway from carrier", to: "+15559876543", message_sid: null } },
 ];
 

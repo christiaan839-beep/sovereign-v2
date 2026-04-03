@@ -6,26 +6,26 @@ import Link from "next/link";
 
 const SECTIONS = [
   {
-    id: "paradigm",
-    title: "The Paradigm Shift in Enterprise AI",
+    id: "why-now",
+    title: "Why Autonomous Agents Are Replacing Chatbots",
     icon: Brain,
-    content: "The landscape of enterprise artificial intelligence is undergoing a structural and irreversible phase shift. The initial wave of generative AI — conversational chatbots and text-generation interfaces — is giving way to a fundamentally more sophisticated paradigm: autonomous agentic workflows. AI systems are evolving from passive tools that draft content into deterministic engines capable of planning, executing, iteratively correcting, and delivering finalized operational work. Within this paradigm, data sovereignty — the principle that an organization must maintain absolute control over its computational models and proprietary data — has become a foundational security requirement for modern enterprises.",
+    content: "Enterprise AI is moving past chatbots. The first wave — ChatGPT, Gemini, Claude — gave companies conversational tools that draft text. The second wave is different: AI systems that plan, execute, verify, and deliver finished work without constant prompting. Instead of asking an AI to write an email, you tell it to find 50 qualified prospects and draft personalized outreach for each. The system breaks that goal into steps, assigns each step to a specialized agent, and delivers results. This is the shift from AI assistants to AI workers — and it demands a new kind of platform built for autonomous execution, not conversation.",
   },
   {
     id: "architecture",
     title: "The Autonomous Agency Operating System",
     icon: Cpu,
-    content: "At the core of Sovereign Matrix is a sophisticated interface providing access to 124 purpose-built, specialized agents spanning sales outreach, voice agents with sub-200ms latency across 12 languages, document intelligence with advanced RAG pipelines, autonomous code generation and deployment, and unconstrained browser automation. Rather than offering a generalized conversational interface, the architecture compartmentalizes functionality into distinct, highly optimized operational silos — mirroring traditional corporate structures where specific departments handle distinct operational mandates.",
+    content: "Sovereign Matrix runs 130+ specialized agents — each built for one job. Lead generation agents find and qualify prospects. Content agents write blog posts and social media. SEO agents audit websites and build keyword strategies. Voice agents make sales calls with sub-200ms latency. Code agents write, test, and deploy software. Instead of one general-purpose chatbot trying to do everything, the platform assigns each task to an agent trained specifically for that type of work. The result: higher quality output, faster execution, and fewer errors.",
   },
   {
     id: "routing",
     title: "Smart Routing & Multi-Model Intelligence",
     icon: Zap,
-    content: "The platform implements a proprietary Smart Router that classifies incoming tasks in real-time and dynamically allocates them across 65+ specialized open-source models. DeepSeek V3.2 handles complex reasoning and coding. Qwen 3 powers multilingual operations. Llama 4 Scout processes massive documents with its 10M token context window. A sophisticated failover chain ensures that if a primary model experiences downtime or latency, tasks are instantaneously rerouted to secondary models — guaranteeing high availability across the enterprise automation fabric.",
+    content: "Every task gets routed to the best AI model for that job — automatically. The Smart Router classifies incoming requests and assigns them: DeepSeek V3.2 for complex reasoning and code, Qwen 3 for multilingual work, Llama 4 Scout for processing massive documents (10M token context). If one model is slow or down, the system silently fails over to the next best option. Users never see an error page. The circuit breaker pattern (borrowed from distributed systems engineering) ensures that one provider's outage doesn't cascade into a platform-wide failure.",
   },
   {
     id: "sovereignty",
-    title: "The Localized Execution Paradigm",
+    title: "Data Stays on Your Hardware",
     icon: Lock,
     content: "The definitive technological moat is the platform's commitment to absolute data sovereignty through local and air-gapped execution. By integrating with NVIDIA's NemoClaw architecture and the Ollama ecosystem, the entire suite of agents and models can be deployed on proprietary hardware. This results in zero variable API costs, predictable operational expenditures, and cryptographic certainty that no corporate data ever leaves the local network perimeter. NVIDIA's OpenShell runtime provides a secure, sandboxed execution environment specifically designed for autonomous agents.",
   },

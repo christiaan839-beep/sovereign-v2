@@ -1,8 +1,7 @@
 "use client";
 
-import { SignUp, useAuth } from "@clerk/nextjs";
+import { SignUp } from "@clerk/nextjs";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { SovereignLogo } from "@/components/ui/SovereignLogo";

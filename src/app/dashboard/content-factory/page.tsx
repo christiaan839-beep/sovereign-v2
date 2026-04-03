@@ -292,7 +292,7 @@ export default function ContentFactoryPage() {
                   Content Output
                 </span>
               </div>
-              <ExportButtons content={result || ""} filename="umbra-content" />
+              <ExportButtons content={result || ""} filename="sovereign-content" />
             </div>
             <div className="p-6 max-h-[600px] overflow-y-auto custom-scrollbar">
               <MarkdownRenderer content={result || ""} />

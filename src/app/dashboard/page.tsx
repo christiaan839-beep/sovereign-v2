@@ -678,7 +678,7 @@ interface RecentAgent {
   visitedAt: number;
 }
 
-const DASHBOARD_PAGE_MAP: Record<string, { name: string; iconName: string }> = {
+const _DASHBOARD_PAGE_MAP: Record<string, { name: string; iconName: string }> = {
   "/dashboard/leads": { name: "Lead Gen", iconName: "Target" },
   "/dashboard/content-factory": { name: "Content Factory", iconName: "Sparkles" },
   "/dashboard/war-room": { name: "War Room", iconName: "Swords" },

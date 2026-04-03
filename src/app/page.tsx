@@ -15,7 +15,7 @@ import { CinematicLoader } from "@/components/ui/CinematicLoader";
 import { SocialProofMetrics } from "@/components/ui/SocialProofMetrics";
 import { LandingAgent } from "@/components/ui/LandingAgent";
 import { AgentOffice } from "@/components/ui/AgentOffice";
-import { RevealText, ScaleOnScroll, MagneticButton, StaggerChildren, GlowDivider, ScrollProgress } from "@/components/ui/ScrollAnimations";
+import { RevealText, MagneticButton, StaggerChildren, GlowDivider, ScrollProgress } from "@/components/ui/ScrollAnimations";
 import { TextDecrypt } from "@/components/cinematic/TextDecrypt";
 import { ScrollVelocitySkew, ClipReveal } from "@/components/cinematic/ScrollVelocity";
 import { ParticleBurst } from "@/components/cinematic/ParticleBurst";
@@ -24,7 +24,6 @@ import { LiveTicker } from "@/components/cinematic/LiveTicker";
 import { LogoMarquee } from "@/components/cinematic/InfiniteMarquee";
 import { ExitIntent } from "@/components/ui/ExitIntent";
 import dynamic from "next/dynamic";
-import { TextMorph } from "@/components/ui/TextMorph";
 import { InteractiveHeroStrike } from "@/components/ui/InteractiveHeroStrike";
 
 const HeroParticles = dynamic(() => import("@/components/ui/HeroParticles").then(m => ({ default: m.HeroParticles })), { ssr: false });
@@ -74,7 +73,7 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
 }
 
 // ─── Model Badge (enhanced with subtle glow) ───
-function ModelBadge({ name, type }: { name: string; type: string }) {
+function _ModelBadge({ name, type }: { name: string; type: string }) {
   return (
     <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.02] border border-white/[0.06] backdrop-blur-xl hover:border-emerald-500/20 hover:bg-emerald-500/[0.03] transition-gpu duration-500 group">
       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] group-hover:shadow-[0_0_12px_rgba(16,185,129,0.8)] transition-shadow" />
@@ -996,7 +995,7 @@ export default function Home() {
       <section className="py-24 px-6 bg-[#050505] perf-section">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
-            <RevealText as="p" className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">A New Paradigm</RevealText>
+            <RevealText as="p" className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">How It Works</RevealText>
             <div className="overflow-hidden">
               <TextDecrypt text="From prompting to deploying." className="text-3xl md:text-5xl font-bold text-white tracking-tight" as="h2" speed={20} delay={200} />
             </div>

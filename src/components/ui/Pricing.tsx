@@ -140,7 +140,7 @@ export function Pricing() {
   ];
 
   const [showModal, setShowModal] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const [selectedPlan, _setSelectedPlan] = useState<string | null>(null);
   const [leadName, setLeadName] = useState("");
   const [leadPhone, setLeadPhone] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);

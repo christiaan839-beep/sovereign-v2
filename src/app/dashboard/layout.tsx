@@ -137,7 +137,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter();
   const { user } = useSafeUser();
   const [isConnected, setIsConnected] = useState(false);
-  const [ping, setPing] = useState(0);
+  const [_ping, setPing] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [sidebarExpanded, setSidebarExpanded] = useState(() => {
     if (typeof window === "undefined") return true;

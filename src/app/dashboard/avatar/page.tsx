@@ -28,7 +28,7 @@ export default function DigitalHumanAvatarPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: `Test voice synthesis for digital human avatar ${avatarName}. Say: Hello, I am your AI sales representative. How can I help you today?` }),
       });
-      const voiceData = await voiceRes.json();
+      const _voiceData = await voiceRes.json();
 
       // Phase 3: Render complete
       setPipelineStatus("rendering");

@@ -59,7 +59,7 @@ export default function CanvasPage() {
     (nodeId: string) => {
       const node = nodes.find((n) => n.id === nodeId);
       if (node?.data && typeof node.data === "object" && "html" in node.data) {
-        const d = node.data as { html: string; label: string };
+        const _d = node.data as { html: string; label: string };
         // Open single screen in flow preview
         setFlowPreviewOpen(true);
       }

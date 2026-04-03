@@ -52,7 +52,7 @@ Output a structured assessment with: Score, Verdict (Hot/Warm/Cold), Key Objecti
     name: "Content Rewriter",
     description: "Rewrites content in your brand voice while preserving meaning",
     icon: FileText,
-    systemPrompt: `You are a world-class content strategist and copywriter. Your job is to take existing content and rewrite it to be more engaging, persuasive, and on-brand.
+    systemPrompt: `You are an expert content strategist and copywriter. Your job is to take existing content and rewrite it to be more engaging, persuasive, and on-brand.
 
 Rules:
 1. Maintain the core message and factual accuracy

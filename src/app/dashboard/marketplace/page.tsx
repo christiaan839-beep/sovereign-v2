@@ -146,7 +146,7 @@ export default function MarketplacePage() {
 
       if (isFeatured) {
         // For featured agents, publish to marketplace first then install
-        const pubRes = await fetch("/api/marketplace", {
+        const _pubRes = await fetch("/api/marketplace", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

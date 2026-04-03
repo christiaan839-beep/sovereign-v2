@@ -33,7 +33,7 @@ interface ClientProject {
   lastActivity: string;
 }
 
-const DEMO_PROJECTS: ClientProject[] = [
+const _DEMO_PROJECTS: ClientProject[] = [
   {
     id: "proj-001",
     clientName: "TechFlow Solutions",
@@ -133,7 +133,7 @@ export default function ClientProjectsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | "All">("All");
   const [projects, setProjects] = useState<ClientProject[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [_loading, setLoading] = useState(true);
 
   const fetchProjects = useCallback(async () => {
     try {

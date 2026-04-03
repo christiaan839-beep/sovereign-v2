@@ -34,7 +34,7 @@ interface AgentExecution {
 
 /* ─── Step Icon Map ─── */
 
-const STEP_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+const _STEP_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   search: Search,
   analyze: Brain,
   write: FileText,

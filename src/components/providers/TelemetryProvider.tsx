@@ -20,7 +20,7 @@ const TelemetryContext = createContext<TelemetryContextType | undefined>(undefin
 
 export function TelemetryProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<SystemState>("UPLINK_SECURED");
-  const [activePipelines, setActivePipelines] = useState(5);
+  const [activePipelines, _setActivePipelines] = useState(5);
   const [dataYield, setDataYield] = useState(1452);
   const [lastAction, setLastAction] = useState("System initialized. Awaiting Commander inputs.");
 
