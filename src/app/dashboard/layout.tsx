@@ -86,9 +86,9 @@ const NAV_GROUPS: NavGroup[] = [
     defaultOpen: true,
     items: [
       { href: "/dashboard/seo-dominator", label: "SEO", icon: Search, tooltip: "Keyword research and site audits" },
-      { href: "/dashboard/competitor", label: "Competitors", icon: Shield, tooltip: "Analyze competitor strategies" },
+      { href: "/dashboard/competitor", label: "Market Intel", icon: Shield, tooltip: "Competitor analysis and market intelligence" },
       { href: "/dashboard/workflow-builder", label: "Workflows", icon: Workflow, tooltip: "Build multi-step automations" },
-      { href: "/dashboard/agent-builder", label: "Custom Agent", icon: Wand2, tooltip: "Create your own AI agent" },
+      { href: "/dashboard/agent-builder", label: "My Agents", icon: Wand2, tooltip: "Create and manage custom agents" },
       { href: "/dashboard/templates", label: "Templates", icon: LayoutTemplate, tooltip: "Pre-built workflows and pages" },
     ],
   },
@@ -96,9 +96,9 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Monitor",
     icon: Cpu,
     items: [
-      { href: "/dashboard/god-eye", label: "Live Agents", icon: Eye, tooltip: "Monitor all running agents" },
-      { href: "/dashboard/agent-analytics", label: "Analytics", icon: BarChart3, tooltip: "Performance and usage metrics" },
-      { href: "/dashboard/nim-arsenal", label: "AI Models", icon: Database, tooltip: "View connected models and routing" },
+      { href: "/dashboard/god-eye", label: "Agent Monitor", icon: Eye, tooltip: "Monitor all running agents" },
+      { href: "/dashboard/agent-analytics", label: "Agent Analytics", icon: BarChart3, tooltip: "Performance and usage metrics" },
+      { href: "/dashboard/nim-arsenal", label: "Model Registry", icon: Database, tooltip: "View connected AI models and routing" },
     ],
   },
 ];

@@ -4,7 +4,14 @@ import { useState, memo } from "react";
 import { Copy, Check, ThumbsUp, ThumbsDown, Eye, EyeOff } from "lucide-react";
 import type { Message } from "./types";
 import { detectContentType } from "./types";
-import { ThinkingTrace } from "./ThinkingTrace";
+// Inline thinking trace — original component was removed during dead code cleanup
+function ThinkingTrace({ thinking }: { thinking: string }) {
+  return (
+    <div className="mt-2 p-3 rounded-lg bg-white/[0.03] border border-white/[0.06] text-xs text-neutral-500 font-mono whitespace-pre-wrap">
+      {thinking}
+    </div>
+  );
+}
 import { getModel, PROVIDER_COLORS } from "@/config/models";
 
 // ── Copy Button ──

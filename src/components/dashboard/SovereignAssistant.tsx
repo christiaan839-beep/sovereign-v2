@@ -27,12 +27,8 @@ import {
   ArrowDown,
 } from "lucide-react";
 import { routeIntent } from "@/lib/intent-router";
-import { ChatLayout } from "@/components/chat";
 import type { Message } from "@/components/chat/types";
 import { detectContentType } from "@/components/chat/types";
-
-// ── Re-export the modular chat as the embedded version ──
-export { ChatLayout as SovereignAssistantEmbed };
 
 const STREAM_FLUSH_MS = 40;
 

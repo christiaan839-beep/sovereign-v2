@@ -11,7 +11,7 @@ import {
   ChevronDown, ChevronUp, PartyPopper, Check, MessageSquare,
 } from "lucide-react";
 import Link from "next/link";
-import { SovereignAssistantEmbed } from "@/components/dashboard/SovereignAssistant";
+// Chat is available via the floating widget (SovereignAssistant) in layout.tsx and /chat page
 import { LiveExecutionStream } from "@/components/dashboard/LiveExecutionStream";
 import { ExecutionFeed } from "@/components/dashboard/ExecutionFeed";
 
@@ -955,9 +955,7 @@ export default function DashboardHome() {
         </motion.div>
       )}
 
-      <div className="flex-1 min-h-0">
-        <SovereignAssistantEmbed />
-      </div>
+      {/* Chat available via floating widget (bottom-right) or /chat page */}
     </div>
   );
 }

@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
-  Eye, Activity, Cpu, Zap, Clock, CheckCircle2,
-  XCircle, AlertTriangle, BarChart3, Globe2, Mic,
+  Eye, Activity, Cpu, Clock, CheckCircle2,
+  XCircle, AlertTriangle, Mic,
   Target, FileText, Search, Code2, Shield,
 } from "lucide-react";
 
