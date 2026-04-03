@@ -242,8 +242,8 @@ describe("free-tier", () => {
 
   describe("constants", () => {
     it("should have correct tier limits", () => {
-      expect(FREE_MONTHLY_LIMIT).toBe(100);
-      expect(PRO_MONTHLY_LIMIT).toBe(5000);
+      expect(FREE_MONTHLY_LIMIT).toBe(50);
+      expect(PRO_MONTHLY_LIMIT).toBe(2000);
       expect(REFERRAL_BONUS_RUNS).toBe(50);
     });
   });

@@ -19,8 +19,16 @@ const log = createLogger("free-tier");
 
 // ── Constants ──
 
-export const FREE_MONTHLY_LIMIT = 100;
-export const PRO_MONTHLY_LIMIT = 5000;
+// Plan limits — must match pricing page and API catalog
+export const PLAN_LIMITS: Record<string, number> = {
+  free: 50,        // Free tier
+  array: 500,      // $49/mo
+  node: 2000,      // $199/mo
+  enterprise: 10000, // $499/mo
+  pro: 2000,       // Legacy alias → same as node
+};
+export const FREE_MONTHLY_LIMIT = PLAN_LIMITS.free;
+export const PRO_MONTHLY_LIMIT = PLAN_LIMITS.pro;
 export const REFERRAL_BONUS_RUNS = 50;
 
 // ── Types ──
@@ -37,7 +45,7 @@ export interface UsageStats {
   resetDate: string;
 }
 
-export type TierType = "free" | "pro" | "enterprise";
+export type TierType = "free" | "array" | "node" | "enterprise" | "pro";
 
 // ── In-Memory Cache (fast path, synced from DB) ──
 // Cache key: "userId:YYYY-MM" → { count, cachedAt }
@@ -64,8 +72,7 @@ function getResetDate(): string {
 }
 
 function getLimitForTier(tier: TierType): number {
-  if (tier === "enterprise") return Infinity;
-  return tier === "pro" ? PRO_MONTHLY_LIMIT : FREE_MONTHLY_LIMIT;
+  return PLAN_LIMITS[tier] ?? PLAN_LIMITS.free;
 }
 
 /**
@@ -129,10 +136,11 @@ export async function checkFreeUsage(userId: string): Promise<UsageCheck> {
   const limit = getLimitForTier(tier);
   const remaining = Math.max(0, limit - used);
 
+  const isUnlimited = tier === "enterprise" || limit >= 10000;
   return {
-    allowed: tier === "enterprise" || used < limit,
-    remaining: tier === "enterprise" ? Infinity : remaining,
-    limit: tier === "enterprise" ? Infinity : limit,
+    allowed: isUnlimited || used < limit,
+    remaining: isUnlimited ? Infinity : remaining,
+    limit: isUnlimited ? Infinity : limit,
   };
 }
 
