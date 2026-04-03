@@ -24,9 +24,11 @@ Here's what it does:
 → Funnel Autopsy: Find exactly where your funnel leaks
 → Contract Review: AI-powered legal risk analysis
 
-Built from scratch. 93,000 lines of TypeScript. 404 automated tests. Multi-tenant. Enterprise-grade security.
+Built from scratch. 91,000 lines of TypeScript. 488 automated tests. 35+ AI models. Enterprise-grade security.
 
-I'm giving 20 people free access for 30 days.
+The first 10 people get lifetime free access — 10,000 runs/month, every playbook, every model. No credit card. No catch.
+
+Only 10 slots. Once they're gone, it's $199/month.
 
 Comment "IN" or DM me and I'll set you up.
 
@@ -66,16 +68,17 @@ All in 3 minutes. No manual work.
 
 Tweet 4:
 The tech stack:
-- 65 AI models (NVIDIA NIM, Gemini, Claude, Groq, DeepSeek)
-- 13 one-click Playbooks
-- Multi-tenant with enterprise security
-- Custom MCP server (operate from Claude Code)
-- 93K lines of TypeScript, 404 tests
+- 35+ AI models (NVIDIA NIM, Gemini, Claude, Groq, DeepSeek, Gemma 4)
+- 25 one-click Playbooks (General, Real Estate, Legal, Recruiting)
+- 4-model consensus verification (no single point of failure)
+- 91K lines of TypeScript, 488 tests
 
 Tweet 5:
-Giving 20 people free access for 30 days.
+First 10 people get lifetime free access. Enterprise-level. No credit card.
 
-DM me or sign up at sovereignmatrix.agency
+Once 10 slots are claimed, it's $199/month.
+
+Sign up: sovereignmatrix.agency
 
 Built in South Africa 🇿🇦
 
@@ -85,15 +88,15 @@ Built in South Africa 🇿🇦
 
 Hey [Name],
 
-I built something that might save you 20+ hours a week.
+I built an AI platform that runs lead gen, SEO audits, content creation, competitor analysis, and email outreach — automatically.
 
-It's called Sovereign Matrix — an AI platform with 130+ agents that handle lead gen, SEO audits, content creation, competitor analysis, and email outreach automatically.
+You type "find 50 leads in fintech" and it chains multiple AI agents together to deliver results in 3 minutes.
 
-You type one goal ("find 50 leads in fintech"), and it chains multiple AI agents together to deliver results in minutes.
+I'm giving the first 10 people lifetime free access — enterprise-level, 10,000 runs/month, 35+ AI models. No credit card. No catch.
 
-I'm giving 20 people free access for 30 days — no card required.
+Only ask: try it, tell me what breaks, and if you find it useful, give me a testimonial.
 
-Want me to set you up? Takes 60 seconds: https://sovereignmatrix.agency
+7 slots left: https://sovereignmatrix.agency
 
 ---
 

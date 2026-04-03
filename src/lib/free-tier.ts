@@ -22,11 +22,15 @@ const log = createLogger("free-tier");
 // Plan limits — must match pricing page and API catalog
 export const PLAN_LIMITS: Record<string, number> = {
   free: 50,        // Free tier
+  founder: 10000,  // Founders Program — first 10 users get enterprise-level access FREE
   array: 500,      // $49/mo
   node: 2000,      // $199/mo
   enterprise: 10000, // $499/mo
   pro: 2000,       // Legacy alias → same as node
 };
+
+/** Maximum number of founder slots available */
+export const MAX_FOUNDERS = 10;
 export const FREE_MONTHLY_LIMIT = PLAN_LIMITS.free;
 export const PRO_MONTHLY_LIMIT = PLAN_LIMITS.pro;
 export const REFERRAL_BONUS_RUNS = 50;
@@ -45,7 +49,7 @@ export interface UsageStats {
   resetDate: string;
 }
 
-export type TierType = "free" | "array" | "node" | "enterprise" | "pro";
+export type TierType = "free" | "founder" | "array" | "node" | "enterprise" | "pro";
 
 // ── In-Memory Cache (fast path, synced from DB) ──
 // Cache key: "userId:YYYY-MM" → { count, cachedAt }
