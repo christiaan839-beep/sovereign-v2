@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import { getNimKey, selectBestModel } from "@/lib/nvidia";
 import { NextResponse } from "next/server";
 import { enhanceWithSkills } from "@/lib/skill-engine";
+import { getSystemPrompt } from "@/lib/system-prompts";
 import { createLogger } from "@/lib/logger";
 const log = createLogger("smart-router");
 
@@ -328,13 +329,45 @@ export async function POST(request: Request) {
     // EXECUTE AGENT WITH MEMORY + SKILLS
     // ==========================================
     const start = Date.now();
-    let systemPrompt = "You are a helpful AI assistant. Provide accurate, well-structured responses.";
+
+    // ── Smart System Prompt — category-aware anti-slop ──
+    const TASK_TO_PROMPT_CATEGORY: Record<string, string> = {
+      "content-writing": "creative",
+      "email": "sales",
+      "analysis": "analysis",
+      "legal": "technical",
+      "code-generation": "technical",
+      "software-engineering": "technical",
+      "debate": "analysis",
+      "deep-reasoning": "analysis",
+      "agentic": "analysis",
+      "translation": "general",
+      "voice": "sales",
+      "summarization": "general",
+      "vision": "technical",
+    };
+    const promptCategory = TASK_TO_PROMPT_CATEGORY[resolvedType] || "general";
+    let systemPrompt = getSystemPrompt(promptCategory);
+
+    // ── Chain-of-thought for complex tasks ──
+    const isComplexTask = ["deep-reasoning", "analysis", "agentic", "legal", "debate", "architecture"].includes(resolvedType);
+    const chainOfThought = isComplexTask
+      ? `\n\nBefore answering, reason through this step-by-step:
+1. What exactly is being asked?
+2. What data and context do I have?
+3. What are the key insights?
+4. What might I be wrong about?
+Then give your final answer.`
+      : "";
+
     if (contextMemory) {
-      systemPrompt += `\n\nUse the following past memory context to inform your answer if relevant:\n${contextMemory}`;
+      systemPrompt += `\n\nRelevant context from past interactions:\n${contextMemory}`;
     }
     if (skillContext) {
       systemPrompt += skillContext;
     }
+
+    const userMessage = `${prompt}${chainOfThought}`;
 
     const nimCtrl = new AbortController();
     const nimTimeout = setTimeout(() => nimCtrl.abort(), 30000);
@@ -345,17 +378,49 @@ export async function POST(request: Request) {
         model: bestModel.id,
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: prompt }
+          { role: "user", content: userMessage }
         ],
-        max_tokens: 1024,
-        temperature: 0.7,
+        max_tokens: 2048,
+        temperature: isComplexTask ? 0.4 : 0.7,
       }),
       signal: nimCtrl.signal,
     });
     clearTimeout(nimTimeout);
 
     const data = await res.json();
-    const finalResult = data?.choices?.[0]?.message?.content || String(data.error?.message || "Generation failed.");
+    let finalResult = data?.choices?.[0]?.message?.content || String(data.error?.message || "Generation failed.");
+
+    // ── Model Escalation — if output is suspiciously short, retry with stronger model ──
+    if (finalResult.length < 80 && prompt.length > 50 && bestModel.quality_score < 10) {
+      log.info("Output too short — escalating to Nemotron Ultra", {
+        originalModel: bestModel.name,
+        outputLength: finalResult.length,
+      });
+      try {
+        const escalateRes = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${nimKey}` },
+          body: JSON.stringify({
+            model: "nvidia/llama-3.1-nemotron-ultra-253b-v1",
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: userMessage }
+            ],
+            max_tokens: 2048,
+            temperature: 0.5,
+          }),
+          signal: AbortSignal.timeout(30000),
+        });
+        const escalateData = await escalateRes.json();
+        const escalated = escalateData?.choices?.[0]?.message?.content;
+        if (escalated && escalated.length > finalResult.length) {
+          finalResult = escalated;
+          log.info("Escalation improved output", { newLength: escalated.length });
+        }
+      } catch {
+        // Keep original
+      }
+    }
 
     // ── Write to route cache ──
     const cacheKey = `smartrouter:${simpleHash(prompt + resolvedType + priority)}`;

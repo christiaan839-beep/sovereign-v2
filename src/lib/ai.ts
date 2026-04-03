@@ -106,6 +106,126 @@ export async function ai(prompt: string, options: AIOptions = {}): Promise<strin
 }
 
 /**
+ * SMART AI — Chain-of-thought reasoning wrapper.
+ *
+ * Forces the model to THINK before answering. Three-phase process:
+ *   1. RESEARCH: If the task needs facts, search the web first (Tavily)
+ *   2. REASON: Ask the model to think step-by-step internally
+ *   3. ANSWER: Generate the final output grounded in research + reasoning
+ *
+ * Also supports model escalation: starts with a fast model, and if the
+ * output quality is low, auto-escalates to a stronger model.
+ *
+ * Usage:
+ *   import { smartAi } from "@/lib/ai";
+ *   const result = await smartAi("Analyze this company", {
+ *     category: "analysis",    // Uses system prompt from system-prompts.ts
+ *     research: true,          // Search web first
+ *     thinking: true,          // Force chain-of-thought
+ *   });
+ */
+export async function smartAi(prompt: string, options: {
+  category?: string;
+  system?: string;
+  research?: boolean;
+  thinking?: boolean;
+  maxTokens?: number;
+  escalate?: boolean;
+} = {}): Promise<{ answer: string; research?: string; thinking?: string; model?: string; escalated?: boolean }> {
+  const { category, research = false, thinking = true, maxTokens = 3000, escalate = true } = options;
+
+  // Get the right system prompt
+  let systemPrompt = options.system || "";
+  if (category && !systemPrompt) {
+    try {
+      const { getSystemPrompt } = await import("@/lib/system-prompts");
+      systemPrompt = getSystemPrompt(category);
+    } catch {
+      // Fall through with empty system prompt
+    }
+  }
+
+  // Phase 1: RESEARCH — gather real data if requested
+  let researchData = "";
+  if (research) {
+    try {
+      researchData = await research_ai(
+        prompt.slice(0, 200),
+        `Research this topic thoroughly. Find recent facts, statistics, company data, and relevant context. Be specific — include names, numbers, dates.`
+      );
+    } catch {
+      researchData = "";
+    }
+  }
+
+  // Phase 2: Build the thinking prompt
+  const thinkingInstruction = thinking
+    ? `\n\nBefore answering, think through this step-by-step:
+1. What is the user actually asking for?
+2. What data do I have (research below)?
+3. What are the key insights?
+4. What's the best way to structure the answer?
+5. What might I be wrong about?
+
+Then give your final answer after your reasoning.`
+    : "";
+
+  const fullPrompt = `${prompt}${researchData ? `\n\n--- LIVE RESEARCH DATA ---\n${researchData.slice(0, 3000)}` : ""}${thinkingInstruction}`;
+
+  // Phase 3: Generate with fast model first
+  let answer: string;
+  let modelUsed = "gemini-2.5-flash";
+  let escalated = false;
+
+  try {
+    answer = await ai(fullPrompt, {
+      system: systemPrompt,
+      maxTokens,
+      model: "gemini",
+    });
+  } catch {
+    // Fast model failed, try NIM
+    answer = await ai(fullPrompt, { system: systemPrompt, maxTokens, model: "nim" });
+    modelUsed = "nemotron-ultra-253b";
+  }
+
+  // Phase 4: ESCALATE if output is too short or looks low quality
+  if (escalate && answer.length < 100 && prompt.length > 50) {
+    log.info("SmartAI: Output too short — escalating to stronger model", {
+      originalLength: answer.length,
+    });
+    try {
+      const escalatedAnswer = await nimChat(
+        "nvidia/llama-3.1-nemotron-ultra-253b-v1",
+        [
+          ...(systemPrompt ? [{ role: "system", content: systemPrompt }] : []),
+          { role: "user", content: fullPrompt },
+        ],
+        { maxTokens, temperature: 0.5 }
+      );
+      if (escalatedAnswer.length > answer.length) {
+        answer = escalatedAnswer;
+        modelUsed = "nemotron-ultra-253b-v1 (escalated)";
+        escalated = true;
+      }
+    } catch {
+      // Keep original answer
+    }
+  }
+
+  // Strip thinking traces from the final answer if present
+  const cleanAnswer = answer.replace(/^(Step \d+:.*\n)+/gm, "").trim();
+
+  return {
+    answer: cleanAnswer || answer,
+    research: researchData || undefined,
+    thinking: thinking ? "chain-of-thought enabled" : undefined,
+    model: modelUsed,
+    escalated,
+  };
+}
+
+/**
  * NVIDIA NIM — Free open-source model execution.
  * Routes to Nemotron Ultra 253B (God Brain) for maximum quality.
  */
