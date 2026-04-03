@@ -1,62 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
+import { AGENT_REGISTRY } from "../registry";
 
 /**
- * UNIFIED AGENT ROUTER — Single serverless function for ALL 117 agents.
+ * UNIFIED AGENT ROUTER — Single serverless function for ALL 126 agents.
  *
- * Instead of 117 separate Lambda functions (which exceeds Vercel's free tier limit),
- * this catch-all route dynamically loads the correct agent handler based on the URL slug.
+ * Uses a static import registry (registry.ts) so webpack bundles all agent
+ * modules into this serverless function. This is required for Vercel
+ * compatibility — dynamic import() with webpackIgnore doesn't work because
+ * the modules aren't included in the bundle.
  *
- * URL: /api/agents/smart-router → loads src/app/api/_agents/smart-router/route.ts
- * URL: /api/agents/blog-gen → loads src/app/api/_agents/blog-gen/route.ts
- *
- * This is a single serverless function that handles all agent requests.
+ * URL: /api/agents/smart-router → loads from AGENT_REGISTRY["smart-router"]
  */
 
-// Build a registry of all agent handlers at module load time
-type RouteHandler = (req: NextRequest) => Promise<Response>;
-const agentHandlers: Record<string, { POST?: RouteHandler; GET?: RouteHandler; PUT?: RouteHandler; DELETE?: RouteHandler }> = {};
+const KNOWN_AGENTS = Object.keys(AGENT_REGISTRY);
 
-// Dynamically import all agent route files
+// Cache loaded modules to avoid re-importing on every request
+const loadedModules: Record<string, Awaited<ReturnType<(typeof AGENT_REGISTRY)[string]>>> = {};
+
 async function getAgentHandler(slug: string) {
-  if (agentHandlers[slug]) return agentHandlers[slug];
+  if (loadedModules[slug]) return loadedModules[slug];
+
+  const loader = AGENT_REGISTRY[slug];
+  if (!loader) return null;
 
   try {
-    const mod = await import(/* webpackIgnore: true */ `@/app/api/_agents/${slug}/route`);
-    agentHandlers[slug] = mod;
+    const mod = await loader();
+    loadedModules[slug] = mod;
     return mod;
   } catch {
     return null;
   }
 }
-
-// Pre-register known agents for faster cold starts
-const KNOWN_AGENTS = [
-  "smart-router", "god-brain", "blog-gen", "leads", "seo-dominator",
-  "site-assassin", "voice-synth", "voice-closer", "code-agent", "code-reviewer",
-  "content", "content-safety", "collab-room", "workflows", "marketplace",
-  "nemoclaw", "nemoclaw-setup", "page-builder", "image-gen", "imagen",
-  "analytics", "audit", "benchmark", "memory", "orchestrator",
-  "email-sequence", "closer", "comms", "competitive-radar",
-  "deep-think", "reasoning-chain", "vision", "vision-analyze", "ocr",
-  "embed", "rerank", "omni-search", "grounded-search", "translate",
-  "voice", "voice-chat", "voice-assistant", "webhook-gateway", "weekly-report",
-  "auto-heal", "scheduler", "pipeline", "swarm", "agentic-chain",
-  "feedback", "social-router", "telegram-router", "pii-redactor", "pii-guard",
-  "doc-intel", "doc-analyst", "proposal-generator", "case-study", "brand-voice",
-  "brand-audit", "ad-report", "ads", "seo", "video-gen", "cosmos-video",
-  "flux-image", "creative-director", "filmmaker", "design",
-  "reputation", "organic-content", "programmatic-seo", "funnel-xray",
-  "contract-analyzer", "support-bot", "client-report", "whitelabel",
-  "workflow-engine", "ai-gateway", "abm-artillery", "booking", "calendar",
-  "agentic-planner", "auto-onboard", "billing", "chain-reactor",
-  "claw-queue", "claude-think", "competitor", "competitor-scan",
-  "computer-use", "deepseek-r1", "digital-human", "email-onboard",
-  "firecrawl", "florence-ocr", "flywheel", "ghost-fleet", "gliner-pii",
-  "meta-prompt", "meeting-notes", "meeting-transcriber", "multilingual-voice",
-  "nemotron-omni", "nemotron3-super", "outbound", "page-builder-stream",
-  "rag-pipeline", "replays", "url-context", "vertex-search", "verticals",
-  "visual-reason", "voicechat", "asr", "code-sandbox"
-];
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ slug: string[] }> }) {
   const { slug } = await params;
@@ -65,16 +39,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
   const handler = await getAgentHandler(agentName);
   if (!handler?.POST) {
     return NextResponse.json(
-      { error: `Agent "${agentName}" not found`, available: KNOWN_AGENTS.slice(0, 20) },
+      { error: `Agent "${agentName}" not found`, available: KNOWN_AGENTS.slice(0, 30) },
       { status: 404 }
     );
   }
 
   try {
     const response = await handler.POST(req);
-    // Add rate limiting headers for enterprise compliance
-    response.headers.set("X-RateLimit-Limit", "500");
-    response.headers.set("X-RateLimit-Remaining", "499");
     response.headers.set("X-Powered-By", "Sovereign Matrix");
     response.headers.set("X-Agent", agentName);
     return response;
@@ -92,7 +63,6 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
 
   const handler = await getAgentHandler(agentName);
   if (!handler?.GET) {
-    // Return agent list for discovery
     return NextResponse.json({
       agents: KNOWN_AGENTS,
       count: KNOWN_AGENTS.length,
@@ -118,7 +88,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ slug
     return await handler.PUT(req);
   } catch (err) {
     return NextResponse.json(
-      { error: `Agent "${slug.join("/")}" PUT failed: ${err instanceof Error ? err.message : "Unknown error"}` },
+      { error: `PUT failed: ${err instanceof Error ? err.message : "Unknown error"}` },
       { status: 500 }
     );
   }
@@ -132,7 +102,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ s
     return await handler.DELETE(req);
   } catch (err) {
     return NextResponse.json(
-      { error: `Agent "${slug.join("/")}" DELETE failed: ${err instanceof Error ? err.message : "Unknown error"}` },
+      { error: `DELETE failed: ${err instanceof Error ? err.message : "Unknown error"}` },
       { status: 500 }
     );
   }
