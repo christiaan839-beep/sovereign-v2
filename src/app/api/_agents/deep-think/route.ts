@@ -1,5 +1,6 @@
 import { createAgentRoute } from "@/lib/agent-factory";
 import { ai } from "@/lib/ai";
+import { verifiedAi } from "@/lib/consensus";
 
 /**
  * GEMINI DEEP THINK — Advanced reasoning with parallel thought streams.
@@ -18,9 +19,44 @@ export const POST = createAgentRoute({
   requiredFields: ["problem"],
   handler: async ({ input }) => {
     const problem = input.problem as string;
+    const prompt = input.prompt as string | undefined;
     const context = (input.context as string) || "";
     const thinkingBudget = (input.thinkingBudget as number) || 8192;
     const useClaude = input.useClaude as boolean | undefined;
+    const useConsensus = input.verified as boolean | undefined;
+
+    // Support both { problem } and { prompt } for playbook compatibility
+    const taskText = problem || prompt || "";
+
+    // ── Verified AI path — generate + critique + revise for max reliability ──
+    if (useConsensus) {
+      const systemPrompt = `You are an expert analyst. Think deeply about the problem. Consider multiple angles, pitfalls, and second-order effects. Structure as:
+
+1. ANALYSIS — Break down the core problem
+2. APPROACH — Recommended strategy with rationale
+3. EXECUTION — Step-by-step implementation
+4. RISKS — What could go wrong and mitigations
+5. EXPECTED OUTCOME — Measurable results
+
+Be specific. Use numbers. No generic advice.`;
+
+      const fullPrompt = context ? `Context:\n${context}\n\nProblem:\n${taskText}` : taskText;
+
+      const result = await verifiedAi(fullPrompt, {
+        system: systemPrompt,
+        maxTokens: 3000,
+      });
+
+      return {
+        solution: result.answer,
+        verified: result.verified,
+        revised: result.revised,
+        confidence: result.confidence,
+        critique: result.critique,
+        models: result.models,
+        mode: "verified-consensus",
+      };
+    }
 
     // Claude Extended Thinking path — use when explicitly requested or Gemini key unavailable
     const geminiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY;
