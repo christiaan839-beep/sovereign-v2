@@ -38,7 +38,7 @@ interface ModelProfile {
 
 const MODEL_REGISTRY: ModelProfile[] = [
   // ─── NVIDIA NIM (Free, Open Source) ───
-  { id: "nvidia/llama-3.1-nemotron-ultra-253b", name: "Nemotron Ultra 253B", strengths: ["synthesis", "debate", "consensus", "research", "reasoning"], avg_speed_ms: 6000, quality_score: 10, cost_tier: "free" },
+  { id: "nvidia/llama-3.1-nemotron-ultra-253b-v1", name: "Nemotron Ultra 253B", strengths: ["synthesis", "debate", "consensus", "research", "reasoning"], avg_speed_ms: 6000, quality_score: 10, cost_tier: "free" },
   { id: "nvidia/nemotron-340b", name: "Nemotron 340B", strengths: ["complex-reasoning", "legal", "compliance", "technical"], avg_speed_ms: 8000, quality_score: 10, cost_tier: "free" },
   { id: "nvidia/nemotron-3-super-120b-a12b", name: "Nemotron 3 Super 120B", strengths: ["long-context", "analysis", "research", "synthesis", "reasoning"], avg_speed_ms: 4000, quality_score: 9, cost_tier: "free" },
   { id: "nvidia/devstral-2-123b-instruct-2512", name: "Devstral 2 123B", strengths: ["code", "html", "css", "javascript", "page-building"], avg_speed_ms: 4000, quality_score: 9, cost_tier: "free" },

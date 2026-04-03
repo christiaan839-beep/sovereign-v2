@@ -1,86 +1,107 @@
-import { NextResponse } from "next/server";
-import { ai } from "@/lib/ai";
+import { createAgentRoute } from "@/lib/agent-factory";
+import { research_ai } from "@/lib/ai";
+import { nimChat } from "@/lib/nvidia";
 import { ANTI_SLOP_RULES } from "@/lib/content-engine";
-import { fireUserWebhook } from "@/lib/webhooks";
-import { requireAuth } from "@/lib/auth-guard";
-import { createLogger } from "@/lib/logger";
-const log = createLogger("leads-agent");
 
-export async function POST(req: Request) {
-  const auth = await requireAuth(); 
-  if (auth.error) return auth.error;
+/**
+ * LEADS AGENT — Find real prospects using live web research.
+ *
+ * Uses Tavily to search for real companies, then NVIDIA Nemotron Ultra
+ * to analyze, qualify, and draft personalized outreach.
+ *
+ * Input: { niche: string, location: string, product?: string, context?: string }
+ * Output: { leads: Lead[], total: number }
+ */
 
-  try {
-    const { action, params } = await req.json();
+export const POST = createAgentRoute({
+  name: "leads",
+  requiredFields: ["niche"],
+  handler: async ({ input }) => {
+    const niche = input.niche as string;
+    const location = (input.location as string) || "worldwide";
+    const product = (input.product as string) || "";
+    const context = (input.context as string) || "";
 
-    if (action === "prospect") {
-      const { niche, location } = params;
-      
-      if (!niche || !location) {
-        return NextResponse.json({ error: "Missing niche or location" }, { status: 400 });
-      }
+    // Step 1: Real web research via Tavily
+    let webResearch = "";
+    try {
+      webResearch = await research_ai(
+        `${niche} companies ${location} hiring growing 2026`,
+        `Find real companies in the ${niche} industry located in ${location}. For each company found, identify: the company name, what they do, their website URL if available, and any recent news (funding, hiring, product launches). Focus on companies that would be good prospects for outreach.`
+      );
+    } catch {
+      webResearch = `No live web data available. Generating prospects based on industry knowledge of ${niche} in ${location}.`;
+    }
 
-      const prompt = `You are an elite B2B prospector and outreach specialist. 
-I need you to generate 3 realistic, highly-targeted local business prospects for the following sector and location:
+    // Step 2: AI analysis + lead generation
+    const prompt = `You are a B2B sales intelligence analyst. Based on the real web research below, generate a list of qualified prospects.
 
-NICHE: ${niche}
+RESEARCH DATA:
+${webResearch}
+
+TARGET NICHE: ${niche}
 LOCATION: ${location}
-
-For each prospect, identify a plausible but severe marketing gap (e.g., missing Schema, slow site, terrible GBP reviews, no organic traffic). Then, write a hyper-personalized, ultra-short cold email that calls out this gap and offers to fix it.
+${product ? `PRODUCT/SERVICE BEING SOLD: ${product}` : ""}
+${context ? `ADDITIONAL CONTEXT: ${context}` : ""}
 
 ${ANTI_SLOP_RULES}
 
-Return EXACTLY this JSON structure, and nothing else:
+Generate 5-10 qualified prospects. For each, provide:
+- company_name: The real company name (from research if possible)
+- industry: Their specific sub-industry
+- location: City/region
+- website: Their website URL (use real URLs from research, or best guess based on company name)
+- signal: Why they're a good prospect right now (recent funding, hiring, expansion, etc.)
+- contact_angle: A specific personalized outreach angle based on their situation
+- score: 1-10 qualification score
+
+Return ONLY valid JSON:
 {
-  "reports": [
+  "leads": [
     {
-      "business_name": "Example Roofers LLC",
-      "website": "exampleroofers.com",
-      "detected_gap": "Terrible GBP reviews and no service-area schema.",
-      "cold_email_subject": "Quick question about your Google Maps reviews",
-      "cold_email_body": "Hey, noticed you're dropping in the local pack because of a few uncaught negative reviews last month. We help roofers in [Location] flip those and inject Schema so you show up #1. Open to a quick chat?"
+      "company_name": "...",
+      "industry": "...",
+      "location": "...",
+      "website": "...",
+      "signal": "...",
+      "contact_angle": "...",
+      "score": 8
     }
   ]
 }`;
 
-      const text = await ai(prompt, { model: "gemini", maxTokens: 2500 });
-      
-      let parsed;
-      try {
-        const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-        parsed = JSON.parse(cleaned);
-      } catch {
-        log.error("Failed to parse prospector AI output", { text });
-        return NextResponse.json({ error: "AI returned invalid structure." }, { status: 500 });
-      }
+    const result = await nimChat(
+      "nvidia/llama-3.1-nemotron-ultra-253b-v1",
+      [
+        { role: "system", content: "You are a B2B sales intelligence analyst. Output ONLY valid JSON. No markdown, no explanation." },
+        { role: "user", content: prompt },
+      ],
+      { maxTokens: 3000, temperature: 0.4 }
+    );
 
-      await fireUserWebhook("Leads", "Sweep Completed", { niche, location, count: parsed.reports?.length || 0 });
-
-      const result = {
+    let parsed;
+    try {
+      const cleaned = result.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
+      parsed = JSON.parse(cleaned);
+    } catch {
+      return {
         success: true,
-        prospects_analyzed: parsed.reports?.length || 0,
-        reports: parsed.reports || []
+        leads: [],
+        total: 0,
+        raw: result.slice(0, 500),
+        note: "AI returned non-JSON output. Raw text included for review.",
       };
-
-      // Auto-handoff to outreach agent
-      fetch(new URL("/api/_agents/comms", req.url).toString(), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          from: "lead-hunter",
-          to: "outbound",
-          type: "handoff",
-          payload: { leads: result, action: "draft_outreach" },
-          autoExecute: false
-        })
-      }).catch(() => {}); // Fire and forget
-
-      return NextResponse.json(result);
     }
 
-    return NextResponse.json({ error: "Invalid action" }, { status: 400 });
-  } catch (error) {
-    log.error("Leads API error", error as Record<string, unknown>);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
-  }
-}
+    const leads = parsed.leads || parsed.reports || [];
+
+    return {
+      success: true,
+      leads,
+      total: leads.length,
+      niche,
+      location,
+      grounded: webResearch.length > 100, // true if we got real web data
+    };
+  },
+});

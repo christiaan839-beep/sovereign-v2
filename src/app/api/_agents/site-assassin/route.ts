@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     if (mode === "analyze") {
       // Pure analysis: identify weaknesses
       const analysis = await nimChat(
-        "nvidia/llama-3.1-nemotron-ultra-253b",
+        "nvidia/llama-3.1-nemotron-ultra-253b-v1",
         [
           { role: "system", content: "You are a strategic UX auditor and conversion rate optimizer. Identify every weakness and score the site." },
           { role: "user", content: `Analyze this competitor website and provide a brutal UX audit.\n\nTARGET: ${url}\nINTEL:\n${siteIntel}\n\nOutput JSON:\n{"ux_score": 0-100, "weaknesses": [{"issue": "description", "severity": "CRITICAL|HIGH|MEDIUM|LOW", "fix": "how to exploit this"}], "conversion_killers": ["list"], "speed_estimate": "fast|medium|slow", "mobile_score": 0-100, "overall_verdict": "one sentence"}` },

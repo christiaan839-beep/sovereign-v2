@@ -38,7 +38,7 @@ export async function POST(request: Request) {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": `Bearer ${await getNimKey()}` },
       body: JSON.stringify({
-        model: "nvidia/llama-3.1-nemotron-ultra-253b",
+        model: "nvidia/llama-3.1-nemotron-ultra-253b-v1",
         messages: [
           { role: "system", content: `You are a master analyst specializing in ${domain}. Break the following question into ${depth} essential sub-questions that must be answered to give a complete response. Output ONLY a numbered list of sub-questions.` },
           { role: "user", content: question },
@@ -93,7 +93,7 @@ export async function POST(request: Request) {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${await getNimKey()}` },
         body: JSON.stringify({
-          model: "nvidia/llama-3.1-nemotron-ultra-253b",
+          model: "nvidia/llama-3.1-nemotron-ultra-253b-v1",
           messages: [
             { role: "system", content: "Synthesize the analysis below into a clear, actionable final answer. Be specific, include concrete recommendations, and highlight key insights. Structure with headers." },
             { role: "user", content: `Question: ${question}\n\nDetailed analysis:\n${analysis}` },

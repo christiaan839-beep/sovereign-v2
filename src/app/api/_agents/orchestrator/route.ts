@@ -67,7 +67,7 @@ export async function POST(request: Request) {
     // ═══════════════════════════════════════════
     const auditStart = Date.now();
     const audit = await nimChat(
-      "nvidia/llama-3.1-nemotron-ultra-253b",
+      "nvidia/llama-3.1-nemotron-ultra-253b-v1",
       [
         { role: "system", content: "You are an elite business intelligence analyst. Produce structured JSON audits with scoring." },
         { role: "user", content: `Based on this recon data, produce a comprehensive multi-vector audit of ${target}.

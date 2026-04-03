@@ -8,16 +8,9 @@ import { fireUserWebhook } from "@/lib/webhooks";
 import { createLogger } from "@/lib/logger";
 const log = createLogger("email-sequence");
 
-const SEQUENCE_PROMPT = `You are an elite email marketing strategist who builds automated drip sequences that agencies charge $3,000-$5,000 to create.
+const SEQUENCE_PROMPT = `You are an expert email marketing strategist who builds automated drip sequences.
 
-When given a business context and sequence type, generate a complete multi-step email sequence.
-
-## SEQUENCE TYPES
-1. **Welcome / Onboarding**: Warm welcome → Value delivery → Social proof → Soft upsell
-2. **Lead Nurture**: Education → Trust building → Case study → Offer
-3. **Post-Purchase Upsell**: Thank you → Quick win → Advanced tip → Premium offer
-4. **Re-Engagement**: "We miss you" → New feature/value → Limited offer → Last chance
-5. **Sales / Launch**: Announcement → Benefits → Social proof → Urgency → Last call
+When given a business context and audience, generate a complete multi-step email sequence.
 
 ## EMAIL RULES
 - Subject lines: 6-10 words, curiosity-driven, NO spam trigger words
@@ -26,6 +19,8 @@ When given a business context and sequence type, generate a complete multi-step 
 - CTA per email: exactly ONE, clear, action-oriented
 - Tone: professional but warm, like a trusted advisor
 - Length: 150-250 words per email (short, scannable)
+- NO generic phrases like "I hope this email finds you well"
+- Sound like a real person, not a template
 
 Respond in this exact JSON format:
 {
@@ -34,7 +29,7 @@ Respond in this exact JSON format:
     {
       "stepNumber": 1,
       "subject": "Email subject line",
-      "body": "Full email body in plain text with paragraphs separated by double newlines",
+      "body": "Full email body in plain text",
       "delayDays": 0
     }
   ]
@@ -67,17 +62,30 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { action } = await req.json();
+    // Parse body ONCE (can't read request body twice)
+    const body = await req.json();
+    const action = body.action || "generate"; // Default to generate for playbook compatibility
 
     if (action === "generate") {
-      const { businessDescription, sequenceType, numberOfEmails, targetAudience } = await req.json().catch(() => ({}));
+      // Support both formats:
+      // Old: { action: "generate", businessDescription, sequenceType, numberOfEmails, targetAudience }
+      // New (playbooks): { product, audience, tone, context }
+      const product = body.product || body.businessDescription || "Business";
+      const audience = body.audience || body.targetAudience || "Decision-makers";
+      const tone = body.tone || "Professional";
+      const context = body.context || "";
+      const sequenceType = body.sequenceType || "Lead Nurture";
+      const numberOfEmails = body.numberOfEmails || 5;
 
-      const prompt = `Generate a ${numberOfEmails || 5}-email ${sequenceType || "lead nurture"} sequence for this business:
+      const prompt = `Generate a ${numberOfEmails}-email ${sequenceType} sequence.
 
-BUSINESS: ${businessDescription || "Premium coaching/consulting business"}
-TARGET AUDIENCE: ${targetAudience || "Professional decision-makers"}
-SEQUENCE TYPE: ${sequenceType || "Lead Nurture"}
-NUMBER OF EMAILS: ${numberOfEmails || 5}`;
+PRODUCT/SERVICE: ${product}
+TARGET AUDIENCE: ${audience}
+TONE: ${tone}
+NUMBER OF EMAILS: ${numberOfEmails}
+${context ? `\nADDITIONAL CONTEXT (use this to personalize the emails):\n${context.slice(0, 2000)}` : ""}
+
+Make each email specific to the product and audience. Reference real pain points. Include specific numbers and outcomes where possible.`;
 
       const result = await ai(prompt, { system: SEQUENCE_PROMPT, maxTokens: 4000 });
 
@@ -86,36 +94,40 @@ NUMBER OF EMAILS: ${numberOfEmails || 5}`;
         const cleaned = result.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
         parsed = JSON.parse(cleaned);
       } catch {
-        parsed = { sequenceName: "Generated Sequence", steps: [] };
+        parsed = { sequenceName: "Generated Sequence", steps: [], raw: result.slice(0, 500) };
       }
 
       // Save sequence to DB
       if (parsed.steps?.length > 0) {
-        const [newSequence] = await db.insert(emailSequences).values({
-          userEmail: user.primaryEmailAddress.emailAddress,
-          name: parsed.sequenceName,
-          trigger: "manual",
-          status: "draft",
-          totalSteps: String(parsed.steps.length),
-        }).returning();
+        try {
+          const [newSequence] = await db.insert(emailSequences).values({
+            userEmail: user.primaryEmailAddress.emailAddress,
+            name: parsed.sequenceName,
+            trigger: "manual",
+            status: "draft",
+            totalSteps: String(parsed.steps.length),
+          }).returning();
 
-        for (const step of parsed.steps) {
-          await db.insert(sequenceSteps).values({
-            sequenceId: newSequence.id,
-            stepNumber: String(step.stepNumber),
-            subject: step.subject,
-            body: step.body,
-            delayDays: String(step.delayDays || 0),
+          for (const step of parsed.steps) {
+            await db.insert(sequenceSteps).values({
+              sequenceId: newSequence.id,
+              stepNumber: String(step.stepNumber),
+              subject: step.subject,
+              body: step.body,
+              delayDays: String(step.delayDays || 0),
+            });
+          }
+
+          await fireUserWebhook("EmailSequences", "SequenceCreated", {
+            name: parsed.sequenceName,
+            steps: parsed.steps.length,
           });
+
+          return NextResponse.json({ success: true, sequence: newSequence, ...parsed });
+        } catch (dbErr) {
+          log.warn("DB save failed, returning generated sequence without persistence", { error: String(dbErr) });
+          return NextResponse.json({ success: true, ...parsed });
         }
-
-        await fireUserWebhook("EmailSequences", "SequenceCreated", {
-          name: parsed.sequenceName,
-          steps: parsed.steps.length,
-          type: sequenceType || "lead_nurture"
-        });
-
-        return NextResponse.json({ success: true, sequence: newSequence, ...parsed });
       }
 
       return NextResponse.json({ success: true, ...parsed });
@@ -123,7 +135,7 @@ NUMBER OF EMAILS: ${numberOfEmails || 5}`;
 
     // Get steps for a specific sequence
     if (action === "getSteps") {
-      const { sequenceId } = await req.json().catch(() => ({}));
+      const sequenceId = body.sequenceId;
       if (!sequenceId) return NextResponse.json({ error: "sequenceId required" }, { status: 400 });
 
       const steps = await db.query.sequenceSteps.findMany({
@@ -132,7 +144,7 @@ NUMBER OF EMAILS: ${numberOfEmails || 5}`;
       return NextResponse.json({ steps });
     }
 
-    return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+    return NextResponse.json({ error: "Invalid action. Use 'generate' or 'getSteps'." }, { status: 400 });
   } catch (err) {
     log.error("POST /api/agents/email-sequence error", err as Record<string, unknown>);
     return NextResponse.json({ error: "Server Error" }, { status: 500 });

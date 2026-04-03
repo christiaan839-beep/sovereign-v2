@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     }
 
     const agents = participants || [
-      { model: "nvidia/llama-3.1-nemotron-ultra-253b", name: "Strategist", role: "You are a strategic thinker. Focus on long-term impact, market positioning, and competitive advantage." },
+      { model: "nvidia/llama-3.1-nemotron-ultra-253b-v1", name: "Strategist", role: "You are a strategic thinker. Focus on long-term impact, market positioning, and competitive advantage." },
       { model: "mistralai/mistral-nemotron", name: "Operator", role: "You are a practical operator. Focus on execution feasibility, resource requirements, and implementation steps." },
       { model: "qwen/qwen3-235b-a22b", name: "Critic", role: "You are a devil's advocate. Challenge assumptions, identify risks, and find weaknesses in every proposal." },
     ];

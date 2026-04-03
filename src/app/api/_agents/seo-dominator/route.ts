@@ -36,7 +36,7 @@ export async function POST(request: Request) {
 
     if (mode === "audit") {
       const analysis = await nimChat(
-        "nvidia/llama-3.1-nemotron-ultra-253b",
+        "nvidia/llama-3.1-nemotron-ultra-253b-v1",
         [
           { role: "system", content: "You are an elite SEO strategist who has managed $100M+ in organic traffic. Provide specific, actionable SEO intelligence." },
           { role: "user", content: `Full SEO audit for ${domain}.\n\nLIVE SERP DATA:\n${serpIntel}\n\nKEYWORDS TO ANALYZE: ${keywordList.join(", ")}\n\nOutput JSON:\n{"domain_authority_estimate": 0-100, "content_velocity": "posts/month estimate", "keyword_gaps": [{"keyword": "term", "monthly_volume": "est", "difficulty": "LOW|MED|HIGH", "opportunity": "why this matters"}], "technical_issues": ["list"], "content_strategy": {"strengths": [], "weaknesses": [], "recommended_topics": ["5 specific topics to write"]}, "backlink_strategy": "recommendation", "estimated_organic_traffic": "monthly estimate", "dominance_score": 0-100}` },
