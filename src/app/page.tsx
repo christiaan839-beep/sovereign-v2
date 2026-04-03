@@ -157,14 +157,14 @@ function EnterpriseSection() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center">
             <div className="text-5xl md:text-6xl font-black mb-2 tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-white to-neutral-400">
-              <AnimatedCounter target={124} duration={2} />
+              <AnimatedCounter target={130} duration={2} />
             </div>
             <div className="text-sm font-semibold text-white mb-1">Specialized Agents</div>
             <p className="text-xs text-neutral-500">Purpose-built for specific business functions.</p>
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 }} className="text-center">
             <div className="text-5xl md:text-6xl font-black mb-2 tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-white to-neutral-400">
-              <AnimatedCounter target={51} suffix="+" duration={1.5} />
+              <AnimatedCounter target={65} suffix="+" duration={1.5} />
             </div>
             <div className="text-sm font-semibold text-white mb-1">Open-Source Models</div>
             <p className="text-xs text-neutral-500">Automatic failover. Zero vendor lock-in.</p>
@@ -361,7 +361,7 @@ function InteractiveDemo() {
 }
 
 function useLiveAgentCount() {
-  const [count, setCount] = useState(124);
+  const [count, setCount] = useState(130);
   useEffect(() => {
     // Simulate real-time variance — in production this would hit /api/health
     const interval = setInterval(() => {
@@ -484,7 +484,7 @@ export default function Home() {
           <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5, duration: 0.7 }}
             className="text-base md:text-lg max-w-xl mx-auto leading-relaxed mb-8">
             <span className="text-neutral-200">Most AI tools just generate text.</span>{" "}
-            <span className="text-neutral-400">Sovereign Matrix has 124 agents that find leads, write content, send emails, and build pages — end to end.</span>
+            <span className="text-neutral-400">Sovereign Matrix has 130+ agents that find leads, write content, send emails, and build pages — end to end.</span>
           </motion.p>
 
           {/* CTAs — one primary, one secondary */}
@@ -538,14 +538,80 @@ export default function Home() {
       {/* ═══ POWERED BY — infinite scrolling trust strip ═══ */}
       <LogoMarquee />
 
+      {/* ═══ THE PROBLEM — Pain section (Gemini-inspired PAS framework) ═══ */}
+      <section className="py-24 px-6 bg-[#060606]">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-16">
+            <RevealText as="h2" className="text-3xl md:text-5xl font-bold text-white tracking-tight mb-4">
+              Your agency is bleeding time.
+            </RevealText>
+            <RevealText as="p" delay={0.1} className="text-neutral-500 max-w-lg mx-auto">
+              Most agency owners spend 60% of their week on tasks an AI agent could handle in minutes.
+            </RevealText>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {[
+              {
+                icon: XCircle,
+                title: "Leads go cold",
+                problem: "A prospect fills out your form at 2 AM. You respond at 9 AM. They already booked with your competitor.",
+                cost: "Lost: ~$4,200/deal",
+              },
+              {
+                icon: XCircle,
+                title: "Manual research burns hours",
+                problem: "Every new prospect means 45 minutes on LinkedIn, their website, and Crunchbase. Multiply that by 50 leads a week.",
+                cost: "Lost: ~37 hours/month",
+              },
+              {
+                icon: XCircle,
+                title: "Content can't keep up",
+                problem: "You need 4 blog posts, 12 social posts, and 3 email sequences per client per month. Your team maxes out at 2 clients.",
+                cost: "Lost: ~$8,000/client",
+              },
+            ].map((card, i) => (
+              <motion.div
+                key={card.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                className="p-8 rounded-2xl border border-white/[0.06] bg-[#0A0A0A] hover:border-red-500/20 transition-gpu duration-300 group"
+              >
+                <card.icon className="w-6 h-6 text-red-400/60 mb-4 group-hover:text-red-400 transition-colors" />
+                <h3 className="text-base font-semibold text-white mb-3">{card.title}</h3>
+                <p className="text-sm text-neutral-500 leading-relaxed mb-4">{card.problem}</p>
+                <span className="text-xs font-mono text-red-400/60">{card.cost}</span>
+              </motion.div>
+            ))}
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.4 }}
+            className="text-center mt-12"
+          >
+            <p className="text-sm text-neutral-400">
+              Sovereign Matrix fixes all three.{" "}
+              <Link href="/signup" className="text-emerald-400 hover:text-emerald-300 transition-colors">
+                See how →
+              </Link>
+            </p>
+          </motion.div>
+        </div>
+      </section>
+
       {/* ═══ PLATFORM METRICS — Social proof with real numbers ═══ */}
       <section className="py-16 px-6 border-y border-white/[0.04]">
         <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
           {[
-            { value: 124, suffix: "", label: "AI Agents", desc: "Purpose-built for business" },
+            { value: 130, suffix: "+", label: "AI Agents", desc: "Purpose-built for business" },
             { value: 65, suffix: "+", label: "AI Models", desc: "Auto-routed per task" },
-            { value: 25, suffix: "+", label: "Integrations", desc: "CRM, Email, Dev, Database, and more" },
-            { value: 198, suffix: "", label: "Tests Passing", desc: "Production-grade reliability" },
+            { value: 13, suffix: "", label: "Playbooks", desc: "1-click multi-agent workflows" },
+            { value: 404, suffix: "", label: "Tests Passing", desc: "Production-grade reliability" },
           ].map((stat, i) => (
             <motion.div key={stat.label} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}>
               <div className="text-3xl md:text-4xl font-black text-white mb-1">
@@ -836,7 +902,7 @@ export default function Home() {
               <RevealText as="p" className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">Agent Intelligence Network</RevealText>
               <RevealText as="h2" delay={0.1} className="text-3xl md:text-4xl font-bold text-white tracking-tight mb-6">Agents that think together.</RevealText>
               <RevealText as="p" delay={0.2} className="text-neutral-500 leading-relaxed mb-8">
-                Watch 124 agents communicate in real-time. When the Lead Gen agent qualifies a prospect, the Email Sequence agent starts outreach. When SEO finds a keyword, Content writes the article. Intelligence flows between agents — creating compound intelligence no single model can match.
+                Watch 130+ agents communicate in real-time. When the Lead Gen agent qualifies a prospect, the Email Sequence agent starts outreach. When SEO finds a keyword, Content writes the article. Intelligence flows between agents — creating compound intelligence no single model can match.
               </RevealText>
               <div className="space-y-3">
                 {[
@@ -1022,7 +1088,7 @@ export default function Home() {
               </h3>
               <p className="text-emerald-500/50 text-xs mb-6">Set the goal. Agents deliver.</p>
               <ul className="space-y-3">
-                {["Describe one goal. 124 agents plan the steps, execute in parallel, and deliver finished work.", "Learns your brand voice, remembers client preferences, and improves with every interaction.", "Opens real browsers. Sends real emails. Generates real content. Deploys real code.", "Self-corrects errors, retries with different approaches, and optimizes its own performance over time."].map((item, i) => (
+                {["Describe one goal. 130+ agents plan the steps, execute in parallel, and deliver finished work.", "Learns your brand voice, remembers client preferences, and improves with every interaction.", "Opens real browsers. Sends real emails. Generates real content. Deploys real code.", "Self-corrects errors, retries with different approaches, and optimizes its own performance over time."].map((item, i) => (
                   <li key={i} className="flex items-start gap-2.5 text-neutral-300 text-sm">
                     <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5 text-emerald-400" /> {item}
                   </li>
@@ -1100,7 +1166,7 @@ export default function Home() {
             <div className="p-8 rounded-2xl border border-white/[0.06] bg-white/[0.02]">
               <h3 className="text-lg font-bold text-white mb-4">What You Get</h3>
               <ul className="space-y-2">
-                {["Your brand on every page", "Custom domain (ai.youragency.com)", "Client portals with usage tracking", "All 124 agents under your roof", "Workflow templates your clients love", "You keep 100% of client revenue"].map(item => (
+                {["Your brand on every page", "Custom domain (ai.youragency.com)", "Client portals with usage tracking", "All 130+ agents under your roof", "Workflow templates your clients love", "You keep 100% of client revenue"].map(item => (
                   <li key={item} className="flex items-start gap-2 text-sm text-neutral-300">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />{item}
                   </li>
@@ -1145,15 +1211,15 @@ export default function Home() {
           <RevealText as="h2" className="text-2xl md:text-3xl font-bold text-white mb-12 text-center tracking-tight">Common Questions</RevealText>
           <div className="rounded-2xl border border-white/[0.06] bg-[#080808] p-1">
             {[
-              { q: "What is Sovereign Matrix?", a: "An autonomous AI agent platform. 124 specialized agents handle sales, marketing, content, and operations end-to-end. A smart router picks the best model from 65+ open-source LLMs per task. You set goals — agents deliver results." },
-              { q: "Is this just another ChatGPT wrapper?", a: "No. ChatGPT is a chatbot. Sovereign Matrix is 124 autonomous agents that execute: finding leads, building pages, writing outreach sequences, qualifying prospects, making calls. They open real browsers, hit real APIs, plan multi-step workflows, and self-correct without manual prompting." },
+              { q: "What is Sovereign Matrix?", a: "An autonomous AI agent platform. 130+ specialized agents handle sales, marketing, content, and operations end-to-end. A smart router picks the best model from 65+ open-source LLMs per task. You set goals — agents deliver results." },
+              { q: "Is this just another ChatGPT wrapper?", a: "No. ChatGPT is a chatbot. Sovereign Matrix is 130+ autonomous agents that execute: finding leads, building pages, writing outreach sequences, qualifying prospects, making calls. They open real browsers, hit real APIs, plan multi-step workflows, and self-correct without manual prompting." },
               { q: "Can agents run locally without cloud?", a: "Yes. NemoClaw runs on your machine via Ollama. Full offline execution — your data never leaves your hardware. Built for sensitive client work and air-gapped environments." },
               { q: "Is there a contract or lock-in?", a: "No contracts. Month-to-month. Cancel from your dashboard. Data is always exportable. NVIDIA NIM inference is free — you only pay for premium features." },
               { q: "How long does setup take?", a: "Under 60 seconds. Sign up, complete the 5-step onboarding wizard, and deploy your first agent immediately. No Docker, no terminal commands, no technical setup required for the cloud version." },
               { q: "What integrations are supported?", a: "NVIDIA NIM, Ollama (local models), ElevenLabs (voice), Pinecone (vector memory), Clerk (auth), Neon PostgreSQL (database), Vercel (hosting), PayFast, Yoco, and PayStack. A public API is available for custom integrations." },
               { q: "Is my data safe?", a: "Yes. A 5-layer NeMo Guardrails safety pipeline protects every interaction: jailbreak detection, topic control, content safety, PII scanning, and quality scoring. Plus local execution means data never touches the cloud if you choose." },
               { q: "What is the white-label Enterprise license?", a: "The Enterprise license lets agencies rebrand the entire platform as their own. Custom domain, client portals, your logo. It is a complete AI business-in-a-box — deploy under your brand and scale your agency without hiring." },
-              { q: "How is this different from ChatGPT?", a: "ChatGPT is a chatbot — you type, it responds with text. Sovereign Matrix has 124 specialized agents that execute real tasks: finding leads with verified emails, sending email sequences, making phone calls, building landing pages, and running SEO audits. The agents work autonomously — you set a goal, they plan and execute without constant prompting." },
+              { q: "How is this different from ChatGPT?", a: "ChatGPT is a chatbot — you type, it responds with text. Sovereign Matrix has 130+ specialized agents that execute real tasks: finding leads with verified emails, sending email sequences, making phone calls, building landing pages, and running SEO audits. The agents work autonomously — you set a goal, they plan and execute without constant prompting." },
               { q: "What happens to my data?", a: "Your data stays in your account. We use encrypted storage, RBAC access controls, and a full audit trail. You can export all your data anytime from Settings. For maximum security, run agents locally via NemoClaw — your data never leaves your network." },
             ].map((faq, i) => <FAQItem key={i} question={faq.q} answer={faq.a} />)}
           </div>
@@ -1176,7 +1242,7 @@ export default function Home() {
             <TextDecrypt text="Try it free. Judge for yourself." className="text-4xl md:text-6xl font-black text-white tracking-tight leading-[1.05]" as="h2" speed={20} delay={400} />
           </div>
           <RevealText as="p" delay={0.3} className="text-neutral-400 max-w-lg mx-auto mb-4">
-            124 agents. 65+ open-source models. Workflows, integrations, and analytics — all included on the free plan. No credit card. Cancel anytime.
+            130+ agents. 65+ open-source models. Workflows, integrations, and analytics — all included on the free plan. No credit card. Cancel anytime.
           </RevealText>
           <RevealText as="p" delay={0.4} className="text-emerald-400/70 text-sm mb-10">
             Free forever plan. No credit card. Set up in 60 seconds.
@@ -1208,7 +1274,7 @@ export default function Home() {
                 <SovereignLogo size="sm" />
                 <span className="text-sm font-semibold text-white">Sovereign Matrix</span>
               </div>
-              <p className="text-xs text-neutral-500 leading-relaxed">The autonomous AI agent platform. 124 agents. 65+ models. Flat pricing, no usage fees. Built on NVIDIA NIM.</p>
+              <p className="text-xs text-neutral-500 leading-relaxed">The autonomous AI agent platform. 130+ agents. 65+ models. Flat pricing, no usage fees. Built on NVIDIA NIM.</p>
             </div>
             <div>
               <h4 className="text-xs font-semibold text-neutral-400 mb-4">Product</h4>
