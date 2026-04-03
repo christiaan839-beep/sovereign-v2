@@ -208,6 +208,7 @@ interface ConsensusResult {
 const CONSENSUS_MODELS = [
   "nvidia/llama-3.1-nemotron-ultra-253b-v1",
   "deepseek-ai/deepseek-v3-2-0324",
+  "google/gemma-4-31b-it",
   "qwen/qwen3-235b-a22b",
 ];
 

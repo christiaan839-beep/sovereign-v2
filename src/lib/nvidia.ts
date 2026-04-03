@@ -53,7 +53,12 @@ export const NIM_MODELS = {
   // ── Google Gemma 4 (Released April 2, 2026 — Apache 2.0) ──
   gemma4: "google/gemma-4-31b-it",                   // 31B dense — 256K context, vision+audio, 140+ languages
   gemma4Vision: "google/gemma-4-31b-it",             // Same model — native multimodal (images, video, audio)
-  // gemma4Edge: "google/gemma-4-e4b-it",            // 4B edge — for future mobile/IoT deployment
+  gemma4Edge: "google/gemma-4-e4b-it",               // 4B edge — mobile/IoT deployment
+  gemma4Nano: "google/gemma-4-e2b-it",               // 2B — ultra-lightweight, runs on phones
+
+  // ── Meta Llama 4 ──
+  llama4Maverick: "meta/llama-4-maverick-17b-128e",  // 128 experts MoE — massive multimodal
+  llama4Scout: "meta/llama-4-scout-17b-16e-instruct", // 10M context — entire codebases
 
   // ── Vision & Multimodal ──
   vision: "meta/llama-3.2-90b-vision-instruct",
@@ -80,6 +85,10 @@ export const NIM_MODELS = {
   asrEnglish: "nvidia/parakeet-tdt-0.6b-v2",
   asrMultilingual: "nvidia/parakeet-tdt-0.6b-v3",     // 25 European languages
   asrStreaming: "nvidia/nemotron-speech-streaming-en-0.6b", // Real-time streaming ASR
+
+  // ── Additional Speech ──
+  ttsChatterbox: "resemble-ai/chatterbox",            // Zero-shot voice cloning — MIT license
+  asrQwen: "qwen/qwen3-asr",                          // Best Chinese + multilingual ASR
 
   // ── Safety & Guardrails ──
   jailbreakDetect: "nvidia/nemoguard-jailbreakdetect",
