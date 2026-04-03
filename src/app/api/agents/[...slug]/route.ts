@@ -45,9 +45,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
   }
 
   try {
+    const start = Date.now();
     const response = await handler.POST(req);
+    const duration = Date.now() - start;
     response.headers.set("X-Powered-By", "Sovereign Matrix");
     response.headers.set("X-Agent", agentName);
+    response.headers.set("X-Response-Time", `${duration}ms`);
+    response.headers.set("Cache-Control", "no-store"); // Agent responses are dynamic, never cache
     return response;
   } catch (err) {
     return NextResponse.json(
