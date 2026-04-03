@@ -45,6 +45,8 @@ const MODEL_REGISTRY: ModelProfile[] = [
   { id: "nvidia/devstral-2-123b-instruct-2512", name: "Devstral 2 123B", strengths: ["code", "html", "css", "javascript", "page-building"], avg_speed_ms: 4000, quality_score: 9, cost_tier: "free" },
   { id: "nvidia/nemotron-content-safety-reasoning-4b", name: "Content Safety 4B", strengths: ["pii", "safety", "moderation", "compliance", "guardrails"], avg_speed_ms: 800, quality_score: 8, cost_tier: "free" },
   { id: "nvidia/nemotron-voicechat", name: "Nemotron Voicechat", strengths: ["voice", "conversation", "phone", "support", "sales-call"], avg_speed_ms: 1500, quality_score: 8, cost_tier: "free" },
+  // ─── Google Gemma 4 (April 2026 — Apache 2.0) ───
+  { id: "google/gemma-4-31b-it", name: "Gemma 4 31B", strengths: ["reasoning", "multilingual", "vision", "audio", "analysis", "writing", "code", "chat"], avg_speed_ms: 2500, quality_score: 9, cost_tier: "free" },
   // ─── New Frontier Models (NIM) ───
   { id: "qwen/qwen3-235b-a22b", name: "Qwen 3 235B", strengths: ["reasoning", "code", "multilingual", "analysis", "thinking", "math"], avg_speed_ms: 3000, quality_score: 10, cost_tier: "free" },
   { id: "meta/llama-4-maverick-17b-128e", name: "Llama 4 Maverick", strengths: ["multimodal", "vision", "image-understanding", "creative", "chat"], avg_speed_ms: 2000, quality_score: 9, cost_tier: "free" },

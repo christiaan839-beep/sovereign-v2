@@ -25,6 +25,7 @@ async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): P
 /** Primary failover chain for text generation — ordered by throughput + quality */
 const FAILOVER_MODELS = [
   "nvidia/nemotron-3-super-120b-a12b",   // Hybrid Mamba-Transformer MoE, 1M context, 5x throughput
+  "google/gemma-4-31b-it",               // Gemma 4 31B — 256K context, vision+audio, 140+ languages (NEW)
   "glm-5-744b-moe",                      // 744B MoE — long-horizon agentic reasoning
   "nvidia/nemotron-ultra-253b-v1",        // Flagship reasoning (heavier, slower)
   "nvidia/nemotron-3-nano-30b-a3b",       // Ultra-fast edge model (3.2B active)
@@ -48,6 +49,11 @@ export const NIM_MODELS = {
   office: "minimax/minimax-m2.5-230b",               // 230B — coding, reasoning, office tasks
   codingThinking: "qwen/qwen3-30b-a3b-thinking",     // Reasoning-focused coding
   codingInstruct: "qwen/qwen3-coder-30b-a3b-instruct", // Code generation specialist
+
+  // ── Google Gemma 4 (Released April 2, 2026 — Apache 2.0) ──
+  gemma4: "google/gemma-4-31b-it",                   // 31B dense — 256K context, vision+audio, 140+ languages
+  gemma4Vision: "google/gemma-4-31b-it",             // Same model — native multimodal (images, video, audio)
+  // gemma4Edge: "google/gemma-4-e4b-it",            // 4B edge — for future mobile/IoT deployment
 
   // ── Vision & Multimodal ──
   vision: "meta/llama-3.2-90b-vision-instruct",
