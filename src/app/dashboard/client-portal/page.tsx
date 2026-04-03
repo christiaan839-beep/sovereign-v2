@@ -27,17 +27,17 @@ interface WhitelabelConfig {
 
 // ─── Demo Data ──────────────────────────────────────────────
 
-// Empty defaults — populated when client data is available
-const DEMO_LEADS = {
+// Defaults — populated when client data is loaded from the API
+const DEFAULT_LEADS = {
   hot: 0,
   warm: 0,
   cold: 0,
   total: 0,
 };
 
-const DEMO_CONTENT: { title: string; type: string; date: string }[] = [];
+const DEFAULT_CONTENT: { title: string; type: string; date: string }[] = [];
 
-const DEMO_ACTIVITY: { action: string; detail: string; time: string; icon: React.ComponentType<{ className?: string }> }[] = [];
+const DEFAULT_ACTIVITY: { action: string; detail: string; time: string; icon: React.ComponentType<{ className?: string }> }[] = [];
 
 // ─── Component ──────────────────────────────────────────────
 
@@ -188,16 +188,16 @@ export default function ClientPortalPage() {
                   <Users className="w-5 h-5 text-cyan-400" />
                   <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-500">Leads</span>
                 </div>
-                <p className="text-3xl font-black text-white mb-3">{DEMO_LEADS.total}</p>
+                <p className="text-3xl font-black text-white mb-3">{DEFAULT_LEADS.total}</p>
                 <div className="flex gap-2">
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 font-bold">
-                    {DEMO_LEADS.hot} Hot
+                    {DEFAULT_LEADS.hot} Hot
                   </span>
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 font-bold">
-                    {DEMO_LEADS.warm} Warm
+                    {DEFAULT_LEADS.warm} Warm
                   </span>
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-neutral-500/10 border border-neutral-500/20 text-neutral-400 font-bold">
-                    {DEMO_LEADS.cold} Cold
+                    {DEFAULT_LEADS.cold} Cold
                   </span>
                 </div>
               </motion.div>
@@ -213,9 +213,9 @@ export default function ClientPortalPage() {
                   <FileText className="w-5 h-5 text-emerald-400" />
                   <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-500">Content</span>
                 </div>
-                <p className="text-3xl font-black text-white mb-3">{DEMO_CONTENT.length}</p>
+                <p className="text-3xl font-black text-white mb-3">{DEFAULT_CONTENT.length}</p>
                 <div className="space-y-1.5">
-                  {DEMO_CONTENT.slice(0, 2).map((c) => (
+                  {DEFAULT_CONTENT.slice(0, 2).map((c) => (
                     <div key={c.title} className="flex items-center justify-between">
                       <span className="text-[10px] text-neutral-400 truncate max-w-[70%]">{c.title}</span>
                       <span className="text-[10px] text-neutral-500">{c.date}</span>
@@ -235,9 +235,9 @@ export default function ClientPortalPage() {
                   <Activity className="w-5 h-5" style={{ color: accentColor }} />
                   <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-500">Activity</span>
                 </div>
-                <p className="text-3xl font-black text-white mb-3">{DEMO_ACTIVITY.length}</p>
+                <p className="text-3xl font-black text-white mb-3">{DEFAULT_ACTIVITY.length}</p>
                 <div className="space-y-1.5">
-                  {DEMO_ACTIVITY.slice(0, 2).map((a) => (
+                  {DEFAULT_ACTIVITY.slice(0, 2).map((a) => (
                     <div key={a.detail} className="flex items-center justify-between">
                       <span className="text-[10px] text-neutral-400 truncate max-w-[70%]">{a.action}</span>
                       <span className="text-[10px] text-neutral-500">{a.time}</span>
@@ -255,7 +255,7 @@ export default function ClientPortalPage() {
                 </h3>
               </div>
               <div className="divide-y divide-white/[0.04]">
-                {DEMO_ACTIVITY.map((a, i) => {
+                {DEFAULT_ACTIVITY.map((a, i) => {
                   const Icon = a.icon;
                   return (
                     <motion.div
