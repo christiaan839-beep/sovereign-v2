@@ -26,7 +26,7 @@ import { NextResponse } from "next/server";
 import { guardRoute, sanitizeString, errorResponse } from "@/lib/api-guard";
 import { detectJailbreak } from "@/lib/jailbreak-detect";
 import { checkContentSafety } from "@/lib/content-safety";
-import { checkFreeUsage, incrementUsage, getUpgradePrompt, getSmartUpgradeInfo } from "@/lib/free-tier";
+import { checkFreeUsage, incrementUsage, getSmartUpgradeInfo } from "@/lib/free-tier";
 import { scoreOutput, type QualityScore } from "@/lib/quality-scorer";
 import { createLogger } from "@/lib/logger";
 import { auditLog } from "@/lib/audit-log";

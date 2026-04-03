@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Headphones, Mail, User, CheckCircle2, ShieldCheck, CreditCard, AlertCircle, ArrowRight } from "lucide-react";
 

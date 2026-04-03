@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { agentActivity } from "@/db/schema";
-import { eq, and, gte, count, sql, avg } from "drizzle-orm";
+import { eq, and, gte, count, sql, avg as _avg } from "drizzle-orm";
 
 /**
  * AGENT PERFORMANCE API — Track which agents perform best.

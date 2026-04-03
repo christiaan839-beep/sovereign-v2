@@ -5,11 +5,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  LayoutDashboard, Settings, DollarSign, Target,
+  LayoutDashboard, Settings, Target,
   Search, ChevronDown, ChevronRight, Sparkles, Factory,
-  X, Menu, Database,
+  X, Menu,
   PanelLeftOpen, PanelLeftClose, Plug, Cpu,
-  BarChart3, Eye, Shield, Wrench, LayoutTemplate,
+  BarChart3, Eye, Shield, Wrench,
   Wand2, Workflow, MessageSquare, Zap, Crown
 } from "lucide-react";
 import { useKeyboardShortcuts } from "@/lib/keyboard-shortcuts";

@@ -15,7 +15,7 @@ export interface ApprovalRequest {
   createdAt: string;
 }
 
-const STORAGE_KEY = "sovereign_approvals";
+const _STORAGE_KEY = "sovereign_approvals";
 
 /**
  * Check if an action requires human approval.

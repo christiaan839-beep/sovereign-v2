@@ -22,7 +22,7 @@ export interface TierInfo {
 }
 
 /** Agents that execute immediately — read-only, no side effects */
-const TIER_1_AGENTS = new Set([
+const _TIER_1_AGENTS = new Set([
   "smart-router",
   "deep-think",
   "vision",

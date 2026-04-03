@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { db } from "@/db";
-import { subscriptions, users } from "@/db/schema";
+import { subscriptions } from "@/db/schema";
 import { eq, count } from "drizzle-orm";
 import { createLogger } from "@/lib/logger";
 import { MAX_FOUNDERS } from "@/lib/free-tier";

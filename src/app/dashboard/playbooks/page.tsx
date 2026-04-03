@@ -7,6 +7,12 @@ import {
   Activity, Ghost, Rocket, Brain, Settings, Play, Loader2,
   CheckCircle2, XCircle, Clock, ArrowLeft, ChevronRight,
   Zap, Sparkles,
+  // Real Estate pack
+  Home, DoorOpen, BarChart3, FileBarChart,
+  // Legal pack
+  Scale, UserCheck, Search, Mail,
+  // Recruiting pack
+  Briefcase, UserSearch, ClipboardList, FileSignature,
 } from "lucide-react";
 import { PLAYBOOKS, PLAYBOOK_CATEGORIES } from "@/lib/playbooks";
 import type { Playbook } from "@/lib/playbooks";
@@ -15,6 +21,12 @@ import type { Playbook } from "@/lib/playbooks";
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   Target, Swords, PenTool, FileText, TrendingUp, Fingerprint,
   Activity, Ghost, Rocket, Brain, Settings,
+  // Real Estate pack
+  Home, DoorOpen, BarChart3, FileBarChart,
+  // Legal pack
+  Scale, UserCheck, Search, Mail,
+  // Recruiting pack
+  Briefcase, UserSearch, ClipboardList, FileSignature,
 };
 
 const COLOR_MAP: Record<string, { bg: string; border: string; text: string; shadow: string; gradient: string }> = {

@@ -116,7 +116,7 @@ describe("withRetry", () => {
     vi.useRealTimers();
 
     // Capture the actual delays used by tracking calls to the retry mechanism
-    const delays: number[] = [];
+    const _delays: number[] = [];
     const originalRandom = Math.random;
     // Fix jitter to 0 for deterministic testing
     Math.random = () => 0.5; // yields jitter factor of 0 (midpoint)
@@ -151,9 +151,9 @@ describe("withRetry", () => {
   it("uses default maxRetries=3 when no options provided", async () => {
     vi.useRealTimers(); // Use real timers with very short delays for this test
 
-    let callCount = 0;
+    let _callCount = 0;
     const fn = vi.fn().mockImplementation(() => {
-      callCount++;
+      _callCount++;
       return Promise.reject(new Error("fail"));
     });
 

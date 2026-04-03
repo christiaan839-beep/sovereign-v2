@@ -38,3 +38,36 @@ Key endpoints:
 3. **Animations**: Use `framer-motion` for complex micro-interactions. Any newly introduced UI elements require fluid enter/exit states natively hooked into `AnimatePresence`.
 
 *You are operating as a Sovereign Node. Execute all tasks defensively and accurately.*
+
+## Session Learnings (April 2026)
+
+### Architecture Decisions
+- Static agent registry (registry.ts) required for Vercel — dynamic import() with webpackIgnore doesn't work on serverless
+- Direct route re-exports needed for _misc and _health routes on Vercel (e.g., api/health/ping/route.ts re-exports from api/_health/ping/route.ts)
+- Consensus engine (lib/consensus.ts) — verifiedAi() uses generate→critique→revise with 2 different models
+- Smart Router uses 22 models with task classification across 19 categories
+- Agent factory injects tenantId and orgId into every handler via tenant-resolver.ts
+
+### Key Files Added
+- src/lib/consensus.ts — Multi-model verification (verifiedAi, consensusAi, confidentAi)
+- src/lib/playbooks.ts — 25 playbook definitions with guaranteeCheck fields
+- src/lib/tenant-resolver.ts — LRU-cached userId → tenantId resolver
+- src/lib/tenant-scope.ts — requireTenantId(), guardTenantAccess(), belongsToTenant()
+- src/app/api/agents/registry.ts — Static import map for 129 agents (Vercel compatibility)
+- src/app/api/_agents/trigger/route.ts — Webhook trigger engine for external automation
+- src/app/api/_agents/agent-performance/route.ts — Per-agent execution metrics
+- src/app/api/_misc/founders/route.ts — Founders Program (10 free enterprise slots)
+- mcp-server/ — Custom MCP server with 6 tools for operating the platform from Claude Code
+
+### Important Patterns
+- All catch-all routes use static imports (not dynamic) for Vercel bundling
+- Deploy with: `vercel build --prod && vercel deploy --prebuilt --prod` (bypass duplicate project conflicts)
+- Anti-slop prompts are injected per task category via getSystemPrompt() in system-prompts.ts
+- Free tier uses PLAN_LIMITS map: free=50, founder=10000, array=500, node=2000, enterprise=10000
+- Model names must include version suffix (e.g., nemotron-ultra-253b-v1, not just 253b)
+
+### Models
+- 35+ models across 6 providers (NVIDIA NIM, Gemini, Claude, Groq, Ollama, Tavily)
+- Gemma 4 (google/gemma-4-31b-it) added April 2026 — 256K context, vision+audio, 140 languages
+- Failover chain is 11 models deep
+- Consensus verification uses 4 independent models (Nemotron Ultra, DeepSeek V3.2, Gemma 4, Qwen 3)

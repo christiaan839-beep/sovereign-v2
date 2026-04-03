@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import {
-  ArrowRight, Clock, Search, FileText, BarChart3,
+  ArrowRight, Search, FileText, BarChart3,
   Mail, Eye, Zap, Settings, Rocket,
 } from "lucide-react";
 import Link from "next/link";
@@ -351,7 +351,7 @@ export default function ForAgenciesPage() {
             <div className="absolute left-6 md:left-8 top-0 bottom-0 w-px bg-gradient-to-b from-emerald-500/30 via-white/10 to-transparent" />
 
             <StaggerChildren className="space-y-6">
-              {TIMELINE.map((item, i) => (
+              {TIMELINE.map((item) => (
                 <motion.div
                   key={item.time}
                   variants={fadeUp}

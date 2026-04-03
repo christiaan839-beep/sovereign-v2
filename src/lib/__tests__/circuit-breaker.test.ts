@@ -22,7 +22,7 @@ import {
   nimBreaker,
   geminiBreaker,
   claudeBreaker,
-  groqBreaker,
+  groqBreaker as _groqBreaker,
   getCircuitStatus,
 } from "@/lib/circuit-breaker";
 

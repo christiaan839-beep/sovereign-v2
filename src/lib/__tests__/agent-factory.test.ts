@@ -207,7 +207,7 @@ describe("createAgentRoute", () => {
   // ─── Input Over maxInputSize is Truncated ───
 
   it("input over maxInputSize is truncated", async () => {
-    let capturedInput: Record<string, unknown> = {};
+    let _capturedInput: Record<string, unknown> = {};
 
     const handler = createAgentRoute({
       name: "test-agent",
@@ -217,7 +217,7 @@ describe("createAgentRoute", () => {
       skipPiiScan: true,
       skipQualityCheck: true,
       handler: async ({ input }) => {
-        capturedInput = input;
+        _capturedInput = input;
         return { output: "ok" };
       },
     });

@@ -202,7 +202,7 @@ export default function WorkflowBuilderPage() {
     }
     setSaving(true);
     try {
-      const serialized: SerializedNode[] = nodes.map(({ icon, ...rest }) => rest);
+      const serialized: SerializedNode[] = nodes.map(({ icon: _icon, ...rest }) => rest);
       const res = await fetch("/api/workflows", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -510,7 +510,7 @@ export default function WorkflowBuilderPage() {
 
   // ─── Connector icon between nodes ────────────────────────────────
 
-  const ConnectorIcon = ({ node, nextNode }: { node: AgentNode; nextNode?: AgentNode }) => {
+  const ConnectorIcon = ({ nextNode }: { node: AgentNode; nextNode?: AgentNode }) => {
     const nextMode = nextNode?.executionMode;
     if (nextMode === "parallel") {
       return (
