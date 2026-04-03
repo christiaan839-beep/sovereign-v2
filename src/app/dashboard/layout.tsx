@@ -68,44 +68,44 @@ interface NavGroup {
   defaultOpen?: boolean;
 }
 
+// ── Primary: What users do every day (visible immediately) ──
 const PRIMARY_NAV: NavItem[] = [
   { href: "/dashboard", label: "Home", icon: LayoutDashboard, tooltip: "Dashboard overview" },
-  { href: "/dashboard/playbooks", label: "Playbooks", icon: Zap, tooltip: "1-click multi-agent workflows" },
-  { href: "/chat", label: "Chat", icon: MessageSquare, tooltip: "AI chat assistant" },
-  { href: "/dashboard/leads", label: "Leads", icon: Target, tooltip: "Find and manage leads" },
-  { href: "/dashboard/content-factory", label: "Content", icon: Factory, tooltip: "Create blog posts and social content" },
-  { href: "/dashboard/build", label: "Page Builder", icon: Sparkles, tooltip: "Build landing pages with AI" },
+  { href: "/dashboard/playbooks", label: "Playbooks", icon: Zap, tooltip: "1-click multi-agent workflows — start here" },
+  { href: "/chat", label: "Chat", icon: MessageSquare, tooltip: "Ask anything — AI routes to the right agent" },
+  { href: "/dashboard/leads", label: "Leads", icon: Target, tooltip: "Find and manage prospects" },
+  { href: "/dashboard/content-factory", label: "Content", icon: Factory, tooltip: "Blog posts, social media, email sequences" },
 ];
 
+// ── Grouped: Power tools (collapsed by default — revealed as users engage) ──
 const NAV_GROUPS: NavGroup[] = [
   {
     label: "Tools",
     icon: Wrench,
-    defaultOpen: true,
+    defaultOpen: false, // Collapsed — reduces initial overwhelm
     items: [
       { href: "/dashboard/seo-dominator", label: "SEO", icon: Search, tooltip: "Keyword research and site audits" },
-      { href: "/dashboard/competitor", label: "Market Intel", icon: Shield, tooltip: "Competitor analysis and market intelligence" },
-      { href: "/dashboard/workflow-builder", label: "Workflows", icon: Workflow, tooltip: "Build multi-step automations" },
-      { href: "/dashboard/agent-builder", label: "My Agents", icon: Wand2, tooltip: "Create and manage custom agents" },
-      { href: "/dashboard/templates", label: "Templates", icon: LayoutTemplate, tooltip: "Pre-built workflows and pages" },
+      { href: "/dashboard/competitor", label: "Market Intel", icon: Shield, tooltip: "Competitor analysis" },
+      { href: "/dashboard/build", label: "Page Builder", icon: Sparkles, tooltip: "Build landing pages with AI" },
+      { href: "/dashboard/workflow-builder", label: "Workflows", icon: Workflow, tooltip: "Multi-step automations" },
+      { href: "/dashboard/agent-builder", label: "My Agents", icon: Wand2, tooltip: "Create custom agents" },
     ],
   },
   {
     label: "Monitor",
     icon: Cpu,
     items: [
-      { href: "/dashboard/god-eye", label: "Agent Monitor", icon: Eye, tooltip: "Monitor all running agents" },
-      { href: "/dashboard/agent-analytics", label: "Agent Analytics", icon: BarChart3, tooltip: "Performance and usage metrics" },
-      { href: "/dashboard/nim-arsenal", label: "Model Registry", icon: Database, tooltip: "View connected AI models and routing" },
+      { href: "/dashboard/god-eye", label: "Agent Monitor", icon: Eye, tooltip: "Watch agents execute in real-time" },
+      { href: "/dashboard/agent-analytics", label: "Analytics", icon: BarChart3, tooltip: "Performance metrics" },
     ],
   },
 ];
 
+// ── Bottom: Account-level items ──
 const BOTTOM_NAV: NavItem[] = [
   { href: "/dashboard/integrations", label: "Integrations", icon: Plug, tooltip: "Connect apps and services" },
-  { href: "/dashboard/billing", label: "Billing", icon: DollarSign, tooltip: "Plans and payments" },
   { href: "/dashboard/settings", label: "Settings", icon: Settings, tooltip: "Account and team settings" },
-  { href: "/dashboard/admin", label: "Admin", icon: Crown, tooltip: "Platform-wide revenue and metrics" },
+  { href: "/dashboard/admin", label: "Admin", icon: Crown, tooltip: "Revenue and platform metrics" },
 ];
 
 /* Page label lookup for breadcrumbs */
