@@ -41,6 +41,15 @@ export interface Playbook {
   steps: PlaybookStep[];
   estimatedTime: string; // e.g., "2-4 min"
   agentCount: number;
+  /** Output guarantee — if not met, the run doesn't count against usage */
+  guarantee?: string;
+  /** Machine-checkable guarantee conditions */
+  guaranteeCheck?: {
+    minResultCount?: number;   // e.g., "10+ leads"
+    minWordCount?: number;     // e.g., "1500+ words"
+    minScore?: number;         // e.g., quality score > 0.7
+    maxAiDetection?: number;   // e.g., < 10% AI detection
+  };
 }
 
 // ─── Playbook Definitions ───────────────────────────────────────────────────
@@ -65,6 +74,8 @@ export const PLAYBOOKS: Playbook[] = [
     ],
     estimatedTime: "2-3 min",
     agentCount: 2,
+    guarantee: "5+ qualified companies with contact angles or the run doesn't count",
+    guaranteeCheck: { minResultCount: 5, minScore: 0.7 },
   },
   {
     id: "competitor-takedown",
@@ -85,6 +96,8 @@ export const PLAYBOOKS: Playbook[] = [
     ],
     estimatedTime: "3-5 min",
     agentCount: 3,
+    guarantee: "5+ counter-positioning strategies with specific action items or re-run free",
+    guaranteeCheck: { minResultCount: 5, minScore: 0.75 },
   },
   {
     id: "content-machine",
@@ -105,6 +118,8 @@ export const PLAYBOOKS: Playbook[] = [
     ],
     estimatedTime: "2-3 min",
     agentCount: 2,
+    guarantee: "1,500+ word blog post + 3 social posts or re-run free",
+    guaranteeCheck: { minWordCount: 1500, minScore: 0.75 },
   },
   {
     id: "proposal-blaster",
