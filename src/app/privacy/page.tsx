@@ -4,7 +4,7 @@ import { PrintButton } from "@/components/ui/PrintButton";
 
 export const metadata: Metadata = {
   title: "Privacy Policy — Sovereign Matrix",
-  description: "Sovereign Matrix privacy policy. How we collect, use, and protect your data.",
+  description: "Sovereign Matrix privacy policy — how we collect, use, store, and protect your data. GDPR-compliant data practices, your rights, and our contact details.",
 };
 
 export default function PrivacyPage() {

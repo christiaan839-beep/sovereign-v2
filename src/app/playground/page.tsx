@@ -66,7 +66,7 @@ export default function PlaygroundPage() {
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-xs font-mono mb-4">
             <Sparkles className="w-3 h-3" /> API Playground
           </div>
-          <h1 className="text-4xl font-bold tracking-tight text-white mb-3">Try Agents Live</h1>
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-white mb-3">Try Agents Live</h1>
           <p className="text-neutral-500 max-w-lg mx-auto">Run any agent without signing up. See real results in seconds.</p>
         </motion.div>
 

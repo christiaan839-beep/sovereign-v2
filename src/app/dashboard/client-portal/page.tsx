@@ -103,7 +103,7 @@ export default function ClientPortalPage() {
             <div className="flex items-center gap-4">
               {config.logoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={config.logoUrl} alt="Logo" className="w-12 h-12 rounded-lg object-contain bg-white/[0.05] p-1" />
+                <img src={config.logoUrl} alt={`${config.agencyName} logo`} className="w-12 h-12 rounded-lg object-contain bg-white/[0.05] p-1" />
               ) : (
                 <div
                   className="w-12 h-12 rounded-lg flex items-center justify-center text-lg font-black text-white"

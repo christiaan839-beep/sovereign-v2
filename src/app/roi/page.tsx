@@ -54,7 +54,7 @@ export default function ROICalculatorPage() {
             <h2 className="text-sm font-bold uppercase tracking-widest text-neutral-400 mb-4">With Sovereign Matrix</h2>
             <div className="bg-[#00ff66]/5 border border-[#00ff66]/20 p-6 text-center">
               <p className="text-[10px] text-[#00ff66] uppercase tracking-widest mb-2">Monthly ROI</p>
-              <p className="text-5xl font-black text-[#00ff66]">{roi}%</p>
+              <p className="text-4xl md:text-5xl font-black text-[#00ff66]">{roi}%</p>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-neutral-950 border border-neutral-800 p-4 text-center">

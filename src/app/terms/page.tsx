@@ -4,7 +4,7 @@ import { PrintButton } from "@/components/ui/PrintButton";
 
 export const metadata: Metadata = {
   title: "Terms of Service — Sovereign Matrix",
-  description: "Sovereign Matrix terms of service. Rules and guidelines for using the platform.",
+  description: "Sovereign Matrix terms of service — rules and guidelines for using the platform. Acceptable use, account terms, subscription details, and liability.",
 };
 
 export default function TermsPage() {
