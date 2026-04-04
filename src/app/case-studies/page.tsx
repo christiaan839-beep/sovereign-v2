@@ -66,7 +66,7 @@ const CASE_STUDIES = [
 
 export default function CaseStudiesPage() {
   return (
-    <div className="min-h-screen bg-[#050505] text-white">
+    <main className="min-h-screen bg-[#050505] text-white">
       <div className="max-w-4xl mx-auto px-6 py-32">
         <Link
           href="/"
@@ -187,6 +187,6 @@ export default function CaseStudiesPage() {
           </p>
         </motion.div>
       </div>
-    </div>
+    </main>
   );
 }

@@ -198,7 +198,7 @@ export default function SovereignApp() {
   };
 
   return (
-    <div className="h-dvh flex flex-col bg-[#0A0A0A] text-white">
+    <main className="h-dvh flex flex-col bg-[#0A0A0A] text-white">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
         <div className="flex items-center gap-2">
@@ -324,6 +324,6 @@ export default function SovereignApp() {
           Sovereign AI • 65+ models • auto-routed • sovereignmatrix.agency
         </p>
       </div>
-    </div>
+    </main>
   );
 }

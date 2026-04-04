@@ -19,7 +19,7 @@ export default function ROICalculatorPage() {
   const roi = Math.round(((revenueIncrease + savings) / sovereignCost) * 100);
 
   return (
-    <div className="min-h-screen bg-black text-white p-6 md:p-8 font-mono">
+    <main className="min-h-screen bg-black text-white p-6 md:p-8 font-mono">
       <div className="max-w-4xl mx-auto space-y-8">
         <header className="text-center space-y-4 pb-8 border-b border-neutral-800">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#00ff66]/10 border border-[#00ff66]/30 text-[#00ff66] text-[10px] font-bold uppercase tracking-widest">
@@ -89,6 +89,6 @@ export default function ROICalculatorPage() {
           </div>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

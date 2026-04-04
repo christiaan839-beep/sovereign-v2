@@ -39,7 +39,7 @@ export default function SignupPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#010101] flex flex-col items-center justify-center px-4">
+    <main className="min-h-screen bg-[#010101] flex flex-col items-center justify-center px-4">
       {/* Logo */}
       <div className="mb-8 flex flex-col items-center gap-4">
         <Link href="/" className="flex items-center gap-2.5">
@@ -110,6 +110,6 @@ export default function SignupPage() {
           ← Back to home
         </Link>
       </div>
-    </div>
+    </main>
   );
 }

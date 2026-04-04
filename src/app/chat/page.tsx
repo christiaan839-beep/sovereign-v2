@@ -290,7 +290,7 @@ export default function SovereignChat() {
   const currentModel = MODELS.find((m) => m.id === selectedModel) || MODELS[0];
 
   return (
-    <div className="h-dvh flex flex-col bg-[#010101] text-white overflow-hidden">
+    <main className="h-dvh flex flex-col bg-[#010101] text-white overflow-hidden">
 
       {/* Header */}
       <header className="flex items-center justify-between px-4 py-3 border-b border-white/[0.04] shrink-0 bg-[#010101]/95 backdrop-blur-xl z-10">
@@ -485,6 +485,6 @@ export default function SovereignChat() {
           </div>
         )}
       </div>
-    </div>
+    </main>
   );
 }

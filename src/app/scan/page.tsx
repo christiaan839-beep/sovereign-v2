@@ -68,7 +68,7 @@ export default function AGIAuditorPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] text-[#E0E0E0] font-sans selection:bg-[#00B7FF]/30 overflow-hidden relative">
+    <main className="min-h-screen bg-[#050505] text-[#E0E0E0] font-sans selection:bg-[#00B7FF]/30 overflow-hidden relative">
       <div className="fixed inset-0 pointer-events-none z-0">
         <div className="absolute top-[-20%] left-[-10%] w-[50vw] h-[50vw] bg-[#00B7FF]/5 rounded-full blur-[120px]" />
         <div className="absolute bottom-[-20%] right-[-10%] w-[60vw] h-[60vw] bg-pink-500/5 rounded-full blur-[150px]" />
@@ -280,6 +280,6 @@ export default function AGIAuditorPage() {
           )}
         </AnimatePresence>
       </div>
-    </div>
+    </main>
   );
 }

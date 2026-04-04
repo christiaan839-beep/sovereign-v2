@@ -418,8 +418,10 @@ export default function Home() {
         </AnimatePresence>
       </motion.nav>
 
+      <main id="main-content">
+
       {/* ═══ HERO ═══ */}
-      <motion.section id="main-content" ref={heroRef} style={{ opacity: heroOpacity, scale: heroScale }}
+      <motion.section ref={heroRef} style={{ opacity: heroOpacity, scale: heroScale }}
         className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden">
 
         {/* 3D Particle background */}
@@ -1301,6 +1303,8 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      </main>
 
       {/* ═══ FOOTER ═══ */}
       <GlowDivider />

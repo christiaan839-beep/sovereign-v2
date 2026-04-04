@@ -80,7 +80,7 @@ export default function EnterprisePage() {
     "w-full rounded-lg border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white placeholder-neutral-500 outline-none focus:border-white/20 focus:ring-1 focus:ring-white/10 transition-colors";
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white">
+    <main className="min-h-screen bg-[#050505] text-white">
       <div className="max-w-5xl mx-auto px-6 py-32">
         <Link
           href="/"
@@ -282,6 +282,6 @@ export default function EnterprisePage() {
           </p>
         </motion.div>
       </div>
-    </div>
+    </main>
   );
 }

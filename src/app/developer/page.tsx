@@ -64,7 +64,7 @@ export default function DeveloperPage() {
 }`;
 
   return (
-    <div className="min-h-screen bg-[#030303] text-white">
+    <main className="min-h-screen bg-[#030303] text-white">
       {/* Hero */}
       <div className="max-w-5xl mx-auto px-6 pt-20 pb-16">
         <motion.div
@@ -236,6 +236,6 @@ export default function DeveloperPage() {
           </div>
         </motion.section>
       </div>
-    </div>
+    </main>
   );
 }

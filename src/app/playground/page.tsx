@@ -60,7 +60,7 @@ export default function PlaygroundPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#010101] text-neutral-200">
+    <main className="min-h-screen bg-[#010101] text-neutral-200">
       <div className="max-w-4xl mx-auto px-6 py-20">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-12">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-xs font-mono mb-4">
@@ -155,6 +155,6 @@ export default function PlaygroundPage() {
           )}
         </AnimatePresence>
       </div>
-    </div>
+    </main>
   );
 }

@@ -139,7 +139,7 @@ export default function DocsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white p-6 md:p-8 font-mono">
+    <main className="min-h-screen bg-black text-white p-6 md:p-8 font-mono">
       <div className="max-w-5xl mx-auto space-y-8">
         <header className="border-b border-neutral-800 pb-6">
           <div className="flex items-center justify-between">
@@ -445,6 +445,6 @@ export default function DocsPage() {
           </div>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
