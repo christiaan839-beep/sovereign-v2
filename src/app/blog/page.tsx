@@ -83,6 +83,8 @@ export default function BlogPage() {
         </div>
       </nav>
 
+      <main id="main-content">
+
       <section className="relative z-10 px-8 pt-12 pb-16 max-w-6xl mx-auto">
         <motion.div {...fadeIn(0)} className="text-center mb-16">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-electric/10 border border-electric/20 text-electric text-xs font-bold uppercase tracking-wider mb-6">
@@ -128,6 +130,8 @@ export default function BlogPage() {
           ))}
         </div>
       </section>
+
+      </main>
 
       <footer className="relative z-10 border-t border-glass-border/30 px-8 py-10 text-center">
         <p className="text-[10px] text-text-secondary/40 uppercase tracking-[0.4em]">SOVEREIGN — Shadow Intelligence Platform</p>

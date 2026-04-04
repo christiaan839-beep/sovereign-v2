@@ -190,6 +190,8 @@ export default function PricingPage() {
         </div>
       </nav>
 
+      <main id="main-content">
+
       {/* ─── Comparison Hero ─── */}
       <section className="relative pt-40 pb-16 px-6 overflow-hidden">
         <motion.div
@@ -405,6 +407,8 @@ export default function PricingPage() {
           </MagneticButton>
         </div>
       </section>
+
+      </main>
 
       {/* ─── Footer ─── */}
       <footer className="border-t border-white/[0.06] py-12 px-6">

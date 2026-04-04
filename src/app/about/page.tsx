@@ -39,6 +39,8 @@ export default function AboutPage() {
         </div>
       </nav>
 
+      <main id="main-content">
+
       <section className="relative z-10 px-8 pt-16 pb-20 max-w-3xl mx-auto">
         <motion.div {...fadeIn(0)} className="text-center mb-16">
           <h1 className="text-4xl md:text-5xl serif-text font-light mb-6">We Build Autonomous<br /><span className="bg-gradient-to-r from-electric to-rose-glow bg-clip-text text-transparent font-medium">Intelligence Systems</span></h1>
@@ -105,6 +107,8 @@ export default function AboutPage() {
           </div>
         </motion.div>
       </section>
+
+      </main>
 
       <footer className="relative z-10 border-t border-glass-border/30 px-8 py-10 text-center">
         <p className="text-[10px] text-text-secondary/40 uppercase tracking-[0.4em]">SOVEREIGN — Shadow Intelligence Platform</p>

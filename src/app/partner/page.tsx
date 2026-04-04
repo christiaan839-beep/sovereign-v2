@@ -34,6 +34,8 @@ export default function PartnerPage() {
         </div>
       </nav>
 
+      <main id="main-content">
+
       {/* Hero */}
       <div className="pt-40 pb-20 px-6 relative overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-emerald-500/5 rounded-full blur-[200px]" />
@@ -110,6 +112,8 @@ export default function PartnerPage() {
           Apply Now <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
         </a>
       </div>
+
+      </main>
     </div>
   );
 }

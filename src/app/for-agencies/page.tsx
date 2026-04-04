@@ -272,6 +272,8 @@ export default function ForAgenciesPage() {
         </div>
       </nav>
 
+      <main id="main-content">
+
       {/* ─── Hero ─── */}
       <section className="relative pt-40 pb-24 px-6 overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[700px] bg-emerald-500/[0.04] rounded-full blur-[250px]" />
@@ -448,6 +450,8 @@ export default function ForAgenciesPage() {
           </MagneticButton>
         </div>
       </section>
+
+      </main>
 
       {/* ─── Footer ─── */}
       <footer className="border-t border-white/[0.06] py-12 px-6">

@@ -70,6 +70,8 @@ export default function WhitepaperPage() {
         </button>
       </nav>
 
+      <main id="main-content">
+
       {/* Header */}
       <header className="max-w-4xl mx-auto px-6 pb-16">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
@@ -142,6 +144,8 @@ export default function WhitepaperPage() {
           </div>
         </div>
       </div>
+
+      </main>
     </div>
   );
 }

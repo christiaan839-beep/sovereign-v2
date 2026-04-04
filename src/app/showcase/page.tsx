@@ -130,6 +130,8 @@ export default function ShowcasePage() {
         </div>
       </nav>
 
+      <main id="main-content">
+
       {/* Hero */}
       <section className="pt-28 pb-12 px-6 text-center max-w-3xl mx-auto">
         <motion.div
@@ -374,6 +376,8 @@ export default function ShowcasePage() {
           </div>
         </section>
       </div>
+
+      </main>
     </div>
   );
 }
