@@ -368,7 +368,7 @@ export default function SovereignChat() {
                 <Sparkles className="w-8 h-8 text-emerald-400" />
               </div>
               <h1 className="text-xl font-bold text-white mb-1">Sovereign AI</h1>
-              <p className="text-sm text-neutral-500">124 agents. 65+ models. What do you want to build?</p>
+              <p className="text-sm text-neutral-500">130+ agents. 65+ models. What do you want to build?</p>
             </motion.div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 w-full max-w-lg">
               {QUICK_ACTIONS.map((action, i) => (

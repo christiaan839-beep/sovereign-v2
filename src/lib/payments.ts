@@ -22,7 +22,7 @@ export const PLANS = {
     priceZAR: 999700,
     priceDisplay: "R9,997",
     monthlyAmount: 9997,
-    features: ["All 124 agents", "Unlimited tasks", "Local execution", "Ghost Fleet", "NVIDIA NIM", "BYOK support"],
+    features: ["All 130+ agents", "Unlimited tasks", "Local execution", "Ghost Fleet", "NVIDIA NIM", "BYOK support"],
   },
   array: {
     name: "Sovereign Array",

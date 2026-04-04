@@ -103,7 +103,7 @@ export const DRIP_SEQUENCE: DripEmail[] = [
     html: wrap(`
       <p>Two weeks in. Here is what Pro gives you beyond the free tier:</p>
       <ul style="padding-left:18px;color:#d4d4d4">
-        <li>Unlimited runs across all 124 agents</li>
+        <li>Unlimited runs across all 130+ agents</li>
         <li>Scheduled workflows that run while you sleep</li>
         <li>Voice agents for outbound calls</li>
         <li>White-label client dashboards</li>

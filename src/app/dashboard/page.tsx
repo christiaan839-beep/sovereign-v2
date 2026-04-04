@@ -400,7 +400,7 @@ function StatsPanel() {
             </div>
             <div className="flex items-center gap-1.5">
               <Cpu className="w-3 h-3 text-cyan-500" />
-              <span className="text-[10px] text-neutral-400">124 Agents</span>
+              <span className="text-[10px] text-neutral-400">130+ Agents</span>
             </div>
             <div className="hidden sm:block">
               <LiveStatusRotator />

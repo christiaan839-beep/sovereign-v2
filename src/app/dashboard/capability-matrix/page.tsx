@@ -108,9 +108,9 @@ export default function CapabilityMatrixPage() {
         {/* Platform Stats */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           {[
-            { label: "Agent APIs", value: "72+", color: "#00B7FF" },
-            { label: "NIM Models", value: "50+", color: "#76B900" },
-            { label: "Dashboard Pages", value: "43", color: "#00B7FF" },
+            { label: "Agent APIs", value: "130+", color: "#00B7FF" },
+            { label: "NIM Models", value: "65+", color: "#76B900" },
+            { label: "Dashboard Pages", value: "75", color: "#00B7FF" },
             { label: "Industry Verticals", value: "6", color: "#A855F7" },
             { label: "Cost", value: "$0", color: "#FFD700" },
           ].map(stat => (

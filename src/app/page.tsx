@@ -25,6 +25,7 @@ import { LogoMarquee } from "@/components/cinematic/InfiniteMarquee";
 import { ExitIntent } from "@/components/ui/ExitIntent";
 import dynamic from "next/dynamic";
 import { InteractiveHeroStrike } from "@/components/ui/InteractiveHeroStrike";
+import { useLiveAgentCount } from "@/hooks/useLiveAgentCount";
 
 const HeroParticles = dynamic(() => import("@/components/ui/HeroParticles").then(m => ({ default: m.HeroParticles })), { ssr: false });
 const HeroOrb = dynamic(() => import("@/components/cinematic/HeroOrb").then(m => ({ default: m.HeroOrb })), { ssr: false });
@@ -349,23 +350,6 @@ function InteractiveDemo() {
   );
 }
 
-function useLiveAgentCount() {
-  const [count, setCount] = useState(130);
-  useEffect(() => {
-    // Fetch real agent count from health endpoint once on mount.
-    // No polling — agent count is effectively static and we don't want
-    // to burn request budget on a cosmetic number.
-    fetch("/api/health")
-      .then((res) => res.ok ? res.json() : null)
-      .then((data) => {
-        const total = data?.agents?.totalAgents;
-        if (typeof total === "number" && total > 0) setCount(total);
-      })
-      .catch(() => { /* keep default */ });
-  }, []);
-  return count;
-}
-
 export default function Home() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const heroRef = useRef<HTMLDivElement>(null);
@@ -664,8 +648,8 @@ export default function Home() {
           {[
             { value: 130, suffix: "+", label: "AI Agents", desc: "Purpose-built for business" },
             { value: 65, suffix: "+", label: "AI Models", desc: "Auto-routed per task" },
-            { value: 13, suffix: "", label: "Playbooks", desc: "1-click multi-agent workflows" },
-            { value: 404, suffix: "", label: "Tests Passing", desc: "Production-grade reliability" },
+            { value: 25, suffix: "", label: "Playbooks", desc: "1-click multi-agent workflows" },
+            { value: 491, suffix: "", label: "Tests Passing", desc: "Production-grade reliability" },
           ].map((stat, i) => (
             <motion.div key={stat.label} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}>
               <div className="text-3xl md:text-4xl font-black text-white mb-1">
@@ -775,7 +759,7 @@ export default function Home() {
 
       <GlowDivider />
       <section className="py-24 px-6">
-        <SocialProofMetrics />
+        <SocialProofMetrics agentCount={agentCount} />
       </section>
 
       {/* ═══ INTELLIGENCE STACK — How it thinks ═══ */}

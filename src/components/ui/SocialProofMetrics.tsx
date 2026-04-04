@@ -17,7 +17,15 @@ function AnimatedNumber({
   const hasAnimated = useRef(false);
 
   useEffect(() => {
-    if (target === 0 || hasAnimated.current) return;
+    if (target === 0) return;
+
+    // If animation already completed and target changed (e.g. live fetch
+    // updated the count after scroll-in), snap to the new value via rAF
+    // so React doesn't treat this as a synchronous cascading render.
+    if (hasAnimated.current) {
+      const raf = requestAnimationFrame(() => setDisplay(target));
+      return () => cancelAnimationFrame(raf);
+    }
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -82,13 +90,13 @@ function StaticMetric({ value }: { value: string }) {
 
 /**
  * SocialProofMetrics — Platform capability stats that are always impressive.
- * No API calls, no zeros. Real numbers about what the platform can do.
+ * The agent count is live (from /api/health); the rest are static.
  */
-export function SocialProofMetrics() {
+export function SocialProofMetrics({ agentCount = 130 }: { agentCount?: number }) {
   const metrics = [
     {
-      target: 124,
-      suffix: "",
+      target: agentCount,
+      suffix: "+",
       label: "AI Agents",
       desc: "Purpose-built for every business function",
     },

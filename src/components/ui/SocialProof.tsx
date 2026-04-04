@@ -6,7 +6,7 @@ import { useRef, useState, useEffect } from "react";
 
 const PLATFORM_FACTS = [
   {
-    metric: "124",
+    metric: "130+",
     label: "Agent Endpoints",
     desc: "Each calling a real AI model. Zero fakes, zero simulations.",
     color: "from-emerald-400/20 to-transparent",
@@ -122,7 +122,7 @@ export function ToolShowcase() {
           transition={{ duration: 0.8 }}
         >
           <h2 className="text-4xl md:text-5xl font-bold text-white serif-text mb-4">
-            124 AI Agents. One Dashboard.
+            130+ AI Agents. One Dashboard.
           </h2>
           <p className="text-neutral-400 text-sm uppercase tracking-[0.2em]">
             From lead generation to deployment — every function automated

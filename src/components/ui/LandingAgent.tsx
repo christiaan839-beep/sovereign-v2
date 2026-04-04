@@ -114,7 +114,7 @@ export function LandingAgent() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          prompt: `You are the Sovereign Matrix landing page assistant. Be concise (2-3 sentences max), friendly, and specific. You represent an autonomous AI agent platform with 124 agents, 65+ open-source models, zero per-token cost via NVIDIA NIM, white-label capability, and local execution via NemoClaw.
+          prompt: `You are the Sovereign Matrix landing page assistant. Be concise (2-3 sentences max), friendly, and specific. You represent an autonomous AI agent platform with 130+ agents, 65+ open-source models, zero per-token cost via NVIDIA NIM, white-label capability, and local execution via NemoClaw.
 
 Previous conversation:
 ${context}

@@ -90,7 +90,7 @@ interface ComparisonRow {
 
 const COMPARISON_ROWS: ComparisonRow[] = [
   { label: "Monthly price (entry tier)", values: ["R897/mo ($49)", "$97/mo", "$99/mo", "$24/mo", "$20/mo"] },
-  { label: "AI agents included", values: ["124 agents", "0 AI agents", "Build your own", "AI nodes", "50+ templates"] },
+  { label: "AI agents included", values: ["130+ agents", "0 AI agents", "Build your own", "AI nodes", "50+ templates"] },
   { label: "Models available", values: ["65+", "0", "5-10", "5-10", "3-5"] },
   { label: "Voice agents", values: [true, false, false, false, false] },
   { label: "White-label", values: [true, true, false, false, false] },
@@ -213,7 +213,7 @@ export default function PricingPage() {
             </span>
           </p>
           <p className="text-sm text-neutral-500 max-w-xl mx-auto">
-            124 autonomous agents. 65+ open-source models. Local execution. No per-API-call billing surprises.
+            130+ autonomous agents. 65+ open-source models. Local execution. No per-API-call billing surprises.
           </p>
         </motion.div>
       </section>
@@ -393,7 +393,7 @@ export default function PricingPage() {
             Start Free — No Credit Card
           </RevealText>
           <RevealText as="p" className="text-neutral-500 mb-10 max-w-xl mx-auto" delay={0.1}>
-            100 free runs. 124 agents. Zero commitment. See what autonomous AI can do for your business.
+            100 free runs. 130+ agents. Zero commitment. See what autonomous AI can do for your business.
           </RevealText>
           <MagneticButton>
             <Link

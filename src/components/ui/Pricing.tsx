@@ -64,7 +64,7 @@ export function Pricing() {
     },
     {
       name: "Sovereign Node",
-      description: "All 124 agents with unlimited tasks. Local execution via NemoClaw OS.",
+      description: "All 130+ agents with unlimited tasks. Local execution via NemoClaw OS.",
       price: "R9,997",
       priceUSD: "~$540",
       period: "/mo",

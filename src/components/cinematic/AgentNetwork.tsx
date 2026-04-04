@@ -199,7 +199,7 @@ export function AgentNetwork() {
         className="absolute inset-0 flex items-center justify-center pointer-events-none"
       >
         <div className="text-center">
-          <div className="text-3xl font-black text-white/10">124</div>
+          <div className="text-3xl font-black text-white/10">130+</div>
           <div className="text-[9px] text-neutral-600 uppercase tracking-widest">Agents Active</div>
         </div>
       </motion.div>
