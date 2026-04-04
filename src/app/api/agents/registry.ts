@@ -120,6 +120,7 @@ export const AGENT_REGISTRY: Record<string, () => Promise<RouteModule>> = {
   "site-assassin": () => import("@/app/api/_agents/site-assassin/route"),
   "smart-router": () => import("@/app/api/_agents/smart-router/route"),
   "social-router": () => import("@/app/api/_agents/social-router/route"),
+  "super-agent": () => import("@/app/api/_agents/super-agent/route"),
   "support-bot": () => import("@/app/api/_agents/support-bot/route"),
   "swarm": () => import("@/app/api/_agents/swarm/route"),
   "telegram-router": () => import("@/app/api/_agents/telegram-router/route"),
