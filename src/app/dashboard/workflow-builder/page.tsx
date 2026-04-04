@@ -712,7 +712,7 @@ export default function WorkflowBuilderPage() {
                             </div>
                           )}
 
-                          <button onClick={() => removeNode(node.id)} className="p-1 text-neutral-500 hover:text-rose-400 transition-colors shrink-0">
+                          <button onClick={() => removeNode(node.id)} aria-label="Delete workflow node" className="p-1 text-neutral-500 hover:text-rose-400 transition-colors shrink-0">
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
@@ -1002,7 +1002,7 @@ export default function WorkflowBuilderPage() {
             >
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-bold text-white">My Workflows</h3>
-                <button onClick={() => setShowDrawer(false)} className="p-1 text-neutral-500 hover:text-white transition-colors">
+                <button onClick={() => setShowDrawer(false)} aria-label="Close workflows panel" className="p-1 text-neutral-500 hover:text-white transition-colors">
                   <X className="w-5 h-5" />
                 </button>
               </div>

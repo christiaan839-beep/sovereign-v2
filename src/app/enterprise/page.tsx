@@ -163,8 +163,9 @@ export default function EnterprisePage() {
                 exit={{ opacity: 0 }}
               >
                 <div>
-                  <label className="block text-xs text-neutral-400 mb-1.5 uppercase tracking-wider">Full Name *</label>
+                  <label htmlFor="enterprise-name" className="block text-xs text-neutral-400 mb-1.5 uppercase tracking-wider">Full Name *</label>
                   <input
+                    id="enterprise-name"
                     type="text"
                     required
                     value={formData.name}
@@ -175,8 +176,9 @@ export default function EnterprisePage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs text-neutral-400 mb-1.5 uppercase tracking-wider">Work Email *</label>
+                  <label htmlFor="enterprise-email" className="block text-xs text-neutral-400 mb-1.5 uppercase tracking-wider">Work Email *</label>
                   <input
+                    id="enterprise-email"
                     type="email"
                     required
                     value={formData.email}
@@ -187,8 +189,9 @@ export default function EnterprisePage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs text-neutral-400 mb-1.5 uppercase tracking-wider">Company Name *</label>
+                  <label htmlFor="enterprise-company" className="block text-xs text-neutral-400 mb-1.5 uppercase tracking-wider">Company Name *</label>
                   <input
+                    id="enterprise-company"
                     type="text"
                     required
                     value={formData.company}
@@ -199,8 +202,9 @@ export default function EnterprisePage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs text-neutral-400 mb-1.5 uppercase tracking-wider">Company Size</label>
+                  <label htmlFor="enterprise-size" className="block text-xs text-neutral-400 mb-1.5 uppercase tracking-wider">Company Size</label>
                   <select
+                    id="enterprise-size"
                     value={formData.size}
                     onChange={(e) => setFormData({ ...formData, size: e.target.value })}
                     className={inputClasses}
@@ -215,8 +219,9 @@ export default function EnterprisePage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs text-neutral-400 mb-1.5 uppercase tracking-wider">Use Case</label>
+                  <label htmlFor="enterprise-usecase" className="block text-xs text-neutral-400 mb-1.5 uppercase tracking-wider">Use Case</label>
                   <textarea
+                    id="enterprise-usecase"
                     rows={4}
                     value={formData.useCase}
                     onChange={(e) => setFormData({ ...formData, useCase: e.target.value })}

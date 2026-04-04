@@ -346,7 +346,7 @@ export function Pricing() {
               className="bg-[#0A0A0A] border border-white/10 p-8 rounded-3xl w-full max-w-md relative shadow-[0_0_100px_rgba(0,183,255,0.1)]"
               initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }}
             >
-              <button onClick={() => setShowModal(false)} className="absolute top-6 right-6 text-neutral-500 hover:text-white transition-colors">
+              <button onClick={() => setShowModal(false)} aria-label="Close dialog" className="absolute top-6 right-6 text-neutral-500 hover:text-white transition-colors">
                 <XIcon className="w-5 h-5" />
               </button>
 

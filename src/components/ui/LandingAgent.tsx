@@ -271,13 +271,16 @@ Answer concisely and specifically. Do not be generic. Reference real features of
             {/* Input */}
             <form onSubmit={handleSubmit} className="p-3 border-t border-white/[0.06]">
               <div className="flex items-center gap-2 bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-2.5 focus-within:border-emerald-500/20 transition-colors">
+                <label htmlFor="landing-agent-input" className="sr-only">Ask about the platform</label>
                 <input
+                  id="landing-agent-input"
                   ref={inputRef}
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Ask about the platform..."
                   disabled={isThinking}
+                  aria-label="Ask about the platform"
                   className="flex-1 bg-transparent text-sm text-white placeholder:text-neutral-600 outline-none disabled:opacity-50"
                 />
                 <button

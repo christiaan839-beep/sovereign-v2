@@ -85,7 +85,7 @@ export default function ClientPortalLogin() {
 
           <div className="space-y-6">
             <div>
-              <label className="block text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">
+              <label htmlFor="portal-access" className="block text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">
                 {mode === "id" ? "Client Access ID" : "Email Address"}
               </label>
               <div className="relative">
@@ -95,6 +95,7 @@ export default function ClientPortalLogin() {
                   <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-600" />
                 )}
                 <input
+                  id="portal-access"
                   type={mode === "id" ? "text" : "email"}
                   value={accessValue}
                   onChange={(e) => setAccessValue(e.target.value)}

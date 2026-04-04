@@ -73,7 +73,7 @@ export default function StatusPage() {
           <div className="flex items-center justify-center gap-2">
             <span className={`w-2.5 h-2.5 rounded-full ${allOp ? "bg-emerald-400" : "bg-yellow-400"} animate-pulse`} />
             <span className="text-neutral-500 text-sm">{lastChecked ? `Last checked ${lastChecked.toLocaleTimeString()}` : "Checking..."}</span>
-            <button onClick={fetchHealth} className="text-neutral-500 hover:text-emerald-400 transition-colors ml-1"><RefreshCw className="w-3.5 h-3.5" /></button>
+            <button onClick={fetchHealth} aria-label="Refresh system health status" className="text-neutral-500 hover:text-emerald-400 transition-colors ml-1"><RefreshCw className="w-3.5 h-3.5" /></button>
           </div>
         </motion.div>
 
@@ -124,7 +124,8 @@ export default function StatusPage() {
             <p className="text-emerald-400 text-sm font-mono">Subscribed. You will be notified.</p>
           ) : (
             <form onSubmit={(e) => { e.preventDefault(); setSubscribed(true); }} className="flex gap-2 max-w-sm mx-auto">
-              <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.com"
+              <label htmlFor="status-email" className="sr-only">Email address for status updates</label>
+              <input id="status-email" type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.com" aria-label="Email address for status updates"
                 className="flex-1 px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 focus:border-emerald-500/40 focus:outline-none text-sm text-neutral-200 placeholder-neutral-600" />
               <button type="submit" className="px-5 py-2.5 rounded-lg bg-emerald-500 text-black font-semibold text-sm hover:bg-emerald-400 transition-colors">Subscribe</button>
             </form>

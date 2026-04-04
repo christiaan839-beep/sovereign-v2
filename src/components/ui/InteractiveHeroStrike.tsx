@@ -70,12 +70,15 @@ export function InteractiveHeroStrike() {
       <form onSubmit={handleFormSubmit} className="w-full relative group">
         <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500/20 via-emerald-600/10 to-emerald-500/20 rounded-2xl blur-xl opacity-40 group-hover:opacity-60 transition-opacity duration-500" />
         <div className="relative flex items-center bg-[#0a0a0a] border border-white/10 rounded-2xl p-2 shadow-2xl">
+          <label htmlFor="hero-agent-goal" className="sr-only">Describe a goal for the agent</label>
           <input
+            id="hero-agent-goal"
             type="text"
             placeholder="Try it — describe a goal..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
             disabled={isLoading}
+            aria-label="Describe a goal for the agent"
             className="flex-1 bg-transparent text-white px-5 py-3.5 outline-none placeholder:text-neutral-500 text-sm disabled:opacity-50"
           />
           <button

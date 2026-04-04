@@ -111,8 +111,10 @@ export default function AGIAuditorPage() {
                 <div className="pl-6 h-full flex items-center">
                   <Crosshair className="w-6 h-6 text-neutral-500" />
                 </div>
-                <input 
-                  type="text" 
+                <label htmlFor="scan-target-url" className="sr-only">Target website URL to scan</label>
+                <input
+                  id="scan-target-url"
+                  type="text"
                   value={targetUrl}
                   onChange={(e) => setTargetUrl(e.target.value)}
                   placeholder="https://your-company.com"
@@ -236,9 +238,11 @@ export default function AGIAuditorPage() {
                   
                   {/* Email capture + auto demo provision */}
                   <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto mb-6">
-                    <input 
-                      type="email" 
+                    <label htmlFor="scan-email" className="sr-only">Email address for demo access</label>
+                    <input
+                      type="email"
                       placeholder="your@email.com"
+                      aria-label="Email address for demo access"
                       className="flex-1 bg-white/5 border border-white/10 rounded-xl px-6 py-4 text-white placeholder-neutral-500 outline-none focus:border-[#00B7FF]/50 transition-gpu"
                       id="scan-email"
                     />

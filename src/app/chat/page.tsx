@@ -309,10 +309,10 @@ export default function SovereignChat() {
             <span className="hidden sm:inline">{currentModel.name.split(" (")[0]}</span>
             <ChevronDown className="w-3 h-3" />
           </button>
-          <button onClick={() => setShowHistory(!showHistory)} className="p-1.5 rounded-lg text-neutral-500 hover:text-white hover:bg-white/5 transition-all">
+          <button onClick={() => setShowHistory(!showHistory)} aria-label="Toggle conversation history" className="p-1.5 rounded-lg text-neutral-500 hover:text-white hover:bg-white/5 transition-all">
             <Clock className="w-4 h-4" />
           </button>
-          <button onClick={() => { saveConversation(); setMessages([]); }} className="p-1.5 rounded-lg text-neutral-500 hover:text-white hover:bg-white/5 transition-all">
+          <button onClick={() => { saveConversation(); setMessages([]); }} aria-label="Start new conversation" className="p-1.5 rounded-lg text-neutral-500 hover:text-white hover:bg-white/5 transition-all">
             <Plus className="w-4 h-4" />
           </button>
         </div>
@@ -344,7 +344,7 @@ export default function SovereignChat() {
             className="absolute top-0 right-0 bottom-0 w-72 z-50 bg-[#0A0A0A] border-l border-white/[0.06] flex flex-col">
             <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.04]">
               <span className="text-sm font-semibold">History</span>
-              <button onClick={() => setShowHistory(false)} className="p-1 text-neutral-500 hover:text-white"><ArrowLeft className="w-4 h-4" /></button>
+              <button onClick={() => setShowHistory(false)} aria-label="Close history sidebar" className="p-1 text-neutral-500 hover:text-white"><ArrowLeft className="w-4 h-4" /></button>
             </div>
             <div className="flex-1 overflow-y-auto p-2 space-y-1">
               {conversations.length === 0 && <p className="text-xs text-neutral-600 text-center py-8">No conversations yet</p>}
@@ -410,7 +410,7 @@ export default function SovereignChat() {
                     <div className="flex items-center gap-3 mt-1.5 px-1">
                       {msg.model && <span className="text-[9px] text-neutral-600 font-mono">{msg.model}</span>}
                       {msg.duration && <span className="text-[9px] text-neutral-600 font-mono">{(msg.duration / 1000).toFixed(1)}s</span>}
-                      <button onClick={() => copyMessage(msg.id, msg.content)} className="text-neutral-600 hover:text-neutral-400 transition-colors">
+                      <button onClick={() => copyMessage(msg.id, msg.content)} aria-label="Copy message to clipboard" className="text-neutral-600 hover:text-neutral-400 transition-colors">
                         {copied === msg.id ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                       </button>
                     </div>
@@ -428,6 +428,8 @@ export default function SovereignChat() {
           {/* Voice toggle */}
           <button
             onClick={() => setVoiceEnabled(!voiceEnabled)}
+            aria-label={voiceEnabled ? "Disable voice responses" : "Enable voice responses"}
+            aria-pressed={voiceEnabled}
             className={`p-3 rounded-xl shrink-0 transition-all ${voiceEnabled ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-400" : "bg-white/[0.04] border border-white/[0.08] text-neutral-600 hover:text-neutral-400"}`}
             title={voiceEnabled ? "Voice mode on — responses will be spoken" : "Enable voice mode"}
           >
@@ -446,12 +448,15 @@ export default function SovereignChat() {
             {input.trim() || streaming ? (
               <motion.button key="send" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
                 onClick={() => sendMessage()} disabled={streaming || !input.trim()}
+                aria-label={streaming ? "Sending message" : "Send message"}
                 className="p-3 rounded-xl bg-emerald-500 text-black hover:bg-emerald-400 transition-colors disabled:opacity-50 shrink-0">
                 {streaming ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               </motion.button>
             ) : (
               <motion.button key="mic" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
                 onClick={isListening ? stopListening : startListening}
+                aria-label={isListening ? "Stop listening" : "Start voice input"}
+                aria-pressed={isListening}
                 className={`p-3 rounded-xl shrink-0 transition-all ${isListening ? "bg-red-500 text-white animate-pulse" : "bg-white/[0.04] border border-white/[0.08] text-neutral-400 hover:text-white hover:bg-white/[0.08]"}`}>
                 {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
               </motion.button>
