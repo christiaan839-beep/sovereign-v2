@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sovereign Matrix - Mission Control Demo</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+  :root{
+    --bg:#050505;
+    --surface:rgba(255,255,255,0.04);
+    --border:rgba(255,255,255,0.08);
+    --border-bright:rgba(16,185,129,0.25);
+    --emerald:#10b981;
+    --emerald-dim:rgba(16,185,129,0.15);
+    --emerald-glow:rgba(16,185,129,0.4);
+    --text-primary:rgba(255,255,255,0.92);
+    --text-secondary:rgba(255,255,255,0.5);
+    --text-muted:rgba(255,255,255,0.3);
+    --red:#ef4444;
+    --card-blur:16px;
+  }
+
+  body{
+    background:var(--bg);
+    color:var(--text-primary);
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    overflow-x:hidden;
+    position:relative;
+  }
+
+  /* ── ambient background ── */
+  .bg-grid{
+    position:fixed;inset:0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+    background-size:64px 64px;
+    pointer-events:none;z-index:0;
+  }
+  .bg-glow{
+    position:fixed;top:-40%;left:50%;transform:translateX(-50%);
+    width:900px;height:900px;
+    background:radial-gradient(circle,rgba(16,185,129,0.06) 0%,transparent 70%);
+    pointer-events:none;z-index:0;
+    animation:breathe 8s ease-in-out infinite;
+  }
+  @keyframes breathe{0%,100%{opacity:.6;transform:translateX(-50%) scale(1)}50%{opacity:1;transform:translateX(-50%) scale(1.1)}}
+
+  /* ── layout ── */
+  .container{
+    position:relative;z-index:1;
+    width:100%;max-width:720px;
+    padding:48px 24px 32px;
+    display:flex;flex-direction:column;
+    gap:0;
+    flex:1;
+  }
+
+  /* ── logo ── */
+  .logo{
+    text-align:center;margin-bottom:48px;
+    opacity:0;
+    animation:fadeSlideIn .8s ease forwards;
+    animation-delay:.2s;
+  }
+  .logo-text{
+    font-size:13px;font-weight:600;
+    letter-spacing:5px;text-transform:uppercase;
+    color:var(--emerald);
+  }
+  .logo-sub{
+    font-size:11px;letter-spacing:3px;
+    color:var(--text-muted);margin-top:4px;
+  }
+
+  /* ── mission control header ── */
+  .mc-header{
+    display:flex;align-items:center;gap:10px;
+    margin-bottom:24px;
+    opacity:0;
+  }
+  .mc-header.visible{animation:fadeSlideIn .6s ease forwards}
+  .mc-dot{
+    width:8px;height:8px;border-radius:50%;
+    background:var(--emerald);
+    box-shadow:0 0 8px var(--emerald-glow);
+    animation:pulse-dot 2s ease-in-out infinite;
+  }
+  @keyframes pulse-dot{0%,100%{opacity:1;box-shadow:0 0 8px var(--emerald-glow)}50%{opacity:.5;box-shadow:0 0 16px var(--emerald-glow)}}
+  .mc-title{
+    font-size:20px;font-weight:600;
+    letter-spacing:-.3px;
+  }
+
+  /* ── goal input area ── */
+  .goal-area{
+    position:relative;
+    border-radius:14px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    backdrop-filter:blur(var(--card-blur));
+    -webkit-backdrop-filter:blur(var(--card-blur));
+    padding:20px 22px;
+    margin-bottom:20px;
+    opacity:0;
+    min-height:72px;
+    transition:border-color .4s ease;
+  }
+  .goal-area.visible{animation:fadeSlideIn .5s ease forwards;animation-delay:.1s}
+  .goal-area.typing{border-color:var(--border-bright)}
+  .goal-area.done{border-color:var(--border)}
+  .goal-label{
+    font-size:11px;font-weight:500;
+    color:var(--text-muted);letter-spacing:1.5px;
+    text-transform:uppercase;margin-bottom:10px;
+  }
+  .goal-text{
+    font-size:15px;line-height:1.6;
+    color:var(--text-primary);
+    min-height:24px;
+  }
+  .cursor-blink{
+    display:inline-block;
+    width:2px;height:18px;
+    background:var(--emerald);
+    margin-left:2px;
+    vertical-align:text-bottom;
+    animation:blink .6s step-end infinite;
+  }
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+  /* ── planning state ── */
+  .planning{
+    display:flex;align-items:center;gap:10px;
+    margin-bottom:20px;
+    opacity:0;height:0;overflow:hidden;
+    transition:opacity .4s ease, height .4s ease;
+  }
+  .planning.visible{opacity:1;height:32px}
+  .spinner{
+    width:16px;height:16px;
+    border:2px solid var(--border);
+    border-top-color:var(--emerald);
+    border-radius:50%;
+    animation:spin .8s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .planning-text{
+    font-size:13px;color:var(--text-secondary);
+  }
+
+  /* ── step cards ── */
+  .steps{display:flex;flex-direction:column;gap:12px;margin-bottom:20px}
+  .step-card{
+    border-radius:12px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    backdrop-filter:blur(var(--card-blur));
+    -webkit-backdrop-filter:blur(var(--card-blur));
+    padding:18px 20px;
+    opacity:0;
+    transform:translateY(16px);
+    transition:opacity .5s ease, transform .5s ease, border-color .5s ease, background .5s ease;
+  }
+  .step-card.visible{opacity:1;transform:translateY(0)}
+  .step-card.completed{border-color:rgba(16,185,129,0.2);background:rgba(16,185,129,0.03)}
+  .step-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+  .step-info{display:flex;align-items:center;gap:10px}
+  .step-icon{font-size:18px;line-height:1}
+  .step-agent{font-size:13px;font-weight:600;color:var(--text-primary)}
+  .step-status{
+    font-size:12px;font-weight:500;
+    color:var(--text-secondary);
+    display:flex;align-items:center;gap:6px;
+  }
+  .step-status.running{color:var(--emerald)}
+  .step-status.done{color:var(--emerald)}
+  .step-check{display:none}
+  .step-card.completed .step-check{display:inline}
+  .step-card.completed .step-spinner{display:none}
+  .step-spinner{
+    width:12px;height:12px;
+    border:1.5px solid var(--border);
+    border-top-color:var(--emerald);
+    border-radius:50%;
+    animation:spin .8s linear infinite;
+    display:inline-block;
+  }
+  .step-desc{
+    font-size:13px;color:var(--text-secondary);
+    margin-bottom:12px;
+  }
+
+  /* progress bar */
+  .progress-track{
+    height:3px;border-radius:2px;
+    background:rgba(255,255,255,0.06);
+    overflow:hidden;
+  }
+  .progress-fill{
+    height:100%;border-radius:2px;
+    background:linear-gradient(90deg,var(--emerald),#34d399);
+    width:0%;
+    transition:width .3s linear;
+    box-shadow:0 0 8px var(--emerald-glow);
+  }
+  .step-card.completed .progress-fill{width:100%!important}
+
+  /* ── summary card ── */
+  .summary{
+    border-radius:14px;
+    background:var(--surface);
+    border:1px solid var(--border-bright);
+    backdrop-filter:blur(var(--card-blur));
+    -webkit-backdrop-filter:blur(var(--card-blur));
+    padding:24px;
+    text-align:center;
+    opacity:0;
+    transform:translateY(16px);
+    transition:opacity .6s ease, transform .6s ease;
+    margin-bottom:20px;
+  }
+  .summary.visible{opacity:1;transform:translateY(0)}
+  .summary-stats{
+    display:flex;justify-content:center;gap:32px;
+    margin-bottom:16px;flex-wrap:wrap;
+  }
+  .stat{display:flex;flex-direction:column;align-items:center;gap:4px}
+  .stat-value{font-size:22px;font-weight:700;color:var(--text-primary)}
+  .stat-value.green{color:var(--emerald)}
+  .stat-value.red{color:var(--red)}
+  .stat-label{font-size:11px;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase}
+  .summary-bar{
+    height:3px;border-radius:2px;
+    background:linear-gradient(90deg,var(--emerald),#34d399,var(--emerald));
+    background-size:200% 100%;
+    animation:shimmer 2s linear infinite;
+    margin-top:4px;
+  }
+  @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+  /* ── mission complete ── */
+  .mission-complete{
+    text-align:center;
+    opacity:0;
+    transform:translateY(12px);
+    transition:opacity .7s ease, transform .7s ease;
+    margin-bottom:32px;
+  }
+  .mission-complete.visible{opacity:1;transform:translateY(0)}
+  .mc-big{
+    font-size:28px;font-weight:700;
+    letter-spacing:-.5px;
+    background:linear-gradient(135deg,#fff,var(--emerald));
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+    background-clip:text;
+    margin-bottom:8px;
+  }
+  .mc-sub{
+    font-size:13px;color:var(--text-muted);
+  }
+
+  /* ── particles ── */
+  .particle-container{
+    position:fixed;inset:0;pointer-events:none;z-index:10;
+    overflow:hidden;
+  }
+  .particle{
+    position:absolute;
+    width:4px;height:4px;
+    border-radius:50%;
+    background:var(--emerald);
+    opacity:0;
+  }
+  .particle.burst{
+    animation:particleBurst 1.4s ease-out forwards;
+  }
+  @keyframes particleBurst{
+    0%{opacity:1;transform:translate(0,0) scale(1)}
+    100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(0)}
+  }
+
+  /* ── footer ── */
+  .footer{
+    text-align:center;
+    padding:24px;
+    opacity:0;
+    animation:fadeSlideIn 1s ease forwards;
+    animation-delay:.5s;
+    position:relative;z-index:1;
+  }
+  .footer-url{
+    font-size:12px;font-weight:500;
+    letter-spacing:2px;
+    color:var(--text-muted);
+  }
+  .footer-url .accent{color:var(--emerald)}
+
+  /* ── loop indicator ── */
+  .loop-indicator{
+    position:fixed;bottom:20px;right:20px;
+    font-size:11px;color:var(--text-muted);
+    letter-spacing:1px;z-index:5;
+    opacity:0;
+    transition:opacity .4s ease;
+  }
+  .loop-indicator.visible{opacity:1}
+
+  /* ── keyframes ── */
+  @keyframes fadeSlideIn{
+    from{opacity:0;transform:translateY(10px)}
+    to{opacity:1;transform:translateY(0)}
+  }
+
+  /* ── responsive ── */
+  @media(max-width:600px){
+    .container{padding:32px 16px 24px}
+    .mc-title{font-size:17px}
+    .goal-text{font-size:14px}
+    .summary-stats{gap:20px}
+    .mc-big{font-size:22px}
+    .stat-value{font-size:18px}
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-glow"></div>
+<div class="particle-container" id="particles"></div>
+
+<div class="container">
+  <div class="logo">
+    <div class="logo-text">Sovereign Matrix</div>
+    <div class="logo-sub">Autonomous Agent Platform</div>
+  </div>
+
+  <div class="mc-header" id="mcHeader">
+    <div class="mc-dot"></div>
+    <div class="mc-title">Mission Control</div>
+  </div>
+
+  <div class="goal-area" id="goalArea">
+    <div class="goal-label">Objective</div>
+    <div class="goal-text" id="goalText"></div>
+  </div>
+
+  <div class="planning" id="planning">
+    <div class="spinner"></div>
+    <div class="planning-text">Planning execution strategy...</div>
+  </div>
+
+  <div class="steps" id="steps"></div>
+
+  <div class="summary" id="summary"></div>
+
+  <div class="mission-complete" id="missionComplete">
+    <div class="mc-big">Mission Complete</div>
+    <div class="mc-sub">All agents executed successfully</div>
+  </div>
+</div>
+
+<div class="footer">
+  <div class="footer-url"><span class="accent">sovereign</span>matrix.agency</div>
+</div>
+
+<div class="loop-indicator" id="loopIndicator">LOOPING</div>
+
+<script>
+(function(){
+  var GOAL = "Find 50 fintech companies in London and draft personalized outreach emails";
+
+  var STEPS = [
+    { icon: "\uD83C\uDFAF", agent: "leads", desc: "Finding qualified prospects in London fintech sector...", time: "8.2s" },
+    { icon: "\uD83D\uDD0D", agent: "competitor-scan", desc: "Analyzing market positioning and company profiles...", time: "5.1s" },
+    { icon: "\uD83D\uDCE7", agent: "email-sequence", desc: "Drafting personalized outreach for each prospect...", time: "4.3s" }
+  ];
+
+  var mcHeader    = document.getElementById("mcHeader");
+  var goalArea    = document.getElementById("goalArea");
+  var goalText    = document.getElementById("goalText");
+  var planning    = document.getElementById("planning");
+  var stepsEl     = document.getElementById("steps");
+  var summary     = document.getElementById("summary");
+  var missionComp = document.getElementById("missionComplete");
+  var particlesEl = document.getElementById("particles");
+  var loopInd     = document.getElementById("loopIndicator");
+
+  function wait(ms){ return new Promise(function(r){ setTimeout(r, ms) }) }
+
+  function typeText(el, text, speed){
+    return new Promise(function(resolve){
+      var i = 0;
+      var cursor = document.createElement("span");
+      cursor.className = "cursor-blink";
+      el.textContent = "";
+      el.appendChild(cursor);
+      var interval = setInterval(function(){
+        if(i < text.length){
+          el.textContent = text.substring(0, i + 1);
+          el.appendChild(cursor);
+          i++;
+        } else {
+          clearInterval(interval);
+          setTimeout(function(){
+            if(cursor.parentNode) cursor.parentNode.removeChild(cursor);
+            resolve();
+          }, 400);
+        }
+      }, speed);
+    });
+  }
+
+  function buildSummaryContent(container){
+    while(container.firstChild) container.removeChild(container.firstChild);
+
+    var statsRow = document.createElement("div");
+    statsRow.className = "summary-stats";
+
+    var items = [
+      { value: "3", cls: "green", label: "Succeeded" },
+      { value: "0", cls: "red", label: "Failed" },
+      { value: "17.6s", cls: "", label: "Total Time" }
+    ];
+
+    items.forEach(function(item){
+      var stat = document.createElement("div");
+      stat.className = "stat";
+
+      var val = document.createElement("div");
+      val.className = "stat-value" + (item.cls ? " " + item.cls : "");
+      val.textContent = item.value;
+
+      var lbl = document.createElement("div");
+      lbl.className = "stat-label";
+      lbl.textContent = item.label;
+
+      stat.appendChild(val);
+      stat.appendChild(lbl);
+      statsRow.appendChild(stat);
+    });
+
+    var bar = document.createElement("div");
+    bar.className = "summary-bar";
+
+    container.appendChild(statsRow);
+    container.appendChild(bar);
+  }
+
+  function createStepCard(step){
+    var card = document.createElement("div");
+    card.className = "step-card";
+
+    /* top row */
+    var top = document.createElement("div");
+    top.className = "step-top";
+
+    var info = document.createElement("div");
+    info.className = "step-info";
+
+    var icon = document.createElement("span");
+    icon.className = "step-icon";
+    icon.textContent = step.icon;
+
+    var agent = document.createElement("span");
+    agent.className = "step-agent";
+    agent.textContent = step.agent;
+
+    info.appendChild(icon);
+    info.appendChild(agent);
+
+    var status = document.createElement("div");
+    status.className = "step-status running";
+
+    var spinnerSpan = document.createElement("span");
+    spinnerSpan.className = "step-spinner";
+
+    var checkSpan = document.createElement("span");
+    checkSpan.className = "step-check";
+    checkSpan.textContent = "\u2705";
+
+    var statusText = document.createElement("span");
+    statusText.className = "status-text";
+    statusText.textContent = "Running";
+
+    status.appendChild(spinnerSpan);
+    status.appendChild(checkSpan);
+    status.appendChild(statusText);
+
+    top.appendChild(info);
+    top.appendChild(status);
+
+    /* description */
+    var desc = document.createElement("div");
+    desc.className = "step-desc";
+    desc.textContent = step.desc;
+
+    /* progress */
+    var track = document.createElement("div");
+    track.className = "progress-track";
+
+    var fill = document.createElement("div");
+    fill.className = "progress-fill";
+
+    track.appendChild(fill);
+
+    card.appendChild(top);
+    card.appendChild(desc);
+    card.appendChild(track);
+
+    return card;
+  }
+
+  function animateProgress(card, durationMs){
+    var fill = card.querySelector(".progress-fill");
+    var start = performance.now();
+    return new Promise(function(resolve){
+      function tick(now){
+        var elapsed = now - start;
+        var pct = Math.min((elapsed / durationMs) * 100, 100);
+        fill.style.width = pct + "%";
+        if(pct < 100){
+          requestAnimationFrame(tick);
+        } else {
+          resolve();
+        }
+      }
+      requestAnimationFrame(tick);
+    });
+  }
+
+  function completeStep(card, time){
+    card.classList.add("completed");
+    var statusText = card.querySelector(".status-text");
+    statusText.textContent = time;
+  }
+
+  function burstParticles(){
+    var cx = window.innerWidth / 2;
+    var cy = window.innerHeight / 2;
+    var count = 40;
+    for(var i = 0; i < count; i++){
+      var p = document.createElement("div");
+      p.className = "particle";
+      var angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.5;
+      var dist = 80 + Math.random() * 180;
+      var dx = Math.cos(angle) * dist;
+      var dy = Math.sin(angle) * dist;
+      p.style.left = cx + "px";
+      p.style.top = cy + "px";
+      p.style.setProperty("--dx", dx + "px");
+      p.style.setProperty("--dy", dy + "px");
+      var size = (2 + Math.random() * 4) + "px";
+      p.style.width = size;
+      p.style.height = size;
+      p.style.background = Math.random() > 0.3 ? "var(--emerald)" : "#34d399";
+      particlesEl.appendChild(p);
+      (function(el, delay){
+        setTimeout(function(){ el.classList.add("burst") }, delay);
+        setTimeout(function(){ if(el.parentNode) el.parentNode.removeChild(el) }, delay + 1500);
+      })(p, Math.random() * 200);
+    }
+  }
+
+  function reset(){
+    mcHeader.classList.remove("visible");
+    goalArea.classList.remove("visible","typing","done");
+    goalText.textContent = "";
+    planning.classList.remove("visible");
+    while(stepsEl.firstChild) stepsEl.removeChild(stepsEl.firstChild);
+    summary.classList.remove("visible");
+    missionComp.classList.remove("visible");
+    loopInd.classList.remove("visible");
+  }
+
+  async function runDemo(){
+    reset();
+
+    /* 0-2s: header fades in */
+    await wait(400);
+    mcHeader.classList.add("visible");
+    goalArea.classList.add("visible");
+    await wait(1600);
+
+    /* 2-4s: type goal */
+    goalArea.classList.add("typing");
+    await typeText(goalText, GOAL, 32);
+    goalArea.classList.remove("typing");
+    goalArea.classList.add("done");
+    await wait(400);
+
+    /* 4-5s: planning spinner */
+    planning.classList.add("visible");
+    await wait(1200);
+
+    /* 5-16s: steps execute sequentially */
+    var durations = [3000, 2000, 3000];
+
+    for(var s = 0; s < STEPS.length; s++){
+      var card = createStepCard(STEPS[s]);
+      stepsEl.appendChild(card);
+      void card.offsetHeight;
+      card.classList.add("visible");
+
+      if(s === 0) planning.classList.remove("visible");
+
+      await animateProgress(card, durations[s]);
+      completeStep(card, STEPS[s].time);
+      await wait(400);
+    }
+
+    /* 16-18s: summary */
+    await wait(600);
+    buildSummaryContent(summary);
+    summary.classList.add("visible");
+    await wait(1800);
+
+    /* 18-20s: mission complete + particles */
+    missionComp.classList.add("visible");
+    await wait(300);
+    burstParticles();
+    await wait(3000);
+
+    /* brief loop indicator, then restart */
+    loopInd.classList.add("visible");
+    await wait(1500);
+    loopInd.classList.remove("visible");
+    await wait(500);
+
+    runDemo();
+  }
+
+  runDemo();
+})();
+</script>
+</body>
+</html>
