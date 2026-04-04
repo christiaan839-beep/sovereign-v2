@@ -115,12 +115,12 @@ function Particles() {
       }
 
       // Zero out unused lines
-      /* eslint-disable react-hooks/immutability -- WebGL Float32Array buffer mutation is intentional */
+       
       for (let i = lineIdx * 6; i < MAX_CONNECTIONS * 6; i++) {
         linePositions[i] = 0;
         lineColors[i] = 0;
       }
-      /* eslint-enable react-hooks/immutability */
+       
 
       linesRef.current.geometry.attributes.position.needsUpdate = true;
       linesRef.current.geometry.attributes.color.needsUpdate = true;
