@@ -89,7 +89,7 @@ function Particles() {
           if (dist < CONNECTION_DISTANCE) {
             const opacity = 1 - dist / CONNECTION_DISTANCE;
             const idx = lineIdx * 6;
-            /* eslint-disable react-compiler/react-compiler -- WebGL Float32Array buffer mutation is intentional */
+            /* eslint-disable react-hooks/immutability -- WebGL Float32Array buffer mutation is intentional */
             linePositions[idx] = particles[i].x;
             linePositions[idx + 1] = particles[i].y;
             linePositions[idx + 2] = particles[i].z;
@@ -108,17 +108,19 @@ function Particles() {
             lineColors[idx + 4] = g;
             lineColors[idx + 5] = b;
 
-            /* eslint-enable react-compiler/react-compiler */
+            /* eslint-enable react-hooks/immutability */
             lineIdx++;
           }
         }
       }
 
       // Zero out unused lines
+      /* eslint-disable react-hooks/immutability -- WebGL Float32Array buffer mutation is intentional */
       for (let i = lineIdx * 6; i < MAX_CONNECTIONS * 6; i++) {
         linePositions[i] = 0;
         lineColors[i] = 0;
       }
+      /* eslint-enable react-hooks/immutability */
 
       linesRef.current.geometry.attributes.position.needsUpdate = true;
       linesRef.current.geometry.attributes.color.needsUpdate = true;

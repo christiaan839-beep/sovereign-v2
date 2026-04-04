@@ -12,7 +12,9 @@ export async function POST(request: Request) {
   try {
     const { userId } = await auth();
     if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const { target } = await request.json();
+    const body = await request.json();
+    const target = body.target || body.url || body.prompt || "";
+    const context = body.context || ""; // Context from previous playbook steps
 
     if (!target) {
       return NextResponse.json({ error: "target domain is required." }, { status: 400 });
@@ -39,16 +41,18 @@ TARGET: ${target}
 
 WEB RESEARCH:
 ${webIntel}
+${context ? `\nADDITIONAL CONTEXT FROM PREVIOUS ANALYSIS:\n${context.slice(0, 2000)}` : ""}
 
 OUTPUT (strict JSON):
 {
   "threat_level": "HIGH|MEDIUM|LOW",
   "vulnerabilities": ["5 specific exploitable weaknesses with evidence"],
-  "counter_strikes": ["5 specific offensive actions our agency can take to beat them"]
+  "counter_strikes": ["5 specific offensive actions our agency can take to beat them"],
+  "positioning_angles": ["3 specific ways to position against this competitor"]
 }
 
-Be specific, actionable, and aggressive. Reference real findings from the research. Output ONLY valid JSON.`,
-      { system: "You are a strategic competitive strategist who finds and exploits competitor weaknesses.", maxTokens: 2000 }
+Be specific, actionable, and data-driven. Reference real findings from the research. Output ONLY valid JSON.`,
+      { system: "You are a strategic competitive analyst. Be specific — cite real data. No generic advice.", maxTokens: 2500 }
     );
 
     let parsed;
@@ -68,6 +72,7 @@ Be specific, actionable, and aggressive. Reference real findings from the resear
       threat_level: parsed.threat_level,
       vulnerabilities: parsed.vulnerabilities,
       counter_strikes: parsed.counter_strikes,
+      positioning_angles: parsed.positioning_angles || [],
       duration_ms: Date.now() - start,
     };
 

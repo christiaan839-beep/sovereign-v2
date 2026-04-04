@@ -68,7 +68,7 @@ function ThinkingOrb() {
 
 export function LandingAgent() {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
+  const [messages, setMessages] = useState<Message[]>(() => [
     {
       role: "assistant",
       content: "Hey! I'm the Sovereign Matrix agent. Ask me anything about the platform — pricing, capabilities, how it works, or what makes it different.",
@@ -96,7 +96,8 @@ export function LandingAgent() {
   const sendMessage = async (text: string) => {
     if (!text.trim() || isThinking) return;
 
-    const userMessage: Message = { role: "user", content: text.trim(), timestamp: Date.now() };
+    const now = Date.now(); // eslint-disable-line react-hooks/purity -- called from event handler, not during render
+    const userMessage: Message = { role: "user", content: text.trim(), timestamp: now };
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setIsThinking(true);

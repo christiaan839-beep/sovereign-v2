@@ -71,6 +71,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://integrate.api.nvidia.com" />
         <link rel="preconnect" href="https://generativelanguage.googleapis.com" />
         <link rel="dns-prefetch" href="https://api.anthropic.com" />
+        {/* eslint-disable-next-line @next/next/no-page-custom-font -- App Router layout.tsx applies fonts globally, not per-page */}
         <link
           href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Outfit:wght@300;400;500;600;700&display=swap"
           rel="stylesheet"

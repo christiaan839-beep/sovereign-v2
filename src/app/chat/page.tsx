@@ -152,6 +152,7 @@ export default function SovereignChat() {
     recognitionRef.current = recognition;
     recognition.start();
     setIsListening(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- sendMessage is stable and called via setTimeout, not during render
   }, []);
 
   const stopListening = useCallback(() => {

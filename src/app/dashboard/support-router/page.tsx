@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Headphones, Mail, User, CheckCircle2, ShieldCheck, CreditCard, AlertCircle, ArrowRight } from "lucide-react";
 
@@ -80,7 +80,7 @@ export default function SupportRouterPage() {
                     <div className="w-full">
                        <div className="flex items-center justify-between mb-2">
                           <span className="text-[10px] text-[#00B7FF] uppercase font-bold tracking-widest animate-pulse">Incoming Payload Detected</span>
-                          <span className="text-[10px] text-neutral-500 font-mono">WSS://{Date.now()}</span>
+                          <span className="text-[10px] text-neutral-500 font-mono">WSS://sovereign.wss</span>
                        </div>
                        <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
                           <motion.div 

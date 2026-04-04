@@ -72,6 +72,7 @@ export default function VoiceAssistantPage() {
     recognition.start();
     setListening(true);
     setError("");
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- handleUserMessage is stable and called from speech event, not during render
   }, []);
 
   const stopListening = useCallback(() => {

@@ -11,21 +11,29 @@ export async function POST(request: Request) {
   try {
     const { userId } = await auth();
     if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const { client_name, project_type, requirements, budget_range, timeline } = await request.json();
+    const body = await request.json();
+    // Support both direct fields and playbook format
+    const client_name = body.client_name || body.client || "";
+    const project_type = body.project_type || body.service || body.product || "";
+    const requirements = body.requirements || body.prompt || "";
+    const budget_range = body.budget_range || body.budget || "";
+    const timeline = body.timeline || "";
+    const context = body.context || ""; // From previous playbook steps (e.g., site analysis + lead data)
 
-    if (!client_name || !project_type) {
-      return NextResponse.json({ error: "client_name and project_type are required." }, { status: 400 });
+    if (!client_name && !project_type && !requirements) {
+      return NextResponse.json({ error: "Provide client_name, project_type, or prompt." }, { status: 400 });
     }
 
     const start = Date.now();
     const { finalOutput, rounds } = await runSwarm({
       goal: `Generate a professional business proposal.
 
-CLIENT: ${client_name}
-PROJECT TYPE: ${project_type}
+CLIENT: ${client_name || "Prospective Client"}
+PROJECT TYPE: ${project_type || "Consulting Services"}
 REQUIREMENTS: ${requirements || "Not specified — infer from project type"}
 BUDGET RANGE: ${budget_range || "To be discussed"}
 TIMELINE: ${timeline || "Standard delivery"}
+${context ? `\nCONTEXT FROM PREVIOUS RESEARCH:\n${context.slice(0, 3000)}` : ""}
 
 OUTPUT STRUCTURE:
 1. EXECUTIVE SUMMARY (100 words — what we're proposing and why)
