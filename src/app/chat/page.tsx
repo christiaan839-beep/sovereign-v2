@@ -67,9 +67,10 @@ function FormattedText({ text }: { text: string }) {
         // Process inline formatting
         const lines = part.split("\n");
         return lines.map((line, j) => {
-          if (line.startsWith("### ")) return <h3 key={`${i}-${j}`} className="text-sm font-bold text-white mt-3 mb-1">{line.slice(4)}</h3>;
-          if (line.startsWith("## ")) return <h2 key={`${i}-${j}`} className="text-base font-bold text-white mt-3 mb-1">{line.slice(3)}</h2>;
-          if (line.startsWith("# ")) return <h1 key={`${i}-${j}`} className="text-lg font-bold text-white mt-3 mb-1">{line.slice(2)}</h1>;
+          // Downshift markdown headings by 2 levels: page h1 is "Sovereign AI", so message content starts at h3
+          if (line.startsWith("### ")) return <h5 key={`${i}-${j}`} className="text-sm font-bold text-white mt-3 mb-1">{line.slice(4)}</h5>;
+          if (line.startsWith("## ")) return <h4 key={`${i}-${j}`} className="text-base font-bold text-white mt-3 mb-1">{line.slice(3)}</h4>;
+          if (line.startsWith("# ")) return <h3 key={`${i}-${j}`} className="text-lg font-bold text-white mt-3 mb-1">{line.slice(2)}</h3>;
           if (line.startsWith("- ")) return <div key={`${i}-${j}`} className="flex gap-2 ml-1"><span className="text-emerald-500 shrink-0">•</span><span>{line.slice(2)}</span></div>;
           if (line.trim() === "") return <br key={`${i}-${j}`} />;
           return <span key={`${i}-${j}`}>{line}<br /></span>;
@@ -383,6 +384,7 @@ export default function SovereignChat() {
           </div>
         ) : (
           <div className="px-4 py-6 space-y-5 max-w-2xl mx-auto">
+            <h2 className="sr-only">Conversation</h2>
             {messages.map((msg) => (
               <motion.div key={msg.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                 className={msg.role === "user" ? "flex justify-end" : "flex justify-start gap-3"}>

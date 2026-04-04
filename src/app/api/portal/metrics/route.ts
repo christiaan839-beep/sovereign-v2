@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { leads, generations, bookings, agentActivity } from "@/db/schema";
 import { eq, desc, sql, count } from "drizzle-orm";
+import { createLogger } from "@/lib/logger";
 
 export const runtime = "edge";
+
+const log = createLogger("portal/metrics");
 
 /**
  * GET /api/portal/metrics?clientId=<id>
@@ -122,7 +125,7 @@ export async function GET(req: NextRequest) {
       })),
     });
   } catch (err) {
-    console.error("[portal/metrics] Error:", err);
+    log.error("Failed to compute portal metrics", { error: String(err) });
     return NextResponse.json(
       {
         success: true,

@@ -74,7 +74,7 @@ export default function ChangelogPage() {
                     <div className="flex items-start justify-between gap-3 mb-2">
                       <div className="flex items-center gap-2.5">
                         <Icon className="w-4 h-4 text-emerald-400 shrink-0" />
-                        <h3 className="font-semibold text-white">{entry.title}</h3>
+                        <h2 className="font-semibold text-white">{entry.title}</h2>
                       </div>
                       <span className={`text-xs font-mono px-2 py-0.5 rounded-full border shrink-0 ${cat.bg} ${cat.color}`}>
                         {entry.category}
