@@ -40,6 +40,7 @@ export default function SignupPage() {
 
   return (
     <main className="min-h-screen bg-[#010101] flex flex-col items-center justify-center px-4">
+      <h1 className="sr-only">Create your Sovereign Matrix account</h1>
       {/* Logo */}
       <div className="mb-8 flex flex-col items-center gap-4">
         <Link href="/" className="flex items-center gap-2.5">
