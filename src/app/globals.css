@@ -89,9 +89,27 @@ body {
 
 /* ─── Focus Ring ──────────────────────────────────── */
 
+/* Opt-in utility for elements that need emphasis */
 .focus-ring:focus-visible {
   outline: 2px solid rgba(16, 185, 129, 0.5);
   outline-offset: 2px;
+}
+
+/* Global keyboard focus indicator (WCAG 2.4.7) — applies only to
+   keyboard focus (:focus-visible), not mouse clicks. Uses emerald
+   brand color with high-contrast shadow to pierce through dark bg. */
+:focus-visible {
+  outline: 2px solid rgba(16, 185, 129, 0.7);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Elements that set their own focus style should keep control */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[data-no-focus-ring]:focus-visible {
+  outline: none;
 }
 
 /* ─── Custom Scrollbar (thin variant) ────────────── */
