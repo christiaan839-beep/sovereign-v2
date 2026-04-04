@@ -189,6 +189,8 @@ function CompanyUrlAnalyzer({ onComplete }: { onComplete: () => void }) {
       <div className="relative">
         <input
           type="url"
+          inputMode="url"
+          autoComplete="url"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && analyze()}
@@ -277,6 +279,8 @@ function ReferralCodeInput() {
             onChange={(e) => setCode(e.target.value.toUpperCase())}
             onKeyDown={(e) => e.key === "Enter" && submitReferral()}
             placeholder="Have a referral code?"
+            autoComplete="off"
+            spellCheck={false}
             className="bg-white/[0.03] border border-white/[0.06] rounded-lg px-3 py-1.5 text-xs text-white placeholder:text-neutral-700 focus:outline-none focus:border-emerald-500/30 transition-colors w-48"
           />
           {code.trim() && (

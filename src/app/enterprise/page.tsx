@@ -168,6 +168,7 @@ export default function EnterprisePage() {
                     id="enterprise-name"
                     type="text"
                     required
+                    autoComplete="name"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     placeholder="Jane Smith"
@@ -181,6 +182,7 @@ export default function EnterprisePage() {
                     id="enterprise-email"
                     type="email"
                     required
+                    autoComplete="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     placeholder="jane@company.com"
@@ -194,6 +196,7 @@ export default function EnterprisePage() {
                     id="enterprise-company"
                     type="text"
                     required
+                    autoComplete="organization"
                     value={formData.company}
                     onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                     placeholder="Acme Inc."

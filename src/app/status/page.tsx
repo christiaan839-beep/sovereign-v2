@@ -125,7 +125,7 @@ export default function StatusPage() {
           ) : (
             <form onSubmit={(e) => { e.preventDefault(); setSubscribed(true); }} className="flex gap-2 max-w-sm mx-auto">
               <label htmlFor="status-email" className="sr-only">Email address for status updates</label>
-              <input id="status-email" type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.com" aria-label="Email address for status updates"
+              <input id="status-email" type="email" required autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.com" aria-label="Email address for status updates"
                 className="flex-1 px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 focus:border-emerald-500/40 focus:outline-none text-sm text-neutral-200 placeholder-neutral-600" />
               <button type="submit" className="px-5 py-2.5 rounded-lg bg-emerald-500 text-black font-semibold text-sm hover:bg-emerald-400 transition-colors">Subscribe</button>
             </form>

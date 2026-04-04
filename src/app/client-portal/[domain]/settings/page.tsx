@@ -50,7 +50,7 @@ export default function WhiteLabelSettings({ params: _params }: PageProps) {
               </div>
               <div>
                 <label className="text-[10px] uppercase tracking-widest font-bold text-neutral-400 mb-2 block">Logo URL</label>
-                <input value={config.logoUrl} onChange={(e) => update("logoUrl", e.target.value)} placeholder="https://..." className="w-full bg-black/60 border border-white/10 rounded-xl p-3 text-sm text-neutral-300 placeholder:text-neutral-600 focus:outline-none focus:border-cyan-500/50 font-mono" />
+                <input type="url" inputMode="url" value={config.logoUrl} onChange={(e) => update("logoUrl", e.target.value)} placeholder="https://..." className="w-full bg-black/60 border border-white/10 rounded-xl p-3 text-sm text-neutral-300 placeholder:text-neutral-600 focus:outline-none focus:border-cyan-500/50 font-mono" />
               </div>
             </div>
           </div>
@@ -74,7 +74,7 @@ export default function WhiteLabelSettings({ params: _params }: PageProps) {
             </h2>
             <div>
               <label className="text-[10px] uppercase tracking-widest font-bold text-neutral-400 mb-2 block">Support Email</label>
-              <input value={config.supportEmail} onChange={(e) => update("supportEmail", e.target.value)} placeholder="support@youragency.com" className="w-full bg-black/60 border border-white/10 rounded-xl p-3 text-sm text-neutral-300 placeholder:text-neutral-600 focus:outline-none focus:border-cyan-500/50 font-mono" />
+              <input type="email" inputMode="email" value={config.supportEmail} onChange={(e) => update("supportEmail", e.target.value)} placeholder="support@youragency.com" className="w-full bg-black/60 border border-white/10 rounded-xl p-3 text-sm text-neutral-300 placeholder:text-neutral-600 focus:outline-none focus:border-cyan-500/50 font-mono" />
             </div>
           </div>
 

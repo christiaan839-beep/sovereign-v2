@@ -97,6 +97,7 @@ export default function ClientPortalLogin() {
                 <input
                   id="portal-access"
                   type={mode === "id" ? "text" : "email"}
+                  autoComplete={mode === "id" ? "username" : "email"}
                   value={accessValue}
                   onChange={(e) => setAccessValue(e.target.value)}
                   placeholder={

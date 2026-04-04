@@ -114,7 +114,9 @@ export default function AGIAuditorPage() {
                 <label htmlFor="scan-target-url" className="sr-only">Target website URL to scan</label>
                 <input
                   id="scan-target-url"
-                  type="text"
+                  type="url"
+                  inputMode="url"
+                  autoComplete="url"
                   value={targetUrl}
                   onChange={(e) => setTargetUrl(e.target.value)}
                   placeholder="https://your-company.com"
@@ -241,6 +243,7 @@ export default function AGIAuditorPage() {
                     <label htmlFor="scan-email" className="sr-only">Email address for demo access</label>
                     <input
                       type="email"
+                      autoComplete="email"
                       placeholder="your@email.com"
                       aria-label="Email address for demo access"
                       className="flex-1 bg-white/5 border border-white/10 rounded-xl px-6 py-4 text-white placeholder-neutral-500 outline-none focus:border-[#00B7FF]/50 transition-gpu"
