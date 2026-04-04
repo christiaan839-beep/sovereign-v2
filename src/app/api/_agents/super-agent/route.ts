@@ -1,11 +1,6 @@
 import { createAgentRoute } from "@/lib/agent-factory";
-import { nimChat } from "@/lib/nvidia";
 import { smartAi } from "@/lib/ai";
 import { verifiedAi } from "@/lib/consensus";
-import { getPlaybook, resolvePlaybookSteps } from "@/lib/playbooks";
-import { createLogger } from "@/lib/logger";
-
-const log = createLogger("super-agent");
 
 /**
  * SUPER AGENT — The most powerful endpoint in Sovereign Matrix.

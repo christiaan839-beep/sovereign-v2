@@ -46,7 +46,8 @@ const MAX_QUALITY_RETRIES = 1;
  *  Prevents "Denial of Wallet" attacks where a malicious playbook
  *  chains consensus + regeneration to drain unlimited tokens.
  *  10,000 tokens ≈ ~7,500 words — enough for any single agent task. */
-const MAX_TOKENS_PER_REQUEST = 10000;
+/** @see Phase 2 implementation — will be enforced in the AI router */
+export const MAX_TOKENS_PER_REQUEST = 10000;
 
 /** Anti-slop rules injected into agent context */
 export const ANTI_SLOP_RULES = getAntiSlopRules();
