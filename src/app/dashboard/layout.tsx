@@ -10,7 +10,7 @@ import {
   X, Menu,
   PanelLeftOpen, PanelLeftClose, Plug, Cpu,
   BarChart3, Eye, Shield, Wrench,
-  Wand2, Workflow, MessageSquare, Zap, Crown
+  Wand2, Workflow, MessageSquare, Zap, Crown, Rocket
 } from "lucide-react";
 import { useKeyboardShortcuts } from "@/lib/keyboard-shortcuts";
 import { motion, AnimatePresence } from "framer-motion";
@@ -71,10 +71,10 @@ interface NavGroup {
 // ── Primary: What users do every day (visible immediately) ──
 const PRIMARY_NAV: NavItem[] = [
   { href: "/dashboard", label: "Home", icon: LayoutDashboard, tooltip: "Dashboard overview" },
-  { href: "/dashboard/playbooks", label: "Playbooks", icon: Zap, tooltip: "1-click multi-agent workflows — start here" },
+  { href: "/dashboard/mission-control", label: "Mission Control", icon: Rocket, tooltip: "One goal → watch agents execute in real-time" },
+  { href: "/dashboard/playbooks", label: "Playbooks", icon: Zap, tooltip: "1-click multi-agent workflows" },
   { href: "/chat", label: "Chat", icon: MessageSquare, tooltip: "Ask anything — AI routes to the right agent" },
   { href: "/dashboard/leads", label: "Leads", icon: Target, tooltip: "Find and manage prospects" },
-  { href: "/dashboard/content-factory", label: "Content", icon: Factory, tooltip: "Blog posts, social media, email sequences" },
 ];
 
 // ── Grouped: Power tools (collapsed by default — revealed as users engage) ──
