@@ -12,7 +12,7 @@ const log = createLogger("memory-router");
 export async function queryUnifiedVectorSpace(semanticQuery: string, limit: number = 3) {
   log.info("Querying memory for context", { query: semanticQuery.slice(0, 80), limit });
 
-  const results = await queryMemory(semanticQuery, limit);
+  const results = await queryMemory("system", semanticQuery, limit);
 
   return results.map((entry) => ({
     score: 1.0,
@@ -23,7 +23,7 @@ export async function queryUnifiedVectorSpace(semanticQuery: string, limit: numb
 }
 
 export async function enrichAgentPrompt(basePrompt: string): Promise<string> {
-  const memoryContext = await getMemoryContext(basePrompt.split(" ").slice(0, 5).join(" "));
+  const memoryContext = getMemoryContext("system", "memory-router");
 
   if (!memoryContext) return basePrompt;
 

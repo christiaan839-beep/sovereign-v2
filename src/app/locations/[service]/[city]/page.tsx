@@ -25,7 +25,7 @@ export default async function ProgrammaticLocationPage({ params }: Props) {
   }
 
   // Extract the payload stored in metadata
-  const payload = results[0].entry.metadata;
+  const payload = (results[0] as { entry: Record<string, unknown> }).entry.metadata as Record<string, string>;
 
   if (payload.type !== "programmatic-page" || payload.path !== path) {
     notFound();
@@ -156,7 +156,7 @@ export async function generateMetadata({ params }: Props) {
   const results = await recall(memQuery, 1);
 
   if (results.length > 0 && results[0].score > 0.8) {
-    const payload = results[0].entry.metadata;
+    const payload = (results[0] as { entry: Record<string, unknown> }).entry.metadata as Record<string, string>;
     return {
       title: payload.title,
       description: payload.description,

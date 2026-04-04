@@ -103,7 +103,7 @@ export default function CustomDomainPage() {
     failed: { icon: XCircle, label: "Not Verified", color: "text-red-400 bg-red-500/10 border-red-500/20" },
   };
 
-  const StatusIcon = statusConfig[verifyStatus].icon;
+  const StatusIcon = statusConfig[verifyStatus].icon as React.ElementType;
 
   return (
     <div className="p-6 md:p-8 max-w-4xl mx-auto space-y-6">
@@ -137,6 +137,7 @@ export default function CustomDomainPage() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-sm font-bold text-white uppercase tracking-widest">Current Domain</h2>
               <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-full border ${statusConfig[verifyStatus].color}`}>
+                {/* @ts-expect-error — Lucide icon component accepts className */}
                 <StatusIcon className={`w-3.5 h-3.5 ${verifyStatus === "pending" ? "animate-spin" : ""}`} />
                 {statusConfig[verifyStatus].label}
               </span>

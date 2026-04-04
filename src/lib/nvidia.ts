@@ -278,7 +278,7 @@ export async function analyzeWithCosmos(imageUrl: string, prompt: string = "Anal
  * 3. Audio Transcription via NVIDIA Parakeet-TDT (free, open-source ASR).
  * Uses the proper NIM audio/transcriptions endpoint (OpenAI Whisper-compatible).
  */
-export async function transcribeAudio(audioBuffer: Uint8Array, filename: string = "audio.wav"): Promise<{ text: string }> {
+export async function transcribeAudio(audioBuffer: Uint8Array, filename: string = "audio.wav"): Promise<{ text: string; language?: string }> {
   try {
     const apiKey = await getNimKey();
     if (!apiKey) {
@@ -487,7 +487,7 @@ export async function transcribeMultilingual(
     if (!apiKey) return { text: "[NIM API key required]", language };
 
     const formData = new FormData();
-    const blob = new Blob([audioBuffer], { type: "audio/wav" });
+    const blob = new Blob([audioBuffer as unknown as BlobPart], { type: "audio/wav" });
     formData.append("file", new File([blob], filename, { type: "audio/wav" }));
     formData.append("model", NIM_MODELS.asrMultilingual);
     formData.append("language", language);
@@ -501,7 +501,8 @@ export async function transcribeMultilingual(
 
     if (!res.ok) {
       // Fallback to English-only Parakeet v2
-      return transcribeAudio(audioBuffer, filename);
+      const fallback = await transcribeAudio(audioBuffer, filename);
+      return { text: fallback.text, language: fallback.language || language };
     }
 
     const data = await res.json();

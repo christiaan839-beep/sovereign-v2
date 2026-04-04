@@ -3,7 +3,31 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageSquare } from "lucide-react";
-import { AgentAvatar, type AgentPersonality } from "@/components/ui/AgentAvatar";
+// Inline avatar — original AgentAvatar was removed in dead code cleanup
+type AgentPersonality = "analytical" | "creative" | "strategic" | "technical" | "social" | "hunter" | "creator" | "coder" | "analyst" | "caller" | "defender" | "strategist" | "router";
+const PERSONALITY_COLORS: Record<string, string> = {
+  analytical: "bg-cyan-500/20 border-cyan-500/30 text-cyan-400",
+  creative: "bg-violet-500/20 border-violet-500/30 text-violet-400",
+  strategic: "bg-amber-500/20 border-amber-500/30 text-amber-400",
+  technical: "bg-emerald-500/20 border-emerald-500/30 text-emerald-400",
+  social: "bg-pink-500/20 border-pink-500/30 text-pink-400",
+  hunter: "bg-emerald-500/20 border-emerald-500/30 text-emerald-400",
+  creator: "bg-violet-500/20 border-violet-500/30 text-violet-400",
+  coder: "bg-cyan-500/20 border-cyan-500/30 text-cyan-400",
+  analyst: "bg-amber-500/20 border-amber-500/30 text-amber-400",
+  caller: "bg-pink-500/20 border-pink-500/30 text-pink-400",
+  defender: "bg-blue-500/20 border-blue-500/30 text-blue-400",
+  strategist: "bg-amber-500/20 border-amber-500/30 text-amber-400",
+  router: "bg-emerald-500/20 border-emerald-500/30 text-emerald-400",
+};
+function AgentAvatar({ personality, isActive, isThinking }: { personality: AgentPersonality; size?: string; isActive?: boolean; isThinking?: boolean }) {
+  const color = PERSONALITY_COLORS[personality] || PERSONALITY_COLORS.analytical;
+  return (
+    <div className={`w-10 h-10 rounded-xl border flex items-center justify-center ${color} ${isActive ? "ring-1 ring-white/20" : ""}`}>
+      {isThinking ? <span className="w-2 h-2 rounded-full bg-current animate-pulse" /> : <span className="w-3 h-3 rounded-full bg-current opacity-60" />}
+    </div>
+  );
+}
 
 /**
  * AgentWorld — An animated digital workspace visualization showing

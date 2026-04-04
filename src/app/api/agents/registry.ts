@@ -8,12 +8,8 @@
  * To add a new agent: add a line to AGENT_REGISTRY below.
  */
 
-type RouteModule = {
-  POST?: (req: never) => Promise<Response>;
-  GET?: (req: never) => Promise<Response>;
-  PUT?: (req: never) => Promise<Response>;
-  DELETE?: (req: never) => Promise<Response>;
-};
+/* eslint-disable @typescript-eslint/no-explicit-any */
+type RouteModule = Record<string, any>;
 
 export const AGENT_REGISTRY: Record<string, () => Promise<RouteModule>> = {
   "abm-artillery": () => import("@/app/api/_agents/abm-artillery/route"),

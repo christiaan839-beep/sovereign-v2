@@ -51,7 +51,7 @@ interface StepResult {
   agent: string;
   reason: string;
   status: "success" | "failed";
-  data?: unknown;
+  data?: Record<string, unknown>;
   error?: string;
   duration_ms: number;
 }

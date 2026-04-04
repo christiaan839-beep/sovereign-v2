@@ -117,7 +117,10 @@ export async function recall(query: string, limit: number = 2, pineconeKey?: str
       includeMetadata: true
     });
 
-    return results.matches || [];
+    return (results.matches || []).map((m) => ({
+      entry: { text: (m.metadata as Record<string, string>)?.text || m.id },
+      score: m.score || 0,
+    }));
   } catch (e) {
     log.error("Pinecone recall failed:", e as Record<string, unknown>);
     return [];
