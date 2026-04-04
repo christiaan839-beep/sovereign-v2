@@ -73,7 +73,7 @@ export default function PartnerPage() {
               className={`rounded-2xl p-8 border ${i === 2 ? "border-emerald-500/30 bg-emerald-500/5 ring-1 ring-emerald-500/10" : "border-white/5 bg-white/[0.02]"}`}>
               <div className="text-4xl font-bold text-white font-mono mb-2">{tier.commission}</div>
               <h3 className="text-lg font-bold text-white mb-2">{tier.name}</h3>
-              <p className="text-sm text-neutral-500 mb-6">{tier.desc}</p>
+              <p className="text-sm text-neutral-400 mb-6">{tier.desc}</p>
               <ul className="space-y-3">
                 {tier.features.map((f, j) => (
                   <li key={j} className="flex items-center gap-2 text-sm text-neutral-400">
@@ -98,7 +98,7 @@ export default function PartnerPage() {
             <div key={i} className="text-center">
               <div className="text-5xl font-bold font-mono text-white/10 mb-4">{s.step}</div>
               <h3 className="text-lg font-bold text-white mb-2">{s.title}</h3>
-              <p className="text-sm text-neutral-500">{s.desc}</p>
+              <p className="text-sm text-neutral-400">{s.desc}</p>
             </div>
           ))}
         </div>

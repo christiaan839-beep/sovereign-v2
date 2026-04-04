@@ -279,7 +279,7 @@ export default function ShowcasePage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-white mb-1">{item.finding}</p>
-                  <p className="text-xs text-neutral-500">
+                  <p className="text-xs text-neutral-400">
                     {item.recommendation}
                   </p>
                 </div>
@@ -355,7 +355,7 @@ export default function ShowcasePage() {
           <h2 className="text-2xl md:text-3xl font-black text-white mb-3">
             See your own results.
           </h2>
-          <p className="text-neutral-500 text-sm mb-8 max-w-md mx-auto">
+          <p className="text-neutral-400 text-sm mb-8 max-w-md mx-auto">
             Run any of these agents on your actual data. Free tier available, no
             credit card required.
           </p>

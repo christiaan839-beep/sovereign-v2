@@ -277,7 +277,7 @@ export default function AGIAuditorPage() {
                       See My Demo <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                     </button>
                   </div>
-                  <p className="text-xs text-neutral-500">No credit card required. Instant access to your personalized SOVEREIGN dashboard.</p>
+                  <p className="text-xs text-neutral-400">No credit card required. Instant access to your personalized SOVEREIGN dashboard.</p>
                 </div>
               </div>
             </motion.div>

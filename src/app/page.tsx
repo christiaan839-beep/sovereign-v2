@@ -45,7 +45,7 @@ function CapabilityCard({ icon: Icon, title, desc, accent, href }: { icon: React
               <Icon className="w-5 h-5 text-neutral-400 group-hover:text-emerald-400 transition-colors" />
             </div>
             <h3 className="text-base font-semibold text-white mb-2">{title}</h3>
-            <p className="text-sm text-neutral-500 leading-relaxed">{desc}</p>
+            <p className="text-sm text-neutral-400 leading-relaxed">{desc}</p>
             <div className="mt-4 flex items-center gap-1 text-[10px] text-emerald-500/50 uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-opacity">
               Try it <ArrowRight className="w-3 h-3" />
             </div>
@@ -67,7 +67,7 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
         <ChevronDown className={`w-5 h-5 text-neutral-500 transition-transform flex-shrink-0 ${open ? 'rotate-180' : ''}`} />
       </button>
       <div className={`overflow-hidden transition-gpu duration-300 ${open ? 'max-h-60 pb-6' : 'max-h-0'}`}>
-        <p className="text-sm text-neutral-500 leading-relaxed">{answer}</p>
+        <p className="text-sm text-neutral-400 leading-relaxed">{answer}</p>
       </div>
     </div>
   );
@@ -150,21 +150,21 @@ function EnterpriseSection() {
               <AnimatedCounter target={130} duration={2} />
             </div>
             <div className="text-sm font-semibold text-white mb-1">Specialized Agents</div>
-            <p className="text-xs text-neutral-500">Purpose-built for specific business functions.</p>
+            <p className="text-xs text-neutral-400">Purpose-built for specific business functions.</p>
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 }} className="text-center">
             <div className="text-5xl md:text-6xl font-black mb-2 tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-white to-neutral-400">
               <AnimatedCounter target={65} suffix="+" duration={1.5} />
             </div>
             <div className="text-sm font-semibold text-white mb-1">Open-Source Models</div>
-            <p className="text-xs text-neutral-500">Automatic failover. Zero vendor lock-in.</p>
+            <p className="text-xs text-neutral-400">Automatic failover. Zero vendor lock-in.</p>
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }} className="text-center">
             <div className="text-5xl md:text-6xl font-black mb-2 tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-white to-neutral-400">
               $<AnimatedCounter target={0} duration={0.5} />
             </div>
             <div className="text-sm font-semibold text-white mb-1">Per-Token Cost</div>
-            <p className="text-xs text-neutral-500">Scale inference without scaling your bill.</p>
+            <p className="text-xs text-neutral-400">Scale inference without scaling your bill.</p>
           </motion.div>
         </div>
 
@@ -621,7 +621,7 @@ export default function Home() {
               >
                 <card.icon className="w-6 h-6 text-red-400/60 mb-4 group-hover:text-red-400 transition-colors" />
                 <h3 className="text-base font-semibold text-white mb-3">{card.title}</h3>
-                <p className="text-sm text-neutral-500 leading-relaxed mb-4">{card.problem}</p>
+                <p className="text-sm text-neutral-400 leading-relaxed mb-4">{card.problem}</p>
                 <span className="text-xs font-mono text-red-400/60">{card.cost}</span>
               </motion.div>
             ))}
@@ -880,7 +880,7 @@ export default function Home() {
               <div key={item.title} className="p-7 rounded-2xl border border-white/[0.06] bg-white/[0.02] hover:border-emerald-500/15 transition-gpu duration-500 group">
                 <div className="text-[10px] text-emerald-500/60 uppercase tracking-widest mb-3 font-semibold">{item.highlight}</div>
                 <h3 className="text-base font-semibold text-white mb-2">{item.title}</h3>
-                <p className="text-sm text-neutral-500 leading-relaxed">{item.desc}</p>
+                <p className="text-sm text-neutral-400 leading-relaxed">{item.desc}</p>
               </div>
             ))}
           </StaggerChildren>
@@ -922,7 +922,7 @@ export default function Home() {
                 <div className="relative p-8 rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl hover:border-emerald-500/15 transition-gpu duration-500">
                   <div className="text-5xl font-black text-white/[0.04] mb-4 font-mono">{item.step}</div>
                   <h3 className="text-lg font-semibold text-white mb-3">{item.title}</h3>
-                  <p className="text-sm text-neutral-500 leading-relaxed">{item.desc}</p>
+                  <p className="text-sm text-neutral-400 leading-relaxed">{item.desc}</p>
                 </div>
               </div>
             ))}
@@ -1088,7 +1088,7 @@ export default function Home() {
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/60 group-hover:bg-emerald-400 group-hover:shadow-[0_0_6px_rgba(16,185,129,0.5)] transition-gpu" />
                   <p className="text-sm font-semibold text-white">{tech.name}</p>
                 </div>
-                <p className="text-xs text-neutral-500">{tech.desc}</p>
+                <p className="text-xs text-neutral-400">{tech.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -1112,7 +1112,7 @@ export default function Home() {
               <h3 className="text-lg font-semibold text-neutral-400 mb-1 flex items-center gap-2">
                 <XCircle className="w-4 h-4 text-neutral-500" /> The Old Way
               </h3>
-              <p className="text-neutral-500 text-xs mb-6">Prompt, copy, paste, repeat</p>
+              <p className="text-neutral-400 text-xs mb-6">Prompt, copy, paste, repeat</p>
               <ul className="space-y-3">
                 {["You type a prompt. Copy the response. Paste it somewhere else. Repeat 50 times a day.", "Every session starts from zero — no memory of your brand, clients, or past work.", "Limited to text generation — can't browse the web, send emails, or execute tasks.", "You do the planning, quality checking, and formatting. The AI just generates text."].map((item, i) => (
                   <li key={i} className="flex items-start gap-2.5 text-neutral-500 text-sm">
@@ -1171,7 +1171,7 @@ export default function Home() {
             ].map((uc) => (
               <div key={uc.industry} className="p-7 rounded-2xl border border-white/[0.06] bg-white/[0.02] hover:border-emerald-500/15 transition-gpu duration-500 group">
                 <h3 className="text-base font-semibold text-white mb-2">{uc.industry}</h3>
-                <p className="text-sm text-neutral-500 leading-relaxed mb-4">{uc.use}</p>
+                <p className="text-sm text-neutral-400 leading-relaxed mb-4">{uc.use}</p>
                 <div className="text-[10px] text-emerald-500/50 uppercase tracking-wider mb-2">Agents used</div>
                 <p className="text-xs text-neutral-400 mb-3">{uc.agents}</p>
                 <div className="pt-3 border-t border-white/[0.04]">
@@ -1316,7 +1316,7 @@ export default function Home() {
                 <SovereignLogo size="sm" />
                 <span className="text-sm font-semibold text-white">Sovereign Matrix</span>
               </div>
-              <p className="text-xs text-neutral-500 leading-relaxed">The autonomous AI agent platform. 130+ agents. 65+ models. Flat pricing, no usage fees. Built on NVIDIA NIM.</p>
+              <p className="text-xs text-neutral-400 leading-relaxed">The autonomous AI agent platform. 130+ agents. 65+ models. Flat pricing, no usage fees. Built on NVIDIA NIM.</p>
             </div>
             <div>
               <h4 className="text-xs font-semibold text-neutral-400 mb-4">Product</h4>

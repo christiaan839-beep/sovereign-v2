@@ -149,7 +149,7 @@ export default function DocsPage() {
               </div>
               <div>
                 <h1 className="text-2xl font-black uppercase tracking-[0.2em]">API Reference</h1>
-                <p className="text-neutral-500 text-xs uppercase tracking-widest">{ENDPOINTS.length} Endpoints · 129 Agents · 25 Playbooks · MCP + REST</p>
+                <p className="text-neutral-400 text-xs uppercase tracking-widest">{ENDPOINTS.length} Endpoints · 129 Agents · 25 Playbooks · MCP + REST</p>
               </div>
             </div>
             <Link href="/" className="text-xs text-neutral-600 hover:text-white transition-colors">← Back</Link>
@@ -163,7 +163,7 @@ export default function DocsPage() {
             All <code className="text-emerald-400">/api/v1/</code> endpoints require a Bearer token. Get your API key from <code className="text-emerald-400">Dashboard → Settings → API Keys</code>. Keys are SHA-256 hashed and validated against the database with expiry and revocation support.
           </p>
           <pre className="bg-black/50 border border-emerald-500/10 rounded-lg p-3 text-[10px] text-neutral-400 overflow-x-auto">Authorization: Bearer sk_pro_your_key_here</pre>
-          <p className="text-xs text-neutral-500">Rate limits: Free (100/day) · Pro (1,000/day) · Enterprise (unlimited)</p>
+          <p className="text-xs text-neutral-400">Rate limits: Free (100/day) · Pro (1,000/day) · Enterprise (unlimited)</p>
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -190,7 +190,7 @@ export default function DocsPage() {
                   <div className="border-t border-neutral-800 p-4 space-y-4 animate-in fade-in duration-200">
                     <div>
                       <h3 className="text-sm font-bold mb-1">{ep.name}</h3>
-                      <p className="text-xs text-neutral-500">{ep.description}</p>
+                      <p className="text-xs text-neutral-400">{ep.description}</p>
                     </div>
                     {ep.body && (
                       <div>
@@ -233,7 +233,7 @@ export default function DocsPage() {
             </div>
             <div>
               <h2 className="text-xl font-black uppercase tracking-[0.15em]">Playbooks</h2>
-              <p className="text-neutral-500 text-xs uppercase tracking-widest">{PLAYBOOK_DOCS.length} Pre-built Workflows · 2-5 min execution · Output guarantees</p>
+              <p className="text-neutral-400 text-xs uppercase tracking-widest">{PLAYBOOK_DOCS.length} Pre-built Workflows · 2-5 min execution · Output guarantees</p>
             </div>
           </div>
 
@@ -272,7 +272,7 @@ export default function DocsPage() {
                         <div className="border-t border-neutral-800 p-4 space-y-4 animate-in fade-in duration-200">
                           <div>
                             <h4 className="text-sm font-bold mb-1">{pb.name}</h4>
-                            <p className="text-xs text-neutral-500">{pb.tagline}</p>
+                            <p className="text-xs text-neutral-400">{pb.tagline}</p>
                             <div className="flex gap-4 mt-2">
                               <span className="text-[9px] text-neutral-600">ID: <code className="text-violet-400">{pb.id}</code></span>
                               <span className="text-[9px] text-neutral-600">Agents: {pb.agentCount}</span>
@@ -321,7 +321,7 @@ export default function DocsPage() {
             </div>
             <div>
               <h2 className="text-xl font-black uppercase tracking-[0.15em]">Webhook Trigger Engine</h2>
-              <p className="text-neutral-500 text-xs uppercase tracking-widest">Zapier · Make · n8n · Custom HTTP · No Clerk auth required</p>
+              <p className="text-neutral-400 text-xs uppercase tracking-widest">Zapier · Make · n8n · Custom HTTP · No Clerk auth required</p>
             </div>
           </div>
 
@@ -381,7 +381,7 @@ export default function DocsPage() {
             </div>
             <div>
               <h2 className="text-xl font-black uppercase tracking-[0.15em]">Founders Program</h2>
-              <p className="text-neutral-500 text-xs uppercase tracking-widest">10 slots · Enterprise-level access · Free forever</p>
+              <p className="text-neutral-400 text-xs uppercase tracking-widest">10 slots · Enterprise-level access · Free forever</p>
             </div>
           </div>
 

@@ -44,7 +44,7 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
           }`}>!</span>
         </div>
         <h2 className="text-xl font-bold text-white mb-3">{title}</h2>
-        <p className="text-sm text-neutral-500 mb-8 leading-relaxed">{description}</p>
+        <p className="text-sm text-neutral-400 mb-8 leading-relaxed">{description}</p>
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <button

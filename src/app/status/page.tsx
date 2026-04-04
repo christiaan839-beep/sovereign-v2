@@ -104,7 +104,7 @@ export default function StatusPage() {
                   <span className="font-medium text-white text-sm">{inc.title}</span>
                   <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Resolved</span>
                 </div>
-                <p className="text-neutral-500 text-sm mb-1">{inc.description}</p>
+                <p className="text-neutral-400 text-sm mb-1">{inc.description}</p>
                 <div className="flex items-center gap-4 text-xs text-neutral-600 font-mono">
                   <span>{inc.date}</span>
                   <span>Duration: {inc.duration}</span>
@@ -119,7 +119,7 @@ export default function StatusPage() {
           className="mt-16 p-6 rounded-xl border border-white/10 bg-white/[0.02] text-center">
           <Mail className="w-5 h-5 text-emerald-400 mx-auto mb-3" />
           <p className="text-white font-medium mb-1">Subscribe to Updates</p>
-          <p className="text-neutral-500 text-sm mb-4">Get notified when something goes wrong.</p>
+          <p className="text-neutral-400 text-sm mb-4">Get notified when something goes wrong.</p>
           {subscribed ? (
             <p className="text-emerald-400 text-sm font-mono">Subscribed. You will be notified.</p>
           ) : (

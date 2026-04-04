@@ -44,14 +44,14 @@ export default function LoginPage() {
           <SovereignLogo size="sm" />
           <span className="text-sm font-semibold text-white">Sovereign Matrix</span>
         </Link>
-        <p className="text-xs text-neutral-500">Sign in to your workspace</p>
+        <p className="text-xs text-neutral-400">Sign in to your workspace</p>
       </div>
 
       {/* Loading state */}
       {!clerkReady && !clerkFailed && (
         <div className="flex flex-col items-center gap-4 py-12">
           <Loader2 className="w-6 h-6 text-emerald-500 animate-spin" />
-          <p className="text-xs text-neutral-500">Loading sign-in...</p>
+          <p className="text-xs text-neutral-400">Loading sign-in...</p>
         </div>
       )}
 

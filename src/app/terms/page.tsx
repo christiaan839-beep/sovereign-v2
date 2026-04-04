@@ -14,7 +14,7 @@ export default function TermsPage() {
         <Link href="/" className="text-xs text-neutral-500 hover:text-white transition-colors uppercase tracking-widest mb-8 block">← Back to Home</Link>
 
         <h1 className="text-3xl md:text-4xl font-bold text-white serif-text mb-4">Terms of Service</h1>
-        <p className="text-sm text-neutral-500 mb-4">Last updated: March 2026</p>
+        <p className="text-sm text-neutral-400 mb-4">Last updated: March 2026</p>
         <div className="mb-12">
           <PrintButton />
         </div>

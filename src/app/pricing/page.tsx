@@ -214,7 +214,7 @@ export default function PricingPage() {
               $0 per-token cost
             </span>
           </p>
-          <p className="text-sm text-neutral-500 max-w-xl mx-auto">
+          <p className="text-sm text-neutral-400 max-w-xl mx-auto">
             130+ autonomous agents. 65+ open-source models. Local execution. No per-API-call billing surprises.
           </p>
         </motion.div>
@@ -320,7 +320,7 @@ export default function PricingPage() {
                 {t.price}
                 {t.period !== "forever" && <span className="text-base text-neutral-500 font-normal">{t.period}</span>}
               </p>
-              <p className="text-xs text-neutral-500 mb-6">{t.tagline}</p>
+              <p className="text-xs text-neutral-400 mb-6">{t.tagline}</p>
               <ul className="space-y-2 mb-6 flex-1">
                 {t.features.map((f, j) => (
                   <li key={j} className={`flex items-center gap-2 text-sm ${f.included ? "text-neutral-300" : "text-neutral-600"}`}>

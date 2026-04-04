@@ -135,7 +135,7 @@ export default function EnterprisePage() {
           className="max-w-xl mx-auto"
         >
           <h2 className="text-2xl font-bold text-white mb-2 text-center">Request a Demo</h2>
-          <p className="text-sm text-neutral-500 mb-8 text-center">
+          <p className="text-sm text-neutral-400 mb-8 text-center">
             Tell us about your organization and we&apos;ll set up a personalized walkthrough.
           </p>
 
@@ -254,7 +254,7 @@ export default function EnterprisePage() {
             )}
           </AnimatePresence>
 
-          <p className="text-sm text-neutral-500 text-center mt-6">
+          <p className="text-sm text-neutral-400 text-center mt-6">
             Or{" "}
             <Link href="/partner" className="text-white hover:underline">
               book a call directly

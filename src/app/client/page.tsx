@@ -59,7 +59,7 @@ export default function ClientPortalPage() {
                 <f.icon className="w-6 h-6" />
               </div>
               <h3 className="text-lg font-bold text-white mb-2">{f.title}</h3>
-              <p className="text-sm text-neutral-500 leading-relaxed">{f.desc}</p>
+              <p className="text-sm text-neutral-400 leading-relaxed">{f.desc}</p>
             </motion.div>
           ))}
         </div>

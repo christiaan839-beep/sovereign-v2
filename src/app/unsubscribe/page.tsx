@@ -56,7 +56,7 @@ function UnsubscribeForm() {
         {status === "success" ? (
           <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-6">
             <p className="text-emerald-400 text-sm">{message}</p>
-            <p className="text-neutral-500 text-xs mt-3">
+            <p className="text-neutral-400 text-xs mt-3">
               You will no longer receive marketing emails from Sovereign Matrix.
               Transactional emails (billing, security) will still be sent.
             </p>
@@ -70,7 +70,7 @@ function UnsubscribeForm() {
 
             {email ? (
               <div className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-xl p-4">
-                <p className="text-xs text-neutral-500 uppercase tracking-widest mb-1">
+                <p className="text-xs text-neutral-400 uppercase tracking-widest mb-1">
                   Email Address
                 </p>
                 <p className="text-white text-sm font-mono">{email}</p>
@@ -113,7 +113,7 @@ export default function UnsubscribePage() {
     <Suspense
       fallback={
         <div className="min-h-screen bg-[#050505] text-white flex items-center justify-center">
-          <p className="text-neutral-500 text-sm">Loading...</p>
+          <p className="text-neutral-400 text-sm">Loading...</p>
         </div>
       }
     >

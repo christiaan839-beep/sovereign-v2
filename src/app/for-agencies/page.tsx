@@ -194,7 +194,7 @@ function ROICalculator() {
         {/* Results */}
         <div className="grid md:grid-cols-3 gap-6 mb-10">
           <div className="p-6 rounded-2xl bg-white/[0.03] border border-white/[0.06] text-center">
-            <p className="text-xs text-neutral-500 uppercase tracking-wider mb-2">
+            <p className="text-xs text-neutral-400 uppercase tracking-wider mb-2">
               Current cost
             </p>
             <p className="text-2xl md:text-3xl font-bold text-red-400 font-mono">
@@ -204,7 +204,7 @@ function ROICalculator() {
           </div>
 
           <div className="p-6 rounded-2xl bg-white/[0.03] border border-white/[0.06] text-center">
-            <p className="text-xs text-neutral-500 uppercase tracking-wider mb-2">
+            <p className="text-xs text-neutral-400 uppercase tracking-wider mb-2">
               Sovereign Matrix
             </p>
             <p className="text-2xl md:text-3xl font-bold text-emerald-400 font-mono">
@@ -379,7 +379,7 @@ export default function ForAgenciesPage() {
                         <h3 className="text-sm md:text-base font-semibold text-white mb-1">
                           {item.title}
                         </h3>
-                        <p className="text-xs text-neutral-500">
+                        <p className="text-xs text-neutral-400">
                           {item.result}
                         </p>
                       </div>
@@ -421,7 +421,7 @@ export default function ForAgenciesPage() {
                     <s.icon className="w-6 h-6 text-neutral-400 group-hover:text-emerald-400 transition-colors" />
                   </div>
                   <h3 className="text-xl font-bold text-white mb-3">{s.title}</h3>
-                  <p className="text-sm text-neutral-500 leading-relaxed">{s.desc}</p>
+                  <p className="text-sm text-neutral-400 leading-relaxed">{s.desc}</p>
                 </div>
               </motion.div>
             ))}

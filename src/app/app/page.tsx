@@ -231,7 +231,7 @@ export default function SovereignApp() {
               <Sparkles className="w-8 h-8 text-emerald-400" />
             </div>
             <h2 className="text-xl font-bold text-white mb-2">What can I help you with?</h2>
-            <p className="text-sm text-neutral-500 max-w-sm mb-8">
+            <p className="text-sm text-neutral-400 max-w-sm mb-8">
               I have 35+ AI models and 130 specialized agents. Ask me anything — I&apos;ll pick the best model for your task automatically.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-w-lg w-full">
