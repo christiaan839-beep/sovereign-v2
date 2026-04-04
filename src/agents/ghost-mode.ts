@@ -28,10 +28,10 @@ async function metaApi(endpoint: string, method: string = "GET", body?: Record<s
     method,
     headers: { "Content-Type": "application/json" }
   };
-  
+
   if (method === "GET") {
     options.headers = { ...options.headers, Authorization: `Bearer ${META_TOKEN}` };
-  } else {
+  } else if (body) {
     body.access_token = META_TOKEN;
     options.body = JSON.stringify(body);
   }

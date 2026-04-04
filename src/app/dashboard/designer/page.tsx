@@ -90,7 +90,7 @@ export default function DesignerPage() {
     for (const field of action.fields) {
       const val = formData[field.name] || "";
       if (field.name === "screens") {
-        params[field.name] = val.split(",").map((s) => s.trim()).filter(Boolean);
+        params[field.name] = val.split(",").map((s) => s.trim()).filter(Boolean).join(",");
       } else {
         params[field.name] = val;
       }

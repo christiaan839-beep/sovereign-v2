@@ -483,8 +483,8 @@ export default function Home() {
           {/* Subtitle — clear, readable, high contrast */}
           <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5, duration: 0.7 }}
             className="text-base md:text-lg max-w-xl mx-auto leading-relaxed mb-8">
-            <span className="text-neutral-200">Most AI tools just generate text.</span>{" "}
-            <span className="text-neutral-400">Sovereign Matrix has 130+ agents that find leads, write content, send emails, and build pages — end to end.</span>
+            <span className="text-neutral-200">Most AI tools generate text. This one executes.</span>{" "}
+            <span className="text-neutral-400">130+ agents find real leads, write content, analyze competitors, and draft outreach — verified by 4 independent AI models. $0 per token.</span>
           </motion.p>
 
           {/* CTAs — one primary, one secondary */}

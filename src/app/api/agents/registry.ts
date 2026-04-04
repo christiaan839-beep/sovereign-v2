@@ -9,10 +9,10 @@
  */
 
 type RouteModule = {
-  POST?: (req: Request) => Promise<Response>;
-  GET?: (req: Request) => Promise<Response>;
-  PUT?: (req: Request) => Promise<Response>;
-  DELETE?: (req: Request) => Promise<Response>;
+  POST?: (req: never) => Promise<Response>;
+  GET?: (req: never) => Promise<Response>;
+  PUT?: (req: never) => Promise<Response>;
+  DELETE?: (req: never) => Promise<Response>;
 };
 
 export const AGENT_REGISTRY: Record<string, () => Promise<RouteModule>> = {

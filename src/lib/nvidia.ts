@@ -286,7 +286,7 @@ export async function transcribeAudio(audioBuffer: Uint8Array, filename: string 
     }
 
     const formData = new FormData();
-    const blob = new Blob([audioBuffer], { type: "audio/wav" });
+    const blob = new Blob([audioBuffer as unknown as BlobPart], { type: "audio/wav" });
     formData.append("file", new File([blob], filename, { type: "audio/wav" }));
     formData.append("model", TTS_MODELS.parakeet);
     formData.append("language", "en");

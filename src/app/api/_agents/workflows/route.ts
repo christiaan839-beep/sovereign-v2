@@ -59,7 +59,7 @@ export async function POST(req: Request) {
           body: JSON.stringify({
             to: "team@sovereign.ai",
             template: "audit_report",
-            data: { targetUrl: target, vulnCount: results.audit?.vulnerabilities?.length || 0 },
+            data: { targetUrl: target, vulnCount: ((results.audit as Record<string, unknown>)?.vulnerabilities as unknown[] | undefined)?.length || 0 },
           }),
         }).catch(() => {});
         steps.push("Report emailed ✅");

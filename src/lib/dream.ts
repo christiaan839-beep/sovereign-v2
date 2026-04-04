@@ -56,12 +56,13 @@ async function scanMemories(pineconeKey?: string): Promise<MemoryEntry[]> {
   for (const query of broadQueries) {
     const results = await recall(query, 50, pineconeKey);
     for (const match of results) {
-      if (!allMemories.has(match.id)) {
-        allMemories.set(match.id, {
-          id: match.id,
-          text: match.metadata?.text || "",
-          timestamp: match.metadata?.timestamp || 0,
-          type: match.metadata?.type || "unknown",
+      const matchId = `${query}-${match.score}`;
+      if (!allMemories.has(matchId)) {
+        allMemories.set(matchId, {
+          id: matchId,
+          text: match.entry?.text || "",
+          timestamp: 0,
+          type: "unknown",
           score: match.score || 0,
         });
       }

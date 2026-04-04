@@ -39,7 +39,7 @@ export async function POST(req: Request) {
         if (Array.isArray(memories) && memories.length > 0) {
           ragContext = memories
             .slice(0, 5)
-            .map((m: { metadata?: { text?: string } }) => m.metadata?.text || "")
+            .map((m: { entry: { text: string }; score: number }) => m.entry.text || "")
             .filter(Boolean)
             .join("\n\n");
         }

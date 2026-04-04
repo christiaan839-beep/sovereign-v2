@@ -170,7 +170,7 @@ export async function GET() {
       generatedAt: now.toISOString(),
     });
   } catch (err) {
-    log.error("Admin analytics failed", err);
+    log.error("Admin analytics failed", err as Record<string, unknown>);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

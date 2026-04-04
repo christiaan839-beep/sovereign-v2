@@ -8,7 +8,7 @@ export default function VideoOutreachStudioPage() {
   const [targetDomain, setTargetDomain] = useState("");
   const [targetScript, setTargetScript] = useState("");
   const [selectedAvatar, setSelectedAvatar] = useState("avatar-1");
-  const [status, setStatus] = useState<"idle" | "scraping" | "generating" | "complete">("idle");
+  const [status, setStatus] = useState<"idle" | "scraping" | "generating" | "complete" | "error">("idle");
   const [scrapedData, setScrapedData] = useState<{name: string, company: string, tech: string} | null>(null);
 
   const handleScrape = async () => {

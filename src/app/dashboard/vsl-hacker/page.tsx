@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Video, Cpu, UploadCloud, FileVideo, Waves, CheckCircle2, Search, Sparkles, Download } from "lucide-react";
 
 export default function CosmosVSLHackerPage() {
-  const [fileStatus, setFileStatus] = useState<"idle" | "uploading" | "uploaded">("idle");
+  const [fileStatus, setFileStatus] = useState<"idle" | "uploading" | "uploaded" | "error">("idle");
   const [pipelineStatus, setPipelineStatus] = useState<"idle" | "vision" | "cadence" | "scripting" | "complete">("idle");
   
   // Settings

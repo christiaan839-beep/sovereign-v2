@@ -42,7 +42,6 @@ export async function executeCode(
     const client = new GoogleGenerativeAI(apiKey);
     const model = client.getGenerativeModel({
       model: "gemini-2.5-flash",
-      // @ts-expect-error — code execution is a preview feature
       tools: [{ codeExecution: {} }],
     });
 
