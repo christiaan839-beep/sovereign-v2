@@ -60,7 +60,7 @@ function RichContent({ content, contentType }: { content: string; contentType?: 
     return (
       <div className="space-y-2">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={url} alt="Generated" className="rounded-xl max-w-full max-h-[400px] object-contain border border-white/10" />
+        <img src={url} alt="Generated" loading="lazy" className="rounded-xl max-w-full max-h-[400px] object-contain border border-white/10" />
         <div className="flex gap-1">
           <CopyButton text={url} />
           <a href={url} target="_blank" rel="noopener noreferrer" className="p-1 rounded hover:bg-white/10 text-neutral-500 hover:text-white transition-colors text-xs">

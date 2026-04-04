@@ -237,7 +237,7 @@ export default function VideoOutreachStudioPage() {
                 <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full h-full relative group">
                   {/* Fake Video Player Placeholder */}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=2000" alt="Executive" className="w-full h-full object-cover opacity-80" />
+                  <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=2000" alt="Executive" loading="lazy" decoding="async" className="w-full h-full object-cover opacity-80" />
                   <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors flex items-center justify-center cursor-pointer">
                     <div role="button" aria-label="Play video preview" className="w-16 h-16 rounded-full bg-white/10 backdrop-blur-md border border-white/30 flex items-center justify-center hover:scale-110 transition-transform">
                       <Play className="w-6 h-6 text-white ml-1" />

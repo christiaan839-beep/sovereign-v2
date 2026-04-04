@@ -111,7 +111,7 @@ export default function WhitelabelPage() {
             {settings.logoUrl && (
               <div className="mt-4 p-4 bg-white/5 rounded-xl border border-white/10 flex items-center justify-center">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={settings.logoUrl} alt="Logo Preview" className="max-h-12 object-contain" onError={(e) => e.currentTarget.style.display = 'none'} />
+                <img src={settings.logoUrl} alt="Logo Preview" loading="lazy" className="max-h-12 object-contain" onError={(e) => e.currentTarget.style.display = 'none'} />
               </div>
             )}
           </div>

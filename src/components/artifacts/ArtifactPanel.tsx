@@ -371,7 +371,7 @@ export function ArtifactPanel({ artifacts, onClose }: ArtifactPanelProps) {
         {current.type === "image" && (
           <div className="flex items-center justify-center p-6 h-full">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={current.content} alt="Generated" className="max-w-full max-h-full rounded-lg object-contain" />
+            <img src={current.content} alt="Generated" loading="lazy" className="max-w-full max-h-full rounded-lg object-contain" />
           </div>
         )}
         {current.type === "code" && (

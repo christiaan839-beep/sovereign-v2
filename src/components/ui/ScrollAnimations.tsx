@@ -142,10 +142,10 @@ export function MagneticButton({
   );
 
   if (href) {
-    return <a href={href}>{content}</a>;
+    return <a href={href} className="inline-block">{content}</a>;
   }
   if (onClick) {
-    return <div onClick={onClick}>{content}</div>;
+    return <div onClick={onClick} className="inline-block">{content}</div>;
   }
   return content;
 }
