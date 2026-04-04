@@ -1,4 +1,5 @@
 "use client";
+"use no memo"; // 3D particle system uses Math.random() for particle positions
 
 import { useRef, useMemo, useEffect } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";

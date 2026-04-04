@@ -1,4 +1,5 @@
 "use client";
+"use no memo"; // Animation component uses Math.random() for cinematic effects
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";

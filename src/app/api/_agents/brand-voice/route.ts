@@ -14,7 +14,9 @@ export async function POST(request: Request) {
   try {
     const { userId } = await auth();
     if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const { action, samples, prompt, brand_name } = await request.json();
+    const body = await request.json();
+    const { action, samples, prompt, brand_name, url } = body;
+    const context = body.context || "";
 
     // ACTION: LEARN — Ingest sample content to learn the brand voice
     if (action === "learn") {
@@ -26,7 +28,7 @@ export async function POST(request: Request) {
 
       const voiceProfile = await ai(
         `Analyze these content samples and extract the brand's unique voice profile.
-
+${context ? `\nCONTEXT FROM PREVIOUS ANALYSIS:\n${context}\n` : ""}${url ? `\nBrand URL: ${url}\n` : ""}
 ${samplesText}
 
 OUTPUT (strict JSON):
@@ -90,6 +92,7 @@ Output ONLY valid JSON.`,
         system: `You are writing content as the brand "${label}". You must match their exact voice, tone, and style.
 
 ${voiceContext ? `LEARNED VOICE PROFILE:\n${voiceContext}` : "No voice profile found — write in a professional, engaging tone."}
+${context ? `\nCONTEXT FROM PREVIOUS PLAYBOOK STEPS:\n${context}` : ""}${url ? `\nBrand URL: ${url}` : ""}
 
 RULES:
 - Match the brand's vocabulary level exactly

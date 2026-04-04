@@ -1,4 +1,5 @@
 "use client";
+"use no memo"; // Animation component uses Math.random() intentionally for visual effects
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";

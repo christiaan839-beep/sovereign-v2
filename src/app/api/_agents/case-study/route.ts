@@ -11,12 +11,15 @@ export async function POST(request: Request) {
   try {
     const { userId } = await auth();
     if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const { clientName, industry, metrics, challenge, result: outcome } = await request.json();
+    const body = await request.json();
+    const prompt = body.prompt || body.topic || "";
+    const context = body.context || "";
+    const { clientName, industry, metrics, challenge, result: outcome } = body;
 
-    if (!clientName) {
-      return NextResponse.json({ error: "clientName is required." }, { status: 400 });
+    if (!clientName && !prompt) {
+      return NextResponse.json({ error: "clientName or prompt is required." }, { status: 400 });
     }
-    
+
 
     const nimRes = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
       method: "POST",
@@ -38,11 +41,11 @@ export async function POST(request: Request) {
 6. Client Quote (generate a realistic testimonial)
 7. Key Takeaways (3 bullet points)
 
-Make it professional, data-driven, and compelling. Use semantic HTML with proper headings.`,
+Make it professional, data-driven, and compelling. Use semantic HTML with proper headings.${context ? `\n\nCONTEXT FROM PREVIOUS ANALYSIS:\n${context}` : ""}`,
           },
           {
             role: "user",
-            content: `Client: ${clientName}
+            content: `${prompt ? `Task: ${prompt}\n\n` : ""}Client: ${clientName || "Unknown"}
 Industry: ${industry || "Technology"}
 Metrics: ${JSON.stringify(metrics || { leads: "+340%", revenue: "+R180,000/mo", time_saved: "60 hours/week" })}
 Challenge: ${challenge || "Manual marketing operations were too slow and expensive"}
@@ -63,7 +66,7 @@ Outcome: ${outcome || "Autonomous AI agents replaced the entire marketing team"}
       industry: industry || "Technology",
       html: caseStudyHtml,
       wordCount: caseStudyHtml.split(/\s+/).length,
-      slug: `/case-studies/${clientName.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+      slug: `/case-studies/${(clientName || "draft").toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
     });
   } catch (error) {
     return NextResponse.json({ error: "Case study error", details: String(error) }, { status: 500 });
