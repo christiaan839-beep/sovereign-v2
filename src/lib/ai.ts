@@ -186,7 +186,7 @@ Then give your final answer after your reasoning.`
   } catch {
     // Fast model failed, try NIM
     answer = await ai(fullPrompt, { system: systemPrompt, maxTokens, model: "nim" });
-    modelUsed = "nemotron-ultra-253b";
+    modelUsed = "nemotron-ultra-253b-v1";
   }
 
   // Phase 4: ESCALATE if output is too short or looks low quality

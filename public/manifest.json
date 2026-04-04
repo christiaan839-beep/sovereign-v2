@@ -1,7 +1,7 @@
 {
   "name": "Sovereign Matrix",
   "short_name": "Sovereign",
-  "description": "130+ AI agents. 25 playbooks. 35+ models. $0 per token. The AI platform that actually does the work.",
+  "description": "130+ AI agents. 25 playbooks. 65+ models. $0 per token. The AI platform that actually does the work.",
   "start_url": "/dashboard",
   "scope": "/",
   "display": "standalone",
