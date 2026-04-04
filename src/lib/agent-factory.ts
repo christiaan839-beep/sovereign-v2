@@ -38,6 +38,16 @@ import { resolveTenantId } from "@/lib/tenant-resolver";
 
 const log = createLogger("agent-factory");
 
+/** Maximum number of quality-score retries before accepting the output as-is.
+ *  Prevents theoretical infinite regeneration loops (flagged by Gemma 4 audit). */
+const MAX_QUALITY_RETRIES = 1;
+
+/** Maximum tokens a single request can consume across all AI calls.
+ *  Prevents "Denial of Wallet" attacks where a malicious playbook
+ *  chains consensus + regeneration to drain unlimited tokens.
+ *  10,000 tokens ≈ ~7,500 words — enough for any single agent task. */
+const MAX_TOKENS_PER_REQUEST = 10000;
+
 /** Anti-slop rules injected into agent context */
 export const ANTI_SLOP_RULES = getAntiSlopRules();
 
@@ -302,54 +312,64 @@ export function createAgentRoute(config: AgentConfig) {
             qualityScore = await scoreOutput(promptText, outputText, threshold);
 
             if (!qualityScore.passed) {
-              log.info("Quality below threshold — regenerating", {
-                agent: config.name,
-                score: qualityScore.overall,
-                threshold,
-              });
-
-              // Re-run handler with a refinement hint injected into the input
-              const refinedInput: Record<string, unknown> = {
-                ...sanitized,
-                _qualityRetry: true,
-                _refinementHint:
-                  `Previous response scored ${qualityScore.overall}/1.0. ` +
-                  `Improve: helpfulness=${qualityScore.helpfulness}, coherence=${qualityScore.coherence}, ` +
-                  `correctness=${qualityScore.correctness}, verbosity=${qualityScore.verbosity}. ` +
-                  `Be more precise, accurate, and concise.`,
-              };
-
-              const retryResult = await config.handler({
-                input: refinedInput,
-                request: req,
-                email,
-                userId,
-                tenantId,
-                orgId,
-              });
-
-              // Score the retry attempt
-              const retryText = getFirstStringValue(retryResult);
-              if (retryText && retryText.length >= 20) {
-                const retryScore = await scoreOutput(promptText, retryText, threshold);
-                // Use whichever attempt scored higher
-                if (retryScore.overall >= qualityScore.overall) {
-                  finalResult = retryResult;
-                  qualityScore = retryScore;
-                  log.info("Retry improved quality", {
-                    agent: config.name,
-                    newScore: retryScore.overall,
-                  });
-                } else {
-                  log.info("Retry did not improve — keeping original", {
-                    agent: config.name,
-                    originalScore: qualityScore.overall,
-                    retryScore: retryScore.overall,
-                  });
-                }
+              // ─── Loop Guard: skip regeneration if we already retried ───
+              const alreadyRetried = sanitized._qualityRetry === true;
+              if (alreadyRetried) {
+                log.info("Quality below threshold but MAX_QUALITY_RETRIES reached — accepting output", {
+                  agent: config.name,
+                  score: qualityScore.overall,
+                  maxRetries: MAX_QUALITY_RETRIES,
+                });
               } else {
-                finalResult = retryResult;
-              }
+                log.info("Quality below threshold — regenerating", {
+                  agent: config.name,
+                  score: qualityScore.overall,
+                  threshold,
+                });
+
+                // Re-run handler with a refinement hint injected into the input
+                const refinedInput: Record<string, unknown> = {
+                  ...sanitized,
+                  _qualityRetry: true,
+                  _refinementHint:
+                    `Previous response scored ${qualityScore.overall}/1.0. ` +
+                    `Improve: helpfulness=${qualityScore.helpfulness}, coherence=${qualityScore.coherence}, ` +
+                    `correctness=${qualityScore.correctness}, verbosity=${qualityScore.verbosity}. ` +
+                    `Be more precise, accurate, and concise.`,
+                };
+
+                const retryResult = await config.handler({
+                  input: refinedInput,
+                  request: req,
+                  email,
+                  userId,
+                  tenantId,
+                  orgId,
+                });
+
+                // Score the retry attempt
+                const retryText = getFirstStringValue(retryResult);
+                if (retryText && retryText.length >= 20) {
+                  const retryScore = await scoreOutput(promptText, retryText, threshold);
+                  // Use whichever attempt scored higher
+                  if (retryScore.overall >= qualityScore.overall) {
+                    finalResult = retryResult;
+                    qualityScore = retryScore;
+                    log.info("Retry improved quality", {
+                      agent: config.name,
+                      newScore: retryScore.overall,
+                    });
+                  } else {
+                    log.info("Retry did not improve — keeping original", {
+                      agent: config.name,
+                      originalScore: qualityScore.overall,
+                      retryScore: retryScore.overall,
+                    });
+                  }
+                } else {
+                  finalResult = retryResult;
+                }
+              } // end else (retry allowed)
             }
           } catch (scoringError) {
             // Fail-safe: if scorer breaks, return the original response untouched

@@ -31,6 +31,29 @@ const sql: NeonQueryFunction<boolean, boolean> = neon(connectionString || "postg
   fetchOptions: { cache: "no-store" },
 });
 
+/**
+ * ─── Connection Pooling Notes (for scale beyond 10K+ DAU) ───
+ *
+ * The neon-http driver used here is already connection-pool safe: each query
+ * is a stateless HTTPS request with no persistent connection held open.
+ * This means there is no risk of connection exhaustion on serverless
+ * (Vercel Edge / Lambda) regardless of concurrency.
+ *
+ * When scaling to 10K+ daily active users, consider:
+ *
+ *   1. Switch to Neon's pooled connection string (port 6543 instead of 5432).
+ *      This routes through PgBouncer on Neon's side, which helps if you ever
+ *      migrate to the WebSocket driver (@neondatabase/serverless ws) for
+ *      transactions or session-level features.
+ *
+ *   2. Upgrade to Neon Pro for always-on compute. The free tier auto-suspends
+ *      after 5 minutes of inactivity, causing 3-5 second cold starts. Pro
+ *      keeps the compute endpoint warm and adds autoscaling replicas.
+ *
+ *   3. No changes needed for the HTTP driver itself — it is inherently
+ *      pool-safe because it opens no persistent connections. Each query
+ *      is an independent HTTPS request routed through Neon's proxy.
+ */
 export const db = drizzle(sql, { schema });
 
 /** Test DB connectivity. Handles Neon cold starts (3-5s). */
