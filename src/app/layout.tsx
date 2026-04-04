@@ -39,13 +39,13 @@ export const metadata: Metadata = {
     siteName: "Sovereign Matrix",
     locale: "en_US",
     url: "https://sovereignmatrix.agency",
-    images: [{ url: "https://sovereignmatrix.agency/og-image.jpg", width: 1200, height: 630, alt: "Sovereign Matrix — Autonomous AI Agent Platform" }],
+    images: [{ url: "https://sovereignmatrix.agency/og-image.png", width: 1200, height: 630, alt: "Sovereign Matrix — Autonomous AI Agent Platform" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Sovereign Matrix — Your AI Workforce",
     description: "130+ autonomous AI agents. 65+ open-source models. $0 per-token cost. White-label ready. Your competitors hire. You deploy.",
-    images: ["https://sovereignmatrix.agency/og-image.jpg"],
+    images: ["https://sovereignmatrix.agency/og-image.png"],
   },
   icons: {
     icon: [
@@ -134,7 +134,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   "@type": "Organization",
                   name: "Sovereign Matrix",
                   url: "https://sovereignmatrix.agency",
-                  logo: "https://sovereignmatrix.agency/og-image.jpg",
+                  logo: "https://sovereignmatrix.agency/icon-512.png",
                   contactPoint: { "@type": "ContactPoint", email: "christiaan@sovereignmatrix.agency", contactType: "sales" },
                   sameAs: [],
                 },

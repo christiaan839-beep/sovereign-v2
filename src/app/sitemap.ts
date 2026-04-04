@@ -27,7 +27,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/roi", priority: 0.7, changeFreq: "monthly" },
     { path: "/scan", priority: 0.7, changeFreq: "monthly" },
     { path: "/blog", priority: 0.7, changeFreq: "daily" },
-    { path: "/locations", priority: 0.6, changeFreq: "monthly" },
+    { path: "/demo", priority: 0.8, changeFreq: "weekly" },
+    { path: "/demo/mission", priority: 0.7, changeFreq: "weekly" },
+    { path: "/demo/live", priority: 0.7, changeFreq: "weekly" },
 
     // Trust & transparency
     { path: "/security", priority: 0.7, changeFreq: "monthly" },
@@ -43,6 +45,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
     // Auth
     { path: "/login", priority: 0.4, changeFreq: "monthly" },
+    { path: "/signup", priority: 0.5, changeFreq: "monthly" },
   ];
 
   return pages.map(({ path, priority, changeFreq }) => ({

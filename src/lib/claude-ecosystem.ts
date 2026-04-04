@@ -229,13 +229,13 @@ const CLAUDE_MODELS: ClaudeModelInfo[] = [
     released: "TBD — early access expected Q2 2026",
   },
   {
-    id: "claude-haiku-3-5-20241022",
-    name: "Claude 3.5 Haiku",
+    id: "claude-haiku-4-5-20251001",
+    name: "Claude Haiku 4.5",
     provider: "Anthropic",
     contextWindow: 200000,
     maxOutputTokens: 8192,
     capabilities: ["tool-use", "prompt-caching", "vision"],
-    released: "2024-10-22",
+    released: "2025-10-01",
   },
 ];
 

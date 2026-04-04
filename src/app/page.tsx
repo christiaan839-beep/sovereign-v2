@@ -1115,8 +1115,8 @@ export default function Home() {
               <p className="text-neutral-400 text-xs mb-6">Prompt, copy, paste, repeat</p>
               <ul className="space-y-3">
                 {["You type a prompt. Copy the response. Paste it somewhere else. Repeat 50 times a day.", "Every session starts from zero — no memory of your brand, clients, or past work.", "Limited to text generation — can't browse the web, send emails, or execute tasks.", "You do the planning, quality checking, and formatting. The AI just generates text."].map((item, i) => (
-                  <li key={i} className="flex items-start gap-2.5 text-neutral-500 text-sm">
-                    <XCircle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-neutral-500" /> {item}
+                  <li key={i} className="flex items-start gap-2.5 text-neutral-400 text-sm">
+                    <XCircle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-neutral-500" aria-hidden="true" /> {item}
                   </li>
                 ))}
               </ul>
@@ -1130,7 +1130,7 @@ export default function Home() {
               <ul className="space-y-3">
                 {["Describe one goal. 130+ agents plan the steps, execute in parallel, and deliver finished work.", "Learns your brand voice, remembers client preferences, and improves with every interaction.", "Opens real browsers. Sends real emails. Generates real content. Deploys real code.", "Self-corrects errors, retries with different approaches, and optimizes its own performance over time."].map((item, i) => (
                   <li key={i} className="flex items-start gap-2.5 text-neutral-300 text-sm">
-                    <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5 text-emerald-400" /> {item}
+                    <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5 text-emerald-400" aria-hidden="true" /> {item}
                   </li>
                 ))}
               </ul>

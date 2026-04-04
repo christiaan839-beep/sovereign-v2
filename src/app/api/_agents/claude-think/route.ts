@@ -82,7 +82,7 @@ export const POST = createAgentRoute({
         thinkingTokens: data.usage?.cache_creation_input_tokens || 0,
         totalInputTokens: data.usage?.input_tokens || 0,
         totalOutputTokens: data.usage?.output_tokens || 0,
-        model: data.model || "claude-sonnet-4",
+        model: data.model || "claude-sonnet-4-6",
         mode: "extended-thinking",
       };
     } catch (error) {
