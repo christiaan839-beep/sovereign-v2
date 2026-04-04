@@ -76,7 +76,7 @@ export default function HolographicAgentDashboard() {
                    <span className="text-[#00B7FF]">Locked (14ms)</span>
                  </div>
                  <div className="p-4 bg-[#00B7FF]/10 rounded-lg border border-[#00B7FF]/20 text-[#00B7FF] animate-pulse">
-                   {isSpeaking ? "Agent is transmitting payload..." : "Agent is analyzing target response..."}
+                   {isSpeaking ? "Agent is speaking..." : "Agent is listening..."}
                  </div>
                </div>
              )}

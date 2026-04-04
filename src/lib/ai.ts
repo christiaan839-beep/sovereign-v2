@@ -303,7 +303,7 @@ async function claudeText(prompt: string, system?: string, maxTokens: number = 2
   // Sonnet 4.6: best balance of speed/quality — default for all other agents
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const requestParams: any = {
-    model: useOpus ? "claude-opus-4-6-20250514" : "claude-sonnet-4-6-20250514",
+    model: useOpus ? "claude-opus-4-6" : "claude-sonnet-4-6",
     ...(systemParam ? { system: systemParam } : {}),
     messages: [{ role: "user", content: prompt }],
   };
@@ -356,7 +356,7 @@ async function claudeWithCitations(
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const response = await (client.messages.create as any)({
-    model: "claude-sonnet-4-6-20250514",
+    model: "claude-sonnet-4-6",
     max_tokens: maxTokens,
     ...(system ? { system } : {}),
     messages: [{
@@ -477,7 +477,7 @@ export async function claudeToolUse(
 
   for (let i = 0; i < MAX_ITERATIONS; i++) {
     const response = await client.messages.create({
-      model: "claude-sonnet-4-6-20250514",
+      model: "claude-sonnet-4-6",
       max_tokens: maxTokens,
       ...(system ? { system } : {}),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

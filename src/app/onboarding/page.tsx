@@ -58,7 +58,7 @@ const STEPS = [
   {
     id: "complete",
     title: "You're live.",
-    subtitle: "124 agents deployed. 65+ models active. Zero per-token cost.",
+    subtitle: "130+ agents deployed. 65+ models active. Zero per-token cost.",
     icon: CheckCircle2,
     isComplete: true,
   },
@@ -364,7 +364,7 @@ export default function OnboardingPage() {
               <div className="text-center space-y-6">
                 <div className="grid grid-cols-3 gap-4 max-w-sm mx-auto">
                   {[
-                    { val: "124", label: "Agents", color: "text-emerald-400" },
+                    { val: "130+", label: "Agents", color: "text-emerald-400" },
                     { val: "65+", label: "Models", color: "text-cyan-400" },
                     { val: "$0", label: "Per Token", color: "text-white" },
                   ].map((s) => (

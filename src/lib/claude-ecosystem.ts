@@ -97,7 +97,7 @@ const CAPABILITIES: CapabilityConfig[] = [
       "Browser and desktop automation via Claude. Controls mouse, keyboard, and screen to interact with any application on behalf of the user.",
     betaHeader: "computer-use-2025-01-24",
     usedBy: ["computer-use"],
-    meta: { modelVersion: "claude-sonnet-4-20250514", toolVersion: "2025-11-24" },
+    meta: { modelVersion: "claude-sonnet-4-6", toolVersion: "2025-11-24" },
   },
   {
     id: "tool-search",
@@ -122,7 +122,7 @@ const CAPABILITIES: CapabilityConfig[] = [
       "god-brain",
       "swarm",
     ],
-    meta: { maxIterations: 10, model: "claude-sonnet-4-20250514" },
+    meta: { maxIterations: 10, model: "claude-sonnet-4-6" },
   },
   {
     id: "agent-sdk",
@@ -174,7 +174,7 @@ const CAPABILITIES: CapabilityConfig[] = [
 
 const CLAUDE_MODELS: ClaudeModelInfo[] = [
   {
-    id: "claude-sonnet-4-6-20250514",
+    id: "claude-sonnet-4-6",
     name: "Claude Sonnet 4.6",
     provider: "Anthropic",
     contextWindow: 1000000,
@@ -194,7 +194,7 @@ const CLAUDE_MODELS: ClaudeModelInfo[] = [
     released: "2026-03-01",
   },
   {
-    id: "claude-opus-4-6-20250514",
+    id: "claude-opus-4-6",
     name: "Claude Opus 4.6",
     provider: "Anthropic",
     contextWindow: 1000000,

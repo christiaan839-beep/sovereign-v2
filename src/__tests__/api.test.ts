@@ -168,14 +168,31 @@ describe("Agent API Routes", () => {
 // Payment Routes — Export Verification
 // ============================================================
 describe("Payment Routes", () => {
-  it("Payments catch-all should export a POST handler", async () => {
-    const mod = await import("@/app/api/payments/[...path]/route");
+  // Direct re-export routes (Vercel-compatible static bundling).
+  // Catch-all was removed because webpackIgnore dynamic imports don't bundle on Vercel.
+  it("Yoco checkout route should export POST handler", async () => {
+    const mod = await import("@/app/api/payments/yoco/checkout/route");
     expect(mod.POST).toBeDefined();
   });
 
-  it("Payments catch-all should export a GET handler", async () => {
-    const mod = await import("@/app/api/payments/[...path]/route");
+  it("Yoco webhook route should export POST handler", async () => {
+    const mod = await import("@/app/api/payments/yoco/webhook/route");
+    expect(mod.POST).toBeDefined();
+  });
+
+  it("PayFast checkout route should export POST handler", async () => {
+    const mod = await import("@/app/api/payments/payfast/checkout/route");
+    expect(mod.POST).toBeDefined();
+  });
+
+  it("PayStack callback route should export GET handler", async () => {
+    const mod = await import("@/app/api/payments/paystack/callback/route");
     expect(mod.GET).toBeDefined();
+  });
+
+  it("Stripe webhook route should export POST handler", async () => {
+    const mod = await import("@/app/api/payments/stripe/webhook/route");
+    expect(mod.POST).toBeDefined();
   });
 });
 

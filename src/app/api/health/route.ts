@@ -44,6 +44,13 @@ export async function GET() {
       modelSummary = { totalModels: registry.totalModels };
     } catch { /* skip */ }
 
+    // ── Agent registry ──
+    let agentSummary = { totalAgents: 129 };
+    try {
+      const { AGENT_REGISTRY } = await import("@/app/api/agents/registry");
+      agentSummary = { totalAgents: Object.keys(AGENT_REGISTRY).length };
+    } catch { /* skip */ }
+
     // ── Uptime ──
     const uptimeSeconds = Math.floor((Date.now() - startedAt) / 1000);
 
@@ -60,6 +67,7 @@ export async function GET() {
       database: { status: services.db, latencyMs: dbLatencyMs },
       circuits,
       models: modelSummary,
+      agents: agentSummary,
     });
   } catch (err) {
     // Absolute last resort — NEVER return 500

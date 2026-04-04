@@ -72,17 +72,6 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
   );
 }
 
-// ─── Model Badge (enhanced with subtle glow) ───
-function _ModelBadge({ name, type }: { name: string; type: string }) {
-  return (
-    <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.02] border border-white/[0.06] backdrop-blur-xl hover:border-emerald-500/20 hover:bg-emerald-500/[0.03] transition-gpu duration-500 group">
-      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] group-hover:shadow-[0_0_12px_rgba(16,185,129,0.8)] transition-shadow" />
-      <span className="text-xs font-medium text-neutral-300 group-hover:text-white transition-colors">{name}</span>
-      <span className="text-[9px] text-emerald-500/40 uppercase font-mono">{type}</span>
-    </div>
-  );
-}
-
 // ─── Count Up On View ───
 function CountUpOnView({ target, suffix = "", prefix = "", duration = 1.5 }: { target: number; suffix?: string; prefix?: string; duration?: number }) {
   const ref = useRef<HTMLSpanElement>(null);
@@ -363,11 +352,16 @@ function InteractiveDemo() {
 function useLiveAgentCount() {
   const [count, setCount] = useState(130);
   useEffect(() => {
-    // Simulate real-time variance — in production this would hit /api/health
-    const interval = setInterval(() => {
-      setCount(122 + Math.floor(Math.random() * 5)); // 122-126
-    }, 8000);
-    return () => clearInterval(interval);
+    // Fetch real agent count from health endpoint once on mount.
+    // No polling — agent count is effectively static and we don't want
+    // to burn request budget on a cosmetic number.
+    fetch("/api/health")
+      .then((res) => res.ok ? res.json() : null)
+      .then((data) => {
+        const total = data?.agents?.totalAgents;
+        if (typeof total === "number" && total > 0) setCount(total);
+      })
+      .catch(() => { /* keep default */ });
   }, []);
   return count;
 }
@@ -1121,7 +1115,7 @@ export default function Home() {
       <section className="py-24 px-6 bg-[#050505] perf-section">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
-            <RevealText as="p" className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">How It Works</RevealText>
+            <RevealText as="p" className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">Old vs New</RevealText>
             <div className="overflow-hidden">
               <TextDecrypt text="From prompting to deploying." className="text-3xl md:text-5xl font-bold text-white tracking-tight" as="h2" speed={20} delay={200} />
             </div>

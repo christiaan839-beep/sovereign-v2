@@ -278,13 +278,6 @@ section *, [role="main"] * {
   100% { background-position: -200% center; }
 }
 
-/* Legacy shimmer (translateX variant for pseudo-elements) */
-@keyframes shimmer-slide {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
-}
-
-
 /* Gradient border glow on hover */
 .gradient-border-card {
   position: relative;
@@ -299,13 +292,6 @@ section *, [role="main"] * {
   background: rgba(255, 255, 255, 0.04);
   box-shadow: 0 0 30px rgba(255, 255, 255, 0.05);
 }
-
-/* Badge glow — subtle hue rotate */
-@keyframes badge-glow {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 0.8; }
-}
-
 
 /* Smooth section divider glow */
 .section-divider {

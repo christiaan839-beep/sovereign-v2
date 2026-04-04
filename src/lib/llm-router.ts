@@ -308,7 +308,7 @@ export async function routeAgenticExecution({
             "anthropic-version": "2023-06-01",
           },
           body: JSON.stringify({
-            model: "claude-sonnet-4-20250514",
+            model: "claude-sonnet-4-6",
             max_tokens: 4096,
             system: systemInstruction || "You are Sovereign Matrix, an elite AI agent.",
             messages: [{ role: "user", content: prompt }],

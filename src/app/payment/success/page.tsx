@@ -1,9 +1,10 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { CheckCircle2, ArrowRight, Sparkles, Zap, Shield } from "lucide-react";
+import { CheckCircle2, ArrowRight, Shield, Mail, Sparkles } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 
 interface ParticleProps {
   id: number;
@@ -25,7 +26,19 @@ function ConfettiParticle({ p }: { p: ParticleProps }) {
   );
 }
 
-export default function PaymentSuccessPage() {
+const PLAN_LABELS: Record<string, string> = {
+  starter: "Starter",
+  node: "Sovereign Node",
+  array: "Sovereign Array",
+  enterprise: "Enterprise License",
+};
+
+function PaymentSuccessContent() {
+  const searchParams = useSearchParams();
+  const plan = searchParams.get("plan") || "";
+  const provider = searchParams.get("provider") || "";
+  const planLabel = PLAN_LABELS[plan] || "Subscription";
+
   const [particles, setParticles] = useState<ParticleProps[]>([]);
 
   useEffect(() => {
@@ -41,8 +54,8 @@ export default function PaymentSuccessPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center px-6 relative overflow-hidden">
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-emerald-500/10 rounded-full blur-[200px]" />
+    <div className="min-h-screen bg-[#010101] text-white flex items-center justify-center px-6 relative overflow-hidden">
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-emerald-500/[0.08] rounded-full blur-[200px]" />
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         {particles.map((p) => (
           <ConfettiParticle key={p.id} p={p} />
@@ -59,40 +72,62 @@ export default function PaymentSuccessPage() {
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-          className="w-24 h-24 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mx-auto mb-8 shadow-[0_0_60px_rgba(16,185,129,0.3)]"
+          className="w-20 h-20 rounded-full bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center mx-auto mb-8 shadow-[0_0_60px_rgba(16,185,129,0.25)]"
         >
-          <CheckCircle2 className="w-12 h-12 text-emerald-400" />
+          <CheckCircle2 className="w-10 h-10 text-emerald-400" />
         </motion.div>
 
-        <h1 className="text-4xl md:text-5xl font-bold text-white serif-text mb-4">Deployment Authorized.</h1>
-        <p className="text-neutral-400 text-lg mb-10 max-w-md mx-auto">
-          Your Sovereign Matrix node is being provisioned. The AI swarm is initializing your autonomous operations.
+        <h1 className="text-3xl md:text-4xl font-bold text-white mb-3 tracking-tight">
+          You&apos;re in. Welcome aboard.
+        </h1>
+        <p className="text-neutral-400 text-base mb-8 max-w-md mx-auto">
+          Your <span className="text-white font-medium">{planLabel}</span> plan is active.
+          All 130+ agents and 65+ models are ready to use.
         </p>
 
-        <div className="flex flex-wrap items-center justify-center gap-3 mb-10">
-          <span className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-xs font-bold uppercase tracking-widest text-emerald-400">
-            <Shield className="w-3 h-3" /> Payment Verified
+        <div className="flex flex-wrap items-center justify-center gap-2 mb-8">
+          <span className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-[10px] font-semibold uppercase tracking-wider text-emerald-400">
+            <Shield className="w-3 h-3" /> Payment confirmed
           </span>
-          <span className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-full text-xs font-bold uppercase tracking-widest text-neutral-400">
-            <Zap className="w-3 h-3" /> Node Provisioning
-          </span>
-          <span className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-full text-xs font-bold uppercase tracking-widest text-neutral-400">
-            <Sparkles className="w-3 h-3" /> Swarm Active
+          {provider && (
+            <span className="flex items-center gap-2 px-3 py-1.5 bg-white/[0.04] border border-white/[0.08] rounded-full text-[10px] font-semibold uppercase tracking-wider text-neutral-400">
+              via {provider}
+            </span>
+          )}
+          <span className="flex items-center gap-2 px-3 py-1.5 bg-white/[0.04] border border-white/[0.08] rounded-full text-[10px] font-semibold uppercase tracking-wider text-neutral-400">
+            <Sparkles className="w-3 h-3" /> All agents unlocked
           </span>
         </div>
 
-        <Link
-          href="/dashboard"
-          className="inline-flex items-center gap-3 px-10 py-5 rounded-2xl bg-white text-black font-bold uppercase tracking-widest text-sm hover:bg-neutral-200 transition-gpu shadow-[0_0_40px_rgba(255,255,255,0.2)] group"
-        >
-          Enter Command Center
-          <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-        </Link>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-6">
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white text-black font-bold text-sm hover:bg-neutral-200 transition-gpu group"
+          >
+            Go to dashboard
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          </Link>
+          <Link
+            href="/dashboard/mission-control"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white/[0.04] border border-white/[0.08] text-white font-medium text-sm hover:bg-white/[0.08] transition-gpu"
+          >
+            Run your first playbook
+          </Link>
+        </div>
 
-        <p className="text-neutral-600 text-xs mt-8 font-mono">
-          A confirmation email has been dispatched to your registered address.
+        <p className="text-neutral-600 text-xs flex items-center justify-center gap-1.5">
+          <Mail className="w-3 h-3" /> Receipt sent to your email.
         </p>
       </motion.div>
     </div>
+  );
+}
+
+export default function PaymentSuccessPage() {
+  return (
+    // useSearchParams needs a Suspense boundary in the App Router.
+    <Suspense fallback={<div className="min-h-screen bg-[#010101]" />}>
+      <PaymentSuccessContent />
+    </Suspense>
   );
 }

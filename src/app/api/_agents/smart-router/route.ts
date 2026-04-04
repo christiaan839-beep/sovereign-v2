@@ -139,7 +139,7 @@ async function compileDAG(prompt: string): Promise<Array<{ agent: string; task: 
     const client = new Anthropic({ apiKey: anthropicKey });
 
     const response = await client.messages.create({
-      model: "claude-sonnet-4-6-20250514",
+      model: "claude-sonnet-4-6",
       max_tokens: 1000,
       system: "You are a workflow compiler. Break complex goals into a DAG of agent tasks. Available agents: leads, content, seo, email-sequence, voice, competitor, design, page-builder, code-agent, ads. Return ONLY a JSON array.",
       messages: [{ role: "user", content: `Compile this goal into a workflow DAG:\n\n${prompt}\n\nReturn JSON array: [{"agent": "leads", "task": "Find 50 leads", "dependsOn": []}]` }],

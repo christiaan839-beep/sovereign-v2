@@ -16,14 +16,14 @@ type ProspectReport = {
 };
 
 const LOG_MESSAGES = [
-    "Establishing uplink with Google Maps Builder API...",
-    "Extracting spatial B2B nodes via Maps Places API...",
-    "Filtering out franchise megacorps...",
-    "Extracting raw DOM structure & dynamic reviews from 3 Map pins...",
-    "Transmitting payload to Gemini 1.5 Pro for analysis...",
-    "Detecting marketing failure points (SEO, Schema, Offer)...",
-    "Synthesizing hyper-personalized cold outreach angles...",
-    "Committing gap analysis reports to The AI Memory...",
+    "Connecting to Google Places API...",
+    "Finding local businesses in target area...",
+    "Filtering out large franchises...",
+    "Scraping website content for 3 leads...",
+    "Analyzing with Gemini 2.5 Flash...",
+    "Detecting marketing gaps (SEO, schema, offer)...",
+    "Writing personalized outreach angles...",
+    "Saving gap analysis reports...",
 ];
 
 export default function LeadsDashboard() {

@@ -226,12 +226,112 @@ export async function initializeYoco(plan: PlanId, email: string, callbackUrl: s
   return null;
 }
 
-export function verifyYocoWebhook(body: string, signature: string): boolean {
-  const key = getYocoKey();
-  if (!key) return false;
+/**
+ * Yoco Webhook Verification — Standard Webhooks format.
+ *
+ * Yoco uses the Standard Webhooks spec: https://www.standardwebhooks.com/
+ * Headers: `webhook-id`, `webhook-timestamp`, `webhook-signature`
+ * Signed content: `{webhook-id}.{webhook-timestamp}.{body}`
+ * Signature format: `v1,{base64(HMAC-SHA256(secret, signed_content))}` (space-separated if multiple)
+ *
+ * The webhook secret is distinct from the API key — it's issued when
+ * the webhook subscription is created (POST /v1/webhooks/subscriptions/)
+ * and has a `whsec_` prefix whose base64-encoded portion is the actual key.
+ */
+export function verifyYocoWebhook(
+  body: string,
+  headers: {
+    id: string;
+    timestamp: string;
+    signature: string;
+  }
+): boolean {
+  const rawSecret = process.env.YOCO_WEBHOOK_SECRET;
+  if (!rawSecret || !headers.id || !headers.timestamp || !headers.signature) {
+    return false;
+  }
 
-  const hash = crypto.createHmac("sha256", key).update(body).digest("hex");
-  return hash === signature;
+  // Reject messages older than 5 minutes to prevent replay attacks.
+  const timestampMs = Number(headers.timestamp) * 1000;
+  if (!Number.isFinite(timestampMs)) return false;
+  const ageMs = Date.now() - timestampMs;
+  if (ageMs > 5 * 60 * 1000 || ageMs < -5 * 60 * 1000) return false;
+
+  // Strip `whsec_` prefix if present, then base64-decode to get raw key bytes.
+  const secretKey = rawSecret.startsWith("whsec_") ? rawSecret.slice(6) : rawSecret;
+  let secretBytes: Buffer;
+  try {
+    secretBytes = Buffer.from(secretKey, "base64");
+  } catch {
+    return false;
+  }
+
+  const signedContent = `${headers.id}.${headers.timestamp}.${body}`;
+  const expectedSignature = crypto
+    .createHmac("sha256", secretBytes)
+    .update(signedContent)
+    .digest("base64");
+
+  // The header may contain multiple space-separated signatures: "v1,sig1 v1,sig2"
+  const receivedSignatures = headers.signature.split(" ");
+  for (const sig of receivedSignatures) {
+    const [version, candidate] = sig.split(",");
+    if (version !== "v1" || !candidate) continue;
+    // Timing-safe comparison to prevent signature-stealing via timing attacks.
+    const expectedBuf = Buffer.from(expectedSignature);
+    const candidateBuf = Buffer.from(candidate);
+    if (
+      expectedBuf.length === candidateBuf.length &&
+      crypto.timingSafeEqual(expectedBuf, candidateBuf)
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Fetch a payment from Yoco by ID — used to resolve metadata after
+ * webhook delivery (PaymentCreated payloads only include IDs).
+ */
+export async function getYocoPayment(paymentId: string) {
+  const key = getYocoKey();
+  if (!key) return null;
+
+  const res = await fetch(`https://payments.yoco.com/api/payments/${encodeURIComponent(paymentId)}`, {
+    headers: { Authorization: `Bearer ${key}` },
+  });
+
+  if (!res.ok) return null;
+  return res.json() as Promise<{
+    id: string;
+    amount: number;
+    currency: string;
+    status: string;
+    metadata?: Record<string, string>;
+  }>;
+}
+
+/**
+ * Fetch a checkout from Yoco by ID — used when the webhook's `order_id`
+ * maps to a checkout session (rather than a standalone payment).
+ */
+export async function getYocoCheckout(checkoutId: string) {
+  const key = getYocoKey();
+  if (!key) return null;
+
+  const res = await fetch(`https://payments.yoco.com/api/checkouts/${encodeURIComponent(checkoutId)}`, {
+    headers: { Authorization: `Bearer ${key}` },
+  });
+
+  if (!res.ok) return null;
+  return res.json() as Promise<{
+    id: string;
+    amount: number;
+    currency: string;
+    status: string;
+    metadata?: Record<string, string>;
+  }>;
 }
 
 // ─── Provider Detection ─────────────────────────────────────────

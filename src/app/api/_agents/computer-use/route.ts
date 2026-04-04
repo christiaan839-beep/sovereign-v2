@@ -50,7 +50,7 @@ export async function POST(req: Request) {
 
     // 3. Request Computer Use action
     const response = await anthropic.beta.messages.create({
-      model: "claude-sonnet-4-6-20250514",
+      model: "claude-sonnet-4-6",
       max_tokens: 1024,
       betas: ["computer-use-2025-11-24"],
       system: "You are the Sovereign Matrix Ghost Browser. You have access to a virtual Linux desktop. Use the computer tools to navigate the web, analyze competitors, and fulfill the user's instructions. Always verify the UI state with screenshots before clicking.",

@@ -146,17 +146,16 @@ function renderTemplate(template: string, data: Record<string, string>): string 
 
   const templates: Record<string, string> = {
     welcome: `
-      <h2 style="color: #00B7FF; font-weight: 300; font-size: 22px;">Welcome to SOVEREIGN</h2>
-      <p>Your autonomous marketing node has been activated.</p>
-      <p>Node ID: <strong style="color: white;">${safe.nodeId || "UMB-NX-00000"}</strong></p>
-      <p>Your AI marketing engine is now initializing. You'll receive notifications as it learns and executes.</p>
-      <a href="${safe.dashboardUrl || "#"}" style="display: inline-block; padding: 12px 30px; background: #00B7FF15; border: 1px solid #00B7FF30; color: #00B7FF; text-decoration: none; border-radius: 8px; font-size: 12px; letter-spacing: 0.15em; text-transform: uppercase; margin-top: 20px;">Enter Command Center →</a>`,
+      <h2 style="color: #00B7FF; font-weight: 300; font-size: 22px;">Welcome to Sovereign Matrix</h2>
+      <p>Your account is active. All 130+ agents and 65+ models are ready to use.</p>
+      <p>Account ID: <strong style="color: white;">${safe.nodeId || "UMB-NX-00000"}</strong></p>
+      <a href="${safe.dashboardUrl || "#"}" style="display: inline-block; padding: 12px 30px; background: #00B7FF15; border: 1px solid #00B7FF30; color: #00B7FF; text-decoration: none; border-radius: 8px; font-size: 12px; letter-spacing: 0.15em; text-transform: uppercase; margin-top: 20px;">Open Dashboard →</a>`,
 
     payment_confirmed: `
       <h2 style="color: #10B981; font-weight: 300; font-size: 22px;">Payment Confirmed</h2>
       <p>Amount: <strong style="color: white;">${safe.amount || "R0"}</strong></p>
       <p>Plan: <strong style="color: white;">${safe.plan || "Sovereign"}</strong></p>
-      <p>Your SOVEREIGN node is now fully operational. All AI engines are active.</p>`,
+      <p>Your subscription is active. All agents and models are unlocked.</p>`,
 
     lead_alert: `
       <h2 style="color: #F97316; font-weight: 300; font-size: 22px;">New Lead Captured</h2>
