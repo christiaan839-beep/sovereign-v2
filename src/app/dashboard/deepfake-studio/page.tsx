@@ -65,7 +65,7 @@ export default function VideoOutreachStudioPage() {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8 relative min-h-screen" role="main" aria-label="Video outreach studio">
+    <div className="p-8 max-w-7xl mx-auto space-y-8 relative min-h-screen" role="region" aria-label="Video outreach studio">
       {/* Header */}
       <div className="relative z-10 flex items-center justify-between mb-8">
         <div>

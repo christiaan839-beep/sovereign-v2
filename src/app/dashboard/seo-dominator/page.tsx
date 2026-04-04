@@ -153,7 +153,7 @@ export default function SEODominatorPage() {
 
 
   return (
-    <div className="w-full max-w-7xl mx-auto space-y-8 relative z-10 p-4 lg:p-8" role="main" aria-label="SEO domination tools">
+    <div className="w-full max-w-7xl mx-auto space-y-8 relative z-10 p-4 lg:p-8" role="region" aria-label="SEO domination tools">
       {/* Header */}
       <div className="border-b border-rose-500/20 pb-6 backdrop-blur-3xl bg-black/40 p-6 rounded-2xl shadow-[0_0_50px_rgba(244,63,94,0.05)] border-t border-rose-500/10">
         <div className="flex items-center gap-3 mb-2">

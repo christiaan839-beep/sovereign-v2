@@ -179,7 +179,7 @@ export default function AutomationsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] p-6 md:p-10" role="main" aria-label="Automations scheduling">
+    <div className="min-h-screen bg-[#050505] p-6 md:p-10" role="region" aria-label="Automations scheduling">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}

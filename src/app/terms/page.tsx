@@ -1,5 +1,6 @@
 import { Metadata } from "next";
 import Link from "next/link";
+import { PrintButton } from "@/components/ui/PrintButton";
 
 export const metadata: Metadata = {
   title: "Terms of Service — Sovereign Matrix",
@@ -11,9 +12,12 @@ export default function TermsPage() {
     <div className="min-h-screen bg-[#050505] text-white">
       <div className="max-w-3xl mx-auto px-6 py-32">
         <Link href="/" className="text-xs text-neutral-500 hover:text-white transition-colors uppercase tracking-widest mb-8 block">← Back to Home</Link>
-        
+
         <h1 className="text-3xl md:text-4xl font-bold text-white serif-text mb-4">Terms of Service</h1>
-        <p className="text-sm text-neutral-500 mb-12">Last updated: March 2026</p>
+        <p className="text-sm text-neutral-500 mb-4">Last updated: March 2026</p>
+        <div className="mb-12">
+          <PrintButton />
+        </div>
 
         <div className="space-y-8 text-sm text-neutral-400 leading-relaxed">
           <section>

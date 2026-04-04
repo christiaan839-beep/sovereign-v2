@@ -105,7 +105,7 @@ export default function GodEyePage() {
   const totalExecs = AGENT_CATEGORIES.reduce((sum, c) => sum + c.agents.reduce((s, a) => s + a.executions, 0), 0);
 
   return (
-    <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-6" role="main" aria-label="Agent Monitor dashboard">
+    <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-6" role="region" aria-label="Agent Monitor dashboard">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="min-w-0">

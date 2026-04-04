@@ -190,7 +190,7 @@ export default function BuildModePage() {
   };
 
   return (
-    <div className={`h-[calc(100vh-4rem)] flex ${fullscreen ? "fixed inset-0 z-50 bg-black" : ""}`} role="main" aria-label="Build mode code generator">
+    <div className={`h-[calc(100vh-4rem)] flex ${fullscreen ? "fixed inset-0 z-50 bg-black" : ""}`} role="region" aria-label="Build mode code generator">
       {/* Left: Chat Panel */}
       <div className={`flex flex-col ${showPreview ? "w-1/2" : "w-full"} border-r border-white/[0.06]`}>
         {/* Header */}

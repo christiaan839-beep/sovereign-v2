@@ -212,7 +212,7 @@ export default function AgentWorldPage() {
   };
 
   return (
-    <div className="p-6 pb-0" role="main" aria-label="Agent world network graph">
+    <div className="p-6 pb-0" role="region" aria-label="Agent world network graph">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-white tracking-tight">Agent World</h1>

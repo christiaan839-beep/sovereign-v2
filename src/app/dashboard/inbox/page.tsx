@@ -212,7 +212,7 @@ export default function InboxPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#000000] p-6 md:p-10" role="main" aria-label="Smart inbox notifications">
+    <div className="min-h-screen bg-[#000000] p-6 md:p-10" role="region" aria-label="Smart inbox notifications">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}

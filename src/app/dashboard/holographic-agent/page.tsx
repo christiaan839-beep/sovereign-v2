@@ -23,7 +23,7 @@ export default function HolographicAgentDashboard() {
   const isSpeaking = callActive && speakCycle % 2 === 0;
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 bg-[#050505]" role="main" aria-label="Sentinel holographic array">
+    <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 bg-[#050505]" role="region" aria-label="Sentinel holographic array">
       <div className="border-b border-[#00B7FF]/20 pb-6">
         <h1 className="text-3xl font-bold text-white font-serif uppercase tracking-widest flex items-center gap-3">
            <Activity className="w-6 h-6 text-[#00B7FF]" />

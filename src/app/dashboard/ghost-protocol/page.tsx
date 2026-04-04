@@ -102,7 +102,7 @@ export default function GhostProtocolDashboard() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-64px)] p-6 lg:p-10 font-mono text-[#00B7FF] bg-[#050505]" role="main" aria-label="Ghost fleet SDR pipeline">
+    <div className="min-h-[calc(100vh-64px)] p-6 lg:p-10 font-mono text-[#00B7FF] bg-[#050505]" role="region" aria-label="Ghost fleet SDR pipeline">
       <div className="max-w-6xl mx-auto space-y-8">
         
         {/* Header */}

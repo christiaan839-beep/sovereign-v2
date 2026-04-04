@@ -235,7 +235,7 @@ export default function CanvasPage() {
   const hasScreens = nodes.some((n) => n.type === "screen");
 
   return (
-    <div className="h-screen w-full bg-[#050505] relative overflow-hidden" role="main" aria-label="Design canvas">
+    <div className="h-screen w-full bg-[#050505] relative overflow-hidden" role="region" aria-label="Design canvas">
       {/* Top bar */}
       <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-5 py-3 bg-[#050505]/80 backdrop-blur-xl border-b border-white/[0.04]">
         <div className="flex items-center gap-3">

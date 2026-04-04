@@ -48,7 +48,7 @@ export default function VisualStudioNode() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#050505] text-[#00B7FF] p-8 font-mono animate-in fade-in" role="main" aria-label="Visual studio video generation">
+    <div className="min-h-screen bg-[#050505] text-[#00B7FF] p-8 font-mono animate-in fade-in" role="region" aria-label="Visual studio video generation">
       <div className="max-w-6xl mx-auto space-y-12">
         
         <header className="border-b border-[#00B7FF]/30 pb-6 flex items-center justify-between">

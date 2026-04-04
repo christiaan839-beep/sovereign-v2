@@ -637,7 +637,7 @@ Respond helpfully and concisely. If the user asks to execute a task, describe wh
   };
 
   return (
-    <div className="min-h-screen flex flex-col max-w-4xl mx-auto p-4 md:p-8" role="main" aria-label="Sovereign AI assistant">
+    <div className="min-h-screen flex flex-col max-w-4xl mx-auto p-4 md:p-8" role="region" aria-label="Sovereign AI assistant">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">

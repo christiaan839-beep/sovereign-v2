@@ -233,7 +233,7 @@ export default function AgentCommandCenter() {
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white p-6 md:p-8 font-mono" role="main" aria-label="Agent command center">
+    <div className="min-h-screen bg-[#050505] text-white p-6 md:p-8 font-mono" role="region" aria-label="Agent command center">
       <div className="max-w-7xl mx-auto space-y-8">
 
         {/* Header */}

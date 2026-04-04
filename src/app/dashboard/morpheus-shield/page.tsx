@@ -67,7 +67,7 @@ export default function MorpheusShieldPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white p-8 font-mono" role="main" aria-label="Morpheus shield chatbot">
+    <div className="min-h-screen bg-[#050505] text-white p-8 font-mono" role="region" aria-label="Morpheus shield chatbot">
       <div className="max-w-3xl mx-auto space-y-6">
         {/* Header */}
         <header className="border-b border-red-500/30 pb-6">

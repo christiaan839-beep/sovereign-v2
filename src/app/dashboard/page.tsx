@@ -823,7 +823,7 @@ export default function DashboardHome() {
   }
 
   return (
-    <div className="flex flex-col h-full" role="main" aria-label="Dashboard home">
+    <div className="flex flex-col h-full" role="region" aria-label="Dashboard home">
       {/* Welcome Tour Modal — shows once after onboarding */}
       <AnimatePresence>
         {showTour && <WelcomeTourModal onDismiss={dismissTour} />}

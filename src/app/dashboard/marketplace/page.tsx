@@ -202,7 +202,7 @@ export default function MarketplacePage() {
   });
 
   return (
-    <div className="min-h-screen bg-[#000000] px-6 lg:px-8 py-8 pb-32" role="main" aria-label="Agent marketplace">
+    <div className="min-h-screen bg-[#000000] px-6 lg:px-8 py-8 pb-32" role="region" aria-label="Agent marketplace">
       <PageHeader
         title="Agent Marketplace"
         description="Discover and deploy community-built agents"

@@ -134,7 +134,7 @@ export default function DesignerPage() {
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto space-y-8 relative z-10 p-4 lg:p-8" role="main" aria-label="Design agency tools">
+    <div className="w-full max-w-7xl mx-auto space-y-8 relative z-10 p-4 lg:p-8" role="region" aria-label="Design agency tools">
       {/* Header */}
       <div className="border-b border-violet-500/20 pb-6 backdrop-blur-3xl bg-black/40 p-6 rounded-2xl shadow-[0_0_50px_rgba(139,92,246,0.05)] border-t border-violet-500/10">
         <div className="flex items-center gap-3 mb-2">

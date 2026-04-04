@@ -281,7 +281,7 @@ export default function AgentBuilderPage() {
   const selectedModelConfig = MODEL_REGISTRY.find((m) => m.id === selectedModel) || MODEL_REGISTRY[0];
 
   return (
-    <div className="min-h-screen bg-[#000000] px-6 lg:px-8 py-8 pb-32" role="main" aria-label="Agent builder">
+    <div className="min-h-screen bg-[#000000] px-6 lg:px-8 py-8 pb-32" role="region" aria-label="Agent builder">
       <PageHeader
         title="Agent Builder"
         description="Create custom AI agents with your own instructions, model selection, and tools"

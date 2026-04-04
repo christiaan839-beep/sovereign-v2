@@ -67,7 +67,7 @@ export default function ClientPortalPage() {
   const accentColor = config?.primaryColor || "#00B7FF";
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto" role="main" aria-label="Client portal preview">
+    <div className="space-y-6 max-w-7xl mx-auto" role="region" aria-label="Client portal preview">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>

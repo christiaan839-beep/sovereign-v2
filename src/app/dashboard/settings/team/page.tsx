@@ -191,7 +191,7 @@ export default function TeamSettingsPage() {
 
   return (
     <motion.div
-      role="main"
+      role="region"
       aria-label="Team settings"
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}

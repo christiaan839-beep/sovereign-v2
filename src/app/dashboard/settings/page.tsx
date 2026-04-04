@@ -232,7 +232,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="p-4 md:p-8 max-w-4xl mx-auto" role="main" aria-label="API keys and configuration settings">
+    <div className="p-4 md:p-8 max-w-4xl mx-auto" role="region" aria-label="API keys and configuration settings">
       <div className="mb-8">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#00B7FF]/10 border border-[#00B7FF]/20 text-[#00B7FF] text-xs font-bold uppercase tracking-wider mb-3">
           <Shield className="w-3 h-3" /> Secure Settings

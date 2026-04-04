@@ -120,7 +120,7 @@ export default function AgentHQPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#050505] px-4 py-10 sm:px-8 lg:px-12" role="main" aria-label="Agent headquarters">
+    <div className="min-h-screen bg-[#050505] px-4 py-10 sm:px-8 lg:px-12" role="region" aria-label="Agent headquarters">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -12 }}

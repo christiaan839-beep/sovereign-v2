@@ -70,7 +70,7 @@ export default function MarketIntelligence() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 p-4 lg:p-8" role="main" aria-label="Competitor analysis">
+    <div className="max-w-6xl mx-auto space-y-8 p-4 lg:p-8" role="region" aria-label="Competitor analysis">
       
       {/* Header */}
       <header className="border-b border-emerald-500/20 pb-8">

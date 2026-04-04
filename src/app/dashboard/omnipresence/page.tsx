@@ -221,7 +221,7 @@ export default function OmnipresenceNode() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] p-6 md:p-10" role="main" aria-label="Omnipresence multi-channel outreach">
+    <div className="min-h-screen bg-[#0A0A0A] p-6 md:p-10" role="region" aria-label="Omnipresence multi-channel outreach">
       {/* Toast */}
       <AnimatePresence>
         {toast && (

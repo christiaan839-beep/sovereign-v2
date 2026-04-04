@@ -43,7 +43,7 @@ export default function BillingHistoryPage() {
   const pct = runLimit > 0 ? Math.round((used / runLimit) * 100) : 0;
 
   return (
-    <motion.div role="main" aria-label="Billing history" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+    <motion.div role="region" aria-label="Billing history" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35 }} className="min-h-screen bg-[#0A0A0A] p-6 lg:p-10 space-y-8">
 
       <div>

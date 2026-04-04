@@ -73,7 +73,7 @@ export default function LeaderboardPage() {
   const rankIcons = [Crown, Trophy, Trophy];
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white p-6 md:p-8 font-mono" role="main" aria-label="AI agent leaderboard">
+    <div className="min-h-screen bg-[#050505] text-white p-6 md:p-8 font-mono" role="region" aria-label="AI agent leaderboard">
       <div className="max-w-5xl mx-auto space-y-8">
         <header className="border-b border-[#FFD700]/20 pb-6">
           <div className="flex items-center gap-4">

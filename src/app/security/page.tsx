@@ -14,6 +14,7 @@ import {
   AlertCircle,
   Trash2,
 } from "lucide-react";
+import { PrintButton } from "@/components/ui/PrintButton";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -120,10 +121,18 @@ export default function SecurityPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.15, duration: 0.5 }}
-          className="text-neutral-400 mb-12 text-lg"
+          className="text-neutral-400 mb-4 text-lg"
         >
           How we protect your data
         </motion.p>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2, duration: 0.5 }}
+          className="mb-12"
+        >
+          <PrintButton />
+        </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {SECTIONS.map((section, i) => {

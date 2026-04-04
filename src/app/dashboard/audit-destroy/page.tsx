@@ -47,7 +47,7 @@ export default function AuditAndDestroyPage() {
   };
 
   return (
-    <div className="p-8 max-w-6xl mx-auto min-h-screen" role="main" aria-label="Audit and destroy engine">
+    <div className="p-8 max-w-6xl mx-auto min-h-screen" role="region" aria-label="Audit and destroy engine">
       <div className="mb-10 flex items-center justify-between">
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-red-500/20 bg-red-500/10 text-red-400 text-[10px] font-bold uppercase tracking-widest mb-4">

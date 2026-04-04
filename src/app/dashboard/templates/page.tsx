@@ -81,7 +81,7 @@ export default function WorkflowTemplatesPage() {
   const totalInstalls = WORKFLOW_TEMPLATES.reduce((sum, t) => sum + t.installs, 0);
 
   return (
-    <div className="min-h-screen px-4 py-10 sm:px-6 lg:px-10" role="main" aria-label="Workflow template marketplace">
+    <div className="min-h-screen px-4 py-10 sm:px-6 lg:px-10" role="region" aria-label="Workflow template marketplace">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -12 }}

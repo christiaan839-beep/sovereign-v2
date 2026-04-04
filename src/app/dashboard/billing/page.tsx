@@ -103,7 +103,7 @@ export default function BillingPortal() {
   return (
     <div
       className="max-w-5xl mx-auto space-y-8 p-4 lg:p-8"
-      role="main"
+      role="region"
       aria-label="Billing and subscription management"
     >
       {/* Header */}

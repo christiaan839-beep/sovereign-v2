@@ -53,7 +53,7 @@ export default function OmniSearchPage() {
   };
 
   return (
-    <div className="p-8 max-w-5xl mx-auto min-h-screen bg-[#050505] text-white" role="main" aria-label="Global knowledge retrieval search">
+    <div className="p-8 max-w-5xl mx-auto min-h-screen bg-[#050505] text-white" role="region" aria-label="Global knowledge retrieval search">
       <div className="text-center mb-12 mt-10">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold uppercase tracking-wider mb-4">
           <Database className="w-3 h-3" /> Omni-Search RAG Architecture

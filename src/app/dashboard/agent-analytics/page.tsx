@@ -127,7 +127,7 @@ export default function AgentAnalyticsDashboard() {
   const maxExecCount = data?.topAgents?.[0]?.executions || 1;
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white p-6 md:p-8 font-mono" role="main" aria-label="Agent analytics dashboard">
+    <div className="min-h-screen bg-[#050505] text-white p-6 md:p-8 font-mono" role="region" aria-label="Agent analytics dashboard">
       <div className="max-w-7xl mx-auto space-y-8">
 
         {/* Header */}

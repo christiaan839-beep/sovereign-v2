@@ -180,7 +180,7 @@ export default function ScheduledRunsPage() {
   const activeCount = schedules.filter((s) => s.active).length;
 
   return (
-    <div className="min-h-screen bg-[#000000] p-6 md:p-10" role="main" aria-label="Scheduled agent runs">
+    <div className="min-h-screen bg-[#000000] p-6 md:p-10" role="region" aria-label="Scheduled agent runs">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}

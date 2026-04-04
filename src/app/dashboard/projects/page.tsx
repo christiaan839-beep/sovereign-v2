@@ -168,7 +168,7 @@ export default function ClientProjectsPage() {
   }, [projects, searchQuery, statusFilter]);
 
   return (
-    <div className="min-h-screen bg-[#000000] p-6 md:p-8 max-w-7xl mx-auto space-y-8" role="main" aria-label="Client projects">
+    <div className="min-h-screen bg-[#000000] p-6 md:p-8 max-w-7xl mx-auto space-y-8" role="region" aria-label="Client projects">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}

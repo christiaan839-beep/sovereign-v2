@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { Clock, Shield, AlertTriangle, CreditCard, Ban, Mail } from "lucide-react";
+import { PrintButton } from "@/components/ui/PrintButton";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -49,10 +50,18 @@ export default function SLAPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.15, duration: 0.5 }}
-          className="text-sm text-neutral-500 mb-12"
+          className="text-sm text-neutral-500 mb-4"
         >
           Last updated: March 31, 2026
         </motion.p>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2, duration: 0.5 }}
+          className="mb-12"
+        >
+          <PrintButton />
+        </motion.div>
 
         <div className="space-y-12 text-sm text-neutral-400 leading-relaxed">
           {/* Uptime Commitment */}

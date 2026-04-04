@@ -104,7 +104,7 @@ export default function WarRoomColosseum() {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto min-h-screen bg-[#050505] text-white overflow-hidden relative" role="main" aria-label="Multi-agent war room">
+    <div className="p-8 max-w-7xl mx-auto min-h-screen bg-[#050505] text-white overflow-hidden relative" role="region" aria-label="Multi-agent war room">
       {/* Background WebGL-style Glows */}
       <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-[radial-gradient(circle,rgba(99,102,241,0.05),transparent_70%)] rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-[radial-gradient(circle,rgba(0,183,255,0.03),transparent_70%)] rounded-full blur-3xl pointer-events-none" />

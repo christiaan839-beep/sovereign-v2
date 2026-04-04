@@ -61,7 +61,7 @@ export default function FlywheelPage() {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto min-h-screen bg-[#050505] text-white" role="main" aria-label="Anti-slop quality flywheel">
+    <div className="p-8 max-w-7xl mx-auto min-h-screen bg-[#050505] text-white" role="region" aria-label="Anti-slop quality flywheel">
       <div className="mb-8">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#00B7FF]/10 border border-[#00B7FF]/20 text-[#00B7FF] text-xs font-bold uppercase tracking-wider mb-3">
           <RefreshCcw className="w-3 h-3" /> RLHF Continuous Improvement
