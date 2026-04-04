@@ -438,3 +438,80 @@ section *, [role="main"] * {
   from { transform: translateX(0); }
   to { transform: translateX(-50%); }
 }
+
+/* ─── Print Styles (for legal docs, whitepapers via window.print) ─── */
+
+@media print {
+  /* Force light background with dark text for readable PDF output */
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11pt;
+    line-height: 1.5;
+  }
+
+  /* Elevate text contrast for everything */
+  * {
+    color: #000000 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  /* Strip motion / decoration */
+  [data-framer-motion], .animate-fade-in, .animate-float,
+  .animate-scale-in, .text-shimmer, .cta-glow, .stat-glow {
+    animation: none !important;
+    transform: none !important;
+  }
+
+  /* Hide interactive / navigational chrome */
+  nav, button[type="button"], header nav, footer,
+  [role="navigation"], [aria-label*="menu" i], [aria-label*="toggle" i] {
+    display: none !important;
+  }
+
+  /* But keep semantic headers, main content, articles */
+  header h1, header p, header .header-content,
+  main, article, section {
+    display: block !important;
+  }
+
+  /* Preserve link URLs next to link text */
+  a[href]::after {
+    content: " (" attr(href) ")";
+    font-size: 9pt;
+    color: #555 !important;
+    word-break: break-all;
+  }
+
+  /* Don't print internal anchors */
+  a[href^="#"]::after,
+  a[href^="javascript:"]::after {
+    content: "";
+  }
+
+  /* Page breaks */
+  h1, h2, h3 { page-break-after: avoid; }
+  section, article { page-break-inside: avoid; }
+
+  /* Remove gradients/glow containers */
+  [class*="bg-gradient-"], [class*="bg-\\[\\#"],
+  [class*="border-"], [class*="rounded-"],
+  [class*="backdrop-blur"] {
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    backdrop-filter: none !important;
+  }
+
+  /* Restore sensible borders for tables/separators */
+  hr, table, th, td {
+    border-color: #d4d4d4 !important;
+  }
+
+  /* A4 page margins */
+  @page {
+    margin: 2cm 1.8cm;
+  }
+}

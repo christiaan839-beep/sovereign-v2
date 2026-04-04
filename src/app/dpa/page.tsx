@@ -56,7 +56,7 @@ export default function DPAPage() {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.5 }}
           className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-4 py-2 text-sm text-neutral-300 hover:bg-white/[0.06] hover:text-white transition-colors mb-12"
-          onClick={() => alert("PDF download will be available soon.")}
+          onClick={() => window.print()}
         >
           <FileText className="w-4 h-4" />
           Download PDF

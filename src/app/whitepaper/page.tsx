@@ -60,13 +60,14 @@ export default function WhitepaperPage() {
         <Link href="/" className="text-sm text-neutral-500 hover:text-white transition-colors flex items-center gap-2">
           <ArrowLeft className="w-4 h-4" /> Back
         </Link>
-        <a
-          href="/sovereign-matrix-whitepaper.pdf"
+        <button
+          type="button"
+          onClick={() => window.print()}
           className="flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold hover:bg-emerald-500/20 transition-colors"
           aria-label="Download whitepaper as PDF"
         >
           <Download className="w-3.5 h-3.5" /> Download PDF
-        </a>
+        </button>
       </nav>
 
       {/* Header */}
