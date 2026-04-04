@@ -1,8 +1,9 @@
 {
   "name": "Sovereign Matrix",
   "short_name": "Sovereign",
-  "description": "124 AI agents that find leads, write content, build pages, and close deals. 65+ models.",
-  "start_url": "/chat",
+  "description": "130+ AI agents. 25 playbooks. 35+ models. $0 per token. The AI platform that actually does the work.",
+  "start_url": "/dashboard",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#010101",
   "theme_color": "#010101",
@@ -24,19 +25,26 @@
   ],
   "shortcuts": [
     {
+      "name": "Mission Control",
+      "url": "/dashboard/mission-control",
+      "description": "One goal, multiple agents, real results"
+    },
+    {
+      "name": "Playbooks",
+      "url": "/dashboard/playbooks",
+      "description": "25 one-click multi-agent workflows"
+    },
+    {
       "name": "Chat",
       "url": "/chat",
-      "description": "Open Sovereign AI chat"
+      "description": "Ask AI anything"
     },
     {
-      "name": "Dashboard",
-      "url": "/dashboard",
-      "description": "Open the full dashboard"
-    },
-    {
-      "name": "Workflows",
-      "url": "/dashboard/workflow-builder",
-      "description": "Build agent workflows"
+      "name": "Leads",
+      "url": "/dashboard/leads",
+      "description": "Find and manage prospects"
     }
-  ]
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false
 }
