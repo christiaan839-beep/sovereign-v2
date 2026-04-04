@@ -256,60 +256,16 @@ export async function POST(request: Request) {
     }
 
     // ==========================================
-    // LONG-TERM SWARM MEMORY (PINECONE + NEMOTRON RAG)
+    // LONG-TERM SWARM MEMORY (Neon pgvector — replaces Pinecone)
     // ==========================================
     let contextMemory = "";
-    
+
     // Using a try-catch so routing never fails even if memory is offline
     try {
-      const pineconeKey = process.env.PINECONE_API_KEY;
-      if (pineconeKey) {
-        // 1. Embed the user's prompt using free Nemotron 1B
-        const embedCtrl = AbortController ? new AbortController() : undefined;
-        const embedTimeout = setTimeout(() => embedCtrl?.abort(), 15000);
-        const embedRes = await fetch("https://integrate.api.nvidia.com/v1/embeddings", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${nimKey}` },
-          body: JSON.stringify({
-            model: "nvidia/llama-3.2-nv-embedqa-1b-v2",
-            input: [prompt],
-            input_type: "query",
-            encoding_format: "float",
-            truncate: "NONE"
-          }),
-          signal: embedCtrl?.signal,
-        });
-        clearTimeout(embedTimeout);
-        
-        if (embedRes.ok) {
-          const embedData = await embedRes.json();
-          const vector = embedData.data[0].embedding;
-          
-          // 2. Query Pinecone for relevant past interactions (simulated HTTP endpoint structure)
-          const pcHost = process.env.PINECONE_HOST || "sovereign-memory.svc.pinecone.io";
-          const pcCtrl = new AbortController();
-          const pcTimeout = setTimeout(() => pcCtrl.abort(), 10000);
-          const queryRes = await fetch(`https://${pcHost}/query`, {
-            method: "POST",
-            headers: { "Api-Key": pineconeKey, "Content-Type": "application/json" },
-            body: JSON.stringify({
-              vector,
-              topK: 3,
-              includeMetadata: true
-            }),
-            signal: pcCtrl.signal,
-          });
-          clearTimeout(pcTimeout);
-          
-          if (queryRes.ok) {
-            const memoryData = await queryRes.json();
-            if (memoryData.matches?.length > 0) {
-              contextMemory = "Relevant context from previous interactions:\n" + memoryData.matches
-                .map((m: { metadata?: { text?: string }; id: string }) => `- ${m.metadata?.text || m.id}`)
-                .join("\n");
-            }
-          }
-        }
+      const { getMemoryContextForPrompt } = await import("@/lib/vector-memory");
+      contextMemory = await getMemoryContextForPrompt(userId, prompt);
+      if (contextMemory) {
+        log.info("Memory context loaded", { userId, contextLength: contextMemory.length });
       }
     } catch (memErr) {
       log.error("Memory context lookup failed", memErr as Record<string, unknown>);
