@@ -6,7 +6,7 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, Settings, Target,
-  Search, ChevronDown, ChevronRight, Sparkles, Factory,
+  Search, ChevronDown, ChevronRight, Sparkles,
   X, Menu,
   PanelLeftOpen, PanelLeftClose, Plug, Cpu,
   BarChart3, Eye, Shield, Wrench,
