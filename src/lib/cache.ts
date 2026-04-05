@@ -16,13 +16,44 @@
 
 const USE_UPSTASH = !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN);
 
-// In-memory LRU cache (fallback)
+// In-memory FIFO cache (fallback). True LRU would require re-inserting on
+// get() to refresh position; we intentionally keep the simpler FIFO behavior.
 const memoryCache = new Map<string, { value: string; expires: number }>();
 const MAX_CACHE_SIZE = 500;
 
+/**
+ * Deterministic deep-stringify — sorts keys at every level so two payloads
+ * with the same content but different key order hash to the same string.
+ * Used as the input to cache-key generation.
+ *
+ * NOTE: the previous impl used JSON.stringify(value, sortedKeys) which
+ * collapsed nested objects to {} (replacer-array filters keys at *every*
+ * level, not just the top). That caused silent cache collisions across
+ * payloads that differed only in nested fields.
+ */
+export function deterministicStringify(value: unknown): string {
+  if (value === null || typeof value !== "object") return JSON.stringify(value) ?? "null";
+  if (Array.isArray(value)) {
+    return "[" + value.map(deterministicStringify).join(",") + "]";
+  }
+  const keys = Object.keys(value as Record<string, unknown>).sort();
+  return (
+    "{" +
+    keys
+      .map(
+        (k) =>
+          JSON.stringify(k) +
+          ":" +
+          deterministicStringify((value as Record<string, unknown>)[k])
+      )
+      .join(",") +
+    "}"
+  );
+}
+
 function generateCacheKey(agent: string, payload: unknown): string {
-  const sorted = JSON.stringify(payload, Object.keys(payload as Record<string, unknown>).sort());
-  // Simple hash
+  const sorted = deterministicStringify(payload);
+  // djb2-style hash — adequate for a 500-entry in-memory cache
   let hash = 0;
   for (let i = 0; i < sorted.length; i++) {
     const char = sorted.charCodeAt(i);
