@@ -18,6 +18,15 @@ const log = createLogger("stripe-webhook");
  * 4. Copy signing secret to .env.local: STRIPE_WEBHOOK_SECRET=whsec_...
  */
 
+/**
+ * Extract a Stripe resource ID from a field that may be `string | ExpandedObject | null`.
+ * Never use `.toString()` on Stripe objects — it returns "[object Object]".
+ */
+function stripeId<T extends { id: string }>(field: string | T | null | undefined): string | null {
+  if (!field) return null;
+  return typeof field === "string" ? field : field.id;
+}
+
 export async function POST(req: Request) {
   const stripeKey = process.env.STRIPE_SECRET_KEY;
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -47,20 +56,22 @@ export async function POST(req: Request) {
         const session = event.data.object as Stripe.Checkout.Session;
         const plan = session.metadata?.plan || "node";
         const userId = session.metadata?.userId;
+        const customerId = stripeId(session.customer);
+        const subscriptionId = stripeId(session.subscription);
         if (userId) {
           await db.insert(subscriptions).values({
             userId,
             plan,
             status: "active",
-            stripeCustomerId: typeof session.customer === "string" ? session.customer : session.customer?.toString() ?? null,
-            stripeSubscriptionId: typeof session.subscription === "string" ? session.subscription : null,
+            stripeCustomerId: customerId,
+            stripeSubscriptionId: subscriptionId,
           }).onConflictDoUpdate({
             target: subscriptions.userId,
             set: {
               plan,
               status: "active",
-              stripeCustomerId: typeof session.customer === "string" ? session.customer : null,
-              stripeSubscriptionId: typeof session.subscription === "string" ? session.subscription : null,
+              stripeCustomerId: customerId,
+              stripeSubscriptionId: subscriptionId,
               updatedAt: new Date(),
             },
           });
@@ -71,7 +82,7 @@ export async function POST(req: Request) {
 
       case "customer.subscription.updated": {
         const sub = event.data.object as Stripe.Subscription;
-        const stripeCustomerId = typeof sub.customer === "string" ? sub.customer : sub.customer?.toString();
+        const stripeCustomerId = stripeId(sub.customer);
         if (stripeCustomerId) {
           await db.update(subscriptions).set({
             status: sub.status === "active" ? "active" : sub.status === "past_due" ? "past_due" : "inactive",
@@ -84,7 +95,7 @@ export async function POST(req: Request) {
 
       case "customer.subscription.deleted": {
         const sub = event.data.object as Stripe.Subscription;
-        const stripeCustomerId = typeof sub.customer === "string" ? sub.customer : sub.customer?.toString();
+        const stripeCustomerId = stripeId(sub.customer);
         if (stripeCustomerId) {
           await db.update(subscriptions).set({
             status: "cancelled",
@@ -98,7 +109,7 @@ export async function POST(req: Request) {
 
       case "invoice.payment_failed": {
         const invoice = event.data.object as Stripe.Invoice;
-        const stripeCustomerId = typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.toString();
+        const stripeCustomerId = stripeId(invoice.customer);
         if (stripeCustomerId) {
           await db.update(subscriptions).set({
             status: "past_due",

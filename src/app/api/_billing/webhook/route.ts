@@ -8,6 +8,16 @@ import { createLogger } from "@/lib/logger";
 const log = createLogger("stripe-webhook");
 
 /**
+ * Extract a Stripe resource ID from a field that may be `string | ExpandedObject | null`.
+ * Never use `.toString()` on Stripe objects — it returns "[object Object]" and silently
+ * breaks DB queries. Also protects against accidentally adding `expand: [...]` later.
+ */
+function stripeId<T extends { id: string }>(field: string | T | null | undefined): string | null {
+  if (!field) return null;
+  return typeof field === "string" ? field : field.id;
+}
+
+/**
  * POST /api/billing/webhook
  * Handles incoming Stripe webhook events.
  *
@@ -46,8 +56,8 @@ export async function POST(request: Request) {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as {
-          customer: string;
-          subscription: string;
+          customer: string | { id: string } | null;
+          subscription: string | { id: string } | null;
           customer_email: string | null;
           metadata?: Record<string, string>;
           client_reference_id?: string | null;
@@ -55,6 +65,8 @@ export async function POST(request: Request) {
 
         const userId = session.client_reference_id || session.metadata?.userId || "";
         const plan = session.metadata?.plan || "node";
+        const customerId = stripeId(session.customer);
+        const subscriptionId = stripeId(session.subscription);
 
         // Upsert subscription
         const existing = userId
@@ -65,8 +77,8 @@ export async function POST(request: Request) {
           await db
             .update(subscriptions)
             .set({
-              stripeCustomerId: session.customer as string,
-              stripeSubscriptionId: session.subscription as string,
+              stripeCustomerId: customerId,
+              stripeSubscriptionId: subscriptionId,
               plan,
               status: "active",
               updatedAt: new Date(),
@@ -75,8 +87,8 @@ export async function POST(request: Request) {
         } else if (userId) {
           await db.insert(subscriptions).values({
             userId,
-            stripeCustomerId: session.customer as string,
-            stripeSubscriptionId: session.subscription as string,
+            stripeCustomerId: customerId,
+            stripeSubscriptionId: subscriptionId,
             plan,
             status: "active",
           });
@@ -93,8 +105,8 @@ export async function POST(request: Request) {
         await auditLog({
           userId: userId || "unknown",
           action: "subscription.change",
-          resource: session.subscription as string,
-          details: { event: "checkout.session.completed", plan, customerId: session.customer },
+          resource: subscriptionId || "unknown",
+          details: { event: "checkout.session.completed", plan, customerId },
         });
 
         break;
@@ -103,13 +115,14 @@ export async function POST(request: Request) {
       case "customer.subscription.updated": {
         const sub = event.data.object as {
           id: string;
-          customer: string;
+          customer: string | { id: string } | null;
           status: string;
           current_period_end: number;
           metadata?: Record<string, string>;
         };
 
         const plan = sub.metadata?.plan || "node";
+        const customerId = stripeId(sub.customer);
 
         await db
           .update(subscriptions)
@@ -122,7 +135,7 @@ export async function POST(request: Request) {
           .where(eq(subscriptions.stripeSubscriptionId, sub.id));
 
         await auditLog({
-          userId: sub.customer as string,
+          userId: customerId || "unknown",
           action: "subscription.change",
           resource: sub.id,
           details: { event: "customer.subscription.updated", plan, status: sub.status },
@@ -132,7 +145,8 @@ export async function POST(request: Request) {
       }
 
       case "customer.subscription.deleted": {
-        const sub = event.data.object as { id: string; customer: string };
+        const sub = event.data.object as { id: string; customer: string | { id: string } | null };
+        const customerId = stripeId(sub.customer);
 
         await db
           .update(subscriptions)
@@ -144,11 +158,13 @@ export async function POST(request: Request) {
           .where(eq(subscriptions.stripeSubscriptionId, sub.id));
 
         // Downgrade tenant to free
-        const subRow = await db
-          .select()
-          .from(subscriptions)
-          .where(eq(subscriptions.stripeCustomerId, sub.customer as string))
-          .limit(1);
+        const subRow = customerId
+          ? await db
+              .select()
+              .from(subscriptions)
+              .where(eq(subscriptions.stripeCustomerId, customerId))
+              .limit(1)
+          : [];
 
         if (subRow[0]?.userId) {
           await db
@@ -158,7 +174,7 @@ export async function POST(request: Request) {
         }
 
         await auditLog({
-          userId: subRow[0]?.userId || sub.customer as string,
+          userId: subRow[0]?.userId || customerId || "unknown",
           action: "subscription.change",
           resource: sub.id,
           details: { event: "customer.subscription.deleted", plan: "free", status: "canceled" },
