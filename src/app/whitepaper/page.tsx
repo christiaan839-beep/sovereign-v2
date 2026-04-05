@@ -81,7 +81,7 @@ export default function WhitepaperPage() {
             </div>
             <div>
               <p className="text-[10px] text-emerald-500/60 uppercase tracking-[0.3em] font-semibold">Whitepaper</p>
-              <p className="text-[10px] text-neutral-600">March 2026 — v1.0</p>
+              <p className="text-[10px] text-neutral-500">March 2026 — v1.0</p>
             </div>
           </div>
 
@@ -104,7 +104,7 @@ export default function WhitepaperPage() {
               className="p-3 rounded-xl border border-white/[0.06] bg-white/[0.02] text-center"
             >
               <div className="text-lg font-bold text-white">{m.value}</div>
-              <div className="text-[9px] text-neutral-600 uppercase tracking-widest">{m.label}</div>
+              <div className="text-[9px] text-neutral-500 uppercase tracking-widest">{m.label}</div>
             </motion.div>
           ))}
         </div>

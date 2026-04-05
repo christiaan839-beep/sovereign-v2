@@ -154,7 +154,7 @@ function ROICalculator() {
                 [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:rounded-full
                 [&::-moz-range-thumb]:bg-emerald-400 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
             />
-            <div className="flex justify-between text-[10px] text-neutral-600 mt-1">
+            <div className="flex justify-between text-[10px] text-neutral-500 mt-1">
               <span>1</span>
               <span>10</span>
             </div>
@@ -184,7 +184,7 @@ function ROICalculator() {
                 [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:rounded-full
                 [&::-moz-range-thumb]:bg-emerald-400 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
             />
-            <div className="flex justify-between text-[10px] text-neutral-600 mt-1">
+            <div className="flex justify-between text-[10px] text-neutral-500 mt-1">
               <span>R20K</span>
               <span>R80K</span>
             </div>
@@ -200,7 +200,7 @@ function ROICalculator() {
             <p className="text-2xl md:text-3xl font-bold text-red-400 font-mono">
               {formatRand(currentCost)}
             </p>
-            <p className="text-xs text-neutral-600 mt-1">/month</p>
+            <p className="text-xs text-neutral-500 mt-1">/month</p>
           </div>
 
           <div className="p-6 rounded-2xl bg-white/[0.03] border border-white/[0.06] text-center">
@@ -210,7 +210,7 @@ function ROICalculator() {
             <p className="text-2xl md:text-3xl font-bold text-emerald-400 font-mono">
               {formatRand(sovereignCost)}
             </p>
-            <p className="text-xs text-neutral-600 mt-1">/month</p>
+            <p className="text-xs text-neutral-500 mt-1">/month</p>
           </div>
 
           <div className="p-6 rounded-2xl bg-emerald-500/[0.06] border border-emerald-500/20 text-center">

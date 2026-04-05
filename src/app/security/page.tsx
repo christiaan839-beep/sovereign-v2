@@ -160,7 +160,7 @@ export default function SecurityPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8, duration: 0.5 }}
-          className="mt-16 pt-8 border-t border-white/10 text-xs text-neutral-600"
+          className="mt-16 pt-8 border-t border-white/10 text-xs text-neutral-500"
         >
           <p>
             Questions about security? Contact{" "}

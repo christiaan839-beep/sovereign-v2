@@ -140,7 +140,7 @@ export default function DeveloperPage() {
                     </div>
                     <p className="text-sm text-neutral-400">{ep.description}</p>
                   </div>
-                  <ArrowRight className="w-4 h-4 text-neutral-600 group-hover:text-emerald-400 transition-colors mt-1 shrink-0" />
+                  <ArrowRight className="w-4 h-4 text-neutral-500 group-hover:text-emerald-400 transition-colors mt-1 shrink-0" aria-hidden="true" />
                 </div>
               </motion.div>
             ))}

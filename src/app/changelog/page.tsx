@@ -69,7 +69,7 @@ export default function ChangelogPage() {
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                   </div>
 
-                  <span className="text-xs font-mono text-neutral-600 mb-2 block">{entry.date}</span>
+                  <span className="text-xs font-mono text-neutral-500 mb-2 block">{entry.date}</span>
                   <div className="px-5 py-4 rounded-xl border border-white/10 bg-white/[0.02] backdrop-blur-xl hover:border-emerald-500/20 transition-colors">
                     <div className="flex items-start justify-between gap-3 mb-2">
                       <div className="flex items-center gap-2.5">

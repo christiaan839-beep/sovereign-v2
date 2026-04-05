@@ -1027,9 +1027,9 @@ export default function Home() {
 
           <div className="mt-6 flex items-center justify-center gap-6 text-[10px] text-neutral-500">
             <span>Every agent execution is logged</span>
-            <span className="text-neutral-600">|</span>
+            <span className="text-neutral-500" aria-hidden="true">|</span>
             <span>Full audit trail for compliance</span>
-            <span className="text-neutral-600">|</span>
+            <span className="text-neutral-500" aria-hidden="true">|</span>
             <span>Real-time in the dashboard</span>
           </div>
         </div>

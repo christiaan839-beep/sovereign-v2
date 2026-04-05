@@ -105,7 +105,7 @@ export default function StatusPage() {
                   <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Resolved</span>
                 </div>
                 <p className="text-neutral-400 text-sm mb-1">{inc.description}</p>
-                <div className="flex items-center gap-4 text-xs text-neutral-600 font-mono">
+                <div className="flex items-center gap-4 text-xs text-neutral-500 font-mono">
                   <span>{inc.date}</span>
                   <span>Duration: {inc.duration}</span>
                 </div>

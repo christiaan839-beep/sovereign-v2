@@ -96,7 +96,7 @@ function UnsubscribeForm() {
               {status === "loading" ? "Processing..." : "Confirm Unsubscribe"}
             </button>
 
-            <p className="text-xs text-neutral-600 leading-relaxed">
+            <p className="text-xs text-neutral-500 leading-relaxed">
               This will remove you from marketing communications only.
               Transactional emails related to your account, billing, and
               security notifications will continue.

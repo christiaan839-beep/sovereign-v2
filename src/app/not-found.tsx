@@ -53,7 +53,7 @@ export default function NotFound() {
         </div>
       </motion.div>
 
-      <div className="absolute bottom-8 text-xs text-neutral-600">
+      <div className="absolute bottom-8 text-xs text-neutral-500">
         © 2026 SOVEREIGN. All rights reserved.
       </div>
     </div>

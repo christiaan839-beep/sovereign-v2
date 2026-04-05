@@ -70,7 +70,7 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
         </div>
 
         {error.digest && (
-          <p className="text-[10px] text-neutral-700 mt-8 font-mono">
+          <p className="text-[10px] text-neutral-500 mt-8 font-mono">
             Error ID: {error.digest}
           </p>
         )}

@@ -97,7 +97,7 @@ export default function SignupPage() {
             >
               Sign up at sovereignmatrix.agency
             </a>
-            <p className="text-xs text-neutral-600">
+            <p className="text-xs text-neutral-500">
               Already have an account?{" "}
               <Link href="/login" className="text-emerald-400 hover:text-emerald-300">Sign in</Link>
             </p>

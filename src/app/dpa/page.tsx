@@ -250,7 +250,7 @@ export default function DPAPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.7, duration: 0.5 }}
-          className="mt-16 pt-8 border-t border-white/10 text-xs text-neutral-600"
+          className="mt-16 pt-8 border-t border-white/10 text-xs text-neutral-500"
         >
           <p>
             <Link href="/privacy" className="text-neutral-500 hover:text-white transition-colors">

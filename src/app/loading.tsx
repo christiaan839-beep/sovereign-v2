@@ -13,7 +13,7 @@ export default function Loading() {
       </div>
       <div className="flex flex-col items-center gap-1">
         <span className="text-sm font-semibold text-white">Sovereign Matrix</span>
-        <span className="text-[10px] text-neutral-600 uppercase tracking-widest">Initializing agents</span>
+        <span className="text-[10px] text-neutral-500 uppercase tracking-widest">Initializing agents</span>
       </div>
     </div>
   );

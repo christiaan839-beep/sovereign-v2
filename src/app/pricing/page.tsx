@@ -105,7 +105,7 @@ function CellDisplay({ value }: { value: CellValue }) {
     return value ? (
       <CheckCircle2 className="w-5 h-5 text-emerald-400 mx-auto" />
     ) : (
-      <XIcon className="w-4 h-4 text-neutral-600 mx-auto" />
+      <XIcon className="w-4 h-4 text-neutral-500 mx-auto" aria-hidden="true" />
     );
   }
   return <span className="text-sm text-neutral-300">{value}</span>;
@@ -323,8 +323,8 @@ export default function PricingPage() {
               <p className="text-xs text-neutral-400 mb-6">{t.tagline}</p>
               <ul className="space-y-2 mb-6 flex-1">
                 {t.features.map((f, j) => (
-                  <li key={j} className={`flex items-center gap-2 text-sm ${f.included ? "text-neutral-300" : "text-neutral-600"}`}>
-                    {f.included ? <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> : <XIcon className="w-4 h-4 text-neutral-700 shrink-0" />}
+                  <li key={j} className={`flex items-center gap-2 text-sm ${f.included ? "text-neutral-300" : "text-neutral-500"}`}>
+                    {f.included ? <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" aria-hidden="true" /> : <XIcon className="w-4 h-4 text-neutral-500 shrink-0" aria-hidden="true" />}
                     {f.name}
                   </li>
                 ))}

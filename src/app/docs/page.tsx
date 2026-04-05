@@ -152,7 +152,7 @@ export default function DocsPage() {
                 <p className="text-neutral-400 text-xs uppercase tracking-widest">{ENDPOINTS.length} Endpoints · 129 Agents · 25 Playbooks · MCP + REST</p>
               </div>
             </div>
-            <Link href="/" className="text-xs text-neutral-600 hover:text-white transition-colors">← Back</Link>
+            <Link href="/" className="text-xs text-neutral-500 hover:text-white transition-colors">← Back</Link>
           </div>
         </header>
 
@@ -183,8 +183,8 @@ export default function DocsPage() {
                 <button onClick={() => setExpanded(isExpanded ? null : epKey)} className="w-full p-4 flex items-center gap-3 text-left hover:bg-neutral-900 transition-gpu">
                   <span className={`px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest ${ep.method === "GET" ? "bg-[#00ff66]/10 text-[#00ff66] border border-[#00ff66]/30" : "bg-[#10b981]/10 text-[#10b981] border border-[#10b981]/30"}`}>{ep.method}</span>
                   <code className="text-xs text-white flex-1">{ep.path}</code>
-                  <span className="text-[9px] text-neutral-600 uppercase tracking-widest hidden md:block">{ep.category}</span>
-                  <ChevronRight className={`w-4 h-4 text-neutral-600 transition-transform ${isExpanded ? "rotate-90" : ""}`} />
+                  <span className="text-[9px] text-neutral-500 uppercase tracking-widest hidden md:block">{ep.category}</span>
+                  <ChevronRight className={`w-4 h-4 text-neutral-500 transition-transform ${isExpanded ? "rotate-90" : ""}`} />
                 </button>
                 {isExpanded && (
                   <div className="border-t border-neutral-800 p-4 space-y-4 animate-in fade-in duration-200">
@@ -263,10 +263,10 @@ export default function DocsPage() {
                         <span className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest bg-violet-500/10 text-violet-400 border border-violet-500/30">{pb.agentCount} agents</span>
                         <div className="flex-1 min-w-0">
                           <code className="text-xs text-white">{pb.name}</code>
-                          <span className="text-[10px] text-neutral-600 ml-2 hidden md:inline">{pb.tagline}</span>
+                          <span className="text-[10px] text-neutral-500 ml-2 hidden md:inline">{pb.tagline}</span>
                         </div>
-                        <span className="text-[9px] text-neutral-600 uppercase tracking-widest hidden md:block">{pb.estimatedTime}</span>
-                        <ChevronRight className={`w-4 h-4 text-neutral-600 transition-transform ${isExpanded ? "rotate-90" : ""}`} />
+                        <span className="text-[9px] text-neutral-500 uppercase tracking-widest hidden md:block">{pb.estimatedTime}</span>
+                        <ChevronRight className={`w-4 h-4 text-neutral-500 transition-transform ${isExpanded ? "rotate-90" : ""}`} />
                       </button>
                       {isExpanded && (
                         <div className="border-t border-neutral-800 p-4 space-y-4 animate-in fade-in duration-200">
@@ -274,9 +274,9 @@ export default function DocsPage() {
                             <h4 className="text-sm font-bold mb-1">{pb.name}</h4>
                             <p className="text-xs text-neutral-400">{pb.tagline}</p>
                             <div className="flex gap-4 mt-2">
-                              <span className="text-[9px] text-neutral-600">ID: <code className="text-violet-400">{pb.id}</code></span>
-                              <span className="text-[9px] text-neutral-600">Agents: {pb.agentCount}</span>
-                              <span className="text-[9px] text-neutral-600">Time: {pb.estimatedTime}</span>
+                              <span className="text-[9px] text-neutral-500">ID: <code className="text-violet-400">{pb.id}</code></span>
+                              <span className="text-[9px] text-neutral-500">Agents: {pb.agentCount}</span>
+                              <span className="text-[9px] text-neutral-500">Time: {pb.estimatedTime}</span>
                             </div>
                           </div>
                           <div>
@@ -285,7 +285,7 @@ export default function DocsPage() {
                               {pb.fields.map(f => (
                                 <div key={f.key} className="flex gap-4 py-1 text-[11px]">
                                   <code className="text-violet-400 font-bold w-32">{f.key}</code>
-                                  <span className="text-neutral-600 w-16">{f.type}</span>
+                                  <span className="text-neutral-500 w-16">{f.type}</span>
                                   <span className="text-neutral-500">{f.label}{f.required ? "" : " (optional)"}</span>
                                 </div>
                               ))}
@@ -364,12 +364,12 @@ export default function DocsPage() {
                 {["Zapier", "Make", "n8n", "Custom HTTP"].map(tool => (
                   <div key={tool} className="bg-black/50 border border-neutral-800 rounded-lg p-2 text-center">
                     <p className="text-[10px] text-neutral-400">{tool}</p>
-                    <p className="text-[9px] text-neutral-600">Point webhook at POST /api/agents/trigger</p>
+                    <p className="text-[9px] text-neutral-500">Point webhook at POST /api/agents/trigger</p>
                   </div>
                 ))}
               </div>
             </div>
-            <p className="text-[10px] text-neutral-600">Every trigger execution is logged with a trigger ID, timestamp, mode, status, duration, and source IP. Last 500 entries retained.</p>
+            <p className="text-[10px] text-neutral-500">Every trigger execution is logged with a trigger ID, timestamp, mode, status, duration, and source IP. Last 500 entries retained.</p>
           </div>
         </div>
 
@@ -439,7 +439,7 @@ export default function DocsPage() {
             ].map(stat => (
               <div key={stat.label} className="bg-neutral-950 border border-neutral-800 rounded-lg p-4 text-center">
                 <p className="text-2xl font-black text-emerald-400">{stat.value}</p>
-                <p className="text-[9px] text-neutral-600 uppercase tracking-widest">{stat.label}</p>
+                <p className="text-[9px] text-neutral-500 uppercase tracking-widest">{stat.label}</p>
               </div>
             ))}
           </div>
