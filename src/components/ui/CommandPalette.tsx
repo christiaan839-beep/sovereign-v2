@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import {
   Search, Command, ArrowRight, Zap, Target, Shield, LayoutDashboard, Settings,
   Rocket, Palette, Factory, Cpu, Mic, ScanFace, Video, Swords, ShieldAlert,
@@ -90,6 +91,7 @@ export function CommandPalette() {
   const [result, setResult] = useState<string | null>(null);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const trapRef = useFocusTrap<HTMLDivElement>(isOpen);
   const router = useRouter();
 
   /* ═══════════ ALL NAVIGATION PAGES (grouped by category) ═══════════ */
@@ -485,6 +487,10 @@ export function CommandPalette() {
             onClick={() => { setIsOpen(false); setResult(null); }}
           />
           <motion.div
+            ref={trapRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Command palette"
             initial={{ opacity: 0, scale: 0.95, y: -20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}

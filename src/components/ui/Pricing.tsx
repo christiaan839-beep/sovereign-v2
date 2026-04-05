@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { CheckCircle2, X as XIcon, Zap, Crown, Server, ArrowRight, Shield, ShieldAlert, Loader2, Phone } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SovereignLogo } from "@/components/ui/SovereignLogo";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 
 export function Pricing() {
   const [notification, setNotification] = useState<{ message: string; type: "error" | "success" } | null>(null);
@@ -140,6 +141,15 @@ export function Pricing() {
   ];
 
   const [showModal, setShowModal] = useState(false);
+  const modalRef = useFocusTrap<HTMLDivElement>(showModal);
+
+  // Close modal on Escape
+  useEffect(() => {
+    if (!showModal) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setShowModal(false); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [showModal]);
   const [selectedPlan, _setSelectedPlan] = useState<string | null>(null);
   const [leadName, setLeadName] = useState("");
   const [leadPhone, setLeadPhone] = useState("");
@@ -342,7 +352,11 @@ export function Pricing() {
             className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
           >
-            <motion.div 
+            <motion.div
+              ref={modalRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="secure-uplink-title"
               className="bg-[#0A0A0A] border border-white/10 p-8 rounded-3xl w-full max-w-md relative shadow-[0_0_100px_rgba(0,183,255,0.1)]"
               initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }}
             >
@@ -355,7 +369,7 @@ export function Pricing() {
                   <ShieldAlert className="w-6 h-6 text-[#00B7FF]" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-white uppercase tracking-widest">Secure Uplink</h3>
+                  <h3 id="secure-uplink-title" className="text-xl font-bold text-white uppercase tracking-widest">Secure Uplink</h3>
                   <p className="text-xs text-[#00B7FF] uppercase tracking-widest">Hardware Binding Protocol</p>
                 </div>
               </div>

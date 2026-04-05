@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Play, Download, ChevronLeft, ChevronRight } from "lucide-react";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 
 interface Screen {
   id: string;
@@ -19,6 +20,15 @@ interface FlowExportProps {
 export function FlowExport({ open, onClose, screens }: FlowExportProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [playing, setPlaying] = useState(false);
+  const trapRef = useFocusTrap<HTMLDivElement>(open);
+
+  // Close on Escape
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
 
   const handleExport = () => {
     // Create a simple HTML file for each screen and trigger download
@@ -63,6 +73,10 @@ export function FlowExport({ open, onClose, screens }: FlowExportProps) {
         onClick={onClose}
       >
         <motion.div
+          ref={trapRef}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Flow preview"
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
@@ -86,7 +100,7 @@ export function FlowExport({ open, onClose, screens }: FlowExportProps) {
                 <Download className="w-3 h-3" />
                 Export All
               </button>
-              <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/[0.05] text-neutral-500 hover:text-white transition-colors">
+              <button onClick={onClose} aria-label="Close flow preview" className="p-1.5 rounded-lg hover:bg-white/[0.05] text-neutral-500 hover:text-white transition-colors">
                 <X className="w-4 h-4" />
               </button>
             </div>

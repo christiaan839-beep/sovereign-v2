@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ArrowRight, Sparkles } from "lucide-react";
 import Link from "next/link";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 
 const STORAGE_KEY = "sovereign_exit_intent_shown";
 
@@ -14,6 +15,17 @@ const STORAGE_KEY = "sovereign_exit_intent_shown";
  */
 export function ExitIntent() {
   const [visible, setVisible] = useState(false);
+  const trapRef = useFocusTrap<HTMLDivElement>(visible);
+
+  // Close on Escape key
+  useEffect(() => {
+    if (!visible) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setVisible(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [visible]);
 
   useEffect(() => {
     // Only show on desktop, only once per session
@@ -50,6 +62,10 @@ export function ExitIntent() {
         onClick={() => setVisible(false)}
       >
         <motion.div
+          ref={trapRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="exit-intent-title"
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
@@ -70,7 +86,7 @@ export function ExitIntent() {
               <span className="text-[10px] font-semibold uppercase tracking-widest text-emerald-400">Before you go</span>
             </div>
 
-            <h3 className="text-xl font-bold text-white mb-3">
+            <h3 id="exit-intent-title" className="text-xl font-bold text-white mb-3">
               See it work in 30 seconds
             </h3>
             <p className="text-sm text-neutral-400 mb-6 leading-relaxed">

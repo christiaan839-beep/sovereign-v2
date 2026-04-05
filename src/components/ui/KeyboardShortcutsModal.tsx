@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Keyboard } from "lucide-react";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 
 /* ─── Shortcut Data ─── */
 
@@ -53,6 +54,7 @@ const SHORTCUT_GROUPS: ShortcutGroup[] = [
 
 export function KeyboardShortcutsModal() {
   const [isOpen, setIsOpen] = useState(false);
+  const trapRef = useFocusTrap<HTMLDivElement>(isOpen);
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -102,6 +104,10 @@ export function KeyboardShortcutsModal() {
               onClick={() => setIsOpen(false)}
             />
             <motion.div
+              ref={trapRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="shortcuts-title"
               initial={{ opacity: 0, scale: 0.95, y: -10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
@@ -113,10 +119,11 @@ export function KeyboardShortcutsModal() {
                 <div className="flex items-center justify-between px-5 py-4 border-b border-white/5">
                   <div className="flex items-center gap-2.5">
                     <Keyboard className="w-4 h-4 text-[#00B7FF]" />
-                    <span className="text-sm font-semibold text-white">Keyboard Shortcuts</span>
+                    <span id="shortcuts-title" className="text-sm font-semibold text-white">Keyboard Shortcuts</span>
                   </div>
                   <button
                     onClick={() => setIsOpen(false)}
+                    aria-label="Close keyboard shortcuts"
                     className="p-1.5 rounded-lg text-neutral-500 hover:text-white hover:bg-white/5 transition-colors"
                   >
                     <X className="w-4 h-4" />

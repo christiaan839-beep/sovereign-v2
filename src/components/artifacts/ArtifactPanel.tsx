@@ -17,6 +17,7 @@ import {
   Clipboard,
 } from "lucide-react";
 import type { PreviewContent } from "@/components/chat/types";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 
 // ── Toast ──
 
@@ -52,6 +53,16 @@ function EmailModal({
   const [to, setTo] = useState("");
   const [subj, setSubj] = useState(subject);
   const [sending, setSending] = useState(false);
+  const trapRef = useFocusTrap<HTMLDivElement>(true);
+
+  // Close on Escape
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
 
   const handleSend = async () => {
     if (!to.trim()) return;
@@ -70,13 +81,17 @@ function EmailModal({
       onClick={onClose}
     >
       <motion.div
+        ref={trapRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="email-modal-title"
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
         className="bg-[#0c0c0c] border border-white/[0.08] rounded-2xl p-5 w-[380px] space-y-4 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 className="text-sm font-semibold text-neutral-200">Send via Email</h3>
+        <h3 id="email-modal-title" className="text-sm font-semibold text-neutral-200">Send via Email</h3>
         <div className="space-y-3">
           <div>
             <label className="text-[10px] uppercase tracking-widest text-neutral-500 mb-1 block">To</label>
