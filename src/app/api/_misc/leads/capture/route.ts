@@ -3,7 +3,11 @@ import { z } from "zod";
 import { db } from "@/db";
 import { leads } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
+import { rateLimit } from "@/lib/rate-limit";
 const log = createLogger("leads-capture");
+
+// Public endpoint: 5 submissions per minute per IP to prevent spam floods.
+const limiter = rateLimit({ interval: 60, limit: 5 });
 
 /**
  * LEAD CAPTURE — /api/leads/capture
@@ -26,6 +30,9 @@ const leadSchema = z.object({
 });
 
 export async function POST(req: Request) {
+  const limited = await limiter.check(req);
+  if (limited) return limited;
+
   try {
     const rawData = await req.json();
     const data = leadSchema.parse(rawData);

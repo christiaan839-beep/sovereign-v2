@@ -1,14 +1,22 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { generations } from "@/db/schema";
+import { rateLimit } from "@/lib/rate-limit";
 
 /**
  * TRANSACTIONAL EMAIL — Resend-compatible email sender.
  * Sends welcome emails, invoices, lead notifications, and drip sequences.
  * Free tier: 100 emails/day via Resend, or falls back to logged-only mode.
  * All sends are audit-logged to the database.
+ *
+ * Hard-capped at 10 sends/hour per IP to prevent spam relay abuse.
  */
+const limiter = rateLimit({ interval: 3600, limit: 10 });
+
 export async function POST(req: Request) {
+  const limited = await limiter.check(req);
+  if (limited) return limited;
+
   try {
     const { to, subject, html, text, template, data, body: bodyText } = await req.json();
 

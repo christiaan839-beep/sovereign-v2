@@ -1,39 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { research_ai } from "@/lib/ai";
+import { rateLimit } from "@/lib/rate-limit";
 
 /**
  * Demo Scan API — Public, no auth required.
  * Runs a real mini competitor analysis for landing page visitors.
- * Rate-limited to prevent abuse (simple in-memory counter).
+ * Rate-limited to prevent AI cost abuse (3 scans per IP per hour).
  */
-
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const MAX_REQUESTS = 3; // 3 scans per IP per hour
-const WINDOW_MS = 60 * 60 * 1000; // 1 hour
-
-function isRateLimited(ip: string): boolean {
-  const now = Date.now();
-  const entry = rateLimitMap.get(ip);
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + WINDOW_MS });
-    return false;
-  }
-  if (entry.count >= MAX_REQUESTS) return true;
-  entry.count++;
-  return false;
-}
+const limiter = rateLimit({ interval: 3600, limit: 3 });
 
 export async function POST(req: NextRequest) {
-  try {
-    const ip = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown";
-    
-    if (isRateLimited(ip)) {
-      return NextResponse.json(
-        { error: "Rate limited. Sign up for unlimited access.", limited: true },
-        { status: 429 }
-      );
-    }
+  const limited = await limiter.check(req);
+  if (limited) return limited;
 
+  try {
     const { url } = await req.json();
     
     if (!url || typeof url !== "string") {
