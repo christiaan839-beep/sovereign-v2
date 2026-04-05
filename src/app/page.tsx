@@ -541,14 +541,14 @@ export default function Home() {
                 {model.name}
               </motion.span>
             ))}
-            <span className="text-[10px] text-neutral-600 ml-1">+ 27 more</span>
+            <span className="text-[10px] text-neutral-500 ml-1">+ 27 more</span>
           </motion.div>
 
           {/* Trusted by — prominent, confident */}
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2, duration: 0.6 }}
             className="flex flex-col items-center gap-3">
             <span className="text-[10px] text-neutral-500 uppercase tracking-[0.25em]">Built on infrastructure from</span>
-            <div className="flex items-center gap-8">
+            <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 px-4">
               {["NVIDIA", "Google", "Anthropic", "Meta", "Mistral"].map((name) => (
                 <span key={name} className="text-sm font-semibold text-neutral-500 hover:text-neutral-300 transition-colors cursor-default">{name}</span>
               ))}
