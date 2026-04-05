@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, Suspense } from "react";
 import { motion, AnimatePresence, Reorder } from "framer-motion";
 import {
   Plus, Trash2, Play, Save, ArrowRight, GripVertical,
@@ -103,7 +103,7 @@ const MODE_CONFIG: Record<ExecutionMode, { label: string; icon: React.ComponentT
 
 // ─── Workflow Builder Page ───────────────────────────────────────
 
-export default function WorkflowBuilderPage() {
+function WorkflowBuilderInner() {
   const toast = useToast();
   const searchParams = useSearchParams();
 
@@ -1080,5 +1080,13 @@ export default function WorkflowBuilderPage() {
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+export default function WorkflowBuilderPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#030303] flex items-center justify-center text-neutral-500 text-sm">Loading workflow builder…</div>}>
+      <WorkflowBuilderInner />
+    </Suspense>
   );
 }
