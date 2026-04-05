@@ -15,6 +15,7 @@
  */
 
 import { NextResponse } from "next/server";
+import crypto from "crypto";
 
 interface RateLimitConfig {
   interval: number; // seconds
@@ -26,7 +27,12 @@ const stores = new Map<string, Map<string, number[]>>();
 
 function getClientId(req: Request): string {
   const apiKey = req.headers.get("x-api-key");
-  if (apiKey) return `key:${apiKey.slice(0, 8)}`;
+  if (apiKey) {
+    // Use a hash of the key as the rate-limit identifier, not the raw key
+    // (raw prefixes could leak into Redis logs or memory dumps)
+    const hash = crypto.createHash("sha256").update(apiKey).digest("hex").slice(0, 12);
+    return `key:${hash}`;
+  }
   const forwarded = req.headers.get("x-forwarded-for");
   return `ip:${forwarded?.split(",")[0]?.trim() || "unknown"}`;
 }

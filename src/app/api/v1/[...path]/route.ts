@@ -51,15 +51,20 @@ async function validateApiKey(rawKey: string): Promise<{ plan: string; userId: s
     if (!row) return null;
     if (row.revokedAt) return null;
     if (row.expiresAt && row.expiresAt < new Date()) return null;
-    // Update last used timestamp (best-effort)
-    db.update(apiKeys).set({ lastUsedAt: new Date() }).where(eq(apiKeys.id, row.id)).catch(() => {});
+    // Update last used timestamp (best-effort — log failures but don't block)
+    db.update(apiKeys).set({ lastUsedAt: new Date() }).where(eq(apiKeys.id, row.id)).catch((err) => {
+      log.warn("Failed to update lastUsedAt on API key", { keyId: row.id, error: (err as Error).message });
+    });
     return { plan: row.plan, userId: row.userId };
-  } catch {
+  } catch (err) {
     // DB unavailable — fall back to prefix convention for resilience
+    log.warn("API key DB validation failed, falling back to prefix convention", { error: (err as Error).message });
     let plan = "free";
     if (rawKey.startsWith("sk_pro_")) plan = "pro";
     else if (rawKey.startsWith("sk_ent_")) plan = "enterprise";
-    return { plan, userId: rawKey.slice(0, 20) };
+    // Use the key hash (not raw key) as a stable, non-sensitive identifier
+    const keyHash = crypto.createHash("sha256").update(rawKey).digest("hex").slice(0, 16);
+    return { plan, userId: `apikey_${keyHash}` };
   }
 }
 
@@ -162,17 +167,19 @@ async function handleRequest(
       data = await internalRes.text();
     }
 
-    // Log usage to database
+    // Log usage to database — use the authenticated userId from validation,
+    // NEVER the raw API key (keys are secrets; storing prefixes leaks entropy)
     try {
       const agentId = path.join("/");
       await db.insert(usage).values({
-        userId: apiKey.slice(0, 20), // Use truncated key as user identifier
+        userId: keyInfo?.userId || "unknown",
         agentId,
         model: (data as Record<string, unknown>)?.model as string || "unknown",
         tokensUsed: (data as Record<string, unknown>)?.tokensUsed as number || 0,
       });
-    } catch {
-      // Non-blocking: don't fail the request if usage logging fails
+    } catch (err) {
+      // Non-blocking: don't fail the request if usage logging fails, but log it
+      log.warn("Failed to log usage", { error: (err as Error).message });
     }
 
     return NextResponse.json(
