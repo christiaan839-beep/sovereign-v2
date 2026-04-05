@@ -1,6 +1,7 @@
 import { createAgentRoute } from "@/lib/agent-factory";
 import { smartAi } from "@/lib/ai";
 import { verifiedAi } from "@/lib/consensus";
+import { getBaseUrl } from "@/lib/base-url";
 
 /**
  * SUPER AGENT — The most powerful endpoint in Sovereign Matrix.
@@ -114,7 +115,7 @@ Agent params:
     }
 
     // ─── Phase 2: EXECUTE ───
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const baseUrl = getBaseUrl();
     const results: StepResult[] = [];
     let previousOutput = "";
     const stepOutputs: Record<string, string> = {};

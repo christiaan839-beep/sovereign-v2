@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import { getNimKey } from "@/lib/nvidia";
 import { NextResponse } from "next/server";
 import { createLogger } from "@/lib/logger";
+import { getBaseUrl } from "@/lib/base-url";
 
 const log = createLogger("agentic-planner");
 
@@ -79,7 +80,7 @@ Output a JSON array of steps. Each step must have: {"tool": "tool_name", "params
     // Step 2: Optionally auto-execute the plan
     const results = [];
     if (auto_execute && Array.isArray(executionPlan)) {
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+      const baseUrl = getBaseUrl();
 
       for (const step of executionPlan.slice(0, 5)) {
         try {

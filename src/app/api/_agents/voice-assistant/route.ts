@@ -2,6 +2,7 @@ import { createAgentRoute } from "@/lib/agent-factory";
 import { nimChat } from "@/lib/nvidia";
 import { routeIntent } from "@/lib/intent-router";
 import { getSystemPrompt } from "@/lib/system-prompts";
+import { getBaseUrl } from "@/lib/base-url";
 
 /**
  * SOVEREIGN VOICE ASSISTANT — Human-sounding AI voice interface.
@@ -30,7 +31,7 @@ export const POST = createAgentRoute({
     let agentResult: unknown = null;
     if (intent.confidence > 0.7 && intent.endpoint !== "/api/ai/stream") {
       try {
-        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+        const baseUrl = getBaseUrl();
         const res = await fetch(`${baseUrl}${intent.endpoint}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },

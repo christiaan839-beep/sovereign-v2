@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { sendOnboardingEmail } from "@/lib/onboarding-emails";
+import { getBaseUrl } from "@/lib/base-url";
 
 function escapeHtml(str: string): string {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -35,7 +36,7 @@ export async function POST(request: Request) {
     const onboardingSteps: Array<{ step: string; status: string; detail: string }> = [];
 
     // Step 1: Deploy vertical template
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+    const baseUrl = getBaseUrl();
 
     try {
       const verticalRes = await fetch(`${baseUrl}/api/agents/verticals`, {

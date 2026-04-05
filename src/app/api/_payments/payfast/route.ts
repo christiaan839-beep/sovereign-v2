@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
+import { getBaseUrl } from "@/lib/base-url";
 
 /**
  * PAYFAST PAYMENT GATEWAY — South African payment processing.
@@ -59,7 +60,7 @@ export async function POST(request: Request) {
       });
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+    const baseUrl = getBaseUrl();
 
     // Build PayFast payment data
     const paymentData: Record<string, string> = {

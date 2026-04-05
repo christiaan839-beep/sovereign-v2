@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getBaseUrl } from "@/lib/base-url";
 
 /**
  * SMOKE TEST API — Runs quick health checks against critical agent endpoints.
@@ -19,7 +20,7 @@ interface TestResult {
 }
 
 export async function GET() {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+  const baseUrl = getBaseUrl();
   const results: TestResult[] = [];
 
   const tests = [

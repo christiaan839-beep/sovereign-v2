@@ -1,5 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
+import { getBaseUrl } from "@/lib/base-url";
 
 /**
  * AGENT-TO-AGENT COMMUNICATION BUS — Allows deployed agents to 
@@ -76,7 +77,7 @@ export async function POST(request: Request) {
 
       const endpoint = agentEndpoints[to];
       if (endpoint) {
-        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+        const baseUrl = getBaseUrl();
         const res = await fetch(`${baseUrl}${endpoint}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },

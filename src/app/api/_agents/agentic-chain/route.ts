@@ -1,6 +1,7 @@
 import { createAgentRoute } from "@/lib/agent-factory";
 import { nimChat, nimToolCall } from "@/lib/nvidia";
 import { getAntiSlopRules } from "@/lib/system-prompts";
+import { getBaseUrl } from "@/lib/base-url";
 
 /**
  * AGENTIC CHAIN — Multi-step autonomous agent with tool calling.
@@ -133,7 +134,7 @@ Decide the next step. If the goal is already achieved, call the "done" tool.`;
       }
 
       try {
-        const toolRes = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}${tool.endpoint}`, {
+        const toolRes = await fetch(`${getBaseUrl()}${tool.endpoint}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ [tool.paramKey]: plan.input }),

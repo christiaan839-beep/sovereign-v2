@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { subscriptions } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { createLogger } from "@/lib/logger";
+import { getBaseUrl } from "@/lib/base-url";
 const log = createLogger("billing-portal");
 
 /**
@@ -33,7 +34,7 @@ export async function POST() {
       );
     }
 
-    const origin = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const origin = getBaseUrl();
     const url = await createPortalSession(sub.stripeCustomerId, `${origin}/dashboard/billing`);
 
     if (!url) {

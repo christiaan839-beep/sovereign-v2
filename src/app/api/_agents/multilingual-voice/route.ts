@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 
 import { NextResponse } from "next/server";
+import { getBaseUrl } from "@/lib/base-url";
 
 /**
  * MULTILINGUAL VOICE PIPELINE — Chain translation + voice synthesis
@@ -21,7 +22,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "text and target_lang required." }, { status: 400 });
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+    const baseUrl = getBaseUrl();
     const start = Date.now();
 
     // Step 1: Translate

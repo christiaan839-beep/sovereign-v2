@@ -5,6 +5,7 @@ import { payments, tenants } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { createLogger } from "@/lib/logger";
 import crypto from "crypto";
+import { getBaseUrl } from "@/lib/base-url";
 
 const log = createLogger("payfast-webhook");
 
@@ -148,7 +149,7 @@ export async function POST(req: Request) {
       }
 
       // 3. Trigger auto-onboard (best effort)
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+      const baseUrl = getBaseUrl();
       try {
         await fetch(`${baseUrl}/api/_agents/auto-onboard`, {
           method: "POST",

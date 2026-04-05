@@ -1,4 +1,5 @@
 import { persistAppend } from "@/lib/persist";
+import { getBaseUrl } from "@/lib/base-url";
 
 /**
  * PAYFAST ITN (Instant Transaction Notification) — Webhook callback
@@ -38,7 +39,7 @@ export async function POST(request: Request) {
       const planId = planMatch?.[1] || "node";
 
       // Trigger auto-onboard
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+      const baseUrl = getBaseUrl();
 
       try {
         await fetch(`${baseUrl}/api/agents/auto-onboard`, {

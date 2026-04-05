@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { createCheckoutSession } from "@/lib/stripe";
 import { createLogger } from "@/lib/logger";
+import { getBaseUrl } from "@/lib/base-url";
 const log = createLogger("billing-checkout");
 
 /**
@@ -42,7 +43,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const origin = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const origin = getBaseUrl();
 
     const url = await createCheckoutSession({
       priceId,

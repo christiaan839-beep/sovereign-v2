@@ -1,5 +1,6 @@
 import { createAgentRoute } from "@/lib/agent-factory";
 import { createLogger } from "@/lib/logger";
+import { getBaseUrl } from "@/lib/base-url";
 
 const log = createLogger("workflow-engine");
 
@@ -69,7 +70,7 @@ export const POST = createAgentRoute({
       return { error: "Workflow limited to 20 nodes maximum." };
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const baseUrl = getBaseUrl();
     const results: Record<string, { output: unknown; durationMs: number; status: "success" | "error" }> = {};
     const completed = new Set<string>();
     const startTime = Date.now();

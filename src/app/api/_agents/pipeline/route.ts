@@ -1,5 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
+import { getBaseUrl } from "@/lib/base-url";
 
 /**
  * MULTI-MODAL PIPELINE — Chain agents across modalities in sequence.
@@ -83,7 +84,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: `Pipeline '${pipelineId}' not found.`, available: PIPELINES.map(p => p.id) }, { status: 404 });
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+    const baseUrl = getBaseUrl();
     const results: Array<{ step: string; agent: string; status: string; duration_ms: number; output: unknown }> = [];
     const prevResults: Record<string, unknown>[] = [];
 

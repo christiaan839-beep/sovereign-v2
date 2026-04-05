@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getPlaybook } from "@/lib/playbooks";
 import { createLogger } from "@/lib/logger";
+import { getBaseUrl } from "@/lib/base-url";
 
 /**
  * SOVEREIGN MATRIX — Webhook Trigger Engine
@@ -204,7 +205,7 @@ async function handlePlaybookTrigger(
 
   // Call the coordinator to execute the playbook
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const baseUrl = getBaseUrl();
     const coordinatorRes = await fetch(`${baseUrl}/api/agents/coordinator`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -342,7 +343,7 @@ async function handleAgentTrigger(
   }
 
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const baseUrl = getBaseUrl();
 
     // Build the request body — pass all fields except api_key and agent
     const agentBody: Record<string, unknown> = { prompt, confirmed: true };

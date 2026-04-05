@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { nimChat } from "@/lib/nvidia";
+import { getBaseUrl } from "@/lib/base-url";
 
 /**
  * NEMOCLAW AUTO-HEAL — Self-healing backbone.
@@ -63,7 +64,7 @@ Only output valid JSON, nothing else.`,
       }
 
       // Step 2: Attempt self-heal by retrying with adjusted parameters
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+      const baseUrl = getBaseUrl();
       let healed = false;
       let healResult = null;
 

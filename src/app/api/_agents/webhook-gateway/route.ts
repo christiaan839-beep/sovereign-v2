@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getBaseUrl } from "@/lib/base-url";
 
 /**
  * WEBHOOK GATEWAY — External trigger point for Zapier, Make, n8n,
@@ -55,7 +56,7 @@ export async function POST(request: Request) {
       }, { status: 404 });
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+    const baseUrl = getBaseUrl();
 
     const startTime = Date.now();
     const res = await fetch(`${baseUrl}${endpoint}`, {

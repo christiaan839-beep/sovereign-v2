@@ -1,6 +1,7 @@
 import { createAgentRoute } from "@/lib/agent-factory";
 import { nimChat } from "@/lib/nvidia";
 import { getPlaybook, resolvePlaybookSteps } from "@/lib/playbooks";
+import { getBaseUrl } from "@/lib/base-url";
 
 /**
  * GOAL COORDINATOR — Plan and execute multi-agent pipelines from plain English.
@@ -188,7 +189,7 @@ export const POST = createAgentRoute({
     }
 
     // ─── Execute the plan ───
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const baseUrl = getBaseUrl();
     const results: StepResult[] = [];
     let previousOutput = "";
     const stepOutputs: Record<string, string> = {};

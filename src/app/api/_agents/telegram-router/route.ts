@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { createLogger } from "@/lib/logger";
+import { getBaseUrl } from "@/lib/base-url";
 const log = createLogger("telegram-router");
 
 /**
@@ -138,7 +139,7 @@ export async function POST(request: Request) {
 
     await sendReply(`⏳ Processing via *${command.replace("/", "").toUpperCase()}* agent...`);
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+    const baseUrl = getBaseUrl();
 
     const agentRes = await fetch(`${baseUrl}${route.endpoint}`, {
       method: "POST",

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { persistAppend } from "@/lib/persist";
 import crypto from "crypto";
 import { createLogger } from "@/lib/logger";
+import { getBaseUrl } from "@/lib/base-url";
 
 const log = createLogger("paystack-webhook");
 
@@ -34,7 +35,7 @@ export async function POST(req: Request) {
       timestamp: new Date().toISOString(),
     }, 500);
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+    const baseUrl = getBaseUrl();
 
     switch (event.event) {
       case "charge.success": {
