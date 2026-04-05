@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { initializeYoco, PLANS, PlanId } from "@/lib/payments";
 import { createLogger } from "@/lib/logger";
+import { getPublicUrl } from "@/lib/base-url";
 
 const log = createLogger("yoco-checkout");
 
@@ -21,8 +22,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL
-      || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://sovereignmatrix.agency");
+    const baseUrl = getPublicUrl();
 
     const result = await initializeYoco(plan as PlanId, email, baseUrl);
 

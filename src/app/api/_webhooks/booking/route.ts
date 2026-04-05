@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createLogger } from "@/lib/logger";
+import { getPublicUrl } from "@/lib/base-url";
 const log = createLogger("booking-webhook");
 
 /**
@@ -45,7 +46,7 @@ export async function POST(req: Request) {
             to: email,
             subject: `Your call with Sovereign Matrix is confirmed`,
             template: "welcome",
-            data: { name, dashboardUrl: process.env.NEXT_PUBLIC_APP_URL || "https://sovereign.ai" },
+            data: { name, dashboardUrl: getPublicUrl() },
           }),
         });
       } catch (e) {

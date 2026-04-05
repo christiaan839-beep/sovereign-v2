@@ -1,9 +1,10 @@
 import { createLogger } from "@/lib/logger";
 import { sendEmail } from "@/lib/email";
+import { getPublicUrl } from "@/lib/base-url";
 
 const log = createLogger("onboarding-emails");
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://sovereignmatrix.agency";
+const BASE_URL = getPublicUrl();
 const FROM_EMAIL = "Sovereign Matrix <noreply@sovereignmatrix.agency>";
 
 // ── Email Template Wrapper ──

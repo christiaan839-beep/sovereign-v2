@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { persistAppend } from "@/lib/persist";
+import { getPublicUrl } from "@/lib/base-url";
 
 /**
  * YOCO PAYMENT GATEWAY — South African card + QR payment processing.
@@ -50,7 +51,7 @@ export async function POST(req: Request) {
     }
 
     const planData = PLANS[plan];
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://sovereignmatrix.agency";
+    const baseUrl = getPublicUrl();
 
     // Create Yoco checkout session
     const res = await fetch("https://payments.yoco.com/api/checkouts", {

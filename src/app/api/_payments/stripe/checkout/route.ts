@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { auth } from "@clerk/nextjs/server";
+import { getPublicUrl } from "@/lib/base-url";
 
 /**
  * STRIPE CHECKOUT — Creates a Stripe Checkout session for plan upgrades.
@@ -42,7 +43,7 @@ export async function POST(req: Request) {
     }
 
     const { userId } = await auth();
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://sovereignmatrix.agency";
+    const appUrl = getPublicUrl();
 
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",

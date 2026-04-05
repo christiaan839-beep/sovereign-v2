@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
+import { getPublicUrl } from "@/lib/base-url";
 
 /**
  * STRIPE CUSTOMER PORTAL — Lets users manage their subscription.
@@ -19,7 +20,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Customer ID required" }, { status: 400 });
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://sovereignmatrix.agency";
+  const appUrl = getPublicUrl();
 
   const session = await stripe.billingPortal.sessions.create({
     customer: customerId,
