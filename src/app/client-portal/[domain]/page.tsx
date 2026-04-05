@@ -34,8 +34,9 @@ export default function ClientPortal({ params }: { params: { domain: string } })
         </header>
 
         {/* ROI Metrics - Fast and Immediate */}
+        <h2 className="sr-only">Key metrics</h2>
         <div className="grid lg:grid-cols-4 md:grid-cols-2 gap-4">
-          {[ 
+          {[
             { label: "Human Labor Displaced", val: "$15,500/mo", icon: DollarSign, color: "emerald" },
             { label: "Leads Intercepted", val: "142", icon: Target, color: "blue" },
             { label: "Active Ghost Nodes", val: "24/7", icon: Activity, color: "purple" },
@@ -44,7 +45,7 @@ export default function ClientPortal({ params }: { params: { domain: string } })
             <div key={i} className="bg-white/[0.02] border border-white/5 rounded-2xl p-6 relative overflow-hidden group hover:border-white/10 transition-colors">
               <metric.icon className={`w-5 h-5 mb-4 text-${metric.color}-400 opacity-50`} />
               <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-500 mb-1">{metric.label}</p>
-              <h3 className="text-3xl font-mono font-bold text-white tracking-tight">{metric.val}</h3>
+              <p className="text-3xl font-mono font-bold text-white tracking-tight">{metric.val}</p>
               <div className={`absolute -bottom-12 -right-12 w-32 h-32 bg-${metric.color}-500/10 blur-[40px] rounded-full group-hover:bg-${metric.color}-500/20 transition-colors`} />
             </div>
           ))}
@@ -65,7 +66,7 @@ export default function ClientPortal({ params }: { params: { domain: string } })
             <div className="flex-1 flex flex-col items-center justify-center text-center p-6 border border-emerald-500/20 bg-emerald-500/5 rounded-2xl">
                <TrendingUp className="w-12 h-12 text-emerald-400 mb-4 opacity-80" />
                <p className="text-xs text-emerald-500/70 uppercase tracking-widest font-bold mb-2">Net Retainer Offset</p>
-               <h4 className="text-4xl font-mono font-bold text-emerald-400">+92.4%</h4>
+               <p className="text-4xl font-mono font-bold text-emerald-400">+92.4%</p>
                <p className="text-[10px] text-neutral-500 mt-4 leading-relaxed max-w-[200px]">The Sovereign Matrix is currently performing the exact workload of a 6-person agency.</p>
             </div>
           </div>

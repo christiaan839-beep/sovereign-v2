@@ -45,6 +45,7 @@ export default function ClientPortalPage() {
 
       {/* Features */}
       <div className="max-w-5xl mx-auto px-6 pb-32">
+        <h2 className="sr-only">Client portal features</h2>
         <div className="grid md:grid-cols-2 gap-6">
           {features.map((f, i) => (
             <motion.div

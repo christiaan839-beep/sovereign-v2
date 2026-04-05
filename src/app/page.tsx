@@ -1319,7 +1319,7 @@ export default function Home() {
               <p className="text-xs text-neutral-400 leading-relaxed">The autonomous AI agent platform. 130+ agents. 65+ models. Flat pricing, no usage fees. Built on NVIDIA NIM.</p>
             </div>
             <div>
-              <h4 className="text-xs font-semibold text-neutral-400 mb-4">Product</h4>
+              <h3 className="text-xs font-semibold text-neutral-400 mb-4">Product</h3>
               <ul className="space-y-2.5">
                 <li><Link href="/pricing" className="text-xs text-neutral-500 hover:text-white transition-colors">Pricing</Link></li>
                 <li><Link href="/playground" className="text-xs text-neutral-500 hover:text-white transition-colors">API Playground</Link></li>
@@ -1328,7 +1328,7 @@ export default function Home() {
               </ul>
             </div>
             <div>
-              <h4 className="text-xs font-semibold text-neutral-400 mb-4">Resources</h4>
+              <h3 className="text-xs font-semibold text-neutral-400 mb-4">Resources</h3>
               <ul className="space-y-2.5">
                 <li><Link href="/whitepaper" className="text-xs text-neutral-500 hover:text-white transition-colors">Whitepaper</Link></li>
                 <li><Link href="/changelog" className="text-xs text-neutral-500 hover:text-white transition-colors">Changelog</Link></li>
@@ -1337,7 +1337,7 @@ export default function Home() {
               </ul>
             </div>
             <div>
-              <h4 className="text-xs font-semibold text-neutral-400 mb-4">Legal & Trust</h4>
+              <h3 className="text-xs font-semibold text-neutral-400 mb-4">Legal &amp; Trust</h3>
               <ul className="space-y-2.5">
                 <li><Link href="/privacy" className="text-xs text-neutral-500 hover:text-white transition-colors">Privacy Policy</Link></li>
                 <li><Link href="/terms" className="text-xs text-neutral-500 hover:text-white transition-colors">Terms of Service</Link></li>
@@ -1347,7 +1347,7 @@ export default function Home() {
               </ul>
             </div>
             <div>
-              <h4 className="text-xs font-semibold text-neutral-400 mb-4">Contact</h4>
+              <h3 className="text-xs font-semibold text-neutral-400 mb-4">Contact</h3>
               <ul className="space-y-2.5">
                 <li><a href="mailto:christiaan@sovereignmatrix.agency" className="text-xs text-neutral-500 hover:text-white transition-colors">christiaan@sovereignmatrix.agency</a></li>
                 <li><span className="text-xs text-neutral-500">Cape Town, South Africa</span></li>

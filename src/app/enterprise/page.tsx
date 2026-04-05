@@ -107,6 +107,7 @@ export default function EnterprisePage() {
         </motion.p>
 
         {/* Benefits Grid */}
+        <h2 className="sr-only">Enterprise benefits</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-20">
           {BENEFITS.map((benefit, i) => {
             const Icon = benefit.icon;
