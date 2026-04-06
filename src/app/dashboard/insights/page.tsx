@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
-  Brain, TrendingUp, Zap, Clock, CheckCircle, XCircle,
+  Brain, TrendingUp, Zap, Clock, CheckCircle,
   BarChart3, Activity, Sparkles, RefreshCw, ArrowUpRight,
 } from "lucide-react";
 import Link from "next/link";
@@ -86,7 +86,8 @@ export default function InsightsPage() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { fetchData(); }, []);
 
   const executions = data?.usage?.executions;
   const topAgents = data?.usage?.topAgents || [];

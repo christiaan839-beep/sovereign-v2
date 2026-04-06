@@ -71,7 +71,8 @@ export default function ResultsLibraryPage() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { fetchActivities(); }, [fetchActivities]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { fetchActivities(); }, []);
 
   // Get unique agent names for filter
   const agentNames = [...new Set(activities.map(a => a.agentName))].sort();
