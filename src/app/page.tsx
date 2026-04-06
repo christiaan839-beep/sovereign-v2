@@ -23,6 +23,8 @@ import { Typewriter, GradientFollower, Tilt3D, AnimatedCounter } from "@/compone
 import { LiveTicker } from "@/components/cinematic/LiveTicker";
 import { LogoMarquee } from "@/components/cinematic/InfiniteMarquee";
 import { ExitIntent } from "@/components/ui/ExitIntent";
+import { CursorGlow } from "@/components/ui/CursorGlow";
+import { LivePulse } from "@/components/ui/LivePulse";
 import dynamic from "next/dynamic";
 import { InteractiveHeroStrike } from "@/components/ui/InteractiveHeroStrike";
 import { useLiveAgentCount } from "@/hooks/useLiveAgentCount";
@@ -1608,6 +1610,12 @@ export default function Home() {
           </div>
         </div>
       </footer>
+
+      {/* Cursor glow — follows mouse with emerald light */}
+      <CursorGlow />
+
+      {/* Live pulse — shows platform activity in real-time */}
+      <LivePulse />
 
       {/* Floating conversational AI agent */}
       <LandingAgent />
