@@ -132,8 +132,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   name: "Sovereign Matrix",
                   applicationCategory: "BusinessApplication",
                   operatingSystem: "Web",
-                  offers: { "@type": "Offer", price: "0", priceCurrency: "ZAR" },
-                  description: "Autonomous AI agent platform. 130+ agents, 65+ open-source models, zero per-token cost. Built on NVIDIA NIM and NemoClaw.",
+                  offers: [
+                    { "@type": "Offer", name: "Free", price: "0", priceCurrency: "USD" },
+                    { "@type": "Offer", name: "Starter", price: "19", priceCurrency: "USD" },
+                    { "@type": "Offer", name: "Array", price: "49", priceCurrency: "USD" },
+                    { "@type": "Offer", name: "Node", price: "199", priceCurrency: "USD" },
+                    { "@type": "Offer", name: "Enterprise", price: "499", priceCurrency: "USD" },
+                  ],
+                  description: "Autonomous AI agent platform with 129 specialized agents, 35+ open-source models, and zero per-token cost. Built on NVIDIA NIM. Features: smart routing, adversarial synthesis, knowledge graph memory, 15-layer safety pipeline.",
+                  featureList: "AI Agents, Multi-Model Routing, White-Label, Knowledge Graph, PEER Loop, Adversarial Synthesis, Citation Tracking, Policy Engine, Budget Controls",
                 },
                 {
                   "@context": "https://schema.org",
@@ -156,7 +163,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     {
                       "@type": "Question",
                       name: "How much does Sovereign Matrix cost?",
-                      acceptedAnswer: { "@type": "Answer", text: "Sovereign Matrix offers a free tier with 3 agents and 50 tasks per month. Paid plans start at R9,997/mo (Sovereign Node), R24,997/mo (Sovereign Array with voice agents), and R49,997/mo (Enterprise License with white-label). Month-to-month, no contracts." },
+                      acceptedAnswer: { "@type": "Answer", text: "Sovereign Matrix offers a free tier with 50 runs/month. Paid plans: Starter at $19/mo (200 runs), Array at $49/mo (500 runs), Node at $199/mo (2,000 runs), and Enterprise at $499/mo (10,000 runs with white-label). Month-to-month, no contracts." },
                     },
                     {
                       "@type": "Question",
