@@ -75,6 +75,12 @@ const MODEL_REGISTRY: ModelProfile[] = [
   { id: "qwen/qwen3-asr", name: "Qwen3-ASR", strengths: ["transcription", "speech-to-text", "voice-input"], avg_speed_ms: 1000, quality_score: 10, cost_tier: "free" },
   { id: "nvidia/nemotron-speech-streaming", name: "Nemotron-Speech-Streaming", strengths: ["voice", "real-time-transcription", "streaming-asr"], avg_speed_ms: 500, quality_score: 9, cost_tier: "free" },
   { id: "moonshotai/kimi-k2.5", name: "Kimi K2.5", strengths: ["vision", "multimodal", "code-generation", "reasoning", "math", "image-understanding", "video-understanding", "agentic-coding"], avg_speed_ms: 3000, quality_score: 10, cost_tier: "free" },
+  // ─── Cerebras (Wafer-Scale Engine — 2000+ tok/s) ───
+  { id: "cerebras/llama-4-scout-17b-16e-instruct", name: "Llama 4 Scout (Cerebras)", strengths: ["fast-chat", "classification", "routing", "instruction-following", "email", "summarization", "chat"], avg_speed_ms: 150, quality_score: 8, cost_tier: "free" },
+  { id: "cerebras/llama3.3-70b", name: "Llama 3.3 70B (Cerebras)", strengths: ["reasoning", "analysis", "writing", "code", "strategy", "deep-reasoning"], avg_speed_ms: 500, quality_score: 9, cost_tier: "free" },
+  // ─── Google Gemini (Native API — grounding + vision) ───
+  { id: "google/gemini-2.5-pro", name: "Gemini 2.5 Pro", strengths: ["reasoning", "analysis", "research", "vision", "long-context", "grounding", "web-search", "multimodal", "strategy"], avg_speed_ms: 3000, quality_score: 10, cost_tier: "low" },
+  { id: "google/gemini-2.5-flash", name: "Gemini 2.5 Flash", strengths: ["fast-reasoning", "chat", "writing", "analysis", "vision", "multimodal", "instruction-following"], avg_speed_ms: 1000, quality_score: 9, cost_tier: "free" },
 ];
 
 const TASK_CATEGORY_MAP: Record<string, string[]> = {
@@ -99,6 +105,8 @@ const TASK_CATEGORY_MAP: Record<string, string[]> = {
   "fast-chat": ["fast-chat", "instruction-following", "edge-reasoning"],
   "math": ["math", "reasoning", "logic", "analysis"],
   "video-understanding": ["video-understanding", "multimodal", "vision", "image-understanding"],
+  "classification": ["classification", "routing", "fast-chat", "instruction-following"],
+  "web-research": ["grounding", "web-search", "research", "reasoning", "long-context"],
 };
 
 function findBestModel(taskType: string, priority: "speed" | "quality" = "quality"): ModelProfile & { score: number; dataEnhanced: boolean } {

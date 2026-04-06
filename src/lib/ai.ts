@@ -19,6 +19,7 @@ const globalGeminiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.
 const globalAnthropicKey = process.env.ANTHROPIC_API_KEY || "";
 const globalGroqKey = process.env.GROQ_API_KEY || "";
 const globalTavilyKey = process.env.TAVILY_API_KEY || "tvly-demo";
+const globalCerebrasKey = process.env.CEREBRAS_API_KEY || "";
 
 async function getUserKeys(): Promise<{ gemini?: string, tavily?: string, anthropic?: string, ollama?: string, nvidia?: string, groq?: string }> {
   try {
@@ -58,7 +59,7 @@ const globalGenAI = new GoogleGenerativeAI(globalGeminiKey);
  */
 export async function ai(prompt: string, options: AIOptions = {}): Promise<string> {
   const { model = "gemini", system, maxTokens = 2000, thinking, useOpus, useGeminiPro } = options;
-  
+
   const userKeys = await getUserKeys();
 
   // 1. Local execution (cost: $0)
@@ -66,27 +67,32 @@ export async function ai(prompt: string, options: AIOptions = {}): Promise<strin
     return ollamaText(prompt, system, userKeys.ollama);
   }
 
-  // 2. NVIDIA NIM open-source models (cost: $0)
+  // 2. Cerebras — ultra-fast inference (2000+ tok/s). Use for classification and routing.
+  if (model === "cerebras") {
+    return cerebrasText(prompt, system, maxTokens);
+  }
+
+  // 3. NVIDIA NIM open-source models (cost: $0)
   if (model === "nim" || (userKeys.nvidia && model !== "claude" && model !== "gemini")) {
     return nimText(prompt, system, maxTokens);
   }
 
-  // 3. Claude (BYOK only) - Opus or Sonnet
+  // 4. Claude (BYOK only) - Opus or Sonnet
   if (model === "claude" || (userKeys.anthropic && !userKeys.gemini && !userKeys.groq)) {
     return claudeText(prompt, system, maxTokens, userKeys, thinking, useOpus);
   }
 
-  // 4. Mistral Large 2 (EU Compliance / Open Weights via NIM)
+  // 5. Mistral Large 2 (EU Compliance / Open Weights via NIM)
   if (model === "mistral") {
     return mistralText(prompt, system, maxTokens);
   }
 
-  // 5. Groq (DeepSeek-R1, Qwen 2.5 Coder, Llama 3.1)
+  // 6. Groq (DeepSeek-R1, Qwen 2.5 Coder, Llama 3.1)
   if (model === "groq" || model === "deepseek" || model === "qwen" || (userKeys.groq && !userKeys.gemini)) {
     return groqText(prompt, system, maxTokens, userKeys, model);
   }
 
-  // 5. Gemini (default) → fallback to NIM → fallback to Groq
+  // 7. Gemini (default) → fallback to NIM → fallback to Groq
   try {
     return await geminiText(prompt, system, maxTokens, userKeys, useGeminiPro);
   } catch (geminiErr) {
@@ -416,6 +422,47 @@ async function groqText(prompt: string, system?: string, maxTokens: number = 200
 
     return completion.choices[0]?.message?.content || "";
   }, { maxRetries: 2, label: "Groq" }));
+}
+
+/**
+ * Cerebras — Wafer-Scale Engine inference.
+ * 2,000+ tokens/sec on 70B models. Use for fast classification, routing, and short-form generation.
+ * Free tier: https://inference.cerebras.ai
+ */
+async function cerebrasText(prompt: string, system?: string, maxTokens: number = 2000): Promise<string> {
+  const apiKey = globalCerebrasKey;
+  if (!apiKey) {
+    // Graceful fallback to Groq if no Cerebras key
+    return groqText(prompt, system, maxTokens, {}, "groq");
+  }
+
+  const messages = [
+    ...(system ? [{ role: "system", content: system }] : []),
+    { role: "user", content: prompt },
+  ];
+
+  const res = await fetch("https://api.cerebras.ai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: "llama-4-scout-17b-16e-instruct",
+      messages,
+      max_tokens: maxTokens,
+      temperature: 0.4,
+    }),
+    signal: AbortSignal.timeout(15000),
+  });
+
+  if (!res.ok) {
+    const err = await res.text().catch(() => res.statusText);
+    throw new Error(`Cerebras error ${res.status}: ${err}`);
+  }
+
+  const data = await res.json();
+  return data.choices?.[0]?.message?.content || "";
 }
 
 /**
