@@ -47,6 +47,7 @@ vi.mock("@/lib/free-tier", () => ({
   checkFreeUsage: vi.fn().mockResolvedValue({ allowed: true, remaining: 99 }),
   incrementUsage: vi.fn().mockResolvedValue(undefined),
   getUpgradePrompt: vi.fn().mockReturnValue("Upgrade now!"),
+  getUserTier: vi.fn().mockResolvedValue("enterprise"),
   getSmartUpgradeInfo: vi.fn().mockResolvedValue({
     currentPlan: "free",
     currentLimit: 50,
@@ -57,6 +58,23 @@ vi.mock("@/lib/free-tier", () => ({
     upgradeUrl: "/pricing",
     resetDate: "2026-05-01",
   }),
+}));
+
+vi.mock("@/lib/paywall", () => ({
+  checkAgentAccess: vi.fn().mockReturnValue({ allowed: true, reason: "", requiredPlan: null, upgradeUrl: "" }),
+}));
+
+vi.mock("@/lib/policy-engine", () => ({
+  evaluatePolicy: vi.fn().mockReturnValue({ allowed: true, effect: "allow", policyId: null, ruleName: null, reason: "", requiresApproval: false }),
+}));
+
+vi.mock("@/lib/budget-controls", () => ({
+  checkBudget: vi.fn().mockReturnValue({ allowed: true, reason: "", dailyPercent: 0, monthlyPercent: 0 }),
+  recordSpend: vi.fn(),
+}));
+
+vi.mock("@/lib/agent-replay", () => ({
+  startReplay: vi.fn().mockReturnValue({ id: "test", addStep: vi.fn(), complete: vi.fn(), fail: vi.fn() }),
 }));
 
 vi.mock("@/lib/quality-scorer", () => ({

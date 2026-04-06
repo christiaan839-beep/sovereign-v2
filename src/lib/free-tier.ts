@@ -81,7 +81,7 @@ function getLimitForTier(tier: TierType): number {
 /**
  * Get user's subscription tier from DB (cached for 5 minutes).
  */
-async function getUserTier(userId: string): Promise<TierType> {
+export async function getUserTier(userId: string): Promise<TierType> {
   const cached = tierCache.get(userId);
   if (cached && Date.now() - cached.cachedAt < TIER_CACHE_TTL) {
     return cached.tier;

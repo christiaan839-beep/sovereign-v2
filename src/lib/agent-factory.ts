@@ -41,6 +41,7 @@ import { notifyAgentComplete } from "@/lib/notify";
 import { evaluatePolicy } from "@/lib/policy-engine";
 import { checkBudget, recordSpend } from "@/lib/budget-controls";
 import { startReplay, type ReplayBuilder } from "@/lib/agent-replay";
+import { checkAgentAccess } from "@/lib/paywall";
 import type { ZodObject, ZodRawShape } from "zod";
 
 const log = createLogger("agent-factory");
@@ -300,6 +301,20 @@ export function createAgentRoute(config: AgentConfig) {
           { error: `Agent "${config.name}" is temporarily unavailable due to repeated failures. Please try again shortly.` },
           { status: 503 }
         );
+      }
+
+      // ─── Paywall Gate (lock agents behind plan tiers) ───
+      if (userId && !config.public) {
+        // Get user's plan from the free-tier module (cached)
+        const { getUserTier } = await import("@/lib/free-tier");
+        const userTier = await getUserTier(userId);
+        const access = checkAgentAccess(config.name, userTier);
+        if (!access.allowed) {
+          return NextResponse.json(
+            { error: access.reason, requiredPlan: access.requiredPlan, upgradeUrl: access.upgradeUrl },
+            { status: 403 }
+          );
+        }
       }
 
       // ─── Start Replay Recording ───
