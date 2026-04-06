@@ -113,31 +113,84 @@ export function getModelPerformance(modelId: string): ModelStats | null {
 }
 
 /**
- * Get the best model for a task type based on historical performance.
+ * Thompson Sampling — RL-based model selection.
+ *
+ * Instead of always picking the "best" model (exploitation), Thompson Sampling
+ * balances exploration vs exploitation by sampling from each model's Beta distribution.
+ *
+ * This means:
+ * - Models with high success rates are picked more often (exploitation)
+ * - Models with few executions get occasional chances (exploration)
+ * - Over time, the system converges on the optimal model per task type
+ *
+ * This is how Google Ads and Netflix select content — proven at scale.
+ */
+function thompsonSample(successes: number, failures: number): number {
+  // Beta distribution sampling approximation
+  // Using the Jitter method: Beta(a, b) ≈ Gamma(a) / (Gamma(a) + Gamma(b))
+  const a = successes + 1; // +1 prior (uniform)
+  const b = failures + 1;
+
+  // Box-Muller approximation for Gamma sampling
+  function gammaSample(shape: number): number {
+    if (shape < 1) return gammaSample(shape + 1) * Math.pow(Math.random(), 1 / shape);
+    const d = shape - 1 / 3;
+    const c = 1 / Math.sqrt(9 * d);
+    let x: number, v: number;
+    do {
+      do {
+        x = normalSample();
+        v = 1 + c * x;
+      } while (v <= 0);
+      v = v * v * v;
+    } while (Math.log(Math.random()) >= 0.5 * x * x + d - d * v + d * Math.log(v));
+    return d * v;
+  }
+
+  function normalSample(): number {
+    const u1 = Math.random();
+    const u2 = Math.random();
+    return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+  }
+
+  const ga = gammaSample(a);
+  const gb = gammaSample(b);
+  return ga / (ga + gb);
+}
+
+/**
+ * Get the best model for a task type using Thompson Sampling (RL).
+ * Balances exploration (trying new models) and exploitation (using proven ones).
  * Returns null if insufficient data (falls back to static routing).
  */
 export function getBestModelFor(taskType: string): string | null {
   const taskScores = taskModelScores.get(taskType);
-  if (!taskScores || taskScores.size < 3) return null; // Need at least 3 models with data
+  if (!taskScores || taskScores.size < 3) return null;
 
   let bestModel = "";
-  let bestScore = -1;
+  let bestSample = -1;
 
-  for (const [modelId, score] of taskScores) {
-    // Also factor in recent performance
+  for (const [modelId] of taskScores) {
     const perf = getModelPerformance(modelId);
-    if (!perf || perf.executions < 5) continue; // Need at least 5 executions
+    if (!perf) continue;
 
-    // Combined: 60% task affinity + 40% overall performance
-    const combined = score * 0.6 + perf.compositeScore * 0.4;
-    if (combined > bestScore) {
-      bestScore = combined;
+    // Thompson Sampling: sample from Beta(successes+1, failures+1)
+    const successes = Math.round(perf.successRate * perf.executions);
+    const failures = perf.executions - successes;
+    const sample = thompsonSample(successes, failures);
+
+    // Boost by quality if available
+    const qualityBoost = perf.avgQuality !== null ? perf.avgQuality * 0.3 : 0;
+    const finalSample = sample * 0.7 + qualityBoost;
+
+    if (finalSample > bestSample) {
+      bestSample = finalSample;
       bestModel = modelId;
     }
   }
 
   if (!bestModel) return null;
-  log.info(`Model selection for ${taskType}: ${bestModel} (score: ${bestScore.toFixed(2)})`);
+  log.info(`Thompson sampling for ${taskType}: ${bestModel} (sample: ${bestSample.toFixed(3)})`);
   return bestModel;
 }
 
