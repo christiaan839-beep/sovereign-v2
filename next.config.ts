@@ -1,8 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // NOTE: "standalone" removed — incompatible with Vercel serverless deployment.
-  // Only needed for Docker/self-hosted. Vercel auto-splits into lambdas.
+  // Standalone output for Docker/Railway — Vercel injects VERCEL=1 automatically
+  // so this activates only for self-hosted deployments.
+  output: process.env.VERCEL ? undefined : "standalone",
 
   // Allow build to proceed despite strict TS on dynamic icon components
   typescript: { ignoreBuildErrors: true },
