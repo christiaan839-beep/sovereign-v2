@@ -1291,6 +1291,135 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ═══ COMPETITOR COMPARISON MATRIX ═══ */}
+      <GlowDivider />
+      <section className="py-24 px-6 perf-section">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-14">
+            <RevealText as="p" className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">The Comparison</RevealText>
+            <RevealText as="h2" delay={0.1} className="text-3xl md:text-5xl font-bold text-white tracking-tight mb-4">How we stack up.</RevealText>
+            <RevealText as="p" delay={0.2} className="text-neutral-400 max-w-lg mx-auto">
+              Not hype. Real capabilities side by side.
+            </RevealText>
+          </div>
+
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+            className="rounded-2xl border border-white/[0.08] bg-white/[0.02] overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-white/[0.06] bg-white/[0.02]">
+                    <th className="text-left px-5 py-4 text-xs font-medium text-neutral-500 uppercase tracking-wider">Capability</th>
+                    <th className="px-4 py-4 text-xs font-bold text-emerald-400 uppercase tracking-wider text-center">Sovereign</th>
+                    <th className="px-4 py-4 text-xs font-medium text-neutral-500 uppercase tracking-wider text-center">ChatGPT</th>
+                    <th className="px-4 py-4 text-xs font-medium text-neutral-500 uppercase tracking-wider text-center">n8n</th>
+                    <th className="px-4 py-4 text-xs font-medium text-neutral-500 uppercase tracking-wider text-center">Manus</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/[0.04]">
+                  {[
+                    { cap: "Autonomous agents", sov: true, gpt: false, n8n: false, man: true },
+                    { cap: "Multi-model routing (35+)", sov: true, gpt: false, n8n: false, man: false },
+                    { cap: "Visual workflow builder", sov: true, gpt: false, n8n: true, man: false },
+                    { cap: "White-label / reseller", sov: true, gpt: false, n8n: false, man: false },
+                    { cap: "Self-healing PEER loop", sov: true, gpt: false, n8n: false, man: false },
+                    { cap: "Adversarial synthesis (3-agent debate)", sov: true, gpt: false, n8n: false, man: false },
+                    { cap: "Real-time citations with sources", sov: true, gpt: false, n8n: false, man: false },
+                    { cap: "Knowledge graph memory", sov: true, gpt: false, n8n: false, man: false },
+                    { cap: "Policy engine + budget controls", sov: true, gpt: false, n8n: false, man: false },
+                    { cap: "Human-in-the-loop approvals", sov: true, gpt: false, n8n: true, man: false },
+                    { cap: "$0 per-token (open-source models)", sov: true, gpt: false, n8n: false, man: false },
+                    { cap: "Local / air-gapped execution", sov: true, gpt: false, n8n: true, man: false },
+                  ].map((row, i) => (
+                    <tr key={i} className="hover:bg-white/[0.02] transition-colors">
+                      <td className="px-5 py-3 text-neutral-300 text-xs">{row.cap}</td>
+                      <td className="px-4 py-3 text-center">{row.sov ? <CheckCircle2 className="w-4 h-4 text-emerald-400 mx-auto" /> : <XCircle className="w-4 h-4 text-neutral-600 mx-auto" />}</td>
+                      <td className="px-4 py-3 text-center">{row.gpt ? <CheckCircle2 className="w-4 h-4 text-neutral-400 mx-auto" /> : <XCircle className="w-4 h-4 text-neutral-600 mx-auto" />}</td>
+                      <td className="px-4 py-3 text-center">{row.n8n ? <CheckCircle2 className="w-4 h-4 text-neutral-400 mx-auto" /> : <XCircle className="w-4 h-4 text-neutral-600 mx-auto" />}</td>
+                      <td className="px-4 py-3 text-center">{row.man ? <CheckCircle2 className="w-4 h-4 text-neutral-400 mx-auto" /> : <XCircle className="w-4 h-4 text-neutral-600 mx-auto" />}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="px-5 py-3 border-t border-white/[0.04] text-center">
+              <span className="text-[10px] text-neutral-600">Based on publicly available feature lists as of April 2026</span>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ═══ PLATFORM NUMBERS — Real stats ═══ */}
+      <section className="py-16 px-6 bg-[#020202]">
+        <div className="max-w-5xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {[
+              { number: "129", label: "Specialized Agents", sub: "Not wrappers — purpose-built" },
+              { number: "912", label: "Automated Tests", sub: "Production-grade reliability" },
+              { number: "15", label: "Integration Connectors", sub: "HubSpot, Salesforce, Slack, more" },
+              { number: "$0", label: "Per-Token Cost", sub: "35+ open-source models via NVIDIA NIM" },
+            ].map((stat, i) => (
+              <motion.div key={i} initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.08 }}
+                className="text-center p-5 rounded-xl border border-white/[0.04] bg-white/[0.01]"
+              >
+                <div className="text-3xl md:text-4xl font-black text-white tracking-tight mb-1">
+                  <CountUpOnView target={parseInt(stat.number) || 0} prefix={stat.number.startsWith("$") ? "$" : ""} />
+                </div>
+                <div className="text-xs font-semibold text-neutral-300 mb-0.5">{stat.label}</div>
+                <div className="text-[10px] text-neutral-600">{stat.sub}</div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ HOW IT WORKS — 3-step visual ═══ */}
+      <GlowDivider />
+      <section className="py-24 px-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-14">
+            <RevealText as="p" className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">3 Steps</RevealText>
+            <RevealText as="h2" delay={0.1} className="text-3xl md:text-5xl font-bold text-white tracking-tight">Describe it. Deploy it. Done.</RevealText>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              {
+                step: "01",
+                title: "Describe your goal",
+                desc: "Type what you need in plain English. \"Find 50 SaaS leads in Austin and draft outreach emails.\"",
+                color: "emerald",
+              },
+              {
+                step: "02",
+                title: "Agents plan & execute",
+                desc: "The smart router picks the best models. Agents research, draft, quality-check, and refine — autonomously.",
+                color: "cyan",
+              },
+              {
+                step: "03",
+                title: "Review & deploy",
+                desc: "Get verified results with source citations. Approve, schedule, or export to your tools.",
+                color: "violet",
+              },
+            ].map((s, i) => (
+              <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.12 }}
+                className="relative"
+              >
+                <div className={`text-6xl font-black text-${s.color}-500/10 mb-4`}>{s.step}</div>
+                <h3 className="text-lg font-bold text-white mb-2">{s.title}</h3>
+                <p className="text-sm text-neutral-400 leading-relaxed">{s.desc}</p>
+                {i < 2 && (
+                  <div className="hidden md:block absolute top-8 -right-4 text-neutral-700">
+                    <ArrowRight className="w-6 h-6" />
+                  </div>
+                )}
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ═══ AGENCY SPOTLIGHT ═══ */}
       <GlowDivider />
       <section className="py-24 px-6 bg-[#030303] perf-section">
