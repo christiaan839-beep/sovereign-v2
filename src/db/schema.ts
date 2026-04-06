@@ -532,3 +532,30 @@ export const referrals = pgTable("referrals", {
   index("idx_referrals_affiliate").on(table.affiliateId),
 ]);
 
+// ═══════════════════════════════════════════
+// Async Job Queue
+// Fire-and-forget agent execution — user submits a goal,
+// gets a job ID back immediately, result arrives via Telegram.
+// ═══════════════════════════════════════════
+
+export const jobs = pgTable("jobs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull(),
+  goal: text("goal").notNull(),
+  status: text("status").notNull().default("pending"), // pending | running | done | failed
+  progress: integer("progress").default(0), // 0–100
+  result: text("result"), // JSON stringified result
+  error: text("error"),
+  agentsUsed: text("agents_used"), // JSON array of agent names
+  notifyTelegram: boolean("notify_telegram").default(false),
+  telegramChatId: text("telegram_chat_id"),
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+  durationMs: integer("duration_ms"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_jobs_user").on(table.userId),
+  index("idx_jobs_status").on(table.status),
+  index("idx_jobs_created").on(table.createdAt),
+]);
+

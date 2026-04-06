@@ -10,6 +10,10 @@
   },
   "crons": [
     {
+      "path": "/api/cron/job-runner",
+      "schedule": "* * * * *"
+    },
+    {
       "path": "/api/cron/weekly-report",
       "schedule": "0 8 * * 1"
     },

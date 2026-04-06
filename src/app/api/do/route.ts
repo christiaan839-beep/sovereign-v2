@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { ai } from "@/lib/ai";
+import { db } from "@/db";
+import { jobs } from "@/db/schema";
+import { executeGoal } from "@/lib/goal-executor";
+import { sendTelegram, formatJobStarted } from "@/lib/telegram";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("do-api");
@@ -11,11 +14,9 @@ const log = createLogger("do-api");
  * POST /api/do
  * Body: { "goal": "Find SaaS leads in London and draft outreach emails" }
  *
- * That's it. One endpoint. One field. Plain English.
- * The system figures out which agents to use, runs them, and returns results.
- *
- * This is the "just do it" endpoint — the fastest path from idea to result.
- * No agent selection. No field mapping. No configuration.
+ * Optional: { "async": true }
+ * → Returns immediately with a job ID instead of waiting for the result.
+ *   Agent runs in the background; result arrives via Telegram.
  *
  * Behind the scenes:
  * 1. Smart router classifies the goal
@@ -23,13 +24,14 @@ const log = createLogger("do-api");
  * 3. Agents execute in sequence (or parallel via swarm)
  * 4. Results returned with citations and metadata
  */
-
 export async function POST(req: Request) {
   try {
     const { userId } = await auth();
     if (!userId) return NextResponse.json({ error: "Sign in to use /api/do" }, { status: 401 });
 
-    const { goal } = await req.json();
+    const body = await req.json();
+    const { goal, async: runAsync } = body;
+
     if (!goal || typeof goal !== "string" || goal.trim().length < 5) {
       return NextResponse.json({
         error: "Tell me what you need",
@@ -37,88 +39,53 @@ export async function POST(req: Request) {
       }, { status: 400 });
     }
 
-    const start = Date.now();
+    // ── Async mode ────────────────────────────────────────────────────────────
+    // Return a job ID immediately — the cron runner picks it up within 30s–1min.
+    if (runAsync) {
+      const chatId = process.env.TELEGRAM_ADMIN_CHAT_ID || process.env.TELEGRAM_CHAT_ID || "";
+      const hasTelegram = !!process.env.TELEGRAM_BOT_TOKEN && !!chatId;
 
-    // Step 1: Classify — is this a single-agent or multi-agent task?
-    const classification = await ai(
-      `Classify this goal into ONE category and pick the best agent(s).
+      const [job] = await db
+        .insert(jobs)
+        .values({
+          userId,
+          goal: goal.trim(),
+          status: "pending",
+          notifyTelegram: hasTelegram,
+          telegramChatId: chatId || null,
+        })
+        .returning();
 
-GOAL: "${goal}"
+      if (hasTelegram) {
+        sendTelegram(chatId, formatJobStarted(goal.trim(), job.id)).catch(() => {});
+      }
 
-Available agents and what they do:
-- leads: Find B2B prospects by niche/location
-- blog-gen: Write SEO blog posts
-- seo-dominator: SEO audit for any domain
-- email-sequence: Draft email outreach sequences
-- competitor-scan: Analyze competitor weaknesses
-- brand-voice: Learn/generate in a brand's voice
-- proposal-generator: Create business proposals
-- organic-content: Social media content calendar
-- creative-director: Ad copy and campaigns
-- translate: Translate text to any language
-- omni-search: Research any topic
-- deep-search: Deep web research with synthesis
+      log.info("async job queued", { jobId: job.id, userId });
 
-Respond ONLY with JSON:
-{"agents": ["leads"], "params": {"niche": "SaaS", "location": "Austin"}, "multi": false}
-
-For multi-step goals, set multi: true and list agents in order.`,
-      { system: "You are a task classifier. Pick the minimum agents needed. Output ONLY JSON.", maxTokens: 300 }
-    );
-
-    let plan;
-    try {
-      plan = JSON.parse(classification.replace(/```json?\n?/g, "").replace(/```/g, "").trim());
-    } catch {
-      // Fallback: use smart-router for unknown goals
-      plan = { agents: ["omni-search"], params: { query: goal }, multi: false };
+      return NextResponse.json({
+        jobId: job.id,
+        status: "pending",
+        goal: job.goal,
+        pollUrl: `/api/jobs/${job.id}`,
+        message: hasTelegram
+          ? "Job queued. You'll get a Telegram notification when it's done."
+          : "Job queued. Poll pollUrl for status.",
+      }, { status: 202 });
     }
 
-    // Step 2: Execute
+    // ── Synchronous mode (default) ────────────────────────────────────────────
     const baseUrl = req.headers.get("x-forwarded-proto") === "https"
       ? `https://${req.headers.get("host")}`
       : `http://${req.headers.get("host") || "localhost:3000"}`;
 
-    if (!plan.multi || plan.agents.length === 1) {
-      // Single agent — fast path
-      const agent = plan.agents[0];
-      const res = await fetch(`${baseUrl}/api/agents/${agent}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "X-Sovereign-Internal": "do-api" },
-        body: JSON.stringify({ ...plan.params, prompt: goal, confirmed: true }),
-        signal: AbortSignal.timeout(45000),
-      });
-
-      const data = await res.json();
-
-      return NextResponse.json({
-        goal,
-        agent,
-        result: data,
-        durationMs: Date.now() - start,
-        tip: "Want to run this weekly? Use /api/do with schedule: 'weekly'",
-      });
-    }
-
-    // Multi-agent — use coordinator
-    const coordRes = await fetch(`${baseUrl}/api/agents/coordinator`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Sovereign-Internal": "do-api" },
-      body: JSON.stringify({
-        goal,
-        auto_execute: true,
-        confirmed: true,
-      }),
-      signal: AbortSignal.timeout(120000),
-    });
-
-    const coordData = await coordRes.json();
+    const execution = await executeGoal(goal.trim(), baseUrl, userId);
 
     return NextResponse.json({
       goal,
-      agents: plan.agents,
-      result: coordData,
-      durationMs: Date.now() - start,
+      agent: execution.agent,
+      result: execution.result,
+      durationMs: execution.durationMs,
+      tip: "Want to run this in the background? Add \"async\": true to your request.",
     });
   } catch (err) {
     log.error("/api/do error", { error: String(err) });
@@ -133,13 +100,19 @@ export async function GET() {
     description: "The simplest API. One goal, one result.",
     usage: {
       method: "POST",
-      body: { goal: "string — describe what you need in plain English" },
-      example: { goal: "Find 10 SaaS leads in London and draft cold emails" },
+      body: {
+        goal: "string — describe what you need in plain English",
+        async: "boolean (optional) — run in background, get result via Telegram",
+      },
+      examples: [
+        { goal: "Find 10 SaaS leads in London and draft cold emails" },
+        { goal: "Audit SEO for stripe.com", async: true },
+      ],
     },
     tips: [
       "Be specific: 'Find dental clinics in Cape Town' > 'Find leads'",
+      "Add async: true for long-running tasks — result arrives on Telegram",
       "Chain tasks: 'Audit SEO for stripe.com and write 3 blog posts targeting their keyword gaps'",
-      "The system auto-picks the best agent(s) for your goal",
     ],
   });
 }
