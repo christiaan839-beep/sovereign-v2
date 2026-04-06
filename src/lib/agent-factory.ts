@@ -303,46 +303,62 @@ export function createAgentRoute(config: AgentConfig) {
         );
       }
 
-      // ─── Paywall Gate (lock agents behind plan tiers) ───
+      // ─── Pre-execution governance (each layer is independently fault-tolerant) ───
+
+      // Paywall: blocks if plan doesn't include this agent
       if (userId && !config.public) {
-        // Get user's plan from the free-tier module (cached)
-        const { getUserTier } = await import("@/lib/free-tier");
-        const userTier = await getUserTier(userId);
-        const access = checkAgentAccess(config.name, userTier);
-        if (!access.allowed) {
-          return NextResponse.json(
-            { error: access.reason, requiredPlan: access.requiredPlan, upgradeUrl: access.upgradeUrl },
-            { status: 403 }
-          );
+        try {
+          const { getUserTier } = await import("@/lib/free-tier");
+          const userTier = await getUserTier(userId);
+          const access = checkAgentAccess(config.name, userTier);
+          if (!access.allowed) {
+            return NextResponse.json(
+              { error: access.reason, requiredPlan: access.requiredPlan, upgradeUrl: access.upgradeUrl },
+              { status: 403 }
+            );
+          }
+        } catch (paywallErr) {
+          log.warn("Paywall check failed — allowing execution", { agent: config.name, error: String(paywallErr) });
+          // Fail-open: if paywall check crashes, allow execution (better than blocking everyone)
         }
       }
 
-      // ─── Start Replay Recording ───
-      if (userId) {
-        replay = startReplay(config.name, userId);
-        replay.addStep("input_received", { fields: Object.keys(body), inputSize: JSON.stringify(body).length });
-      }
+      // Replay: records execution steps (non-blocking — never prevents execution)
+      try {
+        if (userId) {
+          replay = startReplay(config.name, userId);
+          replay.addStep("input_received", { fields: Object.keys(body), inputSize: JSON.stringify(body).length });
+        }
+      } catch { /* replay failure must never block agent execution */ }
 
-      // ─── Policy Engine Check ───
+      // Policy: blocks if rules deny this action
       if (userId) {
-        const policyResult = evaluatePolicy(config.name, "agent.execute", { userId, role: "member" });
-        if (!policyResult.allowed) {
-          log.warn("Policy denied agent execution", { agent: config.name, policy: policyResult.policyId, reason: policyResult.reason });
-          return NextResponse.json(
-            { error: policyResult.reason || "Action denied by policy" },
-            { status: 403 }
-          );
+        try {
+          const policyResult = evaluatePolicy(config.name, "agent.execute", { userId, role: "member" });
+          if (!policyResult.allowed) {
+            log.warn("Policy denied agent execution", { agent: config.name, policy: policyResult.policyId, reason: policyResult.reason });
+            return NextResponse.json(
+              { error: policyResult.reason || "Action denied by policy" },
+              { status: 403 }
+            );
+          }
+        } catch (policyErr) {
+          log.warn("Policy check failed — allowing execution", { agent: config.name, error: String(policyErr) });
         }
       }
 
-      // ─── Budget Check ───
+      // Budget: blocks if spend limits exceeded
       if (userId) {
-        const budgetResult = checkBudget(userId);
-        if (!budgetResult.allowed) {
-          return NextResponse.json(
-            { error: budgetResult.reason || "Budget limit exceeded", dailyPercent: budgetResult.dailyPercent, monthlyPercent: budgetResult.monthlyPercent },
-            { status: 429 }
-          );
+        try {
+          const budgetResult = checkBudget(userId);
+          if (!budgetResult.allowed) {
+            return NextResponse.json(
+              { error: budgetResult.reason || "Budget limit exceeded", dailyPercent: budgetResult.dailyPercent, monthlyPercent: budgetResult.monthlyPercent },
+              { status: 429 }
+            );
+          }
+        } catch (budgetErr) {
+          log.warn("Budget check failed — allowing execution", { agent: config.name, error: String(budgetErr) });
         }
       }
 
@@ -525,32 +541,9 @@ export function createAgentRoute(config: AgentConfig) {
         // ─── Notify user (Slack + email if configured) ───
         notifyAgentComplete(userId, config.name, outputSummary, email || undefined).catch(() => {});
 
-        // ─── Auto-learn: Extract relationships for knowledge graph ───
-        import("@/lib/graph/relationship-extractor")
-          .then(({ extractFromAgentExecution }) => {
-            const inputText = getFirstStringValue(sanitized)?.slice(0, 500) || "";
-            extractFromAgentExecution(config.name, inputText, outputSummary, durationMs)
-              .then(({ triples }) => {
-                if (triples.length > 0) {
-                  // Store triples in graph (fire-and-forget)
-                  import("@/db").then(({ db }) => {
-                    import("@/db/schema").then(({ graphNodes, graphEdges }) => {
-                      for (const triple of triples.slice(0, 3)) { // Max 3 triples per execution
-                        db.insert(graphNodes).values({ userId, nodeType: triple.subject.type, label: triple.subject.label, properties: "{}", confidence: triple.confidence })
-                          .returning()
-                          .then(([src]) => {
-                            db.insert(graphNodes).values({ userId, nodeType: triple.object.type, label: triple.object.label, properties: "{}", confidence: triple.confidence })
-                              .returning()
-                              .then(([tgt]) => {
-                                db.insert(graphEdges).values({ userId, sourceId: src.id, targetId: tgt.id, edgeType: triple.predicate, confidence: triple.confidence, weight: 100 }).catch(() => {});
-                              }).catch(() => {});
-                          }).catch(() => {});
-                      }
-                    }).catch(() => {});
-                  }).catch(() => {});
-                }
-              }).catch(() => {});
-          }).catch(() => {}); // All graph operations are fire-and-forget
+        // ─── Auto-learn: Extract relationships for knowledge graph (fire-and-forget) ───
+        autoLearnGraph(userId, config.name, getFirstStringValue(sanitized)?.slice(0, 500) || "", outputSummary, durationMs)
+          .catch(() => {}); // Graph learning must never block or fail the response
       }
 
       // ─── Complete Replay Recording ───
@@ -638,4 +631,34 @@ function scanForPiiPatterns(text: string): Array<{ type: string; match: string }
   }
 
   return findings;
+}
+
+/**
+ * Auto-learn: extract relationships from agent execution and store in knowledge graph.
+ * Single async function with one try/catch — replaces the 7-level nested .then() chain.
+ * Fire-and-forget: caller should .catch(() => {}) this.
+ */
+async function autoLearnGraph(userId: string, agentName: string, inputText: string, outputText: string, durationMs: number): Promise<void> {
+  try {
+    const { extractFromAgentExecution } = await import("@/lib/graph/relationship-extractor");
+    const { triples } = await extractFromAgentExecution(agentName, inputText, outputText, durationMs);
+    if (triples.length === 0) return;
+
+    const { db } = await import("@/db");
+    const { graphNodes, graphEdges } = await import("@/db/schema");
+
+    for (const triple of triples.slice(0, 3)) {
+      const [src] = await db.insert(graphNodes).values({
+        userId, nodeType: triple.subject.type, label: triple.subject.label, properties: "{}", confidence: triple.confidence,
+      }).returning();
+      const [tgt] = await db.insert(graphNodes).values({
+        userId, nodeType: triple.object.type, label: triple.object.label, properties: "{}", confidence: triple.confidence,
+      }).returning();
+      await db.insert(graphEdges).values({
+        userId, sourceId: src.id, targetId: tgt.id, edgeType: triple.predicate, confidence: triple.confidence, weight: 100,
+      });
+    }
+  } catch {
+    // Graph learning failure must never surface — it's a background enhancement
+  }
 }
