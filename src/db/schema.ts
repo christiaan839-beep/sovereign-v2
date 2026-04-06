@@ -459,6 +459,45 @@ export const workflows = pgTable("workflows", {
 ]);
 
 // ═══════════════════════════════════════════
+// Graph Memory Fabric — Knowledge Graph for Agent Intelligence
+// ═══════════════════════════════════════════
+
+/** Graph nodes — entities in the knowledge graph */
+export const graphNodes = pgTable("graph_nodes", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull(), // tenant isolation
+  nodeType: text("node_type").notNull(), // agent, task, document, user, tool, outcome, concept
+  label: text("label").notNull(), // human-readable name
+  properties: text("properties").notNull().default("{}"), // JSON — flexible metadata
+  confidence: integer("confidence").default(100), // 0-100 confidence score
+  embedding: text("embedding"), // JSON array for vector search (serialized float[])
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_graph_nodes_user").on(table.userId),
+  index("idx_graph_nodes_type").on(table.nodeType),
+  index("idx_graph_nodes_label").on(table.label),
+]);
+
+/** Graph edges — relationships between nodes */
+export const graphEdges = pgTable("graph_edges", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull(),
+  sourceId: uuid("source_id").references(() => graphNodes.id, { onDelete: "cascade" }).notNull(),
+  targetId: uuid("target_id").references(() => graphNodes.id, { onDelete: "cascade" }).notNull(),
+  edgeType: text("edge_type").notNull(), // EXECUTED, DEPENDS_ON, CITED, LEADS_TO, SIMILAR_TO, CAUSED, PRECEDED
+  weight: integer("weight").default(100), // 0-100 — temporal decay reduces this
+  properties: text("properties").notNull().default("{}"), // JSON metadata
+  confidence: integer("confidence").default(100),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_graph_edges_user").on(table.userId),
+  index("idx_graph_edges_source").on(table.sourceId),
+  index("idx_graph_edges_target").on(table.targetId),
+  index("idx_graph_edges_type").on(table.edgeType),
+]);
+
+// ═══════════════════════════════════════════
 // Affiliate / Referral Program
 // ═══════════════════════════════════════════
 
