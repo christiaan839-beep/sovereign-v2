@@ -38,6 +38,8 @@ import { resolveTenantId } from "@/lib/tenant-resolver";
 import { isAgentAvailable, recordAgentSuccess, recordAgentFailure } from "@/lib/agent-circuit-breaker";
 import { persistAgentActivity } from "@/lib/activity-persist";
 import { notifyAgentComplete } from "@/lib/notify";
+import { evaluatePolicy } from "@/lib/policy-engine";
+import { checkBudget, recordSpend } from "@/lib/budget-controls";
 import type { ZodObject, ZodRawShape } from "zod";
 
 const log = createLogger("agent-factory");
@@ -298,6 +300,29 @@ export function createAgentRoute(config: AgentConfig) {
         );
       }
 
+      // ─── Policy Engine Check ───
+      if (userId) {
+        const policyResult = evaluatePolicy(config.name, "agent.execute", { userId, role: "member" });
+        if (!policyResult.allowed) {
+          log.warn("Policy denied agent execution", { agent: config.name, policy: policyResult.policyId, reason: policyResult.reason });
+          return NextResponse.json(
+            { error: policyResult.reason || "Action denied by policy" },
+            { status: 403 }
+          );
+        }
+      }
+
+      // ─── Budget Check ───
+      if (userId) {
+        const budgetResult = checkBudget(userId);
+        if (!budgetResult.allowed) {
+          return NextResponse.json(
+            { error: budgetResult.reason || "Budget limit exceeded", dailyPercent: budgetResult.dailyPercent, monthlyPercent: budgetResult.monthlyPercent },
+            { status: 429 }
+          );
+        }
+      }
+
       // ─── Execute Agent Handler ───
       const result = await config.handler({
         input: sanitized,
@@ -441,6 +466,8 @@ export function createAgentRoute(config: AgentConfig) {
       // ─── Track Usage, Audit Log & Return Response ───
       if (userId) {
         await incrementUsage(userId, config.name);
+        // Track spend for budget controls (estimates token cost by model)
+        recordSpend(userId, "nim-default", 500); // ~500 tokens per agent call average
         // Audit every agent execution (SOC 2 compliance)
         auditLog({
           userId,
