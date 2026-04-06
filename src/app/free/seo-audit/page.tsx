@@ -39,10 +39,10 @@ export default function FreeSeoAuditPage() {
 
     try {
       const domain = url.replace(/^https?:\/\//, "").replace(/\/.*$/, "");
-      const res = await fetch("/api/agents/seo-dominator", {
+      const res = await fetch("/api/free/run", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ domain, mode: "audit" }),
+        body: JSON.stringify({ agent: "seo-dominator", params: { domain, mode: "audit" } }),
       });
 
       if (!res.ok) {

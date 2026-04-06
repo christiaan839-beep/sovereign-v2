@@ -36,10 +36,10 @@ export default function FreeLeadFinderPage() {
     setLeads([]);
 
     try {
-      const res = await fetch("/api/agents/leads", {
+      const res = await fetch("/api/free/run", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ niche, location: location || "worldwide" }),
+        body: JSON.stringify({ agent: "leads", params: { niche, location: location || "worldwide" } }),
       });
 
       if (!res.ok) {
