@@ -458,3 +458,38 @@ export const workflows = pgTable("workflows", {
   index("idx_workflows_user").on(table.userId),
 ]);
 
+// ═══════════════════════════════════════════
+// Affiliate / Referral Program
+// ═══════════════════════════════════════════
+
+export const affiliates = pgTable("affiliates", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull().unique(), // Clerk user ID
+  email: text("email").notNull(),
+  referralCode: text("referral_code").notNull().unique(), // e.g., "john-smith-abc123"
+  commissionRate: integer("commission_rate").notNull().default(20), // 20% default
+  totalReferrals: integer("total_referrals").notNull().default(0),
+  totalEarnings: integer("total_earnings").notNull().default(0), // cents
+  payoutMethod: text("payout_method").default("paypal"), // paypal, bank, crypto
+  payoutDetails: text("payout_details"), // encrypted
+  status: text("status").notNull().default("active"), // active, suspended, pending
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_affiliates_code").on(table.referralCode),
+  index("idx_affiliates_user").on(table.userId),
+]);
+
+export const referrals = pgTable("referrals", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  affiliateId: uuid("affiliate_id").references(() => affiliates.id, { onDelete: "cascade" }).notNull(),
+  referredUserId: text("referred_user_id").notNull(),
+  referredEmail: text("referred_email").notNull(),
+  plan: text("plan").default("free"), // plan they signed up for
+  revenue: integer("revenue").notNull().default(0), // cents earned from this referral
+  status: text("status").notNull().default("signed_up"), // signed_up, converted, churned
+  convertedAt: timestamp("converted_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_referrals_affiliate").on(table.affiliateId),
+]);
+
