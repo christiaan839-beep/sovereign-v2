@@ -40,6 +40,7 @@ import { persistAgentActivity } from "@/lib/activity-persist";
 import { notifyAgentComplete } from "@/lib/notify";
 import { evaluatePolicy } from "@/lib/policy-engine";
 import { checkBudget, recordSpend } from "@/lib/budget-controls";
+import { startReplay, type ReplayBuilder } from "@/lib/agent-replay";
 import type { ZodObject, ZodRawShape } from "zod";
 
 const log = createLogger("agent-factory");
@@ -123,6 +124,7 @@ export function createAgentRoute(config: AgentConfig) {
     const startTime = Date.now();
     let email = "";
     let userId = "";
+    let replay: ReplayBuilder | null = null;
 
     try {
       // ─── Auth & Rate Limiting ───
@@ -300,6 +302,12 @@ export function createAgentRoute(config: AgentConfig) {
         );
       }
 
+      // ─── Start Replay Recording ───
+      if (userId) {
+        replay = startReplay(config.name, userId);
+        replay.addStep("input_received", { fields: Object.keys(body), inputSize: JSON.stringify(body).length });
+      }
+
       // ─── Policy Engine Check ───
       if (userId) {
         const policyResult = evaluatePolicy(config.name, "agent.execute", { userId, role: "member" });
@@ -324,6 +332,7 @@ export function createAgentRoute(config: AgentConfig) {
       }
 
       // ─── Execute Agent Handler ───
+      replay?.addStep("handler_start", { agent: config.name });
       const result = await config.handler({
         input: sanitized,
         request: req,
@@ -332,6 +341,7 @@ export function createAgentRoute(config: AgentConfig) {
         tenantId,
         orgId,
       });
+      replay?.addStep("handler_complete", { outputKeys: Object.keys(result), outputSize: JSON.stringify(result).length });
 
       // ─── Safety Post-flight: PII Scan on Output ───
       let piiWarning: string | undefined;
@@ -499,6 +509,39 @@ export function createAgentRoute(config: AgentConfig) {
 
         // ─── Notify user (Slack + email if configured) ───
         notifyAgentComplete(userId, config.name, outputSummary, email || undefined).catch(() => {});
+
+        // ─── Auto-learn: Extract relationships for knowledge graph ───
+        import("@/lib/graph/relationship-extractor")
+          .then(({ extractFromAgentExecution }) => {
+            const inputText = getFirstStringValue(sanitized)?.slice(0, 500) || "";
+            extractFromAgentExecution(config.name, inputText, outputSummary, durationMs)
+              .then(({ triples }) => {
+                if (triples.length > 0) {
+                  // Store triples in graph (fire-and-forget)
+                  import("@/db").then(({ db }) => {
+                    import("@/db/schema").then(({ graphNodes, graphEdges }) => {
+                      for (const triple of triples.slice(0, 3)) { // Max 3 triples per execution
+                        db.insert(graphNodes).values({ userId, nodeType: triple.subject.type, label: triple.subject.label, properties: "{}", confidence: triple.confidence })
+                          .returning()
+                          .then(([src]) => {
+                            db.insert(graphNodes).values({ userId, nodeType: triple.object.type, label: triple.object.label, properties: "{}", confidence: triple.confidence })
+                              .returning()
+                              .then(([tgt]) => {
+                                db.insert(graphEdges).values({ userId, sourceId: src.id, targetId: tgt.id, edgeType: triple.predicate, confidence: triple.confidence, weight: 100 }).catch(() => {});
+                              }).catch(() => {});
+                          }).catch(() => {});
+                      }
+                    }).catch(() => {});
+                  }).catch(() => {});
+                }
+              }).catch(() => {});
+          }).catch(() => {}); // All graph operations are fire-and-forget
+      }
+
+      // ─── Complete Replay Recording ───
+      if (replay) {
+        replay.addStep("quality_score", { score: qualityScore?.overall, passed: qualityScore?.passed, piiWarning: !!piiWarning });
+        replay.complete({ durationMs, agent: config.name, success: true });
       }
 
       const remainingCheck = userId ? await checkFreeUsage(userId) : undefined;
@@ -525,6 +568,7 @@ export function createAgentRoute(config: AgentConfig) {
       recordAgentFailure(config.name);
       const message = error instanceof Error ? error.message : "Unknown error";
       log.error("Agent execution failed", { agent: config.name, error: message });
+      replay?.fail(message);
 
       // ─── Persist failure to agentActivity table ───
       if (userId) {
