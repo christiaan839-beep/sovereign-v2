@@ -533,6 +533,48 @@ export const referrals = pgTable("referrals", {
 ]);
 
 // ═══════════════════════════════════════════
+// Playbook Runs — Persistent multi-agent execution history
+// Every step is written to DB in real-time so the UI can poll for live progress.
+// ═══════════════════════════════════════════
+
+export const playbookRuns = pgTable("playbook_runs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull(),
+  playbookId: text("playbook_id").notNull(),
+  playbookName: text("playbook_name").notNull(),
+  inputs: text("inputs").notNull().default("{}"), // JSON: user-provided field values
+  status: text("status").notNull().default("running"), // running | done | failed
+  stepCount: integer("step_count").notNull().default(0),
+  stepsSucceeded: integer("steps_succeeded").notNull().default(0),
+  stepsFailed: integer("steps_failed").notNull().default(0),
+  durationMs: integer("duration_ms"),
+  notifyTelegram: boolean("notify_telegram").default(false),
+  telegramChatId: text("telegram_chat_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+  completedAt: timestamp("completed_at"),
+}, (table) => [
+  index("idx_playbook_runs_user").on(table.userId),
+  index("idx_playbook_runs_status").on(table.status),
+  index("idx_playbook_runs_created").on(table.createdAt),
+]);
+
+export const playbookRunSteps = pgTable("playbook_run_steps", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  runId: uuid("run_id").references(() => playbookRuns.id, { onDelete: "cascade" }).notNull(),
+  stepIndex: integer("step_index").notNull(),
+  agentName: text("agent_name").notNull(),
+  reason: text("reason"),
+  status: text("status").notNull().default("pending"), // pending | running | done | failed | skipped
+  result: text("result"), // JSON stringified
+  error: text("error"),
+  durationMs: integer("duration_ms"),
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+}, (table) => [
+  index("idx_playbook_steps_run").on(table.runId),
+]);
+
+// ═══════════════════════════════════════════
 // Async Job Queue
 // Fire-and-forget agent execution — user submits a goal,
 // gets a job ID back immediately, result arrives via Telegram.
