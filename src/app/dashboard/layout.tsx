@@ -10,7 +10,8 @@ import {
   X, Menu,
   PanelLeftOpen, PanelLeftClose, Plug, Cpu,
   BarChart3, Eye, Shield, Wrench,
-  Wand2, Workflow, MessageSquare, Zap, Crown, Rocket
+  Wand2, Workflow, MessageSquare, Zap, Crown, Rocket,
+  Bot, ClipboardList,
 } from "lucide-react";
 import { useKeyboardShortcuts } from "@/lib/keyboard-shortcuts";
 import { motion, AnimatePresence } from "framer-motion";
@@ -33,6 +34,7 @@ const NEW_BADGE_ITEMS = new Set([
   "/dashboard/workflow-builder",
   "/dashboard/integrations",
   "/dashboard/audit-trail",
+  "/dashboard/autopilot",
 ]);
 
 const NEW_BADGE_STORAGE_PREFIX = "sovereign_new_dismissed_";
@@ -73,6 +75,8 @@ const PRIMARY_NAV: NavItem[] = [
   { href: "/dashboard", label: "Home", icon: LayoutDashboard, tooltip: "Dashboard overview" },
   { href: "/dashboard/mission-control", label: "Mission Control", icon: Rocket, tooltip: "One goal → watch agents execute in real-time" },
   { href: "/dashboard/playbooks", label: "Playbooks", icon: Zap, tooltip: "1-click multi-agent workflows" },
+  { href: "/dashboard/autopilot", label: "Autopilot", icon: Bot, tooltip: "Live agent runs — see what's executing right now" },
+  { href: "/dashboard/jobs", label: "Jobs", icon: ClipboardList, tooltip: "Async job queue — fire-and-forget execution" },
   { href: "/chat", label: "Chat", icon: MessageSquare, tooltip: "Ask anything — AI routes to the right agent" },
   { href: "/dashboard/leads", label: "Leads", icon: Target, tooltip: "Find and manage prospects" },
 ];

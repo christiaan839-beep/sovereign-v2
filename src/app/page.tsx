@@ -172,10 +172,10 @@ function EnterpriseSection() {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
-            { label: "Workflow Automation", desc: "Visual builder with branching, parallel, and scheduling" },
+            { label: "25 Autopilot Playbooks", desc: "Schedule multi-agent workflows to run hourly, daily, or weekly — 24/7" },
             { label: "25+ Live Integrations", desc: "Slack, Sheets, HubSpot, Yoco, GitHub, Discord, and more" },
             { label: "White-Label Platform", desc: "Custom domains, branding, client portals" },
-            { label: "Team Roles & Audit Trail", desc: "RBAC, SOC 2 ready, full activity log" },
+            { label: "2,200+ Tok/s Inference", desc: "Cerebras wafer-scale engine for instant classification" },
           ].map((item, i) => (
             <motion.div key={i} initial={{ opacity: 0 }} whileInView={{ opacity: 1 }}
               viewport={{ once: true }} transition={{ delay: 0.2 + i * 0.08 }}
@@ -465,8 +465,8 @@ export default function Home() {
           {/* Subtitle — clear, readable, high contrast */}
           <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5, duration: 0.7 }}
             className="text-base md:text-lg max-w-xl mx-auto leading-relaxed mb-8">
-            <span className="text-neutral-200">Most AI tools generate text. This one executes.</span>{" "}
-            <span className="text-neutral-400">130+ agents find real leads, write content, analyze competitors, and draft outreach — verified by 4 independent AI models. $0 per token.</span>
+            <span className="text-neutral-200">Most AI tools generate text. This one runs your business.</span>{" "}
+            <span className="text-neutral-400">130+ agents find leads, write content, and close deals autonomously — 25 playbooks run 24/7 on autopilot. Verified by 4 independent AI models. $0 per token.</span>
           </motion.p>
 
           {/* CTAs — one primary, one secondary */}
@@ -520,6 +520,7 @@ export default function Home() {
               { name: "Llama 4", color: "violet" },
               { name: "Qwen 3", color: "amber" },
               { name: "GLM-5", color: "pink" },
+              { name: "Cerebras", color: "cyan" },
               { name: "Mistral", color: "orange" },
               { name: "FLUX.1", color: "rose" },
             ].map((model, i) => (
@@ -703,8 +704,8 @@ export default function Home() {
           {[
             { value: 130, suffix: "+", label: "AI Agents", desc: "Purpose-built for business" },
             { value: 65, suffix: "+", label: "AI Models", desc: "Auto-routed per task" },
-            { value: 25, suffix: "", label: "Playbooks", desc: "1-click multi-agent workflows" },
-            { value: 491, suffix: "", label: "Tests Passing", desc: "Production-grade reliability" },
+            { value: 25, suffix: "", label: "Autopilot Playbooks", desc: "Scheduled multi-agent workflows" },
+            { value: 2200, suffix: "+", label: "Tok/s Speed", desc: "Cerebras wafer-scale inference" },
           ].map((stat, i) => (
             <motion.div key={stat.label} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}>
               <div className="text-3xl md:text-4xl font-black text-white mb-1">
@@ -1186,6 +1187,7 @@ export default function Home() {
               { name: "Qwen 3", desc: "Best multilingual — 50+ languages" },
               { name: "NVIDIA NIM", desc: "Free inference at scale" },
               { name: "NeMo Guardrails", desc: "5-layer safety pipeline" },
+              { name: "Cerebras WSE", desc: "2,200+ tok/s instant inference" },
               { name: "Mistral Small 3", desc: "Ultra-fast function calling" },
               { name: "FLUX.1", desc: "Production image generation" },
               { name: "Kokoro TTS", desc: "Open-source voice synthesis" },
@@ -1351,21 +1353,21 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ═══ PLATFORM NUMBERS — Real stats ═══ */}
-      <section className="py-16 px-6 bg-[#020202]">
+      {/* ═══ SPEED SECTION — Cerebras + inference performance ═══ */}
+      <section className="py-16 px-6 bg-[#020202] border-y border-white/[0.03]">
         <div className="max-w-5xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
-              { number: "129", label: "Specialized Agents", sub: "Not wrappers — purpose-built" },
-              { number: "912", label: "Automated Tests", sub: "Production-grade reliability" },
-              { number: "15", label: "Integration Connectors", sub: "HubSpot, Salesforce, Slack, more" },
-              { number: "$0", label: "Per-Token Cost", sub: "35+ open-source models via NVIDIA NIM" },
+              { value: 2200, suffix: "+", label: "Tokens/Second", sub: "Cerebras wafer-scale inference", color: "text-cyan-400" },
+              { value: 25, suffix: "", label: "Playbooks", sub: "1-click autonomous workflows", color: "text-violet-400" },
+              { value: 11, suffix: "", label: "Failover Models", sub: "Auto-switches if one fails", color: "text-emerald-400" },
+              { value: 0, suffix: "", label: "Downtime", sub: "Multi-provider redundancy", color: "text-white", prefix: "$" },
             ].map((stat, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.08 }}
                 className="text-center p-5 rounded-xl border border-white/[0.04] bg-white/[0.01]"
               >
-                <div className="text-3xl md:text-4xl font-black text-white tracking-tight mb-1">
-                  <CountUpOnView target={parseInt(stat.number) || 0} prefix={stat.number.startsWith("$") ? "$" : ""} />
+                <div className={`text-3xl md:text-4xl font-black tracking-tight mb-1 ${stat.color}`}>
+                  {stat.prefix || ""}<AnimatedCounter target={stat.value} duration={1.5} />{stat.suffix}
                 </div>
                 <div className="text-xs font-semibold text-neutral-300 mb-0.5">{stat.label}</div>
                 <div className="text-[10px] text-neutral-600">{stat.sub}</div>
@@ -1375,49 +1377,118 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ═══ HOW IT WORKS — 3-step visual ═══ */}
+      {/* ═══ AGENTIC AUTOPILOT — 24/7 Autonomous Execution ═══ */}
       <GlowDivider />
-      <section className="py-24 px-6">
-        <div className="max-w-4xl mx-auto">
+      <section className="py-24 px-6 bg-[#020202] relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_50%,rgba(139,92,246,0.03),transparent)]" />
+        <div className="max-w-5xl mx-auto relative z-10">
           <div className="text-center mb-14">
-            <RevealText as="p" className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">3 Steps</RevealText>
-            <RevealText as="h2" delay={0.1} className="text-3xl md:text-5xl font-bold text-white tracking-tight">Describe it. Deploy it. Done.</RevealText>
+            <div className="inline-flex items-center gap-2 mb-4">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute h-full w-full rounded-full bg-violet-400 opacity-50" />
+                <span className="relative rounded-full h-2 w-2 bg-violet-400" />
+              </span>
+              <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-violet-400/70">Always On</p>
+            </div>
+            <RevealText as="h2" delay={0.1} className="text-3xl md:text-5xl font-bold text-white tracking-tight mb-4">
+              Agents that run your business while you sleep.
+            </RevealText>
+            <RevealText as="p" delay={0.2} className="text-neutral-400 max-w-xl mx-auto">
+              Playbooks chain multiple agents into autonomous workflows. Set a schedule, walk away — Sovereign runs lead gen, content, outreach, and reporting 24/7. You wake up to results.
+            </RevealText>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          {/* Autopilot Live Terminal */}
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+            className="rounded-2xl border border-violet-500/10 bg-[#0A0A0A] overflow-hidden shadow-[0_0_60px_rgba(139,92,246,0.04)] mb-10">
+            <div className="flex items-center gap-2 px-5 py-3 border-b border-white/[0.06] bg-[#060606]">
+              <div className="flex gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-violet-500/60" />
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/60" />
+                <span className="w-2.5 h-2.5 rounded-full bg-white/[0.08]" />
+              </div>
+              <span className="text-[10px] text-neutral-500 ml-3 font-mono">autopilot — Lead Blitz playbook</span>
+              <span className="ml-auto flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" />
+                <span className="text-[10px] text-violet-400/70">RUNNING</span>
+              </span>
+            </div>
+
+            <div className="p-5 font-mono text-xs space-y-3">
+              {[
+                { step: 1, agent: "Lead Scraper", status: "done", result: "53 leads found in 4.2s", color: "text-emerald-400", icon: "check" },
+                { step: 2, agent: "Email Verifier", status: "done", result: "48/53 verified (90.5% hit rate)", color: "text-emerald-400", icon: "check" },
+                { step: 3, agent: "ICP Scorer", status: "done", result: "Ranked by fit score — top 10 highlighted", color: "text-emerald-400", icon: "check" },
+                { step: 4, agent: "Outreach Writer", status: "running", result: "Drafting 3-step sequence for top 20...", color: "text-violet-400", icon: "spin" },
+                { step: 5, agent: "CRM Sync", status: "pending", result: "Waiting for step 4", color: "text-neutral-500", icon: "wait" },
+                { step: 6, agent: "Telegram Alert", status: "pending", result: "Will notify on completion", color: "text-neutral-500", icon: "wait" },
+              ].map((s, i) => (
+                <motion.div key={i} initial={{ opacity: 0, x: -10 }} whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }} transition={{ delay: i * 0.1 }}
+                  className="flex items-center gap-3">
+                  <span className={`w-5 text-center ${s.color}`}>
+                    {s.icon === "check" ? <CheckCircle2 className="w-3.5 h-3.5 inline" /> :
+                     s.icon === "spin" ? <span className="inline-block w-3.5 h-3.5 border-2 border-violet-400/30 border-t-violet-400 rounded-full animate-spin" /> :
+                     <span className="inline-block w-1.5 h-1.5 rounded-full bg-neutral-600" />}
+                  </span>
+                  <span className="text-neutral-500 w-4">{s.step}.</span>
+                  <span className={`font-semibold w-[120px] truncate ${s.color}`}>{s.agent}</span>
+                  <span className="text-neutral-400 flex-1">{s.result}</span>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Progress bar */}
+            <div className="px-5 pb-4">
+              <div className="h-1 w-full rounded-full bg-white/5 overflow-hidden">
+                <motion.div
+                  className="h-full rounded-full bg-gradient-to-r from-violet-500 to-emerald-500"
+                  initial={{ width: "0%" }}
+                  whileInView={{ width: "60%" }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 2, ease: "easeOut", delay: 0.5 }}
+                />
+              </div>
+              <div className="flex justify-between mt-1.5">
+                <span className="text-[10px] text-neutral-600">3 of 6 steps complete</span>
+                <span className="text-[10px] text-violet-400/60">~45s remaining</span>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Autopilot Features */}
+          <StaggerChildren className="grid md:grid-cols-3 gap-5" staggerDelay={0.08}>
             {[
               {
-                step: "01",
-                title: "Describe your goal",
-                desc: "Type what you need in plain English. \"Find 50 SaaS leads in Austin and draft outreach emails.\"",
-                color: "emerald",
+                title: "25 Pre-Built Playbooks",
+                desc: "Lead Blitz, SEO Domination, Content Machine, Competitor Takedown — pick a business outcome, fill 2 fields, hit deploy. The right agent team assembles automatically.",
+                highlight: "1-click deploy",
               },
               {
-                step: "02",
-                title: "Agents plan & execute",
-                desc: "The smart router picks the best models. Agents research, draft, quality-check, and refine — autonomously.",
-                color: "cyan",
+                title: "Scheduled Execution",
+                desc: "Run playbooks hourly, daily, or weekly on autopilot. Wake up to 50 new leads, a week's worth of content, and a competitor report — every morning.",
+                highlight: "Cron-powered",
               },
               {
-                step: "03",
-                title: "Review & deploy",
-                desc: "Get verified results with source citations. Approve, schedule, or export to your tools.",
-                color: "violet",
+                title: "Real-Time Step Tracking",
+                desc: "Watch each agent execute live in the dashboard. Every step writes to the database — poll for progress, see results as they arrive, get Telegram alerts on completion.",
+                highlight: "Live dashboard",
               },
-            ].map((s, i) => (
-              <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.12 }}
-                className="relative"
-              >
-                <div className={`text-6xl font-black text-${s.color}-500/10 mb-4`}>{s.step}</div>
-                <h3 className="text-lg font-bold text-white mb-2">{s.title}</h3>
-                <p className="text-sm text-neutral-400 leading-relaxed">{s.desc}</p>
-                {i < 2 && (
-                  <div className="hidden md:block absolute top-8 -right-4 text-neutral-700">
-                    <ArrowRight className="w-6 h-6" />
-                  </div>
-                )}
-              </motion.div>
+            ].map((item) => (
+              <div key={item.title} className="p-7 rounded-2xl border border-white/[0.06] bg-white/[0.02] hover:border-violet-500/15 transition-gpu duration-500 group">
+                <div className="text-[10px] text-violet-400/60 uppercase tracking-widest mb-3 font-semibold">{item.highlight}</div>
+                <h3 className="text-base font-semibold text-white mb-2">{item.title}</h3>
+                <p className="text-sm text-neutral-400 leading-relaxed">{item.desc}</p>
+              </div>
             ))}
+          </StaggerChildren>
+
+          <div className="mt-10 text-center">
+            <MagneticButton href="/dashboard/autopilot" strength={0.15}>
+              <span className="group inline-flex items-center gap-2 px-7 py-3.5 rounded-full text-sm font-semibold text-violet-300 border border-violet-500/20 hover:bg-violet-500/10 transition-colors cursor-pointer">
+                Open Autopilot Dashboard <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+              </span>
+            </MagneticButton>
           </div>
         </div>
       </section>
@@ -1521,7 +1592,7 @@ export default function Home() {
             <TextDecrypt text="Try it free. Judge for yourself." className="text-4xl md:text-6xl font-black text-white tracking-tight leading-[1.05]" as="h2" speed={20} delay={400} />
           </div>
           <RevealText as="p" delay={0.3} className="text-neutral-400 max-w-lg mx-auto mb-4">
-            130+ agents. 65+ open-source models. Workflows, integrations, and analytics — all included on the free plan. No credit card. Cancel anytime.
+            130+ agents. 65+ models. 25 autopilot playbooks running 24/7. Workflows, integrations, and analytics — all on the free plan. No credit card.
           </RevealText>
           <RevealText as="p" delay={0.4} className="text-emerald-400/70 text-sm mb-10">
             Free forever plan. No credit card. Set up in 60 seconds.
