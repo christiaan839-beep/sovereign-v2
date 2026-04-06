@@ -892,6 +892,41 @@ export default function DashboardHome() {
       {/* Discover Section — shown after onboarding */}
       {!showWelcome && <DiscoverSection />}
 
+      {/* ─── Solution Templates — One-Click Workflows ─── */}
+      {!showWelcome && (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.15 }}
+          className="px-6 py-4"
+        >
+          <div className="max-w-3xl mx-auto">
+            <h2 className="text-xs font-semibold uppercase tracking-[0.15em] text-neutral-500 mb-3">
+              Quick Launch
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {[
+                { id: "lead-pipeline", name: "Lead Pipeline", desc: "Find leads + draft outreach", icon: "🎯", color: "emerald", href: "/dashboard/leads" },
+                { id: "content-engine", name: "Content Engine", desc: "Blog + social + newsletter", icon: "📝", color: "cyan", href: "/dashboard/blog-gen" },
+                { id: "competitor-monitor", name: "Competitor Intel", desc: "Deep-scan any competitor", icon: "🛡️", color: "violet", href: "/dashboard/competitor-scan" },
+                { id: "client-onboard", name: "Client Onboard", desc: "Proposal + audit + plan", icon: "💼", color: "blue", href: "/dashboard/proposal-generator" },
+                { id: "seo-autopilot", name: "SEO Autopilot", desc: "Audit + gaps + content", icon: "📊", color: "amber", href: "/dashboard/seo-dominator" },
+              ].map((sol) => (
+                <Link key={sol.id} href={sol.href}>
+                  <div className={`p-4 rounded-xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04] hover:border-${sol.color}-500/20 transition-all cursor-pointer group`}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-lg">{sol.icon}</span>
+                      <span className="text-sm font-semibold text-white group-hover:text-emerald-400 transition-colors">{sol.name}</span>
+                    </div>
+                    <p className="text-[11px] text-neutral-500">{sol.desc}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+      )}
+
       {/* Live Agent Execution — try an agent right from the dashboard */}
       {!showWelcome && (
         <motion.div
