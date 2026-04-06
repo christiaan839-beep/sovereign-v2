@@ -23,8 +23,8 @@ const agents = [
     icon: Brain,
     description:
       "Finds and qualifies leads across LinkedIn, Apollo, and web scraping",
-    tasks: 2847,
-    successRate: 94,
+    tasks: 0,
+    successRate: 0,
   },
   {
     codename: "Cipher",

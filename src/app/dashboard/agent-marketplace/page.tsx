@@ -11,18 +11,18 @@ const CATEGORIES = ["All", "Sales", "Content", "SEO", "Intelligence", "Voice", "
 
 // Fallback templates used when the marketplace API returns no results
 const FALLBACK_TEMPLATES: MarketplaceAgent[] = [
-  { id: "fb-1", name: "Cold Outbound Pro", description: "Multi-channel outbound sequence with personalized emails, LinkedIn, and follow-ups.", category: "Sales", authorName: "Sovereign Labs", installs: 2847, rating: 4.9, premium: false },
-  { id: "fb-2", name: "SEO Content Engine", description: "Auto-research keywords, generate optimized blog posts, and track rankings.", category: "SEO", authorName: "Growth AI", installs: 3412, rating: 4.8, premium: true },
-  { id: "fb-3", name: "Voice Qualifier", description: "AI voice agent that qualifies inbound leads with natural conversation.", category: "Voice", authorName: "VoxForge", installs: 1256, rating: 4.7, premium: true },
-  { id: "fb-4", name: "Competitor Radar", description: "Track competitor pricing, features, and content changes in real time.", category: "Intelligence", authorName: "Sovereign Labs", installs: 1890, rating: 4.6, premium: false },
-  { id: "fb-5", name: "Blog Ghost Writer", description: "Generate long-form blog posts matching your brand voice and style.", category: "Content", authorName: "ContentStack", installs: 4201, rating: 4.9, premium: false },
-  { id: "fb-6", name: "Lead Scraper X", description: "Find and enrich B2B leads from LinkedIn, Apollo, and company sites.", category: "Sales", authorName: "DataMine Co", installs: 2134, rating: 4.5, premium: true },
-  { id: "fb-7", name: "Code Review Agent", description: "Automated PR reviews with security checks, performance tips, and style linting.", category: "Code", authorName: "DevFlow", installs: 987, rating: 4.8, premium: false },
-  { id: "fb-8", name: "Social Scheduler", description: "Generate and schedule posts across Twitter, LinkedIn, and Instagram.", category: "Content", authorName: "SocialPilot AI", installs: 1567, rating: 4.4, premium: false },
-  { id: "fb-9", name: "Site Audit Pro", description: "Full technical SEO audit with Core Web Vitals and accessibility checks.", category: "SEO", authorName: "Sovereign Labs", installs: 2345, rating: 4.7, premium: true },
-  { id: "fb-10", name: "Meeting Intel", description: "Pre-call research that pulls company news, funding, and attendee profiles.", category: "Intelligence", authorName: "PrepAI", installs: 1123, rating: 4.6, premium: false },
-  { id: "fb-11", name: "Voice Transcriber", description: "Real-time call transcription with sentiment analysis and action items.", category: "Voice", authorName: "VoxForge", installs: 876, rating: 4.3, premium: false },
-  { id: "fb-12", name: "API Builder Agent", description: "Generate REST APIs from natural language specs with auto-documentation.", category: "Code", authorName: "DevFlow", installs: 654, rating: 4.9, premium: true },
+  { id: "fb-1", name: "Cold Outbound Pro", description: "Multi-channel outbound sequence with personalized emails, LinkedIn, and follow-ups.", category: "Sales", authorName: "Sovereign Labs", installs: 0, rating: 0, premium: false },
+  { id: "fb-2", name: "SEO Content Engine", description: "Auto-research keywords, generate optimized blog posts, and track rankings.", category: "SEO", authorName: "Growth AI", installs: 0, rating: 0, premium: true },
+  { id: "fb-3", name: "Voice Qualifier", description: "AI voice agent that qualifies inbound leads with natural conversation.", category: "Voice", authorName: "VoxForge", installs: 0, rating: 0, premium: true },
+  { id: "fb-4", name: "Competitor Radar", description: "Track competitor pricing, features, and content changes in real time.", category: "Intelligence", authorName: "Sovereign Labs", installs: 0, rating: 0, premium: false },
+  { id: "fb-5", name: "Blog Ghost Writer", description: "Generate long-form blog posts matching your brand voice and style.", category: "Content", authorName: "ContentStack", installs: 0, rating: 0, premium: false },
+  { id: "fb-6", name: "Lead Scraper X", description: "Find and enrich B2B leads from LinkedIn, Apollo, and company sites.", category: "Sales", authorName: "DataMine Co", installs: 0, rating: 0, premium: true },
+  { id: "fb-7", name: "Code Review Agent", description: "Automated PR reviews with security checks, performance tips, and style linting.", category: "Code", authorName: "DevFlow", installs: 0, rating: 0, premium: false },
+  { id: "fb-8", name: "Social Scheduler", description: "Generate and schedule posts across Twitter, LinkedIn, and Instagram.", category: "Content", authorName: "SocialPilot AI", installs: 0, rating: 0, premium: false },
+  { id: "fb-9", name: "Site Audit Pro", description: "Full technical SEO audit with Core Web Vitals and accessibility checks.", category: "SEO", authorName: "Sovereign Labs", installs: 0, rating: 0, premium: true },
+  { id: "fb-10", name: "Meeting Intel", description: "Pre-call research that pulls company news, funding, and attendee profiles.", category: "Intelligence", authorName: "PrepAI", installs: 0, rating: 0, premium: false },
+  { id: "fb-11", name: "Voice Transcriber", description: "Real-time call transcription with sentiment analysis and action items.", category: "Voice", authorName: "VoxForge", installs: 0, rating: 0, premium: false },
+  { id: "fb-12", name: "API Builder Agent", description: "Generate REST APIs from natural language specs with auto-documentation.", category: "Code", authorName: "DevFlow", installs: 0, rating: 0, premium: true },
 ];
 
 interface MarketplaceAgent {

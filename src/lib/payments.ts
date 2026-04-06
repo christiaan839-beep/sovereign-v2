@@ -7,40 +7,43 @@
 
 import crypto from "crypto";
 
-// ─── Pricing Plans ──────────────────────────────────────────────
+// ─── Pricing (from canonical plans.ts — single source of truth) ──
 
-export const PLANS = {
+import { PLANS as CANONICAL_PLANS, type PlanId as CanonicalPlanId } from "@/lib/plans";
+
+// Re-export for backward compatibility with existing payment routes
+export type PlanId = "starter" | "array" | "node" | "enterprise";
+
+export const PLANS: Record<PlanId, { name: string; priceZAR: number; priceDisplay: string; monthlyAmount: number; features: string[] }> = {
   starter: {
-    name: "Starter",
-    priceZAR: 89700,
-    priceDisplay: "R897",
-    monthlyAmount: 897,
-    features: ["10 core agents", "500 tasks/month", "Smart Router", "BYOK support", "Email sequences (3)", "Priority email support"],
-  },
-  node: {
-    name: "Sovereign Node",
-    priceZAR: 999700,
-    priceDisplay: "R9,997",
-    monthlyAmount: 9997,
-    features: ["All 130+ agents", "Unlimited tasks", "Local execution", "Ghost Fleet", "NVIDIA NIM", "BYOK support"],
+    name: CANONICAL_PLANS.starter.name,
+    priceZAR: CANONICAL_PLANS.starter.priceZarCents,
+    priceDisplay: CANONICAL_PLANS.starter.priceDisplayZar,
+    monthlyAmount: CANONICAL_PLANS.starter.priceZarCents / 100,
+    features: ["5 core agents", "200 tasks/month", "Smart Router", "Email support"],
   },
   array: {
-    name: "Sovereign Array",
-    priceZAR: 2499700,
-    priceDisplay: "R24,997",
-    monthlyAmount: 24997,
-    features: ["Everything in Node", "Unlimited AI generations", "Cosmos VLM Video", "Priority processing", "War Room Red-Teaming", "Direct Comm-Link (24h)"],
+    name: CANONICAL_PLANS.array.name,
+    priceZAR: CANONICAL_PLANS.array.priceZarCents,
+    priceDisplay: CANONICAL_PLANS.array.priceDisplayZar,
+    monthlyAmount: CANONICAL_PLANS.array.priceZarCents / 100,
+    features: ["10 agents", "500 tasks/month", "BYOK support", "Priority email support"],
+  },
+  node: {
+    name: CANONICAL_PLANS.node.name,
+    priceZAR: CANONICAL_PLANS.node.priceZarCents,
+    priceDisplay: CANONICAL_PLANS.node.priceDisplayZar,
+    monthlyAmount: CANONICAL_PLANS.node.priceZarCents / 100,
+    features: ["All 129 agents", "2,000 tasks/month", "Local execution", "Voice agents"],
   },
   enterprise: {
-    name: "Enterprise License",
-    priceZAR: 4999700,
-    priceDisplay: "R49,997",
-    monthlyAmount: 49997,
-    features: ["Everything in Array", "White-label dashboard", "Client portal", "Root Admin Command Center", "API access", "5 Sub-Licenses", "SLA guarantee"],
+    name: CANONICAL_PLANS.enterprise.name,
+    priceZAR: CANONICAL_PLANS.enterprise.priceZarCents,
+    priceDisplay: CANONICAL_PLANS.enterprise.priceDisplayZar,
+    monthlyAmount: CANONICAL_PLANS.enterprise.priceZarCents / 100,
+    features: ["Everything in Node", "White-label", "Client portal", "10,000 tasks/month", "SLA guarantee"],
   },
-} as const;
-
-export type PlanId = keyof typeof PLANS;
+};
 
 // ─── PayFast ────────────────────────────────────────────────────
 

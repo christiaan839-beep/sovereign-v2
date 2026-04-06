@@ -14,11 +14,15 @@ import { getPublicUrl } from "@/lib/base-url";
  * POST: Creates a Yoco checkout session
  */
 
-const PLANS: Record<string, { name: string; amountCents: number }> = {
-  node: { name: "Sovereign Node", amountCents: 999700 },
-  array: { name: "Sovereign Array", amountCents: 2499700 },
-  enterprise: { name: "Enterprise License", amountCents: 4999700 },
-};
+import { PLANS as CANONICAL_PLANS, normalizePlanId } from "@/lib/plans";
+
+// Derive Yoco amounts from canonical plans.ts
+function getYocoAmount(planId: string): { name: string; amountCents: number } | null {
+  const id = normalizePlanId(planId);
+  const plan = CANONICAL_PLANS[id];
+  if (!plan || !plan.purchasable) return null;
+  return { name: plan.name, amountCents: plan.priceZarCents };
+}
 
 export async function GET() {
   const configured = !!process.env.YOCO_SECRET_KEY;
@@ -46,11 +50,10 @@ export async function POST(req: Request) {
   try {
     const { plan, email, name } = await req.json();
 
-    if (!plan || !PLANS[plan]) {
+    const planData = getYocoAmount(plan);
+    if (!plan || !planData) {
       return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
     }
-
-    const planData = PLANS[plan];
     const baseUrl = getPublicUrl();
 
     // Create Yoco checkout session
