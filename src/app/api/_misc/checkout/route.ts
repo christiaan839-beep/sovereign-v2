@@ -8,6 +8,10 @@ export async function POST(req: Request) {
     try {
         const { email, lead_id: _lead_id } = await req.json();
 
+        if (!email || !email.includes("@")) {
+            return NextResponse.json({ error: "Valid email is required for checkout" }, { status: 400 });
+        }
+
         if (!PAYSTACK_SECRET_KEY) {
             log.error("Missing PAYSTACK_SECRET_KEY");
             return NextResponse.json({ error: "Paystack API Offline" }, { status: 500 });
@@ -23,7 +27,7 @@ export async function POST(req: Request) {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                email: email || 'commander-lead@example.com',
+                email: email, // Validated above — never use fallback emails for payments
                 amount: zarAmountCents,
                 currency: 'ZAR',
                 callback_url: 'https://sovereign-matrix.com/dashboard/onboarding',

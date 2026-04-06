@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { createAgentRoute } from "@/lib/agent-factory";
 import {
   competitorXRay,
   contentGapKiller,
@@ -6,87 +6,57 @@ import {
   gbpOptimize,
 } from "@/agents/seo-dominator";
 import { fireUserWebhook } from "@/lib/webhooks";
-import { createLogger } from "@/lib/logger";
-const log = createLogger("seo-agent");
-import { requireAuth } from "@/lib/auth-guard";
 
-export async function POST(req: NextRequest) {
-  const auth = await requireAuth(); if (auth.error) return auth.error;
-  try {
-    const body = await req.json();
-    const { action, params } = body;
-
-    if (!action) {
-      return NextResponse.json(
-        { error: "Missing required field: action" },
-        { status: 400 }
-      );
-    }
+export const POST = createAgentRoute({
+  name: "seo",
+  requiredFields: ["action"],
+  handler: async ({ input }) => {
+    const { action, params } = input as Record<string, unknown>;
+    const p = (params || {}) as Record<string, unknown>;
 
     switch (action) {
       case "xray": {
-        const { urls, business } = params || {};
-        if (!urls?.length || !business) {
-          return NextResponse.json(
-            { error: "Missing params: urls (array) and business (string)" },
-            { status: 400 }
-          );
+        const { urls, business } = p;
+        if (!(urls as unknown[])?.length || !business) {
+          throw new Error("Missing params: urls (array) and business (string)");
         }
-        const result = await competitorXRay(urls, business);
+        const result = await competitorXRay(urls as string[], business as string);
         await fireUserWebhook("SEO Dominator", "Competitor X-Ray", result);
-        return NextResponse.json(result);
+        return result;
       }
 
       case "gap": {
-        const { domain, competitors, niche } = params || {};
-        if (!domain || !competitors?.length || !niche) {
-          return NextResponse.json(
-            { error: "Missing params: domain, competitors (array), niche" },
-            { status: 400 }
-          );
+        const { domain, competitors, niche } = p;
+        if (!domain || !(competitors as unknown[])?.length || !niche) {
+          throw new Error("Missing params: domain, competitors (array), niche");
         }
-        const result = await contentGapKiller(domain, competitors, niche);
+        const result = await contentGapKiller(domain as string, competitors as string[], niche as string);
         await fireUserWebhook("SEO Dominator", "Content Gap", result);
-        return NextResponse.json(result);
+        return result;
       }
 
       case "schema": {
-        const { url, businessType } = params || {};
+        const { url, businessType } = p;
         if (!url || !businessType) {
-          return NextResponse.json(
-            { error: "Missing params: url and businessType" },
-            { status: 400 }
-          );
+          throw new Error("Missing params: url and businessType");
         }
-        const result = await schemaAudit(url, businessType);
+        const result = await schemaAudit(url as string, businessType as string);
         await fireUserWebhook("SEO Dominator", "Schema Audit", result);
-        return NextResponse.json(result);
+        return result;
       }
 
       case "gbp": {
-        const { business, location, services } = params || {};
+        const { business, location, services } = p;
         if (!business || !location || !services) {
-          return NextResponse.json(
-            { error: "Missing params: business, location, services" },
-            { status: 400 }
-          );
+          throw new Error("Missing params: business, location, services");
         }
-        const result = await gbpOptimize(business, location, services);
+        const result = await gbpOptimize(business as string, location as string, services as string);
         await fireUserWebhook("SEO Dominator", "GBP Hijack", result);
-        return NextResponse.json(result);
+        return result;
       }
 
       default:
-        return NextResponse.json(
-          { error: `Unknown action: ${action}. Available: xray, gap, schema, gbp` },
-          { status: 400 }
-        );
+        throw new Error(`Unknown action: ${action}. Available: xray, gap, schema, gbp`);
     }
-  } catch (error) {
-    log.error("SEO agent error", error as Record<string, unknown>);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Internal error" },
-      { status: 500 }
-    );
-  }
-}
+  },
+});

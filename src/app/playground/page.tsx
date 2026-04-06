@@ -117,7 +117,7 @@ export default function PlaygroundPage() {
                 {tries > 0 ? `${tries} free ${tries === 1 ? "try" : "tries"} remaining` : "No tries left"}
               </span>
             </div>
-            <span className="text-xs font-mono text-neutral-600">POST {agent.endpoint}</span>
+            <span className="text-xs font-mono text-neutral-500">POST {agent.endpoint}</span>
           </div>
 
           {/* Result panel */}
@@ -133,8 +133,8 @@ export default function PlaygroundPage() {
               )}
             </div>
             <pre className="p-5 text-sm font-mono overflow-auto max-h-80 text-emerald-300/80 min-h-[120px]">
-              {loading && <span className="text-neutral-600 animate-pulse">Running agent...</span>}
-              {!loading && !result && <span className="text-neutral-600">Agent response will appear here</span>}
+              {loading && <span className="text-neutral-500 animate-pulse">Running agent...</span>}
+              {!loading && !result && <span className="text-neutral-500">Agent response will appear here</span>}
               {!loading && result && result}
             </pre>
           </div>

@@ -36,7 +36,7 @@ const STARTER_TEMPLATES = [
     name: "Sales Qualifier",
     description: "Qualifies inbound leads by asking discovery questions and scoring fit",
     icon: Briefcase,
-    systemPrompt: `You are an elite B2B sales qualification agent. Your job is to analyze a lead's information and determine their qualification level.
+    systemPrompt: `You are a B2B sales qualification agent. Your job is to analyze a lead's information and determine their qualification level.
 
 For each lead, evaluate:
 1. Budget - Can they afford the solution?

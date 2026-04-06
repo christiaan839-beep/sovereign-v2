@@ -236,7 +236,7 @@ export default function AgentHQPage() {
               </div>
             ) : (
               <div className="px-5 py-10 text-center">
-                <Activity className="w-5 h-5 text-neutral-700 mx-auto mb-3" />
+                <Activity className="w-5 h-5 text-neutral-500 mx-auto mb-3" />
                 <p className="text-neutral-500 text-xs font-mono">
                   No agent activity yet. Run an agent to see it here.
                 </p>
@@ -270,7 +270,7 @@ export default function AgentHQPage() {
               <span className="text-sm font-medium text-neutral-300 group-hover:text-white transition-colors flex-1">
                 {action.label}
               </span>
-              <ArrowRight className="w-4 h-4 text-neutral-700 group-hover:text-[#00B7FF] transition-colors" />
+              <ArrowRight className="w-4 h-4 text-neutral-500 group-hover:text-[#00B7FF] transition-colors" />
             </motion.button>
           ))}
         </motion.div>

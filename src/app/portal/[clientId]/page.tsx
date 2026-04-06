@@ -225,7 +225,7 @@ export default function ClientDashboard({
               <h2 className="text-xs font-bold uppercase tracking-widest text-neutral-500 flex items-center gap-2">
                 <Activity className="w-4 h-4" /> Recent Activity
               </h2>
-              <span className="text-[10px] text-neutral-600">
+              <span className="text-[10px] text-neutral-500">
                 Last 10 executions
               </span>
             </div>
@@ -244,7 +244,7 @@ export default function ClientDashboard({
                   ))}
                 </div>
               ) : metrics.recentActivity.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 text-neutral-600">
+                <div className="flex flex-col items-center justify-center py-16 text-neutral-500">
                   <Activity className="w-10 h-10 mb-3 opacity-40" />
                   <p className="text-sm">No activity recorded yet.</p>
                   <p className="text-xs mt-1">
@@ -272,7 +272,7 @@ export default function ClientDashboard({
                               <span className="text-sm font-semibold text-white truncate">
                                 {item.agent}
                               </span>
-                              <span className="text-[10px] text-neutral-600 font-mono flex items-center gap-1">
+                              <span className="text-[10px] text-neutral-500 font-mono flex items-center gap-1">
                                 <Clock className="w-3 h-3" />
                                 {formatTime(item.timestamp)}
                               </span>
@@ -334,7 +334,7 @@ export default function ClientDashboard({
 
       {/* ── Footer ── */}
       <footer className="border-t border-white/[0.06] py-6 text-center">
-        <p className="text-[10px] text-neutral-600 uppercase tracking-[0.2em]">
+        <p className="text-[10px] text-neutral-500 uppercase tracking-[0.2em]">
           Powered by {agencyName}
         </p>
       </footer>

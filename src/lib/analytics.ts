@@ -87,6 +87,12 @@ export function trackAgentExecution(
     timestamp: new Date().toISOString(),
   });
   enforceLimit();
+
+  // Also feed the model tracker (model is captured separately by AI router)
+  try {
+    const { recordModelExecution } = require("@/lib/model-tracker");
+    recordModelExecution(`agent:${agentName}`, { latencyMs: durationMs, success });
+  } catch { /* model-tracker not available */ }
 }
 
 export function trackUserAction(

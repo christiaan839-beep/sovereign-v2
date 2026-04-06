@@ -216,10 +216,10 @@ export default function ShowcasePage() {
             </table>
           </div>
           <div className="px-5 py-3 border-t border-white/[0.04] flex items-center justify-between">
-            <span className="text-[10px] text-neutral-600 font-mono">
+            <span className="text-[10px] text-neutral-500 font-mono">
               5 of 53 results shown
             </span>
-            <span className="text-[10px] text-neutral-600">
+            <span className="text-[10px] text-neutral-500">
               Scores based on ICP fit, hiring signals, funding recency
             </span>
           </div>
@@ -237,15 +237,15 @@ export default function ShowcasePage() {
               Why AI Agents Are Replacing the Traditional Agency Model
             </h3>
             <div className="flex items-center gap-3 mb-5">
-              <span className="text-[10px] text-neutral-600 font-mono">
+              <span className="text-[10px] text-neutral-500 font-mono">
                 2,147 words
               </span>
               <span className="w-1 h-1 rounded-full bg-neutral-700" />
-              <span className="text-[10px] text-neutral-600 font-mono">
+              <span className="text-[10px] text-neutral-500 font-mono">
                 8 min read
               </span>
               <span className="w-1 h-1 rounded-full bg-neutral-700" />
-              <span className="text-[10px] text-neutral-600 font-mono">
+              <span className="text-[10px] text-neutral-500 font-mono">
                 Readability: Grade 8
               </span>
             </div>
@@ -253,11 +253,11 @@ export default function ShowcasePage() {
               {BLOG_EXCERPT}
             </div>
             <div className="mt-5 pt-4 border-t border-white/[0.04] flex items-center gap-4">
-              <span className="text-[10px] text-neutral-600">
+              <span className="text-[10px] text-neutral-500">
                 Brand voice applied from memory
               </span>
               <span className="w-1 h-1 rounded-full bg-neutral-700" />
-              <span className="text-[10px] text-neutral-600">
+              <span className="text-[10px] text-neutral-500">
                 One-click publish to WordPress, Medium, LinkedIn
               </span>
             </div>
@@ -287,7 +287,7 @@ export default function ShowcasePage() {
             ))}
           </div>
           <div className="px-5 py-3 border-t border-white/[0.04]">
-            <span className="text-[10px] text-neutral-600 font-mono">
+            <span className="text-[10px] text-neutral-500 font-mono">
               5 findings shown — full audit covers technical SEO, content gaps,
               backlink profile, and keyword opportunities
             </span>
@@ -343,7 +343,7 @@ export default function ShowcasePage() {
             </table>
           </div>
           <div className="px-5 py-3 border-t border-white/[0.04]">
-            <span className="text-[10px] text-neutral-600 font-mono">
+            <span className="text-[10px] text-neutral-500 font-mono">
               Full report includes tech stack detection, backlink comparison,
               content gap analysis, and counter-strategy recommendations
             </span>

@@ -105,7 +105,7 @@ export default function DemoPage() {
               <span className={`w-2 h-2 rounded-full ${timeLeft > 30 ? "bg-emerald-400" : "bg-red-400 animate-pulse"}`} />
               <span className="text-xs font-mono text-neutral-400">{formatTime(timeLeft)} remaining</span>
             </div>
-            <span className="text-xs font-mono text-neutral-600">{queriesUsed}/5 queries</span>
+            <span className="text-xs font-mono text-neutral-500">{queriesUsed}/5 queries</span>
             <Link href="/pricing" className="px-4 py-2 rounded-lg bg-white text-black text-xs font-bold uppercase tracking-widest hover:bg-neutral-200 transition-gpu">
               Upgrade
             </Link>
@@ -131,7 +131,7 @@ export default function DemoPage() {
             >
               <agent.icon className={`w-5 h-5 ${agent.color} mb-2`} />
               <div className="text-sm font-bold text-white">{agent.name}</div>
-              <div className="text-[10px] text-neutral-600 mt-1 line-clamp-2">{agent.description}</div>
+              <div className="text-[10px] text-neutral-500 mt-1 line-clamp-2">{agent.description}</div>
             </button>
           ))}
         </div>
@@ -161,8 +161,8 @@ export default function DemoPage() {
               </div>
               <p className="text-sm text-neutral-300 leading-relaxed font-mono whitespace-pre-wrap">{streamText}<span className="inline-block w-1.5 h-4 bg-emerald-400 ml-0.5 animate-pulse" /></p>
               <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between">
-                <span className="text-[10px] text-neutral-600 font-mono">NVIDIA NIM × Nemotron</span>
-                <span className="text-[10px] text-neutral-600 font-mono">{queriesUsed}/5 used</span>
+                <span className="text-[10px] text-neutral-500 font-mono">NVIDIA NIM × Nemotron</span>
+                <span className="text-[10px] text-neutral-500 font-mono">{queriesUsed}/5 used</span>
               </div>
             </motion.div>
           )}
@@ -170,7 +170,7 @@ export default function DemoPage() {
 
         {(timeLeft <= 0 || queriesUsed >= 5) && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-16">
-            <Lock className="w-12 h-12 text-neutral-600 mx-auto mb-4" />
+            <Lock className="w-12 h-12 text-neutral-500 mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-white serif-text mb-3">Sandbox Expired</h2>
             <p className="text-neutral-500 mb-8 max-w-md mx-auto">You&apos;ve seen what 5 queries can do. Imagine 72 agents running 24/7.</p>
             <Link href="/pricing" className="inline-flex items-center gap-2 px-10 py-5 rounded-2xl bg-white text-black font-bold uppercase tracking-widest text-sm hover:bg-neutral-200 transition-gpu shadow-[0_0_40px_rgba(255,255,255,0.15)] group">

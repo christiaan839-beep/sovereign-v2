@@ -1,28 +1,39 @@
-import { auth } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
+import { createAgentRoute } from "@/lib/agent-factory";
+import { z } from "zod";
 import { runSwarm } from "@/lib/swarm";
 
 /**
  * PROPOSAL GENERATOR — Input a client brief and get a full branded proposal.
- * Uses the Swarm (Creator/Critic) for elite output quality.
+ * Uses the Swarm (Creator/Critic) for high output quality.
  */
 
-export async function POST(request: Request) {
-  try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const body = await request.json();
-    // Support both direct fields and playbook format
-    const client_name = body.client_name || body.client || "";
-    const project_type = body.project_type || body.service || body.product || "";
-    const requirements = body.requirements || body.prompt || "";
-    const budget_range = body.budget_range || body.budget || "";
-    const timeline = body.timeline || "";
-    const context = body.context || ""; // From previous playbook steps (e.g., site analysis + lead data)
+const schema = z.object({
+  client_name: z.string().max(200).optional(),
+  client: z.string().max(200).optional(),
+  project_type: z.string().max(200).optional(),
+  service: z.string().max(200).optional(),
+  product: z.string().max(200).optional(),
+  requirements: z.string().max(5000).optional(),
+  prompt: z.string().max(5000).optional(),
+  budget_range: z.string().max(200).optional(),
+  budget: z.string().max(200).optional(),
+  timeline: z.string().max(200).optional(),
+  context: z.string().max(5000).optional(),
+}).refine(
+  (d) => d.client_name || d.client || d.project_type || d.service || d.requirements || d.prompt,
+  { message: "Provide at least a client name, project type, or requirements" }
+);
 
-    if (!client_name && !project_type && !requirements) {
-      return NextResponse.json({ error: "Provide client_name, project_type, or prompt." }, { status: 400 });
-    }
+export const POST = createAgentRoute({
+  name: "proposal-generator",
+  schema,
+  handler: async ({ input }) => {
+    const client_name = (input.client_name || input.client || "") as string;
+    const project_type = (input.project_type || input.service || input.product || "") as string;
+    const requirements = (input.requirements || input.prompt || "") as string;
+    const budget_range = (input.budget_range || input.budget || "") as string;
+    const timeline = (input.timeline || "") as string;
+    const context = (input.context || "") as string;
 
     const start = Date.now();
     const { finalOutput, rounds } = await runSwarm({
@@ -46,12 +57,12 @@ OUTPUT STRUCTURE:
 8. NEXT STEPS (clear CTA with scheduling link)
 
 Write in confident but warm professional tone. No jargon. No filler.`,
-      creatorSystem: "You are a proposal writer who has closed $50M+ in consulting deals. Your proposals are clear, visually structured, and always end with a strong call to action. You write for decision-makers who skim.",
-      criticSystem: "You are a procurement officer. Check: Is the pricing clear? Are deliverables specific enough to hold the vendor accountable? Is there any vague language that could cause scope creep? If perfect, output FINAL_APPROVED.",
+      creatorSystem: "You are a proposal writer who has closed $50M+ in consulting deals. Your proposals are clear, visually structured, and always end with a strong call to action.",
+      criticSystem: "You are a procurement officer. Check: Is the pricing clear? Are deliverables specific enough? Is there vague language that could cause scope creep? If perfect, output FINAL_APPROVED.",
       maxRounds: 2,
     });
 
-    return NextResponse.json({
+    return {
       success: true,
       agent: "proposal-generator",
       client: client_name,
@@ -59,8 +70,6 @@ Write in confident but warm professional tone. No jargon. No filler.`,
       proposal: finalOutput,
       swarm_rounds: rounds,
       duration_ms: Date.now() - start,
-    });
-  } catch (error) {
-    return NextResponse.json({ error: "Proposal generator error", details: String(error) }, { status: 500 });
-  }
-}
+    };
+  },
+});

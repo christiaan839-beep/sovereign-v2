@@ -1,28 +1,28 @@
-import { auth } from "@clerk/nextjs/server";
+import { createAgentRoute } from "@/lib/agent-factory";
 import { NextResponse } from "next/server";
 import { createLogger } from "@/lib/logger";
 const log = createLogger("ghost-fleet-agent");
 
-export async function POST(req: Request) {
-  try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const { competitorName } = await req.json();
+export const POST = createAgentRoute({
+  name: "ghost-fleet",
+  handler: async ({ input, email, userId }) => {
+
+    const { competitorName } = input as Record<string, unknown>;
 
     if (!competitorName) {
-      return NextResponse.json({ error: "Missing competitor target." }, { status: 400 });
+      return ({ error: "Missing competitor target." });
     }
 
     const nimKey = process.env.NVIDIA_NIM_API_KEY;
     if (!nimKey) {
-      return NextResponse.json({ error: "NVIDIA_NIM_API_KEY is not configured." }, { status: 500 });
+      return ({ error: "NVIDIA_NIM_API_KEY is not configured." });
     }
 
     // Phase 1: Simulate/Execute Tavily Search for Complaints
     // Since scraping G2/Twitter in real-time takes complex custom scrapers, we will simulate
     // the "insight" gathering using Nemotron to generate realistic complaint data for the demo,
     // assuming this would be replaced by a real Firecrawl/Tavily actor in production.
-    const prompt = `You are an elite B2B Sales Development Representative (SDR). 
+    const prompt = `You are a B2B Sales Development Representative (SDR). 
 I am targeting unhappy customers of: ${competitorName}.
 Create ONE highly realistic, specific complaint from a frustrated user.
 Then, invent a realistic B2B buyer persona for this user (Name, Title, Company).
@@ -79,8 +79,7 @@ Respond ONLY in strict JSON format:
 
     return NextResponse.json(resultJson);
 
-  } catch (error: unknown) {
-    log.error("Ghost fleet error", error as Record<string, unknown>);
-    return NextResponse.json({ error: (error as Error).message || "Failed to execute Ghost Fleet operations." }, { status: 500 });
-  }
-}
+  
+  },
+});
+

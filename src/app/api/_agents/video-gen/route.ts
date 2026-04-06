@@ -1,5 +1,5 @@
+import { createAgentRoute } from "@/lib/agent-factory";
 import { NextResponse } from "next/server";
-import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { settings } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -11,12 +11,14 @@ import { ai } from "@/lib/ai";
  * Uses AI to enhance prompts into cinematic directives before generation.
  */
 
-export async function POST(req: Request) {
-  try {
-    const { prompt, provider = "luma", enhance = true } = await req.json();
+export const POST = createAgentRoute({
+  name: "video-gen",
+  handler: async ({ input, email, userId }) => {
+
+    const { prompt, provider = "luma", enhance = true } = input as Record<string, unknown>;
 
     if (!prompt) {
-      return NextResponse.json({ error: "Cinematic prompt required." }, { status: 400 });
+      return ({ error: "Cinematic prompt required." });
     }
 
     // Use AI to enhance the raw prompt into a cinematic video directive
@@ -41,22 +43,23 @@ Return ONLY the enhanced prompt (no explanations). The enhanced prompt should:
       );
     }
 
-    const user = await currentUser();
     let apiKey = process.env.VIDEO_GEN_API_KEY || "";
 
-    if (user?.primaryEmailAddress?.emailAddress) {
-      const userSettings = await db.query.settings.findFirst({
-        where: eq(settings.userEmail, user.primaryEmailAddress.emailAddress)
-      });
-      if (userSettings?.apiKeys) {
-        const keys = JSON.parse(userSettings.apiKeys);
-        if (keys.luma && provider === "luma") apiKey = keys.luma;
-        if (keys.runway && provider === "runway") apiKey = keys.runway;
-      }
+    if (email) {
+      try {
+        const userSettings = await db.query.settings.findFirst({
+          where: eq(settings.userEmail, email)
+        });
+        if (userSettings?.apiKeys) {
+          const keys = JSON.parse(userSettings.apiKeys);
+          if (keys.luma && provider === "luma") apiKey = keys.luma;
+          if (keys.runway && provider === "runway") apiKey = keys.runway;
+        }
+      } catch { /* BYOK lookup failed — use default */ }
     }
 
     if (!apiKey) {
-      return NextResponse.json({ error: `API Key required for ${provider} Video Generative Engine.` }, { status: 401 });
+      return ({ error: `API Key required for ${provider} Video Generative Engine.` });
     }
 
     if (provider === "luma") {
@@ -74,12 +77,12 @@ Return ONLY the enhanced prompt (no explanations). The enhanced prompt should:
 
       if (!response.ok) {
         const errDump = await response.text();
-        return NextResponse.json({ error: "Luma API Error", details: errDump }, { status: response.status });
+        return ({ error: "Luma API Error", details: errDump }, { status: response.status });
       }
 
       const lumaData = await response.json();
 
-      return NextResponse.json({
+      return ({
         success: true,
         task_id: lumaData.id,
         status: "GENERATING",
@@ -89,9 +92,9 @@ Return ONLY the enhanced prompt (no explanations). The enhanced prompt should:
       });
     }
 
-    return NextResponse.json({ error: "Unsupported Video Provider." }, { status: 400 });
+    return ({ error: "Unsupported Video Provider." });
 
-  } catch (error) {
-    return NextResponse.json({ error: "Filmmaker Engine Exception", details: String(error) }, { status: 500 });
-  }
-}
+  
+  },
+});
+

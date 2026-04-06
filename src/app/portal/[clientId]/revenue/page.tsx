@@ -189,7 +189,7 @@ export default function RevenuePage({
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex flex-col items-center justify-center py-24 text-neutral-600"
+            className="flex flex-col items-center justify-center py-24 text-neutral-500"
           >
             <BarChart3 className="w-12 h-12 mb-4 opacity-30" />
             <p className="text-sm">No revenue data available yet.</p>
@@ -304,7 +304,7 @@ export default function RevenuePage({
                             <p className="text-sm font-semibold text-white truncate">
                               {name}
                             </p>
-                            <p className="text-[10px] text-neutral-600">
+                            <p className="text-[10px] text-neutral-500">
                               {pct}% of total
                             </p>
                           </div>
@@ -318,7 +318,7 @@ export default function RevenuePage({
                 </div>
 
                 {sortedAgents.length === 0 && (
-                  <p className="text-xs text-neutral-600 text-center py-4">
+                  <p className="text-xs text-neutral-500 text-center py-4">
                     No agent data available.
                   </p>
                 )}
@@ -344,7 +344,7 @@ export default function RevenuePage({
 
       {/* ── Footer ── */}
       <footer className="border-t border-white/[0.06] py-6 text-center">
-        <p className="text-[10px] text-neutral-600 uppercase tracking-[0.2em]">
+        <p className="text-[10px] text-neutral-500 uppercase tracking-[0.2em]">
           Powered by {agencyName}
         </p>
       </footer>

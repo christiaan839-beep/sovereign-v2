@@ -25,7 +25,7 @@ export async function POST(req: Request) {
 
     const { text: articleHtml } = await generateText({
       model: google("gemini-2.5-pro"),
-      prompt: `You are an elite, technical SEO architect writing for a ${industry || "digital agency"}. 
+      prompt: `You are a senior, technical SEO architect writing for a ${industry || "digital agency"}. 
 
 Generate a completely comprehensive, 2,000-word authoritative guide optimized for the keyword: "${targetKeyword}" in "${location || 'Global'}".
 

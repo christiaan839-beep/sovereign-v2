@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { createAgentRoute } from "@/lib/agent-factory";
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { google } from '@ai-sdk/google';
@@ -7,14 +7,14 @@ import * as cheerio from 'cheerio';
 import { createLogger } from "@/lib/logger";
 const log = createLogger("audit-engine");
 
-export async function POST(req: Request) {
-  try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const { targetUrl } = await req.json();
+export const POST = createAgentRoute({
+  name: "audit",
+  handler: async ({ input, email, userId }) => {
+
+    const { targetUrl } = input as Record<string, unknown>;
 
     if (!targetUrl) {
-      return NextResponse.json({ error: 'URL is required' }, { status: 400 });
+      return ({ error: 'URL is required' });
     }
 
     // 1. Physically scrape the target website
@@ -56,16 +56,12 @@ export async function POST(req: Request) {
       prompt: `Target URL: ${targetUrl}\n\nScraped Intel:\n${scrapedText || 'Firewalled. Infer business model from domain name.'}`
     });
 
-    return NextResponse.json({
+    return ({
       ...object,
       pdfReady: true
     });
 
-  } catch (error: unknown) {
-    log.error('Audit engine error', error as Record<string, unknown>);
-    return NextResponse.json(
-      { error: (error as Error).message || 'Internal Server Error' },
-      { status: 500 }
-    );
-  }
-}
+  
+  },
+});
+

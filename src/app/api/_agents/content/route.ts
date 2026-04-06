@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { createAgentRoute } from "@/lib/agent-factory";
 import {
   generateBlogPost,
   generateEmailSequence,
@@ -6,87 +6,57 @@ import {
   generateVideoScript,
 } from "@/agents/content-factory";
 import { fireUserWebhook } from "@/lib/webhooks";
-import { createLogger } from "@/lib/logger";
-const log = createLogger("content-factory");
-import { requireAuth } from "@/lib/auth-guard";
 
-export async function POST(req: NextRequest) {
-  const auth = await requireAuth(); if (auth.error) return auth.error;
-  try {
-    const body = await req.json();
-    const { action, params } = body;
-
-    if (!action) {
-      return NextResponse.json(
-        { error: "Missing required field: action" },
-        { status: 400 }
-      );
-    }
+export const POST = createAgentRoute({
+  name: "content",
+  requiredFields: ["action"],
+  handler: async ({ input }) => {
+    const { action, params } = input as Record<string, unknown>;
+    const p = (params || {}) as Record<string, unknown>;
 
     switch (action) {
       case "blog": {
-        const { topic, keywords, tone } = params || {};
+        const { topic, keywords, tone } = p;
         if (!topic) {
-          return NextResponse.json(
-            { error: "Missing params: topic (keywords optional as array, tone optional)" },
-            { status: 400 }
-          );
+          throw new Error("Missing params: topic (keywords optional as array, tone optional)");
         }
-        const result = await generateBlogPost(topic, keywords || [], tone);
+        const result = await generateBlogPost(topic as string, (keywords || []) as string[], tone as string);
         await fireUserWebhook("Content Factory", "Blog Post", result);
-        return NextResponse.json(result);
+        return result;
       }
 
       case "email": {
-        const { product, audience, steps } = params || {};
+        const { product, audience, steps } = p;
         if (!product || !audience) {
-          return NextResponse.json(
-            { error: "Missing params: product and audience" },
-            { status: 400 }
-          );
+          throw new Error("Missing params: product and audience");
         }
-        const result = await generateEmailSequence(product, audience, steps);
+        const result = await generateEmailSequence(product as string, audience as string, steps as number);
         await fireUserWebhook("Content Factory", "Email Sequence", result);
-        return NextResponse.json(result);
+        return result;
       }
 
       case "social": {
-        const { topic, platforms } = params || {};
+        const { topic, platforms } = p;
         if (!topic) {
-          return NextResponse.json(
-            { error: "Missing params: topic" },
-            { status: 400 }
-          );
+          throw new Error("Missing params: topic");
         }
-        const result = await generateSocialPack(topic, platforms);
+        const result = await generateSocialPack(topic as string, platforms as string[]);
         await fireUserWebhook("Content Factory", "Social Pack", result);
-        return NextResponse.json(result);
+        return result;
       }
 
       case "video": {
-        const { topic, duration, style } = params || {};
+        const { topic, duration, style } = p;
         if (!topic) {
-          return NextResponse.json(
-            { error: "Missing params: topic" },
-            { status: 400 }
-          );
+          throw new Error("Missing params: topic");
         }
-        const result = await generateVideoScript(topic, duration, style);
+        const result = await generateVideoScript(topic as string, duration as string, style as string);
         await fireUserWebhook("Content Factory", "Video Script", result);
-        return NextResponse.json(result);
+        return result;
       }
 
       default:
-        return NextResponse.json(
-          { error: `Unknown action: ${action}. Available: blog, email, social, video` },
-          { status: 400 }
-        );
+        throw new Error(`Unknown action: ${action}. Available: blog, email, social, video`);
     }
-  } catch (error) {
-    log.error("Content factory error", error as Record<string, unknown>);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Internal error" },
-      { status: 500 }
-    );
-  }
-}
+  },
+});

@@ -25,40 +25,31 @@ interface TopAgent {
 
 interface AnalyticsData {
   revenue: {
-    subscriptions: {
-      free: number;
-      array: number;
-      node: number;
-      enterprise: number;
-    };
+    activeSubscriptionsByPlan: Record<string, number>;
+    estimatedMRR: number;
   };
   users: {
     total: number;
-    newThisWeek: number;
-    newThisMonth: number;
+    last7Days: number;
+    last30Days: number;
   };
   agents: {
-    executions24h: number;
-    executions7d: number;
-    executions30d: number;
+    executions: {
+      last24h: number;
+      last7d: number;
+      last30d: number;
+    };
     topAgents: TopAgent[];
   };
   leads: {
-    generated30d: number;
+    last30Days: number;
   };
   content: {
-    generated30d: number;
+    generationsLast30Days: number;
   };
 }
 
-/* ─── Plan Pricing ─── */
-
-const PLAN_PRICES: Record<string, number> = {
-  free: 0,
-  array: 49,
-  node: 199,
-  enterprise: 499,
-};
+import { getPlanMrrUsd, PLANS } from "@/lib/plans";
 
 /* ─── Helpers ─── */
 
@@ -191,7 +182,7 @@ function TopAgentsList({ agents }: { agents: TopAgent[] }) {
             <div key={agent.name}>
               <div className="flex items-center justify-between mb-1.5">
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-mono text-neutral-600 w-4 text-right">
+                  <span className="text-[10px] font-mono text-neutral-500 w-4 text-right">
                     {i + 1}
                   </span>
                   <span className="text-xs text-neutral-300">{agent.name}</span>
@@ -276,17 +267,11 @@ export default function AdminDashboardPage() {
 
   // ─── Computed Revenue ───
   const mrr = data
-    ? (data.revenue.subscriptions.free * PLAN_PRICES.free) +
-      (data.revenue.subscriptions.array * PLAN_PRICES.array) +
-      (data.revenue.subscriptions.node * PLAN_PRICES.node) +
-      (data.revenue.subscriptions.enterprise * PLAN_PRICES.enterprise)
+    ? data.revenue.estimatedMRR
     : 0;
   const arr = mrr * 12;
   const totalSubscriptions = data
-    ? data.revenue.subscriptions.free +
-      data.revenue.subscriptions.array +
-      data.revenue.subscriptions.node +
-      data.revenue.subscriptions.enterprise
+    ? Object.values(data.revenue.activeSubscriptionsByPlan).reduce((sum, n) => sum + n, 0)
     : 0;
   const valuation = arr * 10;
 
@@ -391,7 +376,7 @@ export default function AdminDashboardPage() {
                 <StatCard
                   label="Active Subscriptions"
                   value={formatNumber(totalSubscriptions)}
-                  subtitle={`${formatNumber(data.revenue.subscriptions.array + data.revenue.subscriptions.node + data.revenue.subscriptions.enterprise)} paid`}
+                  subtitle={`${formatNumber(totalSubscriptions - (data.revenue.activeSubscriptionsByPlan.free || 0))} paid`}
                   icon={BarChart3}
                   color="emerald"
                   delay={0.15}
@@ -420,7 +405,7 @@ export default function AdminDashboardPage() {
                 />
                 <StatCard
                   label="New This Week"
-                  value={formatNumber(data.users.newThisWeek)}
+                  value={formatNumber(data.users.last7Days)}
                   subtitle="Last 7 days"
                   icon={TrendingUp}
                   color="cyan"
@@ -428,7 +413,7 @@ export default function AdminDashboardPage() {
                 />
                 <StatCard
                   label="New This Month"
-                  value={formatNumber(data.users.newThisMonth)}
+                  value={formatNumber(data.users.last30Days)}
                   subtitle="Last 30 days"
                   icon={TrendingUp}
                   color="cyan"
@@ -443,21 +428,21 @@ export default function AdminDashboardPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
                 <StatCard
                   label="Executions (24h)"
-                  value={formatNumber(data.agents.executions24h)}
+                  value={formatNumber(data.agents.executions.last24h)}
                   icon={Activity}
                   color="violet"
                   delay={0.3}
                 />
                 <StatCard
                   label="Executions (7d)"
-                  value={formatNumber(data.agents.executions7d)}
+                  value={formatNumber(data.agents.executions.last7d)}
                   icon={Activity}
                   color="violet"
                   delay={0.35}
                 />
                 <StatCard
                   label="Executions (30d)"
-                  value={formatNumber(data.agents.executions30d)}
+                  value={formatNumber(data.agents.executions.last30d)}
                   icon={Activity}
                   color="violet"
                   delay={0.4}
@@ -472,14 +457,14 @@ export default function AdminDashboardPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <StatCard
                   label="Leads Generated (30d)"
-                  value={formatNumber(data.leads.generated30d)}
+                  value={formatNumber(data.leads.last30Days)}
                   icon={Target}
                   color="amber"
                   delay={0.4}
                 />
                 <StatCard
                   label="Content Generated (30d)"
-                  value={formatNumber(data.content.generated30d)}
+                  value={formatNumber(data.content.generationsLast30Days)}
                   icon={Sparkles}
                   color="amber"
                   delay={0.45}

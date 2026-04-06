@@ -82,7 +82,7 @@ async function stagePolish(
       "Vivid, rhythmic. Surprise the reader. Break rules on purpose, not by accident.",
   };
 
-  const system = `You are an elite copy editor. Your job: make this text sound like a sharp human wrote it, not an AI.
+  const system = `You are a senior copy editor. Your job: make this text sound like a sharp human wrote it, not an AI.
 
 Rules:
 - Remove filler and throat-clearing sentences

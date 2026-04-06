@@ -1,3 +1,4 @@
+import { createAgentRoute } from "@/lib/agent-factory";
 import { NextResponse } from "next/server";
 import { getBaseUrl } from "@/lib/base-url";
 
@@ -29,7 +30,7 @@ const AGENT_MAP: Record<string, string> = {
   "marketplace": "/api/_agents/marketplace",
 };
 
-export async function POST(request: Request) {
+async function _postHandler(request: Request) {
   try {
     // API key auth
     const apiKey = request.headers.get("x-api-key");
@@ -91,3 +92,19 @@ export async function GET() {
     },
   });
 }
+
+
+// Factory wrapper for POST (adds safety pipeline)
+export const POST = createAgentRoute({
+  name: "webhook-gateway",
+  handler: async ({ input, email, userId, request }) => {
+    // Delegate to existing handler
+    const fakeReq = new Request("http://localhost", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
+    const res = await _postHandler(fakeReq);
+    return res instanceof Response ? await res.json() : res;
+  },
+});

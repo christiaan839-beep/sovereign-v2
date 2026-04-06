@@ -15,13 +15,7 @@ interface UsageEvent {
   tokens: number;
 }
 
-// Plan limits (generations per day)
-const PLAN_LIMITS: Record<string, number> = {
-  sniper: 10,
-  node: 100,
-  array: 500,
-  enterprise: -1, // unlimited
-};
+import { getPlan, normalizePlanId } from "@/lib/plans";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -36,18 +30,20 @@ export async function GET(req: Request) {
     (e) => e.userId === userId && e.timestamp.startsWith(today)
   );
 
-  const limit = PLAN_LIMITS[plan] || 100;
+  const planId = normalizePlanId(plan);
+  const limit = getPlan(planId).runsPerMonth;
   const used = todayUsage.length;
-  const remaining = limit === -1 ? -1 : Math.max(0, limit - used);
+  const isUnlimited = limit >= 10_000;
+  const remaining = isUnlimited ? Infinity : Math.max(0, limit - used);
 
   return NextResponse.json({
     userId,
-    plan,
+    plan: planId,
     today: {
       used,
-      limit: limit === -1 ? "unlimited" : limit,
-      remaining: limit === -1 ? "unlimited" : remaining,
-      percentUsed: limit === -1 ? 0 : Math.round((used / limit) * 100),
+      limit: isUnlimited ? "unlimited" : limit,
+      remaining: isUnlimited ? "unlimited" : remaining,
+      percentUsed: isUnlimited ? 0 : Math.round((used / limit) * 100),
     },
     totalAllTime: allUsage.filter((e) => e.userId === userId).length,
   });

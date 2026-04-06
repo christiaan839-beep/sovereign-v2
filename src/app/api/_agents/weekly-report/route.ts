@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { createAgentRoute } from "@/lib/agent-factory";
 import { NextResponse } from "next/server";
 import { persistAppend, persistRead } from "@/lib/persist";
 import { ai } from "@/lib/ai";
@@ -35,7 +35,7 @@ export async function GET() {
   });
 }
 
-export async function POST(req: Request) {
+async function _postHandler(request: Request) {
   try {
     const { userId } = await auth();
     if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
@@ -177,3 +177,19 @@ Return ONLY valid JSON, no markdown fences.`,
     return NextResponse.json({ error: "Report generation failed" }, { status: 500 });
   }
 }
+
+
+// Factory wrapper for POST (adds safety pipeline)
+export const POST = createAgentRoute({
+  name: "weekly-report",
+  handler: async ({ input, email, userId, request }) => {
+    // Delegate to existing handler
+    const fakeReq = new Request("http://localhost", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
+    const res = await _postHandler(fakeReq);
+    return res instanceof Response ? await res.json() : res;
+  },
+});

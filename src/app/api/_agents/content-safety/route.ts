@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { createAgentRoute } from "@/lib/agent-factory";
 import { NextResponse } from "next/server";
 
 /**
@@ -6,15 +6,15 @@ import { NextResponse } from "next/server";
  * to detect prompt injection, toxic outputs, and unsafe content.
  * This should be used as a pre-flight check on all user-facing AI endpoints.
  */
-export async function POST(req: Request) {
-  try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const { text } = await req.json();
-    if (!text) return NextResponse.json({ error: "Missing text." }, { status: 400 });
+export const POST = createAgentRoute({
+  name: "content-safety",
+  handler: async ({ input, email, userId }) => {
+
+    const { text } = input as Record<string, unknown>;
+    if (!text) return ({ error: "Missing text." });
 
     const nimKey = process.env.NVIDIA_NIM_API_KEY;
-    if (!nimKey) return NextResponse.json({ error: "NVIDIA_NIM_API_KEY not configured." }, { status: 500 });
+    if (!nimKey) return ({ error: "NVIDIA_NIM_API_KEY not configured." });
 
     const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
       method: "POST",
@@ -35,7 +35,7 @@ export async function POST(req: Request) {
 
     if (!res.ok) {
       // Fail-open: if the safety model is down, allow the request but flag it
-      return NextResponse.json({ safe: true, category: "unknown", confidence: 0, explanation: "Safety model unavailable — fail-open policy." });
+      return ({ safe: true, category: "unknown", confidence: 0, explanation: "Safety model unavailable — fail-open policy." });
     }
 
     const data = await res.json();
@@ -46,9 +46,9 @@ export async function POST(req: Request) {
       const parsed = match ? JSON.parse(match[0]) : { safe: true, category: "none", confidence: 0.5 };
       return NextResponse.json(parsed);
     } catch {
-      return NextResponse.json({ safe: true, category: "parse_error", confidence: 0, explanation: raw.slice(0, 200) });
+      return ({ safe: true, category: "parse_error", confidence: 0, explanation: raw.slice(0, 200) });
     }
-  } catch (error: unknown) {
-    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
-  }
-}
+  
+  },
+});
+

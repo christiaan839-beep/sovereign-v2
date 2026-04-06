@@ -1,75 +1,70 @@
-import { auth } from "@clerk/nextjs/server";
+import { createAgentRoute } from "@/lib/agent-factory";
+import { z } from "zod";
 import { getNimKey } from "@/lib/nvidia";
-import { NextResponse } from "next/server";
 
 /**
- * KIMI K2.5 CREATIVE DIRECTOR — MoE model currently #1 Featured on NIM.
- * 
- * Specializes in creative content generation:
- * - Ad copy & headlines
- * - Social media campaigns
- * - Brand voice & storytelling
- * - Product descriptions
- * - Video scripts
- * 
- * LICENSE: Apache 2.0 — commercial use permitted.
+ * CREATIVE DIRECTOR — Kimi K2.5 MoE model for creative content.
+ * Generates ad copy, social campaigns, brand storytelling, video scripts.
  */
 
-export async function POST(request: Request) {
-  try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const { brief, style = "professional", platform = "general", count = 3 } = await request.json();
+const STYLE_GUIDES: Record<string, string> = {
+  professional: "Polished, authoritative, data-driven. Think McKinsey meets Apple.",
+  bold: "Provocative, disruptive, attention-grabbing. Think Ogilvy meets Nike.",
+  conversational: "Warm, relatable, human. Think Mailchimp meets Innocent.",
+  luxury: "Exclusive, refined, aspirational.",
+  tech: "Clean, precise, innovative. Think Stripe meets Vercel.",
+};
 
-    if (!brief) {
-      return NextResponse.json({ error: "brief is required." }, { status: 400 });
-    }
+const PLATFORM_GUIDES: Record<string, string> = {
+  general: "Create versatile content adaptable to any channel.",
+  twitter: "Max 280 characters per post. Punchy, engagement-focused.",
+  linkedin: "Professional tone, thought-leadership, 150-300 words.",
+  instagram: "Visual-first descriptions, emoji-friendly, 125-150 words.",
+  email: "Subject line + body. Clear CTA. Personalization tokens like {firstName}.",
+};
 
-    const styleGuides: Record<string, string> = {
-      professional: "Polished, authoritative, data-driven. Think McKinsey meets Apple.",
-      bold: "Provocative, disruptive, attention-grabbing. Think Ogilvy meets Nike.",
-      conversational: "Warm, relatable, human. Think Mailchimp meets Innocent.",
-      luxury: "Exclusive, refined, aspirational. Think Hermès meets Rolls-Royce.",
-      tech: "Clean, precise, innovative. Think Stripe meets Vercel.",
-    };
+const schema = z.object({
+  brief: z.string().min(3, "Creative brief is required").max(2000),
+  style: z.enum(["professional", "bold", "conversational", "luxury", "tech"]).optional().default("professional"),
+  platform: z.enum(["general", "twitter", "linkedin", "instagram", "email"]).optional().default("general"),
+  count: z.number().int().min(1).max(10).optional().default(3),
+  prompt: z.string().max(5000).optional(),
+});
 
-    const platformGuides: Record<string, string> = {
-      general: "Create versatile content adaptable to any channel.",
-      twitter: "Max 280 characters per post. Punchy, hashtag-smart, engagement-focused.",
-      linkedin: "Professional tone, thought-leadership angle, 150-300 words.",
-      instagram: "Visual-first descriptions, emoji-friendly, 125-150 words with hashtags.",
-      email: "Subject line + body. Clear CTA. Personalization tokens like {firstName}.",
-    };
-
+export const POST = createAgentRoute({
+  name: "creative-director",
+  schema,
+  handler: async ({ input }) => {
+    const { brief, style, platform, count } = input as z.infer<typeof schema>;
     const start = Date.now();
+
     const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${await getNimKey()}` },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${await getNimKey()}` },
       body: JSON.stringify({
         model: "moonshotai/kimi-k2.5",
         messages: [
           {
             role: "system",
-            content: `You are a world-class Creative Director at a top agency. Style: ${styleGuides[style] || styleGuides.professional}. Platform: ${platformGuides[platform] || platformGuides.general}. Generate exactly ${count} creative variations.`,
+            content: `You are a Creative Director. Style: ${STYLE_GUIDES[style]}. Platform: ${PLATFORM_GUIDES[platform]}. Generate exactly ${count} creative variations. Each should be distinct in approach.`,
           },
-          { role: "user", content: `Creative Brief: ${brief}` },
+          { role: "user", content: `Brief: ${brief}` },
         ],
         max_tokens: 1200,
         temperature: 0.8,
       }),
     });
 
+    if (!res.ok) throw new Error(`NIM API returned ${res.status}`);
     const data = await res.json();
 
-    return NextResponse.json({
+    return {
       success: true,
-      model: "Kimi K2.5 (MoE — Featured #1 on NIM)",
-      style, platform,
+      model: "Kimi K2.5",
+      style,
+      platform,
       creatives: data?.choices?.[0]?.message?.content || "",
       duration_ms: Date.now() - start,
-      license: "Apache 2.0 — commercial use permitted",
-    });
-  } catch (error) {
-    return NextResponse.json({ error: "Creative Director error", details: String(error) }, { status: 500 });
-  }
-}
+    };
+  },
+});

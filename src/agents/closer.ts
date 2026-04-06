@@ -75,7 +75,7 @@ Step 4: Urgency play
 Step 5: Final close with risk reversal`,
     {
       model: "claude",
-      system: `You are an elite high-ticket closer who has sold $50M+ in consulting services. You know:
+      system: `You are a senior high-ticket closer who has sold $50M+ in consulting services. You know:
 - Pressure kills deals. Curiosity sells.
 - Every objection is a buying signal.
 - The best close doesn't feel like a close.

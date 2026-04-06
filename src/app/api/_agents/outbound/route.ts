@@ -1,85 +1,40 @@
-import { NextResponse } from "next/server";
-import { currentUser } from "@clerk/nextjs/server";
+import { createAgentRoute } from "@/lib/agent-factory";
+import { z } from "zod";
 import { ai } from "@/lib/ai";
 import { ANTI_SLOP_RULES } from "@/lib/content-engine";
 import { fireUserWebhook } from "@/lib/webhooks";
-import { createLogger } from "@/lib/logger";
-const log = createLogger("outbound-agent");
 
-/**
- * Outbound Engine API
- * Generates personalized cold outreach sequences (email + LinkedIn + DM).
- */
-
-const OUTBOUND_PROMPT = `You are an elite B2B outbound sales specialist. You write cold outreach that gets replies, not spam complaints.
+const OUTBOUND_PROMPT = `You are a B2B outbound sales specialist. You write cold outreach that gets replies.
 
 ${ANTI_SLOP_RULES}
 
-## OUTBOUND RULES
-1. Subject lines: Max 5 words, lowercase, curiosity-driven
-2. Opening line: Reference something specific about the prospect (never "I hope this finds you well")
-3. Value prop in 1 sentence — what result you deliver, not what you do
-4. Social proof: 1 specific result (client name + metric)
-5. CTA: Single, low-friction ask (never "jump on a call")
-6. Total email length: 50-80 words max
-7. Follow-ups get progressively shorter
-8. Never use "touching base" or "circling back"`;
+RULES: Subject lines max 5 words. Opening references something specific. Value prop in 1 sentence. CTA is low-friction. Total email 50-80 words max.`;
 
-export async function POST(req: Request) {
-  const user = await currentUser();
-  if (!user?.primaryEmailAddress?.emailAddress) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+export const POST = createAgentRoute({
+  name: "outbound",
+  schema: z.object({
+    prospectName: z.string().max(200).optional(),
+    prospectCompany: z.string().max(200).optional(),
+    prospectIndustry: z.string().max(200).optional(),
+    yourOffer: z.string().max(500).optional(),
+    yourProof: z.string().max(500).optional(),
+    channels: z.array(z.string()).optional().default(["email"]),
+    sequenceLength: z.number().int().min(1).max(10).optional().default(5),
+    prompt: z.string().optional(),
+  }),
+  handler: async ({ input }) => {
+    const { prospectName, prospectCompany, prospectIndustry, yourOffer, yourProof, channels, sequenceLength } = input as Record<string, unknown>;
 
-  try {
-    const { prospectName, prospectCompany, prospectIndustry, yourOffer, yourProof, channels, sequenceLength } = await req.json();
-
-    const prompt = `Generate a ${sequenceLength || 5}-step cold outreach sequence for:
-
-PROSPECT: ${prospectName || "Decision Maker"} at ${prospectCompany || "Target Company"}
-INDUSTRY: ${prospectIndustry || "B2B Services"}
-YOUR OFFER: ${yourOffer || "AI-powered marketing automation"}
-YOUR PROOF: ${yourProof || "Helped 50+ businesses increase leads by 300%"}
-CHANNELS: ${(channels || ["email"]).join(", ")}
-
-For EACH step, generate:
-1. CHANNEL: Email, LinkedIn message, or DM
-2. TIMING: Day number and time
-3. SUBJECT (for email): Max 5 words
-4. FULL MESSAGE: Complete, ready-to-send text
-5. FOLLOW-UP TRIGGER: What determines if you send next step
-
-Respond in JSON:
-{
-  "sequence": [
-    {
-      "step": 1,
-      "channel": "email",
-      "dayNumber": 1,
-      "timing": "Tuesday 9:15 AM",
-      "subject": "quick q about [company]",
-      "message": "Full message text",
-      "followUpTrigger": "No reply within 3 days"
-    }
-  ],
-  "overallStrategy": "Brief description of the sequence psychology"
-}`;
-
-    const result = await ai(prompt, { system: OUTBOUND_PROMPT, maxTokens: 3000 });
+    const result = await ai(
+      `Generate a ${sequenceLength || 5}-step cold outreach sequence. PROSPECT: ${prospectName || "Decision Maker"} at ${prospectCompany || "Target Company"}. INDUSTRY: ${prospectIndustry || "B2B"}. OFFER: ${yourOffer || "AI marketing automation"}. PROOF: ${yourProof || "50+ businesses, 300% more leads"}. CHANNELS: ${(channels as string[] || ["email"]).join(", ")}. Respond in JSON: {"sequence": [{"step": 1, "channel": "email", "dayNumber": 1, "subject": "...", "message": "...", "followUpTrigger": "..."}], "overallStrategy": "..."}`,
+      { system: OUTBOUND_PROMPT, maxTokens: 3000 }
+    );
 
     let parsed;
-    try {
-      const cleaned = result.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-      parsed = JSON.parse(cleaned);
-    } catch {
-      parsed = { sequence: [], rawOutput: result };
-    }
+    try { parsed = JSON.parse(result.replace(/```json?\n?/g, "").replace(/```/g, "").trim()); }
+    catch { parsed = { sequence: [], rawOutput: result }; }
 
-    await fireUserWebhook("Outbound", "SequenceGenerated", { prospectCompany, steps: parsed.sequence?.length });
-
-    return NextResponse.json({ success: true, ...parsed });
-  } catch (err) {
-    log.error("Outbound error", err as Record<string, unknown>);
-    return NextResponse.json({ error: "Failed" }, { status: 500 });
-  }
-}
+    await fireUserWebhook("Outbound", "SequenceGenerated", { prospectCompany }).catch(() => {});
+    return { success: true, ...parsed };
+  },
+});

@@ -301,12 +301,12 @@ export default function SovereignApp() {
             placeholder="Message Sovereign AI..."
             disabled={streaming}
             rows={1}
-            className="w-full bg-white/[0.04] border border-white/[0.08] rounded-2xl px-4 py-3 pr-24 text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-emerald-500/30 transition-colors resize-none disabled:opacity-50"
+            className="w-full bg-white/[0.04] border border-white/[0.08] rounded-2xl px-4 py-3 pr-24 text-sm text-white placeholder:text-neutral-500 focus:outline-none focus:border-emerald-500/30 transition-colors resize-none disabled:opacity-50"
           />
           <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
             <button
               onClick={toggleVoice}
-              className={`p-2 rounded-xl transition-colors ${isListening ? "bg-red-500/20 text-red-400" : "text-neutral-600 hover:text-white hover:bg-white/5"}`}
+              className={`p-2 rounded-xl transition-colors ${isListening ? "bg-red-500/20 text-red-400" : "text-neutral-500 hover:text-white hover:bg-white/5"}`}
               title={isListening ? "Stop listening" : "Voice input"}
             >
               {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
@@ -320,7 +320,7 @@ export default function SovereignApp() {
             </button>
           </div>
         </div>
-        <p className="text-center text-[10px] text-neutral-700 mt-2">
+        <p className="text-center text-[10px] text-neutral-500 mt-2">
           Sovereign AI • 65+ models • auto-routed • sovereignmatrix.agency
         </p>
       </div>

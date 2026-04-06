@@ -192,7 +192,7 @@ export default function PlaybooksPage() {
                     ) : step.status === "failed" ? (
                       <XCircle className="w-4 h-4 text-red-400" />
                     ) : (
-                      <Clock className="w-4 h-4 text-neutral-600" />
+                      <Clock className="w-4 h-4 text-neutral-500" />
                     )}
                   </div>
 
@@ -311,10 +311,10 @@ export default function PlaybooksPage() {
                   </div>
                   <div className="flex-1">
                     <span className="text-xs font-mono text-neutral-500">{step.agent}</span>
-                    <span className="text-xs text-neutral-600 ml-2">— {step.reason}</span>
+                    <span className="text-xs text-neutral-500 ml-2">— {step.reason}</span>
                   </div>
                   {i < selectedPlaybook.steps.length - 1 && (
-                    <ChevronRight className="w-3 h-3 text-neutral-700" />
+                    <ChevronRight className="w-3 h-3 text-neutral-500" />
                   )}
                 </div>
               ))}
@@ -370,7 +370,7 @@ export default function PlaybooksPage() {
             className={`w-full py-4 rounded-2xl text-sm font-bold flex items-center justify-center gap-3 transition-all ${
               allRequiredFilled
                 ? `bg-gradient-to-r ${colors.gradient} text-white shadow-lg ${colors.shadow} cursor-pointer`
-                : "bg-white/5 text-neutral-600 cursor-not-allowed"
+                : "bg-white/5 text-neutral-500 cursor-not-allowed"
             }`}
           >
             <Play className="w-4 h-4" />
@@ -453,14 +453,14 @@ export default function PlaybooksPage() {
               <p className="text-xs text-neutral-500 leading-relaxed mb-4 line-clamp-2">{playbook.description}</p>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <span className="flex items-center gap-1 text-[10px] text-neutral-600">
+                  <span className="flex items-center gap-1 text-[10px] text-neutral-500">
                     <Clock className="w-3 h-3" /> {playbook.estimatedTime}
                   </span>
-                  <span className="flex items-center gap-1 text-[10px] text-neutral-600">
+                  <span className="flex items-center gap-1 text-[10px] text-neutral-500">
                     <Zap className="w-3 h-3" /> {playbook.agentCount} agents
                   </span>
                 </div>
-                <ChevronRight className="w-4 h-4 text-neutral-700 group-hover:text-white transition-colors" />
+                <ChevronRight className="w-4 h-4 text-neutral-500 group-hover:text-white transition-colors" />
               </div>
             </motion.button>
           );

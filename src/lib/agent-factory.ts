@@ -35,6 +35,10 @@ import { trackAgentExecution } from "@/lib/analytics";
 import { getMemoryContext, saveMemory } from "@/lib/tenant-memory";
 import { getActionTier, buildConfirmResponse, buildRestrictedResponse, type ActionTier } from "@/lib/action-tiers";
 import { resolveTenantId } from "@/lib/tenant-resolver";
+import { isAgentAvailable, recordAgentSuccess, recordAgentFailure } from "@/lib/agent-circuit-breaker";
+import { persistAgentActivity } from "@/lib/activity-persist";
+import { notifyAgentComplete } from "@/lib/notify";
+import type { ZodObject, ZodRawShape } from "zod";
 
 const log = createLogger("agent-factory");
 
@@ -56,8 +60,12 @@ export interface AgentConfig {
   /** Agent name for logging and telemetry */
   name: string;
 
-  /** Fields required in the request body */
+  /** Fields required in the request body (legacy — prefer `schema` for type-safe validation) */
   requiredFields?: string[];
+
+  /** Zod schema for input validation. When provided, input is validated before the handler runs.
+   *  Falls back to `requiredFields` check if not provided. */
+  schema?: ZodObject<ZodRawShape>;
 
   /** Skip authentication (for public demo endpoints) */
   public?: boolean;
@@ -164,8 +172,14 @@ export function createAgentRoute(config: AgentConfig) {
         return errorResponse("Invalid JSON body", 400, "INVALID_BODY");
       }
 
-      // Validate required fields
-      if (config.requiredFields) {
+      // Validate input with Zod schema (preferred) or required fields (legacy fallback)
+      if (config.schema) {
+        const validation = config.schema.safeParse(body);
+        if (!validation.success) {
+          const issues = validation.error.issues.map(i => `${i.path.join(".")}: ${i.message}`).join("; ");
+          return errorResponse(`Validation failed: ${issues}`, 400, "VALIDATION_ERROR");
+        }
+      } else if (config.requiredFields) {
         for (const field of config.requiredFields) {
           if (body[field] === undefined || body[field] === null || body[field] === "") {
             return errorResponse(`Missing required field: ${field}`, 400, "MISSING_FIELD");
@@ -274,6 +288,15 @@ export function createAgentRoute(config: AgentConfig) {
 
       // Extract orgId from request body if provided (for org-scoped operations)
       const orgId = typeof sanitized.orgId === "string" ? sanitized.orgId : undefined;
+
+      // ─── Circuit Breaker Check ───
+      if (!isAgentAvailable(config.name)) {
+        log.warn(`Agent circuit open: ${config.name} — temporarily disabled`);
+        return NextResponse.json(
+          { error: `Agent "${config.name}" is temporarily unavailable due to repeated failures. Please try again shortly.` },
+          { status: 503 }
+        );
+      }
 
       // ─── Execute Agent Handler ───
       const result = await config.handler({
@@ -426,7 +449,30 @@ export function createAgentRoute(config: AgentConfig) {
           details: { durationMs: Date.now() - startTime, success: true },
         }).catch(() => {}); // Non-blocking
       }
-      trackAgentExecution(config.name, Date.now() - startTime, true);
+      const durationMs = Date.now() - startTime;
+      trackAgentExecution(config.name, durationMs, true);
+      recordAgentSuccess(config.name);
+
+      // ─── Persist to agentActivity table (fire-and-forget) ───
+      if (userId) {
+        const outputSummary = getFirstStringValue(finalResult)?.slice(0, 200) || "";
+        persistAgentActivity({
+          userId,
+          agentName: config.name,
+          agentType: config.name,
+          action: "completed",
+          summary: outputSummary,
+          metadata: JSON.stringify({
+            durationMs,
+            qualityScore: qualityScore?.overall,
+            qualityPassed: qualityScore?.passed,
+            piiWarning: !!piiWarning,
+          }),
+        }).catch(() => {}); // Non-blocking
+
+        // ─── Notify user (Slack + email if configured) ───
+        notifyAgentComplete(userId, config.name, outputSummary, email || undefined).catch(() => {});
+      }
 
       const remainingCheck = userId ? await checkFreeUsage(userId) : undefined;
       const remaining = remainingCheck?.remaining;
@@ -447,9 +493,23 @@ export function createAgentRoute(config: AgentConfig) {
 
       return response;
     } catch (error: unknown) {
-      trackAgentExecution(config.name, Date.now() - startTime, false);
+      const failDurationMs = Date.now() - startTime;
+      trackAgentExecution(config.name, failDurationMs, false);
+      recordAgentFailure(config.name);
       const message = error instanceof Error ? error.message : "Unknown error";
       log.error("Agent execution failed", { agent: config.name, error: message });
+
+      // ─── Persist failure to agentActivity table ───
+      if (userId) {
+        persistAgentActivity({
+          userId,
+          agentName: config.name,
+          agentType: config.name,
+          action: "failed",
+          summary: message.slice(0, 200),
+          metadata: JSON.stringify({ durationMs: failDurationMs, error: message.slice(0, 500) }),
+        }).catch(() => {});
+      }
 
       // Persist error for monitoring dashboard
       const { reportError } = await import("@/lib/error-reporter");

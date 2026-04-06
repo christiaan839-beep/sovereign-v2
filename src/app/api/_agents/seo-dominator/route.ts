@@ -1,45 +1,59 @@
-import { auth } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
+import { createAgentRoute } from "@/lib/agent-factory";
+import { z } from "zod";
 import { nimChat } from "@/lib/nvidia";
 import { research_ai } from "@/lib/ai";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("seo-dominator");
 
 /**
- * NEMOCLAW SEO DOMINATOR — Real keyword gap analysis, content velocity
+ * SEO DOMINATOR — Real keyword gap analysis, content velocity
  * scoring, and SERP position intelligence.
- * Uses Tavily for live SERP data + Nemotron Ultra for analysis.
+ *
+ * Now uses createAgentRoute for full safety pipeline.
  */
 
-export async function POST(request: Request) {
-  try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const { domain, keywords, mode = "audit" } = await request.json();
+const schema = z.object({
+  domain: z.string().min(3, "Domain is required").max(200),
+  keywords: z.array(z.string()).optional(),
+  mode: z.enum(["audit", "content-plan"]).optional().default("audit"),
+  prompt: z.string().optional(),
+});
 
-    if (!domain) {
-      return NextResponse.json({ error: "domain is required." }, { status: 400 });
-    }
-
+export const POST = createAgentRoute({
+  name: "seo-dominator",
+  schema,
+  handler: async ({ input }) => {
+    const { domain, keywords, mode } = input as z.infer<typeof schema>;
     const start = Date.now();
 
-    // Step 1: Live SERP research
+    // Step 1: Live SERP research — flag explicitly when unavailable
     const keywordList = keywords || [`${domain} reviews`, `${domain} pricing`, `${domain} alternatives`];
-    
     let serpIntel = "";
+    let serpAvailable = false;
+
     try {
       serpIntel = await research_ai(
         `site:${domain} SEO analysis content marketing`,
-        `Analyze the SEO performance of ${domain}. Identify: their top ranking keywords, content publishing frequency, backlink quality indicators, meta tag optimization, site speed indicators, and content gaps. Compare against competitors in their space.`
+        `Analyze the SEO performance of ${domain}. Identify: top ranking keywords, content publishing frequency, backlink quality indicators, meta tag optimization, site speed indicators, and content gaps.`
       );
-    } catch {
-      serpIntel = "Unable to perform live SERP analysis. Proceeding with domain-level assessment.";
+      serpAvailable = serpIntel.length > 50;
+    } catch (err) {
+      log.warn("SERP research unavailable for seo-dominator", { domain, error: String(err) });
     }
 
     if (mode === "audit") {
       const analysis = await nimChat(
         "nvidia/llama-3.1-nemotron-ultra-253b-v1",
         [
-          { role: "system", content: "You are an elite SEO strategist who has managed $100M+ in organic traffic. Provide specific, actionable SEO intelligence." },
-          { role: "user", content: `Full SEO audit for ${domain}.\n\nLIVE SERP DATA:\n${serpIntel}\n\nKEYWORDS TO ANALYZE: ${keywordList.join(", ")}\n\nOutput JSON:\n{"domain_authority_estimate": 0-100, "content_velocity": "posts/month estimate", "keyword_gaps": [{"keyword": "term", "monthly_volume": "est", "difficulty": "LOW|MED|HIGH", "opportunity": "why this matters"}], "technical_issues": ["list"], "content_strategy": {"strengths": [], "weaknesses": [], "recommended_topics": ["5 specific topics to write"]}, "backlink_strategy": "recommendation", "estimated_organic_traffic": "monthly estimate", "dominance_score": 0-100}` },
+          {
+            role: "system",
+            content: "You are a senior SEO strategist. Provide specific, actionable SEO intelligence. Do NOT make up metrics — if data is unavailable, say so explicitly. Never fabricate domain authority scores or traffic numbers without real data.",
+          },
+          {
+            role: "user",
+            content: `Full SEO audit for ${domain}.\n\n${serpAvailable ? `LIVE SERP DATA:\n${serpIntel}` : "NOTE: Live SERP data was unavailable. Base your analysis on general domain knowledge and clearly mark any estimates."}\n\nKEYWORDS TO ANALYZE: ${keywordList.join(", ")}\n\nOutput JSON:\n{"domain_authority_estimate": "number or 'unknown'", "content_velocity": "posts/month estimate", "keyword_gaps": [{"keyword": "term", "monthly_volume": "est", "difficulty": "LOW|MED|HIGH", "opportunity": "why this matters"}], "technical_issues": ["list"], "content_strategy": {"strengths": [], "weaknesses": [], "recommended_topics": ["5 specific topics to write"]}, "backlink_strategy": "recommendation", "data_grounded": ${serpAvailable}, "dominance_score": "0-100 or 'insufficient data'"}`,
+          },
         ],
         { maxTokens: 2500, temperature: 0.3 }
       );
@@ -51,22 +65,29 @@ export async function POST(request: Request) {
         parsed = { raw: analysis };
       }
 
-      return NextResponse.json({
+      return {
         success: true,
-        agent: "nemoclaw-seo-dominator",
+        agent: "seo-dominator",
         mode: "audit",
         domain,
+        serpDataAvailable: serpAvailable,
         seo_intelligence: parsed,
         duration_ms: Date.now() - start,
-      });
+      };
     }
 
     if (mode === "content-plan") {
       const plan = await nimChat(
-        "mistralai/mistral-nemotron",
+        "nvidia/llama-3.1-nemotron-ultra-253b-v1",
         [
-          { role: "system", content: "You are an SEO content strategist. Create a 30-day content calendar with exact titles, target keywords, and word count goals." },
-          { role: "user", content: `Create a 30-day SEO content plan for ${domain}.\n\nCurrent intel:\n${serpIntel}\n\nOutput a JSON array of 30 posts:\n[{"day": 1, "title": "Exact Blog Title", "target_keyword": "primary keyword", "word_count": 1500, "content_type": "pillar|supporting|comparison|how-to", "estimated_traffic": "monthly search volume"}]` },
+          {
+            role: "system",
+            content: "You are an SEO content strategist. Create a 30-day content calendar with exact titles, target keywords, and word count goals. Base recommendations on actual research data when available.",
+          },
+          {
+            role: "user",
+            content: `Create a 30-day SEO content plan for ${domain}.\n\n${serpAvailable ? `Current intel:\n${serpIntel}` : "No live SERP data available — create plan based on general best practices for this domain type."}\n\nOutput a JSON array of 30 posts:\n[{"day": 1, "title": "Exact Blog Title", "target_keyword": "primary keyword", "word_count": 1500, "content_type": "pillar|supporting|comparison|how-to", "estimated_traffic": "monthly search volume"}]`,
+          },
         ],
         { maxTokens: 3000, temperature: 0.4 }
       );
@@ -78,18 +99,17 @@ export async function POST(request: Request) {
         parsed = { raw: plan };
       }
 
-      return NextResponse.json({
+      return {
         success: true,
-        agent: "nemoclaw-seo-dominator",
+        agent: "seo-dominator",
         mode: "content-plan",
         domain,
+        serpDataAvailable: serpAvailable,
         content_calendar: parsed,
         duration_ms: Date.now() - start,
-      });
+      };
     }
 
-    return NextResponse.json({ error: "mode must be 'audit' or 'content-plan'." }, { status: 400 });
-  } catch (error) {
-    return NextResponse.json({ error: "SEO Dominator error", details: String(error) }, { status: 500 });
-  }
-}
+    throw new Error("mode must be 'audit' or 'content-plan'");
+  },
+});

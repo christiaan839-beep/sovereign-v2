@@ -113,7 +113,7 @@ function FirstTaskDemo() {
         <input type="text" value={input} onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && runTask()}
           placeholder="Give the agents a goal..."
-          className="w-full bg-[#0A0A0A] border border-white/[0.08] rounded-xl px-5 py-4 pr-24 text-sm text-white placeholder:text-neutral-700 focus:outline-none focus:border-emerald-500/30 transition-colors" />
+          className="w-full bg-[#0A0A0A] border border-white/[0.08] rounded-xl px-5 py-4 pr-24 text-sm text-white placeholder:text-neutral-500 focus:outline-none focus:border-emerald-500/30 transition-colors" />
         <button onClick={runTask} disabled={running || !input.trim()}
           className="absolute right-2 top-1/2 -translate-y-1/2 px-5 py-2 rounded-lg bg-emerald-500/15 border border-emerald-500/25 text-emerald-400 text-xs font-bold uppercase tracking-wider hover:bg-emerald-500/25 transition-gpu disabled:opacity-30">
           {running ? (
@@ -195,7 +195,7 @@ function CompanyUrlAnalyzer({ onComplete }: { onComplete: () => void }) {
           onChange={(e) => setUrl(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && analyze()}
           placeholder="yourcompany.com"
-          className="w-full bg-[#0A0A0A] border border-white/[0.08] rounded-xl px-5 py-4 pr-28 text-sm text-white placeholder:text-neutral-700 focus:outline-none focus:border-emerald-500/30 transition-colors"
+          className="w-full bg-[#0A0A0A] border border-white/[0.08] rounded-xl px-5 py-4 pr-28 text-sm text-white placeholder:text-neutral-500 focus:outline-none focus:border-emerald-500/30 transition-colors"
         />
         <button
           onClick={analyze}
@@ -213,7 +213,7 @@ function CompanyUrlAnalyzer({ onComplete }: { onComplete: () => void }) {
         </button>
       </div>
 
-      <p className="text-[10px] text-neutral-600 text-center">
+      <p className="text-[10px] text-neutral-500 text-center">
         We&apos;ll scan your site to understand your business. No data is stored externally.
       </p>
 
@@ -281,7 +281,7 @@ function ReferralCodeInput() {
             placeholder="Have a referral code?"
             autoComplete="off"
             spellCheck={false}
-            className="bg-white/[0.03] border border-white/[0.06] rounded-lg px-3 py-1.5 text-xs text-white placeholder:text-neutral-700 focus:outline-none focus:border-emerald-500/30 transition-colors w-48"
+            className="bg-white/[0.03] border border-white/[0.06] rounded-lg px-3 py-1.5 text-xs text-white placeholder:text-neutral-500 focus:outline-none focus:border-emerald-500/30 transition-colors w-48"
           />
           {code.trim() && (
             <button onClick={submitReferral} disabled={status === "loading"}
@@ -321,7 +321,7 @@ export default function OnboardingPage() {
             }`} />
           ))}
         </div>
-        <Link href="/dashboard" className="text-[10px] text-neutral-600 hover:text-white transition-colors uppercase tracking-wider">Skip</Link>
+        <Link href="/dashboard" className="text-[10px] text-neutral-500 hover:text-white transition-colors uppercase tracking-wider">Skip</Link>
       </div>
 
       <div className="flex-1 flex items-center justify-center px-6 py-12">
@@ -347,10 +347,10 @@ export default function OnboardingPage() {
                           : "bg-white/[0.02] border-white/[0.06] hover:border-white/[0.12]"
                       }`}>
                       <div className="flex items-center gap-3 mb-2">
-                        <opt.icon className={`w-5 h-5 ${isSelected ? "text-emerald-400" : "text-neutral-600"}`} />
+                        <opt.icon className={`w-5 h-5 ${isSelected ? "text-emerald-400" : "text-neutral-500"}`} />
                         <span className={`text-sm font-semibold ${isSelected ? "text-emerald-300" : "text-white"}`}>{opt.label}</span>
                       </div>
-                      <p className="text-xs text-neutral-600 mb-2">{opt.desc}</p>
+                      <p className="text-xs text-neutral-500 mb-2">{opt.desc}</p>
                       <p className="text-[9px] text-emerald-500/50 uppercase tracking-wider">{opt.agents}</p>
                     </button>
                   );
@@ -374,7 +374,7 @@ export default function OnboardingPage() {
                   ].map((s) => (
                     <div key={s.label} className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">
                       <div className={`text-2xl font-black font-mono stat-glow ${s.color}`}>{s.val}</div>
-                      <div className="text-[9px] text-neutral-600 uppercase tracking-wider mt-1">{s.label}</div>
+                      <div className="text-[9px] text-neutral-500 uppercase tracking-wider mt-1">{s.label}</div>
                     </div>
                   ))}
                 </div>
@@ -382,7 +382,7 @@ export default function OnboardingPage() {
                   className="cta-glow inline-flex items-center gap-2 px-10 py-4 bg-white text-black font-bold rounded-full text-sm hover:shadow-[0_0_40px_rgba(255,255,255,0.12)] transition-gpu">
                   Enter Dashboard <ArrowRight className="w-4 h-4" />
                 </Link>
-                <p className="text-[10px] text-neutral-600 mt-4 uppercase tracking-wider">
+                <p className="text-[10px] text-neutral-500 mt-4 uppercase tracking-wider">
                   Payments powered by Yoco
                 </p>
               </div>
@@ -393,7 +393,7 @@ export default function OnboardingPage() {
 
       <div className="flex items-center justify-between px-6 py-6 max-w-2xl mx-auto w-full">
         <button onClick={back} disabled={currentStep === 0}
-          className="flex items-center gap-2 text-xs text-neutral-600 hover:text-white transition-colors disabled:opacity-0">
+          className="flex items-center gap-2 text-xs text-neutral-500 hover:text-white transition-colors disabled:opacity-0">
           <ArrowLeft className="w-4 h-4" /> Back
         </button>
         {!step.options && !step.isComplete && (

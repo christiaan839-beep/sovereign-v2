@@ -62,9 +62,9 @@ export default function RevenuePage() {
         <h2 className="text-sm font-semibold text-neutral-300">Attribution Chains</h2>
         {CHAINS.length === 0 ? (
           <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-8 text-center">
-            <Link2 className="w-8 h-8 text-neutral-700 mx-auto mb-3" />
+            <Link2 className="w-8 h-8 text-neutral-500 mx-auto mb-3" />
             <p className="text-sm text-neutral-500">No attribution chains yet</p>
-            <p className="text-xs text-neutral-600 mt-1">Revenue attribution will appear here when you connect a CRM and close deals through agent-sourced leads.</p>
+            <p className="text-xs text-neutral-500 mt-1">Revenue attribution will appear here when you connect a CRM and close deals through agent-sourced leads.</p>
           </div>
         ) : null}
         {CHAINS.map((chain, ci) => {

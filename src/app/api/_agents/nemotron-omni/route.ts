@@ -1,19 +1,19 @@
-import { auth } from "@clerk/nextjs/server";
+import { createAgentRoute } from "@/lib/agent-factory";
 import { NextRequest, NextResponse } from "next/server";
 
 function getNimKey(): string {
   return process.env.NVIDIA_NIM_API_KEY || process.env.NVIDIA_API_KEY || "";
 }
 
-export async function POST(req: NextRequest) {
-  try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const { prompt, mode = "text", imageUrl, audioContext } = await req.json();
-    if (!prompt) return NextResponse.json({ error: "prompt required" }, { status: 400 });
+export const POST = createAgentRoute({
+  name: "nemotron-omni",
+  handler: async ({ input, email, userId }) => {
+
+    const { prompt, mode = "text", imageUrl, audioContext } = input as Record<string, unknown>;
+    if (!prompt) return ({ error: "prompt required" });
 
     const key = getNimKey();
-    if (!key) return NextResponse.json({ error: "AI model API key not configured. Add it in Settings > API Keys." }, { status: 500 });
+    if (!key) return ({ error: "AI model API key not configured. Add it in Settings > API Keys." });
 
     // Build messages based on mode
     const messages: Array<{role: string; content: string | Array<{type: string; text?: string; image_url?: {url: string}}>}> = [];
@@ -61,19 +61,19 @@ export async function POST(req: NextRequest) {
 
     if (!res.ok) {
       const err = await res.text();
-      return NextResponse.json({ error: `NIM error: ${err}` }, { status: res.status });
+      return ({ error: `NIM error: ${err}` }, { status: res.status });
     }
 
     const data = await res.json();
     const answer = data.choices?.[0]?.message?.content || "No response generated.";
 
-    return NextResponse.json({
+    return ({
       result: answer,
       model,
       mode,
       personality: "sovereign",
     });
-  } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
-  }
-}
+  
+  },
+});
+

@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { createAgentRoute } from "@/lib/agent-factory";
 import { NextResponse } from "next/server";
 import { nimChat } from "@/lib/nvidia";
 
@@ -8,14 +8,14 @@ import { nimChat } from "@/lib/nvidia";
  * Uses Devstral 2 123B (NVIDIA's coding specialist).
  */
 
-export async function POST(request: Request) {
-  try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const { code, language = "auto-detect", focus = "full" } = await request.json();
+export const POST = createAgentRoute({
+  name: "code-reviewer",
+  handler: async ({ input, email, userId }) => {
+
+    const { code, language = "auto-detect", focus = "full" } = input as Record<string, unknown>;
 
     if (!code) {
-      return NextResponse.json({ error: "code is required." }, { status: 400 });
+      return ({ error: "code is required." });
     }
 
     const start = Date.now();
@@ -61,7 +61,7 @@ Output ONLY valid JSON.`,
       parsed = { raw: review };
     }
 
-    return NextResponse.json({
+    return ({
       success: true,
       agent: "nemoclaw-code-reviewer",
       language,
@@ -73,7 +73,7 @@ Output ONLY valid JSON.`,
       review: parsed,
       duration_ms: Date.now() - start,
     });
-  } catch (error) {
-    return NextResponse.json({ error: "Code reviewer error", details: String(error) }, { status: 500 });
-  }
-}
+  
+  },
+});
+

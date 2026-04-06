@@ -21,11 +21,25 @@ const log = createLogger("api-v1-proxy");
 // In-memory API key rate tracking
 const apiRateLimits = new Map<string, { count: number; resetAt: number }>();
 
-const PLAN_RATE_LIMITS: Record<string, number> = {
-  free: 100,       // 100/day
-  pro: 10_000,     // 10,000/day
-  enterprise: Infinity,
-};
+// ── API Key Validation Cache (prevents DB hit on every request) ──
+const API_KEY_CACHE_TTL = 5 * 60_000; // 5 minutes
+const API_KEY_CACHE_MAX = 1_000;
+const apiKeyCache = new Map<string, { plan: string; userId: string; cachedAt: number }>();
+
+/** Invalidate a cached API key (call on revocation). */
+export function invalidateApiKeyCache(keyHash: string): void {
+  apiKeyCache.delete(keyHash);
+}
+
+function pruneApiKeyCache(): void {
+  if (apiKeyCache.size <= API_KEY_CACHE_MAX) return;
+  // Evict oldest entries
+  const entries = [...apiKeyCache.entries()].sort((a, b) => a[1].cachedAt - b[1].cachedAt);
+  const toRemove = entries.slice(0, entries.length - API_KEY_CACHE_MAX);
+  for (const [key] of toRemove) apiKeyCache.delete(key);
+}
+
+import { getApiRateLimit } from "@/lib/plans";
 
 function extractApiKey(request: NextRequest): string | null {
   const authHeader = request.headers.get("authorization");
@@ -40,17 +54,29 @@ function extractApiKey(request: NextRequest): string | null {
   return null;
 }
 
-/** Validate API key against database. Returns plan or null if invalid. */
+/** Validate API key against database with LRU cache. Returns plan or null if invalid. */
 async function validateApiKey(rawKey: string): Promise<{ plan: string; userId: string } | null> {
   const keyHash = crypto.createHash("sha256").update(rawKey).digest("hex");
+
+  // Check cache first (avoids DB query on every request)
+  const cached = apiKeyCache.get(keyHash);
+  if (cached && Date.now() - cached.cachedAt < API_KEY_CACHE_TTL) {
+    return { plan: cached.plan, userId: cached.userId };
+  }
+
   try {
     const rows = await db.select().from(apiKeys)
       .where(eq(apiKeys.key, keyHash))
       .limit(1);
     const row = rows[0];
     if (!row) return null;
-    if (row.revokedAt) return null;
-    if (row.expiresAt && row.expiresAt < new Date()) return null;
+    if (row.revokedAt) { apiKeyCache.delete(keyHash); return null; }
+    if (row.expiresAt && row.expiresAt < new Date()) { apiKeyCache.delete(keyHash); return null; }
+
+    // Populate cache
+    apiKeyCache.set(keyHash, { plan: row.plan, userId: row.userId, cachedAt: Date.now() });
+    pruneApiKeyCache();
+
     // Update last used timestamp (best-effort — log failures but don't block)
     db.update(apiKeys).set({ lastUsedAt: new Date() }).where(eq(apiKeys.id, row.id)).catch((err) => {
       log.warn("Failed to update lastUsedAt on API key", { keyId: row.id, error: (err as Error).message });
@@ -62,9 +88,8 @@ async function validateApiKey(rawKey: string): Promise<{ plan: string; userId: s
     let plan = "free";
     if (rawKey.startsWith("sk_pro_")) plan = "pro";
     else if (rawKey.startsWith("sk_ent_")) plan = "enterprise";
-    // Use the key hash (not raw key) as a stable, non-sensitive identifier
-    const keyHash = crypto.createHash("sha256").update(rawKey).digest("hex").slice(0, 16);
-    return { plan, userId: `apikey_${keyHash}` };
+    const shortHash = crypto.createHash("sha256").update(rawKey).digest("hex").slice(0, 16);
+    return { plan, userId: `apikey_${shortHash}` };
   }
 }
 
@@ -74,7 +99,7 @@ function checkRateLimit(apiKey: string, plan: string = "free"): {
   plan: string;
 } {
 
-  const limit = PLAN_RATE_LIMITS[plan] ?? PLAN_RATE_LIMITS.free;
+  const limit = getApiRateLimit(plan);
   const now = Date.now();
   const tracker = apiRateLimits.get(apiKey);
 
@@ -121,7 +146,7 @@ async function handleRequest(
         success: false,
         error: "Rate limit exceeded.",
         plan: rateCheck.plan,
-        limit: PLAN_RATE_LIMITS[rateCheck.plan],
+        limit: getApiRateLimit(rateCheck.plan),
       },
       {
         status: 429,

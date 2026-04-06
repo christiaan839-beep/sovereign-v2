@@ -1,34 +1,31 @@
-import { auth } from "@clerk/nextjs/server";
+import { createAgentRoute } from "@/lib/agent-factory";
 import { getNimKey } from "@/lib/nvidia";
-import { NextResponse } from "next/server";
 
 /**
  * VERCEL AI GATEWAY PROXY — Routes to MiniMax M2.7 via Vercel's unified AI Gateway.
  * Provides automatic retries, failover, cost tracking, and observability.
- * 
+ *
  * Available models:
  * - minimax/minimax-m2.7 (standard)
  * - minimax/minimax-m2.7-highspeed (~100 tok/s)
  */
 
-export async function POST(request: Request) {
-  try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const body = await request.json();
+export const POST = createAgentRoute({
+  name: "ai-gateway",
+  requiredFields: ["messages"],
+  handler: async ({ input }) => {
     const {
       messages,
       model = "minimax/minimax-m2.7-highspeed",
       max_tokens = 1024,
       temperature = 0.7,
-    } = body;
+    } = input as Record<string, unknown>;
 
-    if (!messages || !Array.isArray(messages)) {
-      return NextResponse.json({ error: "Messages array is required." }, { status: 400 });
+    if (!Array.isArray(messages)) {
+      throw new Error("Messages must be an array.");
     }
 
     // Vercel AI Gateway uses the standard OpenAI-compatible endpoint
-    // The gateway handles routing, retries, and failover automatically
     const gatewayResponse = await fetch("https://api.vercel.ai/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -62,24 +59,22 @@ export async function POST(request: Request) {
           }),
         });
         const fallbackData = await fallbackRes.json();
-        return NextResponse.json({
+        return {
           success: true,
           provider: "NVIDIA NIM (Fallback)",
           model: "minimax-m2.1",
           result: fallbackData,
-        });
+        };
       }
-      return NextResponse.json({ error: "AI Gateway not configured" }, { status: 500 });
+      throw new Error("AI Gateway not configured");
     }
 
     const data = await gatewayResponse.json();
-    return NextResponse.json({
+    return {
       success: true,
       provider: "Vercel AI Gateway",
       model,
       result: data,
-    });
-  } catch (error) {
-    return NextResponse.json({ error: "Gateway error", details: String(error) }, { status: 500 });
-  }
-}
+    };
+  },
+});

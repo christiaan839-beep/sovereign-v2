@@ -63,7 +63,7 @@ Provide a detailed SEO X-Ray including:
 Return as structured analysis with clear headings.`,
       {
         model: "claude",
-        system: `You are an elite SEO intelligence analyst. You find the exact weak points in competitor strategies that can be exploited for rapid ranking gains. Be specific — generic advice is useless. Every recommendation should be actionable this week.`,
+        system: `You are a SEO intelligence analyst. You find the exact weak points in competitor strategies that can be exploited for rapid ranking gains. Be specific — generic advice is useless. Every recommendation should be actionable this week.`,
         maxTokens: 2500,
       }
     );

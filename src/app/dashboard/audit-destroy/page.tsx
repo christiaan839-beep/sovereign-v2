@@ -80,7 +80,7 @@ export default function AuditAndDestroyPage() {
                       placeholder="https://competitor-agency.com"
                       value={url}
                       onChange={(e) => setUrl(e.target.value)}
-                      className="w-full bg-black/50 border border-[#00B7FF]/20 rounded-xl pl-12 pr-4 py-4 text-sm text-white focus:outline-none focus:border-[#00B7FF]/50 focus:ring-1 focus:ring-[#00B7FF]/50 transition-gpu font-mono placeholder:text-neutral-700"
+                      className="w-full bg-black/50 border border-[#00B7FF]/20 rounded-xl pl-12 pr-4 py-4 text-sm text-white focus:outline-none focus:border-[#00B7FF]/50 focus:ring-1 focus:ring-[#00B7FF]/50 transition-gpu font-mono placeholder:text-neutral-500"
                     />
                   </div>
                </div>

@@ -1013,7 +1013,7 @@ function WorkflowBuilderInner() {
                 </div>
               ) : savedWorkflows.length === 0 ? (
                 <div className="text-center py-16">
-                  <FolderOpen className="w-10 h-10 text-neutral-700 mx-auto mb-3" />
+                  <FolderOpen className="w-10 h-10 text-neutral-500 mx-auto mb-3" />
                   <p className="text-sm text-neutral-500">No saved workflows yet</p>
                   <p className="text-xs text-neutral-500 mt-1">Save your current workflow to see it here</p>
                 </div>

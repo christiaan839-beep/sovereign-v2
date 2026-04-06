@@ -1,82 +1,62 @@
-import { NextResponse } from "next/server";
-import { currentUser } from "@clerk/nextjs/server";
+import { createAgentRoute } from "@/lib/agent-factory";
+import { z } from "zod";
 import { ai } from "@/lib/ai";
 import { ANTI_SLOP_RULES } from "@/lib/content-engine";
 import { fireUserWebhook } from "@/lib/webhooks";
-import { createLogger } from "@/lib/logger";
-const log = createLogger("client-report");
 
-const REPORT_PROMPT = `You are a senior marketing analyst at a premium agency. You create executive-level performance reports that justify $5,000-$15,000/month retainers.
+/**
+ * CLIENT REPORT — Generates executive-level performance reports.
+ */
 
-Your reports use REAL data patterns (when provided) or generate realistic example data when none is provided. Reports must feel data-driven, not generic.
+const REPORT_PROMPT = `You are a senior marketing analyst. You create executive-level performance reports.
 
 ${ANTI_SLOP_RULES}
 
-## REPORT STRUCTURE
-Generate a complete branded performance report in this JSON format:
-{
-  "title": "Monthly Performance Report — [Month] 2026",
-  "executiveSummary": "2-3 sentence overview of wins and key metrics",
-  "kpis": [
-    { "metric": "Organic Traffic", "current": "12,847", "previous": "9,234", "change": "+39.1%", "status": "up" },
-    { "metric": "Leads Generated", "current": "247", "previous": "183", "change": "+35.0%", "status": "up" }
-  ],
-  "sections": [
-    {
-      "title": "SEO Performance",
-      "content": "Detailed analysis paragraph",
-      "highlights": ["Highlight 1", "Highlight 2"],
-      "chart_data": { "labels": ["Week 1", "Week 2", "Week 3", "Week 4"], "values": [234, 289, 312, 367] }
-    }
-  ],
-  "recommendations": [
-    { "priority": "HIGH", "action": "Specific recommendation", "expectedImpact": "Expected result with numbers" }
-  ],
-  "nextMonthFocus": ["Priority 1", "Priority 2", "Priority 3"]
-}`;
+Generate a report as JSON: { "title": "...", "executiveSummary": "...", "kpis": [{"metric": "...", "current": "...", "previous": "...", "change": "...", "status": "up|down|flat"}], "sections": [{"title": "...", "content": "...", "highlights": ["..."]}], "recommendations": [{"priority": "HIGH|MEDIUM|LOW", "action": "...", "expectedImpact": "..."}], "nextMonthFocus": ["..."] }`;
 
-export async function POST(req: Request) {
-  const user = await currentUser();
-  if (!user?.primaryEmailAddress?.emailAddress) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+const schema = z.object({
+  clientName: z.string().max(200).optional(),
+  businessType: z.string().max(200).optional(),
+  reportPeriod: z.string().max(100).optional(),
+  metrics: z.record(z.unknown()).optional(),
+  focus: z.string().max(500).optional(),
+  prompt: z.string().max(5000).optional(),
+  context: z.string().max(5000).optional(),
+});
 
-  try {
-    const { clientName, businessType, reportPeriod, metrics, focus } = await req.json();
+export const POST = createAgentRoute({
+  name: "client-report",
+  schema,
+  handler: async ({ input }) => {
+    const clientName = (input.clientName as string) || "Client";
+    const businessType = (input.businessType as string) || "Local Business";
+    const reportPeriod = (input.reportPeriod as string) || "March 2026";
+    const metrics = input.metrics as Record<string, unknown> | undefined;
+    const focus = (input.focus as string) || "SEO, Content Marketing, Lead Generation";
+    const context = (input.context as string) || "";
 
     const prompt = `Generate a comprehensive marketing performance report.
 
-CLIENT: ${clientName || "Client"}
-BUSINESS TYPE: ${businessType || "Local Business"}
-REPORT PERIOD: ${reportPeriod || "March 2026"}
-FOCUS AREAS: ${focus || "SEO, Content Marketing, Lead Generation, Social Media"}
-${metrics ? `RAW METRICS PROVIDED:\n${JSON.stringify(metrics, null, 2)}` : "No raw metrics provided — generate realistic example data based on a growing local business."}
+CLIENT: ${clientName}
+BUSINESS TYPE: ${businessType}
+REPORT PERIOD: ${reportPeriod}
+FOCUS AREAS: ${focus}
+${metrics ? `RAW METRICS:\n${JSON.stringify(metrics, null, 2)}` : "No raw metrics — generate realistic example data."}
+${context ? `\nCONTEXT:\n${context.slice(0, 2000)}` : ""}
 
-Include sections for:
-1. Executive Summary (2-3 sentences, wins-focused)
-2. KPI Dashboard (6-8 key metrics with month-over-month changes)
-3. SEO Performance (rankings, traffic, keywords)
-4. Content Performance (blog views, engagement, top content)
-5. Lead Generation (total leads, conversion rate, cost per lead)
-6. Social Media (follower growth, engagement rate, top posts)
-7. Recommendations (3-5 prioritized actions for next period)
-8. Next Month Focus Areas`;
+Include: Executive Summary, KPI Dashboard (6-8 metrics), SEO Performance, Content Performance, Lead Generation, Recommendations (3-5), Next Month Focus.`;
 
     const result = await ai(prompt, { system: REPORT_PROMPT, maxTokens: 4000 });
 
     let parsed;
     try {
-      const cleaned = result.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-      parsed = JSON.parse(cleaned);
+      parsed = JSON.parse(result.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim());
     } catch {
-      parsed = { title: `Performance Report — ${reportPeriod || "March 2026"}`, executiveSummary: result, kpis: [], sections: [], recommendations: [], nextMonthFocus: [] };
+      parsed = { title: `Performance Report — ${reportPeriod}`, executiveSummary: result, kpis: [], sections: [], recommendations: [], nextMonthFocus: [] };
     }
 
-    await fireUserWebhook("ClientReport", "Generated", { clientName, period: reportPeriod });
+    await fireUserWebhook("ClientReport", "Generated", { clientName, period: reportPeriod }).catch(() => {});
 
-    return NextResponse.json({ success: true, report: parsed });
-  } catch (err) {
-    log.error("Client report error", err as Record<string, unknown>);
-    return NextResponse.json({ error: "Failed to generate report" }, { status: 500 });
-  }
-}
+    return { success: true, report: parsed };
+  },
+});

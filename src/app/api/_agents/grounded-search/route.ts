@@ -184,7 +184,7 @@ export const POST = createAgentRoute({
       `You have been given multiple research findings from different sub-questions about the user's query. Synthesize them into a single, comprehensive, well-structured answer.\n\nOriginal query: "${query}"\n\n${subAnswerContext}\n\nAvailable sources for citation:\n${sourceReference}\n\nInstructions:\n- Combine all findings into one cohesive response\n- Use inline citations like [1], [2], [3] referencing the numbered sources\n- End with a "Sources:" section listing all cited sources\n- Be direct and factual — no filler`,
       {
         model: "gemini",
-        system: "You are an elite research synthesizer. Produce comprehensive, well-cited answers from multiple research threads. Use inline citations [1], [2], etc. and always include a Sources section at the end.",
+        system: "You are a senior research synthesizer. Produce comprehensive, well-cited answers from multiple research threads. Use inline citations [1], [2], etc. and always include a Sources section at the end.",
         maxTokens: 3000,
       }
     );

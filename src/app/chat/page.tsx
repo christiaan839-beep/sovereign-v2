@@ -348,11 +348,11 @@ export default function SovereignChat() {
               <button onClick={() => setShowHistory(false)} aria-label="Close history sidebar" className="p-1 text-neutral-500 hover:text-white"><ArrowLeft className="w-4 h-4" /></button>
             </div>
             <div className="flex-1 overflow-y-auto p-2 space-y-1">
-              {conversations.length === 0 && <p className="text-xs text-neutral-600 text-center py-8">No conversations yet</p>}
+              {conversations.length === 0 && <p className="text-xs text-neutral-500 text-center py-8">No conversations yet</p>}
               {conversations.map((conv) => (
                 <button key={conv.id} onClick={() => setShowHistory(false)} className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-white/5 transition-colors">
                   <div className="text-xs font-medium text-neutral-300 truncate">{conv.title}</div>
-                  <div className="text-[10px] text-neutral-600 truncate mt-0.5">{conv.lastMessage}</div>
+                  <div className="text-[10px] text-neutral-500 truncate mt-0.5">{conv.lastMessage}</div>
                 </button>
               ))}
             </div>
@@ -410,9 +410,9 @@ export default function SovereignChat() {
                   </div>
                   {msg.role === "assistant" && !msg.streaming && msg.content && (
                     <div className="flex items-center gap-3 mt-1.5 px-1">
-                      {msg.model && <span className="text-[9px] text-neutral-600 font-mono">{msg.model}</span>}
-                      {msg.duration && <span className="text-[9px] text-neutral-600 font-mono">{(msg.duration / 1000).toFixed(1)}s</span>}
-                      <button onClick={() => copyMessage(msg.id, msg.content)} aria-label="Copy message to clipboard" className="text-neutral-600 hover:text-neutral-400 transition-colors">
+                      {msg.model && <span className="text-[9px] text-neutral-500 font-mono">{msg.model}</span>}
+                      {msg.duration && <span className="text-[9px] text-neutral-500 font-mono">{(msg.duration / 1000).toFixed(1)}s</span>}
+                      <button onClick={() => copyMessage(msg.id, msg.content)} aria-label="Copy message to clipboard" className="text-neutral-500 hover:text-neutral-400 transition-colors">
                         {copied === msg.id ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                       </button>
                     </div>
@@ -432,7 +432,7 @@ export default function SovereignChat() {
             onClick={() => setVoiceEnabled(!voiceEnabled)}
             aria-label={voiceEnabled ? "Disable voice responses" : "Enable voice responses"}
             aria-pressed={voiceEnabled}
-            className={`p-3 rounded-xl shrink-0 transition-all ${voiceEnabled ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-400" : "bg-white/[0.04] border border-white/[0.08] text-neutral-600 hover:text-neutral-400"}`}
+            className={`p-3 rounded-xl shrink-0 transition-all ${voiceEnabled ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-400" : "bg-white/[0.04] border border-white/[0.08] text-neutral-500 hover:text-neutral-400"}`}
             title={voiceEnabled ? "Voice mode on — responses will be spoken" : "Enable voice mode"}
           >
             {voiceEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
@@ -442,7 +442,7 @@ export default function SovereignChat() {
             onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
             placeholder={isListening ? "Listening..." : "Ask anything..."}
             rows={1}
-            className={`flex-1 resize-none bg-white/[0.04] border rounded-xl px-4 py-3 text-sm text-white placeholder:text-neutral-600 outline-none transition-colors ${isListening ? "border-emerald-500/50 bg-emerald-500/[0.03]" : "border-white/[0.08] focus:border-emerald-500/30"}`}
+            className={`flex-1 resize-none bg-white/[0.04] border rounded-xl px-4 py-3 text-sm text-white placeholder:text-neutral-500 outline-none transition-colors ${isListening ? "border-emerald-500/50 bg-emerald-500/[0.03]" : "border-white/[0.08] focus:border-emerald-500/30"}`}
             style={{ maxHeight: 120 }} />
 
           {/* Mic button — shows when input is empty */}
@@ -484,7 +484,7 @@ export default function SovereignChat() {
         </AnimatePresence>
 
         {!isListening && (
-          <div className="flex items-center justify-center gap-4 mt-2 text-[9px] text-neutral-600">
+          <div className="flex items-center justify-center gap-4 mt-2 text-[9px] text-neutral-500">
             <span>Tap mic to speak</span>
             <span>·</span>
             <span>{currentModel.name}</span>

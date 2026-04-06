@@ -1,20 +1,16 @@
-import { NextResponse } from "next/server";
-import { currentUser } from "@clerk/nextjs/server";
+import { createAgentRoute } from "@/lib/agent-factory";
 import { ai } from "@/lib/ai";
 import { ANTI_SLOP_RULES } from "@/lib/content-engine";
 import { fireUserWebhook } from "@/lib/webhooks";
-import { createLogger } from "@/lib/logger";
-const log = createLogger("programmatic-seo");
 
 /**
  * Programmatic SEO Swarm API
- * 
- * Replaces setTimeout simulations with real Tavily + Gemini calls.
+ *
  * Discovers keyword gaps, generates full SEO-optimized blog posts,
  * and provides schema markup.
  */
 
-const SEO_SWARM_PROMPT = `You are an elite SEO strategist and content engineer. You analyze search intent, identify content gaps, and generate authoritative long-form posts that dominate Google SERPs.
+const SEO_SWARM_PROMPT = `You are a SEO strategist and content engineer. You analyze search intent, identify content gaps, and generate authoritative long-form posts that dominate Google SERPs.
 
 ${ANTI_SLOP_RULES}
 
@@ -28,17 +24,13 @@ ${ANTI_SLOP_RULES}
 7. Include at least 1 original data point or statistic
 8. FAQ section with 3-5 questions AND structured data`;
 
-export async function POST(req: Request) {
-  const user = await currentUser();
-  if (!user?.primaryEmailAddress?.emailAddress) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  try {
-    const { action, niche, difficulty } = await req.json();
+export const POST = createAgentRoute({
+  name: "programmatic-seo",
+  requiredFields: ["action"],
+  handler: async ({ input }) => {
+    const { action, niche, difficulty, keyword, contentAngle } = input as Record<string, unknown>;
 
     if (action === "discover") {
-      // Step 1: Use AI to discover high-intent keyword gaps
       const discoveryPrompt = `You are a keyword research expert. Discover 8 high-intent, low-competition keyword opportunities for the niche: "${niche || "AI marketing automation"}".
 
 Filter by difficulty: ${difficulty || "Low - Medium (Long Tail)"}
@@ -65,14 +57,11 @@ Be realistic with volume estimates. Target keywords that a new domain could real
         keywords = [{ keyword: niche, estimatedVolume: "N/A", difficulty: "Medium", intent: "Informational", contentAngle: "Comprehensive guide", currentTopResult: "Generic article" }];
       }
 
-      return NextResponse.json({ success: true, keywords });
+      return { success: true, keywords };
     }
 
     if (action === "generate") {
-      const { keyword, contentAngle } = await req.json().catch(() => ({ keyword: niche, contentAngle: "" }));
-
-      // Step 2: Generate a full SEO-optimized blog post
-      const generatePrompt = `Write a comprehensive, SEO-optimized blog post targeting the keyword: "${keyword}"
+      const generatePrompt = `Write a comprehensive, SEO-optimized blog post targeting the keyword: "${keyword || niche}"
 
 CONTENT ANGLE: ${contentAngle || "Authoritative guide"}
 WORD COUNT: 2,000-2,400 words
@@ -91,7 +80,7 @@ Include:
    - 1 expert quote (attributed to a real thought leader)
    - Internal link suggestions: [INTERNAL_LINK: topic]
    - External link suggestions: [SOURCE: url description]
-   
+
 3. FAQ SECTION (3-5 questions based on "People Also Ask")
 
 4. JSON-LD SCHEMA MARKUP (Article type, fully valid)
@@ -100,14 +89,11 @@ Format: Output the complete post in clean markdown.`;
 
       const post = await ai(generatePrompt, { system: SEO_SWARM_PROMPT, maxTokens: 4000 });
 
-      await fireUserWebhook("ProgrammaticSEO", "PostGenerated", { keyword });
+      await fireUserWebhook("ProgrammaticSEO", "PostGenerated", { keyword: keyword || niche });
 
-      return NextResponse.json({ success: true, post, keyword });
+      return { success: true, post, keyword: keyword || niche };
     }
 
-    return NextResponse.json({ error: "Invalid action. Use: discover, generate" }, { status: 400 });
-  } catch (err) {
-    log.error("Programmatic SEO error", err as Record<string, unknown>);
-    return NextResponse.json({ error: "Failed" }, { status: 500 });
-  }
-}
+    throw new Error("Invalid action. Use: discover, generate");
+  },
+});

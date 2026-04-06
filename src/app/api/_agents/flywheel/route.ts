@@ -1,16 +1,15 @@
-import { auth } from "@clerk/nextjs/server";
+import { createAgentRoute } from "@/lib/agent-factory";
 import { getNimKey } from "@/lib/nvidia";
-import { NextResponse } from "next/server";
 import { persistRead, persistAppend } from "@/lib/persist";
 
 /**
  * AI-Q DATA FLYWHEEL — Continuous self-improvement system inspired
  * by NVIDIA's AI-Q Blueprint.
- * 
+ *
  * Tracks: successful outputs, failed outputs, user ratings.
  * Builds: optimized prompt templates that get better over time.
  * Exports: training-ready datasets for fine-tuning.
- * 
+ *
  * This is the self-teaching backbone of the platform.
  */
 
@@ -23,35 +22,33 @@ interface FlywheelEntry {
   timestamp: string;
 }
 
-export async function POST(request: Request) {
-  try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const { action, agent, prompt = "", output = "", rating = 0 } = await request.json();
+export const POST = createAgentRoute({
+  name: "flywheel",
+  requiredFields: ["action"],
+  handler: async ({ input }) => {
+    const { action, agent, prompt = "", output = "", rating = 0 } = input as Record<string, unknown>;
 
     if (action === "ingest") {
       if (!agent || !prompt) {
-        return NextResponse.json({ error: "agent and prompt required." }, { status: 400 });
+        throw new Error("agent and prompt required.");
       }
 
       const entry: FlywheelEntry = {
         id: `fw-${Date.now()}`,
-        agent,
-        prompt,
+        agent: agent as string,
+        prompt: prompt as string,
         output_preview: String(output).substring(0, 300),
-        rating,
+        rating: rating as number,
         timestamp: new Date().toISOString(),
       };
 
       persistAppend("flywheel-data", entry, 2000);
 
-      return NextResponse.json({ success: true, ingested: entry });
+      return { success: true, ingested: entry };
     }
 
     if (action === "optimize") {
-      if (!agent) {
-        return NextResponse.json({ error: "agent required." }, { status: 400 });
-      }
+      if (!agent) throw new Error("agent required.");
 
       const data = persistRead<FlywheelEntry[]>("flywheel-data", []);
       const agentData = data.filter(d => d.agent === agent);
@@ -59,7 +56,7 @@ export async function POST(request: Request) {
       const bad = agentData.filter(d => d.rating <= 2);
 
       if (agentData.length < 10) {
-        return NextResponse.json({ success: true, message: `Need at least 10 data points. Current: ${agentData.length}` });
+        return { success: true, message: `Need at least 10 data points. Current: ${agentData.length}` };
       }
 
       const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
@@ -78,19 +75,19 @@ export async function POST(request: Request) {
 
       const optimData = await res.json();
 
-      return NextResponse.json({
+      return {
         success: true,
         agent,
         data_points: agentData.length,
         good_examples: good.length,
         bad_examples: bad.length,
         optimized_prompt: optimData?.choices?.[0]?.message?.content || "",
-      });
+      };
     }
 
     if (action === "export") {
       const data = persistRead<FlywheelEntry[]>("flywheel-data", []);
-      return NextResponse.json({
+      return {
         success: true,
         total_entries: data.length,
         by_agent: [...new Set(data.map(d => d.agent))].map(a => ({
@@ -99,11 +96,9 @@ export async function POST(request: Request) {
           avg_rating: +(data.filter(d => d.agent === a).reduce((s, d) => s + d.rating, 0) / data.filter(d => d.agent === a).length).toFixed(2),
         })),
         export: data,
-      });
+      };
     }
 
-    return NextResponse.json({ error: "action must be 'ingest', 'optimize', or 'export'." }, { status: 400 });
-  } catch (error) {
-    return NextResponse.json({ error: "Flywheel error", details: String(error) }, { status: 500 });
-  }
-}
+    throw new Error("action must be 'ingest', 'optimize', or 'export'.");
+  },
+});

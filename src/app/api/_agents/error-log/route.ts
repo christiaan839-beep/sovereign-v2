@@ -1,3 +1,4 @@
+import { createAgentRoute } from "@/lib/agent-factory";
 /**
  * SOVEREIGN MATRIX — Error Log API
  *
@@ -16,7 +17,7 @@ export async function GET() {
   return NextResponse.json({ errors: getErrorLog() });
 }
 
-export async function POST(req: Request) {
+async function _postHandler(request: Request) {
   const auth = await requireAuth();
   if (auth.error) return auth.error;
 
@@ -35,3 +36,19 @@ export async function POST(req: Request) {
     );
   }
 }
+
+
+// Factory wrapper for POST (adds safety pipeline)
+export const POST = createAgentRoute({
+  name: "error-log",
+  handler: async ({ input, email, userId, request }) => {
+    // Delegate to existing handler
+    const fakeReq = new Request("http://localhost", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
+    const res = await _postHandler(fakeReq);
+    return res instanceof Response ? await res.json() : res;
+  },
+});

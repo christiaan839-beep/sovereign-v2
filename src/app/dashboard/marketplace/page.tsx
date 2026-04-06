@@ -46,7 +46,7 @@ const CATEGORY_STYLES: Record<string, { badge: string; glow: string }> = {
   research:   { badge: "text-rose-400 bg-rose-500/10 border-rose-500/20", glow: "shadow-rose-500/5" },
 };
 
-/* ─── Featured Agents (hardcoded) ─── */
+/* ─── Featured Agent Templates (pre-installed, real metrics from DB when available) ─── */
 
 const FEATURED_AGENTS: MarketplaceAgent[] = [
   {
@@ -56,8 +56,8 @@ const FEATURED_AGENTS: MarketplaceAgent[] = [
     category: "sales",
     systemPrompt: "You are an expert LinkedIn prospecting agent. Analyze target profiles, identify decision makers, score leads based on ICP fit, and draft personalized connection requests. Output structured lead reports with qualification scores.",
     authorName: "Sovereign Labs",
-    installs: 2847,
-    rating: 5,
+    installs: 0,
+    rating: null,
     createdAt: new Date().toISOString(),
   },
   {
@@ -67,8 +67,8 @@ const FEATURED_AGENTS: MarketplaceAgent[] = [
     category: "seo",
     systemPrompt: "You are an SEO content strategist. Given a target keyword, produce a fully optimized blog post with: H1/H2/H3 structure, keyword density analysis, LSI keywords, meta description, FAQ schema suggestions, and internal linking recommendations. Write in a conversational yet authoritative tone.",
     authorName: "Sovereign Labs",
-    installs: 3412,
-    rating: 5,
+    installs: 0,
+    rating: null,
     createdAt: new Date().toISOString(),
   },
   {
@@ -78,8 +78,8 @@ const FEATURED_AGENTS: MarketplaceAgent[] = [
     category: "research",
     systemPrompt: "You are a legal contract analysis agent. Review contracts and identify: unfavorable terms, missing clauses, liability risks, IP concerns, termination penalties, and auto-renewal traps. Rate each finding as Critical/Warning/Info. Provide a risk score out of 100 and recommend amendments.",
     authorName: "Sovereign Labs",
-    installs: 1893,
-    rating: 4,
+    installs: 0,
+    rating: null,
     createdAt: new Date().toISOString(),
   },
   {
@@ -89,8 +89,8 @@ const FEATURED_AGENTS: MarketplaceAgent[] = [
     category: "content",
     systemPrompt: "You are a social media strategist managing content across Instagram, LinkedIn, Twitter/X, TikTok, and Facebook. Given a brand description and goals, produce a 30-day content calendar with: post types, captions, hashtag sets, optimal posting times, and content pillars. Include engagement hooks and CTA variations.",
     authorName: "Sovereign Labs",
-    installs: 4201,
-    rating: 5,
+    installs: 0,
+    rating: null,
     createdAt: new Date().toISOString(),
   },
   {
@@ -98,10 +98,10 @@ const FEATURED_AGENTS: MarketplaceAgent[] = [
     name: "Cold Email Closer",
     description: "Writes personalized cold outreach sequences that get replies. Multi-step sequences with follow-ups and objection handling.",
     category: "sales",
-    systemPrompt: "You are an elite cold email copywriter. Given a target persona and value proposition, create a 5-email outreach sequence with: attention-grabbing subject lines, personalization tokens, social proof elements, clear CTAs, and strategic follow-up timing. Each email should be under 150 words. Include A/B test variants for the first email.",
+    systemPrompt: "You are a senior cold email copywriter. Given a target persona and value proposition, create a 5-email outreach sequence with: attention-grabbing subject lines, personalization tokens, social proof elements, clear CTAs, and strategic follow-up timing. Each email should be under 150 words. Include A/B test variants for the first email.",
     authorName: "Sovereign Labs",
-    installs: 3756,
-    rating: 5,
+    installs: 0,
+    rating: null,
     createdAt: new Date().toISOString(),
   },
 ];

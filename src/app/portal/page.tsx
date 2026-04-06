@@ -90,9 +90,9 @@ export default function ClientPortalLogin() {
               </label>
               <div className="relative">
                 {mode === "id" ? (
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-600" />
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500" />
                 ) : (
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-600" />
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500" />
                 )}
                 <input
                   id="portal-access"
@@ -103,7 +103,7 @@ export default function ClientPortalLogin() {
                   placeholder={
                     mode === "id" ? "Enter your client ID" : "Enter your email"
                   }
-                  className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl pl-12 pr-4 py-4 text-white placeholder:text-neutral-600 focus:outline-none focus:border-emerald-500/40 focus:ring-1 focus:ring-emerald-500/20 transition-all"
+                  className="w-full bg-white/[0.03] border border-white/[0.06] rounded-xl pl-12 pr-4 py-4 text-white placeholder:text-neutral-500 focus:outline-none focus:border-emerald-500/40 focus:ring-1 focus:ring-emerald-500/20 transition-all"
                   required
                 />
               </div>
@@ -150,7 +150,7 @@ export default function ClientPortalLogin() {
           </div>
         </form>
 
-        <p className="text-center text-[10px] text-neutral-600 mt-8 uppercase tracking-[0.2em]">
+        <p className="text-center text-[10px] text-neutral-500 mt-8 uppercase tracking-[0.2em]">
           Powered by Sovereign Autonomous Systems
         </p>
       </motion.div>

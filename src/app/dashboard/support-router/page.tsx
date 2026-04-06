@@ -73,7 +73,7 @@ export default function SupportRouterPage() {
               <div className="flex-1 flex items-center justify-center border-2 border-dashed border-white/10 rounded-xl bg-black/40 mb-6 p-6">
                  {pipelineState === "idle" ? (
                     <div className="text-center">
-                       <ShieldCheck className="w-12 h-12 text-neutral-700 mx-auto mb-3" />
+                       <ShieldCheck className="w-12 h-12 text-neutral-500 mx-auto mb-3" />
                        <p className="text-xs text-neutral-500 font-mono uppercase tracking-widest">Awaiting Yoco / Zendesk Webhook</p>
                     </div>
                  ) : (

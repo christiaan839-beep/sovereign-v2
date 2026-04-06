@@ -1,5 +1,4 @@
-import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { createAgentRoute } from "@/lib/agent-factory";
 import { ai } from "@/lib/ai";
 
 /**
@@ -10,24 +9,20 @@ import { ai } from "@/lib/ai";
  * Output: complete intelligence package — analysis, safety check, PII scrub,
  *         embeddings for memory, voice-ready script, and image generation.
  */
-export async function POST(req: Request) {
-  try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-
-    const { input, inputType: _inputType = "text", depth = "standard" } = await req.json();
-    if (!input) return NextResponse.json({ error: "Missing `input`." }, { status: 400 });
+export const POST = createAgentRoute({
+  name: "god-brain",
+  requiredFields: ["input"],
+  handler: async ({ input: body }) => {
+    const { input, depth = "standard" } = body as Record<string, unknown>;
 
     const nimKey = process.env.NVIDIA_NIM_API_KEY;
-    if (!nimKey) return NextResponse.json({ error: "NVIDIA_NIM_API_KEY not configured." }, { status: 500 });
+    if (!nimKey) throw new Error("NVIDIA_NIM_API_KEY not configured.");
 
     const results: Record<string, unknown> = {};
     const timings: Record<string, number> = {};
     const start = Date.now();
 
-    // ═══════════════════════════════════════════════
-    // STAGE 1: Content Safety Check (Guardrail Gate)
-    // ═══════════════════════════════════════════════
+    // STAGE 1: Content Safety Check
     const t1 = Date.now();
     try {
       const safetyRes = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
@@ -43,9 +38,7 @@ export async function POST(req: Request) {
     } catch { results.safety = "Safety check unavailable"; }
     timings.safety_ms = Date.now() - t1;
 
-    // ═══════════════════════════════════════════════
-    // STAGE 2: Deep Analysis (Core Reasoning)
-    // ═══════════════════════════════════════════════
+    // STAGE 2: Deep Analysis
     const t2 = Date.now();
     const analysisRes = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
       method: "POST",
@@ -66,9 +59,7 @@ export async function POST(req: Request) {
     }
     timings.analysis_ms = Date.now() - t2;
 
-    // ═══════════════════════════════════════════════
     // STAGE 2.5: Claude Extended Thinking (Deep Reasoning)
-    // ═══════════════════════════════════════════════
     if (depth === "deep") {
       const t25 = Date.now();
       try {
@@ -77,7 +68,7 @@ export async function POST(req: Request) {
           {
             model: "claude",
             thinking: true,
-            useOpus: true, // God Brain uses Opus 4.6 for maximum reasoning depth
+            useOpus: true,
             system: "You are a master strategist performing deep analysis. Think through multiple angles, consider second-order effects, and identify non-obvious insights. Be specific and actionable.",
           }
         );
@@ -86,9 +77,7 @@ export async function POST(req: Request) {
       timings.deep_thinking_ms = Date.now() - t25;
     }
 
-    // ═══════════════════════════════════════════════
-    // STAGE 3: Vector Embedding (Memory Storage Ready)
-    // ═══════════════════════════════════════════════
+    // STAGE 3: Vector Embedding
     const t3 = Date.now();
     try {
       const embedRes = await fetch("https://integrate.api.nvidia.com/v1/embeddings", {
@@ -111,9 +100,7 @@ export async function POST(req: Request) {
     } catch { results.embedding = { ready: false }; }
     timings.embedding_ms = Date.now() - t3;
 
-    // ═══════════════════════════════════════════════
-    // STAGE 4: Voice-Ready Script (Sales Conversion)
-    // ═══════════════════════════════════════════════
+    // STAGE 4: Voice-Ready Script
     if (depth === "deep") {
       const t4 = Date.now();
       try {
@@ -136,9 +123,7 @@ export async function POST(req: Request) {
       timings.voice_ms = Date.now() - t4;
     }
 
-    // ═══════════════════════════════════════════════
-    // STAGE 5: Visual Generation (FLUX image from analysis)
-    // ═══════════════════════════════════════════════
+    // STAGE 5: Visual Generation
     if (depth === "deep") {
       const t5 = Date.now();
       try {
@@ -159,12 +144,9 @@ export async function POST(req: Request) {
       timings.image_ms = Date.now() - t5;
     }
 
-    // ═══════════════════════════════════════════════
-    // FINAL: Compile Intelligence Package
-    // ═══════════════════════════════════════════════
     const totalMs = Date.now() - start;
 
-    return NextResponse.json({
+    return {
       intelligence: results,
       meta: {
         totalDuration_ms: totalMs,
@@ -178,8 +160,6 @@ export async function POST(req: Request) {
         depth,
         cost: "$0.00 (all free NIM models)",
       },
-    });
-  } catch (error: unknown) {
-    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
-  }
-}
+    };
+  },
+});

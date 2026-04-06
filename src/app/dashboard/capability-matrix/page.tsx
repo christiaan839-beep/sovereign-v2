@@ -83,7 +83,7 @@ export default function CapabilityMatrixPage() {
                     <span key={c} className="text-[8px] px-1.5 py-0.5 bg-white/5 text-neutral-500 border border-neutral-800">{c}</span>
                   ))}
                 </div>
-                <p className="text-[8px] text-neutral-700">Used by: {m.agents_using.join(", ")}</p>
+                <p className="text-[8px] text-neutral-500">Used by: {m.agents_using.join(", ")}</p>
               </div>
             ))}
           </div>

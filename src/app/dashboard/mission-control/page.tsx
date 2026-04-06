@@ -171,7 +171,7 @@ export default function MissionControlPage() {
               onKeyDown={(e) => e.key === "Enter" && execute()}
               placeholder="Describe your goal..."
               disabled={running}
-              className="w-full bg-[#0A0A0A] border border-white/[0.08] rounded-2xl px-6 py-5 pr-16 text-base text-white placeholder:text-neutral-700 focus:outline-none focus:border-emerald-500/30 transition-colors disabled:opacity-50"
+              className="w-full bg-[#0A0A0A] border border-white/[0.08] rounded-2xl px-6 py-5 pr-16 text-base text-white placeholder:text-neutral-500 focus:outline-none focus:border-emerald-500/30 transition-colors disabled:opacity-50"
             />
             <button
               onClick={execute}
@@ -201,7 +201,7 @@ export default function MissionControlPage() {
         {/* Elapsed timer */}
         {(running || steps.length > 0) && (
           <div className="flex items-center justify-between mb-4">
-            <span className="text-xs text-neutral-600">
+            <span className="text-xs text-neutral-500">
               {running ? "Executing..." : "Complete"}
             </span>
             <span className="text-xs font-mono text-neutral-500">
@@ -244,7 +244,7 @@ export default function MissionControlPage() {
                       ) : step.status === "failed" ? (
                         <XCircle className="w-5 h-5 text-red-400" />
                       ) : (
-                        <Clock className="w-5 h-5 text-neutral-600" />
+                        <Clock className="w-5 h-5 text-neutral-500" />
                       )}
                     </div>
 
@@ -253,7 +253,7 @@ export default function MissionControlPage() {
                         <Icon className={`w-3.5 h-3.5 ${colorClass.split(" ")[0]}`} />
                         <span className="text-xs font-mono text-neutral-500">{step.agent}</span>
                         {step.duration_ms && (
-                          <span className="text-[10px] text-neutral-600 font-mono">{(step.duration_ms / 1000).toFixed(1)}s</span>
+                          <span className="text-[10px] text-neutral-500 font-mono">{(step.duration_ms / 1000).toFixed(1)}s</span>
                         )}
                       </div>
                       <p className="text-sm text-white">{step.reason}</p>

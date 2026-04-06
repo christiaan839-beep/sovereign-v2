@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { createAgentRoute } from "@/lib/agent-factory";
 import { getNimKey } from "@/lib/nvidia";
 import { NextResponse } from "next/server";
 
@@ -7,14 +7,14 @@ import { NextResponse } from "next/server";
  * document OCR, image captioning, and visual question answering.
  */
 
-export async function POST(request: Request) {
-  try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const { action = "caption", image_url, question } = await request.json();
+export const POST = createAgentRoute({
+  name: "florence-ocr",
+  handler: async ({ input, email, userId }) => {
+
+    const { action = "caption", image_url, question } = input as Record<string, unknown>;
 
     if (!image_url) {
-      return NextResponse.json({ error: "image_url is required." }, { status: 400 });
+      return ({ error: "image_url is required." });
     }
     
 
@@ -49,14 +49,14 @@ export async function POST(request: Request) {
     const data = await res.json();
     const result = data?.choices?.[0]?.message?.content || "";
 
-    return NextResponse.json({
+    return ({
       success: true,
       model: "florence-v2",
       action,
       result,
       word_count: result.split(/\s+/).length,
     });
-  } catch (error) {
-    return NextResponse.json({ error: "Florence error", details: String(error) }, { status: 500 });
-  }
-}
+  
+  },
+});
+

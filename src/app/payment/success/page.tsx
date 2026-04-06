@@ -115,7 +115,7 @@ function PaymentSuccessContent() {
           </Link>
         </div>
 
-        <p className="text-neutral-600 text-xs flex items-center justify-center gap-1.5">
+        <p className="text-neutral-500 text-xs flex items-center justify-center gap-1.5">
           <Mail className="w-3 h-3" /> Receipt sent to your email.
         </p>
       </motion.div>

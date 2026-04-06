@@ -72,7 +72,8 @@ export const INTEGRATION_REGISTRY: IntegrationConnector[] = [
     authType: "oauth2",
     baseUrl: "https://api.hubapi.com",
     brandColor: "#FF7A59",
-    status: "coming_soon",
+    status: "available",
+    endpoint: "/api/_integrations/hubspot",
     actions: [
       { id: "list-contacts", label: "List Contacts", description: "Retrieve CRM contacts with filters", method: "GET" },
       { id: "create-contact", label: "Create Contact", description: "Add a new contact record", method: "POST" },
@@ -226,6 +227,21 @@ export const INTEGRATION_REGISTRY: IntegrationConnector[] = [
   },
 
   // ── Email ──────────────────────────────────────────────────
+  {
+    id: "gmail",
+    name: "Gmail",
+    description: "Send emails and search inbox via the Gmail API",
+    category: "Email",
+    authType: "oauth2",
+    baseUrl: "https://gmail.googleapis.com/gmail/v1",
+    brandColor: "#EA4335",
+    status: "available",
+    endpoint: "/api/_integrations/gmail",
+    actions: [
+      { id: "send-email", label: "Send Email", description: "Send an email from your account", method: "POST" },
+      { id: "list-messages", label: "List Messages", description: "Search and list inbox messages", method: "GET" },
+    ],
+  },
   {
     id: "mailchimp",
     name: "Mailchimp",

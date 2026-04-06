@@ -281,7 +281,7 @@ export default function WorkflowBuilderPage() {
 
                   {/* Remove button */}
                   <foreignObject x={node.x + NODE_W - 28} y={node.y + 6} width={20} height={20}>
-                    <button onClick={() => removeNode(node.id)} aria-label={`Remove ${node.agent.name}`} className="text-neutral-700 hover:text-red-400 transition-colors">
+                    <button onClick={() => removeNode(node.id)} aria-label={`Remove ${node.agent.name}`} className="text-neutral-500 hover:text-red-400 transition-colors">
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </foreignObject>

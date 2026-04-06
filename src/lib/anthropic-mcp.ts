@@ -47,16 +47,25 @@ async function handlePostgres(toolName: string, params: Record<string, unknown>)
       if (!normalized.startsWith("SELECT")) {
         return { success: false, error: "Only SELECT queries are allowed via MCP" };
       }
-      // Block dangerous patterns: semicolons (multi-statement), UNION injection, subqueries against sensitive tables
-      if (/;|\bUNION\b|\bINTO\b|\bDROP\b|\bDELETE\b|\bUPDATE\b|\bINSERT\b|\bALTER\b|\bCREATE\b|\bTRUNCATE\b|\bEXEC\b/i.test(query)) {
+      // SECURITY: Only allow SELECT queries via MCP (read-only access)
+      const trimmed = query.trim();
+      if (!/^SELECT\b/i.test(trimmed)) {
+        return { success: false, error: "Only SELECT queries are allowed via MCP" };
+      }
+      // Block dangerous patterns: semicolons (multi-statement), UNION injection, subqueries
+      if (/;|\bUNION\b|\bINTO\b|\bDROP\b|\bDELETE\b|\bUPDATE\b|\bINSERT\b|\bALTER\b|\bCREATE\b|\bTRUNCATE\b|\bEXEC\b/i.test(trimmed)) {
         return { success: false, error: "Query contains disallowed SQL keywords" };
       }
       // Block access to sensitive tables
-      if (/\b(settings|api_keys|payments|subscriptions)\b/i.test(query)) {
+      if (/\b(settings|api_keys|payments|subscriptions|audit_logs)\b/i.test(trimmed)) {
         return { success: false, error: "Access to this table is restricted via MCP" };
       }
+      // Enforce max query length to prevent abuse
+      if (trimmed.length > 2000) {
+        return { success: false, error: "Query exceeds maximum allowed length (2000 chars)" };
+      }
       try {
-        const result = await db.execute(sql.raw(query));
+        const result = await db.execute(sql.raw(trimmed));
         return { success: true, data: { rows: result, rowCount: Array.isArray(result) ? result.length : 0 } };
       } catch (err) {
         return { success: false, error: err instanceof Error ? err.message : "Query failed" };

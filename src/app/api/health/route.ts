@@ -29,6 +29,29 @@ export async function GET() {
     services.claude = process.env.ANTHROPIC_API_KEY ? "ok" : "unconfigured";
     services.groq = process.env.GROQ_API_KEY ? "ok" : "unconfigured";
 
+    // ── Redis / Upstash (for rate limiting) ──
+    try {
+      const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
+      const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+      if (redisUrl && redisToken) {
+        const pingRes = await fetch(`${redisUrl}/ping`, {
+          headers: { Authorization: `Bearer ${redisToken}` },
+          signal: AbortSignal.timeout(2000),
+        });
+        services.redis = pingRes.ok ? "ok" : "error";
+      } else {
+        services.redis = "unconfigured";
+      }
+    } catch {
+      services.redis = "unreachable";
+    }
+
+    // ── Email (Resend) ──
+    services.email = process.env.RESEND_API_KEY ? "ok" : "unconfigured";
+
+    // ── Auth (Clerk) ──
+    services.auth = process.env.CLERK_SECRET_KEY ? "ok" : "unconfigured";
+
     // ── Circuit breakers (dynamic import) ──
     let circuits = {};
     try {

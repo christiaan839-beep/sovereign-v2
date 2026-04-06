@@ -1,58 +1,69 @@
-import { auth } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
+import { createAgentRoute } from "@/lib/agent-factory";
+import { z } from "zod";
 import { ai, research_ai } from "@/lib/ai";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("competitor-scan");
 
 /**
  * COMPETITOR SCAN — Real web research + LLM analysis.
- * Uses Tavily to scrape the target domain, then synthesizes an
- * intelligence report with vulnerabilities and counter-strikes.
+ * Uses Tavily to research the target, then synthesizes an intelligence report.
+ *
+ * Now uses createAgentRoute for full safety pipeline.
+ * Removed fire-and-forget handoff — user triggers report generation separately.
  */
 
-export async function POST(request: Request) {
-  try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const body = await request.json();
-    const target = body.target || body.url || body.prompt || "";
-    const context = body.context || ""; // Context from previous playbook steps
+const schema = z.object({
+  target: z.string().min(1, "Target company or domain is required").max(300).optional(),
+  url: z.string().url().optional(),
+  prompt: z.string().optional(),
+  context: z.string().max(5000).optional(),
+}).refine(
+  (d) => d.target || d.url || d.prompt,
+  { message: "Provide at least a target, URL, or prompt" }
+);
 
-    if (!target) {
-      return NextResponse.json({ error: "target domain is required." }, { status: 400 });
-    }
-
+export const POST = createAgentRoute({
+  name: "competitor-scan",
+  schema,
+  handler: async ({ input }) => {
+    const target = (input.target || input.url || input.prompt) as string;
+    const context = (input.context as string) || "";
     const start = Date.now();
 
-    // Step 1: Real web research via Tavily
+    // Step 1: Real web research — flag explicitly when unavailable
     let webIntel = "";
+    let researchAvailable = false;
     try {
       webIntel = await research_ai(
-        `${target} complaints reviews criticism pricing problems`,
-        `What are the weaknesses, negative reviews, pricing complaints, and competitive vulnerabilities of ${target}? Include any public criticism.`
+        `${target} reviews criticism pricing competitors`,
+        `Research ${target}: find public reviews, pricing details, known limitations, customer complaints, and how they compare to alternatives.`
       );
-    } catch {
-      webIntel = `Unable to scrape ${target} — Tavily key may not be configured. Falling back to LLM analysis.`;
+      researchAvailable = webIntel.length > 50;
+    } catch (err) {
+      log.warn("Web research unavailable for competitor-scan", { target, error: String(err) });
     }
 
-    // Step 2: LLM analysis to produce structured intel
+    // Step 2: LLM analysis
     const analysis = await ai(
-      `You are a competitive intelligence analyst. Based on the web research below, produce a tactical intelligence report.
+      `You are a competitive intelligence analyst. Produce a tactical intelligence report.
 
 TARGET: ${target}
 
-WEB RESEARCH:
-${webIntel}
-${context ? `\nADDITIONAL CONTEXT FROM PREVIOUS ANALYSIS:\n${context.slice(0, 2000)}` : ""}
+${researchAvailable ? `WEB RESEARCH:\n${webIntel}` : "NOTE: Web research was unavailable. Clearly mark all findings as estimates based on general knowledge. Do NOT fabricate specific data points, reviews, or statistics."}
+${context ? `\nADDITIONAL CONTEXT:\n${context.slice(0, 2000)}` : ""}
 
 OUTPUT (strict JSON):
 {
   "threat_level": "HIGH|MEDIUM|LOW",
-  "vulnerabilities": ["5 specific exploitable weaknesses with evidence"],
-  "counter_strikes": ["5 specific offensive actions our agency can take to beat them"],
-  "positioning_angles": ["3 specific ways to position against this competitor"]
+  "data_grounded": ${researchAvailable},
+  "vulnerabilities": ["specific weaknesses${researchAvailable ? " with evidence from research" : " — mark as estimated"}"],
+  "counter_strategies": ["specific actions to differentiate against this competitor"],
+  "positioning_angles": ["3 ways to position against this competitor"]
 }
 
-Be specific, actionable, and data-driven. Reference real findings from the research. Output ONLY valid JSON.`,
-      { system: "You are a strategic competitive analyst. Be specific — cite real data. No generic advice.", maxTokens: 2500 }
+Be specific and actionable. ${researchAvailable ? "Reference real findings from the research." : "Clearly distinguish fact from inference."} Output ONLY valid JSON.`,
+      { system: "You are a strategic competitive analyst. Be specific. Never fabricate data.", maxTokens: 2500 }
     );
 
     let parsed;
@@ -60,37 +71,23 @@ Be specific, actionable, and data-driven. Reference real findings from the resea
       parsed = JSON.parse(analysis.replace(/```json?\n?/g, "").replace(/```/g, "").trim());
     } catch {
       parsed = {
-        threat_level: "MEDIUM",
-        vulnerabilities: ["Analysis produced non-structured output. Raw result available."],
-        counter_strikes: [analysis.substring(0, 200)],
+        threat_level: "UNKNOWN",
+        data_grounded: false,
+        vulnerabilities: ["Analysis produced non-structured output"],
+        counter_strategies: [analysis.substring(0, 300)],
+        positioning_angles: [],
       };
     }
 
-    const result = {
+    return {
       success: true,
       target,
+      researchGrounded: researchAvailable,
       threat_level: parsed.threat_level,
       vulnerabilities: parsed.vulnerabilities,
-      counter_strikes: parsed.counter_strikes,
+      counter_strategies: parsed.counter_strikes || parsed.counter_strategies,
       positioning_angles: parsed.positioning_angles || [],
       duration_ms: Date.now() - start,
     };
-
-    // Auto-handoff to report writer
-    fetch(new URL("/api/_agents/comms", request.url).toString(), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        from: "competitor-scout",
-        to: "client-report",
-        type: "handoff",
-        payload: { intel: result, action: "generate_report" },
-        autoExecute: false
-      })
-    }).catch(() => {}); // Fire and forget
-
-    return NextResponse.json(result);
-  } catch (error) {
-    return NextResponse.json({ error: "Competitor scan error", details: String(error) }, { status: 500 });
-  }
-}
+  },
+});

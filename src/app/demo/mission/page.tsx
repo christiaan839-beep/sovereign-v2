@@ -337,7 +337,7 @@ export default function MissionControlDemo() {
               className="flex items-center justify-between mb-5"
             >
               <div className="flex items-center gap-2">
-                <Clock className="w-3.5 h-3.5 text-neutral-600" />
+                <Clock className="w-3.5 h-3.5 text-neutral-500" />
                 <span className="text-xs font-mono text-neutral-500">
                   Elapsed:{" "}
                   <span className="text-neutral-300">{elapsed.toFixed(1)}s</span>
@@ -406,7 +406,7 @@ export default function MissionControlDemo() {
                           <p className="text-xs font-bold text-white tracking-wide">
                             {step.agent}
                           </p>
-                          <p className="text-[10px] text-neutral-600 font-mono">
+                          <p className="text-[10px] text-neutral-500 font-mono">
                             agent
                           </p>
                         </div>
@@ -520,9 +520,9 @@ export default function MissionControlDemo() {
                 <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                 <span className="text-sm font-mono text-neutral-300">
                   <span className="text-white font-bold">3/3</span> succeeded
-                  <span className="text-neutral-600 mx-2">&bull;</span>
+                  <span className="text-neutral-500 mx-2">&bull;</span>
                   <span className="text-white font-bold">{TOTAL_DISPLAY_TIME}</span>
-                  <span className="text-neutral-600 mx-2">&bull;</span>
+                  <span className="text-neutral-500 mx-2">&bull;</span>
                   Powered by{" "}
                   <span className="text-emerald-400 font-bold">35+ AI models</span>
                 </span>
@@ -568,7 +568,7 @@ export default function MissionControlDemo() {
 
         {/* ── watermark ── */}
         <div className="mt-12 text-center">
-          <p className="text-[10px] text-neutral-700 font-mono tracking-wider">
+          <p className="text-[10px] text-neutral-500 font-mono tracking-wider">
             SOVEREIGN MATRIX &mdash; Autonomous Agent Platform
           </p>
         </div>

@@ -56,16 +56,52 @@ export async function detectJailbreak(text: string): Promise<JailbreakResult> {
     }
   }
 
-  // ─── Suspicious keyword scoring ───
-  const suspiciousTerms = [
-    "do anything now", "developer mode", "admin override",
-    "disregard safety", "no restrictions", "act as if",
-    "unlock your full", "remove all filters",
+  // ─── Weighted keyword scoring ───
+  // Each term has a severity weight based on how strong a jailbreak signal it is.
+  // Higher weight = more suspicious on its own. Two low-severity matches
+  // should not equal one high-severity match.
+  const suspiciousTerms: Array<{ term: string; weight: number }> = [
+    // High severity — almost always malicious
+    { term: "do anything now", weight: 0.5 },
+    { term: "developer mode", weight: 0.45 },
+    { term: "admin override", weight: 0.5 },
+    { term: "disregard safety", weight: 0.5 },
+    { term: "remove all filters", weight: 0.45 },
+    { term: "unlock your full", weight: 0.4 },
+    // Medium severity — suspicious but context-dependent
+    { term: "no restrictions", weight: 0.3 },
+    { term: "forget your training", weight: 0.4 },
+    { term: "override your programming", weight: 0.45 },
+    { term: "ignore your rules", weight: 0.4 },
+    // Low severity — common in legitimate business prompts
+    { term: "act as if", weight: 0.15 },
+    { term: "pretend you are", weight: 0.2 },
+    { term: "respond as", weight: 0.1 },
+  ];
+
+  // Business context phrases that reduce suspicion score
+  // (legitimate use cases where "act as" and "pretend" are normal)
+  const businessContextTerms = [
+    "sales rep", "consultant", "marketing", "customer service",
+    "write a", "draft a", "create a", "generate a", "help me",
+    "business", "proposal", "email", "blog", "content",
   ];
 
   let suspicionScore = 0;
-  for (const term of suspiciousTerms) {
-    if (lower.includes(term)) suspicionScore += 0.3;
+  for (const { term, weight } of suspiciousTerms) {
+    if (lower.includes(term)) suspicionScore += weight;
+  }
+
+  // Normalize by input length: longer inputs with fewer matches are less suspicious
+  // (a 2000-char business prompt with one "act as if" is fine)
+  if (text.length > 500 && suspicionScore < 0.4) {
+    suspicionScore *= 0.7; // Reduce by 30% for long inputs with weak signals
+  }
+
+  // Reduce score if business context is present
+  const hasBusinessContext = businessContextTerms.some(t => lower.includes(t));
+  if (hasBusinessContext && suspicionScore < 0.5) {
+    suspicionScore *= 0.6; // Reduce by 40% when legitimate context is detected
   }
 
   if (suspicionScore >= 0.6) {

@@ -122,14 +122,14 @@ export default function PricingPage() {
     }
 
     try {
-      const res = await fetch("/api/payments/payfast/checkout", {
+      const res = await fetch("/api/payments/yoco/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plan }),
       });
       const data = await res.json();
 
-      if (data.success && data.redirectUrl) {
+      if (res.ok && data.redirectUrl) {
         window.location.assign(data.redirectUrl);
         return;
       }

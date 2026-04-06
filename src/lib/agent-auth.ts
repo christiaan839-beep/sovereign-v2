@@ -26,12 +26,14 @@ export interface AuthResult {
 const USAGE_TRACKER = new Map<string, { count: number; reset: number }>();
 let lastTrackerCleanup = Date.now();
 
-const PLAN_LIMITS: Record<string, number> = {
-  free: 5,
-  node: 500,
-  array: 2000,
-  enterprise: Infinity,
-};
+import { getPlan, normalizePlanId } from "@/lib/plans";
+
+// Daily rate limits for agent calls (derived from plan's demoRatePerDay / apiRatePerDay)
+function getDailyLimit(planId: string): number {
+  const plan = getPlan(planId);
+  // Demo/free uses demoRatePerDay; paid plans use apiRatePerDay (capped for agent calls)
+  return planId === "free" ? plan.demoRatePerDay : Math.min(plan.apiRatePerDay, 10_000);
+}
 
 // Purge expired entries every 10 minutes (prevents unbounded growth)
 function cleanupTracker() {
@@ -57,7 +59,7 @@ export async function authorizeAgent(
     const tracker = USAGE_TRACKER.get(key);
 
     if (tracker && tracker.reset > now) {
-      if (tracker.count >= PLAN_LIMITS.free) {
+      if (tracker.count >= getDailyLimit("free")) {
         return {
           authorized: false,
           error: "Demo limit reached (5/day). Sign up for unlimited access.",
@@ -71,7 +73,7 @@ export async function authorizeAgent(
 
     logUsage("anonymous", ip, options.agentName || "unknown");
 
-    return { authorized: true, plan: "free", remaining: PLAN_LIMITS.free - (USAGE_TRACKER.get(key)?.count || 0) };
+    return { authorized: true, plan: "free", remaining: getDailyLimit("free") - (USAGE_TRACKER.get(key)?.count || 0) };
   }
 
   // Clerk auth check
@@ -84,7 +86,7 @@ export async function authorizeAgent(
 
     // Determine plan from metadata (simplified — production: check Stripe subscription)
     const plan = "enterprise"; // Default to highest for now — when billing is wired, check subscription
-    const limit = PLAN_LIMITS[plan] || PLAN_LIMITS.free;
+    const limit = getDailyLimit(plan);
 
     const key = `user:${userId}`;
     const now = Date.now();

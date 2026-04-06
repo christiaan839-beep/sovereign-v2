@@ -1,5 +1,5 @@
+import { createAgentRoute } from "@/lib/agent-factory";
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("music-gen");
@@ -10,16 +10,16 @@ const log = createLogger("music-gen");
  * Available on Vertex AI (public preview) and Gemini API.
  * Outputs are watermarked and avoid mimicking existing artists.
  */
-export async function POST(req: Request) {
-  try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+export const POST = createAgentRoute({
+  name: "music-gen",
+  handler: async ({ input, email, userId }) => {
 
-    const { prompt, duration = 30, style, instruments } = await req.json();
-    if (!prompt) return NextResponse.json({ error: "Missing music prompt" }, { status: 400 });
+
+    const { prompt, duration = 30, style, instruments } = input as Record<string, unknown>;
+    if (!prompt) return ({ error: "Missing music prompt" });
 
     const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) return NextResponse.json({ error: "GEMINI_API_KEY required for Lyria 3 Pro" }, { status: 500 });
+    if (!apiKey) return ({ error: "GEMINI_API_KEY required for Lyria 3 Pro" });
 
     // Build enhanced prompt with style and instruments
     let enhancedPrompt = prompt;
@@ -49,10 +49,10 @@ export async function POST(req: Request) {
       const { ai } = await import("@/lib/ai");
       const brief = await ai(
         `Create a detailed music production brief for: ${enhancedPrompt}. Include BPM, key, structure (intro/verse/chorus/bridge/outro), instrument arrangement, and mixing notes.`,
-        { system: "You are an elite music producer creating professional production briefs.", maxTokens: 1500 }
+        { system: "You are a senior music producer creating professional production briefs.", maxTokens: 1500 }
       );
 
-      return NextResponse.json({
+      return ({
         output: brief,
         model: "text-brief-fallback",
         note: "Lyria 3 Pro requires Google AI Ultra or Vertex AI. Generated a production brief instead.",
@@ -63,7 +63,7 @@ export async function POST(req: Request) {
     // Lyria returns audio data
     const audioData = data.candidates?.[0]?.content?.parts?.[0];
 
-    return NextResponse.json({
+    return ({
       output: "Music generated successfully",
       audio: audioData,
       model: "lyria-3-pro",
@@ -72,8 +72,7 @@ export async function POST(req: Request) {
       commercial_use: true,
       watermarked: true,
     });
-  } catch (err) {
-    log.error("Music generation failed", err as Record<string, unknown>);
-    return NextResponse.json({ error: "Music generation failed" }, { status: 500 });
-  }
-}
+  
+  },
+});
+

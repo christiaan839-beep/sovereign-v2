@@ -1,3 +1,4 @@
+import { createAgentRoute } from "@/lib/agent-factory";
 import { getNimKey } from "@/lib/nvidia";
 import { NextResponse } from "next/server";
 
@@ -7,9 +8,11 @@ import { NextResponse } from "next/server";
  * Publishes results for authority building.
  */
 
-export async function POST(request: Request) {
-  try {
-    const { prompt = "Write a 100-word analysis of how AI will impact marketing in 2026." } = await request.json();
+export const POST = createAgentRoute({
+  name: "benchmark",
+  handler: async ({ input, email, userId }) => {
+
+    const { prompt = "Write a 100-word analysis of how AI will impact marketing in 2026." } = input as Record<string, unknown>;
     
 
     const models = [
@@ -70,7 +73,7 @@ export async function POST(request: Request) {
     const fastest = successful.sort((a, b) => a.duration_ms - b.duration_ms)[0];
     const highest_throughput = successful.sort((a, b) => b.tokens_per_second - a.tokens_per_second)[0];
 
-    return NextResponse.json({
+    return ({
       success: true,
       prompt,
       models_tested: models.length,
@@ -80,7 +83,7 @@ export async function POST(request: Request) {
         highest_throughput: highest_throughput?.model || "N/A",
       },
     });
-  } catch (error) {
-    return NextResponse.json({ error: "Benchmark error", details: String(error) }, { status: 500 });
-  }
-}
+  
+  },
+});
+

@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { createAgentRoute } from "@/lib/agent-factory";
 import { NextResponse } from "next/server";
 
 /**
@@ -6,15 +6,15 @@ import { NextResponse } from "next/server";
  * Wraps any AI output to detect and redact PII before it reaches the user.
  * Based on NVIDIA's NeMo Guardrails Blueprint.
  */
-export async function POST(req: Request) {
-  try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const { text, action = "detect" } = await req.json();
-    if (!text) return NextResponse.json({ error: "Missing `text`." }, { status: 400 });
+export const POST = createAgentRoute({
+  name: "pii-guard",
+  handler: async ({ input, email, userId }) => {
+
+    const { text, action = "detect" } = input as Record<string, unknown>;
+    if (!text) return ({ error: "Missing `text`." });
 
     const nimKey = process.env.NVIDIA_NIM_API_KEY;
-    if (!nimKey) return NextResponse.json({ error: "NVIDIA_NIM_API_KEY not configured." }, { status: 500 });
+    if (!nimKey) return ({ error: "NVIDIA_NIM_API_KEY not configured." });
 
     // Use GLiNER PII detection model
     const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
@@ -51,7 +51,7 @@ export async function POST(req: Request) {
         }
       }
 
-      return NextResponse.json({
+      return ({
         pii_found: piiFound,
         clean_text: action === "redact" ? cleanText : text,
         pii_count: piiFound.length,
@@ -65,15 +65,15 @@ export async function POST(req: Request) {
     try {
       const match = raw.match(/\{[\s\S]*\}/);
       const parsed = match ? JSON.parse(match[0]) : { pii_found: [], clean_text: text };
-      return NextResponse.json({
+      return ({
         ...parsed,
         pii_count: parsed.pii_found?.length || 0,
         model: "gliner-pii",
       });
     } catch {
-      return NextResponse.json({ pii_found: [], clean_text: text, pii_count: 0, model: "gliner-pii", raw: raw.slice(0, 200) });
+      return ({ pii_found: [], clean_text: text, pii_count: 0, model: "gliner-pii", raw: raw.slice(0, 200) });
     }
-  } catch (error: unknown) {
-    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
-  }
-}
+  
+  },
+});
+

@@ -99,7 +99,13 @@ const MAIN_DOMAINS = new Set([
   'localhost',
 ]);
 
-const isProtectedRoute = createRouteMatcher(['/dashboard(.*)']);
+const isProtectedRoute = createRouteMatcher([
+  '/dashboard(.*)',
+  '/api/_agents(.*)',
+  '/api/_billing(.*)',
+  '/api/_misc/admin(.*)',
+  '/api/_settings(.*)',
+]);
 
 export default clerkMiddleware(async (auth, request) => {
   if (isProtectedRoute(request)) {

@@ -250,7 +250,7 @@ export default function WorkflowTemplatesPage() {
           animate={{ opacity: 1 }}
           className="flex flex-col items-center justify-center py-20"
         >
-          <Search className="w-10 h-10 text-neutral-700 mb-3" />
+          <Search className="w-10 h-10 text-neutral-500 mb-3" />
           <p className="text-sm text-neutral-500">No templates match your search</p>
           <button
             onClick={() => { setSearchQuery(""); setFilter("all"); }}

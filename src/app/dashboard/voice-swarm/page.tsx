@@ -97,7 +97,7 @@ export default function VoiceSwarmPage() {
              <div className="flex-1 p-6 md:p-8 overflow-y-auto relative noise-overlay custom-scrollbar">
                 <div className="h-full flex flex-col items-center justify-center text-center space-y-6">
                   <div className="w-20 h-20 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
-                    <Phone className="w-10 h-10 text-neutral-700" />
+                    <Phone className="w-10 h-10 text-neutral-500" />
                   </div>
                   <div className="space-y-2 max-w-sm">
                     <p className="text-sm font-bold text-white">Voice agents require setup</p>

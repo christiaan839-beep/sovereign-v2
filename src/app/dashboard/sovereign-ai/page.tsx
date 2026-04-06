@@ -207,7 +207,7 @@ function MessageBubble({ message, onAction }: { message: Message; onAction: (act
             </div>
           )}
 
-          <div className="text-[9px] text-neutral-700 mt-1 px-1">
+          <div className="text-[9px] text-neutral-500 mt-1 px-1">
             {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
           </div>
         </div>
@@ -273,7 +273,7 @@ function PlanStepCard({
             <div className="flex items-center gap-2">
               <span className="text-xs font-mono font-bold text-white">{step.agent}</span>
               {result?.duration_ms !== undefined && (
-                <span className="text-[9px] text-neutral-600 font-mono">{result.duration_ms}ms</span>
+                <span className="text-[9px] text-neutral-500 font-mono">{result.duration_ms}ms</span>
               )}
             </div>
             <p className="text-[11px] text-neutral-500 mt-0.5 truncate">{step.reason}</p>
@@ -283,7 +283,7 @@ function PlanStepCard({
         {result?.data && (
           <button
             onClick={() => setExpanded(!expanded)}
-            className="flex-shrink-0 p-1 rounded hover:bg-white/[0.05] text-neutral-600 hover:text-neutral-400 transition-colors"
+            className="flex-shrink-0 p-1 rounded hover:bg-white/[0.05] text-neutral-500 hover:text-neutral-400 transition-colors"
           >
             {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
           </button>
@@ -411,7 +411,7 @@ function GoalCoordinator() {
           }}
           placeholder="Describe your goal... e.g. &quot;Find fintech startups in London, research their tech stacks, then write a personalized outreach email sequence&quot;"
           rows={3}
-          className="w-full bg-black/30 border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white placeholder:text-neutral-700 focus:outline-none focus:border-violet-500/30 transition-colors resize-none"
+          className="w-full bg-black/30 border border-white/[0.08] rounded-xl px-4 py-3 text-sm text-white placeholder:text-neutral-500 focus:outline-none focus:border-violet-500/30 transition-colors resize-none"
         />
 
         <div className="flex items-center gap-2 mt-3">
@@ -479,11 +479,11 @@ function GoalCoordinator() {
             className="px-5 pb-5 space-y-2"
           >
             <div className="flex items-center justify-between mb-1">
-              <span className="text-[10px] text-neutral-600 uppercase tracking-wider font-bold">
+              <span className="text-[10px] text-neutral-500 uppercase tracking-wider font-bold">
                 Pipeline — {plan.length} step{plan.length !== 1 ? "s" : ""}
               </span>
               {summary && (
-                <span className="text-[10px] font-mono text-neutral-600">
+                <span className="text-[10px] font-mono text-neutral-500">
                   {summary.succeeded}/{summary.total_steps} passed
                   {summary.total_duration_ms ? ` in ${(summary.total_duration_ms / 1000).toFixed(1)}s` : ""}
                 </span>
@@ -723,7 +723,7 @@ Respond helpfully and concisely. If the user asks to execute a task, describe wh
           onKeyDown={(e) => e.key === "Enter" && sendMessage()}
           placeholder="Ask Sovereign AI anything..."
           aria-label="Message to Sovereign AI"
-          className="w-full bg-[#0A0A0A] border border-white/[0.08] rounded-xl px-5 py-4 pr-14 text-sm text-white placeholder:text-neutral-700 focus:outline-none focus:border-emerald-500/30 transition-colors"
+          className="w-full bg-[#0A0A0A] border border-white/[0.08] rounded-xl px-5 py-4 pr-14 text-sm text-white placeholder:text-neutral-500 focus:outline-none focus:border-emerald-500/30 transition-colors"
         />
         <button
           onClick={sendMessage}

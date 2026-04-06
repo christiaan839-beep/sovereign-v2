@@ -117,12 +117,12 @@ export async function GET() {
       cache: getCacheStats(),
     },
     capabilities: {
-      agent_apis: 124,
-      dashboard_pages: 55,
-      nim_models: 65,
+      agent_apis: 129, // Matches actual count in src/app/api/_agents/
+      dashboard_pages: 79, // Matches actual count in src/app/dashboard/
+      nim_models: 35, // Models in smart-router registry
       industry_verticals: 6,
-      marketplace_templates: 14,
-      multi_modal_pipelines: 4,
+      marketplace_templates: 5,
+      integration_connectors: 15,
       payment_gateways: 4,
     },
     protection: {

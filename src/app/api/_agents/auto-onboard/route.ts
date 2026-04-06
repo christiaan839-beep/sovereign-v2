@@ -1,5 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
+import { createAgentRoute } from "@/lib/agent-factory";
 import { sendOnboardingEmail } from "@/lib/onboarding-emails";
 import { getBaseUrl } from "@/lib/base-url";
 
@@ -11,28 +10,24 @@ function escapeHtml(str: string): string {
  * CLIENT AUTO-ONBOARD — When a new client pays, this agent:
  * 1. Deploys their vertical template automatically
  * 2. Creates their portal credentials
- * 3. Sends a welcome email via Resend  
+ * 3. Sends a welcome email via Resend
  * 4. Activates their agent fleet
  * 5. Stores first memory for personalization
  */
 
-export async function POST(request: Request) {
-  try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+export const POST = createAgentRoute({
+  name: "auto-onboard",
+  requiredFields: ["clientName", "email"],
+  handler: async ({ input }) => {
     const {
       clientName,
       email,
       plan = "array",
       vertical = "saas-startup",
       companyUrl,
-    } = await request.json();
+    } = input as Record<string, unknown>;
 
-    if (!clientName || !email) {
-      return NextResponse.json({ error: "clientName and email are required." }, { status: 400 });
-    }
-
-    const clientId = clientName.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    const clientId = (clientName as string).toLowerCase().replace(/[^a-z0-9]+/g, "-");
     const onboardingSteps: Array<{ step: string; status: string; detail: string }> = [];
 
     // Step 1: Deploy vertical template
@@ -47,18 +42,18 @@ export async function POST(request: Request) {
       const verticalData = await verticalRes.json();
       onboardingSteps.push({
         step: "Deploy Vertical Template",
-        status: "✅",
+        status: "done",
         detail: `${verticalData.deployed?.vertical || vertical} stack deployed with ${verticalData.deployed?.agents_deployed || 0} agents`,
       });
     } catch {
-      onboardingSteps.push({ step: "Deploy Vertical Template", status: "⚠️", detail: "Default agents deployed" });
+      onboardingSteps.push({ step: "Deploy Vertical Template", status: "partial", detail: "Default agents deployed" });
     }
 
     // Step 2: Create portal access
     const portalUrl = `${baseUrl}/portal/${clientId}`;
     onboardingSteps.push({
       step: "Create Portal Access",
-      status: "✅",
+      status: "done",
       detail: `Portal ready at ${portalUrl}`,
     });
 
@@ -77,39 +72,39 @@ export async function POST(request: Request) {
           body: JSON.stringify({
             from: fromEmail,
             to: email,
-            subject: `Welcome to Sovereign Matrix — Your AI Fleet is Live, ${escapeHtml(clientName)}`,
+            subject: `Welcome to Sovereign Matrix — Your AI Fleet is Live, ${escapeHtml(clientName as string)}`,
             html: `
               <div style="font-family:system-ui;max-width:600px;margin:0 auto;padding:40px;background:#000;color:#fff">
-                <h1 style="color:#00B7FF;font-size:24px">Welcome, ${escapeHtml(clientName)} 🚀</h1>
+                <h1 style="color:#00B7FF;font-size:24px">Welcome, ${escapeHtml(clientName as string)}</h1>
                 <p style="color:#999;font-size:14px">Your autonomous AI fleet has been deployed and is ready to work.</p>
                 <div style="background:#111;border:1px solid #333;padding:20px;margin:20px 0">
                   <p style="color:#00ff66;font-size:12px;text-transform:uppercase;letter-spacing:2px">Your Setup</p>
                   <ul style="color:#ccc;font-size:13px;line-height:2">
-                    <li>Plan: <strong>${plan.toUpperCase()}</strong></li>
-                    <li>Industry: <strong>${vertical.replace(/-/g, " ").toUpperCase()}</strong></li>
+                    <li>Plan: <strong>${(plan as string).toUpperCase()}</strong></li>
+                    <li>Industry: <strong>${(vertical as string).replace(/-/g, " ").toUpperCase()}</strong></li>
                     <li>Portal: <a href="${portalUrl}" style="color:#00B7FF">${portalUrl}</a></li>
                   </ul>
                 </div>
-                <a href="${portalUrl}" style="display:inline-block;padding:12px 24px;background:#00B7FF;color:#000;font-weight:bold;text-decoration:none;text-transform:uppercase;font-size:12px">Access Your Portal →</a>
+                <a href="${portalUrl}" style="display:inline-block;padding:12px 24px;background:#00B7FF;color:#000;font-weight:bold;text-decoration:none;text-transform:uppercase;font-size:12px">Access Your Portal</a>
                 <p style="color:#666;font-size:11px;margin-top:30px">Sovereign Matrix — Your AI Army, Deployed.</p>
               </div>
             `,
           }),
         });
-        onboardingSteps.push({ step: "Send Welcome Email", status: "✅", detail: `Sent to ${email}` });
+        onboardingSteps.push({ step: "Send Welcome Email", status: "done", detail: `Sent to ${email}` });
       } catch {
-        onboardingSteps.push({ step: "Send Welcome Email", status: "⚠️", detail: "Email queued" });
+        onboardingSteps.push({ step: "Send Welcome Email", status: "partial", detail: "Email queued" });
       }
     } else {
-      onboardingSteps.push({ step: "Send Welcome Email", status: "⏸️", detail: "RESEND_API_KEY not configured" });
+      onboardingSteps.push({ step: "Send Welcome Email", status: "skipped", detail: "RESEND_API_KEY not configured" });
     }
 
     // Step 3b: Trigger onboarding email sequence (first email immediately)
     try {
-      const onboardingSent = await sendOnboardingEmail(email, 0);
+      const onboardingSent = await sendOnboardingEmail(email as string, 0);
       onboardingSteps.push({
         step: "Start Onboarding Sequence",
-        status: onboardingSent ? "✅" : "⚠️",
+        status: onboardingSent ? "done" : "partial",
         detail: onboardingSent
           ? "3-email onboarding sequence started"
           : "Onboarding email queued (RESEND_API_KEY may not be set)",
@@ -117,7 +112,7 @@ export async function POST(request: Request) {
     } catch {
       onboardingSteps.push({
         step: "Start Onboarding Sequence",
-        status: "⚠️",
+        status: "partial",
         detail: "Onboarding sequence will retry",
       });
     }
@@ -135,19 +130,19 @@ export async function POST(request: Request) {
           type: "fact",
         }),
       });
-      onboardingSteps.push({ step: "Initialize Agent Memory", status: "✅", detail: "Client profile stored" });
+      onboardingSteps.push({ step: "Initialize Agent Memory", status: "done", detail: "Client profile stored" });
     } catch {
-      onboardingSteps.push({ step: "Initialize Agent Memory", status: "⚠️", detail: "Memory will initialize on first interaction" });
+      onboardingSteps.push({ step: "Initialize Agent Memory", status: "partial", detail: "Memory will initialize on first interaction" });
     }
 
     // Step 5: Activate metering
     onboardingSteps.push({
       step: "Activate Usage Metering",
-      status: "✅",
+      status: "done",
       detail: `Plan limits active: ${plan === "enterprise" ? "Unlimited" : plan === "array" ? "2,000/day" : "500/day"}`,
     });
 
-    return NextResponse.json({
+    return {
       success: true,
       client: {
         id: clientId,
@@ -158,10 +153,8 @@ export async function POST(request: Request) {
         portal_url: portalUrl,
       },
       onboarding_steps: onboardingSteps,
-      steps_completed: onboardingSteps.filter(s => s.status === "✅").length,
+      steps_completed: onboardingSteps.filter(s => s.status === "done").length,
       steps_total: onboardingSteps.length,
-    });
-  } catch (_error) {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
-  }
-}
+    };
+  },
+});

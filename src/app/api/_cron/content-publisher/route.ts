@@ -43,7 +43,8 @@ export async function GET(req: Request) {
     for (const item of dueItems) {
       try {
         // Trigger the external n8n workflow directly
-        const n8nWebhookUrl = process.env.N8N_WEBHOOK_URL || "https://n8n.your-agency.com/webhook/omnidirector";
+        const n8nWebhookUrl = process.env.N8N_WEBHOOK_URL;
+        if (!n8nWebhookUrl) { log.warn("N8N_WEBHOOK_URL not set — skipping publish"); continue; }
         
         await fetch(n8nWebhookUrl, {
           method: "POST",

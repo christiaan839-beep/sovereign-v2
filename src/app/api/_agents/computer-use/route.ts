@@ -1,6 +1,5 @@
-import { NextResponse } from "next/server";
+import { createAgentRoute } from "@/lib/agent-factory";
 import Anthropic from "@anthropic-ai/sdk";
-import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { settings } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -11,24 +10,24 @@ import { eq } from "drizzle-orm";
  * clicking, typing, taking screenshots, and executing bash commands.
  */
 
-export async function POST(req: Request) {
-  try {
-    const { 
-      instructions, 
+export const POST = createAgentRoute({
+  name: "computer-use",
+  handler: async ({ input, email }) => {
+    const {
+      instructions,
       resolution = { type: "computer_20251124", display_width_px: 1920, display_height_px: 1080 },
       history = []
-    } = await req.json();
+    } = input as Record<string, unknown>;
 
-    if (!instructions && history.length === 0) {
-      return NextResponse.json({ error: "Instructions or history required." }, { status: 400 });
+    if (!instructions && (history as unknown[]).length === 0) {
+      throw new Error("Instructions or history required.");
     }
 
-    // 1. Get Anthropic Key (BYOK)
+    // 1. Get Anthropic Key (BYOK) — use email from factory context
     let apiKey = process.env.ANTHROPIC_API_KEY || "";
-    const user = await currentUser();
-    if (user?.primaryEmailAddress?.emailAddress) {
+    if (email) {
       const userSettings = await db.query.settings.findFirst({
-        where: eq(settings.userEmail, user.primaryEmailAddress.emailAddress)
+        where: eq(settings.userEmail, email)
       });
       if (userSettings?.apiKeys) {
         const keys = JSON.parse(userSettings.apiKeys);
@@ -37,15 +36,16 @@ export async function POST(req: Request) {
     }
 
     if (!apiKey) {
-      return NextResponse.json({ error: "Anthropic API Key required for Computer Use." }, { status: 401 });
+      throw new Error("Anthropic API Key required for Computer Use.");
     }
 
     // 2. Initialize Claude with Beta headers for Computer Use
     const anthropic = new Anthropic({ apiKey });
+    const res = resolution as { display_width_px: number; display_height_px: number };
 
     const messages = [
-      ...history,
-      ...(instructions ? [{ role: "user" as const, content: instructions }] : [])
+      ...(history as Array<{ role: "user" | "assistant"; content: string }>),
+      ...(instructions ? [{ role: "user" as const, content: instructions as string }] : [])
     ];
 
     // 3. Request Computer Use action
@@ -54,14 +54,12 @@ export async function POST(req: Request) {
       max_tokens: 1024,
       betas: ["computer-use-2025-11-24"],
       system: "You are the Sovereign Matrix Ghost Browser. You have access to a virtual Linux desktop. Use the computer tools to navigate the web, analyze competitors, and fulfill the user's instructions. Always verify the UI state with screenshots before clicking.",
-      // Anthropic Beta Computer Use requires non-standard tool/message shapes not in stable SDK types
-      // Anthropic Beta Computer Use tools use non-standard shapes
       tools: [
         {
           type: "computer_20251124",
           name: "computer",
-          display_width_px: resolution.display_width_px,
-          display_height_px: resolution.display_height_px,
+          display_width_px: res.display_width_px,
+          display_height_px: res.display_height_px,
           display_number: 1,
         },
         {
@@ -80,14 +78,11 @@ export async function POST(req: Request) {
     const textBlocks = response.content.filter((c): c is Anthropic.TextBlock => c.type === "text").map(c => c.text).join("\n");
     const toolCalls = response.content.filter((c): c is Anthropic.ToolUseBlock => c.type === "tool_use");
 
-    return NextResponse.json({
+    return {
       success: true,
       text: textBlocks,
       tool_calls: toolCalls,
       raw: response.content
-    });
-
-  } catch (error) {
-    return NextResponse.json({ error: "Computer Use Engine Error", details: String(error) }, { status: 500 });
-  }
-}
+    };
+  },
+});

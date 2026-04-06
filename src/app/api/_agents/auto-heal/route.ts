@@ -1,5 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
+import { createAgentRoute } from "@/lib/agent-factory";
 import { nimChat } from "@/lib/nvidia";
 import { getBaseUrl } from "@/lib/base-url";
 
@@ -20,15 +19,15 @@ interface HealRecord {
 
 const HEAL_LOG: HealRecord[] = [];
 
-export async function POST(request: Request) {
-  try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const { action, agent, error_message, original_payload } = await request.json();
+export const POST = createAgentRoute({
+  name: "auto-heal",
+  requiredFields: ["action"],
+  handler: async ({ input }) => {
+    const { action, agent, error_message, original_payload } = input as Record<string, unknown>;
 
     if (action === "heal") {
       if (!agent || !error_message) {
-        return NextResponse.json({ error: "agent and error_message required." }, { status: 400 });
+        throw new Error("agent and error_message required.");
       }
 
       // Step 1: Diagnose the failure using Nemotron (BYOK-aware)
@@ -70,7 +69,7 @@ Only output valid JSON, nothing else.`,
 
       if (original_payload) {
         try {
-          const adjustedPayload = { ...original_payload };
+          const adjustedPayload = { ...(original_payload as Record<string, unknown>) };
           if (diagnosis.recommended_temperature) {
             adjustedPayload.temperature = diagnosis.recommended_temperature;
           }
@@ -91,8 +90,8 @@ Only output valid JSON, nothing else.`,
       // Step 3: Log the healing event
       const record: HealRecord = {
         id: `heal-${Date.now()}`,
-        agent,
-        original_error: error_message.substring(0, 200),
+        agent: agent as string,
+        original_error: (error_message as string).substring(0, 200),
         diagnosis: diagnosis.root_cause,
         healing_action: diagnosis.healing_actions?.[0] || "Retry",
         healed,
@@ -101,7 +100,7 @@ Only output valid JSON, nothing else.`,
       HEAL_LOG.push(record);
       if (HEAL_LOG.length > 200) HEAL_LOG.splice(0, HEAL_LOG.length - 200);
 
-      return NextResponse.json({
+      return {
         success: true,
         healed,
         diagnosis: {
@@ -112,22 +111,20 @@ Only output valid JSON, nothing else.`,
         },
         heal_result: healed ? { preview: JSON.stringify(healResult).substring(0, 300) } : null,
         record,
-      });
+      };
     }
 
     if (action === "status") {
-      return NextResponse.json({
+      return {
         status: "NemoClaw Auto-Heal — Active",
         total_heals: HEAL_LOG.length,
         success_rate: HEAL_LOG.length > 0
           ? `${Math.round((HEAL_LOG.filter(h => h.healed).length / HEAL_LOG.length) * 100)}%`
           : "N/A",
         recent: HEAL_LOG.slice(-10).reverse(),
-      });
+      };
     }
 
-    return NextResponse.json({ error: "action must be 'heal' or 'status'." }, { status: 400 });
-  } catch (error) {
-    return NextResponse.json({ error: "Auto-heal error", details: String(error) }, { status: 500 });
-  }
-}
+    throw new Error("action must be 'heal' or 'status'.");
+  },
+});

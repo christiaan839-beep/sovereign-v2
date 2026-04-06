@@ -1,3 +1,4 @@
+import { createAgentRoute } from "@/lib/agent-factory";
 import { NextRequest, NextResponse } from "next/server";
 import { getAvailablePipelines, runPipeline } from "@/agents/orchestrator";
 import { fireUserWebhook } from "@/lib/webhooks";
@@ -11,7 +12,7 @@ export async function GET() {
   return NextResponse.json({ pipelines });
 }
 
-export async function POST(req: NextRequest) {
+async function _postHandler(request: Request) {
   const auth = await requireAuth(); if (auth.error) return auth.error;
   try {
     const body = await req.json();
@@ -43,3 +44,19 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+
+
+// Factory wrapper for POST (adds safety pipeline)
+export const POST = createAgentRoute({
+  name: "orchestrate",
+  handler: async ({ input, email, userId, request }) => {
+    // Delegate to existing handler
+    const fakeReq = new Request("http://localhost", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
+    const res = await _postHandler(fakeReq);
+    return res instanceof Response ? await res.json() : res;
+  },
+});

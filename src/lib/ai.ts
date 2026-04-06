@@ -574,7 +574,7 @@ export async function research_ai(query: string, prompt: string, options: AIOpti
     
     return ai(enrichedPrompt, { 
       ...options, 
-      system: `${options.system || "You are an elite researcher."}\n\nYou have been provided with real-time web search results. Use this data absolutely strictly to answer the user's task. If the search results contradict your training data, trust the search results.` 
+      system: `${options.system || "You are a senior researcher."}\n\nYou have been provided with real-time web search results. Use this data absolutely strictly to answer the user's task. If the search results contradict your training data, trust the search results.` 
     });
   } catch (error) {
     log.error("Live Search Error:", error as Record<string, unknown>);
@@ -601,7 +601,7 @@ export async function adaptive_ai(prompt: string, options: AIOptions = {}): Prom
   }
 
   const enhancedSystem = [
-    options.system || "You are SOVEREIGN, an elite autonomous AI marketing system.",
+    options.system || "You are SOVEREIGN, a senior autonomous AI marketing system.",
     learnedDirectives ? `\n\n--- LEARNED OPTIMIZATION DIRECTIVES (Auto-Injected) ---\n${learnedDirectives}\n--- END DIRECTIVES ---` : "",
   ].join("");
 

@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { createAgentRoute } from "@/lib/agent-factory";
 import { NextResponse } from "next/server";
 import { nimChat } from "@/lib/nvidia";
 import { research_ai } from "@/lib/ai";
@@ -9,14 +9,14 @@ import { research_ai } from "@/lib/ai";
  * Uses Tavily for live scraping + Devstral 2 123B for code generation.
  */
 
-export async function POST(request: Request) {
-  try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const { url, mode = "analyze" } = await request.json();
+export const POST = createAgentRoute({
+  name: "site-assassin",
+  handler: async ({ input, email, userId }) => {
+
+    const { url, mode = "analyze" } = input as Record<string, unknown>;
 
     if (!url) {
-      return NextResponse.json({ error: "url is required." }, { status: 400 });
+      return ({ error: "url is required." });
     }
 
     const start = Date.now();
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
         parsed = { raw: analysis };
       }
 
-      return NextResponse.json({
+      return ({
         success: true,
         agent: "nemoclaw-site-assassin",
         mode: "analyze",
@@ -65,13 +65,13 @@ export async function POST(request: Request) {
       const superiorPage = await nimChat(
         "nvidia/devstral-2-123b-instruct-2512",
         [
-          { role: "system", content: "You are an elite web developer. Generate a complete, production-ready HTML page that is BETTER than the competitor's site. Use modern CSS, smooth animations, and superior conversion elements. Return ONLY valid HTML." },
+          { role: "system", content: "You are a web developer. Generate a complete, production-ready HTML page that is BETTER than the competitor's site. Use modern CSS, smooth animations, and superior conversion elements. Return ONLY valid HTML." },
           { role: "user", content: `Based on this competitor analysis, generate a SUPERIOR landing page.\n\nCOMPETITOR: ${url}\nINTEL:\n${siteIntel}\n\nRequirements:\n- Dark, premium aesthetic\n- Faster-loading structure\n- Better CTA placement\n- Mobile-first responsive\n- Include social proof section\n- Add urgency elements\n\nReturn complete HTML with inline CSS.` },
         ],
         { maxTokens: 4000, temperature: 0.4 }
       );
 
-      return NextResponse.json({
+      return ({
         success: true,
         agent: "nemoclaw-site-assassin",
         mode: "clone-superior",
@@ -81,8 +81,8 @@ export async function POST(request: Request) {
       });
     }
 
-    return NextResponse.json({ error: "mode must be 'analyze' or 'clone-superior'." }, { status: 400 });
-  } catch (error) {
-    return NextResponse.json({ error: "Site Assassin error", details: String(error) }, { status: 500 });
-  }
-}
+    return ({ error: "mode must be 'analyze' or 'clone-superior'." });
+  
+  },
+});
+

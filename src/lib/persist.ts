@@ -77,16 +77,24 @@ async function supabaseRead<T>(key: string, fallback: T): Promise<T> {
 function fileWrite(key: string, data: unknown): void {
   try {
     ensureDir();
-    writeFileSync(join(PERSIST_DIR, `${key}.json`), JSON.stringify(data), "utf-8");
+    const safeKey = sanitizeKey(key);
+    writeFileSync(join(PERSIST_DIR, `${safeKey}.json`), JSON.stringify(data), "utf-8");
   } catch {
     // Silent fail
   }
 }
 
+/** Sanitize key to prevent path traversal (../../../etc/passwd) */
+function sanitizeKey(key: string): string {
+  // Strip directory separators and parent references
+  return key.replace(/[\/\\]/g, "_").replace(/\.\./g, "_");
+}
+
 function fileRead<T>(key: string, fallback: T): T {
   try {
     ensureDir();
-    const path = join(PERSIST_DIR, `${key}.json`);
+    const safeKey = sanitizeKey(key);
+    const path = join(PERSIST_DIR, `${safeKey}.json`);
     if (!existsSync(path)) return fallback;
     return JSON.parse(readFileSync(path, "utf-8")) as T;
   } catch {

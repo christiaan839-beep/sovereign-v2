@@ -20,12 +20,7 @@ const log = createLogger("usage-api");
  * Used by: billing page, usage dashboard, upgrade prompts
  */
 
-const PLAN_LIMITS: Record<string, { runs: number; price: number }> = {
-  free: { runs: 50, price: 0 },
-  array: { runs: 500, price: 49 },
-  node: { runs: 2000, price: 199 },
-  enterprise: { runs: 10000, price: 499 },
-};
+import { getPlan, getPlanLimit, normalizePlanId } from "@/lib/plans";
 
 export async function GET() {
   const { userId } = await auth();
@@ -84,17 +79,18 @@ export async function GET() {
         .limit(1),
     ]);
 
-    const plan = userSub[0]?.plan || "free";
-    const limits = PLAN_LIMITS[plan] || PLAN_LIMITS.free;
+    const plan = normalizePlanId(userSub[0]?.plan);
+    const planDef = getPlan(plan);
+    const runLimit = planDef.runsPerMonth;
     const monthlyExecutions = Number(executions30d[0]?.value ?? 0);
-    const usagePercent = limits.runs > 0 ? Math.round((monthlyExecutions / limits.runs) * 100) : 0;
+    const usagePercent = runLimit > 0 && runLimit < Infinity ? Math.round((monthlyExecutions / runLimit) * 100) : 0;
 
     return NextResponse.json({
       userId,
       plan: {
         name: plan,
-        price: limits.price,
-        runLimit: limits.runs,
+        price: planDef.priceUsdCents / 100,
+        runLimit,
         status: userSub[0]?.status || "active",
       },
       usage: {
@@ -105,7 +101,7 @@ export async function GET() {
           allTime: Number(executionsAll[0]?.value ?? 0),
         },
         usagePercent,
-        runsRemaining: Math.max(0, limits.runs - monthlyExecutions),
+        runsRemaining: runLimit >= 10_000 ? Infinity : Math.max(0, runLimit - monthlyExecutions),
         topAgents: topAgents.map((a) => ({
           name: a.agent,
           executions: Number(a.executions),

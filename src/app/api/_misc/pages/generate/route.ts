@@ -27,7 +27,7 @@ export async function POST(req: Request) {
        messages: [
          { 
             role: "user", 
-            content: `You are an elite landing page designer and copywriter. Generate a complete, production-ready HTML landing page for ${businessName}. Offer: ${offer}. Style: ${style}. Output ONLY HTML.` 
+            content: `You are a senior landing page designer and copywriter. Generate a complete, production-ready HTML landing page for ${businessName}. Offer: ${offer}. Style: ${style}. Output ONLY HTML.` 
          }
        ],
        max_tokens: 2000,

@@ -1,5 +1,5 @@
+import { createAgentRoute } from "@/lib/agent-factory";
 import { NextResponse } from "next/server";
-import { currentUser } from "@clerk/nextjs/server";
 import { ai } from "@/lib/ai";
 import { ANTI_SLOP_RULES } from "@/lib/content-engine";
 import { createLogger } from "@/lib/logger";
@@ -10,14 +10,10 @@ const log = createLogger("calendar-agent");
  * Generates strategic content calendars with daily posting schedules.
  */
 
-export async function POST(req: Request) {
-  const user = await currentUser();
-  if (!user?.primaryEmailAddress?.emailAddress) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  try {
-    const { niche, platforms, weeks, contentGoal } = await req.json();
+export const POST = createAgentRoute({
+  name: "calendar",
+  handler: async ({ input }) => {
+    const { niche, platforms, weeks, contentGoal } = input as Record<string, unknown>;
 
     const prompt = `Generate a ${weeks || 4}-week content calendar for:
 
@@ -68,9 +64,8 @@ Respond in JSON:
       parsed = { calendar: [], rawOutput: result };
     }
 
-    return NextResponse.json({ success: true, ...parsed });
-  } catch (err) {
-    log.error("Calendar error", err as Record<string, unknown>);
-    return NextResponse.json({ error: "Failed" }, { status: 500 });
-  }
-}
+    return ({ success: true, ...parsed });
+  
+  },
+});
+

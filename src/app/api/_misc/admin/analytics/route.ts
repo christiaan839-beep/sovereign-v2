@@ -25,13 +25,7 @@ function isAdmin(email: string): boolean {
   return false;
 }
 
-// MRR estimates per plan (monthly prices in USD)
-const PLAN_MRR: Record<string, number> = {
-  free: 0,
-  array: 49,
-  node: 99,
-  enterprise: 299,
-};
+import { getPlanMrrUsd } from "@/lib/plans";
 
 export async function GET() {
   try {
@@ -135,7 +129,7 @@ export async function GET() {
       const planName = row.plan ?? "free";
       const cnt = Number(row.count);
       planBreakdown[planName] = cnt;
-      totalMRR += (PLAN_MRR[planName] ?? 0) * cnt;
+      totalMRR += getPlanMrrUsd(planName) * cnt;
     }
 
     log.info(`Admin analytics served to ${email}`);

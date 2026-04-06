@@ -64,7 +64,7 @@ export async function POST(req: Request) {
         Identify 3 key missing elements in standard competitor pages that we can exploit for higher conversions. Output as a brief list.`;
 
         const researchData = await research_ai(searchQuery, researchPrompt, {
-          system: "You are an elite conversion rate optimization (CRO) researcher.",
+          system: "You are a conversion rate optimization (CRO) researcher.",
           maxTokens: 500
         });
 
@@ -128,7 +128,7 @@ export async function POST(req: Request) {
 
         const rawCode = await ai(codePrompt, {
           model: "gemini", // Or claude if user prefers
-          system: "You are an elite Frontend Web Developer. Output ONLY RAW JSX code. No markdown formatting. No explanations.",
+          system: "You are a Frontend Web Developer. Output ONLY RAW JSX code. No markdown formatting. No explanations.",
           maxTokens: 4000
         });
 

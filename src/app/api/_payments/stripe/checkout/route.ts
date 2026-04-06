@@ -18,11 +18,7 @@ import { getPublicUrl } from "@/lib/base-url";
  * 4. Set up webhook endpoint in Stripe: /api/payments/stripe/webhook
  */
 
-const PLAN_PRICES: Record<string, string | undefined> = {
-  node: process.env.STRIPE_PRICE_NODE,
-  array: process.env.STRIPE_PRICE_ARRAY,
-  enterprise: process.env.STRIPE_PRICE_ENTERPRISE,
-};
+import { getStripePriceId } from "@/lib/plans";
 
 export async function POST(req: Request) {
   try {
@@ -36,7 +32,7 @@ export async function POST(req: Request) {
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-04-30.basil" as Stripe.LatestApiVersion });
     const { plan } = await req.json();
-    const priceId = PLAN_PRICES[plan];
+    const priceId = getStripePriceId(plan);
 
     if (!priceId) {
       return NextResponse.json({ error: `No Stripe price configured for plan: ${plan}` }, { status: 400 });

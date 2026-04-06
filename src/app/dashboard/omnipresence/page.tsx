@@ -332,7 +332,7 @@ export default function OmnipresenceNode() {
                 {state.connected && (
                   <button
                     onClick={() => { setConfigModal(def.id); setApiKeyInput(state.apiKey || ""); }}
-                    className="p-1.5 rounded-lg hover:bg-white/5 text-neutral-600 hover:text-neutral-400 transition-colors"
+                    className="p-1.5 rounded-lg hover:bg-white/5 text-neutral-500 hover:text-neutral-400 transition-colors"
                     title="Settings"
                   >
                     <Settings className="w-3.5 h-3.5" />
@@ -351,7 +351,7 @@ export default function OmnipresenceNode() {
                     className={`text-[10px] px-2 py-0.5 rounded-full border ${
                       state.connected
                         ? `${def.bgColor} ${def.borderColor} ${def.color}`
-                        : "bg-white/[0.03] border-white/[0.06] text-neutral-600"
+                        : "bg-white/[0.03] border-white/[0.06] text-neutral-500"
                     }`}
                   >
                     {f}

@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { createAgentRoute } from "@/lib/agent-factory";
 import { NextResponse } from "next/server";
 
 /**
@@ -6,15 +6,15 @@ import { NextResponse } from "next/server";
  * Combines: embed → search → rerank → generate.
  * This is the NVIDIA NeMo Retriever Blueprint implemented as a single endpoint.
  */
-export async function POST(req: Request) {
-  try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const { query, documents = [], topK = 3 } = await req.json();
-    if (!query) return NextResponse.json({ error: "Missing `query`." }, { status: 400 });
+export const POST = createAgentRoute({
+  name: "rag-pipeline",
+  handler: async ({ input, email, userId }) => {
+
+    const { query, documents = [], topK = 3 } = input as Record<string, unknown>;
+    if (!query) return ({ error: "Missing `query`." });
 
     const nimKey = process.env.NVIDIA_NIM_API_KEY;
-    if (!nimKey) return NextResponse.json({ error: "NVIDIA_NIM_API_KEY not configured." }, { status: 500 });
+    if (!nimKey) return ({ error: "NVIDIA_NIM_API_KEY not configured." });
 
     // Step 1: Embed the query
     const embedRes = await fetch("https://integrate.api.nvidia.com/v1/embeddings", {
@@ -68,13 +68,13 @@ export async function POST(req: Request) {
     });
     const genData = genRes.ok ? await genRes.json() : { choices: [{ message: { content: "Generation failed." } }] };
 
-    return NextResponse.json({
+    return ({
       answer: genData.choices?.[0]?.message?.content || "",
       sources: rankedDocs.slice(0, topK),
       queryEmbedding: queryEmbedding.slice(0, 5), // First 5 dims as preview
       models: { embed: "llama-nemotron-embed-1b-v2", rerank: "llama-nemotron-rerank-1b-v2", generate: "nemotron-3-super-120b" },
     });
-  } catch (error: unknown) {
-    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
-  }
-}
+  
+  },
+});
+

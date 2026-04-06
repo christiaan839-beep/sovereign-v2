@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { enhanceWithSkills } from "@/lib/skill-engine";
 import { getSystemPrompt } from "@/lib/system-prompts";
 import { createLogger } from "@/lib/logger";
+import { getModelPerformance, recordModelExecution } from "@/lib/model-tracker";
 const log = createLogger("smart-router");
 
 /**
@@ -100,19 +101,29 @@ const TASK_CATEGORY_MAP: Record<string, string[]> = {
   "video-understanding": ["video-understanding", "multimodal", "vision", "image-understanding"],
 };
 
-function findBestModel(taskType: string, priority: "speed" | "quality" = "quality"): ModelProfile {
+function findBestModel(taskType: string, priority: "speed" | "quality" = "quality"): ModelProfile & { score: number; dataEnhanced: boolean } {
   const requiredStrengths = TASK_CATEGORY_MAP[taskType] || TASK_CATEGORY_MAP["analysis"];
 
-  // Score each model by how many required strengths it has
+  // Score each model by strengths match + live performance data (when available)
   const scored = MODEL_REGISTRY.map(model => {
     const matchCount = requiredStrengths.filter(s => model.strengths.includes(s)).length;
     const matchScore = matchCount / requiredStrengths.length;
-    
-    const finalScore = priority === "speed"
+
+    // Static score from registry benchmarks
+    let finalScore = priority === "speed"
       ? matchScore * 0.6 + (1 - model.avg_speed_ms / 10000) * 0.4
       : matchScore * 0.7 + (model.quality_score / 10) * 0.3;
 
-    return { ...model, score: finalScore };
+    // Boost/penalize based on live performance data (if available)
+    let dataEnhanced = false;
+    const livePerf = getModelPerformance(model.id);
+    if (livePerf && livePerf.executions >= 5) {
+      // Blend: 70% static score + 30% live composite score
+      finalScore = finalScore * 0.7 + livePerf.compositeScore * 0.3;
+      dataEnhanced = true;
+    }
+
+    return { ...model, score: finalScore, dataEnhanced };
   });
 
   scored.sort((a, b) => b.score - a.score);
@@ -246,6 +257,8 @@ export async function POST(request: Request) {
           quality_score: bestModel.quality_score,
           avg_speed_ms: bestModel.avg_speed_ms,
           strengths: bestModel.strengths,
+          dataEnhanced: bestModel.dataEnhanced,
+          confidence: Math.round(bestModel.score * 100) / 100,
         },
       });
     }

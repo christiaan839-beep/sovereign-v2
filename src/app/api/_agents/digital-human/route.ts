@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { createAgentRoute } from "@/lib/agent-factory";
 import { NextResponse } from "next/server";
 
 /**
@@ -6,15 +6,15 @@ import { NextResponse } from "next/server";
  * to create a digital human avatar pipeline: face generation → voice synthesis → lip-sync metadata.
  * Based on NVIDIA's Audio2Face blueprint architecture.
  */
-export async function POST(req: Request) {
-  try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const { name, script, gender = "female", style = "corporate" } = await req.json();
-    if (!script) return NextResponse.json({ error: "Missing `script`." }, { status: 400 });
+export const POST = createAgentRoute({
+  name: "digital-human",
+  handler: async ({ input, email, userId }) => {
+
+    const { name, script, gender = "female", style = "corporate" } = input as Record<string, unknown>;
+    if (!script) return ({ error: "Missing `script`." });
 
     const nimKey = process.env.NVIDIA_NIM_API_KEY;
-    if (!nimKey) return NextResponse.json({ error: "NVIDIA_NIM_API_KEY not configured." }, { status: 500 });
+    if (!nimKey) return ({ error: "NVIDIA_NIM_API_KEY not configured." });
 
     // Step 1: Generate avatar face via FLUX
     const faceRes = await fetch("https://integrate.api.nvidia.com/v1/images/generations", {
@@ -65,7 +65,7 @@ export async function POST(req: Request) {
       viseme: word.charAt(0).toLowerCase(),
     }));
 
-    return NextResponse.json({
+    return ({
       avatar: {
         faceUrl: faceData?.data?.[0]?.url || faceData?.data?.[0]?.b64_json || null,
         dialogue: voiceData?.choices?.[0]?.message?.content || script,
@@ -74,7 +74,7 @@ export async function POST(req: Request) {
       },
       models: { face: "FLUX.2 Klein 4B", voice: "nemotron-voicechat" },
     });
-  } catch (error: unknown) {
-    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
-  }
-}
+  
+  },
+});
+

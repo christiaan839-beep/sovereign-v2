@@ -135,7 +135,7 @@ export default function LeaderboardPage() {
             onChange={e => setPrompt(e.target.value)}
             rows={3}
             aria-label="Benchmark prompt"
-            className="w-full bg-black border border-neutral-800 px-4 py-3 text-xs text-white placeholder:text-neutral-700 focus:outline-none focus:border-neutral-600 font-mono resize-none"
+            className="w-full bg-black border border-neutral-800 px-4 py-3 text-xs text-white placeholder:text-neutral-500 focus:outline-none focus:border-neutral-600 font-mono resize-none"
           />
           <button
             onClick={runBenchmark}

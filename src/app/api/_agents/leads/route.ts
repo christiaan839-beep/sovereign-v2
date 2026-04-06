@@ -29,15 +29,15 @@ export const POST = createAgentRoute({
         `${niche} companies ${location} hiring growing 2026`,
         `Find real companies in the ${niche} industry located in ${location}. For each company found, identify: the company name, what they do, their website URL if available, and any recent news (funding, hiring, product launches). Focus on companies that would be good prospects for outreach.`
       );
-    } catch {
-      webResearch = `No live web data available. Generating prospects based on industry knowledge of ${niche} in ${location}.`;
+    } catch (err) {
+      // Don't hallucinate fake leads — flag that research was unavailable
+      webResearch = "";
     }
 
     // Step 2: AI analysis + lead generation
     const prompt = `You are a B2B sales intelligence analyst. Based on the real web research below, generate a list of qualified prospects.
 
-RESEARCH DATA:
-${webResearch}
+${webResearch ? `RESEARCH DATA:\n${webResearch}` : "NOTE: Web research was unavailable. Generate prospects based on your training knowledge but clearly mark all leads as UNVERIFIED. Do NOT fabricate specific website URLs — use 'unknown' instead."}
 
 TARGET NICHE: ${niche}
 LOCATION: ${location}
@@ -101,7 +101,7 @@ Return ONLY valid JSON:
       total: leads.length,
       niche,
       location,
-      grounded: webResearch.length > 100, // true if we got real web data
+      researchGrounded: webResearch.length > 50, // true if we got real web data
     };
   },
 });

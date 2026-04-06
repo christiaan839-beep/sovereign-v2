@@ -1,5 +1,5 @@
+import { createAgentRoute } from "@/lib/agent-factory";
 import { NextResponse } from "next/server";
-import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { settings } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -9,30 +9,32 @@ import { eq } from "drizzle-orm";
  * Uses the Firecrawl API to turn any website into LLM-ready markdown.
  * Bypasses anti-bot protections natively.
  */
-export async function POST(req: Request) {
-  try {
-    const { url, formats = ["markdown"] } = await req.json();
+export const POST = createAgentRoute({
+  name: "firecrawl",
+  handler: async ({ input, email, userId }) => {
+
+    const { url, formats = ["markdown"] } = input as Record<string, unknown>;
 
     if (!url) {
-      return NextResponse.json({ error: "Target URL is required." }, { status: 400 });
+      return ({ error: "Target URL is required." });
     }
 
     // Attempt to pull user's Firecrawl key if available
     let apiKey = process.env.FIRECRAWL_API_KEY || "";
-    const user = await currentUser();
-    
-    if (user?.primaryEmailAddress?.emailAddress) {
-      const userSettings = await db.query.settings.findFirst({
-        where: eq(settings.userEmail, user.primaryEmailAddress.emailAddress)
-      });
-      if (userSettings?.apiKeys) {
-        const keys = JSON.parse(userSettings.apiKeys);
-        if (keys.firecrawl) apiKey = keys.firecrawl;
-      }
+    if (email) {
+      try {
+        const userSettings = await db.query.settings.findFirst({
+          where: eq(settings.userEmail, email)
+        });
+        if (userSettings?.apiKeys) {
+          const keys = JSON.parse(userSettings.apiKeys);
+          if (keys.firecrawl) apiKey = keys.firecrawl;
+        }
+      } catch { /* BYOK lookup failed */ }
     }
 
     if (!apiKey) {
-      return NextResponse.json({ error: "Firecrawl API key required." }, { status: 401 });
+      return ({ error: "Firecrawl API key required." });
     }
 
     // Call Firecrawl Scrape API
@@ -50,12 +52,12 @@ export async function POST(req: Request) {
 
     if (!response.ok) {
         const errorText = await response.text();
-        return NextResponse.json({ error: `Firecrawl request failed: ${response.status}`, details: errorText }, { status: response.status });
+        return ({ error: `Firecrawl request failed: ${response.status}`, details: errorText }, { status: response.status });
     }
 
     const data = await response.json();
 
-    return NextResponse.json({
+    return ({
       success: true,
       url: data.data?.metadata?.sourceURL || url,
       markdown: data.data?.markdown || "",
@@ -63,7 +65,7 @@ export async function POST(req: Request) {
       status: "Extracted via Open-Source Node"
     });
 
-  } catch (error) {
-    return NextResponse.json({ error: "Firecrawl Scraper Error", details: String(error) }, { status: 500 });
-  }
-}
+  
+  },
+});
+

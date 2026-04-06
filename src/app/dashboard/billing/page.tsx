@@ -16,36 +16,25 @@ export default function BillingPortal() {
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
 
-  const attemptCheckout = async (endpoint: string, planId: string, email: string) => {
-    const res = await fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ planId, email }),
-    });
-    if (res.status === 503) return null; // provider unavailable, try next
-    const data = await res.json();
-    return data.checkoutUrl || null;
-  };
-
   const handleUpgrade = async (planId: string) => {
     setCheckoutError(null);
     setCheckoutLoading(planId);
-    const email = user?.emailAddresses?.[0]?.emailAddress || "";
-    const providers = [
-      "/api/payments/yoco/checkout",
-      "/api/_payments/paystack/checkout",
-      "/api/_payments/payfast/webhook",
-    ];
+    
     try {
-      let checkoutUrl: string | null = null;
-      for (const endpoint of providers) {
-        checkoutUrl = await attemptCheckout(endpoint, planId, email);
-        if (checkoutUrl) break;
-      }
-      if (checkoutUrl) {
-        window.location.href = checkoutUrl;
+      const res = await fetch("/api/payments/yoco/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: planId }),
+      });
+      
+      const data = await res.json();
+      
+      if (res.ok && data.redirectUrl) {
+        window.location.assign(data.redirectUrl);
+      } else if (res.status === 503) {
+        setCheckoutError("Payments are being set up. Please try again shortly.");
       } else {
-        setCheckoutError("All payment providers are currently unavailable. Please try again later.");
+        setCheckoutError(data.error || "Payment setup incomplete. Please try again.");
       }
     } catch {
       setCheckoutError("Connection failed. Please check your internet and try again.");

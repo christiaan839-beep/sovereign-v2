@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { createAgentRoute } from "@/lib/agent-factory";
 import { NextResponse } from "next/server";
 import { nimChat } from "@/lib/nvidia";
 
@@ -15,18 +15,18 @@ import { nimChat } from "@/lib/nvidia";
  * Now BYOK-aware via nimChat().
  */
 
-export async function POST(request: Request) {
-  try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const { prompt, mode = "reason", max_tokens = 2048 } = await request.json();
+export const POST = createAgentRoute({
+  name: "nemotron3-super",
+  handler: async ({ input, email, userId }) => {
+
+    const { prompt, mode = "reason", max_tokens = 2048 } = input as Record<string, unknown>;
 
     if (!prompt) {
-      return NextResponse.json({ error: "prompt is required." }, { status: 400 });
+      return ({ error: "prompt is required." });
     }
 
     const systemPrompts: Record<string, string> = {
-      reason: "You are an elite reasoning engine. Think step-by-step, consider multiple perspectives, and arrive at a well-supported conclusion. Show your chain of thought.",
+      reason: "You are a senior reasoning engine. Think step-by-step, consider multiple perspectives, and arrive at a well-supported conclusion. Show your chain of thought.",
       analyze: "You are a deep analyst. Extract key insights, identify patterns, assess risks, and provide actionable recommendations. Be thorough and specific.",
       strategize: "You are a world-class strategist. Consider competitive dynamics, market forces, and second-order effects. Propose bold but executable strategies.",
       summarize: "You are a precision summarizer. Distill complex information into clear, concise summaries. Preserve critical details while eliminating noise.",
@@ -42,7 +42,7 @@ export async function POST(request: Request) {
       { maxTokens: max_tokens, temperature: mode === "summarize" ? 0.2 : 0.6 }
     );
 
-    return NextResponse.json({
+    return ({
       success: true,
       model: "Nemotron 3 Super 120B (Hybrid Mamba-Transformer MoE)",
       mode,
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
       duration_ms: Date.now() - start,
       license: "NVIDIA Open Model License — commercial use permitted",
     });
-  } catch (error) {
-    return NextResponse.json({ error: "Nemotron 3 Super error", details: String(error) }, { status: 500 });
-  }
-}
+  
+  },
+});
+

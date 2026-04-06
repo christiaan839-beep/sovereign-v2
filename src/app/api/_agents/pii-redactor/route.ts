@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { createAgentRoute } from "@/lib/agent-factory";
 import { NextResponse } from "next/server";
 import { nimChat } from "@/lib/nvidia";
 
@@ -8,14 +8,14 @@ import { nimChat } from "@/lib/nvidia";
  * Ensures POPIA/GDPR compliance. Now BYOK-aware via nimChat().
  */
 
-export async function POST(request: Request) {
-  try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const { text, redact = true } = await request.json();
+export const POST = createAgentRoute({
+  name: "pii-redactor",
+  handler: async ({ input, email, userId }) => {
+
+    const { text, redact = true } = input as Record<string, unknown>;
 
     if (!text) {
-      return NextResponse.json({ error: "Text is required." }, { status: 400 });
+      return ({ error: "Text is required." });
     }
 
     // Step 1: Use NeMo Content Safety model to detect PII entities (BYOK-aware)
@@ -56,7 +56,7 @@ Output ONLY valid JSON. No explanation.`,
       parsed = { entities: [], risk_level: "UNKNOWN", redacted_text: text };
     }
 
-    return NextResponse.json({
+    return ({
       success: true,
       model: "nemotron-content-safety-reasoning-4b",
       original_length: text.length,
@@ -66,7 +66,7 @@ Output ONLY valid JSON. No explanation.`,
       redacted_text: redact ? (parsed.redacted_text || text) : undefined,
       compliance: ["POPIA", "GDPR", "CCPA"],
     });
-  } catch (error) {
-    return NextResponse.json({ error: "PII detection error", details: String(error) }, { status: 500 });
-  }
-}
+  
+  },
+});
+

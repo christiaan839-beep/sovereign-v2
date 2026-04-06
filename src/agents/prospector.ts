@@ -18,7 +18,7 @@ export async function prospectLeads(
 
   const enrichedOutput = await research_ai(
     searchQuery,
-    `You are an elite B2B lead prospector. Using the live search results provided, identify 5 REAL businesses that match the target profile.
+    `You are a B2B lead prospector. Using the live search results provided, identify 5 REAL businesses that match the target profile.
 
 TARGET PROFILE:
 - Industry: ${industry}

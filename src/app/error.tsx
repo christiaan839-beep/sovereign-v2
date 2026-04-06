@@ -20,7 +20,7 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
     ? "Session expired"
     : isUsage
     ? "Usage limit reached"
-    : "Something went wrong";
+    : "Unexpected error";
 
   const description = isNetwork
     ? "Could not reach the server. Check your internet connection and try again."

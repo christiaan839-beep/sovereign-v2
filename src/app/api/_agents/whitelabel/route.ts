@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { createAgentRoute } from "@/lib/agent-factory";
 import { NextResponse } from "next/server";
 
 /**
@@ -56,7 +56,7 @@ export async function GET(request: Request) {
   });
 }
 
-export async function POST(request: Request) {
+async function _postHandler(request: Request) {
   try {
     const { userId } = await auth();
     if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
@@ -103,3 +103,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "White-label error", details: String(error) }, { status: 500 });
   }
 }
+
+
+// Factory wrapper for POST (adds safety pipeline)
+export const POST = createAgentRoute({
+  name: "whitelabel",
+  handler: async ({ input, email, userId, request }) => {
+    // Delegate to existing handler
+    const fakeReq = new Request("http://localhost", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
+    const res = await _postHandler(fakeReq);
+    return res instanceof Response ? await res.json() : res;
+  },
+});

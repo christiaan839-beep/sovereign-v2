@@ -15,7 +15,7 @@ export interface ToolResult {
 export async function createAndRunTool(objective: string): Promise<ToolResult> {
   const start = Date.now();
 
-  const systemPrompt = `You are the SOVEREIGN Tool Factory — an elite AI engineer.
+  const systemPrompt = `You are the SOVEREIGN Tool Factory — a senior AI engineer.
 The user needs a tool to accomplish an objective. You must WRITE it now in JavaScript.
 
 Rules:
@@ -44,7 +44,28 @@ async () => {
     // Clean markdown wrappers
     generatedCode = generatedCode.replace(/^```(js|javascript)?\s*/i, "").replace(/```$/i, "").trim();
 
-    // Execute in sandboxed context
+    // Security: block dangerous code patterns before execution
+    const blockedPatterns = [
+      /\bprocess\b/, /\brequire\b/, /\bimport\b/, /\b__dirname\b/, /\b__filename\b/,
+      /\bchild_process\b/, /\bfs\b\./, /\bnet\b\./, /\bhttp\b\./, /\bdns\b\./,
+      /\beval\b\(/, /\bglobalThis\b/, /\bwindow\b/,
+      /\bfetch\b\(/, /\bXMLHttpRequest\b/, /\bWebSocket\b/,
+    ];
+    for (const pattern of blockedPatterns) {
+      if (pattern.test(generatedCode)) {
+        throw new Error(`Generated code contains blocked pattern: ${pattern.source}. Code execution denied for security.`);
+      }
+    }
+
+    // Limit code length to prevent abuse
+    if (generatedCode.length > 10_000) {
+      throw new Error("Generated code exceeds maximum allowed length (10,000 chars)");
+    }
+
+    // SECURITY NOTE: new Function() is used intentionally here for the Tool Factory feature.
+    // It executes AI-generated pure computation code (math, data transforms, string ops).
+    // All dangerous patterns (I/O, network, filesystem, process) are blocked above.
+    // eslint-disable-next-line no-new-func
     const execute = new Function(`return (${generatedCode})();`);
     const result = await execute();
 

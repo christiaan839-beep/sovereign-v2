@@ -131,7 +131,7 @@ export default function WebhookLogPage() {
           })}
           {filtered.length === 0 && (
             <div className="px-5 py-12 text-center">
-              <Zap className="w-8 h-8 text-neutral-700 mx-auto mb-2" />
+              <Zap className="w-8 h-8 text-neutral-500 mx-auto mb-2" />
               <p className="text-sm text-neutral-500">No events match this filter.</p>
             </div>
           )}

@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { createAgentRoute } from "@/lib/agent-factory";
 
 import { NextResponse } from "next/server";
 import { getBaseUrl } from "@/lib/base-url";
@@ -12,14 +12,14 @@ import { getBaseUrl } from "@/lib/base-url";
  * Supports 20+ languages via NIM translation + voice models.
  */
 
-export async function POST(request: Request) {
-  try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const { text, source_lang = "en", target_lang, voice = "en-US-1" } = await request.json();
+export const POST = createAgentRoute({
+  name: "multilingual-voice",
+  handler: async ({ input, email, userId }) => {
+
+    const { text, source_lang = "en", target_lang, voice = "en-US-1" } = input as Record<string, unknown>;
 
     if (!text || !target_lang) {
-      return NextResponse.json({ error: "text and target_lang required." }, { status: 400 });
+      return ({ error: "text and target_lang required." });
     }
 
     const baseUrl = getBaseUrl();
@@ -54,7 +54,7 @@ export async function POST(request: Request) {
       voiceResult = { status: "Voice synthesis unavailable" };
     }
 
-    return NextResponse.json({
+    return ({
       success: true,
       pipeline: "Multilingual Voice",
       source: { lang: source_lang, text },
@@ -62,7 +62,7 @@ export async function POST(request: Request) {
       voice_output: voiceResult,
       total_duration_ms: Date.now() - start,
     });
-  } catch (error) {
-    return NextResponse.json({ error: "Multilingual pipeline error", details: String(error) }, { status: 500 });
-  }
-}
+  
+  },
+});
+

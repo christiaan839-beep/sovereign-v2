@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { createAgentRoute } from "@/lib/agent-factory";
 import { NextResponse } from "next/server";
 import { nimChat } from "@/lib/nvidia";
 
@@ -8,14 +8,14 @@ import { nimChat } from "@/lib/nvidia";
  * Now BYOK-aware via nimChat().
  */
 
-export async function POST(request: Request) {
-  try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const { text, context = "customer-support", voice_style = "professional" } = await request.json();
+export const POST = createAgentRoute({
+  name: "voicechat",
+  handler: async ({ input, email, userId }) => {
+
+    const { text, context = "customer-support", voice_style = "professional" } = input as Record<string, unknown>;
 
     if (!text) {
-      return NextResponse.json({ error: "text is required." }, { status: 400 });
+      return ({ error: "text is required." });
     }
 
     const contextPrompts: Record<string, string> = {
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
       { maxTokens: 200, temperature: 0.8 }
     );
 
-    return NextResponse.json({
+    return ({
       success: true,
       model: "nemotron-voicechat",
       context,
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
       word_count: response.split(/\s+/).length,
       estimated_duration_seconds: Math.round(response.split(/\s+/).length / 2.5),
     });
-  } catch (error) {
-    return NextResponse.json({ error: "Voicechat error", details: String(error) }, { status: 500 });
-  }
-}
+  
+  },
+});
+

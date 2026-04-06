@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { createAgentRoute } from "@/lib/agent-factory";
 import { getNimKey } from "@/lib/nvidia";
 import { NextResponse } from "next/server";
 
@@ -10,14 +10,14 @@ import { NextResponse } from "next/server";
  * passport numbers, medical IDs, bank accounts, IP addresses.
  */
 
-export async function POST(request: Request) {
-  try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const { text, entities = ["PERSON", "EMAIL", "PHONE", "ADDRESS", "SSN", "CREDIT_CARD", "PASSPORT", "IP_ADDRESS"] } = await request.json();
+export const POST = createAgentRoute({
+  name: "gliner-pii",
+  handler: async ({ input, email, userId }) => {
+
+    const { text, entities = ["PERSON", "EMAIL", "PHONE", "ADDRESS", "SSN", "CREDIT_CARD", "PASSPORT", "IP_ADDRESS"] } = input as Record<string, unknown>;
 
     if (!text) {
-      return NextResponse.json({ error: "text is required." }, { status: 400 });
+      return ({ error: "text is required." });
     }
     
 
@@ -69,7 +69,7 @@ export async function POST(request: Request) {
       detectedEntities.length <= 2 ? "LOW" :
       detectedEntities.length <= 5 ? "MEDIUM" : "HIGH";
 
-    return NextResponse.json({
+    return ({
       success: true,
       model: "gliner-pii",
       entities_found: Array.isArray(detectedEntities) ? detectedEntities.length : 0,
@@ -79,7 +79,7 @@ export async function POST(request: Request) {
       redacted_text: redactedText,
       compliance: { gdpr: true, popia: true, ccpa: true },
     });
-  } catch (error) {
-    return NextResponse.json({ error: "GLiNER PII error", details: String(error) }, { status: 500 });
-  }
-}
+  
+  },
+});
+

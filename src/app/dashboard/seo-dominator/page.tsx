@@ -311,7 +311,7 @@ export default function SEODominatorPage() {
       {/* Empty State */}
       {!result && !error && !loading && !activeAction && (
         <div className="text-center py-16">
-          <Search className="w-8 h-8 text-neutral-700 mx-auto mb-3" />
+          <Search className="w-8 h-8 text-neutral-500 mx-auto mb-3" />
           <p className="text-sm text-neutral-500">Select a tool above to get started</p>
           <p className="text-[10px] text-neutral-500 mt-1">Choose X-Ray, Gap Killer, Schema Audit, or GBP Hijack</p>
         </div>

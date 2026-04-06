@@ -10,19 +10,24 @@ export const tenants = pgTable("tenants", {
 
 export const activeSwarms = pgTable("active_swarms", {
   id: uuid("id").primaryKey().defaultRandom(),
-  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
+  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: "cascade" }).notNull(),
   agentAlias: text("agent_alias").notNull(), // COMMANDER, AD-BUYER, etc.
   status: text("status").notNull().default("idle"),
   uptime: timestamp("uptime").defaultNow(),
-});
+}, (table) => [
+  index("idx_active_swarms_tenant").on(table.tenantId),
+]);
 
 export const globalTelemetry = pgTable("global_telemetry", {
   id: uuid("id").primaryKey().defaultRandom(),
-  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
+  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: "cascade" }).notNull(),
   eventType: text("event_type").notNull(), // e.g., "lead_scraped", "video_synthesized"
   payload: text("payload").notNull(), // JSON string representing the asset/data
   timestamp: timestamp("timestamp").defaultNow(),
-});
+}, (table) => [
+  index("idx_telemetry_tenant").on(table.tenantId),
+  index("idx_telemetry_timestamp").on(table.timestamp),
+]);
 
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -44,7 +49,7 @@ export const settings = pgTable("settings", {
 
 export const scheduledContent = pgTable("scheduled_content", {
   id: uuid("id").primaryKey().defaultRandom(),
-  tenantId: uuid("tenant_id").references(() => tenants.id), // nullable — some routes don't have tenant context
+  tenantId: uuid("tenant_id").references(() => tenants.id, { onDelete: "set null" }), // nullable — some routes don't have tenant context
   topic: text("topic").notNull(),
   caption: text("caption"),
   platform: text("platform").notNull().default("instagram"), // instagram, youtube, tiktok
@@ -109,7 +114,10 @@ export const leads = pgTable("leads", {
   score: text("score").default("0"),   // 0-100 lead quality score
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => [
+  index("idx_leads_user_email").on(table.userEmail),
+  index("idx_leads_status").on(table.status),
+]);
 
 export const adCreatives = pgTable("ad_creatives", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -122,7 +130,9 @@ export const adCreatives = pgTable("ad_creatives", {
   hook: text("hook"),                  // the opening line / attention grabber
   style: text("style").default("direct-response"), // direct-response, storytelling, ugc, testimonial
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => [
+  index("idx_ad_creatives_user_email").on(table.userEmail),
+]);
 
 // ═══════════════════════════════════════════
 // Phase 6: Email Sequence Engine
@@ -136,11 +146,13 @@ export const emailSequences = pgTable("email_sequences", {
   status: text("status").notNull().default("draft"), // draft, active, paused
   totalSteps: text("total_steps").default("0"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => [
+  index("idx_email_sequences_user_email").on(table.userEmail),
+]);
 
 export const sequenceSteps = pgTable("sequence_steps", {
   id: uuid("id").primaryKey().defaultRandom(),
-  sequenceId: uuid("sequence_id").references(() => emailSequences.id).notNull(),
+  sequenceId: uuid("sequence_id").references(() => emailSequences.id, { onDelete: "cascade" }).notNull(),
   stepNumber: text("step_number").notNull(), // "1", "2", "3"
   subject: text("subject").notNull(),
   body: text("body").notNull(), // HTML or plain text
@@ -237,7 +249,7 @@ export const conversations = pgTable("conversations", {
 
 export const chatMessages = pgTable("chat_messages", {
   id: uuid("id").primaryKey().defaultRandom(),
-  conversationId: uuid("conversation_id").references(() => conversations.id).notNull(),
+  conversationId: uuid("conversation_id").references(() => conversations.id, { onDelete: "cascade" }).notNull(),
   role: text("role").notNull(), // user, assistant
   content: text("content").notNull(),
   agentLabel: text("agent_label"),
@@ -253,7 +265,7 @@ export const chatMessages = pgTable("chat_messages", {
 
 export const marketplaceAgents = pgTable("marketplace_agents", {
   id: uuid("id").primaryKey().defaultRandom(),
-  skillId: uuid("skill_id").references(() => customSkills.id),
+  skillId: uuid("skill_id").references(() => customSkills.id, { onDelete: "set null" }),
   authorEmail: text("author_email").notNull(),
   authorName: text("author_name").notNull(),
   name: text("name").notNull(),
@@ -300,7 +312,7 @@ export const organizations = pgTable("organizations", {
 
 export const orgMembers = pgTable("org_members", {
   id: uuid("id").primaryKey().defaultRandom(),
-  orgId: uuid("org_id").references(() => organizations.id).notNull(),
+  orgId: uuid("org_id").references(() => organizations.id, { onDelete: "cascade" }).notNull(),
   userId: text("user_id").notNull(),
   email: text("email").notNull(),
   role: text("role").notNull().default("member"), // owner, admin, member, viewer

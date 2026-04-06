@@ -1,63 +1,56 @@
-import { auth } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
+import { createAgentRoute } from "@/lib/agent-factory";
+import { z } from "zod";
 import { nimChat } from "@/lib/nvidia";
 import { ai } from "@/lib/ai";
 
 /**
- * CONTRACT ANALYZER — Upload a contract/document text and get:
- * - Key terms extraction
- * - Red flag identification
- * - Renewal/deadline dates
- * - Risk assessment
- * 
- * Uses Nemotron 3 Nano (262K context) for long document ingestion,
- * falls back to Gemini/Claude via ai() if NIM key is unavailable.
+ * CONTRACT ANALYZER — Extract key terms, red flags, deadlines, and risk scores.
+ * Uses Nemotron 3 Nano (262K context) with Claude fallback for long documents.
  */
 
-export async function POST(request: Request) {
-  try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const { document } = await request.json();
+const schema = z.object({
+  document: z.string().min(50, "Document text must be at least 50 characters").max(500_000),
+  prompt: z.string().optional(),
+  context: z.string().max(5000).optional(),
+});
 
-    if (!document) {
-      return NextResponse.json({ error: "document text is required." }, { status: 400 });
-    }
-
-    const systemPrompt = `You are a senior contract attorney and risk analyst. Analyze the provided contract with extreme precision.
+const SYSTEM_PROMPT = `You are a senior contract attorney and risk analyst. Analyze with extreme precision.
 
 OUTPUT FORMAT (strict JSON):
 {
   "summary": "2-3 sentence executive summary",
-  "parties": ["Party A name", "Party B name"],
-  "key_terms": [{"term": "Payment Terms", "detail": "Net 30 days", "section": "Section 4.1"}],
-  "red_flags": [{"flag": "description", "severity": "HIGH|MEDIUM|LOW", "recommendation": "what to do"}],
-  "deadlines": [{"date": "2024-12-31", "description": "Contract renewal deadline", "action_required": "Send notice 60 days prior"}],
-  "financial_terms": {"total_value": "$X", "payment_schedule": "description", "penalties": "description"},
+  "parties": ["Party A", "Party B"],
+  "key_terms": [{"term": "...", "detail": "...", "section": "..."}],
+  "red_flags": [{"flag": "...", "severity": "HIGH|MEDIUM|LOW", "recommendation": "..."}],
+  "deadlines": [{"date": "...", "description": "...", "action_required": "..."}],
+  "financial_terms": {"total_value": "...", "payment_schedule": "...", "penalties": "..."},
   "risk_score": 7,
   "risk_assessment": "Overall risk narrative"
 }
 
 Output ONLY valid JSON.`;
 
+export const POST = createAgentRoute({
+  name: "contract-analyzer",
+  schema,
+  handler: async ({ input }) => {
+    const document = input.document as string;
     const start = Date.now();
     let result: string;
 
     try {
-      // Try Nemotron 3 Nano (best for long documents)
       result = await nimChat(
         "nvidia/nemotron-3-nano-30b-a3b",
         [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: `Analyze this contract:\n\n${document.substring(0, 200000)}` },
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: `Analyze this contract:\n\n${document.substring(0, 200_000)}` },
         ],
         { maxTokens: 3000, temperature: 0.1 }
       );
     } catch {
-      // Fallback to BYOK ai() engine — use Claude Extended Thinking for thorough legal analysis
       result = await ai(
-        `Analyze this contract:\n\n${document.substring(0, 50000)}`,
-        { system: systemPrompt, maxTokens: 3000, model: "claude", thinking: true }
+        `Analyze this contract:\n\n${document.substring(0, 50_000)}`,
+        { system: SYSTEM_PROMPT, maxTokens: 3000, model: "claude", thinking: true }
       );
     }
 
@@ -68,7 +61,7 @@ Output ONLY valid JSON.`;
       parsed = { raw_analysis: result };
     }
 
-    return NextResponse.json({
+    return {
       success: true,
       agent: "contract-analyzer",
       analysis: parsed,
@@ -78,8 +71,6 @@ Output ONLY valid JSON.`;
         pages_estimated: Math.ceil(document.split(/\s+/).length / 300),
       },
       duration_ms: Date.now() - start,
-    });
-  } catch (error) {
-    return NextResponse.json({ error: "Contract analyzer error", details: String(error) }, { status: 500 });
-  }
-}
+    };
+  },
+});

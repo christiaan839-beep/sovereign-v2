@@ -53,7 +53,7 @@ interface StepResult {
   step: number;
   agent: string;
   reason: string;
-  status: "success" | "failed";
+  status: "success" | "failed" | "skipped";
   data?: unknown;
   error?: string;
   duration_ms: number;
@@ -194,9 +194,32 @@ export const POST = createAgentRoute({
     let previousOutput = "";
     const stepOutputs: Record<string, string> = {};
 
+    // Failure mode: "continue" (default) runs all steps; "stop" halts on first failure
+    const failureMode = (input.failure_mode as string) || "continue";
+
     for (let i = 0; i < plan.length; i++) {
       const step = plan[i];
       const start = Date.now();
+
+      // ─── Dependency validation: skip if a required previous step failed ───
+      const paramStr = JSON.stringify(step.params);
+      const depRefs = paramStr.match(/\{\{step_(\d+)\}\}/g) || [];
+      const hasFailedDep = depRefs.some((ref) => {
+        const depStep = parseInt(ref.replace(/\{\{step_|\}\}/g, ""));
+        return results[depStep - 1]?.status === "failed";
+      });
+
+      if (hasFailedDep) {
+        results.push({
+          step: i + 1,
+          agent: step.agent,
+          reason: step.reason,
+          status: "skipped",
+          error: "Skipped: depends on a failed previous step",
+          duration_ms: 0,
+        });
+        continue;
+      }
 
       // Resolve {{step_N}} templates with previous step outputs
       const body: Record<string, string> = {};
@@ -212,7 +235,6 @@ export const POST = createAgentRoute({
       if (previousOutput && !body.context) {
         body.context = previousOutput.slice(0, 1500);
       }
-      // Agents that use `prompt` as primary key need it populated
       if (!body.prompt && !body.text && !body.url && !body.target && !body.niche && !body.query) {
         body.prompt = `${step.reason}. Context: ${previousOutput.slice(0, 500)}`;
       }
@@ -238,10 +260,12 @@ export const POST = createAgentRoute({
             duration_ms,
           });
           previousOutput += `\nStep ${i + 1} (${step.agent}) failed: ${data.error || res.status}`;
+
+          // Stop-on-failure mode
+          if (failureMode === "stop") break;
           continue;
         }
 
-        // Extract summary for downstream steps
         const summary = JSON.stringify(data).slice(0, 2000);
         previousOutput = summary;
         stepOutputs[`{{step_${i + 1}}}`] = summary;
@@ -266,21 +290,33 @@ export const POST = createAgentRoute({
           duration_ms,
         });
         previousOutput += `\nStep ${i + 1} (${step.agent}) failed: ${errMsg}`;
+
+        if (failureMode === "stop") break;
       }
     }
 
     const succeeded = results.filter((r) => r.status === "success").length;
+    const failed = results.filter((r) => r.status === "failed").length;
+    const skipped = results.filter((r) => r.status === "skipped").length;
+
+    // Overall status: success (all passed), partial (some passed), failed (none passed)
+    const overallStatus = succeeded === results.length ? "success"
+      : succeeded > 0 ? "partial"
+      : "failed";
 
     return {
       goal: goalText,
       plan,
       auto_execute: true,
+      failure_mode: failureMode,
       ...(playbookId ? { playbook_id: playbookId } : {}),
       results,
       summary: {
+        status: overallStatus,
         total_steps: results.length,
         succeeded,
-        failed: results.length - succeeded,
+        failed,
+        skipped,
         total_duration_ms: results.reduce((sum, r) => sum + r.duration_ms, 0),
       },
     };

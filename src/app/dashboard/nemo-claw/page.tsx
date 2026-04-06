@@ -66,7 +66,7 @@ export default function NemoClawPage() {
           method: "POST",
           headers: { 
             "Content-Type": "application/json",
-            "Authorization": "Bearer 599a61ce2a2725c8b72c46f81e39c21c934cd07cea50c961"
+            "Authorization": `Bearer ${process.env.NEXT_PUBLIC_NEMOCLAW_TOKEN || ""}`
           },
           body: JSON.stringify({ command: input, messages: payloadMessages })
         });

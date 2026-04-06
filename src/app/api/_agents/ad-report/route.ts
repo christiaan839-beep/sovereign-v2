@@ -1,11 +1,32 @@
-import { auth } from "@clerk/nextjs/server";
-import { NextRequest, NextResponse } from "next/server";
+import { createAgentRoute } from "@/lib/agent-factory";
+import { z } from "zod";
 import { nimChat } from "@/lib/nvidia";
 
-export async function POST(req: NextRequest) {
-  const { platform, metrics, goal, dateRange } = await req.json();
+/**
+ * AD REPORT — Analyzes campaign metrics and generates optimization recommendations.
+ */
 
-  const systemPrompt = `You are a performance marketing analyst. You analyze ad campaign data and provide specific, actionable recommendations. Never use vague language. Always reference specific metrics, suggest specific budget changes, and identify specific creative or targeting improvements. Format your response as:
+const schema = z.object({
+  platform: z.string().max(100).optional(),
+  metrics: z.string().max(5000).optional(),
+  goal: z.string().max(500).optional(),
+  dateRange: z.string().max(100).optional(),
+  prompt: z.string().max(5000).optional(),
+});
+
+export const POST = createAgentRoute({
+  name: "ad-report",
+  schema,
+  handler: async ({ input }) => {
+    const platform = (input.platform as string) || "digital advertising";
+    const metrics = (input.metrics as string) || "";
+    const goal = (input.goal as string) || "";
+    const dateRange = (input.dateRange as string) || "";
+
+    const result = await nimChat("nvidia/llama-3.1-nemotron-ultra-253b-v1", [
+      {
+        role: "system",
+        content: `You are a performance marketing analyst. Analyze campaign data and provide specific, actionable recommendations. Never use vague language. Always reference specific metrics. Format as:
 
 ## Campaign Summary
 [2-3 sentence overview with key metrics]
@@ -20,34 +41,19 @@ export async function POST(req: NextRequest) {
 [Numbered list of specific changes with expected impact]
 
 ## Budget Recommendation
-[Specific reallocation suggestions]`;
-
-  const prompt = `Analyze this ${platform || "digital advertising"} campaign data:
-
-${metrics ? `Metrics provided:\n${metrics}` : "No metrics provided — give a general campaign audit framework."}
-${goal ? `Campaign goal: ${goal}` : ""}
-${dateRange ? `Date range: ${dateRange}` : ""}
-
-Provide specific, actionable recommendations. No fluff.`;
-
-  try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const result = await nimChat("nvidia/llama-3.1-nemotron-ultra-253b-v1", [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: prompt },
+[Specific reallocation suggestions]`,
+      },
+      {
+        role: "user",
+        content: `Analyze this ${platform} campaign data:\n\n${metrics ? `Metrics:\n${metrics}` : "No metrics provided — give a general campaign audit framework."}\n${goal ? `Goal: ${goal}` : ""}\n${dateRange ? `Date range: ${dateRange}` : ""}\n\nProvide specific, actionable recommendations.`,
+      },
     ]);
 
-    return NextResponse.json({
+    return {
       success: true,
       report: result,
       platform,
       timestamp: new Date().toISOString(),
-    });
-  } catch (_error) {
-    return NextResponse.json(
-      { success: false, error: "Failed to generate report" },
-      { status: 500 }
-    );
-  }
-}
+    };
+  },
+});

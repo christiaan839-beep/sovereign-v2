@@ -1,55 +1,47 @@
-import { auth } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
+import { createAgentRoute } from "@/lib/agent-factory";
+import { z } from "zod";
 import { ai, adaptive_ai } from "@/lib/ai";
 import { remember, recall } from "@/lib/memory";
 
 /**
- * BRAND VOICE CLONER — Analyze existing content to learn a brand's voice,
- * then generate new content that sounds exactly like them.
- * 
- * Uses Adaptive AI (memory-enhanced) to improve over time.
+ * BRAND VOICE CLONER — Learn a brand's voice from samples, then generate
+ * new content matching it. Uses Adaptive AI with memory for improvement.
  */
 
-export async function POST(request: Request) {
-  try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const body = await request.json();
-    const { action, samples, prompt, brand_name, url } = body;
-    const context = body.context || "";
+const schema = z.object({
+  action: z.enum(["learn", "generate"]),
+  samples: z.array(z.string()).optional(),
+  prompt: z.string().max(5000).optional(),
+  brand_name: z.string().max(200).optional(),
+  url: z.string().max(500).optional(),
+  context: z.string().max(5000).optional(),
+}).refine(
+  (d) => (d.action === "learn" && d.samples && d.samples.length >= 3) || (d.action === "generate" && d.prompt),
+  { message: "learn requires 3+ samples; generate requires a prompt" }
+);
 
-    // ACTION: LEARN — Ingest sample content to learn the brand voice
+export const POST = createAgentRoute({
+  name: "brand-voice",
+  schema,
+  handler: async ({ input }) => {
+    const { action, samples, prompt, brand_name, url, context } = input as z.infer<typeof schema>;
+    const label = brand_name || "default";
+
     if (action === "learn") {
-      if (!samples || !Array.isArray(samples) || samples.length < 3) {
-        return NextResponse.json({ error: "Provide at least 3 content samples as an array." }, { status: 400 });
-      }
-
-      const samplesText = samples.map((s: string, i: number) => `Sample ${i + 1}:\n${s}`).join("\n\n---\n\n");
+      const samplesText = samples!.map((s, i) => `Sample ${i + 1}:\n${s}`).join("\n\n---\n\n");
 
       const voiceProfile = await ai(
         `Analyze these content samples and extract the brand's unique voice profile.
-${context ? `\nCONTEXT FROM PREVIOUS ANALYSIS:\n${context}\n` : ""}${url ? `\nBrand URL: ${url}\n` : ""}
+${context ? `\nCONTEXT:\n${context}\n` : ""}${url ? `\nBrand URL: ${url}\n` : ""}
 ${samplesText}
 
 OUTPUT (strict JSON):
-{
-  "tone": "description of overall tone (e.g., 'confident but approachable')",
-  "vocabulary_level": "grade level and word choices",
-  "sentence_structure": "short/long, simple/complex, patterns observed",
-  "personality_traits": ["trait1", "trait2", "trait3"],
-  "signature_phrases": ["phrases they frequently use"],
-  "topics_they_avoid": ["things they never talk about"],
-  "formatting_style": "how they structure posts (line breaks, emojis, hashtags)",
-  "call_to_action_style": "how they close content",
-  "example_hooks": ["3 hooks that match their style"]
-}
+{"tone": "...", "vocabulary_level": "...", "sentence_structure": "...", "personality_traits": ["..."], "signature_phrases": ["..."], "topics_they_avoid": ["..."], "formatting_style": "...", "call_to_action_style": "...", "example_hooks": ["..."]}
 
 Output ONLY valid JSON.`,
-        { system: "You are a brand strategist who can reverse-engineer any brand's voice from content samples. Be specific and actionable.", maxTokens: 2000 }
+        { system: "You are a brand strategist who reverse-engineers voice from content samples. Be specific.", maxTokens: 2000 }
       );
 
-      // Store the voice profile in memory for later retrieval
-      const label = brand_name || "default";
       await remember(`BRAND_VOICE_PROFILE:${label} ${voiceProfile}`);
 
       let parsed;
@@ -59,61 +51,38 @@ Output ONLY valid JSON.`,
         parsed = { raw: voiceProfile };
       }
 
-      return NextResponse.json({
+      return {
         success: true,
         action: "learn",
         brand: label,
         voice_profile: parsed,
-        samples_analyzed: samples.length,
-        message: `Voice profile for "${label}" learned and stored in memory.`,
-      });
+        samples_analyzed: samples!.length,
+      };
     }
 
-    // ACTION: GENERATE — Create content in the learned brand voice
-    if (action === "generate") {
-      if (!prompt) {
-        return NextResponse.json({ error: "prompt is required for generation." }, { status: 400 });
-      }
+    // Generate content in the learned brand voice
+    let voiceContext = "";
+    try {
+      const memories = await recall(`BRAND_VOICE_PROFILE:${label}`, 1);
+      if (memories.length > 0) voiceContext = memories[0].entry.text;
+    } catch { /* no profile found */ }
 
-      const label = brand_name || "default";
-
-      // Recall the stored voice profile
-      let voiceContext = "";
-      try {
-        const memories = await recall(`BRAND_VOICE_PROFILE:${label}`, 1);
-        if (memories.length > 0) {
-          voiceContext = memories[0].entry.text;
-        }
-      } catch {
-        // No voice profile found — generate without it
-      }
-
-      const result = await adaptive_ai(prompt, {
-        system: `You are writing content as the brand "${label}". You must match their exact voice, tone, and style.
+    const result = await adaptive_ai(prompt!, {
+      system: `You are writing content as the brand "${label}". Match their exact voice, tone, and style.
 
 ${voiceContext ? `LEARNED VOICE PROFILE:\n${voiceContext}` : "No voice profile found — write in a professional, engaging tone."}
-${context ? `\nCONTEXT FROM PREVIOUS PLAYBOOK STEPS:\n${context}` : ""}${url ? `\nBrand URL: ${url}` : ""}
+${context ? `\nCONTEXT:\n${context}` : ""}${url ? `\nBrand URL: ${url}` : ""}
 
-RULES:
-- Match the brand's vocabulary level exactly
-- Use their signature phrases naturally
-- Mirror their formatting style
-- Sound human, not AI-generated
-- Never break character`,
-        maxTokens: 2000,
-      });
+RULES: Match vocabulary level. Use signature phrases naturally. Mirror formatting. Sound human.`,
+      maxTokens: 2000,
+    });
 
-      return NextResponse.json({
-        success: true,
-        action: "generate",
-        brand: label,
-        content: result,
-        voice_matched: !!voiceContext,
-      });
-    }
-
-    return NextResponse.json({ error: "action must be 'learn' or 'generate'." }, { status: 400 });
-  } catch (error) {
-    return NextResponse.json({ error: "Brand voice cloner error", details: String(error) }, { status: 500 });
-  }
-}
+    return {
+      success: true,
+      action: "generate",
+      brand: label,
+      content: result,
+      voice_matched: !!voiceContext,
+    };
+  },
+});

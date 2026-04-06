@@ -12,7 +12,7 @@ export async function generateCode(
 RULES: Include imports, error handling, JSDoc comments. Return code in a markdown code block, followed by a "## How to use" section.`,
     {
       model: "claude",
-      system: "You are an elite full-stack engineer. Write clean, production-grade code.",
+      system: "You are a senior full-stack engineer. Write clean, production-grade code.",
       maxTokens: 4000,
     }
   );

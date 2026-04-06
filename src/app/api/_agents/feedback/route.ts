@@ -1,13 +1,12 @@
-import { auth } from "@clerk/nextjs/server";
+import { createAgentRoute } from "@/lib/agent-factory";
 import { getNimKey } from "@/lib/nvidia";
-import { NextResponse } from "next/server";
 import { persistRead, persistAppend } from "@/lib/persist";
 
 /**
  * SELF-IMPROVING FEEDBACK SYSTEM — After every agent execution,
  * clients can rate the output. The system stores feedback and
  * generates improved prompts over time.
- * 
+ *
  * Operations: rate, stats, improve
  */
 
@@ -20,35 +19,33 @@ interface FeedbackRecord {
   timestamp: string;
 }
 
-export async function POST(request: Request) {
-  try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const { action, agent, rating, comment = "", prompt_used = "" } = await request.json();
+export const POST = createAgentRoute({
+  name: "feedback",
+  requiredFields: ["action"],
+  handler: async ({ input }) => {
+    const { action, agent, rating, comment = "", prompt_used = "" } = input as Record<string, unknown>;
 
     if (action === "rate") {
-      if (!agent || !rating || rating < 1 || rating > 5) {
-        return NextResponse.json({ error: "agent and rating (1-5) required." }, { status: 400 });
+      if (!agent || !rating || (rating as number) < 1 || (rating as number) > 5) {
+        throw new Error("agent and rating (1-5) required.");
       }
 
       const record: FeedbackRecord = {
         id: `fb-${Date.now()}`,
-        agent,
-        rating,
-        comment,
-        prompt_used,
+        agent: agent as string,
+        rating: rating as number,
+        comment: comment as string,
+        prompt_used: prompt_used as string,
         timestamp: new Date().toISOString(),
       };
 
       persistAppend(`feedback-${agent}`, record, 500);
 
-      return NextResponse.json({ success: true, recorded: record });
+      return { success: true, recorded: record };
     }
 
     if (action === "stats") {
-      if (!agent) {
-        return NextResponse.json({ error: "agent required." }, { status: 400 });
-      }
+      if (!agent) throw new Error("agent required.");
 
       const records = persistRead<FeedbackRecord[]>(`feedback-${agent}`, []);
       const avgRating = records.length > 0
@@ -60,31 +57,29 @@ export async function POST(request: Request) {
         count: records.filter(r => r.rating === star).length,
       }));
 
-      return NextResponse.json({
+      return {
         success: true,
         agent,
         total_ratings: records.length,
         average_rating: avgRating,
         distribution,
         recent: records.slice(-5).reverse(),
-      });
+      };
     }
 
     if (action === "improve") {
-      if (!agent) {
-        return NextResponse.json({ error: "agent required." }, { status: 400 });
-      }
+      if (!agent) throw new Error("agent required.");
 
       const records = persistRead<FeedbackRecord[]>(`feedback-${agent}`, []);
       const lowRated = records.filter(r => r.rating <= 2);
       const highRated = records.filter(r => r.rating >= 4);
 
       if (records.length < 5) {
-        return NextResponse.json({
+        return {
           success: true,
           improvement: "Not enough feedback yet. Need at least 5 ratings to generate improvements.",
           total_ratings: records.length,
-        });
+        };
       }
 
       const feedbackSummary = `
@@ -110,17 +105,15 @@ ${lowRated.slice(-5).map(r => `- Rating: ${r.rating}/5 | Comment: ${r.comment} |
 
       const data = await res.json();
 
-      return NextResponse.json({
+      return {
         success: true,
         agent,
         total_ratings: records.length,
         average_rating: (records.reduce((s, r) => s + r.rating, 0) / records.length).toFixed(2),
         improvements: data?.choices?.[0]?.message?.content || "Unable to generate improvements.",
-      });
+      };
     }
 
-    return NextResponse.json({ error: "action must be 'rate', 'stats', or 'improve'." }, { status: 400 });
-  } catch (error) {
-    return NextResponse.json({ error: "Feedback error", details: String(error) }, { status: 500 });
-  }
-}
+    throw new Error("action must be 'rate', 'stats', or 'improve'.");
+  },
+});

@@ -118,9 +118,9 @@ export default function BillingHistoryPage() {
               <h2 className="text-sm font-semibold text-white">Payment History</h2>
             </div>
             <div className="flex flex-col items-center justify-center py-8 text-center">
-              <Receipt className="w-8 h-8 text-neutral-700 mb-3" />
+              <Receipt className="w-8 h-8 text-neutral-500 mb-3" />
               <p className="text-sm text-neutral-500">No payments yet</p>
-              <p className="text-xs text-neutral-600 mt-1">Invoices will appear here after your first payment via Yoco.</p>
+              <p className="text-xs text-neutral-500 mt-1">Invoices will appear here after your first payment via Yoco.</p>
             </div>
           </div>
 

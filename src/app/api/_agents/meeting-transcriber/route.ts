@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { createAgentRoute } from "@/lib/agent-factory";
 import { NextResponse } from "next/server";
 import { nimChat } from "@/lib/nvidia";
 
@@ -8,14 +8,14 @@ import { nimChat } from "@/lib/nvidia";
  * Uses Nemotron 3 Nano (262K context) for long transcript ingestion.
  */
 
-export async function POST(request: Request) {
-  try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const { transcript, meeting_type = "general", attendees } = await request.json();
+export const POST = createAgentRoute({
+  name: "meeting-transcriber",
+  handler: async ({ input, email, userId }) => {
+
+    const { transcript, meeting_type = "general", attendees } = input as Record<string, unknown>;
 
     if (!transcript) {
-      return NextResponse.json({ error: "transcript text is required." }, { status: 400 });
+      return ({ error: "transcript text is required." });
     }
 
     const start = Date.now();
@@ -61,7 +61,7 @@ Output ONLY valid JSON.`,
       parsed = { raw: analysis };
     }
 
-    return NextResponse.json({
+    return ({
       success: true,
       agent: "nemoclaw-meeting-transcriber",
       meeting_type,
@@ -73,7 +73,7 @@ Output ONLY valid JSON.`,
       intelligence: parsed,
       duration_ms: Date.now() - start,
     });
-  } catch (error) {
-    return NextResponse.json({ error: "Meeting transcriber error", details: String(error) }, { status: 500 });
-  }
-}
+  
+  },
+});
+

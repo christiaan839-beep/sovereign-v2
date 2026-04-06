@@ -1,30 +1,33 @@
-import { auth } from "@clerk/nextjs/server";
+import { createAgentRoute } from "@/lib/agent-factory";
+import { z } from "zod";
 import { getNimKey } from "@/lib/nvidia";
-import { NextResponse } from "next/server";
 
 /**
- * IMAGE GENERATION API — Uses NVIDIA Stable Diffusion 3 Medium via NIM
- * to generate high-quality images for the Content Factory.
- * 
+ * IMAGE GENERATION — Uses NVIDIA FLUX.1 Schnell via NIM.
  * Generates social media imagery, product shots, marketing assets.
  */
 
-export async function POST(request: Request) {
-  try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const { prompt, negative_prompt = "", width = 1024, height = 1024, steps = 28 } = await request.json();
+const schema = z.object({
+  prompt: z.string().min(3, "Prompt is required").max(2000),
+  negative_prompt: z.string().max(500).optional().default(""),
+  width: z.number().int().min(256).max(1024).optional().default(1024),
+  height: z.number().int().min(256).max(1024).optional().default(1024),
+  steps: z.number().int().min(1).max(50).optional().default(28),
+});
 
-    if (!prompt) {
-      return NextResponse.json({ error: "Prompt is required." }, { status: 400 });
-    }
-    
+export const POST = createAgentRoute({
+  name: "image-gen",
+  schema,
+  skipQualityCheck: true, // Image output is binary, not text
+  skipPiiScan: true, // Image URLs don't contain PII text
+  handler: async ({ input }) => {
+    const { prompt, negative_prompt, width, height, steps } = input as z.infer<typeof schema>;
 
     const nimRes = await fetch("https://integrate.api.nvidia.com/v1/images/generations", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${await getNimKey()}`,
+        Authorization: `Bearer ${await getNimKey()}`,
       },
       body: JSON.stringify({
         model: "black-forest-labs/flux1-schnell",
@@ -39,23 +42,18 @@ export async function POST(request: Request) {
 
     if (!nimRes.ok) {
       const errorText = await nimRes.text();
-      return NextResponse.json({
-        error: "AI model temporarily unavailable — please try again in a moment.",
-        details: errorText,
-      }, { status: nimRes.status });
+      throw new Error(`Image generation failed: ${errorText.slice(0, 200)}`);
     }
 
     const data = await nimRes.json();
 
-    return NextResponse.json({
+    return {
       success: true,
       model: "flux1-schnell",
       prompt,
       image: data.data?.[0] || null,
       dimensions: `${width}x${height}`,
       steps,
-    });
-  } catch (error) {
-    return NextResponse.json({ error: "Image generation error", details: String(error) }, { status: 500 });
-  }
-}
+    };
+  },
+});

@@ -1,150 +1,58 @@
-import { NextResponse } from "next/server";
-import { currentUser } from "@clerk/nextjs/server";
+import { createAgentRoute } from "@/lib/agent-factory";
+import { z } from "zod";
 import { ai } from "@/lib/ai";
 import { ANTI_SLOP_RULES, VOICE_PRESETS, PLATFORM_RULES, QUALITY_SCORER_PROMPT } from "@/lib/content-engine";
 import type { VoicePreset } from "@/lib/content-engine";
 import { fireUserWebhook } from "@/lib/webhooks";
-import { createLogger } from "@/lib/logger";
-const log = createLogger("organic-content");
 
 /**
- * Organic Content Production Engine
- * 
- * Generates premium, anti-slop content for organic marketing.
- * Supports: Blog, Instagram, LinkedIn, Twitter, TikTok, YouTube, Newsletter
- * 
- * Uses a 2-pass system:
- * 1. Generate content with anti-slop rules injected
- * 2. Score quality and auto-revise if below threshold
+ * ORGANIC CONTENT ENGINE — Premium anti-slop content for organic marketing.
+ * Supports: Blog, Social Pack, Video Script, Newsletter, Thread.
+ * Custom 3-pass system: generate → score → auto-revise.
  */
 
-export async function POST(req: Request) {
-  const user = await currentUser();
-  if (!user?.primaryEmailAddress?.emailAddress) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+const schema = z.object({
+  contentType: z.enum(["blog", "social-pack", "video-script", "newsletter", "thread"]),
+  topic: z.string().min(3).max(500),
+  platform: z.string().max(50).optional(),
+  voice: z.string().max(50).optional(),
+  targetAudience: z.string().max(500).optional(),
+  brandContext: z.string().max(2000).optional(),
+  keywords: z.array(z.string()).optional(),
+  prompt: z.string().max(5000).optional(),
+  context: z.string().max(5000).optional(),
+});
 
-  try {
-    const { contentType, topic, platform, voice, targetAudience, brandContext, keywords } = await req.json();
-
-    if (!contentType || !topic) {
-      return NextResponse.json({ error: "contentType and topic are required" }, { status: 400 });
-    }
+export const POST = createAgentRoute({
+  name: "organic-content",
+  schema,
+  skipQualityCheck: true, // Agent has its own 3-pass quality system
+  handler: async ({ input }) => {
+    const { contentType, topic, platform, voice, targetAudience, brandContext, keywords, context } = input as z.infer<typeof schema>;
 
     const voicePreset = VOICE_PRESETS[(voice as VoicePreset) || "conversational"];
     const platformRules = PLATFORM_RULES[platform || "blog"] || "";
 
-    // Build the content generation prompt
-    let contentPrompt = "";
+    // Build content-type-specific prompt
+    const contentPrompts: Record<string, string> = {
+      blog: `Write a blog post about: ${topic}\n\nTARGET AUDIENCE: ${targetAudience || "Business professionals"}\nKEYWORDS: ${(keywords || []).join(", ") || "Not specified"}\nBRAND CONTEXT: ${brandContext || "Not specified"}\n${context ? `CONTEXT:\n${context.slice(0, 2000)}` : ""}\n\nRequirements:\n- Title: 50-60 chars, click-worthy\n- Length: 1200-1800 words\n- Structure: Hook intro (3 sentences) → 5-6 sections with H2s → CTA conclusion\n- Include 2-3 data points\n- Include 1 contrarian take`,
 
-    switch (contentType) {
-      case "blog":
-        contentPrompt = `Write a blog post about: ${topic}
+      "social-pack": `Create a 7-day organic content calendar for: ${topic}\n\nPLATFORM: ${platform || "instagram"}\nTARGET: ${targetAudience || "Business professionals"}\n\nFor each day: POST TYPE, HOOK, FULL CAPTION, HASHTAGS, VISUAL DIRECTION, BEST TIME, ENGAGEMENT CTA.\nMix formats. Each post must be immediately publishable.`,
 
-TARGET AUDIENCE: ${targetAudience || "Business professionals and decision-makers"}
-KEYWORDS: ${(keywords || []).join(", ") || "Not specified"}
-BRAND CONTEXT: ${brandContext || "Not specified"}
+      "video-script": `Write a video script about: ${topic}\n\nPLATFORM: ${platform || "youtube"}\nTARGET: ${targetAudience || "Business professionals"}\n\nFormat: HOOK (0-3s), INTRO (3-15s), BODY (15-120s with 3-4 key points), CTA (final 10s).\nInclude [VISUAL], [TEXT OVERLAY], [TRANSITION] tags.`,
 
-Requirements:
-- Title: 50-60 chars, include primary keyword naturally, make it click-worthy
-- Length: 1200-1800 words
-- Structure: Hook intro (3 sentences max) → 5-6 sections with H2s → Short conclusion with CTA
-- Include 2-3 data points or statistics (real or realistic)
-- Include 1 contrarian take that challenges conventional wisdom
-- End with an open loop or provocative question, NOT a generic summary`;
-        break;
+      newsletter: `Write a newsletter about: ${topic}\n\nTARGET: ${targetAudience || "Subscribers"}\n\nFormat: SUBJECT LINE (2 options), PREVIEW TEXT, OPENING (bold claim), MAIN CONTENT (400-600 words with story/data), KEY TAKEAWAY, CTA, P.S. LINE.`,
 
-      case "social-pack":
-        contentPrompt = `Create a 7-day organic content calendar for: ${topic}
+      thread: `Write a Twitter/X thread about: ${topic}\n\nTARGET: ${targetAudience || "Business/tech professionals"}\n\n8-12 tweets under 280 chars each.\nTweet 1: viral standalone. Include data, contrarian take. Last tweet: CTA.\nFormat: 1/, 2/, etc.`,
+    };
 
-TARGET AUDIENCE: ${targetAudience || "Business professionals"}
-PLATFORM: ${platform || "instagram"}
-BRAND CONTEXT: ${brandContext || "Not specified"}
+    const contentPrompt = contentPrompts[contentType];
 
-For EACH of the 7 days, generate:
-1. POST TYPE (carousel, reel script, story, static, text post)
-2. HOOK (the text/visual that stops the scroll)
-3. FULL CAPTION (platform-native length and format)
-4. HASHTAGS (if applicable)
-5. VISUAL DIRECTION (what should the image/video contain)
-6. BEST POSTING TIME (based on platform algorithm)
-7. ENGAGEMENT CTA (specific question or action to drive comments)
-
-Mix content types across the week. Never repeat the same format twice in a row.
-Each post must be immediately publishable — no placeholders.`;
-        break;
-
-      case "video-script":
-        contentPrompt = `Write a video script about: ${topic}
-
-TARGET AUDIENCE: ${targetAudience || "Business professionals"}
-PLATFORM: ${platform || "youtube"}
-BRAND CONTEXT: ${brandContext || "Not specified"}
-
-Format:
-HOOK (0-3 seconds): The exact words/visual that prevent the scroll
-INTRO (3-15 seconds): Establish credibility and promise value
-BODY (15-120 seconds): 3-4 key points, each with a real example or story
-CTA (final 10 seconds): Single, clear next step
-
-Include:
-- Exact speaker dialogue (in quotes)
-- [VISUAL] tags describing what's on screen
-- [TEXT OVERLAY] for any text graphics
-- [TRANSITION] notes for editing
-- Timing for each segment`;
-        break;
-
-      case "newsletter":
-        contentPrompt = `Write a newsletter issue about: ${topic}
-
-TARGET AUDIENCE: ${targetAudience || "Subscribers interested in business/growth"}
-BRAND CONTEXT: ${brandContext || "Not specified"}
-
-Format:
-1. SUBJECT LINE (2 options: one curiosity-based, one benefit-based)
-2. PREVIEW TEXT (complement the subject, max 90 chars)
-3. OPENING (personal anecdote or bold claim — 2 sentences)
-4. MAIN CONTENT (one core idea, 400-600 words)
-   - Include a specific story, case study, or data point
-   - Break into short paragraphs (2-3 sentences max)
-   - Add 1-2 subheadings
-5. KEY TAKEAWAY (1 sentence, bolded)
-6. CTA (specific, relevant to the content — not generic)
-7. P.S. LINE (add a personal touch or teaser for next issue)`;
-        break;
-
-      case "thread":
-        contentPrompt = `Write a Twitter/X thread about: ${topic}
-
-TARGET AUDIENCE: ${targetAudience || "Business/tech professionals"}
-
-Requirements:
-- 8-12 tweets, each under 280 characters
-- Tweet 1: Must stand alone as a viral tweet. Bold claim, number, or counterintuitive statement.
-- Each tweet: ONE idea. Short sentences. Use line breaks.
-- Include at least 1 tweet with a specific number or data point
-- Include at least 1 contrarian take
-- Last tweet: CTA (follow, reply, or visit link)
-- Format each tweet with the number (1/, 2/, etc.)
-
-The thread should read like a mini-essay that builds momentum. Each tweet should make the reader NEED to see the next one.`;
-        break;
-
-      default:
-        return NextResponse.json({ error: `Unknown contentType: ${contentType}` }, { status: 400 });
-    }
-
-    // PASS 1: Generate content with anti-slop rules
+    // PASS 1: Generate with anti-slop rules
     const systemPrompt = `${voicePreset}\n\n${ANTI_SLOP_RULES}\n\n${platformRules}`;
+    const rawContent = await ai(contentPrompt, { system: systemPrompt, maxTokens: 4000, model: "gemini" });
 
-    const rawContent = await ai(contentPrompt, {
-      system: systemPrompt,
-      maxTokens: 4000,
-      model: "gemini", // Use Gemini 2.0 Pro for best long-form quality
-    });
-
-    // PASS 2: Quality score the content
+    // PASS 2: Quality score
     const scoreResult = await ai(
       `Score this ${contentType} content:\n\n---\n${rawContent}\n---`,
       { system: QUALITY_SCORER_PROMPT, maxTokens: 500 }
@@ -152,27 +60,23 @@ The thread should read like a mini-essay that builds momentum. Each tweet should
 
     let qualityScore;
     try {
-      const cleaned = scoreResult.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-      qualityScore = JSON.parse(cleaned);
+      qualityScore = JSON.parse(scoreResult.replace(/```json?\n?/g, "").replace(/```/g, "").trim());
     } catch {
       qualityScore = { overallScore: 7, verdict: "PUBLISH", scores: {} };
     }
 
-    // PASS 3: Auto-revise if quality is below threshold
+    // PASS 3: Auto-revise if needed
     let finalContent = rawContent;
     if (qualityScore.verdict === "NEEDS_REVISION" && qualityScore.issues?.length > 0) {
-      const revisionPrompt = `Revise this ${contentType} content to fix these issues:\n\nISSUES:\n${qualityScore.issues.join("\n")}\n\nSUGGESTIONS:\n${(qualityScore.suggestions || []).join("\n")}\n\nORIGINAL CONTENT:\n${rawContent}\n\nRewrite the FULL content with these fixes applied. Do NOT add explanations — just output the improved content.`;
-
-      finalContent = await ai(revisionPrompt, {
-        system: systemPrompt,
-        maxTokens: 4000,
-      });
+      finalContent = await ai(
+        `Revise this ${contentType} to fix:\n\nISSUES:\n${qualityScore.issues.join("\n")}\n\nORIGINAL:\n${rawContent}\n\nRewrite the FULL content. No explanations.`,
+        { system: systemPrompt, maxTokens: 4000 }
+      );
     }
 
-    // Fire webhook
-    await fireUserWebhook("OrganicContent", contentType, { topic, platform, qualityScore: qualityScore.overallScore });
+    await fireUserWebhook("OrganicContent", contentType, { topic, platform, qualityScore: qualityScore.overallScore }).catch(() => {});
 
-    return NextResponse.json({
+    return {
       success: true,
       content: finalContent,
       qualityScore,
@@ -182,11 +86,7 @@ The thread should read like a mini-essay that builds momentum. Each tweet should
         voice: voice || "conversational",
         generatedAt: new Date().toISOString(),
         wasRevised: qualityScore.verdict === "NEEDS_REVISION",
-      }
-    });
-
-  } catch (err) {
-    log.error("Organic content error", err as Record<string, unknown>);
-    return NextResponse.json({ error: "Failed to generate content" }, { status: 500 });
-  }
-}
+      },
+    };
+  },
+});

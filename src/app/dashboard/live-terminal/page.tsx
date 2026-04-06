@@ -136,7 +136,7 @@ export default function LiveTerminalPage() {
         <div ref={terminalRef} className="bg-neutral-950 border border-neutral-800 p-4 h-[400px] overflow-y-auto font-mono text-[11px] leading-relaxed" aria-live="polite">
           {lines.map((line, i) => (
             <div key={i} className={`flex gap-3 ${typeColors[line.type]}`}>
-              <span className="text-neutral-700 shrink-0">[{line.time}]</span>
+              <span className="text-neutral-500 shrink-0">[{line.time}]</span>
               <span className="whitespace-pre-wrap break-all">{line.text}</span>
             </div>
           ))}
@@ -160,7 +160,7 @@ export default function LiveTerminalPage() {
             onKeyDown={e => e.key === "Enter" && execute()}
             placeholder="Enter JSON payload..."
             aria-label="Agent JSON payload input"
-            className="flex-1 bg-neutral-950 border border-neutral-800 px-4 py-3 text-xs text-white placeholder:text-neutral-700 focus:outline-none focus:border-neutral-600 font-mono"
+            className="flex-1 bg-neutral-950 border border-neutral-800 px-4 py-3 text-xs text-white placeholder:text-neutral-500 focus:outline-none focus:border-neutral-600 font-mono"
           />
           <button
             onClick={execute}

@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { createAgentRoute } from "@/lib/agent-factory";
 import { NextResponse } from 'next/server';
 import { createLogger } from "@/lib/logger";
 const log = createLogger("closer-agent");
@@ -6,17 +6,17 @@ const log = createLogger("closer-agent");
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const META_ACCESS_TOKEN = process.env.META_ACCESS_TOKEN; // For Instagram Graph API dispatch
 
-export async function POST(req: Request) {
-  try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+export const POST = createAgentRoute({
+  name: "closer",
+  handler: async ({ input, email, userId }) => {
+
     const data = await req.json();
     
     // Ingest Meta Graph API / IG Webhook format (or raw JSON for testing)
     const userMessage = data?.entry?.[0]?.messaging?.[0]?.message?.text || data.message;
     const senderId = data?.entry?.[0]?.messaging?.[0]?.sender?.id || "test_lead_id";
 
-    if (!userMessage) return NextResponse.json({ status: 'ignored: no message payload' });
+    if (!userMessage) return ({ status: 'ignored: no message payload' });
 
 
     // System Prompt for closing $5k/mo deal using Google AI Ultra (Gemini 1.5 Flash / Pro)
@@ -29,7 +29,7 @@ Keep responses under 3 sentences. Be strategic about their time.`;
     
     if (!GEMINI_API_KEY) {
         log.error("CRITICAL: GEMINI_API_KEY is missing from environment variables");
-        return NextResponse.json({ error: "AI Engine Offline" }, { status: 500 });
+        return ({ error: "AI Engine Offline" });
     }
 
     // Google Gemini 1.5 Flash REST API (Bypassing NPM lockouts)
@@ -68,15 +68,14 @@ Keep responses under 3 sentences. Be strategic about their time.`;
         });
     }
 
-    return NextResponse.json({ 
+    return ({ 
         status: 'success', 
         agentResponse: replyText,
         leadId: senderId,
         dispatchedToMeta: !!META_ACCESS_TOKEN
     });
 
-  } catch (error) {
-    log.error("Closer agent fatal error", error as Record<string, unknown>);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
-  }
-}
+  
+  },
+});
+

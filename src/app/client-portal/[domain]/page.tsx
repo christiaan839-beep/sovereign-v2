@@ -56,7 +56,7 @@ export default function ClientPortal({ params }: { params: { domain: string } })
           <div className="lg:col-span-2 bg-[#0A0A0A] border border-white/5 rounded-3xl p-8">
              <div className="flex items-center justify-between mb-8">
                 <h2 className="text-xl font-bold font-serif">Autonomous Operations</h2>
-                <Zap className="w-5 h-5 text-neutral-600" />
+                <Zap className="w-5 h-5 text-neutral-500" />
              </div>
              <WhiteLabelLogFeed />
           </div>

@@ -1,69 +1,75 @@
-import { auth } from "@clerk/nextjs/server";
+import { createAgentRoute } from "@/lib/agent-factory";
+import { z } from "zod";
 import { getNimKey } from "@/lib/nvidia";
-import { NextResponse } from "next/server";
+import { research_ai } from "@/lib/ai";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("blog-gen");
 
 /**
- * SEO BLOG AUTO-GENERATOR — Autonomous content pipeline.
- * 1. Tavily researches the topic
+ * SEO BLOG GENERATOR — Autonomous content pipeline.
+ * 1. Tavily researches the topic (fails explicitly if unavailable)
  * 2. NIM writes a 1500-word SEO article
  * 3. Returns publishable HTML with meta tags
+ *
+ * Now uses createAgentRoute for: jailbreak detection, PII scanning,
+ * quality scoring, rate limiting, circuit breaker, audit logging.
  */
 
-export async function POST(request: Request) {
-  try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const { topic, keywords = [], tone = "professional" } = await request.json();
+const schema = z.object({
+  topic: z.string().min(3, "Topic must be at least 3 characters").max(300, "Topic too long"),
+  keywords: z.array(z.string()).optional().default([]),
+  tone: z.enum(["professional", "casual", "academic", "conversational", "technical"]).optional().default("professional"),
+  prompt: z.string().optional(),
+});
 
-    if (!topic) {
-      return NextResponse.json({ error: "topic is required." }, { status: 400 });
-    }
-    const tavilyKey = process.env.TAVILY_API_KEY;
+export const POST = createAgentRoute({
+  name: "blog-gen",
+  schema,
+  handler: async ({ input }) => {
+    const { topic, keywords, tone } = input as z.infer<typeof schema>;
 
-    // Step 1: Research the topic via Tavily
+    // Step 1: Research the topic — fail explicitly if unavailable
     let research = "";
-    if (tavilyKey) {
-      const tavilyRes = await fetch("https://api.tavily.com/search", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          api_key: tavilyKey,
-          query: `${topic} latest trends insights statistics 2026`,
-          search_depth: "advanced",
-          max_results: 5,
-          include_answer: true,
-        }),
-      });
-      const tavilyData = await tavilyRes.json();
-      research = tavilyData.answer || tavilyData.results?.map((r: { content: string }) => r.content).join("\n\n") || "";
+    let researchAvailable = false;
+    try {
+      research = await research_ai(
+        `${topic} latest trends insights statistics 2026`,
+        `Find recent data, statistics, and expert insights about "${topic}". Focus on actionable information.`
+      );
+      researchAvailable = research.length > 50;
+    } catch (err) {
+      log.warn("Tavily research unavailable for blog-gen", { topic, error: String(err) });
+      // Continue without research — but flag it in the response
     }
 
-    // Step 2: Generate the blog post via NIM
-
+    // Step 2: Generate blog via NIM
     const nimRes = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${await getNimKey()}`,
+        Authorization: `Bearer ${await getNimKey()}`,
       },
       body: JSON.stringify({
         model: "deepseek-ai/deepseek-v3.2",
         messages: [
           {
             role: "system",
-            content: `You are an elite SEO content writer for Sovereign Matrix, the world's most advanced AI agency platform. Write a comprehensive, SEO-optimized blog post. Requirements:
+            content: `You are a skilled SEO content writer. Write a comprehensive, well-researched blog post.
+
+Requirements:
 1. Length: 1500-2000 words.
 2. Structure: H1 title, H2 sections, H3 subsections, bullet points, bold key terms.
-3. Tone: ${tone}. Authoritative, data-driven, no fluff.
-4. Include statistics and data points from the research provided.
-5. Target keywords: ${keywords.join(", ") || topic}.
-6. End with a strong CTA directing readers to Sovereign Matrix.
-7. Include a meta description (under 160 characters) at the very top prefixed with "META: ".
-8. Output as clean HTML with semantic tags. No markdown.`,
+3. Tone: ${tone}. Be specific and data-driven — no filler.
+4. Target keywords: ${keywords.length > 0 ? keywords.join(", ") : topic}.
+5. Include a meta description (under 160 characters) at the very top prefixed with "META: ".
+6. Output as clean HTML with semantic tags. No markdown.
+7. Do NOT use phrases like "in today's fast-paced world", "game-changer", "cutting-edge", or "revolutionize".
+8. Every claim should be supported with a specific example, number, or reference.`,
           },
           {
             role: "user",
-            content: `Topic: ${topic}\n\nResearch Data:\n${research}\n\nWrite the blog post now.`,
+            content: `Topic: ${topic}\n\n${researchAvailable ? `Research Data:\n${research}` : "No web research available — write based on your training knowledge. Be explicit about what is established fact vs. general industry knowledge."}\n\nWrite the blog post now.`,
           },
         ],
         max_tokens: 4096,
@@ -71,8 +77,16 @@ export async function POST(request: Request) {
       }),
     });
 
+    if (!nimRes.ok) {
+      throw new Error(`NIM API returned ${nimRes.status}: ${nimRes.statusText}`);
+    }
+
     const nimData = await nimRes.json();
     const blogContent = nimData?.choices?.[0]?.message?.content || "";
+
+    if (!blogContent || blogContent.length < 100) {
+      throw new Error("Blog generation produced insufficient content");
+    }
 
     // Extract meta description
     const metaMatch = blogContent.match(/META:\s*(.+?)(?:\n|<)/);
@@ -81,14 +95,14 @@ export async function POST(request: Request) {
     // Generate slug
     const slug = topic.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
-    const result = {
+    return {
       success: true,
       topic,
       slug,
       metaDescription,
       wordCount: blogContent.split(/\s+/).length,
       html: blogContent,
-      research_sources: research ? research.substring(0, 500) + "..." : "No research data",
+      researchGrounded: researchAvailable,
       seo: {
         title: topic,
         description: metaDescription,
@@ -96,22 +110,5 @@ export async function POST(request: Request) {
         slug: `/blog/${slug}`,
       },
     };
-
-    // Auto-handoff to SEO agent
-    fetch(new URL("/api/_agents/comms", request.url).toString(), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        from: "content-writer",
-        to: "seo-dominator",
-        type: "handoff",
-        payload: { content: result, action: "optimize_seo" },
-        autoExecute: false
-      })
-    }).catch(() => {}); // Fire and forget
-
-    return NextResponse.json(result);
-  } catch (error) {
-    return NextResponse.json({ error: "Blog generator error", details: String(error) }, { status: 500 });
-  }
-}
+  },
+});

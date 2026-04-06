@@ -338,8 +338,6 @@ export async function getYocoCheckout(checkoutId: string) {
 
 export function getAvailableProviders(): string[] {
   const providers: string[] = [];
-  if (getPayFastConfig()) providers.push("payfast");
-  if (getPaystackKey()) providers.push("paystack");
   if (getYocoKey()) providers.push("yoco");
   return providers;
 }

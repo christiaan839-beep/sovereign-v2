@@ -225,7 +225,7 @@ export async function routeAgenticExecution({
           body: JSON.stringify({
             model: nimModel,
             messages: [
-              { role: "system", content: systemInstruction || "You are Sovereign Matrix, an elite AI agent. Be concise, accurate, and actionable." },
+              { role: "system", content: systemInstruction || "You are Sovereign Matrix, a senior AI agent. Be concise, accurate, and actionable." },
               { role: "user", content: prompt },
             ],
             max_tokens: 4096,
@@ -271,7 +271,7 @@ export async function routeAgenticExecution({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            systemInstruction: { parts: [{ text: systemInstruction || "You are Sovereign Matrix, an elite AI agent." }] },
+            systemInstruction: { parts: [{ text: systemInstruction || "You are Sovereign Matrix, a senior AI agent." }] },
             contents: [{ parts: [{ text: prompt }] }],
             generationConfig: {
               temperature: taskType === "creative" ? 0.8 : 0.3,
@@ -310,7 +310,7 @@ export async function routeAgenticExecution({
           body: JSON.stringify({
             model: "claude-sonnet-4-6",
             max_tokens: 4096,
-            system: systemInstruction || "You are Sovereign Matrix, an elite AI agent.",
+            system: systemInstruction || "You are Sovereign Matrix, a senior AI agent.",
             messages: [{ role: "user", content: prompt }],
           }),
         });

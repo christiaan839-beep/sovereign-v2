@@ -10,8 +10,8 @@
     },
     {
       "name": "websocket-voice",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "ws"],
+      "runtimeExecutable": "/bin/bash",
+      "runtimeArgs": ["-c", "export PATH=/Users/christiaanwillemdewet/.nvm/versions/node/v22.22.0/bin:$PATH && npm run ws"],
       "port": 8080
     },
     {

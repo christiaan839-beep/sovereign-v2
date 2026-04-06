@@ -1,5 +1,5 @@
+import { createAgentRoute } from "@/lib/agent-factory";
 import { NextResponse } from "next/server";
-import { currentUser } from "@clerk/nextjs/server";
 import { ai } from "@/lib/ai";
 import { ANTI_SLOP_RULES, PLATFORM_RULES } from "@/lib/content-engine";
 import { fireUserWebhook } from "@/lib/webhooks";
@@ -12,14 +12,10 @@ const log = createLogger("social-router");
  * Adapts the same core message for each platform's unique format.
  */
 
-export async function POST(req: Request) {
-  const user = await currentUser();
-  if (!user?.primaryEmailAddress?.emailAddress) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  try {
-    const { topic, platforms, brandVoice, targetAudience } = await req.json();
+export const POST = createAgentRoute({
+  name: "social-router",
+  handler: async ({ input }) => {
+    const { topic, platforms, brandVoice, targetAudience } = input as Record<string, unknown>;
 
     const selectedPlatforms = platforms || ["instagram", "linkedin", "twitter"];
 
@@ -63,9 +59,8 @@ Respond in JSON:
 
     await fireUserWebhook("SocialRouter", "PostsGenerated", { topic, platforms: selectedPlatforms });
 
-    return NextResponse.json({ success: true, ...parsed });
-  } catch (err) {
-    log.error("Social router error", err as Record<string, unknown>);
-    return NextResponse.json({ error: "Failed" }, { status: 500 });
-  }
-}
+    return ({ success: true, ...parsed });
+  
+  },
+});
+

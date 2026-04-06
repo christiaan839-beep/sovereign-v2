@@ -395,7 +395,7 @@ export default function AgentCommandCenter() {
                           value={inputs[agent.id] || ""}
                           onChange={e => setInputs(prev => ({ ...prev, [agent.id]: e.target.value }))}
                           placeholder={agent.placeholder}
-                          className="flex-1 bg-black border border-neutral-800 px-3 py-2.5 text-xs text-white placeholder:text-neutral-700 focus:outline-none focus:border-neutral-600"
+                          className="flex-1 bg-black border border-neutral-800 px-3 py-2.5 text-xs text-white placeholder:text-neutral-500 focus:outline-none focus:border-neutral-600"
                           onKeyDown={e => e.key === "Enter" && executeAgent(agent)}
                         />
                         <button

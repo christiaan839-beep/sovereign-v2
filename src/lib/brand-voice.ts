@@ -31,7 +31,7 @@ export interface BrandVoiceProfile {
 // ---------------------------------------------------------------------------
 
 const BRAND_VOICE_PREFIX = "brand-voice";
-const EXTRACTION_SYSTEM = `You are an elite brand voice analyst. Given sample content, extract the writing DNA — not what the content says, but HOW it says it. Focus on rhythm, word choices, sentence structure, and personality.
+const EXTRACTION_SYSTEM = `You are a brand voice analyst. Given sample content, extract the writing DNA — not what the content says, but HOW it says it. Focus on rhythm, word choices, sentence structure, and personality.
 
 You must respond ONLY with valid JSON matching this exact schema:
 {

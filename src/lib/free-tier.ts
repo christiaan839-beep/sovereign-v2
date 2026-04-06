@@ -17,23 +17,22 @@ import { createLogger } from "@/lib/logger";
 
 const log = createLogger("free-tier");
 
-// ── Constants ──
+// ── Constants (imported from canonical plans.ts) ──
 
-// Plan limits — must match pricing page and API catalog
-export const PLAN_LIMITS: Record<string, number> = {
-  free: 50,        // Free tier
-  founder: 10000,  // Founders Program — first 10 users get enterprise-level access FREE
-  array: 500,      // $49/mo
-  node: 2000,      // $199/mo
-  enterprise: 10000, // $499/mo
-  pro: 2000,       // Legacy alias → same as node
-};
+import {
+  PLAN_LIMITS,
+  MAX_FOUNDERS,
+  REFERRAL_BONUS_RUNS,
+  getPlanLimit,
+  normalizePlanId,
+  isUnlimited,
+  getNextPlan,
+  type PlanId,
+} from "@/lib/plans";
 
-/** Maximum number of founder slots available */
-export const MAX_FOUNDERS = 10;
+export { PLAN_LIMITS, MAX_FOUNDERS, REFERRAL_BONUS_RUNS };
 export const FREE_MONTHLY_LIMIT = PLAN_LIMITS.free;
-export const PRO_MONTHLY_LIMIT = PLAN_LIMITS.pro;
-export const REFERRAL_BONUS_RUNS = 50;
+export const PRO_MONTHLY_LIMIT = PLAN_LIMITS.node; // "pro" is legacy alias for "node"
 
 // ── Types ──
 
@@ -49,7 +48,7 @@ export interface UsageStats {
   resetDate: string;
 }
 
-export type TierType = "free" | "founder" | "array" | "node" | "enterprise" | "pro";
+export type TierType = PlanId | "pro";
 
 // ── In-Memory Cache (fast path, synced from DB) ──
 // Cache key: "userId:YYYY-MM" → { count, cachedAt }
@@ -76,7 +75,7 @@ function getResetDate(): string {
 }
 
 function getLimitForTier(tier: TierType): number {
-  return PLAN_LIMITS[tier] ?? PLAN_LIMITS.free;
+  return getPlanLimit(tier);
 }
 
 /**
@@ -140,11 +139,11 @@ export async function checkFreeUsage(userId: string): Promise<UsageCheck> {
   const limit = getLimitForTier(tier);
   const remaining = Math.max(0, limit - used);
 
-  const isUnlimited = tier === "enterprise" || limit >= 10000;
+  const unlimited = isUnlimited(tier);
   return {
-    allowed: isUnlimited || used < limit,
-    remaining: isUnlimited ? Infinity : remaining,
-    limit: isUnlimited ? Infinity : limit,
+    allowed: unlimited || used < limit,
+    remaining: unlimited ? Infinity : remaining,
+    limit: unlimited ? Infinity : limit,
   };
 }
 
@@ -220,30 +219,7 @@ export function getUpgradePrompt(limit: number): string {
   );
 }
 
-/* ── Plan Tier Metadata (for smart upgrade prompts) ── */
-
-interface PlanInfo {
-  name: string;
-  limit: number;
-  price: string;
-}
-
-const PLAN_TIERS: Record<string, PlanInfo> = {
-  free:       { name: "free",       limit: 100,   price: "R0/mo" },
-  starter:    { name: "free",       limit: 100,   price: "R0/mo" },
-  pro:        { name: "pro",        limit: 5000,  price: "R499/mo" },
-  node:       { name: "node",       limit: 2000,  price: "R9,997/mo" },
-  array:      { name: "array",      limit: 10000, price: "R24,997/mo" },
-  enterprise: { name: "enterprise", limit: Infinity, price: "Custom" },
-};
-
-const UPGRADE_PATH: Record<string, string> = {
-  free: "pro",
-  starter: "pro",
-  pro: "node",
-  node: "array",
-  array: "enterprise",
-};
+/* ── Plan Tier Metadata (from canonical plans.ts) ── */
 
 export interface SmartUpgradeInfo {
   currentPlan: string;
@@ -265,17 +241,16 @@ export async function getSmartUpgradeInfo(userId: string): Promise<SmartUpgradeI
     getUserTier(userId),
   ]);
 
-  const currentTier = PLAN_TIERS[tier] || PLAN_TIERS.free;
-  const nextTierKey = UPGRADE_PATH[tier] || "pro";
-  const nextTier = PLAN_TIERS[nextTierKey] || PLAN_TIERS.pro;
+  const currentLimit = getPlanLimit(tier);
+  const next = getNextPlan(tier);
 
   return {
-    currentPlan: currentTier.name,
-    currentLimit: currentTier.limit,
+    currentPlan: normalizePlanId(tier),
+    currentLimit,
     used,
-    nextPlan: nextTier.name,
-    nextLimit: nextTier.limit,
-    nextPrice: nextTier.price,
+    nextPlan: next?.name ?? "Enterprise",
+    nextLimit: next?.runsPerMonth ?? Infinity,
+    nextPrice: next?.priceDisplayZar ?? "Custom",
     upgradeUrl: "/dashboard/billing",
     resetDate: getResetDate(),
   };

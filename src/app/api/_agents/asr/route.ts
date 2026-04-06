@@ -1,19 +1,19 @@
-import { auth } from "@clerk/nextjs/server";
+import { createAgentRoute } from "@/lib/agent-factory";
 import { NextResponse } from "next/server";
 
 /**
  * ASR (Automatic Speech Recognition) — Uses NVIDIA Nemotron ASR Streaming
  * for real-time speech-to-text transcription during Twilio voice calls.
  */
-export async function POST(req: Request) {
-  try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const { audioBase64, language = "en" } = await req.json();
-    if (!audioBase64) return NextResponse.json({ error: "Missing audioBase64 payload." }, { status: 400 });
+export const POST = createAgentRoute({
+  name: "asr",
+  handler: async ({ input, email, userId }) => {
+
+    const { audioBase64, language = "en" } = input as Record<string, unknown>;
+    if (!audioBase64) return ({ error: "Missing audioBase64 payload." });
 
     const nimKey = process.env.NVIDIA_NIM_API_KEY;
-    if (!nimKey) return NextResponse.json({ error: "NVIDIA_NIM_API_KEY not configured." }, { status: 500 });
+    if (!nimKey) return ({ error: "NVIDIA_NIM_API_KEY not configured." });
 
     const res = await fetch("https://integrate.api.nvidia.com/v1/asr/transcriptions", {
       method: "POST",
@@ -31,16 +31,16 @@ export async function POST(req: Request) {
 
     if (!res.ok) {
       const errText = await res.text();
-      return NextResponse.json({ error: `ASR failed: ${res.status}`, details: errText }, { status: 500 });
+      return ({ error: `ASR failed: ${res.status}`, details: errText });
     }
 
     const data = await res.json();
-    return NextResponse.json({
+    return ({
       transcript: data.text || data.transcript || "",
       confidence: data.confidence || null,
       model: "nemotron-asr-streaming",
     });
-  } catch (error: unknown) {
-    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
-  }
-}
+  
+  },
+});
+

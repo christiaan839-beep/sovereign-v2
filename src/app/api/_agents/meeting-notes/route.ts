@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { createAgentRoute } from "@/lib/agent-factory";
 import { NextResponse } from "next/server";
 import { guardRoute, sanitizeString, errorResponse } from "@/lib/api-guard";
 import { nimChat } from "@/lib/nvidia";
@@ -11,10 +11,10 @@ import { nimChat } from "@/lib/nvidia";
  *
  * Uses Nemotron Ultra for high-quality summarization.
  */
-export async function POST(req: Request) {
-  try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+export const POST = createAgentRoute({
+  name: "meeting-notes",
+  handler: async ({ input, email, userId }) => {
+
     const guard = await guardRoute();
     if (!guard.authorized) return guard.response;
 
@@ -58,14 +58,13 @@ Be concise and factual. Do not add information not in the transcript.`,
       { maxTokens: 2000, temperature: 0.2 }
     );
 
-    return NextResponse.json({
+    return ({
       title: meetingTitle,
       summary: result,
       wordCount: typeof result === "string" ? result.split(/\s+/).length : 0,
       model: "nemotron-ultra-253b",
     });
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return errorResponse(message, 500, "AGENT_ERROR");
-  }
-}
+  
+  },
+});
+

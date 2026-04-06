@@ -1,3 +1,4 @@
+import { createAgentRoute } from "@/lib/agent-factory";
 import { getNimKey } from "@/lib/nvidia";
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth-guard";
@@ -32,7 +33,7 @@ function getKey(userId: string, agentId: string): string {
   return `${userId}:${agentId}`;
 }
 
-export async function POST(request: Request) {
+async function _postHandler(request: Request) {
   const auth = await requireAuth(); if (auth.error) return auth.error;
   try {
     const { action, userId = "default", agentId = "general", content, type = "conversation", query, limit = 10 } = await request.json();
@@ -274,3 +275,19 @@ export async function GET(request: Request) {
     tenantMemory: tenantStats,
   });
 }
+
+
+// Factory wrapper for POST (adds safety pipeline)
+export const POST = createAgentRoute({
+  name: "memory",
+  handler: async ({ input, email, userId, request }) => {
+    // Delegate to existing handler
+    const fakeReq = new Request("http://localhost", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
+    const res = await _postHandler(fakeReq);
+    return res instanceof Response ? await res.json() : res;
+  },
+});

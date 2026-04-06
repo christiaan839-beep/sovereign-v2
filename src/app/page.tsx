@@ -139,8 +139,8 @@ function EnterpriseSection() {
             Your data. Your infrastructure. Your autonomous workforce.
           </RevealText>
           <RevealText as="p" delay={0.2} className="text-sm text-neutral-400 max-w-2xl mx-auto leading-relaxed">
-            Built on the same NVIDIA NIM and NemoClaw stack trusted by Google, Cisco, and CrowdStrike.
-            Air-gapped deployment. Zero data residency violations. Enterprise-grade from day one.
+            Built on NVIDIA NIM inference with 35+ open-source models. Zero per-token costs.
+            Air-gapped deployment available. Enterprise-grade security from day one.
           </RevealText>
         </div>
 
@@ -577,6 +577,57 @@ export default function Home() {
 
       {/* ═══ POWERED BY — infinite scrolling trust strip ═══ */}
       <LogoMarquee />
+
+      {/* ═══ PRODUCT VIDEO — 90-second walkthrough ═══ */}
+      <section className="py-20 px-6 bg-[#030303]">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-10">
+            <RevealText as="p" className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">See It In Action</RevealText>
+            <RevealText as="h2" delay={0.1} className="text-2xl md:text-4xl font-bold text-white tracking-tight mb-3">
+              90 seconds. Zero fluff.
+            </RevealText>
+            <RevealText as="p" delay={0.2} className="text-sm text-neutral-500">
+              Watch agents find leads, write content, and audit SEO — in real time.
+            </RevealText>
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="relative rounded-2xl border border-white/[0.08] bg-[#0A0A0A] overflow-hidden shadow-[0_0_60px_rgba(16,185,129,0.04)] aspect-video"
+          >
+            {/* Video placeholder — replace src with your actual video URL */}
+            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[#0A0A0A] to-[#060606]">
+              <div className="text-center">
+                <div className="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto mb-4 cursor-pointer hover:bg-emerald-500/20 transition-colors group">
+                  <svg className="w-6 h-6 text-emerald-400 ml-1 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                </div>
+                <p className="text-sm text-neutral-400">Product walkthrough coming soon</p>
+                <p className="text-xs text-neutral-600 mt-1">Record a 90-second demo to place here</p>
+              </div>
+            </div>
+            {/*
+              When you have the video, replace the placeholder above with:
+              <iframe
+                src="https://www.youtube.com/embed/YOUR_VIDEO_ID"
+                title="Sovereign Matrix Product Demo"
+                className="absolute inset-0 w-full h-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            */}
+          </motion.div>
+
+          <div className="mt-6 flex items-center justify-center gap-6 text-[10px] text-neutral-500">
+            <span>No signup required to watch</span>
+            <span aria-hidden="true">|</span>
+            <span>Real agents, real output, real time</span>
+          </div>
+        </div>
+      </section>
 
       {/* ═══ THE PROBLEM — Pain section (Gemini-inspired PAS framework) ═══ */}
       <section className="py-24 px-6 bg-[#060606]">
@@ -1031,6 +1082,63 @@ export default function Home() {
             <span>Full audit trail for compliance</span>
             <span className="text-neutral-500" aria-hidden="true">|</span>
             <span>Real-time in the dashboard</span>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ TRUST & SECURITY ═══ */}
+      <section className="py-24 px-6 bg-[#020202]">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-14">
+            <RevealText as="p" className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">Enterprise Security</RevealText>
+            <RevealText as="h2" delay={0.1} className="text-3xl md:text-5xl font-bold text-white tracking-tight mb-4">Built for teams that can&apos;t afford to get hacked.</RevealText>
+            <RevealText as="p" delay={0.2} className="text-neutral-500 max-w-lg mx-auto">Every agent execution runs through a 5-layer safety pipeline. Your data stays encrypted, isolated, and audited.</RevealText>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              {
+                title: "5-Layer Safety Pipeline",
+                points: ["Jailbreak detection pre-flight", "Content safety screening", "PII scanning on all outputs", "Quality scoring with auto-retry", "Critic agent QA gate"],
+              },
+              {
+                title: "Data Isolation",
+                points: ["Multi-tenant architecture", "Per-user encrypted API keys", "Tenant memory isolation", "No cross-account data leakage", "Full data export anytime"],
+              },
+              {
+                title: "Audit & Compliance",
+                points: ["Every execution logged with timestamps", "RBAC with 4 role levels", "SOC 2 Type II audit trail", "Request correlation IDs", "Rate limiting at every layer"],
+              },
+            ].map((card, i) => (
+              <motion.div
+                key={card.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-6"
+              >
+                <h3 className="text-sm font-semibold text-white mb-4">{card.title}</h3>
+                <ul className="space-y-2.5">
+                  {card.points.map((point) => (
+                    <li key={point} className="flex items-start gap-2 text-sm text-neutral-400">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500/60 mt-0.5 shrink-0" />
+                      <span>{point}</span>
+                    </li>
+                  ))}
+                </ul>
+              </motion.div>
+            ))}
+          </div>
+
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-[10px] text-neutral-500">
+            <span>780+ automated tests</span>
+            <span aria-hidden="true">|</span>
+            <span>Encrypted at rest + in transit</span>
+            <span aria-hidden="true">|</span>
+            <span>Air-gapped deployment available</span>
+            <span aria-hidden="true">|</span>
+            <span>GDPR-ready data handling</span>
           </div>
         </div>
       </section>

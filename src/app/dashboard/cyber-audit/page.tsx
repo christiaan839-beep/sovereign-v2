@@ -140,7 +140,7 @@ export default function CyberAuditPage() {
                <div className="p-6 flex-1 flex flex-col justify-center relative noise-overlay">
                   {pipelineStatus === "idle" && (
                      <div className="text-center">
-                        <ShieldCheck className="w-12 h-12 text-neutral-700 mx-auto mb-4" />
+                        <ShieldCheck className="w-12 h-12 text-neutral-500 mx-auto mb-4" />
                         <p className="text-neutral-500 font-mono text-xs uppercase tracking-widest">Awaiting architecture target injection.</p>
                      </div>
                   )}

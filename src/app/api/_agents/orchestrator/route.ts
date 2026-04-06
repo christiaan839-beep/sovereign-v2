@@ -1,11 +1,10 @@
-import { auth } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
+import { createAgentRoute } from "@/lib/agent-factory";
 import { nimChat } from "@/lib/nvidia";
 import { research_ai } from "@/lib/ai";
 
 /**
  * NEMOCLAW ORCHESTRATOR — The God-Chain.
- * 
+ *
  * Chains multiple NemoClaw agents together automatically.
  * Input a target URL or task → it runs the full kill chain:
  * 1. RECON: Scrape + analyze the target (Tavily + Nemotron Ultra)
@@ -13,9 +12,6 @@ import { research_ai } from "@/lib/ai";
  * 3. STRATEGY: Generate counter-strategy (DeepSeek V3.2 + Mistral)
  * 4. BUILD: Generate superior assets (Devstral 123B)
  * 5. DEPLOY: Produce deployment-ready deliverables
- * 
- * This is the feature that spreads like fire — one click to
- * annihilate any competitor's entire digital presence.
  */
 
 interface OrchestratorStep {
@@ -27,22 +23,16 @@ interface OrchestratorStep {
   duration_ms?: number;
 }
 
-export async function POST(request: Request) {
-  try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const { target, chain_type = "full-audit", custom_instructions } = await request.json();
-
-    if (!target) {
-      return NextResponse.json({ error: "target URL or task description required." }, { status: 400 });
-    }
+export const POST = createAgentRoute({
+  name: "orchestrator",
+  requiredFields: ["target"],
+  handler: async ({ input }) => {
+    const { target, chain_type = "full-audit", custom_instructions } = input as Record<string, unknown>;
 
     const globalStart = Date.now();
     const steps: OrchestratorStep[] = [];
 
-    // ═══════════════════════════════════════════
     // PHASE 1: RECONNAISSANCE
-    // ═══════════════════════════════════════════
     const reconStart = Date.now();
     let reconIntel = "";
     try {
@@ -62,14 +52,12 @@ export async function POST(request: Request) {
       duration_ms: Date.now() - reconStart,
     });
 
-    // ═══════════════════════════════════════════
     // PHASE 2: MULTI-VECTOR AUDIT
-    // ═══════════════════════════════════════════
     const auditStart = Date.now();
     const audit = await nimChat(
       "nvidia/llama-3.1-nemotron-ultra-253b-v1",
       [
-        { role: "system", content: "You are an elite business intelligence analyst. Produce structured JSON audits with scoring." },
+        { role: "system", content: "You are a business intelligence analyst. Produce structured JSON audits with scoring." },
         { role: "user", content: `Based on this recon data, produce a comprehensive multi-vector audit of ${target}.
 
 RECON DATA:
@@ -106,9 +94,7 @@ Score each dimension 0-100 and provide specific findings. Output JSON:
       duration_ms: Date.now() - auditStart,
     });
 
-    // ═══════════════════════════════════════════
     // PHASE 3: COUNTER-STRATEGY
-    // ═══════════════════════════════════════════
     const stratStart = Date.now();
     const strategy = await nimChat(
       "deepseek-ai/deepseek-v3.2",
@@ -139,9 +125,7 @@ Be specific, actionable, and strategic.` },
       duration_ms: Date.now() - stratStart,
     });
 
-    // ═══════════════════════════════════════════
     // PHASE 4: ASSET GENERATION
-    // ═══════════════════════════════════════════
     let generatedAsset = null;
     if (chain_type === "full-audit" || chain_type === "generate") {
       const buildStart = Date.now();
@@ -178,9 +162,7 @@ Return ONLY complete valid HTML with inline CSS.` },
       });
     }
 
-    // ═══════════════════════════════════════════
     // PHASE 5: EXECUTIVE BRIEF
-    // ═══════════════════════════════════════════
     const briefStart = Date.now();
     const brief = await nimChat(
       "mistralai/mistral-nemotron",
@@ -205,7 +187,7 @@ Format as a clean brief with: Executive Summary, Threat Assessment, Recommended 
       duration_ms: Date.now() - briefStart,
     });
 
-    return NextResponse.json({
+    return {
       success: true,
       agent: "nemoclaw-orchestrator",
       chain_type,
@@ -220,11 +202,6 @@ Format as a clean brief with: Executive Summary, Threat Assessment, Recommended 
         executive_brief: brief,
         ...(generatedAsset ? { generated_page_html: generatedAsset } : {}),
       },
-    });
-  } catch (error) {
-    return NextResponse.json(
-      { error: "Orchestrator chain failed", details: String(error) },
-      { status: 500 }
-    );
-  }
-}
+    };
+  },
+});

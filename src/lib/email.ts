@@ -36,9 +36,8 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
   const apiKey = process.env.RESEND_API_KEY;
 
   if (!apiKey) {
-    // Graceful fallback — log instead of crash
-    log.debug("No RESEND_API_KEY configured, simulating delivery", { to, subject, from: from || "noreply@umbra.ai" });
-    return { success: true, id: `sim_${Date.now()}`, simulated: true };
+    log.warn("RESEND_API_KEY not configured — email NOT sent", { to, subject });
+    return { success: false, error: "Email service not configured (RESEND_API_KEY missing)", simulated: true };
   }
 
   try {

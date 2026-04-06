@@ -39,9 +39,9 @@ export function Pricing() {
     },
     {
       name: "Starter",
-      description: "10 core agents with 500 tasks/month. Perfect for solo operators and small teams.",
-      price: "R897",
-      priceUSD: "~$49",
+      description: "5 core agents with 200 tasks/month. Perfect for trying AI automation.",
+      price: "R349",
+      priceUSD: "$19",
       period: "/mo",
       icon: Zap,
       color: "text-emerald-400",
@@ -49,25 +49,48 @@ export function Pricing() {
       border: "border-emerald-500/40",
       isPopular: true,
       features: [
-        { name: "10 core agents (Sales, Content, SEO, Design, Code)", included: true },
-        { name: "500 tasks per month", included: true },
+        { name: "5 core agents (Content, SEO, Leads, Email, Research)", included: true },
+        { name: "200 tasks per month", included: true },
         { name: "Smart Router (auto model selection)", included: true },
         { name: "STRIKE competitor analysis", included: true },
+        { name: "Email sequences (1 active)", included: true },
+        { name: "Email support", included: true },
+        { name: "Voice agents", included: false },
+        { name: "White-label", included: false },
+      ],
+      planId: "starter",
+      buttonText: "Start for $19/mo",
+      buttonStyle: "bg-emerald-400 hover:bg-emerald-300 text-black shadow-[0_0_20px_rgba(52,211,153,0.3)]",
+    },
+    {
+      name: "Sovereign Array",
+      description: "10 agents with 500 tasks/month. For growing teams ready to scale.",
+      price: "R4,997",
+      priceUSD: "$49",
+      period: "/mo",
+      icon: Zap,
+      color: "text-cyan-400",
+      bg: "bg-cyan-500/5",
+      border: "border-cyan-500/20",
+      features: [
+        { name: "Everything in Starter", included: true },
+        { name: "10 core agents (+ Sales, Design, Code)", included: true },
+        { name: "500 tasks per month", included: true },
         { name: "Email sequences (3 active)", included: true },
         { name: "Bring Your Own Key (BYOK)", included: true },
         { name: "Priority email support", included: true },
         { name: "Voice agents", included: false },
         { name: "White-label", included: false },
       ],
-      planId: "starter",
+      planId: "array",
       buttonText: "Subscribe",
-      buttonStyle: "bg-emerald-400 hover:bg-emerald-300 text-black shadow-[0_0_20px_rgba(52,211,153,0.3)]",
+      buttonStyle: "bg-white/5 hover:bg-white/10 text-white border border-white/10",
     },
     {
       name: "Sovereign Node",
-      description: "All 130+ agents with unlimited tasks. Local execution via NemoClaw OS.",
+      description: "All 130+ agents with 2,000 tasks. Local execution via NemoClaw OS.",
       price: "R9,997",
-      priceUSD: "~$540",
+      priceUSD: "$199",
       period: "/mo",
       icon: Zap,
       color: "text-[#00B7FF]",
@@ -87,31 +110,6 @@ export function Pricing() {
       planId: "node",
       buttonText: "Subscribe",
       buttonStyle: "bg-white/5 hover:bg-white/10 text-white border border-white/10",
-    },
-    {
-      name: "Sovereign Array",
-      description: "Sub-200ms voice agents, Cosmos VLM video, War Room red-teaming, and 24h priority processing.",
-      price: "R24,997",
-      priceUSD: "~$1,350",
-      period: "/mo",
-      icon: Crown,
-      color: "text-emerald-400",
-      bg: "bg-emerald-500/5",
-      border: "border-emerald-500/20",
-      features: [
-        { name: "Everything in Node", included: true },
-        { name: "Voice Agents (sub-200ms)", included: true },
-        { name: "Cosmos VLM Video Generation", included: true },
-        { name: "Priority AI processing", included: true },
-        { name: "War Room Red-Teaming", included: true },
-        { name: "Competitor monitoring", included: true },
-        { name: "Direct Comm-Link (24h)", included: true },
-        { name: "White-label Reseller Hub", included: false },
-        { name: "Enterprise Sub-Licenses", included: false },
-      ],
-      planId: "array",
-      buttonText: "Subscribe",
-      buttonStyle: "bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20",
     },
     {
       name: "Enterprise License",
@@ -215,24 +213,25 @@ export function Pricing() {
         body: JSON.stringify({ name: leadName, phone: leadPhone, planId: selectedPlan }),
       });
 
-      // Step 2: Initialize PayFast Execution
-      const res = await fetch("/api/payments/payfast/checkout", {
+      // Step 2: Initialize Yoco Execution
+      const res = await fetch("/api/payments/yoco/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plan: selectedPlan }),
       });
       const data = await res.json();
 
-      if (data.success && data.formHtml) {
-        const container = document.createElement("div");
-        container.innerHTML = data.formHtml;
-        container.style.display = "none";
-        document.body.appendChild(container);
-        const form = container.querySelector("form");
-        if (form) form.submit();
+      if (res.ok && data.redirectUrl) {
+        window.location.assign(data.redirectUrl);
         return;
       }
-      showNotification(data.error || "Payment setup incomplete. Please configure PayFast API keys.");
+      
+      if (res.status === 503) {
+        showNotification("Payments are being set up. Please try again shortly.", "error");
+        return;
+      }
+
+      showNotification(data.error || "Payment setup incomplete. Please configure Yoco API keys.", "error");
     } catch {
       showNotification("Connection failed. Please try again.");
     } finally {
@@ -276,7 +275,7 @@ export function Pricing() {
       <div className="grid md:grid-cols-3 gap-8 items-start">
         {tiers.map((tier) => (
           <div
-            key={tier.name}
+            key={tier.planId}
             className={`relative rounded-3xl p-8 backdrop-blur-3xl border ${tier.border} ${tier.bg} transition-gpu duration-300 hover:-translate-y-2 gradient-border-card ${tier.isPopular ? "shadow-[0_0_50px_rgba(16,185,129,0.15)] ring-1 ring-emerald-500/50" : "hover:shadow-[0_0_30px_rgba(0,0,0,0.5)]"}`}
           >
             {tier.isPopular && (

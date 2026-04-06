@@ -1,27 +1,22 @@
-import { auth } from "@clerk/nextjs/server";
+import { createAgentRoute } from "@/lib/agent-factory";
 import { getNimKey } from "@/lib/nvidia";
-import { NextResponse } from "next/server";
 
 /**
  * MULTI-AGENT SWARM MODE — True parallel agent orchestration.
- * Spawns multiple agents simultaneously, collects results, and 
+ * Spawns multiple agents simultaneously, collects results, and
  * optionally uses a "jury" model to synthesize the best output.
- * 
+ *
  * Uses MiniMax M2.7's native multi-agent collaboration capability.
  */
 
-export async function POST(request: Request) {
-  try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const { task, agents, jury = true } = await request.json();
-
-    if (!task) {
-      return NextResponse.json({ error: "task is required." }, { status: 400 });
-    }
+export const POST = createAgentRoute({
+  name: "swarm",
+  requiredFields: ["task"],
+  handler: async ({ input }) => {
+    const { task, agents, jury = true } = input as Record<string, unknown>;
 
     // Default swarm: 3 different models attack the same problem
-    const swarmAgents = agents || [
+    const swarmAgents = (agents as Array<{ model: string; name: string }>) || [
       { model: "deepseek-ai/deepseek-v3.2", name: "DeepSeek V3.2" },
       { model: "mistralai/mistral-nemotron", name: "Mistral Nemotron" },
       { model: "thudm/glm-4-9b-chat", name: "GLM-4.7" },
@@ -57,7 +52,7 @@ export async function POST(request: Request) {
           model: agent.model,
           output: data?.choices?.[0]?.message?.content || "No response",
           duration_ms: Date.now() - startTime,
-          status: "✅ Complete",
+          status: "Complete",
         };
       } catch (err) {
         return {
@@ -65,7 +60,7 @@ export async function POST(request: Request) {
           model: agent.model,
           output: String(err),
           duration_ms: Date.now() - startTime,
-          status: "❌ Failed",
+          status: "Failed",
         };
       }
     });
@@ -74,9 +69,9 @@ export async function POST(request: Request) {
 
     // Jury model synthesizes the best answer from all agents
     let juryVerdict = null;
-    if (jury && swarmResults.filter(r => r.status === "✅ Complete").length > 1) {
+    if (jury && swarmResults.filter(r => r.status === "Complete").length > 1) {
       const juryPrompt = swarmResults
-        .filter(r => r.status === "✅ Complete")
+        .filter(r => r.status === "Complete")
         .map((r, i) => `=== Agent ${i + 1} (${r.agent}) ===\n${r.output}`)
         .join("\n\n");
 
@@ -104,17 +99,15 @@ export async function POST(request: Request) {
       juryVerdict = juryData?.choices?.[0]?.message?.content || null;
     }
 
-    return NextResponse.json({
+    return {
       success: true,
       mode: "SWARM",
       task,
       agents_spawned: swarmResults.length,
-      agents_succeeded: swarmResults.filter(r => r.status === "✅ Complete").length,
+      agents_succeeded: swarmResults.filter(r => r.status === "Complete").length,
       total_duration_ms: Math.max(...swarmResults.map(r => r.duration_ms)),
       results: swarmResults,
       jury_verdict: juryVerdict,
-    });
-  } catch (error) {
-    return NextResponse.json({ error: "Swarm mode error", details: String(error) }, { status: 500 });
-  }
-}
+    };
+  },
+});

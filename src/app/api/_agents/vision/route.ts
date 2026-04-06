@@ -1,29 +1,28 @@
-import { auth } from "@clerk/nextjs/server";
+import { createAgentRoute } from "@/lib/agent-factory";
 import { getNimKey } from "@/lib/nvidia";
-import { NextResponse } from "next/server";
 
 /**
  * QWEN 3.5 VLM VISION AGENT — 400B MoE vision-language model.
- * 
+ *
  * Understands images natively:
  * - Screenshot analysis ("What's broken in this UI?")
  * - Chart/graph reading ("What trend does this show?")
  * - Invoice/receipt OCR with understanding
  * - Medical image description
  * - Architectural plan analysis
- * 
+ *
  * LICENSE: Apache 2.0 — free for commercial use.
  */
 
-export async function POST(request: Request) {
-  try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const { image_url, question = "Describe this image in detail.", mode = "analyze" } = await request.json();
-
-    if (!image_url) {
-      return NextResponse.json({ error: "image_url is required (direct URL to image)." }, { status: 400 });
-    }
+export const POST = createAgentRoute({
+  name: "vision",
+  requiredFields: ["image_url"],
+  handler: async ({ input }) => {
+    const {
+      image_url,
+      question = "Describe this image in detail.",
+      mode = "analyze",
+    } = input as Record<string, unknown>;
 
     const modePrompts: Record<string, string> = {
       analyze: `Analyze this image thoroughly. Describe what you see, identify key elements, and provide insights. Then answer: ${question}`,
@@ -43,7 +42,7 @@ export async function POST(request: Request) {
             role: "user",
             content: [
               { type: "image_url", image_url: { url: image_url } },
-              { type: "text", text: modePrompts[mode] || modePrompts.analyze },
+              { type: "text", text: modePrompts[mode as string] || modePrompts.analyze },
             ],
           },
         ],
@@ -54,7 +53,7 @@ export async function POST(request: Request) {
 
     const data = await res.json();
 
-    return NextResponse.json({
+    return {
       success: true,
       model: "Qwen 3.5 VLM (400B MoE Vision-Language)",
       mode,
@@ -62,8 +61,6 @@ export async function POST(request: Request) {
       result: data?.choices?.[0]?.message?.content || "",
       duration_ms: Date.now() - start,
       license: "Apache 2.0 — commercial use permitted",
-    });
-  } catch (error) {
-    return NextResponse.json({ error: "Vision agent error", details: String(error) }, { status: 500 });
-  }
-}
+    };
+  },
+});

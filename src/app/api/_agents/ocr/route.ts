@@ -1,21 +1,21 @@
-import { auth } from "@clerk/nextjs/server";
+import { createAgentRoute } from "@/lib/agent-factory";
 import { NextResponse } from "next/server";
 
 /**
  * OCR — Uses nemotron-ocr-v1 to extract text from images (screenshots, PDFs, competitor pricing tables).
  * Essential for the Ghost Fleet SDR to read G2 review screenshots.
  */
-export async function POST(req: Request) {
-  try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const { imageBase64, imageUrl } = await req.json();
+export const POST = createAgentRoute({
+  name: "ocr",
+  handler: async ({ input, email, userId }) => {
+
+    const { imageBase64, imageUrl } = input as Record<string, unknown>;
     if (!imageBase64 && !imageUrl) {
-      return NextResponse.json({ error: "Provide either `imageBase64` or `imageUrl`." }, { status: 400 });
+      return ({ error: "Provide either `imageBase64` or `imageUrl`." });
     }
 
     const nimKey = process.env.NVIDIA_NIM_API_KEY;
-    if (!nimKey) return NextResponse.json({ error: "NVIDIA_NIM_API_KEY not configured." }, { status: 500 });
+    if (!nimKey) return ({ error: "NVIDIA_NIM_API_KEY not configured." });
 
     const content: ({ type: string; text: string } | { type: string; image_url: { url: string } })[] = [
       { type: "text", text: "Extract all visible text from this image. Return it as clean, structured text. Preserve table layouts if present." }
@@ -43,15 +43,15 @@ export async function POST(req: Request) {
 
     if (!res.ok) {
       const errText = await res.text();
-      return NextResponse.json({ error: `OCR failed: ${res.status}`, details: errText }, { status: 500 });
+      return ({ error: `OCR failed: ${res.status}`, details: errText });
     }
 
     const data = await res.json();
-    return NextResponse.json({
+    return ({
       text: data.choices?.[0]?.message?.content || "",
       model: "nemotron-ocr-v1",
     });
-  } catch (error: unknown) {
-    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
-  }
-}
+  
+  },
+});
+

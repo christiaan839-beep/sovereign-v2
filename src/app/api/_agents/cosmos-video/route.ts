@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { createAgentRoute } from "@/lib/agent-factory";
 import { getNimKey } from "@/lib/nvidia";
 import { NextResponse } from "next/server";
 
@@ -9,14 +9,14 @@ import { NextResponse } from "next/server";
  * Powers: Visual Studio, VSL Hacker, Content Factory video generation.
  */
 
-export async function POST(request: Request) {
-  try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const { prompt, mode = "predict" } = await request.json();
+export const POST = createAgentRoute({
+  name: "cosmos-video",
+  handler: async ({ input, email, userId }) => {
+
+    const { prompt, mode = "predict" } = input as Record<string, unknown>;
 
     if (!prompt) {
-      return NextResponse.json({ error: "Prompt is required." }, { status: 400 });
+      return ({ error: "Prompt is required." });
     }
     
 
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
     const nimData = await nimRes.json();
     const sceneData = nimData?.choices?.[0]?.message?.content || "Scene generation pending.";
 
-    return NextResponse.json({
+    return ({
       success: true,
       model: modelId,
       mode,
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
         "⏳ Video encoding ready for downstream renderer",
       ],
     });
-  } catch (error) {
-    return NextResponse.json({ error: "Cosmos video error", details: String(error) }, { status: 500 });
-  }
-}
+  
+  },
+});
+

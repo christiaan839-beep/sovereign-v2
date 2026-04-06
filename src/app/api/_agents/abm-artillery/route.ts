@@ -1,135 +1,116 @@
-import { auth } from "@clerk/nextjs/server";
+import { createAgentRoute } from "@/lib/agent-factory";
+import { z } from "zod";
 import { getNimKey } from "@/lib/nvidia";
-import { NextResponse } from "next/server";
-import { createLogger } from "@/lib/logger";
-const log = createLogger("abm-artillery");
 
 /**
- * ABM ARTILLERY NODE — Autonomous Account-Based Marketing
- * 
- * Flow:
- * 1. Client submits a target company name
- * 2. Tavily API scrapes the company's website in real-time
- * 3. NVIDIA NIM (Nemotron) analyzes the data and writes a hyper-personalized outreach email
- * 4. Resend API fires the email to the target
+ * ABM ARTILLERY — Account-Based Marketing automation.
+ * 1. Tavily researches the target company
+ * 2. NIM writes personalized outreach email
+ * 3. Resend fires the email (if target email provided)
  */
 
-export async function POST(request: Request) {
-  try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const { companyName, targetEmail } = await request.json();
+const schema = z.object({
+  companyName: z.string().min(1, "Company name is required").max(200),
+  targetEmail: z.string().email().optional(),
+  prompt: z.string().max(5000).optional(),
+  context: z.string().max(5000).optional(),
+});
 
-    if (!companyName) {
-      return NextResponse.json({ error: "Company name is required." }, { status: 400 });
-    }
+export const POST = createAgentRoute({
+  name: "abm-artillery",
+  schema,
+  handler: async ({ input }) => {
+    const companyName = input.companyName as string;
+    const targetEmail = input.targetEmail as string | undefined;
+    const context = (input.context as string) || "";
 
-    // ═══════════════════════════════════════════════
-    // STEP 1: TAVILY DEEP RESEARCH
-    // ═══════════════════════════════════════════════
+    // Step 1: Tavily research
     const tavilyKey = process.env.TAVILY_API_KEY;
-    let companyIntel = "No intelligence gathered.";
+    let companyIntel = "";
+    let researchAvailable = false;
 
     if (tavilyKey) {
-      const tavilyRes = await fetch("https://api.tavily.com/search", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          api_key: tavilyKey,
-          query: `What does ${companyName} do? What are their main products, services, and pain points?`,
-          search_depth: "advanced",
-          max_results: 5,
-          include_answer: true,
-        }),
-      });
-      const tavilyData = await tavilyRes.json();
-      companyIntel = tavilyData.answer || tavilyData.results?.map((r: { content: string }) => r.content).join("\n") || "No intelligence gathered.";
+      try {
+        const tavilyRes = await fetch("https://api.tavily.com/search", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            api_key: tavilyKey,
+            query: `What does ${companyName} do? Products, services, pain points?`,
+            search_depth: "advanced",
+            max_results: 5,
+            include_answer: true,
+          }),
+        });
+        const tavilyData = await tavilyRes.json();
+        companyIntel = tavilyData.answer || tavilyData.results?.map((r: { content: string }) => r.content).join("\n") || "";
+        researchAvailable = companyIntel.length > 50;
+      } catch { /* research unavailable */ }
     }
 
-    // ═══════════════════════════════════════════════
-    // STEP 2: NVIDIA NIM GENERATES OUTREACH EMAIL
-    // ═══════════════════════════════════════════════
-    let emailBody = `We'd love to help ${companyName} scale with AI.`;
-
-    if (await getNimKey()) {
-      const nimRes = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${await getNimKey()}`,
-        },
-        body: JSON.stringify({
-          model: "mistralai/mistral-nemotron",
-          messages: [
-            {
-              role: "system",
-              content: `You are an elite B2B outreach copywriter for Sovereign Matrix, the most advanced autonomous AI agency platform. Write a cold email (max 150 words) that:
-1. References a SPECIFIC pain point or opportunity for the target company based on the intelligence provided.
-2. Positions Sovereign Matrix as the solution (autonomous AI agents replacing manual marketing teams).
-3. Ends with a single call-to-action to book a 15-minute strategy call.
-4. Be professional, sharp, and avoid generic filler. No "I hope this email finds you well."
-5. Subject line should be included at the top, prefixed with "Subject: ".`,
-            },
-            {
-              role: "user",
-              content: `Target Company: ${companyName}\n\nIntelligence Report:\n${companyIntel}`,
-            },
-          ],
-          max_tokens: 500,
-          temperature: 0.7,
-        }),
-      });
-      const nimData = await nimRes.json();
-      emailBody = nimData?.choices?.[0]?.message?.content || emailBody;
-    }
-
-    // ═══════════════════════════════════════════════
-    // STEP 3: RESEND FIRES THE EMAIL
-    // ═══════════════════════════════════════════════
-    const resendKey = process.env.RESEND_API_KEY;
-    const fromEmail = process.env.RESEND_FROM_EMAIL || "kilo@sovereignmatrix.agency";
-    let emailSent = false;
-
-    // Extract subject line from AI response
-    const subjectMatch = emailBody.match(/Subject:\s*(.+)/i);
-    const subject = subjectMatch ? subjectMatch[1].trim() : `${companyName} × Sovereign Matrix`;
-    const bodyWithoutSubject = emailBody.replace(/Subject:\s*.+\n?/i, "").trim();
-
-    if (resendKey && targetEmail) {
-      const resendRes = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${resendKey}`,
-        },
-        body: JSON.stringify({
-          from: fromEmail,
-          to: targetEmail,
-          subject: subject,
-          text: bodyWithoutSubject,
-        }),
-      });
-      emailSent = resendRes.ok;
-    }
-
-    return NextResponse.json({
-      success: true,
-      target: companyName,
-      intelligence: companyIntel.substring(0, 300) + "...",
-      generatedEmail: {
-        subject,
-        body: bodyWithoutSubject,
+    // Step 2: NIM generates outreach email
+    const nimRes = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${await getNimKey()}`,
       },
-      emailSent,
-      pipeline: [
-        "✅ Tavily Deep Research Complete",
-        "✅ NVIDIA NIM Email Generation Complete",
-        emailSent ? "✅ Resend Email Dispatched" : "⏳ No target email provided — email stored for manual dispatch",
-      ],
+      body: JSON.stringify({
+        model: "mistralai/mistral-nemotron",
+        messages: [
+          {
+            role: "system",
+            content: `You are a B2B outreach copywriter. Write a cold email (max 150 words) that:
+1. References a specific pain point for the target company${researchAvailable ? " based on the research" : ""}
+2. Positions our platform as the solution
+3. Ends with a CTA to book a 15-minute call
+4. Include "Subject: " line at the top
+5. Sound human, not templated. No "I hope this email finds you well."${context ? `\nCONTEXT:\n${context.slice(0, 1000)}` : ""}`,
+          },
+          {
+            role: "user",
+            content: `Target: ${companyName}\n\n${researchAvailable ? `Research:\n${companyIntel}` : "No research available — write based on general industry knowledge."}`,
+          },
+        ],
+        max_tokens: 500,
+        temperature: 0.7,
+      }),
     });
 
-  } catch (error) {
-    log.error("ABM artillery error", error as Record<string, unknown>);
-    return NextResponse.json({ error: "Artillery pipeline failure", details: String(error) }, { status: 500 });
-  }
-}
+    const nimData = await nimRes.json();
+    const emailBody = nimData?.choices?.[0]?.message?.content || `Personalized outreach for ${companyName}`;
+
+    // Extract subject line
+    const subjectMatch = emailBody.match(/Subject:\s*(.+)/i);
+    const subject = subjectMatch ? subjectMatch[1].trim() : `${companyName} — Quick Question`;
+    const bodyWithoutSubject = emailBody.replace(/Subject:\s*.+\n?/i, "").trim();
+
+    // Step 3: Send via Resend (if email provided)
+    let emailSent = false;
+    const resendKey = process.env.RESEND_API_KEY;
+    if (resendKey && targetEmail) {
+      try {
+        const resendRes = await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${resendKey}` },
+          body: JSON.stringify({
+            from: process.env.RESEND_FROM_EMAIL || "outreach@sovereignmatrix.agency",
+            to: targetEmail,
+            subject,
+            text: bodyWithoutSubject,
+          }),
+        });
+        emailSent = resendRes.ok;
+      } catch { /* email send failed — non-blocking */ }
+    }
+
+    return {
+      success: true,
+      target: companyName,
+      researchGrounded: researchAvailable,
+      generatedEmail: { subject, body: bodyWithoutSubject },
+      emailSent,
+      emailTarget: targetEmail || null,
+    };
+  },
+});

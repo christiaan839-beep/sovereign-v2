@@ -37,7 +37,7 @@ export async function ingestContextualDocument(
       const chunk = chunks[i];
 
       // THE MAGIC: Anthropic's Contextual Retrieval Generation
-      const prompt = `You are an elite data engineer. Look at this entire document:
+      const prompt = `You are a senior data engineer. Look at this entire document:
 <document>
 ${fullDocumentText}
 </document>

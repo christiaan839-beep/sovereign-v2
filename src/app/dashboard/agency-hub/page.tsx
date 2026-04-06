@@ -244,7 +244,7 @@ export default function AgencyHubPage() {
             )}
             {!loadingClients && clients.length === 0 && (
               <div className="text-center py-8">
-                <Building2 className="w-6 h-6 text-neutral-700 mx-auto mb-2" />
+                <Building2 className="w-6 h-6 text-neutral-500 mx-auto mb-2" />
                 <p className="text-xs text-neutral-500">No clients yet. Add your first client to get started.</p>
               </div>
             )}

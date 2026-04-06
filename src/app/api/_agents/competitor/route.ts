@@ -1,17 +1,14 @@
-import { NextResponse } from "next/server";
-import { currentUser } from "@clerk/nextjs/server";
+import { createAgentRoute } from "@/lib/agent-factory";
 import { ai } from "@/lib/ai";
 import { ANTI_SLOP_RULES } from "@/lib/content-engine";
 import { fireUserWebhook } from "@/lib/webhooks";
-import { createLogger } from "@/lib/logger";
-const log = createLogger("competitor-intel");
 
 /**
  * Competitor Intel API
  * Deep competitive analysis using AI to identify weaknesses and opportunities.
  */
 
-const COMPETITOR_PROMPT = `You are an elite competitive intelligence analyst. You identify market vulnerabilities and actionable opportunities.
+const COMPETITOR_PROMPT = `You are a competitive intelligence analyst. You identify market vulnerabilities and actionable opportunities.
 
 ${ANTI_SLOP_RULES}
 
@@ -23,14 +20,10 @@ Use Porter's Five Forces + Blue Ocean Strategy to identify:
 4. Pricing arbitrage opportunities
 5. Messaging vulnerabilities`;
 
-export async function POST(req: Request) {
-  const user = await currentUser();
-  if (!user?.primaryEmailAddress?.emailAddress) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  try {
-    const { competitorUrl, competitorName, yourBusiness, industry } = await req.json();
+export const POST = createAgentRoute({
+  name: "competitor",
+  handler: async ({ input }) => {
+    const { competitorUrl, competitorName, yourBusiness, industry } = input as Record<string, unknown>;
 
     const prompt = `Conduct a deep competitive intelligence analysis:
 
@@ -84,9 +77,6 @@ Provide a comprehensive analysis in JSON:
 
     await fireUserWebhook("CompetitorIntel", "Analyzed", { competitorName: competitorName || competitorUrl });
 
-    return NextResponse.json({ success: true, intel: parsed });
-  } catch (err) {
-    log.error("Competitor intel error", err as Record<string, unknown>);
-    return NextResponse.json({ error: "Failed" }, { status: 500 });
-  }
-}
+    return { success: true, intel: parsed };
+  },
+});

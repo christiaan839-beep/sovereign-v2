@@ -136,11 +136,11 @@ export default function LiveDemoPage() {
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               rows={3}
-              className="w-full bg-transparent text-sm text-white placeholder:text-neutral-600 outline-none resize-none leading-relaxed"
+              className="w-full bg-transparent text-sm text-white placeholder:text-neutral-500 outline-none resize-none leading-relaxed"
               placeholder={agent.placeholder}
             />
             <div className="flex items-center justify-between mt-4">
-              <span className="text-[10px] text-neutral-600">{triesLeft} free {triesLeft === 1 ? "try" : "tries"} remaining</span>
+              <span className="text-[10px] text-neutral-500">{triesLeft} free {triesLeft === 1 ? "try" : "tries"} remaining</span>
               <button
                 onClick={runDemo}
                 disabled={running || triesLeft <= 0 || !prompt.trim()}
@@ -189,7 +189,7 @@ export default function LiveDemoPage() {
         )}
 
         {triesLeft > 0 && !result && (
-          <p className="text-center text-xs text-neutral-600 mt-8">
+          <p className="text-center text-xs text-neutral-500 mt-8">
             Powered by 65+ AI models via NVIDIA NIM. Zero per-token cost.
           </p>
         )}

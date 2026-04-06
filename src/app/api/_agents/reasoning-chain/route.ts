@@ -1,33 +1,24 @@
-import { auth } from "@clerk/nextjs/server";
+import { createAgentRoute } from "@/lib/agent-factory";
 import { getNimKey } from "@/lib/nvidia";
-import { NextResponse } from "next/server";
 import { ai } from "@/lib/ai";
 
 /**
  * NEMOTRON REASONING CHAIN — Multi-step deep reasoning using the
  * Nemotron Ultra 253B model for complex problems that require
  * chain-of-thought analysis.
- * 
+ *
  * Steps:
  * 1. Decompose the problem into sub-questions
  * 2. Answer each sub-question independently
  * 3. Synthesize into a final coherent answer
  * 4. Self-critique and refine
- * 
- * Use for: legal analysis, strategic planning, complex research,
- * multi-variable decision making.
  */
 
-export async function POST(request: Request) {
-  try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const { question, depth = 3, domain = "general" } = await request.json();
-
-    if (!question) {
-      return NextResponse.json({ error: "question is required." }, { status: 400 });
-    }
-    
+export const POST = createAgentRoute({
+  name: "reasoning-chain",
+  requiredFields: ["question"],
+  handler: async ({ input }) => {
+    const { question, depth = 3, domain = "general" } = input as Record<string, unknown>;
 
     const steps: Array<{ step: string; content: string; model: string; duration_ms: number }> = [];
     const startTime = Date.now();
@@ -41,7 +32,7 @@ export async function POST(request: Request) {
         model: "nvidia/llama-3.1-nemotron-ultra-253b-v1",
         messages: [
           { role: "system", content: `You are a master analyst specializing in ${domain}. Break the following question into ${depth} essential sub-questions that must be answered to give a complete response. Output ONLY a numbered list of sub-questions.` },
-          { role: "user", content: question },
+          { role: "user", content: question as string },
         ],
         max_tokens: 500,
         temperature: 0.3,
@@ -72,7 +63,7 @@ export async function POST(request: Request) {
     const analysis = analysisData?.choices?.[0]?.message?.content || "";
     steps.push({ step: "Deep Analysis", content: analysis, model: "deepseek-v3.2", duration_ms: Date.now() - analysisStart });
 
-    // Step 3: Synthesize final answer — Claude Extended Thinking for deep reasoning, NIM fallback
+    // Step 3: Synthesize final answer
     const synthStart = Date.now();
     let synthesis = "";
     let synthModel = "nemotron-ultra-253b";
@@ -88,7 +79,6 @@ export async function POST(request: Request) {
       );
       synthModel = "claude-sonnet-4-extended-thinking";
     } catch {
-      // Fallback to NIM if Claude is unavailable
       const synthRes = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${await getNimKey()}` },
@@ -128,7 +118,7 @@ export async function POST(request: Request) {
     const critique = critiqueData?.choices?.[0]?.message?.content || "";
     steps.push({ step: "Self-Critique", content: critique, model: "mistral-nemotron", duration_ms: Date.now() - critiqueStart });
 
-    return NextResponse.json({
+    return {
       success: true,
       mode: "NEMOTRON_REASONING_CHAIN",
       question,
@@ -144,8 +134,6 @@ export async function POST(request: Request) {
         duration_ms: s.duration_ms,
         preview: s.content.substring(0, 300),
       })),
-    });
-  } catch (error) {
-    return NextResponse.json({ error: "Reasoning chain error", details: String(error) }, { status: 500 });
-  }
-}
+    };
+  },
+});

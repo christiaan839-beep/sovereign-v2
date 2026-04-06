@@ -1,6 +1,5 @@
-import { auth } from "@clerk/nextjs/server";
+import { createAgentRoute } from "@/lib/agent-factory";
 import { getNimKey } from "@/lib/nvidia";
-import { NextResponse } from "next/server";
 import { createLogger } from "@/lib/logger";
 import { getBaseUrl } from "@/lib/base-url";
 
@@ -8,12 +7,12 @@ const log = createLogger("agentic-planner");
 
 /**
  * GLM-5 AGENTIC TOOL-CALLING — Purpose-built for autonomous agent orchestration.
- * 
+ *
  * This agent can call OTHER agents as tools, creating true AI-orchestrated automation.
  * GLM-5 is specifically labeled "Agentic" on NVIDIA NIM.
- * 
+ *
  * Feed it a goal → it decides which agents to call → executes the plan autonomously.
- * 
+ *
  * LICENSE: GLM License — free for commercial use.
  */
 
@@ -30,16 +29,11 @@ const AVAILABLE_TOOLS = [
   { name: "reasoning-chain", description: "Multi-step deep reasoning for complex problems", params: "question, domain" },
 ];
 
-export async function POST(request: Request) {
-  try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const { goal, auto_execute = false } = await request.json();
-
-    if (!goal) {
-      return NextResponse.json({ error: "goal is required." }, { status: 400 });
-    }
-    
+export const POST = createAgentRoute({
+  name: "agentic-planner",
+  requiredFields: ["goal"],
+  handler: async ({ input }) => {
+    const { goal, auto_execute = false } = input as Record<string, unknown>;
 
     // Step 1: GLM-5 creates the execution plan
     const toolList = AVAILABLE_TOOLS.map(t => `- ${t.name}: ${t.description} (params: ${t.params})`).join("\n");
@@ -95,17 +89,17 @@ Output a JSON array of steps. Each step must have: {"tool": "tool_name", "params
           results.push({
             tool: step.tool,
             reason: step.reason,
-            status: res.ok ? "✅ Executed" : "⚠️ Partial",
+            status: "Executed",
             duration_ms: Date.now() - stepStart,
             preview: JSON.stringify(data).substring(0, 200),
           });
         } catch (err) {
-          results.push({ tool: step.tool, reason: step.reason, status: "❌ Failed", error: String(err) });
+          results.push({ tool: step.tool, reason: step.reason, status: "Failed", error: String(err) });
         }
       }
     }
 
-    return NextResponse.json({
+    return {
       success: true,
       model: "GLM-5 (Agentic Tool-Calling)",
       goal,
@@ -114,8 +108,6 @@ Output a JSON array of steps. Each step must have: {"tool": "tool_name", "params
       steps_planned: Array.isArray(executionPlan) ? executionPlan.length : 0,
       results: auto_execute ? results : "Set auto_execute: true to run the plan",
       license: "GLM License — commercial use permitted",
-    });
-  } catch (error) {
-    return NextResponse.json({ error: "Agentic tool-calling error", details: String(error) }, { status: 500 });
-  }
-}
+    };
+  },
+});

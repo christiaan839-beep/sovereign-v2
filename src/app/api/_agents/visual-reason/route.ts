@@ -1,19 +1,19 @@
-import { auth } from "@clerk/nextjs/server";
+import { createAgentRoute } from "@/lib/agent-factory";
 import { NextResponse } from "next/server";
 
 /**
  * VISUAL REASONING — Uses cosmos-reason2-8b for deep visual analysis.
  * Can analyze competitor screenshots, landing page layouts, and design patterns.
  */
-export async function POST(req: Request) {
-  try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const { imageUrl, question = "Analyze this image and provide detailed insights." } = await req.json();
-    if (!imageUrl) return NextResponse.json({ error: "Missing `imageUrl`." }, { status: 400 });
+export const POST = createAgentRoute({
+  name: "visual-reason",
+  handler: async ({ input, email, userId }) => {
+
+    const { imageUrl, question = "Analyze this image and provide detailed insights." } = input as Record<string, unknown>;
+    if (!imageUrl) return ({ error: "Missing `imageUrl`." });
 
     const nimKey = process.env.NVIDIA_NIM_API_KEY;
-    if (!nimKey) return NextResponse.json({ error: "NVIDIA_NIM_API_KEY not configured." }, { status: 500 });
+    if (!nimKey) return ({ error: "NVIDIA_NIM_API_KEY not configured." });
 
     const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
       method: "POST",
@@ -39,15 +39,15 @@ export async function POST(req: Request) {
 
     if (!res.ok) {
       const errText = await res.text();
-      return NextResponse.json({ error: `Visual reasoning failed: ${res.status}`, details: errText }, { status: 500 });
+      return ({ error: `Visual reasoning failed: ${res.status}`, details: errText });
     }
 
     const data = await res.json();
-    return NextResponse.json({
+    return ({
       analysis: data.choices?.[0]?.message?.content || "",
       model: "cosmos-reason2-8b",
     });
-  } catch (error: unknown) {
-    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
-  }
-}
+  
+  },
+});
+

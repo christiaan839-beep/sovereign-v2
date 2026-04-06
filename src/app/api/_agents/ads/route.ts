@@ -1,5 +1,5 @@
+import { createAgentRoute } from "@/lib/agent-factory";
 import { NextResponse } from "next/server";
-import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { adCreatives } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -75,7 +75,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: Request) {
+async function _postHandler(request: Request) {
   const user = await currentUser();
   if (!user?.primaryEmailAddress?.emailAddress) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -131,3 +131,19 @@ Generate the creatives now.`;
     return NextResponse.json({ error: "Server Error" }, { status: 500 });
   }
 }
+
+
+// Factory wrapper for POST (adds safety pipeline)
+export const POST = createAgentRoute({
+  name: "ads",
+  handler: async ({ input, email, userId, request }) => {
+    // Delegate to existing handler
+    const fakeReq = new Request("http://localhost", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
+    const res = await _postHandler(fakeReq);
+    return res instanceof Response ? await res.json() : res;
+  },
+});

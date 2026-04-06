@@ -287,8 +287,22 @@ export function GuidedSetup({ children }: { children: React.ReactNode }) {
               </motion.div>
             )}
 
-            {/* ── Step 3: Success ── */}
-            {step === 3 && (
+            {/* ── Step 3: Your Agents + Success ── */}
+            {step === 3 && (() => {
+              // Map needs → recommended agents
+              const agentMap: Record<string, Array<{ name: string; desc: string }>> = {
+                content: [{ name: "Blog Generator", desc: "SEO blog posts with research" }, { name: "Organic Content", desc: "Social posts, newsletters, threads" }],
+                leads: [{ name: "Lead Finder", desc: "Find prospects by niche" }, { name: "Email Sequence", desc: "Automated outreach drips" }],
+                websites: [{ name: "Page Builder", desc: "Generate landing pages" }, { name: "Funnel X-Ray", desc: "Analyze competitor pages" }],
+                seo: [{ name: "SEO Dominator", desc: "Audit and content plan" }, { name: "Programmatic SEO", desc: "Scale content production" }],
+                voice: [{ name: "Voice Agent", desc: "AI phone outreach" }, { name: "Transcriber", desc: "Meeting transcription" }],
+                code: [{ name: "Code Agent", desc: "Generate production code" }, { name: "Code Reviewer", desc: "Review and debug" }],
+                intel: [{ name: "Competitor Scan", desc: "Intelligence reports" }, { name: "Brand Audit", desc: "Positioning analysis" }],
+                design: [{ name: "Creative Director", desc: "Ad copy and campaigns" }, { name: "Image Gen", desc: "AI-generated visuals" }],
+              };
+              const recommended = needs.flatMap(n => agentMap[n] || []).slice(0, 6);
+
+              return (
               <motion.div
                 key="step-3"
                 variants={stepVariants}
@@ -296,35 +310,55 @@ export function GuidedSetup({ children }: { children: React.ReactNode }) {
                 animate="center"
                 exit="exit"
                 transition={spring}
-                className="flex-1 flex flex-col items-center justify-center text-center"
+                className="flex-1 flex flex-col"
               >
-                <motion.div
-                  initial={{ scale: 0, rotate: -30 }}
-                  animate={{ scale: 1, rotate: 0 }}
-                  transition={{ ...spring, delay: 0.1 }}
-                  className="w-20 h-20 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center mb-6"
-                >
-                  <Check className="w-10 h-10 text-emerald-400" />
-                </motion.div>
-                <h2 className="text-2xl font-bold text-white tracking-tight mb-2">
-                  You&apos;re ready
-                </h2>
-                <p className="text-sm text-neutral-400 mb-8 max-w-sm">
-                  Your workspace <span className="text-white font-medium">{workspaceName || "My Workspace"}</span> is configured.
-                  The Sovereign Matrix is at your command.
-                </p>
-                <motion.button
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                  onClick={finish}
-                  className="px-8 py-3 bg-emerald-500 hover:bg-emerald-400 text-black font-semibold rounded-xl transition-colors text-sm flex items-center gap-2"
-                >
-                  Enter Dashboard
-                  <ArrowRight className="w-4 h-4" />
-                </motion.button>
+                <div className="text-center mb-6">
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ ...spring, delay: 0.1 }}
+                    className="w-14 h-14 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center mx-auto mb-4"
+                  >
+                    <Sparkles className="w-7 h-7 text-emerald-400" />
+                  </motion.div>
+                  <h2 className="text-xl font-bold text-white tracking-tight mb-1">
+                    Your agents are ready
+                  </h2>
+                  <p className="text-sm text-neutral-400">
+                    Based on your needs, we recommend starting with these:
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-6">
+                  {recommended.map((agent, i) => (
+                    <motion.div
+                      key={agent.name}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.15 + i * 0.05 }}
+                      className="p-3 rounded-xl border border-emerald-500/10 bg-emerald-500/5"
+                    >
+                      <div className="text-xs font-semibold text-white">{agent.name}</div>
+                      <div className="text-[10px] text-neutral-500 mt-0.5">{agent.desc}</div>
+                    </motion.div>
+                  ))}
+                </div>
+
+                <div className="flex justify-center mt-auto">
+                  <motion.button
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                    onClick={finish}
+                    className="px-8 py-3 bg-emerald-500 hover:bg-emerald-400 text-black font-semibold rounded-xl transition-colors text-sm flex items-center gap-2"
+                  >
+                    Enter Dashboard
+                    <ArrowRight className="w-4 h-4" />
+                  </motion.button>
+                </div>
               </motion.div>
-            )}
+            );
+            })()}
           </AnimatePresence>
 
           {/* Navigation footer */}

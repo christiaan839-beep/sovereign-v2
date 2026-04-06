@@ -1,12 +1,9 @@
-import { auth } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
+import { createAgentRoute } from "@/lib/agent-factory";
+import { z } from "zod";
 import { ai } from "@/lib/ai";
-import { createLogger } from "@/lib/logger";
-const log = createLogger("meta-prompt");
 
-// Anthropic's open-source Meta-Prompt methodology translated into a Sovereign constraint.
-const ANTHROPIC_META_PROMPT = `Today you will be writing instructions for an AI AI assistant. 
-Your goal is to write a highly detailed, extremely strict system prompt using XML tags for structure.
+const ANTHROPIC_META_PROMPT = `Today you will be writing instructions for an AI assistant.
+Your goal is to write a highly detailed, strict system prompt using XML tags for structure.
 
 Based on the user's task description, construct a prompt that includes:
 1. <role>: Who the AI is and what persona it should adopt.
@@ -14,29 +11,13 @@ Based on the user's task description, construct a prompt that includes:
 3. <output_format>: Exact JSON schema, markdown format, or XML tags the AI must use.
 4. <examples>: (Optional but recommended) 1-2 examples of ideal input/output.
 
-DO NOT output anything other than the generated prompt. DO NOT surround the prompt in markdown code blocks. Just output the raw text of the final system prompt. Keep it between 300 and 800 words. Make it sound extremely professional, strategic, and elite.`;
+DO NOT output anything other than the generated prompt. No markdown code blocks. Just raw text. Keep it 300-800 words.`;
 
-export async function POST(req: Request) {
-  try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const { task } = await req.json();
-
-    if (!task) {
-      return NextResponse.json({ error: "No task provided" }, { status: 400 });
-    }
-
-    // Route directly to Claude via ai() which defaults BYOK/Anthropic logic.
-    // We enforce Anthropic Meta-Prompting via the system directive.
-    const generatedPrompt = await ai(task, {
-      model: "claude",
-      system: ANTHROPIC_META_PROMPT,
-      maxTokens: 1500
-    });
-
-    return NextResponse.json({ prompt: generatedPrompt });
-  } catch (err: unknown) {
-    log.error("Meta prompt generation error", err as Record<string, unknown>);
-    return NextResponse.json({ error: "Failed to build prompt orchestration." }, { status: 500 });
-  }
-}
+export const POST = createAgentRoute({
+  name: "meta-prompt",
+  schema: z.object({ task: z.string().min(3).max(5000), prompt: z.string().optional() }),
+  handler: async ({ input }) => {
+    const generatedPrompt = await ai(input.task as string, { model: "claude", system: ANTHROPIC_META_PROMPT, maxTokens: 1500 });
+    return { prompt: generatedPrompt };
+  },
+});
