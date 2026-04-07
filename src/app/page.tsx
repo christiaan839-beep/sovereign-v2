@@ -377,26 +377,26 @@ export default function Home() {
 
       {/* ═══ NAVIGATION ═══ */}
       <motion.nav
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: navVisible ? 1 : 0, y: navVisible ? 0 : -20 }}
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: navVisible ? 1 : 0, y: navVisible ? 0 : -10 }}
         transition={{ duration: 0.3, ease: "easeOut" }}
-        className="fixed top-0 inset-x-0 z-50 flex justify-center px-4 py-3 pointer-events-none"
+        className="fixed top-0 inset-x-0 z-50 pointer-events-none"
       >
-        <div className="bg-[#080808]/90 backdrop-blur-2xl border border-white/[0.06] rounded-full px-5 h-12 flex items-center justify-between pointer-events-auto w-full max-w-4xl">
+        <div className="px-6 md:px-10 h-16 flex items-center justify-between pointer-events-auto max-w-7xl mx-auto">
           <Link href="/" className="flex items-center gap-2.5">
             <SovereignLogo size="sm" />
             <span className="hidden sm:block text-sm font-semibold text-white">Sovereign Matrix</span>
           </Link>
 
-          <div className="hidden md:flex items-center gap-6">
-            <Link href="#capabilities" className="text-xs text-neutral-400 hover:text-white transition-colors">Product</Link>
-            <Link href="#pricing" className="text-xs text-neutral-400 hover:text-white transition-colors">Pricing</Link>
-            <Link href="/docs" className="text-xs text-neutral-400 hover:text-white transition-colors">Docs</Link>
-            <Link href="/enterprise" className="text-xs text-neutral-400 hover:text-white transition-colors">Enterprise</Link>
+          <div className="hidden md:flex items-center gap-8">
+            <Link href="#capabilities" className="text-sm text-neutral-400 hover:text-white transition-colors">Product</Link>
+            <Link href="#pricing" className="text-sm text-neutral-400 hover:text-white transition-colors">Pricing</Link>
+            <Link href="/docs" className="text-sm text-neutral-400 hover:text-white transition-colors">Docs</Link>
+            <Link href="/enterprise" className="text-sm text-neutral-400 hover:text-white transition-colors">Enterprise</Link>
             <SignInButton mode="modal" fallbackRedirectUrl="/dashboard">
-              <button className="text-xs text-neutral-500 hover:text-white transition-colors">Log in</button>
+              <button className="text-sm text-neutral-500 hover:text-white transition-colors">Log in</button>
             </SignInButton>
-            <Link href="/signup" className="px-4 py-1.5 rounded-full bg-white text-xs font-semibold text-black hover:bg-neutral-200 transition-gpu">
+            <Link href="/signup" className="px-5 py-2 rounded-full bg-white text-xs font-semibold text-black hover:bg-neutral-200 transition-colors">
               Get Started
             </Link>
           </div>
@@ -425,108 +425,66 @@ export default function Home() {
 
       <main id="main-content">
 
-      {/* ═══ HERO ═══ */}
+      {/* ═══ HERO — Antigravity minimalism + Sovereign dark aesthetic ═══ */}
       <section ref={heroRef}
-        className="relative min-h-[85vh] md:min-h-screen flex flex-col items-center justify-center overflow-hidden">
+        className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-[#030303]">
 
-        {/* 3D Particle background */}
-        <HeroParticles />
+        {/* Floating particles — multi-colored, the defining visual (Antigravity pattern) */}
+        <FloatingParticles
+          count={50}
+          colors={[
+            "rgba(16, 185, 129, 0.5)",
+            "rgba(6, 182, 212, 0.4)",
+            "rgba(139, 92, 246, 0.4)",
+            "rgba(59, 130, 246, 0.3)",
+            "rgba(236, 72, 153, 0.25)",
+          ]}
+          maxSize={3}
+        />
 
-        {/* Interactive floating particles — mouse-reactive zero-gravity drift */}
-        <FloatingParticles count={30} color="rgba(16, 185, 129, 0.4)" maxSize={2.5} />
-
-        {/* Single ambient glow — not 5 layered gradients */}
+        {/* Single subtle ambient glow — restrained */}
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full bg-emerald-500/[0.04] blur-[200px]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,transparent_0%,#010101_70%)]" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-emerald-500/[0.03] blur-[200px]" />
         </div>
 
-        {/* Reactive 3D Orb — follows mouse */}
-        <HeroOrb />
-
-        {/* Vignettes */}
-        <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-[#010101] to-transparent pointer-events-none z-[1]" />
-        <div className="absolute bottom-0 inset-x-0 h-48 bg-gradient-to-t from-[#010101] to-transparent pointer-events-none z-[1]" />
-
-        {/* Content */}
+        {/* Content — radically minimal (Antigravity: text + CTAs + nothing else) */}
         <div className="relative z-10 max-w-4xl mx-auto text-center px-6">
-          {/* Status — minimal */}
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3, duration: 0.8 }}
-            className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/[0.06] mb-8">
-            <span className="relative flex h-1.5 w-1.5">
-              <span className="animate-ping absolute h-full w-full rounded-full bg-emerald-400 opacity-40" />
-              <span className="relative rounded-full h-1.5 w-1.5 bg-emerald-400" />
-            </span>
-            <span className="text-[11px] text-neutral-400 font-medium">{agentCount} agents deployed</span>
+
+          {/* Brand mark */}
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.8 }}
+            className="flex items-center justify-center gap-2.5 mb-12">
+            <SovereignLogo size="sm" />
+            <span className="text-sm font-semibold text-white/80 tracking-wide">Sovereign Matrix</span>
           </motion.div>
 
-          {/* Headline — clear, honest, no hype */}
-          <motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 1, ease: [0.25, 0.46, 0.45, 0.94] }}
-            className="text-[clamp(2.5rem,8vw,5.5rem)] font-black leading-[0.95] tracking-[-0.03em] mb-6">
+          {/* Headline — massive, clean */}
+          <motion.h1 initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 1.2, ease: [0.25, 0.46, 0.45, 0.94] }}
+            className="text-[clamp(2.8rem,9vw,6.5rem)] font-black leading-[0.92] tracking-[-0.04em] mb-8">
             <span className="text-white">The AI platform that</span>
             <br />
             <TextShimmer className="font-black">actually does the work.</TextShimmer>
           </motion.h1>
 
-          {/* Subtitle — clear, readable, high contrast */}
-          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5, duration: 0.7 }}
-            className="text-base md:text-lg max-w-xl mx-auto leading-relaxed mb-8">
-            <span className="text-neutral-200">Agents are born smart. We give them everything else.</span>{" "}
-            <span className="text-neutral-400">Voice, memory, payments, tools, workflows — the full infrastructure stack. 130+ agents run your business 24/7 on autopilot. $0 per token.</span>
+          {/* Subtitle — one sentence, restrained */}
+          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5, duration: 0.8 }}
+            className="text-lg md:text-xl text-neutral-400 max-w-lg mx-auto leading-relaxed mb-12">
+            130+ autonomous agents. 65+ models. Pre-built playbooks that run your business on autopilot.
           </motion.p>
 
-          {/* CTAs — one primary, one secondary */}
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6, duration: 0.5 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-14">
-            <ParticleBurst>
-            <MagneticButton href="/signup" strength={0.2}>
-              <span className="group flex items-center gap-2 px-8 py-4 bg-white text-black font-bold rounded-full text-sm hover:shadow-[0_0_40px_rgba(255,255,255,0.15)] transition-gpu duration-500 cursor-pointer">
+          {/* Two CTAs — Antigravity style (one solid, one outlined) */}
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7, duration: 0.5 }}
+            className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <MagneticButton href="/signup" strength={0.15}>
+              <span className="group flex items-center gap-2 px-8 py-4 bg-white text-black font-semibold rounded-full text-sm hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all cursor-pointer">
                 Run a Free Playbook <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </span>
             </MagneticButton>
-            </ParticleBurst>
             <MagneticButton href="/demo/live" strength={0.15}>
-              <span className="px-8 py-4 rounded-full text-sm font-semibold text-neutral-300 border border-white/[0.08] hover:border-emerald-500/20 hover:text-white transition-gpu duration-300 cursor-pointer inline-block">
-                Try Live Demo
+              <span className="px-8 py-4 rounded-full text-sm font-semibold text-neutral-300 border border-white/[0.1] hover:border-white/[0.2] hover:text-white transition-all cursor-pointer inline-block">
+                Explore use cases
               </span>
             </MagneticButton>
           </motion.div>
-
-          {/* Founders banner — compact */}
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7, duration: 0.6 }}
-            className="mb-6">
-            <Link href="/signup" className="group inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/5 border border-emerald-500/15 hover:border-emerald-500/30 transition-all">
-              <span className="relative flex h-1.5 w-1.5"><span className="animate-ping absolute h-full w-full rounded-full bg-emerald-400 opacity-50" /><span className="relative rounded-full h-1.5 w-1.5 bg-emerald-400" /></span>
-              <span className="text-[10px] text-emerald-400 font-semibold">FOUNDERS PROGRAM</span>
-              <span className="text-[10px] text-neutral-500">First 10 get enterprise — free forever</span>
-              <ArrowRight className="w-3 h-3 text-emerald-500/40 group-hover:text-emerald-400 transition-colors" />
-            </Link>
-          </motion.div>
-
-          {/* Model pills — compact single row */}
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8, duration: 0.8 }}
-            className="flex flex-wrap items-center justify-center gap-1.5 mb-6 max-w-lg mx-auto">
-            {["Nemotron Ultra", "Gemma 4", "DeepSeek V3.2", "Llama 4", "Qwen 3", "Mistral", "FLUX.1"].map((name) => (
-              <span key={name} className="px-2.5 py-0.5 rounded-full text-[9px] font-medium border border-white/[0.06] bg-white/[0.02] text-neutral-500">
-                {name}
-              </span>
-            ))}
-            <span className="text-[9px] text-neutral-600">+ 27 more</span>
-          </motion.div>
-
-          {/* Built on */}
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.9, duration: 0.5 }}
-            className="flex items-center justify-center gap-6">
-            <span className="text-[9px] text-neutral-600 uppercase tracking-[0.2em]">Built on</span>
-            {["NVIDIA", "Google", "Anthropic", "Meta"].map((name) => (
-              <span key={name} className="text-[11px] font-semibold text-neutral-600">{name}</span>
-            ))}
-          </motion.div>
-        </div>
-
-        {/* Interactive demo — tight below hero text */}
-        <div className="relative z-20 mt-6 pb-8 px-6 w-full max-w-3xl mx-auto">
-          <InteractiveHeroStrike />
         </div>
       </section>
 

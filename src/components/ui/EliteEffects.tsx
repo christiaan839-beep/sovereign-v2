@@ -36,11 +36,13 @@ function usePrefersReducedMotion() {
 export function FloatingParticles({
   count = 40,
   color = "rgba(16, 185, 129, 0.3)",
+  colors,
   maxSize = 3,
   className = "",
 }: {
   count?: number;
   color?: string;
+  colors?: string[];
   maxSize?: number;
   className?: string;
 }) {
@@ -48,7 +50,7 @@ export function FloatingParticles({
   const mouseRef = useRef({ x: -999, y: -999 });
   const particlesRef = useRef<Array<{
     x: number; y: number; vx: number; vy: number;
-    size: number; opacity: number; drift: number;
+    size: number; opacity: number; drift: number; colorIdx: number;
   }>>([]);
   const isMobile = useIsMobile();
   const reducedMotion = usePrefersReducedMotion();
@@ -78,6 +80,7 @@ export function FloatingParticles({
     // Initialize particles
     const w = canvas.offsetWidth;
     const h = canvas.offsetHeight;
+    const palette = colors || [color];
     particlesRef.current = Array.from({ length: count }, () => ({
       x: Math.random() * w,
       y: Math.random() * h,
@@ -86,6 +89,7 @@ export function FloatingParticles({
       size: Math.random() * maxSize + 0.5,
       opacity: Math.random() * 0.5 + 0.2,
       drift: Math.random() * Math.PI * 2,
+      colorIdx: Math.floor(Math.random() * palette.length),
     }));
 
     const handleMouse = (e: MouseEvent) => {
@@ -137,10 +141,11 @@ export function FloatingParticles({
         if (p.y < -10) p.y = ch + 10;
         if (p.y > ch + 10) p.y = -10;
 
-        // Draw particle
+        // Draw particle (use per-particle color from palette)
+        const pColor = palette[p.colorIdx] || color;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fillStyle = color.replace(/[\d.]+\)$/, `${p.opacity})`);
+        ctx.fillStyle = pColor.replace(/[\d.]+\)$/, `${p.opacity})`);
         ctx.fill();
       }
 
@@ -154,7 +159,8 @@ export function FloatingParticles({
             ctx.beginPath();
             ctx.moveTo(a.x, a.y);
             ctx.lineTo(b.x, b.y);
-            ctx.strokeStyle = color.replace(/[\d.]+\)$/, `${0.06 * (1 - d / 100)})`);
+            const lineColor = palette[a.colorIdx] || color;
+            ctx.strokeStyle = lineColor.replace(/[\d.]+\)$/, `${0.04 * (1 - d / 100)})`);
             ctx.lineWidth = 0.5;
             ctx.stroke();
           }
