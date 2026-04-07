@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence, useInView } from "framer-motion";
-import { BrainCircuit, CheckCircle2, Cpu, Target, ChevronDown, XCircle, ArrowRight, Mic, Code2, Search, FileText } from "lucide-react";
+import { CheckCircle2, Target, ChevronDown, XCircle, ArrowRight, Mic, Search, FileText } from "lucide-react";
 import Link from "next/link";
 import { SignInButton } from "@clerk/nextjs";
 import { useState, useRef, useEffect } from "react";
@@ -12,15 +12,12 @@ import { Testimonials } from "@/components/ui/SocialProof";
 import { CinematicLoader } from "@/components/ui/CinematicLoader";
 
 
-import { SocialProofMetrics } from "@/components/ui/SocialProofMetrics";
 import { LandingAgent } from "@/components/ui/LandingAgent";
-import { AgentOffice } from "@/components/ui/AgentOffice";
 import { RevealText, MagneticButton, StaggerChildren, GlowDivider, ScrollProgress } from "@/components/ui/ScrollAnimations";
-import { FloatingParticles, useHideyNav, TextShimmer, TiltCard, SectionReveal } from "@/components/ui/EliteEffects";
+import { useHideyNav, TextShimmer, TiltCard, SectionReveal } from "@/components/ui/EliteEffects";
 import { TextDecrypt } from "@/components/cinematic/TextDecrypt";
-import { ScrollVelocitySkew, ClipReveal } from "@/components/cinematic/ScrollVelocity";
 import { ParticleBurst } from "@/components/cinematic/ParticleBurst";
-import { Typewriter, GradientFollower, Tilt3D, AnimatedCounter } from "@/components/cinematic/InteractiveEffects";
+import { Typewriter, AnimatedCounter } from "@/components/cinematic/InteractiveEffects";
 import { LiveTicker } from "@/components/cinematic/LiveTicker";
 import { LogoMarquee } from "@/components/cinematic/InfiniteMarquee";
 import { ExitIntent } from "@/components/ui/ExitIntent";
@@ -28,38 +25,13 @@ import { LivePulse } from "@/components/ui/LivePulse";
 import dynamic from "next/dynamic";
 import { useLiveAgentCount } from "@/hooks/useLiveAgentCount";
 
-const AgentNetwork = dynamic(() => import("@/components/cinematic/AgentNetwork").then(m => ({ default: m.AgentNetwork })), { ssr: false });
 const PhysicsCards = dynamic(() => import("@/components/cinematic/PhysicsCards").then(m => ({ default: m.PhysicsCards })), { ssr: false });
 const NebulaBackground = dynamic(() => import("@/components/cinematic/NebulaBackground").then(m => ({ default: m.NebulaBackground })), { ssr: false });
 const SmoothScroll = dynamic(() => import("@/components/cinematic/SmoothScroll").then(m => ({ default: m.SmoothScroll })), { ssr: false });
 const WebGLParticles = dynamic(() => import("@/components/cinematic/WebGLParticles").then(m => ({ default: m.WebGLParticles })), { ssr: false });
 import { MouseParallax, FloatingElement } from "@/components/cinematic/MouseParallax";
 
-// ─── Capability Card (enhanced with emerald hover glow) ───
-function CapabilityCard({ icon: Icon, title, desc, accent, href }: { icon: React.ComponentType<{ className?: string }>; title: string; desc: string; accent: string; href?: string }) {
-  const content = (
-    <Tilt3D maxTilt={6} scale={1.01}>
-      <div className="group relative cursor-pointer">
-        <div className="relative p-8 rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl hover:border-emerald-500/20 transition-gpu duration-500 overflow-hidden hover:shadow-[0_0_40px_rgba(16,185,129,0.06)] hover:bg-white/[0.04]">
-          {/* Hover glow */}
-          <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 bg-gradient-to-br ${accent} to-transparent`} />
-
-          <div className="relative z-10">
-            <div className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center mb-5 group-hover:border-emerald-500/20 transition-colors">
-              <Icon className="w-5 h-5 text-neutral-400 group-hover:text-emerald-400 transition-colors" />
-            </div>
-            <h3 className="text-base font-semibold text-white mb-2">{title}</h3>
-            <p className="text-sm text-neutral-400 leading-relaxed">{desc}</p>
-            <div className="mt-4 flex items-center gap-1 text-[10px] text-emerald-500/50 uppercase tracking-wider opacity-0 group-hover:opacity-100 transition-opacity">
-              Try it <ArrowRight className="w-3 h-3" />
-            </div>
-          </div>
-        </div>
-      </div>
-    </Tilt3D>
-  );
-  return href ? <Link href={href}>{content}</Link> : content;
-}
+// CapabilityCard removed (capabilities section cut — capabilities shown in demo + results instead)
 
 // ─── FAQ Item ───
 function FAQItem({ question, answer }: { question: string; answer: string }) {
@@ -139,8 +111,8 @@ function EnterpriseSection() {
             Your data. Your infrastructure. Your autonomous workforce.
           </RevealText>
           <RevealText as="p" delay={0.2} className="text-sm text-neutral-400 max-w-2xl mx-auto leading-relaxed">
-            Built on NVIDIA NIM inference with 35+ open-source models. Zero per-token costs.
-            Air-gapped deployment available. Enterprise-grade security from day one.
+            Built on NVIDIA NIM with 35+ open-source models. Zero per-token costs.
+            Run locally on your hardware. Your data never leaves your machine.
           </RevealText>
         </div>
 
@@ -929,6 +901,10 @@ export default function Home() {
           </motion.div>
         </div>
       </section>
+
+      {/* ═══ PLATFORM CAPABILITIES — The full stack ═══ */}
+      <GlowDivider />
+      <EnterpriseSection />
 
       {/* ═══ TESTIMONIALS ═══ */}
       <GlowDivider />
