@@ -71,3 +71,43 @@ Key endpoints:
 - Gemma 4 (google/gemma-4-31b-it) added April 2026 — 256K context, vision+audio, 140 languages
 - Failover chain is 11 models deep
 - Consensus verification uses 4 independent models (Nemotron Ultra, DeepSeek V3.2, Gemma 4, Qwen 3)
+
+## Session Learnings (April 7 2026)
+
+### Key Fixes & Improvements
+- Playbooks page was calling /api/agents/coordinator (old path), bypassing the Playbook Engine entirely. Now calls /api/playbooks/run → polls /api/playbooks/runs/:id. One execution path, one source of truth.
+- Critical bug: Playbook engine step updates used WHERE runId (hits ALL steps), not WHERE stepId (hits ONE step). Fixed by pre-fetching step IDs and updating by primary key.
+- All 3 playbook API routes now handle missing DB tables gracefully (PostgreSQL error 42P01) instead of crashing. POST returns 503 with migration instructions; GET returns empty array; polling returns done:true.
+- Removed 100% simulated ExecutionFeed from dashboard home (generated fake agent activity every 6s). Replaced with RecentRunsFeed showing real playbook runs.
+
+### New Pages & Components
+- /api/approvals (GET+POST) — surfaces hitl-approval.ts system via REST API
+- /dashboard/nemo-claw → completely rebuilt as "Security Command Center":
+  - 5-layer safety pipeline visualization (expandable cards with pass rates)
+  - HITL approval queue (live pending/approve/deny with countdown timers)
+  - Cloud vs Local execution mode toggle with hardware requirements
+  - Authenticated workflow metrics summary
+- Pricing page: Added Founder Access (free tier) card — was missing despite landing page prominently featuring it
+
+### Dashboard Changes
+- Sidebar: NemoClaw renamed to "Security" with Shield icon, added to Monitor nav group
+- Sidebar simplified: 17 items → 12 items (5 primary, 5 tools, 2 monitor, 2 bottom)
+- Dashboard home: Removed LiveExecutionStream demos and simulated ExecutionFeed. Added RecentRunsFeed (real data from /api/playbooks/runs).
+- Autopilot: Stats cards are now clickable filter buttons (All/Running/Done/Failed)
+
+### Landing Page
+- Complete positioning overhaul → "Agent Infrastructure Stack" narrative
+- 7-layer stack with two visual tiers: SOLVED (Voice/Memory/Payments) + THE REST (Intelligence/Orchestration/Trust/Integrations)
+- Trust section reframed: "No more Wild West. Every action is authenticated."
+- Based on NemoClaw transcript analysis (MAPL, authenticated workflows, sandbox architecture)
+
+### Trust & Security Narrative
+- Every playbook execution badge shows "5-Layer Verified" with pipeline breakdown (Jailbreak → PII → Content → Quality → Critic)
+- Each playbook browse card shows green "✓ Verified" badge
+- Security Command Center is the CISO-facing page
+- "Secure by default, only flag anomalies" pattern throughout
+
+### Pending (Manual Steps Required)
+- Run DB migration: drizzle/0003_playbook_runs.sql (Neon Console → SQL Editor)
+- Run DB migration: drizzle/0002_async_jobs.sql (Neon Console → SQL Editor)
+- Add CEREBRAS_API_KEY env var (free at inference.cerebras.ai)
