@@ -32,6 +32,7 @@ const AgentNetwork = dynamic(() => import("@/components/cinematic/AgentNetwork")
 const PhysicsCards = dynamic(() => import("@/components/cinematic/PhysicsCards").then(m => ({ default: m.PhysicsCards })), { ssr: false });
 const NebulaBackground = dynamic(() => import("@/components/cinematic/NebulaBackground").then(m => ({ default: m.NebulaBackground })), { ssr: false });
 const SmoothScroll = dynamic(() => import("@/components/cinematic/SmoothScroll").then(m => ({ default: m.SmoothScroll })), { ssr: false });
+const WebGLParticles = dynamic(() => import("@/components/cinematic/WebGLParticles").then(m => ({ default: m.WebGLParticles })), { ssr: false });
 import { MouseParallax, FloatingElement } from "@/components/cinematic/MouseParallax";
 
 // ─── Capability Card (enhanced with emerald hover glow) ───
@@ -429,19 +430,8 @@ export default function Home() {
         {/* Layer 1: Deep grid — creates depth perception */}
         <div className="absolute inset-0 bg-[linear-gradient(rgba(16,185,129,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(16,185,129,0.015)_1px,transparent_1px)] bg-[size:60px_60px] [mask-image:radial-gradient(ellipse_80%_60%_at_50%_50%,black_20%,transparent_100%)]" />
 
-        {/* Layer 2: Floating particles — multi-colored, mouse-reactive */}
-        <FloatingParticles
-          count={60}
-          colors={[
-            "rgba(16, 185, 129, 0.6)",
-            "rgba(6, 182, 212, 0.5)",
-            "rgba(139, 92, 246, 0.45)",
-            "rgba(59, 130, 246, 0.35)",
-            "rgba(236, 72, 153, 0.3)",
-            "rgba(245, 158, 11, 0.25)",
-          ]}
-          maxSize={4}
-        />
+        {/* Layer 2: WebGL particles — GPU-rendered with custom shaders (beats Antigravity) */}
+        <WebGLParticles count={1000} />
 
         {/* Layer 3: Dual ambient glow — creates atmosphere */}
         <div className="absolute inset-0 pointer-events-none">
