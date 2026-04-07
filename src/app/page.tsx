@@ -31,8 +31,6 @@ const SmoothScroll = dynamic(() => import("@/components/cinematic/SmoothScroll")
 const WebGLParticles = dynamic(() => import("@/components/cinematic/WebGLParticles").then(m => ({ default: m.WebGLParticles })), { ssr: false });
 import { MouseParallax, FloatingElement } from "@/components/cinematic/MouseParallax";
 
-// CapabilityCard removed (capabilities section cut — capabilities shown in demo + results instead)
-
 // ─── FAQ Item ───
 function FAQItem({ question, answer }: { question: string; answer: string }) {
   const [open, setOpen] = useState(false);
@@ -356,7 +354,7 @@ export default function Home() {
           </Link>
 
           <div className="hidden md:flex items-center gap-8">
-            <Link href="#capabilities" className="text-sm text-neutral-400 hover:text-white transition-colors">Product</Link>
+            <Link href="#enterprise" className="text-sm text-neutral-400 hover:text-white transition-colors">Product</Link>
             <Link href="#pricing" className="text-sm text-neutral-400 hover:text-white transition-colors">Pricing</Link>
             <Link href="/docs" className="text-sm text-neutral-400 hover:text-white transition-colors">Docs</Link>
             <Link href="/enterprise" className="text-sm text-neutral-400 hover:text-white transition-colors">Enterprise</Link>
@@ -381,7 +379,7 @@ export default function Home() {
           {mobileNavOpen && (
             <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
               className="absolute top-16 left-4 right-4 p-5 rounded-2xl md:hidden bg-[#080808]/95 backdrop-blur-2xl border border-white/[0.06] flex flex-col gap-3 shadow-2xl pointer-events-auto">
-              <Link href="#capabilities" className="text-sm text-neutral-300 hover:text-white py-1" onClick={() => setMobileNavOpen(false)}>Platform</Link>
+              <Link href="#enterprise" className="text-sm text-neutral-300 hover:text-white py-1" onClick={() => setMobileNavOpen(false)}>Platform</Link>
               <Link href="#pricing" className="text-sm text-neutral-300 hover:text-white py-1" onClick={() => setMobileNavOpen(false)}>Pricing</Link>
               <Link href="#enterprise" className="text-sm text-neutral-300 hover:text-white py-1" onClick={() => setMobileNavOpen(false)}>Enterprise</Link>
               <Link href="/signup" className="px-5 py-2.5 rounded-xl bg-white text-sm font-semibold text-black text-center mt-2" onClick={() => setMobileNavOpen(false)}>Get Started</Link>
@@ -777,7 +775,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Sections removed: Intelligence Stack, Capabilities, Infrastructure Stack — consolidated into demo + results */}
 
       {/* ═══ HOW IT WORKS — 3-step flow ═══ */}
       <GlowDivider />
@@ -843,7 +840,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Sections removed: Agent Network, Agent Office, Execution Transparency, Trust, Consensus Engine, Architecture, Why Different, Use Cases */}
       {/* ═══ COMPETITOR COMPARISON MATRIX ═══ */}
       <GlowDivider />
       <section className="py-24 px-6 perf-section">
@@ -873,7 +869,7 @@ export default function Home() {
                   {[
                     { cap: "Autonomous agents", sov: true, gpt: false, n8n: false, man: true },
                     { cap: "Multi-model routing (35+)", sov: true, gpt: false, n8n: false, man: false },
-                    { cap: "Visual workflow builder", sov: true, gpt: false, n8n: true, man: false },
+                    { cap: "Pre-built playbook workflows", sov: true, gpt: false, n8n: true, man: false },
                     { cap: "White-label / reseller", sov: true, gpt: false, n8n: false, man: false },
                     { cap: "Self-healing PEER loop", sov: true, gpt: false, n8n: false, man: false },
                     { cap: "Adversarial synthesis (3-agent debate)", sov: true, gpt: false, n8n: false, man: false },
@@ -934,8 +930,7 @@ export default function Home() {
               { q: "What integrations are supported?", a: "NVIDIA NIM, Ollama (local models), ElevenLabs (voice), Pinecone (vector memory), Clerk (auth), Neon PostgreSQL (database), Vercel (hosting), PayFast, Yoco, and PayStack. A public API is available for custom integrations." },
               { q: "Is my data safe?", a: "Yes. A 5-layer NeMo Guardrails safety pipeline protects every interaction: jailbreak detection, topic control, content safety, PII scanning, and quality scoring. Plus local execution means data never touches the cloud if you choose." },
               { q: "What is the white-label Enterprise license?", a: "The Enterprise license lets agencies rebrand the entire platform as their own. Custom domain, client portals, your logo. It is a complete AI business-in-a-box — deploy under your brand and scale your agency without hiring." },
-              { q: "How is this different from ChatGPT?", a: "ChatGPT is a chatbot — you type, it responds with text. Sovereign Matrix has 130+ specialized agents that execute real tasks: finding leads with verified emails, sending email sequences, making phone calls, building landing pages, and running SEO audits. The agents work autonomously — you set a goal, they plan and execute without constant prompting." },
-              { q: "What happens to my data?", a: "Your data stays in your account. We use encrypted storage, RBAC access controls, and a full audit trail. You can export all your data anytime from Settings. For maximum security, run agents locally via NemoClaw — your data never leaves your network." },
+              { q: "Can I use this to run an agency?", a: "Yes. The Enterprise plan ($499/mo) includes white-label: your domain, your logo, your client portals. Resell to 20 clients at $50/mo each = $1,000/mo revenue on a $499 cost. Agencies are our fastest-growing segment." },
             ].map((faq, i) => <FAQItem key={i} question={faq.q} answer={faq.a} />)}
           </div>
         </motion.div>
