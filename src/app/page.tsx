@@ -901,57 +901,70 @@ export default function Home() {
             </RevealText>
           </div>
 
-          <StaggerChildren className="grid md:grid-cols-3 gap-5" staggerDelay={0.08}>
-            {[
-              {
-                title: "Voice",
-                desc: "Agents make real phone calls, qualify leads, and book meetings. Sub-200ms latency in 12 languages. Your agents don't just type — they talk.",
-                highlight: "Solved",
-                color: "text-emerald-400",
-              },
-              {
-                title: "Memory",
-                desc: "Knowledge graph with persistent context. Agents remember your brand voice, client preferences, and past interactions. Every conversation makes them smarter.",
-                highlight: "Solved",
-                color: "text-emerald-400",
-              },
-              {
-                title: "Payments",
-                desc: "Yoco, PayStack, PayFast, and Stripe integrations. Agents process transactions, manage subscriptions, and track revenue — end to end.",
-                highlight: "Solved",
-                color: "text-emerald-400",
-              },
-              {
-                title: "Multi-Model Intelligence",
-                desc: "65+ models auto-routed per task. Smart router picks the optimal model. 11-model failover chain. Native function calling lets agents choose their own tools.",
-                highlight: "65+ models",
-                color: "text-cyan-400",
-              },
-              {
-                title: "Workflow Orchestration",
-                desc: "25 playbooks chain agents into autonomous pipelines. Conditional branching, parallel execution, scheduled cron. Lead qualifies → voice calls. Not qualified → email nurture.",
-                highlight: "25 playbooks",
-                color: "text-violet-400",
-              },
-              {
-                title: "Integrations & Identity",
-                desc: "Slack, HubSpot, Salesforce, GitHub, Discord, and 20+ more. Agents connect to your existing stack — CRM, email, calendar, database. They don't work in isolation.",
-                highlight: "25+ connectors",
-                color: "text-amber-400",
-              },
-            ].map((item) => (
-              <div key={item.title} className="p-7 rounded-2xl border border-white/[0.06] bg-white/[0.02] hover:border-emerald-500/15 transition-gpu duration-500 group">
-                <div className={`text-[10px] uppercase tracking-widest mb-3 font-semibold ${item.color || "text-emerald-500/60"}`}>{item.highlight}</div>
-                <h3 className="text-base font-semibold text-white mb-2">{item.title}</h3>
-                <p className="text-sm text-neutral-400 leading-relaxed">{item.desc}</p>
-              </div>
-            ))}
-          </StaggerChildren>
+          {/* Solved layers — compact row */}
+          <div className="mb-3">
+            <p className="text-[10px] text-emerald-400/70 uppercase tracking-[0.2em] font-semibold mb-3 ml-1">Already solved</p>
+            <StaggerChildren className="grid grid-cols-3 gap-3" staggerDelay={0.06}>
+              {[
+                { title: "Voice", desc: "Real phone calls, lead qualification, meeting booking. Sub-200ms in 12 languages.", highlight: "Solved" },
+                { title: "Memory", desc: "Knowledge graph with persistent context. Agents remember your brand, clients, and history.", highlight: "Solved" },
+                { title: "Payments", desc: "Yoco, PayStack, Stripe. Agents process transactions and track revenue end to end.", highlight: "Solved" },
+              ].map((item) => (
+                <div key={item.title} className="p-5 rounded-xl border border-emerald-500/10 bg-emerald-500/[0.02] group">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                    <span className="text-[10px] text-emerald-400 uppercase tracking-widest font-semibold">{item.highlight}</span>
+                  </div>
+                  <h3 className="text-sm font-semibold text-white mb-1">{item.title}</h3>
+                  <p className="text-xs text-neutral-500 leading-relaxed">{item.desc}</p>
+                </div>
+              ))}
+            </StaggerChildren>
+          </div>
+
+          {/* Building layers — full cards */}
+          <div>
+            <p className="text-[10px] text-cyan-400/70 uppercase tracking-[0.2em] font-semibold mb-3 ml-1">The rest of the stack</p>
+            <StaggerChildren className="grid md:grid-cols-2 gap-4" staggerDelay={0.08}>
+              {[
+                {
+                  title: "Multi-Model Intelligence",
+                  desc: "65+ models auto-routed per task. Smart router picks the optimal model. 11-deep failover chain. Native function calling lets agents choose their own tools.",
+                  highlight: "65+ models",
+                  color: "text-cyan-400",
+                },
+                {
+                  title: "Workflow Orchestration",
+                  desc: "25 playbooks chain agents into autonomous pipelines. Conditional branching, parallel execution, scheduled cron. Runs 24/7 on autopilot — you wake up to results.",
+                  highlight: "25 playbooks",
+                  color: "text-violet-400",
+                },
+                {
+                  title: "Trust & Safety",
+                  desc: "5-layer security pipeline on every execution: jailbreak detection, content safety, PII scanning, quality scoring, critic agent QA. Full audit trail. NemoClaw sandbox for air-gapped local execution.",
+                  highlight: "5-layer pipeline",
+                  color: "text-rose-400",
+                },
+                {
+                  title: "Integrations & Identity",
+                  desc: "Slack, HubSpot, Salesforce, GitHub, Discord, and 20+ more. Agents connect to your existing stack — CRM, email, calendar, database. They don't work in isolation.",
+                  highlight: "25+ connectors",
+                  color: "text-amber-400",
+                },
+              ].map((item) => (
+                <div key={item.title} className="p-7 rounded-2xl border border-white/[0.06] bg-white/[0.02] hover:border-emerald-500/15 transition-gpu duration-500 group">
+                  <div className={`text-[10px] uppercase tracking-widest mb-3 font-semibold ${item.color}`}>{item.highlight}</div>
+                  <h3 className="text-base font-semibold text-white mb-2">{item.title}</h3>
+                  <p className="text-sm text-neutral-400 leading-relaxed">{item.desc}</p>
+                </div>
+              ))}
+            </StaggerChildren>
+          </div>
 
           <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ delay: 0.5 }}
             className="mt-10 text-center">
             <p className="text-xs text-neutral-500">
-              Voice, memory, and payments built $11B+ in companies. The rest of the stack is wide open. We&apos;re building all of it.
+              Voice, memory, and payments built $11B+ in standalone companies. We ship the entire stack — including trust and safety — in one platform.
             </p>
           </motion.div>
         </GradientFollower>
@@ -1109,9 +1122,9 @@ export default function Home() {
       <section className="py-24 px-6 bg-[#020202]">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-14">
-            <RevealText as="p" className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">Enterprise Security</RevealText>
-            <RevealText as="h2" delay={0.1} className="text-3xl md:text-5xl font-bold text-white tracking-tight mb-4">Built for teams that can&apos;t afford to get hacked.</RevealText>
-            <RevealText as="p" delay={0.2} className="text-neutral-500 max-w-lg mx-auto">Every agent execution runs through a 5-layer safety pipeline. Your data stays encrypted, isolated, and audited.</RevealText>
+            <RevealText as="p" className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">Trust Infrastructure</RevealText>
+            <RevealText as="h2" delay={0.1} className="text-3xl md:text-5xl font-bold text-white tracking-tight mb-4">No more Wild West. Every action is authenticated.</RevealText>
+            <RevealText as="p" delay={0.2} className="text-neutral-500 max-w-lg mx-auto">Every agent execution runs through a 5-layer safety pipeline. Full audit trail. Air-gapped local execution. Your agents are powerful — and accountable.</RevealText>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
