@@ -36,16 +36,29 @@ export async function POST(req: Request) {
   const shouldNotify = notifyTelegram ?? hasTelegram;
   const chatId = telegramChatId || process.env.TELEGRAM_ADMIN_CHAT_ID || process.env.TELEGRAM_CHAT_ID || "";
 
-  const [job] = await db
-    .insert(jobs)
-    .values({
-      userId,
-      goal: goal.trim(),
-      status: "pending",
-      notifyTelegram: shouldNotify && !!chatId,
-      telegramChatId: chatId || null,
-    })
-    .returning();
+  let job;
+  try {
+    [job] = await db
+      .insert(jobs)
+      .values({
+        userId,
+        goal: goal.trim(),
+        status: "pending",
+        notifyTelegram: shouldNotify && !!chatId,
+        telegramChatId: chatId || null,
+      })
+      .returning();
+  } catch (err: unknown) {
+    const pgCode = (err as { code?: string })?.code;
+    const msg = err instanceof Error ? err.message : String(err);
+    if (pgCode === "42P01" || msg.includes("does not exist")) {
+      return NextResponse.json({
+        error: "Database tables not ready. Run migration: drizzle/0002_async_jobs.sql",
+        hint: "Neon Console → SQL Editor → paste the migration file → Run",
+      }, { status: 503 });
+    }
+    throw err;
+  }
 
   log.info("job created", { jobId: job.id, userId });
 
@@ -71,21 +84,30 @@ export async function GET() {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const userJobs = await db
-    .select({
-      id: jobs.id,
-      goal: jobs.goal,
-      status: jobs.status,
-      progress: jobs.progress,
-      agentsUsed: jobs.agentsUsed,
-      durationMs: jobs.durationMs,
-      createdAt: jobs.createdAt,
-      completedAt: jobs.completedAt,
-    })
-    .from(jobs)
-    .where(eq(jobs.userId, userId))
-    .orderBy(desc(jobs.createdAt))
-    .limit(20);
+  try {
+    const userJobs = await db
+      .select({
+        id: jobs.id,
+        goal: jobs.goal,
+        status: jobs.status,
+        progress: jobs.progress,
+        agentsUsed: jobs.agentsUsed,
+        durationMs: jobs.durationMs,
+        createdAt: jobs.createdAt,
+        completedAt: jobs.completedAt,
+      })
+      .from(jobs)
+      .where(eq(jobs.userId, userId))
+      .orderBy(desc(jobs.createdAt))
+      .limit(20);
 
-  return NextResponse.json({ jobs: userJobs });
+    return NextResponse.json({ jobs: userJobs });
+  } catch (err: unknown) {
+    const pgCode = (err as { code?: string })?.code;
+    const msg = err instanceof Error ? err.message : String(err);
+    if (pgCode === "42P01" || msg.includes("does not exist")) {
+      return NextResponse.json({ jobs: [] });
+    }
+    throw err;
+  }
 }

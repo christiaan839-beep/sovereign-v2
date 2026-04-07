@@ -26,11 +26,8 @@ import { LogoMarquee } from "@/components/cinematic/InfiniteMarquee";
 import { ExitIntent } from "@/components/ui/ExitIntent";
 import { LivePulse } from "@/components/ui/LivePulse";
 import dynamic from "next/dynamic";
-import { InteractiveHeroStrike } from "@/components/ui/InteractiveHeroStrike";
 import { useLiveAgentCount } from "@/hooks/useLiveAgentCount";
 
-const HeroParticles = dynamic(() => import("@/components/ui/HeroParticles").then(m => ({ default: m.HeroParticles })), { ssr: false });
-const HeroOrb = dynamic(() => import("@/components/cinematic/HeroOrb").then(m => ({ default: m.HeroOrb })), { ssr: false });
 const AgentNetwork = dynamic(() => import("@/components/cinematic/AgentNetwork").then(m => ({ default: m.AgentNetwork })), { ssr: false });
 
 // ─── Capability Card (enhanced with emerald hover glow) ───
@@ -355,13 +352,8 @@ function InteractiveDemo() {
 
 export default function Home() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const heroRef = useRef<HTMLDivElement>(null);
   const agentCount = useLiveAgentCount();
   const navVisible = useHideyNav(80);
-  // No hero fade/scale — prevents the "black dead zone" between hero and content.
-  // Content scrolls naturally. This is the Antigravity pattern.
-  const heroOpacity = 1;
-  const heroScale = 1;
 
   return (
     <CinematicLoader>
@@ -426,7 +418,7 @@ export default function Home() {
       <main id="main-content">
 
       {/* ═══ HERO — Antigravity minimalism + Sovereign dark aesthetic ═══ */}
-      <section ref={heroRef}
+      <section
         className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-[#030303]">
 
         {/* Floating particles — multi-colored, the defining visual (Antigravity pattern) */}
