@@ -30,6 +30,8 @@ const NebulaBackground = dynamic(() => import("@/components/cinematic/NebulaBack
 const SmoothScroll = dynamic(() => import("@/components/cinematic/SmoothScroll").then(m => ({ default: m.SmoothScroll })), { ssr: false });
 const WebGLParticles = dynamic(() => import("@/components/cinematic/WebGLParticles").then(m => ({ default: m.WebGLParticles })), { ssr: false });
 import { MouseParallax, FloatingElement } from "@/components/cinematic/MouseParallax";
+const AgentGlobe = dynamic(() => import("@/components/cinematic/AgentGlobe").then(m => ({ default: m.AgentGlobe })), { ssr: false });
+const AgentOffice = dynamic(() => import("@/components/ui/AgentOffice").then(m => ({ default: m.AgentOffice })), { ssr: false });
 
 // ─── FAQ Item ───
 function FAQItem({ question, answer }: { question: string; answer: string }) {
@@ -680,6 +682,10 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ═══ AGENT WORLD GLOBE ═══ */}
+      <GlowDivider />
+      <AgentGlobe />
+
       {/* ═══ RESULTS PREVIEW — Show what the product delivers ═══ */}
       <GlowDivider />
       <section className="py-24 px-6">
@@ -845,6 +851,12 @@ export default function Home() {
             </Link>
           </div>
         </div>
+      </section>
+
+      {/* ═══ AGENT OFFICE — Your agents, live ═══ */}
+      <GlowDivider />
+      <section className="py-24 px-6 bg-[#040406] overflow-hidden perf-section">
+        <AgentOffice />
       </section>
 
       {/* ═══ PROMPT VS AGENT — The difference (from old version, much better) ═══ */}

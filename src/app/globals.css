@@ -194,6 +194,17 @@ input[type="range"]::-webkit-slider-thumb {
   transition-duration: 0.3s;
 }
 
+/* ─── Custom Animations ──────────────────────────── */
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 20s linear infinite;
+}
+
 /* ─── Reduced Motion ─────────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {
