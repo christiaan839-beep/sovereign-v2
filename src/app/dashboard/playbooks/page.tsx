@@ -181,6 +181,23 @@ export default function PlaybooksPage() {
             )}
           </div>
 
+          {/* Trust Pipeline Badge */}
+          <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-emerald-500/5 border border-emerald-500/15 mb-6">
+            <div className="flex items-center gap-1.5">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-[9px] font-bold uppercase tracking-widest text-emerald-400">5-Layer Verified</span>
+            </div>
+            <div className="flex items-center gap-2 text-[9px] text-neutral-500 font-mono">
+              {["Jailbreak", "PII", "Content", "Quality", "Critic"].map((layer, i) => (
+                <span key={layer} className="flex items-center gap-1">
+                  {i > 0 && <span className="text-neutral-700">→</span>}
+                  <CheckCircle2 className="w-2.5 h-2.5 text-emerald-500/60" />
+                  {layer}
+                </span>
+              ))}
+            </div>
+          </div>
+
           {/* Live Execution Steps */}
           <div className="space-y-4">
             {executionSteps.map((step, i) => (

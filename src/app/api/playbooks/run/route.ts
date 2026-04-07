@@ -103,13 +103,22 @@ async function executePlaybook(
   let succeeded = 0;
   let failed = 0;
 
+  // Pre-fetch step IDs so we can update by primary key (not by runId which hits ALL steps)
+  const stepRows = await db.select({ id: playbookRunSteps.id, stepIndex: playbookRunSteps.stepIndex })
+    .from(playbookRunSteps)
+    .where(eq(playbookRunSteps.runId, runId))
+    .orderBy(playbookRunSteps.stepIndex);
+  const stepIdMap = new Map(stepRows.map(s => [s.stepIndex, s.id]));
+
   for (let i = 0; i < steps.length; i++) {
     const step = steps[i];
+    const stepId = stepIdMap.get(i);
+    if (!stepId) { log.error(`step ${i} has no DB row`, { runId }); continue; }
 
-    // Mark step running
+    // Mark THIS step running (by primary key, not runId)
     await db.update(playbookRunSteps)
       .set({ status: "running", startedAt: new Date() })
-      .where(eq(playbookRunSteps.runId, runId));
+      .where(eq(playbookRunSteps.id, stepId));
 
     const stepStart = Date.now();
 
@@ -141,19 +150,10 @@ async function executePlaybook(
       const resultText = typeof data === "string" ? data : JSON.stringify(data);
       stepOutputs[i] = resultText;
 
+      // Mark THIS step done (by primary key)
       await db.update(playbookRunSteps)
         .set({ status: "done", result: resultText.slice(0, 8000), durationMs: Date.now() - stepStart, completedAt: new Date() })
-        .where(eq(playbookRunSteps.runId, runId));
-
-      // Update step index filter — need specific step
-      // Re-query and update by index
-      const allSteps = await db.select().from(playbookRunSteps).where(eq(playbookRunSteps.runId, runId));
-      const targetStep = allSteps.find(s => s.stepIndex === i);
-      if (targetStep) {
-        await db.update(playbookRunSteps)
-          .set({ status: "done", result: resultText.slice(0, 8000), durationMs: Date.now() - stepStart, completedAt: new Date() })
-          .where(eq(playbookRunSteps.id, targetStep.id));
-      }
+        .where(eq(playbookRunSteps.id, stepId));
 
       succeeded++;
       log.info(`step ${i + 1}/${steps.length} done`, { agent: step.agent, runId });
@@ -161,13 +161,9 @@ async function executePlaybook(
       const errorMsg = err instanceof Error ? err.message : String(err);
       log.error(`step ${i + 1} failed`, { agent: step.agent, error: errorMsg, runId });
 
-      const allSteps = await db.select().from(playbookRunSteps).where(eq(playbookRunSteps.runId, runId));
-      const targetStep = allSteps.find(s => s.stepIndex === i);
-      if (targetStep) {
-        await db.update(playbookRunSteps)
-          .set({ status: "failed", error: errorMsg, durationMs: Date.now() - stepStart, completedAt: new Date() })
-          .where(eq(playbookRunSteps.id, targetStep.id));
-      }
+      await db.update(playbookRunSteps)
+        .set({ status: "failed", error: errorMsg, durationMs: Date.now() - stepStart, completedAt: new Date() })
+        .where(eq(playbookRunSteps.id, stepId));
 
       failed++;
     }
