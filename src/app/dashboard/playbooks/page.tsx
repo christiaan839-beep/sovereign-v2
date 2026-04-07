@@ -106,6 +106,9 @@ export default function PlaybooksPage() {
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: "Failed to start playbook" }));
+        if (res.status === 503) {
+          throw new Error("Database tables not ready. Ask your admin to run the migration: drizzle/0003_playbook_runs.sql");
+        }
         throw new Error(err.error || "Failed to start playbook");
       }
 
@@ -492,6 +495,9 @@ export default function PlaybooksPage() {
                   </span>
                   <span className="flex items-center gap-1 text-[10px] text-neutral-500">
                     <Zap className="w-3 h-3" /> {playbook.agentCount} agents
+                  </span>
+                  <span className="flex items-center gap-1 text-[10px] text-emerald-500/50">
+                    <CheckCircle2 className="w-2.5 h-2.5" /> Verified
                   </span>
                 </div>
                 <ChevronRight className="w-4 h-4 text-neutral-500 group-hover:text-white transition-colors" />
