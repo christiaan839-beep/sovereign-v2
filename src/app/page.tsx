@@ -17,7 +17,7 @@ import { RevealText, MagneticButton, StaggerChildren, GlowDivider, ScrollProgres
 import { useHideyNav, TextShimmer, TiltCard, SectionReveal } from "@/components/ui/EliteEffects";
 import { TextDecrypt } from "@/components/cinematic/TextDecrypt";
 import { ParticleBurst } from "@/components/cinematic/ParticleBurst";
-import { Typewriter, AnimatedCounter } from "@/components/cinematic/InteractiveEffects";
+import { Typewriter, AnimatedCounter, GradientFollower } from "@/components/cinematic/InteractiveEffects";
 import { LiveTicker } from "@/components/cinematic/LiveTicker";
 import { LogoMarquee } from "@/components/cinematic/InfiniteMarquee";
 import { ExitIntent } from "@/components/ui/ExitIntent";
@@ -620,7 +620,7 @@ export default function Home() {
       </section>
 
       {/* ═══ THE PROBLEM — Pain section with floating accents ═══ */}
-      <section className="py-24 px-6 bg-[#060606] relative overflow-hidden perf-section">
+      <GradientFollower color="rgba(239,68,68,0.04)" size={700} className="py-24 px-6 bg-[#060606] relative overflow-hidden perf-section">
         {/* Floating accent dots — Antigravity: everything moves */}
         <FloatingElement className="absolute top-20 left-[10%] w-2 h-2 rounded-full bg-red-500/20 blur-[1px]" speed={0.8} range={15} />
         <FloatingElement className="absolute top-40 right-[15%] w-3 h-3 rounded-full bg-red-400/15 blur-[2px]" speed={1.2} range={25} />
@@ -689,16 +689,16 @@ export default function Home() {
             </div>
           </motion.div>
         </div>
-      </section>
+      </GradientFollower>
 
       {/* ═══ PLATFORM METRICS — Social proof with real numbers ═══ */}
       <section className="py-16 px-6 border-y border-white/[0.04]">
         <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
           {[
-            { value: 130, suffix: "+", label: "AI Agents", desc: "Purpose-built for business" },
-            { value: 65, suffix: "+", label: "AI Models", desc: "Auto-routed per task" },
-            { value: 25, suffix: "", label: "Autopilot Playbooks", desc: "Scheduled multi-agent workflows" },
-            { value: 2200, suffix: "+", label: "Tok/s Speed", desc: "Cerebras wafer-scale inference" },
+            { value: 130, suffix: "+", label: "AI Agents", desc: "Each mapped to a specific business function" },
+            { value: 65, suffix: "+", label: "AI Models", desc: "Smart-routed per task type, zero lock-in" },
+            { value: 25, suffix: "", label: "Autopilot Playbooks", desc: "Run on a schedule. No human required." },
+            { value: 2200, suffix: "+", label: "Tok/s on Cerebras", desc: "Wafer-scale silicon, not GPU clusters" },
           ].map((stat, i) => (
             <motion.div key={stat.label} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}>
               <div className="text-3xl md:text-4xl font-black text-white mb-1">
