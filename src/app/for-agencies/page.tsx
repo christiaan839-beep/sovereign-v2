@@ -185,8 +185,8 @@ function ROICalculator() {
                 [&::-moz-range-thumb]:bg-emerald-400 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
             />
             <div className="flex justify-between text-[10px] text-neutral-500 mt-1">
-              <span>R20K</span>
-              <span>R80K</span>
+              <span>$20K</span>
+              <span>$80K</span>
             </div>
           </div>
         </div>
@@ -426,6 +426,61 @@ export default function ForAgenciesPage() {
               </motion.div>
             ))}
           </StaggerChildren>
+        </div>
+      </section>
+
+      <GlowDivider />
+
+      {/* ─── White-Label Revenue Math ─── */}
+      <section className="py-24 px-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12">
+            <RevealText as="p" className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">White-Label Revenue</RevealText>
+            <RevealText as="h2" delay={0.1} className="text-3xl md:text-5xl font-bold text-white tracking-tight mb-4 font-serif">
+              Your brand. Your clients. Your revenue.
+            </RevealText>
+            <RevealText as="p" delay={0.2} className="text-neutral-400 max-w-lg mx-auto">
+              The Enterprise plan ($499/mo) gives you a fully white-labeled AI platform.
+              Resell to your clients under your own brand. Here&apos;s the math:
+            </RevealText>
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="grid md:grid-cols-4 gap-4"
+          >
+            <div className="p-6 rounded-2xl border border-white/[0.06] bg-[#080808] text-center">
+              <p className="text-[10px] text-neutral-600 uppercase tracking-widest mb-2">Your cost</p>
+              <p className="text-2xl font-black text-white font-mono">$499<span className="text-sm text-neutral-500">/mo</span></p>
+            </div>
+            <div className="p-6 rounded-2xl border border-white/[0.06] bg-[#080808] text-center">
+              <p className="text-[10px] text-neutral-600 uppercase tracking-widest mb-2">You charge per client</p>
+              <p className="text-2xl font-black text-white font-mono">$99<span className="text-sm text-neutral-500">/mo</span></p>
+              <p className="text-[9px] text-neutral-700 mt-1">Conservative estimate</p>
+            </div>
+            <div className="p-6 rounded-2xl border border-white/[0.06] bg-[#080808] text-center">
+              <p className="text-[10px] text-neutral-600 uppercase tracking-widest mb-2">At 10 clients</p>
+              <p className="text-2xl font-black text-emerald-400 font-mono">$990<span className="text-sm text-emerald-500/50">/mo</span></p>
+              <p className="text-[9px] text-emerald-500/50 mt-1">Revenue</p>
+            </div>
+            <div className="p-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.04] text-center">
+              <p className="text-[10px] text-emerald-500/60 uppercase tracking-widest mb-2">Net profit</p>
+              <p className="text-2xl font-black text-emerald-400 font-mono">$491<span className="text-sm text-emerald-500/50">/mo</span></p>
+              <p className="text-[9px] text-emerald-500/50 mt-1">From one subscription</p>
+            </div>
+          </motion.div>
+
+          <motion.p
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="text-center text-xs text-neutral-600 mt-6"
+          >
+            At 20 clients &times; $99 = $1,980/mo revenue. At 50 clients &times; $99 = $4,950/mo.
+            Your cost stays $499. The margin gets better every month.
+          </motion.p>
         </div>
       </section>
 
