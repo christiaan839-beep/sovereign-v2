@@ -9,6 +9,7 @@ import {
   Activity, Shield, Zap, TrendingUp, CheckCircle2, Eye,
   Crosshair, PenTool, Radar, Workflow, X, Plug, Users,
   ChevronDown, ChevronUp, PartyPopper, Check, MessageSquare,
+  Bot, ClipboardList,
 } from "lucide-react";
 import Link from "next/link";
 // Chat is available via the floating widget (SovereignAssistant) in layout.tsx and /chat page
@@ -237,6 +238,14 @@ const QUICK_ACTIONS: QuickAction[] = [
     value: "Audit the website ",
   },
   {
+    title: "Autopilot",
+    description: "Watch playbooks run live — step by step",
+    icon: Bot,
+    gradient: "from-violet-500/20 to-purple-500/20",
+    action: "navigate",
+    value: "/dashboard/autopilot",
+  },
+  {
     title: "Open AI Chat",
     description: "Talk to your AI workforce directly",
     icon: MessageSquare,
@@ -290,10 +299,18 @@ const DISCOVER_CARDS = [
     border: "hover:border-amber-500/30",
   },
   {
-    title: "Automations",
-    description: "Set it and forget it",
-    href: "/dashboard/automations",
-    icon: Clock,
+    title: "Autopilot",
+    description: "Live playbook execution tracker",
+    href: "/dashboard/autopilot",
+    icon: Bot,
+    accent: "from-violet-500/20 to-fuchsia-500/20",
+    border: "hover:border-violet-500/30",
+  },
+  {
+    title: "Job Queue",
+    description: "Async fire-and-forget tasks",
+    href: "/dashboard/jobs",
+    icon: ClipboardList,
     accent: "from-cyan-500/20 to-sky-500/20",
     border: "hover:border-cyan-500/30",
   },
