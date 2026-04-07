@@ -16,6 +16,7 @@ import { SocialProofMetrics } from "@/components/ui/SocialProofMetrics";
 import { LandingAgent } from "@/components/ui/LandingAgent";
 import { AgentOffice } from "@/components/ui/AgentOffice";
 import { RevealText, MagneticButton, StaggerChildren, GlowDivider, ScrollProgress } from "@/components/ui/ScrollAnimations";
+import { FloatingParticles, useHideyNav } from "@/components/ui/EliteEffects";
 import { TextDecrypt } from "@/components/cinematic/TextDecrypt";
 import { ScrollVelocitySkew, ClipReveal } from "@/components/cinematic/ScrollVelocity";
 import { ParticleBurst } from "@/components/cinematic/ParticleBurst";
@@ -357,6 +358,7 @@ export default function Home() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const heroRef = useRef<HTMLDivElement>(null);
   const agentCount = useLiveAgentCount();
+  const navVisible = useHideyNav(80);
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
   const heroOpacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
   const heroScale = useTransform(scrollYProgress, [0, 0.5], [1, 0.95]);
@@ -376,8 +378,8 @@ export default function Home() {
       {/* ═══ NAVIGATION ═══ */}
       <motion.nav
         initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, delay: 0.1 }}
+        animate={{ opacity: navVisible ? 1 : 0, y: navVisible ? 0 : -20 }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
         className="fixed top-0 inset-x-0 z-50 flex justify-center px-4 py-3 pointer-events-none"
       >
         <div className="bg-[#080808]/90 backdrop-blur-2xl border border-white/[0.06] rounded-full px-5 h-12 flex items-center justify-between pointer-events-auto w-full max-w-4xl">
@@ -429,6 +431,9 @@ export default function Home() {
 
         {/* 3D Particle background */}
         <HeroParticles />
+
+        {/* Interactive floating particles — mouse-reactive zero-gravity drift */}
+        <FloatingParticles count={30} color="rgba(16, 185, 129, 0.4)" maxSize={2.5} />
 
         {/* Single ambient glow — not 5 layered gradients */}
         <div className="absolute inset-0 pointer-events-none">
