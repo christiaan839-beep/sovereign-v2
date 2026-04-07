@@ -4,7 +4,7 @@ Welcome to the Sovereign Matrix repository. This file serves as the core instruc
 
 ## Architecture Stack
 
-- **Framework**: Next.js 15 (App Router) + React 19
+- **Framework**: Next.js 16 (App Router) + React 19
 - **Compiler**: Turbopack (`npm run dev`)
 - **Language**: TypeScript (`.tsx`, `.ts`)
 - **Styling**: Tailwind CSS v4, Framer Motion (for animations), Lucide React (for icons)
@@ -138,7 +138,17 @@ Key endpoints:
 - For-Agencies: ROI calculator aligned to USD $499 enterprise plan (was R9,997 ZAR hardcoded)
 - Agent Analytics: added playbook runs rollup (total/succeeded/failed/avgDuration from /api/playbooks/runs)
 
+### Deployment & Production Fixes (April 7 session continued)
+- CRITICAL: Antigravity hero redesign removed useScroll from imports but it was still called → runtime crash on all routes
+- Fix: restored useScroll/useTransform imports, removed dead HeroParticles/HeroOrb/InteractiveHeroStrike imports
+- Vercel Deployment Protection (SSO) was enabled → blocks all public access with 401
+- `vercel deploy --prebuilt` creates READY deployments but file resolution breaks: filePathMap references .next/server/chunks/* files not included in .vercel/output
+- FIX: Use GitHub-native deploys (let Vercel build from source) instead of prebuilt. GitHub auto-deploys were being cancelled by concurrent prebuilt deploys
+- NEVER use `vercel build && vercel deploy --prebuilt` unless Vercel CLI handles file bundling correctly
+- Deployment Protection must be set to "Only Preview Deployments" in Vercel Dashboard → Settings → Deployment Protection
+
 ### Pending (Manual Steps Required)
+- **CRITICAL**: Disable Vercel Deployment Protection for production (Vercel Dashboard → Settings → Deployment Protection → "Only Preview Deployments")
 - Run DB migration: drizzle/0003_playbook_runs.sql (Neon Console → SQL Editor)
 - Run DB migration: drizzle/0002_async_jobs.sql (Neon Console → SQL Editor)
 - Add CEREBRAS_API_KEY env var (free at inference.cerebras.ai)
