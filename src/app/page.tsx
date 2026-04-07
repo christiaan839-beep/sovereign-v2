@@ -347,7 +347,7 @@ export default function Home() {
         transition={{ duration: 0.3, ease: "easeOut" }}
         className="fixed top-0 inset-x-0 z-50 pointer-events-none"
       >
-        <div className="px-6 md:px-10 h-16 flex items-center justify-between pointer-events-auto max-w-7xl mx-auto">
+        <div className="px-6 md:px-10 h-16 flex items-center justify-between pointer-events-auto max-w-7xl mx-auto bg-[#010101]/80 backdrop-blur-sm rounded-b-2xl">
           <Link href="/" className="flex items-center gap-2.5">
             <SovereignLogo size="sm" />
             <span className="hidden sm:block text-sm font-semibold text-white">Sovereign Matrix</span>
@@ -413,18 +413,7 @@ export default function Home() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,#010101_80%)] pointer-events-none" />
 
         {/* Content — cinematic staggered reveal */}
-        <div className="relative z-10 max-w-4xl mx-auto text-center px-6">
-
-          {/* Brand mark — floats in from above */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8, filter: "blur(10px)" }}
-            animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-            transition={{ delay: 0.3, duration: 1, ease: [0.16, 1, 0.3, 1] }}
-            className="flex items-center justify-center gap-2.5 mb-12"
-          >
-            <SovereignLogo size="sm" />
-            <span className="text-sm font-semibold text-white/80 tracking-wide">Sovereign Matrix</span>
-          </motion.div>
+        <div className="relative z-10 max-w-4xl mx-auto text-center px-6 pt-20">
 
           {/* Headline — cinematic entrance, each line staggered */}
           <motion.h1

@@ -41,6 +41,48 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // ── AGENT QUALITY GATE — prevent slop/harmful agents ──
+  const VALID_CATEGORIES = ["sales", "content", "seo", "code", "automation", "research", "voice", "analytics"];
+  if (!VALID_CATEGORIES.includes(category)) {
+    return NextResponse.json(
+      { error: `Invalid category. Must be one of: ${VALID_CATEGORIES.join(", ")}` },
+      { status: 400 }
+    );
+  }
+
+  if (name.length < 3 || name.length > 60) {
+    return NextResponse.json({ error: "Agent name must be 3-60 characters." }, { status: 400 });
+  }
+
+  if (description.length < 20 || description.length > 500) {
+    return NextResponse.json({ error: "Description must be 20-500 characters." }, { status: 400 });
+  }
+
+  if (systemPrompt.length < 50) {
+    return NextResponse.json({ error: "System prompt must be at least 50 characters (quality requirement)." }, { status: 400 });
+  }
+
+  // Block harmful content in system prompts
+  const BLOCKED_PATTERNS = [
+    /ignore.*previous.*instructions/i,
+    /jailbreak/i,
+    /bypass.*safety/i,
+    /pretend.*you.*are.*not/i,
+    /act.*as.*if.*no.*rules/i,
+    /generate.*malware/i,
+    /create.*weapon/i,
+    /illegal/i,
+  ];
+
+  for (const pattern of BLOCKED_PATTERNS) {
+    if (pattern.test(systemPrompt) || pattern.test(description)) {
+      return NextResponse.json(
+        { error: "Agent submission rejected by safety review. System prompt contains blocked content." },
+        { status: 403 }
+      );
+    }
+  }
+
   // Check if already published (by skillId if provided)
   if (skillId) {
     const existing = await db
