@@ -892,38 +892,35 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ═══ CASE STUDIES — Real businesses, real outcomes ═══ */}
+      {/* ═══ TRY IT YOURSELF — honest CTA instead of fake case studies ═══ */}
       <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
       <section className="py-24 px-6 perf-section">
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-3xl mx-auto text-center">
           <SectionReveal>
-            <div className="text-center mb-16">
-              <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">Results</p>
-              <h2 className="text-3xl md:text-5xl font-bold text-white tracking-tight">Real businesses. Real outcomes.</h2>
-            </div>
+            <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">See For Yourself</p>
+            <h2 className="text-3xl md:text-5xl font-bold text-white tracking-tight mb-4">Don&apos;t take our word for it.</h2>
+            <p className="text-neutral-400 max-w-lg mx-auto mb-10">
+              Try a free tool right now. Paste any competitor URL and get real competitive intelligence in 30 seconds. No signup. No credit card. Judge the output yourself.
+            </p>
           </SectionReveal>
 
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-3 gap-4">
             {[
-              { company: "TechVentures", industry: "SaaS", metric: "+226%", label: "Revenue Increase", quote: "Sovereign replaced our entire SDR team. Pipeline grew 3x in 60 days.", person: "CEO" },
-              { company: "Apex Fitness", industry: "Health & Fitness", metric: "+68%", label: "Revenue Growth", quote: "From zero online presence to 271% email list growth. The voice agent books calls while we sleep.", person: "Founder" },
-              { company: "Digital Forge", industry: "Agency", metric: "+233%", label: "Revenue Increase", quote: "We white-labeled Sovereign and resell it. Zero employees, pure margin.", person: "Managing Director" },
-            ].map((item, i) => (
-              <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.6 }}
-                className="p-6 rounded-2xl border border-white/[0.06] bg-white/[0.02] hover:border-emerald-500/15 transition-all">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-xs font-bold text-emerald-400">{item.company[0]}</div>
-                  <div>
-                    <p className="text-xs font-semibold text-white">{item.company}</p>
-                    <p className="text-[10px] text-neutral-500">{item.industry}</p>
-                  </div>
-                </div>
-                <div className="text-4xl font-black text-emerald-400 mb-1">{item.metric}</div>
-                <p className="text-xs text-neutral-400 mb-4">{item.label}</p>
-                <p className="text-sm text-neutral-500 leading-relaxed italic">&ldquo;{item.quote}&rdquo;</p>
-                <p className="text-[10px] text-neutral-600 mt-2">&mdash; {item.person}, {item.company}</p>
-              </motion.div>
+              { title: "Scan a competitor", desc: "Paste any URL → weaknesses, gaps, battle plan", href: "/free/competitor-scan", color: "emerald" },
+              { title: "Audit your SEO", desc: "Enter your domain → keyword gaps, technical issues", href: "/free/seo-audit", color: "cyan" },
+              { title: "Find leads", desc: "Describe your niche → qualified prospects with emails", href: "/free/lead-finder", color: "violet" },
+            ].map((tool) => (
+              <Link key={tool.title} href={tool.href}>
+                <motion.div whileHover={{ y: -4 }}
+                  className={`p-6 rounded-2xl border border-${tool.color}-500/10 bg-${tool.color}-500/[0.02] hover:border-${tool.color}-500/20 transition-all cursor-pointer text-left`}
+                >
+                  <h3 className="text-sm font-semibold text-white mb-1">{tool.title}</h3>
+                  <p className="text-xs text-neutral-500 mb-3">{tool.desc}</p>
+                  <span className="text-[11px] text-emerald-400 flex items-center gap-1">
+                    Try free <ArrowRight className="w-3 h-3" />
+                  </span>
+                </motion.div>
+              </Link>
             ))}
           </div>
         </div>
@@ -961,7 +958,7 @@ export default function Home() {
               { q: "What integrations are supported?", a: "NVIDIA NIM, Ollama (local models), ElevenLabs (voice), Pinecone (vector memory), Clerk (auth), Neon PostgreSQL (database), Vercel (hosting), PayFast, Yoco, and PayStack. A public API is available for custom integrations." },
               { q: "Is my data safe?", a: "Yes. A 5-layer NeMo Guardrails safety pipeline protects every interaction: jailbreak detection, topic control, content safety, PII scanning, and quality scoring. Plus local execution means data never touches the cloud if you choose." },
               { q: "What is the white-label Enterprise license?", a: "The Enterprise license lets agencies rebrand the entire platform as their own. Custom domain, client portals, your logo. It is a complete AI business-in-a-box — deploy under your brand and scale your agency without hiring." },
-              { q: "Can I use this to run an agency?", a: "Yes. The Enterprise plan ($499/mo) includes white-label: your domain, your logo, your client portals. Resell to 20 clients at $50/mo each = $1,000/mo revenue on a $499 cost. Agencies are our fastest-growing segment." },
+              { q: "Can I use this to run an agency?", a: "Yes. The Enterprise plan ($499/mo) includes white-label: your domain, your logo, your client portals. Resell to 20 clients at $50/mo each = $1,000/mo revenue on a $499 cost." },
             ].map((faq, i) => <FAQItem key={i} question={faq.q} answer={faq.a} />)}
           </div>
         </motion.div>
