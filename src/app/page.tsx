@@ -29,6 +29,8 @@ import dynamic from "next/dynamic";
 import { useLiveAgentCount } from "@/hooks/useLiveAgentCount";
 
 const AgentNetwork = dynamic(() => import("@/components/cinematic/AgentNetwork").then(m => ({ default: m.AgentNetwork })), { ssr: false });
+const PhysicsCards = dynamic(() => import("@/components/cinematic/PhysicsCards").then(m => ({ default: m.PhysicsCards })), { ssr: false });
+const NebulaBackground = dynamic(() => import("@/components/cinematic/NebulaBackground").then(m => ({ default: m.NebulaBackground })), { ssr: false });
 
 // ─── Capability Card (enhanced with emerald hover glow) ───
 function CapabilityCard({ icon: Icon, title, desc, accent, href }: { icon: React.ComponentType<{ className?: string }>; title: string; desc: string; accent: string; href?: string }) {
@@ -412,14 +414,17 @@ export default function Home() {
 
       <main id="main-content">
 
-      {/* ═══ HERO — Cinematic depth + Antigravity physics ═══ */}
+      {/* ═══ HERO — Antigravity-level cinematic with physics ═══ */}
       <section
         className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-[#010101]">
+
+        {/* Layer 0: Animated nebula — slowly morphing cosmic clouds */}
+        <NebulaBackground />
 
         {/* Layer 1: Deep grid — creates depth perception */}
         <div className="absolute inset-0 bg-[linear-gradient(rgba(16,185,129,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(16,185,129,0.015)_1px,transparent_1px)] bg-[size:60px_60px] [mask-image:radial-gradient(ellipse_80%_60%_at_50%_50%,black_20%,transparent_100%)]" />
 
-        {/* Layer 2: Floating particles — multi-colored, mouse-reactive (Antigravity pattern) */}
+        {/* Layer 2: Floating particles — multi-colored, mouse-reactive */}
         <FloatingParticles
           count={60}
           colors={[
@@ -511,6 +516,16 @@ export default function Home() {
                 Start free — no credit card
               </span>
             </MagneticButton>
+          </motion.div>
+
+          {/* Draggable physics agent cards — Antigravity signature feature */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.2, duration: 1 }}
+            className="mt-16 w-full max-w-3xl mx-auto"
+          >
+            <PhysicsCards className="h-[220px]" />
           </motion.div>
         </div>
       </section>
