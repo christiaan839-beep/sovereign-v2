@@ -16,7 +16,7 @@ import { SocialProofMetrics } from "@/components/ui/SocialProofMetrics";
 import { LandingAgent } from "@/components/ui/LandingAgent";
 import { AgentOffice } from "@/components/ui/AgentOffice";
 import { RevealText, MagneticButton, StaggerChildren, GlowDivider, ScrollProgress } from "@/components/ui/ScrollAnimations";
-import { FloatingParticles, useHideyNav } from "@/components/ui/EliteEffects";
+import { FloatingParticles, useHideyNav, TextShimmer, TiltCard, SectionReveal } from "@/components/ui/EliteEffects";
 import { TextDecrypt } from "@/components/cinematic/TextDecrypt";
 import { ScrollVelocitySkew, ClipReveal } from "@/components/cinematic/ScrollVelocity";
 import { ParticleBurst } from "@/components/cinematic/ParticleBurst";
@@ -24,7 +24,6 @@ import { Typewriter, GradientFollower, Tilt3D, AnimatedCounter } from "@/compone
 import { LiveTicker } from "@/components/cinematic/LiveTicker";
 import { LogoMarquee } from "@/components/cinematic/InfiniteMarquee";
 import { ExitIntent } from "@/components/ui/ExitIntent";
-import { CursorGlow } from "@/components/ui/CursorGlow";
 import { LivePulse } from "@/components/ui/LivePulse";
 import dynamic from "next/dynamic";
 import { InteractiveHeroStrike } from "@/components/ui/InteractiveHeroStrike";
@@ -465,7 +464,7 @@ export default function Home() {
             className="text-[clamp(2.5rem,8vw,5.5rem)] font-black leading-[0.95] tracking-[-0.03em] mb-6">
             <span className="text-white">The AI platform that</span>
             <br />
-            <span className="text-shimmer">actually does the work.</span>
+            <TextShimmer className="font-black">actually does the work.</TextShimmer>
           </motion.h1>
 
           {/* Subtitle — clear, readable, high contrast */}
@@ -958,11 +957,13 @@ export default function Home() {
                   color: "text-amber-400",
                 },
               ].map((item) => (
-                <div key={item.title} className="p-7 rounded-2xl border border-white/[0.06] bg-white/[0.02] hover:border-emerald-500/15 transition-gpu duration-500 group">
-                  <div className={`text-[10px] uppercase tracking-widest mb-3 font-semibold ${item.color}`}>{item.highlight}</div>
-                  <h3 className="text-base font-semibold text-white mb-2">{item.title}</h3>
-                  <p className="text-sm text-neutral-400 leading-relaxed">{item.desc}</p>
-                </div>
+                <TiltCard key={item.title} tiltStrength={6} className="rounded-2xl">
+                  <div className="p-7 rounded-2xl border border-white/[0.06] bg-white/[0.02] hover:border-emerald-500/15 transition-gpu duration-500 group">
+                    <div className={`text-[10px] uppercase tracking-widest mb-3 font-semibold ${item.color}`}>{item.highlight}</div>
+                    <h3 className="text-base font-semibold text-white mb-2">{item.title}</h3>
+                    <p className="text-sm text-neutral-400 leading-relaxed">{item.desc}</p>
+                  </div>
+                </TiltCard>
               ))}
             </StaggerChildren>
           </div>
@@ -1203,6 +1204,7 @@ export default function Home() {
 
       {/* ═══ CONSENSUS ENGINE — The Technical Moat ═══ */}
       <GlowDivider />
+      <SectionReveal>
       <section className="py-24 px-6 perf-section">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
@@ -1276,6 +1278,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+      </SectionReveal>
 
       {/* ═══ HOW IT WORKS — Architecture ═══ */}
       <GlowDivider />
@@ -1793,8 +1796,7 @@ export default function Home() {
         </div>
       </footer>
 
-      {/* Cursor glow — follows mouse with emerald light */}
-      <CursorGlow />
+      {/* Cursor glow effect is handled by the ambient glow in the hero section */}
 
       {/* Live pulse — shows platform activity in real-time */}
       <LivePulse />

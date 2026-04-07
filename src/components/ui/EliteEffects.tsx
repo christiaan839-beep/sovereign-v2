@@ -1,12 +1,37 @@
 "use client";
 
 import React, { useRef, useEffect, useState, useCallback } from "react";
-import { motion, useMotionValue, useSpring, useScroll, useTransform } from "framer-motion";
+import { motion, useMotionValue, useSpring } from "framer-motion";
+
+/* ── Shared: detect mobile + reduced motion ── */
+
+function useIsMobile() {
+  const [mobile, setMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setMobile(window.innerWidth < 768 || "ontouchstart" in window);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+  return mobile;
+}
+
+function usePrefersReducedMotion() {
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setReduced(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setReduced(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+  return reduced;
+}
 
 /**
  * FloatingParticles — Canvas-based particle system for hero sections.
  * Particles drift with zero-gravity physics and react to mouse position.
- * Inspired by Google Antigravity's particle drift system.
+ * Auto-disables on mobile and when user prefers reduced motion.
  */
 export function FloatingParticles({
   count = 40,
@@ -20,22 +45,32 @@ export function FloatingParticles({
   className?: string;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const mouseRef = useRef({ x: 0, y: 0 });
+  const mouseRef = useRef({ x: -999, y: -999 });
   const particlesRef = useRef<Array<{
     x: number; y: number; vx: number; vy: number;
     size: number; opacity: number; drift: number;
   }>>([]);
+  const isMobile = useIsMobile();
+  const reducedMotion = usePrefersReducedMotion();
 
   useEffect(() => {
+    // Skip on mobile or reduced motion
+    if (isMobile || reducedMotion) return;
+
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    const dpr = window.devicePixelRatio || 1;
+
     const resize = () => {
-      canvas.width = canvas.offsetWidth * window.devicePixelRatio;
-      canvas.height = canvas.offsetHeight * window.devicePixelRatio;
-      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+      const w = canvas.offsetWidth;
+      const h = canvas.offsetHeight;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      // Reset transform before scaling (fixes cumulative scale bug)
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
     resize();
     window.addEventListener("resize", resize);
@@ -57,7 +92,11 @@ export function FloatingParticles({
       const rect = canvas.getBoundingClientRect();
       mouseRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
     };
+    const handleMouseLeave = () => {
+      mouseRef.current = { x: -999, y: -999 };
+    };
     canvas.addEventListener("mousemove", handleMouse);
+    canvas.addEventListener("mouseleave", handleMouseLeave);
 
     let frame: number;
     const animate = () => {
@@ -65,20 +104,23 @@ export function FloatingParticles({
       const ch = canvas.offsetHeight;
       ctx.clearRect(0, 0, cw, ch);
 
-      for (const p of particlesRef.current) {
-        // Random drift (zero-gravity feel)
+      const particles = particlesRef.current;
+      for (const p of particles) {
+        // Zero-gravity drift
         p.drift += 0.01;
         p.vx += Math.sin(p.drift) * 0.005;
         p.vy += Math.cos(p.drift * 0.7) * 0.005;
 
-        // Mouse repulsion
-        const dx = p.x - mouseRef.current.x;
-        const dy = p.y - mouseRef.current.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < 120 && dist > 0) {
-          const force = (120 - dist) / 120 * 0.15;
-          p.vx += (dx / dist) * force;
-          p.vy += (dy / dist) * force;
+        // Mouse repulsion (only if mouse is on canvas)
+        if (mouseRef.current.x > 0) {
+          const dx = p.x - mouseRef.current.x;
+          const dy = p.y - mouseRef.current.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 120 && dist > 0) {
+            const force = ((120 - dist) / 120) * 0.15;
+            p.vx += (dx / dist) * force;
+            p.vy += (dy / dist) * force;
+          }
         }
 
         // Damping
@@ -95,19 +137,19 @@ export function FloatingParticles({
         if (p.y < -10) p.y = ch + 10;
         if (p.y > ch + 10) p.y = -10;
 
-        // Draw
+        // Draw particle
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
         ctx.fillStyle = color.replace(/[\d.]+\)$/, `${p.opacity})`);
         ctx.fill();
       }
 
-      // Draw subtle connections between nearby particles
-      for (let i = 0; i < particlesRef.current.length; i++) {
-        for (let j = i + 1; j < particlesRef.current.length; j++) {
-          const a = particlesRef.current[i];
-          const b = particlesRef.current[j];
-          const d = Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
+      // Draw connections between nearby particles
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const a = particles[i];
+          const b = particles[j];
+          const d = Math.hypot(a.x - b.x, a.y - b.y);
           if (d < 100) {
             ctx.beginPath();
             ctx.moveTo(a.x, a.y);
@@ -127,8 +169,12 @@ export function FloatingParticles({
       cancelAnimationFrame(frame);
       window.removeEventListener("resize", resize);
       canvas.removeEventListener("mousemove", handleMouse);
+      canvas.removeEventListener("mouseleave", handleMouseLeave);
     };
-  }, [count, color, maxSize]);
+  }, [count, color, maxSize, isMobile, reducedMotion]);
+
+  // Don't render canvas at all on mobile
+  if (isMobile || reducedMotion) return null;
 
   return (
     <canvas
@@ -140,93 +186,43 @@ export function FloatingParticles({
 }
 
 /**
- * CursorGlow — Gradient orb that follows the cursor.
- * Creates ambient lighting effect like premium design sites.
- */
-export function CursorGlow({
-  size = 400,
-  color = "emerald",
-  opacity = 0.07,
-}: {
-  size?: number;
-  color?: string;
-  opacity?: number;
-}) {
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-  const smoothX = useSpring(x, { stiffness: 50, damping: 20 });
-  const smoothY = useSpring(y, { stiffness: 50, damping: 20 });
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      x.set(e.clientX - size / 2);
-      y.set(e.clientY - size / 2);
-    };
-    window.addEventListener("mousemove", handler);
-    return () => window.removeEventListener("mousemove", handler);
-  }, [x, y, size]);
-
-  const colorMap: Record<string, string> = {
-    emerald: `rgba(16, 185, 129, ${opacity})`,
-    cyan: `rgba(6, 182, 212, ${opacity})`,
-    violet: `rgba(139, 92, 246, ${opacity})`,
-    white: `rgba(255, 255, 255, ${opacity})`,
-  };
-
-  return (
-    <motion.div
-      style={{
-        x: smoothX,
-        y: smoothY,
-        width: size,
-        height: size,
-        background: `radial-gradient(circle, ${colorMap[color] || colorMap.emerald}, transparent 70%)`,
-      }}
-      className="fixed top-0 left-0 pointer-events-none z-[1] rounded-full blur-3xl"
-    />
-  );
-}
-
-/**
  * TiltCard — Card with 3D perspective tilt on hover.
- * Inspired by premium product pages (Apple, Linear).
+ * Disabled on mobile (no hover). Works in all browsers.
  */
 export function TiltCard({
   children,
   className = "",
   tiltStrength = 8,
-  glareEnabled = true,
 }: {
   children: React.ReactNode;
   className?: string;
   tiltStrength?: number;
-  glareEnabled?: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const rotateX = useMotionValue(0);
   const rotateY = useMotionValue(0);
-  const glareX = useMotionValue(50);
-  const glareY = useMotionValue(50);
   const smoothRotateX = useSpring(rotateX, { stiffness: 200, damping: 20 });
   const smoothRotateY = useSpring(rotateY, { stiffness: 200, damping: 20 });
+  const isMobile = useIsMobile();
 
   const handleMouse = useCallback((e: React.MouseEvent) => {
-    if (!ref.current) return;
+    if (isMobile || !ref.current) return;
     const rect = ref.current.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    const pctX = (e.clientX - centerX) / (rect.width / 2);
-    const pctY = (e.clientY - centerY) / (rect.height / 2);
+    const pctX = (e.clientX - rect.left - rect.width / 2) / (rect.width / 2);
+    const pctY = (e.clientY - rect.top - rect.height / 2) / (rect.height / 2);
     rotateX.set(-pctY * tiltStrength);
     rotateY.set(pctX * tiltStrength);
-    glareX.set(((e.clientX - rect.left) / rect.width) * 100);
-    glareY.set(((e.clientY - rect.top) / rect.height) * 100);
-  }, [rotateX, rotateY, glareX, glareY, tiltStrength]);
+  }, [rotateX, rotateY, tiltStrength, isMobile]);
 
   const handleLeave = useCallback(() => {
     rotateX.set(0);
     rotateY.set(0);
   }, [rotateX, rotateY]);
+
+  // On mobile, render without tilt (no hover support)
+  if (isMobile) {
+    return <div className={className}>{children}</div>;
+  }
 
   return (
     <motion.div
@@ -237,25 +233,16 @@ export function TiltCard({
         rotateX: smoothRotateX,
         rotateY: smoothRotateY,
         transformPerspective: 800,
-        transformStyle: "preserve-3d",
       }}
-      className={`relative transition-shadow duration-300 ${className}`}
+      className={className}
     >
       {children}
-      {glareEnabled && (
-        <motion.div
-          className="absolute inset-0 rounded-[inherit] pointer-events-none opacity-0 hover:opacity-100 transition-opacity duration-300"
-          style={{
-            background: `radial-gradient(circle at ${glareX.get()}% ${glareY.get()}%, rgba(255,255,255,0.06), transparent 60%)`,
-          }}
-        />
-      )}
     </motion.div>
   );
 }
 
 /**
- * HideyNav — Navigation that hides on scroll-down, reappears on scroll-up.
+ * useHideyNav — Navigation hides on scroll-down, reappears on scroll-up.
  * The signature UX pattern from Google Antigravity and Apple.
  */
 export function useHideyNav(threshold = 50) {
@@ -268,9 +255,9 @@ export function useHideyNav(threshold = 50) {
       if (currentY < threshold) {
         setVisible(true);
       } else if (currentY > lastScrollY.current + 5) {
-        setVisible(false); // scrolling down
+        setVisible(false);
       } else if (currentY < lastScrollY.current - 5) {
-        setVisible(true); // scrolling up
+        setVisible(true);
       }
       lastScrollY.current = currentY;
     };
@@ -282,8 +269,9 @@ export function useHideyNav(threshold = 50) {
 }
 
 /**
- * TextShimmer — Text with a subtle animated gradient shimmer.
- * Used for hero headlines to create a premium, alive feel.
+ * TextShimmer — Animated gradient shimmer across text.
+ * Uses inline style animation for full browser compatibility
+ * (no dependency on Tailwind arbitrary animation syntax).
  */
 export function TextShimmer({
   children,
@@ -294,9 +282,11 @@ export function TextShimmer({
 }) {
   return (
     <span
-      className={`bg-clip-text text-transparent bg-[length:200%_auto] animate-[shimmer_3s_ease-in-out_infinite] ${className}`}
+      className={`bg-clip-text text-transparent ${className}`}
       style={{
         backgroundImage: "linear-gradient(90deg, #fff 0%, #10b981 25%, #06b6d4 50%, #8b5cf6 75%, #fff 100%)",
+        backgroundSize: "200% auto",
+        animation: "shimmer 4s ease-in-out infinite",
       }}
     >
       {children}
@@ -305,8 +295,8 @@ export function TextShimmer({
 }
 
 /**
- * SectionReveal — Section wrapper that fades/slides in on scroll with clip-path reveal.
- * More dramatic than simple opacity transitions.
+ * SectionReveal — Scroll-triggered entrance animation.
+ * Works in all browsers via Framer Motion (no IntersectionObserver polyfill needed).
  */
 export function SectionReveal({
   children,
@@ -327,7 +317,7 @@ export function SectionReveal({
     <motion.div
       initial={variants[direction].hidden}
       whileInView={variants[direction].visible}
-      viewport={{ once: true, margin: "-100px" }}
+      viewport={{ once: true, margin: "-80px" }}
       transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
       className={className}
     >
@@ -338,7 +328,8 @@ export function SectionReveal({
 
 /**
  * GradientBorder — Animated gradient border on hover.
- * Creates a living border effect that rotates around the element.
+ * Uses inline style animation for browser compatibility
+ * (avoids Tailwind arbitrary animation syntax issues in v4).
  */
 export function GradientBorder({
   children,
@@ -349,9 +340,14 @@ export function GradientBorder({
 }) {
   return (
     <div className={`relative group ${className}`}>
-      {/* Rotating gradient border */}
-      <div className="absolute -inset-[1px] rounded-[inherit] bg-gradient-to-r from-emerald-500/0 via-emerald-500/30 to-cyan-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 animate-[spin_4s_linear_infinite] blur-[1px]" />
-      {/* Content */}
+      <div
+        className="absolute -inset-[1px] rounded-[inherit] opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+        style={{
+          background: "conic-gradient(from 0deg, transparent, rgba(16,185,129,0.3), transparent, rgba(6,182,212,0.3), transparent)",
+          animation: "spin 4s linear infinite",
+          filter: "blur(1px)",
+        }}
+      />
       <div className="relative rounded-[inherit] bg-[#0A0A0A]">
         {children}
       </div>
