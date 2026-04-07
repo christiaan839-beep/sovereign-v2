@@ -31,6 +31,7 @@ import { useLiveAgentCount } from "@/hooks/useLiveAgentCount";
 const AgentNetwork = dynamic(() => import("@/components/cinematic/AgentNetwork").then(m => ({ default: m.AgentNetwork })), { ssr: false });
 const PhysicsCards = dynamic(() => import("@/components/cinematic/PhysicsCards").then(m => ({ default: m.PhysicsCards })), { ssr: false });
 const NebulaBackground = dynamic(() => import("@/components/cinematic/NebulaBackground").then(m => ({ default: m.NebulaBackground })), { ssr: false });
+import { MouseParallax, FloatingElement } from "@/components/cinematic/MouseParallax";
 
 // ─── Capability Card (enhanced with emerald hover glow) ───
 function CapabilityCard({ icon: Icon, title, desc, accent, href }: { icon: React.ComponentType<{ className?: string }>; title: string; desc: string; accent: string; href?: string }) {
@@ -534,7 +535,10 @@ export default function Home() {
       <LiveTicker />
 
       {/* ═══ TRY IT NOW — Free tools (no signup, instant value) ═══ */}
-      <section className="py-16 px-6 bg-[#020202] border-y border-white/[0.03]">
+      <section className="py-16 px-6 bg-[#020202] border-y border-white/[0.03] relative overflow-hidden">
+        {/* Floating accents */}
+        <FloatingElement className="absolute top-16 right-[8%] w-2 h-2 rounded-full bg-emerald-500/25" speed={0.7} range={18} />
+        <FloatingElement className="absolute bottom-20 left-[12%] w-3 h-3 rounded-full bg-cyan-500/15 blur-[1px]" speed={1} range={22} />
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-10">
             <SectionReveal>
@@ -621,8 +625,12 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ═══ THE PROBLEM — Pain section (Gemini-inspired PAS framework) ═══ */}
-      <section className="py-24 px-6 bg-[#060606]">
+      {/* ═══ THE PROBLEM — Pain section with floating accents ═══ */}
+      <section className="py-24 px-6 bg-[#060606] relative overflow-hidden">
+        {/* Floating accent dots — Antigravity: everything moves */}
+        <FloatingElement className="absolute top-20 left-[10%] w-2 h-2 rounded-full bg-red-500/20 blur-[1px]" speed={0.8} range={15} />
+        <FloatingElement className="absolute top-40 right-[15%] w-3 h-3 rounded-full bg-red-400/15 blur-[2px]" speed={1.2} range={25} />
+        <FloatingElement className="absolute bottom-32 left-[20%] w-1.5 h-1.5 rounded-full bg-amber-500/20" speed={0.6} range={12} />
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
             <RevealText as="h2" className="text-3xl md:text-5xl font-bold text-white tracking-tight mb-4">
@@ -717,11 +725,12 @@ export default function Home() {
           <div className="text-center mb-14">
             <RevealText as="p" className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">Real Results</RevealText>
             <RevealText as="h2" delay={0.1} className="text-3xl md:text-5xl font-bold text-white tracking-tight mb-4">What your AI employees produce.</RevealText>
-            <RevealText as="p" delay={0.2} className="text-neutral-500 max-w-lg mx-auto">Real output. Real agents. Hover the cards.</RevealText>
+            <RevealText as="p" delay={0.2} className="text-neutral-500 max-w-lg mx-auto">Real output. Real agents. Move your mouse — the cards follow.</RevealText>
           </div>
 
           <div className="grid md:grid-cols-3 gap-4">
-            {/* Result Card 1 — Leads */}
+            {/* Result Card 1 — Leads (mouse parallax depth) */}
+            <MouseParallax depth={0.015}>
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -740,9 +749,9 @@ export default function Home() {
                 ))}
                 <div className="text-xs font-mono text-emerald-400 font-semibold pt-1">+ <CountUpOnView target={46} duration={1.5} /> more verified leads</div>
               </div>
-            </motion.div>
-
+            </motion.div></MouseParallax>
             {/* Result Card 2 — Content */}
+            <MouseParallax depth={0.025}>
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -764,9 +773,9 @@ export default function Home() {
                   <span className="text-[9px] px-2 py-0.5 rounded bg-white/[0.04] text-neutral-400 border border-white/[0.06]">AI: 4.2%</span>
                 </div>
               </div>
-            </motion.div>
-
+            </motion.div></MouseParallax>
             {/* Result Card 3 — Analysis */}
+            <MouseParallax depth={0.035}>
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -797,7 +806,7 @@ export default function Home() {
                   <span className="text-[10px] text-white font-bold font-mono">73/100</span>
                 </div>
               </div>
-            </motion.div>
+            </motion.div></MouseParallax>
           </div>
         </div>
       </section>
