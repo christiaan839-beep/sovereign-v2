@@ -240,6 +240,7 @@ function RunCard({ run: initialRun }: { run: PlaybookRun }) {
 export default function AutopilotPage() {
   const [runs, setRuns] = useState<PlaybookRun[]>([]);
   const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState<"all" | "running" | "done" | "failed">("all");
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchRuns = useCallback(async (silent = false) => {
@@ -327,17 +328,26 @@ export default function AutopilotPage() {
           </motion.div>
         )}
 
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-3">
+        {/* Stats + Filter */}
+        <div className="grid grid-cols-4 gap-3">
           {[
-            { label: "Running",  value: counts.running, color: "text-blue-400"    },
-            { label: "Done",     value: counts.done,    color: "text-emerald-400" },
-            { label: "Failed",   value: counts.failed,  color: "text-rose-400"    },
+            { label: "All",      value: runs.length,    color: "text-neutral-300", filter: "all" as const },
+            { label: "Running",  value: counts.running, color: "text-blue-400",    filter: "running" as const },
+            { label: "Done",     value: counts.done,    color: "text-emerald-400", filter: "done" as const },
+            { label: "Failed",   value: counts.failed,  color: "text-rose-400",    filter: "failed" as const },
           ].map(s => (
-            <div key={s.label} className="rounded-xl border border-white/6 bg-white/3 p-4 text-center">
+            <button
+              key={s.label}
+              onClick={() => setStatusFilter(s.filter)}
+              className={`rounded-xl border p-4 text-center transition-all ${
+                statusFilter === s.filter
+                  ? "border-white/15 bg-white/5 ring-1 ring-white/10"
+                  : "border-white/6 bg-white/3 hover:border-white/10"
+              }`}
+            >
               <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
               <p className="mt-0.5 text-xs text-neutral-500">{s.label}</p>
-            </div>
+            </button>
           ))}
         </div>
 
@@ -362,10 +372,17 @@ export default function AutopilotPage() {
         ) : (
           <div className="space-y-3">
             <AnimatePresence mode="popLayout">
-              {runs.map(run => (
-                <RunCard key={run.id} run={run} />
-              ))}
+              {runs
+                .filter(r => statusFilter === "all" || r.status === statusFilter)
+                .map(run => (
+                  <RunCard key={run.id} run={run} />
+                ))}
             </AnimatePresence>
+            {statusFilter !== "all" && runs.filter(r => r.status === statusFilter).length === 0 && (
+              <p className="py-8 text-center text-sm text-neutral-600">
+                No {statusFilter} runs
+              </p>
+            )}
           </div>
         )}
       </div>

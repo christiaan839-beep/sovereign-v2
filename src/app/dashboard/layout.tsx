@@ -96,6 +96,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/dashboard/autopilot", label: "Autopilot", icon: Bot, tooltip: "Live playbook runs — step by step" },
       { href: "/dashboard/jobs", label: "Job Queue", icon: ClipboardList, tooltip: "Async fire-and-forget tasks" },
+      { href: "/dashboard/nemo-claw", label: "Security", icon: Shield, tooltip: "5-layer safety pipeline + HITL approvals" },
       { href: "/dashboard/agent-analytics", label: "Analytics", icon: BarChart3, tooltip: "Agent performance metrics" },
     ],
   },
@@ -183,7 +184,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         "/dashboard/war-room": { name: "War Room", iconName: "Swords" },
         "/dashboard/seo-dominator": { name: "SEO Dominator", iconName: "Search" },
         "/dashboard/voice-assistant": { name: "Voice Agent", iconName: "Mic" },
-        "/dashboard/nemo-claw": { name: "NemoClaw", iconName: "Cpu" },
+        "/dashboard/nemo-claw": { name: "Security", iconName: "Shield" },
         "/dashboard/templates": { name: "Templates", iconName: "LayoutTemplate" },
         "/dashboard/workflow-builder": { name: "Workflows", iconName: "Workflow" },
         "/dashboard/integrations": { name: "Integrations", iconName: "Plug" },

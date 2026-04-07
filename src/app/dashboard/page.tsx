@@ -13,8 +13,6 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 // Chat is available via the floating widget (SovereignAssistant) in layout.tsx and /chat page
-import { LiveExecutionStream } from "@/components/dashboard/LiveExecutionStream";
-import { ExecutionFeed } from "@/components/dashboard/ExecutionFeed";
 
 const ONBOARDING_KEY = "sovereign_onboarding";
 const TOUR_KEY = "sovereign_tour_completed";
@@ -732,6 +730,131 @@ function QuickAccessRow() {
   );
 }
 
+/* ─── Recent Playbook Runs (Real Data) ─── */
+
+interface PlaybookRunSummary {
+  id: string;
+  playbookName: string;
+  status: string;
+  stepCount: number;
+  stepsSucceeded: number;
+  stepsFailed: number;
+  durationMs: number | null;
+  createdAt: string;
+  steps: Array<{ agentName: string; status: string; durationMs: number | null }>;
+}
+
+function RecentRunsFeed() {
+  const [runs, setRuns] = useState<PlaybookRunSummary[]>([]);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/playbooks/runs")
+      .then(r => r.json())
+      .then(data => { setRuns((data.runs || []).slice(0, 5)); setLoaded(true); })
+      .catch(() => setLoaded(true));
+  }, []);
+
+  if (!loaded) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, delay: 0.2 }}
+      className="px-6 py-4"
+    >
+      <div className="max-w-3xl mx-auto">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-xs font-semibold uppercase tracking-[0.15em] text-neutral-500">
+            Recent Runs
+          </h2>
+          {runs.length > 0 && (
+            <Link href="/dashboard/autopilot" className="text-[10px] text-emerald-500/60 hover:text-emerald-400 transition-colors">
+              View all →
+            </Link>
+          )}
+        </div>
+
+        {runs.length === 0 ? (
+          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-6 text-center">
+            <Zap className="w-6 h-6 text-neutral-600 mx-auto mb-2" />
+            <p className="text-sm text-neutral-500">No playbook runs yet</p>
+            <Link href="/dashboard/playbooks" className="text-xs text-emerald-500/60 hover:text-emerald-400 mt-1 inline-block transition-colors">
+              Run your first playbook →
+            </Link>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {runs.map((run) => {
+              const isRunning = run.status === "running";
+              const isDone = run.status === "done";
+              const isFailed = run.status === "failed";
+              const progress = run.stepCount > 0 ? Math.round((run.stepsSucceeded / run.stepCount) * 100) : 0;
+              const duration = run.durationMs ? `${(run.durationMs / 1000).toFixed(1)}s` : "—";
+              const timeAgo = (() => {
+                const ms = Date.now() - new Date(run.createdAt).getTime();
+                if (ms < 60000) return "just now";
+                if (ms < 3600000) return `${Math.floor(ms / 60000)}m ago`;
+                if (ms < 86400000) return `${Math.floor(ms / 3600000)}h ago`;
+                return `${Math.floor(ms / 86400000)}d ago`;
+              })();
+
+              return (
+                <Link key={run.id} href="/dashboard/autopilot">
+                  <div className={`rounded-xl border p-3.5 transition-all hover:border-white/15 cursor-pointer ${
+                    isRunning ? "bg-cyan-500/5 border-cyan-500/15" :
+                    isDone ? "bg-white/[0.02] border-white/[0.06]" :
+                    "bg-red-500/5 border-red-500/15"
+                  }`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className={`w-2 h-2 rounded-full shrink-0 ${
+                          isRunning ? "bg-cyan-400 animate-pulse" :
+                          isDone ? "bg-emerald-400" :
+                          "bg-red-400"
+                        }`} />
+                        <span className="text-sm font-medium text-white">{run.playbookName}</span>
+                        <span className="text-[10px] text-neutral-600 font-mono">{timeAgo}</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {isRunning && (
+                          <span className="text-[10px] text-cyan-400 font-mono animate-pulse">
+                            {run.stepsSucceeded}/{run.stepCount} steps
+                          </span>
+                        )}
+                        {isDone && (
+                          <span className="text-[10px] text-neutral-500 font-mono">
+                            {run.stepsSucceeded}/{run.stepCount} · {duration}
+                          </span>
+                        )}
+                        {isFailed && (
+                          <span className="text-[10px] text-red-400 font-mono">
+                            {run.stepsFailed} failed
+                          </span>
+                        )}
+                        {/* Mini progress bar */}
+                        <div className="w-12 h-1 rounded-full bg-white/5 overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all ${
+                              isRunning ? "bg-cyan-400" : isDone ? "bg-emerald-400" : "bg-red-400"
+                            }`}
+                            style={{ width: `${progress}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
 export default function DashboardHome() {
   const router = useRouter();
   const [showWelcome, setShowWelcome] = useState(() => {
@@ -904,52 +1027,8 @@ export default function DashboardHome() {
         </motion.div>
       )}
 
-      {/* Live Agent Execution — try an agent right from the dashboard */}
-      {!showWelcome && (
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.2 }}
-          className="px-6 py-4"
-        >
-          <div className="max-w-3xl mx-auto">
-            <h2 className="text-xs font-semibold uppercase tracking-[0.15em] text-neutral-500 mb-3">
-              Try an Agent
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <LiveExecutionStream
-                agentType="lead-gen"
-                goal="Find 10 qualified leads in SaaS"
-                apiEndpoint="/api/agents/leads"
-                compact
-              />
-              <LiveExecutionStream
-                agentType="competitor-intel"
-                goal="Analyze competitor website"
-                apiEndpoint="/api/agents/site-assassin"
-                compact
-              />
-            </div>
-          </div>
-        </motion.div>
-      )}
-
-      {/* Live Execution Feed — real-time agent activity */}
-      {!showWelcome && (
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.3 }}
-          className="px-6 py-4"
-        >
-          <div className="max-w-3xl mx-auto">
-            <h2 className="text-xs font-semibold uppercase tracking-[0.15em] text-neutral-500 mb-3">
-              Live Agent Activity
-            </h2>
-            <ExecutionFeed />
-          </div>
-        </motion.div>
-      )}
+      {/* Recent Playbook Runs — real data from /api/playbooks/runs */}
+      {!showWelcome && <RecentRunsFeed />}
 
       {/* Chat available via floating widget (bottom-right) or /chat page */}
     </div>
