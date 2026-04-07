@@ -6,6 +6,7 @@ import { eq } from "drizzle-orm";
 import { getPlaybook, resolvePlaybookSteps } from "@/lib/playbooks";
 import { sendTelegram } from "@/lib/telegram";
 import { getBaseUrl } from "@/lib/base-url";
+import { checkPlanLimits, incrementUsage } from "@/lib/plan-enforcement";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("playbooks:run");
@@ -30,6 +31,16 @@ export async function POST(req: Request) {
 
   const playbook = getPlaybook(playbook_id);
   if (!playbook) return NextResponse.json({ error: `Playbook "${playbook_id}" not found` }, { status: 404 });
+
+  // ── Plan enforcement — check monthly run limits ──
+  const planCheck = await checkPlanLimits(userId);
+  if (!planCheck.allowed) {
+    return NextResponse.json({
+      error: planCheck.message,
+      usage: { used: planCheck.used, limit: planCheck.limit, plan: planCheck.planName },
+      upgradeUrl: planCheck.upgradeUrl,
+    }, { status: 429 });
+  }
 
   // Resolve template fields
   const steps = resolvePlaybookSteps(playbook, inputs);
@@ -75,6 +86,9 @@ export async function POST(req: Request) {
   }
 
   log.info("playbook run started", { runId: run.id, playbookId: playbook.id, userId, steps: steps.length });
+
+  // Track usage for plan enforcement (logs warnings when approaching limits)
+  incrementUsage(userId).catch(() => {});
 
   if (runAsync) {
     // Start execution in background, return immediately

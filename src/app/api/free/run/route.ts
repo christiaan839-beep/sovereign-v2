@@ -14,7 +14,7 @@ const RATE_LIMIT = 3; // 3 runs per hour
 const RATE_WINDOW_MS = 60 * 60 * 1000; // 1 hour
 
 // Allowed agents for free tools (only non-destructive read-only agents)
-const ALLOWED_AGENTS = new Set(["seo-dominator", "leads", "brand-voice", "competitor-scan"]);
+const ALLOWED_AGENTS = new Set(["seo-dominator", "seo", "leads", "brand-voice", "competitor-scan", "competitor", "brand-audit"]);
 
 export async function POST(req: Request) {
   try {

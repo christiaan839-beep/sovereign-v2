@@ -417,63 +417,103 @@ export default function Home() {
 
       <main id="main-content">
 
-      {/* ═══ HERO — Antigravity minimalism + Sovereign dark aesthetic ═══ */}
+      {/* ═══ HERO — Cinematic depth + Antigravity physics ═══ */}
       <section
-        className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-[#030303]">
+        className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-[#010101]">
 
-        {/* Floating particles — multi-colored, the defining visual (Antigravity pattern) */}
+        {/* Layer 1: Deep grid — creates depth perception */}
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(16,185,129,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(16,185,129,0.015)_1px,transparent_1px)] bg-[size:60px_60px] [mask-image:radial-gradient(ellipse_80%_60%_at_50%_50%,black_20%,transparent_100%)]" />
+
+        {/* Layer 2: Floating particles — multi-colored, mouse-reactive (Antigravity pattern) */}
         <FloatingParticles
-          count={50}
+          count={60}
           colors={[
-            "rgba(16, 185, 129, 0.5)",
-            "rgba(6, 182, 212, 0.4)",
-            "rgba(139, 92, 246, 0.4)",
-            "rgba(59, 130, 246, 0.3)",
-            "rgba(236, 72, 153, 0.25)",
+            "rgba(16, 185, 129, 0.6)",
+            "rgba(6, 182, 212, 0.5)",
+            "rgba(139, 92, 246, 0.45)",
+            "rgba(59, 130, 246, 0.35)",
+            "rgba(236, 72, 153, 0.3)",
+            "rgba(245, 158, 11, 0.25)",
           ]}
-          maxSize={3}
+          maxSize={4}
         />
 
-        {/* Single subtle ambient glow — restrained */}
+        {/* Layer 3: Dual ambient glow — creates atmosphere */}
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-emerald-500/[0.03] blur-[200px]" />
+          <div className="absolute top-1/3 left-1/3 w-[500px] h-[500px] rounded-full bg-emerald-500/[0.04] blur-[180px]" />
+          <div className="absolute bottom-1/3 right-1/3 w-[400px] h-[400px] rounded-full bg-cyan-500/[0.03] blur-[160px]" />
         </div>
 
-        {/* Content — radically minimal (Antigravity: text + CTAs + nothing else) */}
+        {/* Layer 4: Vignette — focus attention to center */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,#010101_80%)] pointer-events-none" />
+
+        {/* Content — cinematic staggered reveal */}
         <div className="relative z-10 max-w-4xl mx-auto text-center px-6">
 
-          {/* Brand mark */}
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.8 }}
-            className="flex items-center justify-center gap-2.5 mb-12">
+          {/* Brand mark — floats in from above */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8, filter: "blur(10px)" }}
+            animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+            transition={{ delay: 0.3, duration: 1, ease: [0.16, 1, 0.3, 1] }}
+            className="flex items-center justify-center gap-2.5 mb-12"
+          >
             <SovereignLogo size="sm" />
             <span className="text-sm font-semibold text-white/80 tracking-wide">Sovereign Matrix</span>
           </motion.div>
 
-          {/* Headline — massive, clean */}
-          <motion.h1 initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 1.2, ease: [0.25, 0.46, 0.45, 0.94] }}
-            className="text-[clamp(2.8rem,9vw,6.5rem)] font-black leading-[0.92] tracking-[-0.04em] mb-8">
-            <span className="text-white">The AI platform that</span>
-            <br />
-            <TextShimmer className="font-black">actually does the work.</TextShimmer>
+          {/* Headline — cinematic entrance, each line staggered */}
+          <motion.h1
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.1, duration: 0.5 }}
+            className="text-[clamp(2.8rem,9vw,6.5rem)] font-black leading-[0.92] tracking-[-0.04em] mb-8"
+          >
+            <motion.span
+              initial={{ opacity: 0, y: 60, filter: "blur(8px)" }}
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              transition={{ delay: 0.2, duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+              className="text-white block"
+            >
+              Hire AI employees.
+            </motion.span>
+            <motion.span
+              initial={{ opacity: 0, y: 60, filter: "blur(8px)" }}
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              transition={{ delay: 0.5, duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+              className="block"
+            >
+              <TextShimmer className="font-black">Fire busywork.</TextShimmer>
+            </motion.span>
           </motion.h1>
 
-          {/* Subtitle — one sentence, restrained */}
+          {/* Subtitle — benefits, not specs */}
           <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5, duration: 0.8 }}
-            className="text-lg md:text-xl text-neutral-400 max-w-lg mx-auto leading-relaxed mb-12">
-            130+ autonomous agents. 65+ models. Pre-built playbooks that run your business on autopilot.
+            className="text-lg md:text-xl text-neutral-400 max-w-xl mx-auto leading-relaxed mb-6">
+            130 AI agents that find leads, write content, scan competitors, and close deals.
+            They work 24/7. They cost $19/month. They never call in sick.
           </motion.p>
 
-          {/* Two CTAs — Antigravity style (one solid, one outlined) */}
+          {/* Proof strip — tiny, credible */}
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6, duration: 0.5 }}
+            className="flex items-center justify-center gap-4 text-xs text-neutral-500 mb-10">
+            <span className="flex items-center gap-1.5"><CheckCircle2 className="w-3 h-3 text-emerald-500/60" />35+ open-source models</span>
+            <span className="hidden sm:block text-neutral-700">|</span>
+            <span className="flex items-center gap-1.5"><CheckCircle2 className="w-3 h-3 text-emerald-500/60" />$0 per-token cost</span>
+            <span className="hidden sm:block text-neutral-700">|</span>
+            <span className="hidden sm:flex items-center gap-1.5"><CheckCircle2 className="w-3 h-3 text-emerald-500/60" />Runs on your hardware</span>
+          </motion.div>
+
+          {/* Two CTAs — primary = free tool (instant value), secondary = sign up */}
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7, duration: 0.5 }}
             className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <MagneticButton href="/signup" strength={0.15}>
+            <MagneticButton href="/free/competitor-scan" strength={0.15}>
               <span className="group flex items-center gap-2 px-8 py-4 bg-white text-black font-semibold rounded-full text-sm hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all cursor-pointer">
-                Run a Free Playbook <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                Scan a Competitor Free <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </span>
             </MagneticButton>
-            <MagneticButton href="/demo/live" strength={0.15}>
+            <MagneticButton href="/signup" strength={0.15}>
               <span className="px-8 py-4 rounded-full text-sm font-semibold text-neutral-300 border border-white/[0.1] hover:border-white/[0.2] hover:text-white transition-all cursor-pointer inline-block">
-                Explore use cases
+                Start free — no credit card
               </span>
             </MagneticButton>
           </motion.div>
@@ -483,57 +523,91 @@ export default function Home() {
       {/* ═══ LIVE ACTIVITY TICKER ═══ */}
       <LiveTicker />
 
+      {/* ═══ TRY IT NOW — Free tools (no signup, instant value) ═══ */}
+      <section className="py-16 px-6 bg-[#020202] border-y border-white/[0.03]">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-10">
+            <SectionReveal>
+              <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-3">Try it now — no signup</p>
+              <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight mb-2">
+                Free AI tools. Instant results.
+              </h2>
+              <p className="text-sm text-neutral-500 max-w-md mx-auto">
+                See what 130 AI agents can do. Pick a tool, paste a URL, get real intelligence in 30 seconds.
+              </p>
+            </SectionReveal>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-4">
+            {[
+              {
+                title: "Competitor Scanner",
+                desc: "Paste any URL. Get their weaknesses, market gaps, and a battle plan.",
+                href: "/free/competitor-scan",
+                icon: Target,
+                badge: "Most popular",
+                accent: "from-red-500/10",
+              },
+              {
+                title: "SEO Audit",
+                desc: "Instant domain analysis. Keyword gaps, technical issues, content strategy.",
+                href: "/free/seo-audit",
+                icon: Search,
+                badge: null,
+                accent: "from-cyan-500/10",
+              },
+              {
+                title: "Lead Finder",
+                desc: "Find qualified leads in any niche. Enriched with LinkedIn and email data.",
+                href: "/free/lead-finder",
+                icon: Target,
+                badge: null,
+                accent: "from-emerald-500/10",
+              },
+            ].map((tool) => (
+              <Link key={tool.title} href={tool.href}>
+                <motion.div
+                  whileHover={{ y: -4, borderColor: "rgba(16,185,129,0.2)" }}
+                  className="group relative p-6 rounded-2xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04] transition-all cursor-pointer h-full"
+                >
+                  {tool.badge && (
+                    <span className="absolute top-4 right-4 text-[9px] font-bold uppercase px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                      {tool.badge}
+                    </span>
+                  )}
+                  <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${tool.accent} to-transparent border border-white/[0.06] flex items-center justify-center mb-4`}>
+                    <tool.icon className="w-5 h-5 text-neutral-400 group-hover:text-emerald-400 transition-colors" />
+                  </div>
+                  <h3 className="text-sm font-semibold text-white mb-1">{tool.title}</h3>
+                  <p className="text-xs text-neutral-500 leading-relaxed mb-3">{tool.desc}</p>
+                  <span className="text-[11px] text-emerald-500/70 group-hover:text-emerald-400 flex items-center gap-1 transition-colors">
+                    Try free <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+                  </span>
+                </motion.div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ═══ POWERED BY — infinite scrolling trust strip ═══ */}
       <LogoMarquee />
 
-      {/* ═══ PRODUCT VIDEO — 90-second walkthrough ═══ */}
+      {/* ═══ LIVE DEMO — Interactive agent terminal (replaces dead video placeholder) ═══ */}
       <section className="py-20 px-6 bg-[#030303]">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-10">
-            <RevealText as="p" className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">See It In Action</RevealText>
-            <RevealText as="h2" delay={0.1} className="text-2xl md:text-4xl font-bold text-white tracking-tight mb-3">
-              90 seconds. Zero fluff.
-            </RevealText>
-            <RevealText as="p" delay={0.2} className="text-sm text-neutral-500">
-              Watch agents find leads, write content, and audit SEO — in real time.
-            </RevealText>
+            <SectionReveal>
+              <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">Live Demo</p>
+              <h2 className="text-2xl md:text-4xl font-bold text-white tracking-tight mb-3">
+                Tell it what you need. Watch it work.
+              </h2>
+              <p className="text-sm text-neutral-500">
+                Click a scenario. Watch the agent respond in real time.
+              </p>
+            </SectionReveal>
           </div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="relative rounded-2xl border border-white/[0.08] bg-[#0A0A0A] overflow-hidden shadow-[0_0_60px_rgba(16,185,129,0.04)] aspect-video"
-          >
-            {/* Video placeholder — replace src with your actual video URL */}
-            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[#0A0A0A] to-[#060606]">
-              <div className="text-center">
-                <div className="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto mb-4 cursor-pointer hover:bg-emerald-500/20 transition-colors group">
-                  <svg className="w-6 h-6 text-emerald-400 ml-1 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M8 5v14l11-7z" />
-                  </svg>
-                </div>
-                <p className="text-sm text-neutral-400">Product walkthrough coming soon</p>
-                <p className="text-xs text-neutral-600 mt-1">Record a 90-second demo to place here</p>
-              </div>
-            </div>
-            {/*
-              When you have the video, replace the placeholder above with:
-              <iframe
-                src="https://www.youtube.com/embed/YOUR_VIDEO_ID"
-                title="Sovereign Matrix Product Demo"
-                className="absolute inset-0 w-full h-full"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-            */}
-          </motion.div>
-
-          <div className="mt-6 flex items-center justify-center gap-6 text-[10px] text-neutral-500">
-            <span>No signup required to watch</span>
-            <span aria-hidden="true">|</span>
-            <span>Real agents, real output, real time</span>
-          </div>
+          <InteractiveDemo />
         </div>
       </section>
 
@@ -542,10 +616,10 @@ export default function Home() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
             <RevealText as="h2" className="text-3xl md:text-5xl font-bold text-white tracking-tight mb-4">
-              Your agency is bleeding time.
+              You don&apos;t need more tools. You need employees that don&apos;t sleep.
             </RevealText>
             <RevealText as="p" delay={0.1} className="text-neutral-500 max-w-lg mx-auto">
-              Most agency owners spend 60% of their week on tasks an AI agent could handle in minutes.
+              Every hour you spend on research, outreach, and content is an hour you&apos;re not closing deals.
             </RevealText>
           </div>
 
@@ -632,8 +706,8 @@ export default function Home() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-14">
             <RevealText as="p" className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">Real Results</RevealText>
-            <RevealText as="h2" delay={0.1} className="text-3xl md:text-5xl font-bold text-white tracking-tight mb-4">What your agents deliver.</RevealText>
-            <RevealText as="p" delay={0.2} className="text-neutral-500 max-w-lg mx-auto">Not mockups. Not concepts. Actual output from real agent executions.</RevealText>
+            <RevealText as="h2" delay={0.1} className="text-3xl md:text-5xl font-bold text-white tracking-tight mb-4">What your AI employees produce.</RevealText>
+            <RevealText as="p" delay={0.2} className="text-neutral-500 max-w-lg mx-auto">Real output. Real agents. Hover the cards.</RevealText>
           </div>
 
           <div className="grid md:grid-cols-3 gap-4">
@@ -1052,7 +1126,7 @@ export default function Home() {
           <div className="text-center mb-14">
             <RevealText as="p" className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">Trust Infrastructure</RevealText>
             <RevealText as="h2" delay={0.1} className="text-3xl md:text-5xl font-bold text-white tracking-tight mb-4">No more Wild West. Every action is authenticated.</RevealText>
-            <RevealText as="p" delay={0.2} className="text-neutral-500 max-w-lg mx-auto">Every agent execution runs through a 5-layer safety pipeline. Full audit trail. Air-gapped local execution. Your agents are powerful — and accountable.</RevealText>
+            <RevealText as="p" delay={0.2} className="text-neutral-500 max-w-lg mx-auto">Every agent execution runs through a 5-layer safety pipeline. Full audit trail. Air-gapped local execution available. Your data never leaves your hardware.</RevealText>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -1103,25 +1177,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ═══ LIVE DEMO ═══ */}
-      <GlowDivider />
-      <section id="demo" className="py-24 px-6 bg-[#050505]">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-14">
-            <div className="inline-flex items-center gap-2 mb-4">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute h-full w-full rounded-full bg-emerald-400 opacity-50" />
-                <span className="relative rounded-full h-2 w-2 bg-emerald-400" />
-              </span>
-              <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60">Live Demo</p>
-            </div>
-            <RevealText as="h2" className="text-3xl md:text-5xl font-bold text-white tracking-tight mb-4">See it in action.</RevealText>
-            <RevealText as="p" delay={0.15} className="text-neutral-500 max-w-lg mx-auto">Give a goal. Watch agents deliver. No prompting required.</RevealText>
-          </div>
-
-          <InteractiveDemo />
-        </div>
-      </section>
+      {/* Demo section moved to top of page — duplicate removed */}
 
       {/* ═══ CONSENSUS ENGINE — The Technical Moat ═══ */}
       <GlowDivider />
@@ -1621,28 +1677,29 @@ export default function Home() {
         <div className="absolute inset-0 bg-[linear-gradient(rgba(0,183,255,0.008)_1px,transparent_1px),linear-gradient(90deg,rgba(0,183,255,0.008)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none" />
         <div className="relative z-10">
           <RevealText as="h2" className="text-4xl md:text-6xl font-black text-white mb-5 tracking-tight leading-[1.05]">
-            Ready to see what AI agents can do?
+            Your competitors hire humans.
           </RevealText>
           <div className="overflow-hidden mb-5">
-            <TextDecrypt text="Try it free. Judge for yourself." className="text-4xl md:text-6xl font-black text-white tracking-tight leading-[1.05]" as="h2" speed={20} delay={400} />
+            <TextDecrypt text="You deploy AI employees." className="text-4xl md:text-6xl font-black text-white tracking-tight leading-[1.05]" as="h2" speed={20} delay={400} />
           </div>
           <RevealText as="p" delay={0.3} className="text-neutral-400 max-w-lg mx-auto mb-4">
-            130+ agents. 65+ models. 25 autopilot playbooks running 24/7. Workflows, integrations, and analytics — all on the free plan. No credit card.
+            130 agents. 35+ models. They work weekends. They don&apos;t need benefits.
+            They cost less than your morning coffee. Start in 60 seconds.
           </RevealText>
           <RevealText as="p" delay={0.4} className="text-emerald-400/70 text-sm mb-10">
-            Free forever plan. No credit card. Set up in 60 seconds.
+            Free forever plan. No credit card. 50 runs/month included.
           </RevealText>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <ParticleBurst>
-            <MagneticButton href="/signup" strength={0.25}>
+            <MagneticButton href="/free/competitor-scan" strength={0.25}>
               <span className="cta-glow group flex items-center gap-2 px-8 py-4 bg-white text-black font-bold rounded-full text-sm hover:shadow-[0_0_40px_rgba(255,255,255,0.15)] transition-gpu cursor-pointer">
-                Run a Free Playbook <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                Try Free — Scan a Competitor <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </span>
             </MagneticButton>
             </ParticleBurst>
-            <MagneticButton href="#pricing" strength={0.15}>
+            <MagneticButton href="/signup" strength={0.15}>
               <span className="px-7 py-3.5 border border-white/10 text-neutral-300 font-medium rounded-full text-sm hover:border-white/20 hover:text-white transition-gpu cursor-pointer inline-block">
-                Compare Plans
+                Create Free Account
               </span>
             </MagneticButton>
           </div>
@@ -1673,12 +1730,12 @@ export default function Home() {
               </ul>
             </div>
             <div>
-              <h3 className="text-xs font-semibold text-neutral-400 mb-4">Resources</h3>
+              <h3 className="text-xs font-semibold text-neutral-400 mb-4">Free Tools</h3>
               <ul className="space-y-2.5">
-                <li><Link href="/whitepaper" className="text-xs text-neutral-500 hover:text-white transition-colors">Whitepaper</Link></li>
+                <li><Link href="/free/competitor-scan" className="text-xs text-neutral-500 hover:text-white transition-colors">Competitor Scanner</Link></li>
+                <li><Link href="/free/seo-audit" className="text-xs text-neutral-500 hover:text-white transition-colors">SEO Audit</Link></li>
+                <li><Link href="/free/lead-finder" className="text-xs text-neutral-500 hover:text-white transition-colors">Lead Finder</Link></li>
                 <li><Link href="/changelog" className="text-xs text-neutral-500 hover:text-white transition-colors">Changelog</Link></li>
-                <li><Link href="/status" className="text-xs text-neutral-500 hover:text-white transition-colors">System Status</Link></li>
-                <li><Link href="/partner" className="text-xs text-neutral-500 hover:text-white transition-colors">Partners</Link></li>
               </ul>
             </div>
             <div>

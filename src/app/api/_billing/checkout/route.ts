@@ -11,8 +11,9 @@ const log = createLogger("billing-checkout");
  */
 
 const PRICE_MAP: Record<string, string | undefined> = {
-  node: process.env.STRIPE_PRICE_NODE,
+  starter: process.env.STRIPE_PRICE_STARTER,
   array: process.env.STRIPE_PRICE_ARRAY,
+  node: process.env.STRIPE_PRICE_NODE,
   enterprise: process.env.STRIPE_PRICE_ENTERPRISE,
 };
 
