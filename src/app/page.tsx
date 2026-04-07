@@ -358,10 +358,10 @@ export default function Home() {
   const heroRef = useRef<HTMLDivElement>(null);
   const agentCount = useLiveAgentCount();
   const navVisible = useHideyNav(80);
-  const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
-  // Fade hero later (0.7-1.0 range) to prevent dead black zone between hero and content
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.7, 1], [1, 1, 0.3]);
-  const heroScale = useTransform(scrollYProgress, [0, 1], [1, 0.97]);
+  // No hero fade/scale — prevents the "black dead zone" between hero and content.
+  // Content scrolls naturally. This is the Antigravity pattern.
+  const heroOpacity = 1;
+  const heroScale = 1;
 
   return (
     <CinematicLoader>
@@ -426,8 +426,8 @@ export default function Home() {
       <main id="main-content">
 
       {/* ═══ HERO ═══ */}
-      <motion.section ref={heroRef} style={{ opacity: heroOpacity, scale: heroScale }}
-        className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden">
+      <section ref={heroRef}
+        className="relative min-h-[85vh] md:min-h-screen flex flex-col items-center justify-center overflow-hidden">
 
         {/* 3D Particle background */}
         <HeroParticles />
@@ -528,7 +528,7 @@ export default function Home() {
         <div className="relative z-20 mt-6 pb-8 px-6 w-full max-w-3xl mx-auto">
           <InteractiveHeroStrike />
         </div>
-      </motion.section>
+      </section>
 
       {/* ═══ LIVE ACTIVITY TICKER ═══ */}
       <LiveTicker />
