@@ -80,6 +80,7 @@ export function NebulaBackground({ className = "" }: { className?: string }) {
     const noise = createNoise();
     let frame: number;
     let time = 0;
+    let frameCount = 0; // Only render every 3rd frame for perf
 
     // Sovereign color palette as RGB
     const colors = [
@@ -89,11 +90,15 @@ export function NebulaBackground({ className = "" }: { className?: string }) {
     ];
 
     const animate = () => {
+      frameCount++;
+      // Render every 3rd frame — nebula moves slowly, no need for 60fps
+      if (frameCount % 3 !== 0) { frame = requestAnimationFrame(animate); return; }
+
       const w = canvas.width;
       const h = canvas.height;
       const imageData = ctx.createImageData(w, h);
       const data = imageData.data;
-      time += 0.003;
+      time += 0.009; // 3x speed to compensate for 3x fewer frames
 
       for (let y = 0; y < h; y++) {
         for (let x = 0; x < w; x++) {

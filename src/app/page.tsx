@@ -590,7 +590,7 @@ export default function Home() {
       </section>
 
       {/* ═══ THE PROBLEM — Pain section with floating accents ═══ */}
-      <section className="py-24 px-6 bg-[#060606] relative overflow-hidden">
+      <section className="py-24 px-6 bg-[#060606] relative overflow-hidden perf-section">
         {/* Floating accent dots — Antigravity: everything moves */}
         <FloatingElement className="absolute top-20 left-[10%] w-2 h-2 rounded-full bg-red-500/20 blur-[1px]" speed={0.8} range={15} />
         <FloatingElement className="absolute top-40 right-[15%] w-3 h-3 rounded-full bg-red-400/15 blur-[2px]" speed={1.2} range={25} />

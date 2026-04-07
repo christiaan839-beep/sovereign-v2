@@ -52,6 +52,11 @@ const AGENT_CARDS: CardDef[] = [
   { icon: Brain, label: "War Room", metric: "3 models debated", color: "text-emerald-400", bgColor: "bg-emerald-500/10", borderColor: "border-emerald-500/20" },
 ];
 
+// Live status messages — cards cycle through these to feel ALIVE
+const LIVE_STATUSES = [
+  "scanning...", "working", "analyzing", "executing", "processing", "verifying", "done ✓", "idle",
+];
+
 const CARD_W = 160;
 const CARD_H = 80;
 
@@ -285,23 +290,30 @@ export function PhysicsCards({ className = "" }: { className?: string }) {
       {bodiesRef.current.map((body, i) => {
         const card = AGENT_CARDS[i];
         if (!card) return null;
+        // Each card gets a cycling status based on time + index offset
+        const statusIdx = Math.floor(Date.now() / 3000 + i * 1.7) % LIVE_STATUSES.length;
+        const status = LIVE_STATUSES[statusIdx];
+        const isActive = status !== "idle" && status !== "done ✓";
         return (
           <div
             key={card.label}
             onMouseDown={(e) => handleMouseDown(i, e)}
-            className={`absolute rounded-xl border ${card.borderColor} ${card.bgColor} backdrop-blur-md px-4 py-3 cursor-grab active:cursor-grabbing transition-shadow duration-200 hover:shadow-[0_0_25px_rgba(16,185,129,0.15)]`}
+            className={`absolute rounded-xl border ${card.borderColor} ${card.bgColor} px-4 py-3 cursor-grab active:cursor-grabbing transition-shadow duration-200 hover:shadow-[0_0_25px_rgba(16,185,129,0.15)]`}
             style={{
               width: CARD_W,
               height: CARD_H,
               left: body.x,
               top: body.y,
-              transform: `rotate(${body.rotation}deg)`,
+              transform: `rotate(${body.rotation}deg) translateZ(0)`,
               zIndex: body.dragging ? 50 : 10,
-              willChange: "transform, left, top",
             }}
           >
             <div className="flex items-center gap-2 mb-1">
-              <card.icon className={`w-4 h-4 ${card.color} shrink-0`} />
+              {/* Live status dot */}
+              <span className="relative flex h-2 w-2 shrink-0">
+                {isActive && <span className="animate-ping absolute h-full w-full rounded-full bg-emerald-400 opacity-40" />}
+                <span className={`relative rounded-full h-2 w-2 ${isActive ? "bg-emerald-400" : "bg-neutral-600"}`} />
+              </span>
               <span className="text-[11px] font-semibold text-white truncate">{card.label}</span>
             </div>
             <div className="text-[10px] text-neutral-400 font-mono">{card.metric}</div>

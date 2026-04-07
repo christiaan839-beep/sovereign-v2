@@ -4,6 +4,31 @@ html {
   scroll-behavior: smooth;
 }
 
+/* ─── 120fps Performance ──────────────────────────── */
+
+/* GPU-promote sections for smoother scroll compositing */
+.perf-section {
+  contain: layout style;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 800px;
+}
+
+/* GPU-layer hint for animated containers */
+.transition-gpu {
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+/* Reduce backdrop-blur cost — only apply on hover, not idle */
+@media (prefers-reduced-motion: no-preference) {
+  .glass-card {
+    backdrop-filter: none;
+  }
+  .glass-card:hover {
+    backdrop-filter: blur(16px);
+  }
+}
+
 /* ─── Obsidian Rose Design System ─────────────────── */
 
 @theme {
