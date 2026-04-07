@@ -356,8 +356,8 @@ export default function Home() {
           <div className="hidden md:flex items-center gap-8">
             <Link href="#enterprise" className="text-sm text-neutral-400 hover:text-white transition-colors">Product</Link>
             <Link href="#pricing" className="text-sm text-neutral-400 hover:text-white transition-colors">Pricing</Link>
-            <Link href="/docs" className="text-sm text-neutral-400 hover:text-white transition-colors">Docs</Link>
-            <Link href="/enterprise" className="text-sm text-neutral-400 hover:text-white transition-colors">Enterprise</Link>
+            <Link href="/marketplace" className="text-sm text-neutral-400 hover:text-white transition-colors">Marketplace</Link>
+            <Link href="/developers" className="text-sm text-neutral-400 hover:text-white transition-colors">Developers</Link>
             <SignInButton mode="modal" fallbackRedirectUrl="/dashboard">
               <button className="text-sm text-neutral-500 hover:text-white transition-colors">Log in</button>
             </SignInButton>
@@ -998,11 +998,11 @@ export default function Home() {
               <p className="text-xs text-neutral-400 leading-relaxed">The autonomous AI agent platform. 130+ agents. 65+ models. Flat pricing, no usage fees. Built on NVIDIA NIM.</p>
             </div>
             <div>
-              <h3 className="text-xs font-semibold text-neutral-400 mb-4">Product</h3>
+              <h3 className="text-xs font-semibold text-neutral-400 mb-4">Platform</h3>
               <ul className="space-y-2.5">
                 <li><Link href="/pricing" className="text-xs text-neutral-500 hover:text-white transition-colors">Pricing</Link></li>
-                <li><Link href="/playground" className="text-xs text-neutral-500 hover:text-white transition-colors">API Playground</Link></li>
-                <li><Link href="/docs" className="text-xs text-neutral-500 hover:text-white transition-colors">API Docs</Link></li>
+                <li><Link href="/marketplace" className="text-xs text-neutral-500 hover:text-white transition-colors">Agent Marketplace</Link></li>
+                <li><Link href="/developers" className="text-xs text-neutral-500 hover:text-white transition-colors">Developer SDK</Link></li>
                 <li><Link href="/signup" className="text-xs text-neutral-500 hover:text-white transition-colors">Get Started</Link></li>
               </ul>
             </div>
