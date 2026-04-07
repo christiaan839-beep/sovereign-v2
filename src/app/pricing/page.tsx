@@ -14,66 +14,72 @@ const fadeIn = (d: number) => ({ initial: { opacity: 0, y: 20 }, whileInView: { 
 const TIERS = [
   {
     name: "Founder Access", price: "Free", period: "forever", plan: "free", featured: false,
-    tagline: "Full platform access. 50 agent runs/day. No credit card required.",
-    cta: "Get Started Free",
+    tagline: "Full platform access. 50 runs/month. No credit card.",
+    cta: "Run a Free Playbook",
     features: [
-      { name: "130+ AI agents", included: true },
-      { name: "65+ open-source models", included: true },
+      { name: "All 130+ agents", included: true },
       { name: "25 playbook workflows", included: true },
       { name: "5-layer safety pipeline", included: true },
-      { name: "50 runs/day", included: true },
-      { name: "Community support", included: true },
+      { name: "50 runs/month", included: true },
       { name: "BYOK (Bring Your Own Key)", included: true },
-      { name: "White-label Reseller Hub", included: false },
-      { name: "NemoClaw Local Execution", included: false },
+      { name: "200+ runs/month", included: false },
+      { name: "Priority support", included: false },
     ],
   },
   {
-    name: "Sovereign Node", price: "R9,997", period: "/mo", plan: "node", featured: false,
-    tagline: "Replace your SDR and Junior Designer entirely. Includes Ghost Fleet.",
+    name: "Starter", price: "$19", period: "/mo", plan: "starter", featured: false,
+    tagline: "200 runs/month. Perfect for solo operators testing AI workflows.",
+    cta: "Start for $19",
+    features: [
+      { name: "Everything in Free", included: true },
+      { name: "200 runs/month", included: true },
+      { name: "1,000 API calls/day", included: true },
+      { name: "Email support", included: true },
+      { name: "All 65+ models", included: true },
+      { name: "Local execution", included: false },
+      { name: "White-label", included: false },
+    ],
+  },
+  {
+    name: "Growth", price: "$49", period: "/mo", plan: "array", featured: true,
+    tagline: "500 runs/month. For agencies and teams scaling AI workflows.",
+    cta: "Scale with Growth",
+    features: [
+      { name: "Everything in Starter", included: true },
+      { name: "500 runs/month", included: true },
+      { name: "5,000 API calls/day", included: true },
+      { name: "Multi-model consensus verification", included: true },
+      { name: "Priority support (24h)", included: true },
+      { name: "NVIDIA Nemotron Voice", included: true },
+      { name: "White-label", included: false },
+    ],
+  },
+  {
+    name: "Sovereign Node", price: "$199", period: "/mo", plan: "node", featured: false,
+    tagline: "2,000 runs/month + NemoClaw local execution. Replace your SDR.",
     cta: "Deploy Node",
     features: [
-      { name: "OpenClaw Local Execution", included: true },
+      { name: "Everything in Growth", included: true },
+      { name: "2,000 runs/month", included: true },
+      { name: "NemoClaw Local Execution", included: true },
       { name: "Apollo Ghost Fleet Targeting", included: true },
-      { name: "Sovereign Visual Studio", included: true },
-      { name: "NVIDIA Edify 3D Generation", included: true },
-      { name: "Morpheus Shield Integration", included: true },
-      { name: "Single macOS Node License", included: true },
-      { name: "Bring Your Own API Key", included: true },
-      { name: "Unlimited generations", included: false },
-      { name: "White-label Reseller Hub", included: false },
+      { name: "10,000 API calls/day", included: true },
+      { name: "Morpheus Shield", included: true },
+      { name: "White-label", included: false },
     ],
   },
   {
-    name: "Sovereign Array", price: "R24,997", period: "/mo", plan: "array", featured: true,
-    tagline: "Replace a full Growth Team. Priority Nemotron 70B inference.",
-    cta: "Deploy Array",
+    name: "Enterprise", price: "$499", period: "/mo", plan: "enterprise", featured: false,
+    tagline: "10,000 runs/month. White-label. SLA. Dedicated onboarding.",
+    cta: "Contact Sales",
     features: [
       { name: "Everything in Node", included: true },
-      { name: "Unlimited AI generations", included: true },
-      { name: "Nemotron Voice Enterprise (TTS CRM)", included: true },
-      { name: "NVIDIA Continuous Data Flywheel", included: true },
-      { name: "Optical Character Pricing Assassin", included: true },
-      { name: "Competitor VLM Core (90B Vision)", included: true },
-      { name: "Direct Comm-Link (24h)", included: true },
-      { name: "White-label Reseller Hub", included: false },
-      { name: "Enterprise Sub-Licenses", included: false },
-    ],
-  },
-  {
-    name: "Enterprise License", price: "R49,997", period: "/mo", plan: "enterprise", featured: false,
-    tagline: "White-label the Sovereign Matrix to resell autonomous hubs.",
-    cta: "Initialize Enterprise",
-    features: [
-      { name: "Everything in Array", included: true },
-      { name: "White-label Exascale Dashboard", included: true },
-      { name: "Global Data Flywheel Cloning", included: true },
-      { name: "Root Admin Command Center", included: true },
-      { name: "API access for Integrations", included: true },
-      { name: "Dedicated Setup & Onboarding", included: true },
+      { name: "10,000 runs/month", included: true },
+      { name: "Unlimited API calls", included: true },
+      { name: "White-label Dashboard", included: true },
       { name: "Custom domain branding", included: true },
-      { name: "Enterprise Sub-Licenses (5 included)", included: true },
-      { name: "SLA guarantee", included: true },
+      { name: "Dedicated setup + SLA", included: true },
+      { name: "Enterprise sub-licenses (5)", included: true },
     ],
   },
 ];
@@ -105,7 +111,7 @@ interface ComparisonRow {
 }
 
 const COMPARISON_ROWS: ComparisonRow[] = [
-  { label: "Monthly price (entry tier)", values: ["R897/mo ($49)", "$97/mo", "$99/mo", "$24/mo", "$20/mo"] },
+  { label: "Monthly price (entry tier)", values: ["$19/mo", "$97/mo", "$99/mo", "$24/mo", "$20/mo"] },
   { label: "AI agents included", values: ["130+ agents", "0 AI agents", "Build your own", "AI nodes", "50+ templates"] },
   { label: "Models available", values: ["65+", "0", "5-10", "5-10", "3-5"] },
   { label: "Voice agents", values: [true, false, false, false, false] },
@@ -136,8 +142,8 @@ export default function PricingPage() {
       window.location.assign("/signup");
       return;
     }
-    if (plan === "node") {
-      window.location.assign("/dashboard");
+    if (plan === "enterprise") {
+      window.location.assign("mailto:hello@sovereignmatrix.agency?subject=Enterprise%20Inquiry");
       return;
     }
 
@@ -329,7 +335,7 @@ export default function PricingPage() {
           Deploy enterprise-grade NVIDIA execution pipelines. Replaces entire agency overheads.
         </RevealText>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
           {TIERS.map((t, i) => (
             <motion.div key={i} {...fadeIn(i * 0.1)}
               className={`rounded-2xl bg-white/[0.02] backdrop-blur-xl border p-7 flex flex-col ${t.featured ? "border-emerald-500/40 relative overflow-hidden scale-[1.02] shadow-[0_0_40px_rgba(16,185,129,0.1)]" : t.plan === "free" ? "border-cyan-500/30 relative overflow-hidden" : "border-white/[0.06]"}`}>

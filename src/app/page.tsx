@@ -1196,6 +1196,82 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ═══ CONSENSUS ENGINE — The Technical Moat ═══ */}
+      <GlowDivider />
+      <section className="py-24 px-6 perf-section">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-16">
+            <RevealText as="p" className="text-[11px] font-medium uppercase tracking-[0.3em] text-violet-500/60 mb-4">Multi-Model Verification</RevealText>
+            <RevealText as="h2" delay={0.1} className="text-3xl md:text-5xl font-bold text-white tracking-tight mb-4">Your agents don&apos;t just generate. They debate.</RevealText>
+            <RevealText as="p" delay={0.2} className="text-neutral-500 max-w-xl mx-auto">Every critical output passes through generate → critique → synthesize across independent models. The result is verified, not hallucinated.</RevealText>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+            {[
+              {
+                step: "1",
+                title: "Generate",
+                model: "Nemotron Ultra 253B",
+                desc: "The primary model drafts the complete output — leads, content, analysis, or code. Full context, maximum capability.",
+                color: "cyan",
+                icon: "draft",
+              },
+              {
+                step: "2",
+                title: "Critique",
+                model: "DeepSeek V3.2",
+                desc: "A different model reviews the draft for hallucinations, factual errors, bias, and quality issues. Acts as a devil's advocate.",
+                color: "amber",
+                icon: "review",
+              },
+              {
+                step: "3",
+                title: "Synthesize",
+                model: "Gemma 4 31B",
+                desc: "A third model incorporates the critique, resolves conflicts, and produces the final verified output. Three minds, one answer.",
+                color: "emerald",
+                icon: "final",
+              },
+            ].map((s, i) => {
+              const colorMap: Record<string, string> = {
+                cyan: "bg-cyan-500/10 border-cyan-500/20 text-cyan-400",
+                amber: "bg-amber-500/10 border-amber-500/20 text-amber-400",
+                emerald: "bg-emerald-500/10 border-emerald-500/20 text-emerald-400",
+              };
+              const classes = colorMap[s.color];
+              return (
+                <motion.div
+                  key={s.step}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.15, duration: 0.5 }}
+                  className="rounded-2xl bg-white/[0.02] border border-white/[0.06] p-6 relative"
+                >
+                  {i < 2 && (
+                    <div className="hidden md:block absolute -right-3 top-1/2 -translate-y-1/2 text-neutral-700 text-lg">→</div>
+                  )}
+                  <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full ${classes} text-[10px] font-bold uppercase tracking-widest border mb-4`}>
+                    Step {s.step} — {s.title}
+                  </div>
+                  <h3 className="text-lg font-bold text-white mb-2">{s.title}</h3>
+                  <p className="text-xs text-neutral-500 leading-relaxed mb-3">{s.desc}</p>
+                  <div className="text-[10px] font-mono text-neutral-600">Powered by {s.model}</div>
+                </motion.div>
+              );
+            })}
+          </div>
+
+          <div className="text-center mt-10">
+            <p className="text-xs text-neutral-600">
+              This is how <span className="text-white font-medium">consensus verification</span> works.
+              Three independent models. Three perspectives. One verified answer.
+              Not available on ChatGPT, CrewAI, n8n, or any competitor.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* ═══ HOW IT WORKS — Architecture ═══ */}
       <GlowDivider />
       <section className="py-24 px-6 perf-section">
