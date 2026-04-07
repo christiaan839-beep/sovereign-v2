@@ -465,8 +465,8 @@ export default function Home() {
           {/* Subtitle — clear, readable, high contrast */}
           <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5, duration: 0.7 }}
             className="text-base md:text-lg max-w-xl mx-auto leading-relaxed mb-8">
-            <span className="text-neutral-200">Most AI tools generate text. This one runs your business.</span>{" "}
-            <span className="text-neutral-400">130+ agents find leads, write content, and close deals autonomously — 25 playbooks run 24/7 on autopilot. Verified by 4 independent AI models. $0 per token.</span>
+            <span className="text-neutral-200">Agents are born smart. We give them everything else.</span>{" "}
+            <span className="text-neutral-400">Voice, memory, payments, tools, workflows — the full infrastructure stack. 130+ agents run your business 24/7 on autopilot. $0 per token.</span>
           </motion.p>
 
           {/* CTAs — one primary, one secondary */}
@@ -889,55 +889,71 @@ export default function Home() {
       </section>
       </ScrollVelocitySkew>
 
-      {/* ═══ WHY THIS IS DIFFERENT — Innovation pillars ═══ */}
+      {/* ═══ THE AGENT INFRASTRUCTURE STACK ═══ */}
       <GlowDivider />
       <section className="py-20 px-6 bg-[#030303] perf-section">
         <GradientFollower className="max-w-5xl mx-auto" color="rgba(16, 185, 129, 0.04)" size={700}>
           <div className="text-center mb-14">
-            <RevealText as="p" className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">Why It&apos;s Different</RevealText>
-            <RevealText as="h2" delay={0.1} className="text-3xl md:text-5xl font-bold text-white tracking-tight">AI that works. Not just talks.</RevealText>
+            <RevealText as="p" className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">The Full Stack</RevealText>
+            <RevealText as="h2" delay={0.1} className="text-3xl md:text-5xl font-bold text-white tracking-tight mb-4">Agents are born smart. But they&apos;re born naked.</RevealText>
+            <RevealText as="p" delay={0.2} className="text-neutral-400 max-w-xl mx-auto">
+              Voice made ElevenLabs an $11B company. Memory made Mem0 an AWS partner. Sovereign Matrix gives your agents the entire stack — voice, memory, payments, tools, workflows, and identity — in one platform.
+            </RevealText>
           </div>
 
           <StaggerChildren className="grid md:grid-cols-3 gap-5" staggerDelay={0.08}>
             {[
               {
+                title: "Voice",
+                desc: "Agents make real phone calls, qualify leads, and book meetings. Sub-200ms latency in 12 languages. Your agents don't just type — they talk.",
+                highlight: "Solved",
+                color: "text-emerald-400",
+              },
+              {
+                title: "Memory",
+                desc: "Knowledge graph with persistent context. Agents remember your brand voice, client preferences, and past interactions. Every conversation makes them smarter.",
+                highlight: "Solved",
+                color: "text-emerald-400",
+              },
+              {
+                title: "Payments",
+                desc: "Yoco, PayStack, PayFast, and Stripe integrations. Agents process transactions, manage subscriptions, and track revenue — end to end.",
+                highlight: "Solved",
+                color: "text-emerald-400",
+              },
+              {
                 title: "Multi-Model Intelligence",
-                desc: "Not locked to one model. The smart router picks from 65+ models per task — GLM-5 for agentic reasoning, Qwen 3.5 VLM for vision, Nemotron 3 Super for throughput. Native function calling lets models choose which tools to use.",
+                desc: "65+ models auto-routed per task. Smart router picks the optimal model. 11-model failover chain. Native function calling lets agents choose their own tools.",
                 highlight: "65+ models",
+                color: "text-cyan-400",
               },
               {
-                title: "Agent Teams That Debate",
-                desc: "Complex problems get multiple specialists analyzing in parallel. A Devil's Advocate challenges every conclusion. The lead agent synthesizes into a well-vetted plan.",
-                highlight: "Adversarial synthesis",
+                title: "Workflow Orchestration",
+                desc: "25 playbooks chain agents into autonomous pipelines. Conditional branching, parallel execution, scheduled cron. Lead qualifies → voice calls. Not qualified → email nurture.",
+                highlight: "25 playbooks",
+                color: "text-violet-400",
               },
               {
-                title: "Workflow Automation",
-                desc: "Chain agents into automated pipelines with conditional branching and parallel execution. If a lead qualifies, the voice agent calls. If not, email nurture starts. Choose from 8 pre-built templates or build your own.",
-                highlight: "Visual builder",
-              },
-              {
-                title: "Cross-Agent Learning",
-                desc: "When the SEO agent finds a keyword opportunity, the content agent knows immediately. When a lead is qualified, the email agent starts the sequence. Intelligence flows between agents automatically.",
-                highlight: "Shared intelligence",
-              },
-              {
-                title: "Enterprise Controls",
-                desc: "Team roles (Owner, Admin, Editor, Viewer), full audit trail of every action, scheduled workflows on cron, and real-time notifications. SOC 2 ready with encrypted API keys.",
-                highlight: "RBAC + audit trail",
-              },
-              {
-                title: "Connect Everything",
-                desc: "Slack, Google Sheets, Airtable, Notion, HubSpot, Salesforce, Yoco, GitHub, Discord, Twilio, MongoDB, Supabase, and more. Every integration works as a workflow step — find leads, then auto-add to your CRM and notify your team.",
-                highlight: "25+ integrations",
+                title: "Integrations & Identity",
+                desc: "Slack, HubSpot, Salesforce, GitHub, Discord, and 20+ more. Agents connect to your existing stack — CRM, email, calendar, database. They don't work in isolation.",
+                highlight: "25+ connectors",
+                color: "text-amber-400",
               },
             ].map((item) => (
               <div key={item.title} className="p-7 rounded-2xl border border-white/[0.06] bg-white/[0.02] hover:border-emerald-500/15 transition-gpu duration-500 group">
-                <div className="text-[10px] text-emerald-500/60 uppercase tracking-widest mb-3 font-semibold">{item.highlight}</div>
+                <div className={`text-[10px] uppercase tracking-widest mb-3 font-semibold ${item.color || "text-emerald-500/60"}`}>{item.highlight}</div>
                 <h3 className="text-base font-semibold text-white mb-2">{item.title}</h3>
                 <p className="text-sm text-neutral-400 leading-relaxed">{item.desc}</p>
               </div>
             ))}
           </StaggerChildren>
+
+          <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ delay: 0.5 }}
+            className="mt-10 text-center">
+            <p className="text-xs text-neutral-500">
+              Voice, memory, and payments built $11B+ in companies. The rest of the stack is wide open. We&apos;re building all of it.
+            </p>
+          </motion.div>
         </GradientFollower>
       </section>
 
@@ -1215,7 +1231,7 @@ export default function Home() {
           <div className="text-center mb-16">
             <RevealText as="p" className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">Old vs New</RevealText>
             <div className="overflow-hidden">
-              <TextDecrypt text="From prompting to deploying." className="text-3xl md:text-5xl font-bold text-white tracking-tight" as="h2" speed={20} delay={200} />
+              <TextDecrypt text="From chatbot to autonomous workforce." className="text-3xl md:text-5xl font-bold text-white tracking-tight" as="h2" speed={20} delay={200} />
             </div>
           </div>
 
