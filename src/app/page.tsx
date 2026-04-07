@@ -933,40 +933,61 @@ export default function Home() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
             <RevealText as="p" className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">How It Works</RevealText>
-            <RevealText as="h2" delay={0.1} className="text-3xl md:text-5xl font-bold text-white tracking-tight">How it works</RevealText>
+            <RevealText as="h2" delay={0.1} className="text-3xl md:text-5xl font-bold text-white tracking-tight">Three steps. Real results.</RevealText>
+            <RevealText as="p" delay={0.2} className="text-neutral-500 max-w-lg mx-auto mt-3">From goal to output in under 3 minutes. No prompt engineering. No technical setup.</RevealText>
           </div>
 
           <StaggerChildren className="grid md:grid-cols-3 gap-6" staggerDelay={0.12}>
             {[
               {
                 step: "01",
-                title: "Tell it what you need",
-                desc: "\"Find 50 SaaS companies hiring a Head of Marketing.\" Plain English. No prompt engineering. No technical setup.",
+                title: "Describe your goal",
+                desc: "Type what you need in plain English. The smart router analyzes your request and selects the best agents and models.",
+                example: "\"Find 50 fintech companies with Series A funding and draft cold outreach emails\"",
                 gradient: "from-emerald-500/10 to-emerald-500/0",
+                color: "text-emerald-400",
               },
               {
                 step: "02",
-                title: "AI agents do the work",
-                desc: "The smart router picks the best AI model for the job. Specialized agents break your goal into steps and work in parallel.",
+                title: "Agents execute in parallel",
+                desc: "Specialized agents break your goal into steps. Lead Hunter scrapes data, Email Agent drafts sequences, Critic Agent verifies quality.",
+                example: "3 agents \u00b7 2 models \u00b7 consensus verified",
                 gradient: "from-cyan-500/10 to-cyan-500/0",
+                color: "text-cyan-400",
               },
               {
                 step: "03",
-                title: "Get results, not drafts",
-                desc: "Verified emails in your inbox. Blog posts ready to publish. Meetings on your calendar. Work you can use immediately — not drafts you have to edit.",
-                gradient: "from-emerald-400/10 to-emerald-400/0",
+                title: "Get verified output",
+                desc: "Every result passes through the 5-layer safety pipeline. Verified emails, production-ready content, actionable intelligence — not drafts.",
+                example: "53 leads with verified emails \u00b7 ready to export",
+                gradient: "from-violet-500/10 to-violet-500/0",
+                color: "text-violet-400",
               },
-            ].map((item) => (
-              <div key={item.step} className="relative group">
-                <div className={`absolute inset-0 rounded-2xl bg-gradient-to-b ${item.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
-                <div className="relative p-8 rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl hover:border-emerald-500/15 transition-gpu duration-500">
-                  <div className="text-5xl font-black text-white/[0.04] mb-4 font-mono">{item.step}</div>
-                  <h3 className="text-lg font-semibold text-white mb-3">{item.title}</h3>
-                  <p className="text-sm text-neutral-400 leading-relaxed">{item.desc}</p>
+            ].map((item, i) => (
+              <TiltCard key={item.step} tiltStrength={5} className="rounded-2xl">
+                <div className="relative group">
+                  <div className={`absolute inset-0 rounded-2xl bg-gradient-to-b ${item.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
+                  <div className="relative p-8 rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl hover:border-white/10 transition-gpu duration-500">
+                    <div className={`text-4xl font-black ${item.color} opacity-20 mb-3 font-mono`}>{item.step}</div>
+                    <h3 className="text-lg font-semibold text-white mb-2">{item.title}</h3>
+                    <p className="text-sm text-neutral-400 leading-relaxed mb-4">{item.desc}</p>
+                    <div className="p-3 rounded-lg bg-black/30 border border-white/[0.04]">
+                      <p className="text-[11px] text-neutral-500 font-mono leading-relaxed">{item.example}</p>
+                    </div>
+                    {/* Connector arrow */}
+                    {i < 2 && <div className="hidden md:block absolute -right-3 top-1/2 -translate-y-1/2 text-neutral-700 text-lg z-10">&rarr;</div>}
+                  </div>
                 </div>
-              </div>
+              </TiltCard>
             ))}
           </StaggerChildren>
+
+          {/* CTA below steps */}
+          <div className="text-center mt-10">
+            <Link href="/signup" className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white/5 border border-white/10 text-sm text-neutral-300 hover:bg-white/10 hover:text-white transition-all">
+              Try it now — free <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
         </div>
       </section>
 

@@ -107,12 +107,12 @@ function ROICalculator() {
   const [salary, setSalary] = useState(40000);
 
   const currentCost = employees * salary;
-  const sovereignCost = 9997;
+  const sovereignCost = 499; // Enterprise plan — $499/mo (white-label, 10K runs, SLA)
   const savings = currentCost - sovereignCost;
   const savingsPercent = Math.round((savings / currentCost) * 100);
 
-  const formatRand = (n: number) =>
-    "R" + n.toLocaleString("en-ZA");
+  const formatUsd = (n: number) =>
+    "$" + n.toLocaleString("en-US");
 
   return (
     <motion.div
@@ -167,7 +167,7 @@ function ROICalculator() {
                 Avg monthly salary per employee
               </label>
               <span className="text-lg font-bold text-white font-mono">
-                {formatRand(salary)}
+                {formatUsd(salary)}
               </span>
             </div>
             <input
@@ -198,7 +198,7 @@ function ROICalculator() {
               Current cost
             </p>
             <p className="text-2xl md:text-3xl font-bold text-red-400 font-mono">
-              {formatRand(currentCost)}
+              {formatUsd(currentCost)}
             </p>
             <p className="text-xs text-neutral-500 mt-1">/month</p>
           </div>
@@ -208,7 +208,7 @@ function ROICalculator() {
               Sovereign Matrix
             </p>
             <p className="text-2xl md:text-3xl font-bold text-emerald-400 font-mono">
-              {formatRand(sovereignCost)}
+              {formatUsd(sovereignCost)}
             </p>
             <p className="text-xs text-neutral-500 mt-1">/month</p>
           </div>
@@ -218,7 +218,7 @@ function ROICalculator() {
               You save
             </p>
             <p className="text-2xl md:text-3xl font-bold text-emerald-400 font-mono">
-              {savings > 0 ? formatRand(savings) : "R0"}
+              {savings > 0 ? formatUsd(savings) : "$0"}
             </p>
             <p className="text-xs text-emerald-400/50 mt-1">
               {savings > 0 ? `${savingsPercent}% less` : "—"} /month

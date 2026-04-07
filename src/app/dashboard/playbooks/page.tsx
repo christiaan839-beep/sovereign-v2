@@ -495,6 +495,7 @@ export default function PlaybooksPage() {
         {filteredPlaybooks.map((playbook, index) => {
           const colors = COLOR_MAP[playbook.color] || COLOR_MAP.neutral;
           const Icon = ICON_MAP[playbook.icon] || Zap;
+          const isFeatured = ["lead-blitz", "content-machine", "competitor-takedown"].includes(playbook.id);
           return (
             <motion.button
               key={playbook.id}
@@ -502,18 +503,33 @@ export default function PlaybooksPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
               onClick={() => { setSelectedPlaybook(playbook); setInputs({}); }}
-              className="text-left rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 hover:bg-white/[0.04] hover:border-white/10 transition-all group cursor-pointer"
+              className={`text-left rounded-2xl border p-5 hover:bg-white/[0.04] transition-all group cursor-pointer ${
+                isFeatured
+                  ? "border-emerald-500/15 bg-emerald-500/[0.02] hover:border-emerald-500/25"
+                  : "border-white/[0.06] bg-white/[0.02] hover:border-white/10"
+              }`}
             >
               <div className="flex items-center gap-3 mb-3">
                 <div className={`p-2 rounded-xl ${colors.bg} border ${colors.border} group-hover:scale-110 transition-transform`}>
                   <Icon className={`w-4 h-4 ${colors.text}`} />
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-sm font-semibold text-white">{playbook.name}</h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-semibold text-white">{playbook.name}</h3>
+                    {isFeatured && (
+                      <span className="px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Popular</span>
+                    )}
+                  </div>
                 </div>
               </div>
               <p className={`text-xs ${colors.text} font-medium mb-2`}>{playbook.tagline}</p>
-              <p className="text-xs text-neutral-500 leading-relaxed mb-4 line-clamp-2">{playbook.description}</p>
+              <p className="text-xs text-neutral-500 leading-relaxed mb-3 line-clamp-2">{playbook.description}</p>
+              {playbook.guarantee && (
+                <p className="text-[10px] text-emerald-500/50 mb-3 flex items-center gap-1">
+                  <CheckCircle2 className="w-2.5 h-2.5 shrink-0" />
+                  <span className="line-clamp-1">{playbook.guarantee}</span>
+                </p>
+              )}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <span className="flex items-center gap-1 text-[10px] text-neutral-500">

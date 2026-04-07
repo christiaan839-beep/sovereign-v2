@@ -78,6 +78,7 @@ function formatAgent(name: string): string {
 export default function AgentAnalyticsDashboard() {
   const [data, setData] = useState<AnalyticsPayload | null>(null);
   const [jobs, setJobs] = useState<ScheduledJob[]>([]);
+  const [playbookStats, setPlaybookStats] = useState({ total: 0, succeeded: 0, failed: 0, avgDuration: 0 });
   const [loading, setLoading] = useState(true);
   const [triggering, setTriggering] = useState<string | null>(null);
 
@@ -87,11 +88,26 @@ export default function AgentAnalyticsDashboard() {
       const results = await Promise.allSettled([
         fetch("/api/agent-analytics").then((r) => r.json()),
         fetch("/api/agents/scheduler").then((r) => r.json()),
+        fetch("/api/playbooks/runs").then((r) => r.json()),
       ]);
       const analyticsData = results[0].status === "fulfilled" ? results[0].value : null;
       const jobsData = results[1].status === "fulfilled" ? results[1].value : { jobs: [] };
+      const runsData = results[2].status === "fulfilled" ? results[2].value : { runs: [] };
       if (analyticsData) setData(analyticsData);
       setJobs(jobsData.jobs || []);
+      // Compute playbook stats from runs
+      const runs = runsData.runs || [];
+      if (runs.length > 0) {
+        const done = runs.filter((r: { status: string }) => r.status === "done");
+        const failed = runs.filter((r: { status: string }) => r.status === "failed");
+        const durations = runs.filter((r: { durationMs: number | null }) => r.durationMs).map((r: { durationMs: number }) => r.durationMs);
+        setPlaybookStats({
+          total: runs.length,
+          succeeded: done.length,
+          failed: failed.length,
+          avgDuration: durations.length > 0 ? Math.round(durations.reduce((a: number, b: number) => a + b, 0) / durations.length) : 0,
+        });
+      }
     } catch {
       // Keep existing data on error
     } finally {
@@ -214,6 +230,38 @@ export default function AgentAnalyticsDashboard() {
             <p className="text-[9px] text-neutral-500 uppercase tracking-widest mt-1">Active Agents</p>
           </motion.div>
         </div>
+
+        {/* Playbook Runs Summary */}
+        {playbookStats.total > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="bg-neutral-950 border border-neutral-800 rounded-xl p-6"
+          >
+            <h2 className="text-sm font-bold uppercase tracking-widest text-neutral-400 mb-4 flex items-center gap-2">
+              <Play className="w-4 h-4" /> Playbook Runs
+            </h2>
+            <div className="grid grid-cols-4 gap-4">
+              <div className="text-center">
+                <p className="text-2xl font-black text-white">{playbookStats.total}</p>
+                <p className="text-[9px] text-neutral-500 uppercase tracking-widest mt-1">Total Runs</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-black text-emerald-400">{playbookStats.succeeded}</p>
+                <p className="text-[9px] text-neutral-500 uppercase tracking-widest mt-1">Succeeded</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-black text-rose-400">{playbookStats.failed}</p>
+                <p className="text-[9px] text-neutral-500 uppercase tracking-widest mt-1">Failed</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-black text-[#00B7FF]">{playbookStats.avgDuration > 0 ? `${(playbookStats.avgDuration / 1000).toFixed(1)}s` : "—"}</p>
+                <p className="text-[9px] text-neutral-500 uppercase tracking-widest mt-1">Avg Duration</p>
+              </div>
+            </div>
+          </motion.div>
+        )}
 
         {/* Usage Over Time — Last 7 Days */}
         <motion.div
