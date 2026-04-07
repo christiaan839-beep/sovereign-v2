@@ -118,6 +118,18 @@ Key endpoints:
 - Consensus engine visualization added to landing page: Generate → Critique → Synthesize with model names
 - Interactive HITL testing on Security Command Center with 5 enterprise-realistic test scenarios
 
+### Elite Visual Effects (April 7 session continued)
+- New effects library: src/components/ui/EliteEffects.tsx with 7 reusable components
+- FloatingParticles: Canvas particle system with zero-gravity physics + mouse repulsion (auto-disables on mobile)
+- TiltCard: 3D perspective tilt on hover with spring physics (falls back to plain div on mobile)
+- TextShimmer: Animated gradient shimmer text (white→emerald→cyan→violet cycle)
+- useHideyNav: Navigation hides on scroll-down, reappears on scroll-up (Google Antigravity pattern)
+- SectionReveal: Scroll-triggered entrance animations with directional variants
+- All effects respect prefers-reduced-motion media query
+- Canvas devicePixelRatio scaling uses setTransform() to prevent cumulative scale bug
+- Hero fade/scale removed entirely — was causing "black dead zone" between hero and content
+- Hero compacted: 10 elements → 7 elements, min-h-[85vh] on mobile
+
 ### Pending (Manual Steps Required)
 - Run DB migration: drizzle/0003_playbook_runs.sql (Neon Console → SQL Editor)
 - Run DB migration: drizzle/0002_async_jobs.sql (Neon Console → SQL Editor)
