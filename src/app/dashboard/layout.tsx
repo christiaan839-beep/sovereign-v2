@@ -10,7 +10,7 @@ import {
   X, Menu,
   PanelLeftOpen, PanelLeftClose, Plug, Cpu,
   BarChart3, Eye, Shield, Wrench,
-  Wand2, Workflow, MessageSquare, Zap, Crown, Rocket,
+  Wand2, Workflow, MessageSquare, Zap, Rocket,
   Bot, ClipboardList,
 } from "lucide-react";
 import { useKeyboardShortcuts } from "@/lib/keyboard-shortcuts";
@@ -31,9 +31,6 @@ import { KeyboardShortcutsModal } from '@/components/ui/KeyboardShortcutsModal';
 /* ─── "NEW" Badge Helpers ─── */
 
 const NEW_BADGE_ITEMS = new Set([
-  "/dashboard/workflow-builder",
-  "/dashboard/integrations",
-  "/dashboard/audit-trail",
   "/dashboard/autopilot",
 ]);
 
@@ -70,37 +67,36 @@ interface NavGroup {
   defaultOpen?: boolean;
 }
 
-// ── Primary: What users do every day (visible immediately) ──
+// ── Primary: The 5 things users actually do every day ──
 const PRIMARY_NAV: NavItem[] = [
   { href: "/dashboard", label: "Home", icon: LayoutDashboard, tooltip: "Dashboard overview" },
-  { href: "/dashboard/mission-control", label: "Mission Control", icon: Rocket, tooltip: "One goal → watch agents execute in real-time" },
-  { href: "/dashboard/playbooks", label: "Playbooks", icon: Zap, tooltip: "1-click multi-agent workflows" },
-  { href: "/dashboard/autopilot", label: "Autopilot", icon: Bot, tooltip: "Live agent runs — see what's executing right now" },
-  { href: "/dashboard/jobs", label: "Jobs", icon: ClipboardList, tooltip: "Async job queue — fire-and-forget execution" },
+  { href: "/dashboard/mission-control", label: "Mission Control", icon: Rocket, tooltip: "One goal → watch agents execute" },
+  { href: "/dashboard/playbooks", label: "Playbooks", icon: Zap, tooltip: "25 multi-agent workflows + autopilot" },
+  { href: "/dashboard/leads", label: "Leads", icon: Target, tooltip: "Find and qualify prospects" },
   { href: "/chat", label: "Chat", icon: MessageSquare, tooltip: "Ask anything — AI routes to the right agent" },
-  { href: "/dashboard/leads", label: "Leads", icon: Target, tooltip: "Find and manage prospects" },
 ];
 
-// ── Grouped: Power tools (collapsed by default — revealed as users engage) ──
+// ── Grouped: Power tools + monitoring (collapsed by default) ──
 const NAV_GROUPS: NavGroup[] = [
   {
     label: "Tools",
     icon: Wrench,
-    defaultOpen: false, // Collapsed — reduces initial overwhelm
+    defaultOpen: false,
     items: [
+      { href: "/dashboard/content-factory", label: "Content", icon: Sparkles, tooltip: "Blog posts, emails, social media" },
       { href: "/dashboard/seo-dominator", label: "SEO", icon: Search, tooltip: "Keyword research and site audits" },
       { href: "/dashboard/competitor", label: "Market Intel", icon: Shield, tooltip: "Competitor analysis" },
-      { href: "/dashboard/build", label: "Page Builder", icon: Sparkles, tooltip: "Build landing pages with AI" },
-      { href: "/dashboard/workflow-builder", label: "Workflows", icon: Workflow, tooltip: "Multi-step automations" },
-      { href: "/dashboard/agent-builder", label: "My Agents", icon: Wand2, tooltip: "Create custom agents" },
+      { href: "/dashboard/build", label: "Page Builder", icon: Wand2, tooltip: "Build landing pages with AI" },
+      { href: "/dashboard/workflow-builder", label: "Workflows", icon: Workflow, tooltip: "Visual multi-step automations" },
     ],
   },
   {
     label: "Monitor",
     icon: Cpu,
     items: [
-      { href: "/dashboard/god-eye", label: "Agent Monitor", icon: Eye, tooltip: "Watch agents execute in real-time" },
-      { href: "/dashboard/agent-analytics", label: "Analytics", icon: BarChart3, tooltip: "Performance metrics" },
+      { href: "/dashboard/autopilot", label: "Autopilot", icon: Bot, tooltip: "Live playbook runs — step by step" },
+      { href: "/dashboard/jobs", label: "Job Queue", icon: ClipboardList, tooltip: "Async fire-and-forget tasks" },
+      { href: "/dashboard/agent-analytics", label: "Analytics", icon: BarChart3, tooltip: "Agent performance metrics" },
     ],
   },
 ];
@@ -108,8 +104,7 @@ const NAV_GROUPS: NavGroup[] = [
 // ── Bottom: Account-level items ──
 const BOTTOM_NAV: NavItem[] = [
   { href: "/dashboard/integrations", label: "Integrations", icon: Plug, tooltip: "Connect apps and services" },
-  { href: "/dashboard/settings", label: "Settings", icon: Settings, tooltip: "Account and team settings" },
-  { href: "/dashboard/admin", label: "Admin", icon: Crown, tooltip: "Revenue and platform metrics" },
+  { href: "/dashboard/settings", label: "Settings", icon: Settings, tooltip: "Account, team, API keys" },
 ];
 
 /* Page label lookup for breadcrumbs */

@@ -9,7 +9,7 @@ import {
   Activity, Shield, Zap, TrendingUp, CheckCircle2, Eye,
   Crosshair, PenTool, Radar, Workflow, X, Plug, Users,
   ChevronDown, ChevronUp, PartyPopper, Check, MessageSquare,
-  Bot, ClipboardList,
+  Bot,
 } from "lucide-react";
 import Link from "next/link";
 // Chat is available via the floating widget (SovereignAssistant) in layout.tsx and /chat page
@@ -207,7 +207,7 @@ interface QuickAction {
 const QUICK_ACTIONS: QuickAction[] = [
   {
     title: "Run a Playbook",
-    description: "1-click multi-agent workflows",
+    description: "25 multi-agent workflows — pick one and go",
     icon: Zap,
     gradient: "from-violet-500/20 to-emerald-500/20",
     action: "navigate",
@@ -230,24 +230,8 @@ const QUICK_ACTIONS: QuickAction[] = [
     value: "Write a blog post about ",
   },
   {
-    title: "Audit a Website",
-    description: "SEO, performance, and security analysis",
-    icon: Search,
-    gradient: "from-orange-500/20 to-amber-500/20",
-    action: "prompt",
-    value: "Audit the website ",
-  },
-  {
-    title: "Autopilot",
-    description: "Watch playbooks run live — step by step",
-    icon: Bot,
-    gradient: "from-violet-500/20 to-purple-500/20",
-    action: "navigate",
-    value: "/dashboard/autopilot",
-  },
-  {
-    title: "Open AI Chat",
-    description: "Talk to your AI workforce directly",
+    title: "Ask Anything",
+    description: "AI routes your goal to the right agent",
     icon: MessageSquare,
     gradient: "from-pink-500/20 to-rose-500/20",
     action: "navigate",
@@ -259,58 +243,34 @@ const QUICK_ACTIONS: QuickAction[] = [
 
 const DISCOVER_CARDS = [
   {
-    title: "Voice Agents",
-    description: "AI makes calls for you",
-    href: "/dashboard/voice-assistant",
-    icon: Mic,
-    accent: "from-emerald-500/20 to-teal-500/20",
-    border: "hover:border-emerald-500/30",
-  },
-  {
-    title: "NemoClaw Sandbox",
-    description: "Run agents on your hardware",
-    href: "/dashboard/nemo-claw",
-    icon: Cpu,
-    accent: "from-violet-500/20 to-purple-500/20",
-    border: "hover:border-violet-500/30",
-  },
-  {
-    title: "War Room",
-    description: "Multi-agent debate arena",
-    href: "/dashboard/war-room",
-    icon: Swords,
-    accent: "from-rose-500/20 to-orange-500/20",
-    border: "hover:border-rose-500/30",
-  },
-  {
-    title: "Templates",
-    description: "Start with proven templates",
-    href: "/dashboard/templates",
-    icon: LayoutTemplate,
-    accent: "from-blue-500/20 to-cyan-500/20",
-    border: "hover:border-blue-500/30",
-  },
-  {
-    title: "Analytics",
-    description: "Track your AI ROI",
-    href: "/dashboard/analytics/roi",
-    icon: BarChart3,
-    accent: "from-amber-500/20 to-yellow-500/20",
-    border: "hover:border-amber-500/30",
-  },
-  {
     title: "Autopilot",
-    description: "Live playbook execution tracker",
+    description: "Watch playbooks run live",
     href: "/dashboard/autopilot",
     icon: Bot,
     accent: "from-violet-500/20 to-fuchsia-500/20",
     border: "hover:border-violet-500/30",
   },
   {
-    title: "Job Queue",
-    description: "Async fire-and-forget tasks",
-    href: "/dashboard/jobs",
-    icon: ClipboardList,
+    title: "Competitor Intel",
+    description: "Analyze any competitor's strategy",
+    href: "/dashboard/competitor",
+    icon: Shield,
+    accent: "from-rose-500/20 to-orange-500/20",
+    border: "hover:border-rose-500/30",
+  },
+  {
+    title: "SEO Audit",
+    description: "Full site analysis + keyword gaps",
+    href: "/dashboard/seo-dominator",
+    icon: Search,
+    accent: "from-amber-500/20 to-yellow-500/20",
+    border: "hover:border-amber-500/30",
+  },
+  {
+    title: "Analytics",
+    description: "Track agent performance + ROI",
+    href: "/dashboard/agent-analytics",
+    icon: BarChart3,
     accent: "from-cyan-500/20 to-sky-500/20",
     border: "hover:border-cyan-500/30",
   },
@@ -455,7 +415,7 @@ function DiscoverSection() {
         <h2 className="text-xs font-semibold uppercase tracking-[0.15em] text-neutral-500 mb-3">
           Discover More
         </h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+        <div className="grid grid-cols-2 gap-2.5">
           {DISCOVER_CARDS.map((card, i) => (
             <motion.button
               key={card.title}
