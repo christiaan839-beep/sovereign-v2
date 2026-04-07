@@ -94,44 +94,61 @@ export default function PlaybooksPage() {
     );
 
     try {
-      // Set first step to running
-      setExecutionSteps((prev) =>
-        prev.map((s, i) => (i === 0 ? { ...s, status: "running" as StepStatus } : s))
-      );
-
-      const res = await fetch("/api/agents/coordinator", {
+      // Fire the playbook via the Playbook Engine (persists to DB, shows in Autopilot)
+      const res = await fetch("/api/playbooks/run", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           playbook_id: selectedPlaybook.id,
           inputs,
-          auto_execute: true,
-          confirmed: true,
         }),
       });
 
-      const data = await res.json();
-
-      if (data.results && Array.isArray(data.results)) {
-        setExecutionSteps(
-          data.results.map((r: { agent: string; reason: string; status: string; duration_ms: number; data?: unknown; error?: string }) => ({
-            agent: r.agent,
-            reason: r.reason,
-            status: r.status as StepStatus,
-            duration_ms: r.duration_ms,
-            data: r.data,
-            error: r.error,
-          }))
-        );
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: "Failed to start playbook" }));
+        throw new Error(err.error || "Failed to start playbook");
       }
+
+      const { runId } = await res.json();
+      if (!runId) throw new Error("No runId returned");
+
+      // Poll for live step status every 2s
+      const poll = async (): Promise<void> => {
+        const pollRes = await fetch(`/api/playbooks/runs/${runId}`);
+        if (!pollRes.ok) return;
+        const run = await pollRes.json();
+
+        // Map DB steps to execution view
+        if (run.steps && Array.isArray(run.steps)) {
+          setExecutionSteps(
+            run.steps.map((s: { agentName: string; reason: string; status: string; durationMs: number; result?: string; error?: string }) => ({
+              agent: s.agentName,
+              reason: s.reason || "",
+              status: (s.status === "done" ? "success" : s.status) as StepStatus,
+              duration_ms: s.durationMs,
+              data: s.result ? (() => { try { return JSON.parse(s.result!); } catch { return s.result; } })() : undefined,
+              error: s.error || undefined,
+            }))
+          );
+        }
+
+        if (run.done) {
+          setExecuting(false);
+          setExecutionDone(true);
+        } else {
+          await new Promise((r) => setTimeout(r, 2000));
+          return poll();
+        }
+      };
+
+      await poll();
     } catch (err) {
       setExecutionSteps((prev) =>
-        prev.map((s, i) => (i === 0 && s.status === "running"
-          ? { ...s, status: "failed" as StepStatus, error: err instanceof Error ? err.message : "Network error" }
+        prev.map((s, i) => (i === 0 && s.status !== "success"
+          ? { ...s, status: "failed" as StepStatus, error: err instanceof Error ? err.message : "Execution failed" }
           : s
         ))
       );
-    } finally {
       setExecuting(false);
       setExecutionDone(true);
     }
