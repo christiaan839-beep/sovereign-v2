@@ -252,7 +252,7 @@ const DISCOVER_CARDS = [
     title: "Competitor Intel",
     description: "Analyze any competitor's strategy",
     href: "/dashboard/competitor",
-    icon: Shield,
+    icon: Swords,
     accent: "from-rose-500/20 to-orange-500/20",
     border: "hover:border-rose-500/30",
   },
@@ -265,12 +265,12 @@ const DISCOVER_CARDS = [
     border: "hover:border-amber-500/30",
   },
   {
-    title: "Analytics",
-    description: "Track agent performance + ROI",
-    href: "/dashboard/agent-analytics",
-    icon: BarChart3,
-    accent: "from-cyan-500/20 to-sky-500/20",
-    border: "hover:border-cyan-500/30",
+    title: "Security",
+    description: "5-layer pipeline + HITL approvals",
+    href: "/dashboard/nemo-claw",
+    icon: Shield,
+    accent: "from-emerald-500/20 to-teal-500/20",
+    border: "hover:border-emerald-500/30",
   },
 ];
 
