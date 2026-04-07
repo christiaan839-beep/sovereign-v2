@@ -318,7 +318,8 @@ export function FloatingParticles({
       canvas.removeEventListener("mousemove", handleMouse);
       canvas.removeEventListener("mouseleave", handleMouseLeave);
     };
-  }, [count, color, maxSize, isMobile, reducedMotion, colors]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- colors array ref changes but content is stable
+  }, [count, color, maxSize, isMobile, reducedMotion]);
 
   if (isMobile || reducedMotion) return null;
 

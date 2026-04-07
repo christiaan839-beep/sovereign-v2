@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, AnimatePresence, useScroll, useTransform, useInView } from "framer-motion";
+import { motion, AnimatePresence, useInView } from "framer-motion";
 import { BrainCircuit, CheckCircle2, Cpu, Target, ChevronDown, XCircle, ArrowRight, Mic, Code2, Search, FileText } from "lucide-react";
 import Link from "next/link";
 import { SignInButton } from "@clerk/nextjs";
@@ -118,18 +118,13 @@ function TimeCountUpOnView({ minutes, seconds, duration = 1.5 }: { minutes: numb
   return <span ref={ref}>{m}m {s.toString().padStart(2, "0")}s</span>;
 }
 
-// ─── Enterprise Section with Parallax ───
+// ─── Enterprise Section (CSS-only parallax — no useScroll dependency) ───
 function EnterpriseSection() {
-  const sectionRef = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({ target: sectionRef, offset: ["start end", "end start"] });
-  const backgroundY = useTransform(scrollYProgress, [0, 1], ["0%", "20%"]);
-
   return (
-    <section id="enterprise" ref={sectionRef} className="py-32 px-6 relative overflow-hidden">
+    <section id="enterprise" className="py-32 px-6 relative overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_50%,rgba(16,185,129,0.03),transparent)]" />
-      {/* Parallax grid background */}
-      <motion.div
-        style={{ y: backgroundY }}
+      {/* Grid background */}
+      <div
         className="absolute inset-[-20%] bg-[linear-gradient(rgba(16,185,129,0.01)_1px,transparent_1px),linear-gradient(90deg,rgba(16,185,129,0.01)_1px,transparent_1px)] bg-[size:80px_80px] pointer-events-none"
       />
       <div className="max-w-4xl mx-auto relative z-10">
