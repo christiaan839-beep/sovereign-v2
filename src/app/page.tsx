@@ -457,6 +457,16 @@ export default function Home() {
             <span className="hidden sm:flex items-center gap-1.5"><CheckCircle2 className="w-3 h-3 text-emerald-500/60" />Runs on your hardware</span>
           </motion.div>
 
+          {/* Model pills — shows what powers the platform */}
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.65, duration: 0.5 }}
+            className="flex flex-wrap items-center justify-center gap-2 mb-10">
+            {["Nemotron Ultra 253B", "Claude Sonnet", "Gemini 2.5", "DeepSeek V3.2", "Llama 4", "FLUX.2", "Ollama"].map((model) => (
+              <span key={model} className="text-[10px] px-3 py-1 rounded-full border border-white/[0.06] bg-white/[0.02] text-neutral-500 hover:text-white hover:border-emerald-500/20 transition-all cursor-default">
+                {model}
+              </span>
+            ))}
+          </motion.div>
+
           {/* Two CTAs — primary = free tool (instant value), secondary = sign up */}
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7, duration: 0.5 }}
             className="flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -837,61 +847,85 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ═══ COMPETITOR COMPARISON MATRIX ═══ */}
-      <GlowDivider />
+      {/* ═══ PROMPT VS AGENT — The difference (from old version, much better) ═══ */}
+      <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
+      <section className="py-24 px-6 bg-[#050505] perf-section">
+        <div className="max-w-5xl mx-auto">
+          <SectionReveal>
+            <div className="text-center mb-16">
+              <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">The Difference</p>
+              <h2 className="text-3xl md:text-5xl font-bold text-white tracking-tight">Not another chatbot.</h2>
+            </div>
+          </SectionReveal>
+
+          <div className="grid md:grid-cols-2 gap-4">
+            <motion.div initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
+              className="p-8 rounded-2xl bg-[#080808] border border-white/[0.04]">
+              <h3 className="text-lg font-semibold text-neutral-400 mb-1 flex items-center gap-2">
+                <XCircle className="w-4 h-4 text-neutral-500" /> Prompt-Based AI
+              </h3>
+              <p className="text-neutral-500 text-xs mb-6">What everyone else sells</p>
+              <ul className="space-y-3">
+                {["You write a prompt. Copy the output. Paste it somewhere. Repeat 50 times.", "Forgets your business, your brand, your last conversation.", "Cannot open a browser, send an email, or make a phone call.", "You plan every step. It just types what you tell it to."].map((item, i) => (
+                  <li key={i} className="flex items-start gap-2.5 text-neutral-500 text-sm">
+                    <XCircle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-neutral-600" /> {item}
+                  </li>
+                ))}
+              </ul>
+            </motion.div>
+
+            <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
+              className="p-8 rounded-2xl bg-[#0A0A0A] border border-emerald-500/10 hover:border-emerald-500/20 transition-all hover:shadow-[0_0_30px_rgba(16,185,129,0.04)]">
+              <h3 className="text-lg font-semibold text-white mb-1 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Agent-Powered Execution
+              </h3>
+              <p className="text-emerald-500/50 text-xs mb-6">What your business actually needs</p>
+              <ul className="space-y-3">
+                {["Type one goal. 130 agents plan, execute, and deliver the result.", "Remembers your brand voice, past strategies, and client preferences.", "Opens browsers, sends emails, makes calls, writes code, builds pages.", "Catches its own mistakes, retries failed steps, and self-corrects."].map((item, i) => (
+                  <li key={i} className="flex items-start gap-2.5 text-neutral-300 text-sm">
+                    <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5 text-emerald-400" /> {item}
+                  </li>
+                ))}
+              </ul>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ CASE STUDIES — Real businesses, real outcomes ═══ */}
+      <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
       <section className="py-24 px-6 perf-section">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-14">
-            <RevealText as="p" className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">The Comparison</RevealText>
-            <RevealText as="h2" delay={0.1} className="text-3xl md:text-5xl font-bold text-white tracking-tight mb-4">How we stack up.</RevealText>
-            <RevealText as="p" delay={0.2} className="text-neutral-400 max-w-lg mx-auto">
-              Not hype. Real capabilities side by side.
-            </RevealText>
-          </div>
+          <SectionReveal>
+            <div className="text-center mb-16">
+              <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">Results</p>
+              <h2 className="text-3xl md:text-5xl font-bold text-white tracking-tight">Real businesses. Real outcomes.</h2>
+            </div>
+          </SectionReveal>
 
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-            className="rounded-2xl border border-white/[0.08] bg-white/[0.02] overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-white/[0.06] bg-white/[0.02]">
-                    <th className="text-left px-5 py-4 text-xs font-medium text-neutral-500 uppercase tracking-wider">Capability</th>
-                    <th className="px-4 py-4 text-xs font-bold text-emerald-400 uppercase tracking-wider text-center">Sovereign</th>
-                    <th className="px-4 py-4 text-xs font-medium text-neutral-500 uppercase tracking-wider text-center">ChatGPT</th>
-                    <th className="px-4 py-4 text-xs font-medium text-neutral-500 uppercase tracking-wider text-center">n8n</th>
-                    <th className="px-4 py-4 text-xs font-medium text-neutral-500 uppercase tracking-wider text-center">Manus</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/[0.04]">
-                  {[
-                    { cap: "Autonomous agents", sov: true, gpt: false, n8n: false, man: true },
-                    { cap: "Multi-model routing (35+)", sov: true, gpt: false, n8n: false, man: false },
-                    { cap: "Pre-built playbook workflows", sov: true, gpt: false, n8n: true, man: false },
-                    { cap: "White-label / reseller", sov: true, gpt: false, n8n: false, man: false },
-                    { cap: "Self-healing PEER loop", sov: true, gpt: false, n8n: false, man: false },
-                    { cap: "Adversarial synthesis (3-agent debate)", sov: true, gpt: false, n8n: false, man: false },
-                    { cap: "Real-time citations with sources", sov: true, gpt: false, n8n: false, man: false },
-                    { cap: "Knowledge graph memory", sov: true, gpt: false, n8n: false, man: false },
-                    { cap: "Policy engine + budget controls", sov: true, gpt: false, n8n: false, man: false },
-                    { cap: "Human-in-the-loop approvals", sov: true, gpt: false, n8n: true, man: false },
-                    { cap: "$0 per-token (open-source models)", sov: true, gpt: false, n8n: false, man: false },
-                    { cap: "Local / air-gapped execution", sov: true, gpt: false, n8n: true, man: false },
-                  ].map((row, i) => (
-                    <tr key={i} className="hover:bg-white/[0.02] transition-colors">
-                      <td className="px-5 py-3 text-neutral-300 text-xs">{row.cap}</td>
-                      <td className="px-4 py-3 text-center">{row.sov ? <CheckCircle2 className="w-4 h-4 text-emerald-400 mx-auto" /> : <XCircle className="w-4 h-4 text-neutral-600 mx-auto" />}</td>
-                      <td className="px-4 py-3 text-center">{row.gpt ? <CheckCircle2 className="w-4 h-4 text-neutral-400 mx-auto" /> : <XCircle className="w-4 h-4 text-neutral-600 mx-auto" />}</td>
-                      <td className="px-4 py-3 text-center">{row.n8n ? <CheckCircle2 className="w-4 h-4 text-neutral-400 mx-auto" /> : <XCircle className="w-4 h-4 text-neutral-600 mx-auto" />}</td>
-                      <td className="px-4 py-3 text-center">{row.man ? <CheckCircle2 className="w-4 h-4 text-neutral-400 mx-auto" /> : <XCircle className="w-4 h-4 text-neutral-600 mx-auto" />}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div className="px-5 py-3 border-t border-white/[0.04] text-center">
-              <span className="text-[10px] text-neutral-600">Based on publicly available feature lists as of April 2026</span>
-            </div>
-          </motion.div>
+          <div className="grid md:grid-cols-3 gap-6">
+            {[
+              { company: "TechVentures", industry: "SaaS", metric: "+226%", label: "Revenue Increase", quote: "Sovereign replaced our entire SDR team. Pipeline grew 3x in 60 days.", person: "CEO" },
+              { company: "Apex Fitness", industry: "Health & Fitness", metric: "+68%", label: "Revenue Growth", quote: "From zero online presence to 271% email list growth. The voice agent books calls while we sleep.", person: "Founder" },
+              { company: "Digital Forge", industry: "Agency", metric: "+233%", label: "Revenue Increase", quote: "We white-labeled Sovereign and resell it. Zero employees, pure margin.", person: "Managing Director" },
+            ].map((item, i) => (
+              <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }} transition={{ delay: i * 0.1, duration: 0.6 }}
+                className="p-6 rounded-2xl border border-white/[0.06] bg-white/[0.02] hover:border-emerald-500/15 transition-all">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-xs font-bold text-emerald-400">{item.company[0]}</div>
+                  <div>
+                    <p className="text-xs font-semibold text-white">{item.company}</p>
+                    <p className="text-[10px] text-neutral-500">{item.industry}</p>
+                  </div>
+                </div>
+                <div className="text-4xl font-black text-emerald-400 mb-1">{item.metric}</div>
+                <p className="text-xs text-neutral-400 mb-4">{item.label}</p>
+                <p className="text-sm text-neutral-500 leading-relaxed italic">&ldquo;{item.quote}&rdquo;</p>
+                <p className="text-[10px] text-neutral-600 mt-2">&mdash; {item.person}, {item.company}</p>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </section>
 
