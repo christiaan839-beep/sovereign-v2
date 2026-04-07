@@ -289,6 +289,23 @@ export const MODEL_REGISTRY: ModelConfig[] = [
     costTier: "free",
     color: PROVIDER_COLORS.local,
   },
+  // ─── Project Glasswing — Claude Mythos Preview (coming soon) ───
+  // See: anthropic.com/glasswing
+  // Mythos Preview won't be GA — capabilities will ship in a future Opus model.
+  // SWE-bench Pro: 77.8% (vs Opus 4.6 53.4%), CyberGym: 83.1% (vs 66.6%)
+  // Found 0-days in OpenBSD (27-year flaw), FFmpeg (16-year flaw), Linux kernel privesc
+  // Pricing: $25/$125 per M input/output tokens
+  {
+    id: "claude-mythos",
+    name: "Claude Mythos",
+    provider: "anthropic",
+    description: "Frontier — autonomous vulnerability detection, 77.8% SWE-bench Pro",
+    tags: ["code", "reasoning", "agentic"],
+    contextWindow: 200000,
+    speedTier: "standard",
+    costTier: "metered",
+    color: PROVIDER_COLORS.anthropic,
+  },
 ];
 
 export function getModel(id: string): ModelConfig {

@@ -151,6 +151,27 @@ export default function NemoClawPage() {
   return (
     <div className="p-6 md:p-10 max-w-7xl mx-auto min-h-screen bg-[#050505] text-white">
 
+      {/* ── Glasswing Banner ── */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-6 p-4 rounded-2xl border border-violet-500/15 bg-violet-500/[0.04] flex flex-col sm:flex-row sm:items-center gap-3"
+      >
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-violet-500/15 flex items-center justify-center">
+            <Zap className="w-4 h-4 text-violet-400" />
+          </div>
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-violet-400">Project Glasswing</span>
+            <span className="block text-[10px] text-neutral-600">anthropic.com/glasswing</span>
+          </div>
+        </div>
+        <p className="text-xs text-neutral-400 leading-relaxed">
+          Claude Mythos Preview scored <span className="text-white font-semibold">83.1%</span> on CyberGym (vs 66.6% Opus 4.6) and found zero-day vulnerabilities in OpenBSD, FFmpeg, and the Linux kernel autonomously.
+          Sovereign&apos;s safety pipeline ensures these capabilities run inside <span className="text-emerald-400 font-semibold">authenticated guardrails</span> with full audit trails.
+        </p>
+      </motion.div>
+
       {/* ── Header ── */}
       <div className="mb-8">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold uppercase tracking-wider mb-3">
@@ -160,8 +181,9 @@ export default function NemoClawPage() {
           Security Command Center
         </h1>
         <p className="text-sm text-neutral-500 max-w-2xl">
-          Every agent execution passes through a 5-layer safety pipeline. Anomalous actions require human approval.
-          Routine pre-approved tasks run silently — you only see the weird stuff.
+          Every agent execution passes through a 5-layer safety pipeline before output is delivered.
+          Mythos-class models can find vulnerabilities autonomously — but only inside Sovereign&apos;s authenticated,
+          sandboxed, human-in-the-loop infrastructure. You control what ships.
         </p>
       </div>
 
@@ -509,6 +531,70 @@ export default function NemoClawPage() {
             triggers the HITL approval queue above. This is not a walled garden — it&apos;s a checkpoint system.
           </p>
         </div>
+      </div>
+
+      {/* ── Glasswing: Why This Architecture Matters ── */}
+      <div className="mt-8 rounded-2xl bg-white/[0.02] border border-violet-500/10 p-6 backdrop-blur-md">
+        <h3 className="text-xs font-bold uppercase tracking-[0.25em] text-white mb-4 flex items-center gap-2">
+          <ShieldAlert className="w-4 h-4 text-violet-400" />
+          Why Guardrails Matter Now — Project Glasswing
+        </h3>
+
+        <div className="grid md:grid-cols-3 gap-4 mb-6">
+          {[
+            {
+              finding: "27-year-old OpenBSD vulnerability",
+              detail: "Remote system crash via a flaw hidden since 1997. Found autonomously by Mythos Preview.",
+              severity: "Critical",
+              color: "red",
+            },
+            {
+              finding: "16-year-old FFmpeg encoding flaw",
+              detail: "Missed by 5 million automated test interactions. Discovered by AI reading the source code.",
+              severity: "High",
+              color: "amber",
+            },
+            {
+              finding: "Linux kernel privilege escalation",
+              detail: "Multiple chained vulnerabilities allowing regular user → system administrator in seconds.",
+              severity: "Critical",
+              color: "red",
+            },
+          ].map((item) => (
+            <div key={item.finding} className={`rounded-xl border p-4 ${
+              item.color === "red" ? "border-red-500/15 bg-red-500/[0.03]" : "border-amber-500/15 bg-amber-500/[0.03]"
+            }`}>
+              <div className="flex items-center gap-2 mb-2">
+                <AlertTriangle className={`w-3.5 h-3.5 ${item.color === "red" ? "text-red-400" : "text-amber-400"}`} />
+                <span className={`text-[9px] font-bold uppercase ${item.color === "red" ? "text-red-400" : "text-amber-400"}`}>{item.severity}</span>
+              </div>
+              <h4 className="text-sm font-semibold text-white mb-1">{item.finding}</h4>
+              <p className="text-[10px] text-neutral-500 leading-relaxed">{item.detail}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="rounded-xl bg-emerald-500/[0.03] border border-emerald-500/15 p-4">
+          <div className="flex items-start gap-3">
+            <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm text-white font-semibold mb-1">
+                Sovereign&apos;s safety pipeline was built for exactly this moment.
+              </p>
+              <p className="text-[11px] text-neutral-400 leading-relaxed">
+                When frontier models can autonomously find zero-days, you need infrastructure that
+                constrains them: sandboxed execution, 5-layer guardrails, human-in-the-loop approval,
+                and full audit trails. Every action is authenticated. Every output is verified.
+                The power of Mythos-class intelligence — inside guardrails you control.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <p className="mt-4 text-[10px] text-neutral-700">
+          Source: Anthropic Project Glasswing (anthropic.com/glasswing). All vulnerabilities were responsibly disclosed and patched.
+          12 founding partners including AWS, Google, Microsoft, NVIDIA, CrowdStrike, and Apple.
+        </p>
       </div>
 
     </div>
