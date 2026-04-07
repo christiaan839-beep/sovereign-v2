@@ -14,33 +14,43 @@ export async function GET() {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const runs = await db
-    .select()
-    .from(playbookRuns)
-    .where(eq(playbookRuns.userId, userId))
-    .orderBy(desc(playbookRuns.createdAt))
-    .limit(30);
+  try {
+    const runs = await db
+      .select()
+      .from(playbookRuns)
+      .where(eq(playbookRuns.userId, userId))
+      .orderBy(desc(playbookRuns.createdAt))
+      .limit(30);
 
-  // Attach step summaries for each run in parallel
-  const withSteps = await Promise.all(
-    runs.map(async (run) => {
-      const steps = await db
-        .select({
-          stepIndex: playbookRunSteps.stepIndex,
-          agentName: playbookRunSteps.agentName,
-          reason: playbookRunSteps.reason,
-          status: playbookRunSteps.status,
-          durationMs: playbookRunSteps.durationMs,
-          startedAt: playbookRunSteps.startedAt,
-          completedAt: playbookRunSteps.completedAt,
-        })
-        .from(playbookRunSteps)
-        .where(eq(playbookRunSteps.runId, run.id))
-        .orderBy(playbookRunSteps.stepIndex);
+    // Attach step summaries for each run in parallel
+    const withSteps = await Promise.all(
+      runs.map(async (run) => {
+        const steps = await db
+          .select({
+            stepIndex: playbookRunSteps.stepIndex,
+            agentName: playbookRunSteps.agentName,
+            reason: playbookRunSteps.reason,
+            status: playbookRunSteps.status,
+            durationMs: playbookRunSteps.durationMs,
+            startedAt: playbookRunSteps.startedAt,
+            completedAt: playbookRunSteps.completedAt,
+          })
+          .from(playbookRunSteps)
+          .where(eq(playbookRunSteps.runId, run.id))
+          .orderBy(playbookRunSteps.stepIndex);
 
-      return { ...run, steps };
-    })
-  );
+        return { ...run, steps };
+      })
+    );
 
-  return NextResponse.json({ runs: withSteps });
+    return NextResponse.json({ runs: withSteps });
+  } catch (err: unknown) {
+    const pgCode = (err as { code?: string })?.code;
+    const msg = err instanceof Error ? err.message : String(err);
+    if (pgCode === "42P01" || msg.includes("does not exist")) {
+      // Tables not created yet — return empty state instead of crashing
+      return NextResponse.json({ runs: [] });
+    }
+    throw err;
+  }
 }

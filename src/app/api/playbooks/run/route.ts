@@ -37,28 +37,42 @@ export async function POST(req: Request) {
   const chatId = process.env.TELEGRAM_ADMIN_CHAT_ID || process.env.TELEGRAM_CHAT_ID || "";
   const hasTelegram = !!process.env.TELEGRAM_BOT_TOKEN && !!chatId;
 
-  // Create run record
-  const [run] = await db.insert(playbookRuns).values({
-    userId,
-    playbookId: playbook.id,
-    playbookName: playbook.name,
-    inputs: JSON.stringify(inputs),
-    status: "running",
-    stepCount: steps.length,
-    notifyTelegram: hasTelegram,
-    telegramChatId: chatId || null,
-  }).returning();
+  // Create run record (gracefully handle missing tables)
+  let run: typeof playbookRuns.$inferSelect;
+  try {
+    [run] = await db.insert(playbookRuns).values({
+      userId,
+      playbookId: playbook.id,
+      playbookName: playbook.name,
+      inputs: JSON.stringify(inputs),
+      status: "running",
+      stepCount: steps.length,
+      notifyTelegram: hasTelegram,
+      telegramChatId: chatId || null,
+    }).returning();
 
-  // Pre-create all step records as "pending"
-  await db.insert(playbookRunSteps).values(
-    steps.map((step, i) => ({
-      runId: run.id,
-      stepIndex: i,
-      agentName: step.agent,
-      reason: step.reason || "",
-      status: "pending" as const,
-    }))
-  );
+    // Pre-create all step records as "pending"
+    await db.insert(playbookRunSteps).values(
+      steps.map((step, i) => ({
+        runId: run.id,
+        stepIndex: i,
+        agentName: step.agent,
+        reason: step.reason || "",
+        status: "pending" as const,
+      }))
+    );
+  } catch (err: unknown) {
+    const pgCode = (err as { code?: string })?.code;
+    const msg = err instanceof Error ? err.message : String(err);
+    if (pgCode === "42P01" || msg.includes("does not exist")) {
+      log.error("DB table missing — run migrations", { error: msg });
+      return NextResponse.json({
+        error: "Database tables not ready. Run migrations: drizzle/0003_playbook_runs.sql",
+        hint: "Neon Console → SQL Editor → paste the migration file → Run",
+      }, { status: 503 });
+    }
+    throw err; // Re-throw if it's a different error
+  }
 
   log.info("playbook run started", { runId: run.id, playbookId: playbook.id, userId, steps: steps.length });
 

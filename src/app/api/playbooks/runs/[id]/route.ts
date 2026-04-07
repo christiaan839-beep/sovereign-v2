@@ -20,31 +20,40 @@ export async function GET(
 
   const { id } = await params;
 
-  const [run] = await db
-    .select()
-    .from(playbookRuns)
-    .where(and(eq(playbookRuns.id, id), eq(playbookRuns.userId, userId)))
-    .limit(1);
+  try {
+    const [run] = await db
+      .select()
+      .from(playbookRuns)
+      .where(and(eq(playbookRuns.id, id), eq(playbookRuns.userId, userId)))
+      .limit(1);
 
-  if (!run) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    if (!run) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const steps = await db
-    .select()
-    .from(playbookRunSteps)
-    .where(eq(playbookRunSteps.runId, id))
-    .orderBy(playbookRunSteps.stepIndex);
+    const steps = await db
+      .select()
+      .from(playbookRunSteps)
+      .where(eq(playbookRunSteps.runId, id))
+      .orderBy(playbookRunSteps.stepIndex);
 
-  const currentStep = steps.findIndex(s => s.status === "running");
-  const completedSteps = steps.filter(s => s.status === "done").length;
-  const progress = run.stepCount > 0
-    ? Math.round((completedSteps / run.stepCount) * 100)
-    : 0;
+    const currentStep = steps.findIndex(s => s.status === "running");
+    const completedSteps = steps.filter(s => s.status === "done").length;
+    const progress = run.stepCount > 0
+      ? Math.round((completedSteps / run.stepCount) * 100)
+      : 0;
 
-  return NextResponse.json({
-    ...run,
-    steps,
-    currentStep,
-    progress,
-    done: run.status === "done" || run.status === "failed",
-  });
+    return NextResponse.json({
+      ...run,
+      steps,
+      currentStep,
+      progress,
+      done: run.status === "done" || run.status === "failed",
+    });
+  } catch (err: unknown) {
+    const pgCode = (err as { code?: string })?.code;
+    const msg = err instanceof Error ? err.message : String(err);
+    if (pgCode === "42P01" || msg.includes("does not exist")) {
+      return NextResponse.json({ error: "Database tables not ready", done: true, steps: [] }, { status: 503 });
+    }
+    throw err;
+  }
 }
