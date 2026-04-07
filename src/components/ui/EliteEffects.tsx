@@ -29,19 +29,18 @@ function usePrefersReducedMotion() {
 }
 
 /**
- * FloatingParticles — Antigravity-inspired particle system.
+ * FloatingParticles — Antigravity-level particle system.
  *
- * Three layers of depth:
- *   1. Large glowing orbs (8-40px) — slow drift, dramatic glow, few of them
- *   2. Medium particles (3-8px) — moderate speed, some glow
- *   3. Tiny stars (1-2px) — fast, sharp, many of them
+ * Uses Canvas 2D with additive blending for real glow/bloom effect.
+ * Three depth layers with different physics behaviors.
+ * Mouse interaction: attract/orbit/scatter depending on particle layer.
  *
- * Mouse interaction: orbs are ATTRACTED to cursor (not repelled),
- * creating a magnetic pull effect like Google Antigravity.
- * On mouse leave, they drift back to original trajectory.
- *
- * Uses radial gradients for glow (not flat circles).
- * Auto-disables on mobile and prefers-reduced-motion.
+ * NEW in this version:
+ * - Additive blending (globalCompositeOperation = "lighter") for bloom
+ * - Trail effect via semi-transparent clear (particles leave ghost trails)
+ * - Scroll-reactive: particles drift faster when page is being scrolled
+ * - Brighter, more vivid colors with proper glow halos
+ * - Mouse cursor creates a visible light cone
  */
 export function FloatingParticles({
   count = 40,
@@ -58,6 +57,7 @@ export function FloatingParticles({
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const mouseRef = useRef({ x: -999, y: -999 });
+  const scrollSpeedRef = useRef(0);
   const particlesRef = useRef<Array<{
     x: number; y: number; vx: number; vy: number;
     size: number; opacity: number; drift: number; colorIdx: number;
@@ -71,84 +71,79 @@ export function FloatingParticles({
 
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { alpha: true });
     if (!ctx) return;
 
     const dpr = window.devicePixelRatio || 1;
 
     const resize = () => {
-      const w = canvas.offsetWidth;
-      const h = canvas.offsetHeight;
-      canvas.width = w * dpr;
-      canvas.height = h * dpr;
+      canvas.width = canvas.offsetWidth * dpr;
+      canvas.height = canvas.offsetHeight * dpr;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
     resize();
     window.addEventListener("resize", resize);
 
+    // Track scroll speed for reactive particles
+    let lastScrollY = window.scrollY;
+    const onScroll = () => {
+      scrollSpeedRef.current = Math.abs(window.scrollY - lastScrollY);
+      lastScrollY = window.scrollY;
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+
     const w = canvas.offsetWidth;
     const h = canvas.offsetHeight;
     const palette = colors || [color];
 
-    // Parse RGB values from palette for gradient creation
     const rgbPalette = palette.map(c => {
       const m = c.match(/(\d+),\s*(\d+),\s*(\d+)/);
       return m ? { r: +m[1], g: +m[2], b: +m[3] } : { r: 16, g: 185, b: 129 };
     });
 
-    // Create 3 layers of particles
     const particles: typeof particlesRef.current = [];
 
-    // Layer 1: Large glowing orbs (5-8 of them, 15-40px, dramatic)
-    const orbCount = Math.max(5, Math.floor(count * 0.12));
+    // Layer 1: Large glowing orbs
+    const orbCount = Math.max(6, Math.floor(count * 0.1));
     for (let i = 0; i < orbCount; i++) {
       particles.push({
-        x: Math.random() * w,
-        y: Math.random() * h,
-        vx: (Math.random() - 0.5) * 0.15,
-        vy: (Math.random() - 0.5) * 0.15,
-        size: Math.random() * 25 + 15,
-        opacity: Math.random() * 0.15 + 0.08,
+        x: Math.random() * w, y: Math.random() * h,
+        vx: (Math.random() - 0.5) * 0.2, vy: (Math.random() - 0.5) * 0.2,
+        size: Math.random() * 20 + 12,
+        opacity: Math.random() * 0.2 + 0.1,
         drift: Math.random() * Math.PI * 2,
         colorIdx: Math.floor(Math.random() * palette.length),
-        layer: 1,
-        glowSize: Math.random() * 60 + 40,
+        layer: 1, glowSize: Math.random() * 80 + 50,
         pulsePhase: Math.random() * Math.PI * 2,
       });
     }
 
-    // Layer 2: Medium particles (20-30% of count, 4-12px)
+    // Layer 2: Medium particles
     const medCount = Math.floor(count * 0.25);
     for (let i = 0; i < medCount; i++) {
       particles.push({
-        x: Math.random() * w,
-        y: Math.random() * h,
-        vx: (Math.random() - 0.5) * 0.3,
-        vy: (Math.random() - 0.5) * 0.3,
-        size: Math.random() * 8 + 4,
-        opacity: Math.random() * 0.4 + 0.15,
+        x: Math.random() * w, y: Math.random() * h,
+        vx: (Math.random() - 0.5) * 0.4, vy: (Math.random() - 0.5) * 0.4,
+        size: Math.random() * 6 + 3,
+        opacity: Math.random() * 0.5 + 0.2,
         drift: Math.random() * Math.PI * 2,
         colorIdx: Math.floor(Math.random() * palette.length),
-        layer: 2,
-        glowSize: Math.random() * 20 + 10,
+        layer: 2, glowSize: Math.random() * 25 + 12,
         pulsePhase: Math.random() * Math.PI * 2,
       });
     }
 
-    // Layer 3: Tiny stars (rest, 1-3px, sharp)
+    // Layer 3: Tiny sharp stars
     const starCount = count - orbCount - medCount;
     for (let i = 0; i < starCount; i++) {
       particles.push({
-        x: Math.random() * w,
-        y: Math.random() * h,
-        vx: (Math.random() - 0.5) * 0.5,
-        vy: (Math.random() - 0.5) * 0.5,
-        size: Math.random() * maxSize + 0.5,
-        opacity: Math.random() * 0.6 + 0.2,
+        x: Math.random() * w, y: Math.random() * h,
+        vx: (Math.random() - 0.5) * 0.6, vy: (Math.random() - 0.5) * 0.6,
+        size: Math.random() * maxSize + 0.8,
+        opacity: Math.random() * 0.7 + 0.3,
         drift: Math.random() * Math.PI * 2,
         colorIdx: Math.floor(Math.random() * palette.length),
-        layer: 3,
-        glowSize: 0,
+        layer: 3, glowSize: 0,
         pulsePhase: Math.random() * Math.PI * 2,
       });
     }
@@ -159,9 +154,7 @@ export function FloatingParticles({
       const rect = canvas.getBoundingClientRect();
       mouseRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
     };
-    const handleMouseLeave = () => {
-      mouseRef.current = { x: -999, y: -999 };
-    };
+    const handleMouseLeave = () => { mouseRef.current = { x: -999, y: -999 }; };
     canvas.addEventListener("mousemove", handleMouse);
     canvas.addEventListener("mouseleave", handleMouseLeave);
 
@@ -171,142 +164,140 @@ export function FloatingParticles({
     const animate = () => {
       const cw = canvas.offsetWidth;
       const ch = canvas.offsetHeight;
-      ctx.clearRect(0, 0, cw, ch);
-      time += 0.016; // ~60fps
+      time += 0.016;
 
-      const allParticles = particlesRef.current;
+      // Trail effect: semi-transparent clear (ghosts linger)
+      ctx.globalCompositeOperation = "source-over";
+      ctx.fillStyle = "rgba(1, 1, 1, 0.15)";
+      ctx.fillRect(0, 0, cw, ch);
 
-      for (const p of allParticles) {
-        // Zero-gravity drift (different speeds per layer)
-        const driftSpeed = p.layer === 1 ? 0.003 : p.layer === 2 ? 0.008 : 0.015;
+      // Additive blending for bloom/glow
+      ctx.globalCompositeOperation = "lighter";
+
+      // Scroll reactivity: particles drift faster during scroll
+      const scrollBoost = 1 + Math.min(scrollSpeedRef.current * 0.02, 2);
+      scrollSpeedRef.current *= 0.9; // decay
+
+      const all = particlesRef.current;
+
+      for (const p of all) {
+        const driftSpeed = (p.layer === 1 ? 0.004 : p.layer === 2 ? 0.01 : 0.018) * scrollBoost;
         p.drift += driftSpeed;
-        p.vx += Math.sin(p.drift) * (driftSpeed * 0.5);
-        p.vy += Math.cos(p.drift * 0.7) * (driftSpeed * 0.5);
+        p.vx += Math.sin(p.drift) * (driftSpeed * 0.6);
+        p.vy += Math.cos(p.drift * 0.7) * (driftSpeed * 0.4);
 
-        // Mouse interaction — ATTRACTION for orbs, repulsion for small
+        // Mouse interaction
         if (mouseRef.current.x > 0) {
           const dx = mouseRef.current.x - p.x;
           const dy = mouseRef.current.y - p.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
-          const range = p.layer === 1 ? 250 : p.layer === 2 ? 180 : 120;
+          const range = p.layer === 1 ? 300 : p.layer === 2 ? 200 : 130;
 
-          if (dist < range && dist > 0) {
-            const strength = ((range - dist) / range);
+          if (dist < range && dist > 1) {
+            const str = (range - dist) / range;
             if (p.layer === 1) {
-              // Large orbs: gentle ATTRACTION (Antigravity magnetic effect)
-              p.vx += (dx / dist) * strength * 0.08;
-              p.vy += (dy / dist) * strength * 0.08;
+              p.vx += (dx / dist) * str * 0.1;
+              p.vy += (dy / dist) * str * 0.1;
             } else if (p.layer === 2) {
-              // Medium: orbit around cursor
-              p.vx += (dx / dist) * strength * 0.04 + (-dy / dist) * strength * 0.02;
-              p.vy += (dy / dist) * strength * 0.04 + (dx / dist) * strength * 0.02;
+              p.vx += (dx / dist) * str * 0.05 + (-dy / dist) * str * 0.03;
+              p.vy += (dy / dist) * str * 0.05 + (dx / dist) * str * 0.03;
             } else {
-              // Tiny: scatter away (repulsion)
-              p.vx -= (dx / dist) * strength * 0.2;
-              p.vy -= (dy / dist) * strength * 0.2;
+              p.vx -= (dx / dist) * str * 0.25;
+              p.vy -= (dy / dist) * str * 0.25;
             }
           }
         }
 
-        // Damping (heavier for large orbs = more floaty)
-        const damping = p.layer === 1 ? 0.995 : p.layer === 2 ? 0.99 : 0.985;
-        p.vx *= damping;
-        p.vy *= damping;
+        const damp = p.layer === 1 ? 0.994 : p.layer === 2 ? 0.988 : 0.982;
+        p.vx *= damp;
+        p.vy *= damp;
 
-        // Speed limit
-        const maxSpeed = p.layer === 1 ? 0.8 : p.layer === 2 ? 1.5 : 2.5;
-        const speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
-        if (speed > maxSpeed) {
-          p.vx = (p.vx / speed) * maxSpeed;
-          p.vy = (p.vy / speed) * maxSpeed;
-        }
+        const maxSpd = (p.layer === 1 ? 1 : p.layer === 2 ? 2 : 3) * scrollBoost;
+        const spd = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+        if (spd > maxSpd) { p.vx = (p.vx / spd) * maxSpd; p.vy = (p.vy / spd) * maxSpd; }
 
         p.x += p.vx;
         p.y += p.vy;
 
-        // Soft edge wrapping
-        const pad = p.glowSize + 20;
+        const pad = p.glowSize + 30;
         if (p.x < -pad) p.x = cw + pad;
         if (p.x > cw + pad) p.x = -pad;
         if (p.y < -pad) p.y = ch + pad;
         if (p.y > ch + pad) p.y = -pad;
 
-        // Pulsing opacity for orbs
-        const pulse = p.layer <= 2 ? Math.sin(time * 0.8 + p.pulsePhase) * 0.03 : 0;
-        const currentOpacity = Math.max(0.02, p.opacity + pulse);
-
+        const pulse = p.layer <= 2 ? Math.sin(time * 0.6 + p.pulsePhase) * 0.04 : 0;
+        const op = Math.max(0.03, p.opacity + pulse);
         const rgb = rgbPalette[p.colorIdx] || rgbPalette[0];
 
         if (p.layer === 1) {
-          // Large orbs: radial gradient glow
+          // Large orbs: multi-stop radial glow with bright core
           const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.glowSize);
-          grad.addColorStop(0, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${currentOpacity * 1.5})`);
-          grad.addColorStop(0.3, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${currentOpacity * 0.6})`);
-          grad.addColorStop(0.7, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${currentOpacity * 0.15})`);
+          grad.addColorStop(0, `rgba(${Math.min(255, rgb.r + 100)}, ${Math.min(255, rgb.g + 100)}, ${Math.min(255, rgb.b + 100)}, ${op * 0.8})`);
+          grad.addColorStop(0.15, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${op * 0.5})`);
+          grad.addColorStop(0.5, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${op * 0.12})`);
           grad.addColorStop(1, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0)`);
           ctx.beginPath();
           ctx.arc(p.x, p.y, p.glowSize, 0, Math.PI * 2);
           ctx.fillStyle = grad;
           ctx.fill();
-
-          // Bright core
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.size * 0.3, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(${Math.min(255, rgb.r + 80)}, ${Math.min(255, rgb.g + 80)}, ${Math.min(255, rgb.b + 80)}, ${currentOpacity * 2})`;
-          ctx.fill();
         } else if (p.layer === 2) {
-          // Medium: soft glow circle
           const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.glowSize);
-          grad.addColorStop(0, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${currentOpacity})`);
-          grad.addColorStop(0.5, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${currentOpacity * 0.3})`);
+          grad.addColorStop(0, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${op * 0.7})`);
+          grad.addColorStop(0.4, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${op * 0.2})`);
           grad.addColorStop(1, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0)`);
           ctx.beginPath();
           ctx.arc(p.x, p.y, p.glowSize, 0, Math.PI * 2);
           ctx.fillStyle = grad;
           ctx.fill();
         } else {
-          // Tiny stars: sharp bright dots
+          // Stars: tiny bright dots with micro-glow
+          const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 3);
+          grad.addColorStop(0, `rgba(${Math.min(255, rgb.r + 60)}, ${Math.min(255, rgb.g + 60)}, ${Math.min(255, rgb.b + 60)}, ${op})`);
+          grad.addColorStop(0.5, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${op * 0.2})`);
+          grad.addColorStop(1, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0)`);
           ctx.beginPath();
-          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${currentOpacity})`;
+          ctx.arc(p.x, p.y, p.size * 3, 0, Math.PI * 2);
+          ctx.fillStyle = grad;
           ctx.fill();
         }
       }
 
-      // Connection lines between nearby medium/large particles
-      for (let i = 0; i < allParticles.length; i++) {
-        if (allParticles[i].layer === 3) continue; // Skip tiny stars
-        for (let j = i + 1; j < allParticles.length; j++) {
-          if (allParticles[j].layer === 3) continue;
-          const a = allParticles[i];
-          const b = allParticles[j];
+      // Connection lines (additive blend makes them glow)
+      for (let i = 0; i < all.length; i++) {
+        if (all[i].layer === 3) continue;
+        for (let j = i + 1; j < all.length; j++) {
+          if (all[j].layer === 3) continue;
+          const a = all[i], b = all[j];
           const d = Math.hypot(a.x - b.x, a.y - b.y);
-          if (d < 200) {
-            const lineAlpha = 0.06 * (1 - d / 200);
+          if (d < 220) {
+            const alpha = 0.04 * (1 - d / 220);
             const rgb1 = rgbPalette[a.colorIdx] || rgbPalette[0];
             ctx.beginPath();
             ctx.moveTo(a.x, a.y);
             ctx.lineTo(b.x, b.y);
-            ctx.strokeStyle = `rgba(${rgb1.r}, ${rgb1.g}, ${rgb1.b}, ${lineAlpha})`;
-            ctx.lineWidth = 0.5;
+            ctx.strokeStyle = `rgba(${rgb1.r}, ${rgb1.g}, ${rgb1.b}, ${alpha})`;
+            ctx.lineWidth = 0.8;
             ctx.stroke();
           }
         }
       }
 
-      // Mouse glow — subtle radial light that follows cursor
+      // Mouse light cone
       if (mouseRef.current.x > 0) {
-        const mx = mouseRef.current.x;
-        const my = mouseRef.current.y;
-        const mouseGlow = ctx.createRadialGradient(mx, my, 0, mx, my, 150);
-        mouseGlow.addColorStop(0, "rgba(16, 185, 129, 0.04)");
-        mouseGlow.addColorStop(0.5, "rgba(6, 182, 212, 0.02)");
-        mouseGlow.addColorStop(1, "rgba(0, 0, 0, 0)");
+        const mx = mouseRef.current.x, my = mouseRef.current.y;
+        const mg = ctx.createRadialGradient(mx, my, 0, mx, my, 200);
+        mg.addColorStop(0, "rgba(16, 185, 129, 0.06)");
+        mg.addColorStop(0.3, "rgba(6, 182, 212, 0.03)");
+        mg.addColorStop(0.6, "rgba(139, 92, 246, 0.015)");
+        mg.addColorStop(1, "rgba(0, 0, 0, 0)");
         ctx.beginPath();
-        ctx.arc(mx, my, 150, 0, Math.PI * 2);
-        ctx.fillStyle = mouseGlow;
+        ctx.arc(mx, my, 200, 0, Math.PI * 2);
+        ctx.fillStyle = mg;
         ctx.fill();
       }
+
+      // Reset composite for next frame
+      ctx.globalCompositeOperation = "source-over";
 
       frame = requestAnimationFrame(animate);
     };
@@ -315,10 +306,11 @@ export function FloatingParticles({
     return () => {
       cancelAnimationFrame(frame);
       window.removeEventListener("resize", resize);
+      window.removeEventListener("scroll", onScroll);
       canvas.removeEventListener("mousemove", handleMouse);
       canvas.removeEventListener("mouseleave", handleMouseLeave);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- colors array ref changes but content is stable
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [count, color, maxSize, isMobile, reducedMotion]);
 
   if (isMobile || reducedMotion) return null;

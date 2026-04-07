@@ -31,6 +31,7 @@ import { useLiveAgentCount } from "@/hooks/useLiveAgentCount";
 const AgentNetwork = dynamic(() => import("@/components/cinematic/AgentNetwork").then(m => ({ default: m.AgentNetwork })), { ssr: false });
 const PhysicsCards = dynamic(() => import("@/components/cinematic/PhysicsCards").then(m => ({ default: m.PhysicsCards })), { ssr: false });
 const NebulaBackground = dynamic(() => import("@/components/cinematic/NebulaBackground").then(m => ({ default: m.NebulaBackground })), { ssr: false });
+const SmoothScroll = dynamic(() => import("@/components/cinematic/SmoothScroll").then(m => ({ default: m.SmoothScroll })), { ssr: false });
 import { MouseParallax, FloatingElement } from "@/components/cinematic/MouseParallax";
 
 // ─── Capability Card (enhanced with emerald hover glow) ───
@@ -356,6 +357,9 @@ export default function Home() {
   return (
     <CinematicLoader>
     <div className="relative min-h-screen bg-[#010101] text-white selection:bg-emerald-500/20 font-sans antialiased">
+
+      {/* Smooth scroll — Lenis (Antigravity's floating scroll feel) */}
+      <SmoothScroll />
 
       {/* Scroll progress bar */}
       <ScrollProgress />
