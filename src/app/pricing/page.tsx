@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { CheckCircle2, X as XIcon, ArrowRight, Shield, HelpCircle, Crown, GitCompareArrows } from "lucide-react";
+import { CheckCircle2, X as XIcon, ArrowRight, Shield, HelpCircle, Crown, GitCompareArrows, Zap } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { AnimatePresence } from "framer-motion";
@@ -332,9 +332,11 @@ export default function PricingPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
           {TIERS.map((t, i) => (
             <motion.div key={i} {...fadeIn(i * 0.1)}
-              className={`rounded-2xl bg-white/[0.02] backdrop-blur-xl border p-7 flex flex-col ${t.featured ? "border-emerald-500/40 relative overflow-hidden scale-[1.02] shadow-[0_0_40px_rgba(16,185,129,0.1)]" : "border-white/[0.06]"}`}>
+              className={`rounded-2xl bg-white/[0.02] backdrop-blur-xl border p-7 flex flex-col ${t.featured ? "border-emerald-500/40 relative overflow-hidden scale-[1.02] shadow-[0_0_40px_rgba(16,185,129,0.1)]" : t.plan === "free" ? "border-cyan-500/30 relative overflow-hidden" : "border-white/[0.06]"}`}>
               {t.featured && <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-500" />}
+              {t.plan === "free" && <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-500 to-blue-500" />}
               {t.featured && <span className="inline-flex self-start items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase mb-3"><Crown className="w-2.5 h-2.5" /> Most Popular</span>}
+              {t.plan === "free" && <span className="inline-flex self-start items-center gap-1 px-2 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-[10px] font-bold uppercase mb-3"><Zap className="w-2.5 h-2.5" /> No Credit Card</span>}
               <p className="text-sm font-bold uppercase tracking-widest text-neutral-400 mb-1">{t.name}</p>
               <p className="text-4xl font-bold text-white mb-1">
                 {t.price}
@@ -353,6 +355,8 @@ export default function PricingPage() {
                 className={`w-full py-3 font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${
                   t.featured
                     ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:opacity-90 shadow-[0_0_20px_rgba(16,185,129,0.2)]"
+                    : t.plan === "free"
+                    ? "bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:opacity-90"
                     : t.plan === "node"
                     ? "bg-white/5 border border-white/10 text-white hover:bg-white/10"
                     : "border border-white/[0.06] text-white hover:bg-white/5"
