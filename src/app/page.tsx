@@ -32,6 +32,27 @@ const WebGLParticles = dynamic(() => import("@/components/cinematic/WebGLParticl
 import { MouseParallax, FloatingElement } from "@/components/cinematic/MouseParallax";
 const AgentGlobe = dynamic(() => import("@/components/cinematic/AgentGlobe").then(m => ({ default: m.AgentGlobe })), { ssr: false });
 const AgentOffice = dynamic(() => import("@/components/ui/AgentOffice").then(m => ({ default: m.AgentOffice })), { ssr: false });
+const CursorGlow = dynamic(() => import("@/components/cinematic/CursorGlow").then(m => ({ default: m.CursorGlow })), { ssr: false });
+const ConsensusEngine = dynamic(() => import("@/components/cinematic/ConsensusEngine").then(m => ({ default: m.ConsensusEngine })), { ssr: false });
+const TokenStream = dynamic(() => import("@/components/cinematic/TokenStream").then(m => ({ default: m.TokenStream })), { ssr: false });
+
+// ─── Live Token Counter (hero strip) ───
+function LiveTokCounter() {
+  const [tok, setTok] = useState(2247);
+  useEffect(() => {
+    const iv = setInterval(() => setTok(2180 + Math.floor(Math.random() * 120)), 400);
+    return () => clearInterval(iv);
+  }, []);
+  return (
+    <span className="hidden md:flex items-center gap-1.5 font-mono tabular-nums">
+      <span className="relative flex h-1.5 w-1.5">
+        <span className="animate-ping absolute h-full w-full rounded-full bg-emerald-400 opacity-70" />
+        <span className="relative rounded-full h-1.5 w-1.5 bg-emerald-400" />
+      </span>
+      <span className="text-emerald-400/80">{tok.toLocaleString()} tok/s</span>
+    </span>
+  );
+}
 
 // ─── FAQ Item ───
 function FAQItem({ question, answer }: { question: string; answer: string }) {
@@ -331,6 +352,12 @@ export default function Home() {
     <CinematicLoader>
     <div className="relative min-h-screen bg-[#010101] text-white selection:bg-emerald-500/20 font-sans antialiased">
 
+      {/* Cursor glow — emerald trail follows mouse everywhere */}
+      <CursorGlow />
+
+      {/* Exit intent — captures leaving visitors */}
+      <ExitIntent />
+
       {/* Smooth scroll — Lenis (Antigravity's floating scroll feel) */}
       <SmoothScroll />
 
@@ -449,14 +476,16 @@ export default function Home() {
             They work 24/7. They cost $19/month. They never call in sick.
           </motion.p>
 
-          {/* Proof strip — tiny, credible */}
+          {/* Proof strip — tiny, credible + live tok/s counter */}
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6, duration: 0.5 }}
-            className="flex items-center justify-center gap-4 text-xs text-neutral-500 mb-10">
+            className="flex items-center justify-center gap-4 text-xs text-neutral-500 mb-10 flex-wrap">
             <span className="flex items-center gap-1.5"><CheckCircle2 className="w-3 h-3 text-emerald-500/60" />35+ open-source models</span>
             <span className="hidden sm:block text-neutral-700">|</span>
             <span className="flex items-center gap-1.5"><CheckCircle2 className="w-3 h-3 text-emerald-500/60" />$0 per-token cost</span>
             <span className="hidden sm:block text-neutral-700">|</span>
             <span className="hidden sm:flex items-center gap-1.5"><CheckCircle2 className="w-3 h-3 text-emerald-500/60" />Runs on your hardware</span>
+            <span className="hidden md:block text-neutral-700">|</span>
+            <LiveTokCounter />
           </motion.div>
 
           {/* Model pills — shows what powers the platform */}
@@ -682,6 +711,9 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ═══ LIVE TOKEN STREAM ═══ */}
+      <TokenStream />
+
       {/* ═══ AGENT WORLD GLOBE ═══ */}
       <GlowDivider />
       <AgentGlobe />
@@ -852,6 +884,10 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* ═══ CONSENSUS ENGINE — 4-model debate visualization ═══ */}
+      <GlowDivider />
+      <ConsensusEngine />
 
       {/* ═══ AGENT OFFICE — Your agents, live ═══ */}
       <GlowDivider />
