@@ -79,7 +79,8 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
 function CountUpOnView({ target, suffix = "", prefix = "", duration = 1.5 }: { target: number; suffix?: string; prefix?: string; duration?: number }) {
   const ref = useRef<HTMLSpanElement>(null);
   const isInView = useInView(ref, { once: true });
-  const [value, setValue] = useState(0);
+  // Start at target (not 0) to prevent flash-of-zero before hydration/viewport
+  const [value, setValue] = useState(target);
 
   useEffect(() => {
     if (!isInView) return;
@@ -475,7 +476,7 @@ export default function Home() {
             <ParticleBurst>
             <MagneticButton href="/signup" strength={0.2}>
               <span className="group flex items-center gap-2 px-8 py-4 bg-white text-black font-bold rounded-full text-sm hover:shadow-[0_0_40px_rgba(255,255,255,0.15)] transition-gpu duration-500 cursor-pointer">
-                Claim Founder Access — Free Forever <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                Run a Free Playbook <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </span>
             </MagneticButton>
             </ParticleBurst>
@@ -1630,7 +1631,7 @@ export default function Home() {
             <ParticleBurst>
             <MagneticButton href="/signup" strength={0.25}>
               <span className="cta-glow group flex items-center gap-2 px-8 py-4 bg-white text-black font-bold rounded-full text-sm hover:shadow-[0_0_40px_rgba(255,255,255,0.15)] transition-gpu cursor-pointer">
-                Start Free Now <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                Run a Free Playbook <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </span>
             </MagneticButton>
             </ParticleBurst>

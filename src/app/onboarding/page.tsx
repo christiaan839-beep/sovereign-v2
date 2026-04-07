@@ -306,8 +306,20 @@ export default function OnboardingPage() {
   const next = () => { if (currentStep < STEPS.length - 1) setCurrentStep(currentStep + 1); };
   const back = () => { if (currentStep > 0) setCurrentStep(currentStep - 1); };
   const selectOption = (stepId: string, optionId: string) => {
-    setSelections({ ...selections, [stepId]: optionId });
+    const updated = { ...selections, [stepId]: optionId };
+    setSelections(updated);
+    // Persist goal and industry to localStorage so the dashboard can use them
+    if (stepId === "goal") localStorage.setItem("sovereign_user_goal", optionId);
+    if (stepId === "industry") localStorage.setItem("sovereign_user_industry", optionId);
     setTimeout(next, 400);
+  };
+
+  // Map onboarding goals → playbook IDs for the activation bridge
+  const GOAL_PLAYBOOK_MAP: Record<string, string> = {
+    leads: "lead-blitz",
+    content: "content-machine",
+    compete: "competitor-takedown",
+    automate: "", // show full playbooks page
   };
 
   return (
@@ -378,9 +390,14 @@ export default function OnboardingPage() {
                     </div>
                   ))}
                 </div>
-                <Link href="/dashboard"
+                <Link
+                  href={(() => {
+                    const goal = selections.goal || "";
+                    const playbookId = GOAL_PLAYBOOK_MAP[goal];
+                    return playbookId ? `/dashboard/playbooks?auto=${playbookId}` : "/dashboard";
+                  })()}
                   className="cta-glow inline-flex items-center gap-2 px-10 py-4 bg-white text-black font-bold rounded-full text-sm hover:shadow-[0_0_40px_rgba(255,255,255,0.12)] transition-gpu">
-                  Enter Dashboard <ArrowRight className="w-4 h-4" />
+                  {selections.goal && GOAL_PLAYBOOK_MAP[selections.goal] ? "Run Your First Playbook" : "Enter Dashboard"} <ArrowRight className="w-4 h-4" />
                 </Link>
                 <p className="text-[10px] text-neutral-500 mt-4 uppercase tracking-wider">
                   Payments powered by Yoco

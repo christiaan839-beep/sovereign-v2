@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   Target, Swords, PenTool, FileText, TrendingUp, Fingerprint,
@@ -62,6 +63,31 @@ export default function PlaybooksPage() {
   const [executing, setExecuting] = useState(false);
   const [executionSteps, setExecutionSteps] = useState<ExecutionStep[]>([]);
   const [executionDone, setExecutionDone] = useState(false);
+
+  const searchParams = useSearchParams();
+
+  // Auto-select a playbook from onboarding bridge (?auto=lead-blitz)
+  useEffect(() => {
+    const autoId = searchParams.get("auto");
+    if (autoId && !selectedPlaybook) {
+      const match = PLAYBOOKS.find(p => p.id === autoId);
+      if (match) {
+        setSelectedPlaybook(match);
+        // Pre-fill company URL from onboarding if available
+        const companyUrl = localStorage.getItem("sovereign_company_url");
+        if (companyUrl) {
+          const prefilled: Record<string, string> = {};
+          for (const field of match.fields) {
+            const key = field.key.toLowerCase();
+            if (key.includes("url") || key.includes("website") || key.includes("domain") || key.includes("competitor")) {
+              prefilled[field.key] = companyUrl;
+            }
+          }
+          if (Object.keys(prefilled).length > 0) setInputs(prefilled);
+        }
+      }
+    }
+  }, [searchParams, selectedPlaybook]);
 
   const filteredPlaybooks = activeCategory === "all"
     ? PLAYBOOKS
