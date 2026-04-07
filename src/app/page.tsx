@@ -57,6 +57,113 @@ function TokCounter() {
   );
 }
 
+// ─── ROI Calculator ───
+function ROICalculator() {
+  const [leads, setLeads] = useState(50);
+  const [dealSize, setDealSize] = useState(5000);
+  const closeRate = 0.1;
+  const sovereignCost = 199;
+
+  const monthlyRevenue = Math.round(leads * closeRate * dealSize);
+  const roi = monthlyRevenue > 0 ? Math.round(((monthlyRevenue - sovereignCost) / sovereignCost) * 100) : 0;
+  const humanCost = Math.round(leads * 0.75 * 25); // 45min per lead at $25/hr ≈ 0.75hr
+
+  return (
+    <section className="py-24 px-6 bg-[#040404]">
+      <div className="max-w-4xl mx-auto">
+        <div className="text-center mb-12">
+          <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">ROI Calculator</p>
+          <h2 className="text-3xl md:text-5xl font-black text-white tracking-tight mb-4">
+            The math is<br />
+            <span className="text-emerald-400">embarrassingly obvious.</span>
+          </h2>
+          <p className="text-neutral-400 text-sm max-w-md mx-auto">
+            Drag the sliders. Watch what happens to your revenue when agents handle lead gen 24/7.
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-[1fr_1fr] gap-8">
+          {/* Inputs */}
+          <div className="space-y-8 p-6 rounded-2xl border border-white/[0.06] bg-[#080808]">
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <label className="text-xs text-neutral-400">Leads per month from agents</label>
+                <span className="text-sm font-black text-white font-mono">{leads}</span>
+              </div>
+              <input
+                type="range" min={10} max={500} step={10} value={leads}
+                onChange={e => setLeads(Number(e.target.value))}
+                className="w-full h-1 rounded-full bg-neutral-800 appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-emerald-400 [&::-webkit-slider-thumb]:cursor-pointer"
+              />
+              <div className="flex justify-between text-[9px] text-neutral-700 mt-1">
+                <span>10</span><span>250</span><span>500</span>
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <label className="text-xs text-neutral-400">Average deal value</label>
+                <span className="text-sm font-black text-white font-mono">${dealSize.toLocaleString()}</span>
+              </div>
+              <input
+                type="range" min={500} max={50000} step={500} value={dealSize}
+                onChange={e => setDealSize(Number(e.target.value))}
+                className="w-full h-1 rounded-full bg-neutral-800 appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-emerald-400 [&::-webkit-slider-thumb]:cursor-pointer"
+              />
+              <div className="flex justify-between text-[9px] text-neutral-700 mt-1">
+                <span>$500</span><span>$25K</span><span>$50K</span>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-white/[0.04] space-y-2">
+              <div className="flex justify-between text-xs">
+                <span className="text-neutral-500">Close rate (industry avg)</span>
+                <span className="text-white font-mono">10%</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-neutral-500">Sovereign Node cost</span>
+                <span className="text-white font-mono">${sovereignCost}/mo</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Results */}
+          <div className="space-y-4">
+            <div className="p-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.04]">
+              <p className="text-[10px] text-emerald-500/60 uppercase tracking-widest mb-1">Expected monthly revenue</p>
+              <p className="text-4xl font-black text-emerald-400 font-mono">${monthlyRevenue.toLocaleString()}</p>
+              <p className="text-xs text-neutral-500 mt-1">{leads} leads &times; 10% close &times; ${dealSize.toLocaleString()} avg deal</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-4 rounded-xl border border-white/[0.06] bg-[#080808]">
+                <p className="text-[10px] text-neutral-600 uppercase tracking-widest mb-1">ROI</p>
+                <p className="text-2xl font-black text-white font-mono">{roi.toLocaleString()}%</p>
+              </div>
+              <div className="p-4 rounded-xl border border-white/[0.06] bg-[#080808]">
+                <p className="text-[10px] text-neutral-600 uppercase tracking-widest mb-1">vs hiring a human</p>
+                <p className="text-2xl font-black text-white font-mono">${humanCost.toLocaleString()}<span className="text-sm text-neutral-500">/mo</span></p>
+                <p className="text-[9px] text-neutral-700">45 min/lead &times; $25/hr</p>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl border border-white/[0.06] bg-[#080808] text-center">
+              <p className="text-xs text-neutral-500 mb-1">Sovereign pays for itself after</p>
+              <p className="text-xl font-black text-white font-mono">
+                {monthlyRevenue > 0 ? (
+                  <>{Math.max(1, Math.ceil(sovereignCost / (monthlyRevenue / 30)))} days</>
+                ) : (
+                  <>—</>
+                )}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ─── FAQ Item ───
 function FAQItem({ question, answer }: { question: string; answer: string }) {
   const [open, setOpen] = useState(false);
@@ -135,8 +242,8 @@ function EnterpriseSection() {
             Your data. Your infrastructure. Your autonomous workforce.
           </RevealText>
           <RevealText as="p" delay={0.2} className="text-sm text-neutral-400 max-w-2xl mx-auto leading-relaxed">
-            Built on NVIDIA NIM with 35+ open-source models. Zero per-token costs.
-            Run locally on your hardware. Your data never leaves your machine.
+            Built on NVIDIA NIM with 36+ models including Claude Mythos. Zero per-token costs.
+            Run locally via Ollama. Glasswing-grade safety on every execution.
           </RevealText>
         </div>
 
@@ -168,7 +275,7 @@ function EnterpriseSection() {
           {[
             { label: "25 Autopilot Playbooks", desc: "Schedule multi-agent workflows to run hourly, daily, or weekly — 24/7" },
             { label: "25+ Live Integrations", desc: "Slack, Sheets, HubSpot, Yoco, GitHub, Discord, and more" },
-            { label: "White-Label Platform", desc: "Custom domains, branding, client portals" },
+            { label: "Mythos-Ready", desc: "Glasswing-tier models auto-route through 5-layer guardrails" },
             { label: "2,200+ Tok/s Inference", desc: "Cerebras wafer-scale engine for instant classification" },
           ].map((item, i) => (
             <motion.div key={i} initial={{ opacity: 0 }} whileInView={{ opacity: 1 }}
@@ -497,7 +604,7 @@ export default function Home() {
           {/* Proof strip — tiny, credible + live tok/s counter */}
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6, duration: 0.5 }}
             className="flex items-center justify-center gap-4 text-xs text-neutral-500 mb-10 flex-wrap">
-            <span className="flex items-center gap-1.5"><CheckCircle2 className="w-3 h-3 text-emerald-500/60" />35+ open-source models</span>
+            <span className="flex items-center gap-1.5"><CheckCircle2 className="w-3 h-3 text-emerald-500/60" />36+ open-source models</span>
             <span className="hidden sm:block text-neutral-700">|</span>
             <span className="flex items-center gap-1.5"><CheckCircle2 className="w-3 h-3 text-emerald-500/60" />$0 per-token cost</span>
             <span className="hidden sm:block text-neutral-700">|</span>
@@ -509,9 +616,22 @@ export default function Home() {
           {/* Model pills — shows what powers the platform */}
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.65, duration: 0.5 }}
             className="flex flex-wrap items-center justify-center gap-2 mb-10">
-            {["Nemotron Ultra 253B", "Claude Sonnet 4.6", "Gemini 2.5 Pro", "DeepSeek V3.2", "Llama 4 Scout", "FLUX.1 Pro", "Ollama"].map((model) => (
-              <span key={model} className="text-[10px] px-3 py-1 rounded-full border border-white/[0.06] bg-white/[0.02] text-neutral-500 hover:text-white hover:border-emerald-500/20 transition-all cursor-default">
-                {model}
+            {[
+              { name: "Nemotron Ultra 253B", hot: false },
+              { name: "Claude Mythos", hot: true },
+              { name: "Claude Sonnet 4.6", hot: false },
+              { name: "Gemini 2.5 Pro", hot: false },
+              { name: "DeepSeek V3.2", hot: false },
+              { name: "Llama 4 Scout", hot: false },
+              { name: "FLUX.1 Pro", hot: false },
+              { name: "Ollama", hot: false },
+            ].map((model) => (
+              <span key={model.name} className={`text-[10px] px-3 py-1 rounded-full border transition-all cursor-default ${
+                model.hot
+                  ? "border-violet-500/30 bg-violet-500/10 text-violet-400 hover:border-violet-500/50"
+                  : "border-white/[0.06] bg-white/[0.02] text-neutral-500 hover:text-white hover:border-emerald-500/20"
+              }`}>
+                {model.name}{model.hot && <span className="ml-1 text-[8px] text-violet-400/60">NEW</span>}
               </span>
             ))}
           </motion.div>
@@ -964,6 +1084,10 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* ═══ ROI CALCULATOR — The math is obvious ═══ */}
+      <GlowDivider />
+      <ROICalculator />
 
       {/* ═══ TRY IT YOURSELF — honest CTA instead of fake case studies ═══ */}
       <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
