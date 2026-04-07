@@ -82,79 +82,145 @@ export function WebGLParticles({
         new THREE.Color(0xf59e0b), // amber
       ];
 
+      // ─── MORPH SHAPE GENERATORS ───
+      // Each returns an array of [x, y, z] positions for `count` particles
+      function makeCloud(n: number) {
+        return Array.from({ length: n }, () => [
+          (Math.random() - 0.5) * 80,
+          (Math.random() - 0.5) * 48,
+          (Math.random() - 0.5) * 40,
+        ]);
+      }
+      function makeSphere(n: number) {
+        return Array.from({ length: n }, (_, i) => {
+          const phi = Math.acos(1 - 2 * (i + 0.5) / n);
+          const theta = Math.PI * (1 + Math.sqrt(5)) * i;
+          const r = 22 + Math.random() * 3;
+          return [
+            r * Math.sin(phi) * Math.cos(theta),
+            r * Math.sin(phi) * Math.sin(theta) * 0.6,
+            r * Math.cos(phi),
+          ];
+        });
+      }
+      function makeDNA(n: number) {
+        return Array.from({ length: n }, (_, i) => {
+          const t = (i / n) * Math.PI * 6 - Math.PI * 3;
+          const strand = i % 2 === 0 ? 1 : -1;
+          return [
+            Math.cos(t) * 12 * strand,
+            t * 2.5,
+            Math.sin(t) * 12 * strand + (Math.random() - 0.5) * 2,
+          ];
+        });
+      }
+      function makeGrid(n: number) {
+        const side = Math.ceil(Math.sqrt(n));
+        return Array.from({ length: n }, (_, i) => {
+          const row = Math.floor(i / side);
+          const col = i % side;
+          return [
+            (col - side / 2) * 2.5 + (Math.random() - 0.5) * 0.3,
+            (row - side / 2) * 2.5 + (Math.random() - 0.5) * 0.3,
+            (Math.random() - 0.5) * 2,
+          ];
+        });
+      }
+      function makeRing(n: number) {
+        return Array.from({ length: n }, (_, i) => {
+          const angle = (i / n) * Math.PI * 2;
+          const r = 20 + Math.sin(angle * 6) * 5 + Math.random() * 2;
+          return [
+            Math.cos(angle) * r,
+            Math.sin(angle) * r * 0.5,
+            (Math.random() - 0.5) * 8,
+          ];
+        });
+      }
+
+      const shapes = [makeCloud, makeSphere, makeDNA, makeGrid, makeRing];
+      let currentShapeIdx = 0;
+      let morphProgress = 0; // 0 = current shape, 1 = next shape
+      let morphDirection = 0; // 0 = idle, 1 = morphing forward
+      let lastMorphTime = 0;
+      const MORPH_INTERVAL = 8; // seconds between morphs
+      const MORPH_DURATION = 2.5; // seconds to complete morph
+
+      // Generate initial + target shapes
+      let currentShape = shapes[0](count);
+      let nextShape = shapes[1](count);
+
       // Create particles
       const positions = new Float32Array(count * 3);
+      const targetPositions = new Float32Array(count * 3);
       const colors = new Float32Array(count * 3);
       const sizes = new Float32Array(count);
-      const phases = new Float32Array(count);  // for animation
-      const speeds = new Float32Array(count);  // drift speed
-      const targets = new Float32Array(count * 3); // morph target positions
-
-      const spread = 80;
+      const phases = new Float32Array(count);
+      const speeds = new Float32Array(count);
 
       for (let i = 0; i < count; i++) {
         const i3 = i * 3;
-        // Random cloud positions
-        positions[i3] = (Math.random() - 0.5) * spread;
-        positions[i3 + 1] = (Math.random() - 0.5) * spread * 0.6;
-        positions[i3 + 2] = (Math.random() - 0.5) * 40;
+        positions[i3] = currentShape[i][0];
+        positions[i3 + 1] = currentShape[i][1];
+        positions[i3 + 2] = currentShape[i][2];
 
-        // Color from palette
+        targetPositions[i3] = nextShape[i][0];
+        targetPositions[i3 + 1] = nextShape[i][1];
+        targetPositions[i3 + 2] = nextShape[i][2];
+
         const col = palette[Math.floor(Math.random() * palette.length)];
         colors[i3] = col.r;
         colors[i3 + 1] = col.g;
         colors[i3 + 2] = col.b;
 
-        // Size: mix of large orbs and tiny stars
         const isOrb = Math.random() < 0.08;
         const isMed = Math.random() < 0.25;
         sizes[i] = isOrb ? Math.random() * 4 + 3 : isMed ? Math.random() * 2 + 1 : Math.random() * 0.8 + 0.3;
-
         phases[i] = Math.random() * Math.PI * 2;
         speeds[i] = Math.random() * 0.5 + 0.2;
-
-        // Constellation morph target: arrange in a grid pattern
-        const angle = (i / count) * Math.PI * 2 * 3;
-        const radius = 15 + (i / count) * 20;
-        targets[i3] = Math.cos(angle) * radius * (0.5 + Math.random() * 0.5);
-        targets[i3 + 1] = Math.sin(angle) * radius * 0.5 * (0.5 + Math.random() * 0.5);
-        targets[i3 + 2] = (Math.random() - 0.5) * 10;
       }
 
       const geometry = new THREE.BufferGeometry();
       geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+      geometry.setAttribute("targetPosition", new THREE.BufferAttribute(targetPositions, 3));
       geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
       geometry.setAttribute("size", new THREE.BufferAttribute(sizes, 1));
       geometry.setAttribute("phase", new THREE.BufferAttribute(phases, 1));
       geometry.setAttribute("speed", new THREE.BufferAttribute(speeds, 1));
 
-      // Custom shader material — the magic
+      // Custom shader material — morphing + glow + mouse interaction
       const material = new THREE.ShaderMaterial({
         uniforms: {
           uTime: { value: 0 },
           uMouse: { value: new THREE.Vector2(-999, -999) },
           uResolution: { value: new THREE.Vector2(w, h) },
           uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) },
+          uMorph: { value: 0 }, // 0 = position, 1 = targetPosition
         },
         vertexShader: `
           attribute float size;
           attribute float phase;
           attribute float speed;
+          attribute vec3 targetPosition;
           varying vec3 vColor;
           varying float vOpacity;
           uniform float uTime;
           uniform vec2 uMouse;
           uniform float uPixelRatio;
+          uniform float uMorph;
 
           void main() {
             vColor = color;
 
-            // Drift animation
-            vec3 pos = position;
+            // MORPH: lerp between position and targetPosition
+            vec3 pos = mix(position, targetPosition, uMorph);
+
+            // Drift animation (reduced during morph for clean transitions)
+            float driftScale = 1.0 - uMorph * 0.7;
             float t = uTime * speed * 0.3;
-            pos.x += sin(t + phase) * 2.0;
-            pos.y += cos(t * 0.7 + phase * 1.3) * 1.5;
-            pos.z += sin(t * 0.5 + phase * 0.7) * 1.0;
+            pos.x += sin(t + phase) * 2.0 * driftScale;
+            pos.y += cos(t * 0.7 + phase * 1.3) * 1.5 * driftScale;
+            pos.z += sin(t * 0.5 + phase * 0.7) * 1.0 * driftScale;
 
             // Mouse interaction in screen space
             vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
@@ -167,7 +233,8 @@ export function WebGLParticles({
 
             // Particles near mouse get bigger and brighter
             float finalSize = size * (1.0 + mouseInfluence * 2.0);
-            vOpacity = 0.6 + mouseInfluence * 0.4;
+            // Brighter during morph transition
+            vOpacity = 0.6 + mouseInfluence * 0.4 + uMorph * 0.15;
 
             // Subtle pull toward mouse
             if (mouseNorm.x > -1.0) {
@@ -239,18 +306,72 @@ export function WebGLParticles({
       };
       window.addEventListener("resize", handleResize);
 
-      // Animation loop
+      // Smooth easing function
+      function easeInOutCubic(t: number) {
+        return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+      }
+
+      // Animation loop with morph cycle
       const clock = new THREE.Clock();
       const animate = () => {
         if (destroyed) return;
         const elapsed = clock.getElapsedTime();
 
+        // ─── MORPH CYCLE ───
+        // Every MORPH_INTERVAL seconds, morph to the next shape
+        if (elapsed - lastMorphTime > MORPH_INTERVAL && morphDirection === 0) {
+          morphDirection = 1;
+          lastMorphTime = elapsed;
+          // Advance to next shape
+          currentShapeIdx = (currentShapeIdx + 1) % shapes.length;
+          const nextIdx = (currentShapeIdx + 1) % shapes.length;
+          currentShape = shapes[currentShapeIdx](count);
+          nextShape = shapes[nextIdx](count);
+
+          // Update buffer attributes
+          const posAttr = geometry.getAttribute("position") as THREE.BufferAttribute;
+          const tgtAttr = geometry.getAttribute("targetPosition") as THREE.BufferAttribute;
+          for (let i = 0; i < count; i++) {
+            const i3 = i * 3;
+            posAttr.setXYZ(i, currentShape[i][0], currentShape[i][1], currentShape[i][2]);
+            tgtAttr.setXYZ(i, nextShape[i][0], nextShape[i][1], nextShape[i][2]);
+          }
+          posAttr.needsUpdate = true;
+          tgtAttr.needsUpdate = true;
+          morphProgress = 0;
+        }
+
+        // Animate morph progress
+        if (morphDirection === 1) {
+          morphProgress += (1 / 60) / MORPH_DURATION; // assumes 60fps
+          if (morphProgress >= 1) {
+            morphProgress = 1;
+            morphDirection = 0;
+            // Swap: next shape becomes current
+            const posAttr = geometry.getAttribute("position") as THREE.BufferAttribute;
+            const tgtAttr = geometry.getAttribute("targetPosition") as THREE.BufferAttribute;
+            for (let i = 0; i < count; i++) {
+              posAttr.setXYZ(i, nextShape[i][0], nextShape[i][1], nextShape[i][2]);
+            }
+            posAttr.needsUpdate = true;
+            // Pre-generate next target
+            const futureIdx = (currentShapeIdx + 2) % shapes.length;
+            const futureShape = shapes[futureIdx](count);
+            for (let i = 0; i < count; i++) {
+              tgtAttr.setXYZ(i, futureShape[i][0], futureShape[i][1], futureShape[i][2]);
+            }
+            tgtAttr.needsUpdate = true;
+            morphProgress = 0;
+          }
+        }
+
         material.uniforms.uTime.value = elapsed;
         material.uniforms.uMouse.value.copy(mouse);
+        material.uniforms.uMorph.value = easeInOutCubic(morphProgress);
 
         // Slow camera drift for depth
-        camera.position.x = Math.sin(elapsed * 0.1) * 2;
-        camera.position.y = Math.cos(elapsed * 0.08) * 1.5;
+        camera.position.x = Math.sin(elapsed * 0.1) * 3;
+        camera.position.y = Math.cos(elapsed * 0.08) * 2;
         camera.lookAt(0, 0, 0);
 
         renderer.render(scene, camera);

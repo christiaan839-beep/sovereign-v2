@@ -873,7 +873,7 @@ export default function Home() {
             <CapabilityCard icon={Cpu} title="Browser Automation" desc="Point an agent at any website. It opens a real browser, clicks through pages, extracts data, and delivers a structured report." accent="from-emerald-500/[0.04]" href="/showcase" />
             <CapabilityCard icon={BrainCircuit} title="Document Intelligence" desc="Upload PDFs, contracts, or reports. Ask questions in plain English. Get precise answers backed by your own data." accent="from-emerald-400/[0.04]" href="/dashboard" />
             <CapabilityCard icon={Target} title="Sales Outreach" desc="Find 50 prospects in 30 seconds. Write personalized cold emails. Send sequences. Qualify responses. Book meetings automatically." accent="from-emerald-500/[0.04]" href="/showcase" />
-            <CapabilityCard icon={Search} title="Market Intelligence" desc="Analyze any website or market. Get tech stack breakdowns, positioning gaps, untapped keyword opportunities, and actionable insights." accent="from-cyan-500/[0.04]" href="/showcase" />
+            <CapabilityCard icon={Search} title="Market Intelligence" desc="Paste any URL. Get their tech stack, pricing model, keyword gaps, and 5 angles to beat them. Takes 30 seconds." accent="from-cyan-500/[0.04]" href="/showcase" />
             <CapabilityCard icon={Mic} title="Voice Agents" desc="AI cold-calls prospects, qualifies leads, and books meetings directly onto your calendar. Sub-200ms response in 12 languages." accent="from-emerald-600/[0.04]" href="/dashboard" />
             <CapabilityCard icon={Code2} title="Code & Deploy" desc="Describe a feature in plain English. The agent writes production code, reviews it for bugs, and prepares it for deployment." accent="from-emerald-300/[0.04]" href="/dashboard" />
           </StaggerChildren>
@@ -900,7 +900,7 @@ export default function Home() {
               {[
                 { title: "Voice", desc: "Real phone calls, lead qualification, meeting booking. Sub-200ms in 12 languages.", highlight: "Solved" },
                 { title: "Memory", desc: "Knowledge graph with persistent context. Agents remember your brand, clients, and history.", highlight: "Solved" },
-                { title: "Payments", desc: "Yoco, PayStack, Stripe. Agents process transactions and track revenue end to end.", highlight: "Solved" },
+                { title: "Payments", desc: "Yoco, PayStack, Stripe. Agents process transactions and track every dollar.", highlight: "Solved" },
               ].map((item) => (
                 <div key={item.title} className="p-5 rounded-xl border border-emerald-500/10 bg-emerald-500/[0.02] group">
                   <div className="flex items-center gap-2 mb-2">
@@ -1289,7 +1289,7 @@ export default function Home() {
               { name: "Gemini 2.5 Pro", desc: "Cognitive engine & grounding" },
               { name: "DeepSeek V3.2", desc: "Strongest open-source reasoning" },
               { name: "Qwen 3", desc: "Best multilingual — 50+ languages" },
-              { name: "NVIDIA NIM", desc: "Free inference at scale" },
+              { name: "NVIDIA NIM", desc: "Free inference, zero rate limits" },
               { name: "NeMo Guardrails", desc: "5-layer safety pipeline" },
               { name: "Cerebras WSE", desc: "2,200+ tok/s instant inference" },
               { name: "Mistral Small 3", desc: "Ultra-fast function calling" },
@@ -1380,7 +1380,7 @@ export default function Home() {
               },
               {
                 industry: "E-commerce Brands",
-                use: "Generate product descriptions, ad creatives, social posts, and SEO-optimized landing pages at scale. One prompt produces content across all channels.",
+                use: "One prompt → blog post + 5 social posts + email sequence + landing page copy. All anti-slop, all human-passing, all SEO-ready.",
                 agents: "Content, Ads, Design, Page Builder, Programmatic SEO",
                 result: "50+ pages generated per hour",
               },
@@ -1665,7 +1665,7 @@ export default function Home() {
           <RevealText as="h2" className="text-2xl md:text-3xl font-bold text-white mb-12 text-center tracking-tight">Common Questions</RevealText>
           <div className="rounded-2xl border border-white/[0.06] bg-[#080808] p-1">
             {[
-              { q: "What is Sovereign Matrix?", a: "An autonomous AI agent platform. 130+ specialized agents handle sales, marketing, content, and operations end-to-end. A smart router picks the best model from 65+ open-source LLMs per task. You set goals — agents deliver results." },
+              { q: "What is Sovereign Matrix?", a: "130 AI agents that do sales, marketing, content, and ops work. You tell them what you need. They figure out which of the 65+ models to use, execute the task, and deliver the output. No prompt engineering required." },
               { q: "Is this just another ChatGPT wrapper?", a: "No. ChatGPT is a chatbot. Sovereign Matrix is 130+ autonomous agents that execute: finding leads, building pages, writing outreach sequences, qualifying prospects, making calls. They open real browsers, hit real APIs, plan multi-step workflows, and self-correct without manual prompting." },
               { q: "Can agents run locally without cloud?", a: "Yes. NemoClaw runs on your machine via Ollama. Full offline execution — your data never leaves your hardware. Built for sensitive client work and air-gapped environments." },
               { q: "Is there a contract or lock-in?", a: "No contracts. Month-to-month. Cancel from your dashboard. Data is always exportable. NVIDIA NIM inference is free — you only pay for premium features." },
