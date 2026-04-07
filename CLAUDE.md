@@ -130,9 +130,16 @@ Key endpoints:
 - Hero fade/scale removed entirely — was causing "black dead zone" between hero and content
 - Hero compacted: 10 elements → 7 elements, min-h-[85vh] on mobile
 
+### Autonomous Polish Sprint (April 7 session — while user was away)
+- "How It Works" section: fixed duplicate title, added concrete examples, TiltCard wrapping, connector arrows, CTA
+- Playbook browse: "Popular" badges on top 3 playbooks, guarantee text on cards, emerald glow on featured
+- Security Command Center: replaced fake metrics with real data from /api/agents/dashboard-stats (honest "—" when no data)
+- SEO metadata: created layout.tsx for 8 public pages (chat, privacy, terms, security, demo, playground, status, changelog)
+- For-Agencies: ROI calculator aligned to USD $499 enterprise plan (was R9,997 ZAR hardcoded)
+- Agent Analytics: added playbook runs rollup (total/succeeded/failed/avgDuration from /api/playbooks/runs)
+
 ### Pending (Manual Steps Required)
 - Run DB migration: drizzle/0003_playbook_runs.sql (Neon Console → SQL Editor)
 - Run DB migration: drizzle/0002_async_jobs.sql (Neon Console → SQL Editor)
 - Add CEREBRAS_API_KEY env var (free at inference.cerebras.ai)
-- Wire real safety pipeline metrics to Security Command Center (currently simulated pass rates)
 - Connect Stripe/Yoco price IDs in env vars for paid tier checkout
