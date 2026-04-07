@@ -13,6 +13,22 @@ const fadeIn = (d: number) => ({ initial: { opacity: 0, y: 20 }, whileInView: { 
 /* ─── Tier Data ─── */
 const TIERS = [
   {
+    name: "Founder Access", price: "Free", period: "forever", plan: "free", featured: false,
+    tagline: "Full platform access. 50 agent runs/day. No credit card required.",
+    cta: "Get Started Free",
+    features: [
+      { name: "130+ AI agents", included: true },
+      { name: "65+ open-source models", included: true },
+      { name: "25 playbook workflows", included: true },
+      { name: "5-layer safety pipeline", included: true },
+      { name: "50 runs/day", included: true },
+      { name: "Community support", included: true },
+      { name: "BYOK (Bring Your Own Key)", included: true },
+      { name: "White-label Reseller Hub", included: false },
+      { name: "NemoClaw Local Execution", included: false },
+    ],
+  },
+  {
     name: "Sovereign Node", price: "R9,997", period: "/mo", plan: "node", featured: false,
     tagline: "Replace your SDR and Junior Designer entirely. Includes Ghost Fleet.",
     cta: "Deploy Node",
@@ -116,6 +132,10 @@ export default function PricingPage() {
   const [error, setError] = useState<string | null>(null);
 
   const checkout = async (plan: string) => {
+    if (plan === "free") {
+      window.location.assign("/signup");
+      return;
+    }
     if (plan === "node") {
       window.location.assign("/dashboard");
       return;
@@ -309,7 +329,7 @@ export default function PricingPage() {
           Deploy enterprise-grade NVIDIA execution pipelines. Replaces entire agency overheads.
         </RevealText>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
           {TIERS.map((t, i) => (
             <motion.div key={i} {...fadeIn(i * 0.1)}
               className={`rounded-2xl bg-white/[0.02] backdrop-blur-xl border p-7 flex flex-col ${t.featured ? "border-emerald-500/40 relative overflow-hidden scale-[1.02] shadow-[0_0_40px_rgba(16,185,129,0.1)]" : "border-white/[0.06]"}`}>
