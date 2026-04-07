@@ -107,7 +107,20 @@ Key endpoints:
 - Security Command Center is the CISO-facing page
 - "Secure by default, only flag anomalies" pattern throughout
 
+### Activation & Conversion Fixes (April 7 session continued)
+- Onboarding goal/industry selections were useState only — THROWN AWAY after navigation. Now persisted to localStorage and used to route users directly to matching playbook.
+- Goal → Playbook mapping: leads→lead-blitz, content→content-machine, compete→competitor-takedown, automate→/dashboard/playbooks
+- Playbooks page reads ?auto= query param, auto-selects the playbook, pre-fills URL fields from onboarding company URL
+- "Enter Dashboard" button becomes "Run Your First Playbook" with direct routing
+- CountUpOnView counter started at 0, showed "0 Agents, 0 Models" on initial render. Fixed to start at target value.
+- Primary CTA changed from "Claim Founder Access" to "Run a Free Playbook" — action-oriented
+- Pricing page aligned with plans.ts: 5 tiers (Free, Starter $19, Growth $49, Node $199, Enterprise $499)
+- Consensus engine visualization added to landing page: Generate → Critique → Synthesize with model names
+- Interactive HITL testing on Security Command Center with 5 enterprise-realistic test scenarios
+
 ### Pending (Manual Steps Required)
 - Run DB migration: drizzle/0003_playbook_runs.sql (Neon Console → SQL Editor)
 - Run DB migration: drizzle/0002_async_jobs.sql (Neon Console → SQL Editor)
 - Add CEREBRAS_API_KEY env var (free at inference.cerebras.ai)
+- Wire real safety pipeline metrics to Security Command Center (currently simulated pass rates)
+- Connect Stripe/Yoco price IDs in env vars for paid tier checkout
