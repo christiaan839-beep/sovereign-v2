@@ -35,6 +35,9 @@ const AgentOffice = dynamic(() => import("@/components/ui/AgentOffice").then(m =
 const CursorGlow = dynamic(() => import("@/components/cinematic/CursorGlow").then(m => ({ default: m.CursorGlow })), { ssr: false });
 const ConsensusEngine = dynamic(() => import("@/components/cinematic/ConsensusEngine").then(m => ({ default: m.ConsensusEngine })), { ssr: false });
 const TokenStream = dynamic(() => import("@/components/cinematic/TokenStream").then(m => ({ default: m.TokenStream })), { ssr: false });
+// Static imports to avoid Turbopack stale module factory issue with new files
+import { LiveAgentTerminal } from "@/components/cinematic/LiveAgentTerminal";
+import { StackKiller } from "@/components/cinematic/StackKiller";
 
 // ─── Tok/s counter — must be defined in same file to avoid Turbopack HMR stale module ───
 function TokCounter() {
@@ -444,6 +447,21 @@ export default function Home() {
         {/* Content — cinematic staggered reveal */}
         <div className="relative z-10 max-w-4xl mx-auto text-center px-6 pt-20">
 
+          {/* Category label — "Agent OS" positioning */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05, duration: 0.6 }}
+            className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/[0.06] mb-6"
+          >
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="animate-ping absolute inset-0 rounded-full bg-emerald-400 opacity-60" />
+              <span className="relative rounded-full h-1.5 w-1.5 bg-emerald-400" />
+            </span>
+            <span className="text-[11px] font-semibold text-emerald-400 uppercase tracking-[0.2em]">Agent Operating System</span>
+            <span className="text-[10px] text-neutral-600 font-mono">v2.4</span>
+          </motion.div>
+
           {/* Headline — cinematic entrance, each line staggered */}
           <motion.h1
             initial={{ opacity: 0 }}
@@ -527,6 +545,10 @@ export default function Home() {
 
       {/* ═══ LIVE ACTIVITY TICKER ═══ */}
       <LiveTicker />
+
+      {/* ═══ LIVE AGENT TERMINAL — Watch the agent work ═══ */}
+      <GlowDivider />
+      <LiveAgentTerminal />
 
       {/* ═══ TRY IT NOW — Free tools (no signup, instant value) ═══ */}
       <section className="py-16 px-6 bg-[#020202] border-y border-white/[0.03] relative overflow-hidden">
@@ -690,6 +712,9 @@ export default function Home() {
           </motion.div>
         </div>
       </GradientFollower>
+
+      {/* ═══ STACK KILLER — Replace 8 tools with one ═══ */}
+      <StackKiller />
 
       {/* ═══ PLATFORM METRICS — Social proof with real numbers ═══ */}
       <section className="py-16 px-6 border-y border-white/[0.04]">
@@ -982,6 +1007,118 @@ export default function Home() {
       <GlowDivider />
       <section className="py-24 px-6">
         <Testimonials />
+      </section>
+
+      {/* ═══ AGENT OS ARCHITECTURE — The 5-layer infrastructure ═══ */}
+      <GlowDivider />
+      <section className="py-24 px-6 bg-[#030303] relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_50%,rgba(16,185,129,0.025),transparent)] pointer-events-none" />
+        <div className="max-w-4xl mx-auto relative z-10">
+          <div className="text-center mb-16">
+            <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">The Architecture</p>
+            <h2 className="text-3xl md:text-5xl font-black text-white tracking-tight mb-4">
+              Built like an OS.<br />
+              <span className="text-emerald-400">Not a feature.</span>
+            </h2>
+            <p className="text-neutral-400 text-sm max-w-md mx-auto">
+              Every other AI tool is a wrapper. Sovereign is a complete infrastructure stack
+              — five layers purpose-built for agentic business execution.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            {[
+              {
+                layer: "L5",
+                name: "Business Execution Layer",
+                desc: "You give a goal in plain English. The OS figures out everything else.",
+                detail: "Natural language intent → task graph → agent selection → parallel dispatch",
+                color: "emerald",
+                items: ["130 specialized agents", "Smart goal decomposition", "Multi-step planning engine"],
+              },
+              {
+                layer: "L4",
+                name: "Orchestration Layer",
+                desc: "Agents chain, delegate, and debate until the answer is correct.",
+                detail: "Agent handoffs · parallel execution · consensus verification · self-correction",
+                color: "cyan",
+                items: ["War Room debate engine", "4-model consensus", "Auto-retry on failure"],
+              },
+              {
+                layer: "L3",
+                name: "Model Intelligence Layer",
+                desc: "Every task auto-routes to the best model. No lock-in, no wasted tokens.",
+                detail: "35+ models · NVIDIA NIM · Gemini · Claude · Groq · Cerebras WSE-3",
+                color: "violet",
+                items: ["19-category smart routing", "11-model failover chain", "2,200+ tok/s inference"],
+              },
+              {
+                layer: "L2",
+                name: "Trust & Safety Layer",
+                desc: "Five independent checks before any output leaves the pipeline.",
+                detail: "Jailbreak detection · PII scan · content safety · quality gate · critic review",
+                color: "amber",
+                items: ["NeMo Guardrails", "HITL approval queue", "Audit trail on every task"],
+              },
+              {
+                layer: "L1",
+                name: "Infrastructure Layer",
+                desc: "Cloud or local. Your choice. Your data never leaves if you don't want it to.",
+                detail: "Ollama local · Neon Postgres · Clerk auth · Vercel edge · zero cold starts",
+                color: "neutral",
+                items: ["Runs offline via Ollama", "Tenant-isolated data", "White-label API surface"],
+              },
+            ].map((item, i) => (
+              <motion.div
+                key={item.layer}
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.08 }}
+                className={`group grid md:grid-cols-[64px_1fr_auto] gap-4 items-start p-5 rounded-2xl border transition-all duration-300 ${
+                  item.color === "emerald" ? "border-emerald-500/10 hover:border-emerald-500/25 hover:bg-emerald-500/[0.02]" :
+                  item.color === "cyan"    ? "border-cyan-500/10 hover:border-cyan-500/25 hover:bg-cyan-500/[0.02]" :
+                  item.color === "violet"  ? "border-violet-500/10 hover:border-violet-500/25 hover:bg-violet-500/[0.02]" :
+                  item.color === "amber"   ? "border-amber-500/10 hover:border-amber-500/25 hover:bg-amber-500/[0.02]" :
+                  "border-white/[0.04] hover:border-white/[0.08]"
+                } bg-[#060606]`}
+              >
+                <div className={`text-2xl font-black font-mono opacity-20 group-hover:opacity-60 transition-opacity ${
+                  item.color === "emerald" ? "text-emerald-400" :
+                  item.color === "cyan"    ? "text-cyan-400" :
+                  item.color === "violet"  ? "text-violet-400" :
+                  item.color === "amber"   ? "text-amber-400" : "text-neutral-400"
+                }`}>{item.layer}</div>
+
+                <div>
+                  <div className="flex items-baseline gap-3 mb-1">
+                    <h3 className="text-sm font-bold text-white">{item.name}</h3>
+                  </div>
+                  <p className="text-xs text-neutral-400 mb-2">{item.desc}</p>
+                  <p className="text-[10px] font-mono text-neutral-700">{item.detail}</p>
+                </div>
+
+                <div className="hidden md:flex flex-col gap-1 min-w-[180px]">
+                  {item.items.map((it) => (
+                    <span key={it} className="text-[10px] text-neutral-600 flex items-center gap-1.5">
+                      <span className={`w-1 h-1 rounded-full shrink-0 ${
+                        item.color === "emerald" ? "bg-emerald-500/40" :
+                        item.color === "cyan"    ? "bg-cyan-500/40" :
+                        item.color === "violet"  ? "bg-violet-500/40" :
+                        item.color === "amber"   ? "bg-amber-500/40" : "bg-neutral-600"
+                      }`} />
+                      {it}
+                    </span>
+                  ))}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          <p className="text-center text-xs text-neutral-700 mt-8 font-mono">
+            Every layer is open-source composable · no black boxes · inspect any execution step
+          </p>
+        </div>
       </section>
 
       {/* ═══ PRICING ═══ */}
