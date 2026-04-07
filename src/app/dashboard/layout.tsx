@@ -11,7 +11,7 @@ import {
   PanelLeftOpen, PanelLeftClose, Plug, Cpu,
   BarChart3, Eye, Shield, Wrench,
   Wand2, Workflow, MessageSquare, Zap, Rocket,
-  Bot, ClipboardList,
+  Bot, ClipboardList, Store, Code2,
 } from "lucide-react";
 import { useKeyboardShortcuts } from "@/lib/keyboard-shortcuts";
 import { motion, AnimatePresence } from "framer-motion";
@@ -102,6 +102,12 @@ const NAV_GROUPS: NavGroup[] = [
   },
 ];
 
+// ── Ecosystem: Marketplace + Developer tools ──
+const ECOSYSTEM_NAV: NavItem[] = [
+  { href: "/marketplace", label: "Marketplace", icon: Store, tooltip: "Browse and install 130+ agents" },
+  { href: "/developers", label: "Developer SDK", icon: Code2, tooltip: "Build agents, earn 80% revenue" },
+];
+
 // ── Bottom: Account-level items ──
 const BOTTOM_NAV: NavItem[] = [
   { href: "/dashboard/integrations", label: "Integrations", icon: Plug, tooltip: "Connect apps and services" },
@@ -112,6 +118,7 @@ const BOTTOM_NAV: NavItem[] = [
 const ALL_NAV_ITEMS: NavItem[] = [
   ...PRIMARY_NAV,
   ...NAV_GROUPS.flatMap((g) => g.items),
+  ...ECOSYSTEM_NAV,
   ...BOTTOM_NAV,
 ];
 
@@ -419,7 +426,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         <div className="mx-4 border-b border-white/[0.04]" />
 
+        {/* Ecosystem: Marketplace + Developers */}
+        <div className="mx-4 border-b border-white/[0.04]" />
+        <div className="px-3 pt-2 pb-1">
+          <span className="px-3 text-[9px] font-semibold text-emerald-500/60 uppercase tracking-widest">Ecosystem</span>
+        </div>
+        <div className="px-3 pb-2 space-y-0.5">
+          {ECOSYSTEM_NAV.map((item) => (
+            <NavLink key={item.href} item={item} onNavigate={onNavigate} />
+          ))}
+        </div>
+
         {/* Bottom settings nav */}
+        <div className="mx-4 border-b border-white/[0.04]" />
         <div className="px-3 pt-2 pb-3 space-y-0.5">
           {BOTTOM_NAV.map((item) => (
             <NavLink key={item.href} item={item} onNavigate={onNavigate} />
@@ -437,6 +456,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       ))}
       <div className="mx-3 my-2 border-b border-white/[0.04]" />
       {NAV_GROUPS.flatMap((g) => g.items).map((item) => (
+        <NavLink key={item.href} item={item} collapsed />
+      ))}
+      <div className="mx-3 my-2 border-b border-white/[0.04]" />
+      {ECOSYSTEM_NAV.map((item) => (
         <NavLink key={item.href} item={item} collapsed />
       ))}
       <div className="mx-3 my-2 border-b border-white/[0.04]" />
