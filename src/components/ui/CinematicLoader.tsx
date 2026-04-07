@@ -29,8 +29,15 @@ export function CinematicLoader({ children }: { children: React.ReactNode }) {
       setPhase("done");
       sessionStorage.setItem("sm-loaded", "1");
     }, 1800);
+    // Safety fallback — if phases don't fire (HMR, slow hydration), force done after 3s
+    const tSafety = setTimeout(() => {
+      setPhase((prev) => {
+        if (prev !== "done") sessionStorage.setItem("sm-loaded", "1");
+        return "done";
+      });
+    }, 3000);
 
-    return () => { clearTimeout(t1); clearTimeout(t2); };
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(tSafety); };
   }, []);
 
   if (phase === "done") return <>{children}</>;

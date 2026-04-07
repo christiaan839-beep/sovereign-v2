@@ -29,18 +29,13 @@ const pricingJsonLd = {
   description: "Autonomous AI agent platform with 130+ specialized agents and 65+ open-source models.",
   url: "https://sovereignmatrix.agency/pricing",
   offers: [
-    { "@type": "Offer", name: "Free", price: "0", priceCurrency: "ZAR", description: "50 tasks/month, 3 agents, community support. No credit card.", availability: "https://schema.org/InStock", url: "https://sovereignmatrix.agency/signup" },
-    { "@type": "Offer", name: "Sovereign Node", price: "9997", priceCurrency: "ZAR", description: "2,000 tasks/month, 20 agents, priority support.", availability: "https://schema.org/InStock", url: "https://sovereignmatrix.agency/pricing" },
-    { "@type": "Offer", name: "Sovereign Array", price: "24997", priceCurrency: "ZAR", description: "500 tasks/month, voice agents, advanced automations, dedicated success manager.", availability: "https://schema.org/InStock", url: "https://sovereignmatrix.agency/pricing" },
-    { "@type": "Offer", name: "Enterprise License", price: "49997", priceCurrency: "ZAR", description: "10,000 tasks/month, full white-label, custom domains, SLA, dedicated infrastructure.", availability: "https://schema.org/InStock", url: "https://sovereignmatrix.agency/enterprise" },
+    { "@type": "Offer", name: "Free", price: "0", priceCurrency: "USD", description: "50 tasks/month, 3 agents, community support. No credit card.", availability: "https://schema.org/InStock", url: "https://sovereignmatrix.agency/signup" },
+    { "@type": "Offer", name: "Starter", price: "19", priceCurrency: "USD", description: "200 tasks/month, 10 agents, email support.", availability: "https://schema.org/InStock", url: "https://sovereignmatrix.agency/pricing" },
+    { "@type": "Offer", name: "Growth", price: "49", priceCurrency: "USD", description: "500 tasks/month, 50 agents, priority support.", availability: "https://schema.org/InStock", url: "https://sovereignmatrix.agency/pricing" },
+    { "@type": "Offer", name: "Node", price: "199", priceCurrency: "USD", description: "2,000 tasks/month, 130 agents, all features, priority support.", availability: "https://schema.org/InStock", url: "https://sovereignmatrix.agency/pricing" },
+    { "@type": "Offer", name: "Enterprise", price: "499", priceCurrency: "USD", description: "10,000 tasks/month, full white-label, custom domains, SLA.", availability: "https://schema.org/InStock", url: "https://sovereignmatrix.agency/enterprise" },
   ],
-  aggregateRating: {
-    "@type": "AggregateRating",
-    ratingValue: "4.9",
-    reviewCount: "47",
-    bestRating: "5",
-    worstRating: "1",
-  },
+  // No aggregate rating until real reviews exist
 };
 
 export default function PricingLayout({ children }: { children: React.ReactNode }) {
