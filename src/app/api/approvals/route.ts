@@ -5,6 +5,7 @@ import {
   getApprovalHistory,
   approveRequest,
   denyRequest,
+  requestApproval,
 } from "@/lib/hitl-approval";
 
 /**
@@ -49,6 +50,26 @@ export async function POST(req: Request) {
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id, decision } = await req.json();
+
+  // Simulate a test approval request (for demo purposes)
+  if (decision === "simulate") {
+    const TEST_SCENARIOS = [
+      { agent: "lead-hunter", action: "connect_to_apollo", description: "Agent wants to connect to Apollo.io API to enrich 47 lead records with verified emails and phone numbers." },
+      { agent: "seo-dominator", action: "download_sitemap", description: "Agent wants to download sitemap.xml from an unlisted host (competitor-domain.com) for competitive analysis." },
+      { agent: "content-engine", action: "publish_draft", description: "Agent wants to publish a 1,200-word blog post directly to your WordPress site without human review." },
+      { agent: "email-sequencer", action: "send_bulk_email", description: "Agent wants to send a cold email sequence to 150 prospects. Requires approval per your outbound policy." },
+      { agent: "code-agent", action: "install_package", description: "Agent wants to install npm package 'ai-scraper-utils@3.2.1' from an unverified registry to complete a data extraction task." },
+    ];
+    const scenario = TEST_SCENARIOS[Math.floor(Math.random() * TEST_SCENARIOS.length)];
+    const approvalId = await requestApproval({
+      userId,
+      agentName: scenario.agent,
+      action: scenario.action,
+      description: scenario.description,
+      timeoutMs: 5 * 60 * 1000, // 5 minutes for test
+    });
+    return NextResponse.json({ status: "simulated", id: approvalId, scenario: scenario.agent });
+  }
 
   if (!id || !decision) {
     return NextResponse.json({ error: "Missing id or decision" }, { status: 400 });

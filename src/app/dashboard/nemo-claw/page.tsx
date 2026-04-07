@@ -103,6 +103,22 @@ export default function NemoClawPage() {
     }
   };
 
+  // ── Simulate a test approval ──
+  const [simulating, setSimulating] = useState(false);
+  const simulateApproval = async () => {
+    setSimulating(true);
+    try {
+      await fetch("/api/approvals", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ decision: "simulate" }),
+      });
+      await fetchApprovals();
+    } finally {
+      setSimulating(false);
+    }
+  };
+
   const formatTime = (ms: number) => {
     const remaining = Math.max(0, ms - Date.now());
     const mins = Math.floor(remaining / 60000);
@@ -201,6 +217,15 @@ export default function NemoClawPage() {
                 <div className={`w-1.5 h-1.5 rounded-full ${approvalStats.pendingCount > 0 ? "bg-amber-400 animate-pulse" : "bg-neutral-600"}`} />
                 <span className="text-[10px] font-mono text-amber-400">{approvalStats.pendingCount} pending</span>
               </div>
+              <button
+                onClick={simulateApproval}
+                disabled={simulating}
+                className="text-[10px] text-cyan-500/60 hover:text-cyan-400 transition-colors flex items-center gap-1 disabled:opacity-50"
+                title="Create a test approval to demo the HITL flow"
+              >
+                {simulating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
+                Test
+              </button>
               <button
                 onClick={() => setShowHistory(!showHistory)}
                 className="text-[10px] text-neutral-500 hover:text-white transition-colors flex items-center gap-1"
