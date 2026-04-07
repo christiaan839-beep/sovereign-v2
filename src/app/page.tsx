@@ -359,8 +359,9 @@ export default function Home() {
   const agentCount = useLiveAgentCount();
   const navVisible = useHideyNav(80);
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
-  const heroScale = useTransform(scrollYProgress, [0, 0.5], [1, 0.95]);
+  // Fade hero later (0.7-1.0 range) to prevent dead black zone between hero and content
+  const heroOpacity = useTransform(scrollYProgress, [0, 0.7, 1], [1, 1, 0.3]);
+  const heroScale = useTransform(scrollYProgress, [0, 1], [1, 0.97]);
 
   return (
     <CinematicLoader>
@@ -491,92 +492,41 @@ export default function Home() {
             </MagneticButton>
           </motion.div>
 
-          {/* ═══ FOUNDERS BANNER — Scarcity + urgency ═══ */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.7, duration: 0.6 }}
-            className="mb-10"
-          >
-            <Link href="/signup">
-              <div className="group inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-gradient-to-r from-emerald-500/10 via-cyan-500/10 to-violet-500/10 border border-emerald-500/20 hover:border-emerald-500/40 transition-all duration-500 cursor-pointer">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute h-full w-full rounded-full bg-emerald-400 opacity-50" />
-                  <span className="relative rounded-full h-2 w-2 bg-emerald-400" />
-                </span>
-                <span className="text-xs font-bold text-emerald-400">FOUNDERS PROGRAM</span>
-                <span className="text-xs text-neutral-400">First 10 users get lifetime enterprise access — free forever</span>
-                <ArrowRight className="w-3 h-3 text-emerald-500/60 group-hover:text-emerald-400 group-hover:translate-x-0.5 transition-all" />
-              </div>
+          {/* Founders banner — compact */}
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7, duration: 0.6 }}
+            className="mb-6">
+            <Link href="/signup" className="group inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/5 border border-emerald-500/15 hover:border-emerald-500/30 transition-all">
+              <span className="relative flex h-1.5 w-1.5"><span className="animate-ping absolute h-full w-full rounded-full bg-emerald-400 opacity-50" /><span className="relative rounded-full h-1.5 w-1.5 bg-emerald-400" /></span>
+              <span className="text-[10px] text-emerald-400 font-semibold">FOUNDERS PROGRAM</span>
+              <span className="text-[10px] text-neutral-500">First 10 get enterprise — free forever</span>
+              <ArrowRight className="w-3 h-3 text-emerald-500/40 group-hover:text-emerald-400 transition-colors" />
             </Link>
           </motion.div>
 
-          {/* ═══ FLOATING MODEL CONSTELLATION ═══ */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.9, duration: 1 }}
-            className="flex flex-wrap items-center justify-center gap-2 mb-8 max-w-2xl mx-auto"
-          >
-            {[
-              { name: "Nemotron Ultra", color: "emerald" },
-              { name: "Gemma 4", color: "blue" },
-              { name: "DeepSeek V3.2", color: "cyan" },
-              { name: "Llama 4", color: "violet" },
-              { name: "Qwen 3", color: "amber" },
-              { name: "GLM-5", color: "pink" },
-              { name: "Cerebras", color: "cyan" },
-              { name: "Mistral", color: "orange" },
-              { name: "FLUX.1", color: "rose" },
-            ].map((model, i) => (
-              <motion.span
-                key={model.name}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1.0 + i * 0.08 }}
-                whileHover={{ scale: 1.1, y: -2 }}
-                className={`px-3 py-1 rounded-full text-[10px] font-medium border cursor-default transition-all duration-300 ${
-                  model.color === "emerald" ? "bg-emerald-500/5 border-emerald-500/15 text-emerald-400/70 hover:text-emerald-400 hover:border-emerald-500/30" :
-                  model.color === "blue" ? "bg-blue-500/5 border-blue-500/15 text-blue-400/70 hover:text-blue-400 hover:border-blue-500/30" :
-                  model.color === "cyan" ? "bg-cyan-500/5 border-cyan-500/15 text-cyan-400/70 hover:text-cyan-400 hover:border-cyan-500/30" :
-                  model.color === "violet" ? "bg-violet-500/5 border-violet-500/15 text-violet-400/70 hover:text-violet-400 hover:border-violet-500/30" :
-                  model.color === "amber" ? "bg-amber-500/5 border-amber-500/15 text-amber-400/70 hover:text-amber-400 hover:border-amber-500/30" :
-                  model.color === "pink" ? "bg-pink-500/5 border-pink-500/15 text-pink-400/70 hover:text-pink-400 hover:border-pink-500/30" :
-                  model.color === "orange" ? "bg-orange-500/5 border-orange-500/15 text-orange-400/70 hover:text-orange-400 hover:border-orange-500/30" :
-                  "bg-rose-500/5 border-rose-500/15 text-rose-400/70 hover:text-rose-400 hover:border-rose-500/30"
-                }`}
-              >
-                {model.name}
-              </motion.span>
+          {/* Model pills — compact single row */}
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8, duration: 0.8 }}
+            className="flex flex-wrap items-center justify-center gap-1.5 mb-6 max-w-lg mx-auto">
+            {["Nemotron Ultra", "Gemma 4", "DeepSeek V3.2", "Llama 4", "Qwen 3", "Mistral", "FLUX.1"].map((name) => (
+              <span key={name} className="px-2.5 py-0.5 rounded-full text-[9px] font-medium border border-white/[0.06] bg-white/[0.02] text-neutral-500">
+                {name}
+              </span>
             ))}
-            <span className="text-[10px] text-neutral-500 ml-1">+ 27 more</span>
+            <span className="text-[9px] text-neutral-600">+ 27 more</span>
           </motion.div>
 
-          {/* Trusted by — prominent, confident */}
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2, duration: 0.6 }}
-            className="flex flex-col items-center gap-3">
-            <span className="text-[10px] text-neutral-500 uppercase tracking-[0.25em]">Built on infrastructure from</span>
-            <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 px-4">
-              {["NVIDIA", "Google", "Anthropic", "Meta", "Mistral"].map((name) => (
-                <span key={name} className="text-sm font-semibold text-neutral-500 hover:text-neutral-300 transition-colors cursor-default">{name}</span>
-              ))}
-            </div>
+          {/* Built on */}
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.9, duration: 0.5 }}
+            className="flex items-center justify-center gap-6">
+            <span className="text-[9px] text-neutral-600 uppercase tracking-[0.2em]">Built on</span>
+            {["NVIDIA", "Google", "Anthropic", "Meta"].map((name) => (
+              <span key={name} className="text-[11px] font-semibold text-neutral-600">{name}</span>
+            ))}
           </motion.div>
-
-          {/* Origin */}
-          <div className="text-center pt-6">
-            <span className="text-[9px] text-neutral-500/60 tracking-[0.2em]">Cape Town, South Africa</span>
-          </div>
         </div>
 
-        {/* Interactive demo input — live agent */}
-        <div className="relative z-20 mt-8 pb-6 px-6 w-full">
+        {/* Interactive demo — tight below hero text */}
+        <div className="relative z-20 mt-6 pb-8 px-6 w-full max-w-3xl mx-auto">
           <InteractiveHeroStrike />
-
-          {/* Scroll indicator */}
-          <div className="flex justify-center mt-10">
-            <ChevronDown className="w-5 h-5 text-neutral-500 animate-bounce" aria-hidden="true" />
-          </div>
         </div>
       </motion.section>
 
