@@ -642,19 +642,21 @@ export default function Home() {
             ))}
           </div>
 
+          {/* Solution bridge — connects problem to results */}
           <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.4 }}
-            className="text-center mt-12"
+            className="mt-16 text-center"
           >
-            <p className="text-sm text-neutral-400">
-              Sovereign Matrix fixes all three.{" "}
-              <Link href="/signup" className="text-emerald-400 hover:text-emerald-300 transition-colors">
-                See how →
-              </Link>
-            </p>
+            <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full border border-emerald-500/20 bg-emerald-500/5">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute h-full w-full rounded-full bg-emerald-400 opacity-40" />
+                <span className="relative rounded-full h-2 w-2 bg-emerald-400" />
+              </span>
+              <span className="text-sm text-emerald-300">Your AI employees handle all three. Here&apos;s what they produce ↓</span>
+            </div>
           </motion.div>
         </div>
       </section>
@@ -679,10 +681,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ═══ SOCIAL PROOF METRICS ═══ */}
       {/* ═══ RESULTS PREVIEW — Show what the product delivers ═══ */}
-      {/* Section transition gradient */}
-      <div className="h-24 bg-gradient-to-b from-[#010101] via-[#030303] to-[#010101] pointer-events-none" />
       <GlowDivider />
       <section className="py-24 px-6">
         <div className="max-w-5xl mx-auto">
@@ -712,6 +711,9 @@ export default function Home() {
                   <div key={i} className="text-xs font-mono text-neutral-400">{lead}</div>
                 ))}
                 <div className="text-xs font-mono text-emerald-400 font-semibold pt-1">+ <CountUpOnView target={46} duration={1.5} /> more verified leads</div>
+                <Link href="/free/lead-finder" className="mt-3 flex items-center gap-1 text-[10px] text-emerald-500/60 hover:text-emerald-400 transition-colors">
+                  Try Lead Finder free <ArrowRight className="w-3 h-3" />
+                </Link>
               </div>
             </motion.div></MouseParallax>
             {/* Result Card 2 — Content */}
@@ -736,6 +738,9 @@ export default function Home() {
                   <span className="text-[9px] px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/15">SEO score: 94</span>
                   <span className="text-[9px] px-2 py-0.5 rounded bg-white/[0.04] text-neutral-400 border border-white/[0.06]">AI: 4.2%</span>
                 </div>
+                <Link href="/signup" className="mt-3 flex items-center gap-1 text-[10px] text-cyan-500/60 hover:text-cyan-400 transition-colors">
+                  Try Content Agent free <ArrowRight className="w-3 h-3" />
+                </Link>
               </div>
             </motion.div></MouseParallax>
             {/* Result Card 3 — Analysis */}
@@ -769,6 +774,9 @@ export default function Home() {
                   <span className="text-[10px] text-neutral-500">Overall Score</span>
                   <span className="text-[10px] text-white font-bold font-mono">73/100</span>
                 </div>
+                <Link href="/free/competitor-scan" className="mt-3 flex items-center gap-1 text-[10px] text-violet-500/60 hover:text-violet-400 transition-colors">
+                  Try Competitor Scanner free <ArrowRight className="w-3 h-3" />
+                </Link>
               </div>
             </motion.div></MouseParallax>
           </div>
