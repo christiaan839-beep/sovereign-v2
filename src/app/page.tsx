@@ -491,7 +491,7 @@ export default function Home() {
           {/* Model pills — shows what powers the platform */}
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.65, duration: 0.5 }}
             className="flex flex-wrap items-center justify-center gap-2 mb-10">
-            {["Nemotron Ultra 253B", "Claude Sonnet", "Gemini 2.5", "DeepSeek V3.2", "Llama 4", "FLUX.2", "Ollama"].map((model) => (
+            {["Nemotron Ultra 253B", "Claude Sonnet 4.6", "Gemini 2.5 Pro", "DeepSeek V3.2", "Llama 4 Scout", "FLUX.1 Pro", "Ollama"].map((model) => (
               <span key={model} className="text-[10px] px-3 py-1 rounded-full border border-white/[0.06] bg-white/[0.02] text-neutral-500 hover:text-white hover:border-emerald-500/20 transition-all cursor-default">
                 {model}
               </span>

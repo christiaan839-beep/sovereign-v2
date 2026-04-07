@@ -68,21 +68,21 @@ export function AgentGlobe() {
 
       globeRef.current = createGlobe(canvasRef.current, {
         devicePixelRatio: Math.min(window.devicePixelRatio, 2),
-        width: 800,
-        height: 800,
+        width: 900,
+        height: 900,
         phi: 0.5,
-        theta: 0.25,
+        theta: 0.2,
         dark: 1,
-        diffuse: 1.8,
-        mapSamples: 20000,
-        mapBrightness: 8,
-        baseColor: [0.04, 0.04, 0.05],
-        markerColor: [0.063, 0.725, 0.506],
+        diffuse: 2.2,
+        mapSamples: 22000,
+        mapBrightness: 10,
+        baseColor: [0.03, 0.04, 0.04],
+        markerColor: [0.063, 0.82, 0.56],
         glowColor: [0.063, 0.725, 0.506],
-        scale: 1.1,
+        scale: 1.15,
         markers: AGENT_HUBS.map((hub) => ({
           location: [hub.lat, hub.lng],
-          size: 0.05,
+          size: 0.06,
         })),
         arcs: ARCS.map((arc) => ({
           startLat: arc.startLat,
@@ -91,10 +91,10 @@ export function AgentGlobe() {
           endLng: arc.endLng,
           arcAlt: arc.arcAlt,
           color: arc.color,
-          strokeWidth: 0.5,
+          strokeWidth: 0.6,
         })),
         onRender(state) {
-          phiRef.current += 0.0025;
+          phiRef.current += 0.002;
           state.phi = phiRef.current;
         },
       });
@@ -175,7 +175,7 @@ export function AgentGlobe() {
             <div className="absolute w-[420px] h-[420px] rounded-full border border-white/[0.03]" />
 
             {/* Globe canvas — oversized then overflow:hidden for edge-bleed effect */}
-            <div className="relative w-[380px] h-[380px] overflow-hidden rounded-full">
+            <div className="relative w-[420px] h-[420px] overflow-hidden rounded-full">
               <canvas
                 ref={canvasRef}
                 style={{
@@ -185,7 +185,7 @@ export function AgentGlobe() {
                 }}
               />
               {/* Radial fade — tighter to show more globe */}
-              <div className="absolute inset-0 rounded-full bg-[radial-gradient(ellipse_at_center,transparent_65%,#010101_100%)] pointer-events-none" />
+              <div className="absolute inset-0 rounded-full bg-[radial-gradient(ellipse_at_center,transparent_60%,#010101_95%)] pointer-events-none" />
             </div>
 
             {/* Floating city labels with pulsing dots */}
