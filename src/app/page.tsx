@@ -1422,6 +1422,15 @@ export default function Home() {
               </ul>
             </div>
             <div>
+              <h3 className="text-xs font-semibold text-neutral-400 mb-4">Compare</h3>
+              <ul className="space-y-2.5">
+                <li><Link href="/vs/hubspot" className="text-xs text-neutral-500 hover:text-white transition-colors">vs HubSpot</Link></li>
+                <li><Link href="/vs/clay" className="text-xs text-neutral-500 hover:text-white transition-colors">vs Clay</Link></li>
+                <li><Link href="/vs/zapier" className="text-xs text-neutral-500 hover:text-white transition-colors">vs Zapier</Link></li>
+                <li><Link href="/for-agencies" className="text-xs text-neutral-500 hover:text-white transition-colors">For Agencies</Link></li>
+              </ul>
+            </div>
+            <div>
               <h3 className="text-xs font-semibold text-neutral-400 mb-4">Legal &amp; Trust</h3>
               <ul className="space-y-2.5">
                 <li><Link href="/privacy" className="text-xs text-neutral-500 hover:text-white transition-colors">Privacy Policy</Link></li>
