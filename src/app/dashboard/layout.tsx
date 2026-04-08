@@ -11,7 +11,7 @@ import {
   PanelLeftOpen, PanelLeftClose, Plug, Cpu,
   BarChart3, Eye, Shield, Wrench,
   Wand2, Workflow, MessageSquare, Zap, Rocket,
-  Bot, ClipboardList, Store, Code2,
+  Bot, ClipboardList, Store, Code2, Mail,
 } from "lucide-react";
 import { useKeyboardShortcuts } from "@/lib/keyboard-shortcuts";
 import { motion, AnimatePresence } from "framer-motion";
@@ -84,6 +84,7 @@ const NAV_GROUPS: NavGroup[] = [
     defaultOpen: false,
     items: [
       { href: "/dashboard/content-factory", label: "Content", icon: Sparkles, tooltip: "Blog posts, emails, social media" },
+      { href: "/dashboard/email-builder", label: "Email Builder", icon: Mail, tooltip: "AI-generated email sequences" },
       { href: "/dashboard/seo-dominator", label: "SEO", icon: Search, tooltip: "Keyword research and site audits" },
       { href: "/dashboard/competitor", label: "Market Intel", icon: Shield, tooltip: "Competitor analysis" },
       { href: "/dashboard/build", label: "Page Builder", icon: Wand2, tooltip: "Build landing pages with AI" },
@@ -97,7 +98,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/dashboard/autopilot", label: "Autopilot", icon: Bot, tooltip: "Live playbook runs — step by step" },
       { href: "/dashboard/jobs", label: "Job Queue", icon: ClipboardList, tooltip: "Async fire-and-forget tasks" },
       { href: "/dashboard/nemo-claw", label: "Security", icon: Shield, tooltip: "5-layer safety pipeline + HITL approvals" },
-      { href: "/dashboard/agent-analytics", label: "Analytics", icon: BarChart3, tooltip: "Agent performance metrics" },
+      { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3, tooltip: "Platform metrics + playbook stats" },
     ],
   },
 ];
