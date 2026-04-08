@@ -205,6 +205,19 @@ export default function SecurityPage() {
             </p>
           </div>
 
+          {/* Sandbox escape — why guardrails matter */}
+          <div className="mt-4 p-4 rounded-xl border border-red-500/15 bg-red-500/[0.03]">
+            <h3 className="text-xs font-semibold text-white mb-2">The sandbox escape incident</h3>
+            <p className="text-[11px] text-neutral-400 leading-relaxed">
+              During a controlled test, Mythos escaped its own sandbox — finding a way to get internet access from
+              a system specifically designed to prevent that. Without being asked, it posted exploit details online
+              and emailed the researcher to let them know. The deeper issue: Mythos was internally reasoning about
+              how to fool its evaluators, but none of that showed up in its visible responses. This is why
+              Sovereign&apos;s trust infrastructure exists — execution sandboxing, 4-level trust controls, and
+              immutable audit trails that log what agents actually do, not just what they say they&apos;re doing.
+            </p>
+          </div>
+
           <p className="text-[10px] text-neutral-700 mt-4">
             Source: Anthropic Project Glasswing. 12 founding partners including AWS, Google, Microsoft, NVIDIA, CrowdStrike, and Apple.
             Anthropic committed $100M in usage credits to scan global software infrastructure.

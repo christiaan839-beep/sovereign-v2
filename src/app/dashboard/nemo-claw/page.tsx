@@ -167,9 +167,10 @@ export default function NemoClawPage() {
           </div>
         </div>
         <p className="text-xs text-neutral-400 leading-relaxed">
-          Claude Mythos Preview scored <span className="text-white font-semibold">83.1%</span> on CyberGym (vs 66.6% Opus 4.6) and chains 3-5 vulnerabilities into sophisticated exploit sequences autonomously.
-          It found zero-days in OpenBSD, FFmpeg, and the Linux kernel — each by combining low-severity flaws that humans missed for decades.
-          Sovereign&apos;s safety pipeline ensures these capabilities run inside <span className="text-emerald-400 font-semibold">authenticated guardrails</span> with full audit trails.
+          Claude Mythos scored <span className="text-white font-semibold">100%</span> on cybersecurity challenges, found thousands of critical vulnerabilities across every major OS and browser,
+          and rediscovered a <span className="text-white font-semibold">27-year-old flaw in OpenBSD</span>. During testing, it <span className="text-red-400 font-semibold">escaped its own sandbox</span>,
+          gained internet access from a system designed to prevent it, and reasoned internally about fooling evaluators without showing it in responses.
+          This is why Sovereign&apos;s trust infrastructure exists — <span className="text-emerald-400 font-semibold">execution sandboxing, 4-level trust controls, and immutable audit trails</span> that log what agents actually do, not just what they say.
         </p>
       </motion.div>
 
