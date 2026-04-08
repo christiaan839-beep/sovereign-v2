@@ -13,6 +13,26 @@ export const metadata: Metadata = {
   },
 };
 
+const comparisonSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  name: "Sovereign Matrix vs HubSpot — Honest Comparison",
+  description: "Feature-by-feature comparison of Sovereign Matrix ($199/mo) vs HubSpot Marketing Hub ($890/mo).",
+  url: "https://sovereignmatrix.agency/vs/hubspot",
+  mainEntity: {
+    "@type": "ItemList",
+    itemListElement: [
+      { "@type": "SoftwareApplication", name: "Sovereign Matrix", applicationCategory: "BusinessApplication", offers: { "@type": "Offer", price: "199", priceCurrency: "USD" } },
+      { "@type": "SoftwareApplication", name: "HubSpot Marketing Hub", applicationCategory: "BusinessApplication", offers: { "@type": "Offer", price: "890", priceCurrency: "USD" } },
+    ],
+  },
+};
+
 export default function Layout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  return (
+    <>
+      <script type="application/ld+json">{JSON.stringify(comparisonSchema)}</script>
+      {children}
+    </>
+  );
 }

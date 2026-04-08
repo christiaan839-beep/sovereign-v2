@@ -13,6 +13,26 @@ export const metadata: Metadata = {
   },
 };
 
+const comparisonSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  name: "Sovereign Matrix vs n8n — Honest Comparison",
+  description: "Feature-by-feature comparison of Sovereign Matrix ($199/mo) vs n8n Cloud ($20/mo).",
+  url: "https://sovereignmatrix.agency/vs/n8n",
+  mainEntity: {
+    "@type": "ItemList",
+    itemListElement: [
+      { "@type": "SoftwareApplication", name: "Sovereign Matrix", applicationCategory: "BusinessApplication", offers: { "@type": "Offer", price: "199", priceCurrency: "USD" } },
+      { "@type": "SoftwareApplication", name: "n8n", applicationCategory: "BusinessApplication", offers: { "@type": "Offer", price: "20", priceCurrency: "USD" } },
+    ],
+  },
+};
+
 export default function Layout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  return (
+    <>
+      <script type="application/ld+json">{JSON.stringify(comparisonSchema)}</script>
+      {children}
+    </>
+  );
 }
