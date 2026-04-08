@@ -19,7 +19,7 @@ export const revalidate = 3600; // Revalidate static pages every hour
 export const metadata: Metadata = {
   metadataBase: new URL("https://sovereignmatrix.agency"),
   title: "Sovereign Matrix — Your AI Workforce",
-  description: "130+ autonomous AI agents. 65+ open-source models. $0 per-token cost. Find leads, write content, build pages, make calls, close deals. Built on NVIDIA NIM.",
+  description: "130+ autonomous AI agents. 39+ AI models. $0 per-token cost. Find leads, write content, build pages, make calls, close deals. Built on NVIDIA NIM.",
   keywords: ["AI agents", "autonomous AI", "agency automation", "NVIDIA NIM", "NemoClaw", "lead generation", "content automation", "AI platform", "open-source AI", "white-label AI", "AI agency", "agentic AI"],
   authors: [{ name: "Sovereign Matrix", url: "https://sovereignmatrix.agency" }],
   creator: "Sovereign Matrix",
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "Sovereign Matrix — Your AI Workforce",
-    description: "130+ autonomous AI agents. 65+ open-source models. $0 per-token cost. White-label ready. Your competitors hire. You deploy.",
+    description: "130+ autonomous AI agents. 39+ AI models. $0 per-token cost. White-label ready. Your competitors hire. You deploy.",
     type: "website",
     siteName: "Sovereign Matrix",
     locale: "en_US",
@@ -44,7 +44,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Sovereign Matrix — Your AI Workforce",
-    description: "130+ autonomous AI agents. 65+ open-source models. $0 per-token cost. White-label ready. Your competitors hire. You deploy.",
+    description: "130+ autonomous AI agents. 39+ AI models. $0 per-token cost. White-label ready. Your competitors hire. You deploy.",
     images: ["https://sovereignmatrix.agency/og-image.jpg"],
   },
   icons: {
@@ -158,7 +158,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     {
                       "@type": "Question",
                       name: "What is Sovereign Matrix?",
-                      acceptedAnswer: { "@type": "Answer", text: "Sovereign Matrix is an autonomous AI agent platform with 130+ specialized agents that execute business tasks like lead generation, content creation, SEO, voice calls, and competitor analysis. Built on NVIDIA NIM with 65+ open-source models at zero per-token cost." },
+                      acceptedAnswer: { "@type": "Answer", text: "Sovereign Matrix is an autonomous AI agent platform with 130+ specialized agents that execute business tasks like lead generation, content creation, SEO, voice calls, and competitor analysis. Built on NVIDIA NIM with 39+ AI models at zero per-token cost." },
                     },
                     {
                       "@type": "Question",
