@@ -129,23 +129,39 @@ export function LandingAgent() {
     setIsListening(true);
   };
 
-  // ── Voice: Text-to-Speech ──
-  const speakText = (text: string) => {
+  // ── Voice: Text-to-Speech (NVIDIA Magpie TTS → browser fallback) ──
+  const speakText = async (text: string) => {
     if (!voiceEnabled) return;
+
+    // Try NVIDIA Magpie TTS first (real AI voice)
+    try {
+      const res = await fetch("/api/voice/speak", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: text.slice(0, 300) }),
+      });
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        audio.playbackRate = 1.05;
+        audio.play().catch(() => {});
+        audio.onended = () => URL.revokeObjectURL(url);
+        return;
+      }
+    } catch {
+      // Fall through to browser TTS
+    }
+
+    // Fallback: browser speech synthesis
     if (!window.speechSynthesis) return;
-
-    // Cancel any ongoing speech
     window.speechSynthesis.cancel();
-
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.rate = 1.05;
     utterance.pitch = 1.0;
-
-    // Try to pick a natural voice
     const voices = window.speechSynthesis.getVoices();
     const preferred = voices.find(v => v.name.includes("Samantha") || v.name.includes("Google") || v.name.includes("Natural"));
     if (preferred) utterance.voice = preferred;
-
     window.speechSynthesis.speak(utterance);
   };
 
