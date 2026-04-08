@@ -94,15 +94,31 @@ function StatusDot({ status }: { status: string }) {
 export default function GodEyePage() {
   const [now, setNow] = useState<Date | null>(() => typeof window !== "undefined" ? new Date() : null);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+  const [realStats, setRealStats] = useState<{ agentExecutions?: number; leadsGenerated?: number; contentGenerated?: number } | null>(null);
 
   useEffect(() => {
     const interval = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(interval);
   }, []);
 
+  // Fetch real execution data
+  useEffect(() => {
+    fetch("/api/agents/dashboard-stats")
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data) setRealStats(data.stats ?? data); })
+      .catch(() => {});
+    const iv = setInterval(() => {
+      fetch("/api/agents/dashboard-stats")
+        .then(r => r.ok ? r.json() : null)
+        .then(data => { if (data) setRealStats(data.stats ?? data); })
+        .catch(() => {});
+    }, 30000);
+    return () => clearInterval(iv);
+  }, []);
+
   const totalAgents = AGENT_CATEGORIES.reduce((sum, c) => sum + c.agents.length, 0);
   const activeAgents = AGENT_CATEGORIES.reduce((sum, c) => sum + c.agents.filter(a => a.status === "active").length, 0);
-  const totalExecs = AGENT_CATEGORIES.reduce((sum, c) => sum + c.agents.reduce((s, a) => s + a.executions, 0), 0);
+  const totalExecs = realStats?.agentExecutions || AGENT_CATEGORIES.reduce((sum, c) => sum + c.agents.reduce((s, a) => s + a.executions, 0), 0);
 
   return (
     <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-6" role="region" aria-label="Agent Monitor dashboard">
