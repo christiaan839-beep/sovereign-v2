@@ -33,7 +33,14 @@ const DEMO_STEPS = [
   { delay: 9900, type: "action",   text: "03 → Demo agent chaining vs their workflow builder. Your 3-step vs their 14-step setup — side by side." },
   { delay: 10300,type: "action",   text: "04 → Contact the 3,400 agencies. Lead list attached: 3,400 companies, enriched with LinkedIn + email." },
   { delay: 10700,type: "divider",  text: "───────────────────────────────────────────" },
-  { delay: 10900,type: "complete", text: "✓ COMPLETE · 10.4s · 5-layer verified · 4 models consulted · confidence: 94.1/100" },
+  { delay: 10900,type: "subhead",  text: "SAFETY PIPELINE  [5-layer verification]" },
+  { delay: 11100,type: "system",   text: "  ✓ L1 Jailbreak Detection ··· PASS (0 injections detected)" },
+  { delay: 11300,type: "system",   text: "  ✓ L2 PII Scanning ········· PASS (0 personal data exposed)" },
+  { delay: 11500,type: "system",   text: "  ✓ L3 Content Safety ······· PASS (no harmful content)" },
+  { delay: 11700,type: "system",   text: "  ✓ L4 Quality Score ········ 94.1/100 (exceeds 70 threshold)" },
+  { delay: 11900,type: "system",   text: "  ✓ L5 Critic Review ········ APPROVED (factual, no hallucinations)" },
+  { delay: 12200,type: "divider",  text: "───────────────────────────────────────────" },
+  { delay: 12400,type: "complete", text: "✓ COMPLETE · 12.4s · 5-layer verified · 4 models consulted · confidence: 94.1/100" },
 ];
 
 type StepType = "system" | "think" | "divider" | "heading" | "subhead" | "weakness" | "gap" | "action" | "complete";
