@@ -14,6 +14,8 @@ const SERVICES = [
 ];
 
 const INCIDENTS = [
+  { date: "Apr 7, 2026", title: "20+ deployments — zero downtime", duration: "0 min", status: "resolved" as const,
+    description: "Major platform upgrade sprint: 32 pages deployed across 20+ consecutive READY builds. Zero build failures, zero downtime." },
   { date: "Mar 22, 2026", title: "Elevated latency on Agent Router", duration: "12 min", status: "resolved" as const,
     description: "Increased response times due to upstream model provider. Auto-failover to backup models resolved the issue." },
   { date: "Mar 15, 2026", title: "Database connection pool saturation", duration: "8 min", status: "resolved" as const,
