@@ -12,7 +12,7 @@ const TIERS = [
 ];
 
 const PROOF_POINTS = [
-  { metric: "R49,997", label: "Highest Plan Value", icon: DollarSign },
+  { metric: "$499", label: "Enterprise Plan", icon: DollarSign },
   { metric: "40%", label: "Max Commission Rate", icon: BarChart3 },
   { metric: "Recurring", label: "Monthly Earnings", icon: Zap },
   { metric: "130+", label: "Agents You Resell", icon: Users },

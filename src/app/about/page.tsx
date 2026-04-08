@@ -111,7 +111,7 @@ export default function AboutPage() {
       </main>
 
       <footer className="relative z-10 border-t border-glass-border/30 px-8 py-10 text-center">
-        <p className="text-[10px] text-text-secondary/40 uppercase tracking-[0.4em]">SOVEREIGN — Shadow Intelligence Platform</p>
+        <p className="text-[10px] text-neutral-700 uppercase tracking-[0.4em]">Sovereign Matrix — Agent Operating System</p>
       </footer>
     </div>
   );

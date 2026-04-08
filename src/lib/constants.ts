@@ -38,10 +38,11 @@ export const MODELS = {
 } as const;
 
 export const PRICING = {
-  currency: "ZAR",
-  node: { name: "Sovereign Node", price: "R9,997", priceUsd: "~$550", period: "/mo" },
-  array: { name: "Sovereign Array", price: "R24,997", priceUsd: "~$1,375", period: "/mo" },
-  enterprise: { name: "Enterprise License", price: "R49,997", priceUsd: "~$2,750", period: "/mo" },
+  currency: "USD",
+  starter: { name: "Starter", price: "$19", period: "/mo" },
+  growth: { name: "Growth", price: "$49", period: "/mo" },
+  node: { name: "Sovereign Node", price: "$199", period: "/mo" },
+  enterprise: { name: "Enterprise License", price: "$499", period: "/mo" },
 } as const;
 
 export const LINKS = {
