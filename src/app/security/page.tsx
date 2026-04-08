@@ -207,6 +207,7 @@ export default function SecurityPage() {
 
           <p className="text-[10px] text-neutral-700 mt-4">
             Source: Anthropic Project Glasswing. 12 founding partners including AWS, Google, Microsoft, NVIDIA, CrowdStrike, and Apple.
+            Anthropic committed $100M in usage credits to scan global software infrastructure.
           </p>
         </motion.div>
 
