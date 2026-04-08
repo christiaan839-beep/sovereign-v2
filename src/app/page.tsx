@@ -40,6 +40,7 @@ import { LiveAgentTerminal } from "@/components/cinematic/LiveAgentTerminal";
 import { StackKiller } from "@/components/cinematic/StackKiller";
 import { LiveModelHealth } from "@/components/cinematic/LiveModelHealth";
 import { LiveAgentStats } from "@/components/cinematic/LiveAgentStats";
+import { AnimatedGrid } from "@/components/cinematic/AnimatedGrid";
 
 // ─── Tok/s counter — must be defined in same file to avoid Turbopack HMR stale module ───
 function TokCounter() {
@@ -306,6 +307,7 @@ function EnterpriseSection() {
   return (
     <section id="enterprise" className="py-32 px-6 relative overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_50%,rgba(16,185,129,0.03),transparent)]" />
+      <AnimatedGrid />
       {/* Grid background */}
       <div
         className="absolute inset-[-20%] bg-[linear-gradient(rgba(16,185,129,0.01)_1px,transparent_1px),linear-gradient(90deg,rgba(16,185,129,0.01)_1px,transparent_1px)] bg-[size:80px_80px] pointer-events-none"
@@ -1370,6 +1372,7 @@ export default function Home() {
       <GlowDivider />
       <section className="py-24 px-6 bg-[#030303] relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_50%,rgba(16,185,129,0.025),transparent)] pointer-events-none" />
+        <AnimatedGrid />
         <div className="max-w-4xl mx-auto relative z-10">
           <div className="text-center mb-16">
             <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">The Architecture</p>
