@@ -45,7 +45,7 @@ const CATEGORIES = [
 
 const FEATURED_AGENTS: MarketplaceAgent[] = [
   {
-    id: "1",
+    id: "lead-blitz",
     name: "Lead Blitz",
     description: "Find verified leads in any niche. Enriched with LinkedIn data, funding rounds, and email verification.",
     category: "sales",
@@ -53,7 +53,7 @@ const FEATURED_AGENTS: MarketplaceAgent[] = [
     authorType: "first-party",
   },
   {
-    id: "2",
+    id: "content-machine",
     name: "Content Machine",
     description: "Generate blog posts, social content, and email sequences that pass AI detection. Anti-slop pipeline, SEO-optimized.",
     category: "content",
@@ -61,7 +61,7 @@ const FEATURED_AGENTS: MarketplaceAgent[] = [
     authorType: "first-party",
   },
   {
-    id: "3",
+    id: "competitor-takedown",
     name: "Competitor Takedown",
     description: "Deep competitive intelligence: weaknesses, market gaps, pricing analysis, and a strategy to differentiate.",
     category: "research",
@@ -69,7 +69,7 @@ const FEATURED_AGENTS: MarketplaceAgent[] = [
     authorType: "first-party",
   },
   {
-    id: "4",
+    id: "seo-dominator",
     name: "SEO Dominator",
     description: "Full SEO audit: keyword gaps, technical issues, content strategy, and schema markup recommendations.",
     category: "seo",
@@ -77,7 +77,7 @@ const FEATURED_AGENTS: MarketplaceAgent[] = [
     authorType: "first-party",
   },
   {
-    id: "5",
+    id: "voice-caller",
     name: "Voice Caller",
     description: "AI cold-calls prospects, qualifies for budget and timeline, books meetings on your calendar. Sub-200ms latency.",
     category: "voice",
@@ -85,7 +85,7 @@ const FEATURED_AGENTS: MarketplaceAgent[] = [
     authorType: "first-party",
   },
   {
-    id: "6",
+    id: "code-agent",
     name: "Code Agent",
     description: "Writes production-ready code, reviews for bugs, prepares PRs. Supports TypeScript, Python, Go, Rust.",
     category: "code",
@@ -93,7 +93,7 @@ const FEATURED_AGENTS: MarketplaceAgent[] = [
     authorType: "first-party",
   },
   {
-    id: "7",
+    id: "brand-voice-analyzer",
     name: "Brand Voice Analyzer",
     description: "Paste your content, get a detailed brand voice profile. Tone, vocabulary, sentence patterns, and consistency score.",
     category: "content",
@@ -101,7 +101,7 @@ const FEATURED_AGENTS: MarketplaceAgent[] = [
     authorType: "first-party",
   },
   {
-    id: "8",
+    id: "ad-optimizer",
     name: "Ad Optimizer",
     description: "Analyze ad campaigns, identify underperforming creatives, generate new copy variants. ROAS tracking built in.",
     category: "sales",
@@ -109,7 +109,7 @@ const FEATURED_AGENTS: MarketplaceAgent[] = [
     authorType: "first-party",
   },
   {
-    id: "9",
+    id: "war-room",
     name: "War Room",
     description: "3 AI models debate your business question independently, then synthesize a consensus answer. Multi-perspective intelligence.",
     category: "research",
@@ -250,7 +250,9 @@ export default function MarketplacePage() {
                 <div className="flex items-start justify-between mb-3">
                   <div>
                     <div className="flex items-center gap-2 mb-0.5">
-                      <h3 className="text-sm font-semibold text-white group-hover:text-emerald-400 transition-colors">{agent.name}</h3>
+                      <Link href={`/marketplace/${agent.id}`} className="text-sm font-semibold text-white group-hover:text-emerald-400 transition-colors hover:underline">
+                        {agent.name}
+                      </Link>
                       {agent.authorType === "first-party" && (
                         <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20">
                           <BadgeCheck className="w-3 h-3 text-emerald-400" />
