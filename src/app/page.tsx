@@ -38,6 +38,8 @@ const TokenStream = dynamic(() => import("@/components/cinematic/TokenStream").t
 // Static imports to avoid Turbopack stale module factory issue with new files
 import { LiveAgentTerminal } from "@/components/cinematic/LiveAgentTerminal";
 import { StackKiller } from "@/components/cinematic/StackKiller";
+import { LiveModelHealth } from "@/components/cinematic/LiveModelHealth";
+import { LiveAgentStats } from "@/components/cinematic/LiveAgentStats";
 
 // ─── Tok/s counter — must be defined in same file to avoid Turbopack HMR stale module ───
 function TokCounter() {
@@ -688,6 +690,12 @@ export default function Home() {
             <TokCounter />
           </motion.div>
 
+          {/* Live model health — real latency pings */}
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.62, duration: 0.5 }}
+            className="mb-6">
+            <LiveModelHealth />
+          </motion.div>
+
           {/* Model pills — shows what powers the platform */}
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.65, duration: 0.5 }}
             className="flex flex-wrap items-center justify-center gap-2 mb-10">
@@ -954,6 +962,11 @@ export default function Home() {
             ))}
           </div>
         </div>
+      </section>
+
+      {/* ═══ LIVE PLATFORM STATS ═══ */}
+      <section className="py-6 px-6 bg-[#020202]">
+        <LiveAgentStats />
       </section>
 
       {/* ═══ LIVE TOKEN STREAM ═══ */}
