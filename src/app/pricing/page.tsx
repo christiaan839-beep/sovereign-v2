@@ -35,7 +35,7 @@ const TIERS = [
       { name: "200 runs/month", included: true },
       { name: "1,000 API calls/day", included: true },
       { name: "Email support", included: true },
-      { name: "All 65+ models", included: true },
+      { name: "All 39+ models", included: true },
       { name: "Local execution", included: false },
       { name: "White-label", included: false },
     ],
@@ -113,7 +113,7 @@ interface ComparisonRow {
 const COMPARISON_ROWS: ComparisonRow[] = [
   { label: "Monthly price (entry tier)", values: ["$19/mo", "$97/mo", "$99/mo", "$24/mo", "$20/mo"] },
   { label: "AI agents included", values: ["130+ agents", "0 AI agents", "Build your own", "AI nodes", "50+ templates"] },
-  { label: "Models available", values: ["65+", "0", "5-10", "5-10", "3-5"] },
+  { label: "Models available", values: ["39+", "0", "5-10", "5-10", "3-5"] },
   { label: "Voice agents", values: [true, false, false, false, false] },
   { label: "White-label", values: [true, true, false, false, false] },
   { label: "Local execution", values: [true, false, true, true, false] },
@@ -241,7 +241,7 @@ export default function PricingPage() {
             </span>
           </p>
           <p className="text-sm text-neutral-400 max-w-xl mx-auto">
-            130+ autonomous agents. 65+ open-source models. Local execution. No per-API-call billing surprises.
+            130+ autonomous agents. 39+ open-source models. Local execution. No per-API-call billing surprises.
           </p>
         </motion.div>
       </section>

@@ -161,7 +161,7 @@ export default function DevelopersPage() {
             {[
               { title: "Authentication & auth", desc: "Clerk-based user auth. Your agent never touches credentials." },
               { title: "5-layer safety pipeline", desc: "Jailbreak detection, content safety, PII scan, quality scoring, critic review." },
-              { title: "Multi-model routing", desc: "65+ models. Smart router picks the best one for each request." },
+              { title: "Multi-model routing", desc: "39+ models. Smart router picks the best one for each request." },
               { title: "Rate limiting & plan enforcement", desc: "Free tier limits, paid tier quotas — all handled automatically." },
               { title: "Billing & revenue share", desc: "Stripe integration. 80% goes to you. Monthly payouts." },
               { title: "Analytics dashboard", desc: "See installs, usage, revenue, ratings — all in real time." },

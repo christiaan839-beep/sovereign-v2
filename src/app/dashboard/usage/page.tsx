@@ -35,7 +35,7 @@ const PLAN_LABELS: Record<string, string> = {
   starter: "Free",
   pro: "Pro",
   node: "Sovereign Node",
-  array: "Sovereign Array",
+  array: "Growth",
   enterprise: "Enterprise",
 };
 

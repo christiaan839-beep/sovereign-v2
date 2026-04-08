@@ -150,7 +150,7 @@ describe("plans.ts — Single Source of Truth", () => {
 
   it("returns correct upgrade path", () => {
     expect(getNextPlan("free")?.name).toBe("Starter");
-    expect(getNextPlan("starter")?.name).toBe("Sovereign Array");
+    expect(getNextPlan("starter")?.name).toBe("Growth");
     expect(getNextPlan("array")?.name).toBe("Sovereign Node");
     expect(getNextPlan("node")?.name).toBe("Enterprise");
     expect(getNextPlan("enterprise")).toBeNull();

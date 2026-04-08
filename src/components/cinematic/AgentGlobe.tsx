@@ -3,23 +3,37 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 
-// Major tech hubs where agents operate
+// 25 global agent hubs — every major tech + business center
 const AGENT_HUBS = [
+  // Americas
   { lat: 37.7749, lng: -122.4194, label: "San Francisco" },
   { lat: 40.7128, lng: -74.006, label: "New York" },
+  { lat: 43.6532, lng: -79.3832, label: "Toronto" },
+  { lat: -23.5505, lng: -46.6333, label: "São Paulo" },
+  { lat: 19.4326, lng: -99.1332, label: "Mexico City" },
+  { lat: 34.0522, lng: -118.2437, label: "Los Angeles" },
+  // Europe
   { lat: 51.5074, lng: -0.1278, label: "London" },
   { lat: 52.52, lng: 13.405, label: "Berlin" },
+  { lat: 48.8566, lng: 2.3522, label: "Paris" },
+  { lat: 55.7558, lng: 37.6173, label: "Moscow" },
+  { lat: 59.3293, lng: 18.0686, label: "Stockholm" },
+  { lat: 41.9028, lng: 12.4964, label: "Rome" },
+  // Asia-Pacific
   { lat: 1.3521, lng: 103.8198, label: "Singapore" },
   { lat: 35.6762, lng: 139.6503, label: "Tokyo" },
   { lat: -33.8688, lng: 151.2093, label: "Sydney" },
-  { lat: 48.8566, lng: 2.3522, label: "Paris" },
-  { lat: 25.2048, lng: 55.2708, label: "Dubai" },
-  { lat: -23.5505, lng: -46.6333, label: "São Paulo" },
-  { lat: 19.076, lng: 72.8777, label: "Mumbai" },
-  { lat: 43.6532, lng: -79.3832, label: "Toronto" },
   { lat: 37.5665, lng: 126.978, label: "Seoul" },
-  { lat: 55.7558, lng: 37.6173, label: "Moscow" },
   { lat: 31.2304, lng: 121.4737, label: "Shanghai" },
+  { lat: 22.3193, lng: 114.1694, label: "Hong Kong" },
+  { lat: 13.7563, lng: 100.5018, label: "Bangkok" },
+  // Middle East + Africa
+  { lat: 25.2048, lng: 55.2708, label: "Dubai" },
+  { lat: 19.076, lng: 72.8777, label: "Mumbai" },
+  { lat: 28.6139, lng: 77.209, label: "New Delhi" },
+  { lat: -33.9249, lng: 18.4241, label: "Cape Town" },
+  { lat: 6.5244, lng: 3.3792, label: "Lagos" },
+  { lat: -1.2921, lng: 36.8219, label: "Nairobi" },
 ];
 
 // Emerald = data flows, Cyan = AI inference, Violet = agent handoffs
@@ -52,6 +66,18 @@ const ARCS = [
   { startLat: 37.7749, startLng: -122.4194, endLat: 19.076, endLng: 72.8777, arcAlt: 0.6, color: EMERALD },
   // Pacific diagonal
   { startLat: 35.6762, startLng: 139.6503, endLat: -33.8688, endLng: 151.2093, arcAlt: 0.2, color: VIOLET },
+  // New routes — denser network
+  { startLat: 34.0522, startLng: -118.2437, endLat: 35.6762, endLng: 139.6503, arcAlt: 0.5, color: CYAN },
+  { startLat: 51.5074, startLng: -0.1278, endLat: 25.2048, endLng: 55.2708, arcAlt: 0.25, color: EMERALD },
+  { startLat: 22.3193, startLng: 114.1694, endLat: -33.8688, endLng: 151.2093, arcAlt: 0.22, color: VIOLET },
+  { startLat: 59.3293, startLng: 18.0686, endLat: 40.7128, endLng: -74.006, arcAlt: 0.32, color: CYAN },
+  { startLat: -33.9249, startLng: 18.4241, endLat: 51.5074, endLng: -0.1278, arcAlt: 0.45, color: EMERALD },
+  { startLat: 6.5244, startLng: 3.3792, endLat: 48.8566, endLng: 2.3522, arcAlt: 0.3, color: VIOLET },
+  { startLat: 28.6139, startLng: 77.209, endLat: 37.5665, endLng: 126.978, arcAlt: 0.2, color: CYAN },
+  { startLat: -1.2921, startLng: 36.8219, endLat: 25.2048, endLng: 55.2708, arcAlt: 0.18, color: EMERALD },
+  { startLat: 19.4326, startLng: -99.1332, endLat: -23.5505, endLng: -46.6333, arcAlt: 0.28, color: VIOLET },
+  { startLat: 13.7563, startLng: 100.5018, endLat: 35.6762, endLng: 139.6503, arcAlt: 0.15, color: CYAN },
+  { startLat: 41.9028, startLng: 12.4964, endLat: 28.6139, endLng: 77.209, arcAlt: 0.25, color: EMERALD },
 ];
 
 export function AgentGlobe() {
@@ -137,15 +163,15 @@ export function AgentGlobe() {
               <span className="text-emerald-400">Operating everywhere.</span>
             </h2>
             <p className="text-neutral-400 text-sm leading-relaxed mb-8 max-w-sm">
-              130 specialized agents deployed across 15 global data centers.
-              Zero latency regardless of where your leads, content, or competitors are.
+              130 agents deployed across 25 global hubs on 6 continents.
+              27 active data routes. Zero latency regardless of where your leads are.
             </p>
 
             {/* Live stat pills */}
             <div className="grid grid-cols-2 gap-3">
               {[
                 { label: "Active agents", value: "130", accent: "emerald" },
-                { label: "Data centers", value: "15", accent: "cyan" },
+                { label: "Global hubs", value: "25", accent: "cyan" },
                 { label: "Uptime", value: "99.9%", accent: "emerald" },
                 { label: "Avg latency", value: "<180ms", accent: "violet" },
               ].map((stat) => (
@@ -202,6 +228,9 @@ export function AgentGlobe() {
               { label: "Singapore", bottom: "30%", right: "6%", delay: 1.8 },
               { label: "Sydney", bottom: "16%", right: "20%", delay: 2.4 },
               { label: "Tokyo", top: "35%", right: "4%", delay: 0.9 },
+              { label: "Dubai", top: "45%", right: "14%", delay: 1.5 },
+              { label: "Lagos", bottom: "38%", left: "28%", delay: 2.1 },
+              { label: "Seoul", top: "28%", right: "8%", delay: 0.3 },
             ].map((city) => (
               <motion.div
                 key={city.label}

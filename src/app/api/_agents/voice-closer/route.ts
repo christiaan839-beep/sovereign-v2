@@ -76,7 +76,7 @@ export async function POST(req: Request) {
     const lowerSpeech = speechResult.toLowerCase();
 
     if (lowerSpeech.includes("price") || lowerSpeech.includes("cost") || lowerSpeech.includes("how much")) {
-      responseText = "Our Sovereign Node starts at 9,997 Rand per month, which gives you a full autonomous AI marketing team. The Sovereign Array at 24,997 includes unlimited AI generations and priority processing. Would you like me to send you a detailed proposal?";
+      responseText = "Our Sovereign Node starts at 9,997 Rand per month, which gives you a full autonomous AI marketing team. The Growth plan at 24,997 includes unlimited AI generations and priority processing. Would you like me to send you a detailed proposal?";
     } else if (lowerSpeech.includes("demo") || lowerSpeech.includes("show")) {
       responseText = "I'd love to arrange a live demonstration for you. Our team will walk you through the entire platform including the War Room, Visual Studio, and NemoClaw automation. Can I get your email address to schedule this?";
     } else if (lowerSpeech.includes("agent") || lowerSpeech.includes("what")) {

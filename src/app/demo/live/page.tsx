@@ -190,7 +190,7 @@ export default function LiveDemoPage() {
 
         {triesLeft > 0 && !result && (
           <p className="text-center text-xs text-neutral-500 mt-8">
-            Powered by 65+ AI models via NVIDIA NIM. Zero per-token cost.
+            Powered by 39+ AI models via NVIDIA NIM. Zero per-token cost.
           </p>
         )}
       </div>
