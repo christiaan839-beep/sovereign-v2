@@ -162,7 +162,7 @@ export function Pricing() {
       return;
     }
 
-    // Yoco — only payment provider
+    // Try Stripe first (USD international), fall back to Yoco (ZAR)
     setCheckoutLoading(planId);
 
     const checkoutTimeout = setTimeout(() => {
@@ -171,27 +171,43 @@ export function Pricing() {
     }, 30000);
 
     try {
-      const res = await fetch("/api/payments/yoco/checkout", {
+      // Try Stripe (USD) first
+      const stripeRes = await fetch("/api/payments/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plan: planId }),
       });
-      const data = await res.json();
+      const stripeData = await stripeRes.json();
+
+      if (stripeRes.ok && (stripeData.url || stripeData.redirectUrl)) {
+        clearTimeout(checkoutTimeout);
+        window.location.assign(stripeData.url || stripeData.redirectUrl);
+        return;
+      }
+
+      // Stripe not configured — try Yoco
+      const yocoRes = await fetch("/api/payments/yoco/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: planId }),
+      });
+      const yocoData = await yocoRes.json();
 
       clearTimeout(checkoutTimeout);
 
-      if (res.ok && data.redirectUrl) {
-        window.location.assign(data.redirectUrl);
+      if (yocoRes.ok && yocoData.redirectUrl) {
+        window.location.assign(yocoData.redirectUrl);
         return;
       }
 
-      // Yoco not configured — show error
-      if (res.status === 503) {
-        showNotification("Payments are being set up. Please try again shortly.", "error");
+      // Neither configured — direct to signup
+      if (stripeRes.status === 503 && yocoRes.status === 503) {
+        showNotification("Payments are being configured. Signing you up for the free tier.", "error");
+        window.location.assign("/onboarding");
         return;
       }
 
-      showNotification(data.error || "Checkout failed. Please try again.", "error");
+      showNotification(yocoData.error || stripeData.error || "Checkout failed. Please try again.", "error");
     } catch {
       clearTimeout(checkoutTimeout);
       showNotification("Connection error. Please check your internet and try again.", "error");
