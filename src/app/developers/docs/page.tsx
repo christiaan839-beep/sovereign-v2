@@ -40,7 +40,7 @@ interface Endpoint {
 interface Section {
   id: string;
   title: string;
-  icon: React.ElementType;
+  icon: React.ComponentType<{ className?: string }>;
   description: string;
   endpoints: Endpoint[];
 }
@@ -558,20 +558,23 @@ function Sidebar({
       >
         Quick Start
       </button>
-      {SECTIONS.map((section) => (
-        <button
-          key={section.id}
-          onClick={() => onNavigate(section.id)}
-          className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
-            active === section.id
-              ? "bg-emerald-500/10 text-emerald-400"
-              : "text-neutral-400 hover:text-white hover:bg-white/[0.03]"
-          }`}
-        >
-          <section.icon className="w-3.5 h-3.5" />
-          {section.title}
-        </button>
-      ))}
+      {SECTIONS.map((section) => {
+        const Icon = section.icon;
+        return (
+          <button
+            key={section.id}
+            onClick={() => onNavigate(section.id)}
+            className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
+              active === section.id
+                ? "bg-emerald-500/10 text-emerald-400"
+                : "text-neutral-400 hover:text-white hover:bg-white/[0.03]"
+            }`}
+          >
+            <Icon className="w-3.5 h-3.5" />
+            {section.title}
+          </button>
+        );
+      })}
       <button
         onClick={() => onNavigate("rate-limits")}
         className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
@@ -827,7 +830,9 @@ export default function ApiDocsPage() {
             </section>
 
             {/* ─── SECTION BLOCKS ─── */}
-            {SECTIONS.map((section) => (
+            {SECTIONS.map((section) => {
+              const SectionIcon = section.icon;
+              return (
               <section key={section.id} id={section.id}>
                 <motion.div
                   initial={{ opacity: 0, y: 16 }}
@@ -838,7 +843,7 @@ export default function ApiDocsPage() {
                   {/* Section header */}
                   <div className="flex items-center gap-3 mb-2">
                     <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-                      <section.icon className="w-4 h-4 text-emerald-400" />
+                      <SectionIcon className="w-4 h-4 text-emerald-400" />
                     </div>
                     <h2 className="text-xl font-bold">{section.title}</h2>
                   </div>
@@ -922,7 +927,8 @@ export default function ApiDocsPage() {
                   )}
                 </motion.div>
               </section>
-            ))}
+              );
+            })}
 
             {/* ─── RATE LIMITS ─── */}
             <section id="rate-limits">
