@@ -40,15 +40,16 @@ export default function VsClaudeAgentsPage() {
       {/* Hero */}
       <section className="py-20 px-6 text-center">
         <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-          className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">Honest Comparison</motion.p>
+          className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">Better Together</motion.p>
         <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
           className="text-4xl md:text-6xl font-black tracking-tight mb-6">
-          Sovereign Matrix<br /><span className="text-neutral-500">vs Claude Managed Agents</span>
+          Sovereign Matrix<br /><span className="text-neutral-500">&amp; Claude Managed Agents</span>
         </motion.h1>
         <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
           className="text-neutral-400 max-w-xl mx-auto leading-relaxed">
-          Claude Managed Agents is an impressive platform from the team that built Claude.
-          But if you need multi-model intelligence, pre-built agents, and predictable pricing &mdash; here&apos;s how we compare.
+          We don&apos;t compete with Anthropic &mdash; we build on top of them. Claude is one of 39+ models in our routing layer.
+          Sovereign is the multi-model orchestration infrastructure. Claude Managed Agents is the single-model execution layer.
+          Together, they&apos;re more powerful than either alone.
         </motion.p>
       </section>
 
