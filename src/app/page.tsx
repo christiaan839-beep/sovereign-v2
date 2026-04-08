@@ -332,7 +332,7 @@ function EnterpriseSection() {
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 }} className="text-center">
             <div className="text-5xl md:text-6xl font-black mb-2 tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-white to-neutral-400">
-              <AnimatedCounter target={65} suffix="+" duration={1.5} />
+              <AnimatedCounter target={39} suffix="+" duration={1.5} />
             </div>
             <div className="text-sm font-semibold text-white mb-1">Open-Source Models</div>
             <p className="text-xs text-neutral-400">Automatic failover. Zero vendor lock-in.</p>
@@ -1405,7 +1405,7 @@ export default function Home() {
                 layer: "L3",
                 name: "Model Intelligence Layer",
                 desc: "Every task auto-routes to the best model. No lock-in, no wasted tokens.",
-                detail: "35+ models · NVIDIA NIM · Gemini · Claude · Groq · Cerebras WSE-3",
+                detail: "39+ models · NVIDIA NIM · Gemini · Claude · Groq · Cerebras WSE-3",
                 color: "violet",
                 items: ["19-category smart routing", "11-model failover chain", "2,200+ tok/s inference"],
               },
@@ -1492,7 +1492,7 @@ export default function Home() {
           <RevealText as="h2" className="text-2xl md:text-3xl font-bold text-white mb-12 text-center tracking-tight">Common Questions</RevealText>
           <div className="rounded-2xl border border-white/[0.06] bg-[#080808] p-1">
             {[
-              { q: "What is Sovereign Matrix?", a: "130 AI agents that do sales, marketing, content, and ops work. You tell them what you need. They figure out which of the 65+ models to use, execute the task, and deliver the output. No prompt engineering required." },
+              { q: "What is Sovereign Matrix?", a: "130 AI agents that do sales, marketing, content, and ops work. You tell them what you need. They figure out which of the 39+ models to use, execute the task, and deliver the output. No prompt engineering required." },
               { q: "Is this just another ChatGPT wrapper?", a: "No. ChatGPT is a chatbot. Sovereign Matrix is 130+ autonomous agents that execute: finding leads, building pages, writing outreach sequences, qualifying prospects, making calls. They open real browsers, hit real APIs, plan multi-step workflows, and self-correct without manual prompting." },
               { q: "Can agents run locally without cloud?", a: "Yes. NemoClaw runs on your machine via Ollama. Full offline execution — your data never leaves your hardware. Built for sensitive client work and air-gapped environments." },
               { q: "Is there a contract or lock-in?", a: "No contracts. Month-to-month. Cancel from your dashboard. Data is always exportable. NVIDIA NIM inference is free — you only pay for premium features." },
@@ -1522,7 +1522,7 @@ export default function Home() {
             <TextDecrypt text="You deploy AI employees." className="text-4xl md:text-6xl font-black text-white tracking-tight leading-[1.05]" as="h2" speed={20} delay={400} />
           </div>
           <RevealText as="p" delay={0.3} className="text-neutral-400 max-w-lg mx-auto mb-4">
-            130 agents. 35+ models. They work weekends. They don&apos;t need benefits.
+            130 agents. 39+ models. They work weekends. They don&apos;t need benefits.
             They cost less than your morning coffee. Start in 60 seconds.
           </RevealText>
           <RevealText as="p" delay={0.4} className="text-emerald-400/70 text-sm mb-10">

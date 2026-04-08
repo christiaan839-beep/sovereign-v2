@@ -15,8 +15,8 @@ export const PLATFORM = {
 } as const;
 
 export const METRICS = {
-  agentCount: 124,
-  modelCount: "65+",
+  agentCount: 130,
+  modelCount: "39+",
   perTokenCost: "$0",
   avgLatency: "<200ms",
   safetyLayers: 5,
@@ -30,7 +30,7 @@ export const MODELS = {
   gemini: "Gemini 2.5 Pro",
   deepseekV3: "DeepSeek V3.2",
   deepseekR1: "DeepSeek R1",
-  flux: "FLUX.2",
+  flux: "FLUX.1 Pro",
   nemoClaw: "NemoClaw",
   kimiK25: "Kimi K2.5",
   cosmosVLM: "Cosmos VLM",
