@@ -13,7 +13,10 @@ import { motion, AnimatePresence } from "framer-motion";
  * Duration: ~1.8s total. Only shows once per session.
  */
 export function CinematicLoader({ children }: { children: React.ReactNode }) {
-  const [phase, setPhase] = useState<"loading" | "dissolve" | "done">("loading");
+  const [phase, setPhase] = useState<"loading" | "dissolve" | "done">(() => {
+    if (typeof window !== "undefined" && sessionStorage.getItem("sm-loaded")) return "done";
+    return "loading";
+  });
 
   useEffect(() => {
     // Skip if already shown this session
