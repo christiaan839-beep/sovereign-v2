@@ -13,6 +13,26 @@ export const metadata: Metadata = {
   },
 };
 
+const comparisonSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  name: "Sovereign Matrix vs Make.com — Honest Comparison",
+  description: "Feature-by-feature comparison of Sovereign Matrix ($199/mo) vs Make.com ($17/mo).",
+  url: "https://sovereignmatrix.agency/vs/make",
+  mainEntity: {
+    "@type": "ItemList",
+    itemListElement: [
+      { "@type": "SoftwareApplication", name: "Sovereign Matrix", applicationCategory: "BusinessApplication", offers: { "@type": "Offer", price: "199", priceCurrency: "USD" } },
+      { "@type": "SoftwareApplication", name: "Make.com", applicationCategory: "BusinessApplication", offers: { "@type": "Offer", price: "17", priceCurrency: "USD" } },
+    ],
+  },
+};
+
 export default function Layout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  return (
+    <>
+      <script type="application/ld+json">{JSON.stringify(comparisonSchema)}</script>
+      {children}
+    </>
+  );
 }
