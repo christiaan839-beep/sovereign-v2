@@ -1653,6 +1653,9 @@ export default function Home() {
                 <li><Link href="/use-cases/content-engine" className="text-xs text-neutral-500 hover:text-white transition-colors">Content Engine</Link></li>
                 <li><Link href="/use-cases/second-brain" className="text-xs text-neutral-500 hover:text-white transition-colors">Second Brain</Link></li>
                 <li><Link href="/for-agencies" className="text-xs text-neutral-500 hover:text-white transition-colors">For Agencies</Link></li>
+                <li><Link href="/for-healthcare" className="text-xs text-neutral-500 hover:text-white transition-colors">For Healthcare</Link></li>
+                <li><Link href="/for-legal" className="text-xs text-neutral-500 hover:text-white transition-colors">For Legal</Link></li>
+                <li><Link href="/for-cybersecurity" className="text-xs text-neutral-500 hover:text-white transition-colors">For Cybersecurity</Link></li>
               </ul>
             </div>
             <div>
