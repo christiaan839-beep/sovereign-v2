@@ -671,8 +671,9 @@ export default function Home() {
           {/* Subtitle — benefits, not specs */}
           <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5, duration: 0.8 }}
             className="text-lg md:text-xl text-neutral-400 max-w-xl mx-auto leading-relaxed mb-6">
-            130 AI agents that find leads, write content, scan competitors, and close deals.
-            They work 24/7. They cost $19/month. They never call in sick.
+            130 AI agents. 36 models. One platform that finds leads, writes content,
+            scans competitors, makes calls, and closes deals — autonomously.
+            Starting at $19/month. No per-token fees. No vendor lock-in.
           </motion.p>
 
           {/* Proof strip — tiny, credible + live tok/s counter */}
@@ -927,6 +928,31 @@ export default function Home() {
               <div className="text-xs text-neutral-500">{stat.desc}</div>
             </motion.div>
           ))}
+        </div>
+      </section>
+
+      {/* ═══ COMPETITIVE STRIP — Why not the others ═══ */}
+      <section className="py-12 px-6 bg-[#020202] border-y border-white/[0.03]">
+        <div className="max-w-5xl mx-auto">
+          <p className="text-center text-[10px] uppercase tracking-[0.3em] text-neutral-600 mb-6">How we compare</p>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            {[
+              { name: "HubSpot", price: "$890/mo", us: "$199/mo", href: "/vs/hubspot" },
+              { name: "Clay", price: "$149/mo", us: "Included", href: "/vs/clay" },
+              { name: "Zapier", price: "$49/mo", us: "Unlimited", href: "/vs/zapier" },
+              { name: "Sintra", price: "12 agents", us: "130 agents", href: "/vs/sintra" },
+              { name: "CrewAI", price: "You build it", us: "Pre-built", href: "/vs/crewai" },
+            ].map((comp) => (
+              <Link key={comp.name} href={comp.href}>
+                <div className="p-3 rounded-xl border border-white/[0.04] bg-white/[0.01] hover:border-emerald-500/15 transition-all text-center cursor-pointer group">
+                  <p className="text-[10px] text-neutral-600 mb-1">{comp.name}</p>
+                  <p className="text-[10px] text-neutral-700 line-through mb-1">{comp.price}</p>
+                  <p className="text-[11px] text-emerald-400 font-semibold">{comp.us}</p>
+                  <p className="text-[8px] text-neutral-700 mt-1 group-hover:text-emerald-500/50 transition-colors">Compare &rarr;</p>
+                </div>
+              </Link>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -1430,6 +1456,9 @@ export default function Home() {
                 <li><Link href="/vs/zapier" className="text-xs text-neutral-500 hover:text-white transition-colors">vs Zapier</Link></li>
                 <li><Link href="/vs/crewai" className="text-xs text-neutral-500 hover:text-white transition-colors">vs CrewAI</Link></li>
                 <li><Link href="/vs/n8n" className="text-xs text-neutral-500 hover:text-white transition-colors">vs n8n</Link></li>
+                <li><Link href="/vs/lindy" className="text-xs text-neutral-500 hover:text-white transition-colors">vs Lindy</Link></li>
+                <li><Link href="/vs/sintra" className="text-xs text-neutral-500 hover:text-white transition-colors">vs Sintra</Link></li>
+                <li><Link href="/vs/make" className="text-xs text-neutral-500 hover:text-white transition-colors">vs Make</Link></li>
               </ul>
             </div>
             <div>
