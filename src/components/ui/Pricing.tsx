@@ -40,7 +40,7 @@ export function Pricing() {
     {
       name: "Starter",
       description: "5 core agents with 200 tasks/month. Perfect for trying AI automation.",
-      price: "R349",
+      price: "$19",
       priceUSD: "$19",
       period: "/mo",
       icon: Zap,
@@ -63,9 +63,9 @@ export function Pricing() {
       buttonStyle: "bg-emerald-400 hover:bg-emerald-300 text-black shadow-[0_0_20px_rgba(52,211,153,0.3)]",
     },
     {
-      name: "Sovereign Array",
+      name: "Growth",
       description: "10 agents with 500 tasks/month. For growing teams ready to scale.",
-      price: "R4,997",
+      price: "$49",
       priceUSD: "$49",
       period: "/mo",
       icon: Zap,
@@ -89,7 +89,7 @@ export function Pricing() {
     {
       name: "Sovereign Node",
       description: "All 130+ agents with 2,000 tasks. Local execution via NemoClaw OS.",
-      price: "R9,997",
+      price: "$199",
       priceUSD: "$199",
       period: "/mo",
       icon: Zap,
@@ -114,8 +114,8 @@ export function Pricing() {
     {
       name: "Enterprise License",
       description: "White-label the platform with your branding. Resell to clients with custom portals.",
-      price: "R49,997",
-      priceUSD: "~$2,700",
+      price: "$499",
+      priceUSD: "$499",
       period: "/mo",
       icon: Server,
       color: "text-violet-400",
