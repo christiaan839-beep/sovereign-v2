@@ -37,6 +37,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/free/seo-audit", priority: 0.9, changeFreq: "monthly" },
     { path: "/free/lead-finder", priority: 0.9, changeFreq: "monthly" },
 
+    // Integrations
+    { path: "/integrations", priority: 0.8, changeFreq: "monthly" },
+
     // Marketing pages
     { path: "/about", priority: 0.7, changeFreq: "monthly" },
     { path: "/partner", priority: 0.7, changeFreq: "monthly" },

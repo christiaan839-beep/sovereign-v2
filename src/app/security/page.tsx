@@ -156,6 +156,48 @@ export default function SecurityPage() {
           })}
         </div>
 
+        {/* Glasswing Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6, duration: 0.5 }}
+          className="mt-16 rounded-2xl border border-violet-500/15 bg-violet-500/[0.03] p-8"
+        >
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-xl bg-violet-500/15 flex items-center justify-center">
+              <Shield className="w-5 h-5 text-violet-400" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-white">Project Glasswing — Why This Matters</h2>
+              <p className="text-[10px] text-neutral-600">anthropic.com/glasswing</p>
+            </div>
+          </div>
+          <p className="text-sm text-neutral-400 leading-relaxed mb-4">
+            Anthropic&apos;s Claude Mythos Preview scored 83.1% on CyberGym (vs 66.6% for Opus 4.6) and autonomously
+            found zero-day vulnerabilities in OpenBSD (27 years undetected), FFmpeg (16 years, missed by 5 million automated tests),
+            and the Linux kernel (privilege escalation chains). All were responsibly disclosed and patched.
+          </p>
+          <p className="text-sm text-neutral-400 leading-relaxed mb-4">
+            When frontier AI models can find vulnerabilities faster than humans can patch them, the execution environment
+            becomes the security boundary. Sovereign Matrix was designed for exactly this moment:
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {[
+              { title: "Sandboxed execution", desc: "Every agent runs in an isolated context. No shared state between tenants." },
+              { title: "5-layer guardrails", desc: "Jailbreak detection, PII scanning, content safety, quality scoring, critic review — on every request." },
+              { title: "Human-in-the-loop", desc: "Anomalous actions require human approval. Full audit trail on every execution." },
+            ].map((item) => (
+              <div key={item.title} className="p-4 rounded-xl border border-white/[0.06] bg-white/[0.02]">
+                <h3 className="text-xs font-semibold text-white mb-1">{item.title}</h3>
+                <p className="text-[10px] text-neutral-500">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+          <p className="text-[10px] text-neutral-700 mt-4">
+            Source: Anthropic Project Glasswing. 12 founding partners including AWS, Google, Microsoft, NVIDIA, CrowdStrike, and Apple.
+          </p>
+        </motion.div>
+
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
