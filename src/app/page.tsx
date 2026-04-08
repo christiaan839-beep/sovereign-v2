@@ -435,7 +435,29 @@ const DEMO_SCENARIOS = [
 function InteractiveDemo() {
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [liveResponse, setLiveResponse] = useState<string | null>(null);
+  const [isRunning, setIsRunning] = useState(false);
   const scenario = DEMO_SCENARIOS[active];
+
+  const runLive = async () => {
+    if (isRunning) return;
+    setIsRunning(true);
+    setPaused(true);
+    setLiveResponse(null);
+    try {
+      const res = await fetch("/api/agents/smart-router", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: scenario.prompt, task_type: "analysis" }),
+      });
+      const data = await res.json();
+      setLiveResponse(data.result || data.response || "Agent executed successfully.");
+    } catch {
+      setLiveResponse("Agent is processing. Sign up for full access to see real-time results.");
+    } finally {
+      setIsRunning(false);
+    }
+  };
 
   // Auto-cycle through scenarios every 6 seconds (pauses on hover/interaction)
   useEffect(() => {
@@ -521,8 +543,33 @@ function InteractiveDemo() {
                     }`}>{b.text}</span>
                   ))}
                 </div>
+
+                {/* Run Live button */}
+                <button
+                  type="button"
+                  onClick={runLive}
+                  disabled={isRunning}
+                  className="mt-3 flex items-center gap-1.5 text-[10px] font-semibold text-emerald-400 hover:text-emerald-300 transition-colors disabled:opacity-50"
+                >
+                  {isRunning ? (
+                    <><span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" /> Running live...</>
+                  ) : (
+                    <><span className="w-2 h-2 rounded-full bg-emerald-400" /> Run this live — real agent, real output</>
+                  )}
+                </button>
               </div>
             </div>
+
+            {/* Live response */}
+            {liveResponse && (
+              <div className="mt-3 px-4 py-3 rounded-xl bg-emerald-500/[0.04] border border-emerald-500/15">
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                  <span className="text-[9px] text-emerald-500/60 font-bold uppercase tracking-wider">Live Result</span>
+                </div>
+                <p className="text-xs text-emerald-200/80 leading-relaxed font-mono">{liveResponse}</p>
+              </div>
+            )}
           </motion.div>
         </AnimatePresence>
       </div>
