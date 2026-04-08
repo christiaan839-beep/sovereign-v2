@@ -55,6 +55,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // Launch
     { path: "/launch", priority: 1.0, changeFreq: "weekly" },
 
+    // Sector pages
+    { path: "/for-healthcare", priority: 0.8, changeFreq: "monthly" },
+    { path: "/for-legal", priority: 0.8, changeFreq: "monthly" },
+    { path: "/for-realestate", priority: 0.8, changeFreq: "monthly" },
+    { path: "/for-recruiting", priority: 0.8, changeFreq: "monthly" },
+    { path: "/for-cybersecurity", priority: 0.8, changeFreq: "monthly" },
+    { path: "/for-education", priority: 0.8, changeFreq: "monthly" },
+
     // Contact
     { path: "/contact", priority: 0.7, changeFreq: "monthly" },
 
