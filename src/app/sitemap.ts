@@ -52,6 +52,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // Roadmap
     { path: "/roadmap", priority: 0.7, changeFreq: "weekly" },
 
+    // Launch
+    { path: "/launch", priority: 1.0, changeFreq: "weekly" },
+
     // Contact
     { path: "/contact", priority: 0.7, changeFreq: "monthly" },
 

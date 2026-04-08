@@ -163,7 +163,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     {
                       "@type": "Question",
                       name: "How much does Sovereign Matrix cost?",
-                      acceptedAnswer: { "@type": "Answer", text: "Sovereign Matrix offers a free tier with 50 runs/month. Paid plans: Starter at $19/mo (200 runs), Array at $49/mo (500 runs), Node at $199/mo (2,000 runs), and Enterprise at $499/mo (10,000 runs with white-label). Month-to-month, no contracts." },
+                      acceptedAnswer: { "@type": "Answer", text: "Sovereign Matrix offers a free tier with 50 runs/month. Paid plans: Starter at $19/mo (200 runs), Growth at $49/mo (500 runs), Node at $199/mo (2,000 runs), and Enterprise at $499/mo (10,000 runs with white-label). Month-to-month, no contracts." },
                     },
                     {
                       "@type": "Question",
