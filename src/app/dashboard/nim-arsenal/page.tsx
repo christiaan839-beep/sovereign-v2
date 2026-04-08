@@ -58,14 +58,14 @@ export default function NimArsenalPage() {
             <Zap className="w-7 h-7 text-[#00ff66]" />
             <h1 className="text-2xl font-bold tracking-tight">Model Registry</h1>
           </div>
-          <p className="text-sm text-neutral-500">View all 65+ AI models available on the platform. See routing rules, failover chains, and model capabilities.</p>
+          <p className="text-sm text-neutral-500">View all 39+ AI models available on the platform. See routing rules, failover chains, and model capabilities.</p>
         </motion.header>
 
         {/* Stats */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}
           className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { val: "65+", label: "Available Models", color: "#00ff66" },
+            { val: "39+", label: "Available Models", color: "#00ff66" },
             { val: "100%", label: "Free / Open-Source", color: "#06B6D4" },
             { val: "8", label: "Task Types", color: "#A855F7" },
             { val: "6", label: "Failover Depth", color: "#FF6B00" },

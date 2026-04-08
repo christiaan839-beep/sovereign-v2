@@ -381,7 +381,7 @@ export default function OnboardingPage() {
                 <div className="grid grid-cols-3 gap-4 max-w-sm mx-auto">
                   {[
                     { val: "130+", label: "Agents", color: "text-emerald-400" },
-                    { val: "65+", label: "Models", color: "text-cyan-400" },
+                    { val: "39+", label: "Models", color: "text-cyan-400" },
                     { val: "$0", label: "Per Token", color: "text-white" },
                   ].map((s) => (
                     <div key={s.label} className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06]">

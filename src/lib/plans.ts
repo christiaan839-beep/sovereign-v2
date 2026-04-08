@@ -88,7 +88,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     description: "Enterprise-level access for first 10 users",
   },
   array: {
-    name: "Sovereign Array",
+    name: "Growth",
     runsPerMonth: 500,
     apiRatePerDay: 5_000,
     demoRatePerDay: 5,

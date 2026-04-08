@@ -434,7 +434,7 @@ export default function DocsPage() {
             {[
               { label: "Agents", value: "129" },
               { label: "Playbooks", value: "25" },
-              { label: "AI Models", value: "65+" },
+              { label: "AI Models", value: "39+" },
               { label: "Providers", value: "6" },
             ].map(stat => (
               <div key={stat.label} className="bg-neutral-950 border border-neutral-800 rounded-lg p-4 text-center">

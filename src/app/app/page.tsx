@@ -8,7 +8,7 @@ import { Send, Loader2, Sparkles, Plus, Mic, MicOff, ArrowDown } from "lucide-re
  * SOVEREIGN MATRIX APP — Premium Chat Experience
  *
  * A clean, full-screen AI chat — no sidebar, no dashboard clutter.
- * Like opening the Claude or Gemini app, but powered by 65+ models.
+ * Like opening the Claude or Gemini app, but powered by 39+ models.
  *
  * Features:
  * - Auto-selects best model per message (Smart Router)
@@ -207,7 +207,7 @@ export default function SovereignApp() {
           </div>
           <div>
             <h1 className="text-sm font-bold text-white">Sovereign AI</h1>
-            <p className="text-[10px] text-neutral-500">65+ models • auto-routed</p>
+            <p className="text-[10px] text-neutral-500">39+ models • auto-routed</p>
           </div>
         </div>
         <button
@@ -321,7 +321,7 @@ export default function SovereignApp() {
           </div>
         </div>
         <p className="text-center text-[10px] text-neutral-500 mt-2">
-          Sovereign AI • 65+ models • auto-routed • sovereignmatrix.agency
+          Sovereign AI • 39+ models • auto-routed • sovereignmatrix.agency
         </p>
       </div>
     </main>

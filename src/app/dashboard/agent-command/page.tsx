@@ -433,7 +433,7 @@ export default function AgentCommandCenter() {
         {/* Footer */}
         <footer className="border-t border-neutral-800 pt-6 text-center">
           <p className="text-[10px] text-neutral-500 uppercase tracking-widest">
-            Sovereign Matrix · Agent Command Center · Powered by 65+ NVIDIA NIM Models · $0 Infrastructure Cost
+            Sovereign Matrix · Agent Command Center · Powered by 39+ NVIDIA NIM Models · $0 Infrastructure Cost
           </p>
         </footer>
       </div>
