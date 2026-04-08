@@ -593,8 +593,8 @@ export default function NemoClawPage() {
         </div>
 
         <p className="mt-4 text-[10px] text-neutral-700">
-          Source: Anthropic Project Glasswing (anthropic.com/glasswing). All vulnerabilities were responsibly disclosed and patched.
-          12 founding partners including AWS, Google, Microsoft, NVIDIA, CrowdStrike, and Apple.
+          Source: Anthropic Project Glasswing (anthropic.com/glasswing). All vulnerabilities responsibly disclosed and patched.
+          12 founding partners including AWS, Google, Microsoft, NVIDIA, CrowdStrike, and Apple. $100M in usage credits committed to scan global infrastructure.
         </p>
       </div>
 
