@@ -8,7 +8,7 @@ import { CheckCircle2, Zap, Shield, Network, Cpu } from "lucide-react";
 const MODELS = [
   { id: "nemotron", name: "Nemotron-Ultra-253B", short: "NMT", provider: "NVIDIA NIM", color: "#10b981", colorClass: "emerald" },
   { id: "deepseek", name: "DeepSeek-V3.2-671B", short: "DSK", provider: "DeepSeek AI", color: "#06b6d4", colorClass: "cyan" },
-  { id: "gemma4",   name: "Gemma-4-31B-IT",     short: "GMM", provider: "Google AI",  color: "#8b5cf6", colorClass: "violet" },
+  { id: "gemini31", name: "Gemini-3.1-Pro",      short: "G31", provider: "Google AI",  color: "#8b5cf6", colorClass: "violet" },
   { id: "qwen3",    name: "Qwen-3-235B-A22B",   short: "QWN", provider: "Alibaba",    color: "#f59e0b", colorClass: "amber" },
 ];
 

@@ -73,14 +73,14 @@ export function classifyTask(prompt: string): TaskType {
 
 // ─── Model Registry ─────────────────────────────────────────
 export const NIM_MODELS = {
-  code:         "nvidia/nemotron-3-super-120b",
-  reasoning:    "deepseek-ai/deepseek-v3-2-0324",
-  creative:     "nvidia/llama-3.1-nemotron-70b-instruct",
-  vision:       "google/gemma-3-27b-it",
-  safety:       "meta/llama-guard-3-8b",
-  multilingual: "qwen/qwen3-235b-a22b",
-  long_context: "meta/llama-4-scout-17b-16e-instruct",
-  general:      "nvidia/llama-3.1-nemotron-70b-instruct",
+  code:         "nvidia/nemotron-3-super-120b",          // 120B, 1M context, hybrid architecture
+  reasoning:    "deepseek-ai/deepseek-v3-2-0324",        // Best open-source reasoning
+  creative:     "nvidia/llama-3.1-nemotron-70b-instruct", // Strong creative + instruction following
+  vision:       "meta/llama-4-maverick-17b-128e-instruct", // 400B MoE, 10M context, multimodal
+  safety:       "meta/llama-guard-3-8b",                  // Dedicated safety classification
+  multilingual: "qwen/qwen3-235b-a22b",                  // 140+ languages, dual thinking mode
+  long_context: "meta/llama-4-scout-17b-16e-instruct",   // 10M context window
+  general:      "nvidia/llama-3.1-nemotron-70b-instruct", // Reliable general-purpose
 } as const;
 
 // ─── LlamaGuard Safety Check ────────────────────────────────

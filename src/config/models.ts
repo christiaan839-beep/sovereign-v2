@@ -289,6 +289,40 @@ export const MODEL_REGISTRY: ModelConfig[] = [
     costTier: "free",
     color: PROVIDER_COLORS.local,
   },
+  // ─── April 2026 Wave 5 — Latest Frontier Models ───
+  {
+    id: "gemini-3.1-pro",
+    name: "Gemini 3.1 Pro",
+    provider: "google",
+    description: "Leads 13/16 benchmarks, 1/3 the cost of GPT-5.4 Pro",
+    tags: ["reasoning", "code", "vision", "long-context"],
+    contextWindow: 2097152,
+    speedTier: "fast",
+    costTier: "free",
+    color: PROVIDER_COLORS.google,
+  },
+  {
+    id: "nemotron-cascade-2",
+    name: "Nemotron Cascade 2",
+    provider: "nvidia",
+    description: "Hybrid Mamba-Transformer MoE — 1M context, agentic reasoning",
+    tags: ["reasoning", "agentic", "long-context", "free"],
+    contextWindow: 1048576,
+    speedTier: "standard",
+    costTier: "free",
+    color: PROVIDER_COLORS.nvidia,
+  },
+  {
+    id: "llama4-maverick",
+    name: "Llama 4 Maverick",
+    provider: "meta",
+    description: "400B — 10M context, strongest open-weight model",
+    tags: ["reasoning", "vision", "long-context", "free"],
+    contextWindow: 10485760,
+    speedTier: "standard",
+    costTier: "free",
+    color: PROVIDER_COLORS.meta,
+  },
   // ─── Project Glasswing — Claude Mythos Preview (coming soon) ───
   // See: anthropic.com/glasswing
   // Mythos Preview won't be GA — capabilities will ship in a future Opus model.
