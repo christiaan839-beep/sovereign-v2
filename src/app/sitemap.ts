@@ -20,16 +20,30 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/app", priority: 0.8, changeFreq: "monthly" },
     { path: "/chat", priority: 0.8, changeFreq: "monthly" },
 
+    // Competitive comparison pages (high SEO value)
+    { path: "/vs/hubspot", priority: 0.9, changeFreq: "weekly" },
+    { path: "/vs/clay", priority: 0.9, changeFreq: "weekly" },
+    { path: "/vs/zapier", priority: 0.9, changeFreq: "weekly" },
+    { path: "/vs/crewai", priority: 0.9, changeFreq: "weekly" },
+    { path: "/vs/n8n", priority: 0.9, changeFreq: "weekly" },
+
+    // Use case pages
+    { path: "/use-cases/second-brain", priority: 0.8, changeFreq: "monthly" },
+    { path: "/use-cases/lead-gen", priority: 0.8, changeFreq: "monthly" },
+    { path: "/use-cases/content-engine", priority: 0.8, changeFreq: "monthly" },
+
+    // Free tools (high conversion)
+    { path: "/free/competitor-scan", priority: 0.9, changeFreq: "monthly" },
+    { path: "/free/seo-audit", priority: 0.9, changeFreq: "monthly" },
+    { path: "/free/lead-finder", priority: 0.9, changeFreq: "monthly" },
+
     // Marketing pages
     { path: "/about", priority: 0.7, changeFreq: "monthly" },
-    { path: "/case-studies", priority: 0.7, changeFreq: "weekly" },
     { path: "/partner", priority: 0.7, changeFreq: "monthly" },
-    { path: "/roi", priority: 0.7, changeFreq: "monthly" },
-    { path: "/scan", priority: 0.7, changeFreq: "monthly" },
-    { path: "/blog", priority: 0.7, changeFreq: "daily" },
-    { path: "/demo", priority: 0.8, changeFreq: "weekly" },
-    { path: "/demo/mission", priority: 0.7, changeFreq: "weekly" },
-    { path: "/demo/live", priority: 0.7, changeFreq: "weekly" },
+    { path: "/blog", priority: 0.8, changeFreq: "daily" },
+    { path: "/marketplace", priority: 0.8, changeFreq: "weekly" },
+    { path: "/developers", priority: 0.8, changeFreq: "weekly" },
+    { path: "/developers/docs", priority: 0.8, changeFreq: "weekly" },
 
     // Trust & transparency
     { path: "/security", priority: 0.7, changeFreq: "monthly" },

@@ -568,8 +568,8 @@ export default function Home() {
           <div className="hidden md:flex items-center gap-8">
             <Link href="#enterprise" className="text-sm text-neutral-400 hover:text-white transition-colors">Product</Link>
             <Link href="#pricing" className="text-sm text-neutral-400 hover:text-white transition-colors">Pricing</Link>
+            <Link href="/vs/hubspot" className="text-sm text-neutral-400 hover:text-white transition-colors">Compare</Link>
             <Link href="/marketplace" className="text-sm text-neutral-400 hover:text-white transition-colors">Marketplace</Link>
-            <Link href="/developers" className="text-sm text-neutral-400 hover:text-white transition-colors">Developers</Link>
             <SignInButton mode="modal" fallbackRedirectUrl="/dashboard">
               <button className="text-sm text-neutral-500 hover:text-white transition-colors">Log in</button>
             </SignInButton>
@@ -593,7 +593,8 @@ export default function Home() {
               className="absolute top-16 left-4 right-4 p-5 rounded-2xl md:hidden bg-[#080808]/95 backdrop-blur-2xl border border-white/[0.06] flex flex-col gap-3 shadow-2xl pointer-events-auto">
               <Link href="#enterprise" className="text-sm text-neutral-300 hover:text-white py-1" onClick={() => setMobileNavOpen(false)}>Platform</Link>
               <Link href="#pricing" className="text-sm text-neutral-300 hover:text-white py-1" onClick={() => setMobileNavOpen(false)}>Pricing</Link>
-              <Link href="#enterprise" className="text-sm text-neutral-300 hover:text-white py-1" onClick={() => setMobileNavOpen(false)}>Enterprise</Link>
+              <Link href="/vs/hubspot" className="text-sm text-neutral-300 hover:text-white py-1" onClick={() => setMobileNavOpen(false)}>Compare</Link>
+              <Link href="/marketplace" className="text-sm text-neutral-300 hover:text-white py-1" onClick={() => setMobileNavOpen(false)}>Marketplace</Link>
               <Link href="/signup" className="px-5 py-2.5 rounded-xl bg-white text-sm font-semibold text-black text-center mt-2" onClick={() => setMobileNavOpen(false)}>Get Started</Link>
             </motion.div>
           )}
