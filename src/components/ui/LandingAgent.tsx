@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageSquare, X, Send, Bot } from "lucide-react";
+import { MessageSquare, X, Send, Bot, Mic, MicOff, Volume2, VolumeX } from "lucide-react";
 
 /**
  * LandingAgent — Conversational AI assistant on the landing page.
@@ -71,13 +71,16 @@ export function LandingAgent() {
   const [messages, setMessages] = useState<Message[]>(() => [
     {
       role: "assistant",
-      content: "Hey! I'm the Sovereign Matrix agent. Ask me anything about the platform — pricing, capabilities, how it works, or what makes it different.",
+      content: "Hey! I\u2019m the Sovereign Matrix agent. Type or tap the mic to speak. Ask me anything \u2014 pricing, capabilities, how it compares to HubSpot or Clay, or what makes it different.",
       timestamp: Date.now(),
     },
   ]);
   const [input, setInput] = useState("");
   const [isThinking, setIsThinking] = useState(false);
   const [streamText, setStreamText] = useState("");
+  const [isListening, setIsListening] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -92,6 +95,59 @@ export function LandingAgent() {
       setTimeout(() => inputRef.current?.focus(), 300);
     }
   }, [isOpen]);
+
+  // ── Voice: Speech Recognition ──
+  const toggleListening = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      return;
+    }
+
+    const SpeechRecognition = (window as unknown as { SpeechRecognition?: typeof window.SpeechRecognition; webkitSpeechRecognition?: typeof window.SpeechRecognition }).SpeechRecognition
+      || (window as unknown as { webkitSpeechRecognition?: typeof window.SpeechRecognition }).webkitSpeechRecognition;
+    if (!SpeechRecognition) return; // Browser doesn't support
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
+      const transcript = event.results[0][0].transcript;
+      setInput(transcript);
+      setIsListening(false);
+      // Auto-send after voice input
+      setTimeout(() => sendMessage(transcript), 300);
+    };
+
+    recognition.onerror = () => setIsListening(false);
+    recognition.onend = () => setIsListening(false);
+
+    recognitionRef.current = recognition;
+    recognition.start();
+    setIsListening(true);
+  };
+
+  // ── Voice: Text-to-Speech ──
+  const speakText = (text: string) => {
+    if (!voiceEnabled) return;
+    if (!window.speechSynthesis) return;
+
+    // Cancel any ongoing speech
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 1.05;
+    utterance.pitch = 1.0;
+
+    // Try to pick a natural voice
+    const voices = window.speechSynthesis.getVoices();
+    const preferred = voices.find(v => v.name.includes("Samantha") || v.name.includes("Google") || v.name.includes("Natural"));
+    if (preferred) utterance.voice = preferred;
+
+    window.speechSynthesis.speak(utterance);
+  };
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || isThinking) return;
@@ -114,7 +170,7 @@ export function LandingAgent() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          prompt: `You are the Sovereign Matrix landing page assistant. Be concise (2-3 sentences max), friendly, and specific. You represent an autonomous AI agent platform with 130+ agents, 65+ open-source models, zero per-token cost via NVIDIA NIM, white-label capability, and local execution via NemoClaw.
+          prompt: `You are the Sovereign Matrix voice assistant. Be concise (2-3 sentences max), helpful, and specific. You represent an Agent Operating System with 130 specialized agents, 39+ models (including Gemini 3.1 Pro, Claude Mythos, Llama 4 Maverick), $199/mo flat pricing (no credits, no per-token fees), 5-layer safety pipeline, white-label for agencies, and local execution via Ollama.
 
 Previous conversation:
 ${context}
@@ -142,6 +198,8 @@ Answer concisely and specifically. Do not be generic. Reference real features of
             { role: "assistant", content: fullText, timestamp: Date.now() },
           ]);
           setStreamText("");
+          // Speak the response
+          speakText(fullText);
         }
       }, 15);
     } catch {
@@ -202,7 +260,7 @@ Answer concisely and specifically. Do not be generic. Reference real features of
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-white">Sovereign Agent</p>
-                  <p className="text-[10px] text-emerald-400/60 uppercase tracking-wider">Online — Powered by NIM</p>
+                  <p className="text-[10px] text-emerald-400/60 uppercase tracking-wider">Voice-enabled — Powered by NIM</p>
                 </div>
               </div>
               <button
@@ -270,6 +328,33 @@ Answer concisely and specifically. Do not be generic. Reference real features of
 
             {/* Input */}
             <form onSubmit={handleSubmit} className="p-3 border-t border-white/[0.06]">
+              {/* Voice controls */}
+              <div className="flex items-center justify-between mb-2 px-1">
+                <button
+                  type="button"
+                  onClick={toggleListening}
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-semibold uppercase tracking-wider transition-all ${
+                    isListening
+                      ? "bg-red-500/10 border border-red-500/20 text-red-400"
+                      : "bg-white/[0.03] border border-white/[0.06] text-neutral-500 hover:text-emerald-400 hover:border-emerald-500/20"
+                  }`}
+                >
+                  {isListening ? <MicOff className="w-3 h-3" /> : <Mic className="w-3 h-3" />}
+                  {isListening ? "Listening..." : "Speak"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setVoiceEnabled(!voiceEnabled); if (voiceEnabled) window.speechSynthesis?.cancel(); }}
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-semibold uppercase tracking-wider transition-all ${
+                    voiceEnabled
+                      ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-400"
+                      : "bg-white/[0.03] border border-white/[0.06] text-neutral-600"
+                  }`}
+                >
+                  {voiceEnabled ? <Volume2 className="w-3 h-3" /> : <VolumeX className="w-3 h-3" />}
+                  {voiceEnabled ? "Voice on" : "Voice off"}
+                </button>
+              </div>
               <div className="flex items-center gap-2 bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-2.5 focus-within:border-emerald-500/20 transition-colors">
                 <label htmlFor="landing-agent-input" className="sr-only">Ask about the platform</label>
                 <input
@@ -278,7 +363,7 @@ Answer concisely and specifically. Do not be generic. Reference real features of
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder="Ask about the platform..."
+                  placeholder={isListening ? "Listening..." : "Type or speak..."}
                   disabled={isThinking}
                   aria-label="Ask about the platform"
                   className="flex-1 bg-transparent text-sm text-white placeholder:text-neutral-600 outline-none disabled:opacity-50"
