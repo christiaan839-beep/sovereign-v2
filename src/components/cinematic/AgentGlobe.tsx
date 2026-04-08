@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 
 // Major tech hubs where agents operate
@@ -58,6 +58,11 @@ export function AgentGlobe() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const globeRef = useRef<ReturnType<typeof import("cobe")["default"]> | null>(null);
   const phiRef = useRef(0);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    setIsMobile(window.innerWidth < 768);
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -66,15 +71,16 @@ export function AgentGlobe() {
       if (!canvasRef.current || !mounted) return;
       const createGlobe = (await import("cobe")).default;
 
+      const mobile = window.innerWidth < 768;
       globeRef.current = createGlobe(canvasRef.current, {
-        devicePixelRatio: Math.min(window.devicePixelRatio, 2),
-        width: 900,
-        height: 900,
+        devicePixelRatio: mobile ? 1 : Math.min(window.devicePixelRatio, 2),
+        width: mobile ? 500 : 900,
+        height: mobile ? 500 : 900,
         phi: 0.5,
         theta: 0.2,
         dark: 1,
         diffuse: 2.2,
-        mapSamples: 22000,
+        mapSamples: mobile ? 12000 : 22000,
         mapBrightness: 10,
         baseColor: [0.03, 0.04, 0.04],
         markerColor: [0.063, 0.82, 0.56],

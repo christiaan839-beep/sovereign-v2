@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 // ─── Tokens flowing left → right as a canvas stream ─────────────────────────
 // Renders a horizontal rail of glowing token fragments at 2200+ tok/s
@@ -39,8 +39,18 @@ interface Particle {
 
 export function TokenStream() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
+    const mq = window.matchMedia("(max-width: 768px)");
+    setIsMobile(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
+  useEffect(() => {
+    if (isMobile) return; // Skip canvas animation on mobile — saves battery
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
@@ -117,7 +127,22 @@ export function TokenStream() {
       cancelAnimationFrame(raf);
       window.removeEventListener("resize", resize);
     };
-  }, []);
+  }, [isMobile]);
+
+  // Mobile: simple text-only strip (no canvas)
+  if (isMobile) {
+    return (
+      <div className="relative h-12 overflow-hidden bg-[#020202] border-y border-emerald-500/[0.06] flex items-center justify-center gap-4">
+        <div className="relative flex h-1.5 w-1.5">
+          <span className="animate-ping absolute h-full w-full rounded-full bg-emerald-400 opacity-60" />
+          <span className="relative rounded-full h-1.5 w-1.5 bg-emerald-400" />
+        </div>
+        <span className="text-[9px] font-mono font-bold text-emerald-500/70 uppercase tracking-widest">
+          LIVE · 2,200+ tok/s · Cerebras WSE-3
+        </span>
+      </div>
+    );
+  }
 
   return (
     <div className="relative h-16 overflow-hidden bg-[#020202] border-y border-emerald-500/[0.06]">
