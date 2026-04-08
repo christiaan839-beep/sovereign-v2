@@ -193,6 +193,18 @@ export default function SecurityPage() {
               </div>
             ))}
           </div>
+          {/* Vulnerability chaining — the key technical insight */}
+          <div className="mt-6 p-4 rounded-xl border border-white/[0.06] bg-white/[0.02]">
+            <h3 className="text-xs font-semibold text-white mb-2">Why this changes everything: vulnerability chaining</h3>
+            <p className="text-[11px] text-neutral-400 leading-relaxed">
+              Mythos doesn&apos;t just find single bugs — it chains 3, 4, sometimes 5 vulnerabilities together into
+              sophisticated exploit sequences. Each vulnerability alone is low-severity. Chained together, they produce
+              privilege escalation, remote code execution, or data exfiltration. This is how it found the Linux kernel
+              privesc: multiple low-risk flaws combined into a path from regular user to root. Human researchers
+              do this — but it takes days. Mythos does it autonomously in minutes.
+            </p>
+          </div>
+
           <p className="text-[10px] text-neutral-700 mt-4">
             Source: Anthropic Project Glasswing. 12 founding partners including AWS, Google, Microsoft, NVIDIA, CrowdStrike, and Apple.
           </p>
