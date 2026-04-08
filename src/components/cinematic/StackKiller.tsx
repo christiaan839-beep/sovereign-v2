@@ -8,7 +8,7 @@ import Link from "next/link";
 const OLD_TOOLS = [
   { name: "Apollo.io",    function: "Lead database & enrichment",    price: 99 },
   { name: "Clay",         function: "Lead enrichment & workflows",    price: 149 },
-  { name: "Jasper",       function: "AI content writing",             price: 49 },
+  { name: "Jasper",       function: "AI content writing",             price: 59 },
   { name: "SEMrush",      function: "SEO & competitive intelligence", price: 140 },
   { name: "Zapier",       function: "Workflow automation",            price: 49 },
   { name: "Outreach.io",  function: "Sales sequencing",               price: 100 },
