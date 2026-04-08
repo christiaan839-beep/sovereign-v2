@@ -575,6 +575,7 @@ export default function Home() {
             <SignInButton mode="modal" fallbackRedirectUrl="/dashboard">
               <button className="text-sm text-neutral-500 hover:text-white transition-colors">Log in</button>
             </SignInButton>
+            <Link href="/demo" className="text-sm text-emerald-400 hover:text-emerald-300 transition-colors font-semibold">Live Demo</Link>
             <Link href="/signup" className="px-5 py-2 rounded-full bg-white text-xs font-semibold text-black hover:bg-neutral-200 transition-colors">
               Get Started
             </Link>
