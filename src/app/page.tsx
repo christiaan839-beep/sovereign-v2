@@ -41,6 +41,7 @@ import { StackKiller } from "@/components/cinematic/StackKiller";
 import { LiveModelHealth } from "@/components/cinematic/LiveModelHealth";
 import { LiveAgentStats } from "@/components/cinematic/LiveAgentStats";
 import { AnimatedGrid } from "@/components/cinematic/AnimatedGrid";
+import { FloatingOrbs } from "@/components/cinematic/ScrollRevealHero";
 
 // ─── Tok/s counter — must be defined in same file to avoid Turbopack HMR stale module ───
 function TokCounter() {
@@ -588,6 +589,9 @@ export default function Home() {
 
       {/* Cursor glow — emerald trail follows mouse everywhere */}
       <CursorGlow />
+
+      {/* Floating orbs — scroll-driven parallax depth */}
+      <FloatingOrbs />
 
       {/* Exit intent — captures leaving visitors */}
       <ExitIntent />
