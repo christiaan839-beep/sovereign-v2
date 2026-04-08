@@ -571,7 +571,7 @@ export default function Home() {
             <Link href="#enterprise" className="text-sm text-neutral-400 hover:text-white transition-colors">Product</Link>
             <Link href="#pricing" className="text-sm text-neutral-400 hover:text-white transition-colors">Pricing</Link>
             <Link href="/vs/hubspot" className="text-sm text-neutral-400 hover:text-white transition-colors">Compare</Link>
-            <Link href="/marketplace" className="text-sm text-neutral-400 hover:text-white transition-colors">Marketplace</Link>
+            <Link href="/security" className="text-sm text-neutral-400 hover:text-white transition-colors">Security</Link>
             <SignInButton mode="modal" fallbackRedirectUrl="/dashboard">
               <button className="text-sm text-neutral-500 hover:text-white transition-colors">Log in</button>
             </SignInButton>
@@ -596,7 +596,7 @@ export default function Home() {
               <Link href="#enterprise" className="text-sm text-neutral-300 hover:text-white py-1" onClick={() => setMobileNavOpen(false)}>Platform</Link>
               <Link href="#pricing" className="text-sm text-neutral-300 hover:text-white py-1" onClick={() => setMobileNavOpen(false)}>Pricing</Link>
               <Link href="/vs/hubspot" className="text-sm text-neutral-300 hover:text-white py-1" onClick={() => setMobileNavOpen(false)}>Compare</Link>
-              <Link href="/marketplace" className="text-sm text-neutral-300 hover:text-white py-1" onClick={() => setMobileNavOpen(false)}>Marketplace</Link>
+              <Link href="/security" className="text-sm text-neutral-300 hover:text-white py-1" onClick={() => setMobileNavOpen(false)}>Security</Link>
               <Link href="/signup" className="px-5 py-2.5 rounded-xl bg-white text-sm font-semibold text-black text-center mt-2" onClick={() => setMobileNavOpen(false)}>Get Started</Link>
             </motion.div>
           )}
@@ -915,6 +915,121 @@ export default function Home() {
           </motion.div>
         </div>
       </GradientFollower>
+
+      {/* ═══ FLAT PRICING — The #1 differentiator ═══ */}
+      <section className="py-16 px-6 bg-[#020202] border-y border-emerald-500/[0.06]">
+        <div className="max-w-4xl mx-auto text-center">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+            <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">No credits. No per-token fees.</p>
+            <h2 className="text-3xl md:text-5xl font-black text-white tracking-tight mb-4">
+              $199/month. That&apos;s it.
+            </h2>
+            <p className="text-neutral-400 text-sm max-w-lg mx-auto mb-8">
+              Every other AI platform charges per token, per credit, or per execution.
+              CIOs underestimate AI costs by up to 1,000%. We don&apos;t play that game.
+              One flat price. 130 agents. 39 models. Unlimited executions.
+            </p>
+          </motion.div>
+
+          <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
+            className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+            {[
+              { label: "Lindy", price: "$50–60/mo", model: "Credit-based", bad: true },
+              { label: "Sintra", price: "$97/mo", model: "250 credits/mo", bad: true },
+              { label: "Relevance AI", price: "Custom", model: "Usage-based", bad: true },
+              { label: "Sovereign", price: "$199/mo", model: "Unlimited", bad: false },
+            ].map((comp) => (
+              <div key={comp.label} className={`p-4 rounded-xl border text-center ${
+                comp.bad
+                  ? "border-white/[0.04] bg-white/[0.01]"
+                  : "border-emerald-500/20 bg-emerald-500/[0.04]"
+              }`}>
+                <p className="text-[10px] text-neutral-600 uppercase tracking-widest mb-1">{comp.label}</p>
+                <p className={`text-lg font-black mb-0.5 ${comp.bad ? "text-neutral-500" : "text-emerald-400"}`}>{comp.price}</p>
+                <p className={`text-[10px] ${comp.bad ? "text-red-400/50" : "text-emerald-400/60"}`}>{comp.model}</p>
+              </div>
+            ))}
+          </motion.div>
+
+          <p className="text-[10px] text-neutral-700">
+            Source: CIO AI cost underestimation stat from industry research, April 2026.
+          </p>
+        </div>
+      </section>
+
+      {/* ═══ PRODUCTION READY — Counter the pilot purgatory ═══ */}
+      <section className="py-20 px-6 bg-[#030303]">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12">
+            <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">No pilot purgatory</p>
+            <h2 className="text-2xl md:text-4xl font-black text-white tracking-tight mb-3">
+              86% of AI pilots never reach production.<br />
+              <span className="text-emerald-400">Sovereign ships on day one.</span>
+            </h2>
+            <p className="text-neutral-400 text-sm max-w-lg mx-auto">
+              No setup. No developer needed. No 6-month integration project.
+              Sign up, pick a playbook, get real output in 3 minutes.
+            </p>
+          </div>
+
+          <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
+            className="grid md:grid-cols-3 gap-4">
+            {[
+              {
+                time: "0:00",
+                title: "Sign up",
+                desc: "Email + password. No credit card on free tier. 60 seconds.",
+                color: "emerald",
+              },
+              {
+                time: "1:00",
+                title: "Pick a playbook",
+                desc: "25 pre-built workflows: lead blitz, content machine, competitor scan, SEO audit. One click.",
+                color: "cyan",
+              },
+              {
+                time: "3:00",
+                title: "Get real output",
+                desc: "50 enriched leads, a published blog post, or a competitive analysis. Not a demo — real deliverables.",
+                color: "violet",
+              },
+            ].map((step) => (
+              <motion.div key={step.title}
+                initial={{ opacity: 0, y: 15 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className={`p-6 rounded-2xl border border-${step.color}-500/10 bg-${step.color}-500/[0.02]`}
+              >
+                <div className={`text-2xl font-black font-mono text-${step.color}-400/30 mb-2`}>{step.time}</div>
+                <h3 className="text-sm font-bold text-white mb-1">{step.title}</h3>
+                <p className="text-xs text-neutral-400 leading-relaxed">{step.desc}</p>
+              </motion.div>
+            ))}
+          </motion.div>
+
+          <p className="text-center text-[10px] text-neutral-700 mt-6">
+            86% pilot failure stat: Gartner/industry research, 2026. 14% of enterprises have scaled agents to production.
+          </p>
+        </div>
+      </section>
+
+      {/* ═══ TRUST STRIP — Real industry stats ═══ */}
+      <section className="py-12 px-6 border-y border-white/[0.03] bg-[#020202]">
+        <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+          {[
+            { stat: "88%", desc: "of orgs report AI security incidents", sub: "Sovereign: 5-layer pipeline on every request" },
+            { stat: "80%", desc: "can\u2019t track what agents do", sub: "Sovereign: full audit trail, every action logged" },
+            { stat: "46%", desc: "cite integration as #1 barrier", sub: "Sovereign: 25+ native integrations + MCP" },
+            { stat: "1,000%", desc: "CIO AI cost underestimation", sub: "Sovereign: $199/mo flat, no hidden fees" },
+          ].map((item) => (
+            <motion.div key={item.stat} initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}>
+              <div className="text-2xl font-black text-white mb-1">{item.stat}</div>
+              <p className="text-[10px] text-neutral-500 mb-2">{item.desc}</p>
+              <p className="text-[9px] text-emerald-500/50">{item.sub}</p>
+            </motion.div>
+          ))}
+        </div>
+      </section>
 
       {/* ═══ STACK KILLER — Replace 8 tools with one ═══ */}
       <StackKiller />
