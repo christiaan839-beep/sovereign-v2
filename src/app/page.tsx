@@ -315,7 +315,7 @@ function EnterpriseSection() {
             Your data. Your infrastructure. Your autonomous workforce.
           </RevealText>
           <RevealText as="p" delay={0.2} className="text-sm text-neutral-400 max-w-2xl mx-auto leading-relaxed">
-            Built on NVIDIA NIM with 36+ models including Claude Mythos. Zero per-token costs.
+            Built on NVIDIA NIM with 39+ models including Gemini 3.1 Pro and Claude Mythos. Zero per-token costs.
             Run locally via Ollama. Glasswing-grade safety on every execution.
           </RevealText>
         </div>
@@ -671,7 +671,7 @@ export default function Home() {
           {/* Subtitle — benefits, not specs */}
           <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5, duration: 0.8 }}
             className="text-lg md:text-xl text-neutral-400 max-w-xl mx-auto leading-relaxed mb-6">
-            130 AI agents. 36 models. One platform that finds leads, writes content,
+            130 AI agents. 39 models. One platform that finds leads, writes content,
             scans competitors, makes calls, and closes deals — autonomously.
             Starting at $19/month. No per-token fees. No vendor lock-in.
           </motion.p>
@@ -679,7 +679,7 @@ export default function Home() {
           {/* Proof strip — tiny, credible + live tok/s counter */}
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6, duration: 0.5 }}
             className="flex items-center justify-center gap-4 text-xs text-neutral-500 mb-10 flex-wrap">
-            <span className="flex items-center gap-1.5"><CheckCircle2 className="w-3 h-3 text-emerald-500/60" />36+ open-source models</span>
+            <span className="flex items-center gap-1.5"><CheckCircle2 className="w-3 h-3 text-emerald-500/60" />39+ open-source models</span>
             <span className="hidden sm:block text-neutral-700">|</span>
             <span className="flex items-center gap-1.5"><CheckCircle2 className="w-3 h-3 text-emerald-500/60" />$0 per-token cost</span>
             <span className="hidden sm:block text-neutral-700">|</span>
@@ -695,10 +695,10 @@ export default function Home() {
               { name: "Nemotron Ultra 253B", hot: false },
               { name: "Claude Mythos", hot: true },
               { name: "Claude Sonnet 4.6", hot: false },
-              { name: "Gemini 2.5 Pro", hot: false },
+              { name: "Gemini 3.1 Pro", hot: true },
               { name: "DeepSeek V3.2", hot: false },
-              { name: "Llama 4 Scout", hot: false },
-              { name: "FLUX.1 Pro", hot: false },
+              { name: "Llama 4 Maverick", hot: true },
+              { name: "Nemotron Cascade 2", hot: true },
               { name: "Ollama", hot: false },
             ].map((model) => (
               <span key={model.name} className={`text-[10px] px-3 py-1 rounded-full border transition-all cursor-default ${
@@ -916,7 +916,7 @@ export default function Home() {
         <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
           {[
             { value: 130, suffix: "+", label: "AI Agents", desc: "Each mapped to a specific business function" },
-            { value: 65, suffix: "+", label: "AI Models", desc: "Smart-routed per task type, zero lock-in" },
+            { value: 68, suffix: "+", label: "AI Models", desc: "Smart-routed per task type, zero lock-in" },
             { value: 25, suffix: "", label: "Autopilot Playbooks", desc: "Run on a schedule. No human required." },
             { value: 2200, suffix: "+", label: "Tok/s on Cerebras", desc: "Wafer-scale silicon, not GPU clusters" },
           ].map((stat, i) => (
