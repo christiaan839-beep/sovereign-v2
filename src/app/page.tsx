@@ -42,6 +42,7 @@ import { LiveModelHealth } from "@/components/cinematic/LiveModelHealth";
 import { LiveAgentStats } from "@/components/cinematic/LiveAgentStats";
 import { AnimatedGrid } from "@/components/cinematic/AnimatedGrid";
 import { FloatingOrbs } from "@/components/cinematic/ScrollRevealHero";
+import { BentoGrid } from "@/components/cinematic/BentoGrid";
 
 // ─── Tok/s counter — must be defined in same file to avoid Turbopack HMR stale module ───
 function TokCounter() {
@@ -1408,6 +1409,9 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* ═══ BENTO GRID — Elite feature showcase ═══ */}
+      <BentoGrid />
 
       {/* ═══ PLATFORM CAPABILITIES — The full stack ═══ */}
       <GlowDivider />
