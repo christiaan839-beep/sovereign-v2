@@ -1428,6 +1428,16 @@ export default function Home() {
                 <li><Link href="/vs/hubspot" className="text-xs text-neutral-500 hover:text-white transition-colors">vs HubSpot</Link></li>
                 <li><Link href="/vs/clay" className="text-xs text-neutral-500 hover:text-white transition-colors">vs Clay</Link></li>
                 <li><Link href="/vs/zapier" className="text-xs text-neutral-500 hover:text-white transition-colors">vs Zapier</Link></li>
+                <li><Link href="/vs/crewai" className="text-xs text-neutral-500 hover:text-white transition-colors">vs CrewAI</Link></li>
+                <li><Link href="/vs/n8n" className="text-xs text-neutral-500 hover:text-white transition-colors">vs n8n</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-xs font-semibold text-neutral-400 mb-4">Use Cases</h3>
+              <ul className="space-y-2.5">
+                <li><Link href="/use-cases/lead-gen" className="text-xs text-neutral-500 hover:text-white transition-colors">Lead Generation</Link></li>
+                <li><Link href="/use-cases/content-engine" className="text-xs text-neutral-500 hover:text-white transition-colors">Content Engine</Link></li>
+                <li><Link href="/use-cases/second-brain" className="text-xs text-neutral-500 hover:text-white transition-colors">Second Brain</Link></li>
                 <li><Link href="/for-agencies" className="text-xs text-neutral-500 hover:text-white transition-colors">For Agencies</Link></li>
               </ul>
             </div>
