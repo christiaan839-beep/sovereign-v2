@@ -6,7 +6,7 @@ import Link from "next/link";
 
 const COMPARISON = [
   { feature: "AI agents that plan + execute", sovereign: true, competitor: false, note: "HubSpot has AI assistants — not autonomous agents" },
-  { feature: "Multi-model routing (36+ models)", sovereign: true, competitor: false, note: "HubSpot uses a single OpenAI integration" },
+  { feature: "Multi-model routing (39+ models)", sovereign: true, competitor: false, note: "HubSpot uses a single OpenAI integration" },
   { feature: "Consensus verification (4 models)", sovereign: true, competitor: false, note: "No multi-model quality checking" },
   { feature: "Lead generation + enrichment", sovereign: true, competitor: true, note: "Both have lead tools" },
   { feature: "Email sequences", sovereign: true, competitor: true, note: "Both automate outreach" },
@@ -142,6 +142,29 @@ export default function VsHubSpotPage() {
                 <h3 className="text-sm font-semibold text-emerald-400 mb-1">{item.title}</h3>
                 <p className="text-xs text-neutral-400 leading-relaxed">{item.desc}</p>
               </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Related pages */}
+      <section className="px-6 pb-16">
+        <div className="max-w-3xl mx-auto">
+          <h2 className="text-sm font-semibold text-neutral-500 mb-4 text-center">Related</h2>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            {[
+              { label: "vs Clay", href: "/vs/clay" },
+              { label: "vs Zapier", href: "/vs/zapier" },
+              { label: "vs Sintra", href: "/vs/sintra" },
+              { label: "Lead Generation", href: "/use-cases/lead-gen" },
+              { label: "Content Engine", href: "/use-cases/content-engine" },
+              { label: "For Agencies", href: "/for-agencies" },
+              { label: "Compare All", href: "/pricing/compare" },
+            ].map((link) => (
+              <Link key={link.label} href={link.href}
+                className="px-3 py-1.5 rounded-full text-[10px] text-neutral-500 border border-white/[0.06] hover:border-emerald-500/20 hover:text-emerald-400 transition-all">
+                {link.label}
+              </Link>
             ))}
           </div>
         </div>
