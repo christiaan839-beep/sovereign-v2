@@ -45,6 +45,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // Integrations
     { path: "/integrations", priority: 0.8, changeFreq: "monthly" },
 
+    // Roadmap
+    { path: "/roadmap", priority: 0.7, changeFreq: "weekly" },
+
     // Marketing pages
     { path: "/about", priority: 0.7, changeFreq: "monthly" },
     { path: "/partner", priority: 0.7, changeFreq: "monthly" },
