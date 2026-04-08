@@ -3,6 +3,7 @@
 import React, { useState, useCallback, useEffect, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { NotificationBell } from "@/components/dashboard/NotificationBell";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, Settings, Target,
@@ -11,7 +12,7 @@ import {
   PanelLeftOpen, PanelLeftClose, Plug, Cpu,
   BarChart3, Eye, Shield, Wrench,
   Wand2, Workflow, MessageSquare, Zap, Rocket,
-  Bot, ClipboardList, Store, Code2, Mail,
+  Bot, ClipboardList, Store, Code2, Mail, FileText, Bell,
 } from "lucide-react";
 import { useKeyboardShortcuts } from "@/lib/keyboard-shortcuts";
 import { motion, AnimatePresence } from "framer-motion";
@@ -99,6 +100,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/dashboard/jobs", label: "Job Queue", icon: ClipboardList, tooltip: "Async fire-and-forget tasks" },
       { href: "/dashboard/nemo-claw", label: "Security", icon: Shield, tooltip: "5-layer safety pipeline + HITL approvals" },
       { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3, tooltip: "Platform metrics + playbook stats" },
+      { href: "/dashboard/reports", label: "Reports", icon: FileText, tooltip: "AI-generated business reports" },
     ],
   },
 ];
@@ -571,21 +573,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* === MAIN CONTENT === */}
         <main role="main" className="flex-1 overflow-y-auto bg-[#000000] relative z-10 custom-scrollbar">
           <div className="relative z-10 w-full min-h-full max-w-[1600px] mx-auto">
-            {/* Breadcrumb Bar */}
-            {!isHome && pageLabel && (
-              <div className="px-6 lg:px-8 pt-3 pb-1 flex items-center gap-1.5">
-                <Link
-                  href="/dashboard"
-                  className="text-[11px] text-neutral-500 hover:text-neutral-400 transition-colors"
-                >
-                  Dashboard
-                </Link>
-                <ChevronRight className="w-3 h-3 text-neutral-500" />
-                <span className="text-[11px] text-neutral-400 font-medium">
-                  {pageLabel}
-                </span>
+            {/* Breadcrumb Bar + Notification Bell */}
+            <div className="px-6 lg:px-8 pt-3 pb-1 flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                {!isHome && pageLabel && (
+                  <>
+                    <Link
+                      href="/dashboard"
+                      className="text-[11px] text-neutral-500 hover:text-neutral-400 transition-colors"
+                    >
+                      Dashboard
+                    </Link>
+                    <ChevronRight className="w-3 h-3 text-neutral-500" />
+                    <span className="text-[11px] text-neutral-400 font-medium">
+                      {pageLabel}
+                    </span>
+                  </>
+                )}
               </div>
-            )}
+              <NotificationBell />
+            </div>
             <ErrorBoundary>
               <ToastProvider>
                 <CinematicOnboarding>
