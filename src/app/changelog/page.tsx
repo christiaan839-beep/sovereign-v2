@@ -12,6 +12,18 @@ const CATEGORIES: Record<string, { color: string; bg: string }> = {
 };
 
 const ENTRIES = [
+  { date: "Apr 9, 2026", title: "Evolution Engine — Platform That Rewrites Itself", category: "Agents", icon: Brain,
+    description: "Three self-improvement mechanisms: prompt evolution (rewrites prompts based on quality), routing evolution (learns best model per task), strategy evolution (discovers optimal agent chains)." },
+  { date: "Apr 9, 2026", title: "11 Comparison Pages + Claude Managed Agents", category: "Platform", icon: Route,
+    description: "Added /vs/lindy, /vs/sintra, /vs/manus, /vs/relevance-ai, /vs/make, /vs/claude-agents. Positioned Claude Managed Agents as complementary, not competitive." },
+  { date: "Apr 9, 2026", title: "6 Sector Landing Pages", category: "Platform", icon: Layers,
+    description: "Healthcare (HIPAA), Legal (confidentiality), Real Estate (voice agents), Recruiting, Cybersecurity (Glasswing), Education (FERPA). Each with sector-specific capabilities and workflows." },
+  { date: "Apr 9, 2026", title: "Dashboard Completion Sprint", category: "Platform", icon: Terminal,
+    description: "Analytics dashboard (real API data), email builder (938 lines, 4 sequence types), reports page (AI-generated), notification bell, admin panel, quick-run banner." },
+  { date: "Apr 9, 2026", title: "Bento Grid + Performance Infrastructure", category: "Platform", icon: Layers,
+    description: "Linear/Vercel-style feature showcase with 9 interactive cards. Plus useLazyLoad hook, Skeleton component, Badge component, useInterval hook." },
+  { date: "Apr 9, 2026", title: "Mythos-Ready Safety Stack", category: "Safety", icon: Shield,
+    description: "Trust levels (4 autonomy settings), execution audit (immutable logs), output verifier (LlamaGuard + PII + quality), context compression (5 levels). Built for when frontier models can hack autonomously." },
   { date: "Apr 8, 2026", title: "Competitive Hub — 5 Comparison Pages", category: "Platform", icon: Route,
     description: "Launched /vs/hubspot, /vs/clay, /vs/zapier, /vs/crewai, /vs/n8n with honest feature comparison tables, pricing breakdowns, and SEO metadata for high-intent search traffic." },
   { date: "Apr 8, 2026", title: "Use Case Pages — Lead Gen, Content Engine, Second Brain", category: "Platform", icon: Layers,
