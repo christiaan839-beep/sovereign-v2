@@ -21,7 +21,7 @@ interface Invoice {
 
 export default function BillingPage() {
   const { today, limit, total, plan, loaded, isPaid } = useUsage();
-  const { user } = useSafeUser();
+  const { user: _user } = useSafeUser();
   const [portalLoading, setPortalLoading] = useState(false);
   const [portalError, setPortalError] = useState<string | null>(null);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
