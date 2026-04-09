@@ -58,7 +58,7 @@ export interface SafeFetchOptions {
 }
 
 /** Configuration for withRetry(). */
-export interface RetryOptions<T> {
+export interface RetryOptions {
   /** Maximum number of retry attempts (default: 3). */
   maxRetries?: number;
   /** Base delay in ms — doubles each attempt (default: 1000). */
@@ -477,7 +477,7 @@ export class CircuitOpenError extends Error {
  */
 export async function withRetry<T>(
   fn: () => Promise<T>,
-  options: RetryOptions<T> = {}
+  options: RetryOptions = {}
 ): Promise<Result<T>> {
   const {
     maxRetries = 3,
