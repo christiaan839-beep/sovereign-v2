@@ -63,6 +63,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/for-recruiting", priority: 0.8, changeFreq: "monthly" },
     { path: "/for-cybersecurity", priority: 0.8, changeFreq: "monthly" },
     { path: "/for-education", priority: 0.8, changeFreq: "monthly" },
+    { path: "/for-fintech", priority: 0.8, changeFreq: "monthly" },
+    { path: "/for-ecommerce", priority: 0.8, changeFreq: "monthly" },
 
     // Contact
     { path: "/contact", priority: 0.7, changeFreq: "monthly" },
