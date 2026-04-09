@@ -1664,6 +1664,8 @@ export default function Home() {
                 <li><Link href="/for-realestate" className="text-xs text-neutral-500 hover:text-white transition-colors">For Real Estate</Link></li>
                 <li><Link href="/for-recruiting" className="text-xs text-neutral-500 hover:text-white transition-colors">For Recruiting</Link></li>
                 <li><Link href="/for-education" className="text-xs text-neutral-500 hover:text-white transition-colors">For Education</Link></li>
+                <li><Link href="/for-fintech" className="text-xs text-neutral-500 hover:text-white transition-colors">For Fintech</Link></li>
+                <li><Link href="/for-ecommerce" className="text-xs text-neutral-500 hover:text-white transition-colors">For E-Commerce</Link></li>
               </ul>
             </div>
             <div>

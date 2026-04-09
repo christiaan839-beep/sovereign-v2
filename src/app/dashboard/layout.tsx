@@ -13,6 +13,7 @@ import {
   BarChart3, Eye, Shield, Wrench,
   Wand2, Workflow, MessageSquare, Zap, Rocket,
   Bot, ClipboardList, Store, Code2, Mail, FileText, Bell,
+  CreditCard, Users,
 } from "lucide-react";
 import { useKeyboardShortcuts } from "@/lib/keyboard-shortcuts";
 import { motion, AnimatePresence } from "framer-motion";
@@ -113,6 +114,8 @@ const ECOSYSTEM_NAV: NavItem[] = [
 
 // ── Bottom: Account-level items ──
 const BOTTOM_NAV: NavItem[] = [
+  { href: "/dashboard/billing", label: "Billing", icon: CreditCard, tooltip: "Plan, usage, payment history" },
+  { href: "/dashboard/referrals", label: "Referrals", icon: Users, tooltip: "Earn up to 40% commission" },
   { href: "/dashboard/integrations", label: "Integrations", icon: Plug, tooltip: "Connect apps and services" },
   { href: "/dashboard/settings", label: "Settings", icon: Settings, tooltip: "Account, team, API keys" },
 ];
