@@ -521,6 +521,20 @@ export function createAgentRoute(config: AgentConfig) {
       trackAgentExecution(config.name, durationMs, true);
       recordAgentSuccess(config.name);
 
+      // ─── Evolution: Record quality for prompt self-improvement ───
+      if (qualityScore) {
+        try {
+          const { recordStrategyOutcome } = await import("@/lib/evolution-engine");
+          recordStrategyOutcome({
+            goalType: config.name,
+            strategy: config.name,
+            success: qualityScore.passed ?? true,
+            score: Math.round(qualityScore.overall * 100),
+            context: { durationMs, agent: config.name },
+          });
+        } catch {} // Evolution must never block responses
+      }
+
       // ─── Persist to agentActivity table (fire-and-forget) ───
       if (userId) {
         const outputSummary = getFirstStringValue(finalResult)?.slice(0, 200) || "";
@@ -544,6 +558,10 @@ export function createAgentRoute(config: AgentConfig) {
         // ─── Auto-learn: Extract relationships for knowledge graph (fire-and-forget) ───
         autoLearnGraph(userId, config.name, getFirstStringValue(sanitized)?.slice(0, 500) || "", outputSummary, durationMs)
           .catch(() => {}); // Graph learning must never block or fail the response
+
+        // ─── Graph Writer: Record structured entities from execution (fire-and-forget) ───
+        recordGraphExecution(userId, config.name, getFirstStringValue(sanitized)?.slice(0, 500) || "", outputSummary, durationMs)
+          .catch(() => {}); // Graph writing must never block or fail the response
       }
 
       // ─── Complete Replay Recording ───
@@ -631,6 +649,20 @@ function scanForPiiPatterns(text: string): Array<{ type: string; match: string }
   }
 
   return findings;
+}
+
+/**
+ * Record structured entities (emails, URLs, companies, mentions) from agent execution
+ * into the knowledge graph using regex-based extraction (zero LLM cost).
+ * Fire-and-forget: caller should .catch(() => {}) this.
+ */
+async function recordGraphExecution(userId: string, agentName: string, inputText: string, outputText: string, durationMs: number): Promise<void> {
+  try {
+    const { recordAgentExecution } = await import("@/lib/graph/graph-writer");
+    await recordAgentExecution({ userId, agentName, input: inputText, output: outputText, durationMs });
+  } catch {
+    // Graph writing failure must never surface — it's a background enhancement
+  }
 }
 
 /**

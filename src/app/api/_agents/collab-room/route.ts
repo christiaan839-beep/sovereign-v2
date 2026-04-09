@@ -90,7 +90,7 @@ export async function POST(request: Request) {
           ).join("\n\n---\n\n");
 
           const response = await nimChat(
-            "nvidia/nemotron-4-340b-instruct",
+            "nvidia/llama-3.1-nemotron-ultra-253b-v1",
             [
               {
                 role: "system",

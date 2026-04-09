@@ -32,6 +32,12 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "images.unsplash.com" },
       { protocol: "https", hostname: "**.nvidia.com" },
       { protocol: "https", hostname: "**.googleapis.com" },
+      // White-label portal: agency logos from common storage providers
+      { protocol: "https", hostname: "**.amazonaws.com" },
+      { protocol: "https", hostname: "**.cloudinary.com" },
+      { protocol: "https", hostname: "**.supabase.co" },
+      { protocol: "https", hostname: "**.vercel-storage.com" },
+      { protocol: "https", hostname: "**.blob.core.windows.net" },
     ],
   },
 
@@ -81,12 +87,22 @@ const nextConfig: NextConfig = {
     ];
   },
 
-  // Rewrites for white-label subdomain routing
+  // Rewrites for white-label subdomain + portal routing
   async rewrites() {
     return [
       {
         source: "/client/:clientId/:path*",
         destination: "/portal/:clientId/:path*",
+      },
+      // White-label portal: /portal/d/:domain is the real route,
+      // but external URLs can use /wl/:domain for a cleaner look.
+      {
+        source: "/wl/:domain/:path*",
+        destination: "/portal/d/:domain/:path*",
+      },
+      {
+        source: "/wl/:domain",
+        destination: "/portal/d/:domain",
       },
     ];
   },
