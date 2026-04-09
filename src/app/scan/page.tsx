@@ -255,20 +255,20 @@ export default function AGIAuditorPage() {
                         const email = emailInput?.value;
                         if (!email) return;
                         
-                        // Auto-provision demo
-                        const demoRes = await fetch('/api/demo/provision', {
+                        // Capture email to waitlist
+                        await fetch('/api/waitlist', {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ email, businessName: targetUrl }),
-                        });
+                          body: JSON.stringify({ email }),
+                        }).catch(() => {});
+
+                        // Auto-trigger demo analysis
+                        const demoRes = await fetch('/api/_misc/demo/analyze', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ email, url: targetUrl }),
+                        }).catch(() => ({ json: () => ({}) }));
                         const demo = await demoRes.json();
-                        
-                        // Auto-trigger nurture sequence
-                        fetch('/api/nurture/sequence', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ leadName: email.split('@')[0], email, industry: 'Digital Business', painPoints: 'Funnel leakage, manual marketing, scaling' }),
-                        });
                         
                         // Redirect to live demo
                         if (demo.portalUrl) {
