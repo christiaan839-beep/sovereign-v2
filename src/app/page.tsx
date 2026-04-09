@@ -1648,6 +1648,7 @@ export default function Home() {
                 <li><Link href="/vs/lindy" className="text-xs text-neutral-500 hover:text-white transition-colors">vs Lindy</Link></li>
                 <li><Link href="/vs/sintra" className="text-xs text-neutral-500 hover:text-white transition-colors">vs Sintra</Link></li>
                 <li><Link href="/vs/make" className="text-xs text-neutral-500 hover:text-white transition-colors">vs Make</Link></li>
+                <li><Link href="/vs/claude-agents" className="text-xs text-neutral-500 hover:text-white transition-colors">& Claude Agents</Link></li>
               </ul>
             </div>
             <div>
@@ -1660,6 +1661,9 @@ export default function Home() {
                 <li><Link href="/for-healthcare" className="text-xs text-neutral-500 hover:text-white transition-colors">For Healthcare</Link></li>
                 <li><Link href="/for-legal" className="text-xs text-neutral-500 hover:text-white transition-colors">For Legal</Link></li>
                 <li><Link href="/for-cybersecurity" className="text-xs text-neutral-500 hover:text-white transition-colors">For Cybersecurity</Link></li>
+                <li><Link href="/for-realestate" className="text-xs text-neutral-500 hover:text-white transition-colors">For Real Estate</Link></li>
+                <li><Link href="/for-recruiting" className="text-xs text-neutral-500 hover:text-white transition-colors">For Recruiting</Link></li>
+                <li><Link href="/for-education" className="text-xs text-neutral-500 hover:text-white transition-colors">For Education</Link></li>
               </ul>
             </div>
             <div>

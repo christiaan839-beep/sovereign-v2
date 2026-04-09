@@ -31,6 +31,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/vs/manus", priority: 0.9, changeFreq: "weekly" },
     { path: "/vs/relevance-ai", priority: 0.9, changeFreq: "weekly" },
     { path: "/vs/make", priority: 0.9, changeFreq: "weekly" },
+    { path: "/vs/claude-agents", priority: 0.9, changeFreq: "weekly" },
 
     // Use case pages
     { path: "/use-cases/second-brain", priority: 0.8, changeFreq: "monthly" },
