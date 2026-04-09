@@ -472,8 +472,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     </nav>
   );
 
+  // Dynamic page title for browser tabs
+  const titleSuffix = pageLabel ? ` — ${pageLabel}` : "";
+
   return (
     <TelemetryProvider>
+      <title>{`Sovereign Matrix${titleSuffix}`}</title>
       <div className="flex h-screen bg-[#000000] text-white overflow-hidden font-sans">
 
         {/* === DESKTOP SIDEBAR === */}
