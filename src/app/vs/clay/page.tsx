@@ -147,6 +147,29 @@ export default function VsClayPage() {
         </div>
       </section>
 
+      {/* Related pages */}
+      <section className="px-6 pb-16">
+        <div className="max-w-3xl mx-auto">
+          <h2 className="text-sm font-semibold text-neutral-500 mb-4 text-center">Related</h2>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            {[
+              { label: "vs HubSpot", href: "/vs/hubspot" },
+              { label: "vs Relevance AI", href: "/vs/relevance-ai" },
+              { label: "vs Zapier", href: "/vs/zapier" },
+              { label: "Lead Generation", href: "/use-cases/lead-gen" },
+              { label: "Content Engine", href: "/use-cases/content-engine" },
+              { label: "For Agencies", href: "/for-agencies" },
+              { label: "Compare All", href: "/pricing/compare" },
+            ].map((link) => (
+              <Link key={link.label} href={link.href}
+                className="px-3 py-1.5 rounded-full text-[10px] text-neutral-500 border border-white/[0.06] hover:border-emerald-500/20 hover:text-emerald-400 transition-all">
+                {link.label}
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="py-20 px-6 text-center border-t border-white/[0.03]">
         <h2 className="text-3xl md:text-4xl font-black text-white mb-4">Try it yourself.</h2>

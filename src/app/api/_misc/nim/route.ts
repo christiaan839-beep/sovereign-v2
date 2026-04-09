@@ -98,7 +98,7 @@ const AVAILABLE_MODELS = {
     name: "Gemma 3 27B IT",
     category: "Vision & Video",
     tier: 2,
-    description: "Cutting-edge open multimodal model excelling in high-quality reasoning from images.",
+    description: "Open multimodal model excelling in high-quality reasoning from images.",
     endpoint: "/chat/completions",
   },
   "stable-diffusion-3": {
@@ -330,7 +330,7 @@ const AVAILABLE_MODELS = {
     name: "Phi-4 Multimodal",
     category: "Frontier Free",
     tier: 8,
-    description: "Cutting-edge open multimodal model excelling in reasoning from image and audio inputs.",
+    description: "Open multimodal model excelling in reasoning from image and audio inputs.",
     endpoint: "/chat/completions",
   },
   "seed-oss-36b": {

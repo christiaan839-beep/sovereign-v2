@@ -72,6 +72,61 @@ Key endpoints:
 - Failover chain is 11 models deep
 - Consensus verification uses 4 independent models (Nemotron Ultra, DeepSeek V3.2, Gemma 4, Qwen 3)
 
+## Session Learnings (April 8-9 2026)
+
+### Architecture Decisions
+- Evolution engine (evolution-engine.ts) — prompts, routing, and agent chains self-improve over time
+- Trust levels (trust-levels.ts) — 4 configurable autonomy levels: supervised → guided → autonomous → full auto
+- Output verifier (output-verifier.ts) — LlamaGuard + PII + content policy + quality + trust gate, 5 checks in parallel
+- Context compression (context-compression.ts) — 5-level strategy: dedup → summarize → prioritize → trim → truncate
+- Agent performance (agent-performance.ts) — learns best model per task type, feeds back into smart router
+- Competitive moat (competitive-moat.ts) — cross-agent learning, chain intelligence, pricing calculator
+
+### Key Files Added
+- src/lib/evolution-engine.ts — Self-improving prompts, routing, and strategy discovery
+- src/lib/trust-levels.ts — 4-level autonomy with anomaly detection
+- src/lib/execution-audit.ts — Immutable action logging
+- src/lib/output-verifier.ts — 5-parallel-check verification pipeline
+- src/lib/context-compression.ts — 5-level context management
+- src/lib/agent-performance.ts — Model recommendation engine
+- src/lib/competitive-moat.ts — Cross-agent learning + pricing math
+- src/components/ui/Badge.tsx — Shared badge (6 colors, 3 sizes)
+- src/components/ui/Skeleton.tsx — Loading placeholder (3 variants)
+- src/hooks/useInterval.ts — Safe timer with auto-cleanup
+- src/hooks/useLazyLoad.ts — Intersection Observer lazy loading
+- src/components/cinematic/BentoGrid.tsx — Linear/Vercel-style feature grid
+- src/components/cinematic/LiveModelHealth.tsx — Real API latency pings
+- src/components/cinematic/LiveAgentStats.tsx — Real execution metrics
+- src/components/cinematic/StackKiller.tsx — 8-tool cost displacement
+- src/components/cinematic/LiveAgentTerminal.tsx — Streaming scan demo
+- src/components/dashboard/NotificationBell.tsx — Real-time alerts
+- src/app/api/voice/speak/route.ts — NVIDIA Magpie TTS (public, rate-limited)
+- src/app/api/waitlist/route.ts — Email capture with Resend welcome email
+
+### Important Patterns
+- Turbopack stale module: new files imported via dynamic() cause HMR errors. Fix: use static imports for new client components
+- Cherry-pick workflow: work on claude/wizardly-benz, cherry-pick to main for Vercel
+- 55+ consecutive READY deploys with zero failures
+- UltraPlan pattern: 3 parallel agents (bug hunter, quality analyzer, improvement ranker) for comprehensive audits
+- Anti-distillation canary in system-prompts.ts poisons extraction attempts
+- Glasswing sandbox escape narrative is the strongest trust argument
+
+### Models
+- 39+ models across 8 providers (NVIDIA NIM, Gemini, Claude, Groq, Cerebras, Ollama, DeepSeek, Alibaba)
+- Added: Gemini 3.1 Pro, Nemotron Cascade 2, Llama 4 Maverick, Claude Mythos (registry only)
+- Consensus engine updated: Gemma-4 → Gemini-3.1-Pro
+- Smart router vision slot: Llama 4 Maverick (400B MoE)
+- All "65+" references fixed to "39+" (24 files updated)
+- "Sovereign Array" renamed to "Growth" (5 files)
+
+### Pages Built
+- 11 competitive /vs/ pages (hubspot, clay, zapier, crewai, n8n, lindy, sintra, manus, relevance-ai, make, claude-agents)
+- 6 sector pages (healthcare, legal, realestate, recruiting, cybersecurity, education)
+- 3 use case pages (lead-gen, content-engine, second-brain)
+- Dashboard: analytics, email-builder, reports + NotificationBell wired to header
+- Landing: BentoGrid, flat pricing, production-ready, trust stats, competitive strip
+- /launch, /contact, /integrations, /developers/docs, /pricing/compare, /roadmap
+
 ## Session Learnings (April 7 2026)
 
 ### Key Fixes & Improvements
