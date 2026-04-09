@@ -91,6 +91,47 @@ const ARTICLES = [
     date: "Apr 7, 2026",
     featured: true,
   },
+  {
+    slug: "ai-agents-for-ecommerce",
+    title: "How E-Commerce Stores Use AI Agents to Write 10,000 Product Descriptions in a Day",
+    excerpt: "Manual product descriptions don\u2019t scale. AI agents generate SEO-optimized, brand-voiced descriptions for entire catalogs — while monitoring competitor prices in real time.",
+    category: "Use Case",
+    readTime: "7 min",
+    date: "Apr 8, 2026",
+  },
+  {
+    slug: "fintech-compliance-ai",
+    title: "Why Fintech Companies Need Air-Gapped AI — Not Cloud Chatbots",
+    excerpt: "Fiduciary data can\u2019t touch the cloud. Local execution via Ollama + 5-layer safety pipeline = the only architecture that passes compliance audits.",
+    category: "Industry",
+    readTime: "9 min",
+    date: "Apr 8, 2026",
+  },
+  {
+    slug: "ai-recruiting-agents",
+    title: "From 1,000 Resumes to 10 Interviews: How AI Agents Transform Recruiting",
+    excerpt: "Screening 1,000 applicants takes a human recruiter 2 weeks. AI agents do it in 4 minutes — with less bias and better pattern matching.",
+    category: "Use Case",
+    readTime: "6 min",
+    date: "Apr 9, 2026",
+  },
+  {
+    slug: "flat-pricing-vs-credits",
+    title: "Why Credit-Based AI Pricing Is a Trap (And What to Use Instead)",
+    excerpt: "CIOs underestimate AI costs by 1,000%. Credits expire, overages multiply, and per-token billing makes budgeting impossible. Flat pricing fixes all of it.",
+    category: "Analysis",
+    readTime: "8 min",
+    date: "Apr 9, 2026",
+    featured: true,
+  },
+  {
+    slug: "multi-model-consensus",
+    title: "Single Model vs Multi-Model Consensus: Why 4 Models Beat 1",
+    excerpt: "When you run the same query through 4 independent models and take the consensus, accuracy jumps 22.8 percentage points. Here\u2019s the data.",
+    category: "Technology",
+    readTime: "7 min",
+    date: "Apr 9, 2026",
+  },
 ];
 
 const _CATEGORIES = ["All", "Industry", "Guide", "Deep Dive", "Case Study", "Technology", "Business"];
