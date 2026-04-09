@@ -533,6 +533,8 @@ function useWidgetChat() {
             contentType: detectContentType(finalContent),
             agentLabel: intent.label,
             responseTimeMs: Date.now() - startTime,
+            modelUsed: data.model || data.modelUsed || data.metadata?.model || undefined,
+            qualityScore: data.qualityScore ?? data.metadata?.qualityScore ?? undefined,
           },
         ]);
       } catch (error) {
@@ -857,15 +859,19 @@ export function SovereignAssistant() {
                                 )}
                                 {isMsgStreaming && <StreamingCursor />}
                               </div>
-                              {/* Footer: time + copy */}
+                              {/* Footer: transparency + copy */}
                               {msg.content && !isMsgStreaming && (
-                                <div className="flex items-center gap-2 mt-2 pt-1.5">
-                                  {msg.responseTimeMs != null &&
-                                    msg.responseTimeMs > 0 && (
-                                      <span className="text-[10px] text-neutral-600 font-mono">
-                                        {(msg.responseTimeMs / 1000).toFixed(1)}s
-                                      </span>
-                                    )}
+                                <div className="flex items-center gap-2 mt-2 pt-1.5 flex-wrap">
+                                  {/* Transparency footer — model, quality, time */}
+                                  <span className="text-[9px] text-neutral-600 font-mono">
+                                    {[
+                                      msg.modelUsed && msg.modelUsed,
+                                      msg.qualityScore != null && `quality: ${msg.qualityScore}/100`,
+                                      msg.responseTimeMs != null && msg.responseTimeMs > 0 && (
+                                        msg.responseTimeMs < 1000 ? `${msg.responseTimeMs}ms` : `${(msg.responseTimeMs / 1000).toFixed(1)}s`
+                                      ),
+                                    ].filter(Boolean).join(" · ") || ""}
+                                  </span>
                                   <CopyBtn text={msg.content} />
                                 </div>
                               )}

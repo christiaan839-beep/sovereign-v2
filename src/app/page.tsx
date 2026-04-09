@@ -1,10 +1,10 @@
 "use client";
 
-import { motion, AnimatePresence, useInView } from "framer-motion";
-import { CheckCircle2, Target, ChevronDown, XCircle, ArrowRight, Mic, Search, FileText } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { CheckCircle2, Target, XCircle, ArrowRight, Mic, Search, FileText } from "lucide-react";
 import Link from "next/link";
 import { SignInButton } from "@clerk/nextjs";
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 
 import { SovereignLogo } from "@/components/ui/SovereignLogo";
 import { Pricing } from "@/components/ui/Pricing";
@@ -43,97 +43,10 @@ import { LiveAgentStats } from "@/components/cinematic/LiveAgentStats";
 import { AnimatedGrid } from "@/components/cinematic/AnimatedGrid";
 import { FloatingOrbs } from "@/components/cinematic/ScrollRevealHero";
 import { BentoGrid } from "@/components/cinematic/BentoGrid";
-
-// ─── Tok/s counter — must be defined in same file to avoid Turbopack HMR stale module ───
-function TokCounter() {
-  const [tok, setTok] = useState(2247);
-  useEffect(() => {
-    const iv = setInterval(() => setTok(2180 + Math.floor(Math.random() * 120)), 400);
-    return () => clearInterval(iv);
-  }, []);
-  return (
-    <span className="hidden md:flex items-center gap-1.5 font-mono tabular-nums text-xs text-neutral-500">
-      <span className="relative flex h-1.5 w-1.5">
-        <span className="animate-ping absolute h-full w-full rounded-full bg-emerald-400 opacity-70" />
-        <span className="relative rounded-full h-1.5 w-1.5 bg-emerald-400" />
-      </span>
-      <span className="text-emerald-400/80">{tok.toLocaleString()} tok/s</span>
-    </span>
-  );
-}
-
-// ─── Early Access Email Capture ───
-function EarlyAccessCapture() {
-  const [email, setEmail] = useState("");
-  const [submitted, setSubmitted] = useState(false);
-  const [error, setError] = useState("");
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email.trim() || !email.includes("@")) {
-      setError("Enter a valid email");
-      return;
-    }
-    setError("");
-    try {
-      // Store locally + attempt API save
-      const existing = JSON.parse(localStorage.getItem("sm-waitlist") || "[]");
-      if (!existing.includes(email.trim())) {
-        existing.push(email.trim());
-        localStorage.setItem("sm-waitlist", JSON.stringify(existing));
-      }
-      // Try API endpoint (silent fail if not available)
-      fetch("/api/waitlist", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim() }),
-      }).catch(() => {});
-      setSubmitted(true);
-    } catch {
-      setSubmitted(true); // Show success regardless — localStorage captured it
-    }
-  };
-
-  return (
-    <section className="py-20 px-6 bg-[#020202]">
-      <div className="max-w-xl mx-auto text-center">
-        <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">Early Access</p>
-        <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight mb-3">
-          Get in before everyone else.
-        </h2>
-        <p className="text-sm text-neutral-500 mb-8 max-w-md mx-auto">
-          We&apos;re onboarding early users now. Drop your email — we&apos;ll send you access
-          and a free competitor analysis of any company you choose.
-        </p>
-
-        {submitted ? (
-          <div className="p-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.04]">
-            <p className="text-emerald-400 font-semibold mb-1">You&apos;re on the list.</p>
-            <p className="text-xs text-neutral-500">Check your inbox. We&apos;ll send your free competitor scan within 24 hours.</p>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row items-stretch gap-3 max-w-md mx-auto">
-            <input
-              type="email"
-              value={email}
-              onChange={e => { setEmail(e.target.value); setError(""); }}
-              placeholder="you@company.com"
-              className="flex-1 px-5 py-3.5 rounded-full bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-emerald-500/30 transition-colors"
-            />
-            <button
-              type="submit"
-              className="px-6 py-3.5 rounded-full bg-white text-black text-sm font-semibold hover:bg-neutral-100 transition-colors whitespace-nowrap"
-            >
-              Get Early Access
-            </button>
-          </form>
-        )}
-        {error && <p className="text-xs text-red-400 mt-2">{error}</p>}
-        <p className="text-[10px] text-neutral-700 mt-4">No spam. Unsubscribe anytime. Your data stays private.</p>
-      </div>
-    </section>
-  );
-}
+import { TokCounter } from "@/components/landing/TokCounter";
+import { EarlyAccessCapture } from "@/components/landing/EarlyAccessCapture";
+import { FAQSection } from "@/components/landing/FAQSection";
+import { CountUpOnView, TimeCountUpOnView } from "@/components/landing/CountUpOnView";
 
 // ─── ROI Calculator ───
 function ROICalculator() {
@@ -240,68 +153,6 @@ function ROICalculator() {
       </div>
     </section>
   );
-}
-
-// ─── FAQ Item ───
-function FAQItem({ question, answer }: { question: string; answer: string }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="border-b border-white/5">
-      <button type="button" className="w-full flex items-center justify-between py-6 text-left group" onClick={() => setOpen(!open)}>
-        <span className="text-sm md:text-base font-medium text-white group-hover:text-neutral-400 transition-colors pr-4">{question}</span>
-        <ChevronDown className={`w-5 h-5 text-neutral-500 transition-transform flex-shrink-0 ${open ? 'rotate-180' : ''}`} />
-      </button>
-      <div className={`overflow-hidden transition-gpu duration-300 ${open ? 'max-h-60 pb-6' : 'max-h-0'}`}>
-        <p className="text-sm text-neutral-400 leading-relaxed">{answer}</p>
-      </div>
-    </div>
-  );
-}
-
-// ─── Count Up On View ───
-function CountUpOnView({ target, suffix = "", prefix = "", duration = 1.5 }: { target: number; suffix?: string; prefix?: string; duration?: number }) {
-  const ref = useRef<HTMLSpanElement>(null);
-  const isInView = useInView(ref, { once: true });
-  // Start at target (not 0) to prevent flash-of-zero before hydration/viewport
-  const [value, setValue] = useState(target);
-
-  useEffect(() => {
-    if (!isInView) return;
-    const start = performance.now();
-    const animate = (now: number) => {
-      const progress = Math.min((now - start) / (duration * 1000), 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setValue(Math.round(eased * target));
-      if (progress < 1) requestAnimationFrame(animate);
-    };
-    requestAnimationFrame(animate);
-  }, [isInView, target, duration]);
-
-  return <span ref={ref}>{prefix}{value.toLocaleString()}{suffix}</span>;
-}
-
-// ─── Time Count Up (mm:ss format) ───
-function TimeCountUpOnView({ minutes, seconds, duration = 1.5 }: { minutes: number; seconds: number; duration?: number }) {
-  const ref = useRef<HTMLSpanElement>(null);
-  const isInView = useInView(ref, { once: true });
-  const totalTarget = minutes * 60 + seconds;
-  const [totalSec, setTotalSec] = useState(0);
-
-  useEffect(() => {
-    if (!isInView) return;
-    const start = performance.now();
-    const animate = (now: number) => {
-      const progress = Math.min((now - start) / (duration * 1000), 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setTotalSec(Math.round(eased * totalTarget));
-      if (progress < 1) requestAnimationFrame(animate);
-    };
-    requestAnimationFrame(animate);
-  }, [isInView, totalTarget, duration]);
-
-  const m = Math.floor(totalSec / 60);
-  const s = totalSec % 60;
-  return <span ref={ref}>{m}m {s.toString().padStart(2, "0")}s</span>;
 }
 
 // ─── Enterprise Section (CSS-only parallax — no useScroll dependency) ───
@@ -1544,25 +1395,7 @@ export default function Home() {
 
       {/* ═══ FAQ ═══ */}
       <GlowDivider />
-      <section className="py-24 px-6 bg-[#050505] perf-section">
-        <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-          className="max-w-2xl mx-auto">
-          <RevealText as="h2" className="text-2xl md:text-3xl font-bold text-white mb-12 text-center tracking-tight">Common Questions</RevealText>
-          <div className="rounded-2xl border border-white/[0.06] bg-[#080808] p-1">
-            {[
-              { q: "What is Sovereign Matrix?", a: "130 AI agents that do sales, marketing, content, and ops work. You tell them what you need. They figure out which of the 39+ models to use, execute the task, and deliver the output. No prompt engineering required." },
-              { q: "Is this just another ChatGPT wrapper?", a: "No. ChatGPT is a chatbot. Sovereign Matrix is 130+ autonomous agents that execute: finding leads, building pages, writing outreach sequences, qualifying prospects, making calls. They open real browsers, hit real APIs, plan multi-step workflows, and self-correct without manual prompting." },
-              { q: "Can agents run locally without cloud?", a: "Yes. NemoClaw runs on your machine via Ollama. Full offline execution — your data never leaves your hardware. Built for sensitive client work and air-gapped environments." },
-              { q: "Is there a contract or lock-in?", a: "No contracts. Month-to-month. Cancel from your dashboard. Data is always exportable. NVIDIA NIM inference is free — you only pay for premium features." },
-              { q: "How long does setup take?", a: "Under 60 seconds. Sign up, complete the 5-step onboarding wizard, and deploy your first agent immediately. No Docker, no terminal commands, no technical setup required for the cloud version." },
-              { q: "What integrations are supported?", a: "NVIDIA NIM, Ollama (local models), ElevenLabs (voice), Pinecone (vector memory), Clerk (auth), Neon PostgreSQL (database), Vercel (hosting), PayFast, Yoco, and PayStack. A public API is available for custom integrations." },
-              { q: "Is my data safe?", a: "Yes. A 5-layer NeMo Guardrails safety pipeline protects every interaction: jailbreak detection, topic control, content safety, PII scanning, and quality scoring. Plus local execution means data never touches the cloud if you choose." },
-              { q: "What is the white-label Enterprise license?", a: "The Enterprise license lets agencies rebrand the entire platform as their own. Custom domain, client portals, your logo. It is a complete AI business-in-a-box — deploy under your brand and scale your agency without hiring." },
-              { q: "Can I use this to run an agency?", a: "Yes. The Enterprise plan ($499/mo) includes white-label: your domain, your logo, your client portals. Resell to 20 clients at $50/mo each = $1,000/mo revenue on a $499 cost." },
-            ].map((faq, i) => <FAQItem key={i} question={faq.q} answer={faq.a} />)}
-          </div>
-        </motion.div>
-      </section>
+      <FAQSection />
 
       {/* ═══ FINAL CTA ═══ */}
       {/* Section transition gradient */}
