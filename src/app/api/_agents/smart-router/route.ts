@@ -421,6 +421,8 @@ Then give your final answer.`
       }
     }
 
+    const durationMs = Date.now() - start;
+
     return NextResponse.json({
       success: true,
       routing: {
@@ -434,7 +436,16 @@ Then give your final answer.`
       },
       nim_specialist_model: nimOptimalModelId,
       result: finalResult,
-      duration_ms: Date.now() - start,
+      duration_ms: durationMs,
+      // Output transparency — proof on every response
+      transparency: {
+        models_consulted: [bestModel.name],
+        quality_score: bestModel.quality_score,
+        safety_checks: "5-layer pipeline active",
+        execution_time_ms: durationMs,
+        confidence: bestModel.quality_score >= 7 ? "high" : bestModel.quality_score >= 5 ? "medium" : "low",
+        summary: `1 model · quality: ${bestModel.quality_score}/10 · ${durationMs}ms`,
+      },
     });
   } catch (error) {
     return NextResponse.json({ error: "Router error", details: String(error) }, { status: 500 });
