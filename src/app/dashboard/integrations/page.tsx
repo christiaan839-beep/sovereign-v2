@@ -9,7 +9,6 @@ import {
   Circle,
   Settings,
   Link,
-  Loader2,
   ExternalLink,
   RefreshCw,
 } from "lucide-react";
