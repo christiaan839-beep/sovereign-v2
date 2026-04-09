@@ -311,6 +311,14 @@ export default function OnboardingPage() {
     // Persist goal and industry to localStorage so the dashboard can use them
     if (stepId === "goal") localStorage.setItem("sovereign_user_goal", optionId);
     if (stepId === "industry") localStorage.setItem("sovereign_user_industry", optionId);
+    // Also persist to DB for durable personalization
+    if (stepId === "goal" || stepId === "industry") {
+      fetch("/api/user/onboarding", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [stepId]: optionId }),
+      }).catch(() => {}); // Non-blocking — localStorage is the fallback
+    }
     setTimeout(next, 400);
   };
 

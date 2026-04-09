@@ -13,9 +13,9 @@
  */
 
 import { db } from "@/db";
-import { playbookRuns } from "@/db/schema";
+import { playbookRuns, subscriptions } from "@/db/schema";
 import { eq, gte, and, sql } from "drizzle-orm";
-import { PLANS, type PlanId } from "@/lib/plans";
+import { PLANS, normalizePlanId, type PlanId } from "@/lib/plans";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("plan-enforcement");
@@ -32,12 +32,38 @@ export interface PlanCheck {
 }
 
 /**
- * Get the user's current plan. For now, defaults to "free".
- * TODO: Read from subscriptions table once Stripe is wired.
+ * Get the user's current plan from the subscriptions table.
+ * Falls back to founder check, then free tier.
  */
 async function getUserPlan(userId: string): Promise<PlanId> {
+  // 1. Check subscriptions table for active Stripe subscription
   try {
-    // Check for founder status (first 10 users)
+    const [sub] = await db
+      .select({ plan: subscriptions.plan, status: subscriptions.status })
+      .from(subscriptions)
+      .where(
+        and(
+          eq(subscriptions.userId, userId),
+          eq(subscriptions.status, "active")
+        )
+      )
+      .limit(1);
+
+    if (sub?.plan) {
+      const planId = normalizePlanId(sub.plan);
+      if (planId !== "free") return planId;
+    }
+  } catch (err: unknown) {
+    const pgCode = (err as { code?: string })?.code;
+    const msg = err instanceof Error ? err.message : String(err);
+    if (pgCode !== "42P01" && !msg.includes("does not exist")) {
+      log.error("Failed to check subscription", { error: msg, userId });
+    }
+    // Table doesn't exist or DB error — fall through to founder check
+  }
+
+  // 2. Check for founder status (first 10 users)
+  try {
     const { founders } = await import("@/app/api/_misc/founders/route");
     if (typeof founders?.has === "function" && founders.has(userId)) {
       return "founder";
@@ -46,8 +72,6 @@ async function getUserPlan(userId: string): Promise<PlanId> {
     // founders route may not exist, skip
   }
 
-  // TODO: Check subscriptions table for active Stripe subscription
-  // For now, everyone without a subscription is on free tier
   return "free";
 }
 

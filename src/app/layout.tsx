@@ -4,17 +4,16 @@ import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { validateEnvironment } from "@/lib/env-check";
 import { SafeClerkProvider } from "@/components/ui/SafeClerkProvider";
-import { CustomCursor } from "@/components/cinematic/CustomCursor";
-import { CursorGlow } from "@/components/cinematic/CursorGlow";
-import { ScrollProgress } from "@/components/cinematic/ScrollProgress";
-import { BackToTop } from "@/components/cinematic/BackToTop";
 import { CookieConsent } from "@/components/ui/CookieConsent";
+import { ClientOnlyEffects } from "@/components/ui/ClientOnlyEffects";
 import "./globals.css";
 
 // Run environment validation on server startup
 validateEnvironment();
 
-export const revalidate = 3600; // Revalidate static pages every hour
+// Force dynamic rendering — Clerk's useContext crashes during static prerendering in Next.js 16.
+// For a SaaS app requiring auth, on-demand rendering is the correct approach anyway.
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://sovereignmatrix.agency"),
@@ -103,8 +102,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           strategy="afterInteractive"
         />
       </head>
-      <SafeClerkProvider>
-        <body className="relative bg-midnight text-white antialiased">
+      <body className="relative bg-midnight text-white antialiased">
+        <SafeClerkProvider>
           {/* Skip-to-content link — first tab stop for keyboard users (WCAG 2.4.1) */}
           <a
             href="#main-content"
@@ -112,14 +111,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           >
             Skip to main content
           </a>
-          <CustomCursor />
-          <CursorGlow />
-          <ScrollProgress />
+          <ClientOnlyEffects />
           {children}
-          <BackToTop />
           <CookieConsent />
           {process.env.NODE_ENV === "production" && <Analytics />}
           {process.env.NODE_ENV === "production" && <SpeedInsights />}
+        </SafeClerkProvider>
           <Script
             id="json-ld"
             type="application/ld+json"
@@ -200,8 +197,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               ]),
             }}
           />
-        </body>
-      </SafeClerkProvider>
+      </body>
     </html>
   );
 }

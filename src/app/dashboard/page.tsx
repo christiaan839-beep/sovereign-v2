@@ -12,6 +12,9 @@ import {
   Bot,
 } from "lucide-react";
 import Link from "next/link";
+import { Suspense } from "react";
+import { UsageWidget } from "@/components/dashboard/UsageWidget";
+import { CheckoutSuccess } from "@/components/dashboard/CheckoutSuccess";
 // Chat is available via the floating widget (SovereignAssistant) in layout.tsx and /chat page
 
 const ONBOARDING_KEY = "sovereign_onboarding";
@@ -994,6 +997,11 @@ export default function DashboardHome() {
 
   return (
     <div className="flex flex-col h-full" role="region" aria-label="Dashboard home">
+      {/* Checkout success modal — shows after returning from Stripe */}
+      <Suspense fallback={null}>
+        <CheckoutSuccess />
+      </Suspense>
+
       {/* Welcome Tour Modal — shows once after onboarding */}
       <AnimatePresence>
         {showTour && <WelcomeTourModal onDismiss={dismissTour} />}
@@ -1001,6 +1009,9 @@ export default function DashboardHome() {
 
       {/* Stats — always visible */}
       {!showWelcome && <StatsPanel />}
+
+      {/* Usage bar — shows plan limits and upgrade prompts */}
+      {!showWelcome && <UsageWidget />}
 
       {/* Quick-Run Banner — suggests first playbook based on onboarding goal */}
       {!showWelcome && <QuickRunBanner />}

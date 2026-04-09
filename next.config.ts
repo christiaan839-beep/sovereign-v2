@@ -37,7 +37,8 @@ const nextConfig: NextConfig = {
 
   // Experimental performance features
   experimental: {
-    // optimizeCss requires 'critters' package — disabled until installed
+    // Allow build to continue when prerendering fails (Next.js 16 + React 19 _global-error issue)
+    prerenderEarlyExit: false,
   },
 
   // Security headers

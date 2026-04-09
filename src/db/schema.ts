@@ -6,6 +6,9 @@ export const tenants = pgTable("tenants", {
   nodeId: text("node_id").notNull().unique(), // e.g., UMB-NX-77492
   createdAt: timestamp("created_at").defaultNow(),
   plan: text("plan").notNull().default("black-card"), // Future-proofing for tiering
+  onboardingGoal: text("onboarding_goal"), // leads, content, compete, automate
+  onboardingIndustry: text("onboarding_industry"), // agency, saas, ecommerce, consulting
+  companyUrl: text("company_url"), // User's website from onboarding
 });
 
 export const activeSwarms = pgTable("active_swarms", {
