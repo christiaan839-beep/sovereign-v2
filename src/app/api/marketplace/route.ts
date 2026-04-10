@@ -32,10 +32,13 @@ export async function GET(req: NextRequest) {
 
     if (search) {
       conditions.push(
-        sql`(${ilike(marketplaceAgents.name, `%${search}%`)} OR ${ilike(marketplaceAgents.description, `%${search}%`)})`
+        sql`(${ilike(marketplaceAgents.name, `%${search}%`)} OR ${ilike(marketplaceAgents.description, `%${search}%`)})`,
       );
     }
 
+    // SECURITY: authorEmail is NOT returned in the public listing.
+    // Publishers may not expect their email to be public; we expose only
+    // authorName as the public-facing identifier.
     const agents = await db
       .select({
         id: marketplaceAgents.id,
@@ -43,7 +46,6 @@ export async function GET(req: NextRequest) {
         description: marketplaceAgents.description,
         category: marketplaceAgents.category,
         authorName: marketplaceAgents.authorName,
-        authorEmail: marketplaceAgents.authorEmail,
         installs: marketplaceAgents.installs,
         rating: marketplaceAgents.rating,
         createdAt: marketplaceAgents.createdAt,
@@ -64,7 +66,10 @@ export async function GET(req: NextRequest) {
     }
 
     log.error("Failed to list marketplace agents", { error: msg });
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }
 
@@ -86,8 +91,40 @@ export async function POST(req: NextRequest) {
 
     if (!name || !description || !category || !systemPrompt) {
       return NextResponse.json(
-        { error: "Missing required fields: name, description, category, systemPrompt" },
-        { status: 400 }
+        {
+          error:
+            "Missing required fields: name, description, category, systemPrompt",
+        },
+        { status: 400 },
+      );
+    }
+
+    // SECURITY: cap input sizes to prevent storage abuse. Previously any
+    // authenticated user could publish a 1MB systemPrompt that would be
+    // copied into customSkills on every install, bloating storage and
+    // propagating the oversized payload to consumers.
+    if (typeof systemPrompt !== "string" || systemPrompt.length > 10_000) {
+      return NextResponse.json(
+        { error: "systemPrompt must be a string under 10,000 characters" },
+        { status: 400 },
+      );
+    }
+    if (typeof name !== "string" || name.length > 200) {
+      return NextResponse.json(
+        { error: "name must be under 200 characters" },
+        { status: 400 },
+      );
+    }
+    if (typeof description !== "string" || description.length > 2_000) {
+      return NextResponse.json(
+        { error: "description must be under 2,000 characters" },
+        { status: 400 },
+      );
+    }
+    if (typeof category !== "string" || category.length > 50) {
+      return NextResponse.json(
+        { error: "category must be under 50 characters" },
+        { status: 400 },
       );
     }
 
@@ -98,9 +135,12 @@ export async function POST(req: NextRequest) {
       const client = await clerkClient();
       const user = await client.users.getUser(userId);
       authorEmail = user.emailAddresses?.[0]?.emailAddress || authorEmail;
-      authorName = [user.firstName, user.lastName].filter(Boolean).join(" ") || authorName;
+      authorName =
+        [user.firstName, user.lastName].filter(Boolean).join(" ") || authorName;
     } catch {
-      log.warn("Could not resolve Clerk user for marketplace publish", { userId });
+      log.warn("Could not resolve Clerk user for marketplace publish", {
+        userId,
+      });
     }
 
     const [agent] = await db
@@ -119,7 +159,11 @@ export async function POST(req: NextRequest) {
       })
       .returning();
 
-    log.info("Agent published to marketplace", { agentId: agent.id, name, authorEmail });
+    log.info("Agent published to marketplace", {
+      agentId: agent.id,
+      name,
+      authorEmail,
+    });
 
     return NextResponse.json({ agent }, { status: 201 });
   } catch (err: unknown) {
@@ -130,11 +174,14 @@ export async function POST(req: NextRequest) {
       log.error("marketplace_agents table not found — run migration first");
       return NextResponse.json(
         { error: "Database tables not ready. Run the marketplace migration." },
-        { status: 503 }
+        { status: 503 },
       );
     }
 
     log.error("Failed to publish agent", { error: msg });
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }

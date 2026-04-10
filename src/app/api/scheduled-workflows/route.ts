@@ -13,7 +13,8 @@ const log = createLogger("api/scheduled-workflows");
  */
 export async function GET() {
   const { userId } = await auth();
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!userId)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
     const rows = await db
@@ -31,7 +32,10 @@ export async function GET() {
       return NextResponse.json([]);
     }
     log.error("Failed to list scheduled workflows", { error: msg });
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }
 
@@ -41,7 +45,8 @@ export async function GET() {
  */
 export async function POST(req: Request) {
   const { userId } = await auth();
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!userId)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
     const body = await req.json();
@@ -50,7 +55,7 @@ export async function POST(req: Request) {
     if (!agentType || !agentName || !prompt || !schedule) {
       return NextResponse.json(
         { error: "agentType, agentName, prompt, and schedule are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -59,7 +64,26 @@ export async function POST(req: Request) {
     if (cronParts.length < 5 || cronParts.length > 6) {
       return NextResponse.json(
         { error: "Invalid cron expression. Expected 5 or 6 fields." },
-        { status: 400 }
+        { status: 400 },
+      );
+    }
+
+    // SECURITY: reject sub-5-minute cron intervals to prevent LLM cost runaway.
+    // A "* * * * *" (every minute) schedule on a paid plan with 10K/month
+    // budget burns through the entire budget in ~7 days; on free tier it's
+    // worse. Users can still create frequent schedules via the factory.
+    //
+    // Minute field positions: 5-field cron = index 0; 6-field cron (with seconds) = index 1.
+    const minuteField = cronParts.length === 6 ? cronParts[1] : cronParts[0];
+    const isEveryMinuteOrSubMinute =
+      minuteField === "*" || /^\*\/[1-4]$/.test(minuteField);
+    if (isEveryMinuteOrSubMinute) {
+      return NextResponse.json(
+        {
+          error:
+            "Minimum allowed interval is 5 minutes. Use '*/5 * * * *' or less frequent schedules.",
+        },
+        { status: 400 },
       );
     }
 
@@ -84,12 +108,18 @@ export async function POST(req: Request) {
     if (pgCode === "42P01" || msg.includes("does not exist")) {
       log.warn("scheduled_runs table not found");
       return NextResponse.json(
-        { error: "Database tables not ready. Run the scheduled_runs migration first." },
-        { status: 503 }
+        {
+          error:
+            "Database tables not ready. Run the scheduled_runs migration first.",
+        },
+        { status: 503 },
       );
     }
     log.error("Failed to create scheduled workflow", { error: msg });
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }
 
@@ -99,7 +129,8 @@ export async function POST(req: Request) {
  */
 export async function PATCH(req: Request) {
   const { userId } = await auth();
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!userId)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
     const body = await req.json();
@@ -108,7 +139,7 @@ export async function PATCH(req: Request) {
     if (!id || typeof enabled !== "boolean") {
       return NextResponse.json(
         { error: "id and enabled (boolean) are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -119,7 +150,10 @@ export async function PATCH(req: Request) {
       .returning();
 
     if (!updated) {
-      return NextResponse.json({ error: "Schedule not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Schedule not found" },
+        { status: 404 },
+      );
     }
 
     log.info("Scheduled workflow toggled", { id, enabled, userId });
@@ -130,11 +164,14 @@ export async function PATCH(req: Request) {
     if (pgCode === "42P01" || msg.includes("does not exist")) {
       return NextResponse.json(
         { error: "Database tables not ready" },
-        { status: 503 }
+        { status: 503 },
       );
     }
     log.error("Failed to toggle scheduled workflow", { error: msg });
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }
 
@@ -144,7 +181,8 @@ export async function PATCH(req: Request) {
  */
 export async function DELETE(req: Request) {
   const { userId } = await auth();
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!userId)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
     const body = await req.json();
@@ -160,7 +198,10 @@ export async function DELETE(req: Request) {
       .returning();
 
     if (!deleted) {
-      return NextResponse.json({ error: "Schedule not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Schedule not found" },
+        { status: 404 },
+      );
     }
 
     log.info("Scheduled workflow deleted", { id, userId });
@@ -171,10 +212,13 @@ export async function DELETE(req: Request) {
     if (pgCode === "42P01" || msg.includes("does not exist")) {
       return NextResponse.json(
         { error: "Database tables not ready" },
-        { status: 503 }
+        { status: 503 },
       );
     }
     log.error("Failed to delete scheduled workflow", { error: msg });
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }

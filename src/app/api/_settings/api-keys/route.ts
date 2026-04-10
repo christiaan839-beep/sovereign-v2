@@ -18,7 +18,7 @@ export async function GET() {
 
   try {
     const userSettings = await db.query.settings.findFirst({
-      where: eq(settings.userEmail, userEmail)
+      where: eq(settings.userEmail, userEmail),
     });
 
     // Decrypt then mask API keys — never return full keys in GET responses
@@ -34,7 +34,8 @@ export async function GET() {
         rawKeys = {};
       }
     }
-    const maskedKeys: Record<string, { configured: boolean; masked: string }> = {};
+    const maskedKeys: Record<string, { configured: boolean; masked: string }> =
+      {};
     for (const [provider, key] of Object.entries(rawKeys)) {
       const k = String(key);
       if (k && k.length > 8) {
@@ -51,7 +52,10 @@ export async function GET() {
 
     return NextResponse.json({ apiKeys: maskedKeys });
   } catch (err) {
-    log.error("GET /api/settings/api-keys error", err as Record<string, unknown>);
+    log.error(
+      "GET /api/settings/api-keys error",
+      err as Record<string, unknown>,
+    );
     return NextResponse.json({ error: "Server Error" }, { status: 500 });
   }
 }
@@ -66,15 +70,49 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
+
+    // SECURITY: cap encrypted payload size + validate shape. Previously
+    // accepted arbitrary JSON with no size limit; storage abuse vector.
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      return NextResponse.json(
+        { error: "Body must be a flat object of provider → key strings" },
+        { status: 400 },
+      );
+    }
+    for (const [provider, value] of Object.entries(body)) {
+      if (typeof provider !== "string" || provider.length > 50) {
+        return NextResponse.json(
+          { error: "Provider keys must be strings under 50 chars" },
+          { status: 400 },
+        );
+      }
+      if (typeof value !== "string" || value.length > 2_000) {
+        return NextResponse.json(
+          {
+            error: `API key for '${provider}' must be a string under 2,000 chars`,
+          },
+          { status: 400 },
+        );
+      }
+    }
+
     const apiKeysString = JSON.stringify(body);
+    if (apiKeysString.length > 10_240) {
+      return NextResponse.json(
+        { error: "Total API keys payload must be under 10 KB" },
+        { status: 413 },
+      );
+    }
+
     const encryptedKeys = safeEncrypt(apiKeysString);
 
     const existing = await db.query.settings.findFirst({
-      where: eq(settings.userEmail, userEmail)
+      where: eq(settings.userEmail, userEmail),
     });
 
     if (existing) {
-      await db.update(settings)
+      await db
+        .update(settings)
         .set({ apiKeys: encryptedKeys })
         .where(eq(settings.userEmail, userEmail));
     } else {
@@ -93,7 +131,10 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true });
   } catch (err) {
-    log.error("POST /api/settings/api-keys error", err as Record<string, unknown>);
+    log.error(
+      "POST /api/settings/api-keys error",
+      err as Record<string, unknown>,
+    );
     return NextResponse.json({ error: "Server Error" }, { status: 500 });
   }
 }
