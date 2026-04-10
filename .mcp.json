@@ -2,10 +2,21 @@
   "mcpServers": {
     "sovereign-matrix": {
       "command": "/Users/christiaanwillemdewet/.nvm/versions/node/v22.22.0/bin/node",
-      "args": ["/Users/christiaanwillemdewet/Projects/sovereign-v2/mcp-server/dist/index.js"],
+      "args": [
+        "/Users/christiaanwillemdewet/Projects/sovereign-v2/mcp-server/dist/index.js"
+      ],
       "env": {
         "SOVEREIGN_BASE_URL": "https://sovereignmatrix.agency"
       }
+    },
+    "context7": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp@latest"
+      ],
+      "env": {}
     }
   }
 }
