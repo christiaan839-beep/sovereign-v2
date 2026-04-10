@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '.tool_input.file_path // empty' | grep -qE '\\.(env|env\\.local|env\\.production|env\\.development)$' && { echo 'BLOCKED: .env files are protected. Edit manually in your editor.' >&2; exit 2; } || exit 0"
+            "command": "jq -r '.tool_input.file_path // empty' | grep -qE '(\\.(env|env\\.local|env\\.production|env\\.development)$|(^|/)package-lock\\.json$|(^|/)yarn\\.lock$|(^|/)pnpm-lock\\.yaml$)' && { echo 'BLOCKED: protected file (.env or lockfile). Edit manually in your editor.' >&2; exit 2; } || exit 0"
           }
         ]
       }
