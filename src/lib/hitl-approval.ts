@@ -69,7 +69,11 @@ export async function requestApproval(options: {
   };
 
   approvalQueue.set(id, request);
-  log.info("Approval requested", { id, agent: options.agentName, action: options.action });
+  log.info("Approval requested", {
+    id,
+    agent: options.agentName,
+    action: options.action,
+  });
 
   // Notify via Slack if configured
   const slackUrl = process.env.SLACK_WEBHOOK_URL;
@@ -100,10 +104,23 @@ export async function requestApproval(options: {
 
 /**
  * Approve a pending request.
+ *
+ * SECURITY: The caller must be the same user who owns the approval.
+ * Without this check, any authenticated user could approve another
+ * tenant's pending HITL gate (bulk email, npm install, publish, etc.)
+ * by guessing the `apr_*` id.
  */
 export function approveRequest(id: string, decidedBy: string): boolean {
   const req = approvalQueue.get(id);
   if (!req || req.status !== "pending") return false;
+  if (req.userId !== decidedBy) {
+    log.warn("Cross-tenant approval attempt blocked", {
+      id,
+      ownerUserId: req.userId,
+      attemptedBy: decidedBy,
+    });
+    return false;
+  }
 
   req.status = "approved";
   req.decidedAt = Date.now();
@@ -114,10 +131,22 @@ export function approveRequest(id: string, decidedBy: string): boolean {
 
 /**
  * Deny a pending request.
+ *
+ * SECURITY: Same ownership check as approveRequest — prevents cross-tenant
+ * denial (which would also bypass the HITL safety rail, just in the other
+ * direction).
  */
 export function denyRequest(id: string, decidedBy: string): boolean {
   const req = approvalQueue.get(id);
   if (!req || req.status !== "pending") return false;
+  if (req.userId !== decidedBy) {
+    log.warn("Cross-tenant denial attempt blocked", {
+      id,
+      ownerUserId: req.userId,
+      attemptedBy: decidedBy,
+    });
+    return false;
+  }
 
   req.status = "denied";
   req.decidedAt = Date.now();
@@ -149,7 +178,7 @@ export async function waitForApproval(id: string): Promise<ApprovalStatus> {
 
     if (req.status !== "pending") return req.status;
 
-    await new Promise(resolve => setTimeout(resolve, pollInterval));
+    await new Promise((resolve) => setTimeout(resolve, pollInterval));
   }
 
   return "timeout";
@@ -180,9 +209,12 @@ export function getPendingApprovals(userId: string): ApprovalRequest[] {
 /**
  * Get approval history for a user.
  */
-export function getApprovalHistory(userId: string, limit: number = 20): ApprovalRequest[] {
+export function getApprovalHistory(
+  userId: string,
+  limit: number = 20,
+): ApprovalRequest[] {
   return [...approvalQueue.values()]
-    .filter(req => req.userId === userId)
+    .filter((req) => req.userId === userId)
     .sort((a, b) => b.createdAt - a.createdAt)
     .slice(0, limit);
 }

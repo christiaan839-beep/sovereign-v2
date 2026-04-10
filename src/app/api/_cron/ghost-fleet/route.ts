@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { createLogger } from "@/lib/logger";
+import { requireCronAuth } from "@/lib/cron-auth";
 const log = createLogger("ghost-fleet-cron");
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const X_API_KEY = process.env.X_API_KEY;
-const CRON_SECRET = process.env.CRON_SECRET;
 
 /**
  * GHOST FLEET — Automated social content generation for X/LinkedIn.
@@ -15,10 +15,8 @@ const CRON_SECRET = process.env.CRON_SECRET;
  */
 
 export async function GET(req: Request) {
-  const authHeader = req.headers.get("authorization");
-  if (authHeader !== `Bearer ${CRON_SECRET}` && process.env.NODE_ENV === "production") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const authErr = requireCronAuth(req);
+  if (authErr) return authErr;
 
   try {
     const systemInstruction = `You are a content strategist for Sovereign Matrix, an AI automation platform for agencies.
@@ -41,7 +39,10 @@ Return a JSON array of 3 strings (the tweets in sequence). No markdown formattin
 
     if (!GEMINI_API_KEY) {
       log.error("GEMINI_API_KEY missing for ghost-fleet");
-      return NextResponse.json({ error: "AI provider not configured" }, { status: 500 });
+      return NextResponse.json(
+        { error: "AI provider not configured" },
+        { status: 500 },
+      );
     }
 
     const response = await fetch(
@@ -62,7 +63,7 @@ Return a JSON array of 3 strings (the tweets in sequence). No markdown formattin
           systemInstruction: { parts: [{ text: systemInstruction }] },
           generationConfig: { temperature: 0.6 },
         }),
-      }
+      },
     );
 
     if (!response.ok) {
@@ -71,21 +72,31 @@ Return a JSON array of 3 strings (the tweets in sequence). No markdown formattin
 
     const aiData = await response.json();
     let rawContent = aiData.candidates?.[0]?.content?.parts?.[0]?.text || "[]";
-    rawContent = rawContent.replace(/```json/g, "").replace(/```/g, "").trim();
+    rawContent = rawContent
+      .replace(/```json/g, "")
+      .replace(/```/g, "")
+      .trim();
 
     let threadArray = [];
     try {
       threadArray = JSON.parse(rawContent);
     } catch {
-      log.error("Failed to parse ghost-fleet output", { rawContent: rawContent.substring(0, 200) });
-      return NextResponse.json({ error: "Failed to parse generated thread" }, { status: 500 });
+      log.error("Failed to parse ghost-fleet output", {
+        rawContent: rawContent.substring(0, 200),
+      });
+      return NextResponse.json(
+        { error: "Failed to parse generated thread" },
+        { status: 500 },
+      );
     }
 
     // Dispatch to X if API key is configured
     if (X_API_KEY) {
       // X API v2 thread posting — requires OAuth 2.0 user context token
       // When ready: POST to https://api.twitter.com/2/tweets with { text: tweet, reply: { in_reply_to_tweet_id } }
-      log.info("X API key present — thread ready for dispatch", { tweetCount: threadArray.length });
+      log.info("X API key present — thread ready for dispatch", {
+        tweetCount: threadArray.length,
+      });
     }
 
     return NextResponse.json({
@@ -95,6 +106,9 @@ Return a JSON array of 3 strings (the tweets in sequence). No markdown formattin
     });
   } catch (err) {
     log.error("Ghost fleet cron error", err as Record<string, unknown>);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }

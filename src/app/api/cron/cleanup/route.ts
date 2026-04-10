@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createLogger } from "@/lib/logger";
+import { requireCronAuth } from "@/lib/cron-auth";
 
 const log = createLogger("cron:cleanup");
 
@@ -8,10 +9,8 @@ const log = createLogger("cron:cleanup");
  * Cleans up stale data: old error logs, expired sessions, orphaned records.
  */
 export async function GET(request: Request) {
-  const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const authErr = requireCronAuth(request);
+  if (authErr) return authErr;
 
   try {
     const cleaned = {

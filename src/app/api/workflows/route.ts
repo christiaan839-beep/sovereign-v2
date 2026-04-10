@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { workflows } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { and, eq, desc } from "drizzle-orm";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("workflows");
@@ -13,7 +13,8 @@ const log = createLogger("workflows");
 export async function GET() {
   try {
     const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!userId)
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const rows = await db
       .select()
@@ -38,24 +39,34 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!userId)
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json();
     const { id, name, nodes, status } = body;
 
     if (!name || !nodes) {
-      return NextResponse.json({ error: "Missing name or nodes" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Missing name or nodes" },
+        { status: 400 },
+      );
     }
 
     if (id) {
-      // Update existing
+      // Update existing — SECURITY: scope by userId to prevent cross-tenant
+      // overwrite IDOR. Previously any authenticated user could overwrite
+      // another user's workflow by supplying their workflow id.
       const [updated] = await db
         .update(workflows)
         .set({ name, nodes, status: status || "draft", updatedAt: new Date() })
-        .where(eq(workflows.id, id))
+        .where(and(eq(workflows.id, id), eq(workflows.userId, userId)))
         .returning();
 
-      if (!updated) return NextResponse.json({ error: "Workflow not found" }, { status: 404 });
+      if (!updated)
+        return NextResponse.json(
+          { error: "Workflow not found" },
+          { status: 404 },
+        );
       log.info("Workflow updated", { id, name });
       return NextResponse.json({ workflow: updated });
     }
@@ -71,7 +82,10 @@ export async function POST(req: Request) {
   } catch (err: unknown) {
     const pgCode = (err as { code?: string })?.code;
     if (pgCode === "42P01") {
-      return NextResponse.json({ error: "Run migration 0004 first" }, { status: 503 });
+      return NextResponse.json(
+        { error: "Run migration 0004 first" },
+        { status: 503 },
+      );
     }
     log.error("Failed to save workflow", { error: (err as Error).message });
     return NextResponse.json({ error: "Internal error" }, { status: 500 });

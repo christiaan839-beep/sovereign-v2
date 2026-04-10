@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { sql } from "drizzle-orm";
+import { rateLimit } from "@/lib/rate-limit";
+
+// Tight IP-keyed limit — prevents burning Resend credits via welcome-email loops.
+const limiter = rateLimit({ interval: 60 * 60, limit: 5 });
 
 /**
  * POST /api/waitlist — Collect early access emails
@@ -8,6 +12,9 @@ import { sql } from "drizzle-orm";
  * otherwise fails silently (the frontend also saves to localStorage).
  */
 export async function POST(req: Request) {
+  const limited = await limiter.check(req);
+  if (limited) return limited;
+
   try {
     const { email } = await req.json();
 
@@ -20,13 +27,16 @@ export async function POST(req: Request) {
     // Try to insert — table may not exist yet (graceful degradation)
     try {
       await db.execute(
-        sql`INSERT INTO waitlist (email) VALUES (${cleaned}) ON CONFLICT (email) DO NOTHING`
+        sql`INSERT INTO waitlist (email) VALUES (${cleaned}) ON CONFLICT (email) DO NOTHING`,
       );
     } catch (dbErr: unknown) {
       const msg = dbErr instanceof Error ? dbErr.message : "";
       // Table doesn't exist yet — that's okay, log and continue
       if (msg.includes("42P01") || msg.includes("does not exist")) {
-        console.log("[waitlist] Table not yet created — email captured client-side only:", cleaned);
+        console.log(
+          "[waitlist] Table not yet created — email captured client-side only:",
+          cleaned,
+        );
       } else {
         console.error("[waitlist] DB error:", msg);
       }
@@ -49,11 +59,13 @@ async function sendWelcomeEmail(email: string) {
     await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${resendKey}`,
+        Authorization: `Bearer ${resendKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: process.env.RESEND_FROM_EMAIL || "Sovereign Matrix <hello@sovereignmatrix.agency>",
+        from:
+          process.env.RESEND_FROM_EMAIL ||
+          "Sovereign Matrix <hello@sovereignmatrix.agency>",
         to: email,
         subject: "You're on the list — here's your free competitor scan",
         html: `

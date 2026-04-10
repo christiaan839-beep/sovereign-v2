@@ -17,7 +17,11 @@ import { NextResponse } from "next/server";
 export async function POST(request: Request) {
   try {
     const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+    if (!userId)
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401 },
+      );
     const {
       text,
       voice = "flow",
@@ -41,10 +45,14 @@ export async function POST(request: Request) {
         const fallbackAudio = await magpieTTS(text, voice, speed);
         if (!fallbackAudio.ok) {
           const errText = await fallbackAudio.text();
-          return NextResponse.json({
-            error: `TTS generation failed: ${fallbackAudio.status}`,
-            details: errText,
-          }, { status: fallbackAudio.status });
+          console.error("[voice-synth] Magpie fallback failed", {
+            status: fallbackAudio.status,
+            errText,
+          });
+          return NextResponse.json(
+            { error: "TTS generation failed" },
+            { status: fallbackAudio.status },
+          );
         }
 
         const audioBuffer = await fallbackAudio.arrayBuffer();
@@ -72,10 +80,14 @@ export async function POST(request: Request) {
         const fallbackAudio = await magpieTTS(text, voice, speed);
         if (!fallbackAudio.ok) {
           const errText = await fallbackAudio.text();
-          return NextResponse.json({
-            error: `TTS generation failed: ${fallbackAudio.status}`,
-            details: errText,
-          }, { status: fallbackAudio.status });
+          console.error("[voice-synth] Magpie fallback failed", {
+            status: fallbackAudio.status,
+            errText,
+          });
+          return NextResponse.json(
+            { error: "TTS generation failed" },
+            { status: fallbackAudio.status },
+          );
         }
 
         const audioBuffer = await fallbackAudio.arrayBuffer();
@@ -106,16 +118,21 @@ export async function POST(request: Request) {
 
     if (!nimRes.ok) {
       const errText = await nimRes.text();
-      return NextResponse.json({
-        error: `TTS generation failed: ${nimRes.status}`,
-        details: errText,
-      }, { status: nimRes.status });
+      console.error("[voice-synth] Magpie failed", {
+        status: nimRes.status,
+        errText,
+      });
+      return NextResponse.json(
+        { error: "TTS generation failed" },
+        { status: nimRes.status },
+      );
     }
 
     const audioBuffer = await nimRes.arrayBuffer();
-    const modelId = voice === "zeroshot"
-      ? "nvidia/magpie-tts-zeroshot"
-      : "nvidia/magpie-tts-flow";
+    const modelId =
+      voice === "zeroshot"
+        ? "nvidia/magpie-tts-zeroshot"
+        : "nvidia/magpie-tts-flow";
 
     return new NextResponse(audioBuffer, {
       status: 200,
@@ -127,21 +144,30 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
-    return NextResponse.json({ error: "Voice synthesis error", details: String(error) }, { status: 500 });
+    console.error("[voice-synth]", error);
+    return NextResponse.json(
+      { error: "Voice synthesis error" },
+      { status: 500 },
+    );
   }
 }
 
 /** NVIDIA Magpie TTS via NIM — extracted for reuse in fallback paths */
-async function magpieTTS(text: string, voice: string, speed: number): Promise<Response> {
-  const modelId = voice === "zeroshot"
-    ? "nvidia/magpie-tts-zeroshot"
-    : "nvidia/magpie-tts-flow";
+async function magpieTTS(
+  text: string,
+  voice: string,
+  speed: number,
+): Promise<Response> {
+  const modelId =
+    voice === "zeroshot"
+      ? "nvidia/magpie-tts-zeroshot"
+      : "nvidia/magpie-tts-flow";
 
   return fetch("https://integrate.api.nvidia.com/v1/audio/speech", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${await getNimKey()}`,
+      Authorization: `Bearer ${await getNimKey()}`,
     },
     body: JSON.stringify({
       model: modelId,

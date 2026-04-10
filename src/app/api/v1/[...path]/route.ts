@@ -24,7 +24,10 @@ const apiRateLimits = new Map<string, { count: number; resetAt: number }>();
 // ── API Key Validation Cache (prevents DB hit on every request) ──
 const API_KEY_CACHE_TTL = 5 * 60_000; // 5 minutes
 const API_KEY_CACHE_MAX = 1_000;
-const apiKeyCache = new Map<string, { plan: string; userId: string; cachedAt: number }>();
+const apiKeyCache = new Map<
+  string,
+  { plan: string; userId: string; cachedAt: number }
+>();
 
 /** Invalidate a cached API key (call on revocation). */
 export function invalidateApiKeyCache(keyHash: string): void {
@@ -34,7 +37,9 @@ export function invalidateApiKeyCache(keyHash: string): void {
 function pruneApiKeyCache(): void {
   if (apiKeyCache.size <= API_KEY_CACHE_MAX) return;
   // Evict oldest entries
-  const entries = [...apiKeyCache.entries()].sort((a, b) => a[1].cachedAt - b[1].cachedAt);
+  const entries = [...apiKeyCache.entries()].sort(
+    (a, b) => a[1].cachedAt - b[1].cachedAt,
+  );
   const toRemove = entries.slice(0, entries.length - API_KEY_CACHE_MAX);
   for (const [key] of toRemove) apiKeyCache.delete(key);
 }
@@ -55,7 +60,9 @@ function extractApiKey(request: NextRequest): string | null {
 }
 
 /** Validate API key against database with LRU cache. Returns plan or null if invalid. */
-async function validateApiKey(rawKey: string): Promise<{ plan: string; userId: string } | null> {
+async function validateApiKey(
+  rawKey: string,
+): Promise<{ plan: string; userId: string } | null> {
   const keyHash = crypto.createHash("sha256").update(rawKey).digest("hex");
 
   // Check cache first (avoids DB query on every request)
@@ -65,40 +72,61 @@ async function validateApiKey(rawKey: string): Promise<{ plan: string; userId: s
   }
 
   try {
-    const rows = await db.select().from(apiKeys)
+    const rows = await db
+      .select()
+      .from(apiKeys)
       .where(eq(apiKeys.key, keyHash))
       .limit(1);
     const row = rows[0];
     if (!row) return null;
-    if (row.revokedAt) { apiKeyCache.delete(keyHash); return null; }
-    if (row.expiresAt && row.expiresAt < new Date()) { apiKeyCache.delete(keyHash); return null; }
+    if (row.revokedAt) {
+      apiKeyCache.delete(keyHash);
+      return null;
+    }
+    if (row.expiresAt && row.expiresAt < new Date()) {
+      apiKeyCache.delete(keyHash);
+      return null;
+    }
 
     // Populate cache
-    apiKeyCache.set(keyHash, { plan: row.plan, userId: row.userId, cachedAt: Date.now() });
+    apiKeyCache.set(keyHash, {
+      plan: row.plan,
+      userId: row.userId,
+      cachedAt: Date.now(),
+    });
     pruneApiKeyCache();
 
     // Update last used timestamp (best-effort — log failures but don't block)
-    db.update(apiKeys).set({ lastUsedAt: new Date() }).where(eq(apiKeys.id, row.id)).catch((err) => {
-      log.warn("Failed to update lastUsedAt on API key", { keyId: row.id, error: (err as Error).message });
-    });
+    db.update(apiKeys)
+      .set({ lastUsedAt: new Date() })
+      .where(eq(apiKeys.id, row.id))
+      .catch((err) => {
+        log.warn("Failed to update lastUsedAt on API key", {
+          keyId: row.id,
+          error: (err as Error).message,
+        });
+      });
     return { plan: row.plan, userId: row.userId };
   } catch (err) {
-    // DB unavailable — fall back to prefix convention for resilience
-    log.warn("API key DB validation failed, falling back to prefix convention", { error: (err as Error).message });
-    let plan = "free";
-    if (rawKey.startsWith("sk_pro_")) plan = "pro";
-    else if (rawKey.startsWith("sk_ent_")) plan = "enterprise";
-    const shortHash = crypto.createHash("sha256").update(rawKey).digest("hex").slice(0, 16);
-    return { plan, userId: `apikey_${shortHash}` };
+    // SECURITY: Never fall back to prefix-based "plan" trust. Previously
+    // this code read any string starting with sk_ent_ as enterprise tier,
+    // letting attackers bypass plan enforcement during a DB outage by
+    // sending Authorization: Bearer sk_ent_anything. Fail CLOSED instead.
+    log.error("API key DB validation failed — rejecting request", {
+      error: (err as Error).message,
+    });
+    return null;
   }
 }
 
-function checkRateLimit(apiKey: string, plan: string = "free"): {
+function checkRateLimit(
+  apiKey: string,
+  plan: string = "free",
+): {
   allowed: boolean;
   remaining: number;
   plan: string;
 } {
-
   const limit = getApiRateLimit(plan);
   const now = Date.now();
   const tracker = apiRateLimits.get(apiKey);
@@ -118,7 +146,7 @@ function checkRateLimit(apiKey: string, plan: string = "free"): {
 
 async function handleRequest(
   request: NextRequest,
-  { params }: { params: Promise<{ path: string[] }> }
+  { params }: { params: Promise<{ path: string[] }> },
 ) {
   const startTime = Date.now();
   const { path } = await params;
@@ -129,9 +157,10 @@ async function handleRequest(
     return NextResponse.json(
       {
         success: false,
-        error: "Missing or invalid API key. Use: Authorization: Bearer sk_your_key",
+        error:
+          "Missing or invalid API key. Use: Authorization: Bearer sk_your_key",
       },
-      { status: 401 }
+      { status: 401 },
     );
   }
 
@@ -154,7 +183,7 @@ async function handleRequest(
           "X-RateLimit-Remaining": "0",
           "X-RateLimit-Plan": rateCheck.plan,
         },
-      }
+      },
     );
   }
 
@@ -168,14 +197,16 @@ async function handleRequest(
 
   try {
     // Forward the request to the internal route
-    const body = request.method !== "GET" && request.method !== "HEAD"
-      ? await request.text()
-      : undefined;
+    const body =
+      request.method !== "GET" && request.method !== "HEAD"
+        ? await request.text()
+        : undefined;
 
     const internalRes = await fetch(internalUrl.toString(), {
       method: request.method,
       headers: {
-        "Content-Type": request.headers.get("content-type") || "application/json",
+        "Content-Type":
+          request.headers.get("content-type") || "application/json",
         // Pass through a system marker so internal routes know this is trusted
         "X-Sovereign-Internal": "v1-proxy",
       },
@@ -199,8 +230,10 @@ async function handleRequest(
       await db.insert(usage).values({
         userId: keyInfo?.userId || "unknown",
         agentId,
-        model: (data as Record<string, unknown>)?.model as string || "unknown",
-        tokensUsed: (data as Record<string, unknown>)?.tokensUsed as number || 0,
+        model:
+          ((data as Record<string, unknown>)?.model as string) || "unknown",
+        tokensUsed:
+          ((data as Record<string, unknown>)?.tokensUsed as number) || 0,
       });
     } catch (err) {
       // Non-blocking: don't fail the request if usage logging fails, but log it
@@ -220,7 +253,7 @@ async function handleRequest(
           "X-RateLimit-Plan": rateCheck.plan,
           "X-Response-Time": `${responseTimeMs}ms`,
         },
-      }
+      },
     );
   } catch (err) {
     log.error("API v1 Proxy error", err as Record<string, unknown>);
@@ -230,7 +263,7 @@ async function handleRequest(
         error: "Internal routing error.",
         responseTimeMs: Date.now() - startTime,
       },
-      { status: 502 }
+      { status: 502 },
     );
   }
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSignalStats } from "@/lib/agent-memory";
 import { createLogger } from "@/lib/logger";
+import { requireCronAuth } from "@/lib/cron-auth";
 
 const log = createLogger("cron:daily-digest");
 
@@ -9,10 +10,8 @@ const log = createLogger("cron:daily-digest");
  * Cleans up stale data and generates platform-wide stats.
  */
 export async function GET(request: Request) {
-  const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const authErr = requireCronAuth(request);
+  if (authErr) return authErr;
 
   try {
     const signals = getSignalStats();

@@ -5,6 +5,7 @@ import { eq, and, sql } from "drizzle-orm";
 import { executeGoal } from "@/lib/goal-executor";
 import { sendTelegram, formatJobDone, formatJobFailed } from "@/lib/telegram";
 import { createLogger } from "@/lib/logger";
+import { requireCronAuth } from "@/lib/cron-auth";
 
 const log = createLogger("cron:job-runner");
 
@@ -21,12 +22,11 @@ const BATCH_SIZE = 5;
  * Protected by CRON_SECRET — do not expose publicly.
  */
 export async function GET(request: Request) {
-  const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const authErr = requireCronAuth(request);
+  if (authErr) return authErr;
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ||
+  const baseUrl =
+    process.env.NEXT_PUBLIC_APP_URL ||
     (request.headers.get("x-forwarded-proto") === "https"
       ? `https://${request.headers.get("host")}`
       : `http://${request.headers.get("host") || "localhost:3000"}`);
@@ -40,13 +40,17 @@ export async function GET(request: Request) {
       and(
         eq(jobs.status, "pending"),
         // Only claim jobs older than 2 seconds (avoid race on just-inserted jobs)
-        sql`${jobs.createdAt} < now() - interval '2 seconds'`
-      )
+        sql`${jobs.createdAt} < now() - interval '2 seconds'`,
+      ),
     )
-    .returning({ id: jobs.id, userId: jobs.userId, goal: jobs.goal, telegramChatId: jobs.telegramChatId, notifyTelegram: jobs.notifyTelegram })
-    // Drizzle doesn't support LIMIT on UPDATE in PG — select first, then update
-    ;
-
+    .returning({
+      id: jobs.id,
+      userId: jobs.userId,
+      goal: jobs.goal,
+      telegramChatId: jobs.telegramChatId,
+      notifyTelegram: jobs.notifyTelegram,
+    });
+  // Drizzle doesn't support LIMIT on UPDATE in PG — select first, then update
   if (claimed.length === 0) {
     return NextResponse.json({ processed: 0, message: "No pending jobs" });
   }
@@ -58,9 +62,12 @@ export async function GET(request: Request) {
   // Re-queue overflow back to pending
   if (overflow.length > 0) {
     await Promise.all(
-      overflow.map(j =>
-        db.update(jobs).set({ status: "pending", startedAt: null, progress: 0 }).where(eq(jobs.id, j.id))
-      )
+      overflow.map((j) =>
+        db
+          .update(jobs)
+          .set({ status: "pending", startedAt: null, progress: 0 })
+          .where(eq(jobs.id, j.id)),
+      ),
     );
   }
 
@@ -70,50 +77,67 @@ export async function GET(request: Request) {
   await Promise.all(
     batch.map(async (job) => {
       try {
-        log.info("executing job", { jobId: job.id, goal: job.goal.slice(0, 60) });
+        log.info("executing job", {
+          jobId: job.id,
+          goal: job.goal.slice(0, 60),
+        });
 
         await db.update(jobs).set({ progress: 30 }).where(eq(jobs.id, job.id));
 
         const execution = await executeGoal(job.goal, baseUrl, job.userId);
 
-        await db.update(jobs).set({
-          status: "done",
-          progress: 100,
-          result: JSON.stringify(execution.result),
-          agentsUsed: JSON.stringify(execution.agents),
-          completedAt: new Date(),
-          durationMs: execution.durationMs,
-        }).where(eq(jobs.id, job.id));
+        await db
+          .update(jobs)
+          .set({
+            status: "done",
+            progress: 100,
+            result: JSON.stringify(execution.result),
+            agentsUsed: JSON.stringify(execution.agents),
+            completedAt: new Date(),
+            durationMs: execution.durationMs,
+          })
+          .where(eq(jobs.id, job.id));
 
         if (job.notifyTelegram && job.telegramChatId) {
           await sendTelegram(
             job.telegramChatId,
-            formatJobDone(job.goal, job.id, execution.durationMs, execution.agents)
+            formatJobDone(
+              job.goal,
+              job.id,
+              execution.durationMs,
+              execution.agents,
+            ),
           );
         }
 
         processed++;
-        log.info("job done", { jobId: job.id, durationMs: execution.durationMs });
+        log.info("job done", {
+          jobId: job.id,
+          durationMs: execution.durationMs,
+        });
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : String(err);
         log.error("job failed", { jobId: job.id, error: errorMsg });
 
-        await db.update(jobs).set({
-          status: "failed",
-          error: errorMsg,
-          completedAt: new Date(),
-        }).where(eq(jobs.id, job.id));
+        await db
+          .update(jobs)
+          .set({
+            status: "failed",
+            error: errorMsg,
+            completedAt: new Date(),
+          })
+          .where(eq(jobs.id, job.id));
 
         if (job.notifyTelegram && job.telegramChatId) {
           await sendTelegram(
             job.telegramChatId,
-            formatJobFailed(job.goal, job.id, errorMsg)
+            formatJobFailed(job.goal, job.id, errorMsg),
           );
         }
 
         failed++;
       }
-    })
+    }),
   );
 
   return NextResponse.json({ processed, failed, batch: batch.length });

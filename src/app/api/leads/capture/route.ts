@@ -2,8 +2,12 @@ import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { leads } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
+import { rateLimit } from "@/lib/rate-limit";
 
 const log = createLogger("api/leads/capture");
+
+// Public endpoint — tight IP-keyed limit to prevent lead-table poisoning.
+const limiter = rateLimit({ interval: 60, limit: 5 });
 
 /**
  * POST /api/leads/capture
@@ -11,6 +15,9 @@ const log = createLogger("api/leads/capture");
  * Used by landing pages, chatbots, and external forms.
  */
 export async function POST(req: Request) {
+  const limited = await limiter.check(req);
+  if (limited) return limited;
+
   try {
     const body = await req.json();
     const { name, phone, email, planId, businessName, source } = body;
@@ -38,7 +45,10 @@ export async function POST(req: Request) {
     const [lead] = await db.insert(leads).values(sanitized).returning();
 
     log.info("Lead captured", { leadId: lead.id, source: sanitized.source });
-    return NextResponse.json({ id: lead.id, status: "captured" }, { status: 201 });
+    return NextResponse.json(
+      { id: lead.id, status: "captured" },
+      { status: 201 },
+    );
   } catch (err: unknown) {
     const pgCode = (err as { code?: string })?.code;
     const msg = err instanceof Error ? err.message : String(err);
@@ -46,10 +56,13 @@ export async function POST(req: Request) {
       log.warn("leads table not found");
       return NextResponse.json(
         { error: "Database tables not ready. Run the leads migration first." },
-        { status: 503 }
+        { status: 503 },
       );
     }
     log.error("Failed to capture lead", { error: msg });
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }

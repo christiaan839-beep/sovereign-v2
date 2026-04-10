@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { createLogger } from "@/lib/logger";
+import { requireCronAuth } from "@/lib/cron-auth";
 const log = createLogger("tiktok-autopilot");
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const CRON_SECRET = process.env.CRON_SECRET;
 
 /**
  * TIKTOK AUTOPILOT — Generates short-form video scripts for TikTok/Reels.
@@ -13,10 +13,8 @@ const CRON_SECRET = process.env.CRON_SECRET;
  */
 
 export async function GET(req: Request) {
-  const authHeader = req.headers.get("authorization");
-  if (authHeader !== `Bearer ${CRON_SECRET}` && process.env.NODE_ENV === "production") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const authErr = requireCronAuth(req);
+  if (authErr) return authErr;
 
   try {
     const systemInstruction = `You are a short-form video content strategist for Sovereign Matrix, an AI automation platform.
@@ -37,7 +35,10 @@ Return exactly a JSON object: { "hook_text": "...", "voiceover_script": "...", "
 No markdown formatting.`;
 
     if (!GEMINI_API_KEY) {
-      return NextResponse.json({ error: "AI provider not configured" }, { status: 500 });
+      return NextResponse.json(
+        { error: "AI provider not configured" },
+        { status: 500 },
+      );
     }
 
     const response = await fetch(
@@ -58,7 +59,7 @@ No markdown formatting.`;
           systemInstruction: { parts: [{ text: systemInstruction }] },
           generationConfig: { temperature: 0.6 },
         }),
-      }
+      },
     );
 
     if (!response.ok) {
@@ -67,14 +68,22 @@ No markdown formatting.`;
 
     const aiData = await response.json();
     let rawContent = aiData.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
-    rawContent = rawContent.replace(/```json/g, "").replace(/```/g, "").trim();
+    rawContent = rawContent
+      .replace(/```json/g, "")
+      .replace(/```/g, "")
+      .trim();
 
     let scriptObject: Record<string, unknown> = {};
     try {
       scriptObject = JSON.parse(rawContent);
     } catch {
-      log.error("TikTok script parse failed", { rawContent: rawContent.substring(0, 200) });
-      return NextResponse.json({ error: "Failed to parse generated script" }, { status: 500 });
+      log.error("TikTok script parse failed", {
+        rawContent: rawContent.substring(0, 200),
+      });
+      return NextResponse.json(
+        { error: "Failed to parse generated script" },
+        { status: 500 },
+      );
     }
 
     return NextResponse.json({
@@ -83,6 +92,9 @@ No markdown formatting.`;
     });
   } catch (err) {
     log.error("TikTok cron error", err as Record<string, unknown>);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }

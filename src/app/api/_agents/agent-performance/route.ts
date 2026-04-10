@@ -17,7 +17,10 @@ import { eq, and, gte, count, sql, avg as _avg } from "drizzle-orm";
 export async function GET() {
   const { userId } = await auth();
   if (!userId) {
-    return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+    return NextResponse.json(
+      { error: "Authentication required" },
+      { status: 401 },
+    );
   }
 
   const day30 = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
@@ -33,7 +36,12 @@ export async function GET() {
         failedRuns: sql<number>`count(*) filter (where ${agentActivity.action} = 'failed')`,
       })
       .from(agentActivity)
-      .where(and(eq(agentActivity.userId, userId), gte(agentActivity.createdAt, day30)))
+      .where(
+        and(
+          eq(agentActivity.userId, userId),
+          gte(agentActivity.createdAt, day30),
+        ),
+      )
       .groupBy(agentActivity.agentName)
       .orderBy(sql`count(*) desc`)
       .limit(20);
@@ -45,7 +53,12 @@ export async function GET() {
         runs: count(),
       })
       .from(agentActivity)
-      .where(and(eq(agentActivity.userId, userId), gte(agentActivity.createdAt, day7)))
+      .where(
+        and(
+          eq(agentActivity.userId, userId),
+          gte(agentActivity.createdAt, day7),
+        ),
+      )
       .groupBy(agentActivity.agentName)
       .orderBy(sql`count(*) desc`)
       .limit(10);
@@ -54,7 +67,12 @@ export async function GET() {
     const [totalResult] = await db
       .select({ value: count() })
       .from(agentActivity)
-      .where(and(eq(agentActivity.userId, userId), gte(agentActivity.createdAt, day30)));
+      .where(
+        and(
+          eq(agentActivity.userId, userId),
+          gte(agentActivity.createdAt, day30),
+        ),
+      );
 
     const leaderboard = agentStats.map((a) => {
       const total = Number(a.totalRuns);
@@ -73,7 +91,8 @@ export async function GET() {
         succeeded,
         failed,
         successRate,
-        trend: weeklyRate > 30 ? "rising" : weeklyRate > 15 ? "stable" : "declining",
+        trend:
+          weeklyRate > 30 ? "rising" : weeklyRate > 15 ? "stable" : "declining",
         recentRuns7d: recentRuns,
       };
     });
@@ -87,9 +106,10 @@ export async function GET() {
       timestamp: new Date().toISOString(),
     });
   } catch (err) {
-    return NextResponse.json({
-      error: "Failed to fetch performance data",
-      details: String(err),
-    }, { status: 500 });
+    console.error("[agent-performance]", err);
+    return NextResponse.json(
+      { error: "Failed to fetch performance data" },
+      { status: 500 },
+    );
   }
 }

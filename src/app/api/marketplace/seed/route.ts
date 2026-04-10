@@ -547,31 +547,16 @@ RULES:
 ];
 
 function isAuthorized(request: NextRequest): boolean {
+  // SECURITY: Only CRON_SECRET bearer token is accepted.
+  // The previous x-user-email header check was trust-on-first-use
+  // (any request could send `x-user-email: admin@...` and pass), and
+  // the NODE_ENV !== "production" dev bypass left preview deploys
+  // publicly reachable without auth.
+  const secret = process.env.CRON_SECRET;
+  if (!secret) return false;
+
   const authHeader = request.headers.get("authorization");
-
-  // Check CRON_SECRET bearer token
-  if (
-    process.env.CRON_SECRET &&
-    authHeader === `Bearer ${process.env.CRON_SECRET}`
-  ) {
-    return true;
-  }
-
-  // Check ADMIN_EMAILS (requires a custom x-user-email header or similar)
-  const adminEmails = process.env.ADMIN_EMAILS;
-  if (adminEmails) {
-    const userEmail = request.headers.get("x-user-email");
-    if (userEmail && adminEmails.split(",").includes(userEmail.trim())) {
-      return true;
-    }
-  }
-
-  // Allow in development
-  if (process.env.NODE_ENV !== "production") {
-    return true;
-  }
-
-  return false;
+  return authHeader === `Bearer ${secret}`;
 }
 
 /**
@@ -620,10 +605,13 @@ export async function POST(request: NextRequest) {
 
     // Handle missing table gracefully (PostgreSQL error 42P01: undefined_table)
     if (pgError.code === "42P01") {
-      log.warn("marketplace_agents table does not exist — run migrations first");
+      log.warn(
+        "marketplace_agents table does not exist — run migrations first",
+      );
       return NextResponse.json(
         {
-          error: "Table marketplace_agents does not exist. Run database migrations first.",
+          error:
+            "Table marketplace_agents does not exist. Run database migrations first.",
           code: "MISSING_TABLE",
         },
         { status: 503 },

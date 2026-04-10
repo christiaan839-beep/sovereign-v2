@@ -4,6 +4,7 @@ import { users } from "@/db/schema";
 import { sql } from "drizzle-orm";
 import { createLogger } from "@/lib/logger";
 import { DRIP_SEQUENCE, sendOnboardingEmail } from "@/lib/onboarding-emails";
+import { requireCronAuth } from "@/lib/cron-auth";
 
 const log = createLogger("onboarding-drip");
 
@@ -17,14 +18,8 @@ const log = createLogger("onboarding-drip");
  * Protected by CRON_SECRET header.
  */
 export async function GET(request: Request) {
-  // ── Auth ──
-  const secret = process.env.CRON_SECRET;
-  if (secret) {
-    const authHeader = request.headers.get("authorization");
-    if (authHeader !== `Bearer ${secret}`) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-  }
+  const authErr = requireCronAuth(request);
+  if (authErr) return authErr;
 
   const now = new Date();
   let totalSent = 0;
@@ -85,7 +80,7 @@ export async function GET(request: Request) {
     });
     return NextResponse.json(
       { error: "Drip cron failed", details: String(err) },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

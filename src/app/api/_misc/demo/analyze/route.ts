@@ -1,56 +1,63 @@
 import { NextResponse } from "next/server";
 import { ai } from "@/lib/ai";
 import { createLogger } from "@/lib/logger";
+import { rateLimit } from "@/lib/rate-limit";
 
 const log = createLogger("demo-analyze");
 
 /**
  * PUBLIC DEMO ENDPOINT — No auth required.
- * Rate-limited to 3 requests per IP per hour via in-memory store.
- * Used by the homepage InteractiveHeroStrike and /demo/live page.
+ *
+ * SECURITY:
+ * - Rate limited via shared Upstash-backed limiter (not in-memory).
+ * - Input sizes are bounded to prevent token-burning DoS.
+ * - `url` is validated as http(s) before being interpolated into the prompt
+ *   (prevents prompt injection via crafted URLs).
  */
 
-const demoLimits = new Map<string, { count: number; resetAt: number }>();
-const MAX_DEMO_REQUESTS = 5;
-const DEMO_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+const limiter = rateLimit({ interval: 60 * 60, limit: 5 });
+
+// Conservative caps for a free demo endpoint.
+const MAX_PROMPT_LENGTH = 500;
+const MAX_URL_LENGTH = 500;
+
+function isValidHttpUrl(raw: string): boolean {
+  try {
+    const u = new URL(raw);
+    return u.protocol === "http:" || u.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
 
 export async function POST(req: Request) {
+  const limited = await limiter.check(req);
+  if (limited) return limited;
+
   try {
-    // Rate limit by IP
-    const ip = req.headers.get("x-forwarded-for")?.split(",")[0] || "unknown";
-    const now = Date.now();
-    const entry = demoLimits.get(ip);
+    const body = await req.json().catch(() => ({}));
+    const rawPrompt = typeof body.prompt === "string" ? body.prompt : "";
+    const rawUrl = typeof body.url === "string" ? body.url : "";
 
-    if (entry) {
-      if (now < entry.resetAt) {
-        if (entry.count >= MAX_DEMO_REQUESTS) {
-          return NextResponse.json({
-            response: "You've used all free demo tries. Sign up for unlimited access — it's free, no credit card required.",
-            limited: true,
-          });
-        }
-        entry.count++;
-      } else {
-        demoLimits.set(ip, { count: 1, resetAt: now + DEMO_WINDOW_MS });
+    const prompt = rawPrompt.slice(0, MAX_PROMPT_LENGTH);
+    const url = rawUrl.slice(0, MAX_URL_LENGTH);
+
+    let userPrompt: string;
+    if (url) {
+      if (!isValidHttpUrl(url)) {
+        return NextResponse.json(
+          { error: "Invalid URL — must be http:// or https://" },
+          { status: 400 },
+        );
       }
+      userPrompt = `Analyze this website and give a concise 3-bullet strategic breakdown: ${url}. Focus on: 1) What they do well, 2) A critical gap or weakness, 3) One actionable opportunity. Keep each bullet to 1-2 sentences.`;
     } else {
-      demoLimits.set(ip, { count: 1, resetAt: now + DEMO_WINDOW_MS });
+      userPrompt = prompt || "Tell me what Sovereign Matrix can do.";
     }
-
-    // Cleanup stale entries every 100 requests
-    if (demoLimits.size > 100) {
-      for (const [k, v] of demoLimits) {
-        if (now >= v.resetAt) demoLimits.delete(k);
-      }
-    }
-
-    const { prompt, url } = await req.json();
-    const userPrompt = url
-      ? `Analyze this website and give a concise 3-bullet strategic breakdown: ${url}. Focus on: 1) What they do well, 2) A critical gap or weakness, 3) One actionable opportunity. Keep each bullet to 1-2 sentences.`
-      : prompt || "Tell me what Sovereign Matrix can do.";
 
     const result = await ai(userPrompt, {
-      system: "You are a business analyst. Give concise, specific, actionable analysis. No fluff. Use bullet points. Keep total response under 150 words.",
+      system:
+        "You are a business analyst. Give concise, specific, actionable analysis. No fluff. Use bullet points. Keep total response under 150 words.",
       maxTokens: 500,
     });
 
@@ -58,7 +65,8 @@ export async function POST(req: Request) {
   } catch (err) {
     log.error("Demo analyze failed", err as Record<string, unknown>);
     return NextResponse.json({
-      response: "Our AI agents are warming up. Try again in a moment, or sign up for instant access.",
+      response:
+        "Our AI agents are warming up. Try again in a moment, or sign up for instant access.",
     });
   }
 }

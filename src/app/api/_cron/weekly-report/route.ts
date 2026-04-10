@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { persistRead } from "@/lib/persist";
+import { requireCronAuth } from "@/lib/cron-auth";
 
 /**
  * CRON WEEKLY REPORT — Triggered via Vercel Cron every Sunday at midnight.
@@ -7,11 +8,8 @@ import { persistRead } from "@/lib/persist";
  */
 
 export async function GET(req: Request) {
-  // Secure with Vercel cron secret
-  const authHeader = req.headers.get("authorization");
-  if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return new NextResponse("Unauthorized", { status: 401 });
-  }
+  const authErr = requireCronAuth(req);
+  if (authErr) return authErr;
 
   try {
     // Pull real metrics from persistence layer
@@ -25,9 +23,17 @@ export async function GET(req: Request) {
     const actionCount = Array.isArray(agentLogs) ? agentLogs.length : 0;
 
     // If no active clients, report to owner
-    const activeClients = Array.isArray(clients) && clients.length > 0
-      ? clients
-      : [{ name: "Sovereign Operator", email: process.env.RESEND_FROM_EMAIL || "reports@sovereignmatrix.agency" }];
+    const activeClients =
+      Array.isArray(clients) && clients.length > 0
+        ? clients
+        : [
+            {
+              name: "Sovereign Operator",
+              email:
+                process.env.RESEND_FROM_EMAIL ||
+                "reports@sovereignmatrix.agency",
+            },
+          ];
 
     const emailContent = `
     <div style="font-family: 'Helvetica Neue', sans-serif; max-width: 600px; margin: 0 auto; background: #0a0a0a; color: #ffffff; padding: 40px; border-radius: 16px;">
@@ -59,14 +65,15 @@ export async function GET(req: Request) {
 
     // Send via Resend if configured
     if (process.env.RESEND_API_KEY) {
-      const fromEmail = process.env.RESEND_FROM_EMAIL || "reports@sovereignmatrix.agency";
+      const fromEmail =
+        process.env.RESEND_FROM_EMAIL || "reports@sovereignmatrix.agency";
       for (const client of activeClients) {
         const clientObj = client as { name?: string; email?: string };
         if (clientObj.email) {
           await fetch("https://api.resend.com/emails", {
             method: "POST",
             headers: {
-              "Authorization": `Bearer ${process.env.RESEND_API_KEY}`,
+              Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
@@ -86,8 +93,10 @@ export async function GET(req: Request) {
       metrics: { actionCount, genCount, leadCount },
       recipients: activeClients.length,
     });
-
   } catch {
-    return NextResponse.json({ error: "Report generation failed" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Report generation failed" },
+      { status: 500 },
+    );
   }
 }

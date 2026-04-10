@@ -4,6 +4,7 @@ import { playbookRuns } from "@/db/schema";
 import { and, eq, gte } from "drizzle-orm";
 import { getBaseUrl } from "@/lib/base-url";
 import { createLogger } from "@/lib/logger";
+import { requireCronAuth } from "@/lib/cron-auth";
 
 const log = createLogger("cron:playbook-scheduler");
 
@@ -36,19 +37,20 @@ const SCHEDULE: ScheduledEntry[] = [
 ];
 
 const WINDOW_MS: Record<ScheduledEntry["every"], number> = {
-  hourly: 50 * 60 * 1000,       //  50 min
-  daily:  23 * 60 * 60 * 1000,  //  23 h
+  hourly: 50 * 60 * 1000, //  50 min
+  daily: 23 * 60 * 60 * 1000, //  23 h
   weekly: 6.5 * 24 * 60 * 60 * 1000, // 6.5 days
 };
 
 export async function GET(req: Request) {
-  const auth = req.headers.get("Authorization");
-  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const authErr = requireCronAuth(req);
+  if (authErr) return authErr;
 
   if (SCHEDULE.length === 0) {
-    return NextResponse.json({ fired: 0, message: "No scheduled playbooks configured" });
+    return NextResponse.json({
+      fired: 0,
+      message: "No scheduled playbooks configured",
+    });
   }
 
   const baseUrl = getBaseUrl();
@@ -68,14 +70,16 @@ export async function GET(req: Request) {
         and(
           eq(playbookRuns.userId, entry.userId),
           eq(playbookRuns.playbookId, entry.playbookId),
-          gte(playbookRuns.createdAt, windowStart)
-        )
+          gte(playbookRuns.createdAt, windowStart),
+        ),
       )
       .limit(1);
 
     if (recent) {
       skipped++;
-      log.info(`skipping ${entry.playbookId} — already ran within ${entry.every} window`);
+      log.info(
+        `skipping ${entry.playbookId} — already ran within ${entry.every} window`,
+      );
       continue;
     }
 
@@ -85,7 +89,7 @@ export async function GET(req: Request) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${process.env.CRON_SECRET}`,
+          Authorization: `Bearer ${process.env.CRON_SECRET}`,
           "X-User-Id": entry.userId,
           "X-Sovereign-Internal": "playbook-scheduler",
         },
@@ -100,7 +104,10 @@ export async function GET(req: Request) {
       if (res.ok) {
         fired++;
         const data = await res.json();
-        log.info(`fired ${entry.playbookId}`, { runId: data.runId, schedule: entry.every });
+        log.info(`fired ${entry.playbookId}`, {
+          runId: data.runId,
+          schedule: entry.every,
+        });
       } else {
         log.error(`failed to fire ${entry.playbookId}`, { status: res.status });
       }

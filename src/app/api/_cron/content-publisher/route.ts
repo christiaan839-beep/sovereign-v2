@@ -3,21 +3,19 @@ import { db } from "@/db";
 import { scheduledContent } from "@/db/schema";
 import { eq, lte, and } from "drizzle-orm";
 import { createLogger } from "@/lib/logger";
+import { requireCronAuth } from "@/lib/cron-auth";
 const log = createLogger("content-publisher");
 
 /**
  * Cron Content Publisher
- * 
+ *
  * Called on a schedule (e.g., every 5 minutes via Vercel Cron).
  * Checks for content items with status "scheduled" and scheduledAt <= now.
  * Fires the Social Media Swarm for each due item and updates status.
  */
 export async function GET(req: Request) {
-  // Validate CRON_SECRET to prevent unauthorized access
-  const authHeader = req.headers.get("authorization") || "";
-  if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return new NextResponse("Unauthorized", { status: 401 });
-  }
+  const authErr = requireCronAuth(req);
+  if (authErr) return authErr;
 
   try {
     const now = new Date();
@@ -29,13 +27,17 @@ export async function GET(req: Request) {
       .where(
         and(
           eq(scheduledContent.status, "scheduled"),
-          lte(scheduledContent.scheduledAt, now)
-        )
+          lte(scheduledContent.scheduledAt, now),
+        ),
       )
       .limit(10);
 
     if (dueItems.length === 0) {
-      return NextResponse.json({ success: true, message: "No content due for publishing", published: 0 });
+      return NextResponse.json({
+        success: true,
+        message: "No content due for publishing",
+        published: 0,
+      });
     }
 
     let published = 0;
@@ -44,8 +46,11 @@ export async function GET(req: Request) {
       try {
         // Trigger the external n8n workflow directly
         const n8nWebhookUrl = process.env.N8N_WEBHOOK_URL;
-        if (!n8nWebhookUrl) { log.warn("N8N_WEBHOOK_URL not set — skipping publish"); continue; }
-        
+        if (!n8nWebhookUrl) {
+          log.warn("N8N_WEBHOOK_URL not set — skipping publish");
+          continue;
+        }
+
         await fetch(n8nWebhookUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -70,7 +75,10 @@ export async function GET(req: Request) {
           .set({ status: "failed" })
           .where(eq(scheduledContent.id, item.id));
 
-        log.error(`Failed to publish "${item.topic}"`, err as Record<string, unknown>);
+        log.error(
+          `Failed to publish "${item.topic}"`,
+          err as Record<string, unknown>,
+        );
       }
     }
 
@@ -81,6 +89,9 @@ export async function GET(req: Request) {
     });
   } catch (error) {
     log.error("Content publisher error", error as Record<string, unknown>);
-    return NextResponse.json({ error: "Content publisher failed" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Content publisher failed" },
+      { status: 500 },
+    );
   }
 }
