@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
+import crypto from "crypto";
 import { createLogger } from "@/lib/logger";
 import { getPublicUrl } from "@/lib/base-url";
+import { rateLimit } from "@/lib/rate-limit";
+
 const log = createLogger("booking-webhook");
 
 /**
@@ -8,10 +11,40 @@ const log = createLogger("booking-webhook");
  * Receives booking events and triggers downstream automation.
  * GET: returns available link and status.
  * POST: receives Cal.com webhook payloads.
+ *
+ * SECURITY: Without signature verification, any attacker could POST a crafted
+ * payload with an attacker-controlled attendee email, causing us to send
+ * emails from hello@sovereignmatrix.agency to arbitrary addresses
+ * (destroying domain reputation). Requires CALCOM_WEBHOOK_SECRET to be set.
+ *
+ * Cal.com signing docs: https://cal.com/docs/core-features/webhooks
  */
+
+const limiter = rateLimit({ interval: 60, limit: 30 });
+
+/**
+ * Verify Cal.com HMAC-SHA256 signature over the raw request body.
+ * Cal.com sends hex digest in X-Cal-Signature-256 header.
+ */
+function verifyCalSignature(
+  signature: string,
+  secret: string,
+  rawBody: string,
+): boolean {
+  const expected = crypto
+    .createHmac("sha256", secret)
+    .update(rawBody)
+    .digest("hex");
+
+  const a = Buffer.from(signature);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length) return false;
+  return crypto.timingSafeEqual(a, b);
+}
+
 export async function GET() {
   const calUrl = process.env.CALCOM_BOOKING_URL || "https://cal.com/your-link";
-  
+
   return NextResponse.json({
     status: "active",
     bookingUrl: calUrl,
@@ -25,8 +58,33 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  const limited = await limiter.check(req);
+  if (limited) return limited;
+
+  const secret = process.env.CALCOM_WEBHOOK_SECRET;
+  if (!secret) {
+    log.error("CALCOM_WEBHOOK_SECRET not configured — rejecting webhook");
+    return NextResponse.json(
+      { error: "Booking webhook not configured" },
+      { status: 503 },
+    );
+  }
+
+  const signature = req.headers.get("x-cal-signature-256");
+  if (!signature) {
+    return NextResponse.json({ error: "Missing signature" }, { status: 401 });
+  }
+
+  // Read raw body once for signature verification, then parse.
+  const rawBody = await req.text();
+
+  if (!verifyCalSignature(signature, secret, rawBody)) {
+    log.error("Invalid Cal.com signature");
+    return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+  }
+
   try {
-    const payload = await req.json();
+    const payload = JSON.parse(rawBody);
     const event = payload.triggerEvent || payload.event || "unknown";
 
     // Cal.com sends: BOOKING_CREATED, BOOKING_CANCELLED, BOOKING_RESCHEDULED
@@ -70,13 +128,19 @@ export async function POST(req: Request) {
       log.error("Analytics log failed", e as Record<string, unknown>);
     }
 
-    return NextResponse.json({ 
-      received: true, 
-      event, 
+    return NextResponse.json({
+      received: true,
+      event,
       lead: { name, email, startTime },
       actions: ["email_sent", "analytics_logged"],
     });
-  } catch (error: unknown) {
-    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
+  } catch (error) {
+    log.error("Booking webhook handler error", {
+      error: (error as Error).message,
+    });
+    return NextResponse.json(
+      { error: "Failed to process booking" },
+      { status: 500 },
+    );
   }
 }

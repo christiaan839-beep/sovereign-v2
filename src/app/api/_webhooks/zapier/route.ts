@@ -4,8 +4,13 @@ import { apiKeys } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import crypto from "crypto";
 import { createLogger } from "@/lib/logger";
+import { rateLimit } from "@/lib/rate-limit";
+import { getPublicUrl } from "@/lib/base-url";
 
 const log = createLogger("zapier-webhook");
+
+// Per-key rate limit (key hash is the rate-limit identifier in getClientId).
+const limiter = rateLimit({ interval: 60, limit: 60 });
 
 /**
  * ZAPIER INTEGRATION ENDPOINT — /api/_webhooks/zapier
@@ -21,13 +26,22 @@ const log = createLogger("zapier-webhook");
  * https://platform.zapier.com/build/cli-auth
  */
 
-async function validateKey(req: Request): Promise<{ valid: boolean; userId?: string; plan?: string }> {
-  const key = req.headers.get("x-api-key") || req.headers.get("authorization")?.replace("Bearer ", "") || "";
+async function validateKey(
+  req: Request,
+): Promise<{ valid: boolean; userId?: string; plan?: string }> {
+  const key =
+    req.headers.get("x-api-key") ||
+    req.headers.get("authorization")?.replace("Bearer ", "") ||
+    "";
   if (!key || !key.startsWith("sk_")) return { valid: false };
 
   const keyHash = crypto.createHash("sha256").update(key).digest("hex");
   try {
-    const rows = await db.select().from(apiKeys).where(eq(apiKeys.key, keyHash)).limit(1);
+    const rows = await db
+      .select()
+      .from(apiKeys)
+      .where(eq(apiKeys.key, keyHash))
+      .limit(1);
     const row = rows[0];
     if (!row || row.revokedAt) return { valid: false };
     return { valid: true, userId: row.userId, plan: row.plan };
@@ -38,6 +52,9 @@ async function validateKey(req: Request): Promise<{ valid: boolean; userId?: str
 
 // GET: Auth test (Zapier calls this to verify the API key works)
 export async function GET(req: Request) {
+  const limited = await limiter.check(req);
+  if (limited) return limited;
+
   const auth = await validateKey(req);
   if (!auth.valid) {
     return NextResponse.json({ error: "Invalid API key" }, { status: 401 });
@@ -48,17 +65,31 @@ export async function GET(req: Request) {
     userId: auth.userId,
     plan: auth.plan,
     available_agents: [
-      "leads", "blog-gen", "seo-dominator", "email-sequence", "competitor-scan",
-      "brand-voice", "proposal-generator", "organic-content", "translate", "omni-search",
+      "leads",
+      "blog-gen",
+      "seo-dominator",
+      "email-sequence",
+      "competitor-scan",
+      "brand-voice",
+      "proposal-generator",
+      "organic-content",
+      "translate",
+      "omni-search",
     ],
     available_playbooks: [
-      "lead-blitz", "content-machine", "competitor-takedown", "proposal-blaster",
+      "lead-blitz",
+      "content-machine",
+      "competitor-takedown",
+      "proposal-blaster",
     ],
   });
 }
 
 // POST: Execute an action or register a webhook
 export async function POST(req: Request) {
+  const limited = await limiter.check(req);
+  if (limited) return limited;
+
   const auth = await validateKey(req);
   if (!auth.valid) {
     return NextResponse.json({ error: "Invalid API key" }, { status: 401 });
@@ -86,9 +117,9 @@ export async function POST(req: Request) {
 
     // Agent execution
     if (agent) {
-      const baseUrl = req.headers.get("x-forwarded-proto") === "https"
-        ? `https://${req.headers.get("host")}`
-        : `http://${req.headers.get("host") || "localhost:3000"}`;
+      // Use a stable internal URL from env config — never trust the
+      // request Host header (SSRF-adjacent on misconfigured deploys).
+      const baseUrl = getPublicUrl();
 
       const agentRes = await fetch(`${baseUrl}/api/agents/${agent}`, {
         method: "POST",
@@ -106,9 +137,9 @@ export async function POST(req: Request) {
 
     // Playbook execution
     if (playbook_id) {
-      const baseUrl = req.headers.get("x-forwarded-proto") === "https"
-        ? `https://${req.headers.get("host")}`
-        : `http://${req.headers.get("host") || "localhost:3000"}`;
+      // Use a stable internal URL from env config — never trust the
+      // request Host header (SSRF-adjacent on misconfigured deploys).
+      const baseUrl = getPublicUrl();
 
       const coordRes = await fetch(`${baseUrl}/api/agents/coordinator`, {
         method: "POST",
@@ -116,7 +147,12 @@ export async function POST(req: Request) {
           "Content-Type": "application/json",
           "X-Sovereign-Internal": "zapier-proxy",
         },
-        body: JSON.stringify({ playbook_id, ...params, auto_execute: true, confirmed: true }),
+        body: JSON.stringify({
+          playbook_id,
+          ...params,
+          auto_execute: true,
+          confirmed: true,
+        }),
         signal: AbortSignal.timeout(120000),
       });
 
@@ -125,8 +161,11 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json(
-      { error: "Provide 'agent' or 'playbook_id' to execute, or 'action: subscribe' with 'hook_url'" },
-      { status: 400 }
+      {
+        error:
+          "Provide 'agent' or 'playbook_id' to execute, or 'action: subscribe' with 'hook_url'",
+      },
+      { status: 400 },
     );
   } catch (err) {
     log.error("Zapier webhook error", { error: String(err) });

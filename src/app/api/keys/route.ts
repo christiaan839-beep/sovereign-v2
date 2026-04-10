@@ -5,8 +5,12 @@ import { apiKeys } from "@/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { randomBytes, createHash } from "crypto";
 import { createLogger } from "@/lib/logger";
+import { rateLimit } from "@/lib/rate-limit";
 
 const log = createLogger("api-keys");
+
+// Tighter limit on key creation to prevent DoS via mass key generation.
+const createLimiter = rateLimit({ interval: 60, limit: 5 });
 
 // ─────────────────────────────────────────────
 // GET  /api/keys — List user's API keys
@@ -40,7 +44,10 @@ export async function GET() {
       return NextResponse.json({ keys: [] });
     }
     log.error("Failed to list API keys", { error: String(err) });
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }
 
@@ -48,6 +55,9 @@ export async function GET() {
 // POST /api/keys — Generate a new API key
 // ─────────────────────────────────────────────
 export async function POST(req: NextRequest) {
+  const limited = await createLimiter.check(req);
+  if (limited) return limited;
+
   try {
     const { userId } = await auth();
     if (!userId) {
@@ -55,7 +65,8 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json().catch(() => ({}));
-    const label = typeof body.label === "string" ? body.label.slice(0, 100) : null;
+    const label =
+      typeof body.label === "string" ? body.label.slice(0, 100) : null;
 
     // Generate key: sk_sovereign_ + 32 random hex chars
     const raw = `sk_sovereign_${randomBytes(16).toString("hex")}`;
@@ -82,20 +93,29 @@ export async function POST(req: NextRequest) {
     log.info("API key created", { userId, keyId: inserted.id, prefix });
 
     // Return the full key ONLY on creation — user must save it now
-    return NextResponse.json({
-      key: raw,
-      ...inserted,
-    }, { status: 201 });
+    return NextResponse.json(
+      {
+        key: raw,
+        ...inserted,
+      },
+      { status: 201 },
+    );
   } catch (err: unknown) {
     if (isTableMissing(err)) {
       log.warn("api_keys table does not exist — run migration first");
       return NextResponse.json(
-        { error: "API keys table not provisioned. Run the migration to enable this feature." },
+        {
+          error:
+            "API keys table not provisioned. Run the migration to enable this feature.",
+        },
         { status: 503 },
       );
     }
     log.error("Failed to create API key", { error: String(err) });
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }
 
@@ -123,7 +143,10 @@ export async function DELETE(req: NextRequest) {
       .returning({ id: apiKeys.id });
 
     if (result.length === 0) {
-      return NextResponse.json({ error: "Key not found or already revoked" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Key not found or already revoked" },
+        { status: 404 },
+      );
     }
 
     log.info("API key revoked", { userId, keyId });
@@ -133,12 +156,18 @@ export async function DELETE(req: NextRequest) {
     if (isTableMissing(err)) {
       log.warn("api_keys table does not exist — run migration first");
       return NextResponse.json(
-        { error: "API keys table not provisioned. Run the migration to enable this feature." },
+        {
+          error:
+            "API keys table not provisioned. Run the migration to enable this feature.",
+        },
         { status: 503 },
       );
     }
     log.error("Failed to revoke API key", { error: String(err) });
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }
 
