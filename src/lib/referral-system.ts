@@ -52,10 +52,16 @@ const redeemedUsers = new Set<string>();
 // ── Helpers ──
 
 function generateCode(): string {
+  // Crypto-random referral code. `Math.random()` is not cryptographically
+  // strong and is predictable enough that an attacker could enumerate codes
+  // in a tight loop. Use Web Crypto's `getRandomValues` instead so the code
+  // is uniform over the 32-char alphabet and unguessable.
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no ambiguous chars
+  const bytes = new Uint8Array(6);
+  crypto.getRandomValues(bytes);
   let code = "SV-";
   for (let i = 0; i < 6; i++) {
-    code += chars[Math.floor(Math.random() * chars.length)];
+    code += chars[bytes[i] % chars.length];
   }
   return code;
 }

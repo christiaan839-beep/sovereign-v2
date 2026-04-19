@@ -155,7 +155,9 @@ export function saveMemory(
   metadata?: Record<string, unknown>
 ): MemoryEntry {
   const entry: MemoryEntry = {
-    id: `tm_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    // UUID v4 is collision-free and doesn't leak timing info. The `tm_`
+    // prefix preserves the original id-prefix convention for log greppability.
+    id: `tm_${crypto.randomUUID()}`,
     userId,
     agentName,
     input: truncate(input, INPUT_MAX_LENGTH),

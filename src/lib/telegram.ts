@@ -19,11 +19,10 @@ export async function sendTelegram(chatId: string, text: string): Promise<boolea
 }
 
 // ─── Message Formatters ──────────────────────────────────────────────────────
-// TODO: Implement these to match your brand voice.
-// These control exactly what Telegram messages look like when jobs complete.
+// Markdown-formatted Telegram messages for job lifecycle events. Fired from
+// the job runner and the playbook engine. Edit freely to match brand voice.
 
 export function formatJobStarted(goal: string, jobId: string): string {
-  // TODO: implement — called when a job begins processing
   // jobId is a UUID — show the last 8 chars for readability
   const shortId = jobId.slice(-8);
   return [
@@ -36,8 +35,6 @@ export function formatJobStarted(goal: string, jobId: string): string {
 }
 
 export function formatJobDone(goal: string, jobId: string, durationMs: number, agentsUsed: string[]): string {
-  // TODO: implement — called when a job completes successfully
-  // Hint: include the job result summary, duration, and which agents ran
   const shortId = jobId.slice(-8);
   const seconds = (durationMs / 1000).toFixed(1);
   const agentList = agentsUsed.length ? agentsUsed.join(", ") : "auto";
@@ -53,7 +50,6 @@ export function formatJobDone(goal: string, jobId: string, durationMs: number, a
 }
 
 export function formatJobFailed(goal: string, jobId: string, error: string): string {
-  // TODO: implement — called when a job fails
   const shortId = jobId.slice(-8);
   return [
     `❌ *Job failed* \`${shortId}\``,

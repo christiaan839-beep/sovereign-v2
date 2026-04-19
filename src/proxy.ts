@@ -289,7 +289,12 @@ async function sovereignMiddleware(request: NextRequest) {
   let cohort = request.cookies.get('sovereign_cohort')?.value;
 
   if (!cohort) {
-    cohort = Math.random() > 0.5 ? 'variant_alpha' : 'variant_beta';
+    // Crypto-random 50/50 cohort assignment. Once assigned, the cookie
+    // makes it sticky for 30 days so A/B metrics remain attributable to
+    // the same user across sessions.
+    const coin = new Uint8Array(1);
+    crypto.getRandomValues(coin);
+    cohort = coin[0] < 128 ? 'variant_alpha' : 'variant_beta';
   }
 
   url.pathname = `${url.pathname}/${cohort}`;
