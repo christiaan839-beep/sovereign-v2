@@ -25,7 +25,7 @@ const BENTO_ITEMS = [
   },
   {
     title: "39+ Models",
-    desc: "Nemotron, Gemini 3.1, DeepSeek, Maverick, Mythos. Auto-routed per task.",
+    desc: "Claude Sonnet 4.6, Nemotron Ultra, Gemini 3.1, DeepSeek V3, Llama 4 Maverick. Auto-routed per task.",
     icon: Zap,
     color: "cyan",
     size: "small",
