@@ -20,11 +20,18 @@ import { useEffect } from "react";
  */
 export function ScopedError(area: string) {
   const Component = ({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) => {
-    // Best-effort error reporting. If Sentry/Axiom is wired, hook it up here.
+    // Forward to Sentry (if configured) and log locally. Dynamic import
+    // keeps the browser Sentry client out of initial bundles.
     useEffect(() => {
-      if (typeof window !== "undefined") {
-        // eslint-disable-next-line no-console -- intentional diagnostic
-        console.error(`[dashboard:${area}]`, error);
+      // eslint-disable-next-line no-console -- intentional diagnostic
+      console.error(`[dashboard:${area}]`, error);
+      if (typeof window !== "undefined" && process.env.NEXT_PUBLIC_SENTRY_DSN) {
+        import("@sentry/nextjs").then((Sentry) => {
+          Sentry.captureException(error, {
+            tags: { area, surface: "dashboard" },
+            extra: { digest: error.digest },
+          });
+        }).catch(() => { /* Sentry optional */ });
       }
     }, [error]);
 
