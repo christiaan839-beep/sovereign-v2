@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getNimKey } from "@/lib/nvidia";
 import { research_ai } from "@/lib/ai";
 import { createLogger } from "@/lib/logger";
+import { withSelfHeal } from "@/lib/self-heal";
 
 const log = createLogger("blog-gen");
 
@@ -12,8 +13,12 @@ const log = createLogger("blog-gen");
  * 2. NIM writes a 1500-word SEO article
  * 3. Returns publishable HTML with meta tags
  *
- * Now uses createAgentRoute for: jailbreak detection, PII scanning,
+ * Uses createAgentRoute for: jailbreak detection, PII scanning,
  * quality scoring, rate limiting, circuit breaker, audit logging.
+ *
+ * Self-heal: if the model produces insufficient content (<100 chars)
+ * or the NIM provider rejects the request, the diagnoser proposes a
+ * narrower/reframed topic before retrying.
  */
 
 const schema = z.object({
@@ -23,10 +28,14 @@ const schema = z.object({
   prompt: z.string().optional(),
 });
 
+// Self-heal's input-schema check needs a passthrough-safe Zod object since
+// the factory may attach extra fields (confirmed, _meta) to the context.
+const INPUT_SCHEMA = schema.passthrough();
+
 export const POST = createAgentRoute({
   name: "blog-gen",
   schema,
-  handler: async ({ input }) => {
+  handler: withSelfHeal(async ({ input }) => {
     const { topic, keywords, tone } = input as z.infer<typeof schema>;
 
     // Step 1: Research the topic — fail explicitly if unavailable
@@ -110,5 +119,5 @@ Requirements:
         slug: `/blog/${slug}`,
       },
     };
-  },
+  }, { label: "blog-gen", maxRetries: 1, inputSchema: INPUT_SCHEMA }),
 });

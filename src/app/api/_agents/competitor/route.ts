@@ -2,11 +2,25 @@ import { createAgentRoute } from "@/lib/agent-factory";
 import { ai } from "@/lib/ai";
 import { ANTI_SLOP_RULES } from "@/lib/content-engine";
 import { fireUserWebhook } from "@/lib/webhooks";
+import { withSelfHeal } from "@/lib/self-heal";
+import { z } from "zod";
 
 /**
  * Competitor Intel API
  * Deep competitive analysis using AI to identify weaknesses and opportunities.
+ *
+ * Self-heal: if the model returns an object missing `competitorProfile`
+ * or `battlePlan` (happens on ambiguous/too-short inputs), the
+ * diagnoser proposes a clearer business + industry combination.
  */
+
+const INPUT_SCHEMA = z.object({
+  competitorUrl: z.string().max(500).optional(),
+  competitorName: z.string().max(200).optional(),
+  yourBusiness: z.string().max(500).optional(),
+  industry: z.string().max(200).optional(),
+  prompt: z.string().max(5000).optional(),
+}).passthrough();
 
 const COMPETITOR_PROMPT = `You are a competitive intelligence analyst. You identify market vulnerabilities and actionable opportunities.
 
@@ -22,7 +36,7 @@ Use Porter's Five Forces + Blue Ocean Strategy to identify:
 
 export const POST = createAgentRoute({
   name: "competitor",
-  handler: async ({ input }) => {
+  handler: withSelfHeal(async ({ input }) => {
     const { competitorUrl, competitorName, yourBusiness, industry } = input as Record<string, unknown>;
 
     const prompt = `Conduct a deep competitive intelligence analysis:
@@ -67,16 +81,23 @@ Provide a comprehensive analysis in JSON:
 
     const result = await ai(prompt, { system: COMPETITOR_PROMPT, maxTokens: 3000 });
 
-    let parsed;
+    let parsed: Record<string, unknown>;
     try {
       const cleaned = result.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
       parsed = JSON.parse(cleaned);
     } catch {
-      parsed = { analysis: result };
+      throw new Error("Model returned non-JSON competitor analysis");
+    }
+
+    // Self-heal trigger: battlePlan is the highest-signal field for
+    // "did the analysis actually complete". If it's missing we ask the
+    // diagnoser to reformulate rather than returning a partial object.
+    if (!parsed.battlePlan && !parsed.competitorProfile) {
+      throw new Error("Analysis missing required sections (battlePlan/competitorProfile)");
     }
 
     await fireUserWebhook("CompetitorIntel", "Analyzed", { competitorName: competitorName || competitorUrl });
 
     return { success: true, intel: parsed };
-  },
+  }, { label: "competitor", maxRetries: 1, inputSchema: INPUT_SCHEMA }),
 });

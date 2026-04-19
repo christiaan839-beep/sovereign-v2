@@ -3,6 +3,7 @@ import { z } from "zod";
 import { nimChat } from "@/lib/nvidia";
 import { research_ai } from "@/lib/ai";
 import { createLogger } from "@/lib/logger";
+import { withSelfHeal } from "@/lib/self-heal";
 
 const log = createLogger("seo-dominator");
 
@@ -10,7 +11,9 @@ const log = createLogger("seo-dominator");
  * SEO DOMINATOR — Real keyword gap analysis, content velocity
  * scoring, and SERP position intelligence.
  *
- * Now uses createAgentRoute for full safety pipeline.
+ * Uses createAgentRoute for full safety pipeline + self-heal to
+ * recover from malformed model output (e.g. the audit JSON needs
+ * all keys and the model sometimes truncates long lists).
  */
 
 const schema = z.object({
@@ -20,10 +23,12 @@ const schema = z.object({
   prompt: z.string().optional(),
 });
 
+const INPUT_SCHEMA = schema.passthrough();
+
 export const POST = createAgentRoute({
   name: "seo-dominator",
   schema,
-  handler: async ({ input }) => {
+  handler: withSelfHeal(async ({ input }) => {
     const { domain, keywords, mode } = input as z.infer<typeof schema>;
     const start = Date.now();
 
@@ -111,5 +116,5 @@ export const POST = createAgentRoute({
     }
 
     throw new Error("mode must be 'audit' or 'content-plan'");
-  },
+  }, { label: "seo-dominator", maxRetries: 1, inputSchema: INPUT_SCHEMA }),
 });

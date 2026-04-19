@@ -1,12 +1,17 @@
 import { createAgentRoute } from "@/lib/agent-factory";
 import { z } from "zod";
 import { getNimKey } from "@/lib/nvidia";
+import { withSelfHeal } from "@/lib/self-heal";
 
 /**
  * ABM ARTILLERY — Account-Based Marketing automation.
  * 1. Tavily researches the target company
  * 2. NIM writes personalized outreach email
  * 3. Resend fires the email (if target email provided)
+ *
+ * Self-heal: if NIM returns no content (rate-limit passthrough, model
+ * refusal, truncation), the diagnoser proposes a reframed context or
+ * simpler target description.
  */
 
 const schema = z.object({
@@ -16,10 +21,12 @@ const schema = z.object({
   context: z.string().max(5000).optional(),
 });
 
+const INPUT_SCHEMA = schema.passthrough();
+
 export const POST = createAgentRoute({
   name: "abm-artillery",
   schema,
-  handler: async ({ input }) => {
+  handler: withSelfHeal(async ({ input }) => {
     const companyName = input.companyName as string;
     const targetEmail = input.targetEmail as string | undefined;
     const context = (input.context as string) || "";
@@ -77,8 +84,18 @@ export const POST = createAgentRoute({
       }),
     });
 
+    if (!nimRes.ok) {
+      throw new Error(`NIM returned ${nimRes.status} for ABM outreach generation`);
+    }
+
     const nimData = await nimRes.json();
-    const emailBody = nimData?.choices?.[0]?.message?.content || `Personalized outreach for ${companyName}`;
+    const emailBody: string = nimData?.choices?.[0]?.message?.content || "";
+    if (!emailBody || emailBody.length < 40) {
+      // Self-heal trigger: the model didn't actually write a body. A
+      // fallback string like "Personalized outreach for ${company}" is
+      // worse than surfacing the failure — the diagnoser can reframe.
+      throw new Error("ABM outreach email body was empty or too short");
+    }
 
     // Extract subject line
     const subjectMatch = emailBody.match(/Subject:\s*(.+)/i);
@@ -112,5 +129,5 @@ export const POST = createAgentRoute({
       emailSent,
       emailTarget: targetEmail || null,
     };
-  },
+  }, { label: "abm-artillery", maxRetries: 1, inputSchema: INPUT_SCHEMA }),
 });
