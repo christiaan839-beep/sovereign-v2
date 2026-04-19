@@ -108,26 +108,45 @@ class CircuitBreaker {
 // ─── Provider Breakers ───────────────────────────────────────
 // One breaker per AI provider. Shared across all requests.
 
+// NIM threshold raised from 3→5 and reset from 30s→60s per robustness
+// audit: during a brief NIM hiccup, 3 fails in a row would flap
+// open/half-open repeatedly. 5/60s gives real outages clean failover
+// without penalizing transient jitter.
 export const nimBreaker = new CircuitBreaker({
   name: "nvidia-nim",
-  failureThreshold: 3,
-  resetTimeout: 30_000, // 30s
+  failureThreshold: 5,
+  resetTimeout: 60_000, // 60s
 });
 
 export const geminiBreaker = new CircuitBreaker({
   name: "google-gemini",
-  failureThreshold: 3,
-  resetTimeout: 30_000,
+  failureThreshold: 5,
+  resetTimeout: 60_000,
 });
 
 export const claudeBreaker = new CircuitBreaker({
   name: "anthropic-claude",
-  failureThreshold: 3,
-  resetTimeout: 30_000,
+  failureThreshold: 5,
+  resetTimeout: 60_000,
 });
 
 export const groqBreaker = new CircuitBreaker({
   name: "groq",
+  failureThreshold: 5,
+  resetTimeout: 60_000,
+});
+
+// Non-AI service breakers — protect against cascading payment/email failures.
+// Lower threshold (3) because these are critical revenue paths where
+// fail-fast matters more than retry-forgiveness.
+export const stripeBreaker = new CircuitBreaker({
+  name: "stripe",
+  failureThreshold: 3,
+  resetTimeout: 30_000,
+});
+
+export const resendBreaker = new CircuitBreaker({
+  name: "resend",
   failureThreshold: 3,
   resetTimeout: 30_000,
 });
@@ -139,5 +158,7 @@ export function getCircuitStatus() {
     gemini: geminiBreaker.getState(),
     claude: claudeBreaker.getState(),
     groq: groqBreaker.getState(),
+    stripe: stripeBreaker.getState(),
+    resend: resendBreaker.getState(),
   };
 }

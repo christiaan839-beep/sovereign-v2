@@ -9,6 +9,7 @@
  */
 
 import { createLogger } from "@/lib/logger";
+import { resendBreaker } from "@/lib/circuit-breaker";
 
 const log = createLogger("email-service");
 
@@ -214,26 +215,30 @@ export async function sendEmail(
     };
   }
 
-  // Send via Resend API
+  // Send via Resend API — wrapped in a circuit breaker so 3 consecutive
+  // failures open the circuit for 30s, preventing cascading slowness
+  // when Resend has a regional outage.
   try {
-    const response = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      // Resend p99 is ~2s; hard-cap at 8s to prevent Vercel function timeout.
-      signal: AbortSignal.timeout(8_000),
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: options.from || process.env.EMAIL_FROM || "Sovereign Matrix <noreply@sovereign.email>",
-        to,
-        subject,
-        html,
-        ...(options.replyTo ? { reply_to: options.replyTo } : {}),
-        ...(options.tags ? { tags: options.tags.map((t) => ({ name: t })) } : {}),
-        ...(options.headers ? { headers: options.headers } : {}),
+    const response = await resendBreaker.execute(() =>
+      fetch("https://api.resend.com/emails", {
+        method: "POST",
+        // Resend p99 ~2s; hard-cap at 8s to prevent Vercel function timeout.
+        signal: AbortSignal.timeout(8_000),
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: options.from || process.env.EMAIL_FROM || "Sovereign Matrix <noreply@sovereign.email>",
+          to,
+          subject,
+          html,
+          ...(options.replyTo ? { reply_to: options.replyTo } : {}),
+          ...(options.tags ? { tags: options.tags.map((t) => ({ name: t })) } : {}),
+          ...(options.headers ? { headers: options.headers } : {}),
+        }),
       }),
-    });
+    );
 
     if (!response.ok) {
       const errorBody = await response.text();
