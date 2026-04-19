@@ -1,94 +1,380 @@
 "use client";
 
-import React, { useState } from "react";
-import { Calculator, DollarSign, ArrowRight, TrendingUp, Clock, Users, Zap } from "lucide-react";
+import { useState, useMemo } from "react";
+import Link from "next/link";
 
-export default function ROICalculatorPage() {
-  const [leads, setLeads] = useState(100);
-  const [hours, setHours] = useState(40);
-  const [employees, setEmployees] = useState(3);
-  const [avgDeal, setAvgDeal] = useState(5000);
+/**
+ * ROI — Editorial Museum aesthetic.
+ *
+ * User checks which categories of tools their stack includes.
+ * Each category has a typical market price band. We sum the mid-point.
+ * Compared against Sovereign's flat $199/mo.
+ *
+ * Design rules (same as /built-with-claude):
+ *   - Instrument Serif display + Inter Tight body + JetBrains Mono data
+ *   - Cream / charcoal / copper accent (#B5532C)
+ *   - No competitor names. Categories only.
+ *   - Honest math — no "3.4x leads" fabrication.
+ */
 
-  const hourlyRate = 350;
-  const currentCost = employees * hours * 4 * hourlyRate;
-  const sovereignCost = 24997;
-  const savings = currentCost - sovereignCost;
-  const leadIncrease = Math.round(leads * 3.4);
-  const revenueIncrease = Math.round(leadIncrease * 0.15 * avgDeal);
-  const hoursRecovered = Math.round(hours * 0.85);
-  const roi = Math.round(((revenueIncrease + savings) / sovereignCost) * 100);
+interface ToolCategory {
+  id: string;
+  label: string;
+  subcopy: string;
+  lowUsd: number;
+  highUsd: number;
+}
+
+const CATEGORIES: ToolCategory[] = [
+  { id: "crm",        label: "CRM + pipeline",          subcopy: "Contacts, deal stages, forecasting",        lowUsd: 50,  highUsd: 890 },
+  { id: "enrich",     label: "Contact enrichment",      subcopy: "Emails, phone numbers, firmographics",      lowUsd: 75,  highUsd: 200 },
+  { id: "outreach",   label: "Cold email + sequences",  subcopy: "Multi-step outbound, reply tracking",       lowUsd: 80,  highUsd: 250 },
+  { id: "content",    label: "AI writing",              subcopy: "Blog, social, email copywriting",           lowUsd: 40,  highUsd: 120 },
+  { id: "seo",        label: "SEO + keyword research",  subcopy: "Keyword volume, rank tracking, audits",     lowUsd: 120, highUsd: 400 },
+  { id: "automation", label: "Workflow automation",     subcopy: "Multi-step job orchestration",              lowUsd: 25,  highUsd: 100 },
+  { id: "voice",      label: "AI voice / dialer",       subcopy: "Outbound calls, call qualification",        lowUsd: 60,  highUsd: 300 },
+  { id: "intel",      label: "Competitor intelligence", subcopy: "Website changes, pricing, messaging",       lowUsd: 50,  highUsd: 200 },
+  { id: "chat",       label: "AI chat assistant",       subcopy: "ChatGPT Plus, Claude Pro, etc",             lowUsd: 20,  highUsd: 40  },
+  { id: "scraping",   label: "Web data + scraping",     subcopy: "Apify, proxies, LinkedIn scrapers",         lowUsd: 30,  highUsd: 200 },
+];
+
+const SOVEREIGN_MONTHLY_USD = 199;
+
+export default function RoiPage() {
+  const [selected, setSelected] = useState<Set<string>>(
+    // Default-check the most common five so visitors see math immediately
+    new Set(["crm", "enrich", "outreach", "content", "seo"]),
+  );
+
+  const totals = useMemo(() => {
+    let low = 0;
+    let high = 0;
+    let mid = 0;
+    for (const cat of CATEGORIES) {
+      if (selected.has(cat.id)) {
+        low += cat.lowUsd;
+        high += cat.highUsd;
+        mid += Math.round((cat.lowUsd + cat.highUsd) / 2);
+      }
+    }
+    const monthlySavings = Math.max(0, mid - SOVEREIGN_MONTHLY_USD);
+    const annualSavings = monthlySavings * 12;
+    const toolsCount = selected.size;
+    return { low, high, mid, monthlySavings, annualSavings, toolsCount };
+  }, [selected]);
+
+  const toggle = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const usd = (n: number) => `$${n.toLocaleString("en-US")}`;
 
   return (
-    <main className="min-h-screen bg-black text-white p-6 md:p-8 font-mono">
-      <div className="max-w-4xl mx-auto space-y-8">
-        <header className="text-center space-y-4 pb-8 border-b border-neutral-800">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#00ff66]/10 border border-[#00ff66]/30 text-[#00ff66] text-[10px] font-bold uppercase tracking-widest">
-            <Calculator className="w-3 h-3" /> ROI Calculator
-          </div>
-          <h1 className="text-3xl font-black uppercase tracking-[0.15em]">How Much Will You <span className="text-[#00ff66]">Save</span>?</h1>
-          <p className="text-neutral-500 text-sm max-w-lg mx-auto">Enter your current metrics. See exactly how Sovereign Matrix impacts your bottom line.</p>
-        </header>
+    <div className="editorial-light min-h-screen">
+      <div className="ed-page py-12 md:py-20">
+        <div className="ed-max">
 
-        <div className="grid md:grid-cols-2 gap-8">
-          <div className="space-y-6">
-            <h2 className="text-sm font-bold uppercase tracking-widest text-neutral-400 mb-4">Your Current Operations</h2>
-            {[
-              { label: "Monthly leads generated", value: leads, set: setLeads, max: 1000, icon: Users },
-              { label: "Hours/week on marketing", value: hours, set: setHours, max: 80, icon: Clock },
-              { label: "Marketing team size", value: employees, set: setEmployees, max: 20, icon: Users },
-              { label: "Average deal value (ZAR)", value: avgDeal, set: setAvgDeal, max: 100000, icon: DollarSign },
-            ].map(item => (
-              <div key={item.label} className="bg-neutral-950 border border-neutral-800 p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs text-neutral-400 flex items-center gap-2">
-                    <item.icon className="w-3 h-3" /> {item.label}
-                  </label>
-                  <span className="text-sm font-black text-white">{item.value.toLocaleString()}</span>
-                </div>
-                <input type="range" min={1} max={item.max} value={item.value} onChange={e => item.set(Number(e.target.value))} className="w-full accent-[#00B7FF] h-1" />
-              </div>
-            ))}
+          {/* Masthead */}
+          <div className="flex items-baseline justify-between mb-10 ed-fade-in">
+            <Link href="/" className="ed-label hover:ed-copper transition-colors">
+              ← Sovereign Matrix
+            </Link>
+            <p className="ed-caption">ROI Worksheet · April 2026</p>
           </div>
 
-          <div className="space-y-4">
-            <h2 className="text-sm font-bold uppercase tracking-widest text-neutral-400 mb-4">With Sovereign Matrix</h2>
-            <div className="bg-[#00ff66]/5 border border-[#00ff66]/20 p-6 text-center">
-              <p className="text-[10px] text-[#00ff66] uppercase tracking-widest mb-2">Monthly ROI</p>
-              <p className="text-4xl md:text-5xl font-black text-[#00ff66]">{roi}%</p>
+          {/* Title */}
+          <header className="ed-grid-12 mb-14">
+            <div className="col-span-12 md:col-span-9">
+              <p className="ed-label mb-6 ed-enter ed-d-1">Worksheet</p>
+              <h1
+                className="ed-display ed-enter ed-d-2"
+                style={{
+                  fontSize: "clamp(48px, 9vw, 112px)",
+                  lineHeight: 0.9,
+                  letterSpacing: "-0.025em",
+                }}
+              >
+                What your stack{" "}
+                <em className="ed-display-italic ed-copper">actually</em> costs.
+              </h1>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-neutral-950 border border-neutral-800 p-4 text-center">
-                <TrendingUp className="w-4 h-4 text-[#00B7FF] mx-auto mb-2" />
-                <p className="text-lg font-black text-[#00B7FF]">{leadIncrease.toLocaleString()}</p>
-                <p className="text-[8px] text-neutral-500 uppercase tracking-widest">Leads/Month</p>
-              </div>
-              <div className="bg-neutral-950 border border-neutral-800 p-4 text-center">
-                <DollarSign className="w-4 h-4 text-[#00ff66] mx-auto mb-2" />
-                <p className="text-lg font-black text-[#00ff66]">R{(savings > 0 ? savings : 0).toLocaleString()}</p>
-                <p className="text-[8px] text-neutral-500 uppercase tracking-widest">Monthly Savings</p>
-              </div>
-              <div className="bg-neutral-950 border border-neutral-800 p-4 text-center">
-                <Clock className="w-4 h-4 text-[#A855F7] mx-auto mb-2" />
-                <p className="text-lg font-black text-[#A855F7]">{hoursRecovered}h</p>
-                <p className="text-[8px] text-neutral-500 uppercase tracking-widest">Hours Recovered/Week</p>
-              </div>
-              <div className="bg-neutral-950 border border-neutral-800 p-4 text-center">
-                <Zap className="w-4 h-4 text-[#FF6B00] mx-auto mb-2" />
-                <p className="text-lg font-black text-[#FF6B00]">R{revenueIncrease.toLocaleString()}</p>
-                <p className="text-[8px] text-neutral-500 uppercase tracking-widest">Added Revenue/Month</p>
-              </div>
+            <aside
+              className="col-span-12 md:col-span-3 md:pl-6 md:border-l mt-10 md:mt-0 pt-4 md:pt-2 ed-enter ed-d-3"
+              style={{ borderColor: "var(--ed-rule)" }}
+            >
+              <p className="ed-label mb-4">Method</p>
+              <p className="ed-body text-[13px]" style={{ color: "var(--ed-ink-soft)" }}>
+                Check the categories of tools in your current stack. We show
+                typical market price bands and the mid-point. Sovereign Matrix
+                is $199/mo flat on the Node tier — one line.
+              </p>
+            </aside>
+          </header>
+
+          {/* Dek */}
+          <div className="ed-grid-12 mb-16">
+            <div className="col-span-12 md:col-span-8 md:col-start-2 ed-enter ed-d-4">
+              <p
+                className="ed-display"
+                style={{
+                  fontSize: "clamp(20px, 2.4vw, 30px)",
+                  lineHeight: 1.35,
+                  color: "var(--ed-ink-soft)",
+                }}
+              >
+                The honest comparison isn&apos;t feature-by-feature — it&apos;s{" "}
+                <em className="ed-display-italic ed-copper">how much you&apos;re already paying</em>{" "}
+                for the same capabilities spread across eight invoices.
+              </p>
             </div>
-            <div className="bg-neutral-950 border border-neutral-800 p-4 space-y-2 text-xs">
-              <div className="flex justify-between text-neutral-500"><span>Current monthly cost</span><span className="text-red-400 font-bold">R{currentCost.toLocaleString()}</span></div>
-              <div className="flex justify-between text-neutral-500"><span>Sovereign Matrix cost</span><span className="text-[#00ff66] font-bold">R{sovereignCost.toLocaleString()}</span></div>
-              <div className="border-t border-neutral-800 pt-2 flex justify-between font-bold text-white"><span>Net monthly impact</span><span className="text-[#00ff66]">+R{(revenueIncrease + (savings > 0 ? savings : 0)).toLocaleString()}</span></div>
-            </div>
-            <a href="/pricing" className="block w-full py-4 bg-white text-black font-bold text-sm uppercase tracking-widest text-center hover:bg-neutral-200 transition-gpu">
-              View Plans <ArrowRight className="w-4 h-4 inline ml-2" />
-            </a>
           </div>
+
+          {/* Live total — big number */}
+          <section
+            className="ed-grid-12 py-10 border-y mb-14 ed-enter ed-d-5"
+            style={{ borderColor: "var(--ed-rule)" }}
+          >
+            <div className="col-span-12 md:col-span-4">
+              <p className="ed-label">Your stack</p>
+              <p
+                className="ed-display tabular-nums"
+                style={{ fontSize: "clamp(36px, 5vw, 64px)", lineHeight: 0.95 }}
+              >
+                {totals.toolsCount ? usd(totals.mid) : "—"}
+                <span className="ed-caption block mt-2">/month, mid-point</span>
+              </p>
+              {totals.toolsCount ? (
+                <p className="ed-caption mt-1">
+                  range: {usd(totals.low)}–{usd(totals.high)}
+                </p>
+              ) : null}
+            </div>
+            <div className="col-span-12 md:col-span-4 mt-6 md:mt-0">
+              <p className="ed-label">Sovereign Matrix</p>
+              <p
+                className="ed-display tabular-nums"
+                style={{ fontSize: "clamp(36px, 5vw, 64px)", lineHeight: 0.95 }}
+              >
+                {usd(SOVEREIGN_MONTHLY_USD)}
+                <span className="ed-caption block mt-2">/month, one line</span>
+              </p>
+              <p className="ed-caption mt-1">Node tier · unlimited runs</p>
+            </div>
+            <div className="col-span-12 md:col-span-4 mt-6 md:mt-0">
+              <p className="ed-label ed-copper">Annual savings</p>
+              <p
+                className="ed-display tabular-nums ed-copper"
+                style={{ fontSize: "clamp(36px, 5vw, 64px)", lineHeight: 0.95 }}
+              >
+                {totals.monthlySavings > 0 ? usd(totals.annualSavings) : "$0"}
+              </p>
+              <p className="ed-caption mt-1" style={{ color: "var(--ed-copper)" }}>
+                across {totals.toolsCount} tool {totals.toolsCount === 1 ? "category" : "categories"}
+              </p>
+            </div>
+          </section>
+
+          {/* Category picker */}
+          <section className="mb-20">
+            <div className="ed-grid-12 mb-8">
+              <div className="col-span-12 md:col-span-3">
+                <p className="ed-label">Chapter I</p>
+              </div>
+              <div className="col-span-12 md:col-span-9">
+                <h2
+                  className="ed-display"
+                  style={{
+                    fontSize: "clamp(32px, 4.5vw, 54px)",
+                    lineHeight: 0.95,
+                    letterSpacing: "-0.015em",
+                  }}
+                >
+                  Check the tools you <em className="ed-display-italic">actually</em> use.
+                </h2>
+              </div>
+            </div>
+
+            <div
+              className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-0 border-t"
+              style={{ borderColor: "var(--ed-rule-soft)" }}
+            >
+              {CATEGORIES.map((cat, i) => {
+                const isOn = selected.has(cat.id);
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => toggle(cat.id)}
+                    className="flex items-start gap-4 py-5 border-b text-left transition-all group"
+                    style={{ borderColor: "var(--ed-rule-soft)" }}
+                  >
+                    <span
+                      className="flex-shrink-0 w-5 h-5 mt-1 flex items-center justify-center rounded-full border-2 transition-all"
+                      style={{
+                        borderColor: isOn ? "var(--ed-copper)" : "var(--ed-rule)",
+                        background: isOn ? "var(--ed-copper)" : "transparent",
+                      }}
+                    >
+                      {isOn && (
+                        <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                          <path
+                            d="M1 4L4 7L9 1"
+                            stroke="var(--ed-bg)"
+                            strokeWidth="1.8"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      )}
+                    </span>
+                    <div className="flex-1">
+                      <div className="flex items-baseline justify-between gap-3 flex-wrap">
+                        <div className="flex items-baseline gap-3">
+                          <span className="ed-mono text-[10px]" style={{ color: "var(--ed-ink-dim)" }}>
+                            {String(i + 1).padStart(2, "0")}
+                          </span>
+                          <span
+                            className="ed-display text-[22px]"
+                            style={{
+                              color: isOn ? "var(--ed-ink)" : "var(--ed-ink-soft)",
+                              lineHeight: 1.1,
+                            }}
+                          >
+                            {cat.label}
+                          </span>
+                        </div>
+                        <span
+                          className="ed-mono text-[11px] tabular-nums"
+                          style={{ color: isOn ? "var(--ed-copper)" : "var(--ed-ink-dim)" }}
+                        >
+                          ${cat.lowUsd}–${cat.highUsd}/mo
+                        </span>
+                      </div>
+                      <p
+                        className="ed-body text-[13px] mt-1"
+                        style={{ color: "var(--ed-ink-dim)" }}
+                      >
+                        {cat.subcopy}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            <p className="ed-caption mt-6">
+              Price bands are approximate market mid-points sourced from
+              publicly-advertised entry-tier plans in April 2026. Actual
+              savings depend on your tier selection and usage volume.
+            </p>
+          </section>
+
+          {/* Pull quote */}
+          <section className="my-24 ed-grid-12">
+            <div className="col-span-12 md:col-span-10 md:col-start-2">
+              <div
+                className="ed-mono ed-copper text-[60px] mb-4"
+                style={{ lineHeight: 0.5 }}
+              >
+                &ldquo;
+              </div>
+              <blockquote
+                className="ed-display-italic"
+                style={{
+                  fontSize: "clamp(26px, 3.5vw, 44px)",
+                  lineHeight: 1.2,
+                  letterSpacing: "-0.01em",
+                  color: "var(--ed-ink)",
+                }}
+              >
+                The cheapest tool isn&apos;t the one with the lowest monthly price.
+                It&apos;s the one that replaces <em className="not-italic ed-copper">eight</em> others.
+              </blockquote>
+              <div className="flex items-center gap-4 mt-8">
+                <div
+                  className="ed-rule w-16"
+                  style={{ background: "var(--ed-copper)" }}
+                />
+                <p className="ed-label">Operating principle · §1</p>
+              </div>
+            </div>
+          </section>
+
+          {/* CTA */}
+          <section
+            className="my-20 border-y py-16 ed-grid-12"
+            style={{ borderColor: "var(--ed-rule)" }}
+          >
+            <div className="col-span-12 md:col-span-8 md:col-start-3 text-center">
+              <p className="ed-label mb-5">Ready to replace the stack</p>
+              <h2
+                className="ed-display mb-8"
+                style={{
+                  fontSize: "clamp(32px, 4vw, 50px)",
+                  lineHeight: 0.95,
+                  letterSpacing: "-0.015em",
+                }}
+              >
+                Start for <em className="ed-display-italic ed-copper">free.</em>
+                <br />
+                No credit card. No trial countdown.
+              </h2>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <Link
+                  href="/signup"
+                  className="ed-display-italic inline-block text-[22px] ed-copper border-b-2 pb-1 transition-all hover:pl-2"
+                  style={{ borderColor: "var(--ed-copper)" }}
+                >
+                  Start free →
+                </Link>
+                <span className="ed-caption hidden sm:inline">·</span>
+                <Link
+                  href="/pricing"
+                  className="ed-body text-[15px] hover:ed-copper transition-colors"
+                  style={{ color: "var(--ed-ink-soft)" }}
+                >
+                  See all five tiers
+                </Link>
+              </div>
+            </div>
+          </section>
+
+          {/* Colophon */}
+          <footer
+            className="border-t pt-8 pb-4 ed-grid-12"
+            style={{ borderColor: "var(--ed-rule)" }}
+          >
+            <div className="col-span-12 md:col-span-6">
+              <p className="ed-label mb-3">Colophon</p>
+              <p
+                className="ed-body text-[13px]"
+                style={{ color: "var(--ed-ink-soft)", lineHeight: 1.7 }}
+              >
+                Price bands are public entry-tier averages. The mid-point is the
+                arithmetic mean of low and high. Sovereign Matrix monthly is the
+                published Node-tier price. No affiliate relationships. No
+                competitor names; we describe categories, not brands.
+              </p>
+            </div>
+            <div className="col-span-12 md:col-span-6 md:text-right mt-8 md:mt-0">
+              <p className="ed-caption">
+                Sovereign Matrix · Cape Town · 2026
+              </p>
+              <p className="ed-caption mt-1">
+                <Link href="/" className="hover:ed-copper">Home</Link>
+                {" · "}
+                <Link href="/pricing" className="hover:ed-copper">Pricing</Link>
+                {" · "}
+                <Link href="/built-with-claude" className="hover:ed-copper">Built with Claude</Link>
+              </p>
+            </div>
+          </footer>
         </div>
       </div>
-    </main>
+    </div>
   );
 }
