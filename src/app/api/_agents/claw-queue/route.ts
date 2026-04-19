@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import { createAgentRoute } from "@/lib/agent-factory";
 import { NextResponse } from "next/server";
 import { createLogger } from "@/lib/logger";
@@ -145,7 +146,7 @@ async function _postHandler(request: Request) {
   try {
     const { userId } = await auth();
     if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const body = await req.json();
+    const body = await request.json();
 
     // Trigger processing
     if (body.action === "process") {

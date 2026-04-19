@@ -9,9 +9,12 @@ const META_ACCESS_TOKEN = process.env.META_ACCESS_TOKEN; // For Instagram Graph 
 export const POST = createAgentRoute({
   name: "closer",
   handler: async ({ input, email, userId }) => {
+    // `input` is the parsed body — the factory already called req.json()
+    const data = input as {
+      entry?: Array<{ messaging?: Array<{ message?: { text?: string }; sender?: { id?: string } }> }>;
+      message?: string;
+    };
 
-    const data = await req.json();
-    
     // Ingest Meta Graph API / IG Webhook format (or raw JSON for testing)
     const userMessage = data?.entry?.[0]?.messaging?.[0]?.message?.text || data.message;
     const senderId = data?.entry?.[0]?.messaging?.[0]?.sender?.id || "test_lead_id";

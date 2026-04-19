@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import { createAgentRoute } from "@/lib/agent-factory";
 import { NextResponse } from "next/server";
 
@@ -63,7 +64,7 @@ async function _postHandler(request: Request) {
   try {
     const { userId } = await auth();
     if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const { host = "127.0.0.1", port = 18789 } = await req.json();
+    const { host = "127.0.0.1", port = 18789 } = await request.json();
 
     // Validate connection to user's NemoClaw
     const healthUrl = `http://${host}:${port}/health`;

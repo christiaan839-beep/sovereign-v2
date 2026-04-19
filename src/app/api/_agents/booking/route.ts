@@ -1,3 +1,4 @@
+import { currentUser } from "@clerk/nextjs/server";
 import { createAgentRoute } from "@/lib/agent-factory";
 import { NextResponse } from "next/server";
 import { db } from "@/db";
@@ -69,7 +70,7 @@ async function _postHandler(request: Request) {
   }
 
   try {
-    const body = await req.json();
+    const body = await request.json();
     const { action } = body;
 
     if (action === "qualify") {

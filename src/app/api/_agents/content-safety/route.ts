@@ -1,5 +1,4 @@
 import { createAgentRoute } from "@/lib/agent-factory";
-import { NextResponse } from "next/server";
 
 /**
  * CONTENT SAFETY GUARDRAILS — Uses nemotron-content-safety-reasoning-4b
@@ -44,9 +43,9 @@ export const POST = createAgentRoute({
     try {
       const match = raw.match(/\{[\s\S]*\}/);
       const parsed = match ? JSON.parse(match[0]) : { safe: true, category: "none", confidence: 0.5 };
-      return NextResponse.json(parsed);
+      return parsed;
     } catch {
-      return ({ safe: true, category: "parse_error", confidence: 0, explanation: raw.slice(0, 200) });
+      return { safe: true, category: "parse_error", confidence: 0, explanation: raw.slice(0, 200) };
     }
   
   },

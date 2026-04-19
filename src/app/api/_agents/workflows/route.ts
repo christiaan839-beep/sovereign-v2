@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import { createAgentRoute } from "@/lib/agent-factory";
 import { NextResponse } from "next/server";
 
@@ -10,11 +11,11 @@ async function _postHandler(request: Request) {
   try {
     const { userId } = await auth();
     if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const { workflow, target, count = 5, topic } = await req.json();
+    const { workflow, target, count = 5, topic } = await request.json();
     if (!workflow) return NextResponse.json({ error: "Missing `workflow`." }, { status: 400 });
 
     const nimKey = process.env.NVIDIA_NIM_API_KEY;
-    const baseUrl = req.url.replace(/\/api\/agents\/workflows$/, "");
+    const baseUrl = request.url.replace(/\/api\/agents\/workflows$/, "");
 
     const results: Record<string, unknown> = {};
     const steps: string[] = [];

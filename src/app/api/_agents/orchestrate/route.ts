@@ -15,7 +15,7 @@ export async function GET() {
 async function _postHandler(request: Request) {
   const auth = await requireAuth(); if (auth.error) return auth.error;
   try {
-    const body = await req.json();
+    const body = await request.json();
     const { pipelineId, params } = body;
 
     if (!pipelineId) {
