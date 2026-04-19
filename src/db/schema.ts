@@ -298,17 +298,32 @@ export const subscriptions = pgTable("subscriptions", {
 ]);
 
 /**
- * Stripe webhook deduplication. Stripe delivers each event at-least-once
- * (retries over ~3 days on 5xx). We INSERT event.id as the first action
- * on receiving a webhook; if the unique-constraint blocks the insert, we
- * skip processing and return 200 so Stripe stops retrying. Prevents
- * double-applied checkout-completions, duplicate welcome emails, and
- * race conditions between subscription.updated/deleted events.
+ * Stripe webhook deduplication with TWO-STATE processing (received → completed).
+ *
+ * Stripe delivers events at-least-once. A single-state dedup (INSERT-and-skip-
+ * on-conflict) has a race: if we insert at t=0 then crash at t=1ms before
+ * processing, the Stripe retry at t=5s hits the duplicate path and silently
+ * skips a legitimate unprocessed event.
+ *
+ * Two-state fix:
+ *   1. INSERT with status='received' as the first action.
+ *   2. Run the handler switch.
+ *   3. UPDATE status='completed' on success.
+ *
+ * On duplicate-insert: check status.
+ *   - If 'completed' → return 200, skip (real dup, already handled).
+ *   - If 'received' AND received_at > 5 min ago → re-process (stale crash).
+ *   - If 'received' AND received_at ≤ 5 min ago → return 202 (concurrent
+ *     processing; Stripe will retry and we'll pick it up cleanly).
  */
 export const stripeEvents = pgTable("stripe_events", {
-  eventId: text("event_id").primaryKey(),           // Stripe event.id — globally unique
-  type: text("type").notNull(),                     // e.g. "checkout.session.completed"
-  processedAt: timestamp("processed_at").defaultNow().notNull(),
+  eventId: text("event_id").primaryKey(),
+  type: text("type").notNull(),
+  status: text("status").notNull().default("received"), // 'received' | 'completed' | 'failed'
+  receivedAt: timestamp("received_at").defaultNow().notNull(),
+  completedAt: timestamp("completed_at"),
+  /** Serialized error from the handler when status='failed'. */
+  errorMessage: text("error_message"),
 });
 
 /**

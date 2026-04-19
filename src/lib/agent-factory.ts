@@ -131,10 +131,40 @@ export function createAgentRoute(config: AgentConfig) {
       // ─── Auth & Rate Limiting ───
 
       if (!config.public) {
-        const guard = await guardRoute();
-        if (!guard.authorized) return guard.response;
-        email = guard.email;
-        userId = guard.userId;
+        // ── Cron / internal-service bypass ──
+        // When the scheduler, Stripe webhook, or other trusted backend
+        // calls an agent, there's no Clerk session. We authorize the
+        // request via a shared-secret header instead. The internal caller
+        // MUST provide BOTH headers — the secret alone doesn't identify
+        // who the agent is running for, the user-id alone isn't trusted.
+        const internalUserId = req.headers.get("x-sovereign-user-id");
+        const internalSecret = req.headers.get("x-sovereign-internal-secret");
+        const cronSecret = process.env.CRON_SECRET;
+
+        if (internalSecret && cronSecret && internalUserId) {
+          // Constant-time compare via hash+compare (same pattern as
+          // cron-auth.ts). Never accept if CRON_SECRET is unset.
+          if (cronSecret.length >= 16) {
+            const { createHash, timingSafeEqual } = await import("node:crypto");
+            const a = createHash("sha256").update(internalSecret).digest();
+            const b = createHash("sha256").update(cronSecret).digest();
+            if (timingSafeEqual(a, b)) {
+              // Also require a well-formed userId
+              if (/^[A-Za-z0-9_-]+$/.test(internalUserId)) {
+                userId = internalUserId;
+                email = ""; // not needed on this path
+              }
+            }
+          }
+        }
+
+        // Fall through to Clerk auth if no valid internal bypass
+        if (!userId) {
+          const guard = await guardRoute();
+          if (!guard.authorized) return guard.response;
+          email = guard.email;
+          userId = guard.userId;
+        }
       }
 
       // ─── Free Tier Usage Check ───

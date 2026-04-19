@@ -50,28 +50,61 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
-  // ─── Idempotency gate ───────────────────────────────────────────────
-  // INSERT event.id into stripe_events as the first side-effect. If the
-  // primary-key conflict fires, Stripe is retrying an event we already
-  // handled — skip processing but return 200 so retries stop.
+  // ─── Two-state idempotency (received → completed) ──────────────────
+  // Single-state dedup has a race: insert-then-crash would cause a retry
+  // to hit the duplicate path and silently skip the unprocessed event.
+  // We INSERT with status='received' first, process, then UPDATE to
+  // status='completed'. A duplicate-insert checks status to decide
+  // whether to skip or re-process.
   //
-  // Missing-table (42P01) during the pre-migration bootstrap window
-  // falls through to processing (fail-open for dev safety).
+  // Stale-received window: 5 minutes. If we see a "received" row older
+  // than that, we assume the original attempt crashed and re-process.
+  const STALE_RECEIVED_MS = 5 * 60 * 1000;
+
+  let isDuplicate = false;
   try {
-    await db.insert(stripeEvents).values({ eventId: event.id, type: event.type });
+    await db.insert(stripeEvents).values({
+      eventId: event.id,
+      type: event.type,
+      status: "received",
+    });
   } catch (err) {
     const code = (err as { code?: string })?.code;
     if (code === "23505") {
-      // unique_violation — already processed
-      log.info("Duplicate Stripe event ignored", { eventId: event.id, type: event.type });
-      return NextResponse.json({ received: true, duplicate: true });
-    }
-    if (code === "42P01") {
+      // Unique-violation — event already seen. Look up its status.
+      isDuplicate = true;
+      const [existing] = await db
+        .select({ status: stripeEvents.status, receivedAt: stripeEvents.receivedAt })
+        .from(stripeEvents)
+        .where(eq(stripeEvents.eventId, event.id))
+        .limit(1);
+
+      if (!existing || existing.status === "completed") {
+        log.info("Duplicate Stripe event — already completed", { eventId: event.id });
+        return NextResponse.json({ received: true, duplicate: true });
+      }
+
+      const receivedAt = existing.receivedAt.getTime();
+      if (Date.now() - receivedAt < STALE_RECEIVED_MS) {
+        // Another retry is actively processing (or processing crashed
+        // moments ago). Return 202 — Stripe will retry in 5-10s and
+        // the stale-received window will have elapsed.
+        log.info("Stripe event in-flight — deferring", { eventId: event.id });
+        return NextResponse.json({ received: true, deferred: true }, { status: 202 });
+      }
+
+      // Stale 'received' row → re-process. The original attempt crashed.
+      log.warn("Re-processing stale received Stripe event", {
+        eventId: event.id,
+        receivedAgoMs: Date.now() - receivedAt,
+      });
+      // Don't re-insert; fall through to the handler.
+    } else if (code === "42P01") {
       log.warn("stripe_events table missing — run migration 0004", { eventId: event.id });
-      // Continue processing so the product isn't broken in bootstrap
+      // Continue processing; bootstrap mode.
     } else {
       log.error("Failed to record Stripe event", { eventId: event.id, error: (err as Error).message });
-      // Don't block — we'd rather risk a dupe than lose a payment
+      // Don't block — risk a dup over losing a payment.
     }
   }
 
@@ -146,9 +179,28 @@ export async function POST(req: Request) {
       }
     }
   } catch (err) {
-    log.error("Webhook handler error", { eventType: event.type, error: (err as Error).message });
+    // Handler failed mid-processing. Mark the row 'failed' so the next
+    // retry treats it as a fresh attempt (after the stale window).
+    const message = (err as Error).message;
+    log.error("Webhook handler error", { eventType: event.type, error: message });
+    try {
+      await db.update(stripeEvents)
+        .set({ status: "failed", errorMessage: message })
+        .where(eq(stripeEvents.eventId, event.id));
+    } catch {
+      // Best-effort; if the table is missing we're already in bootstrap.
+    }
     return NextResponse.json({ error: "Webhook handler failed" }, { status: 500 });
   }
 
-  return NextResponse.json({ received: true });
+  // Mark completed on success. Stripe retries stop once we return 200.
+  try {
+    await db.update(stripeEvents)
+      .set({ status: "completed", completedAt: new Date() })
+      .where(eq(stripeEvents.eventId, event.id));
+  } catch {
+    // Bootstrap mode or concurrent race — safe to ignore.
+  }
+
+  return NextResponse.json({ received: true, duplicate: isDuplicate });
 }

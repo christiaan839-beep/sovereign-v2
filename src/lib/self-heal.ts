@@ -1,3 +1,4 @@
+import { z, type ZodType } from "zod";
 import { createLogger } from "@/lib/logger";
 import { nimChat } from "@/lib/nvidia";
 import { NIM_MODELS } from "@/lib/nvidia";
@@ -60,6 +61,12 @@ export interface SelfHealOptions {
   label?: string;
   /** Override the diagnosis model (default: Nemotron Ultra via NIM). */
   diagnoseModel?: string;
+  /**
+   * Optional Zod schema for the agent's input. If supplied, the
+   * diagnoser's proposed-input is validated against it before merging.
+   * Prevents a misbehaving diagnoser from corrupting the retry input.
+   */
+  inputSchema?: ZodType<Record<string, unknown>>;
 }
 
 /** Errors we won't try to heal from — re-throw immediately. */
@@ -174,6 +181,21 @@ export function withSelfHeal<Ctx extends { input: Record<string, unknown> }, R>(
 
         if (!proposal) break;
 
+        // Validate the proposed input against the caller's Zod schema (if
+        // supplied). A misbehaving diagnoser that returns the wrong shape
+        // would otherwise corrupt the retry.
+        const merged = { ...currentCtx.input, ...proposal.modifiedInput };
+        if (options.inputSchema) {
+          const check = options.inputSchema.safeParse(merged);
+          if (!check.success) {
+            log.warn("self-heal — diagnoser proposal failed schema validation; stopping", {
+              label: options.label,
+              error: check.error.message.slice(0, 200),
+            });
+            break;
+          }
+        }
+
         attempts.push({
           attempt: attempt + 1,
           error: lastError.message,
@@ -181,12 +203,7 @@ export function withSelfHeal<Ctx extends { input: Record<string, unknown> }, R>(
           modifiedInput: proposal.modifiedInput,
         });
 
-        // Merge the proposed input over the original. Explicit override
-        // semantics — we don't trust the diagnoser to drop keys.
-        currentCtx = {
-          ...currentCtx,
-          input: { ...currentCtx.input, ...proposal.modifiedInput },
-        };
+        currentCtx = { ...currentCtx, input: merged };
       }
     }
 

@@ -45,13 +45,21 @@ async function fireOneSchedule(
   const startedAt = new Date();
 
   try {
+    // Internal-service auth per src/lib/agent-factory.ts: both the secret
+    // AND the user-id must match for the request to bypass Clerk. If
+    // CRON_SECRET is unset the scheduler effectively disables itself,
+    // which is the correct fail-closed behavior.
+    const cronSecret = process.env.CRON_SECRET;
+    if (!cronSecret) {
+      return "errored";
+    }
+
     const res = await fetch(`${baseUrl}/api/agents/${encodeURIComponent(row.agentType)}`, {
       method: "POST",
       signal: AbortSignal.timeout(45_000),
       headers: {
         "Content-Type": "application/json",
-        "X-Sovereign-Internal": "cron-scheduler",
-        // Pass the owning user so tenant-scoped agents resolve correctly.
+        "X-Sovereign-Internal-Secret": cronSecret,
         "X-Sovereign-User-Id": row.userId,
       },
       body: JSON.stringify({ prompt: row.prompt, confirmed: true, _scheduledRunId: row.id }),
@@ -118,10 +126,24 @@ export async function GET(req: Request) {
       const batch = candidates.slice(i, i + BATCH);
       const outcomes = await Promise.all(
         batch.map(async (row) => {
-          // If the row has a stored cron expression, require the minute match.
-          // If it doesn't parse, treat nextRunAt as authoritative.
+          // Two-gate matching decision matrix:
+          //
+          //   cronMatches  nextRunAt_recent  action
+          //   ─────────────────────────────────────────────────────
+          //       true           -           fire
+          //       false        true          skip  (exact-minute wait)
+          //       false        false         fire  (stale-catchup)
+          //
+          // "recent" = nextRunAt is within the last 60s. If we just
+          // fired but the minute changed, cron won't re-match until
+          // the next scheduled interval — we should WAIT, not re-fire.
+          // If nextRunAt is much older (minutes+) we assume the
+          // scheduler missed ticks and catch up exactly once.
           const cronMatches = row.schedule ? matches(row.schedule, now) : true;
-          if (!cronMatches && row.nextRunAt && row.nextRunAt > new Date(now.getTime() - 60_000)) {
+          const nextRunAtRecent =
+            !!row.nextRunAt && row.nextRunAt > new Date(now.getTime() - 60_000);
+
+          if (!cronMatches && nextRunAtRecent) {
             return "skipped" as const;
           }
           return fireOneSchedule(row, baseUrl);

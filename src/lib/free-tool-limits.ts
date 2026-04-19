@@ -38,16 +38,11 @@ type UpstashLimiter = {
 
 /* ─── Upstash lazy singletons ──────────────────────────────────────── */
 
-let _email: UpstashLimiter | null | undefined;
-let _ip: UpstashLimiter | null | undefined;
-let _ceiling: UpstashLimiter | null | undefined;
+// Module-load init eliminates the race where two concurrent first
+// requests would each construct Upstash clients. The promise resolves
+// once; all callers await the same settled value.
 
-async function getLimiter(
-  cached: UpstashLimiter | null | undefined,
-  prefix: string,
-  limit: number,
-): Promise<UpstashLimiter | null> {
-  if (cached !== undefined) return cached;
+async function buildLimiter(prefix: string, limit: number): Promise<UpstashLimiter | null> {
   if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) return null;
   try {
     const { Redis } = await import("@upstash/redis");
@@ -70,6 +65,13 @@ async function getLimiter(
     return null;
   }
 }
+
+const limitersReady: Promise<{ email: UpstashLimiter | null; ip: UpstashLimiter | null; ceiling: UpstashLimiter | null }> =
+  Promise.all([
+    buildLimiter("sovereign:free:email", EMAIL_LIMIT),
+    buildLimiter("sovereign:free:ip", IP_LIMIT),
+    buildLimiter("sovereign:free:ceil", IP_CEILING),
+  ]).then(([email, ip, ceiling]) => ({ email, ip, ceiling }));
 
 /* ─── In-memory fallback — identical semantics at small scale ──────── */
 
@@ -97,15 +99,16 @@ function memSweep(map: Map<string, Window>, now: number) {
 /* ─── Public API ───────────────────────────────────────────────────── */
 
 async function check(
-  prefix: string,
+  prefix: "sovereign:free:email" | "sovereign:free:ip" | "sovereign:free:ceil",
   key: string,
   limit: number,
   memMap: Map<string, Window>,
 ): Promise<LimitResult> {
+  const limiters = await limitersReady;
   const limiter =
-    prefix === "sovereign:free:email" ? await getLimiter(_email, prefix, limit).then((l) => (_email = l))
-    : prefix === "sovereign:free:ip" ? await getLimiter(_ip, prefix, limit).then((l) => (_ip = l))
-    : await getLimiter(_ceiling, prefix, limit).then((l) => (_ceiling = l));
+    prefix === "sovereign:free:email" ? limiters.email
+    : prefix === "sovereign:free:ip" ? limiters.ip
+    : limiters.ceiling;
 
   if (limiter) {
     try {

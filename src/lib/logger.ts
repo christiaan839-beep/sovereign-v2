@@ -42,6 +42,29 @@ function formatEntry(entry: LogEntry): string {
 }
 
 /**
+ * Scrub obvious secret-shaped keys from a log data payload before it
+ * leaves the server. Complements sentry.server.config.ts's beforeSend
+ * (which scrubs request headers + query strings) — this catches
+ * application-level log data that a developer might have included
+ * without realizing it would reach Sentry.
+ */
+const SECRET_KEY_PATTERN = /authori[sz]ation|api.?key|secret|token|password|bearer|dsn|signing.?key|webhook.?secret/i;
+function scrubSecrets(data: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(data)) {
+    if (SECRET_KEY_PATTERN.test(k)) {
+      out[k] = "<redacted>";
+    } else if (v && typeof v === "object" && !Array.isArray(v)) {
+      // One level deep; we don't recurse further to avoid pathological logs.
+      out[k] = scrubSecrets(v as Record<string, unknown>);
+    } else {
+      out[k] = v;
+    }
+  }
+  return out;
+}
+
+/**
  * Forward error-level logs to Sentry when configured. We use dynamic
  * import to keep `@sentry/nextjs` out of bundles that never hit this path
  * and to avoid touching Sentry in environments without the DSN.
@@ -53,7 +76,7 @@ async function reportToSentry(entry: LogEntry) {
     Sentry.captureMessage(entry.message, {
       level: "error",
       tags: { module: entry.module },
-      extra: entry.data ?? {},
+      extra: entry.data ? scrubSecrets(entry.data) : {},
     });
   } catch {
     // Sentry optional — never break a request because error reporting failed.

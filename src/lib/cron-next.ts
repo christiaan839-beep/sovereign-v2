@@ -116,6 +116,11 @@ export function matches(expr: string, date: Date): boolean {
 /**
  * First minute strictly after `from` when `expr` fires. Iterates minute-by-
  * minute up to 366 days. Returns null if the expression never matches.
+ *
+ * Fast-path: if the expression only matches one minute per day (fully-
+ * restricted minute + hour, e.g. "0 9 * * *"), we skip ahead by whole
+ * days once we pass the target hour — turns a 527k-iteration worst case
+ * into a ~365-iteration case.
  */
 export function nextRun(expr: string, from: Date = new Date()): Date | null {
   const p = parseCron(expr);
@@ -126,8 +131,26 @@ export function nextRun(expr: string, from: Date = new Date()): Date | null {
   start.setUTCSeconds(0, 0);
   start.setUTCMinutes(start.getUTCMinutes() + 1);
 
-  const MAX_ITERATIONS = 366 * 24 * 60; // 1 year
+  // Fast path: single exact (minute, hour) — jump by day when past target.
+  const singleMinute = p.minute !== "any" && p.minute.size === 1 ? [...p.minute][0] : null;
+  const singleHour = p.hour !== "any" && p.hour.size === 1 ? [...p.hour][0] : null;
+  const fastPath = singleMinute !== null && singleHour !== null;
+
+  const MAX_ITERATIONS = 366 * 24 * 60; // 1 year — upper bound for loop
+  const MAX_DAYS = 366;
   const cur = new Date(start);
+
+  if (fastPath) {
+    for (let d = 0; d < MAX_DAYS; d++) {
+      // Align to the target hour:minute on this day.
+      cur.setUTCHours(singleHour as number, singleMinute as number, 0, 0);
+      if (cur > from && matches(expr, cur)) return cur;
+      // Move to 00:00 of the next day and repeat.
+      cur.setUTCDate(cur.getUTCDate() + 1);
+      cur.setUTCHours(0, 0, 0, 0);
+    }
+    return null;
+  }
 
   for (let i = 0; i < MAX_ITERATIONS; i++) {
     if (matches(expr, cur)) return cur;

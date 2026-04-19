@@ -47,7 +47,7 @@ interface Props {
 function StepNode({ data }: NodeProps) {
   const { agentName, status, reason, durationMs, stepIndex } = data as unknown as PlaybookStep;
 
-  const { ring, bg, accent, icon } = statusStyle(status);
+  const { ring, bg, accent, Icon } = statusStyle(status);
 
   return (
     <div className="relative">
@@ -70,7 +70,7 @@ function StepNode({ data }: NodeProps) {
             className="w-6 h-6 rounded-full flex items-center justify-center"
             style={{ background: `${accent}15`, color: accent }}
           >
-            {icon}
+            <Icon />
           </div>
           <span className="ed-mono text-[10px]" style={{ color: accent, letterSpacing: "0.12em" }}>
             {String(stepIndex + 1).padStart(2, "0")}
@@ -92,44 +92,44 @@ function StepNode({ data }: NodeProps) {
   );
 }
 
+// Module-scope style map — rebuilds are free. Icons are cheap to
+// allocate since they're memoized by React internally, but the style
+// objects are now shared references so the DOM diff sees them as equal.
+const STATUS_STYLES = {
+  running: {
+    ring: "rgba(251,191,36,0.35)",
+    bg: "rgba(251,191,36,0.08)",
+    accent: "#fbbf24",
+    Icon: () => <Loader2 className="w-3 h-3 animate-spin" />,
+  },
+  done: {
+    ring: "rgba(52,211,153,0.35)",
+    bg: "rgba(52,211,153,0.06)",
+    accent: "#34d399",
+    Icon: () => <CheckCircle2 className="w-3 h-3" />,
+  },
+  failed: {
+    ring: "rgba(244,63,94,0.35)",
+    bg: "rgba(244,63,94,0.08)",
+    accent: "#f43f5e",
+    Icon: () => <XCircle className="w-3 h-3" />,
+  },
+  skipped: {
+    ring: "rgba(163,163,163,0.2)",
+    bg: "rgba(255,255,255,0.02)",
+    accent: "#737373",
+    Icon: () => <Clock className="w-3 h-3" />,
+  },
+  pending: {
+    ring: "rgba(255,255,255,0.1)",
+    bg: "rgba(255,255,255,0.03)",
+    accent: "#a3a3a3",
+    Icon: () => <Circle className="w-3 h-3" />,
+  },
+} as const;
+
 function statusStyle(status: PlaybookStep["status"]) {
-  switch (status) {
-    case "running":
-      return {
-        ring: "rgba(251,191,36,0.35)",
-        bg: "rgba(251,191,36,0.08)",
-        accent: "#fbbf24",
-        icon: <Loader2 className="w-3 h-3 animate-spin" />,
-      };
-    case "done":
-      return {
-        ring: "rgba(52,211,153,0.35)",
-        bg: "rgba(52,211,153,0.06)",
-        accent: "#34d399",
-        icon: <CheckCircle2 className="w-3 h-3" />,
-      };
-    case "failed":
-      return {
-        ring: "rgba(244,63,94,0.35)",
-        bg: "rgba(244,63,94,0.08)",
-        accent: "#f43f5e",
-        icon: <XCircle className="w-3 h-3" />,
-      };
-    case "skipped":
-      return {
-        ring: "rgba(163,163,163,0.2)",
-        bg: "rgba(255,255,255,0.02)",
-        accent: "#737373",
-        icon: <Clock className="w-3 h-3" />,
-      };
-    default:
-      return {
-        ring: "rgba(255,255,255,0.1)",
-        bg: "rgba(255,255,255,0.03)",
-        accent: "#a3a3a3",
-        icon: <Circle className="w-3 h-3" />,
-      };
-  }
+  return STATUS_STYLES[status] ?? STATUS_STYLES.pending;
 }
 
 const nodeTypes = { step: StepNode };

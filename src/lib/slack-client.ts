@@ -53,7 +53,12 @@ export async function slackClient(userId: string): Promise<SlackClient | null> {
 
   if (!row) return null;
 
-  // Decrypt ONLY in the request scope. Never stored back, never logged.
+  // Decrypt once per slackClient() call. The plaintext is captured in
+  // the closure of the returned postMessage(); caller is responsible
+  // for releasing the client (not holding it across long idle periods).
+  // On Vercel serverless this is a non-issue — function instance is
+  // short-lived. On long-lived Node servers, prefer a fresh slackClient()
+  // call per batch rather than holding the reference.
   const accessToken = safeDecrypt(row.accessToken);
 
   async function call<T = SlackApiResponse>(method: string, body: Record<string, unknown>): Promise<T> {

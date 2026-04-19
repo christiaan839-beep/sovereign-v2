@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { createLogger } from "@/lib/logger";
 import { safeEncrypt } from "@/lib/crypto";
@@ -31,7 +31,7 @@ interface SlackOAuthResponse {
   authed_user?: { id: string };
 }
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   const user = await currentUser();
   if (!user) return NextResponse.redirect(new URL("/login", req.url));
 
@@ -43,12 +43,10 @@ export async function GET(req: Request) {
     return redirectWithError(req, "missing_params");
   }
 
-  // CSRF check — state must match the cookie set by /authorize
-  const cookieState = (req.headers.get("cookie") || "")
-    .split(";")
-    .map((c) => c.trim())
-    .find((c) => c.startsWith("slack_oauth_state="))
-    ?.split("=")[1];
+  // CSRF check — state must match the cookie set by /authorize. Use
+  // NextRequest.cookies for proper URL-decode / quoted-value handling
+  // instead of manual header parsing.
+  const cookieState = req.cookies.get("slack_oauth_state")?.value;
   if (!cookieState || cookieState !== state) {
     log.warn("OAuth state mismatch", { userId: user.id });
     return redirectWithError(req, "state_mismatch");

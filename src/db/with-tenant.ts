@@ -40,11 +40,12 @@ export async function withTenant<T>(
     throw new Error("withTenant: userId is required and must be a string");
   }
 
-  // Clerk user ids are /^user_[A-Za-z0-9]+$/. We allowlist the character
-  // set as a belt-and-braces guard against set_config injection. Drizzle
-  // parameterizes the value below, but unsafe chars still break the
-  // literal — reject them up front with a clear error.
-  if (!/^[A-Za-z0-9_\-:@.]+$/.test(userId)) {
+  // Clerk user ids match /^user_[A-Za-z0-9]+$/. We allow the same character
+  // set (no `:` `@` `.`) as a belt-and-braces guard against set_config
+  // injection. Drizzle parameterizes the value below, but keeping the
+  // allowlist tight means a bug that sneaks a wrong-type value through
+  // fails loudly instead of silently passing a crafted payload.
+  if (!/^[A-Za-z0-9_-]+$/.test(userId)) {
     throw new Error("withTenant: userId contains disallowed characters");
   }
 
