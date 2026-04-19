@@ -90,6 +90,7 @@ export const AGENT_REGISTRY: Record<string, () => Promise<RouteModule>> = {
   "nemoclaw-setup": () => import("@/app/api/_agents/nemoclaw-setup/route"),
   "nemotron-omni": () => import("@/app/api/_agents/nemotron-omni/route"),
   "nemotron3-super": () => import("@/app/api/_agents/nemotron3-super/route"),
+  "nexus": () => import("@/app/api/_agents/nexus/route"),
   "ocr": () => import("@/app/api/_agents/ocr/route"),
   "omni-search": () => import("@/app/api/_agents/omni-search/route"),
   "orchestrate": () => import("@/app/api/_agents/orchestrate/route"),

@@ -11,7 +11,7 @@ import {
   X, Menu,
   PanelLeftOpen, PanelLeftClose, Plug, Cpu,
   BarChart3, Eye, Shield, Wrench,
-  Wand2, Workflow, MessageSquare, Zap, Rocket,
+  Wand2, Workflow, MessageSquare, Zap, Rocket, Network,
   Bot, ClipboardList, Store, Code2, Mail, FileText, Bell,
   CreditCard, Users,
 } from "lucide-react";
@@ -76,6 +76,7 @@ const PRIMARY_NAV: NavItem[] = [
   { href: "/dashboard/playbooks", label: "Playbooks", icon: Zap, tooltip: "25 multi-agent workflows + autopilot" },
   { href: "/dashboard/leads", label: "Leads", icon: Target, tooltip: "Find and qualify prospects" },
   { href: "/chat", label: "Chat", icon: MessageSquare, tooltip: "Ask anything — AI routes to the right agent" },
+  { href: "/dashboard/nexus", label: "Nexus", icon: Network, tooltip: "4 frontier models racing in parallel with live consensus" },
 ];
 
 // ── Grouped: Power tools + monitoring (collapsed by default) ──
