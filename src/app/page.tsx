@@ -700,12 +700,19 @@ export default function Home() {
             <span className="text-[10px] text-neutral-600 font-mono">v2.4</span>
           </motion.div>
 
-          {/* Headline — cinematic entrance, each line staggered */}
+          {/* Headline — editorial display serif, staggered reveal */}
           <motion.h1
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.1, duration: 0.5 }}
-            className="text-[clamp(2.8rem,9vw,6.5rem)] font-black leading-[0.92] tracking-[-0.04em] mb-8"
+            className="mb-8"
+            style={{
+              fontFamily: '"Instrument Serif", Georgia, serif',
+              fontSize: "clamp(3.5rem, 11vw, 8rem)",
+              lineHeight: 0.9,
+              letterSpacing: "-0.025em",
+              fontWeight: 400,
+            }}
           >
             <motion.span
               initial={{ opacity: 0, y: 60, filter: "blur(8px)" }}
@@ -719,18 +726,29 @@ export default function Home() {
               initial={{ opacity: 0, y: 60, filter: "blur(8px)" }}
               animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
               transition={{ delay: 0.5, duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-              className="block"
+              className="block italic"
+              style={{ color: "#B5532C" }}
             >
-              <TextShimmer className="font-black">Fire busywork.</TextShimmer>
+              Fire busywork.
             </motion.span>
           </motion.h1>
 
-          {/* Subtitle — benefits, not specs */}
-          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5, duration: 0.8 }}
-            className="text-lg md:text-xl text-neutral-400 max-w-xl mx-auto leading-relaxed mb-6">
-            130 agents. 39 models. One platform that finds leads, writes content,
-            scans competitors, and closes deals — autonomously.
-            <span className="block mt-1.5 text-neutral-500 text-base">From $19/mo. No per-token fees. No vendor lock-in.</span>
+          {/* Subtitle — editorial, with italic emphasis */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5, duration: 0.8 }}
+            className="text-lg md:text-xl text-neutral-400 max-w-xl mx-auto leading-relaxed mb-6"
+            style={{ fontFamily: '"Inter Tight", system-ui, sans-serif', letterSpacing: "-0.011em" }}
+          >
+            One hundred and thirty agents. Thirty-nine models. One platform that finds leads,
+            writes content, scans competitors, and closes deals{" "}
+            <em style={{ fontFamily: '"Instrument Serif", serif', fontStyle: "italic", color: "#fff" }}>
+              autonomously
+            </em>.
+            <span className="block mt-2 text-neutral-500 text-base">
+              From $19/mo. No per-token fees. No vendor lock-in.
+            </span>
           </motion.p>
 
           {/* NEW: Nexus Protocol announcement */}

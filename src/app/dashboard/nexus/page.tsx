@@ -1,60 +1,26 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  Zap, Send, Loader2, CheckCircle2, Cpu,
-  Sparkles, Brain, Target, Shield, Activity,
-  ChevronRight, RotateCcw, Copy, Check,
-} from "lucide-react";
+/**
+ * NEXUS — Technical Monograph
+ *
+ * Four frontier models, racing in parallel, rendered like a technical journal
+ * entry. Instrument Serif display, JetBrains Mono for data, Inter Tight body.
+ * Bone on near-black, burnt copper as the sole accent.
+ *
+ * Explicit design choices:
+ *  - Asymmetric column split (prompt on the left, live output on the right)
+ *  - Models indexed as 01–04 in mono, like a table of contents
+ *  - Serif italic for the thinking state — "thinking" should feel human
+ *  - No glassmorphism. No glow. No neon. Rules, margins, mono numerics.
+ */
 
-/* ─── Agent Config ─── */
+import { useState, useRef, useEffect, useCallback } from "react";
 
 const AGENTS = [
-  {
-    id: "nemotron",
-    name: "Nemotron Ultra",
-    role: "Strategic Analyst",
-    color: "#76b900",
-    bg: "rgba(118,185,0,0.08)",
-    border: "rgba(118,185,0,0.25)",
-    glow: "rgba(118,185,0,0.15)",
-    icon: Target,
-    params: "253B",
-  },
-  {
-    id: "qwen",
-    name: "Qwen 3",
-    role: "Deep Reasoner",
-    color: "#9333ea",
-    bg: "rgba(147,51,234,0.08)",
-    border: "rgba(147,51,234,0.25)",
-    glow: "rgba(147,51,234,0.15)",
-    icon: Brain,
-    params: "235B",
-  },
-  {
-    id: "mistral",
-    name: "Mistral Nemotron",
-    role: "Devil's Advocate",
-    color: "#f59e0b",
-    bg: "rgba(245,158,11,0.08)",
-    border: "rgba(245,158,11,0.25)",
-    glow: "rgba(245,158,11,0.15)",
-    icon: Shield,
-    params: "70B",
-  },
-  {
-    id: "deepseek",
-    name: "DeepSeek V3",
-    role: "Pragmatist",
-    color: "#38bdf8",
-    bg: "rgba(56,189,248,0.08)",
-    border: "rgba(56,189,248,0.25)",
-    glow: "rgba(56,189,248,0.15)",
-    icon: Cpu,
-    params: "685B",
-  },
+  { id: "nemotron", n: "01", name: "Nemotron Ultra",     role: "Strategic Analyst", params: "253B" },
+  { id: "qwen",     n: "02", name: "Qwen 3",             role: "Deep Reasoner",     params: "235B" },
+  { id: "mistral",  n: "03", name: "Mistral Nemotron",   role: "Devil's Advocate",  params: "70B"  },
+  { id: "deepseek", n: "04", name: "DeepSeek V3",        role: "Pragmatist",        params: "685B" },
 ] as const;
 
 type AgentId = (typeof AGENTS)[number]["id"];
@@ -67,218 +33,169 @@ interface AgentState {
   error: string | null;
 }
 
-const DEFAULT_AGENT_STATE: AgentState = { text: "", done: false, latencyMs: null, error: null };
+const DEFAULT: AgentState = { text: "", done: false, latencyMs: null, error: null };
 
-const EXAMPLE_PROMPTS = [
+const PROMPTS = [
   "What's the biggest hidden risk in raising VC funding vs staying bootstrapped?",
   "How can a 5-person startup beat a 500-person company?",
-  "What's the most effective way to generate B2B leads in 2025?",
-  "Is AI replacing founders or making them more powerful?",
   "What separates a $1M company from a $100M company?",
+  "Is AI replacing founders, or making them more powerful?",
 ];
 
-/**
- * Safe markdown-bold renderer — splits on **bold** without injecting raw HTML.
- * Prevents XSS when rendering LLM output.
- */
-function renderSafeBold(text: string): React.ReactNode[] {
-  const parts = text.split(/(\*\*[^*]+\*\*)/g);
-  return parts.map((part, i) => {
-    if (part.startsWith("**") && part.endsWith("**")) {
-      return (
-        <strong key={i} className="text-indigo-300">
-          {part.slice(2, -2)}
-        </strong>
-      );
-    }
-    return <span key={i}>{part}</span>;
-  });
+/* Safe bold renderer — splits **bold** without injecting HTML */
+function renderBold(text: string): React.ReactNode[] {
+  return text.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
+    part.startsWith("**") && part.endsWith("**")
+      ? <em key={i} className="ed-copper not-italic font-medium">{part.slice(2, -2)}</em>
+      : <span key={i}>{part}</span>,
+  );
 }
 
-/* ─── ModelCard ─── */
+/* ─── ModelRow ───────────────────────────────────────────────
+ *   Each model occupies a horizontal band with:
+ *     [ 01 ]  Name — role                           latency
+ *             running copy streams here.....
+ */
 
-function ModelCard({
-  agent,
-  state,
-  active,
-}: {
+function ModelRow({ agent, state, active }: {
   agent: (typeof AGENTS)[number];
   state: AgentState;
   active: boolean;
 }) {
-  const Icon = agent.icon;
-  const textRef = useRef<HTMLDivElement>(null);
-
+  const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (textRef.current) {
-      textRef.current.scrollTop = textRef.current.scrollHeight;
-    }
+    if (ref.current) ref.current.scrollTop = ref.current.scrollHeight;
   }, [state.text]);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="relative rounded-2xl overflow-hidden flex flex-col"
-      style={{
-        background: agent.bg,
-        border: `1px solid ${state.done ? agent.border : active ? agent.border : "rgba(255,255,255,0.06)"}`,
-        boxShadow: active && !state.done ? `0 0 30px ${agent.glow}` : "none",
-        transition: "box-shadow 0.4s ease, border-color 0.3s ease",
-        minHeight: 260,
-      }}
-    >
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
-        <div className="flex items-center gap-2.5">
-          <div
-            className="w-7 h-7 rounded-lg flex items-center justify-center"
-            style={{ background: `${agent.color}20` }}
-          >
-            <Icon className="w-3.5 h-3.5" style={{ color: agent.color }} />
-          </div>
-          <div>
-            <p className="text-xs font-semibold text-neutral-200">{agent.name}</p>
-            <p className="text-[10px]" style={{ color: agent.color }}>{agent.role}</p>
-          </div>
+    <article className="grid grid-cols-[40px_1fr] gap-5 md:gap-8 py-6 border-t" style={{ borderColor: "var(--ed-rule-soft)" }}>
+      {/* Index */}
+      <div className="pt-1">
+        <div className="ed-mono text-[11px]" style={{ color: state.done ? "var(--ed-copper)" : "var(--ed-ink-dim)" }}>
+          {agent.n}
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded" style={{ background: `${agent.color}15`, color: agent.color }}>
-            {agent.params}
-          </span>
-          {active && !state.done && (
-            <motion.div
-              animate={{ opacity: [1, 0.3, 1] }}
-              transition={{ repeat: Infinity, duration: 1 }}
-              className="w-1.5 h-1.5 rounded-full"
-              style={{ background: agent.color }}
-            />
+      </div>
+
+      {/* Body */}
+      <div>
+        {/* Header row */}
+        <header className="flex items-baseline justify-between gap-4 mb-3 flex-wrap">
+          <div className="flex items-baseline gap-3 flex-wrap">
+            <h3 className="ed-display text-2xl md:text-[28px]" style={{ lineHeight: 1 }}>
+              {agent.name}
+            </h3>
+            <span className="ed-display-italic text-[15px]" style={{ color: "var(--ed-ink-soft)" }}>
+              — {agent.role}
+            </span>
+            <span className="ed-mono text-[10px]" style={{ color: "var(--ed-ink-dim)" }}>
+              {agent.params}
+            </span>
+          </div>
+          <div className="ed-mono text-[10px] tabular-nums" style={{ color: state.done ? "var(--ed-copper)" : "var(--ed-ink-dim)" }}>
+            {state.error
+              ? "error"
+              : state.latencyMs !== null
+                ? `${(state.latencyMs / 1000).toFixed(2)}s`
+                : active ? "generating" : "idle"}
+          </div>
+        </header>
+
+        {/* Copy */}
+        <div
+          ref={ref}
+          className="ed-body text-[15px] max-h-40 overflow-y-auto pr-2"
+          style={{ color: state.error ? "var(--ed-copper)" : "var(--ed-ink)" }}
+        >
+          {state.error ? (
+            <span>{state.error}</span>
+          ) : state.text ? (
+            <>
+              {state.text}
+              {active && !state.done && (
+                <span
+                  aria-hidden
+                  className="inline-block w-[2px] h-[14px] ml-0.5 align-middle"
+                  style={{ background: "var(--ed-copper)", animation: "ed-fade 900ms steps(2) infinite alternate" }}
+                />
+              )}
+            </>
+          ) : active ? (
+            <em className="ed-display-italic" style={{ color: "var(--ed-ink-soft)" }}>
+              thinking…
+            </em>
+          ) : (
+            <span style={{ color: "var(--ed-ink-dim)" }}>awaiting prompt</span>
           )}
-          {state.done && <CheckCircle2 className="w-3.5 h-3.5" style={{ color: agent.color }} />}
         </div>
       </div>
-
-      {/* Content */}
-      <div ref={textRef} className="flex-1 p-4 overflow-y-auto text-xs leading-relaxed text-neutral-300 font-mono" style={{ maxHeight: 220 }}>
-        {state.error ? (
-          <p className="text-rose-400">{state.error}</p>
-        ) : state.text ? (
-          <>
-            {state.text}
-            {active && !state.done && (
-              <motion.span
-                animate={{ opacity: [1, 0] }}
-                transition={{ repeat: Infinity, duration: 0.5 }}
-                className="inline-block w-0.5 h-3 ml-0.5 align-middle"
-                style={{ background: agent.color }}
-              />
-            )}
-          </>
-        ) : active ? (
-          <div className="flex items-center gap-1.5 text-neutral-500">
-            <Loader2 className="w-3 h-3 animate-spin" />
-            <span>Thinking...</span>
-          </div>
-        ) : (
-          <p className="text-neutral-600 italic">Waiting for prompt...</p>
-        )}
-      </div>
-
-      {/* Footer latency */}
-      {state.latencyMs !== null && (
-        <div className="px-4 py-2 border-t text-[10px] text-neutral-500 font-mono" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
-          {(state.latencyMs / 1000).toFixed(1)}s
-        </div>
-      )}
-    </motion.div>
+    </article>
   );
 }
 
-/* ─── ConsensusCard ─── */
+/* ─── Consensus ─────────────────────────────────────────────── */
 
-function ConsensusCard({ text, done }: { text: string; done: boolean }) {
-  const [copied, setCopied] = useState(false);
-  const textRef = useRef<HTMLDivElement>(null);
-
+function Consensus({ text, done }: { text: string; done: boolean }) {
+  const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (textRef.current) textRef.current.scrollTop = textRef.current.scrollHeight;
+    if (ref.current) ref.current.scrollTop = ref.current.scrollHeight;
   }, [text]);
 
-  const copy = () => {
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 30, scale: 0.97 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      className="rounded-2xl overflow-hidden"
-      style={{
-        background: "rgba(255,255,255,0.04)",
-        border: "1px solid rgba(255,255,255,0.12)",
-        boxShadow: "0 0 60px rgba(99,102,241,0.12), 0 0 120px rgba(99,102,241,0.05)",
-      }}
-    >
-      <div
-        className="flex items-center justify-between px-5 py-3 border-b"
-        style={{ borderColor: "rgba(255,255,255,0.08)", background: "rgba(99,102,241,0.08)" }}
-      >
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-indigo-500/20 flex items-center justify-center">
-            <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-          </div>
-          <div>
-            <p className="text-xs font-semibold text-neutral-200">Gemini 2.0 — Consensus Synthesis</p>
-            <p className="text-[10px] text-indigo-400">4 perspectives unified</p>
+    <section className="pt-10 mt-10 border-t" style={{ borderColor: "var(--ed-copper)" }}>
+      <div className="grid grid-cols-[40px_1fr] gap-5 md:gap-8">
+        <div className="ed-mono text-[11px] pt-1 ed-copper">◆</div>
+        <div>
+          <header className="flex items-baseline justify-between mb-4 flex-wrap gap-3">
+            <div>
+              <h3 className="ed-display text-3xl md:text-[34px]" style={{ lineHeight: 1 }}>
+                Consensus
+              </h3>
+              <p className="ed-caption mt-1">Gemini 2.0 · four perspectives synthesized</p>
+            </div>
+            {done && (
+              <button
+                onClick={() => navigator.clipboard.writeText(text)}
+                className="ed-label hover:underline"
+                style={{ textUnderlineOffset: "4px" }}
+              >
+                Copy →
+              </button>
+            )}
+          </header>
+          <div
+            ref={ref}
+            className="ed-body text-[17px] leading-[1.65] max-h-64 overflow-y-auto pr-2"
+          >
+            {text ? (
+              <>
+                {renderBold(text)}
+                {!done && (
+                  <span
+                    aria-hidden
+                    className="inline-block w-[2px] h-4 ml-1 align-middle"
+                    style={{ background: "var(--ed-copper)", animation: "ed-fade 900ms steps(2) infinite alternate" }}
+                  />
+                )}
+              </>
+            ) : (
+              <em className="ed-display-italic" style={{ color: "var(--ed-ink-soft)" }}>
+                synthesizing…
+              </em>
+            )}
           </div>
         </div>
-        {done && (
-          <button
-            onClick={copy}
-            className="flex items-center gap-1 text-[10px] text-neutral-400 hover:text-neutral-200 transition-colors"
-          >
-            {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-            {copied ? "Copied" : "Copy"}
-          </button>
-        )}
       </div>
-
-      <div
-        ref={textRef}
-        className="p-5 text-sm leading-relaxed text-neutral-200"
-        style={{ maxHeight: 260, overflowY: "auto" }}
-      >
-        {text ? (
-          <>
-            {renderSafeBold(text)}
-            {!done && (
-              <motion.span
-                animate={{ opacity: [1, 0] }}
-                transition={{ repeat: Infinity, duration: 0.5 }}
-                className="inline-block w-0.5 h-4 ml-0.5 align-middle bg-indigo-400"
-              />
-            )}
-          </>
-        ) : (
-          <div className="flex items-center gap-2 text-neutral-500">
-            <Loader2 className="w-4 h-4 animate-spin text-indigo-400" />
-            <span className="text-sm">Synthesizing {AGENTS.length} perspectives...</span>
-          </div>
-        )}
-      </div>
-    </motion.div>
+    </section>
   );
 }
 
-/* ─── Main Page ─── */
+/* ─── Page ──────────────────────────────────────────────────── */
 
 export default function NexusPage() {
   const [prompt, setPrompt] = useState("");
   const [phase, setPhase] = useState<Phase>("idle");
-  const [agentStates, setAgentStates] = useState<Record<AgentId, AgentState>>(
-    Object.fromEntries(AGENTS.map((a) => [a.id, { ...DEFAULT_AGENT_STATE }])) as Record<AgentId, AgentState>,
+  const [states, setStates] = useState<Record<AgentId, AgentState>>(
+    Object.fromEntries(AGENTS.map(a => [a.id, { ...DEFAULT }])) as Record<AgentId, AgentState>,
   );
   const [consensus, setConsensus] = useState("");
   const [consensusDone, setConsensusDone] = useState(false);
@@ -289,9 +206,7 @@ export default function NexusPage() {
   const reset = useCallback(() => {
     abortRef.current?.abort();
     setPhase("idle");
-    setAgentStates(
-      Object.fromEntries(AGENTS.map((a) => [a.id, { ...DEFAULT_AGENT_STATE }])) as Record<AgentId, AgentState>,
-    );
+    setStates(Object.fromEntries(AGENTS.map(a => [a.id, { ...DEFAULT }])) as Record<AgentId, AgentState>);
     setConsensus("");
     setConsensusDone(false);
     setTotalMs(null);
@@ -300,9 +215,8 @@ export default function NexusPage() {
 
   const run = useCallback(async () => {
     if (!prompt.trim() || phase === "racing" || phase === "consensus") return;
-
     reset();
-    await new Promise((r) => setTimeout(r, 50));
+    await new Promise(r => setTimeout(r, 40));
 
     setSubmittedPrompt(prompt);
     setPhase("racing");
@@ -316,7 +230,6 @@ export default function NexusPage() {
         body: JSON.stringify({ prompt }),
         signal: abort.signal,
       });
-
       if (!res.body) throw new Error("No stream");
 
       const reader = res.body.getReader();
@@ -326,7 +239,6 @@ export default function NexusPage() {
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-
         buf += decoder.decode(value, { stream: true });
         const lines = buf.split("\n");
         buf = lines.pop() || "";
@@ -335,248 +247,192 @@ export default function NexusPage() {
           if (!line.startsWith("data: ")) continue;
           try {
             const ev = JSON.parse(line.slice(6));
-
             if (ev.type === "token") {
-              setAgentStates((prev) => ({
-                ...prev,
-                [ev.model]: { ...prev[ev.model as AgentId], text: prev[ev.model as AgentId].text + ev.text },
-              }));
+              setStates(prev => ({ ...prev, [ev.model]: { ...prev[ev.model as AgentId], text: prev[ev.model as AgentId].text + ev.text } }));
             } else if (ev.type === "model_done") {
-              setAgentStates((prev) => ({
-                ...prev,
-                [ev.model]: { ...prev[ev.model as AgentId], done: true, latencyMs: ev.latencyMs },
-              }));
+              setStates(prev => ({ ...prev, [ev.model]: { ...prev[ev.model as AgentId], done: true, latencyMs: ev.latencyMs } }));
             } else if (ev.type === "error") {
-              setAgentStates((prev) => ({
-                ...prev,
-                [ev.model]: { ...prev[ev.model as AgentId], error: ev.message, done: true },
-              }));
+              setStates(prev => ({ ...prev, [ev.model]: { ...prev[ev.model as AgentId], error: ev.message, done: true } }));
             } else if (ev.type === "consensus_start") {
               setPhase("consensus");
             } else if (ev.type === "consensus_token") {
-              setConsensus((c) => c + ev.text);
+              setConsensus(c => c + ev.text);
             } else if (ev.type === "end") {
               setTotalMs(ev.latencyMs);
               setConsensusDone(true);
               setPhase("done");
             }
-          } catch {
-            // bad JSON chunk
-          }
+          } catch { /* malformed chunk */ }
         }
       }
     } catch (err: unknown) {
-      if ((err as { name?: string })?.name !== "AbortError") {
-        setPhase("done");
-      }
+      if ((err as { name?: string })?.name !== "AbortError") setPhase("done");
     }
   }, [prompt, phase, reset]);
 
-  const handleKey = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      run();
-    }
-  };
-
   const isRunning = phase === "racing" || phase === "consensus";
+  const canRun = prompt.trim().length > 0 && !isRunning;
 
   return (
-    <div className="min-h-screen bg-[#030303] p-6 pb-16">
-      {/* Header */}
-      <div className="max-w-5xl mx-auto mb-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <div className="w-8 h-8 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
-                <Zap className="w-4 h-4 text-indigo-400" />
-              </div>
-              <h1 className="text-lg font-semibold text-neutral-100">Nexus Protocol</h1>
+    <div className="editorial-dark min-h-screen">
+      {/* Page frame */}
+      <div className="ed-page py-10 md:py-16">
+        <div className="ed-max">
+
+          {/* Masthead */}
+          <header className="ed-grid-12 pb-10 border-b" style={{ borderColor: "var(--ed-rule)" }}>
+            <div className="col-span-12 md:col-span-8">
+              <p className="ed-label mb-5">Sovereign Matrix · Nexus Protocol · Issue 01</p>
+              <h1 className="ed-display text-[56px] md:text-[88px]" style={{ lineHeight: 0.9, letterSpacing: "-0.02em" }}>
+                Four frontier models,{" "}
+                <em className="ed-display-italic ed-copper">thinking in parallel.</em>
+              </h1>
+              <p className="ed-body text-[17px] mt-6 max-w-xl" style={{ color: "var(--ed-ink-soft)" }}>
+                Ask one question. Watch Nemotron, Qwen, Mistral and DeepSeek answer
+                simultaneously. Then Gemini reads all four and writes the one answer
+                that survives.
+              </p>
             </div>
-            <p className="text-xs text-neutral-500">
-              4 frontier models · true parallel execution · live consensus synthesis
-            </p>
-          </div>
 
-          {phase === "done" && totalMs && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="flex items-center gap-2 text-xs text-neutral-400"
-            >
-              <Activity className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Completed in {(totalMs / 1000).toFixed(1)}s</span>
-            </motion.div>
-          )}
-        </div>
-      </div>
-
-      {/* Input bar */}
-      <div className="max-w-5xl mx-auto mb-6">
-        <div
-          className="relative rounded-2xl overflow-hidden transition-all duration-300"
-          style={{
-            background: "rgba(255,255,255,0.03)",
-            border: isRunning ? "1px solid rgba(99,102,241,0.4)" : "1px solid rgba(255,255,255,0.08)",
-            boxShadow: isRunning ? "0 0 40px rgba(99,102,241,0.1)" : "none",
-          }}
-        >
-          <textarea
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            onKeyDown={handleKey}
-            placeholder="Ask any question — watch 4 frontier models race to answer..."
-            disabled={isRunning}
-            rows={2}
-            className="w-full bg-transparent px-5 py-4 pr-24 text-sm text-neutral-200 placeholder-neutral-600 resize-none outline-none"
-          />
-          <div className="absolute right-3 bottom-3 flex items-center gap-2">
-            {phase !== "idle" && (
-              <button
-                onClick={reset}
-                className="p-2 rounded-xl text-neutral-500 hover:text-neutral-300 hover:bg-white/5 transition-colors"
-              >
-                <RotateCcw className="w-4 h-4" />
-              </button>
-            )}
-            <button
-              onClick={run}
-              disabled={!prompt.trim() || isRunning}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all disabled:opacity-40"
-              style={{
-                background: prompt.trim() && !isRunning ? "rgba(99,102,241,0.9)" : "rgba(99,102,241,0.15)",
-                color: prompt.trim() && !isRunning ? "#fff" : "rgba(99,102,241,0.6)",
-              }}
-            >
-              {isRunning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-              {isRunning ? "Racing..." : "Run"}
-            </button>
-          </div>
-        </div>
-
-        {phase === "idle" && (
-          <div className="flex flex-wrap gap-2 mt-3">
-            {EXAMPLE_PROMPTS.map((p) => (
-              <button
-                key={p}
-                onClick={() => setPrompt(p)}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] text-neutral-500 hover:text-neutral-300 hover:bg-white/5 border border-white/5 hover:border-white/10 transition-all"
-              >
-                <ChevronRight className="w-2.5 h-2.5 flex-shrink-0" />
-                {p.length > 60 ? p.slice(0, 60) + "…" : p}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Submitted prompt echo */}
-      <AnimatePresence>
-        {submittedPrompt && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="max-w-5xl mx-auto mb-5"
-          >
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/4 border border-white/8">
-              <span className="text-[10px] text-neutral-500">Prompt:</span>
-              <span className="text-xs text-neutral-300">{submittedPrompt}</span>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Model Grid */}
-      <AnimatePresence>
-        {phase !== "idle" && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="max-w-5xl mx-auto"
-          >
-            {phase === "racing" && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="flex items-center gap-2 mb-4 text-xs text-neutral-500"
-              >
-                <div className="flex gap-1">
-                  {AGENTS.map((a, i) => (
-                    <motion.div
-                      key={a.id}
-                      animate={{ opacity: [0.4, 1, 0.4] }}
-                      transition={{ repeat: Infinity, duration: 1.5, delay: i * 0.2 }}
-                      className="w-1 h-3 rounded-full"
-                      style={{ background: a.color }}
-                    />
-                  ))}
+            <aside className="col-span-12 md:col-span-4 md:pl-8 md:border-l pt-6 md:pt-1" style={{ borderColor: "var(--ed-rule-soft)" }}>
+              <dl className="space-y-4">
+                <div>
+                  <dt className="ed-label">Engine</dt>
+                  <dd className="ed-body text-sm mt-1">True parallel SSE. Each model&apos;s tokens forward to the client as they arrive — not staged.</dd>
                 </div>
-                <span>4 models generating simultaneously...</span>
-              </motion.div>
-            )}
+                <div>
+                  <dt className="ed-label">Synthesizer</dt>
+                  <dd className="ed-body text-sm mt-1">Gemini 2.0 Flash. Reads all four transcripts, writes a single authoritative answer.</dd>
+                </div>
+                <div>
+                  <dt className="ed-label">Models consulted</dt>
+                  <dd className="ed-mono text-sm mt-1 tabular-nums">1,243 B total parameters</dd>
+                </div>
+              </dl>
+            </aside>
+          </header>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-              {AGENTS.map((agent, i) => (
-                <motion.div
-                  key={agent.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.06 }}
+          {/* Input */}
+          <section className="pt-10 pb-10">
+            <label htmlFor="nexus-prompt" className="ed-label block mb-4">The question</label>
+            <div className="relative">
+              <textarea
+                id="nexus-prompt"
+                value={prompt}
+                onChange={e => setPrompt(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    run();
+                  }
+                }}
+                placeholder="Ask anything worth thinking hard about…"
+                disabled={isRunning}
+                rows={2}
+                className="w-full bg-transparent ed-display text-[28px] md:text-[36px] leading-tight py-3 pr-24 border-0 border-b-2 focus:outline-none resize-none placeholder:ed-display-italic"
+                style={{
+                  borderColor: canRun ? "var(--ed-copper)" : "var(--ed-rule)",
+                  color: "var(--ed-ink)",
+                  letterSpacing: "-0.01em",
+                  transition: "border-color 300ms ease",
+                }}
+              />
+              <div className="absolute right-0 bottom-4 flex items-center gap-3">
+                {phase !== "idle" && (
+                  <button
+                    onClick={reset}
+                    className="ed-label hover:ed-copper transition-colors"
+                  >
+                    Clear
+                  </button>
+                )}
+                <button
+                  onClick={run}
+                  disabled={!canRun}
+                  className="ed-label px-4 py-2 border transition-all disabled:opacity-30"
+                  style={{
+                    borderColor: canRun ? "var(--ed-copper)" : "var(--ed-rule)",
+                    color: canRun ? "var(--ed-copper)" : "var(--ed-ink-dim)",
+                  }}
                 >
-                  <ModelCard
-                    agent={agent}
-                    state={agentStates[agent.id]}
-                    active={!agentStates[agent.id].done && phase === "racing"}
-                  />
-                </motion.div>
-              ))}
+                  {isRunning ? "Running" : "Run →"}
+                </button>
+              </div>
             </div>
 
-            <AnimatePresence>
-              {(phase === "consensus" || phase === "done") && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                >
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="h-px flex-1" style={{ background: "rgba(99,102,241,0.2)" }} />
-                    <span className="text-[10px] text-indigo-400 font-medium uppercase tracking-widest px-2">
-                      Consensus Synthesis
-                    </span>
-                    <div className="h-px flex-1" style={{ background: "rgba(99,102,241,0.2)" }} />
-                  </div>
-                  <ConsensusCard text={consensus} done={consensusDone} />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            {/* Example prompts */}
+            {phase === "idle" && (
+              <div className="mt-6 flex flex-wrap gap-x-6 gap-y-2">
+                {PROMPTS.map(p => (
+                  <button
+                    key={p}
+                    onClick={() => setPrompt(p)}
+                    className="ed-body text-[13px] text-left hover:ed-copper transition-colors"
+                    style={{ color: "var(--ed-ink-dim)" }}
+                  >
+                    → {p.length > 70 ? p.slice(0, 70) + "…" : p}
+                  </button>
+                ))}
+              </div>
+            )}
 
-      {/* Idle state — capability cards */}
-      {phase === "idle" && (
-        <div className="max-w-5xl mx-auto mt-8 grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {AGENTS.map((agent) => {
-            const Icon = agent.icon;
-            return (
-              <motion.div
-                key={agent.id}
-                whileHover={{ y: -2 }}
-                className="rounded-xl p-4 cursor-default"
-                style={{
-                  background: agent.bg,
-                  border: `1px solid ${agent.border}`,
-                }}
-              >
-                <Icon className="w-5 h-5 mb-2" style={{ color: agent.color }} />
-                <p className="text-xs font-medium text-neutral-200">{agent.name}</p>
-                <p className="text-[10px] mt-0.5" style={{ color: agent.color }}>{agent.role}</p>
-                <p className="text-[10px] text-neutral-600 mt-1 font-mono">{agent.params} params</p>
-              </motion.div>
-            );
-          })}
+            {/* Submitted prompt echo */}
+            {submittedPrompt && (
+              <div className="mt-4 flex items-baseline gap-3">
+                <span className="ed-label">Asking</span>
+                <span className="ed-display-italic text-[18px]">&ldquo;{submittedPrompt}&rdquo;</span>
+              </div>
+            )}
+          </section>
+
+          {/* Model ledger */}
+          {phase !== "idle" && (
+            <section>
+              <div className="flex items-baseline justify-between mb-2">
+                <h2 className="ed-label">The four responses</h2>
+                {phase === "racing" && (
+                  <span className="ed-caption ed-copper">generating simultaneously</span>
+                )}
+              </div>
+
+              <div>
+                {AGENTS.map(a => (
+                  <ModelRow
+                    key={a.id}
+                    agent={a}
+                    state={states[a.id]}
+                    active={!states[a.id].done && phase === "racing"}
+                  />
+                ))}
+              </div>
+
+              {(phase === "consensus" || phase === "done") && (
+                <Consensus text={consensus} done={consensusDone} />
+              )}
+            </section>
+          )}
+
+          {/* Footer */}
+          <footer className="mt-16 pt-6 border-t grid grid-cols-[40px_1fr] gap-5 md:gap-8" style={{ borderColor: "var(--ed-rule-soft)" }}>
+            <div className="ed-mono text-[10px]" style={{ color: "var(--ed-ink-dim)" }}>fin.</div>
+            <div className="flex justify-between flex-wrap gap-3">
+              <p className="ed-caption">
+                Nexus Protocol — Sovereign Matrix
+              </p>
+              {totalMs !== null ? (
+                <p className="ed-caption tabular-nums">
+                  completed in <span className="ed-copper">{(totalMs / 1000).toFixed(2)}s</span>
+                </p>
+              ) : (
+                <p className="ed-caption" style={{ color: "var(--ed-ink-dim)" }}>
+                  ready
+                </p>
+              )}
+            </div>
+          </footer>
+
         </div>
-      )}
+      </div>
     </div>
   );
 }

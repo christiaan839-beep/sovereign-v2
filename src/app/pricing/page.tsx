@@ -226,22 +226,51 @@ export default function PricingPage() {
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           className="relative z-10 max-w-5xl mx-auto text-center"
         >
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold uppercase tracking-[0.2em] mb-8">
-            <GitCompareArrows className="w-3 h-3" /> Platform Comparison
-          </div>
+          <p
+            className="mb-8"
+            style={{
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: "11px",
+              letterSpacing: "0.2em",
+              textTransform: "uppercase",
+              color: "#8F8576",
+            }}
+          >
+            Five tiers · Flat pricing · No per-token fees
+          </p>
 
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white leading-[1.1] mb-6 font-serif">
-            See How We Compare
+          <h1
+            style={{
+              fontFamily: '"Instrument Serif", Georgia, serif',
+              fontSize: "clamp(3rem, 9vw, 7rem)",
+              lineHeight: 0.9,
+              letterSpacing: "-0.025em",
+              fontWeight: 400,
+              color: "#fff",
+              marginBottom: "2rem",
+            }}
+          >
+            Pick one price.{" "}
+            <em style={{ fontStyle: "italic", color: "#B5532C" }}>Keep it.</em>
           </h1>
 
-          <p className="text-lg md:text-xl text-neutral-400 max-w-3xl mx-auto mb-4 leading-relaxed">
-            The only AI agent platform with{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 font-bold">
-              $0 per-token cost
-            </span>
-          </p>
-          <p className="text-sm text-neutral-400 max-w-xl mx-auto">
-            130+ autonomous agents. 39+ open-source models. Local execution. No per-API-call billing surprises.
+          <p
+            className="max-w-2xl mx-auto text-neutral-400"
+            style={{
+              fontFamily: '"Inter Tight", system-ui, sans-serif',
+              fontSize: "19px",
+              lineHeight: 1.55,
+              letterSpacing: "-0.011em",
+            }}
+          >
+            No credit-based pricing. No per-token surprises. No vendor lock-in.
+            One monthly number, every agent, every model — including{" "}
+            <em
+              style={{ fontFamily: '"Instrument Serif", serif', fontStyle: "italic", color: "#fff" }}
+            >
+              Claude
+            </em>{" "}
+            and 38 others.
           </p>
         </motion.div>
       </section>
