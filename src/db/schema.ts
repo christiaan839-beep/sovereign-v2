@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid, integer, index, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, uuid, integer, index, boolean, uniqueIndex } from "drizzle-orm/pg-core";
 
 export const tenants = pgTable("tenants", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -310,6 +310,30 @@ export const stripeEvents = pgTable("stripe_events", {
   type: text("type").notNull(),                     // e.g. "checkout.session.completed"
   processedAt: timestamp("processed_at").defaultNow().notNull(),
 });
+
+/**
+ * OAuth connections — per-user access tokens for Slack / Gmail / HubSpot /
+ * etc. Tokens are encrypted at rest via safeEncrypt. See
+ * docs/adr/0003-slack-oauth-first-integration.md.
+ */
+export const oauthConnections = pgTable("oauth_connections", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull(),
+  provider: text("provider").notNull(),        // "slack", "gmail", "hubspot", ...
+  workspaceId: text("workspace_id").notNull(), // Slack team id / Gmail account id
+  workspaceName: text("workspace_name"),
+  accessToken: text("access_token").notNull(), // safeEncrypt'd
+  refreshToken: text("refresh_token"),         // safeEncrypt'd (nullable for non-rotating providers)
+  scopes: text("scopes").array(),
+  botUserId: text("bot_user_id"),
+  installedAt: timestamp("installed_at").defaultNow().notNull(),
+  revokedAt: timestamp("revoked_at"),
+}, (table) => [
+  uniqueIndex("uniq_oauth_user_provider_workspace").on(
+    table.userId, table.provider, table.workspaceId,
+  ),
+  index("idx_oauth_user_provider").on(table.userId, table.provider),
+]);
 
 // ═══════════════════════════════════════════
 // Team / Organization Workspaces
