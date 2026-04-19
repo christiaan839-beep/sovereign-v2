@@ -6,12 +6,13 @@
     "node": ">=18.0.0 <=22.x"
   },
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "npm run gen:registry && next dev",
+    "build": "npm run gen:registry && next build",
     "start": "next start",
     "lint": "eslint",
     "ws": "ts-node server/ws.ts",
-    "test": "vitest run"
+    "test": "vitest run",
+    "gen:registry": "node scripts/generate-agent-registry.mjs"
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.43",

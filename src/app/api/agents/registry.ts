@@ -1,11 +1,12 @@
 /**
- * AUTO-GENERATED — Static import registry for Vercel compatibility.
+ * AUTO-GENERATED — DO NOT EDIT BY HAND.
  *
- * Webpack needs to see all import() paths at build time to include them
- * in the serverless function bundle. Dynamic paths with webpackIgnore
- * are NOT bundled, causing 404s on Vercel.
+ * Produced by scripts/generate-agent-registry.mjs on every build.
+ * Every agent whose route.ts lives at src/app/api/_agents/<slug>/route.ts
+ * is bundled here so Vercel's serverless packer can see the import paths.
  *
- * To add a new agent: add a line to AGENT_REGISTRY below.
+ * Regenerate: `npm run gen:registry`
+ * Count: 131 agents
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
