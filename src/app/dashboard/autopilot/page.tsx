@@ -8,6 +8,7 @@ import {
   BarChart3, Activity,
 } from "lucide-react";
 import Link from "next/link";
+import { PlaybookGraph } from "@/components/dashboard/PlaybookGraph";
 
 /* ─── Types ─── */
 
@@ -223,10 +224,28 @@ function RunCard({ run: initialRun }: { run: PlaybookRun }) {
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2 }}
           >
-            <div className="border-t border-white/6 px-4 pb-4 pt-3 space-y-1.5">
-              {run.steps.map(step => (
-                <StepRow key={step.id} step={step} />
-              ))}
+            <div className="border-t border-white/6 px-4 pb-4 pt-3 space-y-3">
+              {/* Live DAG — shows the pipeline shape at a glance */}
+              <PlaybookGraph
+                steps={run.steps.map(s => ({
+                  stepIndex: s.stepIndex,
+                  agentName: s.agentName,
+                  reason: s.reason,
+                  status: s.status === "done" ? "done"
+                    : s.status === "failed" ? "failed"
+                    : s.status === "running" ? "running"
+                    : s.status === "skipped" ? "skipped"
+                    : "pending",
+                  durationMs: s.durationMs,
+                }))}
+                runStatus={run.status}
+              />
+              {/* Detail list — timing/result on click */}
+              <div className="space-y-1.5">
+                {run.steps.map(step => (
+                  <StepRow key={step.id} step={step} />
+                ))}
+              </div>
             </div>
           </motion.div>
         )}
