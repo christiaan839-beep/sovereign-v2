@@ -22,7 +22,7 @@ export function TelemetryProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<SystemState>("UPLINK_SECURED");
   const [activePipelines, _setActivePipelines] = useState(5);
   const [dataYield, setDataYield] = useState(1452);
-  const [lastAction, setLastAction] = useState("System initialized. Awaiting Commander inputs.");
+  const [lastAction, setLastAction] = useState("Ready.");
 
   // Keep a ref to the current state so the poll interval can read it without
   // needing `state` in its dep array — this prevents the interval from being
@@ -35,11 +35,10 @@ export function TelemetryProvider({ children }: { children: ReactNode }) {
   const transmitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    const pollStatus = setInterval(() => {
-      if (stateRef.current === "IDLE" && Math.random() > 0.8) {
-        setLastAction("Ghost Fleet optimizing unread inbound hooks.");
-      }
-    }, 15000);
+    // No synthetic "agent optimizing..." messages. The telemetry surface
+    // should reflect real state. When WebSocket telemetry ships we'll wire
+    // real events here. Until then, the interval is a no-op keep-alive.
+    const pollStatus = setInterval(() => { /* reserved for real telemetry */ }, 15000);
     return () => {
       clearInterval(pollStatus);
       if (transmitTimerRef.current) {

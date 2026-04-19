@@ -321,7 +321,7 @@ function EnterpriseSection() {
             Your data. Your infrastructure. Your autonomous workforce.
           </RevealText>
           <RevealText as="p" delay={0.2} className="text-sm text-neutral-400 max-w-2xl mx-auto leading-relaxed">
-            Built on NVIDIA NIM with 39+ models including Gemini 3.1 Pro and Claude Mythos. Zero per-token costs.
+            Built with Claude for reasoning, NVIDIA NIM for throughput. Zero per-token costs on open-source models.
             Run locally via Ollama. Glasswing-grade safety on every execution.
           </RevealText>
         </div>
@@ -354,7 +354,7 @@ function EnterpriseSection() {
           {[
             { label: "25 Autopilot Playbooks", desc: "Schedule multi-agent workflows to run hourly, daily, or weekly — 24/7" },
             { label: "25+ Live Integrations", desc: "Slack, Sheets, HubSpot, Yoco, GitHub, Discord, and more" },
-            { label: "Mythos-Ready", desc: "Glasswing-tier models auto-route through 5-layer guardrails" },
+            { label: "Frontier-Ready Guardrails", desc: "Every agent call routes through 5-layer safety: jailbreak, PII, policy, quality, critic" },
             { label: "2,200+ Tok/s Inference", desc: "Cerebras wafer-scale engine for instant classification" },
           ].map((item, i) => (
             <motion.div key={i} initial={{ opacity: 0 }} whileInView={{ opacity: 1 }}
@@ -776,14 +776,14 @@ export default function Home() {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.65, duration: 0.5 }}
             className="flex flex-wrap items-center justify-center gap-2 mb-10">
             {[
+              { name: "Claude Sonnet 4.6", hot: true },
+              { name: "Claude Haiku 4.5", hot: false },
               { name: "Nemotron Ultra 253B", hot: false },
-              { name: "Claude Mythos", hot: true },
-              { name: "Claude Sonnet 4.6", hot: false },
               { name: "Gemini 3.1 Pro", hot: true },
               { name: "DeepSeek V3.2", hot: false },
               { name: "Llama 4 Maverick", hot: true },
-              { name: "Nemotron Cascade 2", hot: true },
-              { name: "Ollama", hot: false },
+              { name: "Qwen 3 235B", hot: false },
+              { name: "Ollama (local)", hot: false },
             ].map((model) => (
               <span key={model.name} className={`text-[10px] px-3 py-1 rounded-full border transition-all cursor-default ${
                 model.hot
@@ -901,6 +901,62 @@ export default function Home() {
 
       {/* ═══ POWERED BY — infinite scrolling trust strip ═══ */}
       <LogoMarquee />
+
+      {/* ═══ BUILT WITH CLAUDE — Anthropic partner story ═══ */}
+      <section className="py-24 px-6 bg-[#020202] border-y border-white/[0.04] relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-orange-500/[0.03] blur-[180px]" />
+        </div>
+        <div className="max-w-5xl mx-auto relative">
+          <div className="text-center mb-12">
+            <SectionReveal>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-orange-500/20 bg-orange-500/[0.06] mb-5">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="animate-ping absolute inset-0 rounded-full bg-orange-400 opacity-60" />
+                  <span className="relative rounded-full h-1.5 w-1.5 bg-orange-400" />
+                </span>
+                <span className="text-[10px] font-semibold text-orange-400 uppercase tracking-[0.2em]">Claude Partner Network</span>
+              </div>
+              <h2 className="text-2xl md:text-4xl font-bold text-white tracking-tight mb-3">
+                Built <span className="text-orange-400">with</span> Claude, not just on it.
+              </h2>
+              <p className="text-sm text-neutral-500 max-w-xl mx-auto leading-relaxed">
+                Every line of this platform was written with Claude Code. Every complex decision runs through Claude.
+                Anthropic isn&apos;t a vendor — it&apos;s the reasoning core of the product.
+              </p>
+            </SectionReveal>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-4">
+            {[
+              {
+                title: "Claude as the reasoning core",
+                body: "Every high-stakes decision — strategic analysis, consensus synthesis, extended thinking — routes through Claude Sonnet 4.6. Other models handle throughput; Claude handles judgment.",
+                stat: "god-brain · war-room · nexus",
+              },
+              {
+                title: "Built by a solo founder + Claude Code",
+                body: "131 agents, 39 models, a consensus engine, multi-tenant auth, and a live metering layer — shipped solo with Claude Code as the engineering partner. Every commit tells that story.",
+                stat: "1 founder · 1 AI partner · shipped",
+              },
+              {
+                title: "Not embedding. Building.",
+                body: "We don&apos;t wrap Claude in a thin chat UI. We use it where it matters: planning, synthesis, deep reasoning. The rest of the stack — Nemotron, DeepSeek, Qwen — exists so Claude can focus on what it&apos;s best at.",
+                stat: "partnership, not dependency",
+              },
+            ].map((card) => (
+              <div
+                key={card.title}
+                className="rounded-2xl p-5 border border-white/[0.06] bg-white/[0.02] hover:border-orange-500/[0.2] hover:bg-white/[0.03] transition-all"
+              >
+                <h3 className="text-base font-semibold text-white mb-2">{card.title}</h3>
+                <p className="text-[13px] leading-relaxed text-neutral-400 mb-3">{card.body}</p>
+                <p className="text-[10px] font-mono text-orange-400/80 tracking-wide">{card.stat}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* ═══ LIVE DEMO — Interactive agent terminal (replaces dead video placeholder) ═══ */}
       <section className="py-20 px-6 bg-[#030303]">

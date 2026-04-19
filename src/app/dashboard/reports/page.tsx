@@ -52,7 +52,7 @@ const REPORT_TYPES: ReportType[] = [
 4. Top Industries (ranked list of 5 industries with lead counts)
 5. Conversion Funnel (visitors -> leads -> qualified -> converted)
 6. Recommendations (3 actionable next steps)
-Format each section with a clear heading and bullet points. Use realistic placeholder data based on typical B2B SaaS lead generation benchmarks.`,
+Format each section with a clear heading and bullet points. If underlying data is unavailable, state that explicitly — do NOT fabricate numbers. Return only what can be supported by actual platform metrics.`,
   },
   {
     id: "content-performance",
@@ -70,7 +70,7 @@ Format each section with a clear heading and bullet points. Use realistic placeh
 5. Top Performing Content (3 best articles by engagement)
 6. Channel Distribution (blog, social, email newsletter breakdown)
 7. Recommendations (3 actionable next steps)
-Format each section with a clear heading and bullet points. Use realistic data based on typical AI content marketing benchmarks.`,
+Format each section with a clear heading and bullet points. If underlying data is unavailable, state that explicitly — do NOT fabricate numbers.`,
   },
   {
     id: "competitive-intelligence",
@@ -88,7 +88,7 @@ Format each section with a clear heading and bullet points. Use realistic data b
 5. Pricing Intelligence (competitor pricing changes detected)
 6. Feature Gap Analysis (features competitors have vs don't have)
 7. Strategic Recommendations (3 actionable moves to exploit findings)
-Format each section with a clear heading and bullet points. Use realistic competitive analysis data.`,
+Format each section with a clear heading and bullet points. If underlying data is unavailable, state that explicitly — do NOT fabricate numbers.`,
   },
   {
     id: "platform-usage",
@@ -107,7 +107,7 @@ Format each section with a clear heading and bullet points. Use realistic compet
 6. Error Rate Analysis (common failure modes and frequency)
 7. Cost Efficiency (tokens consumed, estimated cost savings vs manual)
 8. Recommendations (3 optimization suggestions)
-Format each section with a clear heading and bullet points. Use realistic platform usage data.`,
+Format each section with a clear heading and bullet points. If underlying data is unavailable, state that explicitly — do NOT fabricate numbers.`,
   },
 ];
 

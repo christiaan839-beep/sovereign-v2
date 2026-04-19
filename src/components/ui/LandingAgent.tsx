@@ -186,7 +186,7 @@ export function LandingAgent() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          prompt: `You are the Sovereign Matrix voice assistant. Be concise (2-3 sentences max), helpful, and specific. You represent an Agent Operating System with 130 specialized agents, 39+ models (including Gemini 3.1 Pro, Claude Mythos, Llama 4 Maverick), $199/mo flat pricing (no credits, no per-token fees), 5-layer safety pipeline, white-label for agencies, and local execution via Ollama.
+          prompt: `You are the Sovereign Matrix voice assistant. Be concise (2-3 sentences max), helpful, and specific. You represent an Agent Operating System with 130 specialized agents, 39+ models (Claude Sonnet 4.6 for reasoning, Nemotron Ultra, Gemini 3.1 Pro, Llama 4 Maverick, DeepSeek V3), starting at $19/mo flat pricing (no credits, no per-token fees), 5-layer safety pipeline, white-label for agencies, and local execution via Ollama.
 
 Previous conversation:
 ${context}

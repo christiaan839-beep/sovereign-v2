@@ -54,7 +54,15 @@ async function getUserPlan(userId: string): Promise<PlanId> {
 /**
  * Count the user's playbook runs in the current calendar month.
  */
-async function getMonthlyUsage(userId: string): Promise<number> {
+/**
+ * Sentinel returned by getMonthlyUsage when the DB is down but the table
+ * DOES exist — we fail CLOSED in that case to protect revenue. A missing
+ * table (42P01) still fails open because that's the pre-migration bootstrap
+ * window where we want users to be able to try the product.
+ */
+const USAGE_UNAVAILABLE = Symbol("usage-unavailable");
+
+async function getMonthlyUsage(userId: string): Promise<number | typeof USAGE_UNAVAILABLE> {
   try {
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -74,11 +82,16 @@ async function getMonthlyUsage(userId: string): Promise<number> {
     const pgCode = (err as { code?: string })?.code;
     const msg = err instanceof Error ? err.message : String(err);
     if (pgCode === "42P01" || msg.includes("does not exist")) {
-      // Table doesn't exist yet — no usage
+      // Bootstrap window: migrations not yet applied. Fail OPEN so the app
+      // can be used while the operator runs migrations.
+      log.warn("playbook_runs table missing — run drizzle migrations", { userId });
       return 0;
     }
-    log.error("Failed to check usage", { error: msg, userId });
-    return 0; // Fail open — don't block users if DB is down
+    // DB is reachable but the count query failed for another reason
+    // (network blip, schema mismatch, bad connection). Fail CLOSED so a
+    // free-tier user can't bypass their limit by triggering errors.
+    log.error("Failed to check usage — denying run", { error: msg, userId });
+    return USAGE_UNAVAILABLE;
   }
 }
 
@@ -91,7 +104,23 @@ async function getMonthlyUsage(userId: string): Promise<number> {
 export async function checkPlanLimits(userId: string): Promise<PlanCheck> {
   const planId = await getUserPlan(userId);
   const plan = PLANS[planId];
-  const used = await getMonthlyUsage(userId);
+  const usageResult = await getMonthlyUsage(userId);
+
+  // Fail-closed when the usage layer is unavailable (DB error, not missing table).
+  if (usageResult === USAGE_UNAVAILABLE) {
+    return {
+      allowed: false,
+      plan: planId,
+      planName: plan.name,
+      used: 0,
+      limit: plan.runsPerMonth,
+      remaining: 0,
+      message: "Usage tracking is temporarily unavailable. Please try again in a moment.",
+      upgradeUrl: "/pricing",
+    };
+  }
+
+  const used = usageResult;
   const limit = plan.runsPerMonth;
   const remaining = Math.max(0, limit - used);
 
@@ -134,7 +163,9 @@ export async function incrementUsage(userId: string): Promise<void> {
   try {
     const planId = await getUserPlan(userId);
     const plan = PLANS[planId];
-    const used = await getMonthlyUsage(userId);
+    const usageResult = await getMonthlyUsage(userId);
+    if (usageResult === USAGE_UNAVAILABLE) return; // DB down — skip warning logs
+    const used = usageResult;
     const pct = plan.runsPerMonth === Infinity ? 0 : (used / plan.runsPerMonth) * 100;
 
     if (pct >= 90) {

@@ -384,24 +384,25 @@ export function Pricing() {
                   <ShieldAlert className="w-6 h-6 text-[#00B7FF]" />
                 </div>
                 <div>
-                  <h3 id="secure-uplink-title" className="text-xl font-bold text-white uppercase tracking-widest">Secure Uplink</h3>
-                  <p className="text-xs text-[#00B7FF] uppercase tracking-widest">Hardware Binding Protocol</p>
+                  <h3 id="secure-uplink-title" className="text-xl font-bold text-white">Talk to Sales</h3>
+                  <p className="text-xs text-[#00B7FF]">Enterprise onboarding</p>
                 </div>
               </div>
 
               <p className="text-sm text-neutral-400 mb-6">
-                To authorize your deployment, the Sovereign Matrix requires a direct WhatsApp line. A verification packet will be sent to this number bounding your Enterprise license to you physically.
+                Leave your name and WhatsApp number. We&apos;ll reach out within one business day to discuss
+                your deployment, pricing, and security requirements.
               </p>
 
               <form onSubmit={processSecureUplink} className="space-y-4">
                 <div>
-                  <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-[0.2em] mb-2">Commander Name</label>
-                  <input 
-                    type="text" 
+                  <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-[0.2em] mb-2">Full Name</label>
+                  <input
+                    type="text"
                     required
                     value={leadName}
                     onChange={(e) => setLeadName(e.target.value)}
-                    placeholder="John Doe"
+                    placeholder="Your name"
                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-neutral-700 focus:outline-none focus:border-[#00B7FF]/50 transition-colors"
                   />
                 </div>

@@ -85,7 +85,6 @@ function formatRelativeTime(dateStr: string): string {
 // ─── Component ──────────────────────────────────────────────
 export default function ROIAnalyticsPage() {
   const [loading, setLoading] = useState(true);
-  const [isDemo, setIsDemo] = useState(false);
   const [kpis, setKpis] = useState<KPIData>({ totalLeads: 0, contentPieces: 0, agentCalls: 0, timeSavedHours: 0 });
   const [agents, setAgents] = useState<AgentPerformance[]>([]);
   const [timeline, setTimeline] = useState<TelemetryEvent[]>([]);
@@ -97,62 +96,18 @@ export default function ROIAnalyticsPage() {
       const res = await fetch("/api/agents/analytics");
       if (res.ok) {
         const data = await res.json();
-        // Map analytics response to our UI types
         if (data.kpis) setKpis(data.kpis);
         if (data.agentPerformance) setAgents(data.agentPerformance);
         if (data.timeline) setTimeline(data.timeline);
         if (data.monthlyTrend) setMonthlyTrend(data.monthlyTrend);
-      } else {
-        // Fallback: generate demo data for presentation
-        setIsDemo(true);
-        loadDemoData();
       }
+      // On failure: leave empty state — NEVER fabricate analytics numbers.
+      // Empty state is an honest signal that the user hasn't run anything yet.
     } catch {
-      setIsDemo(true);
-      loadDemoData();
+      // Swallow — empty state handles display.
     } finally {
       setLoading(false);
     }
-  };
-
-  const loadDemoData = () => {
-    setKpis({ totalLeads: 247, contentPieces: 1893, agentCalls: 12450, timeSavedHours: 3112 });
-    setAgents([
-      { agent: "Content Factory", calls: 3240, avgResponseMs: 2100, category: "content" },
-      { agent: "SEO Dominator", calls: 2810, avgResponseMs: 3400, category: "content" },
-      { agent: "Lead Prospector", calls: 1920, avgResponseMs: 4200, category: "leads" },
-      { agent: "Page Builder", calls: 1540, avgResponseMs: 5100, category: "code" },
-      { agent: "War Room", calls: 980, avgResponseMs: 6800, category: "research" },
-      { agent: "God Brain", calls: 870, avgResponseMs: 3200, category: "research" },
-      { agent: "VSL Hacker", calls: 620, avgResponseMs: 2800, category: "content" },
-      { agent: "Email Sequence", calls: 410, avgResponseMs: 1900, category: "content" },
-      { agent: "Smart Router", calls: 350, avgResponseMs: 800, category: "other" },
-      { agent: "Voice Assistant", calls: 210, avgResponseMs: 1200, category: "leads" },
-    ]);
-    setTimeline(
-      Array.from({ length: 20 }, (_, i) => ({
-        id: `demo-${i}`,
-        eventType: ["lead_scraped", "content_generated", "page_built", "agent_call", "benchmark"][i % 5],
-        payload: JSON.stringify({
-          preview: [
-            "Scraped 12 roofers in Austin TX",
-            'Generated blog post: "AI in 2026"',
-            "Built landing page for client",
-            "Processed SEO audit request",
-            "Benchmark: DeepSeek 2.1s",
-          ][i % 5],
-        }),
-        timestamp: new Date(Date.now() - i * 3600000 * (1 + Math.random())).toISOString(),
-      }))
-    );
-    setMonthlyTrend([
-      { month: "Oct", calls: 1200 },
-      { month: "Nov", calls: 2100 },
-      { month: "Dec", calls: 3400 },
-      { month: "Jan", calls: 4800 },
-      { month: "Feb", calls: 7200 },
-      { month: "Mar", calls: 12450 },
-    ]);
   };
 
   useEffect(() => {
@@ -212,11 +167,6 @@ export default function ROIAnalyticsPage() {
           <p className="text-sm text-neutral-400 mt-1">
             Real-time intelligence on the value Sovereign Matrix delivers to your agency.
           </p>
-          {isDemo && (
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-bold uppercase tracking-wider mt-2">
-              Sample Data — Connect your agents to see real metrics
-            </div>
-          )}
         </div>
         <button
           onClick={fetchData}

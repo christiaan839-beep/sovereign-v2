@@ -1,148 +1,147 @@
 import { createAgentRoute } from "@/lib/agent-factory";
 import { NextResponse } from "next/server";
+import { currentUser } from "@clerk/nextjs/server";
+import { db } from "@/db";
+import { usage, subscriptions } from "@/db/schema";
+import { eq, and, gte, sql } from "drizzle-orm";
+import { PLANS, type PlanId } from "@/lib/plans";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("agents:billing");
 
 /**
- * USAGE-BASED BILLING — Calculates per-agent-call charges.
- * Tracks consumption and generates invoices.
- * 
- * Pricing per call (ZAR):
- * - Translate: R0.50
- * - PII Redactor: R1.00
- * - Blog Gen: R5.00
- * - Swarm: R10.00
- * - Collab Room: R15.00
- * - Case Study: R5.00
- * - Page Builder: R3.00
- * - Image Gen: R2.00
- * - Voice Synth: R1.50
- * - Voicechat: R2.00
- * - Benchmark: R3.00
- * - Other: R0.50
+ * USAGE METERING & BILLING SUMMARY
+ *
+ * Sovereign Matrix charges flat monthly subscriptions (Stripe) — not per
+ * agent-call. This route is the metering layer: it records every agent
+ * invocation in the `usage` table and produces a per-user consumption
+ * summary that the dashboard reads.
+ *
+ * Actions:
+ *   - record:  POST { action: "record", agentId, tokensUsed, model }
+ *              -> insert one row in `usage` for the authenticated user
+ *   - summary: POST { action: "summary", since?: "30d" | "7d" | "today" }
+ *              -> rollup: per-agent calls, totals, current plan + limit
  */
 
-interface UsageRecord {
-  clientId: string;
-  agent: string;
-  cost: number;
-  timestamp: string;
+type Action = "record" | "summary";
+
+function sinceDate(period: string | undefined): Date {
+  const now = Date.now();
+  if (period === "today") return new Date(new Date().setHours(0, 0, 0, 0));
+  if (period === "7d") return new Date(now - 7 * 86_400_000);
+  return new Date(now - 30 * 86_400_000); // default 30d
 }
 
-const BILLING_STORE = new Map<string, UsageRecord[]>();
+async function handleRecord(userId: string, input: Record<string, unknown>) {
+  const agentId = typeof input.agentId === "string" ? input.agentId.trim() : "";
+  const model = typeof input.model === "string" ? input.model.trim() : "unknown";
+  const tokensUsed = Number.isFinite(input.tokensUsed) ? Number(input.tokensUsed) : 0;
 
-const AGENT_PRICING: Record<string, number> = {
-  "translate": 0.50,
-  "pii-redactor": 1.00,
-  "gliner-pii": 1.50,
-  "blog-gen": 5.00,
-  "swarm": 10.00,
-  "collab-room": 15.00,
-  "case-study": 5.00,
-  "page-builder": 3.00,
-  "image-gen": 2.00,
-  "voice-synth": 1.50,
-  "voicechat": 2.00,
-  "cosmos-video": 5.00,
-  "benchmark": 3.00,
-  "florence-ocr": 1.00,
-  "doc-intel": 2.00,
-  "abm-artillery": 3.00,
-};
+  if (!agentId) {
+    return { error: "agentId is required" };
+  }
 
-async function _postHandler(request: Request) {
   try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const { action, clientId, agent } = await request.json();
-
-    if (action === "record") {
-      if (!clientId || !agent) {
-        return NextResponse.json({ error: "clientId and agent required." }, { status: 400 });
-      }
-
-      const cost = AGENT_PRICING[agent] || 0.50;
-      const record: UsageRecord = {
-        clientId,
-        agent,
-        cost,
-        timestamp: new Date().toISOString(),
-      };
-
-      const existing = BILLING_STORE.get(clientId) || [];
-      existing.push(record);
-      BILLING_STORE.set(clientId, existing);
-
-      return NextResponse.json({ success: true, recorded: record, total_usage: existing.length });
+    await db.insert(usage).values({ userId, agentId, model, tokensUsed });
+    return { success: true };
+  } catch (err: unknown) {
+    // Tolerate missing table in preview environments that haven't run migrations.
+    const code = (err as { code?: string })?.code;
+    if (code === "42P01") {
+      log.warn("usage table not found — run drizzle migrations", { userId });
+      return { success: false, error: "usage table missing — run migrations" };
     }
-
-    if (action === "invoice") {
-      if (!clientId) {
-        return NextResponse.json({ error: "clientId required." }, { status: 400 });
-      }
-
-      const records = BILLING_STORE.get(clientId) || [];
-      const totalCost = records.reduce((sum, r) => sum + r.cost, 0);
-
-      // Group by agent
-      const byAgent: Record<string, { calls: number; cost: number }> = {};
-      for (const r of records) {
-        if (!byAgent[r.agent]) byAgent[r.agent] = { calls: 0, cost: 0 };
-        byAgent[r.agent].calls += 1;
-        byAgent[r.agent].cost += r.cost;
-      }
-
-      return NextResponse.json({
-        success: true,
-        invoice: {
-          clientId,
-          period: `${records[0]?.timestamp?.substring(0, 10) || "N/A"} → ${records[records.length - 1]?.timestamp?.substring(0, 10) || "N/A"}`,
-          total_calls: records.length,
-          total_cost_zar: totalCost,
-          breakdown: Object.entries(byAgent).map(([agent, data]) => ({
-            agent,
-            calls: data.calls,
-            unit_price: AGENT_PRICING[agent] || 0.50,
-            total: data.cost,
-          })).sort((a, b) => b.total - a.total),
-        },
-      });
-    }
-
-    return NextResponse.json({ error: "action must be 'record' or 'invoice'." }, { status: 400 });
-  } catch (error) {
-    return NextResponse.json({ error: "Billing error", details: String(error) }, { status: 500 });
+    throw err;
   }
 }
 
-export async function GET() {
-  const allClients: Array<{ clientId: string; calls: number; spend: number }> = [];
-  for (const [clientId, records] of BILLING_STORE.entries()) {
-    allClients.push({
-      clientId,
-      calls: records.length,
-      spend: records.reduce((s, r) => s + r.cost, 0),
-    });
-  }
+async function handleSummary(userId: string, input: Record<string, unknown>) {
+  const since = sinceDate(typeof input.since === "string" ? input.since : undefined);
 
+  try {
+    // Per-agent rollup for this user, ordered by call count
+    const rows = await db
+      .select({
+        agentId: usage.agentId,
+        calls: sql<number>`count(*)::int`,
+        tokens: sql<number>`coalesce(sum(${usage.tokensUsed}), 0)::int`,
+      })
+      .from(usage)
+      .where(and(eq(usage.userId, userId), gte(usage.createdAt, since)))
+      .groupBy(usage.agentId);
+
+    const totalCalls = rows.reduce((s, r) => s + r.calls, 0);
+    const totalTokens = rows.reduce((s, r) => s + r.tokens, 0);
+
+    // Current subscription (if table exists)
+    let plan = "free";
+    try {
+      const sub = await db
+        .select({ plan: subscriptions.plan })
+        .from(subscriptions)
+        .where(eq(subscriptions.userId, userId))
+        .limit(1);
+      if (sub[0]?.plan) plan = sub[0].plan;
+    } catch {
+      // subscriptions table missing — fall back to free
+    }
+
+    const planId = (plan in PLANS ? plan : "free") as PlanId;
+    const planDef = PLANS[planId];
+    const planLimit = Number.isFinite(planDef.runsPerMonth) ? planDef.runsPerMonth : null;
+
+    return {
+      success: true,
+      period: { since: since.toISOString(), now: new Date().toISOString() },
+      plan,
+      planLimit,
+      totalCalls,
+      totalTokens,
+      utilizationPct: planLimit ? Math.round((totalCalls / planLimit) * 100) : null,
+      byAgent: rows.sort((a, b) => b.calls - a.calls),
+    };
+  } catch (err: unknown) {
+    const code = (err as { code?: string })?.code;
+    if (code === "42P01") {
+      return {
+        success: false,
+        error: "usage table missing — run drizzle migrations",
+        byAgent: [],
+        totalCalls: 0,
+        totalTokens: 0,
+      };
+    }
+    throw err;
+  }
+}
+
+/** GET — public status + pricing tier list (no user data). */
+export async function GET() {
   return NextResponse.json({
-    status: "Usage Billing — Active",
-    pricing: AGENT_PRICING,
-    clients: allClients.sort((a, b) => b.spend - a.spend),
-    total_revenue: allClients.reduce((s, c) => s + c.spend, 0),
+    status: "ok",
+    billing_model: "flat monthly subscription via Stripe (USD)",
+    plans: {
+      free: { price_usd: 0, monthly_runs: 50 },
+      starter: { price_usd: 19, monthly_runs: 500 },
+      growth: { price_usd: 49, monthly_runs: 2000 },
+      node: { price_usd: 199, monthly_runs: 10_000 },
+      enterprise: { price_usd: 499, monthly_runs: 100_000 },
+    },
+    note: "Per-call charging is NOT used. See /pricing for current plans.",
   });
 }
 
-
-// Factory wrapper for POST (adds safety pipeline)
 export const POST = createAgentRoute({
   name: "billing",
-  handler: async ({ input, email, userId, request }) => {
-    // Delegate to existing handler
-    const fakeReq = new Request("http://localhost", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(input),
-    });
-    const res = await _postHandler(fakeReq);
-    return res instanceof Response ? await res.json() : res;
+  handler: async ({ input }) => {
+    const user = await currentUser();
+    const userId = user?.id;
+    if (!userId) return { error: "Authentication required" };
+
+    const action = (input.action as Action) || "summary";
+    if (action === "record") return handleRecord(userId, input);
+    if (action === "summary") return handleSummary(userId, input);
+    return { error: `unknown action: ${action}` };
   },
 });

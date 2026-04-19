@@ -6,11 +6,11 @@ import Link from "next/link";
 
 const LAUNCH_FEATURES = [
   { icon: Brain, title: "130 AI Agents", desc: "Lead gen, content, SEO, voice, code, competitive intel — all pre-built and ready.", color: "emerald" },
-  { icon: Zap, title: "39+ Models", desc: "Nemotron, Gemini 3.1, DeepSeek, Llama 4 Maverick, Claude Mythos. Auto-routed per task.", color: "cyan" },
+  { icon: Zap, title: "39+ Models", desc: "Claude Sonnet 4.6, Nemotron Ultra, Gemini 3.1 Pro, DeepSeek V3, Llama 4 Maverick. Auto-routed per task.", color: "cyan" },
   { icon: Shield, title: "5-Layer Safety", desc: "Jailbreak detection, PII scanning, content safety, quality scoring, critic review. Every request.", color: "violet" },
   { icon: Mic, title: "Voice Agents", desc: "AI that makes phone calls, qualifies leads, books meetings. Discloses AI on every call.", color: "amber" },
   { icon: Target, title: "$199/mo Flat", desc: "No credits. No per-token fees. No usage limits. One price for everything.", color: "emerald" },
-  { icon: Globe, title: "Glasswing-Ready", desc: "Built for frontier model safety. Trust infrastructure for Mythos-class AI.", color: "violet" },
+  { icon: Globe, title: "Frontier-Ready", desc: "Built for frontier model safety. Every agent call passes through jailbreak, PII, policy, and quality gates.", color: "violet" },
   { icon: Code2, title: "Developer SDK", desc: "Build agents, publish to marketplace, earn 80% revenue. The Shopify for AI agents.", color: "cyan" },
   { icon: CheckCircle2, title: "White-Label", desc: "Your brand, your clients, your revenue. Agencies resell at 5x margin.", color: "amber" },
 ];

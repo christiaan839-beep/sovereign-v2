@@ -215,20 +215,6 @@ const CLAUDE_MODELS: ClaudeModelInfo[] = [
     released: "2026-02-05",
   },
   {
-    id: "claude-mythos",
-    name: "Claude Mythos (Preview)",
-    provider: "Anthropic",
-    contextWindow: 1000000,
-    maxOutputTokens: 128000,
-    capabilities: [
-      "next-gen-reasoning",
-      "cybersecurity",
-      "advanced-coding",
-      "academic-reasoning",
-    ],
-    released: "TBD — early access expected Q2 2026",
-  },
-  {
     id: "claude-haiku-4-5-20251001",
     name: "Claude Haiku 4.5",
     provider: "Anthropic",

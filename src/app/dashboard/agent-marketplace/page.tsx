@@ -9,21 +9,8 @@ import {
 
 const CATEGORIES = ["All", "Sales", "Content", "SEO", "Intelligence", "Voice", "Code"];
 
-// Fallback templates used when the marketplace API returns no results
-const FALLBACK_TEMPLATES: MarketplaceAgent[] = [
-  { id: "fb-1", name: "Cold Outbound Pro", description: "Multi-channel outbound sequence with personalized emails, LinkedIn, and follow-ups.", category: "Sales", authorName: "Sovereign Labs", installs: 0, rating: 0, premium: false },
-  { id: "fb-2", name: "SEO Content Engine", description: "Auto-research keywords, generate optimized blog posts, and track rankings.", category: "SEO", authorName: "Growth AI", installs: 0, rating: 0, premium: true },
-  { id: "fb-3", name: "Voice Qualifier", description: "AI voice agent that qualifies inbound leads with natural conversation.", category: "Voice", authorName: "VoxForge", installs: 0, rating: 0, premium: true },
-  { id: "fb-4", name: "Competitor Radar", description: "Track competitor pricing, features, and content changes in real time.", category: "Intelligence", authorName: "Sovereign Labs", installs: 0, rating: 0, premium: false },
-  { id: "fb-5", name: "Blog Ghost Writer", description: "Generate long-form blog posts matching your brand voice and style.", category: "Content", authorName: "ContentStack", installs: 0, rating: 0, premium: false },
-  { id: "fb-6", name: "Lead Scraper X", description: "Find and enrich B2B leads from LinkedIn, Apollo, and company sites.", category: "Sales", authorName: "DataMine Co", installs: 0, rating: 0, premium: true },
-  { id: "fb-7", name: "Code Review Agent", description: "Automated PR reviews with security checks, performance tips, and style linting.", category: "Code", authorName: "DevFlow", installs: 0, rating: 0, premium: false },
-  { id: "fb-8", name: "Social Scheduler", description: "Generate and schedule posts across Twitter, LinkedIn, and Instagram.", category: "Content", authorName: "SocialPilot AI", installs: 0, rating: 0, premium: false },
-  { id: "fb-9", name: "Site Audit Pro", description: "Full technical SEO audit with Core Web Vitals and accessibility checks.", category: "SEO", authorName: "Sovereign Labs", installs: 0, rating: 0, premium: true },
-  { id: "fb-10", name: "Meeting Intel", description: "Pre-call research that pulls company news, funding, and attendee profiles.", category: "Intelligence", authorName: "PrepAI", installs: 0, rating: 0, premium: false },
-  { id: "fb-11", name: "Voice Transcriber", description: "Real-time call transcription with sentiment analysis and action items.", category: "Voice", authorName: "VoxForge", installs: 0, rating: 0, premium: false },
-  { id: "fb-12", name: "API Builder Agent", description: "Generate REST APIs from natural language specs with auto-documentation.", category: "Code", authorName: "DevFlow", installs: 0, rating: 0, premium: true },
-];
+// No fabricated fallback agents. If the marketplace DB is empty, show an honest
+// empty state — never hardcoded templates masquerading as real listings.
 
 interface MarketplaceAgent {
   id: string;
@@ -43,7 +30,7 @@ const CATEGORY_ICON: Record<string, React.ComponentType<{ className?: string }>>
 export default function AgentMarketplacePage() {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
-  const [agents, setAgents] = useState<MarketplaceAgent[]>(FALLBACK_TEMPLATES);
+  const [agents, setAgents] = useState<MarketplaceAgent[]>([]);
   const [loading, setLoading] = useState(true);
   const [installingId, setInstallingId] = useState<string | null>(null);
   const [installedIds, setInstalledIds] = useState<Set<string>>(new Set());
@@ -60,18 +47,17 @@ export default function AgentMarketplacePage() {
           name: a.name as string,
           description: a.description as string,
           category: a.category as string,
-          authorName: a.authorName as string || "Community",
+          authorName: (a.authorName as string) || "Community",
           installs: (a.installs as number) || 0,
-          rating: (a.rating as number) || 4.5,
+          // Only show a rating if the API actually returned one — never fabricate
+          rating: typeof a.rating === "number" ? a.rating : undefined,
           premium: (a.premium as boolean) || false,
         })));
       } else {
-        // Use fallback templates when marketplace DB is empty
-        setAgents(FALLBACK_TEMPLATES);
+        setAgents([]);
       }
     } catch {
-      // Keep fallback templates on error
-      setAgents(FALLBACK_TEMPLATES);
+      setAgents([]);
     } finally {
       setLoading(false);
     }
