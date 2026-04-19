@@ -42,7 +42,11 @@ export default function FreeSeoAuditPage() {
       const res = await fetch("/api/free/run", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ agent: "seo-dominator", params: { domain, mode: "audit" } }),
+        body: JSON.stringify({
+          agent: "seo-dominator",
+          email: email.trim() || undefined, // optional — see ADR-0001
+          params: { domain, mode: "audit" },
+        }),
       });
 
       if (!res.ok) {
@@ -101,27 +105,37 @@ export default function FreeSeoAuditPage() {
         </div>
 
         {/* Input */}
-        <div className="flex gap-3 mb-8">
-          <div className="flex-1 relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
-            <input
-              type="text"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && runAudit()}
-              placeholder="Enter a website URL (e.g., competitor.com)"
-              className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white placeholder-neutral-500 text-sm focus:outline-none focus:border-emerald-500/30 transition-colors"
-            />
+        <div className="flex flex-col gap-3 mb-2">
+          <div className="flex gap-3">
+            <div className="flex-1 relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
+              <input
+                type="text"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && runAudit()}
+                placeholder="Enter a website URL (e.g., competitor.com)"
+                className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white placeholder-neutral-500 text-sm focus:outline-none focus:border-emerald-500/30 transition-colors"
+              />
+            </div>
+            <button
+              onClick={runAudit}
+              disabled={loading || !url.trim()}
+              className="px-6 py-3.5 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-black font-semibold rounded-xl text-sm transition-colors flex items-center gap-2"
+            >
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+              {loading ? "Analyzing..." : "Audit"}
+            </button>
           </div>
-          <button
-            onClick={runAudit}
-            disabled={loading || !url.trim()}
-            className="px-6 py-3.5 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-black font-semibold rounded-xl text-sm transition-colors flex items-center gap-2"
-          >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-            {loading ? "Analyzing..." : "Audit"}
-          </button>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Email (optional — 10 audits/hr instead of 3)"
+            className="w-full px-4 py-3 rounded-xl bg-white/[0.02] border border-white/[0.06] text-neutral-300 placeholder-neutral-600 text-xs focus:outline-none focus:border-emerald-500/20 transition-colors"
+          />
         </div>
+        <div className="mb-8" />
 
         {/* Error */}
         {error && (

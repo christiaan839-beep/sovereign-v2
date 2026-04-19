@@ -39,7 +39,11 @@ export default function FreeLeadFinderPage() {
       const res = await fetch("/api/free/run", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ agent: "leads", params: { niche, location: location || "worldwide" } }),
+        body: JSON.stringify({
+          agent: "leads",
+          email: email.trim() || undefined, // optional — see ADR-0001
+          params: { niche, location: location || "worldwide" },
+        }),
       });
 
       if (!res.ok) {
@@ -88,36 +92,45 @@ export default function FreeLeadFinderPage() {
         </div>
 
         {/* Input */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-8">
-          <div className="flex-1 relative">
-            <Target className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
-            <input
-              type="text"
-              value={niche}
-              onChange={(e) => setNiche(e.target.value)}
-              placeholder="Niche (e.g., SaaS, Real Estate, Dental)"
-              className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white placeholder-neutral-500 text-sm focus:outline-none focus:border-emerald-500/30"
-            />
-          </div>
-          <div className="sm:w-48 relative">
-            <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
-            <input
-              type="text"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder="Location"
-              className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white placeholder-neutral-500 text-sm focus:outline-none focus:border-emerald-500/30"
-            />
-          </div>
-          <button
-            onClick={findLeads}
-            disabled={loading || !niche.trim()}
-            onKeyDown={(e) => e.key === "Enter" && findLeads()}
-            className="px-6 py-3.5 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-black font-semibold rounded-xl text-sm transition-colors flex items-center gap-2"
-          >
+        <div className="flex flex-col gap-3 mb-8">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex-1 relative">
+              <Target className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
+              <input
+                type="text"
+                value={niche}
+                onChange={(e) => setNiche(e.target.value)}
+                placeholder="Niche (e.g., SaaS, Real Estate, Dental)"
+                className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white placeholder-neutral-500 text-sm focus:outline-none focus:border-emerald-500/30"
+              />
+            </div>
+            <div className="sm:w-48 relative">
+              <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
+              <input
+                type="text"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="Location"
+                className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white placeholder-neutral-500 text-sm focus:outline-none focus:border-emerald-500/30"
+              />
+            </div>
+            <button
+              onClick={findLeads}
+              disabled={loading || !niche.trim()}
+              onKeyDown={(e) => e.key === "Enter" && findLeads()}
+              className="px-6 py-3.5 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-black font-semibold rounded-xl text-sm transition-colors flex items-center gap-2"
+            >
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Target className="w-4 h-4" />}
             {loading ? "Finding..." : "Find Leads"}
-          </button>
+            </button>
+          </div>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Email (optional — 10 searches/hr instead of 3)"
+            className="w-full px-4 py-3 rounded-xl bg-white/[0.02] border border-white/[0.06] text-neutral-300 placeholder-neutral-600 text-xs focus:outline-none focus:border-emerald-500/20 transition-colors"
+          />
         </div>
 
         {error && (

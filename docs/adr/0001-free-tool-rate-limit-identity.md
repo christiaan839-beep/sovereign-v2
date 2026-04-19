@@ -1,6 +1,6 @@
 # ADR-0001: Free-tool rate-limit identity strategy
 
-**Status:** Proposed
+**Status:** Accepted (2026-04-19 — founder granted autonomous build authority)
 **Date:** 2026-04-19
 **Deciders:** @christiaandewet (founder)
 **Affects:** `src/app/api/free/run/route.ts`, `src/app/free/*` (UI pages)

@@ -73,6 +73,9 @@ export default function FreeCompetitorScanPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           agent: "competitor",
+          // Optional email — if provided, unlocks 10/hr instead of 3/hr.
+          // See ADR-0001.
+          email: email.trim() || undefined,
           params: {
             competitorUrl: url.trim(),
             competitorName: url.replace(/^https?:\/\//, "").replace(/\/.*$/, ""),
@@ -163,6 +166,15 @@ export default function FreeCompetitorScanPage() {
               onChange={(e) => setYourBiz(e.target.value)}
               placeholder="Your business (optional — improves positioning advice)"
               className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white placeholder-neutral-500 text-sm focus:outline-none focus:border-emerald-500/30 transition-colors"
+            />
+          </div>
+          <div className="relative">
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email (optional — 10 scans/hr instead of 3)"
+              className="w-full px-4 py-3 rounded-xl bg-white/[0.02] border border-white/[0.06] text-neutral-300 placeholder-neutral-600 text-xs focus:outline-none focus:border-emerald-500/20 transition-colors"
             />
           </div>
           <button
