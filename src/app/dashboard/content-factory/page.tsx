@@ -16,6 +16,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { useUsage } from "@/hooks/useUsage";
+import { useAgentRun } from "@/hooks/useAgentRun";
 
 type ContentAction = "blog" | "email" | "social" | "video";
 
@@ -88,6 +89,11 @@ export default function ContentFactoryPage() {
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { canGenerate, refresh: refreshUsage } = useUsage();
+  // Standardized agent invocation — surfaces 401/429/503/5xx/network errors
+  // via toast; see src/hooks/useAgentRun.ts.
+  const contentAgent = useAgentRun<{ error?: string; output?: string }>({
+    endpoint: "/api/agents/content",
+  });
 
   const handleExecute = async () => {
     setLoading(true);
@@ -118,38 +124,32 @@ export default function ContentFactoryPage() {
       }
     }
 
-    try {
-      const res = await fetch("/api/agents/content", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: activeTab, params }),
-      });
-      const data = await res.json();
-      if (!res.ok || data.error) {
-        setError(data.error || `Request failed (${res.status})`);
-      } else {
-        const output = data.output || JSON.stringify(data, null, 2);
-        setResult(output);
-        // Auto-save to library
-        fetch("/api/generations", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            action: "save",
-            tool: "content-factory",
-            toolAction: activeTab,
-            inputSummary: `${activeTab}: ${formData[tab.fields[0]?.name] || ""}`.slice(0, 200),
-            output,
-          }),
-        }).catch(() => {}); // Silent
-        refreshUsage();
-      }
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Unknown error";
-      setError(`Connection failed: ${msg}. Please try again.`);
-    } finally {
+    const data = await contentAgent.run({ action: activeTab, params });
+
+    if (!data || data.error) {
+      setError(contentAgent.error || data?.error || "Request failed.");
       setLoading(false);
+      return;
     }
+
+    const output = data.output || JSON.stringify(data, null, 2);
+    setResult(output);
+
+    // Auto-save to library (fire-and-forget)
+    fetch("/api/generations", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "save",
+        tool: "content-factory",
+        toolAction: activeTab,
+        inputSummary: `${activeTab}: ${formData[tab.fields[0]?.name] || ""}`.slice(0, 200),
+        output,
+      }),
+    }).catch(() => {});
+
+    refreshUsage();
+    setLoading(false);
   };
 
 

@@ -16,6 +16,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { useUsage } from "@/hooks/useUsage";
+import { useAgentRun } from "@/hooks/useAgentRun";
 
 type SEOAction = "xray" | "gap" | "schema" | "gbp";
 
@@ -92,6 +93,11 @@ export default function SEODominatorPage() {
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { canGenerate, refresh: refreshUsage } = useUsage();
+  // Standardized agent invocation — handles 401/429/503/5xx/network errors
+  // via toast. See src/hooks/useAgentRun.ts.
+  const seoAgent = useAgentRun<{ error?: string; output?: string }>({
+    endpoint: "/api/agents/seo",
+  });
 
   const handleExecute = async () => {
     if (!activeAction) return;
@@ -117,38 +123,32 @@ export default function SEODominatorPage() {
       }
     }
 
-    try {
-      const res = await fetch("/api/agents/seo", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: activeAction, params }),
-      });
-      const data = await res.json();
-      if (!res.ok || data.error) {
-        setError(data.error || `Request failed (${res.status})`);
-      } else {
-        const output = data.output || JSON.stringify(data, null, 2);
-        setResult(output);
-        // Auto-save to library
-        fetch("/api/generations", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            action: "save",
-            tool: "seo-dominator",
-            toolAction: activeAction,
-            inputSummary: `${activeAction}: ${formData[action.fields[0]?.name] || ""}`.slice(0, 200),
-            output,
-          }),
-        }).catch(() => {}); // Silent — don't block UI
-        refreshUsage(); // Update usage counter
-      }
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Unknown error";
-      setError(`Connection failed: ${msg}. Please try again.`);
-    } finally {
+    const data = await seoAgent.run({ action: activeAction, params });
+
+    if (!data || data.error) {
+      setError(seoAgent.error || data?.error || "Request failed.");
       setLoading(false);
+      return;
     }
+
+    const output = data.output || JSON.stringify(data, null, 2);
+    setResult(output);
+
+    // Auto-save to library (fire-and-forget)
+    fetch("/api/generations", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "save",
+        tool: "seo-dominator",
+        toolAction: activeAction,
+        inputSummary: `${activeAction}: ${formData[action.fields[0]?.name] || ""}`.slice(0, 200),
+        output,
+      }),
+    }).catch(() => {});
+
+    refreshUsage();
+    setLoading(false);
   };
 
 

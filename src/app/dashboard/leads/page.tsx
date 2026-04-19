@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Search, MapPin, Target, Loader2, Database, AlertTriangle, Building2, Zap, ArrowRight, Activity, CheckCircle2, Phone } from "lucide-react";
 import { useUsage } from "@/hooks/useUsage";
+import { useAgentRun } from "@/hooks/useAgentRun";
 import { useRouter } from "next/navigation";
 
 type ProspectReport = {
@@ -36,6 +37,15 @@ export default function LeadsDashboard() {
   const logsEndRef = useRef<HTMLDivElement>(null);
   const { canGenerate, refresh: refreshUsage } = useUsage();
   const router = useRouter();
+  // Standardized agent invocation — handles 401, 429, 503, 5xx, and network
+  // errors via toast; see src/hooks/useAgentRun.ts. `silent: true` because
+  // this page renders errors inline in the terminal logs below.
+  const leadsAgent = useAgentRun<{
+    success?: boolean;
+    prospects_analyzed?: number;
+    reports?: ProspectReport[];
+    error?: string;
+  }>({ endpoint: "/api/agents/leads", silent: true });
 
   useEffect(() => {
     logsEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -60,29 +70,22 @@ export default function LeadsDashboard() {
           });
       }, 1500); // 1.5s per simulated step
 
-      try {
-          const res = await fetch("/api/agents/leads", {
-             method: "POST",
-             headers: { "Content-Type": "application/json" },
-             body: JSON.stringify({ action: "prospect", params: { niche, location } })
-          });
-          
-          const data = await res.json();
-          clearInterval(logInterval);
-          
-          if(data.success) {
-               setLogs(prev => [...prev, `[SUCCESS] ${data.prospects_analyzed} targets acquired and synchronized.`]);
-               setReports(data.reports);
-          } else {
-               setLogs(prev => [...prev, `[ERROR] Intelligence sweep failed: ${data.error}`]);
-          }
-          refreshUsage();
-      } catch {
-          clearInterval(logInterval);
-          setLogs(prev => [...prev, "[FATAL] Connection to Prospector Node severed."]);
-      } finally {
-          setIsSweeping(false);
+      const data = await leadsAgent.run({ action: "prospect", params: { niche, location } });
+      clearInterval(logInterval);
+
+      if (data?.success) {
+        setLogs(prev => [...prev, `[SUCCESS] ${data.prospects_analyzed} targets acquired and synchronized.`]);
+        setReports(data.reports ?? []);
+      } else if (leadsAgent.error) {
+        // useAgentRun has already mapped the HTTP status to a clean message.
+        // We render it inline as a terminal log line because that's this
+        // page's error UX. The toast is suppressed via silent:true.
+        setLogs(prev => [...prev, `[ERROR] ${leadsAgent.error}`]);
+      } else if (data?.error) {
+        setLogs(prev => [...prev, `[ERROR] ${data.error}`]);
       }
+      refreshUsage();
+      setIsSweeping(false);
   };
 
   return (
