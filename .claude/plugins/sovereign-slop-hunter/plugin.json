@@ -1,0 +1,10 @@
+{
+  "name": "sovereign-slop-hunter",
+  "version": "0.1.0",
+  "description": "Defensive agent that hunts fabricated data, LARP copy, and placeholder content across the Sovereign Matrix codebase. Read-only — reports findings, never edits.",
+  "author": "Sovereign Matrix",
+  "homepage": "https://sovereignmatrix.agency",
+  "components": {
+    "agents": ["agents/slop-hunter.md"]
+  }
+}

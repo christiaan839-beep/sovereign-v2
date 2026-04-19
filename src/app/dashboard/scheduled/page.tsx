@@ -51,63 +51,12 @@ const AGENT_OPTIONS = [
 
 const FREQUENCY_OPTIONS = ["Daily", "Weekly", "Monthly", "Custom cron"];
 
-const INITIAL_SCHEDULES: ScheduleItem[] = [
-  {
-    id: "1",
-    agentName: "Lead Prospector",
-    agentIcon: Target,
-    color: "emerald",
-    schedule: "Every day at 9:00 AM",
-    cron: "0 9 * * *",
-    lastRun: "Today at 9:00 AM",
-    nextRun: "Tomorrow at 9:00 AM",
-    active: true,
-  },
-  {
-    id: "2",
-    agentName: "SEO Dominator",
-    agentIcon: Search,
-    color: "blue",
-    schedule: "Every Monday at 7:00 AM",
-    cron: "0 7 * * 1",
-    lastRun: "Mon, Mar 24 at 7:00 AM",
-    nextRun: "Mon, Mar 31 at 7:00 AM",
-    active: true,
-  },
-  {
-    id: "3",
-    agentName: "Content Engine",
-    agentIcon: FileText,
-    color: "violet",
-    schedule: "Every day at 6:00 PM",
-    cron: "0 18 * * *",
-    lastRun: "Yesterday at 6:00 PM",
-    nextRun: "Today at 6:00 PM",
-    active: true,
-  },
-  {
-    id: "4",
-    agentName: "Competitor Intel",
-    agentIcon: Zap,
-    color: "amber",
-    schedule: "Every Wednesday at 8:00 AM",
-    cron: "0 8 * * 3",
-    lastRun: "Wed, Mar 19 at 8:00 AM",
-    nextRun: "Wed, Mar 26 at 8:00 AM",
-    active: false,
-  },
-  {
-    id: "5",
-    agentName: "Ghost Protocol",
-    agentIcon: Shield,
-    color: "rose",
-    schedule: "Every 6 hours",
-    cron: "0 */6 * * *",
-    lastRun: "Today at 12:00 PM",
-    nextRun: "Today at 6:00 PM",
-    active: true,
-  },
-];
+// No fabricated schedules. The UI starts empty; real entries come from
+// /api/_misc/scheduled-runs once the user creates them. Note: scheduled
+// EXECUTION (the cron that fires saved schedules) is not live yet — saved
+// schedules persist to the DB but won't auto-run until the execution loop
+// ships. See the beta banner below.
+const INITIAL_SCHEDULES: ScheduleItem[] = [];
 
 export default function ScheduledRunsPage() {
   const [schedules, setSchedules] = useState<ScheduleItem[]>(INITIAL_SCHEDULES);
@@ -194,7 +143,12 @@ export default function ScheduledRunsPage() {
               <Clock className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white tracking-tight">Scheduled Runs</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-bold text-white tracking-tight">Scheduled Runs</h1>
+                <span className="text-[10px] font-mono uppercase tracking-[0.18em] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                  Beta
+                </span>
+              </div>
               <p className="text-sm text-neutral-500">
                 Automate your agents to work on autopilot
               </p>
@@ -211,6 +165,18 @@ export default function ScheduledRunsPage() {
           </motion.button>
         </div>
       </motion.div>
+
+      {/* Beta notice — honest about current state */}
+      <div className="max-w-7xl mx-auto px-6 -mt-3 mb-6">
+        <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.04] px-4 py-3 flex items-start gap-3">
+          <Clock className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+          <div className="text-xs text-neutral-300 leading-relaxed">
+            <span className="text-amber-400 font-semibold">Scheduled execution is in beta.</span>{" "}
+            Schedules you create will save to your account, but automatic triggering isn&apos;t live yet.
+            You can run any schedule manually from this page. Auto-triggering ships with the next release.
+          </div>
+        </div>
+      </div>
 
       {/* Status bar */}
       <motion.div
