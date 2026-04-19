@@ -175,7 +175,7 @@ export default function AnalyticsPage() {
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div className="p-5 rounded-2xl border border-white/[0.06] bg-white/[0.02]">
                 <Cpu className="w-4 h-4 text-emerald-400 mb-2" />
-                <div className="text-lg font-bold text-white">39+</div>
+                <div className="text-lg font-bold text-white">38</div>
                 <div className="text-[10px] text-neutral-500">Models available</div>
               </div>
               <div className="p-5 rounded-2xl border border-white/[0.06] bg-white/[0.02]">

@@ -79,7 +79,7 @@ export default function OGImage() {
             maxWidth: "600px",
           }}
         >
-          130 AI agents. 39+ models. $199/mo flat.
+          130 AI agents. 38 models. $199/mo flat.
         </p>
 
         {/* Bottom stats */}
@@ -96,7 +96,7 @@ export default function OGImage() {
         >
           {[
             { label: "Agents", value: "130" },
-            { label: "Models", value: "39+" },
+            { label: "Models", value: "38" },
             { label: "Safety layers", value: "5" },
             { label: "Price", value: "$199/mo" },
           ].map((stat) => (

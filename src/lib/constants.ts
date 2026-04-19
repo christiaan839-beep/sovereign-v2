@@ -16,7 +16,7 @@ export const PLATFORM = {
 
 export const METRICS = {
   agentCount: 130,
-  modelCount: "39+",
+  modelCount: "38",
   perTokenCost: "$0",
   avgLatency: "<200ms",
   safetyLayers: 5,

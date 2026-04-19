@@ -207,7 +207,7 @@ export default function SystemStatusPage() {
           name="NVIDIA NIM"
           icon={Cpu}
           service={services?.nim || { status: "checking", latencyMs: 0 }}
-          desc="39+ open-source models — $0 inference"
+          desc="38 open-source models — $0 inference"
         />
         <ServiceCard
           name="Pinecone (Vector DB)"

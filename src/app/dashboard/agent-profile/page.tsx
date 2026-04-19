@@ -52,7 +52,7 @@ const agents = [
     color: "violet",
     icon: Route,
     description:
-      "Routes every request to the optimal model across 39+ options",
+      "Routes every request to the optimal model across 38 options",
     tasks: 12450,
     successRate: 99,
   },

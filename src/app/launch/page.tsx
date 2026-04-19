@@ -6,7 +6,7 @@ import Link from "next/link";
 
 const LAUNCH_FEATURES = [
   { icon: Brain, title: "130 AI Agents", desc: "Lead gen, content, SEO, voice, code, competitive intel — all pre-built and ready.", color: "emerald" },
-  { icon: Zap, title: "39+ Models", desc: "Claude Sonnet 4.6, Nemotron Ultra, Gemini 3.1 Pro, DeepSeek V3, Llama 4 Maverick. Auto-routed per task.", color: "cyan" },
+  { icon: Zap, title: "38 Models", desc: "Claude Sonnet 4.6, Nemotron Ultra, Gemini 3.1 Pro, DeepSeek V3, Llama 4 Maverick. Auto-routed per task.", color: "cyan" },
   { icon: Shield, title: "5-Layer Safety", desc: "Jailbreak detection, PII scanning, content safety, quality scoring, critic review. Every request.", color: "violet" },
   { icon: Mic, title: "Voice Agents", desc: "AI that makes phone calls, qualifies leads, books meetings. Discloses AI on every call.", color: "amber" },
   { icon: Target, title: "$199/mo Flat", desc: "No credits. No per-token fees. No usage limits. One price for everything.", color: "emerald" },
@@ -44,7 +44,7 @@ export default function LaunchPage() {
           </h1>
 
           <p className="text-lg text-neutral-400 max-w-xl mx-auto leading-relaxed mb-4">
-            130 AI agents. 39 models. One flat price.
+            130 AI agents. 38 models. One flat price.
             They find leads, write content, scan competitors, make calls, and close deals.
             Autonomously.
           </p>
@@ -121,7 +121,7 @@ export default function LaunchPage() {
         <div className="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
           {[
             { value: "130", label: "AI Agents" },
-            { value: "39+", label: "Models" },
+            { value: "38", label: "Models" },
             { value: "$199", label: "/month flat" },
             { value: "5", label: "Safety layers" },
           ].map((stat) => (
@@ -140,7 +140,7 @@ export default function LaunchPage() {
           <span className="text-emerald-400">You deploy agents.</span>
         </h2>
         <p className="text-neutral-400 max-w-md mx-auto mb-8">
-          130 agents. 39 models. $199/mo. Start in 60 seconds.
+          130 agents. 38 models. $199/mo. Start in 60 seconds.
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
           <Link href="/signup" className="inline-flex items-center gap-2 px-8 py-4 bg-emerald-500 text-black font-semibold rounded-full text-sm hover:bg-emerald-400 transition-all">

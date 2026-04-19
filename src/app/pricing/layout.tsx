@@ -26,7 +26,7 @@ const pricingJsonLd = {
   name: "Sovereign Matrix",
   applicationCategory: "BusinessApplication",
   operatingSystem: "Web, Linux, macOS, Windows",
-  description: "Autonomous AI agent platform with 130+ specialized agents and 39+ open-source models.",
+  description: "Autonomous AI agent platform with 130+ specialized agents and 38 open-source models.",
   url: "https://sovereignmatrix.agency/pricing",
   offers: [
     { "@type": "Offer", name: "Free", price: "0", priceCurrency: "USD", description: "50 tasks/month, 3 agents, community support. No credit card.", availability: "https://schema.org/InStock", url: "https://sovereignmatrix.agency/signup" },

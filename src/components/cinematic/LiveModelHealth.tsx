@@ -4,111 +4,116 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 
 /**
- * LiveModelHealth — Pings real model endpoints and shows actual latency.
- * This is NOT simulated. It hits the NIM health endpoint and measures
- * real response time. If a model is down, it shows that honestly.
+ * LiveModelHealth — pings /api/health/deep and renders real provider status.
+ *
+ * Honesty rules enforced here:
+ *  - No per-model random jitter. If a provider's status is "ok" we show
+ *    the actual latency_ms the health endpoint reported. If the endpoint
+ *    doesn't have a live latency (provider checked by key-presence only),
+ *    we show "ready" instead of a fake number.
+ *  - On fetch failure we show "—" per provider, not "offline" — because
+ *    the failure means WE can't reach our own health endpoint, which
+ *    isn't the same as the provider being down.
  */
 
-interface ModelStatus {
-  name: string;
-  latency: number | null; // null = offline/error
-  status: "online" | "slow" | "offline" | "checking";
-  color: string;
-}
+type Check = {
+  status: "ok" | "degraded" | "down";
+  latency_ms: number;
+  detail?: string;
+};
 
-const MODELS_TO_CHECK: Array<{ name: string; color: string }> = [
-  { name: "Nemotron Ultra", color: "emerald" },
-  { name: "DeepSeek V3.2", color: "cyan" },
-  { name: "Gemini 3.1 Pro", color: "violet" },
-  { name: "Cerebras WSE-3", color: "amber" },
+type HealthPayload = {
+  status: string;
+  checks: Record<string, Check>;
+};
+
+const PROVIDERS: Array<{ key: string; label: string; color: string }> = [
+  { key: "nvidia_nim", label: "NVIDIA NIM", color: "emerald" },
+  { key: "anthropic",  label: "Claude",     color: "orange"  },
+  { key: "gemini",     label: "Gemini",     color: "violet"  },
+  { key: "database",   label: "Database",   color: "cyan"    },
 ];
 
 export function LiveModelHealth() {
-  const [models, setModels] = useState<ModelStatus[]>(
-    MODELS_TO_CHECK.map(m => ({ ...m, latency: null, status: "checking" as const }))
-  );
+  const [checks, setChecks] = useState<Record<string, Check> | null>(null);
+  const [fetchFailed, setFetchFailed] = useState(false);
 
   useEffect(() => {
     let mounted = true;
 
-    async function checkHealth() {
+    async function ping() {
       try {
-        const start = performance.now();
-        const res = await fetch("/api/agents/dashboard-stats", {
+        const res = await fetch("/api/health/deep", {
           method: "GET",
-          signal: AbortSignal.timeout(5000),
+          signal: AbortSignal.timeout(6000),
+          // Don't cache — we want fresh status every 30s
+          cache: "no-store",
         });
-        const elapsed = Math.round(performance.now() - start);
-
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = (await res.json()) as HealthPayload;
         if (!mounted) return;
-
-        if (res.ok) {
-          // All models are reachable through our API layer
-          setModels(MODELS_TO_CHECK.map((m, i) => ({
-            ...m,
-            // Simulate per-model variance based on real API latency
-            latency: elapsed + (i * 12) + Math.floor(Math.random() * 30),
-            status: elapsed < 2000 ? "online" : "slow",
-          })));
-        } else {
-          setModels(MODELS_TO_CHECK.map(m => ({
-            ...m,
-            latency: null,
-            status: "offline",
-          })));
-        }
+        setChecks(data.checks);
+        setFetchFailed(false);
       } catch {
         if (!mounted) return;
-        setModels(MODELS_TO_CHECK.map(m => ({
-          ...m,
-          latency: null,
-          status: "offline",
-        })));
+        setFetchFailed(true);
       }
     }
 
-    checkHealth();
-    const interval = setInterval(checkHealth, 30000); // Re-check every 30s
-
+    ping();
+    const iv = setInterval(ping, 30_000);
     return () => {
       mounted = false;
-      clearInterval(interval);
+      clearInterval(iv);
     };
   }, []);
 
   return (
-    <div className="flex flex-wrap items-center justify-center gap-3">
-      {models.map((model) => (
-        <motion.div
-          key={model.name}
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/[0.05] bg-white/[0.02]"
-        >
-          <span className={`w-1.5 h-1.5 rounded-full ${
-            model.status === "online" ? `bg-${model.color}-400` :
-            model.status === "slow" ? "bg-amber-400" :
-            model.status === "checking" ? "bg-neutral-600 animate-pulse" :
-            "bg-red-400"
-          }`} />
-          <span className="text-[9px] text-neutral-500 font-mono">{model.name}</span>
-          {model.latency !== null && (
-            <span className={`text-[9px] font-mono ${
-              model.latency < 500 ? `text-${model.color}-400/60` :
-              model.latency < 1500 ? "text-amber-400/60" :
-              "text-red-400/60"
-            }`}>
-              {model.latency}ms
-            </span>
-          )}
-          {model.status === "checking" && (
-            <span className="text-[9px] text-neutral-700 font-mono">...</span>
-          )}
-          {model.status === "offline" && (
-            <span className="text-[9px] text-red-400/60 font-mono">offline</span>
-          )}
-        </motion.div>
-      ))}
+    <div className="flex flex-wrap items-center justify-center gap-2">
+      {PROVIDERS.map(({ key, label, color }) => {
+        const c = checks?.[key];
+        const isOk = c?.status === "ok";
+        const isDegraded = c?.status === "degraded";
+        const latencyLabel = fetchFailed
+          ? "—"
+          : !c
+            ? "checking"
+            : isOk && c.latency_ms > 0
+              ? `${c.latency_ms}ms`
+              : isOk
+                ? "ready"
+                : isDegraded
+                  ? "slow"
+                  : "down";
+
+        // Color for the status dot
+        const dotClass = fetchFailed || !c
+          ? "bg-neutral-600"
+          : isOk
+            ? color === "orange"
+              ? "bg-orange-400"
+              : color === "violet"
+                ? "bg-violet-400"
+                : color === "cyan"
+                  ? "bg-cyan-400"
+                  : "bg-emerald-400"
+            : isDegraded
+              ? "bg-amber-400"
+              : "bg-rose-400";
+
+        return (
+          <motion.div
+            key={key}
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/[0.05] bg-white/[0.02] text-[10px]"
+          >
+            <span className={`w-1.5 h-1.5 rounded-full ${dotClass} ${isOk && c?.latency_ms === 0 ? "" : isOk ? "animate-pulse" : ""}`} />
+            <span className="text-neutral-300 font-mono">{label}</span>
+            <span className="text-neutral-500 font-mono tabular-nums">{latencyLabel}</span>
+          </motion.div>
+        );
+      })}
     </div>
   );
 }

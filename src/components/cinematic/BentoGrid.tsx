@@ -24,13 +24,13 @@ const BENTO_ITEMS = [
     statLabel: "agents ready",
   },
   {
-    title: "39+ Models",
+    title: "38 Models",
     desc: "Claude Sonnet 4.6, Nemotron Ultra, Gemini 3.1, DeepSeek V3, Llama 4 Maverick. Auto-routed per task.",
     icon: Zap,
     color: "cyan",
     size: "small",
     href: "/developers/docs",
-    stat: "39+",
+    stat: "38",
     statLabel: "models",
   },
   {

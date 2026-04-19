@@ -6,7 +6,7 @@ import Link from "next/link";
 
 const COMPARISON = [
   { feature: "Pre-built agents", sovereign: true, competitor: false, note: "Sovereign ships 129 ready-to-run agents. Claude Managed Agents requires you to define your own via YAML or natural language." },
-  { feature: "AI models (multi-provider)", sovereign: true, competitor: false, note: "Sovereign routes across 39+ models from 8 providers. Claude Managed Agents runs on Claude only." },
+  { feature: "AI models (multi-provider)", sovereign: true, competitor: false, note: "Sovereign routes across 38 models from 8 providers. Claude Managed Agents runs on Claude only." },
   { feature: "Multi-model consensus verification", sovereign: true, competitor: false, note: "4 independent models cross-check every output. Single-model platforms can\u2019t self-verify." },
   { feature: "Flat predictable pricing", sovereign: true, competitor: false, note: "Sovereign Node is $199/mo flat. Claude Managed Agents bills per API token \u2014 costs scale with usage." },
   { feature: "Local execution (air-gapped)", sovereign: true, competitor: false, note: "Run sensitive workloads locally via Ollama. Claude Managed Agents is cloud-only." },
@@ -47,7 +47,7 @@ export default function VsClaudeAgentsPage() {
         </motion.h1>
         <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
           className="text-neutral-400 max-w-xl mx-auto leading-relaxed">
-          We don&apos;t compete with Anthropic &mdash; we build on top of them. Claude is one of 39+ models in our routing layer.
+          We don&apos;t compete with Anthropic &mdash; we build on top of them. Claude is one of 38 models in our routing layer.
           Sovereign is the multi-model orchestration infrastructure. Claude Managed Agents is the single-model execution layer.
           Together, they&apos;re more powerful than either alone.
         </motion.p>
@@ -135,7 +135,7 @@ export default function VsClaudeAgentsPage() {
           <div className="grid md:grid-cols-2 gap-4">
             {[
               { title: "129 pre-built agents", desc: "No YAML needed. Lead gen, content, SEO, voice, competitive intel \u2014 129 agents ship ready to run out of the box." },
-              { title: "Model-agnostic (39+ models)", desc: "Route tasks to the best model from 8 providers. Never locked into a single vendor\u2019s pricing or capability ceiling." },
+              { title: "Model-agnostic (38 models)", desc: "Route tasks to the best model from 8 providers. Never locked into a single vendor\u2019s pricing or capability ceiling." },
               { title: "Flat predictable pricing", desc: "Sovereign Node is $199/mo for everything. No per-token billing, no usage surprises, no cost anxiety at scale." },
               { title: "Local execution for sensitive data", desc: "Run workloads on-premise via Ollama. Air-gapped, zero data leaving your network. Claude Managed Agents is cloud-only." },
             ].map((item) => (

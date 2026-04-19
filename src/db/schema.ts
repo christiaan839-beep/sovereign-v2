@@ -297,6 +297,20 @@ export const subscriptions = pgTable("subscriptions", {
   index("idx_subscriptions_stripe").on(table.stripeCustomerId),
 ]);
 
+/**
+ * Stripe webhook deduplication. Stripe delivers each event at-least-once
+ * (retries over ~3 days on 5xx). We INSERT event.id as the first action
+ * on receiving a webhook; if the unique-constraint blocks the insert, we
+ * skip processing and return 200 so Stripe stops retrying. Prevents
+ * double-applied checkout-completions, duplicate welcome emails, and
+ * race conditions between subscription.updated/deleted events.
+ */
+export const stripeEvents = pgTable("stripe_events", {
+  eventId: text("event_id").primaryKey(),           // Stripe event.id — globally unique
+  type: text("type").notNull(),                     // e.g. "checkout.session.completed"
+  processedAt: timestamp("processed_at").defaultNow().notNull(),
+});
+
 // ═══════════════════════════════════════════
 // Team / Organization Workspaces
 // ═══════════════════════════════════════════

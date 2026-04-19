@@ -35,6 +35,10 @@ export interface AgentRunOptions {
   /** Suppress the error toast — useful if the caller wants to render
    *  the error inline instead. */
   silent?: boolean;
+  /** Request timeout in ms. Default: 60_000 (matches Vercel's default
+   *  serverless function limit). Agents that stream or are known to
+   *  exceed this should pass a larger value explicitly. */
+  timeoutMs?: number;
 }
 
 interface AgentRunResult<T> {
@@ -52,6 +56,7 @@ export function useAgentRun<T = unknown>(opts: AgentRunOptions | string): AgentR
   const endpoint = typeof opts === "string" ? opts : opts.endpoint;
   const silent = typeof opts === "string" ? false : opts.silent === true;
   const successMessage = typeof opts === "string" ? undefined : opts.successMessage;
+  const timeoutMs = typeof opts === "string" ? 60_000 : opts.timeoutMs ?? 60_000;
 
   const run = useCallback(
     async (body?: unknown): Promise<T | null> => {
@@ -63,6 +68,9 @@ export function useAgentRun<T = unknown>(opts: AgentRunOptions | string): AgentR
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body ?? {}),
+          // Abort the request after timeoutMs so users never stare at
+          // a spinner forever when the upstream agent hangs.
+          signal: AbortSignal.timeout(timeoutMs),
         });
 
         // Auth — redirect to login preserving return URL
@@ -110,12 +118,21 @@ export function useAgentRun<T = unknown>(opts: AgentRunOptions | string): AgentR
         if (successMessage && !silent) toast.success(successMessage);
         return data as T;
       } catch (err) {
-        // Network/parse failure
-        const msg = err instanceof TypeError
-          ? "Lost connection — check your network and try again."
-          : err instanceof Error
-            ? err.message
-            : "Something went wrong.";
+        // AbortSignal.timeout throws DOMException with name="TimeoutError";
+        // AbortController.abort() throws name="AbortError".
+        const isTimeout = err instanceof DOMException && err.name === "TimeoutError";
+        const isAbort = err instanceof DOMException && err.name === "AbortError";
+
+        const msg = isTimeout
+          ? `Request timed out after ${Math.round(timeoutMs / 1000)}s. Try again.`
+          : isAbort
+            ? "Request cancelled."
+            : err instanceof TypeError
+              ? "Lost connection — check your network and try again."
+              : err instanceof Error
+                ? err.message
+                : "Something went wrong.";
+
         if (!silent) toast.error(msg);
         setError(msg);
         return null;

@@ -45,7 +45,7 @@ const SECTIONS = [
 
 const METRICS = [
   { value: "130+", label: "Specialized Agents" },
-  { value: "39+", label: "Open-Source Models" },
+  { value: "38", label: "Open-Source Models" },
   { value: "5", label: "Safety Layers" },
   { value: "12", label: "Languages Supported" },
   { value: "<200ms", label: "Voice Latency" },

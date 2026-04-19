@@ -6,7 +6,7 @@ import Link from "next/link";
 
 const COMPARISON = [
   { feature: "AI agents that plan + execute", sovereign: true, competitor: false, note: "HubSpot has AI assistants — not autonomous agents" },
-  { feature: "Multi-model routing (39+ models)", sovereign: true, competitor: false, note: "HubSpot uses a single OpenAI integration" },
+  { feature: "Multi-model routing (38 models)", sovereign: true, competitor: false, note: "HubSpot uses a single OpenAI integration" },
   { feature: "Consensus verification (4 models)", sovereign: true, competitor: false, note: "No multi-model quality checking" },
   { feature: "Lead generation + enrichment", sovereign: true, competitor: true, note: "Both have lead tools" },
   { feature: "Email sequences", sovereign: true, competitor: true, note: "Both automate outreach" },

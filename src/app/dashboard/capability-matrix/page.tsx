@@ -109,7 +109,7 @@ export default function CapabilityMatrixPage() {
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           {[
             { label: "Agent APIs", value: "130+", color: "#00B7FF" },
-            { label: "NIM Models", value: "39+", color: "#76B900" },
+            { label: "NIM Models", value: "38", color: "#76B900" },
             { label: "Dashboard Pages", value: "75", color: "#00B7FF" },
             { label: "Industry Verticals", value: "6", color: "#A855F7" },
             { label: "Cost", value: "$0", color: "#FFD700" },

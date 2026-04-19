@@ -119,7 +119,7 @@ export default function DemoPage() {
             <Zap className="w-3 h-3" /> Live Sandbox — No Login Required
           </motion.div>
           <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight mb-4">Try it. Live. Right now.</h1>
-          <p className="text-neutral-500 max-w-xl mx-auto">5 queries. 3 minutes. Real agents powered by 39+ models. No signup. No credit card.</p>
+          <p className="text-neutral-500 max-w-xl mx-auto">5 queries. 3 minutes. Real agents powered by 38 models. No signup. No credit card.</p>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">

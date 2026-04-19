@@ -35,7 +35,7 @@ const TIERS = [
       { name: "200 runs/month", included: true },
       { name: "1,000 API calls/day", included: true },
       { name: "Email support", included: true },
-      { name: "All 39+ models", included: true },
+      { name: "All 38 models", included: true },
       { name: "Local execution", included: false },
       { name: "White-label", included: false },
     ],
@@ -85,13 +85,13 @@ const TIERS = [
 ];
 
 const FAQS = [
-  { q: "What AI tools are included?", a: "Sovereign Matrix includes AI-powered tools for SEO analysis, content creation, design briefs, landing page generation, lead prospecting, competitor intelligence, and more. All powered by Google Gemini 2.5 Pro." },
-  { q: "Do I need technical skills?", a: "No. The dashboard is designed for founders and operators, not coders. Select a tool, fill in your business name, and the AI generates production-ready marketing assets." },
-  { q: "How is Sovereign Matrix different from GoHighLevel?", a: "GoHighLevel gives you empty templates and makes you do the work. Sovereign Matrix is an autonomous engine that generates the actual content, strategies, and creatives for you. It's the difference between buying a toolkit and hiring a 24/7 marketing team." },
-  { q: "What are AI generations?", a: "Each time you use an AI tool (e.g., generate a blog post, analyze a competitor, create a landing page), that counts as one generation. Free users get 20/day, Pro and Agency get unlimited." },
-  { q: "What is BYOK (Bring Your Own Key)?", a: "You can plug in your own API keys for Gemini, Anthropic, or Tavily. This means your generations use your own API quota, giving you full control over costs and usage." },
-  { q: "Can I cancel anytime?", a: "Yes. No contracts, no cancellation fees. Monthly billing, cancel whenever you want." },
-  { q: "What payment methods do you accept?", a: "We accept credit/debit cards, Instant EFT, Zapper, SnapScan, and bank transfers via PayFast. All payments in South African Rand (ZAR)." },
+  { q: "What AI tools are included?", a: "130 autonomous agents across lead generation, content creation, SEO, competitor intelligence, voice calls, and code review. Every agent routes to the best of 38 models (Claude Sonnet 4.6 for reasoning, Nemotron Ultra for throughput, Gemini 3.1 Pro for grounded search, and more) via our smart-router." },
+  { q: "Do I need technical skills?", a: "No. The dashboard is designed for founders and operators. Pick a playbook, fill in the inputs, and the agents execute. For engineers, there's also a REST + streaming API and an SDK." },
+  { q: "How is Sovereign Matrix different from CrewAI or n8n?", a: "CrewAI makes you build the agent orchestration. n8n makes you build the workflow. Sovereign Matrix ships 130 agents and 25 multi-agent playbooks out of the box. You run them, not build them." },
+  { q: "What counts as a 'run'?", a: "One playbook execution = one run. A playbook can chain multiple agents internally (a lead-blitz playbook might run 5 agents), but we count it as one run. Free tier: 50 runs/mo. Starter $19: 200/mo. Growth $49: 500/mo. Node $199: 2,000/mo. Enterprise $499: 10,000/mo." },
+  { q: "What is BYOK (Bring Your Own Key)?", a: "You can plug in your own API keys for Claude, Gemini, NVIDIA NIM, Groq, or Tavily. BYOK runs against your own quota, so you have full control over costs and model access." },
+  { q: "Can I cancel anytime?", a: "Yes. No contracts, no cancellation fees. Monthly billing via Stripe — cancel whenever you want from Settings → Billing." },
+  { q: "What payment methods do you accept?", a: "Credit and debit cards via Stripe. All prices shown in USD. Enterprise invoicing available on request." },
 ];
 
 /* ─── Comparison Table Data ─── */
@@ -113,13 +113,13 @@ interface ComparisonRow {
 const COMPARISON_ROWS: ComparisonRow[] = [
   { label: "Monthly price (entry tier)", values: ["$19/mo", "$97/mo", "$99/mo", "$24/mo", "$20/mo"] },
   { label: "AI agents included", values: ["130+ agents", "0 AI agents", "Build your own", "AI nodes", "50+ templates"] },
-  { label: "Models available", values: ["39+", "0", "5-10", "5-10", "3-5"] },
+  { label: "Models available", values: ["38", "0", "5-10", "5-10", "3-5"] },
   { label: "Voice agents", values: [true, false, false, false, false] },
   { label: "White-label", values: [true, true, false, false, false] },
   { label: "Local execution", values: [true, false, true, true, false] },
   { label: "Workflow builder", values: [true, false, false, true, true] },
   { label: "Integrations", values: ["25+", "400+", "Python SDK", "400+", "5000+"] },
-  { label: "Free tier", values: ["Yes (100 runs)", false, false, "Yes (limited)", "Yes (400 credits)"] },
+  { label: "Free tier", values: ["Yes (50 runs/mo)", false, false, "Yes (limited)", "Yes (400 credits)"] },
 ];
 
 function CellDisplay({ value }: { value: CellValue }) {

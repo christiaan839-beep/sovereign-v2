@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { db } from "@/db";
-import { subscriptions } from "@/db/schema";
+import { subscriptions, stripeEvents } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { createLogger } from "@/lib/logger";
 
@@ -48,6 +48,31 @@ export async function POST(req: Request) {
     event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
   } catch {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
+  }
+
+  // ─── Idempotency gate ───────────────────────────────────────────────
+  // INSERT event.id into stripe_events as the first side-effect. If the
+  // primary-key conflict fires, Stripe is retrying an event we already
+  // handled — skip processing but return 200 so retries stop.
+  //
+  // Missing-table (42P01) during the pre-migration bootstrap window
+  // falls through to processing (fail-open for dev safety).
+  try {
+    await db.insert(stripeEvents).values({ eventId: event.id, type: event.type });
+  } catch (err) {
+    const code = (err as { code?: string })?.code;
+    if (code === "23505") {
+      // unique_violation — already processed
+      log.info("Duplicate Stripe event ignored", { eventId: event.id, type: event.type });
+      return NextResponse.json({ received: true, duplicate: true });
+    }
+    if (code === "42P01") {
+      log.warn("stripe_events table missing — run migration 0004", { eventId: event.id });
+      // Continue processing so the product isn't broken in bootstrap
+    } else {
+      log.error("Failed to record Stripe event", { eventId: event.id, error: (err as Error).message });
+      // Don't block — we'd rather risk a dupe than lose a payment
+    }
   }
 
   try {

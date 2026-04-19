@@ -41,7 +41,7 @@ const COMPARISON: ComparisonRow[] = [
   },
   {
     feature: "AI models",
-    values: ["39+", "1 (OpenAI)", "0", "0", "1", "0"],
+    values: ["38", "1 (OpenAI)", "0", "0", "1", "0"],
   },
   {
     feature: "Multi-model consensus",

@@ -43,6 +43,8 @@ export async function sendEmail(options: EmailOptions): Promise<EmailResult> {
   try {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
+      // Hard 8s timeout — Resend p99 ~2s; prevents Vercel function hangs.
+      signal: AbortSignal.timeout(8_000),
       headers: {
         "Authorization": `Bearer ${apiKey}`,
         "Content-Type": "application/json",

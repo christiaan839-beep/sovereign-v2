@@ -26,7 +26,7 @@ const ENV_VARS: EnvVar[] = [
   { key: "CLERK_SECRET_KEY", label: "Clerk auth (secret)", level: "critical" },
 
   // ── IMPORTANT: Core features degraded ──
-  { key: "NVIDIA_NIM_API_KEY", label: "NVIDIA NIM (39+ AI models)", level: "important" },
+  { key: "NVIDIA_NIM_API_KEY", label: "NVIDIA NIM (38 AI models)", level: "important" },
   { key: "GOOGLE_GENERATIVE_AI_API_KEY", label: "Google Gemini AI", level: "important" },
   { key: "UPSTASH_REDIS_REST_URL", label: "Distributed rate limiting (Upstash Redis)", level: "important" },
   { key: "UPSTASH_REDIS_REST_TOKEN", label: "Distributed rate limiting (Upstash token)", level: "important" },

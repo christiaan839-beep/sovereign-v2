@@ -419,7 +419,7 @@ export default function NemoClawPage() {
                   {executionMode === "cloud" && <Zap className="w-3 h-3 text-cyan-400 ml-auto" />}
                 </div>
                 <p className="text-[11px] text-neutral-500 leading-relaxed">
-                  39+ models via NVIDIA NIM, Gemini, Groq. Zero hardware required. 5-layer pipeline enforced.
+                  38 models via NVIDIA NIM, Gemini, Groq. Zero hardware required. 5-layer pipeline enforced.
                 </p>
               </button>
 

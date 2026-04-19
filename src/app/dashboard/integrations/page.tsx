@@ -54,7 +54,7 @@ const CATEGORIES: Category[] = [
   {
     name: "AI Models",
     integrations: [
-      { id: "nvidia-nim", name: "NVIDIA NIM", description: "39+ models including Nemotron, Llama, DeepSeek", healthKey: "nim", color: "#76B900" },
+      { id: "nvidia-nim", name: "NVIDIA NIM", description: "38 models including Nemotron, Llama, DeepSeek", healthKey: "nim", color: "#76B900" },
       { id: "google-gemini", name: "Google Gemini", description: "Gemini 3.1 Pro, Gemma 4, multimodal reasoning", healthKey: "gemini", color: "#4285F4" },
       { id: "anthropic-claude", name: "Anthropic Claude", description: "Claude Sonnet, consensus verification", healthKey: "claude", color: "#D97706" },
       { id: "groq", name: "Groq", description: "Ultra-fast inference for Llama and Mixtral", healthKey: "groq", color: "#F55036" },

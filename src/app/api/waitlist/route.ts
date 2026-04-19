@@ -48,6 +48,10 @@ async function sendWelcomeEmail(email: string) {
   try {
     await fetch("https://api.resend.com/emails", {
       method: "POST",
+      // 8s timeout — Resend p99 is ~2s; anything over 8s means regional
+      // outage and we prefer fire-and-forget failure over blocking the
+      // Vercel function timeout (60s hard cap).
+      signal: AbortSignal.timeout(8_000),
       headers: {
         "Authorization": `Bearer ${resendKey}`,
         "Content-Type": "application/json",
@@ -66,7 +70,7 @@ async function sendWelcomeEmail(email: string) {
             <h1 style="color: white; font-size: 24px; font-weight: 800; margin: 0 0 16px 0;">You're in.</h1>
             <p style="color: #a3a3a3; font-size: 14px; line-height: 1.7; margin: 0 0 24px 0;">
               Thanks for joining the early access list. You're now ahead of 120+ agentic AI companies
-              in the market — because you picked the one with flat pricing, 39+ models, and a 5-layer
+              in the market — because you picked the one with flat pricing, 38 models, and a 5-layer
               safety pipeline on every execution.
             </p>
             <h2 style="color: white; font-size: 18px; font-weight: 700; margin: 0 0 12px 0;">Your free competitor scan</h2>
@@ -82,7 +86,7 @@ async function sendWelcomeEmail(email: string) {
             </div>
             <p style="color: #525252; font-size: 12px; line-height: 1.6; margin: 32px 0 0 0; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 24px;">
               Sovereign Matrix — Agent Operating System<br/>
-              130 agents. 39+ models. $199/mo flat.<br/>
+              130 agents. 38 models. $199/mo flat.<br/>
               <a href="https://sovereignmatrix.agency" style="color: #10b981; text-decoration: none;">sovereignmatrix.agency</a>
             </p>
           </div>
