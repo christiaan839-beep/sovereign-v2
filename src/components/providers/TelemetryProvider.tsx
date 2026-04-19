@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useRef, useCallback, ReactNode } from "react";
 
 // ⚡ SOVEREIGN MATRIX // TELEMETRY SYNC ⚡
 // This physically bridges the Vercel Frontend UI to the Local Python Swarm.
@@ -24,27 +24,42 @@ export function TelemetryProvider({ children }: { children: ReactNode }) {
   const [dataYield, setDataYield] = useState(1452);
   const [lastAction, setLastAction] = useState("System initialized. Awaiting Commander inputs.");
 
-  // In a full WebSockets production layer, this connects directly to `server/ws.ts`
-  // to receive instantaneous hardware metrics from NemoClaw on your local macOS.
-  useEffect(() => {
-     const pollStatus = setInterval(() => {
-        // Simulated dynamic self-correction ping
-        if (state === "IDLE" && Math.random() > 0.8) {
-           setLastAction("Ghost Fleet optimizing unread inbound hooks.");
-        }
-     }, 15000);
-     return () => clearInterval(pollStatus);
-  }, [state]);
+  // Keep a ref to the current state so the poll interval can read it without
+  // needing `state` in its dep array — this prevents the interval from being
+  // torn down and recreated on every state transition.
+  const stateRef = useRef(state);
+  useEffect(() => { stateRef.current = state; }, [state]);
 
-  const triggerTelemetryUpdate = (action: string, newYield?: number) => {
-     setLastAction(action);
-     setState("TRANSMITTING");
-     if (newYield) setDataYield(prev => prev + newYield);
-     
-     setTimeout(() => {
-        setState("IDLE");
-     }, 3000);
-  };
+  // Track the transmit->idle timeout so we can clear it if the component
+  // unmounts or `triggerTelemetryUpdate` is called again before it fires.
+  const transmitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const pollStatus = setInterval(() => {
+      if (stateRef.current === "IDLE" && Math.random() > 0.8) {
+        setLastAction("Ghost Fleet optimizing unread inbound hooks.");
+      }
+    }, 15000);
+    return () => {
+      clearInterval(pollStatus);
+      if (transmitTimerRef.current) {
+        clearTimeout(transmitTimerRef.current);
+        transmitTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  const triggerTelemetryUpdate = useCallback((action: string, newYield?: number) => {
+    setLastAction(action);
+    setState("TRANSMITTING");
+    if (newYield) setDataYield((prev) => prev + newYield);
+
+    if (transmitTimerRef.current) clearTimeout(transmitTimerRef.current);
+    transmitTimerRef.current = setTimeout(() => {
+      setState("IDLE");
+      transmitTimerRef.current = null;
+    }, 3000);
+  }, []);
 
   return (
     <TelemetryContext.Provider value={{ state, activePipelines, dataYield, lastAction, triggerTelemetryUpdate }}>

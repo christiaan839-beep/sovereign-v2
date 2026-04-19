@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
+import { createHash, timingSafeEqual } from "node:crypto";
 import { getPlaybook } from "@/lib/playbooks";
 import { createLogger } from "@/lib/logger";
 import { getBaseUrl } from "@/lib/base-url";
+import { AGENT_REGISTRY } from "@/app/api/agents/registry";
 
 /**
  * SOVEREIGN MATRIX — Webhook Trigger Engine
@@ -61,21 +63,26 @@ function generateId(): string {
 
 function authenticateApiKey(apiKey: unknown): boolean {
   const expected = process.env.WEBHOOK_API_KEY;
-  if (!expected) {
-    log.warn("WEBHOOK_API_KEY env var is not set — all webhook requests will be rejected");
+  if (!expected || expected.length < 16) {
+    log.warn("WEBHOOK_API_KEY env var is not set or too short — all webhook requests rejected");
     return false;
   }
   if (typeof apiKey !== "string" || apiKey.length === 0) {
     return false;
   }
-  // Constant-time comparison to prevent timing attacks
-  if (apiKey.length !== expected.length) return false;
-  let mismatch = 0;
-  for (let i = 0; i < apiKey.length; i++) {
-    mismatch |= apiKey.charCodeAt(i) ^ expected.charCodeAt(i);
-  }
-  return mismatch === 0;
+  // True constant-time comparison using crypto.timingSafeEqual.
+  // We hash both sides first so the compare operates on fixed-length (32-byte)
+  // buffers regardless of the input — this removes the length-oracle side channel.
+  const given = createHash("sha256").update(apiKey).digest();
+  const want = createHash("sha256").update(expected).digest();
+  return timingSafeEqual(given, want);
 }
+
+// Set of agent slugs that are allowed via webhook trigger. Built from the
+// static registry so this stays in sync automatically. Prevents path-traversal
+// SSRF (e.g. agent="../../_misc/admin/analytics") — the catch-all route would
+// happily load any registered agent otherwise.
+const WEBHOOK_AGENT_ALLOWLIST = new Set(Object.keys(AGENT_REGISTRY));
 
 // ─── POST Handler ───────────────────────────────────────────────────────────
 
@@ -342,6 +349,25 @@ async function handleAgentTrigger(
     );
   }
 
+  // Reject anything that isn't a plain, registered agent slug. This blocks
+  // path traversal (e.g. "../../_misc/admin/...") and arbitrary route proxying.
+  if (typeof agent !== "string" || !/^[a-z0-9-]+$/i.test(agent) || !WEBHOOK_AGENT_ALLOWLIST.has(agent)) {
+    recordAudit({
+      id: trigId,
+      timestamp: new Date().toISOString(),
+      mode: "agent",
+      agent: String(agent),
+      status: "rejected",
+      duration_ms: Date.now() - startTime,
+      error: "Agent not in webhook allowlist",
+      ip,
+    });
+    return NextResponse.json(
+      { error: `Agent "${agent}" is not available via webhook trigger`, trigger_id: trigId },
+      { status: 400 }
+    );
+  }
+
   try {
     const baseUrl = getBaseUrl();
 
@@ -353,7 +379,7 @@ async function handleAgentTrigger(
       }
     }
 
-    const agentRes = await fetch(`${baseUrl}/api/agents/${agent}`, {
+    const agentRes = await fetch(`${baseUrl}/api/agents/${encodeURIComponent(agent)}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(agentBody),

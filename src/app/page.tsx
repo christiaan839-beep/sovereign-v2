@@ -728,10 +728,31 @@ export default function Home() {
           {/* Subtitle — benefits, not specs */}
           <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5, duration: 0.8 }}
             className="text-lg md:text-xl text-neutral-400 max-w-xl mx-auto leading-relaxed mb-6">
-            130 AI agents. 39 models. One platform that finds leads, writes content,
-            scans competitors, makes calls, and closes deals — autonomously.
-            Starting at $19/month. No per-token fees. No vendor lock-in.
+            130 agents. 39 models. One platform that finds leads, writes content,
+            scans competitors, and closes deals — autonomously.
+            <span className="block mt-1.5 text-neutral-500 text-base">From $19/mo. No per-token fees. No vendor lock-in.</span>
           </motion.p>
+
+          {/* NEW: Nexus Protocol announcement */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.55, duration: 0.5 }}
+            className="mb-6"
+          >
+            <Link
+              href="/dashboard/nexus"
+              className="group inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-violet-500/30 bg-violet-500/[0.06] hover:bg-violet-500/[0.1] hover:border-violet-500/50 transition-all"
+            >
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="animate-ping absolute inset-0 rounded-full bg-violet-400 opacity-70" />
+                <span className="relative rounded-full h-1.5 w-1.5 bg-violet-400" />
+              </span>
+              <span className="text-[10px] font-bold tracking-[0.2em] text-violet-400 uppercase">New</span>
+              <span className="text-xs text-neutral-300">Nexus Protocol — watch 4 frontier models race live</span>
+              <ArrowRight className="w-3 h-3 text-violet-400 group-hover:translate-x-0.5 transition-transform" />
+            </Link>
+          </motion.div>
 
           {/* Proof strip — tiny, credible + live tok/s counter */}
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6, duration: 0.5 }}

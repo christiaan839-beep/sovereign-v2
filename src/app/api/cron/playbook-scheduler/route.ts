@@ -41,11 +41,11 @@ const WINDOW_MS: Record<ScheduledEntry["every"], number> = {
   weekly: 6.5 * 24 * 60 * 60 * 1000, // 6.5 days
 };
 
+import { verifyCron } from "@/lib/cron-auth";
+
 export async function GET(req: Request) {
-  const auth = req.headers.get("Authorization");
-  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const denied = verifyCron(req);
+  if (denied) return denied;
 
   if (SCHEDULE.length === 0) {
     return NextResponse.json({ fired: 0, message: "No scheduled playbooks configured" });

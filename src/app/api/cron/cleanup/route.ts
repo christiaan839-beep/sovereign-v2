@@ -7,11 +7,11 @@ const log = createLogger("cron:cleanup");
  * WEEKLY CLEANUP CRON — Runs every Sunday at 3am.
  * Cleans up stale data: old error logs, expired sessions, orphaned records.
  */
+import { verifyCron } from "@/lib/cron-auth";
+
 export async function GET(request: Request) {
-  const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const denied = verifyCron(request);
+  if (denied) return denied;
 
   try {
     const cleaned = {

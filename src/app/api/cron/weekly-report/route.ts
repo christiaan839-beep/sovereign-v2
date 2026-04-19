@@ -12,12 +12,11 @@ const log = createLogger("cron:weekly-report");
  * Sends activity summary emails to all active users.
  * Protected by CRON_SECRET to prevent unauthorized access.
  */
+import { verifyCron } from "@/lib/cron-auth";
+
 export async function GET(request: Request) {
-  // Verify cron secret
-  const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const denied = verifyCron(request);
+  if (denied) return denied;
 
   try {
     // Get all users who ran agents this week

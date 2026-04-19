@@ -83,13 +83,11 @@ async function validateApiKey(rawKey: string): Promise<{ plan: string; userId: s
     });
     return { plan: row.plan, userId: row.userId };
   } catch (err) {
-    // DB unavailable — fall back to prefix convention for resilience
-    log.warn("API key DB validation failed, falling back to prefix convention", { error: (err as Error).message });
-    let plan = "free";
-    if (rawKey.startsWith("sk_pro_")) plan = "pro";
-    else if (rawKey.startsWith("sk_ent_")) plan = "enterprise";
-    const shortHash = crypto.createHash("sha256").update(rawKey).digest("hex").slice(0, 16);
-    return { plan, userId: `apikey_${shortHash}` };
+    // DB unavailable — deny. The in-memory cache already covers recently-used
+    // keys for up to 5 minutes; we MUST NOT grant access based on a key prefix
+    // (an attacker can forge any sk_pro_/sk_ent_ string).
+    log.error("API key DB validation failed — denying request", { error: (err as Error).message });
+    return null;
   }
 }
 

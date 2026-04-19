@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { playbookRuns, playbookRunSteps } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, inArray, asc } from "drizzle-orm";
 
 /**
  * GET /api/playbooks/runs
@@ -22,11 +22,13 @@ export async function GET() {
       .orderBy(desc(playbookRuns.createdAt))
       .limit(30);
 
-    // Attach step summaries for each run in parallel
-    const withSteps = await Promise.all(
-      runs.map(async (run) => {
-        const steps = await db
+    // Fetch all steps for all 30 runs in a SINGLE query, then group in memory.
+    // This replaces the prior N+1 pattern (31 DB round-trips per poll).
+    const runIds = runs.map((r) => r.id);
+    const allSteps = runIds.length
+      ? await db
           .select({
+            runId: playbookRunSteps.runId,
             stepIndex: playbookRunSteps.stepIndex,
             agentName: playbookRunSteps.agentName,
             reason: playbookRunSteps.reason,
@@ -36,12 +38,21 @@ export async function GET() {
             completedAt: playbookRunSteps.completedAt,
           })
           .from(playbookRunSteps)
-          .where(eq(playbookRunSteps.runId, run.id))
-          .orderBy(playbookRunSteps.stepIndex);
+          .where(inArray(playbookRunSteps.runId, runIds))
+          .orderBy(asc(playbookRunSteps.stepIndex))
+      : [];
 
-        return { ...run, steps };
-      })
-    );
+    const stepsByRun = new Map<string, typeof allSteps>();
+    for (const step of allSteps) {
+      const arr = stepsByRun.get(step.runId) ?? [];
+      arr.push(step);
+      stepsByRun.set(step.runId, arr);
+    }
+
+    const withSteps = runs.map((run) => ({
+      ...run,
+      steps: (stepsByRun.get(run.id) ?? []).map(({ runId: _runId, ...rest }) => rest),
+    }));
 
     return NextResponse.json({ runs: withSteps });
   } catch (err: unknown) {

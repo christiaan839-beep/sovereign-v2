@@ -5,6 +5,7 @@ import { eq, and, sql } from "drizzle-orm";
 import { executeGoal } from "@/lib/goal-executor";
 import { sendTelegram, formatJobDone, formatJobFailed } from "@/lib/telegram";
 import { createLogger } from "@/lib/logger";
+import { verifyCron } from "@/lib/cron-auth";
 
 const log = createLogger("cron:job-runner");
 
@@ -21,10 +22,8 @@ const BATCH_SIZE = 5;
  * Protected by CRON_SECRET — do not expose publicly.
  */
 export async function GET(request: Request) {
-  const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const denied = verifyCron(request);
+  if (denied) return denied;
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ||
     (request.headers.get("x-forwarded-proto") === "https"

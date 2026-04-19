@@ -37,9 +37,7 @@ export async function GET() {
 
 async function _postHandler(request: Request) {
   try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const { clientEmail, clientName, period } = await req.json().catch(() => ({}));
+    const { clientEmail, clientName, period } = await request.json().catch(() => ({}));
     const reportPeriod = period || `${new Date().toLocaleDateString("en-ZA")} Weekly Report`;
 
     // Pull real metrics from persistence layer
@@ -182,8 +180,7 @@ Return ONLY valid JSON, no markdown fences.`,
 // Factory wrapper for POST (adds safety pipeline)
 export const POST = createAgentRoute({
   name: "weekly-report",
-  handler: async ({ input, email, userId, request }) => {
-    // Delegate to existing handler
+  handler: async ({ input }) => {
     const fakeReq = new Request("http://localhost", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
