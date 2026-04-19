@@ -170,8 +170,13 @@ async function handleRequest(
       ? await request.text()
       : undefined;
 
+    // Hard 50s timeout — leaves 10s headroom for response serialization
+    // within Vercel's 60s function limit. Without this, a hung agent
+    // endpoint consumes the entire caller budget and returns a generic
+    // platform timeout instead of an actionable 504.
     const internalRes = await fetch(internalUrl.toString(), {
       method: request.method,
+      signal: AbortSignal.timeout(50_000),
       headers: {
         "Content-Type": request.headers.get("content-type") || "application/json",
         // Pass through a system marker so internal routes know this is trusted
@@ -221,12 +226,31 @@ async function handleRequest(
       }
     );
   } catch (err) {
+    const isTimeout = err instanceof DOMException && err.name === "TimeoutError";
+    const responseTimeMs = Date.now() - startTime;
+
+    if (isTimeout) {
+      log.warn("API v1 Proxy — internal agent timeout", {
+        path: path.join("/"),
+        timeoutMs: 50_000,
+        responseTimeMs,
+      });
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Agent request timed out after 50 seconds.",
+          responseTimeMs,
+        },
+        { status: 504 },
+      );
+    }
+
     log.error("API v1 Proxy error", err as Record<string, unknown>);
     return NextResponse.json(
       {
         success: false,
         error: "Internal routing error.",
-        responseTimeMs: Date.now() - startTime,
+        responseTimeMs,
       },
       { status: 502 }
     );
