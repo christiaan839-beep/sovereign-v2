@@ -18,6 +18,10 @@
       "schedule": "*/5 * * * *"
     },
     {
+      "path": "/api/cron/scheduler",
+      "schedule": "* * * * *"
+    },
+    {
       "path": "/api/cron/weekly-report",
       "schedule": "0 8 * * 1"
     },

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { scheduledRuns } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
+import { nextRun, validateCron } from "@/lib/cron-next";
 
 // GET — List all scheduled runs for a user
 export async function GET(req: NextRequest) {
@@ -34,6 +35,17 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Validate the cron expression up-front so invalid schedules are rejected
+  // at creation time, not silently failing in the scheduler tick.
+  const cronError = validateCron(schedule);
+  if (cronError) {
+    return NextResponse.json({ error: `Invalid schedule: ${cronError}` }, { status: 400 });
+  }
+
+  // Pre-compute the first fire time so the scheduler cron knows exactly
+  // when this row becomes due.
+  const firstRun = nextRun(schedule, new Date());
+
   try {
     const [run] = await db
       .insert(scheduledRuns)
@@ -46,6 +58,7 @@ export async function POST(req: NextRequest) {
         schedule,
         timezone: timezone || "UTC",
         enabled: true,
+        nextRunAt: firstRun,
       })
       .returning();
 

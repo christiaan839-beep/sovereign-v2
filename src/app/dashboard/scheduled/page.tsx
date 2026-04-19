@@ -145,8 +145,8 @@ export default function ScheduledRunsPage() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-2xl font-bold text-white tracking-tight">Scheduled Runs</h1>
-                <span className="text-[10px] font-mono uppercase tracking-[0.18em] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                  Beta
+                <span className="text-[10px] font-mono uppercase tracking-[0.18em] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  Live
                 </span>
               </div>
               <p className="text-sm text-neutral-500">
@@ -166,14 +166,13 @@ export default function ScheduledRunsPage() {
         </div>
       </motion.div>
 
-      {/* Beta notice — honest about current state */}
+      {/* Active note — scheduler cron runs every minute */}
       <div className="max-w-7xl mx-auto px-6 -mt-3 mb-6">
-        <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.04] px-4 py-3 flex items-start gap-3">
-          <Clock className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+        <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.04] px-4 py-3 flex items-start gap-3">
+          <Clock className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
           <div className="text-xs text-neutral-300 leading-relaxed">
-            <span className="text-amber-400 font-semibold">Scheduled execution is in beta.</span>{" "}
-            Schedules you create will save to your account, but automatic triggering isn&apos;t live yet.
-            You can run any schedule manually from this page. Auto-triggering ships with the next release.
+            <span className="text-emerald-400 font-semibold">Scheduled execution is live.</span>{" "}
+            The scheduler checks every minute (UTC) and fires any schedule whose cron expression matches. Pause any schedule from the toggle, or run it manually from the card.
           </div>
         </div>
       </div>
