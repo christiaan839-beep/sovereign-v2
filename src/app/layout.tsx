@@ -172,8 +172,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     },
                     {
                       "@type": "Question",
-                      name: "How is this different from ChatGPT or other AI tools?",
-                      acceptedAnswer: { "@type": "Answer", text: "ChatGPT is a chatbot — you type, it responds. Sovereign Matrix deploys autonomous agents that plan, execute, and self-correct without human intervention. 130+ agents work simultaneously across lead gen, content, SEO, voice calls, and more." },
+                      name: "Is this a chatbot or a platform?",
+                      acceptedAnswer: { "@type": "Answer", text: "Neither. Sovereign Matrix is an agent operating system: 130 autonomous agents that plan, execute, and self-correct without human intervention. Agents work simultaneously across lead gen, content, SEO, voice calls, and research — with a scheduler that fires playbooks on cron." },
                     },
                     {
                       "@type": "Question",

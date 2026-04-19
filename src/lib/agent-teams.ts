@@ -5,12 +5,13 @@
  * contexts, coordinated by a lead agent. Each agent brings a different
  * perspective, and the lead synthesizes the final output.
  *
- * This is the architecture that no competitor has — CrewAI does sequential
- * chaining, but Agent Teams do parallel debate with adversarial critique.
+ * Key property: agents debate in parallel with adversarial critique
+ * (Claude chairs, open-source models propose and dissent). The lead
+ * synthesizes only after every dissent has been aired.
  *
  * Usage:
  *   const result = await runAgentTeam({
- *     objective: "Analyze competitor HubSpot and find their weak points",
+ *     objective: "Evaluate our Q3 positioning strategy",
  *     team: "war-room",
  *   });
  */

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { CheckCircle2, X as XIcon, ArrowRight, Shield, HelpCircle, Crown, GitCompareArrows, Zap } from "lucide-react";
+import { CheckCircle2, X as XIcon, ArrowRight, Shield, HelpCircle, Crown, Zap } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { AnimatePresence } from "framer-motion";
@@ -87,51 +87,12 @@ const TIERS = [
 const FAQS = [
   { q: "What AI tools are included?", a: "130 autonomous agents across lead generation, content creation, SEO, competitor intelligence, voice calls, and code review. Every agent routes to the best of 38 models (Claude Sonnet 4.6 for reasoning, Nemotron Ultra for throughput, Gemini 3.1 Pro for grounded search, and more) via our smart-router." },
   { q: "Do I need technical skills?", a: "No. The dashboard is designed for founders and operators. Pick a playbook, fill in the inputs, and the agents execute. For engineers, there's also a REST + streaming API and an SDK." },
-  { q: "How is Sovereign Matrix different from CrewAI or n8n?", a: "CrewAI makes you build the agent orchestration. n8n makes you build the workflow. Sovereign Matrix ships 130 agents and 25 multi-agent playbooks out of the box. You run them, not build them." },
+  { q: "Do I have to build the agents myself?", a: "No. Sovereign Matrix ships 130 production agents and 25 multi-agent playbooks out of the box. Pick one, give it inputs, run. You can also compose custom playbooks via the workflow builder when you want something bespoke." },
   { q: "What counts as a 'run'?", a: "One playbook execution = one run. A playbook can chain multiple agents internally (a lead-blitz playbook might run 5 agents), but we count it as one run. Free tier: 50 runs/mo. Starter $19: 200/mo. Growth $49: 500/mo. Node $199: 2,000/mo. Enterprise $499: 10,000/mo." },
   { q: "What is BYOK (Bring Your Own Key)?", a: "You can plug in your own API keys for Claude, Gemini, NVIDIA NIM, Groq, or Tavily. BYOK runs against your own quota, so you have full control over costs and model access." },
   { q: "Can I cancel anytime?", a: "Yes. No contracts, no cancellation fees. Monthly billing via Stripe — cancel whenever you want from Settings → Billing." },
   { q: "What payment methods do you accept?", a: "Credit and debit cards via Stripe. All prices shown in USD. Enterprise invoicing available on request." },
 ];
-
-/* ─── Comparison Table Data ─── */
-const COMPETITORS = [
-  { name: "Sovereign Matrix", highlight: true },
-  { name: "GoHighLevel", highlight: false },
-  { name: "CrewAI", highlight: false },
-  { name: "n8n", highlight: false },
-  { name: "Lindy.ai", highlight: false },
-];
-
-type CellValue = string | boolean;
-
-interface ComparisonRow {
-  label: string;
-  values: CellValue[];
-}
-
-const COMPARISON_ROWS: ComparisonRow[] = [
-  { label: "Monthly price (entry tier)", values: ["$19/mo", "$97/mo", "$99/mo", "$24/mo", "$20/mo"] },
-  { label: "AI agents included", values: ["130+ agents", "0 AI agents", "Build your own", "AI nodes", "50+ templates"] },
-  { label: "Models available", values: ["38", "0", "5-10", "5-10", "3-5"] },
-  { label: "Voice agents", values: [true, false, false, false, false] },
-  { label: "White-label", values: [true, true, false, false, false] },
-  { label: "Local execution", values: [true, false, true, true, false] },
-  { label: "Workflow builder", values: [true, false, false, true, true] },
-  { label: "Integrations", values: ["25+", "400+", "Python SDK", "400+", "5000+"] },
-  { label: "Free tier", values: ["Yes (50 runs/mo)", false, false, "Yes (limited)", "Yes (400 credits)"] },
-];
-
-function CellDisplay({ value }: { value: CellValue }) {
-  if (typeof value === "boolean") {
-    return value ? (
-      <CheckCircle2 className="w-5 h-5 text-emerald-400 mx-auto" />
-    ) : (
-      <XIcon className="w-4 h-4 text-neutral-500 mx-auto" aria-hidden="true" />
-    );
-  }
-  return <span className="text-sm text-neutral-300">{value}</span>;
-}
 
 export default function PricingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
@@ -273,84 +234,6 @@ export default function PricingPage() {
             and 38 others.
           </p>
         </motion.div>
-      </section>
-
-      <GlowDivider />
-
-      {/* ─── Comparison Table ─── */}
-      <section className="relative z-10 py-20 px-6">
-        <div className="max-w-6xl mx-auto">
-          <RevealText as="h2" className="text-3xl md:text-4xl font-bold text-center mb-4 font-serif">
-            Feature-by-Feature Breakdown
-          </RevealText>
-          <RevealText as="p" className="text-neutral-500 text-center max-w-2xl mx-auto mb-16" delay={0.1}>
-            Honest comparison. No hidden costs. See exactly what you get.
-          </RevealText>
-
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7 }}
-            className="overflow-x-auto rounded-2xl border border-white/[0.06] bg-white/[0.01] backdrop-blur-xl"
-          >
-            <table className="w-full min-w-[800px] border-collapse">
-              {/* Header */}
-              <thead>
-                <tr className="border-b border-white/[0.06]">
-                  <th className="text-left text-xs text-neutral-500 uppercase tracking-widest font-medium p-5 w-48" />
-                  {COMPETITORS.map((c) => (
-                    <th
-                      key={c.name}
-                      className={`text-center p-5 text-sm font-bold uppercase tracking-wider ${
-                        c.highlight
-                          ? "text-emerald-400 bg-emerald-500/[0.06] border-x-2 border-t-2 border-emerald-500/30"
-                          : "text-neutral-400"
-                      }`}
-                    >
-                      {c.highlight && (
-                        <div className="text-[10px] text-emerald-500 font-bold uppercase tracking-[0.2em] mb-1">
-                          Recommended
-                        </div>
-                      )}
-                      {c.name}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-
-              {/* Body */}
-              <tbody>
-                {COMPARISON_ROWS.map((row, i) => (
-                  <motion.tr
-                    key={row.label}
-                    initial={{ opacity: 0, x: -10 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: i * 0.05, duration: 0.4 }}
-                    className={`border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors ${
-                      i % 2 === 0 ? "bg-white/[0.005]" : ""
-                    }`}
-                  >
-                    <td className="p-5 text-sm text-neutral-300 font-medium">{row.label}</td>
-                    {row.values.map((val, j) => (
-                      <td
-                        key={j}
-                        className={`p-5 text-center ${
-                          j === 0
-                            ? "border-x-2 border-emerald-500/30 bg-emerald-500/[0.06]"
-                            : ""
-                        } ${i === COMPARISON_ROWS.length - 1 && j === 0 ? "border-b-2 border-emerald-500/30" : ""}`}
-                      >
-                        <CellDisplay value={val} />
-                      </td>
-                    ))}
-                  </motion.tr>
-                ))}
-              </tbody>
-            </table>
-          </motion.div>
-        </div>
       </section>
 
       <GlowDivider />

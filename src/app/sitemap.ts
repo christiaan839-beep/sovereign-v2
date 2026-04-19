@@ -20,18 +20,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/app", priority: 0.8, changeFreq: "monthly" },
     { path: "/chat", priority: 0.8, changeFreq: "monthly" },
 
-    // Competitive comparison pages (high SEO value)
-    { path: "/vs/hubspot", priority: 0.9, changeFreq: "weekly" },
-    { path: "/vs/clay", priority: 0.9, changeFreq: "weekly" },
-    { path: "/vs/zapier", priority: 0.9, changeFreq: "weekly" },
-    { path: "/vs/crewai", priority: 0.9, changeFreq: "weekly" },
-    { path: "/vs/n8n", priority: 0.9, changeFreq: "weekly" },
-    { path: "/vs/lindy", priority: 0.9, changeFreq: "weekly" },
-    { path: "/vs/sintra", priority: 0.9, changeFreq: "weekly" },
-    { path: "/vs/manus", priority: 0.9, changeFreq: "weekly" },
-    { path: "/vs/relevance-ai", priority: 0.9, changeFreq: "weekly" },
-    { path: "/vs/make", priority: 0.9, changeFreq: "weekly" },
-    { path: "/vs/claude-agents", priority: 0.9, changeFreq: "weekly" },
+    // Positioning pages (owned narrative)
+    { path: "/built-with-claude", priority: 0.9, changeFreq: "weekly" },
 
     // Use case pages
     { path: "/use-cases/second-brain", priority: 0.8, changeFreq: "monthly" },
@@ -46,9 +36,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // Integrations
     { path: "/integrations", priority: 0.8, changeFreq: "monthly" },
 
-    // Demo + pricing compare
+    // Demo
     { path: "/demo", priority: 0.9, changeFreq: "monthly" },
-    { path: "/pricing/compare", priority: 0.9, changeFreq: "weekly" },
 
     // Roadmap
     { path: "/roadmap", priority: 0.7, changeFreq: "weekly" },

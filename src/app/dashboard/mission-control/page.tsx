@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 
 /**
- * MISSION CONTROL — The Manus-Killer Experience
+ * MISSION CONTROL — Operator command surface
  *
  * One input box. Type any goal. Watch agents execute in real-time.
  * Each step shows: which agent, what it's doing, how long it took.

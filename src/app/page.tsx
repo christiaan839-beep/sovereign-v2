@@ -624,7 +624,7 @@ export default function Home() {
           <div className="hidden md:flex items-center gap-8">
             <Link href="#enterprise" className="text-sm text-neutral-400 hover:text-white transition-colors">Product</Link>
             <Link href="#pricing" className="text-sm text-neutral-400 hover:text-white transition-colors">Pricing</Link>
-            <Link href="/vs/hubspot" className="text-sm text-neutral-400 hover:text-white transition-colors">Compare</Link>
+            <Link href="/built-with-claude" className="text-sm text-neutral-400 hover:text-white transition-colors">Built with Claude</Link>
             <Link href="/security" className="text-sm text-neutral-400 hover:text-white transition-colors">Security</Link>
             <SignInButton mode="modal" fallbackRedirectUrl="/dashboard">
               <button className="text-sm text-neutral-500 hover:text-white transition-colors">Log in</button>
@@ -650,7 +650,7 @@ export default function Home() {
               className="absolute top-16 left-4 right-4 p-5 rounded-2xl md:hidden bg-[#080808]/95 backdrop-blur-2xl border border-white/[0.06] flex flex-col gap-3 shadow-2xl pointer-events-auto">
               <Link href="#enterprise" className="text-sm text-neutral-300 hover:text-white py-1" onClick={() => setMobileNavOpen(false)}>Platform</Link>
               <Link href="#pricing" className="text-sm text-neutral-300 hover:text-white py-1" onClick={() => setMobileNavOpen(false)}>Pricing</Link>
-              <Link href="/vs/hubspot" className="text-sm text-neutral-300 hover:text-white py-1" onClick={() => setMobileNavOpen(false)}>Compare</Link>
+              <Link href="/built-with-claude" className="text-sm text-neutral-300 hover:text-white py-1" onClick={() => setMobileNavOpen(false)}>Built with Claude</Link>
               <Link href="/security" className="text-sm text-neutral-300 hover:text-white py-1" onClick={() => setMobileNavOpen(false)}>Security</Link>
               <Link href="/signup" className="px-5 py-2.5 rounded-xl bg-white text-sm font-semibold text-black text-center mt-2" onClick={() => setMobileNavOpen(false)}>Get Started</Link>
             </motion.div>
@@ -1084,26 +1084,18 @@ export default function Home() {
           <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
             className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
             {[
-              { label: "Lindy", price: "$50–60/mo", model: "Credit-based", bad: true },
-              { label: "Sintra", price: "$97/mo", model: "250 credits/mo", bad: true },
-              { label: "Relevance AI", price: "Custom", model: "Usage-based", bad: true },
-              { label: "Sovereign", price: "$199/mo", model: "Unlimited", bad: false },
-            ].map((comp) => (
-              <div key={comp.label} className={`p-4 rounded-xl border text-center ${
-                comp.bad
-                  ? "border-white/[0.04] bg-white/[0.01]"
-                  : "border-emerald-500/20 bg-emerald-500/[0.04]"
-              }`}>
-                <p className="text-[10px] text-neutral-600 uppercase tracking-widest mb-1">{comp.label}</p>
-                <p className={`text-lg font-black mb-0.5 ${comp.bad ? "text-neutral-500" : "text-emerald-400"}`}>{comp.price}</p>
-                <p className={`text-[10px] ${comp.bad ? "text-red-400/50" : "text-emerald-400/60"}`}>{comp.model}</p>
+              { label: "Agents", value: "130", suffix: "pre-built" },
+              { label: "Models", value: "38", suffix: "auto-routed" },
+              { label: "Starting", value: "$19", suffix: "/month" },
+              { label: "Runs", value: "Unlimited", suffix: "on Node +" },
+            ].map((stat) => (
+              <div key={stat.label} className="p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.04] text-center">
+                <p className="text-[10px] text-neutral-500 uppercase tracking-widest mb-1">{stat.label}</p>
+                <p className="text-lg font-black mb-0.5 text-emerald-400">{stat.value}</p>
+                <p className="text-[10px] text-emerald-400/60">{stat.suffix}</p>
               </div>
             ))}
           </motion.div>
-
-          <p className="text-[10px] text-neutral-700">
-            Source: CIO AI cost underestimation stat from industry research, April 2026.
-          </p>
         </div>
       </section>
 
@@ -1201,31 +1193,6 @@ export default function Home() {
               <div className="text-xs text-neutral-500">{stat.desc}</div>
             </motion.div>
           ))}
-        </div>
-      </section>
-
-      {/* ═══ COMPETITIVE STRIP — Why not the others ═══ */}
-      <section className="py-12 px-6 bg-[#020202] border-y border-white/[0.03]">
-        <div className="max-w-5xl mx-auto">
-          <p className="text-center text-[10px] uppercase tracking-[0.3em] text-neutral-600 mb-6">How we compare</p>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            {[
-              { name: "HubSpot", price: "$890/mo", us: "$199/mo", href: "/vs/hubspot" },
-              { name: "Clay", price: "$149/mo", us: "Included", href: "/vs/clay" },
-              { name: "Zapier", price: "$49/mo", us: "Unlimited", href: "/vs/zapier" },
-              { name: "Sintra", price: "12 agents", us: "130 agents", href: "/vs/sintra" },
-              { name: "CrewAI", price: "You build it", us: "Pre-built", href: "/vs/crewai" },
-            ].map((comp) => (
-              <Link key={comp.name} href={comp.href}>
-                <div className="p-3 rounded-xl border border-white/[0.04] bg-white/[0.01] hover:border-emerald-500/15 transition-all text-center cursor-pointer group">
-                  <p className="text-[10px] text-neutral-600 mb-1">{comp.name}</p>
-                  <p className="text-[10px] text-neutral-700 line-through mb-1">{comp.price}</p>
-                  <p className="text-[11px] text-emerald-400 font-semibold">{comp.us}</p>
-                  <p className="text-[8px] text-neutral-700 mt-1 group-hover:text-emerald-500/50 transition-colors">Compare &rarr;</p>
-                </div>
-              </Link>
-            ))}
-          </div>
         </div>
       </section>
 
@@ -1646,7 +1613,7 @@ export default function Home() {
           <div className="rounded-2xl border border-white/[0.06] bg-[#080808] p-1">
             {[
               { q: "What is Sovereign Matrix?", a: "130 AI agents that do sales, marketing, content, and ops work. You tell them what you need. They figure out which of the 38 models to use, execute the task, and deliver the output. No prompt engineering required." },
-              { q: "Is this just another ChatGPT wrapper?", a: "No. ChatGPT is a chatbot. Sovereign Matrix is 130+ autonomous agents that execute: finding leads, building pages, writing outreach sequences, qualifying prospects, making calls. They open real browsers, hit real APIs, plan multi-step workflows, and self-correct without manual prompting." },
+              { q: "Is this a chat interface?", a: "No. Sovereign Matrix is 130+ autonomous agents that execute real work: finding leads, building pages, writing outreach sequences, qualifying prospects, making calls. They open real browsers, hit real APIs, plan multi-step workflows, and self-correct without manual prompting." },
               { q: "Can agents run locally without cloud?", a: "Yes. NemoClaw runs on your machine via Ollama. Full offline execution — your data never leaves your hardware. Built for sensitive client work and air-gapped environments." },
               { q: "Is there a contract or lock-in?", a: "No contracts. Month-to-month. Cancel from your dashboard. Data is always exportable. NVIDIA NIM inference is free — you only pay for premium features." },
               { q: "How long does setup take?", a: "Under 60 seconds. Sign up, complete the 5-step onboarding wizard, and deploy your first agent immediately. No Docker, no terminal commands, no technical setup required for the cloud version." },
@@ -1733,17 +1700,14 @@ export default function Home() {
               </ul>
             </div>
             <div>
-              <h3 className="text-xs font-semibold text-neutral-400 mb-4">Compare</h3>
+              <h3 className="text-xs font-semibold text-neutral-400 mb-4">Why Sovereign</h3>
               <ul className="space-y-2.5">
-                <li><Link href="/vs/hubspot" className="text-xs text-neutral-500 hover:text-white transition-colors">vs HubSpot</Link></li>
-                <li><Link href="/vs/clay" className="text-xs text-neutral-500 hover:text-white transition-colors">vs Clay</Link></li>
-                <li><Link href="/vs/zapier" className="text-xs text-neutral-500 hover:text-white transition-colors">vs Zapier</Link></li>
-                <li><Link href="/vs/crewai" className="text-xs text-neutral-500 hover:text-white transition-colors">vs CrewAI</Link></li>
-                <li><Link href="/vs/n8n" className="text-xs text-neutral-500 hover:text-white transition-colors">vs n8n</Link></li>
-                <li><Link href="/vs/lindy" className="text-xs text-neutral-500 hover:text-white transition-colors">vs Lindy</Link></li>
-                <li><Link href="/vs/sintra" className="text-xs text-neutral-500 hover:text-white transition-colors">vs Sintra</Link></li>
-                <li><Link href="/vs/make" className="text-xs text-neutral-500 hover:text-white transition-colors">vs Make</Link></li>
-                <li><Link href="/vs/claude-agents" className="text-xs text-neutral-500 hover:text-white transition-colors">& Claude Agents</Link></li>
+                <li><Link href="/built-with-claude" className="text-xs text-neutral-500 hover:text-white transition-colors">Built with Claude</Link></li>
+                <li><Link href="/dashboard/nexus" className="text-xs text-neutral-500 hover:text-white transition-colors">Nexus Protocol</Link></li>
+                <li><Link href="/security" className="text-xs text-neutral-500 hover:text-white transition-colors">5-layer Safety</Link></li>
+                <li><Link href="/#pricing" className="text-xs text-neutral-500 hover:text-white transition-colors">Flat Pricing</Link></li>
+                <li><Link href="/roi" className="text-xs text-neutral-500 hover:text-white transition-colors">ROI Calculator</Link></li>
+                <li><Link href="/showcase" className="text-xs text-neutral-500 hover:text-white transition-colors">Showcase</Link></li>
               </ul>
             </div>
             <div>

@@ -1,20 +1,20 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Pricing — Sovereign Matrix vs ChatGPT, Zapier, HubSpot",
-  description: "Compare Sovereign Matrix against ChatGPT, Zapier, HubSpot, and Clay. See how 130+ autonomous agents and zero per-token cost stack up. Free plan, no credit card.",
-  keywords: ["AI platform pricing", "Sovereign Matrix pricing", "AI agents comparison", "ChatGPT alternative pricing", "Zapier vs AI agents", "HubSpot alternative"],
+  title: "Pricing — Sovereign Matrix",
+  description: "One flat price. 130 autonomous agents, 38 models, unlimited runs at Node tier+. No per-token fees. No credits. Free plan, no credit card required.",
+  keywords: ["AI platform pricing", "Sovereign Matrix pricing", "flat AI pricing", "unlimited agent runs", "zero per-token cost"],
   alternates: { canonical: "https://sovereignmatrix.agency/pricing" },
   openGraph: {
-    title: "Pricing — Sovereign Matrix vs ChatGPT, Zapier, HubSpot",
-    description: "130+ autonomous agents. $0 per token. Free plan. See the full comparison.",
+    title: "Pricing — Sovereign Matrix",
+    description: "One flat price. 130 agents, 38 models, 25 playbooks. No per-token fees.",
     url: "https://sovereignmatrix.agency/pricing",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Pricing — Sovereign Matrix vs ChatGPT, Zapier, HubSpot",
-    description: "130+ autonomous agents. $0 per token. Free plan. See the full comparison.",
+    title: "Pricing — Sovereign Matrix",
+    description: "One flat price. 130 agents, 38 models, 25 playbooks. No per-token fees.",
   },
 };
 

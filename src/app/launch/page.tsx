@@ -91,28 +91,25 @@ export default function LaunchPage() {
         </div>
       </section>
 
-      {/* Beats everyone */}
+      {/* What you get */}
       <section className="py-16 px-6 bg-[#020202] border-y border-white/[0.03]">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-xl md:text-3xl font-black text-white mb-8">How we compare</h2>
+          <h2 className="text-xl md:text-3xl font-black text-white mb-8">One price. Everything included.</h2>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             {[
-              { name: "HubSpot", them: "$890/mo", us: "$199/mo" },
-              { name: "Clay", them: "$149/mo", us: "Included" },
-              { name: "Zapier", them: "Task limits", us: "Unlimited" },
-              { name: "Sintra", them: "12 agents", us: "130 agents" },
-              { name: "CrewAI", them: "You build it", us: "Pre-built" },
+              { label: "Agents",       value: "130",       sub: "pre-built" },
+              { label: "Models",       value: "38",        sub: "auto-routed" },
+              { label: "Integrations", value: "25+",       sub: "live" },
+              { label: "Safety",       value: "5-layer",   sub: "every call" },
+              { label: "Cost",         value: "$19–199",   sub: "flat /mo" },
             ].map((c) => (
-              <div key={c.name} className="p-3 rounded-xl border border-white/[0.04] bg-white/[0.01]">
-                <p className="text-[10px] text-neutral-600 mb-1">{c.name}</p>
-                <p className="text-[10px] text-neutral-700 line-through">{c.them}</p>
-                <p className="text-xs text-emerald-400 font-semibold">{c.us}</p>
+              <div key={c.label} className="p-3 rounded-xl border border-emerald-500/15 bg-emerald-500/[0.04]">
+                <p className="text-[10px] text-neutral-500 mb-1 uppercase tracking-widest">{c.label}</p>
+                <p className="text-sm text-emerald-400 font-bold">{c.value}</p>
+                <p className="text-[10px] text-emerald-400/50">{c.sub}</p>
               </div>
             ))}
           </div>
-          <Link href="/pricing/compare" className="inline-flex items-center gap-1 text-xs text-emerald-400 mt-4 hover:text-emerald-300 transition-colors">
-            See full comparison table <ArrowRight className="w-3 h-3" />
-          </Link>
         </div>
       </section>
 
