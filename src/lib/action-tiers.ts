@@ -42,6 +42,7 @@ const TIER_2_AGENTS = new Set([
   "content",
   "ad-report",
   "proposal-generator",
+  "slack-notify", // posts to the user's Slack workspace on their behalf
 ]);
 
 /** Agents that are destructive, financial, or make external calls — require admin approval */

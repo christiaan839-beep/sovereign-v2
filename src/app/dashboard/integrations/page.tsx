@@ -11,15 +11,44 @@ import {
   Link,
   ExternalLink,
   RefreshCw,
+  Loader2,
 } from "lucide-react";
 
 /**
  * INTEGRATIONS DASHBOARD — Manage connected services.
  *
- * Fetches /api/health on mount to detect which services have
- * API keys configured. Organizes integrations by category with
- * live connection status.
+ * Fetches /api/health on mount to detect platform-wide service health
+ * (env-keyed providers like NIM, Gemini). Additionally fetches
+ * per-user OAuth status for connectable integrations (currently Slack).
+ *
+ * The two-signal model matters:
+ *   - `healthKey` → the provider is configured at the platform level
+ *   - `oauth` → THIS user has authorized the provider for THEIR account
+ *
+ * Slack specifically goes through OAuth, so its card needs real-time
+ * state from /api/_integrations/slack/status, not a static env probe.
  */
+
+// ─── OAuth Integration State ──────────────────────────────────
+
+interface SlackStatus {
+  connected: boolean;
+  configurable: boolean;
+  workspace?: string;
+  connectedAt?: string | null;
+}
+
+function formatAgo(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const ms = Date.now() - new Date(iso).getTime();
+  if (ms < 60_000) return "just now";
+  const mins = Math.floor(ms / 60_000);
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  return `${days}d ago`;
+}
 
 // ─── Types ────────────────────────────────────────────────────
 
@@ -120,6 +149,9 @@ export default function IntegrationsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [slack, setSlack] = useState<SlackStatus | null>(null);
+  const [slackBusy, setSlackBusy] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
 
   const fetchHealth = useCallback(async () => {
     try {
@@ -136,13 +168,60 @@ export default function IntegrationsPage() {
     }
   }, []);
 
+  const fetchSlack = useCallback(async () => {
+    try {
+      const res = await fetch("/api/_integrations/slack/status");
+      if (res.ok) {
+        const data = await res.json();
+        setSlack(data as SlackStatus);
+      }
+    } catch {
+      // Keep prior state
+    }
+  }, []);
+
+  // Read ?connected=slack / ?slack_error= from the OAuth callback so we
+  // can show a toast without a full page reload.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("connected") === "slack") {
+      setToast("Slack connected successfully.");
+    } else if (params.get("slack_error")) {
+      setToast(`Slack connection failed: ${params.get("slack_error")}`);
+    }
+    if (toast) {
+      const t = setTimeout(() => setToast(null), 4000);
+      return () => clearTimeout(t);
+    }
+  }, [toast]);
+
   useEffect(() => {
     fetchHealth();
-  }, [fetchHealth]);
+    fetchSlack();
+  }, [fetchHealth, fetchSlack]);
 
-  const connectedCount = ALL_INTEGRATIONS.filter((i) =>
-    isConnected(i.healthKey, services)
-  ).length;
+  const handleSlackDisconnect = useCallback(async () => {
+    if (!confirm("Disconnect Slack? Playbooks using slack-notify will stop sending until you reconnect.")) return;
+    setSlackBusy(true);
+    try {
+      const res = await fetch("/api/_integrations/slack/disconnect", { method: "POST" });
+      if (res.ok) {
+        setToast("Slack disconnected.");
+        await fetchSlack();
+      } else {
+        setToast("Failed to disconnect Slack.");
+      }
+    } catch {
+      setToast("Failed to disconnect Slack.");
+    } finally {
+      setSlackBusy(false);
+    }
+  }, [fetchSlack]);
+
+  const connectedCount =
+    ALL_INTEGRATIONS.filter((i) => isConnected(i.healthKey, services)).length +
+    (slack?.connected ? 1 : 0);
 
   const filteredCategories = CATEGORIES.map((cat) => ({
     ...cat,
@@ -156,6 +235,21 @@ export default function IntegrationsPage() {
 
   return (
     <div className="p-6 lg:p-8 max-w-6xl mx-auto">
+      {/* Toast (OAuth callback feedback + disconnect confirmation) */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            role="status"
+            className="fixed top-6 right-6 z-50 px-4 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-sm backdrop-blur-xl shadow-lg"
+          >
+            {toast}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
@@ -226,10 +320,14 @@ export default function IntegrationsPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <AnimatePresence>
                   {category.integrations.map((integration, i) => {
-                    const connected = isConnected(
-                      integration.healthKey,
-                      services
-                    );
+                    // Slack has real OAuth state — override generic behavior
+                    const isSlack = integration.id === "slack";
+                    const connected = isSlack
+                      ? Boolean(slack?.connected)
+                      : isConnected(integration.healthKey, services);
+                    const subtitle = isSlack && slack?.connected
+                      ? `${slack.workspace}${slack.connectedAt ? ` · connected ${formatAgo(slack.connectedAt)}` : ""}`
+                      : integration.description;
                     return (
                       <motion.div
                         key={integration.id}
@@ -264,7 +362,7 @@ export default function IntegrationsPage() {
                                 {integration.name}
                               </h3>
                               <p className="text-[11px] text-neutral-500 leading-snug">
-                                {integration.description}
+                                {subtitle}
                               </p>
                             </div>
                           </div>
@@ -284,29 +382,63 @@ export default function IntegrationsPage() {
                               <>
                                 <Circle className="w-3.5 h-3.5 text-neutral-600" />
                                 <span className="text-[11px] font-medium text-neutral-500">
-                                  Not Connected
+                                  {isSlack && slack && !slack.configurable
+                                    ? "Not Configured"
+                                    : "Not Connected"}
                                 </span>
                               </>
                             )}
                           </div>
 
-                          <button
-                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all ${
-                              connected
-                                ? "bg-white/5 text-neutral-300 border border-white/10 hover:bg-white/10"
-                                : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20"
-                            }`}
-                          >
-                            {connected ? (
-                              <>
-                                <Settings className="w-3 h-3" /> Manage
-                              </>
+                          {isSlack ? (
+                            connected ? (
+                              <button
+                                onClick={handleSlackDisconnect}
+                                disabled={slackBusy}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold bg-white/5 text-neutral-300 border border-white/10 hover:bg-white/10 disabled:opacity-50 transition-all"
+                              >
+                                {slackBusy ? (
+                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                ) : (
+                                  <Settings className="w-3 h-3" />
+                                )}
+                                Disconnect
+                              </button>
                             ) : (
-                              <>
+                              <a
+                                href={slack?.configurable === false ? "#" : "/api/_integrations/slack/authorize"}
+                                aria-disabled={slack?.configurable === false}
+                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-all ${
+                                  slack?.configurable === false
+                                    ? "bg-white/[0.03] text-neutral-600 border-white/[0.06] cursor-not-allowed"
+                                    : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20"
+                                }`}
+                                onClick={(e) => {
+                                  if (slack?.configurable === false) e.preventDefault();
+                                }}
+                              >
                                 <Link className="w-3 h-3" /> Connect
-                              </>
-                            )}
-                          </button>
+                              </a>
+                            )
+                          ) : (
+                            <button
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all ${
+                                connected
+                                  ? "bg-white/5 text-neutral-300 border border-white/10 hover:bg-white/10"
+                                  : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20"
+                              }`}
+                            >
+                              {connected ? (
+                                <>
+                                  <Settings className="w-3 h-3" /> Manage
+                                </>
+                              ) : (
+                                <>
+                                  <Link className="w-3 h-3" /> Connect
+                                </>
+                              )}
+                            </button>
+                          )}
                         </div>
 
                         {/* Hover glow */}

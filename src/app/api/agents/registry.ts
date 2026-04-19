@@ -115,6 +115,7 @@ export const AGENT_REGISTRY: Record<string, () => Promise<RouteModule>> = {
   "seo": () => import("@/app/api/_agents/seo/route"),
   "seo-dominator": () => import("@/app/api/_agents/seo-dominator/route"),
   "site-assassin": () => import("@/app/api/_agents/site-assassin/route"),
+  "slack-notify": () => import("@/app/api/_agents/slack-notify/route"),
   "smart-router": () => import("@/app/api/_agents/smart-router/route"),
   "social-router": () => import("@/app/api/_agents/social-router/route"),
   "super-agent": () => import("@/app/api/_agents/super-agent/route"),
