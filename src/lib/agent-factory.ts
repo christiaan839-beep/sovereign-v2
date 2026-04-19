@@ -143,8 +143,16 @@ export function createAgentRoute(config: AgentConfig) {
 
         if (internalSecret && cronSecret && internalUserId) {
           // Constant-time compare via hash+compare (same pattern as
-          // cron-auth.ts). Never accept if CRON_SECRET is unset.
-          if (cronSecret.length >= 16) {
+          // cron-auth.ts). Never accept if CRON_SECRET is unset or
+          // weak — weak secrets aren't a security hole (attackers
+          // still need to match them), but they're a misconfiguration
+          // footgun that would silently disable the scheduler. We
+          // log loudly so the operator sees it in Sentry.
+          if (cronSecret.length < 16) {
+            log.error("CRON_SECRET is set but shorter than 16 chars — internal-auth bypass disabled", {
+              length: cronSecret.length,
+            });
+          } else {
             const { createHash, timingSafeEqual } = await import("node:crypto");
             const a = createHash("sha256").update(internalSecret).digest();
             const b = createHash("sha256").update(cronSecret).digest();

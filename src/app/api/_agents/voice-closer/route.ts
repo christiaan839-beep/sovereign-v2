@@ -56,17 +56,29 @@ export async function POST(req: Request) {
 
     // If this is the initial call (no speech result yet)
     if (!speechResult) {
+      // TCPA / FCC Order 19-73 compliance: AI identity MUST be disclosed
+      // at the start of every call. This is a legal requirement, not a
+      // UX choice — do not remove the AI-disclosure clause.
       const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Say voice="Polly.Amy">
-    Welcome to the Sovereign Matrix. I am your AI operations coordinator.
-    How can I assist you today? You can ask about our autonomous AI agents,
-    pricing tiers, or schedule a live demonstration.
+    Hello. This call is handled by an A I assistant from Sovereign Matrix — you are not speaking with a human.
+    The call is being recorded for quality. You can ask to be transferred to a human operator at any time.
+    How may I help you today? You can ask about our autonomous agents, pricing, or scheduling a demonstration.
   </Say>
-  <Gather input="speech" action="/api/_agents/voice-closer" method="POST" speechTimeout="3" language="en-ZA">
+  <Gather input="speech" action="/api/_agents/voice-closer" method="POST" speechTimeout="3" language="en-US">
     <Say voice="Polly.Amy">I'm listening.</Say>
   </Gather>
-  <Say voice="Polly.Amy">I didn't catch that. Transferring you to a human operator.</Say>
+  <Say voice="Polly.Amy">I didn't catch that. Transferring you to a human operator now.</Say>
+</Response>`;
+      return new NextResponse(twiml, { headers: { "Content-Type": "text/xml" } });
+    }
+
+    // Caller requested a human → hand off (TCPA / FCC best-practice).
+    if (/human|agent|representative|person|operator/.test(speechResult.toLowerCase())) {
+      const twiml = `<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say voice="Polly.Amy">Of course. Transferring you to a human operator now. One moment.</Say>
 </Response>`;
       return new NextResponse(twiml, { headers: { "Content-Type": "text/xml" } });
     }
@@ -76,13 +88,13 @@ export async function POST(req: Request) {
     const lowerSpeech = speechResult.toLowerCase();
 
     if (lowerSpeech.includes("price") || lowerSpeech.includes("cost") || lowerSpeech.includes("how much")) {
-      responseText = "Our Sovereign Node starts at 9,997 Rand per month, which gives you a full autonomous AI marketing team. The Growth plan at 24,997 includes unlimited AI generations and priority processing. Would you like me to send you a detailed proposal?";
+      responseText = "Our pricing is flat monthly: Starter is nineteen U S dollars, Growth is forty nine, Node is one hundred and ninety nine, and Enterprise is four hundred and ninety nine. All tiers include every agent and every model. Would you like me to send a summary?";
     } else if (lowerSpeech.includes("demo") || lowerSpeech.includes("show")) {
-      responseText = "I'd love to arrange a live demonstration for you. Our team will walk you through the entire platform including the War Room, Visual Studio, and NemoClaw automation. Can I get your email address to schedule this?";
+      responseText = "Happy to arrange a demonstration. If you visit sovereignmatrix.agency you can try the Nexus Protocol live — that is our flagship demo where four frontier models answer one question in parallel.";
     } else if (lowerSpeech.includes("agent") || lowerSpeech.includes("what")) {
-      responseText = "The Sovereign Matrix runs 72 autonomous AI agents powered by NVIDIA. These agents handle everything from content creation to competitor analysis, outbound sales, voice AI, and visual design. All running 24/7 without human intervention. Would you like to know which agents are best for your industry?";
+      responseText = "Sovereign Matrix runs one hundred and thirty autonomous agents across lead generation, content, search optimization, voice, code review, and competitor research. Every agent routes to the best of thirty eight models. Would you like details on a specific category?";
     } else {
-      responseText = `I understand you're asking about ${speechResult}. Let me connect you with our specialist who can give you detailed information. One moment please.`;
+      responseText = `I heard you ask about ${speechResult}. Let me take your details and have a specialist follow up within one business day. What's the best email to reach you?`;
     }
 
     // Notify Telegram about the call

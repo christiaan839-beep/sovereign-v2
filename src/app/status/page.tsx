@@ -4,25 +4,24 @@ import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle2, AlertTriangle, XCircle, RefreshCw, Activity, Mail } from "lucide-react";
 
+// Target SLA values — NOT verified uptime. We intentionally do not
+// display fabricated uptime percentages (see FTC Act §5 guidance on
+// substantiation). Real uptime monitoring will ship with the
+// observability rollout; until then this page only shows live
+// service status from /api/health.
 const SERVICES = [
-  { name: "API Gateway", key: "api", uptime: 99.98 },
-  { name: "Agent Router", key: "router", uptime: 99.95 },
-  { name: "LLM Models", key: "llm", uptime: 99.91 },
-  { name: "Database", key: "database", uptime: 99.99 },
-  { name: "Auth (Clerk)", key: "auth", uptime: 99.97 },
-  { name: "MCP Server", key: "mcp", uptime: 99.93 },
+  { name: "API Gateway",    key: "api"      },
+  { name: "Agent Router",   key: "router"   },
+  { name: "LLM Models",     key: "llm"      },
+  { name: "Database",       key: "database" },
+  { name: "Auth",           key: "auth"     },
+  { name: "MCP Server",     key: "mcp"      },
 ];
 
-const INCIDENTS = [
-  { date: "Apr 7, 2026", title: "20+ deployments — zero downtime", duration: "0 min", status: "resolved" as const,
-    description: "Major platform upgrade sprint: 32 pages deployed across 20+ consecutive READY builds. Zero build failures, zero downtime." },
-  { date: "Mar 22, 2026", title: "Elevated latency on Agent Router", duration: "12 min", status: "resolved" as const,
-    description: "Increased response times due to upstream model provider. Auto-failover to backup models resolved the issue." },
-  { date: "Mar 15, 2026", title: "Database connection pool saturation", duration: "8 min", status: "resolved" as const,
-    description: "Connection pool briefly saturated during traffic spike. Pool size auto-scaled and recovered within minutes." },
-  { date: "Mar 3, 2026", title: "MCP Server restart", duration: "3 min", status: "resolved" as const,
-    description: "Scheduled maintenance window for MCP Server upgrade. Zero-downtime deployment completed successfully." },
-];
+// Incident log is populated from actual verified incidents only.
+// Empty until we have verified incident data to report — do not
+// seed with "zero downtime" deployment claims.
+const INCIDENTS: Array<{ date: string; title: string; duration: string; status: "resolved"; description: string }> = [];
 
 type Status = "operational" | "degraded" | "down";
 
@@ -89,7 +88,6 @@ export default function StatusPage() {
                 <span className="font-medium text-white">{svc.name}</span>
               </div>
               <div className="flex items-center gap-6 text-sm">
-                <span className="text-neutral-500 font-mono">{svc.uptime}% uptime</span>
                 <span className={`font-mono text-xs ${color(statuses[svc.key] || "operational")}`}>{label(statuses[svc.key] || "operational")}</span>
               </div>
             </motion.div>

@@ -84,21 +84,30 @@ export async function POST(req: Request) {
         return NextResponse.json({ received: true, duplicate: true });
       }
 
-      const receivedAt = existing.receivedAt.getTime();
-      if (Date.now() - receivedAt < STALE_RECEIVED_MS) {
-        // Another retry is actively processing (or processing crashed
-        // moments ago). Return 202 — Stripe will retry in 5-10s and
-        // the stale-received window will have elapsed.
-        log.info("Stripe event in-flight — deferring", { eventId: event.id });
-        return NextResponse.json({ received: true, deferred: true }, { status: 202 });
+      // A prior attempt left the row in 'failed'. Always re-process
+      // immediately — Stripe is retrying because WE told it to, and
+      // the failure was ours (handler crashed). We do NOT want to
+      // send Stripe a 202 here; that just rate-limits the recovery.
+      if (existing.status === "failed") {
+        log.warn("Re-processing failed Stripe event", { eventId: event.id });
+        // Fall through to the handler.
+      } else {
+        // status === 'received' — a prior attempt is potentially still
+        // in-flight OR crashed silently (no catch path executed).
+        const receivedAt = existing.receivedAt.getTime();
+        if (Date.now() - receivedAt < STALE_RECEIVED_MS) {
+          // Fresh 'received' row → concurrent processing. Defer so
+          // Stripe retries after the stale window elapses.
+          log.info("Stripe event in-flight — deferring", { eventId: event.id });
+          return NextResponse.json({ received: true, deferred: true }, { status: 202 });
+        }
+        // Stale 'received' row → the original attempt crashed before
+        // catch-to-failed could run. Re-process.
+        log.warn("Re-processing stale received Stripe event", {
+          eventId: event.id,
+          receivedAgoMs: Date.now() - receivedAt,
+        });
       }
-
-      // Stale 'received' row → re-process. The original attempt crashed.
-      log.warn("Re-processing stale received Stripe event", {
-        eventId: event.id,
-        receivedAgoMs: Date.now() - receivedAt,
-      });
-      // Don't re-insert; fall through to the handler.
     } else if (code === "42P01") {
       log.warn("stripe_events table missing — run migration 0004", { eventId: event.id });
       // Continue processing; bootstrap mode.

@@ -10,6 +10,7 @@
 
 import { createLogger } from "@/lib/logger";
 import { resendBreaker } from "@/lib/circuit-breaker";
+import { appendComplianceFooter } from "@/lib/telecom-compliance";
 
 const log = createLogger("email-service");
 
@@ -232,7 +233,10 @@ export async function sendEmail(
           from: options.from || process.env.EMAIL_FROM || "Sovereign Matrix <noreply@sovereign.email>",
           to,
           subject,
-          html,
+          // CAN-SPAM / CASL / POPIA compliance: every outbound email
+          // includes the sender's physical address and a one-click
+          // unsubscribe link. Helper is in src/lib/telecom-compliance.
+          html: appendComplianceFooter(html, { email: to }),
           ...(options.replyTo ? { reply_to: options.replyTo } : {}),
           ...(options.tags ? { tags: options.tags.map((t) => ({ name: t })) } : {}),
           ...(options.headers ? { headers: options.headers } : {}),

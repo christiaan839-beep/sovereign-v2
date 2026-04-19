@@ -4,7 +4,9 @@ import Link from "next/link";
 /**
  * BUILT WITH CLAUDE — Editorial Museum
  *
- * A page designed to be sent around by the Claude Partner Network team.
+ * Editorial page explaining how Sovereign Matrix integrates with the
+ * Claude API. Content is descriptive, not affiliation-claiming — we
+ * build on the public Anthropic API like any other Anthropic customer.
  * Cream / charcoal / copper. Instrument Serif for display, Inter Tight for
  * body, JetBrains Mono for data. Asymmetric 12-col grid, magazine-style.
  *
@@ -79,7 +81,7 @@ export default function BuiltWithClaudePage() {
 
           <header className="ed-grid-12 mb-16">
             <div className="col-span-12 md:col-span-9">
-              <p className="ed-label mb-6 ed-enter ed-d-1">Field Note · Partnership</p>
+              <p className="ed-label mb-6 ed-enter ed-d-1">Field Note · Integration</p>
               <h1
                 className="ed-display ed-enter ed-d-2"
                 style={{
@@ -282,9 +284,10 @@ export default function BuiltWithClaudePage() {
               <p className="ed-label mb-3">Colophon</p>
               <p className="ed-body text-[13px]" style={{ color: "var(--ed-ink-soft)", lineHeight: 1.7 }}>
                 Set in Instrument Serif (display), Inter Tight (body), JetBrains
-                Mono (data). Copper accent (#B5532C) tonally adjacent to Anthropic&apos;s
-                wordmark. This page was designed, written, and coded in a single
-                Claude Code session.
+                Mono (data). Copper accent (#B5532C). Sovereign Matrix is not
+                formally affiliated with Anthropic — this page describes our
+                integration with Claude via the public Anthropic API. Designed,
+                written, and coded in a single Claude Code session.
               </p>
             </div>
             <div className="col-span-12 md:col-span-6 md:text-right mt-8 md:mt-0">

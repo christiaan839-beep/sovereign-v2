@@ -15,7 +15,7 @@ It completely replaces the need for SDRs, strategists, and copywriters.
 Your $5,000/mo Cartel clients log into `sovereign-matrix.com/client-portal/[domain]`. 
 They see a flawless, military-style UI (The Palantir 3D Map, The Extinction Calculators). They submit a request (e.g., "Need 500 tech leads"), and then they close the browser.
 
-You receive a ping on your iOS Telegram App. You tap `/execute`. The Swarm extracts the leads via Stealth Headless Chromium, writes 500 emails via Gemini 1.5 Flash, and sends them via Resend API. On Sunday, the client receives an automated PDF proving you saved them 160 hours of human labor.
+You receive a ping on your iOS Telegram App. You tap `/execute`. The agent runs the requested playbook (lead discovery, outreach drafting, send), and writes each step to the audit log. A weekly summary report lists the exact work completed. We don't fabricate time-saved estimates; if you want an hours-saved claim, compute it from your own baseline and the verified audit log.
 
 They never see the backend. They only see the results.
 
