@@ -13,7 +13,7 @@
  */
 
 import { db } from "@/db";
-import { playbookRuns } from "@/db/schema";
+import { playbookRuns, subscriptions } from "@/db/schema";
 import { eq, gte, and, sql } from "drizzle-orm";
 import { PLANS, type PlanId } from "@/lib/plans";
 import { createLogger } from "@/lib/logger";
@@ -32,22 +32,60 @@ export interface PlanCheck {
 }
 
 /**
- * Get the user's current plan. For now, defaults to "free".
- * TODO: Read from subscriptions table once Stripe is wired.
+ * Valid plan IDs the subscriptions table may contain. Anything else (legacy
+ * "pro" / "sniper" / etc) collapses to "free" — we never hand a caller a plan
+ * we don't have a PLANS entry for.
+ */
+const KNOWN_PLANS = new Set<PlanId>(["free", "starter", "founder", "array", "node", "enterprise"]);
+
+/**
+ * Get the user's current plan.
+ *
+ * Resolution order:
+ *   1. Founder list (hardcoded first-10 free-enterprise grantees)
+ *   2. Active Stripe subscription row in `subscriptions` — status='active'
+ *      and currentPeriodEnd > now. Gracefully handles missing table (42P01).
+ *   3. Free tier
  */
 async function getUserPlan(userId: string): Promise<PlanId> {
+  // 1. Founders
   try {
-    // Check for founder status (first 10 users)
-    const { founders } = await import("@/app/api/_misc/founders/route");
-    if (typeof founders?.has === "function" && founders.has(userId)) {
-      return "founder";
-    }
+    const founderMod = (await import("@/app/api/_misc/founders/route")) as {
+      founders?: { has: (id: string) => boolean };
+    };
+    if (founderMod.founders?.has?.(userId)) return "founder";
   } catch {
-    // founders route may not exist, skip
+    // founders route may not exist in this deploy — fall through
   }
 
-  // TODO: Check subscriptions table for active Stripe subscription
-  // For now, everyone without a subscription is on free tier
+  // 2. Active Stripe subscription
+  try {
+    const [row] = await db
+      .select({ plan: subscriptions.plan, status: subscriptions.status, periodEnd: subscriptions.currentPeriodEnd })
+      .from(subscriptions)
+      .where(eq(subscriptions.userId, userId))
+      .limit(1);
+
+    if (row && row.status === "active") {
+      // Respect period end when present — if the period has lapsed, drop to free
+      if (!row.periodEnd || row.periodEnd.getTime() > Date.now()) {
+        const plan = row.plan as PlanId;
+        if (KNOWN_PLANS.has(plan)) return plan;
+      }
+    }
+  } catch (err: unknown) {
+    const pgCode = (err as { code?: string })?.code;
+    if (pgCode === "42P01") {
+      // subscriptions table not migrated yet — bootstrap window. Fall through.
+      log.warn("subscriptions table missing — run drizzle migrations", { userId });
+    } else {
+      log.error("Failed to read subscription — defaulting to free", {
+        userId,
+        error: (err as Error).message,
+      });
+    }
+  }
+
   return "free";
 }
 

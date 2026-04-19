@@ -39,7 +39,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
   const handler = await getAgentHandler(agentName);
   if (!handler?.POST) {
     return NextResponse.json(
-      { error: `Agent "${agentName}" not found`, available: KNOWN_AGENTS.slice(0, 30) },
+      {
+        error: `Agent "${agentName}" not found`,
+        total_agents: KNOWN_AGENTS.length,
+        sample: KNOWN_AGENTS.slice(0, 10),
+        docs: "/api/agents",
+        tip: "Use GET /api/agents for the full registered agent list.",
+      },
       { status: 404 }
     );
   }
