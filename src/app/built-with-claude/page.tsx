@@ -14,17 +14,17 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Built with Claude — Sovereign Matrix",
   description:
-    "How a solo founder built 131 AI agents, a multi-model consensus engine, and a live production platform using Claude as the reasoning core.",
+    "How a solo founder built 130 AI agents, a multi-model consensus engine, and a live production platform using Claude as the reasoning core.",
   openGraph: {
     title: "Built with Claude — Sovereign Matrix",
-    description: "131 agents, one founder, Claude as the reasoning core.",
+    description: "130 agents, one founder, Claude as the reasoning core.",
     type: "article",
   },
 };
 
 const STATS = [
-  { n: "131", label: "Production agents" },
-  { n: "39",  label: "Models routed" },
+  { n: "130", label: "Production agents" },
+  { n: "38",  label: "Models routed" },
   { n: "1",   label: "Founder" },
   { n: "5",   label: "Safety layers" },
 ];
@@ -60,7 +60,7 @@ const HOW_BUILT = [
   { count: "01", title: "Written with Claude Code",     body: "Every line of Sovereign Matrix was authored in a Claude Code session. The commit log reads like a correspondence with an engineering partner." },
   { count: "02", title: "Reviewed by Claude",           body: "Three specialized review agents — slop-hunter, security-review, gap-finder — run before every push. The platform audits itself." },
   { count: "03", title: "Architected with Claude",     body: "Architecture decisions, trade-offs, migration plans — all worked out in writing. The reasoning is in the repo." },
-  { count: "04", title: "Shipped solo — at scale",     body: "131 agents, 39 model integrations, a playbook engine, a multi-tenant safety pipeline, a live metering layer. One person, one AI partner." },
+  { count: "04", title: "Shipped solo — at scale",     body: "130 agents, 38 model integrations, a playbook engine, a multi-tenant safety pipeline, a live metering layer. One person, one AI partner." },
 ];
 
 export default function BuiltWithClaudePage() {

@@ -60,7 +60,7 @@ METRICS THIS WEEK:
 - Content Pieces Generated: ${genCount}
 - Leads Generated: ${leadCount}
 - Competitor Audits Run: ${auditCount}
-- Client Name: ${clientName || "Commander"}
+- Client Name: ${clientName || "Team"}
 - Report Period: ${reportPeriod}
 
 Based on these metrics, provide:
@@ -87,7 +87,7 @@ Return ONLY valid JSON, no markdown fences.`,
     const report = {
       id: `RPT-${Date.now()}`,
       title: `Sovereign Matrix — ${reportPeriod}`,
-      clientName: clientName || "Commander",
+      clientName: clientName || "Team",
       generatedAt: new Date().toISOString(),
       sections: {
         executive_summary: {

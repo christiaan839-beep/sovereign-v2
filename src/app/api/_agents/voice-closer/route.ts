@@ -6,7 +6,7 @@ import { persistAppend } from "@/lib/persist";
  * VOICE AI CLOSER — Twilio + NVIDIA Riva voice qualification agent.
  * 
  * Handles inbound calls, qualifies leads with AI-powered voice,
- * and routes hot leads to the Commander via Telegram.
+ * and routes hot leads to the account owner via Telegram.
  * 
  * GET: Returns voice AI status and capabilities
  * POST: Generates TwiML for Twilio voice webhook

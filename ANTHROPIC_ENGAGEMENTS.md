@@ -24,7 +24,7 @@ This is our flagship Anthropic engagement. It is the product.
 ### Scope
 
 Sovereign Matrix is a **multi-tenant agent operating system** that lets
-a single operator deploy 131 production AI agents, orchestrated into
+a single operator deploy 130 production AI agents, orchestrated into
 multi-step playbooks, backed by a 5-layer safety pipeline and
 multi-model consensus verification.
 
@@ -55,11 +55,11 @@ flat-rate agent platform starting at $19/mo.
 - Groq: fast inference fallback.
 - Ollama: customer-side local execution (privacy-sensitive deployments).
 
-**39+ models total, routed per task by `src/lib/llm-router.ts`.**
+**38 models total, routed per task by `src/lib/llm-router.ts`.**
 
 ### Technical surface
 
-- 131 production agents (`src/app/api/_agents/*/route.ts`)
+- 130 production agents (`src/app/api/_agents/*/route.ts`)
 - 25 multi-agent playbook workflows (`src/lib/playbooks.ts`)
 - Multi-tenant auth via Clerk; tenant-scoped DB queries via
   `src/lib/tenant-scope.ts`
@@ -85,7 +85,7 @@ with Claude as the engineering partner.
 ### Outcomes so far
 
 - Zero security vulnerabilities in public audit (Aikido scan).
-- 131 agents typecheck clean on every push.
+- 130 agents typecheck clean on every push.
 - Zero "AI slop" fabrications in user-facing surfaces (enforced by
   the `slop-hunter` Claude Code agent we built for this review).
 - Editorial design language committed across 4 surfaces
@@ -171,7 +171,7 @@ Founder, Sovereign Matrix
 ## For the founder — checklist before sharing
 
 - [ ] Verify current Claude model IDs match what's live in production.
-- [ ] Confirm the "131 agents" count — run `ls src/app/api/_agents/ | wc -l`
+- [ ] Confirm the "130 agents" count — run `ls src/app/api/_agents/ | wc -l`
       and update if drift.
 - [ ] Decide whether the "No paying customers yet" section stays verbatim
       or softens once any design partner is confirmed.

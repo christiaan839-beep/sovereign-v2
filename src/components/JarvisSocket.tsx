@@ -64,7 +64,7 @@ export function JarvisSocket() {
         
         await new Promise(r => setTimeout(r, 1200));
         setTranscript("Command parsed.");
-        setResponse("Affirmative, Commander. Routing vectors to the Swarm.");
+        setResponse("Got it — routing to the right agent.");
         
         await new Promise(r => setTimeout(r, 1500));
         setIsProcessing(false);

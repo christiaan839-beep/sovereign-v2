@@ -222,10 +222,8 @@ Founder, Sovereign Matrix
 ## For the founder — checklist before sharing
 
 - [ ] Verify every file path cited in roles 02–09 still exists.
-      (Run `slop-hunter` first.)
+      (Run the slop-hunter first.)
 - [ ] Confirm all Claude model IDs match the current Anthropic
       public model names.
-- [ ] Decide whether to keep role #10 as "TBD" or reframe as
-      "roadmap" before sending.
 - [ ] Optional: add a link to a short video walkthrough of the
       platform in the signature block.

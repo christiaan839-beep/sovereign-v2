@@ -954,7 +954,7 @@ export default function Home() {
               },
               {
                 title: "Built by a solo founder + Claude Code",
-                body: "131 agents, 39 models, a consensus engine, multi-tenant auth, and a live metering layer — shipped solo with Claude Code as the engineering partner. Every commit tells that story.",
+                body: "130 agents, 38 models, a consensus engine, multi-tenant auth, and a live metering layer — shipped solo with Claude Code as the engineering partner. Every commit tells that story.",
                 stat: "1 founder · 1 AI partner · shipped",
               },
               {
