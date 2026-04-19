@@ -45,6 +45,7 @@ export const settings = pgTable("settings", {
   config: text("config").notNull().default('{}'), // JSON object stringified
   apiKeys: text("api_keys").default('{}'), // Store Gemini/Tavily etc
   webhooks: text("webhooks").default('{}'), // Store user saved webhooks
+  weeklyReportOptIn: text("weekly_report_opt_in").default("false"), // "true" | "false" — opt-in for Proposal R
 });
 
 export const scheduledContent = pgTable("scheduled_content", {

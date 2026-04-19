@@ -291,13 +291,15 @@ export default function PricingPage() {
       {/* Guarantee */}
       <section className="relative z-10 px-8 pb-16 pt-20 text-center max-w-lg mx-auto">
         <motion.div {...fadeIn(0)} className="rounded-2xl bg-white/[0.02] border border-white/[0.06] backdrop-blur-xl p-8">
-          <h3 className="text-lg font-bold mb-2">30-Day Money-Back Guarantee</h3>
+          <h3 className="text-lg font-bold mb-2">14-Day Unconditional Refund</h3>
           <p className="text-sm text-neutral-400 leading-relaxed">
-            Try Sovereign Matrix for 30 days. If it doesn&apos;t work for you, we&apos;ll refund you — no questions asked.
+            If Sovereign Matrix isn&apos;t working for you within 14 days of your first paid invoice,
+            email <a href="mailto:refunds@sovereignmatrix.agency" className="text-emerald-400 underline">refunds@sovereignmatrix.agency</a>.
+            One email, full refund, no outcome conditions. See <a href="/terms" className="text-emerald-400 underline">terms</a> for the fine print.
           </p>
           <div className="flex items-center justify-center gap-4 mt-4">
-            <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-bold uppercase tracking-wider"><Shield className="w-3 h-3" /> SSL Secured</span>
-            <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-bold uppercase tracking-wider"><Shield className="w-3 h-3" /> PayFast Verified</span>
+            <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-bold uppercase tracking-wider"><Shield className="w-3 h-3" /> Stripe Secured</span>
+            <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-bold uppercase tracking-wider"><Shield className="w-3 h-3" /> Cancel Anytime</span>
           </div>
         </motion.div>
       </section>

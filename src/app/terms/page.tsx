@@ -32,7 +32,8 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-lg font-bold text-white mb-3">3. Accounts and Billing</h2>
-            <p>You must provide accurate information when creating an account. Subscription fees are billed monthly in ZAR via Paystack. You may cancel at any time — your access continues until the end of the current billing period. Refunds are handled on a case-by-case basis.</p>
+            <p>You must provide accurate information when creating an account. Subscription fees are billed monthly in USD via Stripe. You may cancel at any time from your dashboard; access continues until the end of the current billing period.</p>
+            <p className="mt-3"><strong>14-day unconditional refund.</strong> Within 14 calendar days of your first paid invoice, you can request a full refund of that invoice by emailing <a href="mailto:refunds@sovereignmatrix.agency" className="text-emerald-400 underline">refunds@sovereignmatrix.agency</a> from the email address associated with your account. We refund within 5 business days via the original payment method. No conditions. The guarantee covers the first invoice only; subsequent monthly charges are not automatically refundable, but you can cancel before the next billing date to avoid future charges.</p>
           </section>
 
           <section>
