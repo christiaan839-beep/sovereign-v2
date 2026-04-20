@@ -4,20 +4,13 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 /**
- * LIVE RUNS PILL — hero "N playbooks running right now."
+ * LIVE RUNS PILL — "N playbooks running right now" hero badge.
  *
- * Studying: vercel.com shows live deployment counts, stripe.com
- * shows payments-per-second. The move is NOT the number; it's the
- * subtle update — the number ticking up without animation tells
- * the visitor "this is alive."
- *
- * Design notes:
- *   - Fades in after hero (1.2s delay) so hero text lands first
- *   - Polls every 30s (matches the endpoint edge cache)
- *   - Pulse dot uses emerald (success/alive semantic)
- *   - When running=0, gracefully shows totalToday instead (zero
- *     state is never "dead")
- *   - Mobile: renders inline below CTA, not floating
+ * Polls /api/_misc/live-count every 30s (matches the endpoint's
+ * edge cache). Fades in 1.2s after hero so the headline lands
+ * first. If both running and totalToday are zero the pill still
+ * renders a "platform ready" message — the zero state must never
+ * read as dead.
  */
 
 interface LiveCount {
@@ -56,16 +49,7 @@ export function LiveRunsPill() {
   // Real data overrides after ~200ms on fast networks.
   const running = data?.running ?? 0;
   const totalToday = data?.totalToday ?? 0;
-
-  // Choose the live message based on state.
-  // Prefer "N running" when we have active runs; fall back to
-  // today's total when the queue is idle.
-  const message =
-    running > 0
-      ? `${formatNumber(running)} playbook${running === 1 ? "" : "s"} running right now`
-      : totalToday > 0
-      ? `${formatNumber(totalToday)} playbook${totalToday === 1 ? "" : "s"} ran today`
-      : `Platform ready · first run in 3 minutes`;
+  const message = buildMessage(running, totalToday);
 
   return (
     <motion.div
@@ -98,4 +82,15 @@ export function LiveRunsPill() {
 
 function formatNumber(n: number): string {
   return new Intl.NumberFormat("en-US").format(n);
+}
+
+/** Prefer live runs. Fall back to today's total. Never read as dead. */
+function buildMessage(running: number, totalToday: number): string {
+  if (running > 0) {
+    return `${formatNumber(running)} playbook${running === 1 ? "" : "s"} running right now`;
+  }
+  if (totalToday > 0) {
+    return `${formatNumber(totalToday)} playbook${totalToday === 1 ? "" : "s"} ran today`;
+  }
+  return "Platform ready · first run in 3 minutes";
 }

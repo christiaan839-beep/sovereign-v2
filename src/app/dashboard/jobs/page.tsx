@@ -3,10 +3,11 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { timeAgo, formatDuration } from "@/lib/format-time";
 import {
   Zap, Clock, CheckCircle2, XCircle, Loader2,
   RefreshCw, ChevronDown, ChevronUp, Copy, Play,
-  BrainCircuit, RotateCcw,
+  RotateCcw,
 } from "lucide-react";
 
 /* ─── Types ─── */
@@ -23,24 +24,6 @@ interface Job {
   createdAt: string;
   completedAt: string | null;
   done: boolean;
-}
-
-/* ─── Helpers ─── */
-
-function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60_000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  return `${Math.floor(hrs / 24)}d ago`;
-}
-
-function formatDuration(ms: number | null): string {
-  if (!ms) return "—";
-  if (ms < 1000) return `${ms}ms`;
-  return `${(ms / 1000).toFixed(1)}s`;
 }
 
 const STATUS_CONFIG = {

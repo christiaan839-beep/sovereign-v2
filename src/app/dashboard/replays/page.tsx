@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { NoRunsEmpty } from "@/components/ui/EmptyState";
+import { formatDuration } from "@/lib/format-time";
 import {
   Play, Clock, CheckCircle2, XCircle, Loader2, ChevronDown,
   Bot, Cpu, Filter, RefreshCw, Zap,
@@ -45,12 +46,6 @@ function parseDetails(raw: string | null): ParsedDetails {
   } catch {
     return {};
   }
-}
-
-function formatDuration(ms: number | undefined): string {
-  if (!ms) return "N/A";
-  if (ms < 1000) return `${ms}ms`;
-  return `${(ms / 1000).toFixed(1)}s`;
 }
 
 function formatTime(iso: string): string {
