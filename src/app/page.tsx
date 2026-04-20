@@ -570,13 +570,21 @@ function FeaturedPlaybooksSection() {
   );
 }
 
-/* ─── 06.5 · Principles (editorial pull, Claude-constitution style) ─── */
-
-/**
- * Mid-page editorial moment. No product, no CTA — just three declarative
- * principles in large serif type. Breaks the rhythm of feature sections
- * the way Claude's Constitution page breaks marketing material: this is
- * what we believe, in fewer words than we could get away with.
+/* ─── 06 · Principles + Built For (bone-cream editorial chapter) ───
+ *
+ * This is the palette-shift moment. Every other landing section runs
+ * on the dark #030303 operator palette; this one switches to the same
+ * bone-cream #F4EFE6 + copper that /trust, /roi, /built-with-claude
+ * and /customers use. The effect: visitors clicking through to those
+ * trust pages land in a palette they already recognize, and the
+ * landing stops feeling like one unbroken dark scroll.
+ *
+ * Structure:
+ *   [Chapter header] → "Chapter II · Principles"
+ *   [Three rules]   → I. Ship on day one / II. Every run audited /
+ *                     III. Guarantees, not promises
+ *   [Built for / Not for] — explicit positioning, not implied
+ *   [Charter link]  → → /trust
  */
 function Principles() {
   const principles = [
@@ -600,25 +608,49 @@ function Principles() {
     },
   ];
 
+  const builtFor = [
+    "Operators who need output this week, not a six-month pilot.",
+    "Founders wearing five hats who can't hire a platform team.",
+    "Agencies replacing a stack of SaaS, not adding another one.",
+    "Developers who want MCP-first distribution, not a CRM plugin.",
+  ];
+
+  const notFor = [
+    "Teams building a consumer chatbot for their end users.",
+    "Groups training custom foundation models from scratch.",
+    "Enterprises with six-month procurement and zero-pilot policies.",
+    "Anyone who needs prompt-only tools without an audit trail.",
+  ];
+
   return (
-    <section className="relative px-6 py-28 md:py-40 border-t border-white/[0.04] overflow-hidden">
-      {/* Very subtle copper radial — different position than hero */}
+    <section className="relative px-6 py-28 md:py-40 bg-[#F4EFE6] text-[#1A1712] overflow-hidden">
+      {/* Soft copper warmth, keeps the palette editorial rather than sterile */}
       <div
-        className="absolute right-0 top-1/2 -translate-y-1/2 h-[500px] w-[500px] rounded-full opacity-20 blur-[120px] pointer-events-none"
+        className="absolute -right-32 top-1/3 h-[500px] w-[500px] rounded-full opacity-25 blur-[140px] pointer-events-none"
         style={{ background: "radial-gradient(circle, rgba(181,83,44,0.35) 0%, transparent 70%)" }}
         aria-hidden="true"
       />
 
       <div className="relative max-w-5xl mx-auto">
-        <SectionHead n="06" label="Principles" />
+        {/* Editorial chapter marker — the "we changed pages" cue */}
+        <div className="mb-8 flex items-center gap-4 flex-wrap">
+          <span className="font-mono text-[10px] text-[#8F8576] tracking-[0.2em]">
+            06 / 10
+          </span>
+          <span aria-hidden="true" className="h-px w-6 bg-[#C7B9A1]" />
+          <p className="text-[10px] font-mono tracking-[0.22em] uppercase text-[#B5532C]">
+            Chapter II · Principles
+          </p>
+        </div>
 
-        <h2 className="font-serif text-3xl md:text-5xl leading-[1.1] mb-20 max-w-3xl tracking-tight">
+        <h2 className="font-serif text-4xl md:text-6xl leading-[1.05] mb-20 max-w-3xl tracking-tight">
           Three rules.
           <br />
           <em className="not-italic text-[#B5532C]">Everything else is detail.</em>
         </h2>
 
-        <div className="grid md:grid-cols-3 gap-10 md:gap-8">
+        {/* The three principles */}
+        <div className="grid md:grid-cols-3 gap-12 md:gap-8 mb-24">
           {principles.map((p) => (
             <motion.article
               key={p.n}
@@ -628,30 +660,80 @@ function Principles() {
               transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
               className="relative"
             >
-              <p className="font-serif text-2xl text-[#B5532C] mb-4 italic">
+              <p className="font-serif text-3xl text-[#B5532C] mb-5 italic">
                 {p.n}
               </p>
-              <h3 className="font-serif text-[22px] md:text-[26px] text-white mb-3 leading-snug tracking-tight">
+              <h3 className="font-serif text-[22px] md:text-[26px] text-[#1A1712] mb-4 leading-snug tracking-tight">
                 {p.title}
               </h3>
-              <p className="text-[14.5px] text-neutral-400 leading-[1.65] max-w-sm">
+              <p className="text-[15px] text-[#5C544A] leading-[1.7] max-w-sm">
                 {p.body}
               </p>
             </motion.article>
           ))}
         </div>
 
-        {/* Small editorial link to the fuller doc */}
-        <div className="mt-16 pt-10 border-t border-white/[0.04]">
+        {/* Divider — editorial, not structural */}
+        <div className="border-t border-[#D8CDB7] pt-16 md:pt-20 mb-16">
+          <p className="text-[10px] font-mono tracking-[0.22em] uppercase text-[#8F8576] mb-6">
+            Positioning · In and out of scope
+          </p>
+          <h3 className="font-serif text-3xl md:text-5xl leading-[1.08] mb-14 max-w-3xl tracking-tight">
+            Built for a specific person.
+            <br />
+            <em className="not-italic text-[#B5532C]">Honest about who it&apos;s not.</em>
+          </h3>
+
+          <div className="grid md:grid-cols-2 gap-12 md:gap-16">
+            {/* Built for */}
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#B5532C] mb-5 flex items-center gap-2">
+                <span aria-hidden="true" className="text-lg">✓</span> Built for
+              </p>
+              <ul className="space-y-4">
+                {builtFor.map((line) => (
+                  <li
+                    key={line}
+                    className="text-[15.5px] leading-[1.6] text-[#1A1712] flex gap-3"
+                  >
+                    <span aria-hidden="true" className="text-[#B5532C] mt-[3px] flex-shrink-0">—</span>
+                    <span>{line}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Not for */}
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#8F8576] mb-5 flex items-center gap-2">
+                <span aria-hidden="true" className="text-lg">×</span> Not for
+              </p>
+              <ul className="space-y-4">
+                {notFor.map((line) => (
+                  <li
+                    key={line}
+                    className="text-[15.5px] leading-[1.6] text-[#5C544A] flex gap-3"
+                  >
+                    <span aria-hidden="true" className="text-[#8F8576] mt-[3px] flex-shrink-0">—</span>
+                    <span>{line}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        {/* Editorial closer — links to the fuller doc */}
+        <div className="pt-10 border-t border-[#D8CDB7]">
           <Link
             href="/trust"
-            className="group inline-flex items-center gap-2 text-[13px] text-neutral-400 hover:text-white transition-colors font-mono tracking-tight"
+            className="group inline-flex items-center gap-2 text-[13px] text-[#5C544A] hover:text-[#1A1712] transition-colors font-mono tracking-tight"
           >
             <span className="text-[#B5532C]">→</span>
             Read the full operating charter
             <span
               aria-hidden="true"
-              className="opacity-0 group-hover:opacity-100 transition-opacity text-neutral-600"
+              className="opacity-0 group-hover:opacity-100 transition-opacity text-[#8F8576]"
             >
               /trust
             </span>
