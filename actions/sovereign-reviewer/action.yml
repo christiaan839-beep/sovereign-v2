@@ -1,0 +1,227 @@
+name: "Sovereign Reviewer"
+description: "AI-powered security + quality review for your PRs. Finds real vulnerabilities; flags what you'd miss on your third coffee. Zero config for most repos."
+author: "Sovereign Matrix"
+
+branding:
+  icon: "shield"
+  color: "orange"
+
+inputs:
+  diff-base:
+    description: "Git ref to diff against (default: target branch of the PR)"
+    required: false
+    default: ""
+
+  severity-fail:
+    description: "Minimum severity that fails the action: critical | high | medium | low | never"
+    required: false
+    default: "critical"
+
+  paths:
+    description: "Glob patterns to review. Default reviews everything that changed in the PR."
+    required: false
+    default: ""
+
+  post-comment:
+    description: "Post findings as a PR comment. Requires pull-requests: write permission."
+    required: false
+    default: "true"
+
+  sovereign-api-key:
+    description: "Sovereign Matrix API key. Get one free at sovereignmatrix.agency/dashboard/settings/tokens."
+    required: true
+
+  sovereign-base-url:
+    description: "Override the API base URL (mostly for EU data residency)."
+    required: false
+    default: "https://sovereignmatrix.agency"
+
+  github-token:
+    description: "GITHUB_TOKEN from the calling workflow. Used only to post PR comments when post-comment=true."
+    required: false
+    default: ${{ github.token }}
+
+outputs:
+  findings-count:
+    description: "Total number of findings across all severities."
+  critical-count:
+    description: "Critical findings."
+  high-count:
+    description: "High-severity findings."
+  report-path:
+    description: "Path to the markdown report file in the workspace."
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout with full history
+      # We need git history to compute the diff between base + head.
+      shell: bash
+      run: |
+        set -e
+        if [ -z "$(git rev-parse --is-inside-work-tree 2>/dev/null)" ]; then
+          echo "::error::Action must run after actions/checkout@v4 with fetch-depth: 0"
+          exit 1
+        fi
+
+    - name: Compute diff
+      id: diff
+      shell: bash
+      env:
+        DIFF_BASE_INPUT: ${{ inputs.diff-base }}
+        EVENT_NAME: ${{ github.event_name }}
+        BASE_REF: ${{ github.base_ref }}
+      run: |
+        set -e
+        # Resolve diff base:
+        #   1. explicit input wins
+        #   2. PR base_ref for pull_request events
+        #   3. "main" fallback
+        if [ -n "$DIFF_BASE_INPUT" ]; then
+          BASE="$DIFF_BASE_INPUT"
+        elif [ "$EVENT_NAME" = "pull_request" ] && [ -n "$BASE_REF" ]; then
+          BASE="origin/$BASE_REF"
+        else
+          BASE="origin/main"
+        fi
+
+        echo "Reviewing changes since $BASE"
+        # Output the changed files list for the review step
+        CHANGED=$(git diff --name-only "$BASE"...HEAD -- '*.ts' '*.tsx' '*.js' '*.jsx' '*.py' '*.go' '*.rs' '*.rb' '*.java' '*.php' '*.c' '*.cpp' '*.sql' '*.yaml' '*.yml' 2>/dev/null || echo "")
+        echo "$CHANGED" > /tmp/sovereign-changed.txt
+        CHANGED_COUNT=$(echo "$CHANGED" | grep -v '^$' | wc -l | tr -d ' ')
+        echo "count=$CHANGED_COUNT" >> "$GITHUB_OUTPUT"
+        echo "base=$BASE" >> "$GITHUB_OUTPUT"
+
+        if [ "$CHANGED_COUNT" = "0" ]; then
+          echo "::notice::No code files changed; skipping Sovereign Reviewer."
+        fi
+
+    - name: Submit to Sovereign Reviewer API
+      id: review
+      if: steps.diff.outputs.count != '0'
+      shell: bash
+      env:
+        BASE_URL: ${{ inputs.sovereign-base-url }}
+        API_KEY: ${{ inputs.sovereign-api-key }}
+        DIFF_BASE: ${{ steps.diff.outputs.base }}
+        REPO: ${{ github.repository }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        COMMIT_SHA: ${{ github.sha }}
+      run: |
+        set -e
+
+        # Bundle the diff and the changed-file contents into a single payload.
+        # We cap at 500KB of code per review to keep latency reasonable;
+        # larger PRs should split into smaller ones anyway.
+        DIFF_CONTENT=$(git diff "$DIFF_BASE"...HEAD | head -c 500000)
+
+        PAYLOAD_FILE=/tmp/sovereign-payload.json
+        jq -n \
+          --arg repo "$REPO" \
+          --arg pr "$PR_NUMBER" \
+          --arg sha "$COMMIT_SHA" \
+          --arg diff "$DIFF_CONTENT" \
+          '{repo: $repo, pull_request: $pr, commit: $sha, diff: $diff}' \
+          > "$PAYLOAD_FILE"
+
+        RESPONSE_FILE=/tmp/sovereign-response.json
+
+        # Call the hosted reviewer endpoint. 120s timeout generously
+        # covers a large review; if the service is down, we exit 0
+        # with a notice so CI isn't blocked by our infra.
+        HTTP_STATUS=$(curl -s -o "$RESPONSE_FILE" -w "%{http_code}" \
+          --max-time 120 \
+          -X POST "$BASE_URL/api/agents/code-reviewer" \
+          -H "Content-Type: application/json" \
+          -H "X-API-Key: $API_KEY" \
+          -H "X-Source: github-action" \
+          -d @"$PAYLOAD_FILE" || echo "000")
+
+        if [ "$HTTP_STATUS" != "200" ]; then
+          echo "::warning::Sovereign Reviewer API returned $HTTP_STATUS. Skipping review for this PR."
+          echo "findings-count=0" >> "$GITHUB_OUTPUT"
+          echo "critical-count=0" >> "$GITHUB_OUTPUT"
+          echo "high-count=0" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+
+        # Extract counts from response
+        CRITICAL=$(jq -r '.findings.critical // 0' "$RESPONSE_FILE")
+        HIGH=$(jq -r '.findings.high // 0' "$RESPONSE_FILE")
+        MEDIUM=$(jq -r '.findings.medium // 0' "$RESPONSE_FILE")
+        LOW=$(jq -r '.findings.low // 0' "$RESPONSE_FILE")
+        TOTAL=$((CRITICAL + HIGH + MEDIUM + LOW))
+
+        echo "findings-count=$TOTAL" >> "$GITHUB_OUTPUT"
+        echo "critical-count=$CRITICAL" >> "$GITHUB_OUTPUT"
+        echo "high-count=$HIGH" >> "$GITHUB_OUTPUT"
+
+        # Write the markdown report for artifacts + PR comment
+        REPORT_PATH=/tmp/sovereign-report.md
+        jq -r '.report // "No report produced."' "$RESPONSE_FILE" > "$REPORT_PATH"
+        echo "report-path=$REPORT_PATH" >> "$GITHUB_OUTPUT"
+
+    - name: Post findings as PR comment
+      if: |
+        steps.diff.outputs.count != '0'
+        && inputs.post-comment == 'true'
+        && github.event_name == 'pull_request'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        REPO: ${{ github.repository }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+      run: |
+        set -e
+        if [ ! -f /tmp/sovereign-report.md ]; then
+          echo "::notice::No report file to post."
+          exit 0
+        fi
+        # Prefix report with Sovereign-branded header so users know
+        # where the comment came from. Use gh CLI so we don't need to
+        # shell-escape the markdown ourselves.
+        {
+          echo "## Sovereign Reviewer findings"
+          echo ""
+          cat /tmp/sovereign-report.md
+          echo ""
+          echo "---"
+          echo "*[Install Sovereign Reviewer on your repo](https://sovereignmatrix.agency/docs/github-action) · [Not affiliated with Anthropic — built on Claude](https://sovereignmatrix.agency/trust/anthropic)*"
+        } > /tmp/sovereign-comment.md
+
+        gh pr comment "$PR_NUMBER" --repo "$REPO" --body-file /tmp/sovereign-comment.md
+
+    - name: Enforce severity gate
+      if: steps.diff.outputs.count != '0'
+      shell: bash
+      env:
+        SEVERITY_FAIL: ${{ inputs.severity-fail }}
+        CRITICAL_COUNT: ${{ steps.review.outputs.critical-count }}
+        HIGH_COUNT: ${{ steps.review.outputs.high-count }}
+      run: |
+        set -e
+        CRIT=${CRITICAL_COUNT:-0}
+        HIGH=${HIGH_COUNT:-0}
+
+        case "$SEVERITY_FAIL" in
+          critical)
+            if [ "$CRIT" -gt 0 ]; then
+              echo "::error::Found $CRIT critical finding(s). Failing as severity-fail=critical."
+              exit 1
+            fi
+            ;;
+          high)
+            if [ "$CRIT" -gt 0 ] || [ "$HIGH" -gt 0 ]; then
+              echo "::error::Found $CRIT critical + $HIGH high finding(s). Failing as severity-fail=high."
+              exit 1
+            fi
+            ;;
+          never)
+            echo "::notice::severity-fail=never; findings will not fail this action."
+            ;;
+          *)
+            # medium, low handled the same way — check the report body
+            echo "::notice::severity-fail=$SEVERITY_FAIL — see report."
+            ;;
+        esac

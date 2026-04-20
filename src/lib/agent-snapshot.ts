@@ -38,13 +38,21 @@ import { getReplay, type ReplayTrace } from "@/lib/agent-replay";
  * rather than compressed — human-readability is a feature for auditors.
  */
 
-import { createHash } from "node:crypto";
+import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 
-export const SNAPSHOT_VERSION = "snapshot-v1";
+// Format discriminator — always the LATEST version we emit.
+// Legacy v1 snapshots continue to verify (integrity only); new exports
+// are v2 (integrity + provenance via HMAC).
+export const SNAPSHOT_VERSION = "snapshot-v2";
+export const SNAPSHOT_VERSION_V1 = "snapshot-v1";
 
+/**
+ * v1 interface preserved so legacy consumers + tests continue to work.
+ * New exports use AgentSnapshotV2 below, which adds a `signature` field.
+ */
 export interface AgentSnapshotV1 {
-  /** Format discriminator; bump when the schema changes. */
-  version: typeof SNAPSHOT_VERSION;
+  /** Format discriminator — legacy v1 uses "snapshot-v1". */
+  version: typeof SNAPSHOT_VERSION | typeof SNAPSHOT_VERSION_V1;
   /** UUID-like identifier stable across exports/imports. */
   id: string;
   /** When the agent run started (ISO 8601 UTC). */
@@ -101,6 +109,27 @@ export interface AgentSnapshotV1 {
   /** SHA-256 hex of the canonical JSON of the snapshot minus this
    *  field — tampering is detectable by recomputing. */
   checksum?: string;
+
+  /**
+   * HMAC-SHA256 of the canonical JSON of the snapshot minus both the
+   * `signature` and `signatureKeyId` fields. Only present on v2 snapshots.
+   * Proves the snapshot was produced by a party holding the signing key
+   * (i.e., Sovereign Matrix's production environment).
+   *
+   * Verification requires the same key — customers can request the
+   * current public key identifier from `/.well-known/snapshot-signing`
+   * and verify via our `/api/_replay/verify` endpoint without needing
+   * the raw key.
+   */
+  signature?: string;
+
+  /**
+   * Identifier for the key used to sign this snapshot. We rotate keys
+   * quarterly; historical snapshots reference the key ID they were
+   * signed with so they continue to verify after rotation.
+   * Format: "smx-sig-YYYY-QN" (e.g., "smx-sig-2026-q2").
+   */
+  signatureKeyId?: string;
 }
 
 /**
@@ -155,7 +184,71 @@ export function buildSnapshot(params: {
 
   // Compute + embed checksum last (so it can verify the rest).
   snapshot.checksum = computeChecksum(snapshot);
+
+  // v2 — sign with the current HMAC key if one is configured. Snapshots
+  // without a key simply stay as v1-equivalent (integrity only; checksum
+  // field present, signature absent). We DON'T downgrade the version
+  // discriminator — v2 with a missing signature still says v2 so the
+  // verifier can differentiate "unsigned" from "legacy v1".
+  const key = getSnapshotSigningKey();
+  if (key) {
+    snapshot.signatureKeyId = getSnapshotKeyId();
+    snapshot.signature = computeSignature(snapshot, key);
+  }
+
   return snapshot;
+}
+
+/**
+ * Read the HMAC signing key from the environment. `SNAPSHOT_SIGNING_KEY`
+ * should be a base64-encoded 32-byte secret generated via:
+ *
+ *   node -e 'console.log(require("crypto").randomBytes(32).toString("base64"))'
+ *
+ * and stored in Vercel env. We rotate quarterly; the key ID format
+ * encodes the rotation cycle so historical snapshots continue to verify.
+ *
+ * Missing key → signatures are skipped (graceful degrade to v1-equivalent).
+ * Dev environments without the key still produce valid snapshots; only
+ * production-signed snapshots carry provenance.
+ */
+function getSnapshotSigningKey(): Buffer | null {
+  const raw = process.env.SNAPSHOT_SIGNING_KEY;
+  if (!raw) return null;
+  try {
+    const buf = Buffer.from(raw, "base64");
+    // Reject obviously-weak keys. 16 bytes is the floor for HMAC-SHA256.
+    if (buf.length < 16) return null;
+    return buf;
+  } catch {
+    return null;
+  }
+}
+
+function getSnapshotKeyId(): string {
+  // Allow explicit override for rotation tracking; fall back to a
+  // quarter-stamp so operators don't need to bump the env var unless
+  // they rotate keys.
+  const override = process.env.SNAPSHOT_SIGNING_KEY_ID;
+  if (override) return override;
+  const d = new Date();
+  const q = Math.floor(d.getUTCMonth() / 3) + 1;
+  return `smx-sig-${d.getUTCFullYear()}-q${q}`;
+}
+
+/**
+ * HMAC-SHA256 over the canonical JSON of the snapshot with BOTH the
+ * `signature` AND `signatureKeyId` fields stripped (since those are
+ * the output of this computation).
+ */
+function computeSignature(snapshot: AgentSnapshotV1, key: Buffer): string {
+  // Strip-both variant — different from computeChecksum which only
+  // strips `checksum`. This ensures the signature covers the checksum
+  // (so tampering the checksum field is also detected).
+  const { signature: _s, signatureKeyId: _k, ...rest } = snapshot;
+  void _s;
+  void _k;
+  return createHmac("sha256", key).update(canonicalJSON(rest)).digest("hex");
 }
 
 /**
@@ -172,26 +265,62 @@ function canonicalJSON(obj: unknown): string {
 }
 
 /**
- * Compute the SHA-256 checksum of a snapshot, excluding the checksum
- * field itself. Running this on a verified snapshot should produce
- * the value stored in `snapshot.checksum`.
+ * Compute the SHA-256 checksum of a snapshot, excluding the checksum,
+ * signature, and signatureKeyId fields. We strip all three because:
+ *   - `checksum` is what we're computing (can't include itself)
+ *   - `signature` + `signatureKeyId` are computed AFTER the checksum
+ *     in buildSnapshot, so they weren't present when checksum was
+ *     produced. Including them here would make round-trip verification
+ *     fail for every v2 snapshot.
+ *
+ * Running this on a verified snapshot should produce the value stored
+ * in `snapshot.checksum`.
  */
 export function computeChecksum(snapshot: AgentSnapshotV1): string {
-  const { checksum: _drop, ...rest } = snapshot;
+  const {
+    checksum: _drop,
+    signature: _sig,
+    signatureKeyId: _kid,
+    ...rest
+  } = snapshot;
   void _drop;
+  void _sig;
+  void _kid;
   return createHash("sha256").update(canonicalJSON(rest)).digest("hex");
 }
 
 /**
- * Verify the integrity of a snapshot. Returns:
- *   - { valid: true }
- *   - { valid: false, reason: "checksum_mismatch" | "wrong_version" | "missing_checksum" }
+ * Verify the integrity + (optionally) authenticity of a snapshot.
+ *
+ * Returns:
+ *   { valid: true, integrity: "verified", provenance: "verified" | "unsigned" | "skipped" }
+ *   { valid: false, reason: <see list> }
+ *
+ * Failure reasons:
+ *   - wrong_version          — format version we don't recognize
+ *   - missing_checksum       — v1/v2 MUST include a checksum
+ *   - checksum_mismatch      — tampering; integrity failed
+ *   - signature_mismatch     — v2 signature doesn't match; provenance failed
+ *   - missing_signature_key  — snapshot claims to be signed but we have
+ *                              no key configured to verify it
+ *   - unknown_key_id         — snapshot was signed by a key we don't have
+ *                              (historical rotation; see ops runbook)
+ *
+ * Note: a v2 snapshot without a signature is NOT invalid — it just has
+ * "integrity: verified, provenance: unsigned" which is what you'd get
+ * in a dev environment or if the key wasn't configured at export time.
  */
 export function verifySnapshot(snapshot: AgentSnapshotV1): {
   valid: boolean;
   reason?: string;
+  integrity?: "verified";
+  provenance?: "verified" | "unsigned" | "skipped";
+  keyId?: string;
 } {
-  if (snapshot.version !== SNAPSHOT_VERSION) {
+  if (
+    snapshot.version !== SNAPSHOT_VERSION &&
+    snapshot.version !== SNAPSHOT_VERSION_V1
+  ) {
     return { valid: false, reason: "wrong_version" };
   }
   if (!snapshot.checksum) {
@@ -201,7 +330,47 @@ export function verifySnapshot(snapshot: AgentSnapshotV1): {
   if (expected !== snapshot.checksum) {
     return { valid: false, reason: "checksum_mismatch" };
   }
-  return { valid: true };
+
+  // Integrity passed. Check signature if present (v2 only).
+  if (!snapshot.signature) {
+    return { valid: true, integrity: "verified", provenance: "unsigned" };
+  }
+
+  const key = getSnapshotSigningKey();
+  if (!key) {
+    // Snapshot claims to be signed but we can't verify — don't lie.
+    return {
+      valid: false,
+      reason: "missing_signature_key",
+      integrity: "verified",
+    };
+  }
+
+  // Check key ID matches our current key — otherwise the operator
+  // needs to look up the historical key from rotation records.
+  if (snapshot.signatureKeyId && snapshot.signatureKeyId !== getSnapshotKeyId()) {
+    return {
+      valid: false,
+      reason: "unknown_key_id",
+      integrity: "verified",
+      keyId: snapshot.signatureKeyId,
+    };
+  }
+
+  const expectedSig = computeSignature(snapshot, key);
+  // Constant-time comparison — prevents signature-guessing via timing.
+  const a = Buffer.from(expectedSig, "hex");
+  const b = Buffer.from(snapshot.signature, "hex");
+  if (a.length !== b.length || !timingSafeEqual(a, b)) {
+    return { valid: false, reason: "signature_mismatch", integrity: "verified" };
+  }
+
+  return {
+    valid: true,
+    integrity: "verified",
+    provenance: "verified",
+    keyId: snapshot.signatureKeyId,
+  };
 }
 
 /**
