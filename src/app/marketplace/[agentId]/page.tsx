@@ -245,9 +245,9 @@ export default function AgentDetailPage() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/[0.04] border border-white/[0.08] mb-6">
             <Zap className="w-7 h-7 text-neutral-500" />
           </div>
-          <h1 className="text-2xl font-bold text-white mb-3">Coming Soon</h1>
+          <h1 className="text-2xl font-bold text-white mb-3">Agent not found</h1>
           <p className="text-sm text-neutral-400 mb-8">
-            This agent isn&apos;t in the catalog yet. We ship new agents weekly — check back soon or browse the current lineup.
+            No agent matches this slug. Browse the full catalog to find what you&apos;re looking for.
           </p>
           <Link
             href="/marketplace"

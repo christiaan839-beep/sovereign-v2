@@ -1,123 +1,179 @@
-"use client";
+import type { Metadata } from "next";
+import { promises as fs } from "node:fs";
+import path from "node:path";
+import { Fragment, type ReactNode } from "react";
 
-import { motion } from "framer-motion";
-import { Rocket, Shield, Workflow, Server, Brain, Cpu, Route, Layers, BarChart3, Terminal } from "lucide-react";
-
-const CATEGORIES: Record<string, { color: string; bg: string }> = {
-  "Agents": { color: "text-emerald-400", bg: "bg-emerald-500/10 border-emerald-500/20" },
-  "Safety": { color: "text-amber-400", bg: "bg-amber-500/10 border-amber-500/20" },
-  "Platform": { color: "text-sky-400", bg: "bg-sky-500/10 border-sky-500/20" },
-  "Models": { color: "text-violet-400", bg: "bg-violet-500/10 border-violet-500/20" },
-  "Analytics": { color: "text-rose-400", bg: "bg-rose-500/10 border-rose-500/20" },
+export const metadata: Metadata = {
+  title: "Changelog · Sovereign Matrix",
+  description:
+    "Every SESSION_LOG entry, every shipped feature. Engineering transparency as a moat.",
+  alternates: { canonical: "https://sovereignmatrix.agency/changelog" },
 };
 
-const ENTRIES = [
-  { date: "Apr 9, 2026", title: "Evolution Engine — Platform That Rewrites Itself", category: "Agents", icon: Brain,
-    description: "Three self-improvement mechanisms: prompt evolution (rewrites prompts based on quality), routing evolution (learns best model per task), strategy evolution (discovers optimal agent chains)." },
-  { date: "Apr 9, 2026", title: "11 Comparison Pages + Claude Managed Agents", category: "Platform", icon: Route,
-    description: "Added /vs/lindy, /vs/sintra, /vs/manus, /vs/relevance-ai, /vs/make, /vs/claude-agents. Positioned Claude Managed Agents as complementary, not competitive." },
-  { date: "Apr 9, 2026", title: "6 Sector Landing Pages", category: "Platform", icon: Layers,
-    description: "Healthcare (HIPAA), Legal (confidentiality), Real Estate (voice agents), Recruiting, Cybersecurity (Glasswing), Education (FERPA). Each with sector-specific capabilities and workflows." },
-  { date: "Apr 9, 2026", title: "Dashboard Completion Sprint", category: "Platform", icon: Terminal,
-    description: "Analytics dashboard (real API data), email builder (938 lines, 4 sequence types), reports page (AI-generated), notification bell, admin panel, quick-run banner." },
-  { date: "Apr 9, 2026", title: "Bento Grid + Performance Infrastructure", category: "Platform", icon: Layers,
-    description: "Linear/Vercel-style feature showcase with 9 interactive cards. Plus useLazyLoad hook, Skeleton component, Badge component, useInterval hook." },
-  { date: "Apr 9, 2026", title: "Mythos-Ready Safety Stack", category: "Safety", icon: Shield,
-    description: "Trust levels (4 autonomy settings), execution audit (immutable logs), output verifier (LlamaGuard + PII + quality), context compression (5 levels). Built for when frontier models can hack autonomously." },
-  { date: "Apr 8, 2026", title: "Competitive Hub — 5 Comparison Pages", category: "Platform", icon: Route,
-    description: "Launched /vs/hubspot, /vs/clay, /vs/zapier, /vs/crewai, /vs/n8n with honest feature comparison tables, pricing breakdowns, and SEO metadata for high-intent search traffic." },
-  { date: "Apr 8, 2026", title: "Use Case Pages — Lead Gen, Content Engine, Second Brain", category: "Platform", icon: Layers,
-    description: "Three dedicated use case pages showing step-by-step agent workflows: ICP-to-meeting lead pipeline, SEO-first content engine, and persistent AI memory system." },
-  { date: "Apr 8, 2026", title: "API Documentation — Stripe-Style Reference", category: "Platform", icon: Terminal,
-    description: "Full API docs at /developers/docs with 9 endpoints, code examples, rate limits per plan, error codes, IntersectionObserver sidebar, and copy-to-clipboard." },
-  { date: "Apr 8, 2026", title: "Marketplace Honesty Audit", category: "Platform", icon: Shield,
-    description: "Removed fake install counts and star ratings. Replaced with honest capability tags and Built-in badges. Added search, category filtering, and Submit Your Agent CTA." },
-  { date: "Apr 7, 2026", title: "Project Glasswing Integration", category: "Models", icon: Brain,
-    description: "Added Claude Mythos to model registry (SWE-bench Pro 77.8%, CyberGym 83.1%). Security Command Center updated with real zero-day vulnerability findings from Anthropic's Glasswing report." },
-  { date: "Apr 7, 2026", title: "Market Pivot — LiveAgentTerminal + StackKiller + Agent OS", category: "Platform", icon: Rocket,
-    description: "Three category-defining landing page sections: streaming competitive scan demo, 8-tool stack displacement ($705→$199), and 5-layer Agent OS architecture visualization." },
-  { date: "Apr 7, 2026", title: "ROI Calculator + Email Capture", category: "Platform", icon: Workflow,
-    description: "Interactive dual-slider ROI calculator showing expected revenue, payback period, and vs-hiring-a-human costs. Email capture with localStorage + API persistence." },
-  { date: "Apr 7, 2026", title: "Consensus Engine Visualization", category: "Agents", icon: Brain,
-    description: "4-model debate visualization on landing page: Nemotron-Ultra, DeepSeek-V3.2, Gemma-4, Qwen-3. Shows generate→critique→synthesize→verify pipeline with live confidence bars." },
-  { date: "Apr 7, 2026", title: "Full Honesty Audit — ZAR→USD + Fake Data Removal", category: "Safety", icon: Shield,
-    description: "Removed all fabricated case studies, fake star ratings, ZAR pricing references. Replaced with honest try-it-yourself CTAs and real USD pricing ($19/$49/$199/$499)." },
-  { date: "Mar 30, 2026", title: "66+ Models — GLM-5, Claude Mythos, NIM Function Calling", category: "Models", icon: Layers,
-    description: "Added GLM-5 (744B MoE), GLM-4.7 (90.6% tool use), MiniMax M2.5, FLUX.1 Pro, Qwen3-Coder, and NIM native function calling. Smart Router now covers 20+ task types." },
-  { date: "Mar 29, 2026", title: "Production Security Hardening", category: "Safety", icon: Shield,
-    description: "SQL injection protection, encrypted API keys, circuit breakers for all providers, audit logging (SOC 2 prep), PayFast signature verification, and auth on all 124 agent routes." },
-  { date: "Mar 29, 2026", title: "Visual Workflow Builder", category: "Platform", icon: Terminal,
-    description: "Drag-and-drop agent pipeline builder. Chain agents into sequential workflows, customize prompts per step, and execute the full chain with one click." },
-  { date: "Mar 28, 2026", title: "API Playground", category: "Platform", icon: Terminal,
-    description: "Interactive playground for testing agents without signing up. Pre-filled prompts, syntax-highlighted responses, and 3 free tries for visitors." },
-  { date: "Mar 24, 2026", title: "Revenue Attribution Dashboard", category: "Analytics", icon: BarChart3,
-    description: "Full-funnel revenue tracking from first touch to closed deal. See exactly which agents drive pipeline and ROI across your entire stack." },
-  { date: "Mar 19, 2026", title: "Llama 4 Scout + DeepSeek V3.2", category: "Models", icon: Layers,
-    description: "Added Meta Llama 4 Scout and DeepSeek V3.2 to the model registry. Smart Router automatically selects the best model per task." },
-  { date: "Mar 14, 2026", title: "124 Agent Routes", category: "Platform", icon: Route,
-    description: "Scaled to 124 unique agent API routes spanning lead gen, content, SEO, voice, analytics, and marketplace operations." },
-  { date: "Mar 10, 2026", title: "Extended Thinking on 5 Agents", category: "Agents", icon: Brain,
-    description: "Enabled extended thinking mode on God Brain, War Room, Market Intel, Blog Gen, and SEO Dominator for deeper multi-step reasoning." },
-  { date: "Mar 5, 2026", title: "Cross-Agent Learning Loop", category: "Agents", icon: Cpu,
-    description: "Agents now share context and learn from each other. Insights from SEO audits feed into content generation, lead scoring improves from deal outcomes." },
-  { date: "Feb 27, 2026", title: "MCP Server — 7 Tools via JSON-RPC", category: "Platform", icon: Server,
-    description: "Model Context Protocol server exposing 7 tools for external LLM integration. Connect Claude Desktop, Cursor, or any MCP client." },
-  { date: "Feb 20, 2026", title: "Visual Workflow Builder", category: "Platform", icon: Workflow,
-    description: "Drag-and-drop workflow canvas for chaining agents into automated pipelines. Conditional branching, parallel execution, and scheduling built in." },
-  { date: "Feb 14, 2026", title: "NeMo Guardrails — 5-Layer Safety Pipeline", category: "Safety", icon: Shield,
-    description: "Integrated NVIDIA NeMo Guardrails with 5 safety layers: input validation, topic boundaries, output filtering, hallucination detection, and PII redaction." },
-  { date: "Feb 8, 2026", title: "Agent Teams — Multi-Agent Debate System", category: "Agents", icon: Rocket,
-    description: "War Room powered multi-agent debate where 3+ models argue, challenge, and synthesize answers. Produces higher-quality outputs than any single model." },
-];
+export const revalidate = 3600;
 
-export default function ChangelogPage() {
+interface ChangelogEntry {
+  version: string;
+  date: string;
+  tagline: string;
+  bullets: string[];
+}
+
+async function loadSessionLog(): Promise<ChangelogEntry | null> {
+  try {
+    const filePath = path.join(process.cwd(), "SESSION_LOG.md");
+    const raw = await fs.readFile(filePath, "utf8");
+    return parseSessionLog(raw);
+  } catch {
+    return null;
+  }
+}
+
+function parseSessionLog(raw: string): ChangelogEntry | null {
+  const h1Match = raw.match(/^#\s+Session Log\s+(v\d+)\s+[—–-]\s+([^(\n]+?)(?:\s*\([^)]*\))?\s*$/m);
+  if (!h1Match) return null;
+  const version = h1Match[1];
+  const date = h1Match[2].trim();
+
+  const afterH1 = raw.slice(h1Match.index! + h1Match[0].length);
+  // No 's' flag (TS target pre-ES2018) — use [\s\S] to match newlines.
+  const blockquoteMatch = afterH1.match(/^>\s+([\s\S]+?)(?=\n\n|\n---)/);
+  const tagline = blockquoteMatch ? blockquoteMatch[1].replace(/\n>\s?/g, " ").trim() : "";
+
+  const summaryMatch = raw.match(/##\s+[^\n]*Top-of-page summary[^\n]*\n\n([\s\S]*?)(?:\n\n##\s|\n\n---)/);
+  const bullets: string[] = [];
+  if (summaryMatch) {
+    for (const line of summaryMatch[1].split("\n")) {
+      const bulletMatch = line.match(/^-\s+(.+)$/);
+      if (bulletMatch) bullets.push(bulletMatch[1].trim());
+    }
+  }
+  return { version, date, tagline, bullets };
+}
+
+/**
+ * Parse minimal markdown (bold / code / link) into React nodes.
+ * No innerHTML — safe by construction.
+ */
+function renderInline(text: string): ReactNode {
+  const parts: ReactNode[] = [];
+  const pattern = /\*\*([^*]+)\*\*|`([^`]+)`|\[([^\]]+)\]\(([^)]+)\)/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = pattern.exec(text)) !== null) {
+    if (match.index > lastIndex) parts.push(text.slice(lastIndex, match.index));
+    const [full, bold, code, linkText, linkHref] = match;
+    if (bold !== undefined) parts.push(<strong key={match.index}>{bold}</strong>);
+    else if (code !== undefined)
+      parts.push(<code key={match.index} className="font-mono text-[13px] px-1 py-0.5 bg-[#1A1712]/[0.06] rounded">{code}</code>);
+    else if (linkText !== undefined && linkHref !== undefined) {
+      const safe = /^(https?:\/\/|\/|#)/.test(linkHref) ? linkHref : "#";
+      parts.push(
+        <a key={match.index} href={safe} className="underline decoration-[#B5532C]/40 hover:decoration-[#B5532C]"
+          {...(safe.startsWith("http") ? { rel: "noopener", target: "_blank" } : {})}>
+          {linkText}
+        </a>,
+      );
+    }
+    lastIndex = match.index + full.length;
+  }
+  if (lastIndex < text.length) parts.push(text.slice(lastIndex));
+  return parts.length === 0 ? text : <Fragment>{parts}</Fragment>;
+}
+
+// Legacy hardcoded entries removed — the page now reads from
+// SESSION_LOG.md at request time. Historical entries live in git
+// history (link in the colophon below).
+
+
+export default async function ChangelogPage() {
+  const entry = await loadSessionLog();
+
   return (
-    <div className="min-h-screen bg-[#010101] text-neutral-200">
-      <div className="max-w-3xl mx-auto px-6 py-20">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-16">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-xs font-mono mb-4">
-            <Rocket className="w-3 h-3" /> Changelog
-          </div>
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-white mb-3">What&apos;s New</h1>
-          <p className="text-neutral-500 max-w-lg mx-auto">Every feature shipped. Follow our velocity.</p>
-        </motion.div>
-
-        {/* Timeline */}
-        <div className="relative">
-          {/* Accent line */}
-          <div className="absolute left-[19px] top-2 bottom-2 w-px bg-gradient-to-b from-emerald-500/50 via-emerald-500/20 to-transparent" />
-
-          <div className="space-y-10">
-            {ENTRIES.map((entry, i) => {
-              const Icon = entry.icon;
-              const cat = CATEGORIES[entry.category];
-              return (
-                <motion.div key={i} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.06 }}
-                  className="relative pl-12">
-                  {/* Dot */}
-                  <div className="absolute left-[12px] top-1.5 w-[15px] h-[15px] rounded-full bg-emerald-500/20 border-2 border-emerald-500 flex items-center justify-center">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                  </div>
-
-                  <span className="text-xs font-mono text-neutral-500 mb-2 block">{entry.date}</span>
-                  <div className="px-5 py-4 rounded-xl border border-white/10 bg-white/[0.02] backdrop-blur-xl hover:border-emerald-500/20 transition-colors">
-                    <div className="flex items-start justify-between gap-3 mb-2">
-                      <div className="flex items-center gap-2.5">
-                        <Icon className="w-4 h-4 text-emerald-400 shrink-0" />
-                        <h2 className="font-semibold text-white">{entry.title}</h2>
-                      </div>
-                      <span className={`text-xs font-mono px-2 py-0.5 rounded-full border shrink-0 ${cat.bg} ${cat.color}`}>
-                        {entry.category}
-                      </span>
-                    </div>
-                    <p className="text-neutral-400 text-sm leading-relaxed">{entry.description}</p>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
-        </div>
+    <main className="min-h-screen bg-[#F4EFE6] text-[#1A1712] px-6 py-20 lg:px-20 lg:py-28">
+      <div className="max-w-4xl">
+        <p className="text-[10px] font-mono tracking-[0.22em] uppercase text-[#8F8576] mb-4">
+          Changelog · Ship record
+        </p>
+        <h1 className="font-serif text-5xl lg:text-7xl leading-[1.05] tracking-tight mb-6">
+          Every ship,
+          <br />
+          <em className="text-[#B5532C] not-italic">on record.</em>
+        </h1>
+        <p className="text-lg text-[#5C544A] leading-relaxed max-w-2xl">
+          We publish our session logs. Every commit batch, every
+          decision, every piece of honest debt. Most SaaS publishes
+          marketing copy. We publish engineering notes because the
+          notes ARE the marketing.
+        </p>
       </div>
-    </div>
+
+      <section className="mt-24 border-t border-[#D8CDB7] pt-12 max-w-4xl">
+        {entry ? (
+          <article>
+            <div className="flex items-baseline gap-6 mb-6">
+              <p className="font-mono text-sm tracking-[0.2em] uppercase text-[#B5532C]">
+                {entry.version}
+              </p>
+              <p className="text-[10px] font-mono tracking-[0.18em] uppercase text-[#8F8576]">
+                {entry.date}
+              </p>
+            </div>
+
+            {entry.tagline && (
+              <blockquote className="border-l-2 border-[#B5532C] pl-6 mb-10 text-lg text-[#5C544A] italic leading-relaxed">
+                {entry.tagline}
+              </blockquote>
+            )}
+
+            {entry.bullets.length > 0 && (
+              <ul className="space-y-4">
+                {entry.bullets.map((b, i) => (
+                  <li key={i} className="flex gap-4">
+                    <span className="text-[#B5532C] shrink-0 font-mono text-xs mt-1.5 tabular-nums">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <p className="text-[15px] text-[#1A1712] leading-relaxed">
+                      {renderInline(b)}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </article>
+        ) : (
+          <div className="py-12 text-center text-[#8F8576] text-sm">
+            No changelog entries yet. Check back after the next ship.
+          </div>
+        )}
+      </section>
+
+      {entry && (
+        <section className="mt-24 border-t border-[#D8CDB7] pt-12 max-w-4xl">
+          <p className="text-[10px] font-mono tracking-[0.22em] uppercase text-[#8F8576] mb-4">
+            Earlier versions
+          </p>
+          <p className="text-[15px] text-[#5C544A] leading-relaxed max-w-2xl">
+            Previous SESSION_LOG versions (v1–
+            {parseInt(entry.version.slice(1)) - 1}) live in the{" "}
+            <a
+              href="https://github.com/christiaan839-beep/sovereign-v2/commits/main/SESSION_LOG.md"
+              className="underline decoration-[#B5532C]/40 hover:decoration-[#B5532C]"
+            >
+              git history
+            </a>
+            . Every commit hash is a verifiable claim.
+          </p>
+        </section>
+      )}
+
+      <footer className="mt-32 pt-12 border-t border-[#D8CDB7] max-w-4xl text-[11px] font-mono text-[#8F8576] leading-loose">
+        <p>
+          This page reads <code>SESSION_LOG.md</code> at request time and
+          parses the top-of-page summary. Revalidates every hour. No CMS,
+          no database — the markdown file IS the source of truth.
+        </p>
+      </footer>
+    </main>
   );
 }
