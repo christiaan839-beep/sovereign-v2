@@ -402,7 +402,7 @@ function Hero() {
           transition={{ delay: 0.55, duration: 0.7 }}
           className="max-w-2xl text-[17px] md:text-[19px] text-neutral-400 leading-[1.55] mb-12"
         >
-          Five production-grade playbooks. Real output in three minutes.
+          Five focused playbooks. Real output in three minutes.
           Claude audits every run. No six-month integration project, no
           developer required.
         </motion.p>
@@ -653,14 +653,14 @@ function DashboardMockupSection() {
         {/* Small caption below the mockup — pulls the eye back up to
             the real CTA and reminds the reader this is the product */}
         <p className="mt-8 text-center text-[11px] font-mono text-neutral-600 tracking-wide">
-          Above: the actual{" "}
+          Representative view of{" "}
           <Link
             href="/dashboard/playbooks?auto=lead-blitz"
             className="text-[#B5532C] hover:text-white transition-colors underline decoration-[#B5532C]/30"
           >
             /dashboard/playbooks
           </Link>{" "}
-          view · steps + models + output · every run 5-layer verified
+          mid-run · steps + models + output · every run 5-layer verified
         </p>
       </div>
     </section>
@@ -1001,9 +1001,8 @@ function FounderQuote() {
 
           <p className="relative text-[15px] md:text-[16px] leading-[1.65] text-neutral-400 max-w-2xl mb-8">
             One critic on every run. Every model named in the trail.
-            A guaranteed deliverable or the run doesn&apos;t count.
-            Simple rules, strictly enforced — the kind of software I
-            wish someone had sold me in 2024.
+            A guaranteed deliverable — the kind of contract I
+            wish someone had offered me in 2024.
           </p>
 
           <footer className="flex items-center gap-3 pt-6 border-t border-white/[0.04]">
@@ -1046,7 +1045,7 @@ function ShipRecord() {
               rel="noopener"
               className="text-white hover:text-[#B5532C] transition-colors"
             >
-              80+ commits. 15 migrations. 1,192 tests passing.
+              700+ commits. 15 migrations. 1,192 tests passing.
             </a>
             <br />
             <em className="not-italic text-[#B5532C]">Published weekly.</em>

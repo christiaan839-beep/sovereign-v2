@@ -65,12 +65,9 @@ export function KeyboardNative() {
             </p>
 
             <p className="text-[13px] font-mono text-neutral-500 leading-relaxed max-w-md">
-              The same palette runs in{" "}
-              <code className="text-[#B5532C] bg-white/[0.03] px-1.5 py-0.5 rounded">
-                /dashboard
-              </code>{" "}
-              too. Whatever shortcut opens it here is the shortcut that
-              opens it there.
+              Four keys. No mouse required. No hamburger menu to find
+              first. The same shortcut works wherever you are on this
+              page.
             </p>
           </div>
 

@@ -160,20 +160,13 @@ export function ConsensusFlow() {
               {stage.role}
             </p>
 
-            {/* Pulsing status dot — "this stage is live" */}
+            {/* Static stage indicator dot — color-keyed to the stage accent.
+                Not pulsing: these stages aren't live on the marketing page. */}
             <span
-              className="absolute top-5 right-5 inline-flex h-1.5 w-1.5"
+              className="absolute top-5 right-5 inline-flex h-1.5 w-1.5 rounded-full opacity-70"
+              style={{ backgroundColor: stage.accent }}
               aria-hidden="true"
-            >
-              <span
-                className="absolute inline-flex h-full w-full rounded-full opacity-75 animate-ping"
-                style={{ backgroundColor: stage.accent }}
-              />
-              <span
-                className="relative inline-flex h-1.5 w-1.5 rounded-full"
-                style={{ backgroundColor: stage.accent }}
-              />
-            </span>
+            />
           </motion.div>
         ))}
       </div>
