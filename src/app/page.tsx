@@ -993,7 +993,7 @@ function ClaudeNarrative() {
   return (
     <section className="px-6 py-28 md:py-36 bg-[#0A0807]">
       <div className="max-w-4xl mx-auto">
-        <SectionHead n="07" label="Claude as critic" />
+        <SectionHead n="08" label="Claude as critic" />
         <h2 className="font-serif text-3xl md:text-5xl lg:text-[56px] leading-[1.08] mb-8 tracking-[-0.02em]">
           Cheaper models generate.
           <br />
@@ -1274,87 +1274,28 @@ function PlatformScale() {
   );
 }
 
-/* ─── 03.5 · Industry Section ──────────────────────────────────────
+/* ─── 03 · Industry Section ────────────────────────────────────────
  *
- * Shows the 8 verticals we serve. Enterprise buyers skim for their
- * industry in the first 5 seconds — this is the section that keeps
- * them. Each card links to the dedicated sector page.
+ * Eight verticals, single accent. The card language matches
+ * ThreeStepProof and FeaturedPlaybooks — one copper hot-spot sweep
+ * on hover, inner-light / drop-shadow combo for depth, no emoji.
+ *
+ * Icons use abbreviated two-letter glyphs set in the mono typeface
+ * so they sit in the same typographic family as the step numbers
+ * and the SectionHead counter. No decorative color coding — the
+ * accent is reserved for hover/focus state only.
  */
 function IndustrySection() {
   const industries = [
-    {
-      icon: "🏥",
-      label: "Healthcare",
-      desc: "SOAP notes, prior auth, ICD-10 coding",
-      href: "/for-healthcare",
-      color: "cyan",
-    },
-    {
-      icon: "⚖️",
-      label: "Legal",
-      desc: "Contract review, compliance monitoring",
-      href: "/for-legal",
-      color: "violet",
-    },
-    {
-      icon: "🌾",
-      label: "Agriculture",
-      desc: "Crop intel, pest risk, yield forecasting",
-      href: "/for-agriculture",
-      color: "emerald",
-    },
-    {
-      icon: "🏭",
-      label: "Manufacturing",
-      desc: "Predictive maintenance, supply chain",
-      href: "/for-manufacturing",
-      color: "amber",
-    },
-    {
-      icon: "🔐",
-      label: "Cybersecurity",
-      desc: "Threat hunting, CVE analysis, SOC automation",
-      href: "/for-cybersecurity",
-      color: "red",
-    },
-    {
-      icon: "💰",
-      label: "Fintech",
-      desc: "Fraud detection, KYC/AML, reporting",
-      href: "/for-fintech",
-      color: "emerald",
-    },
-    {
-      icon: "🏗️",
-      label: "Real Estate",
-      desc: "Listings, lease abstraction, valuations",
-      href: "/for-realestate",
-      color: "amber",
-    },
-    {
-      icon: "🏛️",
-      label: "Government",
-      desc: "Permit processing, benefits, FOIA",
-      href: "/for-government",
-      color: "cyan",
-    },
+    { code: "HC", label: "Healthcare",    desc: "Clinical documentation, prior authorization review, and ICD-10 coding — every run checked by Claude before reaching your EHR.", href: "/for-healthcare" },
+    { code: "LG", label: "Legal",         desc: "Contract review in minutes, not billable hours. Compliance monitoring with a cryptographic audit trail on every opinion.",        href: "/for-legal" },
+    { code: "AG", label: "Agriculture",   desc: "Crop intelligence, pest-risk modelling, and yield forecasting tuned to the specific cultivar and region you operate in.",          href: "/for-agriculture" },
+    { code: "MF", label: "Manufacturing", desc: "Predictive maintenance signals and supply-chain disruption alerts read straight off your sensor and ERP streams.",                 href: "/for-manufacturing" },
+    { code: "CS", label: "Cybersecurity", desc: "Threat hunting, CVE triage, and SOC automation with a human-in-the-loop approval layer on anything destructive.",                  href: "/for-cybersecurity" },
+    { code: "FI", label: "Fintech",       desc: "Fraud pattern detection, KYC / AML flagging, and regulator-ready reporting that holds up under an audit.",                        href: "/for-fintech" },
+    { code: "RE", label: "Real Estate",   desc: "Listing generation, lease abstraction, and broker-grade valuation memos produced from the document bundle you already hold.",     href: "/for-realestate" },
+    { code: "GV", label: "Government",    desc: "Permit processing, benefits eligibility, and FOIA response drafting — every step logged to an immutable ledger.",                  href: "/for-government" },
   ];
-
-  const colorMap: Record<string, string> = {
-    cyan:    "border-cyan-500/20 hover:border-cyan-500/40 hover:bg-cyan-500/[0.04]",
-    violet:  "border-violet-500/20 hover:border-violet-500/40 hover:bg-violet-500/[0.04]",
-    emerald: "border-emerald-500/20 hover:border-emerald-500/40 hover:bg-emerald-500/[0.04]",
-    amber:   "border-amber-500/20 hover:border-amber-500/40 hover:bg-amber-500/[0.04]",
-    red:     "border-red-500/20 hover:border-red-500/40 hover:bg-red-500/[0.04]",
-  };
-
-  const iconBg: Record<string, string> = {
-    cyan:    "bg-cyan-500/10",
-    violet:  "bg-violet-500/10",
-    emerald: "bg-emerald-500/10",
-    amber:   "bg-amber-500/10",
-    red:     "bg-red-500/10",
-  };
 
   return (
     <section className="px-6 py-20 md:py-28 bg-[#040303]">
@@ -1375,29 +1316,46 @@ function IndustrySection() {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {industries.map((ind, i) => (
-            <motion.a
+            <motion.div
               key={ind.label}
-              href={ind.href}
               initial={{ opacity: 0, y: 14 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-40px" }}
               transition={{ delay: i * 0.05, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-              className={`group relative p-5 rounded-[6px] border bg-white/[0.02] transition-all duration-300 overflow-hidden ${colorMap[ind.color] ?? colorMap.emerald}`}
-              style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)" }}
             >
-              <div className={`inline-flex items-center justify-center w-9 h-9 rounded-[4px] text-lg mb-3 ${iconBg[ind.color] ?? iconBg.emerald}`}>
-                {ind.icon}
-              </div>
-              <p className="text-[14px] font-semibold text-white mb-1 tracking-tight">
-                {ind.label}
-              </p>
-              <p className="text-[11px] text-neutral-500 leading-relaxed">
-                {ind.desc}
-              </p>
-              <span className="absolute bottom-4 right-4 text-[10px] font-mono text-neutral-700 group-hover:text-neutral-400 transition-colors">
-                →
-              </span>
-            </motion.a>
+              <Link
+                href={ind.href}
+                className="group relative block h-full p-5 rounded-[6px] border border-white/[0.06] bg-white/[0.025] hover:border-[#B5532C]/35 hover:bg-[#B5532C]/[0.03] transition-all duration-300 overflow-hidden"
+                style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08), 0 1px 0 rgba(0,0,0,0.5)" }}
+              >
+                {/* Copper hot-spot sweep on hover — matches ThreeStepProof + FeaturedPlaybooks */}
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                  style={{
+                    background: "radial-gradient(circle at 20% 0%, rgba(181,83,44,0.18) 0%, transparent 45%)",
+                  }}
+                />
+
+                {/* Monogram — mono two-letter code in the same voice as the step numbers */}
+                <span className="relative inline-flex items-center justify-center h-6 w-6 rounded-full border border-white/[0.12] text-neutral-500 font-mono text-[10px] mb-4 tracking-wide group-hover:border-[#B5532C]/40 group-hover:text-[#B5532C] transition-colors">
+                  {ind.code}
+                </span>
+
+                <p className="relative text-[14px] font-semibold text-white mb-1.5 tracking-tight">
+                  {ind.label}
+                </p>
+                <p className="relative text-[11.5px] text-neutral-500 leading-[1.55]">
+                  {ind.desc}
+                </p>
+                <span
+                  aria-hidden="true"
+                  className="absolute bottom-4 right-4 text-[10px] font-mono text-neutral-700 group-hover:text-[#B5532C] transition-colors"
+                >
+                  →
+                </span>
+              </Link>
+            </motion.div>
           ))}
         </div>
       </div>
@@ -1428,25 +1386,25 @@ function MemoryMoat() {
     },
     {
       label: "Month 6",
-      desc: "Your agents know your business. They pre-empt what you'll ask. You're running faster than competitors who start blank every time.",
+      desc: "Your agents know your ICP, your tone, your past campaigns, and your live competitor set. New runs start from six months of context, not a blank prompt.",
     },
   ];
 
+  // Copper opacity intensifies down the timeline — visual metaphor
+  // for accumulating memory. No second accent color is introduced.
+  const nodeOpacity = [0.35, 0.55, 0.75, 1.0];
+
   return (
     <section className="relative px-6 py-28 md:py-40 bg-[#040303] overflow-hidden">
-      {/* Ambient deep teal glow — distinct from copper, signals "intelligence" */}
+      {/* Ambient copper warmth — keeps the palette monolithic */}
       <div
-        className="absolute right-0 top-1/2 -translate-y-1/2 h-[600px] w-[500px] opacity-[0.07] blur-[140px] pointer-events-none"
-        style={{ background: "radial-gradient(circle, rgba(56,189,248,1) 0%, transparent 70%)" }}
+        className="absolute right-0 top-1/2 -translate-y-1/2 h-[600px] w-[500px] opacity-[0.08] blur-[140px] pointer-events-none"
+        style={{ background: "radial-gradient(circle, rgba(181,83,44,1) 0%, transparent 70%)" }}
         aria-hidden="true"
       />
 
       <div className="relative max-w-5xl mx-auto">
-        <div className="mb-6 flex items-center gap-4">
-          <span className="font-mono text-[10px] text-neutral-600 tracking-[0.2em]">07 / 12</span>
-          <span aria-hidden="true" className="h-px w-6 bg-white/[0.12]" />
-          <p className="font-serif italic text-[13px] text-neutral-500">The compounding moat</p>
-        </div>
+        <SectionHead n="07" label="The compounding moat" />
 
         <div className="grid md:grid-cols-2 gap-16 items-start">
           <div>
@@ -1461,26 +1419,28 @@ function MemoryMoat() {
               what your business is about. Future agents retrieve relevant
               context automatically. No re-briefing. No lost context.
             </p>
-            <p className="text-[14px] text-neutral-500 leading-relaxed max-w-md mb-8">
+            <p className="text-[14px] text-neutral-500 leading-[1.7] max-w-md mb-8 font-serif italic">
               After six months of use, your Sovereign agents know your niche,
               your tone, your past campaigns, your competitors, and your
               customers. That institutional knowledge is yours — and it
               compounds with every run.
             </p>
-            <a
+            <Link
               href="/dashboard"
               className="inline-flex items-center gap-2 text-[13px] font-mono text-[#B5532C] hover:text-white transition-colors tracking-tight"
             >
               Start building your memory →
-            </a>
+            </Link>
           </div>
 
           {/* Timeline — shows memory compounding over time */}
           <div className="relative">
-            {/* Vertical connector line */}
+            {/* Vertical connector line — copper, intensifying downward,
+                mirrors the node-opacity ramp so the line feels like the
+                same substance as the nodes it threads through. */}
             <div
-              className="absolute left-[19px] top-6 bottom-6 w-px"
-              style={{ background: "linear-gradient(to bottom, rgba(181,83,44,0.4) 0%, rgba(56,189,248,0.15) 100%)" }}
+              className="absolute left-5 top-6 bottom-6 w-px -translate-x-1/2"
+              style={{ background: "linear-gradient(to bottom, rgba(181,83,44,0.25) 0%, rgba(181,83,44,0.9) 100%)" }}
               aria-hidden="true"
             />
 
@@ -1494,12 +1454,12 @@ function MemoryMoat() {
                   transition={{ delay: i * 0.12, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
                   className="relative flex gap-5"
                 >
-                  {/* Node */}
+                  {/* Node — opacity scales with elapsed time, single accent */}
                   <div
                     className="relative z-10 flex-shrink-0 w-10 h-10 rounded-full border flex items-center justify-center"
                     style={{
-                      background: i === 3 ? "rgba(56,189,248,0.08)" : "rgba(181,83,44,0.08)",
-                      borderColor: i === 3 ? "rgba(56,189,248,0.35)" : "rgba(181,83,44,0.35)",
+                      background: `rgba(181,83,44,${0.04 + nodeOpacity[i] * 0.06})`,
+                      borderColor: `rgba(181,83,44,${0.2 + nodeOpacity[i] * 0.4})`,
                     }}
                   >
                     <span className="font-mono text-[9px] text-neutral-400 tracking-wide">{String(i + 1).padStart(2, "0")}</span>
@@ -1508,7 +1468,7 @@ function MemoryMoat() {
                   <div className="pt-1.5">
                     <p
                       className="font-mono text-[10px] tracking-[0.18em] uppercase mb-1.5"
-                      style={{ color: i === 3 ? "rgb(56,189,248)" : "#B5532C" }}
+                      style={{ color: `rgba(181,83,44,${0.6 + nodeOpacity[i] * 0.4})` }}
                     >
                       {item.label}
                     </p>
