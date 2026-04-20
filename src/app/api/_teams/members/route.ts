@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
-import { organizations, orgMembers } from "@/db/schema";
+import { orgMembers } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { createLogger } from "@/lib/logger";
@@ -86,7 +86,17 @@ export async function GET(req: Request) {
 // ─── POST: invite ─────────────────────────────────────────────────
 const inviteSchema = z.object({
   orgId: z.string().uuid(),
-  email: z.string().email().max(255),
+  email: z
+    .string()
+    .email()
+    .max(255)
+    // Reject emails shaped like Clerk IDs ("user_XXX") so an admin can't
+    // pre-insert a row keyed on a future Clerk ID and silently bind to
+    // whoever signs up with that ID. Migration 0011 enforces this at the
+    // DB layer too — this is defense-in-depth.
+    .refine((e) => !/^user_[A-Za-z0-9]+$/.test(e), {
+      message: "Invalid email format",
+    }),
   role: z.enum(["viewer", "member", "admin"]).default("member"),
 });
 
@@ -262,11 +272,10 @@ export async function DELETE(req: Request) {
       .delete(orgMembers)
       .where(and(eq(orgMembers.orgId, orgId), eq(orgMembers.userId, targetUserId)));
 
-    // Also clean up any orgs the member owns — but we're DELETE-ing
-    // non-owner rows here so this shouldn't fire. Safe no-op.
-    await db
-      .delete(organizations)
-      .where(and(eq(organizations.id, orgId), eq(organizations.ownerId, targetUserId)));
+    // Note: the target-was-owner case is blocked above (returns 409),
+    // so we never reach a path where we'd need to delete their owned
+    // org. Keeping this out of the code rather than "safe no-op" —
+    // future refactor-mistakes become harder.
 
     log.info("member removed", { actor: userId, orgId, targetUserId });
     return NextResponse.json({ ok: true });

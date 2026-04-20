@@ -7,7 +7,7 @@ import { eq } from "drizzle-orm";
 import { createLogger } from "@/lib/logger";
 import {
   extractIdempotencyKey,
-  beginIdempotent,
+  beginIdempotentStrict,
   commitIdempotent,
 } from "@/lib/idempotency";
 
@@ -39,18 +39,38 @@ export async function POST(req: Request) {
   const user = await currentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  // ── Idempotency ──
+  // ── Idempotency (STRICT) ──
   // Refunds are the canonical use case. A user double-clicking "Refund"
   // must not issue two refunds. We scope the idempotency key to
   // /refund + user.id so a given user can't replay another user's key.
+  //
+  // fail-CLOSED: if the idempotency store is down (table missing, DB
+  // unreachable), we refuse to proceed rather than risk double-refund.
+  // The client sees 503 and retries later.
   let idempotencyKey: string | null = null;
   const clientKey = extractIdempotencyKey(req.headers);
   if (clientKey) {
     const endpoint = `refund::${user.id}`;
-    const result = await beginIdempotent(clientKey, endpoint);
-    idempotencyKey = result.key;
-    if (result.replay && result.cached) {
-      return NextResponse.json(result.cached.body, { status: result.cached.status });
+    try {
+      const result = await beginIdempotentStrict(clientKey, endpoint);
+      idempotencyKey = result.key;
+      if (result.replay && result.cached) {
+        return NextResponse.json(result.cached.body, { status: result.cached.status });
+      }
+    } catch (err) {
+      const code = (err as { code?: string })?.code;
+      if (code === "IDEMPOTENCY_STORE_DOWN") {
+        log.error("Refund blocked: idempotency store down", { userId: user.id });
+        return NextResponse.json(
+          {
+            error:
+              "Refund temporarily unavailable. Please retry in a few minutes or email refunds@sovereignmatrix.agency.",
+            code: "IDEMPOTENCY_STORE_DOWN",
+          },
+          { status: 503 },
+        );
+      }
+      throw err;
     }
   }
 

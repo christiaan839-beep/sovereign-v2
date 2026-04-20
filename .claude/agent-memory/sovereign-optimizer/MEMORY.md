@@ -1,0 +1,3 @@
+- [v8 state snapshot](project_v8_state.md) — What shipped through 2026-04-20, known gaps, strategic direction
+- [Cost tracking gap](project_cost_tracking_gap.md) — token-level $cost tracking absent; `usage.tokensUsed` stored but no $ per-provider, no margin reporting
+- [Durable queue gap](project_queue_gap.md) — no BullMQ/Inngest/QStash; playbook async uses fire-and-forget promise — lost on Vercel cold boot

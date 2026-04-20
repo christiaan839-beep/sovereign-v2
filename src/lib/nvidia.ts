@@ -143,6 +143,16 @@ export async function nimChat(
   messages: Array<{ role: string; content: string | Array<{ type: string; text?: string; image_url?: { url: string } }> }>,
   options: { maxTokens?: number; temperature?: number; stream?: boolean } = {}
 ): Promise<string> {
+  // Record the model for the agent-factory's response envelope.
+  // No-op outside of an attribution context.
+  // Lazy import prevents circular-dependency risk.
+  try {
+    const { recordModel } = await import("@/lib/model-attribution");
+    recordModel(model);
+  } catch {
+    // model-attribution is optional; never block a real AI call on it
+  }
+
   const apiKey = await getNimKey();
   if (!apiKey) throw new Error("NVIDIA NIM API key not configured. Add it in Settings > API Keys.");
 

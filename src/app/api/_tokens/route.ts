@@ -118,19 +118,10 @@ export async function POST(req: Request) {
   const { label, expiresInDays } = parsed.data;
 
   try {
-    // Cap active tokens per user — prevents abuse from a hijacked session
-    // minting unlimited keys before the user notices and rotates Clerk.
-    const existingCount = await db
-      .select({ id: apiKeys.id })
-      .from(apiKeys)
-      .where(and(eq(apiKeys.userId, userId), isNull(apiKeys.revokedAt)));
-    if (existingCount.length >= 10) {
-      return NextResponse.json(
-        { error: "Active token limit reached (10). Revoke unused tokens first." },
-        { status: 429 },
-      );
-    }
-
+    // Atomic count-and-insert — prevents TOCTOU where two concurrent
+    // POSTs both see count=9 and both insert, yielding 11 tokens.
+    // The transaction locks the user's existing rows via SELECT ... FOR
+    // UPDATE so the second request blocks until the first commits.
     const plan = await getCallerPlan(userId);
     const rawToken = generateRawToken(plan);
     const hashed = hashToken(rawToken);
@@ -139,23 +130,42 @@ export async function POST(req: Request) {
       ? new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000)
       : null;
 
-    const [created] = await db
-      .insert(apiKeys)
-      .values({
-        userId,
-        key: hashed,
-        keyPrefix,
-        plan,
-        label: label ?? null,
-        expiresAt,
-      })
-      .returning({
-        id: apiKeys.id,
-        keyPrefix: apiKeys.keyPrefix,
-        label: apiKeys.label,
-        expiresAt: apiKeys.expiresAt,
-        createdAt: apiKeys.createdAt,
-      });
+    const txResult = await db.transaction(async (tx) => {
+      const existing = await tx
+        .select({ id: apiKeys.id })
+        .from(apiKeys)
+        .where(and(eq(apiKeys.userId, userId), isNull(apiKeys.revokedAt)))
+        .for("update");
+
+      if (existing.length >= 10) return { limitReached: true as const };
+
+      const [inserted] = await tx
+        .insert(apiKeys)
+        .values({
+          userId,
+          key: hashed,
+          keyPrefix,
+          plan,
+          label: label ?? null,
+          expiresAt,
+        })
+        .returning({
+          id: apiKeys.id,
+          keyPrefix: apiKeys.keyPrefix,
+          label: apiKeys.label,
+          expiresAt: apiKeys.expiresAt,
+          createdAt: apiKeys.createdAt,
+        });
+      return { limitReached: false as const, created: inserted };
+    });
+
+    if (txResult.limitReached) {
+      return NextResponse.json(
+        { error: "Active token limit reached (10). Revoke unused tokens first." },
+        { status: 429 },
+      );
+    }
+    const created = txResult.created;
 
     // Never log the raw token, even at debug level.
     log.info("token minted", { userId, keyPrefix, label: label ?? null });

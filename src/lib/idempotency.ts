@@ -42,6 +42,12 @@ export interface IdempotencyResult<T> {
   cached?: { status: number; body: T };
   /** Internal key used — caller should pass this to `commit()`. */
   key: string;
+  /**
+   * True if the idempotency store was unavailable (missing table, DB
+   * error). Caller decides whether to fail-OPEN (generic) or fail-CLOSED
+   * (financial endpoints). `refund` uses the closed path.
+   */
+  storeUnavailable?: boolean;
 }
 
 const TABLE_NAME = "idempotency_records";
@@ -72,14 +78,26 @@ export async function beginIdempotent<T = unknown>(
     // Attempt to claim the key atomically. If it already exists, the
     // INSERT does nothing and we fall into the "read cached response"
     // path below.
-    const claim = await db.execute<{ status: number; body: unknown }>(sql`
+    //
+    // Driver-note: Neon's HTTP driver returns results in shapes that
+    // vary by query type. We inspect BOTH `rows` (the typed tuple array)
+    // and `rowCount` (Postgres metadata) — whichever the driver
+    // populates. A fresh INSERT returns one row; an ON-CONFLICT skip
+    // returns zero rows. That's our signal either way.
+    const claim = await db.execute<{ status: string; body: unknown }>(sql`
       INSERT INTO ${sql.identifier(TABLE_NAME)} (key, endpoint, status)
       VALUES (${key}, ${endpoint}, 'pending')
       ON CONFLICT (key) DO NOTHING
       RETURNING status, body
     `);
 
-    if ((claim as { rowCount?: number }).rowCount && (claim as { rowCount?: number }).rowCount! > 0) {
+    const claimRows = Array.isArray(claim)
+      ? claim
+      : ((claim as { rows?: unknown[] }).rows ?? []);
+    const wasInserted = claimRows.length > 0
+      || ((claim as { rowCount?: number }).rowCount ?? 0) > 0;
+
+    if (wasInserted) {
       // Fresh key — caller must process the request and call commit().
       return { replay: false, key };
     }
@@ -125,16 +143,41 @@ export async function beginIdempotent<T = unknown>(
   } catch (err) {
     const code = (err as { code?: string })?.code;
     if (code === "42P01") {
-      // idempotency_records table missing. Fail OPEN — we'd rather
-      // process the request than silently break payments. The ops
-      // team sees this in Sentry and can apply migration 0010.
+      // Table missing — surface storeUnavailable so the caller decides
+      // whether to fail-open (general agent routes) or fail-closed
+      // (financial endpoints that MUST have idempotency to prevent
+      // double-charging).
       log.warn("idempotency_records table missing; idempotency disabled");
-      return { replay: false, key };
+      return { replay: false, key, storeUnavailable: true };
     }
     log.error("idempotency begin failed", { error: String(err) });
-    // Fail open on unexpected errors so the primary flow isn't blocked.
-    return { replay: false, key };
+    // Surface storeUnavailable for unexpected errors too — caller
+    // policies (see `beginIdempotentStrict` for financial use cases).
+    return { replay: false, key, storeUnavailable: true };
   }
+}
+
+/**
+ * Strict variant — throws if the store is unavailable. Use this on
+ * endpoints where losing an idempotency record would be worse than
+ * returning an error (refunds, subscription changes, anything
+ * touching money).
+ *
+ * The caller should catch the thrown error and return a 503 so the
+ * client retries later rather than submitting a fresh-key request
+ * that could double-charge.
+ */
+export async function beginIdempotentStrict<T = unknown>(
+  clientKey: string,
+  endpoint: string,
+): Promise<IdempotencyResult<T>> {
+  const result = await beginIdempotent<T>(clientKey, endpoint);
+  if (result.storeUnavailable) {
+    const err = new Error("Idempotency store unavailable — refusing to proceed");
+    (err as unknown as { code: string }).code = "IDEMPOTENCY_STORE_DOWN";
+    throw err;
+  }
+  return result;
 }
 
 /**

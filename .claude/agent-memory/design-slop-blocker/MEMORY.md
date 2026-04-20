@@ -1,0 +1,2 @@
+- [Two design languages](project_two_design_languages.md) — Editorial Museum vs dashboard slop; specific patterns to flag on dashboard/pricing surfaces
+- [Editorial vocabulary](project_editorial_vocabulary.md) — The `ed-*` CSS class system used on editorial pages; replace Tailwind gradients/colors with these

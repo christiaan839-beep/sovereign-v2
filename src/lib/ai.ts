@@ -60,44 +60,55 @@ const globalGenAI = new GoogleGenerativeAI(globalGeminiKey);
 export async function ai(prompt: string, options: AIOptions = {}): Promise<string> {
   const { model = "gemini", system, maxTokens = 2000, thinking, useOpus, useGeminiPro } = options;
 
+  // Lazy-load model-attribution to avoid circular import risk.
+  const { recordModel } = await import("@/lib/model-attribution");
+
   const userKeys = await getUserKeys();
 
   // 1. Local execution (cost: $0)
   if (userKeys.ollama) {
+    recordModel("ollama-local");
     return ollamaText(prompt, system, userKeys.ollama);
   }
 
   // 2. Cerebras — ultra-fast inference (2000+ tok/s). Use for classification and routing.
   if (model === "cerebras") {
+    recordModel("cerebras");
     return cerebrasText(prompt, system, maxTokens);
   }
 
   // 3. NVIDIA NIM open-source models (cost: $0)
   if (model === "nim" || (userKeys.nvidia && model !== "claude" && model !== "gemini")) {
+    recordModel("nvidia-nim-default");
     return nimText(prompt, system, maxTokens);
   }
 
   // 4. Claude (BYOK only) - Opus or Sonnet
   if (model === "claude" || (userKeys.anthropic && !userKeys.gemini && !userKeys.groq)) {
+    recordModel(useOpus ? "claude-opus" : "claude-sonnet");
     return claudeText(prompt, system, maxTokens, userKeys, thinking, useOpus);
   }
 
   // 5. Mistral Large 2 (EU Compliance / Open Weights via NIM)
   if (model === "mistral") {
+    recordModel("mistral-large");
     return mistralText(prompt, system, maxTokens);
   }
 
   // 6. Groq (DeepSeek-R1, Qwen 2.5 Coder, Llama 3.1)
   if (model === "groq" || model === "deepseek" || model === "qwen" || (userKeys.groq && !userKeys.gemini)) {
+    recordModel(`groq-${model}`);
     return groqText(prompt, system, maxTokens, userKeys, model);
   }
 
   // 7. Gemini (default) → fallback to NIM → fallback to Groq
   try {
+    recordModel(useGeminiPro ? "gemini-pro" : "gemini-flash");
     return await geminiText(prompt, system, maxTokens, userKeys, useGeminiPro);
   } catch (geminiErr) {
     log.warn("Gemini failed, falling back to NIM", { error: (geminiErr as Error).message });
     try {
+      recordModel("nvidia-nim-fallback");
       return await nimText(prompt, system, maxTokens);
     } catch (nimErr) {
       log.warn("NIM failed, falling back to Groq", { error: (nimErr as Error).message });

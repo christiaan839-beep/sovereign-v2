@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/admin-auth";
+import { requireAdmin, isAdmin } from "@/lib/admin-auth";
 import { db } from "@/db";
 import { subscriptions } from "@/db/schema";
 import { desc, like, eq, or } from "drizzle-orm";
@@ -25,7 +25,12 @@ export async function GET(req: Request) {
   if (gate instanceof Response) return gate;
 
   const url = new URL(req.url);
-  const q = url.searchParams.get("q")?.trim() ?? "";
+  // Escape SQL LIKE wildcards (% and _) in the search param so a user
+  // typing a literal "%" doesn't get broader results than they expect.
+  // Drizzle parameterizes values, so injection is prevented, but LIKE
+  // semantics aren't — hence the manual escape.
+  const qRaw = url.searchParams.get("q")?.trim() ?? "";
+  const q = qRaw.replace(/[\\%_]/g, "\\$&");
   const limit = Math.min(500, Math.max(1, Number(url.searchParams.get("limit") ?? 50)));
 
   try {
@@ -97,6 +102,25 @@ export async function PATCH(req: Request) {
   const { targetUserId, plan, status, founderNetwork } = body;
   if (!targetUserId) {
     return NextResponse.json({ error: "Missing targetUserId" }, { status: 400 });
+  }
+
+  // Security: block admin self-modification. An admin should never be
+  // able to promote themselves to a richer plan, resurrect their own
+  // cancelled subscription, or toggle their own Founder Network status.
+  // Two admins can't grief each other either — blocking targetUserId
+  // being ANY admin prevents co-founder weaponization.
+  if (targetUserId === adminId) {
+    return NextResponse.json(
+      { error: "Cannot modify your own account via admin API. Use the regular dashboard flow." },
+      { status: 400 },
+    );
+  }
+  if (isAdmin(targetUserId)) {
+    log.warn("admin attempted to modify another admin", { actor: adminId, targetUserId });
+    return NextResponse.json(
+      { error: "Cannot modify another admin's account." },
+      { status: 403 },
+    );
   }
 
   const updates: Record<string, unknown> = { updatedAt: new Date() };

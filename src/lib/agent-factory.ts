@@ -42,6 +42,11 @@ import { evaluatePolicy } from "@/lib/policy-engine";
 import { checkBudget, recordSpend } from "@/lib/budget-controls";
 import { startReplay, type ReplayBuilder } from "@/lib/agent-replay";
 import { checkAgentAccess } from "@/lib/paywall";
+import {
+  runWithAttribution,
+  getModelsConsulted,
+  getProvidersConsulted,
+} from "@/lib/model-attribution";
 import type { ZodObject, ZodRawShape } from "zod";
 
 const log = createLogger("agent-factory");
@@ -407,14 +412,27 @@ export function createAgentRoute(config: AgentConfig) {
       }
 
       // ─── Execute Agent Handler ───
+      // Wrap in model-attribution context so every AI call made inside
+      // the handler (ai(), nimChat(), consensus, research_ai, nested
+      // agent invocations) records which model it consulted. We read
+      // the trace from INSIDE the wrap (before the context exits) and
+      // surface it alongside the result — honoring the "transparent
+      // provider selection" principle (Anthropic Constitution §3).
       replay?.addStep("handler_start", { agent: config.name });
-      const result = await config.handler({
-        input: sanitized,
-        request: req,
-        email,
-        userId,
-        tenantId,
-        orgId,
+      const { result, modelsConsulted, providersConsulted } = await runWithAttribution(async () => {
+        const r = await config.handler({
+          input: sanitized,
+          request: req,
+          email,
+          userId,
+          tenantId,
+          orgId,
+        });
+        return {
+          result: r,
+          modelsConsulted: getModelsConsulted(),
+          providersConsulted: getProvidersConsulted(),
+        };
       });
       replay?.addStep("handler_complete", { outputKeys: Object.keys(result), outputSize: JSON.stringify(result).length });
 
@@ -613,6 +631,13 @@ export function createAgentRoute(config: AgentConfig) {
           agent: config.name,
           durationMs: Date.now() - startTime,
           timestamp: new Date().toISOString(),
+          // Anthropic Constitution §3: transparent provider selection.
+          // Surface every model the handler consulted (and a coarse
+          // provider bucket so customers can see "anthropic+nvidia"
+          // without us exposing SKU-level internals).
+          ...(modelsConsulted.length > 0
+            ? { modelsConsulted, providersConsulted }
+            : {}),
           ...(piiWarning ? { piiWarning } : {}),
           ...(qualityScore ? { qualityScore: qualityScore.overall, qualityPassed: qualityScore.passed } : {}),
         },
