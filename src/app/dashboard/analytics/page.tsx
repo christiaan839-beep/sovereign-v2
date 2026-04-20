@@ -66,29 +66,50 @@ export default function AnalyticsPage() {
 
   const fetchMetrics = useCallback(async () => {
     try {
-      // Fetch agent stats
-      const statsRes = await fetch("/api/agents/dashboard-stats");
-      const statsData = statsRes.ok ? await statsRes.json() : {};
-      const stats = statsData.stats ?? statsData;
+      // Two independent endpoints — parallelize with allSettled so a
+      // failure on one doesn't drop the other. Previously this ran as
+      // a ~2-round-trip waterfall, which roughly doubled dashboard TTI.
+      const [statsResult, runsResult] = await Promise.allSettled([
+        fetch("/api/agents/dashboard-stats"),
+        fetch("/api/playbooks/runs"),
+      ]);
 
-      // Fetch playbook runs
+      // ── Agent stats ──
+      let stats: {
+        agentExecutions?: number;
+        leadsGenerated?: number;
+        contentGenerated?: number;
+        bookings?: number;
+      } = {};
+      if (statsResult.status === "fulfilled" && statsResult.value.ok) {
+        const statsData = await statsResult.value.json().catch(() => ({}));
+        stats = statsData.stats ?? statsData;
+      }
+
+      // ── Playbook runs ──
       let playbooks = { total: 0, succeeded: 0, failed: 0, avgDurationMs: 0 };
-      try {
-        const runsRes = await fetch("/api/playbooks/runs");
-        if (runsRes.ok) {
-          const runsData = await runsRes.json();
-          const runs = runsData.runs || [];
-          const succeeded = runs.filter((r: { status: string }) => r.status === "done" || r.status === "succeeded");
-          const failed = runs.filter((r: { status: string }) => r.status === "failed");
-          const durations = runs.filter((r: { durationMs?: number }) => r.durationMs).map((r: { durationMs: number }) => r.durationMs);
+      if (runsResult.status === "fulfilled" && runsResult.value.ok) {
+        try {
+          const runsData = await runsResult.value.json();
+          const runs: Array<{ status: string; durationMs?: number }> = runsData.runs || [];
+          const succeeded = runs.filter((r) => r.status === "done" || r.status === "succeeded");
+          const failed = runs.filter((r) => r.status === "failed");
+          const durations = runs
+            .map((r) => r.durationMs)
+            .filter((d): d is number => typeof d === "number");
           playbooks = {
             total: runs.length,
             succeeded: succeeded.length,
             failed: failed.length,
-            avgDurationMs: durations.length > 0 ? Math.round(durations.reduce((s: number, d: number) => s + d, 0) / durations.length) : 0,
+            avgDurationMs:
+              durations.length > 0
+                ? Math.round(durations.reduce((s, d) => s + d, 0) / durations.length)
+                : 0,
           };
+        } catch {
+          /* playbooks API may not exist yet — honest zero state */
         }
-      } catch { /* playbooks API may not exist yet */ }
+      }
 
       setMetrics({
         agentExecutions: stats.agentExecutions || 0,
