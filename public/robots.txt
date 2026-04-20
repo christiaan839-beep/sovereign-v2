@@ -15,11 +15,19 @@ Sitemap: https://sovereignmatrix.agency/sitemap.xml
 
 # ─── AI crawlers ───
 # Anthropic / Claude — explicitly welcomed on public surfaces.
+# Partnership evidence is at /trust/anthropic (live metrics)
+# and /api/_misc/safety-diff (JSON).
 User-agent: anthropic-ai
 Allow: /
+Allow: /trust/anthropic
+Allow: /api/_misc/safety-diff
+Allow: /api/_misc/partnership-metrics
 
 User-agent: ClaudeBot
 Allow: /
+Allow: /trust/anthropic
+Allow: /api/_misc/safety-diff
+Allow: /api/_misc/partnership-metrics
 
 # OpenAI GPTBot — public pages only.
 User-agent: GPTBot
