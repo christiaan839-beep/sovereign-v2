@@ -6,26 +6,17 @@ import Link from "next/link";
 import { Search, CornerDownLeft } from "lucide-react";
 
 /**
- * COMMAND EGG — power-user secret triggered by Shift+? or /.
- *
- * Studying: stripe.com (Cmd+K opens their docs search with a beautiful
- * overlay), linear.app (/ triggers the command palette instantly),
- * vercel.com (undocumented shortcuts dot the UI).
- *
- * The move: a discoverable-via-keyboard command palette that jumps to
- * any section or invokes a "book a call" / "email founder" action.
- * Developers notice. Developers tweet what they notice. Free
- * distribution.
+ * CommandEgg — keyboard-triggered command palette.
  *
  * Triggers:
- *   - Shift + ? (universal help convention)
- *   - `/` when not in an input (similar to GitHub, Linear)
- *   - `k` + `cmd`/`ctrl` (Stripe / Linear convention)
+ *   - `?` or Shift+?  → universal help convention
+ *   - `/`             → when no input is focused
+ *   - ⌘K / Ctrl+K     → the standard command-palette binding
+ *   - Esc             → dismiss
  *
- * First open: we log a console love-note ("Nice, you found it.")
- * as a second-layer easter egg.
- *
- * Dismiss: Esc or click backdrop.
+ * Navigation: arrow keys select, Enter opens the chosen command.
+ * A one-time console shoutout fires on first open (no spam on
+ * subsequent opens).
  */
 
 interface Command {
@@ -125,11 +116,11 @@ export function CommandEgg() {
   // don't repeat (we don't want to spam devtools).
   useEffect(() => {
     if (open && !hasLoggedOnce) {
-      // eslint-disable-next-line no-console
       console.log(
         "%c" + CONSOLE_SHOUTOUT,
         "font-family: 'JetBrains Mono', monospace; color: #B5532C; line-height: 1.5;",
       );
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot "have we logged yet" flag
       setHasLoggedOnce(true);
     }
   }, [open, hasLoggedOnce]);
@@ -143,8 +134,10 @@ export function CommandEgg() {
       )
     : COMMANDS;
 
-  // Clamp selection when filter changes
+  // Reset the highlighted row when the filter changes — selection is
+  // derived from the list, so when the list shrinks we must clamp.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- clamp derived selection on dependency change
     setSelectedIndex(0);
   }, [query]);
 
@@ -285,28 +278,48 @@ export function CommandEgg() {
 
             {/* Footer — shortcut hints */}
             <div className="flex items-center gap-4 px-5 py-3 border-t border-white/[0.04] bg-[#060605] text-[10px] font-mono text-neutral-600">
-              <span className="flex items-center gap-1.5">
-                <kbd className="border border-white/[0.08] px-1.5 py-0.5 rounded">↑↓</kbd>
-                navigate
-              </span>
-              <span className="flex items-center gap-1.5">
-                <kbd className="border border-white/[0.08] px-1.5 py-0.5 rounded">↵</kbd>
-                open
-              </span>
-              <span className="flex items-center gap-1.5 ml-auto">
-                Shortcut:{" "}
-                <kbd className="border border-white/[0.08] px-1.5 py-0.5 rounded">
-                  /
-                </kbd>{" "}
-                or{" "}
-                <kbd className="border border-white/[0.08] px-1.5 py-0.5 rounded">
-                  ⌘K
-                </kbd>
-              </span>
+              <HintKey label="navigate" keys={["↑↓"]} />
+              <HintKey label="open" keys={["↵"]} />
+              <HintKey label="Shortcut:" keys={["/", "⌘K"]} separator=" or " className="ml-auto" />
             </div>
           </motion.div>
         </motion.div>
       )}
     </AnimatePresence>
+  );
+}
+
+/**
+ * Labeled kbd chip (or chips) used in the palette footer. Keeps the
+ * kbd styling in one place so future changes don't drift per-row.
+ */
+function HintKey({
+  label,
+  keys,
+  separator = "",
+  className = "",
+}: {
+  label: string;
+  keys: string[];
+  separator?: string;
+  className?: string;
+}) {
+  const kbdClass = "border border-white/[0.08] px-1.5 py-0.5 rounded";
+
+  // Label goes BEFORE the key for "Shortcut: / or ⌘K", and AFTER for
+  // "↑↓ navigate". We detect based on whether the label ends with ":".
+  const labelFirst = label.endsWith(":");
+
+  return (
+    <span className={`flex items-center gap-1.5 ${className}`}>
+      {labelFirst && <>{label}{" "}</>}
+      {keys.map((k, i) => (
+        <span key={k} className="flex items-center gap-1.5">
+          <kbd className={kbdClass}>{k}</kbd>
+          {i < keys.length - 1 && <span>{separator}</span>}
+        </span>
+      ))}
+      {!labelFirst && label}
+    </span>
   );
 }
