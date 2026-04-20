@@ -22,6 +22,9 @@ interface LogEntry {
   message: string;
   data?: Record<string, unknown>;
   timestamp: string;
+  /** Per-request correlation ID, injected automatically when the call
+   *  is inside a runWithRequestContext() scope. */
+  requestId?: string;
 }
 
 const isProd = process.env.NODE_ENV === "production";
@@ -38,7 +41,11 @@ function formatEntry(entry: LogEntry): string {
     debug: "[DEBUG]",
   }[entry.level];
   const dataStr = entry.data ? ` ${JSON.stringify(entry.data)}` : "";
-  return `${prefix} [${entry.module}] ${entry.message}${dataStr}`;
+  // Request ID appears in [brackets] after module — stays out of the
+  // way in dev but makes it trivial to grep `grep rId=abc123` when
+  // a customer reports an issue.
+  const rId = entry.requestId ? ` [rId=${entry.requestId}]` : "";
+  return `${prefix} [${entry.module}]${rId} ${entry.message}${dataStr}`;
 }
 
 /**
@@ -84,12 +91,26 @@ async function reportToSentry(entry: LogEntry) {
 }
 
 function log(level: LogLevel, module: string, message: string, data?: Record<string, unknown>) {
+  // Inject the current request ID (if we're inside a request context)
+  // so every log line emitted during an agent run can be correlated
+  // without the caller threading it through manually. Lazy-import to
+  // avoid a circular dep (request-context imports nothing from logger).
+  let requestId: string | undefined;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { getRequestId } = require("./request-context") as typeof import("./request-context");
+    requestId = getRequestId() ?? undefined;
+  } catch {
+    // request-context is newer than some call sites; never break a log.
+  }
+
   const entry: LogEntry = {
     level,
     module,
     message,
     data,
     timestamp: new Date().toISOString(),
+    ...(requestId ? { requestId } : {}),
   };
 
   const formatted = formatEntry(entry);

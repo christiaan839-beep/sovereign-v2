@@ -47,6 +47,11 @@ import {
   getModelsConsulted,
   getProvidersConsulted,
 } from "@/lib/model-attribution";
+import {
+  runWithRequestContext,
+  generateRequestId,
+  setUserId as setRequestUserId,
+} from "@/lib/request-context";
 import type { ZodObject, ZodRawShape } from "zod";
 
 const log = createLogger("agent-factory");
@@ -133,10 +138,35 @@ export interface AgentContext {
 
 export function createAgentRoute(config: AgentConfig) {
   return async function POST(req: Request) {
-    const startTime = Date.now();
-    let email = "";
-    let userId = "";
-    let replay: ReplayBuilder | null = null;
+    // Respect an incoming X-Request-Id header if the caller already
+    // generated one (useful for cross-service tracing). Otherwise mint
+    // our own. Format check prevents log injection via a malicious
+    // client sending "..\n\nEVIL" as the ID.
+    const incomingRid = req.headers.get("x-request-id") ?? "";
+    const requestId = /^[A-Za-z0-9-]{1,64}$/.test(incomingRid)
+      ? incomingRid
+      : generateRequestId();
+
+    // Every agent call runs inside its own request + attribution
+    // context. This is the outermost scope; everything below inherits.
+    return runWithRequestContext(
+      { requestId, agentName: config.name, path: new URL(req.url).pathname },
+      () => handleAgentRoute(req, config, requestId),
+    );
+  };
+}
+
+// The real handler body — extracted so the ALS-wrapping wrapper stays
+// thin and obvious.
+async function handleAgentRoute(
+  req: Request,
+  config: AgentConfig,
+  requestId: string,
+): Promise<Response> {
+  const startTime = Date.now();
+  let email = "";
+  let userId = "";
+  let replay: ReplayBuilder | null = null;
 
     try {
       // ─── Auth & Rate Limiting ───
@@ -184,6 +214,9 @@ export function createAgentRoute(config: AgentConfig) {
           email = guard.email;
           userId = guard.userId;
         }
+
+        // Sync to request context for log correlation
+        if (userId) setRequestUserId(userId);
       }
 
       // ─── Free Tier Usage Check ───
@@ -646,6 +679,9 @@ export function createAgentRoute(config: AgentConfig) {
       if (remaining !== undefined) {
         response.headers.set("X-Free-Remaining", String(remaining));
       }
+      // Per-request correlation — customer support can give us this
+      // ID when reporting an issue and we grep it in our logs + Sentry.
+      response.headers.set("X-Request-Id", requestId);
 
       return response;
     } catch (error: unknown) {
@@ -675,7 +711,6 @@ export function createAgentRoute(config: AgentConfig) {
       const userMessage = "Something went wrong while running this agent. Our team has been notified. Try again or contact support.";
       return errorResponse(userMessage, 500, "AGENT_ERROR");
     }
-  };
 }
 
 // ─── Helpers ───
