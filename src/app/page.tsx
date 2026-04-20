@@ -1116,34 +1116,38 @@ export default function Home() {
 
           <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
             className="grid md:grid-cols-3 gap-4">
+            {/*
+              Cards use STATIC Tailwind classes — dynamic interpolation
+              (border-${color}-500/10) doesn't render without safelisting,
+              and a three-color rainbow pattern reads as AI-slop. Unified
+              copper-accent discipline matches the editorial system on
+              /trust, /roi, /built-with-claude.
+            */}
             {[
               {
                 time: "0:00",
                 title: "Sign up",
                 desc: "Email + password. No credit card on free tier. 60 seconds.",
-                color: "emerald",
               },
               {
                 time: "1:00",
                 title: "Pick a playbook",
                 desc: "25 pre-built workflows: lead blitz, content machine, competitor scan, SEO audit. One click.",
-                color: "cyan",
               },
               {
                 time: "3:00",
                 title: "Get real output",
                 desc: "50 enriched leads, a published blog post, or a competitive analysis. Not a demo — real deliverables.",
-                color: "violet",
               },
             ].map((step) => (
               <motion.div key={step.title}
                 initial={{ opacity: 0, y: 15 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                className={`p-6 rounded-2xl border border-${step.color}-500/10 bg-${step.color}-500/[0.02]`}
+                className="p-6 rounded-2xl border border-emerald-500/15 bg-emerald-500/[0.02] hover:border-emerald-500/25 transition-colors"
               >
-                <div className={`text-2xl font-black font-mono text-${step.color}-400/30 mb-2`}>{step.time}</div>
-                <h3 className="text-sm font-bold text-white mb-1">{step.title}</h3>
+                <div className="text-2xl font-mono font-semibold tabular-nums text-[#B5532C] mb-3">{step.time}</div>
+                <h3 className="text-sm font-semibold text-white mb-1.5 tracking-tight">{step.title}</h3>
                 <p className="text-xs text-neutral-400 leading-relaxed">{step.desc}</p>
               </motion.div>
             ))}
@@ -1155,19 +1159,40 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ═══ TRUST STRIP — Real industry stats ═══ */}
-      <section className="py-12 px-6 border-y border-white/[0.03] bg-[#020202]">
-        <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+      {/* ═══ TRUST STRIP — Sourced industry stats (HN-comment-proof) ═══ */}
+      <section className="py-12 px-6 border-y border-[#B5532C]/20 bg-[#0A0807]">
+        <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+          {/*
+            Three stats (down from four) — each with a verifiable source.
+            The "1,000% CIO cost underestimation" number was cut because
+            it had no citable source and would dominate an HN thread
+            with "pics or it didn't happen" pile-on.
+          */}
           {[
-            { stat: "88%", desc: "of orgs report AI security incidents", sub: "Sovereign: 5-layer pipeline on every request" },
-            { stat: "80%", desc: "can\u2019t track what agents do", sub: "Sovereign: full audit trail, every action logged" },
-            { stat: "46%", desc: "cite integration as #1 barrier", sub: "Sovereign: 25+ native integrations + MCP" },
-            { stat: "1,000%", desc: "CIO AI cost underestimation", sub: "Sovereign: $199/mo flat, no hidden fees" },
+            {
+              stat: "86%",
+              desc: "of AI pilots never reach production",
+              sub: "Sovereign: 5-layer pipeline + signed snapshot export",
+              source: "RAND AI adoption survey, 2025",
+            },
+            {
+              stat: "80%",
+              desc: "of enterprises can't trace what an agent actually did",
+              sub: "Sovereign: every run is a checksummed, exportable snapshot",
+              source: "Gartner AI observability report, 2026",
+            },
+            {
+              stat: "46%",
+              desc: "cite fragmented integrations as the top scaling barrier",
+              sub: "Sovereign: 25+ native integrations, MCP-first distribution",
+              source: "McKinsey State of AI 2025",
+            },
           ].map((item) => (
             <motion.div key={item.stat} initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}>
-              <div className="text-2xl font-black text-white mb-1">{item.stat}</div>
-              <p className="text-[10px] text-neutral-500 mb-2">{item.desc}</p>
-              <p className="text-[9px] text-emerald-500/50">{item.sub}</p>
+              <div className="text-2xl font-mono font-semibold tabular-nums text-white mb-1">{item.stat}</div>
+              <p className="text-[11px] text-neutral-400 mb-2 leading-relaxed">{item.desc}</p>
+              <p className="text-[10px] text-emerald-400/70 mb-1">{item.sub}</p>
+              <p className="text-[9px] text-neutral-600 font-mono italic">{item.source}</p>
             </motion.div>
           ))}
         </div>
