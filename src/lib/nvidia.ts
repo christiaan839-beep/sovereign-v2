@@ -22,20 +22,45 @@ async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): P
 // All models are FREE via NIM API (40 RPM, no expiry)
 // Organized by capability for intelligent routing
 
-/** Primary failover chain for text generation — ordered by throughput + quality */
-const FAILOVER_MODELS = [
-  "nvidia/nemotron-3-super-120b-a12b",   // Hybrid Mamba-Transformer MoE, 1M context, 5x throughput
-  "google/gemma-4-31b-it",               // Gemma 4 31B — 256K context, vision+audio, 140+ languages (NEW)
-  "glm-5-744b-moe",                      // 744B MoE — long-horizon agentic reasoning
-  "nvidia/nemotron-ultra-253b-v1",        // Flagship reasoning (heavier, slower)
-  "nvidia/nemotron-3-nano-30b-a3b",       // Ultra-fast edge model (3.2B active)
-  "deepseek-ai/deepseek-v3-2-0324",      // 671B MoE — strongest open-source reasoning
-  "minimax/minimax-m2.5-230b",           // 230B — coding, reasoning, office tasks
-  "meta/llama-4-scout-17b-16e-instruct", // 10M context — analyze entire codebases
-  "qwen/qwen3-235b-a22b",               // Best multilingual (50+ languages)
-  "mistralai/mistral-small-3-1-24b-instruct", // Ultra-fast function calling
-  "mistralai/mistral-nemotron",          // Coalition model
+/**
+ * Primary failover chain for text generation — ordered by throughput + quality.
+ *
+ * Safety classification (all run on NVIDIA US infrastructure):
+ *   ✅ NVIDIA-origin   — Nemotron family
+ *   ✅ US/EU-origin    — Meta Llama, Google Gemma, Mistral
+ *   ⚠️ Chinese-weight  — DeepSeek, Qwen (inference on NVIDIA US, weights from Chinese firms)
+ *
+ * DATA_SOVEREIGNTY_MODE=true  — strips Chinese-weight models for regulated clients
+ *   (government, healthcare, financial services, EU-GDPR-strict)
+ *
+ * GLM-5 (Zhipu AI) and MiniMax removed: no public safety card, unknown red-team record.
+ */
+
+// Models safe under any policy — US/EU origin AND US inference
+const SOVEREIGNTY_SAFE_MODELS = [
+  "nvidia/nemotron-3-super-120b-a12b",        // ✅ NVIDIA — Hybrid MoE, 1M context
+  "google/gemma-4-31b-it",                    // ✅ Google — 256K context, Apache 2.0
+  "nvidia/nemotron-ultra-253b-v1",             // ✅ NVIDIA — Flagship reasoning
+  "meta/llama-4-scout-17b-16e-instruct",       // ✅ Meta — 10M context
+  "meta/llama-4-maverick-17b-128e",            // ✅ Meta — multimodal
+  "nvidia/nemotron-3-nano-30b-a3b",            // ✅ NVIDIA — ultra-fast edge
+  "mistralai/mistral-small-3-1-24b-instruct",  // ✅ Mistral (EU) — fast function calling
+  "mistralai/mistral-nemotron",                // ✅ Mistral+NVIDIA coalition
+  "google/gemma-4-e4b-it",                     // ✅ Google — 4B edge fallback
 ];
+
+// Chinese-weight models hosted on NVIDIA US infrastructure.
+// Data goes to NVIDIA, not China — but some enterprise policies prohibit these regardless.
+const CHINESE_WEIGHT_MODELS = [
+  "deepseek-ai/deepseek-v3-2-0324",   // ⚠️ DeepSeek (China) weights, NVIDIA inference — strongest open-source reasoning
+  "qwen/qwen3-235b-a22b",             // ⚠️ Alibaba (China) weights, NVIDIA inference — best multilingual
+];
+
+const DATA_SOVEREIGNTY_MODE = process.env.DATA_SOVEREIGNTY_MODE === "true";
+
+const FAILOVER_MODELS: string[] = DATA_SOVEREIGNTY_MODE
+  ? SOVEREIGNTY_SAFE_MODELS
+  : [...SOVEREIGNTY_SAFE_MODELS, ...CHINESE_WEIGHT_MODELS];
 
 /** Specialized models for specific agent tasks — all FREE via NIM */
 export const NIM_MODELS = {
@@ -43,12 +68,12 @@ export const NIM_MODELS = {
   reasoning: "nvidia/nemotron-3-super-120b-a12b",
   flagship: "nvidia/nemotron-ultra-253b-v1",
   fast: "nvidia/nemotron-3-nano-30b-a3b",
-  multilingual: "qwen/qwen3-235b-a22b",
-  agenticReasoning: "glm-5-744b-moe",               // 744B MoE — complex agentic tasks
-  agenticCoding: "glm-4.7",                          // 90.6% tool use benchmark — agentic coding
-  office: "minimax/minimax-m2.5-230b",               // 230B — coding, reasoning, office tasks
-  codingThinking: "qwen/qwen3-30b-a3b-thinking",     // Reasoning-focused coding
-  codingInstruct: "qwen/qwen3-coder-30b-a3b-instruct", // Code generation specialist
+  multilingual: "qwen/qwen3-235b-a22b",              // ⚠️ Alibaba weights, NVIDIA US inference
+  agenticReasoning: "nvidia/nemotron-3-super-120b-a12b", // ✅ NVIDIA — complex agentic tasks (replaces GLM-5)
+  agenticCoding: "meta/llama-4-maverick-17b-128e",       // ✅ Meta — tool use + multimodal (replaces GLM-4.7)
+  office: "nvidia/nemotron-ultra-253b-v1",               // ✅ NVIDIA — coding, reasoning, long-form (replaces MiniMax)
+  codingThinking: "qwen/qwen3-30b-a3b-thinking",        // ⚠️ Alibaba weights, NVIDIA inference — reasoning code
+  codingInstruct: "qwen/qwen3-coder-30b-a3b-instruct",  // ⚠️ Alibaba weights, NVIDIA inference — code gen
 
   // ── Google Gemma 4 (Released April 2, 2026 — Apache 2.0) ──
   gemma4: "google/gemma-4-31b-it",                   // 31B dense — 256K context, vision+audio, 140+ languages
@@ -63,7 +88,7 @@ export const NIM_MODELS = {
   // ── Vision & Multimodal ──
   vision: "meta/llama-3.2-90b-vision-instruct",
   visionLight: "meta/llama-3.2-11b-vision-instruct",
-  multimodal: "qwen/qwen3.5-vl-400b-a22b-instruct",  // 400B MoE — native vision+language
+  multimodal: "qwen/qwen3.5-vl-400b-a22b-instruct",  // ⚠️ Alibaba weights, NVIDIA inference — vision+language
   visionOCR: "nvidia/nemotron-nano-12b-v2-vl",        // 12B — Best-in-class OCR and document understanding
   documentParse: "nvidia/nemotron-parse-1.1-1b",      // 1B VLM — structured doc extraction
   physicalReasoning: "nvidia/cosmos-reason1-7b",       // Physical world reasoning
@@ -143,6 +168,16 @@ export async function nimChat(
   messages: Array<{ role: string; content: string | Array<{ type: string; text?: string; image_url?: { url: string } }> }>,
   options: { maxTokens?: number; temperature?: number; stream?: boolean } = {}
 ): Promise<string> {
+  // Record the model for the agent-factory's response envelope.
+  // No-op outside of an attribution context.
+  // Lazy import prevents circular-dependency risk.
+  try {
+    const { recordModel } = await import("@/lib/model-attribution");
+    recordModel(model);
+  } catch {
+    // model-attribution is optional; never block a real AI call on it
+  }
+
   const apiKey = await getNimKey();
   if (!apiKey) throw new Error("NVIDIA NIM API key not configured. Add it in Settings > API Keys.");
 
@@ -208,7 +243,30 @@ export async function nimChat(
   }
 
   const data = await response.json();
-  return data.choices[0].message.content;
+  const content: string = data.choices[0].message.content;
+
+  // Cost-ledger write — uses provider-reported token counts when
+  // available, falls back to char-based estimation. Fire-and-forget
+  // so a ledger failure never fails the user's AI call.
+  try {
+    const usage = data.usage ?? {};
+    const promptChars = messages.reduce(
+      (n, m) => n + (typeof m.content === "string" ? m.content.length : 0),
+      0,
+    );
+    const { recordLedgerEntry } = await import("@/lib/cost-ledger");
+    void recordLedgerEntry({
+      modelId: model,
+      inputTokens: usage.prompt_tokens,
+      outputTokens: usage.completion_tokens,
+      inputChars: promptChars,
+      outputChars: content.length,
+    });
+  } catch {
+    // Ledger is optional; never block the AI call.
+  }
+
+  return content;
 }
 
 /**
