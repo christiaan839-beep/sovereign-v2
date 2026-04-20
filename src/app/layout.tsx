@@ -9,6 +9,7 @@ import { CursorGlow } from "@/components/cinematic/CursorGlow";
 import { ScrollProgress } from "@/components/cinematic/ScrollProgress";
 import { BackToTop } from "@/components/cinematic/BackToTop";
 import { CookieConsent } from "@/components/ui/CookieConsent";
+import { FounderCTA } from "@/components/ui/FounderCTA";
 import "./globals.css";
 
 // Run environment validation on server startup
@@ -118,6 +119,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
           <BackToTop />
           <CookieConsent />
+          <FounderCTA />
           {process.env.NODE_ENV === "production" && <Analytics />}
           {process.env.NODE_ENV === "production" && <SpeedInsights />}
           <Script

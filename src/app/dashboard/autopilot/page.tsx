@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { PlaybookGraph } from "@/components/dashboard/PlaybookGraph";
+import { NoRunsEmpty } from "@/components/ui/EmptyState";
 
 /* ─── Types ─── */
 
@@ -377,17 +378,7 @@ export default function AutopilotPage() {
             <span className="text-sm">Loading runs…</span>
           </div>
         ) : runs.length === 0 ? (
-          <div className="py-16 text-center">
-            <BarChart3 size={32} className="mx-auto mb-3 text-neutral-700" />
-            <p className="mb-1 text-sm text-neutral-500">No playbook runs yet.</p>
-            <p className="text-xs text-neutral-600">
-              Go to{" "}
-              <Link href="/dashboard/playbooks" className="text-violet-400 hover:underline">
-                Playbooks
-              </Link>{" "}
-              to run your first one.
-            </p>
-          </div>
+          <NoRunsEmpty />
         ) : (
           <div className="space-y-3">
             <AnimatePresence mode="popLayout">

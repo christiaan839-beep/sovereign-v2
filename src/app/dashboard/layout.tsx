@@ -22,6 +22,7 @@ import { useSafeUser } from "@/lib/safe-clerk";
 import { TelemetryProvider } from '@/components/providers/TelemetryProvider';
 import { JarvisSocket } from '@/components/JarvisSocket';
 import { ToastProvider } from '@/components/ui/ToastProvider';
+import { AcquisitionCapture } from '@/components/ui/AcquisitionCapture';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { CinematicOnboarding } from '@/components/dashboard/CinematicOnboarding';
 import { LiveActivityConsole } from '@/components/dashboard/LiveActivityConsole';
@@ -601,6 +602,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </div>
               <NotificationBell />
             </div>
+            <AcquisitionCapture />
             <ErrorBoundary>
               <ToastProvider>
                 <CinematicOnboarding>

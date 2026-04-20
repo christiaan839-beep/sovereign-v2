@@ -310,12 +310,22 @@ export const subscriptions = pgTable("subscriptions", {
   founderNetworkJoinedAt: timestamp("founder_network_joined_at"),
   /** Sequential slot number within the 100-member cohort — purely for display. */
   founderNetworkSlot: integer("founder_network_slot"),
+  // v10 acquisition attribution — migration 0013. Written ONCE at
+  // signup; immutable after. Lets us answer "did HN or LinkedIn
+  // drive this week's signups?" without guessing.
+  acquisitionSource: text("acquisition_source"),
+  acquisitionMedium: text("acquisition_medium"),
+  acquisitionCampaign: text("acquisition_campaign"),
+  acquisitionReferrer: text("acquisition_referrer"),
+  acquiredAt: timestamp("acquired_at").defaultNow(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
   index("idx_subscriptions_user").on(table.userId),
   index("idx_subscriptions_stripe").on(table.stripeCustomerId),
   index("idx_subscriptions_founder_network").on(table.founderNetworkJoinedAt),
+  index("idx_subscriptions_acq_source").on(table.acquisitionSource),
+  index("idx_subscriptions_acquired_at").on(table.acquiredAt),
 ]);
 
 /**
