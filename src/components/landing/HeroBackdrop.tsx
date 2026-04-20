@@ -68,97 +68,77 @@ export function HeroBackdrop() {
       className="absolute inset-0 overflow-hidden pointer-events-none"
       aria-hidden="true"
     >
-      {/* Aurora mesh — three drifting blobs at different scales & phases.
-          The blend-mode:screen mixes the colors as they overlap, which is
-          the move that separates "aurora" from "blur stack." */}
+      {/* Aurora — single focal glow anchored behind the headline.
+          Three scattered blobs compete with the copy; one centred
+          source draws the eye to the text. Secondary warm bloom at
+          bottom-right for depth. mix-blend-screen gives additive
+          colour overlap without washing out the dark base. */}
       <motion.div
         style={{ y: auroraY, scale: auroraScale }}
         className="absolute inset-0"
       >
-        <motion.div
-          className="absolute rounded-full blur-[140px] mix-blend-screen"
-          style={{
-            top: "15%",
-            left: "30%",
-            width: 720,
-            height: 720,
-            background:
-              "radial-gradient(circle, rgba(181,83,44,0.55) 0%, transparent 60%)",
-          }}
-          animate={{
-            x: [0, 40, -30, 0],
-            y: [0, -30, 20, 0],
-            opacity: [0.55, 0.8, 0.65, 0.55],
-          }}
-          transition={{
-            duration: 14,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-        />
+        {/* Primary: centred copper focal point */}
         <motion.div
           className="absolute rounded-full blur-[160px] mix-blend-screen"
           style={{
-            top: "5%",
-            right: "-10%",
-            width: 640,
-            height: 640,
+            top: "0%",
+            left: "50%",
+            transform: "translateX(-50%)",
+            width: 800,
+            height: 600,
             background:
-              "radial-gradient(circle, rgba(224,133,88,0.35) 0%, transparent 60%)",
+              "radial-gradient(ellipse, rgba(181,83,44,0.50) 0%, transparent 65%)",
           }}
           animate={{
-            x: [0, -50, 30, 0],
-            y: [0, 40, -20, 0],
-            opacity: [0.35, 0.55, 0.4, 0.35],
+            opacity: [0.5, 0.65, 0.5],
+            scale: [1, 1.05, 1],
           }}
           transition={{
-            duration: 18,
+            duration: 8,
             repeat: Infinity,
             ease: "easeInOut",
-            delay: 2,
           }}
         />
+        {/* Secondary: warm amber edge bloom — depth not clutter */}
         <motion.div
-          className="absolute rounded-full blur-[180px] mix-blend-screen"
+          className="absolute rounded-full blur-[200px] mix-blend-screen"
           style={{
-            bottom: "-20%",
-            left: "-15%",
-            width: 900,
-            height: 700,
+            bottom: "-10%",
+            right: "-5%",
+            width: 560,
+            height: 480,
             background:
-              "radial-gradient(ellipse, rgba(146,64,34,0.45) 0%, transparent 60%)",
+              "radial-gradient(ellipse, rgba(200,100,40,0.28) 0%, transparent 65%)",
           }}
           animate={{
-            x: [0, 30, -20, 0],
-            y: [0, -20, 30, 0],
-            opacity: [0.45, 0.6, 0.5, 0.45],
+            opacity: [0.28, 0.38, 0.28],
           }}
           transition={{
-            duration: 22,
+            duration: 12,
             repeat: Infinity,
             ease: "easeInOut",
-            delay: 5,
+            delay: 3,
           }}
         />
       </motion.div>
 
-      {/* Engineering grid — hairline 72px grid, radial-masked so it fades
-          toward the viewport edges. Parallax-shifted at ½ scroll speed
-          for a subtle depth cue. */}
+      {/* Engineering grid — hairline 80px grid, radial-masked so it fades
+          toward the viewport edges. Kept very faint (0.025) so it reads
+          as depth texture, not wallpaper. Parallax at ½ scroll speed. */}
       <motion.div
         style={{ y: gridY }}
-        className="absolute inset-0 opacity-[0.055]"
+        className="absolute inset-0 opacity-[0.025]"
       >
         <div
           className="absolute inset-0"
           style={{
             backgroundImage:
               "linear-gradient(to right, #fff 1px, transparent 1px), linear-gradient(to bottom, #fff 1px, transparent 1px)",
-            backgroundSize: "72px 72px",
+            backgroundSize: "80px 80px",
             maskImage:
-              "radial-gradient(ellipse 70% 60% at 50% 40%, #000 40%, transparent 80%)",
+              "radial-gradient(ellipse 55% 50% at 50% 35%, #000 30%, transparent 80%)",
             WebkitMaskImage:
-              "radial-gradient(ellipse 70% 60% at 50% 40%, #000 40%, transparent 80%)",
+              "radial-gradient(ellipse 55% 50% at 50% 35%, #000 30%, transparent 80%)",
           }}
         />
       </motion.div>
@@ -178,11 +158,12 @@ export function HeroBackdrop() {
         }}
       />
 
-      {/* Subtle noise texture — breaks up the gradients so they don't
-          look computer-perfect on large screens. A 1% opacity SVG
-          noise is the standard trick. */}
+      {/* Subtle noise texture — barely-there grain at 0.6% opacity.
+          Enough to break up gradient banding on large retina screens,
+          not enough to be visible. Above 1% it reads as a texture;
+          below that it reads as nothing, which is the point. */}
       <div
-        className="absolute inset-0 opacity-[0.015] mix-blend-overlay"
+        className="absolute inset-0 opacity-[0.006] mix-blend-overlay"
         style={{
           backgroundImage:
             "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",

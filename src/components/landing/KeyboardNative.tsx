@@ -23,7 +23,7 @@ const SHORTCUTS = [
 
 export function KeyboardNative() {
   return (
-    <section className="relative px-6 py-28 md:py-36 border-t border-white/[0.04] overflow-hidden">
+    <section className="relative px-6 py-28 md:py-36 bg-[#040303] overflow-hidden">
       {/* Subtle ambient — much lighter than the hero glow */}
       <div
         className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[400px] w-[700px] rounded-full opacity-15 blur-[120px] pointer-events-none"
@@ -37,7 +37,7 @@ export function KeyboardNative() {
           <div>
             <div className="mb-8 flex items-center gap-4 flex-wrap">
               <span className="font-mono text-[10px] text-neutral-600 tracking-[0.2em]">
-                08 / 10
+                10 / 10
               </span>
               <span aria-hidden="true" className="h-px w-6 bg-white/[0.12]" />
               <p className="text-[10px] font-mono tracking-[0.22em] uppercase text-[#B5532C]">

@@ -104,8 +104,17 @@ export default function LandingPage() {
         {/* ═══ 01 · HERO (with live terminal, runs pill, kinetic headline) ═══ */}
         <Hero />
 
-        {/* ═══ 02 · BUILT-ON TRUST STRIP ═══ */}
-        <BuiltOnStrip />
+        {/* ═══ 02 · BUILT-ON TRUST STRIP — hero warmth bleeds in ═══ */}
+        {/* -mt-20 / pt-20 pulls this section up so the hero aurora's copper
+            warmth continues visually rather than cutting hard to black. */}
+        <div className="relative -mt-20 pt-20">
+          <div
+            className="absolute inset-x-0 top-0 h-32 pointer-events-none"
+            style={{ background: "linear-gradient(to bottom, rgba(181,83,44,0.04) 0%, transparent 100%)" }}
+            aria-hidden="true"
+          />
+          <BuiltOnStrip />
+        </div>
 
         {/* ═══ 03 · 3-STEP PROOF ═══ */}
         <ThreeStepProof />
@@ -154,10 +163,9 @@ export default function LandingPage() {
 }
 
 /* ─── SectionHead — editorial monogram + label ─────────────────────
- * Shared label for every major section: copper "NN / 10" monogram +
- * short uppercase kicker. Matches the pattern in the Hero and
- * Principles sections. Using one component keeps the spacing, type
- * weights, and copper-to-bone palette drift-proof.
+ * Three-voice system: mono counter (positional) + hairline rule +
+ * serif italic label (editorial). The italic distinguishes this from
+ * a nav label — it reads as a chapter heading, not a UI affordance.
  */
 function SectionHead({ n, label }: { n: string; label: string }) {
   return (
@@ -166,7 +174,7 @@ function SectionHead({ n, label }: { n: string; label: string }) {
         {n} / 10
       </span>
       <span aria-hidden="true" className="h-px w-6 bg-white/[0.12]" />
-      <p className="text-[10px] font-mono tracking-[0.22em] uppercase text-[#B5532C]">
+      <p className="font-serif italic text-[13px] text-neutral-500 tracking-[-0.01em]">
         {label}
       </p>
     </div>
@@ -360,12 +368,12 @@ function Hero() {
           Sits above the aurora, below content. Auto-disables on mobile
           and prefers-reduced-motion (the hook handles that). */}
       <FloatingParticles
-        count={28}
-        maxSize={2.2}
+        count={24}
+        maxSize={1.8}
         colors={[
-          "rgba(181, 83, 44, 0.55)",
-          "rgba(224, 133, 88, 0.4)",
-          "rgba(255, 255, 255, 0.25)",
+          "rgba(181, 83, 44, 0.45)",
+          "rgba(224, 133, 88, 0.30)",
+          "rgba(255, 200, 150, 0.12)",
         ]}
         className="absolute inset-0 pointer-events-none"
       />
@@ -460,31 +468,47 @@ function ThreeStepProof() {
   ];
 
   return (
-    <section className="px-6 py-24 md:py-32 border-t border-white/[0.04]">
+    <section className="px-6 py-20 md:py-28 bg-[#030303]">
       <div className="max-w-5xl mx-auto">
         <SectionHead n="02" label="The proof" />
-        <h2 className="font-serif text-3xl md:text-5xl leading-[1.1] mb-16 max-w-3xl tracking-tight">
+        <h2 className="font-serif text-4xl md:text-6xl lg:text-[68px] leading-[1.05] mb-12 max-w-3xl tracking-[-0.02em]">
           Sign up at <em className="not-italic text-[#B5532C]">0:00</em>.
           <br />
           See output at <em className="not-italic text-[#B5532C]">3:00</em>.
         </h2>
 
         <div className="grid md:grid-cols-3 gap-4">
-          {steps.map((step) => (
+          {steps.map((step, i) => (
             <motion.div
               key={step.title}
-              initial={{ opacity: 0, y: 15 }}
+              initial={{ opacity: 0, y: 18 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="p-6 rounded-2xl border border-white/[0.06] bg-white/[0.015] hover:border-[#B5532C]/30 transition-colors"
+              viewport={{ once: true, margin: "-60px" }}
+              transition={{ delay: i * 0.1, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+              className="group relative p-7 rounded-[6px] border border-white/[0.06] bg-white/[0.025] hover:border-[#B5532C]/35 hover:bg-[#B5532C]/[0.03] transition-all duration-300 overflow-hidden"
+              style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08), 0 1px 0 rgba(0,0,0,0.5)" }}
             >
-              <div className="text-2xl font-mono font-semibold tabular-nums text-[#B5532C] mb-3">
+              {/* Copper hot-spot sweep on hover — concentrated top-left source */}
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                style={{
+                  background: "radial-gradient(circle at 20% 0%, rgba(181,83,44,0.18) 0%, transparent 45%)",
+                }}
+              />
+
+              {/* Step number — neutral, positional not decorative */}
+              <span className="relative inline-flex items-center justify-center h-5 w-5 rounded-full border border-white/[0.12] text-neutral-500 font-mono text-[9px] mb-4">
+                {i + 1}
+              </span>
+
+              <div className="relative text-[32px] font-mono font-bold tabular-nums text-[#B5532C] mb-4 tracking-tight leading-none">
                 {step.time}
               </div>
-              <h3 className="text-sm font-semibold text-white mb-1.5 tracking-tight">
+              <h3 className="relative text-[15px] font-semibold text-white mb-2 tracking-tight">
                 {step.title}
               </h3>
-              <p className="text-xs text-neutral-400 leading-relaxed">{step.desc}</p>
+              <p className="relative text-[13px] text-neutral-400 leading-relaxed">{step.desc}</p>
             </motion.div>
           ))}
         </div>
@@ -518,22 +542,39 @@ function TrustStrip() {
   ];
 
   return (
-    <section className="py-14 px-6 border-y border-[#B5532C]/20 bg-[#0A0807]">
-      <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-        {stats.map((item) => (
+    <section className="py-16 px-6 border-y border-[#B5532C]/20 bg-[#0A0807] relative overflow-hidden">
+      {/* Ambient copper glow from centre */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: "radial-gradient(ellipse 60% 80% at 50% 50%, rgba(181,83,44,0.07) 0%, transparent 70%)",
+        }}
+        aria-hidden="true"
+      />
+      <div className="relative max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-6 text-center">
+        {stats.map((item, i) => (
           <motion.div
             key={item.stat}
-            initial={{ opacity: 0, y: 8 }}
+            initial={{ opacity: 0, y: 12 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            viewport={{ once: true, margin: "-40px" }}
+            transition={{ delay: i * 0.1, duration: 0.55 }}
+            className="relative"
           >
-            <div className="text-3xl font-mono font-semibold tabular-nums text-white mb-2">
+            {/* Divider between cols on desktop */}
+            {i > 0 && (
+              <span
+                aria-hidden="true"
+                className="hidden md:block absolute -left-3 top-1/2 -translate-y-1/2 h-12 w-px bg-white/[0.06]"
+              />
+            )}
+            <div className="text-[52px] md:text-[60px] font-mono font-bold tabular-nums text-white leading-none mb-3 tracking-tight">
               {item.stat}
             </div>
-            <p className="text-[12px] text-neutral-400 mb-2 leading-relaxed max-w-xs mx-auto">
+            <p className="text-[13px] text-neutral-400 mb-3 leading-relaxed max-w-[220px] mx-auto">
               {item.desc}
             </p>
-            <p className="text-[10px] text-emerald-400/70 mb-1">{item.sub}</p>
+            <p className="text-[11px] text-emerald-400/80 mb-1.5 font-mono">{item.sub}</p>
             <p className="text-[9px] text-neutral-600 font-mono italic">
               {item.source}
             </p>
@@ -548,10 +589,10 @@ function TrustStrip() {
 
 function FeaturedPlaybooksSection() {
   return (
-    <section className="px-6 py-28 md:py-36 border-t border-white/[0.04]">
+    <section className="px-6 py-28 md:py-36 bg-[#040303]">
       <div className="max-w-6xl mx-auto">
         <SectionHead n="04" label="Five playbooks" />
-        <h2 className="font-serif text-3xl md:text-5xl leading-[1.1] mb-5 max-w-3xl tracking-tight">
+        <h2 className="font-serif text-4xl md:text-6xl lg:text-[68px] leading-[1.05] mb-5 max-w-3xl tracking-[-0.02em]">
           Each one guarantees an output
           <br />
           <em className="not-italic text-[#B5532C]">or the run doesn&apos;t count.</em>
@@ -567,19 +608,20 @@ function FeaturedPlaybooksSection() {
               <Link
                 href={`/dashboard/playbooks?auto=${pb.slug}`}
                 onClick={() => trackCtaClick("playbook-card")}
-                className="group relative block h-full p-6 rounded-2xl border border-white/[0.06] bg-white/[0.015] hover:border-[#B5532C]/50 hover:bg-[#B5532C]/[0.04] transition-colors overflow-hidden"
+                className="group relative block h-full p-6 rounded-[6px] border border-white/[0.06] bg-white/[0.025] hover:border-[#B5532C]/35 hover:bg-[#B5532C]/[0.04] transition-all duration-300 overflow-hidden"
+                style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08), 0 1px 0 rgba(0,0,0,0.5)" }}
               >
-                {/* Copper sheen that slides in on hover — subtle depth */}
+                {/* Copper hot-spot sweep on hover */}
                 <span
                   aria-hidden="true"
                   className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
                   style={{
                     background:
-                      "radial-gradient(circle at 30% 0%, rgba(181,83,44,0.08) 0%, transparent 60%)",
+                      "radial-gradient(circle at 30% 0%, rgba(181,83,44,0.18) 0%, transparent 45%)",
                   }}
                 />
 
-                <p className="relative text-[10px] font-mono uppercase tracking-[0.18em] text-[#B5532C] mb-3">
+                <p className="relative text-[10px] font-mono uppercase tracking-[0.18em] text-neutral-500 mb-3">
                   {pb.time}
                 </p>
                 <h3 className="relative font-serif text-2xl text-white mb-2 leading-tight tracking-tight">
@@ -591,12 +633,33 @@ function FeaturedPlaybooksSection() {
                 <p className="relative text-[11px] text-neutral-500 font-mono italic mb-4 leading-relaxed">
                   {pb.outcome}
                 </p>
-                <span className="relative text-[11px] font-mono tracking-wide text-[#B5532C] group-hover:text-white transition-colors">
+                <span className="relative text-[11px] font-mono tracking-wide text-neutral-500 group-hover:text-[#B5532C] transition-colors">
                   Run this →
                 </span>
               </Link>
             </TiltCard>
           ))}
+
+          {/* 6th slot — completes the 3×2 grid, links to the full library */}
+          <Link
+            href="/dashboard/playbooks"
+            className="group relative flex flex-col justify-between h-full p-6 rounded-[6px] border border-dashed border-white/[0.07] hover:border-[#B5532C]/30 transition-all duration-300"
+          >
+            <div>
+              <p className="text-[10px] font-mono uppercase tracking-[0.18em] text-neutral-600 mb-3">
+                25+ playbooks
+              </p>
+              <h3 className="font-serif text-2xl text-neutral-500 group-hover:text-white transition-colors leading-tight tracking-tight mb-2">
+                View all playbooks
+              </h3>
+              <p className="text-sm text-neutral-600 leading-relaxed">
+                Lead gen, content, research, competitive intel, reporting, and more — all with the same 5-layer guarantee.
+              </p>
+            </div>
+            <span className="mt-6 text-[11px] font-mono tracking-wide text-neutral-600 group-hover:text-[#B5532C] transition-colors">
+              Browse library →
+            </span>
+          </Link>
         </div>
       </div>
     </section>
@@ -616,7 +679,7 @@ function FeaturedPlaybooksSection() {
  */
 function DashboardMockupSection() {
   return (
-    <section className="relative px-6 py-28 md:py-36 border-t border-white/[0.04] overflow-hidden">
+    <section className="relative px-6 py-28 md:py-36 bg-[#030303] overflow-hidden">
       {/* Soft ambient glow beneath the mockup for depth */}
       <div
         className="absolute left-1/2 top-2/3 h-[400px] w-[700px] -translate-x-1/2 rounded-full opacity-20 blur-[120px] pointer-events-none"
@@ -627,7 +690,7 @@ function DashboardMockupSection() {
       <div className="relative max-w-6xl mx-auto">
         <div className="max-w-3xl mb-14">
           <SectionHead n="05" label="What you see when it runs" />
-          <h2 className="font-serif text-3xl md:text-5xl leading-[1.1] mb-6 tracking-tight">
+          <h2 className="font-serif text-4xl md:text-6xl lg:text-[68px] leading-[1.05] mb-6 tracking-[-0.02em]">
             The dashboard shows every step.
             <br />
             <em className="not-italic text-[#B5532C]">
@@ -845,10 +908,10 @@ function Principles() {
 
 function ClaudeNarrative() {
   return (
-    <section className="px-6 py-28 md:py-36 border-t border-white/[0.04] bg-[#0A0807]">
+    <section className="px-6 py-28 md:py-36 bg-[#0A0807]">
       <div className="max-w-4xl mx-auto">
         <SectionHead n="07" label="Claude as critic" />
-        <h2 className="font-serif text-3xl md:text-5xl leading-[1.1] mb-8 tracking-tight">
+        <h2 className="font-serif text-3xl md:text-5xl lg:text-[56px] leading-[1.08] mb-8 tracking-[-0.02em]">
           Cheaper models generate.
           <br />
           <em className="not-italic text-[#B5532C]">Claude checks.</em>
@@ -968,7 +1031,7 @@ function ClaudeNarrative() {
  */
 function FounderQuote() {
   return (
-    <section className="relative px-6 py-28 md:py-36 border-t border-white/[0.04] overflow-hidden">
+    <section className="relative px-6 py-28 md:py-36 bg-[#040303] overflow-hidden">
       <div
         className="absolute left-0 top-1/2 -translate-y-1/2 h-[400px] w-[400px] rounded-full opacity-20 blur-[120px] pointer-events-none"
         style={{ background: "radial-gradient(circle, rgba(181,83,44,0.25) 0%, transparent 70%)" }}
@@ -1034,7 +1097,7 @@ function FounderQuote() {
 
 function ShipRecord() {
   return (
-    <section className="px-6 py-20 border-t border-white/[0.04] bg-[#0A0807]">
+    <section className="px-6 py-20 bg-[#0A0807]">
       <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-start md:items-center gap-10">
         <div className="flex-1">
           <SectionHead n="09" label="Ship record" />
@@ -1077,7 +1140,7 @@ function ShipRecord() {
 
 function FinalCTA() {
   return (
-    <section className="px-6 py-32 md:py-44 border-t border-white/[0.04]">
+    <section className="px-6 py-24 md:py-32 bg-[#030303]">
       <div className="max-w-3xl mx-auto text-center">
         <div className="mb-8 flex items-center justify-center gap-4 flex-wrap">
           <span className="font-mono text-[10px] text-neutral-600 tracking-[0.2em]">

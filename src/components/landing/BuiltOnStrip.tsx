@@ -32,7 +32,7 @@ export function BuiltOnStrip() {
   return (
     <section
       aria-label="Infrastructure providers"
-      className="px-6 py-12 border-t border-b border-white/[0.04] bg-[#050404]"
+      className="px-6 py-12 bg-[#050404]"
     >
       <div className="max-w-6xl mx-auto">
         <motion.p

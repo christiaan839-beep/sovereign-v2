@@ -67,7 +67,7 @@ export function FounderSeats() {
   );
 
   return (
-    <section className="relative px-6 py-28 md:py-36 border-t border-white/[0.04] overflow-hidden">
+    <section className="relative px-6 py-28 md:py-36 bg-[#050404] overflow-hidden">
       {/* Ambient radial glow — very subtle, copper */}
       <div className="absolute inset-0 pointer-events-none">
         <div

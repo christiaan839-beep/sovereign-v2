@@ -29,7 +29,7 @@ export function KineticHeadline() {
       initial={reduceMotion ? false : { opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-      className="font-serif text-5xl sm:text-6xl md:text-7xl lg:text-[84px] leading-[0.95] tracking-tight mb-8"
+      className="font-serif text-[52px] sm:text-[68px] md:text-[84px] lg:text-[96px] leading-[0.93] tracking-tight mb-8"
     >
       86% of AI pilots
       <br />
@@ -53,7 +53,13 @@ export function KineticHeadline() {
             delay: reduceMotion ? 0 : 0.45,
             ease: [0.16, 1, 0.3, 1],
           }}
-          className="not-italic inline-block text-[#B5532C]"
+          className="not-italic inline-block"
+          style={{
+            backgroundImage: "linear-gradient(135deg, #B5532C 0%, #D4703A 40%, #B5532C 100%)",
+            WebkitBackgroundClip: "text",
+            backgroundClip: "text",
+            color: "transparent",
+          }}
         >
           We ship on day one.
         </motion.em>
