@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { AGENT_REGISTRY } from "../registry";
+import { buildAgentResume, serializeAgentResume } from "@/lib/agent-resume";
 
 /**
  * UNIFIED AGENT ROUTER — Single serverless function for ALL 126 agents.
@@ -71,12 +72,45 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
   const { slug } = await params;
   const agentName = slug.join("/");
 
+  // ── .agent.md discovery endpoint ──
+  // Agents expose a portable resume at `/api/agents/<slug>.agent.md` and
+  // at `/api/agents/<slug>/resume`. The resume is front-matter + markdown
+  // describing inputs, outputs, tier, and example requests — machine-readable
+  // enough for Claude Code / Cursor agent discovery.
+  const isResumeRequest =
+    agentName.endsWith(".agent.md") ||
+    (slug.length >= 2 && slug[slug.length - 1] === "resume");
+  if (isResumeRequest) {
+    const bareSlug = agentName.endsWith(".agent.md")
+      ? agentName.slice(0, -".agent.md".length)
+      : slug.slice(0, -1).join("/");
+    const resume = buildAgentResume(bareSlug);
+    if (!resume) {
+      return new NextResponse(
+        `# Agent not found\n\nSlug \`${bareSlug}\` is not registered. See GET /api/agents for the full list.\n`,
+        { status: 404, headers: { "Content-Type": "text/markdown; charset=utf-8" } },
+      );
+    }
+    return new NextResponse(serializeAgentResume(resume), {
+      status: 200,
+      headers: {
+        "Content-Type": "text/markdown; charset=utf-8",
+        // Slightly cacheable — resumes change only when code changes.
+        "Cache-Control": "public, max-age=300, s-maxage=300",
+      },
+    });
+  }
+
   const handler = await getAgentHandler(agentName);
   if (!handler?.GET) {
     return NextResponse.json({
       agents: KNOWN_AGENTS,
       count: KNOWN_AGENTS.length,
       usage: "POST /api/agents/{agent-name} with { prompt: '...' }",
+      discover: {
+        resume_endpoint: "GET /api/agents/<slug>.agent.md",
+        example: "/api/agents/leads.agent.md",
+      },
     });
   }
 
