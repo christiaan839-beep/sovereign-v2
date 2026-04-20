@@ -222,23 +222,34 @@ function Nav({
       aria-label="Primary"
     >
       <div
-        className={`transition-[background,border-color] duration-300 ${
+        className={`relative transition-[background] duration-300 ${
           scrolled || mobileNavOpen
-            ? "bg-[#030303]/85 backdrop-blur-xl border-b border-white/[0.05]"
-            : "bg-transparent border-b border-transparent"
+            ? "bg-[#030303]/90 backdrop-blur-xl"
+            : "bg-transparent"
         }`}
       >
+        {/* Copper gradient hairline — appears after hero scrolls past.
+            A gradient from transparent→copper→transparent reads as light
+            catching a physical edge rather than a flat HTML border. */}
+        <div
+          className={`absolute inset-x-0 bottom-0 h-px transition-opacity duration-500 pointer-events-none ${scrolled ? "opacity-100" : "opacity-0"}`}
+          style={{
+            background: "linear-gradient(to right, transparent 0%, rgba(181,83,44,0.45) 50%, transparent 100%)",
+          }}
+          aria-hidden="true"
+        />
+
         <div className="max-w-7xl mx-auto px-6 md:px-10 h-14 flex items-center justify-between">
           {/* Wordmark */}
           <Link href="/" className="group flex items-center gap-2.5" aria-label="Sovereign Matrix — Home">
             <SovereignLogo size="sm" />
-            <span className="hidden sm:block font-serif text-[17px] tracking-tight text-white">
+            <span className="hidden sm:block font-serif text-[17px] tracking-tight text-white group-hover:text-[#E8DDD0] transition-colors">
               Sovereign Matrix
             </span>
           </Link>
 
           {/* Desktop nav */}
-          <div className="hidden md:flex items-center gap-8 text-[13px]">
+          <div className="hidden md:flex items-center gap-7 text-[13px]">
             <NavLink href={PLATFORM_HREF}>Platform</NavLink>
             <NavLink href="/customers">Customers</NavLink>
             <NavLink href="/trust">Trust</NavLink>
@@ -249,41 +260,47 @@ function Nav({
 
             {/* Keyboard hint — Antigravity signature */}
             <div
-              className="group hidden lg:flex items-center gap-1.5 text-neutral-500 text-[11px] font-mono select-none"
+              className="group hidden lg:flex items-center gap-1.5 text-neutral-600 hover:text-neutral-400 text-[11px] font-mono select-none cursor-default transition-colors"
               title="Press / to open the command palette"
             >
               <span>Press</span>
-              <kbd className="rounded border border-white/[0.08] bg-white/[0.025] px-1.5 py-0.5 text-[10px] text-neutral-300 group-hover:text-white group-hover:border-white/20 transition-colors">
+              <kbd className="rounded-[3px] border border-white/[0.07] bg-white/[0.02] px-1.5 py-0.5 text-[10px] text-neutral-400 group-hover:text-white group-hover:border-white/[0.15] transition-colors">
                 /
               </kbd>
             </div>
 
             <SignInButton mode="modal" fallbackRedirectUrl="/dashboard">
-              <button className="text-neutral-400 hover:text-white transition-colors text-[13px]">
+              <button className="text-neutral-500 hover:text-white transition-colors text-[13px] tracking-tight">
                 Log in
               </button>
             </SignInButton>
 
+            {/* CTA — white pill with copper arrow, copper glow ring on hover */}
             <Link
               href={HERO_CTA}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white text-[#030303] font-medium text-[12.5px] tracking-tight rounded-[3px] hover:bg-[#F4EFE6] transition-colors"
+              className="group relative inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white text-[#030303] font-medium text-[12.5px] tracking-tight rounded-[3px] hover:bg-[#F4EFE6] transition-colors"
             >
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 rounded-[3px] opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                style={{ boxShadow: "0 0 0 1px rgba(181,83,44,0.4), 0 0 12px rgba(181,83,44,0.2)" }}
+              />
               Start free
-              <span aria-hidden="true" className="text-[#B5532C]">→</span>
+              <span aria-hidden="true" className="text-[#B5532C] transition-transform group-hover:translate-x-0.5">→</span>
             </Link>
           </div>
 
           {/* Mobile toggle */}
           <button
-            className="md:hidden p-2 -mr-2"
+            className="md:hidden p-2 -mr-2 text-neutral-400 hover:text-white transition-colors"
             onClick={() => setMobileNavOpen(!mobileNavOpen)}
             aria-label={mobileNavOpen ? "Close menu" : "Open menu"}
             aria-expanded={mobileNavOpen}
           >
             <div className="space-y-1.5">
-              <span className={`block w-5 h-[1.5px] bg-white transition-transform ${mobileNavOpen ? "rotate-45 translate-y-[7px]" : ""}`} />
-              <span className={`block w-5 h-[1.5px] bg-white transition-opacity ${mobileNavOpen ? "opacity-0" : ""}`} />
-              <span className={`block w-5 h-[1.5px] bg-white transition-transform ${mobileNavOpen ? "-rotate-45 -translate-y-[7px]" : ""}`} />
+              <span className={`block w-5 h-[1.5px] bg-current transition-transform ${mobileNavOpen ? "rotate-45 translate-y-[7px]" : ""}`} />
+              <span className={`block w-5 h-[1.5px] bg-current transition-opacity ${mobileNavOpen ? "opacity-0" : ""}`} />
+              <span className={`block w-5 h-[1.5px] bg-current transition-transform ${mobileNavOpen ? "-rotate-45 -translate-y-[7px]" : ""}`} />
             </div>
           </button>
         </div>
@@ -295,7 +312,7 @@ function Nav({
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="absolute top-14 left-4 right-4 p-5 rounded-2xl md:hidden bg-[#080808]/95 backdrop-blur-2xl border border-white/[0.06] flex flex-col gap-3 shadow-2xl"
+            className="absolute top-14 left-4 right-4 p-5 rounded-[6px] md:hidden bg-[#0A0807]/97 backdrop-blur-2xl border border-white/[0.07] flex flex-col gap-3 shadow-[0_20px_60px_-10px_rgba(0,0,0,0.8)]"
           >
             <MobileLink href={PLATFORM_HREF} onClick={() => setMobileNavOpen(false)}>
               Platform
@@ -327,9 +344,15 @@ function NavLink({ href, children }: { href: string; children: React.ReactNode }
   return (
     <Link
       href={href}
-      className="relative text-neutral-300 hover:text-white transition-colors tracking-tight"
+      className="group relative text-neutral-400 hover:text-white transition-colors tracking-tight"
     >
       {children}
+      {/* Copper underline slides in on hover — editorial hover state */}
+      <span
+        aria-hidden="true"
+        className="absolute -bottom-0.5 left-0 right-0 h-px scale-x-0 group-hover:scale-x-100 transition-transform duration-200 origin-left"
+        style={{ background: "rgba(181,83,44,0.6)" }}
+      />
     </Link>
   );
 }
@@ -390,7 +413,7 @@ function Hero() {
             01 / 10
           </span>
           <span aria-hidden="true" className="h-px w-6 bg-white/[0.12]" />
-          <p className="text-[10px] font-mono tracking-[0.22em] uppercase text-[#B5532C]">
+          <p className="font-serif italic text-[13px] text-neutral-500 tracking-[-0.01em]">
             Agent infrastructure · For operators
           </p>
           <LiveRunsPill />
@@ -1108,7 +1131,7 @@ function ShipRecord() {
               rel="noopener"
               className="text-white hover:text-[#B5532C] transition-colors"
             >
-              700+ commits. 15 migrations. 1,192 tests passing.
+              700+ commits. 15 migrations. Zero black-box automation.
             </a>
             <br />
             <em className="not-italic text-[#B5532C]">Published weekly.</em>
@@ -1147,7 +1170,7 @@ function FinalCTA() {
             10 / 10
           </span>
           <span aria-hidden="true" className="h-px w-6 bg-white/[0.12]" />
-          <p className="text-[10px] font-mono tracking-[0.22em] uppercase text-[#B5532C]">
+          <p className="font-serif italic text-[13px] text-neutral-500 tracking-[-0.01em]">
             Get started
           </p>
         </div>

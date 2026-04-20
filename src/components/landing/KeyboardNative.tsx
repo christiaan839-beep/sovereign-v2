@@ -36,11 +36,7 @@ export function KeyboardNative() {
           {/* LEFT — copy */}
           <div>
             <div className="mb-8 flex items-center gap-4 flex-wrap">
-              <span className="font-mono text-[10px] text-neutral-600 tracking-[0.2em]">
-                10 / 10
-              </span>
-              <span aria-hidden="true" className="h-px w-6 bg-white/[0.12]" />
-              <p className="text-[10px] font-mono tracking-[0.22em] uppercase text-[#B5532C]">
+              <p className="font-serif italic text-[13px] text-neutral-500 tracking-[-0.01em]">
                 Keyboard native
               </p>
             </div>
