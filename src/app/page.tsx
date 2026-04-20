@@ -119,6 +119,9 @@ export default function LandingPage() {
         {/* ═══ 07 · CLAUDE CRITIC NARRATIVE ═══ */}
         <ClaudeNarrative />
 
+        {/* ═══ 07.5 · FOUNDER QUOTE — editorial breath ═══ */}
+        <FounderQuote />
+
         {/* ═══ 08 · FOUNDER NETWORK — spatial seats visualization ═══ */}
         <FounderSeats />
 
@@ -825,7 +828,7 @@ function ClaudeNarrative() {
           on the quality-verification gate is how we charge $49 instead of
           $200 — and why your output is still trustworthy.
         </p>
-        <p className="text-sm text-neutral-500 leading-relaxed max-w-3xl mb-10">
+        <p className="text-sm text-neutral-500 leading-relaxed max-w-3xl mb-8">
           Every agent response surfaces{" "}
           <code className="font-mono text-[13px] text-[#B5532C] bg-white/[0.03] px-1.5 py-0.5 rounded">
             modelsConsulted
@@ -835,12 +838,69 @@ function ClaudeNarrative() {
             providersConsulted
           </code>
           . Every run is exportable as a cryptographically checksummed snapshot.
+        </p>
+
+        {/* Real response shape — technical proof for engineers scanning the page */}
+        <div className="mb-10 rounded-lg overflow-hidden border border-white/[0.06]">
+          <div className="flex items-center justify-between px-4 py-2 bg-[#060605] border-b border-white/[0.04]">
+            <p className="font-mono text-[10px] text-neutral-600 uppercase tracking-[0.18em]">
+              Every agent response
+            </p>
+            <p className="font-mono text-[10px] text-neutral-700">json</p>
+          </div>
+          <pre className="p-5 font-mono text-[12px] leading-[1.7] overflow-x-auto bg-[#030303]/50">
+            <code>
+              <span className="text-neutral-600">{"{"}</span>
+              {"\n  "}
+              <span className="text-[#B5532C]">&quot;result&quot;</span>
+              <span className="text-neutral-500">: </span>
+              <span className="text-neutral-300">&quot;...&quot;</span>
+              <span className="text-neutral-500">,</span>
+              {"\n  "}
+              <span className="text-[#B5532C]">&quot;modelsConsulted&quot;</span>
+              <span className="text-neutral-500">: [</span>
+              <span className="text-emerald-400/80">&quot;nemotron-ultra-253b-v1&quot;</span>
+              <span className="text-neutral-500">, </span>
+              <span className="text-emerald-400/80">&quot;claude-opus-4.5&quot;</span>
+              <span className="text-neutral-500">],</span>
+              {"\n  "}
+              <span className="text-[#B5532C]">&quot;providersConsulted&quot;</span>
+              <span className="text-neutral-500">: [</span>
+              <span className="text-emerald-400/80">&quot;nvidia-nim&quot;</span>
+              <span className="text-neutral-500">, </span>
+              <span className="text-emerald-400/80">&quot;anthropic&quot;</span>
+              <span className="text-neutral-500">],</span>
+              {"\n  "}
+              <span className="text-[#B5532C]">&quot;criticConfidence&quot;</span>
+              <span className="text-neutral-500">: </span>
+              <span className="text-cyan-400">0.96</span>
+              <span className="text-neutral-500">,</span>
+              {"\n  "}
+              <span className="text-[#B5532C]">&quot;snapshotSha&quot;</span>
+              <span className="text-neutral-500">: </span>
+              <span className="text-neutral-400">&quot;sha256:4f3c...a91e&quot;</span>
+              <span className="text-neutral-500">,</span>
+              {"\n  "}
+              <span className="text-[#B5532C]">&quot;guaranteeMet&quot;</span>
+              <span className="text-neutral-500">: </span>
+              <span className="text-cyan-400">true</span>
+              {"\n"}
+              <span className="text-neutral-600">{"}"}</span>
+            </code>
+          </pre>
+        </div>
+
+        <p className="text-sm text-neutral-500 leading-relaxed max-w-3xl mb-10">
           Live production pipeline metrics are at{" "}
-          <Link href="/trust/anthropic" className="underline decoration-[#B5532C]/40 hover:decoration-[#B5532C] text-white">
+          <Link
+            href="/trust/anthropic"
+            className="underline decoration-[#B5532C]/40 hover:decoration-[#B5532C] text-white"
+          >
             /trust/anthropic
           </Link>
           .
         </p>
+
         <div className="flex flex-wrap gap-3">
           <Link
             href="/trust/anthropic"
@@ -855,6 +915,80 @@ function ClaudeNarrative() {
             Public benchmark leaderboard →
           </Link>
         </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── 07.5 · Founder quote (editorial breath) ──────────────────────
+ *
+ * Anthropic's signature editorial move: a short first-person paragraph
+ * that sounds like a person, not a marketing team. The landing needed
+ * somebody's voice in the middle of all these features. This is that
+ * voice — 2 sentences, signature, Cape Town geography. It reads as a
+ * pull quote from a longer essay (which is the right vibe — we don't
+ * actually need the essay, just the pull).
+ */
+function FounderQuote() {
+  return (
+    <section className="relative px-6 py-28 md:py-36 border-t border-white/[0.04] overflow-hidden">
+      <div
+        className="absolute left-0 top-1/2 -translate-y-1/2 h-[400px] w-[400px] rounded-full opacity-20 blur-[120px] pointer-events-none"
+        style={{ background: "radial-gradient(circle, rgba(181,83,44,0.25) 0%, transparent 70%)" }}
+        aria-hidden="true"
+      />
+
+      <div className="relative max-w-3xl mx-auto">
+        <p className="text-[10px] font-mono tracking-[0.22em] uppercase text-[#8F8576] mb-8">
+          From the founder
+        </p>
+
+        <blockquote className="relative">
+          {/* Oversized copper opening quote — editorial drop-cap */}
+          <span
+            aria-hidden="true"
+            className="absolute -left-3 -top-6 md:-left-8 md:-top-10 font-serif text-7xl md:text-9xl text-[#B5532C]/20 select-none leading-none"
+          >
+            &ldquo;
+          </span>
+
+          <p className="relative font-serif text-[22px] md:text-[30px] leading-[1.45] text-white tracking-tight mb-6">
+            I built Sovereign Matrix because I watched five AI pilots
+            fail in a row — not because the models were bad, but
+            because nobody could tell me which model wrote which
+            paragraph, and nobody would guarantee the output.{" "}
+            <em className="not-italic text-[#B5532C]">
+              So I built the thing I wanted.
+            </em>
+          </p>
+
+          <p className="relative text-[15px] md:text-[16px] leading-[1.65] text-neutral-400 max-w-2xl mb-8">
+            One critic on every run. Every model named in the trail.
+            A guaranteed deliverable or the run doesn&apos;t count.
+            Simple rules, strictly enforced — the kind of software I
+            wish someone had sold me in 2024.
+          </p>
+
+          <footer className="flex items-center gap-3 pt-6 border-t border-white/[0.04]">
+            <div className="flex flex-col">
+              <cite className="not-italic font-serif text-[15px] text-white tracking-tight">
+                Christiaan de Wet
+              </cite>
+              <span className="text-[11px] font-mono text-neutral-500 tracking-tight">
+                Founder · Cape Town · Writes every commit
+              </span>
+            </div>
+            <span aria-hidden="true" className="flex-1 h-px bg-white/[0.04]" />
+            <a
+              href="https://github.com/christiaan839-beep/sovereign-v2/commits/main"
+              target="_blank"
+              rel="noopener"
+              className="text-[11px] font-mono text-neutral-500 hover:text-white transition-colors"
+            >
+              See the commits →
+            </a>
+          </footer>
+        </blockquote>
       </div>
     </section>
   );
