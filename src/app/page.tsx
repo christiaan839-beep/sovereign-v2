@@ -14,6 +14,7 @@ import { BuiltOnStrip } from "@/components/landing/BuiltOnStrip";
 import { FounderSeats } from "@/components/landing/FounderSeats";
 import { PrimaryCTA } from "@/components/landing/PrimaryCTA";
 import { CommandEgg } from "@/components/landing/CommandEgg";
+import { DashboardMockup } from "@/components/landing/DashboardMockup";
 import { trackCtaClick } from "@/lib/cta-track";
 import { useHideyNav } from "@/components/ui/EliteEffects";
 
@@ -106,10 +107,13 @@ export default function LandingPage() {
         {/* ═══ 05 · 5 FEATURED PLAYBOOKS ═══ */}
         <FeaturedPlaybooksSection />
 
+        {/* ═══ 05.5 · DASHBOARD MOCKUP (show the product) ═══ */}
+        <DashboardMockupSection />
+
         {/* ═══ 06 · STACK KILLER ═══ */}
         <StackKiller />
 
-        {/* ═══ 06.5 · PRINCIPLES (editorial pull) ═══ */}
+        {/* ═══ 06.5 · PRINCIPLES + BUILT FOR (bone-cream chapter) ═══ */}
         <Principles />
 
         {/* ═══ 07 · CLAUDE CRITIC NARRATIVE ═══ */}
@@ -565,6 +569,65 @@ function FeaturedPlaybooksSection() {
             </Link>
           ))}
         </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── 05.5 · Dashboard mockup section ──────────────────────────────
+ *
+ * The "show, don't tell" moment. Every elite SaaS landing renders
+ * the product on the page itself — Linear shows boards, Stripe
+ * shows API calls, Vercel shows deploys. Ours shows a live-looking
+ * Lead Blitz run: step list on the left, streaming model output on
+ * the right, model roster in the footer, 5-layer-verified badge.
+ *
+ * The copy above the mockup frames what the visitor is looking at
+ * — the mockup itself is the evidence.
+ */
+function DashboardMockupSection() {
+  return (
+    <section className="relative px-6 py-28 md:py-36 border-t border-white/[0.04] overflow-hidden">
+      {/* Soft ambient glow beneath the mockup for depth */}
+      <div
+        className="absolute left-1/2 top-2/3 h-[400px] w-[700px] -translate-x-1/2 rounded-full opacity-20 blur-[120px] pointer-events-none"
+        style={{ background: "radial-gradient(ellipse, rgba(181,83,44,0.3) 0%, transparent 70%)" }}
+        aria-hidden="true"
+      />
+
+      <div className="relative max-w-6xl mx-auto">
+        <div className="max-w-3xl mb-14">
+          <SectionHead n="05" label="What you see when it runs" />
+          <h2 className="font-serif text-3xl md:text-5xl leading-[1.1] mb-6 tracking-tight">
+            The dashboard shows every step.
+            <br />
+            <em className="not-italic text-[#B5532C]">
+              Every model. Every second.
+            </em>
+          </h2>
+          <p className="text-[15px] md:text-[17px] text-neutral-400 leading-[1.6] max-w-2xl">
+            No black-box automation. The platform renders every agent
+            step, every model consulted, and every intermediate result
+            as the run unfolds — so when something goes wrong you see
+            exactly where, and when it goes right you own the trail
+            you can export.
+          </p>
+        </div>
+
+        <DashboardMockup />
+
+        {/* Small caption below the mockup — pulls the eye back up to
+            the real CTA and reminds the reader this is the product */}
+        <p className="mt-8 text-center text-[11px] font-mono text-neutral-600 tracking-wide">
+          Above: the actual{" "}
+          <Link
+            href="/dashboard/playbooks?auto=lead-blitz"
+            className="text-[#B5532C] hover:text-white transition-colors underline decoration-[#B5532C]/30"
+          >
+            /dashboard/playbooks
+          </Link>{" "}
+          view · steps + models + output · every run 5-layer verified
+        </p>
       </div>
     </section>
   );
