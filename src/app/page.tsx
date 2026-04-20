@@ -15,6 +15,8 @@ import { FounderSeats } from "@/components/landing/FounderSeats";
 import { PrimaryCTA } from "@/components/landing/PrimaryCTA";
 import { CommandEgg } from "@/components/landing/CommandEgg";
 import { DashboardMockup } from "@/components/landing/DashboardMockup";
+import { KeyboardNative } from "@/components/landing/KeyboardNative";
+import { StatusIndicator } from "@/components/landing/StatusIndicator";
 import { trackCtaClick } from "@/lib/cta-track";
 import { useHideyNav } from "@/components/ui/EliteEffects";
 
@@ -127,6 +129,9 @@ export default function LandingPage() {
 
         {/* ═══ 09 · SHIP RECORD ═══ */}
         <ShipRecord />
+
+        {/* ═══ 09.5 · KEYBOARD NATIVE ═══ */}
+        <KeyboardNative />
 
         {/* ═══ 10 · FINAL CTA ═══ */}
         <FinalCTA />
@@ -1172,7 +1177,7 @@ function Footer() {
           />
         </div>
 
-        {/* ── Baseline — year, legal, toggle ── */}
+        {/* ── Baseline — year, legal, live status, toggle ── */}
         <div className="pt-8 border-t border-white/[0.04] flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div className="flex items-center gap-3">
             <SovereignLogo size="sm" />
@@ -1186,15 +1191,22 @@ function Footer() {
             </div>
           </div>
 
-          {/* Operator / Developer toggle */}
-          <div className="flex items-center gap-3 text-[11px] font-mono tracking-tight">
-            <Link href="/" className="text-[#B5532C]">
-              Operators
-            </Link>
-            <span aria-hidden="true" className="text-neutral-800">·</span>
-            <Link href={PLATFORM_HREF} className="text-neutral-500 hover:text-white transition-colors">
-              Developers
-            </Link>
+          <div className="flex items-center gap-5">
+            {/* Live platform health — polls /api/health/ping every 60s */}
+            <StatusIndicator />
+
+            <span aria-hidden="true" className="h-4 w-px bg-white/[0.06]" />
+
+            {/* Operator / Developer toggle */}
+            <div className="flex items-center gap-3 text-[11px] font-mono tracking-tight">
+              <Link href="/" className="text-[#B5532C]">
+                Operators
+              </Link>
+              <span aria-hidden="true" className="text-neutral-800">·</span>
+              <Link href={PLATFORM_HREF} className="text-neutral-500 hover:text-white transition-colors">
+                Developers
+              </Link>
+            </div>
           </div>
         </div>
       </div>
