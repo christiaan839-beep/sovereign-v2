@@ -3,21 +3,19 @@
 import { motion } from "framer-motion";
 
 /**
- * KINETIC HEADLINE — one purposeful animation moment.
+ * KINETIC HEADLINE — single purposeful animation moment, now with a
+ * subtle copper glow on the reveal phrase.
  *
- * Studying anthropic.com's hero: headline has exactly ONE kinetic
- * moment — the italic serif phrase reveals AFTER the main line with
- * slight letterspace contraction. Not scrolljacking, not continuous.
- * One intentional gesture that says "typography matters here."
- *
- * We apply the same pattern:
+ * Sequence:
  *   - Line 1 + 2 fade up together (main statement)
  *   - Line 3 (italic copper "We ship on day one") reveals 400ms later
- *     with letterspace contraction: from `tracking-wider` to tight
- *     — like the phrase is coalescing into a commitment
+ *     with letterspace contraction AND a text-shadow glow that fades
+ *     in during the animation — the phrase looks like it's igniting
+ *     as it coalesces
+ *   - An animated copper underline draws in under the phrase right
+ *     after, a signature visual commitment mark
  *
- * prefers-reduced-motion: the final state renders immediately, no
- * transitions.
+ * prefers-reduced-motion: final state renders immediately, no motion.
  */
 
 export function KineticHeadline() {
@@ -37,18 +35,43 @@ export function KineticHeadline() {
       <br />
       never reach production.
       <br />
-      <motion.em
-        initial={reduceMotion ? false : { opacity: 0, letterSpacing: "0.04em", y: 6 }}
-        animate={{ opacity: 1, letterSpacing: "-0.01em", y: 0 }}
-        transition={{
-          duration: 0.9,
-          delay: reduceMotion ? 0 : 0.45,
-          ease: [0.16, 1, 0.3, 1],
-        }}
-        className="not-italic inline-block text-[#B5532C]"
-      >
-        We ship on day one.
-      </motion.em>
+      <span className="relative inline-block">
+        <motion.em
+          initial={
+            reduceMotion
+              ? false
+              : { opacity: 0, letterSpacing: "0.04em", y: 6, textShadow: "0 0 0px rgba(181,83,44,0)" }
+          }
+          animate={{
+            opacity: 1,
+            letterSpacing: "-0.01em",
+            y: 0,
+            textShadow: "0 0 60px rgba(181,83,44,0.45)",
+          }}
+          transition={{
+            duration: 0.9,
+            delay: reduceMotion ? 0 : 0.45,
+            ease: [0.16, 1, 0.3, 1],
+          }}
+          className="not-italic inline-block text-[#B5532C]"
+        >
+          We ship on day one.
+        </motion.em>
+
+        {/* Copper commitment underline — draws in after the phrase lands */}
+        <motion.span
+          aria-hidden="true"
+          initial={reduceMotion ? false : { scaleX: 0, opacity: 0 }}
+          animate={{ scaleX: 1, opacity: 1 }}
+          transition={{
+            duration: 0.7,
+            delay: reduceMotion ? 0 : 1.1,
+            ease: [0.22, 1, 0.36, 1],
+          }}
+          style={{ transformOrigin: "left" }}
+          className="absolute left-0 right-[8%] -bottom-2 md:-bottom-3 h-[2px] bg-[#B5532C] rounded-full"
+        />
+      </span>
     </motion.h1>
   );
 }

@@ -14,11 +14,18 @@ import { BuiltOnStrip } from "@/components/landing/BuiltOnStrip";
 import { FounderSeats } from "@/components/landing/FounderSeats";
 import { PrimaryCTA } from "@/components/landing/PrimaryCTA";
 import { CommandEgg } from "@/components/landing/CommandEgg";
+import { ConsensusFlow } from "@/components/landing/ConsensusFlow";
 import { DashboardMockup } from "@/components/landing/DashboardMockup";
+import { HeroBackdrop } from "@/components/landing/HeroBackdrop";
 import { KeyboardNative } from "@/components/landing/KeyboardNative";
+import { ModelPulse } from "@/components/landing/ModelPulse";
 import { StatusIndicator } from "@/components/landing/StatusIndicator";
 import { trackCtaClick } from "@/lib/cta-track";
-import { useHideyNav } from "@/components/ui/EliteEffects";
+import {
+  useHideyNav,
+  FloatingParticles,
+  TiltCard,
+} from "@/components/ui/EliteEffects";
 
 /**
  * Landing page — 10 sections, editorial palette aligned with
@@ -344,26 +351,24 @@ function MobileLink({
 function Hero() {
   return (
     <section className="relative px-6 pt-28 pb-24 md:pt-36 md:pb-32 overflow-hidden">
-      {/* Copper radial glow */}
-      <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-        <div
-          className="absolute left-1/2 top-1/3 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-25 blur-[120px]"
-          style={{ background: "radial-gradient(circle, rgba(181,83,44,0.45) 0%, transparent 70%)" }}
-        />
-        {/* Grid hint — tasteful engineering ground plane */}
-        <div
-          className="absolute inset-0 opacity-[0.035]"
-          style={{
-            backgroundImage:
-              "linear-gradient(to right, #fff 1px, transparent 1px), linear-gradient(to bottom, #fff 1px, transparent 1px)",
-            backgroundSize: "72px 72px",
-            maskImage:
-              "radial-gradient(ellipse 60% 60% at 50% 40%, #000 30%, transparent 75%)",
-            WebkitMaskImage:
-              "radial-gradient(ellipse 60% 60% at 50% 40%, #000 30%, transparent 75%)",
-          }}
-        />
-      </div>
+      {/* High-tier graphics stack: aurora mesh + engineering grid +
+          cursor spotlight + noise texture + vignette gradients.
+          See src/components/landing/HeroBackdrop.tsx */}
+      <HeroBackdrop />
+
+      {/* Copper-dust particle field — mouse-repelling canvas layer.
+          Sits above the aurora, below content. Auto-disables on mobile
+          and prefers-reduced-motion (the hook handles that). */}
+      <FloatingParticles
+        count={28}
+        maxSize={2.2}
+        colors={[
+          "rgba(181, 83, 44, 0.55)",
+          "rgba(224, 133, 88, 0.4)",
+          "rgba(255, 255, 255, 0.25)",
+        ]}
+        className="absolute inset-0 pointer-events-none"
+      />
 
       <div className="relative max-w-5xl mx-auto">
         {/* Monogram + kicker + live pill */}
@@ -421,6 +426,11 @@ function Hero() {
             </span>
           </Link>
         </motion.div>
+
+        {/* Live model roster signature — unique to our multi-provider platform */}
+        <div className="mt-8">
+          <ModelPulse />
+        </div>
 
         <LiveTerminalDemo />
       </div>
@@ -553,28 +563,39 @@ function FeaturedPlaybooksSection() {
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {FEATURED_PLAYBOOKS.map((pb) => (
-            <Link
-              key={pb.slug}
-              href={`/dashboard/playbooks?auto=${pb.slug}`}
-              onClick={() => trackCtaClick("playbook-card")}
-              className="group block p-6 rounded-2xl border border-white/[0.06] bg-white/[0.015] hover:border-[#B5532C]/50 hover:bg-[#B5532C]/[0.04] transition-colors"
-            >
-              <p className="text-[10px] font-mono uppercase tracking-[0.18em] text-[#B5532C] mb-3">
-                {pb.time}
-              </p>
-              <h3 className="font-serif text-2xl text-white mb-2 leading-tight">
-                {pb.name}
-              </h3>
-              <p className="text-sm text-neutral-400 leading-relaxed mb-4">
-                {pb.tagline}
-              </p>
-              <p className="text-[11px] text-neutral-500 font-mono italic mb-4 leading-relaxed">
-                {pb.outcome}
-              </p>
-              <span className="text-[11px] font-mono tracking-wide text-[#B5532C] group-hover:text-white transition-colors">
-                Run this →
-              </span>
-            </Link>
+            <TiltCard key={pb.slug} tiltStrength={6} className="h-full">
+              <Link
+                href={`/dashboard/playbooks?auto=${pb.slug}`}
+                onClick={() => trackCtaClick("playbook-card")}
+                className="group relative block h-full p-6 rounded-2xl border border-white/[0.06] bg-white/[0.015] hover:border-[#B5532C]/50 hover:bg-[#B5532C]/[0.04] transition-colors overflow-hidden"
+              >
+                {/* Copper sheen that slides in on hover — subtle depth */}
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                  style={{
+                    background:
+                      "radial-gradient(circle at 30% 0%, rgba(181,83,44,0.08) 0%, transparent 60%)",
+                  }}
+                />
+
+                <p className="relative text-[10px] font-mono uppercase tracking-[0.18em] text-[#B5532C] mb-3">
+                  {pb.time}
+                </p>
+                <h3 className="relative font-serif text-2xl text-white mb-2 leading-tight tracking-tight">
+                  {pb.name}
+                </h3>
+                <p className="relative text-sm text-neutral-400 leading-relaxed mb-4">
+                  {pb.tagline}
+                </p>
+                <p className="relative text-[11px] text-neutral-500 font-mono italic mb-4 leading-relaxed">
+                  {pb.outcome}
+                </p>
+                <span className="relative text-[11px] font-mono tracking-wide text-[#B5532C] group-hover:text-white transition-colors">
+                  Run this →
+                </span>
+              </Link>
+            </TiltCard>
           ))}
         </div>
       </div>
@@ -622,7 +643,12 @@ function DashboardMockupSection() {
           </p>
         </div>
 
-        <DashboardMockup />
+        {/* 3D perspective tilt on hover — Stripe / Linear product-shot move.
+            Subtle strength (4) so the mockup responds to cursor position
+            without feeling like a party trick. Disables on mobile. */}
+        <TiltCard tiltStrength={4}>
+          <DashboardMockup />
+        </TiltCard>
 
         {/* Small caption below the mockup — pulls the eye back up to
             the real CTA and reminds the reader this is the product */}
@@ -895,7 +921,7 @@ function ClaudeNarrative() {
           </pre>
         </div>
 
-        <p className="text-sm text-neutral-500 leading-relaxed max-w-3xl mb-10">
+        <p className="text-sm text-neutral-500 leading-relaxed max-w-3xl mb-4">
           Live production pipeline metrics are at{" "}
           <Link
             href="/trust/anthropic"
@@ -905,6 +931,9 @@ function ClaudeNarrative() {
           </Link>
           .
         </p>
+
+        {/* Animated consensus flow — Generate → Critique → Synthesize */}
+        <ConsensusFlow />
 
         <div className="flex flex-wrap gap-3">
           <Link
