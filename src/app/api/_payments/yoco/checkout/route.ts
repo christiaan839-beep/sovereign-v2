@@ -3,14 +3,22 @@ import { currentUser } from "@clerk/nextjs/server";
 import { initializeYoco, PLANS, PlanId } from "@/lib/payments";
 import { createLogger } from "@/lib/logger";
 import { getPublicUrl } from "@/lib/base-url";
+import { guardLegacyCheckout } from "@/lib/legacy-payment-guard";
 
 const log = createLogger("yoco-checkout");
 
 /**
- * Yoco Checkout — Creates a checkout session and returns the redirect URL.
- * SA's biggest card payment processor. Supports cards, SnapScan, EFT.
+ * Yoco Checkout — RETIRED for new signups as of v10.
+ * Sovereign Matrix now bills USD-only via Stripe. Existing Yoco
+ * subscribers keep their subscription; their webhook at
+ * /api/_payments/yoco/webhook stays functional. This route returns
+ * 410 for new checkout attempts unless LEGACY_PAYMENT_PROVIDERS=1
+ * is set (for admin-triggered migration cutovers).
  */
 export async function POST(req: Request) {
+  const legacyGuard = guardLegacyCheckout("yoco");
+  if (legacyGuard) return legacyGuard;
+
   const user = await currentUser();
   const email = user?.primaryEmailAddress?.emailAddress;
   if (!email) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

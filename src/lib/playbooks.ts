@@ -41,6 +41,18 @@ export interface Playbook {
   steps: PlaybookStep[];
   estimatedTime: string; // e.g., "2-4 min"
   agentCount: number;
+  /**
+   * Whether this playbook is featured on marketing surfaces (landing
+   * page, pricing page, /playbooks public listing). Authenticated
+   * dashboard users always see ALL playbooks; this flag only gates
+   * public marketing. Default: false.
+   *
+   * Curation rationale: a prospect can't evaluate 25 playbooks on a
+   * landing page. We lead with ~5 that have the clearest, most
+   * measurable business outcomes, then let the catalog grow after
+   * signup. Prevents "feature-sprawl" positioning.
+   */
+  marketing?: boolean;
   /** Output guarantee — if not met, the run doesn't count against usage */
   guarantee?: string;
   /** Machine-checkable guarantee conditions */
@@ -58,6 +70,7 @@ export const PLAYBOOKS: Playbook[] = [
   {
     id: "lead-blitz",
     name: "Lead Blitz",
+    marketing: true,
     tagline: "50 qualified leads + outreach in minutes",
     description: "Find prospects in your niche, verify their details, and draft personalized outreach emails — all in one shot.",
     icon: "Target",
@@ -80,6 +93,7 @@ export const PLAYBOOKS: Playbook[] = [
   {
     id: "competitor-takedown",
     name: "Competitor Takedown",
+    marketing: true,
     tagline: "Full competitive analysis + counter-strategy",
     description: "Deep-dive into a competitor's website, SEO, pricing, and messaging. Get an actionable report to outmaneuver them.",
     icon: "Swords",
@@ -102,6 +116,7 @@ export const PLAYBOOKS: Playbook[] = [
   {
     id: "content-machine",
     name: "Content Machine",
+    marketing: true,
     tagline: "SEO blog + social posts from one topic",
     description: "Generate a full SEO-optimized blog post, then spin it into social media snippets for every platform.",
     icon: "PenTool",
@@ -144,6 +159,7 @@ export const PLAYBOOKS: Playbook[] = [
   {
     id: "seo-domination",
     name: "SEO Domination",
+    marketing: true,
     tagline: "Full audit + content strategy + keyword plan",
     description: "Audit your website's SEO, find keyword opportunities, analyze top competitors, and get a 30-day content calendar.",
     icon: "TrendingUp",
@@ -243,6 +259,7 @@ export const PLAYBOOKS: Playbook[] = [
   {
     id: "weekly-report",
     name: "Weekly Report",
+    marketing: true,
     tagline: "Auto-generate your client status report",
     description: "Pull client metrics and activity, then format everything into a polished executive summary with charts, highlights, and next steps.",
     icon: "FileText",
@@ -621,6 +638,15 @@ export function getPlaybooksByCategory(category: Playbook["category"]): Playbook
  */
 export function getPlaybook(id: string): Playbook | undefined {
   return PLAYBOOKS.find((p) => p.id === id);
+}
+
+/**
+ * Playbooks surfaced on marketing pages (landing, pricing, public
+ * /playbooks catalog). Authenticated dashboard users see all; this
+ * is for first-time visitors who can't evaluate 25 choices.
+ */
+export function getMarketingPlaybooks(): Playbook[] {
+  return PLAYBOOKS.filter((p) => p.marketing === true);
 }
 
 export const PLAYBOOK_CATEGORIES = [

@@ -37,6 +37,15 @@ export interface PlanDefinition {
   priceDisplayUsd: string;
   /** Display price string (ZAR) */
   priceDisplayZar: string;
+  /**
+   * Whether this plan shows on the public /pricing page. Existing
+   * subscribers on archived tiers keep their plan; only NEW signups
+   * are gated to marketing-visible tiers. This lets us consolidate
+   * the funnel without forcing migrations on current customers.
+   *
+   * Default: true (legacy plans we haven't marked).
+   */
+  marketing?: boolean;
   /** Stripe price env var key (null if not purchasable via Stripe) */
   stripePriceEnvKey: string | null;
   /** Whether this plan can be purchased by users */
@@ -59,8 +68,13 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     priceDisplayZar: "R0/mo",
     stripePriceEnvKey: null,
     purchasable: false,
-    description: "3 agents, 50 runs/month",
+    marketing: true,
+    description: "50 runs/month. No credit card. Full platform access.",
   },
+  // ARCHIVED: Starter $19 was a commitment-avoidance tier that
+  // cannibalized Growth conversions. Existing subscribers keep it;
+  // new signups are not shown this tier. See plans rationale in
+  // CLAUDE.md.
   starter: {
     name: "Starter",
     runsPerMonth: 200,
@@ -72,8 +86,11 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     priceDisplayZar: "R349/mo",
     stripePriceEnvKey: "STRIPE_PRICE_STARTER",
     purchasable: true,
+    marketing: false, // archived — legacy subscribers only
     description: "5 agents, 200 runs/month, email support",
   },
+  // FOUNDER: free enterprise-tier for first-10 cohort; internal only,
+  // never shown on pricing page. Assigned manually via admin API.
   founder: {
     name: "Founder",
     runsPerMonth: 10_000,
@@ -85,6 +102,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     priceDisplayZar: "Free",
     stripePriceEnvKey: null,
     purchasable: false,
+    marketing: false, // assigned by founder, not self-serve
     description: "Enterprise-level access for first 10 users",
   },
   array: {
@@ -98,8 +116,12 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     priceDisplayZar: "R4,997/mo",
     stripePriceEnvKey: "STRIPE_PRICE_ARRAY",
     purchasable: true,
-    description: "10 agents, 500 runs/month",
+    marketing: true,
+    description: "500 runs/month. All 5 featured playbooks. Email support.",
   },
+  // ARCHIVED: Node $199 was an enterprise-discount tier that
+  // confused positioning. Consolidated into Enterprise + per-deal
+  // concierge pricing. Existing subscribers keep it.
   node: {
     name: "Sovereign Node",
     runsPerMonth: 2_000,
@@ -111,6 +133,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     priceDisplayZar: "R9,997/mo",
     stripePriceEnvKey: "STRIPE_PRICE_NODE",
     purchasable: true,
+    marketing: false, // archived — legacy subscribers only
     description: "Unlimited agents, 2,000 runs/month, local execution",
   },
   enterprise: {
@@ -124,9 +147,17 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     priceDisplayZar: "R49,997/mo",
     stripePriceEnvKey: "STRIPE_PRICE_ENTERPRISE",
     purchasable: true,
-    description: "White-label, voice agents, video generation",
+    marketing: true,
+    description: "10,000 runs/month. SAML SSO, SOC 2 evidence, direct Slack.",
   },
 };
+
+/** Plans visible to new prospects on /pricing. Filters on marketing flag. */
+export function getMarketingPlans(): Array<PlanDefinition & { id: PlanId }> {
+  return (Object.entries(PLANS) as Array<[PlanId, PlanDefinition]>)
+    .filter(([, p]) => p.marketing === true)
+    .map(([id, p]) => ({ ...p, id }));
+}
 
 // ── Upgrade Path ──
 

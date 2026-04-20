@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { getBaseUrl } from "@/lib/base-url";
+import { guardLegacyCheckout } from "@/lib/legacy-payment-guard";
 
 /**
  * PAYFAST PAYMENT GATEWAY — South African payment processing.
@@ -33,6 +34,13 @@ const PLANS: Plan[] = [
 ];
 
 export async function POST(request: Request) {
+  // PayFast checkout is RETIRED for new signups as of v10. USD-only
+  // Stripe billing consolidated. Existing subscribers continue via
+  // the ITN webhook. Re-enable with LEGACY_PAYMENT_PROVIDERS=1 for
+  // admin migration cutovers.
+  const legacyGuard = guardLegacyCheckout("payfast");
+  if (legacyGuard) return legacyGuard;
+
   try {
     const { plan_id, email, first_name, last_name } = await request.json();
 

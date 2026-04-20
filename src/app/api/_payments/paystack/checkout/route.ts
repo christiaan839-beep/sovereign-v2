@@ -3,12 +3,19 @@ import { currentUser } from "@clerk/nextjs/server";
 import { initializePaystack, PLANS, PlanId } from "@/lib/payments";
 import { createLogger } from "@/lib/logger";
 import { getPublicUrl } from "@/lib/base-url";
+import { guardLegacyCheckout } from "@/lib/legacy-payment-guard";
 const log = createLogger("paystack-checkout");
 
 /**
- * Paystack Checkout — initializes a transaction and returns the authorization URL.
+ * Paystack Checkout — RETIRED for new signups as of v10.
+ * Stripe-only USD billing now. Existing subscribers keep their
+ * transactions via the webhook. Re-enable with
+ * LEGACY_PAYMENT_PROVIDERS=1 for admin migration cutovers.
  */
 export async function POST(req: Request) {
+  const legacyGuard = guardLegacyCheckout("paystack");
+  if (legacyGuard) return legacyGuard;
+
   const user = await currentUser();
   const email = user?.primaryEmailAddress?.emailAddress;
   if (!email) {
