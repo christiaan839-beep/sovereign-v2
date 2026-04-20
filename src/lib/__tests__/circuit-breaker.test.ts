@@ -81,8 +81,9 @@ describe("CircuitBreaker", () => {
 
   // ─── Opens After 3 Consecutive Failures ───
 
-  it("opens after 3 consecutive failures (failureThreshold = 3)", async () => {
-    for (let i = 0; i < 3; i++) {
+  it("opens after 5 consecutive failures (nim failureThreshold = 5)", async () => {
+    // NIM threshold was raised from 3 → 5 for robustness (see circuit-breaker.ts:111)
+    for (let i = 0; i < 5; i++) {
       await expect(
         nimBreaker.execute(() => Promise.reject(new Error(`fail-${i}`)))
       ).rejects.toThrow();
@@ -90,14 +91,15 @@ describe("CircuitBreaker", () => {
 
     const state = nimBreaker.getState();
     expect(state.state).toBe("open");
-    expect(state.failures).toBe(3);
+    expect(state.failures).toBe(5);
   });
 
   // ─── Open State Rejects Immediately ───
 
   it("open state rejects immediately without calling the function", async () => {
     // Trip the breaker
-    for (let i = 0; i < 3; i++) {
+    // nim breaker raised threshold from 3 → 5 for robustness
+    for (let i = 0; i < 5; i++) {
       await nimBreaker.execute(() => Promise.reject(new Error("trip"))).catch(() => {});
     }
     expect(nimBreaker.getState().state).toBe("open");
@@ -109,7 +111,8 @@ describe("CircuitBreaker", () => {
   });
 
   it("open state error message includes breaker name", async () => {
-    for (let i = 0; i < 3; i++) {
+    // nim breaker raised threshold from 3 → 5 for robustness
+    for (let i = 0; i < 5; i++) {
       await nimBreaker.execute(() => Promise.reject(new Error("trip"))).catch(() => {});
     }
 
@@ -122,14 +125,15 @@ describe("CircuitBreaker", () => {
 
   it("transitions to half-open after resetTimeout elapses, closes on success", async () => {
     // Trip the breaker
-    for (let i = 0; i < 3; i++) {
+    // nim breaker raised threshold from 3 → 5 for robustness
+    for (let i = 0; i < 5; i++) {
       await nimBreaker.execute(() => Promise.reject(new Error("trip"))).catch(() => {});
     }
     expect(nimBreaker.getState().state).toBe("open");
 
-    // Advance time past the 30s resetTimeout
+    // Advance time past the 60s resetTimeout (raised from 30s for robustness)
     vi.useFakeTimers();
-    vi.advanceTimersByTime(31_000);
+    vi.advanceTimersByTime(61_000);
 
     // Next call should go through (half-open probe)
     const result = await nimBreaker.execute(() => Promise.resolve("recovered"));
@@ -146,13 +150,14 @@ describe("CircuitBreaker", () => {
 
   it("half-open reopens on failure", async () => {
     // Trip the breaker
-    for (let i = 0; i < 3; i++) {
+    // nim breaker raised threshold from 3 → 5 for robustness
+    for (let i = 0; i < 5; i++) {
       await nimBreaker.execute(() => Promise.reject(new Error("trip"))).catch(() => {});
     }
 
     // Advance past reset timeout
     vi.useFakeTimers();
-    vi.advanceTimersByTime(31_000);
+    vi.advanceTimersByTime(61_000);
 
     // Fail in half-open state
     await expect(
@@ -194,8 +199,8 @@ describe("CircuitBreaker", () => {
   // ─── Provider-Specific Breakers ───
 
   it("each provider breaker is independent", async () => {
-    // Trip gemini breaker
-    for (let i = 0; i < 3; i++) {
+    // gemini breaker threshold is 5 (raised from 3 for robustness)
+    for (let i = 0; i < 5; i++) {
       await geminiBreaker.execute(() => Promise.reject(new Error("g"))).catch(() => {});
     }
     expect(geminiBreaker.getState().state).toBe("open");
@@ -207,7 +212,7 @@ describe("CircuitBreaker", () => {
 
     // Reset gemini for other tests
     vi.useFakeTimers();
-    vi.advanceTimersByTime(31_000);
+    vi.advanceTimersByTime(61_000);
     await geminiBreaker.execute(() => Promise.resolve("reset")).catch(() => {});
     vi.useRealTimers();
   });

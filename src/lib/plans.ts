@@ -139,8 +139,29 @@ export const UPGRADE_PATH: Record<PlanId, PlanId | null> = {
   enterprise: null,
 };
 
-/** Maximum number of founder slots */
+/** Maximum number of Free Founder slots (enterprise-level access, no charge). */
 export const MAX_FOUNDERS = 10;
+
+/**
+ * The Founder Network — Proposal L. Separate cohort from the free
+ * Founders program above. Members are paying customers (any plan) in
+ * the first-100 cohort, receiving:
+ *   - 50% lifetime discount on their paid plan
+ *     (applied via Stripe coupon `founder-network-50`)
+ *   - 30% referral commission (vs the 20% default)
+ *   - Direct Slack access + monthly 30-min 1:1 with the founder
+ *   - Optional public "Founder Network Member" badge
+ *
+ * Numbers diverge on purpose: the FREE Founders program is a closed
+ * 10-slot bet (enterprise access, in exchange for feedback); the
+ * Founder Network is an open-until-full 100-slot program for paying
+ * customers. Both can coexist on the same subscription row — they
+ * are flags, not plan tiers.
+ */
+export const FOUNDER_NETWORK_MAX = 100;
+export const FOUNDER_NETWORK_COMMISSION_PCT = 30;
+export const FOUNDER_NETWORK_DISCOUNT_PCT = 50;
+export const FOUNDER_NETWORK_COUPON_ID = "founder-network-50";
 
 /** Bonus runs granted per referral */
 export const REFERRAL_BONUS_RUNS = 50;

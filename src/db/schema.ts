@@ -291,11 +291,21 @@ export const subscriptions = pgTable("subscriptions", {
   plan: text("plan").notNull().default("free"),
   status: text("status").notNull().default("active"),
   currentPeriodEnd: timestamp("current_period_end"),
+  /**
+   * Founder Network membership (Proposal L) — separate from the free
+   * 10-slot Founders program. `null` means not a member; a timestamp
+   * marks when they joined. Used for the 50% lifetime discount +
+   * 30% referral commission + badge perks.
+   */
+  founderNetworkJoinedAt: timestamp("founder_network_joined_at"),
+  /** Sequential slot number within the 100-member cohort — purely for display. */
+  founderNetworkSlot: integer("founder_network_slot"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
   index("idx_subscriptions_user").on(table.userId),
   index("idx_subscriptions_stripe").on(table.stripeCustomerId),
+  index("idx_subscriptions_founder_network").on(table.founderNetworkJoinedAt),
 ]);
 
 /**
