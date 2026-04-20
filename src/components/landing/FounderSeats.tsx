@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { trackCtaClick } from "@/lib/cta-track";
 
 /**
  * FOUNDER SEATS — renders the 100-seat cohort as a ring of circles
@@ -204,6 +205,7 @@ export function FounderSeats() {
         <div className="flex flex-wrap gap-3">
           <Link
             href="/signup?plan=founder-network"
+            onClick={() => trackCtaClick("seat-claim")}
             className="group inline-flex items-center gap-2 px-6 py-3 bg-[#B5532C] text-white font-mono text-sm tracking-wide hover:bg-[#A04527] transition-colors"
           >
             Claim your seat

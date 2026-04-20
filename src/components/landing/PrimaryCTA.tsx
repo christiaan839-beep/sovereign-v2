@@ -4,24 +4,21 @@ import { motion, useReducedMotion } from "framer-motion";
 import Link from "next/link";
 import { useState, useRef, type ReactNode } from "react";
 import { ArrowRight } from "lucide-react";
+import { trackCtaClick } from "@/lib/cta-track";
 
 /**
- * PRIMARY CTA — micro-physics button.
- *
- * Studying: arc.net (buttons feel physical), linear.app (spring hover
- * + micro-ripple on click), raycast.com (arrow glides on hover).
- *
- * Discipline: ONE button on the landing gets this treatment (hero
- * primary). The final-CTA version below uses the same. NOT every
- * button — overused and it loses meaning.
+ * Primary CTA with micro-physics: subtle lift on hover, tap-ripple,
+ * and a sliding arrow. Used in exactly two places on the landing
+ * (hero + final) to keep the interaction meaningful.
  *
  * Behaviors:
- *   1. Hover: subtle lift (y: -1) + shadow deepens
- *   2. Hover: arrow slides right 4px
- *   3. Tap: scale 0.97 + emerald ripple expanding from click point
- *   4. Focus: animated copper outline that pulses ONCE
+ *   1. Hover — lift y:-1 + shadow deepens + arrow slides right
+ *   2. Tap   — scale 0.97 + emerald ripple from the click point
+ *   3. Focus — copper outline, pulses once
  *
- * prefers-reduced-motion: static styles only, no transitions.
+ * Honors prefers-reduced-motion (static fallback, no transitions).
+ * Fires a cta-click beacon on click — variant maps to the server
+ * allowlist (primary-hero / primary-final).
  */
 
 interface PrimaryCTAProps {
@@ -36,6 +33,7 @@ export function PrimaryCTA({ href, children, variant = "hero" }: PrimaryCTAProps
   const nextId = useRef(0);
 
   function handleClick(e: React.MouseEvent<HTMLAnchorElement>) {
+    trackCtaClick(variant === "final" ? "primary-final" : "primary-hero");
     if (reduceMotion) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;

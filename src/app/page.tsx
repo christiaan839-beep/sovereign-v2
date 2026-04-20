@@ -14,6 +14,7 @@ import { BuiltOnStrip } from "@/components/landing/BuiltOnStrip";
 import { FounderSeats } from "@/components/landing/FounderSeats";
 import { PrimaryCTA } from "@/components/landing/PrimaryCTA";
 import { CommandEgg } from "@/components/landing/CommandEgg";
+import { trackCtaClick } from "@/lib/cta-track";
 
 /**
  * Landing page — 10 sections, editorial palette aligned with
@@ -473,6 +474,7 @@ function FeaturedPlaybooksSection() {
             <Link
               key={pb.slug}
               href={`/dashboard/playbooks?auto=${pb.slug}`}
+              onClick={() => trackCtaClick("playbook-card")}
               className="group block p-6 rounded-2xl border border-white/[0.06] bg-white/[0.015] hover:border-[#B5532C]/50 hover:bg-[#B5532C]/[0.04] transition-colors"
             >
               <p className="text-[10px] font-mono uppercase tracking-[0.18em] text-[#B5532C] mb-3">
@@ -626,6 +628,7 @@ function FinalCTA() {
           </PrimaryCTA>
           <a
             href="mailto:christiaan@sovereignmatrix.agency"
+            onClick={() => trackCtaClick("email-founder")}
             className="inline-flex items-center px-7 py-3.5 border border-white/[0.1] text-neutral-400 font-mono text-sm tracking-wide hover:text-white hover:border-white/30 transition-colors"
           >
             Email the founder
