@@ -130,18 +130,25 @@ export async function DELETE(
       return NextResponse.json({ error: "memberId is required." }, { status: 400 });
     }
 
-    // Prevent removing the owner
+    // Prevent removing the owner — scope to orgId to avoid IDOR
     const memberRow = await db
       .select()
       .from(orgMembers)
-      .where(eq(orgMembers.id, memberId))
+      .where(and(eq(orgMembers.id, memberId), eq(orgMembers.orgId, orgId)))
       .limit(1);
 
-    if (memberRow[0]?.role === "owner") {
+    if (!memberRow[0]) {
+      return NextResponse.json({ error: "Member not found." }, { status: 404 });
+    }
+
+    if (memberRow[0].role === "owner") {
       return NextResponse.json({ error: "Cannot remove the organization owner." }, { status: 403 });
     }
 
-    await db.delete(orgMembers).where(eq(orgMembers.id, memberId));
+    // Both conditions required — prevents cross-org member deletion
+    await db.delete(orgMembers).where(
+      and(eq(orgMembers.id, memberId), eq(orgMembers.orgId, orgId))
+    );
 
     return NextResponse.json({ success: true });
   } catch (err) {

@@ -58,7 +58,8 @@ const globalGenAI = new GoogleGenerativeAI(globalGeminiKey);
  * 4. Claude (Anthropic) — if explicitly selected or BYOK key exists
  */
 export async function ai(prompt: string, options: AIOptions = {}): Promise<string> {
-  const { model = "gemini", system, maxTokens = 2000, thinking, useOpus, useGeminiPro } = options;
+  // Default to NIM (NVIDIA open-source, $0) — Gemini is the paid fallback, not the default.
+  const { model = "nim", system, maxTokens = 2000, thinking, useOpus, useGeminiPro } = options;
 
   // Lazy-load model-attribution to avoid circular import risk.
   const { recordModel } = await import("@/lib/model-attribution");
