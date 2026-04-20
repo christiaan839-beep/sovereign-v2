@@ -225,12 +225,285 @@ server.tool(
   }
 );
 
+// ═════════════════════════════════════════════════════════════════════════════
+// v9 — Expanded tool surface (distribution moat: MCP-first agents)
+// ═════════════════════════════════════════════════════════════════════════════
+//
+// The original 6 tools cover platform operations. These 14 add the
+// actual value surface — research / content / security / snapshots —
+// so Claude Code, Cline, and Cursor users get the full Sovereign
+// Matrix agent library as MCP tools with zero-signup discovery.
+//
+// Design guidelines:
+//   - Every tool name is `sovereign_*` so they group cleanly in UIs
+//   - Descriptions are verbose enough that Claude's tool-selector
+//     can disambiguate without a separate "choose between X and Y" round
+//   - All tools return JSON text — structured output Claude can parse
+//   - No tool accepts raw prompts without an agent bucket (prevents
+//     the "use this as a cheap Claude proxy" anti-pattern)
+
+// ─── Tool 7: Agent Resume Discovery ──────────────────────────────────────────
+
+server.tool(
+  "sovereign_agent_resume",
+  "Fetch the .agent.md resume for any Sovereign agent — shows its inputs, outputs, models used, and examples. Use this to understand what an agent does before calling it.",
+  { slug: z.string().describe("Agent slug like 'leads' or 'blog-gen'") },
+  async ({ slug }) => {
+    const result = await apiCall(`/api/agents/${slug}.agent.md`);
+    return {
+      content: [
+        {
+          type: "text" as const,
+          text: typeof result.data === "string"
+            ? result.data
+            : JSON.stringify(result.data, null, 2),
+        },
+      ],
+    };
+  }
+);
+
+// ─── Tool 8: Partnership Metrics ─────────────────────────────────────────────
+
+server.tool(
+  "sovereign_partnership_metrics",
+  "Get public Anthropic/Claude partnership metrics — Claude invocation share, provider mix, total spend. Useful for verifying that Sovereign actually uses Claude in production.",
+  {},
+  async () => {
+    const result = await apiCall("/api/_misc/partnership-metrics");
+    return {
+      content: [{ type: "text" as const, text: JSON.stringify(result.data, null, 2) }],
+    };
+  }
+);
+
+// ─── Tool 9: Safety-Diff Metrics ─────────────────────────────────────────────
+
+server.tool(
+  "sovereign_safety_metrics",
+  "Get live 5-layer safety pipeline outcomes — jailbreak blocks, PII catches, quality rejections. Evidence that our safety system actually runs in production.",
+  {},
+  async () => {
+    const result = await apiCall("/api/_misc/safety-diff");
+    return {
+      content: [{ type: "text" as const, text: JSON.stringify(result.data, null, 2) }],
+    };
+  }
+);
+
+// ─── Tool 10: Snapshot Verify ───────────────────────────────────────────────
+
+server.tool(
+  "sovereign_verify_snapshot",
+  "Verify an Agent Snapshot JSON document — checksum, version, integrity. Used by auditors to confirm a snapshot hasn't been tampered with. Paste the full snapshot JSON.",
+  {
+    snapshot: z
+      .string()
+      .describe("Full snapshot JSON (stringified) from /api/_replay/[id]/snapshot"),
+  },
+  async ({ snapshot }) => {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(snapshot);
+    } catch {
+      return {
+        content: [{ type: "text" as const, text: JSON.stringify({ valid: false, reason: "invalid_json" }) }],
+      };
+    }
+    const result = await apiCall("/api/_replay/verify", "POST", parsed as Record<string, unknown>);
+    return {
+      content: [{ type: "text" as const, text: JSON.stringify(result.data, null, 2) }],
+    };
+  }
+);
+
+// ─── Tool 11: Run Leads Agent (shortcut) ────────────────────────────────────
+
+server.tool(
+  "sovereign_find_leads",
+  "Find real B2B prospects by niche + location. Uses Tavily for research, Nemotron Ultra for qualification. Returns a structured list with identity + outreach angle.",
+  {
+    niche: z.string().describe("Target industry (e.g. 'B2B SaaS analytics')"),
+    location: z.string().default("worldwide").describe("Geographic filter"),
+    product: z.string().optional().describe("Product being sold — tailors outreach angle"),
+  },
+  async (params) => {
+    const result = await apiCall("/api/agents/leads", "POST", params);
+    return {
+      content: [{ type: "text" as const, text: JSON.stringify(result.data, null, 2) }],
+    };
+  }
+);
+
+// ─── Tool 12: Generate Blog Post ────────────────────────────────────────────
+
+server.tool(
+  "sovereign_generate_blog",
+  "Generate a SEO-optimized blog post on a given topic. Uses Tavily for research + NIM for generation. Returns HTML + meta description + keywords.",
+  {
+    topic: z.string().min(3).describe("Topic or target keyword"),
+    keywords: z.array(z.string()).optional().describe("Additional target keywords"),
+    tone: z
+      .enum(["professional", "casual", "academic", "conversational", "technical"])
+      .default("professional"),
+  },
+  async (params) => {
+    const result = await apiCall("/api/agents/blog-gen", "POST", params);
+    return {
+      content: [{ type: "text" as const, text: JSON.stringify(result.data, null, 2) }],
+    };
+  }
+);
+
+// ─── Tool 13: SEO Audit ─────────────────────────────────────────────────────
+
+server.tool(
+  "sovereign_seo_audit",
+  "Run an SEO audit on a domain — keyword gaps, content velocity, technical issues, content strategy. Returns JSON intel grounded in live SERP data when available.",
+  {
+    domain: z.string().describe("Domain like 'example.com'"),
+    keywords: z.array(z.string()).optional().describe("Specific keywords to analyze"),
+    mode: z.enum(["audit", "content-plan"]).default("audit"),
+  },
+  async (params) => {
+    const result = await apiCall("/api/agents/seo-dominator", "POST", params);
+    return {
+      content: [{ type: "text" as const, text: JSON.stringify(result.data, null, 2) }],
+    };
+  }
+);
+
+// ─── Tool 14: Competitor Intelligence ──────────────────────────────────────
+
+server.tool(
+  "sovereign_competitor_intel",
+  "Deep competitive analysis using Porter's Five Forces + Blue Ocean. Identifies weaknesses, market gaps, pricing arbitrage, messaging vulnerabilities.",
+  {
+    competitorName: z.string().describe("Target competitor name"),
+    competitorUrl: z.string().optional(),
+    yourBusiness: z.string().describe("Brief description of your business"),
+    industry: z.string().describe("Industry/market"),
+  },
+  async (params) => {
+    const result = await apiCall("/api/agents/competitor", "POST", params);
+    return {
+      content: [{ type: "text" as const, text: JSON.stringify(result.data, null, 2) }],
+    };
+  }
+);
+
+// ─── Tool 15: Grounded Search ──────────────────────────────────────────────
+
+server.tool(
+  "sovereign_grounded_search",
+  "Tavily-powered web search with grounding — returns cited facts rather than hallucinated answers. Use when you need current information (post-training).",
+  {
+    query: z.string().describe("Search query"),
+    depth: z.enum(["basic", "advanced"]).default("advanced"),
+  },
+  async (params) => {
+    const result = await apiCall("/api/agents/grounded-search", "POST", params);
+    return {
+      content: [{ type: "text" as const, text: JSON.stringify(result.data, null, 2) }],
+    };
+  }
+);
+
+// ─── Tool 16: Generate Ad Creatives ────────────────────────────────────────
+
+server.tool(
+  "sovereign_generate_ads",
+  "Generate 5 ad-creative variations using proven psychological hooks (PAS, social-proof, urgency, curiosity, direct-benefit). For Meta/Google/LinkedIn.",
+  {
+    businessDescription: z.string(),
+    targetAudience: z.string(),
+    platform: z.enum(["meta", "google", "linkedin", "tiktok"]).default("meta"),
+    tone: z.string().default("Professional but bold"),
+  },
+  async (params) => {
+    const result = await apiCall("/api/agents/ads", "POST", params);
+    return {
+      content: [{ type: "text" as const, text: JSON.stringify(result.data, null, 2) }],
+    };
+  }
+);
+
+// ─── Tool 17: Consensus AI ─────────────────────────────────────────────────
+
+server.tool(
+  "sovereign_consensus",
+  "Run a prompt through multiple models with Claude as critic (generate → critique → revise). Higher quality than a single-model call; costs 2-3x. Use for high-stakes outputs.",
+  {
+    prompt: z.string().describe("The task to run through consensus"),
+    system: z.string().optional().describe("Optional system prompt"),
+  },
+  async (params) => {
+    const result = await apiCall("/api/agents/consensus", "POST", params);
+    return {
+      content: [{ type: "text" as const, text: JSON.stringify(result.data, null, 2) }],
+    };
+  }
+);
+
+// ─── Tool 18: Translate ────────────────────────────────────────────────────
+
+server.tool(
+  "sovereign_translate",
+  "Translate text between languages with context preservation. Supports 140+ languages.",
+  {
+    text: z.string().min(1),
+    target_lang: z.string().describe("Target language (e.g. 'Spanish', 'fr-CA', 'ja')"),
+    source_lang: z.string().optional().describe("Source language (auto-detect if omitted)"),
+  },
+  async (params) => {
+    const result = await apiCall("/api/agents/translate", "POST", params);
+    return {
+      content: [{ type: "text" as const, text: JSON.stringify(result.data, null, 2) }],
+    };
+  }
+);
+
+// ─── Tool 19: Meeting Notes ────────────────────────────────────────────────
+
+server.tool(
+  "sovereign_meeting_notes",
+  "Convert meeting transcript into structured action items, decisions, summary, and open questions.",
+  {
+    transcript: z.string().min(10).describe("Raw meeting transcript or notes"),
+    format: z.enum(["bullets", "narrative", "both"]).default("both"),
+  },
+  async (params) => {
+    const result = await apiCall("/api/agents/meeting-notes", "POST", params);
+    return {
+      content: [{ type: "text" as const, text: JSON.stringify(result.data, null, 2) }],
+    };
+  }
+);
+
+// ─── Tool 20: Code Review ──────────────────────────────────────────────────
+
+server.tool(
+  "sovereign_code_review",
+  "AI-powered code review — finds bugs, security issues, performance problems, style deviations. Returns prioritized feedback with line-level specificity.",
+  {
+    code: z.string().min(1).describe("Code to review"),
+    language: z.string().optional().describe("Language hint (e.g. 'typescript')"),
+    context: z.string().optional().describe("What this code does / intent"),
+  },
+  async (params) => {
+    const result = await apiCall("/api/agents/code-reviewer", "POST", params);
+    return {
+      content: [{ type: "text" as const, text: JSON.stringify(result.data, null, 2) }],
+    };
+  }
+);
+
 // ─── Start Server ────────────────────────────────────────────────────────────
 
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("Sovereign Matrix MCP server running on stdio");
+  console.error("Sovereign Matrix MCP server running on stdio — 20 tools available");
 }
 
 main().catch((err) => {

@@ -1,15 +1,44 @@
 {
-  "name": "sovereign-matrix-mcp",
-  "version": "1.0.0",
-  "description": "MCP server for Sovereign Matrix — run playbooks, check health, manage agents from Claude",
+  "name": "@sovereignmatrix/mcp",
+  "version": "2.0.0",
+  "description": "MCP server exposing the Sovereign Matrix agent platform (20 tools) — leads, SEO, content, code review, safety checks, and auditable snapshots — to Claude, Cline, and Cursor.",
   "type": "module",
   "main": "dist/index.js",
+  "bin": {
+    "sovereign-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "claude",
+    "anthropic",
+    "ai-agents",
+    "sovereign-matrix",
+    "b2b-saas",
+    "leads",
+    "seo",
+    "content-generation"
+  ],
+  "author": "Sovereign Matrix",
+  "license": "MIT",
+  "homepage": "https://sovereignmatrix.agency",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/christiaan839-beep/sovereign-v2.git",
+    "directory": "mcp-server"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.12.1"
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "typescript": "^5.8.3",
