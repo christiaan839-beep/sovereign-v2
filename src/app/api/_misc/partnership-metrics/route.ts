@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { usage } from "@/db/schema";
-import { count, gte, like, and, sql } from "drizzle-orm";
+import { count, gte, like, and, sql, isNotNull } from "drizzle-orm";
 import { createLogger } from "@/lib/logger";
+import { RATE_CARD_VERSION } from "@/lib/model-costs";
 
 const log = createLogger("partnership-metrics");
 
@@ -32,7 +33,7 @@ export async function GET() {
   const since7d = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
   try {
-    const [totalRuns30d, totalRuns7d, claudeRuns30d, byProvider] = await Promise.all([
+    const [totalRuns30d, totalRuns7d, claudeRuns30d, byProvider, costBreakdown] = await Promise.all([
       db
         .select({ value: count() })
         .from(usage)
@@ -76,6 +77,25 @@ export async function GET() {
         .from(usage)
         .where(gte(usage.createdAt, since30d))
         .groupBy(sql`bucket`),
+
+      // v9 cost ledger — dollars spent per provider over 30d.
+      // Uses the `provider` column (populated from model-costs.ts rate
+      // lookups) rather than string-matching model names. Ignores rows
+      // pre-0012 migration via the IS NOT NULL filter.
+      db
+        .select({
+          provider: usage.provider,
+          totalCents: sql<string | null>`sum(${usage.costCents})`,
+          totalInputTokens: sql<string | null>`sum(${usage.inputTokens})`,
+          totalOutputTokens: sql<string | null>`sum(${usage.outputTokens})`,
+          runs: count(),
+        })
+        .from(usage)
+        .where(and(
+          gte(usage.createdAt, since30d),
+          isNotNull(usage.costCents),
+        ))
+        .groupBy(usage.provider),
     ]);
 
     const total30d = Number(totalRuns30d[0]?.value ?? 0);
@@ -88,6 +108,21 @@ export async function GET() {
         percent: total30d > 0 ? Math.round((Number(r.runs) / total30d) * 100) : 0,
       }))
       .sort((a, b) => b.runs - a.runs);
+
+    // Cost breakdown (v9) — surfaces dollars spent per provider so
+    // Anthropic's partner team can see "$X/mo goes to us" not just
+    // "N runs hit Claude". Figures are in whole dollars rounded for
+    // readability; exact cents stay in the DB.
+    const costSummary = costBreakdown.map((r) => ({
+      provider: r.provider ?? "unknown",
+      totalUsdSpend: Math.round(Number(r.totalCents ?? 0) / 100),
+      totalInputTokens: Number(r.totalInputTokens ?? 0),
+      totalOutputTokens: Number(r.totalOutputTokens ?? 0),
+      runs: Number(r.runs),
+    })).sort((a, b) => b.totalUsdSpend - a.totalUsdSpend);
+
+    const anthropicSpend =
+      costSummary.find((r) => r.provider === "anthropic")?.totalUsdSpend ?? 0;
 
     return NextResponse.json({
       generatedAt: new Date().toISOString(),
@@ -110,6 +145,16 @@ export async function GET() {
         claudePercentOfAllRuns:
           total30d > 0 ? Math.round((claude30d / total30d) * 100) : 0,
         providerMix: providerBreakdown,
+      },
+
+      // v9 — cost-ledger-backed dollar figures. Useful for Anthropic's
+      // partner team to see REAL spend (not run counts). Limited to
+      // rows post-migration 0012; may be empty immediately after deploy.
+      economics: {
+        rateCardVersion: RATE_CARD_VERSION,
+        totalSpend30dUsd: costSummary.reduce((acc, r) => acc + r.totalUsdSpend, 0),
+        anthropicSpend30dUsd: anthropicSpend,
+        byProvider: costSummary,
       },
 
       integrationPoints: [

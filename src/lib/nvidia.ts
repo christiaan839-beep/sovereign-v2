@@ -218,7 +218,30 @@ export async function nimChat(
   }
 
   const data = await response.json();
-  return data.choices[0].message.content;
+  const content: string = data.choices[0].message.content;
+
+  // Cost-ledger write — uses provider-reported token counts when
+  // available, falls back to char-based estimation. Fire-and-forget
+  // so a ledger failure never fails the user's AI call.
+  try {
+    const usage = data.usage ?? {};
+    const promptChars = messages.reduce(
+      (n, m) => n + (typeof m.content === "string" ? m.content.length : 0),
+      0,
+    );
+    const { recordLedgerEntry } = await import("@/lib/cost-ledger");
+    void recordLedgerEntry({
+      modelId: model,
+      inputTokens: usage.prompt_tokens,
+      outputTokens: usage.completion_tokens,
+      inputChars: promptChars,
+      outputChars: content.length,
+    });
+  } catch {
+    // Ledger is optional; never block the AI call.
+  }
+
+  return content;
 }
 
 /**

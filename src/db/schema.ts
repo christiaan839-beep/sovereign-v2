@@ -205,10 +205,20 @@ export const usage = pgTable("usage", {
   agentId: text("agent_id").notNull(),
   model: text("model").notNull(),
   tokensUsed: integer("tokens_used").notNull().default(0),
+  // v9 cost-ledger columns — populated from model-costs.ts at request
+  // time. Legacy rows have NULL for the three columns and that's fine;
+  // aggregations filter them out.
+  inputTokens: integer("input_tokens"),
+  outputTokens: integer("output_tokens"),
+  costCents: integer("cost_cents"),
+  provider: text("provider"), // matches model-attribution.ts buckets: anthropic/nvidia-nim/...
+  requestId: text("request_id"), // links to the request-context requestId for cross-log correlation
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => [
   index("usage_user_id_idx").on(table.userId),
   index("usage_created_at_idx").on(table.createdAt),
+  index("usage_provider_idx").on(table.provider),
+  index("usage_request_id_idx").on(table.requestId),
 ]);
 
 // ═══════════════════════════════════════════
