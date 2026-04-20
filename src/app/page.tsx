@@ -586,22 +586,22 @@ function ThreeStepProof() {
 function TrustStrip() {
   const stats = [
     {
-      stat: "86%",
+      stat: "~80%",
       desc: "of AI pilots never reach production",
       sub: "Sovereign: 5-layer pipeline + signed snapshot export",
-      source: "RAND AI adoption survey, 2025",
+      source: "Widely cited in enterprise AI adoption research",
     },
     {
-      stat: "80%",
-      desc: "of enterprises can't trace what an agent actually did",
+      stat: "Most",
+      desc: "enterprise AI tools can't show you what an agent actually did",
       sub: "Sovereign: every run is a checksummed, exportable snapshot",
-      source: "Gartner AI observability survey, 2025",
+      source: "A core reason we built the audit trail",
     },
     {
-      stat: "46%",
-      desc: "cite fragmented integrations as the top scaling barrier",
-      sub: "Sovereign: 17 live integrations, MCP-first distribution",
-      source: "McKinsey State of AI 2025",
+      stat: "17",
+      desc: "live integrations — Slack, Notion, HubSpot, and more",
+      sub: "Sovereign: MCP-first distribution, no webhook glue required",
+      source: "See /integrations for the full list",
     },
   ];
 
@@ -1022,7 +1022,7 @@ function ClaudeNarrative() {
               <span className="text-neutral-500">: [</span>
               <span className="text-emerald-400/80">&quot;nemotron-ultra-253b-v1&quot;</span>
               <span className="text-neutral-500">, </span>
-              <span className="text-emerald-400/80">&quot;claude-opus-4.5&quot;</span>
+              <span className="text-emerald-400/80">&quot;claude-sonnet-4-6&quot;</span>
               <span className="text-neutral-500">],</span>
               {"\n  "}
               <span className="text-[#B5532C]">&quot;providersConsulted&quot;</span>
@@ -1159,27 +1159,25 @@ function FounderQuote() {
 
 /* ─── 06.5 · Social proof ──────────────────────────────────────── */
 
-const PROOF_ITEMS = [
+/* What each playbook actually produces — output types, not invented testimonials */
+const WHAT_YOU_GET = [
   {
-    result: "47 qualified leads",
-    context: "from a single Lead Blitz run targeting SaaS founders in Austin",
-    name: "Ruan B.",
-    role: "Agency owner · Johannesburg",
-    time: "3 min",
+    playbook: "Lead Blitz",
+    output: "Company list with decision-maker names, LinkedIn angles, and a personalised opening line for each.",
+    time: "~3 min",
+    href: "/dashboard/playbooks?auto=lead-blitz",
   },
   {
-    result: "Full competitor teardown",
-    context: "priced at R24k from a consulting firm — now done in 4 minutes, free on Growth",
-    name: "Sarah M.",
-    role: "Head of Growth · Cape Town",
-    time: "4 min",
+    playbook: "Competitor Takedown",
+    output: "Pricing gaps, messaging weaknesses, SEO blind spots, and a counter-positioning brief — all in one export.",
+    time: "~4 min",
+    href: "/dashboard/playbooks?auto=competitor-takedown",
   },
   {
-    result: "18 SEO-ready articles",
-    context: "queued from one Content Machine session. Published 12, ranked 8.",
-    name: "James O.",
-    role: "Founder · Lagos",
-    time: "2 min each",
+    playbook: "Content Machine",
+    output: "1,500+ word article with meta description, keyword targets, and platform-ready social snippets.",
+    time: "~2 min",
+    href: "/dashboard/playbooks?auto=content-machine",
   },
 ];
 
@@ -1193,58 +1191,60 @@ function SocialProofWall() {
           </span>
           <span aria-hidden="true" className="h-px w-6 bg-white/[0.12]" />
           <p className="font-serif italic text-[13px] text-neutral-500 tracking-[-0.01em]">
-            Real outputs
+            What you get
           </p>
         </div>
 
         <h2 className="font-serif text-3xl md:text-[44px] leading-[1.1] mb-3 tracking-tight max-w-2xl">
-          Not demos. Not mockups.
+          Not a chatbot.
           <br />
-          <em className="not-italic text-[#B5532C]">Receipts.</em>
+          <em className="not-italic text-[#B5532C]">A finished deliverable.</em>
         </h2>
         <p className="text-[15px] text-neutral-500 mb-12 max-w-lg leading-relaxed">
-          Every run logs the model that wrote each section, the critic score, and
-          the exact tokens spent.
+          Every run produces a concrete output — not a conversation thread
+          you still have to turn into something.
         </p>
 
         <div className="grid md:grid-cols-3 gap-4">
-          {PROOF_ITEMS.map((item) => (
-            <TiltCard key={item.name} className="group">
-              <div className="p-6 h-full bg-white/[0.025] border border-white/[0.07] rounded-[6px] hover:border-[#B5532C]/30 transition-colors flex flex-col gap-5">
-                {/* Result headline */}
-                <div>
-                  <p className="font-serif text-[26px] md:text-[28px] leading-[1.15] text-white tracking-tight mb-1">
-                    {item.result}
+          {WHAT_YOU_GET.map((item) => (
+            <TiltCard key={item.playbook} className="group">
+              <Link
+                href={item.href}
+                className="block p-6 h-full bg-white/[0.025] border border-white/[0.07] rounded-[6px] hover:border-[#B5532C]/30 transition-colors"
+              >
+                <div className="flex flex-col gap-5 h-full">
+                  {/* Playbook label */}
+                  <p className="text-[10px] font-mono uppercase tracking-[0.18em] text-neutral-500">
+                    {item.playbook}
                   </p>
-                  <p className="text-[13px] text-neutral-400 leading-[1.55]">
-                    {item.context}
-                  </p>
-                </div>
 
-                {/* Time badge */}
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#B5532C]/10 border border-[#B5532C]/20 rounded-full">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#B5532C]" />
-                    <span className="text-[11px] font-mono text-[#B5532C] tracking-tight">
-                      {item.time}
+                  {/* Output description */}
+                  <p className="font-serif text-[18px] leading-[1.4] text-white tracking-tight flex-1">
+                    {item.output}
+                  </p>
+
+                  {/* Time badge */}
+                  <div className="flex items-center justify-between pt-4 border-t border-white/[0.04]">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#B5532C]/10 border border-[#B5532C]/20 rounded-full">
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#B5532C]" />
+                      <span className="text-[11px] font-mono text-[#B5532C] tracking-tight">
+                        {item.time}
+                      </span>
                     </span>
-                  </span>
+                    <span className="text-[11px] font-mono text-neutral-600 group-hover:text-[#B5532C] transition-colors">
+                      Try it →
+                    </span>
+                  </div>
                 </div>
-
-                {/* Attribution */}
-                <div className="mt-auto pt-4 border-t border-white/[0.04]">
-                  <p className="text-[13px] text-white font-medium">{item.name}</p>
-                  <p className="text-[11px] font-mono text-neutral-600">{item.role}</p>
-                </div>
-              </div>
+              </Link>
             </TiltCard>
           ))}
         </div>
 
         <p className="mt-8 text-[12px] font-mono text-neutral-600">
-          Results vary. The audit trail is public — every run shows which model produced what.{" "}
-          <Link href="/customers" className="text-neutral-500 hover:text-white transition-colors underline decoration-white/20">
-            See more outcomes →
+          Every run logs the model, critic score, and tokens.{" "}
+          <Link href="/dashboard/playbooks" className="text-neutral-500 hover:text-white transition-colors underline decoration-white/20">
+            Browse all playbooks →
           </Link>
         </p>
       </div>
@@ -1423,7 +1423,7 @@ function PricingPreview() {
           <span className="text-[#B5532C] flex-shrink-0 mt-0.5">◈</span>
           <p className="text-[12px] font-mono text-neutral-500 leading-relaxed">
             <span className="text-neutral-300">Founder Network:</span>{" "}
-            10 lifetime seats at 50% off Growth — forever. 3 slots remaining.{" "}
+            100 lifetime seats at 50% off Growth — locked in forever.{" "}
             <Link href="/signup" className="text-[#B5532C] hover:text-[#D46435] transition-colors">
               Claim yours →
             </Link>
@@ -1499,14 +1499,14 @@ function FinalCTA() {
           </a>
         </div>
 
-        {/* Founder Network urgency */}
+        {/* Founder Network — real availability from /api/_misc/founder-network-status */}
         <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/[0.02] border border-[#B5532C]/20 rounded-full">
           <span className="relative inline-flex h-1.5 w-1.5">
             <span className="absolute inline-flex h-full w-full rounded-full bg-[#B5532C] opacity-60 animate-ping" />
             <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#B5532C]" />
           </span>
           <span className="text-[11px] font-mono text-neutral-500">
-            3 Founder Network slots remaining · 50% off Growth, forever
+            Founder Network · 50% off Growth, locked in forever
           </span>
           <Link
             href="/signup"
