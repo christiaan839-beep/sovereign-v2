@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { SignInButton } from "@clerk/nextjs";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SovereignLogo } from "@/components/ui/SovereignLogo";
 import { StackKiller } from "@/components/cinematic/StackKiller";
 import { getMarketingPlaybooks } from "@/lib/playbooks";
@@ -15,6 +15,7 @@ import { FounderSeats } from "@/components/landing/FounderSeats";
 import { PrimaryCTA } from "@/components/landing/PrimaryCTA";
 import { CommandEgg } from "@/components/landing/CommandEgg";
 import { trackCtaClick } from "@/lib/cta-track";
+import { useHideyNav } from "@/components/ui/EliteEffects";
 
 /**
  * Landing page — 10 sections, editorial palette aligned with
@@ -89,7 +90,7 @@ export default function LandingPage() {
       {/* ═══ NAVIGATION ═══ */}
       <Nav mobileNavOpen={mobileNavOpen} setMobileNavOpen={setMobileNavOpen} />
 
-      <main id="main-content" className="pt-16">
+      <main id="main-content">
         {/* ═══ 01 · HERO (with live terminal, runs pill, kinetic headline) ═══ */}
         <Hero />
 
@@ -107,6 +108,9 @@ export default function LandingPage() {
 
         {/* ═══ 06 · STACK KILLER ═══ */}
         <StackKiller />
+
+        {/* ═══ 06.5 · PRINCIPLES (editorial pull) ═══ */}
+        <Principles />
 
         {/* ═══ 07 · CLAUDE CRITIC NARRATIVE ═══ */}
         <ClaudeNarrative />
@@ -130,8 +134,37 @@ export default function LandingPage() {
   );
 }
 
+/* ─── SectionHead — editorial monogram + label ─────────────────────
+ * Shared label for every major section: copper "NN / 10" monogram +
+ * short uppercase kicker. Matches the pattern in the Hero and
+ * Principles sections. Using one component keeps the spacing, type
+ * weights, and copper-to-bone palette drift-proof.
+ */
+function SectionHead({ n, label }: { n: string; label: string }) {
+  return (
+    <div className="mb-8 flex items-center gap-4 flex-wrap">
+      <span className="font-mono text-[10px] text-neutral-600 tracking-[0.2em]">
+        {n} / 10
+      </span>
+      <span aria-hidden="true" className="h-px w-6 bg-white/[0.12]" />
+      <p className="text-[10px] font-mono tracking-[0.22em] uppercase text-[#B5532C]">
+        {label}
+      </p>
+    </div>
+  );
+}
+
 /* ─── Nav ───────────────────────────────────────────────────────── */
 
+/**
+ * Editorial navigation — sparse, confident, press-/ hint.
+ *
+ * Pattern borrowed from anthropic.com + antigravity.google: a single
+ * wordmark on the left, four content links, login, and one primary
+ * action. Hides on scroll-down and reappears on scroll-up so the
+ * reader isn't re-interrupted every viewport. Opaque after 40px of
+ * scroll (before: translucent over hero, integrates with the page).
+ */
 function Nav({
   mobileNavOpen,
   setMobileNavOpen,
@@ -139,62 +172,94 @@ function Nav({
   mobileNavOpen: boolean;
   setMobileNavOpen: (v: boolean) => void;
 }) {
+  const visible = useHideyNav(64);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onScroll = () => setScrolled(window.scrollY > 40);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
     <motion.nav
       initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, ease: "easeOut" }}
+      animate={{
+        opacity: visible || mobileNavOpen ? 1 : 0,
+        y: visible || mobileNavOpen ? 0 : -64,
+      }}
+      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
       className="fixed top-0 inset-x-0 z-50"
+      aria-label="Primary"
     >
-      <div className="max-w-7xl mx-auto px-6 md:px-10 h-16 flex items-center justify-between bg-[#030303]/80 backdrop-blur-md border-b border-white/[0.04]">
-        <Link href="/" className="flex items-center gap-2.5">
-          <SovereignLogo size="sm" />
-          <span className="hidden sm:block font-serif text-lg text-white">Sovereign Matrix</span>
-        </Link>
-
-        <div className="hidden md:flex items-center gap-7 text-sm">
-          <NavLink href="/customers">Customers</NavLink>
-          <NavLink href="/pricing">Pricing</NavLink>
-          <NavLink href="/trust">Trust</NavLink>
-          <NavLink href="/platform" subtle>
-            For developers →
-          </NavLink>
-          <SignInButton mode="modal" fallbackRedirectUrl="/dashboard">
-            <button className="text-neutral-500 hover:text-white transition-colors">
-              Log in
-            </button>
-          </SignInButton>
-          <Link
-            href={HERO_CTA}
-            className="px-4 py-1.5 bg-[#B5532C] text-white font-mono text-xs tracking-wide hover:bg-[#A04527] transition-colors"
-          >
-            Get Started
+      <div
+        className={`transition-[background,border-color] duration-300 ${
+          scrolled || mobileNavOpen
+            ? "bg-[#030303]/85 backdrop-blur-xl border-b border-white/[0.05]"
+            : "bg-transparent border-b border-transparent"
+        }`}
+      >
+        <div className="max-w-7xl mx-auto px-6 md:px-10 h-14 flex items-center justify-between">
+          {/* Wordmark */}
+          <Link href="/" className="group flex items-center gap-2.5" aria-label="Sovereign Matrix — Home">
+            <SovereignLogo size="sm" />
+            <span className="hidden sm:block font-serif text-[17px] tracking-tight text-white">
+              Sovereign Matrix
+            </span>
           </Link>
-        </div>
 
-        <button
-          className="md:hidden p-2"
-          onClick={() => setMobileNavOpen(!mobileNavOpen)}
-          aria-label="Toggle menu"
-        >
-          <div className="space-y-1.5">
-            <span
-              className={`block w-5 h-[1.5px] bg-white transition-transform ${
-                mobileNavOpen ? "rotate-45 translate-y-[7px]" : ""
-              }`}
-            />
-            <span
-              className={`block w-5 h-[1.5px] bg-white transition-opacity ${
-                mobileNavOpen ? "opacity-0" : ""
-              }`}
-            />
-            <span
-              className={`block w-5 h-[1.5px] bg-white transition-transform ${
-                mobileNavOpen ? "-rotate-45 -translate-y-[7px]" : ""
-              }`}
-            />
+          {/* Desktop nav */}
+          <div className="hidden md:flex items-center gap-8 text-[13px]">
+            <NavLink href={PLATFORM_HREF}>Platform</NavLink>
+            <NavLink href="/customers">Customers</NavLink>
+            <NavLink href="/trust">Trust</NavLink>
+            <NavLink href="/pricing">Pricing</NavLink>
+
+            {/* Subtle divider */}
+            <span aria-hidden="true" className="h-4 w-px bg-white/[0.08]" />
+
+            {/* Keyboard hint — Antigravity signature */}
+            <div
+              className="group hidden lg:flex items-center gap-1.5 text-neutral-500 text-[11px] font-mono select-none"
+              title="Press / to open the command palette"
+            >
+              <span>Press</span>
+              <kbd className="rounded border border-white/[0.08] bg-white/[0.025] px-1.5 py-0.5 text-[10px] text-neutral-300 group-hover:text-white group-hover:border-white/20 transition-colors">
+                /
+              </kbd>
+            </div>
+
+            <SignInButton mode="modal" fallbackRedirectUrl="/dashboard">
+              <button className="text-neutral-400 hover:text-white transition-colors text-[13px]">
+                Log in
+              </button>
+            </SignInButton>
+
+            <Link
+              href={HERO_CTA}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white text-[#030303] font-medium text-[12.5px] tracking-tight rounded-[3px] hover:bg-[#F4EFE6] transition-colors"
+            >
+              Start free
+              <span aria-hidden="true" className="text-[#B5532C]">→</span>
+            </Link>
           </div>
-        </button>
+
+          {/* Mobile toggle */}
+          <button
+            className="md:hidden p-2 -mr-2"
+            onClick={() => setMobileNavOpen(!mobileNavOpen)}
+            aria-label={mobileNavOpen ? "Close menu" : "Open menu"}
+            aria-expanded={mobileNavOpen}
+          >
+            <div className="space-y-1.5">
+              <span className={`block w-5 h-[1.5px] bg-white transition-transform ${mobileNavOpen ? "rotate-45 translate-y-[7px]" : ""}`} />
+              <span className={`block w-5 h-[1.5px] bg-white transition-opacity ${mobileNavOpen ? "opacity-0" : ""}`} />
+              <span className={`block w-5 h-[1.5px] bg-white transition-transform ${mobileNavOpen ? "-rotate-45 -translate-y-[7px]" : ""}`} />
+            </div>
+          </button>
+        </div>
       </div>
 
       <AnimatePresence>
@@ -203,26 +268,26 @@ function Nav({
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="absolute top-16 left-4 right-4 p-5 rounded-2xl md:hidden bg-[#080808]/95 backdrop-blur-2xl border border-white/[0.06] flex flex-col gap-3 shadow-2xl"
+            className="absolute top-14 left-4 right-4 p-5 rounded-2xl md:hidden bg-[#080808]/95 backdrop-blur-2xl border border-white/[0.06] flex flex-col gap-3 shadow-2xl"
           >
+            <MobileLink href={PLATFORM_HREF} onClick={() => setMobileNavOpen(false)}>
+              Platform
+            </MobileLink>
             <MobileLink href="/customers" onClick={() => setMobileNavOpen(false)}>
               Customers
-            </MobileLink>
-            <MobileLink href="/pricing" onClick={() => setMobileNavOpen(false)}>
-              Pricing
             </MobileLink>
             <MobileLink href="/trust" onClick={() => setMobileNavOpen(false)}>
               Trust
             </MobileLink>
-            <MobileLink href="/platform" onClick={() => setMobileNavOpen(false)}>
-              For developers
+            <MobileLink href="/pricing" onClick={() => setMobileNavOpen(false)}>
+              Pricing
             </MobileLink>
             <Link
               href={HERO_CTA}
-              className="mt-2 px-5 py-2.5 bg-[#B5532C] text-white text-sm text-center font-mono tracking-wide"
+              className="mt-3 px-5 py-2.5 bg-white text-[#030303] text-sm text-center font-medium rounded-[3px]"
               onClick={() => setMobileNavOpen(false)}
             >
-              Get Started
+              Start free →
             </Link>
           </motion.div>
         )}
@@ -231,21 +296,11 @@ function Nav({
   );
 }
 
-function NavLink({
-  href,
-  children,
-  subtle,
-}: {
-  href: string;
-  children: React.ReactNode;
-  subtle?: boolean;
-}) {
+function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
     <Link
       href={href}
-      className={`transition-colors ${
-        subtle ? "text-neutral-500 hover:text-[#B5532C]" : "text-neutral-400 hover:text-white"
-      }`}
+      className="relative text-neutral-300 hover:text-white transition-colors tracking-tight"
     >
       {children}
     </Link>
@@ -264,7 +319,7 @@ function MobileLink({
   return (
     <Link
       href={href}
-      className="text-sm text-neutral-300 hover:text-white py-1"
+      className="text-[15px] text-neutral-200 hover:text-white py-1.5 tracking-tight"
       onClick={onClick}
     >
       {children}
@@ -276,28 +331,51 @@ function MobileLink({
 
 function Hero() {
   return (
-    <section className="relative px-6 py-24 md:py-32 overflow-hidden">
-      {/* Subtle copper radial glow behind the headline */}
-      <div className="absolute inset-0 pointer-events-none">
+    <section className="relative px-6 pt-28 pb-24 md:pt-36 md:pb-32 overflow-hidden">
+      {/* Copper radial glow */}
+      <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
         <div
-          className="absolute left-1/2 top-1/3 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-30 blur-[120px]"
-          style={{ background: "radial-gradient(circle, rgba(181,83,44,0.35) 0%, transparent 70%)" }}
+          className="absolute left-1/2 top-1/3 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-25 blur-[120px]"
+          style={{ background: "radial-gradient(circle, rgba(181,83,44,0.45) 0%, transparent 70%)" }}
+        />
+        {/* Grid hint — tasteful engineering ground plane */}
+        <div
+          className="absolute inset-0 opacity-[0.035]"
+          style={{
+            backgroundImage:
+              "linear-gradient(to right, #fff 1px, transparent 1px), linear-gradient(to bottom, #fff 1px, transparent 1px)",
+            backgroundSize: "72px 72px",
+            maskImage:
+              "radial-gradient(ellipse 60% 60% at 50% 40%, #000 30%, transparent 75%)",
+            WebkitMaskImage:
+              "radial-gradient(ellipse 60% 60% at 50% 40%, #000 30%, transparent 75%)",
+          }}
         />
       </div>
 
       <div className="relative max-w-5xl mx-auto">
+        {/* Monogram + kicker + live pill */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.1, duration: 0.8 }}
-          className="mb-6 flex items-center gap-3 flex-wrap"
+          className="mb-8 flex items-center gap-4 flex-wrap"
         >
+          <span className="font-mono text-[10px] text-neutral-600 tracking-[0.2em]">
+            01 / 10
+          </span>
+          <span aria-hidden="true" className="h-px w-6 bg-white/[0.12]" />
           <p className="text-[10px] font-mono tracking-[0.22em] uppercase text-[#B5532C]">
-            No Pilot Purgatory · For operators
+            Agent infrastructure · For operators
           </p>
-          <span className="hidden md:inline text-neutral-800">·</span>
           <LiveRunsPill />
         </motion.div>
+
+        {/*
+          Kept the motion-wrapped monogram block above inline because
+          it composes the LiveRunsPill alongside the label (SectionHead
+          doesn't accept children). Every other section uses <SectionHead />.
+        */}
 
         <KineticHeadline />
 
@@ -305,36 +383,32 @@ function Hero() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.55, duration: 0.7 }}
-          className="max-w-2xl text-lg sm:text-xl text-neutral-400 leading-relaxed mb-10"
+          className="max-w-2xl text-[17px] md:text-[19px] text-neutral-400 leading-[1.55] mb-12"
         >
-          Five pre-built playbooks. Real output in three minutes. Claude as the
-          quality critic on every run. No 6-month integration project. No
-          developer needed.
+          Five production-grade playbooks. Real output in three minutes.
+          Claude audits every run. No six-month integration project, no
+          developer required.
         </motion.p>
 
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7, duration: 0.6 }}
-          className="flex flex-wrap items-center gap-3"
+          className="flex flex-wrap items-center gap-x-6 gap-y-3"
         >
           <PrimaryCTA href={HERO_CTA} variant="hero">
             Run your first playbook
           </PrimaryCTA>
           <Link
             href="/customers"
-            className="inline-flex items-center px-6 py-3 border border-white/[0.1] text-neutral-300 font-mono text-sm tracking-wide hover:bg-white/[0.04] hover:text-white transition-colors"
+            className="group inline-flex items-center gap-1.5 text-neutral-400 hover:text-white font-mono text-[13px] tracking-tight transition-colors"
           >
-            See customer outcomes →
+            See customer outcomes
+            <span aria-hidden="true" className="transition-transform group-hover:translate-x-0.5">
+              →
+            </span>
           </Link>
         </motion.div>
-
-        {/*
-          Stat source is cited once in the TrustStrip below; we don't
-          repeat it under the hero — the slop agent flagged it as
-          citation inflation. Keep the hero clean; TrustStrip does
-          the sourcing.
-        */}
 
         <LiveTerminalDemo />
       </div>
@@ -364,12 +438,10 @@ function ThreeStepProof() {
   ];
 
   return (
-    <section className="px-6 py-20 md:py-28 border-t border-white/[0.04]">
+    <section className="px-6 py-24 md:py-32 border-t border-white/[0.04]">
       <div className="max-w-5xl mx-auto">
-        <p className="text-[10px] font-mono tracking-[0.22em] uppercase text-[#8F8576] mb-4">
-          The proof
-        </p>
-        <h2 className="font-serif text-3xl md:text-4xl leading-tight mb-16 max-w-3xl">
+        <SectionHead n="02" label="The proof" />
+        <h2 className="font-serif text-3xl md:text-5xl leading-[1.1] mb-16 max-w-3xl tracking-tight">
           Sign up at <em className="not-italic text-[#B5532C]">0:00</em>.
           <br />
           See output at <em className="not-italic text-[#B5532C]">3:00</em>.
@@ -454,17 +526,15 @@ function TrustStrip() {
 
 function FeaturedPlaybooksSection() {
   return (
-    <section className="px-6 py-24 md:py-32 border-t border-white/[0.04]">
+    <section className="px-6 py-28 md:py-36 border-t border-white/[0.04]">
       <div className="max-w-6xl mx-auto">
-        <p className="text-[10px] font-mono tracking-[0.22em] uppercase text-[#8F8576] mb-4">
-          Five playbooks
-        </p>
-        <h2 className="font-serif text-3xl md:text-4xl leading-tight mb-4 max-w-3xl">
+        <SectionHead n="04" label="Five playbooks" />
+        <h2 className="font-serif text-3xl md:text-5xl leading-[1.1] mb-5 max-w-3xl tracking-tight">
           Each one guarantees an output
           <br />
           <em className="not-italic text-[#B5532C]">or the run doesn&apos;t count.</em>
         </h2>
-        <p className="text-neutral-400 max-w-xl leading-relaxed mb-16">
+        <p className="text-neutral-400 max-w-xl leading-relaxed mb-16 text-[15px]">
           Twenty more live inside the dashboard. These five are where most
           customers ship their first measurable win.
         </p>
@@ -500,16 +570,106 @@ function FeaturedPlaybooksSection() {
   );
 }
 
-/* ─── 06 · Claude critic narrative ──────────────────────────────── */
+/* ─── 06.5 · Principles (editorial pull, Claude-constitution style) ─── */
+
+/**
+ * Mid-page editorial moment. No product, no CTA — just three declarative
+ * principles in large serif type. Breaks the rhythm of feature sections
+ * the way Claude's Constitution page breaks marketing material: this is
+ * what we believe, in fewer words than we could get away with.
+ */
+function Principles() {
+  const principles = [
+    {
+      n: "I",
+      title: "Ship on day one.",
+      body:
+        "86% of enterprise AI projects never ship. We sell shipped outcomes — leads enriched, content drafted, reports written — not pilots and proofs-of-concept.",
+    },
+    {
+      n: "II",
+      title: "Every run audited.",
+      body:
+        "Each playbook is generated by one model, critiqued by a second, and synthesized by a third. No run reaches you without a second opinion on the other side of the line.",
+    },
+    {
+      n: "III",
+      title: "Guarantees, not promises.",
+      body:
+        "Each playbook publishes the exact output we guarantee. If the run doesn't meet the bar, we don't charge the run. Simple rule, strictly enforced.",
+    },
+  ];
+
+  return (
+    <section className="relative px-6 py-28 md:py-40 border-t border-white/[0.04] overflow-hidden">
+      {/* Very subtle copper radial — different position than hero */}
+      <div
+        className="absolute right-0 top-1/2 -translate-y-1/2 h-[500px] w-[500px] rounded-full opacity-20 blur-[120px] pointer-events-none"
+        style={{ background: "radial-gradient(circle, rgba(181,83,44,0.35) 0%, transparent 70%)" }}
+        aria-hidden="true"
+      />
+
+      <div className="relative max-w-5xl mx-auto">
+        <SectionHead n="06" label="Principles" />
+
+        <h2 className="font-serif text-3xl md:text-5xl leading-[1.1] mb-20 max-w-3xl tracking-tight">
+          Three rules.
+          <br />
+          <em className="not-italic text-[#B5532C]">Everything else is detail.</em>
+        </h2>
+
+        <div className="grid md:grid-cols-3 gap-10 md:gap-8">
+          {principles.map((p) => (
+            <motion.article
+              key={p.n}
+              initial={{ opacity: 0, y: 18 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-80px" }}
+              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              className="relative"
+            >
+              <p className="font-serif text-2xl text-[#B5532C] mb-4 italic">
+                {p.n}
+              </p>
+              <h3 className="font-serif text-[22px] md:text-[26px] text-white mb-3 leading-snug tracking-tight">
+                {p.title}
+              </h3>
+              <p className="text-[14.5px] text-neutral-400 leading-[1.65] max-w-sm">
+                {p.body}
+              </p>
+            </motion.article>
+          ))}
+        </div>
+
+        {/* Small editorial link to the fuller doc */}
+        <div className="mt-16 pt-10 border-t border-white/[0.04]">
+          <Link
+            href="/trust"
+            className="group inline-flex items-center gap-2 text-[13px] text-neutral-400 hover:text-white transition-colors font-mono tracking-tight"
+          >
+            <span className="text-[#B5532C]">→</span>
+            Read the full operating charter
+            <span
+              aria-hidden="true"
+              className="opacity-0 group-hover:opacity-100 transition-opacity text-neutral-600"
+            >
+              /trust
+            </span>
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── 07 · Claude critic narrative ──────────────────────────────── */
 
 function ClaudeNarrative() {
   return (
-    <section className="px-6 py-24 md:py-32 border-t border-white/[0.04] bg-[#0A0807]">
+    <section className="px-6 py-28 md:py-36 border-t border-white/[0.04] bg-[#0A0807]">
       <div className="max-w-4xl mx-auto">
-        <p className="text-[10px] font-mono tracking-[0.22em] uppercase text-[#8F8576] mb-4">
-          Claude as critic
-        </p>
-        <h2 className="font-serif text-3xl md:text-5xl leading-[1.1] mb-8">
+        <SectionHead n="07" label="Claude as critic" />
+        <h2 className="font-serif text-3xl md:text-5xl leading-[1.1] mb-8 tracking-tight">
           Cheaper models generate.
           <br />
           <em className="not-italic text-[#B5532C]">Claude checks.</em>
@@ -560,19 +720,17 @@ function ClaudeNarrative() {
 function ShipRecord() {
   return (
     <section className="px-6 py-20 border-t border-white/[0.04] bg-[#0A0807]">
-      <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-start md:items-center gap-8">
+      <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-start md:items-center gap-10">
         <div className="flex-1">
-          <p className="text-[10px] font-mono tracking-[0.22em] uppercase text-[#8F8576] mb-3">
-            Ship record
-          </p>
-          <h2 className="font-serif text-2xl md:text-3xl leading-snug mb-3 max-w-xl">
+          <SectionHead n="09" label="Ship record" />
+          <h2 className="font-serif text-2xl md:text-4xl leading-[1.15] mb-4 max-w-xl tracking-tight">
             <a
               href="https://github.com/christiaan839-beep/sovereign-v2/commits/main"
               target="_blank"
               rel="noopener"
               className="text-white hover:text-[#B5532C] transition-colors"
             >
-              80+ commits. 12 migrations. 1,165 tests passing.
+              80+ commits. 15 migrations. 1,192 tests passing.
             </a>
             <br />
             <em className="not-italic text-[#B5532C]">Published weekly.</em>
@@ -604,22 +762,28 @@ function ShipRecord() {
 
 function FinalCTA() {
   return (
-    <section className="px-6 py-32 md:py-40 border-t border-white/[0.04]">
+    <section className="px-6 py-32 md:py-44 border-t border-white/[0.04]">
       <div className="max-w-3xl mx-auto text-center">
-        <p className="text-[10px] font-mono tracking-[0.22em] uppercase text-[#B5532C] mb-4">
-          Get started
-        </p>
-        <h2 className="font-serif text-4xl md:text-6xl leading-[1.05] mb-8">
+        <div className="mb-8 flex items-center justify-center gap-4 flex-wrap">
+          <span className="font-mono text-[10px] text-neutral-600 tracking-[0.2em]">
+            10 / 10
+          </span>
+          <span aria-hidden="true" className="h-px w-6 bg-white/[0.12]" />
+          <p className="text-[10px] font-mono tracking-[0.22em] uppercase text-[#B5532C]">
+            Get started
+          </p>
+        </div>
+        <h2 className="font-serif text-4xl md:text-7xl leading-[1.02] mb-10 tracking-tight">
           Three minutes.
           <br />
           <em className="not-italic text-[#B5532C]">One playbook.</em>
           <br />
           Real output.
         </h2>
-        <p className="text-lg text-neutral-400 mb-10 max-w-xl mx-auto leading-relaxed">
-          No credit card. No developer. No 6-month integration. Your first 50
-          runs are free; the next tier is $49/mo, $24.50 if you grab a Founder
-          Network slot.
+        <p className="text-[17px] md:text-[19px] text-neutral-400 mb-12 max-w-xl mx-auto leading-[1.55]">
+          No credit card. No developer. No six-month integration. Your first
+          50 runs are free; the next tier is $49/mo, $24.50 if you grab a
+          Founder Network slot.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -643,13 +807,52 @@ function FinalCTA() {
   );
 }
 
-/* ─── Footer ────────────────────────────────────────────────────── */
+/* ─── Footer — editorial masthead ──────────────────────────────── */
 
+/**
+ * Footer styled as an editorial masthead, not a sitemap. Top third
+ * is a manifesto-style closing statement (the same move Claude makes
+ * on anthropic.com: the last thing the reader sees is positioning,
+ * not a column of links). Middle third is the link grid. Bottom
+ * third is the year + independence statement + operator/developer
+ * toggle.
+ */
 function Footer() {
   return (
-    <footer className="px-6 py-16 border-t border-white/[0.04] bg-[#020202]">
+    <footer className="px-6 pt-24 pb-12 border-t border-white/[0.04] bg-[#020202]">
       <div className="max-w-6xl mx-auto">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
+        {/* ── Masthead statement ── */}
+        <div className="grid md:grid-cols-[1fr_auto] gap-x-16 gap-y-8 items-end mb-20 pb-16 border-b border-white/[0.04]">
+          <div className="max-w-2xl">
+            <p className="text-[10px] font-mono tracking-[0.22em] uppercase text-[#B5532C] mb-5">
+              Colophon
+            </p>
+            <p className="font-serif text-[22px] md:text-[28px] leading-[1.35] text-white tracking-tight">
+              Sovereign Matrix is an independent studio building
+              agent infrastructure for operators — one playbook,{" "}
+              <em className="not-italic text-[#B5532C]">one guarantee</em>,
+              one audit trail at a time.
+            </p>
+            <p className="mt-6 text-[14px] text-neutral-400 leading-relaxed max-w-xl">
+              Hand-written in Cape Town. Claude is the critic on every
+              run. We&apos;re not Anthropic — we just build on their
+              model and publish the receipts.
+            </p>
+          </div>
+
+          <Link
+            href={HERO_CTA}
+            className="group inline-flex items-center gap-3 text-[13px] font-mono tracking-tight text-neutral-400 hover:text-white transition-colors whitespace-nowrap"
+          >
+            <span className="font-serif italic text-lg text-[#B5532C] not-italic">→</span>
+            <span className="border-b border-white/[0.1] group-hover:border-[#B5532C] pb-0.5 transition-colors">
+              Run your first playbook
+            </span>
+          </Link>
+        </div>
+
+        {/* ── Link grid ── */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-y-12 gap-x-8 mb-16">
           <FooterCol
             title="Product"
             links={[
@@ -657,53 +860,60 @@ function Footer() {
               { href: "/pricing", label: "Pricing" },
               { href: "/benchmarks", label: "Benchmarks" },
               { href: "/changelog", label: "Changelog" },
+              { href: "/roi", label: "ROI calculator" },
             ]}
           />
           <FooterCol
             title="Trust"
             links={[
-              { href: "/trust", label: "Overview" },
+              { href: "/trust", label: "Operating charter" },
               { href: "/trust/anthropic", label: "Claude in production" },
               { href: "/trust/defenders", label: "Defender's ledger" },
+              { href: "/built-with-claude", label: "Built with Claude" },
               { href: "/.well-known/security.txt", label: "Security contact" },
             ]}
           />
           <FooterCol
-            title="For developers"
+            title="Developers"
             links={[
-              { href: PLATFORM_HREF, label: "Platform" },
-              { href: "/developers/docs", label: "API docs" },
+              { href: PLATFORM_HREF, label: "Platform overview" },
+              { href: "/developers/docs", label: "API reference" },
               { href: "https://www.npmjs.com/package/@sovereignmatrix/mcp", label: "@sovereignmatrix/mcp", external: true },
-              { href: "https://github.com/christiaan839-beep/sovereign-v2", label: "GitHub", external: true },
+              { href: "https://github.com/christiaan839-beep/sovereign-v2", label: "GitHub source", external: true },
             ]}
           />
           <FooterCol
             title="Company"
             links={[
-              { href: "/built-with-claude", label: "Built with Claude" },
-              { href: "/roi", label: "ROI calculator" },
+              { href: "mailto:christiaan@sovereignmatrix.agency", label: "Email the founder", external: true },
+              { href: "https://cal.com/christiaan-sovereign/15min", label: "Book 15 minutes", external: true },
               { href: "/terms", label: "Terms" },
               { href: "/privacy", label: "Privacy" },
             ]}
           />
         </div>
 
-        <div className="pt-8 border-t border-white/[0.04] flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
+        {/* ── Baseline — year, legal, toggle ── */}
+        <div className="pt-8 border-t border-white/[0.04] flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div className="flex items-center gap-3">
             <SovereignLogo size="sm" />
-            <span className="font-serif text-sm text-neutral-400">
-              Sovereign Matrix
-            </span>
-            <span className="text-[10px] font-mono text-neutral-700 ml-4">
-              © 2026 · Operates independently · Not formally affiliated with Anthropic
-            </span>
+            <div className="flex flex-col md:flex-row md:items-baseline gap-x-3 gap-y-0.5">
+              <span className="font-serif text-[15px] text-white">
+                Sovereign Matrix
+              </span>
+              <span className="text-[10px] font-mono text-neutral-600 tracking-tight">
+                © 2026 · Operates independently · Not formally affiliated with Anthropic
+              </span>
+            </div>
           </div>
-          <div className="flex items-center gap-4 text-[11px] font-mono text-neutral-600">
+
+          {/* Operator / Developer toggle */}
+          <div className="flex items-center gap-3 text-[11px] font-mono tracking-tight">
             <Link href="/" className="text-[#B5532C]">
               Operators
             </Link>
-            <span className="text-neutral-800">·</span>
-            <Link href={PLATFORM_HREF} className="hover:text-white transition-colors">
+            <span aria-hidden="true" className="text-neutral-800">·</span>
+            <Link href={PLATFORM_HREF} className="text-neutral-500 hover:text-white transition-colors">
               Developers
             </Link>
           </div>
@@ -722,10 +932,10 @@ function FooterCol({
 }) {
   return (
     <div>
-      <p className="text-[10px] font-mono uppercase tracking-[0.18em] text-neutral-500 mb-4">
+      <p className="text-[10px] font-mono uppercase tracking-[0.18em] text-neutral-500 mb-5">
         {title}
       </p>
-      <ul className="space-y-2.5">
+      <ul className="space-y-3">
         {links.map((link) => (
           <li key={link.href}>
             {link.external ? (
@@ -733,14 +943,14 @@ function FooterCol({
                 href={link.href}
                 target="_blank"
                 rel="noopener"
-                className="text-sm text-neutral-400 hover:text-white transition-colors"
+                className="text-[13px] text-neutral-400 hover:text-white transition-colors tracking-tight"
               >
                 {link.label}
               </a>
             ) : (
               <Link
                 href={link.href}
-                className="text-sm text-neutral-400 hover:text-white transition-colors"
+                className="text-[13px] text-neutral-400 hover:text-white transition-colors tracking-tight"
               >
                 {link.label}
               </Link>
