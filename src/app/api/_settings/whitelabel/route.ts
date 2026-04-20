@@ -3,6 +3,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { whitelabelConfig } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { bustWhitelabelCache } from "@/lib/whitelabel-resolver";
 
 export async function GET() {
   const user = await currentUser();
@@ -61,6 +62,12 @@ export async function POST(req: Request) {
         domain: domain || "",
       });
     }
+
+    // Invalidate the whitelabel-resolver cache for BOTH the old and
+    // new domain (if the domain changed). Otherwise page views serve
+    // stale branding for up to 5 min until TTL expires naturally.
+    if (existing?.domain) bustWhitelabelCache(existing.domain);
+    if (typeof domain === "string" && domain) bustWhitelabelCache(domain);
 
     return NextResponse.json({ success: true });
   } catch (_err) {
