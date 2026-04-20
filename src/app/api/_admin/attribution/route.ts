@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { subscriptions } from "@/db/schema";
 import { and, desc, gte, isNotNull, count } from "drizzle-orm";
 import { createLogger } from "@/lib/logger";
+import { csvEscape, safeRefDomain } from "@/lib/csv";
 
 const log = createLogger("admin:attribution");
 
@@ -194,24 +195,3 @@ export async function GET(req: Request) {
   }
 }
 
-/** RFC 4180 escape + OWASP CSV-formula-injection guard. */
-function csvEscape(value: string | null | undefined): string {
-  if (value === null || value === undefined) return "";
-  let s = String(value);
-  if (/^[=+\-@\t\r]/.test(s)) s = "\t" + s;
-  if (s.includes('"') || s.includes(",") || s.includes("\n") || s.includes("\r")) {
-    return `"${s.replace(/"/g, '""')}"`;
-  }
-  return s;
-}
-
-/** Extract just the hostname from a full referrer URL. Failing URL
- *  parse returns the raw string — we'd rather show it than drop it. */
-function safeRefDomain(referrer: string | null | undefined): string {
-  if (!referrer) return "";
-  try {
-    return new URL(referrer).hostname.replace(/^www\./, "");
-  } catch {
-    return referrer.slice(0, 80);
-  }
-}

