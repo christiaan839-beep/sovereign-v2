@@ -277,17 +277,53 @@ export const chatMessages = pgTable("chat_messages", {
 export const marketplaceAgents = pgTable("marketplace_agents", {
   id: uuid("id").primaryKey().defaultRandom(),
   skillId: uuid("skill_id").references(() => customSkills.id, { onDelete: "set null" }),
+
+  // Author
   authorEmail: text("author_email").notNull(),
   authorName: text("author_name").notNull(),
+  creatorUserId: text("creator_user_id"),            // Clerk user ID — persists across email changes
+
+  // Content
   name: text("name").notNull(),
   description: text("description").notNull(),
-  category: text("category").notNull(), // sales, content, seo, code, automation, research
+  category: text("category").notNull(),              // sales|content|seo|code|automation|research|voice|data
   systemPrompt: text("system_prompt").notNull(),
+  tags: text("tags").notNull().default("[]"),        // JSON string[]
+
+  // Discovery
   isPublic: boolean("is_public").notNull().default(true),
   installs: integer("installs").notNull().default(0),
-  rating: integer("rating").default(0), // 0-5
+  rating: integer("rating").default(0),              // 0-5 star average
+  featured: boolean("featured").notNull().default(false),
+  featuredAt: timestamp("featured_at"),
+
+  // Monetisation
+  pricePerRun: integer("price_per_run").notNull().default(0),            // cents — 0 = free
+  stripeProductId: text("stripe_product_id"),
+  stripePriceId: text("stripe_price_id"),
+  stripeConnectAccountId: text("stripe_connect_account_id"),            // creator's Connect account
+
+  // Usage stats (denormalised for fast leaderboard queries)
+  totalRunCount: integer("total_run_count").notNull().default(0),
+  weeklyRunCount: integer("weekly_run_count").notNull().default(0),
+  revenueCents: integer("revenue_cents").notNull().default(0),           // gross
+  creatorRevenueCents: integer("creator_revenue_cents").notNull().default(0), // 70% share
+
+  // Verification pipeline
+  verificationStatus: text("verification_status").notNull().default("pending"),
+  // pending | in_review | verified | rejected | suspended
+  verifiedAt: timestamp("verified_at"),
+  testRunPassed: boolean("test_run_passed"),
+  safetyScore: integer("safety_score"),              // 0-100 from 5-layer check
+  rejectionReason: text("rejection_reason"),
+
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => [
+  index("idx_marketplace_creator").on(table.creatorUserId),
+  index("idx_marketplace_category").on(table.category),
+  index("idx_marketplace_status").on(table.verificationStatus),
+  index("idx_marketplace_runs").on(table.totalRunCount),
+]);
 
 // ═══════════════════════════════════════════
 // Stripe Subscriptions

@@ -3,6 +3,7 @@ import { research_ai } from "@/lib/ai";
 import { nimChat } from "@/lib/nvidia";
 import { ANTI_SLOP_RULES } from "@/lib/content-engine";
 import { withSelfHeal } from "@/lib/self-heal";
+import { enrichLeads } from "@/lib/enrichment";
 import { z } from "zod";
 
 /**
@@ -110,13 +111,26 @@ Return ONLY valid JSON:
       throw new Error("No leads generated — niche/location may be too narrow");
     }
 
+    // Step 3: Enrichment — fires only when user has BYOK keys (Hunter, Apollo, Clearbit)
+    // If no keys are configured this returns the original array with zero latency overhead.
+    const userEmail = (input._userEmail as string) || "";
+    const enriched = userEmail
+      ? await enrichLeads(leads, userEmail).catch(() => leads)
+      : leads;
+
+    type LeadWithEnrichment = typeof leads[number] & { enrichment?: { sources: string[] } };
+    const enrichmentSources = (enriched as LeadWithEnrichment[])
+      .flatMap((l) => l.enrichment?.sources ?? []);
+    const uniqueSources = [...new Set(enrichmentSources)];
+
     return {
       success: true,
-      leads,
-      total: leads.length,
+      leads: enriched,
+      total: enriched.length,
       niche,
       location,
-      researchGrounded: webResearch.length > 50, // true if we got real web data
+      researchGrounded: webResearch.length > 50,
+      enrichmentSources: uniqueSources,    // ["hunter", "apollo"] or []
     };
   }, { label: "leads", maxRetries: 1, inputSchema: INPUT_SCHEMA }),
 });

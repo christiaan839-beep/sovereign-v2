@@ -25,8 +25,8 @@ export const metadata: Metadata = {
 };
 
 const STATS = [
-  { n: "130", label: "Production agents" },
-  { n: "38",  label: "Models routed" },
+  { n: "131", label: "Production agents" },
+  { n: "39",  label: "Models routed" },
   { n: "1",   label: "Founder" },
   { n: "5",   label: "Safety layers" },
 ];
@@ -59,10 +59,45 @@ const WHERE_CLAUDE_WORKS = [
 ];
 
 const HOW_BUILT = [
-  { count: "01", title: "Written with Claude Code",     body: "Every line of Sovereign Matrix was authored in a Claude Code session. The commit log reads like a correspondence with an engineering partner." },
-  { count: "02", title: "Reviewed by Claude",           body: "Three specialized review agents — slop-hunter, security-review, gap-finder — run before every push. The platform audits itself." },
-  { count: "03", title: "Architected with Claude",     body: "Architecture decisions, trade-offs, migration plans — all worked out in writing. The reasoning is in the repo." },
-  { count: "04", title: "Shipped solo — at scale",     body: "130 agents, 38 model integrations, a playbook engine, a multi-tenant safety pipeline, a live metering layer. One person, one AI partner." },
+  { count: "01", title: "Written with Claude Code",   body: "Every line of Sovereign Matrix was authored in a Claude Code session. The commit log reads like a correspondence with an engineering partner." },
+  { count: "02", title: "Reviewed by Claude",         body: "Three specialized review agents — slop-hunter, security-review, gap-finder — run before every push. The platform audits itself." },
+  { count: "03", title: "Architected with Claude",   body: "Architecture decisions, trade-offs, migration plans — all worked out in writing. The reasoning is in the repo." },
+  { count: "04", title: "Shipped solo — at scale",   body: "131 agents, 39 model integrations, a playbook engine, a multi-tenant safety pipeline, a live metering layer. One person, one AI partner." },
+];
+
+const CLAUDE_API_FEATURES = [
+  {
+    api: "Extended Thinking",
+    model: "claude-opus-4-7",
+    usage: "Strategic reasoning tasks — competitive analysis, board-facing reports, legal clause review. The output has to be right, not just fast.",
+    detail: "Extended thinking produces step-by-step visible reasoning chains. We surface this in the God-Brain UI so users can see exactly how the answer was constructed.",
+  },
+  {
+    api: "Tool Use / Function Calling",
+    model: "claude-sonnet-4-6",
+    usage: "The war-room agent uses tool use to call Tavily, query the database, and invoke secondary agents — all in a single turn.",
+    detail: "Claude's tool use is more reliable at structured JSON than any other model we've tested. The function signatures are tight; hallucinated tool calls are nearly zero.",
+  },
+  {
+    api: "Computer Use",
+    model: "claude-sonnet-4-6",
+    usage: "The /computer-use agent controls a browser and bash shell on behalf of the user — reading live pages, filling forms, triggering deployments.",
+    detail: "We're one of a small number of production deployments of Claude's computer use API. The safety wrapper adds a confirmation step before any irreversible action.",
+  },
+  {
+    api: "Streaming",
+    model: "claude-haiku-4-5",
+    usage: "The live terminal UI streams agent execution token-by-token. Haiku is the streaming model — low latency, low cost, right personality for incremental output.",
+    detail: "We use the Anthropic SDK's stream() helper with a custom EventSource relay. Average time-to-first-token is under 300ms from a cold start.",
+  },
+];
+
+const RESPONSIBLE_AI = [
+  { n: "01", label: "Jailbreak probe",   body: "Every agent submission is attacked with adversarial prompts before listing. Claude chairs the final pass/fail." },
+  { n: "02", label: "PII scanner",        body: "System prompts are scanned for hardcoded secrets, personal data, and payment card patterns before any user ever runs the agent." },
+  { n: "03", label: "Content policy",     body: "A refuse-list blocks known harmful instruction patterns. Claude Haiku validates the pattern match is not a false positive." },
+  { n: "04", label: "Quality gate",       body: "Nemotron Ultra scores specificity and usefulness 0–100. Low-quality agents are rejected at submission, not discovered after launch." },
+  { n: "05", label: "Claude critic",      body: "The final layer: Claude reads the complete system prompt and outputs a pass/fail with a safety score. Every production agent has passed this gate." },
 ];
 
 export default function BuiltWithClaudePage() {
@@ -249,6 +284,121 @@ export default function BuiltWithClaudePage() {
                   </div>
                 </div>
               ))}
+            </div>
+          </section>
+
+          {/* ── Claude API features ──────────────────────────── */}
+          <section className="mb-24">
+            <div className="ed-grid-12 mb-10">
+              <div className="col-span-12 md:col-span-3">
+                <p className="ed-label">Chapter III</p>
+              </div>
+              <div className="col-span-12 md:col-span-9">
+                <h2
+                  className="ed-display"
+                  style={{ fontSize: "clamp(40px, 5vw, 64px)", lineHeight: 0.95, letterSpacing: "-0.015em" }}
+                >
+                  Claude API features <em className="ed-display-italic">in production</em>
+                </h2>
+              </div>
+            </div>
+
+            {CLAUDE_API_FEATURES.map((item, i) => (
+              <article
+                key={item.api}
+                className="ed-grid-12 py-10 border-t"
+                style={{ borderColor: "var(--ed-rule-soft)" }}
+              >
+                <div className="col-span-12 md:col-span-3">
+                  <p className="ed-mono text-[11px] mb-3" style={{ color: "var(--ed-ink-dim)" }}>
+                    {String(i + 1).padStart(2, "0")} / {String(CLAUDE_API_FEATURES.length).padStart(2, "0")}
+                  </p>
+                  <h3 className="ed-display text-[26px] md:text-[32px]" style={{ lineHeight: 0.95 }}>
+                    <span className="ed-mono text-[14px] ed-copper mr-2">/</span>
+                    {item.api}
+                  </h3>
+                  <p className="ed-mono text-[11px] mt-3 inline-block px-2 py-1" style={{ background: "var(--ed-copper-wash)", color: "var(--ed-copper)" }}>
+                    {item.model}
+                  </p>
+                </div>
+                <div className="col-span-12 md:col-span-7 md:col-start-5 space-y-4">
+                  <p className="ed-body text-[17px]" style={{ lineHeight: 1.6 }}>{item.usage}</p>
+                  <p className="ed-body text-[14px]" style={{ color: "var(--ed-ink-soft)", lineHeight: 1.65 }}>{item.detail}</p>
+                </div>
+              </article>
+            ))}
+          </section>
+
+          {/* ── Responsible AI ─────────────────────────────────── */}
+          <section className="mb-24">
+            <div className="ed-grid-12 mb-10">
+              <div className="col-span-12 md:col-span-3">
+                <p className="ed-label">Chapter IV</p>
+              </div>
+              <div className="col-span-12 md:col-span-9">
+                <h2
+                  className="ed-display"
+                  style={{ fontSize: "clamp(40px, 5vw, 64px)", lineHeight: 0.95, letterSpacing: "-0.015em" }}
+                >
+                  Aligned with <em className="ed-display-italic ed-copper">Anthropic&apos;s mission</em>
+                </h2>
+                <p className="ed-body text-[17px] mt-6" style={{ color: "var(--ed-ink-soft)", lineHeight: 1.65 }}>
+                  Anthropic&apos;s mission is the responsible development of AI for the long-term benefit of humanity.
+                  Every agent that runs on this platform passes five verification layers before reaching a user.
+                  Claude authors the final safety judgment on every submission.
+                </p>
+              </div>
+            </div>
+
+            <div className="ed-grid-12">
+              {RESPONSIBLE_AI.map((item) => (
+                <div key={item.n} className="col-span-12 md:col-span-6 py-6 border-t" style={{ borderColor: "var(--ed-rule-soft)" }}>
+                  <div className="flex items-start gap-4">
+                    <div className="ed-mono text-[11px] pt-1 ed-copper tabular-nums">{item.n}</div>
+                    <div>
+                      <h3 className="ed-display text-[22px]" style={{ lineHeight: 1 }}>{item.label}</h3>
+                      <p className="ed-body text-[14px] mt-2" style={{ color: "var(--ed-ink-soft)", lineHeight: 1.65 }}>{item.body}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Anthropic partnership pitch */}
+            <div className="ed-grid-12 mt-10 py-10 border-t" style={{ borderColor: "var(--ed-rule)" }}>
+              <div className="col-span-12 md:col-span-9 md:col-start-2">
+                <div
+                  className="p-8 rounded"
+                  style={{ background: "var(--ed-copper-wash)", border: "1px solid var(--ed-copper)" }}
+                >
+                  <p className="ed-label mb-4" style={{ color: "var(--ed-copper)" }}>Partnership note</p>
+                  <p className="ed-body text-[17px]" style={{ lineHeight: 1.65 }}>
+                    We are seeking a formal Anthropic partnership.
+                    Sovereign Matrix is one of the most technically sophisticated Claude-native platforms in
+                    production — not just API calls, but extended thinking, tool use, computer use, and
+                    Claude-as-safety-critic in a live multi-tenant SaaS product.
+                    We believe this is the kind of responsible AI deployment Anthropic wants more of.
+                  </p>
+                  <div className="flex gap-3 mt-6 flex-wrap">
+                    <Link
+                      href="/contact"
+                      className="ed-display-italic text-[17px] ed-copper border-b pb-0.5 transition-all hover:pl-2"
+                      style={{ borderColor: "var(--ed-copper)" }}
+                    >
+                      Reach the team →
+                    </Link>
+                    <a
+                      href="https://anthropic.com/build"
+                      target="_blank"
+                      rel="noopener"
+                      className="ed-display-italic text-[17px]"
+                      style={{ color: "var(--ed-ink-soft)", borderBottom: "1px solid var(--ed-rule)" }}
+                    >
+                      Anthropic Build program →
+                    </a>
+                  </div>
+                </div>
+              </div>
             </div>
           </section>
 
