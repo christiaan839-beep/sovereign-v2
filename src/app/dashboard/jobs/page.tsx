@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { EmptyState } from "@/components/ui/EmptyState";
 import {
   Zap, Clock, CheckCircle2, XCircle, Loader2,
   RefreshCw, ChevronDown, ChevronUp, Copy, Play,
@@ -294,10 +295,10 @@ export default function JobsPage() {
             <span className="text-sm">Loading jobs…</span>
           </div>
         ) : jobs.length === 0 ? (
-          <div className="py-16 text-center">
-            <BrainCircuit size={32} className="mx-auto mb-3 text-neutral-700" />
-            <p className="text-sm text-neutral-500">No jobs yet. Queue your first one above.</p>
-          </div>
+          <EmptyState
+            title="No jobs yet"
+            description="Queue a long-running agent job above — useful for background tasks that take 30s+. Jobs land here and notify you via Telegram when done."
+          />
         ) : (
           <div className="space-y-2">
             <AnimatePresence mode="popLayout">

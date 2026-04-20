@@ -721,3 +721,32 @@ export const caseStudies = pgTable("case_studies", {
   index("idx_case_studies_published_at").on(table.publishedAt),
   index("idx_case_studies_slug").on(table.slug),
 ]);
+
+// ═══════════════════════════════════════════
+// CTA click tracking — which surfaces convert
+// ═══════════════════════════════════════════
+
+/**
+ * Tracks clicks on named CTAs (FounderCTA, primary hero button,
+ * final-CTA button). Used for launch-week channel analysis paired
+ * with the acquisition pipeline: "visitors from HN clicked the
+ * FounderCTA at 12%, vs LinkedIn at 3%."
+ *
+ * Privacy: no raw user IDs, no PII, only browser-generated session
+ * IDs + hashed user IDs. Referrer is normalized to domain only
+ * before storage. Retention: 180 days via scheduled cleanup job.
+ */
+export const ctaClicks = pgTable("cta_clicks", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  ctaName: text("cta_name").notNull(),
+  sourcePath: text("source_path"),
+  referrerDomain: text("referrer_domain"),
+  userIdHash: text("user_id_hash"),
+  sessionId: text("session_id"),
+  userAgentFamily: text("user_agent_family"),
+  clickedAt: timestamp("clicked_at").notNull().defaultNow(),
+}, (table) => [
+  index("idx_cta_clicks_clicked_at").on(table.clickedAt),
+  index("idx_cta_clicks_cta").on(table.ctaName),
+  index("idx_cta_clicks_source_path").on(table.sourcePath),
+]);

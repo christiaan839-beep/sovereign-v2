@@ -27,7 +27,30 @@ import { MessageCircle, X } from "lucide-react";
  */
 
 const DISMISS_KEY = "founder-cta-dismissed-v1";
+const SESSION_KEY = "sovereign-session-v1";
 const FALLBACK_URL = "https://cal.com/christiaan-sovereign/15min";
+
+/**
+ * Browser-scoped session ID. Distinct from Clerk's session (which
+ * identifies a logged-in user); this identifies a browser across
+ * pre-auth + post-auth states so we can attribute CTA clicks to
+ * the same visitor even if they sign up later.
+ *
+ * Privacy: stored in localStorage (not a cookie), never sent to a
+ * third party, never joined to PII server-side. 36-char UUID.
+ */
+function getOrCreateSessionId(): string {
+  if (typeof window === "undefined") return "";
+  let id = localStorage.getItem(SESSION_KEY);
+  if (!id) {
+    id =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `sess-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    localStorage.setItem(SESSION_KEY, id);
+  }
+  return id;
+}
 
 export function FounderCTA() {
   const [visible, setVisible] = useState(false);
@@ -52,6 +75,43 @@ export function FounderCTA() {
   function handleDismiss() {
     localStorage.setItem(DISMISS_KEY, "1");
     setDismissed(true);
+  }
+
+  /**
+   * Track the click BEFORE the anchor follows the href. sendBeacon
+   * guarantees delivery across the page transition to Cal.com;
+   * fetch+keepalive is the fallback for browsers without Beacon
+   * (rare — all modern ones support it).
+   *
+   * Analytics failure must never block the click. If the server
+   * is down, the link still works.
+   */
+  function handleClick() {
+    if (typeof window === "undefined") return;
+    const payload = JSON.stringify({
+      ctaName: "founder-cta",
+      sourcePath: window.location.pathname,
+      sessionId: getOrCreateSessionId(),
+    });
+    try {
+      if (typeof navigator !== "undefined" && navigator.sendBeacon) {
+        navigator.sendBeacon(
+          "/api/_misc/cta-click",
+          new Blob([payload], { type: "application/json" }),
+        );
+        return;
+      }
+    } catch {
+      /* sendBeacon can throw in sandboxed contexts; fall through */
+    }
+    fetch("/api/_misc/cta-click", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: payload,
+      keepalive: true,
+    }).catch(() => {
+      /* Analytics failure never breaks the link */
+    });
   }
 
   if (dismissed) return null;
@@ -82,6 +142,7 @@ export function FounderCTA() {
 
             <a
               href={calUrl}
+              onClick={handleClick}
               target="_blank"
               rel="noopener"
               className="text-sm font-mono tracking-tight"

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { NoRunsEmpty } from "@/components/ui/EmptyState";
 import {
   Play, Clock, CheckCircle2, XCircle, Loader2, ChevronDown,
   Bot, Cpu, Filter, RefreshCw, Zap,
@@ -230,16 +231,7 @@ export default function ReplaysPage() {
           <span className="ml-3 text-neutral-400">Loading execution history...</span>
         </div>
       ) : filtered.length === 0 ? (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-center py-20 space-y-3"
-        >
-          <Play className="h-12 w-12 text-neutral-500 mx-auto" />
-          <p className="text-neutral-400">
-            No executions yet. Run an agent to see replays here.
-          </p>
-        </motion.div>
+        <NoRunsEmpty />
       ) : (
         <div className="space-y-2">
           <p className="text-xs text-neutral-500">{filtered.length} executions</p>
