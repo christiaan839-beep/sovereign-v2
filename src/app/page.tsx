@@ -1,12 +1,19 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { SignInButton } from "@clerk/nextjs";
 import { useState } from "react";
 import { SovereignLogo } from "@/components/ui/SovereignLogo";
 import { StackKiller } from "@/components/cinematic/StackKiller";
+// Landing-page elite components (v12 redesign)
+import { LiveTerminalDemo } from "@/components/landing/LiveTerminalDemo";
+import { LiveRunsPill } from "@/components/landing/LiveRunsPill";
+import { KineticHeadline } from "@/components/landing/KineticHeadline";
+import { BuiltOnStrip } from "@/components/landing/BuiltOnStrip";
+import { FounderSeats } from "@/components/landing/FounderSeats";
+import { PrimaryCTA } from "@/components/landing/PrimaryCTA";
+import { CommandEgg } from "@/components/landing/CommandEgg";
 
 /**
  * LANDING PAGE v11 — editorial rewrite.
@@ -96,36 +103,42 @@ export default function LandingPage() {
       <Nav mobileNavOpen={mobileNavOpen} setMobileNavOpen={setMobileNavOpen} />
 
       <main id="main-content" className="pt-16">
-        {/* ═══ 01 · HERO ═══ */}
+        {/* ═══ 01 · HERO (with live terminal, runs pill, kinetic headline) ═══ */}
         <Hero />
 
-        {/* ═══ 02 · 3-STEP PROOF ═══ */}
+        {/* ═══ 02 · BUILT-ON TRUST STRIP ═══ */}
+        <BuiltOnStrip />
+
+        {/* ═══ 03 · 3-STEP PROOF ═══ */}
         <ThreeStepProof />
 
-        {/* ═══ 03 · TRUST STRIP (sourced stats) ═══ */}
+        {/* ═══ 04 · TRUST STRIP (sourced stats) ═══ */}
         <TrustStrip />
 
-        {/* ═══ 04 · 5 FEATURED PLAYBOOKS ═══ */}
+        {/* ═══ 05 · 5 FEATURED PLAYBOOKS ═══ */}
         <FeaturedPlaybooksSection />
 
-        {/* ═══ 05 · STACK KILLER (unchanged — strongest section) ═══ */}
+        {/* ═══ 06 · STACK KILLER ═══ */}
         <StackKiller />
 
-        {/* ═══ 06 · CLAUDE CRITIC NARRATIVE ═══ */}
+        {/* ═══ 07 · CLAUDE CRITIC NARRATIVE ═══ */}
         <ClaudeNarrative />
 
-        {/* ═══ 07 · FOUNDER NETWORK ═══ */}
-        <FounderNetwork />
+        {/* ═══ 08 · FOUNDER NETWORK — spatial seats visualization ═══ */}
+        <FounderSeats />
 
-        {/* ═══ 08 · SHIP RECORD ═══ */}
+        {/* ═══ 09 · SHIP RECORD ═══ */}
         <ShipRecord />
 
-        {/* ═══ 09 · FINAL CTA ═══ */}
+        {/* ═══ 10 · FINAL CTA ═══ */}
         <FinalCTA />
       </main>
 
       {/* ═══ FOOTER ═══ */}
       <Footer />
+
+      {/* ═══ EASTER EGG · keyboard-triggered command palette ═══ */}
+      <CommandEgg />
     </div>
   );
 }
@@ -276,7 +289,7 @@ function MobileLink({
 
 function Hero() {
   return (
-    <section className="relative px-6 py-32 md:py-40 overflow-hidden">
+    <section className="relative px-6 py-24 md:py-32 overflow-hidden">
       {/* Subtle copper radial glow behind the headline */}
       <div className="absolute inset-0 pointer-events-none">
         <div
@@ -286,32 +299,25 @@ function Hero() {
       </div>
 
       <div className="relative max-w-5xl mx-auto">
-        <motion.p
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.1, duration: 0.8 }}
-          className="text-[10px] font-mono tracking-[0.22em] uppercase text-[#B5532C] mb-6"
+          className="mb-6 flex items-center gap-3 flex-wrap"
         >
-          No Pilot Purgatory · For operators
-        </motion.p>
+          <p className="text-[10px] font-mono tracking-[0.22em] uppercase text-[#B5532C]">
+            No Pilot Purgatory · For operators
+          </p>
+          <span className="hidden md:inline text-neutral-800">·</span>
+          <LiveRunsPill />
+        </motion.div>
 
-        <motion.h1
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="font-serif text-5xl sm:text-6xl md:text-7xl lg:text-[84px] leading-[0.95] tracking-tight mb-8"
-        >
-          86% of AI pilots
-          <br />
-          never reach production.
-          <br />
-          <em className="not-italic text-[#B5532C]">We ship on day one.</em>
-        </motion.h1>
+        <KineticHeadline />
 
         <motion.p
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25, duration: 0.7 }}
+          transition={{ delay: 0.55, duration: 0.7 }}
           className="max-w-2xl text-lg sm:text-xl text-neutral-400 leading-relaxed mb-10"
         >
           Five pre-built playbooks. Real output in three minutes. Claude as the
@@ -322,16 +328,12 @@ function Hero() {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4, duration: 0.6 }}
+          transition={{ delay: 0.7, duration: 0.6 }}
           className="flex flex-wrap items-center gap-3"
         >
-          <Link
-            href={HERO_CTA}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-[#B5532C] text-white font-mono text-sm tracking-wide hover:bg-[#A04527] transition-colors"
-          >
+          <PrimaryCTA href={HERO_CTA} variant="hero">
             Run your first playbook
-            <ArrowRight className="h-4 w-4" />
-          </Link>
+          </PrimaryCTA>
           <Link
             href="/customers"
             className="inline-flex items-center px-6 py-3 border border-white/[0.1] text-neutral-300 font-mono text-sm tracking-wide hover:bg-white/[0.04] hover:text-white transition-colors"
@@ -343,12 +345,15 @@ function Hero() {
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.6, duration: 0.6 }}
+          transition={{ delay: 0.9, duration: 0.6 }}
           className="mt-8 text-[11px] font-mono text-neutral-600"
         >
           Source: RAND AI adoption survey, 2025. 14% of enterprises have scaled
           agents to production.
         </motion.p>
+
+        {/* Live terminal showing a real Lead Blitz sequence */}
+        <LiveTerminalDemo />
       </div>
     </section>
   );
@@ -566,64 +571,14 @@ function ClaudeNarrative() {
   );
 }
 
-/* ─── 07 · Founder Network ──────────────────────────────────────── */
+/* ─── 08 · Founder Network — moved to <FounderSeats> component
+ *   (src/components/landing/FounderSeats.tsx). Spatial layout with
+ *   seats around a conversation bubble, live seat counter, matches
+ *   elite benchmarks (linear.app cohort-grid, raycast.com "join
+ *   the club" single-focal-point). See page-level <FounderSeats />.
+ * ──────────────────────────────────────────────────────────────── */
 
-function FounderNetwork() {
-  return (
-    <section className="px-6 py-24 md:py-32 border-t border-white/[0.04]">
-      <div className="max-w-5xl mx-auto">
-        <p className="text-[10px] font-mono tracking-[0.22em] uppercase text-[#B5532C] mb-4">
-          Chapter IV · Founder Network
-        </p>
-        <h2 className="font-serif text-3xl md:text-5xl leading-[1.1] mb-6 max-w-3xl">
-          Be one of the first 100.
-          <br />
-          <em className="not-italic text-[#B5532C]">50% off for life.</em>
-        </h2>
-        <p className="text-lg text-neutral-400 leading-relaxed mb-10 max-w-2xl">
-          Direct Slack to the founder, monthly 1:1, case-study partnership
-          (optional), and lifetime locked-in pricing. This is the cohort that
-          earns our first published case studies.
-        </p>
-
-        <div className="grid md:grid-cols-2 gap-4 mb-10">
-          <FounderTerm label="$24.50/mo instead of $49" detail="50% off Growth tier, locked in for the lifetime of your subscription." />
-          <FounderTerm label="Direct Slack to the founder" detail="Not a community board, not a helpdesk. The person who wrote the code." />
-          <FounderTerm label="Monthly 30-min 1:1" detail="Tell me what's broken, what you need next. Your feedback shapes the roadmap." />
-          <FounderTerm label="Case-study partnership" detail="Optional and opt-in. Full approval rights before anything is published." />
-        </div>
-
-        <div className="flex flex-wrap gap-3">
-          <Link
-            href="/signup?plan=founder-network"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-[#B5532C] text-white font-mono text-sm tracking-wide hover:bg-[#A04527] transition-colors"
-          >
-            Claim a slot →
-          </Link>
-          <Link
-            href="/customers"
-            className="inline-flex items-center px-6 py-3 border border-white/[0.1] text-neutral-400 font-mono text-sm tracking-wide hover:text-white hover:border-white/30 transition-colors"
-          >
-            Read the case studies →
-          </Link>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function FounderTerm({ label, detail }: { label: string; detail: string }) {
-  return (
-    <div className="p-5 rounded-2xl border border-white/[0.06] bg-white/[0.015]">
-      <p className="font-serif text-lg text-white mb-1.5">
-        <em className="not-italic text-[#B5532C]">—</em> {label}
-      </p>
-      <p className="text-sm text-neutral-400 leading-relaxed">{detail}</p>
-    </div>
-  );
-}
-
-/* ─── 08 · Ship record ──────────────────────────────────────────── */
+/* ─── 09 · Ship record ──────────────────────────────────────────── */
 
 function ShipRecord() {
   return (
@@ -684,12 +639,9 @@ function FinalCTA() {
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-          <Link
-            href={HERO_CTA}
-            className="inline-flex items-center gap-2 px-7 py-3.5 bg-[#B5532C] text-white font-mono text-sm tracking-wide hover:bg-[#A04527] transition-colors"
-          >
-            Run your first playbook →
-          </Link>
+          <PrimaryCTA href={HERO_CTA} variant="final">
+            Run your first playbook
+          </PrimaryCTA>
           <a
             href="mailto:christiaan@sovereignmatrix.agency"
             className="inline-flex items-center px-7 py-3.5 border border-white/[0.1] text-neutral-400 font-mono text-sm tracking-wide hover:text-white hover:border-white/30 transition-colors"
