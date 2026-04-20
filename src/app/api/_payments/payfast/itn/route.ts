@@ -1,74 +1,11 @@
-import { persistAppend } from "@/lib/persist";
-import { getBaseUrl } from "@/lib/base-url";
-
 /**
- * PAYFAST ITN (Instant Transaction Notification) — Webhook callback
- * that PayFast calls when a payment completes, cancels, or fails.
- * 
- * On successful payment:
- * 1. Validates the signature
- * 2. Activates the client's plan
- * 3. Triggers auto-onboard pipeline
- * 4. Logs the transaction
+ * PayFast ITN (Instant Transaction Notification) entry point.
+ *
+ * PayFast can be configured to call either /itn or /webhook — this handler
+ * delegates entirely to the verified webhook implementation so there is a
+ * single code path with IP validation + MD5 signature verification.
+ *
+ * DO NOT add business logic here. All processing lives in ../webhook/route.ts
+ * which enforces PayFast IP ranges and signature verification before acting.
  */
-
-export async function POST(request: Request) {
-  try {
-    const body = await request.text();
-    const params = new URLSearchParams(body);
-    const data = Object.fromEntries(params.entries());
-
-    const paymentStatus = data.payment_status;
-    const paymentId = data.m_payment_id || "";
-    const amountGross = data.amount_gross || "0";
-    const emailAddress = data.email_address || "";
-
-    // Log every ITN for audit
-    persistAppend("payfast-itn-log", {
-      id: paymentId,
-      status: paymentStatus,
-      amount: amountGross,
-      email: emailAddress,
-      timestamp: new Date().toISOString(),
-      raw: data,
-    }, 500);
-
-    if (paymentStatus === "COMPLETE") {
-      // Extract plan from payment ID (format: SM-{plan}-{timestamp})
-      const planMatch = paymentId.match(/SM-(\w+)-/);
-      const planId = planMatch?.[1] || "node";
-
-      // Trigger auto-onboard
-      const baseUrl = getBaseUrl();
-
-      try {
-        await fetch(`${baseUrl}/api/agents/auto-onboard`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            clientName: `${data.name_first || ""} ${data.name_last || ""}`.trim() || "New Client",
-            email: emailAddress,
-            plan: planId,
-          }),
-        });
-      } catch {
-        // Auto-onboard is best-effort
-      }
-
-      // Log successful payment
-      persistAppend("payfast-payments", {
-        id: paymentId,
-        plan: planId,
-        amount: amountGross,
-        email: emailAddress,
-        timestamp: new Date().toISOString(),
-      }, 1000);
-
-      return new Response("OK", { status: 200 });
-    }
-
-    return new Response("OK", { status: 200 });
-  } catch (_error) {
-    return new Response("Error", { status: 500 });
-  }
-}
+export { POST } from "../webhook/route";

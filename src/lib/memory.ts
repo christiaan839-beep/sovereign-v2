@@ -49,7 +49,9 @@ ${chunk}
 
 Generate a concise 2-sentence context summary explaining exactly what this chunk means in the context of the whole document. Output ONLY the summary.`;
 
-      const contextSummary = await ai(prompt, { model: "claude", maxTokens: 150 });
+      // Use Cerebras for per-chunk summaries: 2000+ tok/s, sub-$0.01/1K tokens.
+      // Claude is 60× more expensive for 2-sentence outputs that don't need its reasoning depth.
+      const contextSummary = await ai(prompt, { model: "cerebras", maxTokens: 150 });
       
       const contextualizedChunk = `[Source: ${documentTitle}]\n[Context: ${contextSummary}]\n\n${chunk}`;
       const vector = await embed(contextualizedChunk);

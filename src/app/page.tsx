@@ -1,1553 +1,1412 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle2, Target, XCircle, ArrowRight, Mic, Search, FileText } from "lucide-react";
 import Link from "next/link";
 import { SignInButton } from "@clerk/nextjs";
 import { useState, useEffect } from "react";
-
 import { SovereignLogo } from "@/components/ui/SovereignLogo";
-import { Pricing } from "@/components/ui/Pricing";
-import { Testimonials } from "@/components/ui/SocialProof";
-import { CinematicLoader } from "@/components/ui/CinematicLoader";
-
-
-import { LandingAgent } from "@/components/ui/LandingAgent";
-import { RevealText, MagneticButton, StaggerChildren, GlowDivider, ScrollProgress } from "@/components/ui/ScrollAnimations";
-import { useHideyNav, TextShimmer, TiltCard, SectionReveal } from "@/components/ui/EliteEffects";
-import { TextDecrypt } from "@/components/cinematic/TextDecrypt";
-import { ParticleBurst } from "@/components/cinematic/ParticleBurst";
-import { Typewriter, AnimatedCounter, GradientFollower } from "@/components/cinematic/InteractiveEffects";
-import { LiveTicker } from "@/components/cinematic/LiveTicker";
-import { LogoMarquee } from "@/components/cinematic/InfiniteMarquee";
-import { ExitIntent } from "@/components/ui/ExitIntent";
-import { LivePulse } from "@/components/ui/LivePulse";
-import dynamic from "next/dynamic";
-import { useLiveAgentCount } from "@/hooks/useLiveAgentCount";
-
-const PhysicsCards = dynamic(() => import("@/components/cinematic/PhysicsCards").then(m => ({ default: m.PhysicsCards })), { ssr: false });
-const NebulaBackground = dynamic(() => import("@/components/cinematic/NebulaBackground").then(m => ({ default: m.NebulaBackground })), { ssr: false });
-const SmoothScroll = dynamic(() => import("@/components/cinematic/SmoothScroll").then(m => ({ default: m.SmoothScroll })), { ssr: false });
-const WebGLParticles = dynamic(() => import("@/components/cinematic/WebGLParticles").then(m => ({ default: m.WebGLParticles })), { ssr: false });
-import { MouseParallax, FloatingElement } from "@/components/cinematic/MouseParallax";
-const AgentGlobe = dynamic(() => import("@/components/cinematic/AgentGlobe").then(m => ({ default: m.AgentGlobe })), { ssr: false });
-const AgentOffice = dynamic(() => import("@/components/ui/AgentOffice").then(m => ({ default: m.AgentOffice })), { ssr: false });
-const CursorGlow = dynamic(() => import("@/components/cinematic/CursorGlow").then(m => ({ default: m.CursorGlow })), { ssr: false });
-const ConsensusEngine = dynamic(() => import("@/components/cinematic/ConsensusEngine").then(m => ({ default: m.ConsensusEngine })), { ssr: false });
-const TokenStream = dynamic(() => import("@/components/cinematic/TokenStream").then(m => ({ default: m.TokenStream })), { ssr: false });
-// Static imports to avoid Turbopack stale module factory issue with new files
-import { LiveAgentTerminal } from "@/components/cinematic/LiveAgentTerminal";
 import { StackKiller } from "@/components/cinematic/StackKiller";
-import { LiveModelHealth } from "@/components/cinematic/LiveModelHealth";
-import { LiveAgentStats } from "@/components/cinematic/LiveAgentStats";
-import { AnimatedGrid } from "@/components/cinematic/AnimatedGrid";
-import { FloatingOrbs } from "@/components/cinematic/ScrollRevealHero";
-import { BentoGrid } from "@/components/cinematic/BentoGrid";
-import { TokCounter } from "@/components/landing/TokCounter";
-import { EarlyAccessCapture } from "@/components/landing/EarlyAccessCapture";
-import { FAQSection } from "@/components/landing/FAQSection";
-import { CountUpOnView, TimeCountUpOnView } from "@/components/landing/CountUpOnView";
+import { getMarketingPlaybooks } from "@/lib/playbooks";
+import { LiveTerminalDemo } from "@/components/landing/LiveTerminalDemo";
+import { LiveRunsPill } from "@/components/landing/LiveRunsPill";
+import { KineticHeadline } from "@/components/landing/KineticHeadline";
+import { BuiltOnStrip } from "@/components/landing/BuiltOnStrip";
+import { FounderSeats } from "@/components/landing/FounderSeats";
+import { PrimaryCTA } from "@/components/landing/PrimaryCTA";
+import { CommandEgg } from "@/components/landing/CommandEgg";
+import { ConsensusFlow } from "@/components/landing/ConsensusFlow";
+import { DashboardMockup } from "@/components/landing/DashboardMockup";
+import { HeroBackdrop } from "@/components/landing/HeroBackdrop";
+import { KeyboardNative } from "@/components/landing/KeyboardNative";
+import { ModelPulse } from "@/components/landing/ModelPulse";
+import { StatusIndicator } from "@/components/landing/StatusIndicator";
+import { trackCtaClick } from "@/lib/cta-track";
+import {
+  useHideyNav,
+  FloatingParticles,
+  TiltCard,
+} from "@/components/ui/EliteEffects";
 
-// ─── ROI Calculator ───
-function ROICalculator() {
-  const [leads, setLeads] = useState(50);
-  const [dealSize, setDealSize] = useState(5000);
-  const closeRate = 0.1;
-  const sovereignCost = 199;
+/**
+ * Landing page — 10 sections, editorial palette aligned with
+ * /trust, /roi, /built-with-claude, /customers, /platform,
+ * /benchmarks. Each section is a function below:
+ *
+ *   01 Hero  · 02 Three-step proof · 03 Trust strip ·
+ *   04 Featured playbooks · 05 Stack Killer · 06 Claude critic ·
+ *   07 Founder Network · 08 Ship record · 09 Final CTA · 10 Footer
+ *
+ * Palette: #030303 base, #B5532C copper accent, Instrument Serif
+ * for display, Inter Tight for body, JetBrains Mono for labels.
+ */
 
-  const monthlyRevenue = Math.round(leads * closeRate * dealSize);
-  const roi = monthlyRevenue > 0 ? Math.round(((monthlyRevenue - sovereignCost) / sovereignCost) * 100) : 0;
-  const humanCost = Math.round(leads * 0.75 * 25); // 45min per lead at $25/hr ≈ 0.75hr
+const HERO_CTA = "/signup";
+const PLATFORM_HREF = "/platform";
 
-  return (
-    <section className="py-24 px-6 bg-[#040404]">
-      <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-12">
-          <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">ROI Calculator</p>
-          <h2 className="text-3xl md:text-5xl font-black text-white tracking-tight mb-4">
-            The math is<br />
-            <span className="text-emerald-400">embarrassingly obvious.</span>
-          </h2>
-          <p className="text-neutral-400 text-sm max-w-md mx-auto">
-            Drag the sliders. Watch what happens to your revenue when agents handle lead gen 24/7.
-          </p>
-        </div>
-
-        <div className="grid md:grid-cols-[1fr_1fr] gap-8">
-          {/* Inputs */}
-          <div className="space-y-8 p-6 rounded-2xl border border-white/[0.06] bg-[#080808]">
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <label className="text-xs text-neutral-400">Leads per month from agents</label>
-                <span className="text-sm font-black text-white font-mono">{leads}</span>
-              </div>
-              <input
-                type="range" min={10} max={500} step={10} value={leads}
-                onChange={e => setLeads(Number(e.target.value))}
-                className="w-full h-1 rounded-full bg-neutral-800 appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-emerald-400 [&::-webkit-slider-thumb]:cursor-pointer"
-              />
-              <div className="flex justify-between text-[9px] text-neutral-700 mt-1">
-                <span>10</span><span>250</span><span>500</span>
-              </div>
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <label className="text-xs text-neutral-400">Average deal value</label>
-                <span className="text-sm font-black text-white font-mono">${dealSize.toLocaleString()}</span>
-              </div>
-              <input
-                type="range" min={500} max={50000} step={500} value={dealSize}
-                onChange={e => setDealSize(Number(e.target.value))}
-                className="w-full h-1 rounded-full bg-neutral-800 appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-emerald-400 [&::-webkit-slider-thumb]:cursor-pointer"
-              />
-              <div className="flex justify-between text-[9px] text-neutral-700 mt-1">
-                <span>$500</span><span>$25K</span><span>$50K</span>
-              </div>
-            </div>
-
-            <div className="pt-4 border-t border-white/[0.04] space-y-2">
-              <div className="flex justify-between text-xs">
-                <span className="text-neutral-500">Close rate (industry avg)</span>
-                <span className="text-white font-mono">10%</span>
-              </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-neutral-500">Sovereign Node cost</span>
-                <span className="text-white font-mono">${sovereignCost}/mo</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Results */}
-          <div className="space-y-4">
-            <div className="p-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.04]">
-              <p className="text-[10px] text-emerald-500/60 uppercase tracking-widest mb-1">Expected monthly revenue</p>
-              <p className="text-4xl font-black text-emerald-400 font-mono">${monthlyRevenue.toLocaleString()}</p>
-              <p className="text-xs text-neutral-500 mt-1">{leads} leads &times; 10% close &times; ${dealSize.toLocaleString()} avg deal</p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 rounded-xl border border-white/[0.06] bg-[#080808]">
-                <p className="text-[10px] text-neutral-600 uppercase tracking-widest mb-1">ROI</p>
-                <p className="text-2xl font-black text-white font-mono">{roi.toLocaleString()}%</p>
-              </div>
-              <div className="p-4 rounded-xl border border-white/[0.06] bg-[#080808]">
-                <p className="text-[10px] text-neutral-600 uppercase tracking-widest mb-1">vs hiring a human</p>
-                <p className="text-2xl font-black text-white font-mono">${humanCost.toLocaleString()}<span className="text-sm text-neutral-500">/mo</span></p>
-                <p className="text-[9px] text-neutral-700">45 min/lead &times; $25/hr</p>
-              </div>
-            </div>
-
-            <div className="p-4 rounded-xl border border-white/[0.06] bg-[#080808] text-center">
-              <p className="text-xs text-neutral-500 mb-1">Sovereign pays for itself after</p>
-              <p className="text-xl font-black text-white font-mono">
-                {monthlyRevenue > 0 ? (
-                  <>{Math.max(1, Math.ceil(sovereignCost / (monthlyRevenue / 30)))} days</>
-                ) : (
-                  <>—</>
-                )}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ─── Enterprise Section (CSS-only parallax — no useScroll dependency) ───
-function EnterpriseSection() {
-  return (
-    <section id="enterprise" className="py-32 px-6 relative overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_50%,rgba(16,185,129,0.03),transparent)]" />
-      <AnimatedGrid />
-      {/* Grid background */}
-      <div
-        className="absolute inset-[-20%] bg-[linear-gradient(rgba(16,185,129,0.01)_1px,transparent_1px),linear-gradient(90deg,rgba(16,185,129,0.01)_1px,transparent_1px)] bg-[size:80px_80px] pointer-events-none"
-      />
-      <div className="max-w-4xl mx-auto relative z-10">
-        <div className="text-center mb-20">
-          <RevealText as="p" className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">Sovereign AI</RevealText>
-          <RevealText as="h2" delay={0.1} className="text-3xl md:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.1] mb-6">
-            Your data. Your infrastructure. Your autonomous workforce.
-          </RevealText>
-          <RevealText as="p" delay={0.2} className="text-sm text-neutral-400 max-w-2xl mx-auto leading-relaxed">
-            Built on NVIDIA NIM with 39+ models including Gemini 3.1 Pro and Claude Mythos. Zero per-token costs.
-            Run locally via Ollama. Glasswing-grade safety on every execution.
-          </RevealText>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center">
-            <div className="text-5xl md:text-6xl font-black mb-2 tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-white to-neutral-400">
-              <AnimatedCounter target={130} duration={2} />
-            </div>
-            <div className="text-sm font-semibold text-white mb-1">Specialized Agents</div>
-            <p className="text-xs text-neutral-400">Purpose-built for specific business functions.</p>
-          </motion.div>
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 }} className="text-center">
-            <div className="text-5xl md:text-6xl font-black mb-2 tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-white to-neutral-400">
-              <AnimatedCounter target={39} suffix="+" duration={1.5} />
-            </div>
-            <div className="text-sm font-semibold text-white mb-1">Open-Source Models</div>
-            <p className="text-xs text-neutral-400">Automatic failover. Zero vendor lock-in.</p>
-          </motion.div>
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }} className="text-center">
-            <div className="text-5xl md:text-6xl font-black mb-2 tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-white to-neutral-400">
-              $<AnimatedCounter target={0} duration={0.5} />
-            </div>
-            <div className="text-sm font-semibold text-white mb-1">Per-Token Cost</div>
-            <p className="text-xs text-neutral-400">Scale inference without scaling your bill.</p>
-          </motion.div>
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {[
-            { label: "25 Autopilot Playbooks", desc: "Schedule multi-agent workflows to run hourly, daily, or weekly — 24/7" },
-            { label: "25+ Live Integrations", desc: "Slack, Sheets, HubSpot, Yoco, GitHub, Discord, and more" },
-            { label: "Mythos-Ready", desc: "Glasswing-tier models auto-route through 5-layer guardrails" },
-            { label: "2,200+ Tok/s Inference", desc: "Cerebras wafer-scale engine for instant classification" },
-          ].map((item, i) => (
-            <motion.div key={i} initial={{ opacity: 0 }} whileInView={{ opacity: 1 }}
-              viewport={{ once: true }} transition={{ delay: 0.2 + i * 0.08 }}
-              className="p-4 rounded-xl border border-white/[0.06] bg-white/[0.01] hover:border-emerald-500/15 transition-gpu duration-300">
-              <div className="text-xs font-semibold text-white mb-0.5">{item.label}</div>
-              <p className="text-[10px] text-neutral-500">{item.desc}</p>
-            </motion.div>
-          ))}
-        </div>
-
-        <div className="mt-12 text-center">
-          <MagneticButton href="/partner" strength={0.2}>
-            <span className="group inline-flex items-center gap-2 px-7 py-3.5 bg-white text-black font-semibold rounded-full text-sm hover:shadow-[0_0_40px_rgba(255,255,255,0.12)] transition-gpu cursor-pointer">
-              Book a Strategy Call <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-            </span>
-          </MagneticButton>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ─── Interactive Demo with Tabs ───
-const DEMO_SCENARIOS = [
-  {
-    id: "leads",
-    label: "Lead Gen",
-    icon: Target,
-    prompt: "Find 50 leads in fintech — Series A, US-based, with open CMO roles.",
-    agent: "Lead Agent",
-    response: "Found 53 matches. Enriched with LinkedIn profiles, funding data, and email verification. 48 have validated emails.",
-    badges: [
-      { text: "53 leads found", color: "emerald" },
-      { text: "48 verified emails", color: "cyan" },
-      { text: "CSV ready", color: "neutral" },
-    ],
+/**
+ * Landing page's featured playbooks are derived from the single
+ * source of truth in src/lib/playbooks.ts (any playbook with
+ * `marketing: true`). That keeps this file in sync automatically
+ * when we add/remove featured playbooks — no more drift between
+ * the hardcoded landing list and the actual registry.
+ *
+ * Outcome + time strings live here because they're positioning copy,
+ * not playbook-runtime data (the engine doesn't need the sales version
+ * of "50 qualified leads in 3 minutes").
+ */
+const PLAYBOOK_COPY: Record<string, { outcome: string; time: string }> = {
+  "lead-blitz": {
+    outcome: "5+ companies with contact angles guaranteed, or the run doesn't count.",
+    time: "~3 min",
   },
-  {
-    id: "content",
-    label: "Content",
-    icon: FileText,
-    prompt: "Write a 1,500-word blog post about AI agents replacing agency work. Anti-slop. Sound human.",
-    agent: "Content Agent",
-    response: "Draft complete. 1,487 words. AI detection score: 4.2% (human-passing). Readability: Grade 8. SEO optimized for 3 target keywords.",
-    badges: [
-      { text: "4.2% AI score", color: "emerald" },
-      { text: "1,487 words", color: "cyan" },
-      { text: "SEO optimized", color: "neutral" },
-    ],
+  "competitor-takedown": {
+    outcome: "Full report: weaknesses, market gaps, pricing arbitrage, counter-positioning.",
+    time: "~4 min",
   },
-  {
-    id: "market-intel",
-    label: "Market Intel",
-    icon: Search,
-    prompt: "Analyze hubspot.com — tech stack, market positioning, and untapped opportunities.",
-    agent: "Market Analyst",
-    response: "Tech stack: React, Next.js, Contentful CMS. Found 847 uncontested keyword opportunities. Identified 12 positioning angles in underserved segments.",
-    badges: [
-      { text: "847 opportunities", color: "emerald" },
-      { text: "12 positioning angles", color: "cyan" },
-      { text: "Full report", color: "neutral" },
-    ],
+  "content-machine": {
+    outcome: "1,500+ word post, meta + keywords, plus platform-ready social snippets.",
+    time: "~2 min",
   },
-  {
-    id: "voice",
-    label: "Voice Call",
-    icon: Mic,
-    prompt: "Call the top 10 leads from today's search. Qualify for budget and timeline. Book meetings.",
-    agent: "Voice Agent",
-    response: "10 calls completed in 4m 32s. AI disclosed on each call. 6 answered. 3 qualified (budget confirmed). 2 meetings booked directly to your calendar.",
-    badges: [
-      { text: "3 qualified", color: "emerald" },
-      { text: "2 meetings booked", color: "cyan" },
-      { text: "< 200ms latency", color: "neutral" },
-    ],
+  "seo-domination": {
+    outcome: "Content velocity score + ranked keyword gaps + topic sequence.",
+    time: "~4 min",
   },
-];
+  "weekly-report": {
+    outcome: "Executive-ready summary: wins, blockers, next steps. Scheduled every Monday.",
+    time: "~2 min",
+  },
+};
 
-function InteractiveDemo() {
-  const [active, setActive] = useState(0);
-  const [paused, setPaused] = useState(false);
-  const [liveResponse, setLiveResponse] = useState<string | null>(null);
-  const [isRunning, setIsRunning] = useState(false);
-  const scenario = DEMO_SCENARIOS[active];
-
-  const runLive = async () => {
-    if (isRunning) return;
-    setIsRunning(true);
-    setPaused(true);
-    setLiveResponse(null);
-    try {
-      const res = await fetch("/api/agents/smart-router", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: scenario.prompt, task_type: "analysis" }),
-      });
-      const data = await res.json();
-      setLiveResponse(data.result || data.response || "Agent executed successfully.");
-    } catch {
-      setLiveResponse("Agent is processing. Sign up for full access to see real-time results.");
-    } finally {
-      setIsRunning(false);
-    }
+// Build the featured array from the source-of-truth registry.
+const FEATURED_PLAYBOOKS = getMarketingPlaybooks().map((pb) => {
+  const copy = PLAYBOOK_COPY[pb.id] ?? {
+    outcome: pb.guarantee ?? pb.description,
+    time: pb.estimatedTime,
   };
+  return {
+    slug: pb.id,
+    name: pb.name,
+    tagline: pb.tagline,
+    outcome: copy.outcome,
+    time: copy.time,
+  };
+});
 
-  // Auto-cycle through scenarios every 6 seconds (pauses on hover/interaction)
-  useEffect(() => {
-    if (paused) return;
-    const timer = setInterval(() => {
-      setActive((prev) => (prev + 1) % DEMO_SCENARIOS.length);
-    }, 6000);
-    return () => clearInterval(timer);
-  }, [paused]);
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-50px" }}
-      transition={{ duration: 0.7 }}
-      className="relative max-w-3xl mx-auto"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-    >
-      {/* Tabs */}
-      <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-2 scrollbar-hide">
-        {DEMO_SCENARIOS.map((s, i) => (
-          <button
-            key={s.id}
-            type="button"
-            onClick={() => { setActive(i); setPaused(true); }}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium transition-gpu duration-300 whitespace-nowrap ${
-              active === i
-                ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                : "bg-white/[0.02] text-neutral-500 border border-white/[0.06] hover:text-white hover:border-white/[0.12]"
-            }`}
-          >
-            <s.icon className="w-3.5 h-3.5" />
-            {s.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Window chrome */}
-      <div className="rounded-2xl border border-white/[0.08] bg-[#0A0A0A] overflow-hidden shadow-[0_0_60px_rgba(16,185,129,0.04)]">
-        <div className="flex items-center gap-2 px-5 py-3 border-b border-white/[0.06] bg-[#060606]">
-          <div className="flex gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-white/[0.08]" />
-            <span className="w-2.5 h-2.5 rounded-full bg-white/[0.08]" />
-            <span className="w-2.5 h-2.5 rounded-full bg-white/[0.08]" />
-          </div>
-          <span className="text-[10px] text-neutral-500 ml-3 font-mono">sovereign-matrix.agency/dashboard</span>
-        </div>
-
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={scenario.id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.3 }}
-            className="p-6 space-y-4"
-          >
-            {/* User message */}
-            <div className="flex justify-end">
-              <div className="max-w-[80%] px-4 py-3 rounded-2xl rounded-br-md bg-emerald-500/10 border border-emerald-500/15">
-                <p className="text-sm text-emerald-200">{scenario.prompt}</p>
-              </div>
-            </div>
-
-            {/* Agent response */}
-            <div className="flex justify-start">
-              <div className="max-w-[85%] px-4 py-3 rounded-2xl rounded-bl-md bg-white/[0.03] border border-white/[0.06]">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="text-[10px] text-emerald-500/70 font-medium uppercase tracking-wider">{scenario.agent}</span>
-                </div>
-                <p className="text-sm text-neutral-300 leading-relaxed mb-3">
-                  <Typewriter key={scenario.id} text={scenario.response} speed={15} />
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {scenario.badges.map((b, i) => (
-                    <span key={i} className={`text-[10px] px-2 py-1 rounded-md ${
-                      b.color === "emerald" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/15" :
-                      b.color === "cyan" ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/15" :
-                      "bg-white/[0.04] text-neutral-400 border border-white/[0.06]"
-                    }`}>{b.text}</span>
-                  ))}
-                </div>
-
-                {/* Run Live button */}
-                <button
-                  type="button"
-                  onClick={runLive}
-                  disabled={isRunning}
-                  className="mt-3 flex items-center gap-1.5 text-[10px] font-semibold text-emerald-400 hover:text-emerald-300 transition-colors disabled:opacity-50"
-                >
-                  {isRunning ? (
-                    <><span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" /> Running live...</>
-                  ) : (
-                    <><span className="w-2 h-2 rounded-full bg-emerald-400" /> Run this live — real agent, real output</>
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* Live response */}
-            {liveResponse && (
-              <div className="mt-3 px-4 py-3 rounded-xl bg-emerald-500/[0.04] border border-emerald-500/15">
-                <div className="flex items-center gap-1.5 mb-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                  <span className="text-[9px] text-emerald-500/60 font-bold uppercase tracking-wider">Live Result</span>
-                </div>
-                <p className="text-xs text-emerald-200/80 leading-relaxed font-mono">{liveResponse}</p>
-              </div>
-            )}
-          </motion.div>
-        </AnimatePresence>
-      </div>
-    </motion.div>
-  );
-}
-
-export default function Home() {
+export default function LandingPage() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const agentCount = useLiveAgentCount();
-  const navVisible = useHideyNav(80);
 
   return (
-    <CinematicLoader>
-    <div className="relative min-h-screen bg-[#010101] text-white selection:bg-emerald-500/20 font-sans antialiased">
-
-      {/* Cursor glow — emerald trail follows mouse everywhere */}
-      <CursorGlow />
-
-      {/* Floating orbs — scroll-driven parallax depth */}
-      <FloatingOrbs />
-
-      {/* Exit intent — captures leaving visitors */}
-      <ExitIntent />
-
-      {/* Smooth scroll — Lenis (Antigravity's floating scroll feel) */}
-      <SmoothScroll />
-
-      {/* Scroll progress bar */}
-      <ScrollProgress />
-
-      {/* Skip to content — accessibility */}
-      <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[200] focus:px-4 focus:py-2 focus:bg-emerald-500 focus:text-black focus:rounded-lg focus:text-sm focus:font-bold">
-        Skip to main content
-      </a>
-
+    <div className="min-h-screen bg-[#030303] text-white antialiased">
       {/* ═══ NAVIGATION ═══ */}
-      <motion.nav
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: navVisible ? 1 : 0, y: navVisible ? 0 : -10 }}
-        transition={{ duration: 0.3, ease: "easeOut" }}
-        className="fixed top-0 inset-x-0 z-50 pointer-events-none"
-      >
-        <div className="px-6 md:px-10 h-16 flex items-center justify-between pointer-events-auto max-w-7xl mx-auto bg-[#010101]/80 backdrop-blur-sm rounded-b-2xl">
-          <Link href="/" className="flex items-center gap-2.5">
-            <SovereignLogo size="sm" />
-            <span className="hidden sm:block text-sm font-semibold text-white">Sovereign Matrix</span>
-          </Link>
-
-          <div className="hidden md:flex items-center gap-8">
-            <Link href="#enterprise" className="text-sm text-neutral-400 hover:text-white transition-colors">Product</Link>
-            <Link href="#pricing" className="text-sm text-neutral-400 hover:text-white transition-colors">Pricing</Link>
-            <Link href="/vs/hubspot" className="text-sm text-neutral-400 hover:text-white transition-colors">Compare</Link>
-            <Link href="/security" className="text-sm text-neutral-400 hover:text-white transition-colors">Security</Link>
-            <SignInButton mode="modal" fallbackRedirectUrl="/dashboard">
-              <button className="text-sm text-neutral-500 hover:text-white transition-colors">Log in</button>
-            </SignInButton>
-            <Link href="/demo" className="text-sm text-emerald-400 hover:text-emerald-300 transition-colors font-semibold">Live Demo</Link>
-            <Link href="/signup" className="px-5 py-2 rounded-full bg-white text-xs font-semibold text-black hover:bg-neutral-200 transition-colors">
-              Get Started
-            </Link>
-          </div>
-
-          <button className="md:hidden p-2" onClick={() => setMobileNavOpen(!mobileNavOpen)} aria-label="Toggle menu">
-            <div className="space-y-1.5">
-              <span className={`block w-5 h-[1.5px] bg-white transition-gpu ${mobileNavOpen ? 'rotate-45 translate-y-[7px]' : ''}`} />
-              <span className={`block w-5 h-[1.5px] bg-white transition-gpu ${mobileNavOpen ? 'opacity-0' : ''}`} />
-              <span className={`block w-5 h-[1.5px] bg-white transition-gpu ${mobileNavOpen ? '-rotate-45 -translate-y-[7px]' : ''}`} />
-            </div>
-          </button>
-        </div>
-
-        <AnimatePresence>
-          {mobileNavOpen && (
-            <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-              className="absolute top-16 left-4 right-4 p-5 rounded-2xl md:hidden bg-[#080808]/95 backdrop-blur-2xl border border-white/[0.06] flex flex-col gap-3 shadow-2xl pointer-events-auto">
-              <Link href="#enterprise" className="text-sm text-neutral-300 hover:text-white py-1" onClick={() => setMobileNavOpen(false)}>Platform</Link>
-              <Link href="#pricing" className="text-sm text-neutral-300 hover:text-white py-1" onClick={() => setMobileNavOpen(false)}>Pricing</Link>
-              <Link href="/vs/hubspot" className="text-sm text-neutral-300 hover:text-white py-1" onClick={() => setMobileNavOpen(false)}>Compare</Link>
-              <Link href="/security" className="text-sm text-neutral-300 hover:text-white py-1" onClick={() => setMobileNavOpen(false)}>Security</Link>
-              <Link href="/signup" className="px-5 py-2.5 rounded-xl bg-white text-sm font-semibold text-black text-center mt-2" onClick={() => setMobileNavOpen(false)}>Get Started</Link>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.nav>
+      <Nav mobileNavOpen={mobileNavOpen} setMobileNavOpen={setMobileNavOpen} />
 
       <main id="main-content">
+        {/* ═══ 01 · HERO (with live terminal, runs pill, kinetic headline) ═══ */}
+        <Hero />
 
-      {/* ═══ HERO — Antigravity-level cinematic with physics ═══ */}
-      <section
-        className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-[#010101]">
-
-        {/* Layer 0: Animated nebula — slowly morphing cosmic clouds */}
-        <NebulaBackground />
-
-        {/* Layer 1: Deep grid — creates depth perception */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(16,185,129,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(16,185,129,0.015)_1px,transparent_1px)] bg-[size:60px_60px] [mask-image:radial-gradient(ellipse_80%_60%_at_50%_50%,black_20%,transparent_100%)]" />
-
-        {/* Layer 2: WebGL particles — GPU-rendered with custom shaders (beats Antigravity) */}
-        <WebGLParticles count={1000} />
-
-        {/* Layer 3: Dual ambient glow — creates atmosphere */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-1/3 left-1/3 w-[500px] h-[500px] rounded-full bg-emerald-500/[0.04] blur-[180px]" />
-          <div className="absolute bottom-1/3 right-1/3 w-[400px] h-[400px] rounded-full bg-cyan-500/[0.03] blur-[160px]" />
+        {/* ═══ 02 · BUILT-ON TRUST STRIP — hero warmth bleeds in ═══ */}
+        {/* -mt-20 / pt-20 pulls this section up so the hero aurora's copper
+            warmth continues visually rather than cutting hard to black. */}
+        <div className="relative -mt-20 pt-20">
+          <div
+            className="absolute inset-x-0 top-0 h-32 pointer-events-none"
+            style={{ background: "linear-gradient(to bottom, rgba(181,83,44,0.04) 0%, transparent 100%)" }}
+            aria-hidden="true"
+          />
+          <BuiltOnStrip />
         </div>
 
-        {/* Layer 4: Vignette — focus attention to center */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_30%,#010101_80%)] pointer-events-none" />
+        {/* ═══ 03 · 3-STEP PROOF ═══ */}
+        <ThreeStepProof />
 
-        {/* Content — cinematic staggered reveal */}
-        <div className="relative z-10 max-w-4xl mx-auto text-center px-6 pt-20">
+        {/* ═══ 04 · TRUST STRIP (sourced stats) ═══ */}
+        <TrustStrip />
 
-          {/* Category label — "Agent OS" positioning */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.05, duration: 0.6 }}
-            className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/[0.06] mb-6"
-          >
-            <span className="relative flex h-1.5 w-1.5">
-              <span className="animate-ping absolute inset-0 rounded-full bg-emerald-400 opacity-60" />
-              <span className="relative rounded-full h-1.5 w-1.5 bg-emerald-400" />
-            </span>
-            <span className="text-[11px] font-semibold text-emerald-400 uppercase tracking-[0.2em]">Agent Operating System</span>
-            <span className="text-[10px] text-neutral-600 font-mono">v2.4</span>
-          </motion.div>
+        {/* ═══ 05 · 5 FEATURED PLAYBOOKS ═══ */}
+        <FeaturedPlaybooksSection />
 
-          {/* Headline — cinematic entrance, each line staggered */}
-          <motion.h1
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.1, duration: 0.5 }}
-            className="text-[clamp(2.8rem,9vw,6.5rem)] font-black leading-[0.92] tracking-[-0.04em] mb-8"
-          >
-            <motion.span
-              initial={{ opacity: 0, y: 60, filter: "blur(8px)" }}
-              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-              transition={{ delay: 0.2, duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-              className="text-white block"
-            >
-              Hire AI employees.
-            </motion.span>
-            <motion.span
-              initial={{ opacity: 0, y: 60, filter: "blur(8px)" }}
-              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-              transition={{ delay: 0.5, duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-              className="block"
-            >
-              <TextShimmer className="font-black">Fire busywork.</TextShimmer>
-            </motion.span>
-          </motion.h1>
+        {/* ═══ 05.5 · DASHBOARD MOCKUP (show the product) ═══ */}
+        <DashboardMockupSection />
 
-          {/* Subtitle — benefits, not specs */}
-          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5, duration: 0.8 }}
-            className="text-lg md:text-xl text-neutral-400 max-w-xl mx-auto leading-relaxed mb-6">
-            130 AI agents. 39 models. One platform that finds leads, writes content,
-            scans competitors, makes calls, and closes deals — autonomously.
-            Starting at $19/month. No per-token fees. No vendor lock-in.
-          </motion.p>
+        {/* ═══ 06 · STACK KILLER ═══ */}
+        <StackKiller />
 
-          {/* Proof strip — tiny, credible + live tok/s counter */}
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6, duration: 0.5 }}
-            className="flex items-center justify-center gap-4 text-xs text-neutral-500 mb-10 flex-wrap">
-            <span className="flex items-center gap-1.5"><CheckCircle2 className="w-3 h-3 text-emerald-500/60" />39+ open-source models</span>
-            <span className="hidden sm:block text-neutral-700">|</span>
-            <span className="flex items-center gap-1.5"><CheckCircle2 className="w-3 h-3 text-emerald-500/60" />$0 per-token cost</span>
-            <span className="hidden sm:block text-neutral-700">|</span>
-            <span className="hidden sm:flex items-center gap-1.5"><CheckCircle2 className="w-3 h-3 text-emerald-500/60" />Runs on your hardware</span>
-            <span className="hidden md:block text-neutral-700">|</span>
-            <TokCounter />
-          </motion.div>
+        {/* ═══ 06.5 · PRINCIPLES + BUILT FOR (bone-cream chapter) ═══ */}
+        <Principles />
 
-          {/* Live model health — real latency pings */}
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.62, duration: 0.5 }}
-            className="mb-6">
-            <LiveModelHealth />
-          </motion.div>
+        {/* ═══ 07 · CLAUDE CRITIC NARRATIVE ═══ */}
+        <ClaudeNarrative />
 
-          {/* Model pills — shows what powers the platform */}
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.65, duration: 0.5 }}
-            className="flex flex-wrap items-center justify-center gap-2 mb-10">
-            {[
-              { name: "Nemotron Ultra 253B", hot: false },
-              { name: "Claude Mythos", hot: true },
-              { name: "Claude Sonnet 4.6", hot: false },
-              { name: "Gemini 3.1 Pro", hot: true },
-              { name: "DeepSeek V3.2", hot: false },
-              { name: "Llama 4 Maverick", hot: true },
-              { name: "Nemotron Cascade 2", hot: true },
-              { name: "Ollama", hot: false },
-            ].map((model) => (
-              <span key={model.name} className={`text-[10px] px-3 py-1 rounded-full border transition-all cursor-default ${
-                model.hot
-                  ? "border-violet-500/30 bg-violet-500/10 text-violet-400 hover:border-violet-500/50"
-                  : "border-white/[0.06] bg-white/[0.02] text-neutral-500 hover:text-white hover:border-emerald-500/20"
-              }`}>
-                {model.name}{model.hot && <span className="ml-1 text-[8px] text-violet-400/60">NEW</span>}
-              </span>
-            ))}
-          </motion.div>
+        {/* ═══ 07.5 · FOUNDER QUOTE — editorial breath ═══ */}
+        <FounderQuote />
 
-          {/* Two CTAs — primary = free tool (instant value), secondary = sign up */}
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7, duration: 0.5 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <MagneticButton href="/free/competitor-scan" strength={0.15}>
-              <span className="group flex items-center gap-2 px-8 py-4 bg-white text-black font-semibold rounded-full text-sm hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all cursor-pointer">
-                Scan a Competitor Free <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </span>
-            </MagneticButton>
-            <MagneticButton href="/signup" strength={0.15}>
-              <span className="px-8 py-4 rounded-full text-sm font-semibold text-neutral-300 border border-white/[0.1] hover:border-white/[0.2] hover:text-white transition-all cursor-pointer inline-block">
-                Start free — no credit card
-              </span>
-            </MagneticButton>
-          </motion.div>
+        {/* ═══ 08 · FOUNDER NETWORK — spatial seats visualization ═══ */}
+        <FounderSeats />
 
-          {/* Draggable physics agent cards — Antigravity signature feature */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.2, duration: 1 }}
-            className="mt-16 w-full max-w-3xl mx-auto"
-          >
-            <PhysicsCards className="h-[220px]" />
-          </motion.div>
-        </div>
-      </section>
+        {/* ═══ 09 · SHIP RECORD ═══ */}
+        <ShipRecord />
 
-      {/* ═══ LIVE ACTIVITY TICKER ═══ */}
-      <LiveTicker />
+        {/* ═══ 09.5 · KEYBOARD NATIVE ═══ */}
+        <KeyboardNative />
 
-      {/* ═══ LIVE AGENT TERMINAL — Watch the agent work ═══ */}
-      <GlowDivider />
-      <LiveAgentTerminal />
-
-      {/* ═══ TRY IT NOW — Free tools (no signup, instant value) ═══ */}
-      <section className="py-16 px-6 bg-[#020202] border-y border-white/[0.03] relative overflow-hidden">
-        {/* Floating accents */}
-        <FloatingElement className="absolute top-16 right-[8%] w-2 h-2 rounded-full bg-emerald-500/25" speed={0.7} range={18} />
-        <FloatingElement className="absolute bottom-20 left-[12%] w-3 h-3 rounded-full bg-cyan-500/15 blur-[1px]" speed={1} range={22} />
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-10">
-            <SectionReveal>
-              <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-3">Try it now — no signup</p>
-              <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight mb-2">
-                Free AI tools. Instant results.
-              </h2>
-              <p className="text-sm text-neutral-500 max-w-md mx-auto">
-                See what 130 AI agents can do. Pick a tool, paste a URL, get real intelligence in 30 seconds.
-              </p>
-            </SectionReveal>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-4">
-            {[
-              {
-                title: "Competitor Scanner",
-                desc: "Paste any URL. Get their weaknesses, market gaps, and a battle plan.",
-                href: "/free/competitor-scan",
-                icon: Target,
-                badge: "Most popular",
-                accent: "from-red-500/10",
-              },
-              {
-                title: "SEO Audit",
-                desc: "Instant domain analysis. Keyword gaps, technical issues, content strategy.",
-                href: "/free/seo-audit",
-                icon: Search,
-                badge: null,
-                accent: "from-cyan-500/10",
-              },
-              {
-                title: "Lead Finder",
-                desc: "Find qualified leads in any niche. Enriched with LinkedIn and email data.",
-                href: "/free/lead-finder",
-                icon: Target,
-                badge: null,
-                accent: "from-emerald-500/10",
-              },
-            ].map((tool) => (
-              <Link key={tool.title} href={tool.href}>
-                <motion.div
-                  whileHover={{ y: -4, borderColor: "rgba(16,185,129,0.2)" }}
-                  className="group relative p-6 rounded-2xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04] transition-all cursor-pointer h-full"
-                >
-                  {tool.badge && (
-                    <span className="absolute top-4 right-4 text-[9px] font-bold uppercase px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                      {tool.badge}
-                    </span>
-                  )}
-                  <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${tool.accent} to-transparent border border-white/[0.06] flex items-center justify-center mb-4`}>
-                    <tool.icon className="w-5 h-5 text-neutral-400 group-hover:text-emerald-400 transition-colors" />
-                  </div>
-                  <h3 className="text-sm font-semibold text-white mb-1">{tool.title}</h3>
-                  <p className="text-xs text-neutral-500 leading-relaxed mb-3">{tool.desc}</p>
-                  <span className="text-[11px] text-emerald-500/70 group-hover:text-emerald-400 flex items-center gap-1 transition-colors">
-                    Try free <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
-                  </span>
-                </motion.div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ═══ POWERED BY — infinite scrolling trust strip ═══ */}
-      <LogoMarquee />
-
-      {/* ═══ LIVE DEMO — Interactive agent terminal (replaces dead video placeholder) ═══ */}
-      <section className="py-20 px-6 bg-[#030303]">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-10">
-            <SectionReveal>
-              <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">Live Demo</p>
-              <h2 className="text-2xl md:text-4xl font-bold text-white tracking-tight mb-3">
-                Tell it what you need. Watch it work.
-              </h2>
-              <p className="text-sm text-neutral-500">
-                Click a scenario. Watch the agent respond in real time.
-              </p>
-            </SectionReveal>
-          </div>
-          <InteractiveDemo />
-        </div>
-      </section>
-
-      {/* ═══ THE PROBLEM — Pain section with floating accents ═══ */}
-      <GradientFollower color="rgba(239,68,68,0.04)" size={700} className="py-24 px-6 bg-[#060606] relative overflow-hidden perf-section">
-        {/* Floating accent dots — Antigravity: everything moves */}
-        <FloatingElement className="absolute top-20 left-[10%] w-2 h-2 rounded-full bg-red-500/20 blur-[1px]" speed={0.8} range={15} />
-        <FloatingElement className="absolute top-40 right-[15%] w-3 h-3 rounded-full bg-red-400/15 blur-[2px]" speed={1.2} range={25} />
-        <FloatingElement className="absolute bottom-32 left-[20%] w-1.5 h-1.5 rounded-full bg-amber-500/20" speed={0.6} range={12} />
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-16">
-            <RevealText as="h2" className="text-3xl md:text-5xl font-bold text-white tracking-tight mb-4">
-              You don&apos;t need more tools. You need employees that don&apos;t sleep.
-            </RevealText>
-            <RevealText as="p" delay={0.1} className="text-neutral-500 max-w-lg mx-auto">
-              Every hour you spend on research, outreach, and content is an hour you&apos;re not closing deals.
-            </RevealText>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-6">
-            {[
-              {
-                icon: XCircle,
-                title: "Leads go cold",
-                problem: "A prospect fills out your form at 2 AM. You respond at 9 AM. They already booked with your competitor.",
-                cost: "Lost: ~$4,200/deal",
-              },
-              {
-                icon: XCircle,
-                title: "Manual research burns hours",
-                problem: "Every new prospect means 45 minutes on LinkedIn, their website, and Crunchbase. Multiply that by 50 leads a week.",
-                cost: "Lost: ~37 hours/month",
-              },
-              {
-                icon: XCircle,
-                title: "Content can't keep up",
-                problem: "You need 4 blog posts, 12 social posts, and 3 email sequences per client per month. Your team maxes out at 2 clients.",
-                cost: "Lost: ~$8,000/client",
-              },
-            ].map((card, i) => (
-              <motion.div
-                key={card.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className="p-8 rounded-2xl border border-white/[0.06] bg-[#0A0A0A] hover:border-red-500/20 transition-gpu duration-300 group"
-              >
-                <card.icon className="w-6 h-6 text-red-400/60 mb-4 group-hover:text-red-400 transition-colors" />
-                <h3 className="text-base font-semibold text-white mb-3">{card.title}</h3>
-                <p className="text-sm text-neutral-400 leading-relaxed mb-4">{card.problem}</p>
-                <span className="text-xs font-mono text-red-400/60">{card.cost}</span>
-              </motion.div>
-            ))}
-          </div>
-
-          {/* Solution bridge — connects problem to results */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.4 }}
-            className="mt-16 text-center"
-          >
-            <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full border border-emerald-500/20 bg-emerald-500/5">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute h-full w-full rounded-full bg-emerald-400 opacity-40" />
-                <span className="relative rounded-full h-2 w-2 bg-emerald-400" />
-              </span>
-              <span className="text-sm text-emerald-300">Your AI employees handle all three. Here&apos;s what they produce ↓</span>
-            </div>
-          </motion.div>
-        </div>
-      </GradientFollower>
-
-      {/* ═══ FLAT PRICING — The #1 differentiator ═══ */}
-      <section className="py-16 px-6 bg-[#020202] border-y border-emerald-500/[0.06]">
-        <div className="max-w-4xl mx-auto text-center">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-            <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">No credits. No per-token fees.</p>
-            <h2 className="text-3xl md:text-5xl font-black text-white tracking-tight mb-4">
-              $199/month. That&apos;s it.
-            </h2>
-            <p className="text-neutral-400 text-sm max-w-lg mx-auto mb-8">
-              Every other AI platform charges per token, per credit, or per execution.
-              CIOs underestimate AI costs by up to 1,000%. We don&apos;t play that game.
-              One flat price. 130 agents. 39 models. Unlimited executions.
-            </p>
-          </motion.div>
-
-          <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
-            className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
-            {[
-              { label: "Lindy", price: "$50–60/mo", model: "Credit-based", bad: true },
-              { label: "Sintra", price: "$97/mo", model: "250 credits/mo", bad: true },
-              { label: "Relevance AI", price: "Custom", model: "Usage-based", bad: true },
-              { label: "Sovereign", price: "$199/mo", model: "Unlimited", bad: false },
-            ].map((comp) => (
-              <div key={comp.label} className={`p-4 rounded-xl border text-center ${
-                comp.bad
-                  ? "border-white/[0.04] bg-white/[0.01]"
-                  : "border-emerald-500/20 bg-emerald-500/[0.04]"
-              }`}>
-                <p className="text-[10px] text-neutral-600 uppercase tracking-widest mb-1">{comp.label}</p>
-                <p className={`text-lg font-black mb-0.5 ${comp.bad ? "text-neutral-500" : "text-emerald-400"}`}>{comp.price}</p>
-                <p className={`text-[10px] ${comp.bad ? "text-red-400/50" : "text-emerald-400/60"}`}>{comp.model}</p>
-              </div>
-            ))}
-          </motion.div>
-
-          <p className="text-[10px] text-neutral-700">
-            Source: CIO AI cost underestimation stat from industry research, April 2026.
-          </p>
-        </div>
-      </section>
-
-      {/* ═══ PRODUCTION READY — Counter the pilot purgatory ═══ */}
-      <section className="py-20 px-6 bg-[#030303]">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-12">
-            <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">No pilot purgatory</p>
-            <h2 className="text-2xl md:text-4xl font-black text-white tracking-tight mb-3">
-              86% of AI pilots never reach production.<br />
-              <span className="text-emerald-400">Sovereign ships on day one.</span>
-            </h2>
-            <p className="text-neutral-400 text-sm max-w-lg mx-auto">
-              No setup. No developer needed. No 6-month integration project.
-              Sign up, pick a playbook, get real output in 3 minutes.
-            </p>
-          </div>
-
-          <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
-            className="grid md:grid-cols-3 gap-4">
-            {[
-              {
-                time: "0:00",
-                title: "Sign up",
-                desc: "Email + password. No credit card on free tier. 60 seconds.",
-                color: "emerald",
-              },
-              {
-                time: "1:00",
-                title: "Pick a playbook",
-                desc: "25 pre-built workflows: lead blitz, content machine, competitor scan, SEO audit. One click.",
-                color: "cyan",
-              },
-              {
-                time: "3:00",
-                title: "Get real output",
-                desc: "50 enriched leads, a published blog post, or a competitive analysis. Not a demo — real deliverables.",
-                color: "violet",
-              },
-            ].map((step) => (
-              <motion.div key={step.title}
-                initial={{ opacity: 0, y: 15 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className={`p-6 rounded-2xl border border-${step.color}-500/10 bg-${step.color}-500/[0.02]`}
-              >
-                <div className={`text-2xl font-black font-mono text-${step.color}-400/30 mb-2`}>{step.time}</div>
-                <h3 className="text-sm font-bold text-white mb-1">{step.title}</h3>
-                <p className="text-xs text-neutral-400 leading-relaxed">{step.desc}</p>
-              </motion.div>
-            ))}
-          </motion.div>
-
-          <p className="text-center text-[10px] text-neutral-700 mt-6">
-            86% pilot failure stat: Gartner/industry research, 2026. 14% of enterprises have scaled agents to production.
-          </p>
-        </div>
-      </section>
-
-      {/* ═══ TRUST STRIP — Real industry stats ═══ */}
-      <section className="py-12 px-6 border-y border-white/[0.03] bg-[#020202]">
-        <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-          {[
-            { stat: "88%", desc: "of orgs report AI security incidents", sub: "Sovereign: 5-layer pipeline on every request" },
-            { stat: "80%", desc: "can\u2019t track what agents do", sub: "Sovereign: full audit trail, every action logged" },
-            { stat: "46%", desc: "cite integration as #1 barrier", sub: "Sovereign: 25+ native integrations + MCP" },
-            { stat: "1,000%", desc: "CIO AI cost underestimation", sub: "Sovereign: $199/mo flat, no hidden fees" },
-          ].map((item) => (
-            <motion.div key={item.stat} initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}>
-              <div className="text-2xl font-black text-white mb-1">{item.stat}</div>
-              <p className="text-[10px] text-neutral-500 mb-2">{item.desc}</p>
-              <p className="text-[9px] text-emerald-500/50">{item.sub}</p>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* ═══ STACK KILLER — Replace 8 tools with one ═══ */}
-      <StackKiller />
-
-      {/* ═══ PLATFORM METRICS — Social proof with real numbers ═══ */}
-      <section className="py-16 px-6 border-y border-white/[0.04]">
-        <div className="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-          {[
-            { value: 130, suffix: "+", label: "AI Agents", desc: "Each mapped to a specific business function" },
-            { value: 68, suffix: "+", label: "AI Models", desc: "Smart-routed per task type, zero lock-in" },
-            { value: 25, suffix: "", label: "Autopilot Playbooks", desc: "Run on a schedule. No human required." },
-            { value: 2200, suffix: "+", label: "Tok/s on Cerebras", desc: "Wafer-scale silicon, not GPU clusters" },
-          ].map((stat, i) => (
-            <motion.div key={stat.label} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}>
-              <div className="text-3xl md:text-4xl font-black text-white mb-1">
-                <AnimatedCounter target={stat.value} duration={1.5} />{stat.suffix}
-              </div>
-              <div className="text-sm font-semibold text-white mb-0.5">{stat.label}</div>
-              <div className="text-xs text-neutral-500">{stat.desc}</div>
-            </motion.div>
-          ))}
-        </div>
-      </section>
-
-      {/* ═══ COMPETITIVE STRIP — Why not the others ═══ */}
-      <section className="py-12 px-6 bg-[#020202] border-y border-white/[0.03]">
-        <div className="max-w-5xl mx-auto">
-          <p className="text-center text-[10px] uppercase tracking-[0.3em] text-neutral-600 mb-6">How we compare</p>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            {[
-              { name: "HubSpot", price: "$890/mo", us: "$199/mo", href: "/vs/hubspot" },
-              { name: "Clay", price: "$149/mo", us: "Included", href: "/vs/clay" },
-              { name: "Zapier", price: "$49/mo", us: "Unlimited", href: "/vs/zapier" },
-              { name: "Sintra", price: "12 agents", us: "130 agents", href: "/vs/sintra" },
-              { name: "CrewAI", price: "You build it", us: "Pre-built", href: "/vs/crewai" },
-            ].map((comp) => (
-              <Link key={comp.name} href={comp.href}>
-                <div className="p-3 rounded-xl border border-white/[0.04] bg-white/[0.01] hover:border-emerald-500/15 transition-all text-center cursor-pointer group">
-                  <p className="text-[10px] text-neutral-600 mb-1">{comp.name}</p>
-                  <p className="text-[10px] text-neutral-700 line-through mb-1">{comp.price}</p>
-                  <p className="text-[11px] text-emerald-400 font-semibold">{comp.us}</p>
-                  <p className="text-[8px] text-neutral-700 mt-1 group-hover:text-emerald-500/50 transition-colors">Compare &rarr;</p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ═══ LIVE PLATFORM STATS ═══ */}
-      <section className="py-6 px-6 bg-[#020202]">
-        <LiveAgentStats />
-      </section>
-
-      {/* ═══ LIVE TOKEN STREAM ═══ */}
-      <TokenStream />
-
-      {/* ═══ AGENT WORLD GLOBE ═══ */}
-      <GlowDivider />
-      <AgentGlobe />
-
-      {/* ═══ RESULTS PREVIEW — Show what the product delivers ═══ */}
-      <GlowDivider />
-      <section className="py-24 px-6">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-14">
-            <RevealText as="p" className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">Real Results</RevealText>
-            <RevealText as="h2" delay={0.1} className="text-3xl md:text-5xl font-bold text-white tracking-tight mb-4">What your AI employees produce.</RevealText>
-            <RevealText as="p" delay={0.2} className="text-neutral-500 max-w-lg mx-auto">Real output. Real agents. Move your mouse — the cards follow.</RevealText>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-4">
-            {/* Result Card 1 — Leads (mouse parallax depth) */}
-            <MouseParallax depth={0.015}>
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-50px" }}
-              transition={{ duration: 0.6, delay: 0, ease: [0.25, 0.46, 0.45, 0.94] }}
-              className="rounded-xl border border-white/[0.06] bg-[#080808] overflow-hidden group hover:border-emerald-500/15 transition-gpu duration-300"
-            >
-              <div className="px-4 py-3 border-b border-white/[0.04] flex items-center gap-2">
-                <Target className="w-3.5 h-3.5 text-emerald-400" />
-                <span className="text-xs font-semibold text-white">Lead Gen Agent</span>
-                <span className="ml-auto text-[9px] text-emerald-500/60 uppercase tracking-wider"><CountUpOnView target={32} suffix="s" duration={1.2} /></span>
-              </div>
-              <div className="p-4 space-y-2">
-                {["Acme Corp — CEO — john@acme.com ✓", "TechFlow — CTO — sarah@techflow.io ✓", "DataPipe — VP Sales — mike@datapipe.com ✓", "CloudBase — CMO — lisa@cloudbase.ai ✓"].map((lead, i) => (
-                  <div key={i} className="text-xs font-mono text-neutral-400">{lead}</div>
-                ))}
-                <div className="text-xs font-mono text-emerald-400 font-semibold pt-1">+ <CountUpOnView target={46} duration={1.5} /> more verified leads</div>
-                <Link href="/free/lead-finder" className="mt-3 flex items-center gap-1 text-[10px] text-emerald-500/60 hover:text-emerald-400 transition-colors">
-                  Try Lead Finder free <ArrowRight className="w-3 h-3" />
-                </Link>
-              </div>
-            </motion.div></MouseParallax>
-            {/* Result Card 2 — Content */}
-            <MouseParallax depth={0.025}>
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-50px" }}
-              transition={{ duration: 0.6, delay: 0.15, ease: [0.25, 0.46, 0.45, 0.94] }}
-              className="rounded-xl border border-white/[0.06] bg-[#080808] overflow-hidden group hover:border-cyan-500/15 transition-gpu duration-300"
-            >
-              <div className="px-4 py-3 border-b border-white/[0.04] flex items-center gap-2">
-                <FileText className="w-3.5 h-3.5 text-cyan-400" />
-                <span className="text-xs font-semibold text-white">Content Agent</span>
-                <span className="ml-auto text-[9px] text-cyan-500/60 uppercase tracking-wider"><TimeCountUpOnView minutes={2} seconds={14} duration={1.8} /></span>
-              </div>
-              <div className="p-4">
-                <div className="text-xs font-semibold text-white mb-1">Why AI Agents Are Replacing Agencies</div>
-                <div className="text-[10px] text-neutral-500 leading-relaxed">The marketing agency model is fundamentally broken. You pay $15,000/month for a team of 5 people who spend 80% of their time on tasks an AI can do in seconds...</div>
-                <div className="mt-3 flex items-center gap-3">
-                  <span className="text-[9px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/15"><CountUpOnView target={1487} suffix=" words" duration={1.5} /></span>
-                  <span className="text-[9px] px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/15">SEO score: 94</span>
-                  <span className="text-[9px] px-2 py-0.5 rounded bg-white/[0.04] text-neutral-400 border border-white/[0.06]">AI: 4.2%</span>
-                </div>
-                <Link href="/signup" className="mt-3 flex items-center gap-1 text-[10px] text-cyan-500/60 hover:text-cyan-400 transition-colors">
-                  Try Content Agent free <ArrowRight className="w-3 h-3" />
-                </Link>
-              </div>
-            </motion.div></MouseParallax>
-            {/* Result Card 3 — Analysis */}
-            <MouseParallax depth={0.035}>
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-50px" }}
-              transition={{ duration: 0.6, delay: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
-              className="rounded-xl border border-white/[0.06] bg-[#080808] overflow-hidden group hover:border-violet-500/15 transition-gpu duration-300"
-            >
-              <div className="px-4 py-3 border-b border-white/[0.04] flex items-center gap-2">
-                <Search className="w-3.5 h-3.5 text-violet-400" />
-                <span className="text-xs font-semibold text-white">Market Analyst</span>
-                <span className="ml-auto text-[9px] text-violet-500/60 uppercase tracking-wider"><TimeCountUpOnView minutes={1} seconds={8} duration={1.5} /></span>
-              </div>
-              <div className="p-4 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-neutral-500">Tech Stack</span>
-                  <span className="text-[10px] text-white font-mono">React, Next.js, Contentful</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-neutral-500">Keyword Gaps</span>
-                  <span className="text-[10px] text-emerald-400 font-mono"><CountUpOnView target={847} suffix=" opportunities" duration={1.8} /></span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-neutral-500">Weak Points</span>
-                  <span className="text-[10px] text-amber-400 font-mono">12 positioning angles</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-neutral-500">Overall Score</span>
-                  <span className="text-[10px] text-white font-bold font-mono">73/100</span>
-                </div>
-                <Link href="/free/competitor-scan" className="mt-3 flex items-center gap-1 text-[10px] text-violet-500/60 hover:text-violet-400 transition-colors">
-                  Try Competitor Scanner free <ArrowRight className="w-3 h-3" />
-                </Link>
-              </div>
-            </motion.div></MouseParallax>
-          </div>
-        </div>
-      </section>
-
-
-      {/* ═══ HOW IT WORKS — 3-step flow ═══ */}
-      <GlowDivider />
-      <section className="py-24 px-6">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-16">
-            <RevealText as="p" className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">How It Works</RevealText>
-            <RevealText as="h2" delay={0.1} className="text-3xl md:text-5xl font-bold text-white tracking-tight">Three steps. Real results.</RevealText>
-            <RevealText as="p" delay={0.2} className="text-neutral-500 max-w-lg mx-auto mt-3">From goal to output in under 3 minutes. No prompt engineering. No technical setup.</RevealText>
-          </div>
-
-          <StaggerChildren className="grid md:grid-cols-3 gap-6" staggerDelay={0.12}>
-            {[
-              {
-                step: "01",
-                title: "Describe your goal",
-                desc: "Type what you need in plain English. The smart router analyzes your request and selects the best agents and models.",
-                example: "\"Find 50 fintech companies with Series A funding and draft cold outreach emails\"",
-                gradient: "from-emerald-500/10 to-emerald-500/0",
-                color: "text-emerald-400",
-              },
-              {
-                step: "02",
-                title: "Agents execute in parallel",
-                desc: "Specialized agents break your goal into steps. Lead Hunter scrapes data, Email Agent drafts sequences, Critic Agent verifies quality.",
-                example: "3 agents \u00b7 2 models \u00b7 consensus verified",
-                gradient: "from-cyan-500/10 to-cyan-500/0",
-                color: "text-cyan-400",
-              },
-              {
-                step: "03",
-                title: "Get verified output",
-                desc: "Every result passes through the 5-layer safety pipeline. Verified emails, production-ready content, actionable intelligence — not drafts.",
-                example: "53 leads with verified emails \u00b7 ready to export",
-                gradient: "from-violet-500/10 to-violet-500/0",
-                color: "text-violet-400",
-              },
-            ].map((item, i) => (
-              <TiltCard key={item.step} tiltStrength={5} className="rounded-2xl">
-                <div className="relative group">
-                  <div className={`absolute inset-0 rounded-2xl bg-gradient-to-b ${item.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
-                  <div className="relative p-8 rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl hover:border-white/10 transition-gpu duration-500">
-                    <div className={`text-4xl font-black ${item.color} opacity-20 mb-3 font-mono`}>{item.step}</div>
-                    <h3 className="text-lg font-semibold text-white mb-2">{item.title}</h3>
-                    <p className="text-sm text-neutral-400 leading-relaxed mb-4">{item.desc}</p>
-                    <div className="p-3 rounded-lg bg-black/30 border border-white/[0.04]">
-                      <p className="text-[11px] text-neutral-500 font-mono leading-relaxed">{item.example}</p>
-                    </div>
-                    {/* Connector arrow */}
-                    {i < 2 && <div className="hidden md:block absolute -right-3 top-1/2 -translate-y-1/2 text-neutral-700 text-lg z-10">&rarr;</div>}
-                  </div>
-                </div>
-              </TiltCard>
-            ))}
-          </StaggerChildren>
-
-          {/* CTA below steps */}
-          <div className="text-center mt-10">
-            <Link href="/signup" className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white/5 border border-white/10 text-sm text-neutral-300 hover:bg-white/10 hover:text-white transition-all">
-              Try it now — free <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══ CONSENSUS ENGINE — 4-model debate visualization ═══ */}
-      <GlowDivider />
-      <ConsensusEngine />
-
-      {/* ═══ AGENT OFFICE — Your agents, live ═══ */}
-      <GlowDivider />
-      <section className="py-24 px-6 bg-[#040406] overflow-hidden perf-section">
-        <AgentOffice />
-      </section>
-
-      {/* ═══ PROMPT VS AGENT — The difference (from old version, much better) ═══ */}
-      <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
-      <section className="py-24 px-6 bg-[#050505] perf-section">
-        <div className="max-w-5xl mx-auto">
-          <SectionReveal>
-            <div className="text-center mb-16">
-              <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">The Difference</p>
-              <h2 className="text-3xl md:text-5xl font-bold text-white tracking-tight">Not another chatbot.</h2>
-            </div>
-          </SectionReveal>
-
-          <div className="grid md:grid-cols-2 gap-4">
-            <motion.div initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
-              className="p-8 rounded-2xl bg-[#080808] border border-white/[0.04]">
-              <h3 className="text-lg font-semibold text-neutral-400 mb-1 flex items-center gap-2">
-                <XCircle className="w-4 h-4 text-neutral-500" /> Prompt-Based AI
-              </h3>
-              <p className="text-neutral-500 text-xs mb-6">What everyone else sells</p>
-              <ul className="space-y-3">
-                {["You write a prompt. Copy the output. Paste it somewhere. Repeat 50 times.", "Forgets your business, your brand, your last conversation.", "Cannot open a browser, send an email, or make a phone call.", "You plan every step. It just types what you tell it to."].map((item, i) => (
-                  <li key={i} className="flex items-start gap-2.5 text-neutral-500 text-sm">
-                    <XCircle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-neutral-600" /> {item}
-                  </li>
-                ))}
-              </ul>
-            </motion.div>
-
-            <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
-              className="p-8 rounded-2xl bg-[#0A0A0A] border border-emerald-500/10 hover:border-emerald-500/20 transition-all hover:shadow-[0_0_30px_rgba(16,185,129,0.04)]">
-              <h3 className="text-lg font-semibold text-white mb-1 flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Agent-Powered Execution
-              </h3>
-              <p className="text-emerald-500/50 text-xs mb-6">What your business actually needs</p>
-              <ul className="space-y-3">
-                {["Type one goal. 130 agents plan, execute, and deliver the result.", "Remembers your brand voice, past strategies, and client preferences.", "Opens browsers, sends emails, makes calls, writes code, builds pages.", "Catches its own mistakes, retries failed steps, and self-corrects."].map((item, i) => (
-                  <li key={i} className="flex items-start gap-2.5 text-neutral-300 text-sm">
-                    <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5 text-emerald-400" /> {item}
-                  </li>
-                ))}
-              </ul>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══ ROI CALCULATOR — The math is obvious ═══ */}
-      <GlowDivider />
-      <ROICalculator />
-
-      {/* ═══ EMAIL CAPTURE — Build the list ═══ */}
-      <GlowDivider />
-      <EarlyAccessCapture />
-
-      {/* ═══ TRY IT YOURSELF — honest CTA instead of fake case studies ═══ */}
-      <div className="h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent" />
-      <section className="py-24 px-6 perf-section">
-        <div className="max-w-3xl mx-auto text-center">
-          <SectionReveal>
-            <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">See For Yourself</p>
-            <h2 className="text-3xl md:text-5xl font-bold text-white tracking-tight mb-4">Don&apos;t take our word for it.</h2>
-            <p className="text-neutral-400 max-w-lg mx-auto mb-10">
-              Try a free tool right now. Paste any competitor URL and get real competitive intelligence in 30 seconds. No signup. No credit card. Judge the output yourself.
-            </p>
-          </SectionReveal>
-
-          <div className="grid md:grid-cols-3 gap-4">
-            {[
-              { title: "Scan a competitor", desc: "Paste any URL → weaknesses, gaps, battle plan", href: "/free/competitor-scan", color: "emerald" },
-              { title: "Audit your SEO", desc: "Enter your domain → keyword gaps, technical issues", href: "/free/seo-audit", color: "cyan" },
-              { title: "Find leads", desc: "Describe your niche → qualified prospects with emails", href: "/free/lead-finder", color: "violet" },
-            ].map((tool) => (
-              <Link key={tool.title} href={tool.href}>
-                <motion.div whileHover={{ y: -4 }}
-                  className={`p-6 rounded-2xl border border-${tool.color}-500/10 bg-${tool.color}-500/[0.02] hover:border-${tool.color}-500/20 transition-all cursor-pointer text-left`}
-                >
-                  <h3 className="text-sm font-semibold text-white mb-1">{tool.title}</h3>
-                  <p className="text-xs text-neutral-500 mb-3">{tool.desc}</p>
-                  <span className="text-[11px] text-emerald-400 flex items-center gap-1">
-                    Try free <ArrowRight className="w-3 h-3" />
-                  </span>
-                </motion.div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ═══ BENTO GRID — Elite feature showcase ═══ */}
-      <BentoGrid />
-
-      {/* ═══ PLATFORM CAPABILITIES — The full stack ═══ */}
-      <GlowDivider />
-      <EnterpriseSection />
-
-      {/* ═══ TESTIMONIALS ═══ */}
-      <GlowDivider />
-      <section className="py-24 px-6">
-        <Testimonials />
-      </section>
-
-      {/* ═══ AGENT OS ARCHITECTURE — The 5-layer infrastructure ═══ */}
-      <GlowDivider />
-      <section className="py-24 px-6 bg-[#030303] relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_50%,rgba(16,185,129,0.025),transparent)] pointer-events-none" />
-        <AnimatedGrid />
-        <div className="max-w-4xl mx-auto relative z-10">
-          <div className="text-center mb-16">
-            <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">The Architecture</p>
-            <h2 className="text-3xl md:text-5xl font-black text-white tracking-tight mb-4">
-              Built like an OS.<br />
-              <span className="text-emerald-400">Not a feature.</span>
-            </h2>
-            <p className="text-neutral-400 text-sm max-w-md mx-auto">
-              Every other AI tool is a wrapper. Sovereign is a complete infrastructure stack
-              — five layers purpose-built for agentic business execution.
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            {[
-              {
-                layer: "L5",
-                name: "Business Execution Layer",
-                desc: "You give a goal in plain English. The OS figures out everything else.",
-                detail: "Natural language intent → task graph → agent selection → parallel dispatch",
-                color: "emerald",
-                items: ["130 specialized agents", "Smart goal decomposition", "Multi-step planning engine"],
-              },
-              {
-                layer: "L4",
-                name: "Orchestration Layer",
-                desc: "Agents chain, delegate, and debate until the answer is correct.",
-                detail: "Agent handoffs · parallel execution · consensus verification · self-correction",
-                color: "cyan",
-                items: ["War Room debate engine", "4-model consensus", "Auto-retry on failure"],
-              },
-              {
-                layer: "L3",
-                name: "Model Intelligence Layer",
-                desc: "Every task auto-routes to the best model. No lock-in, no wasted tokens.",
-                detail: "39+ models · NVIDIA NIM · Gemini · Claude · Groq · Cerebras WSE-3",
-                color: "violet",
-                items: ["19-category smart routing", "11-model failover chain", "2,200+ tok/s inference"],
-              },
-              {
-                layer: "L2",
-                name: "Trust & Safety Layer",
-                desc: "Five independent checks before any output leaves the pipeline.",
-                detail: "Jailbreak detection · PII scan · content safety · quality gate · critic review",
-                color: "amber",
-                items: ["NeMo Guardrails", "HITL approval queue", "Audit trail on every task"],
-              },
-              {
-                layer: "L1",
-                name: "Infrastructure Layer",
-                desc: "Cloud or local. Your choice. Your data never leaves if you don't want it to.",
-                detail: "Ollama local · Neon Postgres · Clerk auth · Vercel edge · zero cold starts",
-                color: "neutral",
-                items: ["Runs offline via Ollama", "Tenant-isolated data", "White-label API surface"],
-              },
-            ].map((item, i) => (
-              <motion.div
-                key={item.layer}
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.08 }}
-                className={`group grid md:grid-cols-[64px_1fr_auto] gap-4 items-start p-5 rounded-2xl border transition-all duration-300 ${
-                  item.color === "emerald" ? "border-emerald-500/10 hover:border-emerald-500/25 hover:bg-emerald-500/[0.02]" :
-                  item.color === "cyan"    ? "border-cyan-500/10 hover:border-cyan-500/25 hover:bg-cyan-500/[0.02]" :
-                  item.color === "violet"  ? "border-violet-500/10 hover:border-violet-500/25 hover:bg-violet-500/[0.02]" :
-                  item.color === "amber"   ? "border-amber-500/10 hover:border-amber-500/25 hover:bg-amber-500/[0.02]" :
-                  "border-white/[0.04] hover:border-white/[0.08]"
-                } bg-[#060606]`}
-              >
-                <div className={`text-2xl font-black font-mono opacity-20 group-hover:opacity-60 transition-opacity ${
-                  item.color === "emerald" ? "text-emerald-400" :
-                  item.color === "cyan"    ? "text-cyan-400" :
-                  item.color === "violet"  ? "text-violet-400" :
-                  item.color === "amber"   ? "text-amber-400" : "text-neutral-400"
-                }`}>{item.layer}</div>
-
-                <div>
-                  <div className="flex items-baseline gap-3 mb-1">
-                    <h3 className="text-sm font-bold text-white">{item.name}</h3>
-                  </div>
-                  <p className="text-xs text-neutral-400 mb-2">{item.desc}</p>
-                  <p className="text-[10px] font-mono text-neutral-700">{item.detail}</p>
-                </div>
-
-                <div className="hidden md:flex flex-col gap-1 min-w-[180px]">
-                  {item.items.map((it) => (
-                    <span key={it} className="text-[10px] text-neutral-600 flex items-center gap-1.5">
-                      <span className={`w-1 h-1 rounded-full shrink-0 ${
-                        item.color === "emerald" ? "bg-emerald-500/40" :
-                        item.color === "cyan"    ? "bg-cyan-500/40" :
-                        item.color === "violet"  ? "bg-violet-500/40" :
-                        item.color === "amber"   ? "bg-amber-500/40" : "bg-neutral-600"
-                      }`} />
-                      {it}
-                    </span>
-                  ))}
-                </div>
-              </motion.div>
-            ))}
-          </div>
-
-          <p className="text-center text-xs text-neutral-700 mt-8 font-mono">
-            Every layer is open-source composable · no black boxes · inspect any execution step
-          </p>
-        </div>
-      </section>
-
-      {/* ═══ PRICING ═══ */}
-      <GlowDivider />
-      <section id="pricing" className="py-24">
-        <Pricing />
-      </section>
-
-      {/* ═══ FAQ ═══ */}
-      <GlowDivider />
-      <FAQSection />
-
-      {/* ═══ FINAL CTA ═══ */}
-      {/* Section transition gradient */}
-      <div className="h-20 bg-gradient-to-b from-[#050505] via-[#030303] to-[#010101] pointer-events-none" />
-      <GlowDivider />
-      <section className="py-32 text-center px-6 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(16,185,129,0.04),transparent_70%)]" />
-        {/* Circuit-style grid accent */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,183,255,0.008)_1px,transparent_1px),linear-gradient(90deg,rgba(0,183,255,0.008)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none" />
-        <div className="relative z-10">
-          <RevealText as="h2" className="text-4xl md:text-6xl font-black text-white mb-5 tracking-tight leading-[1.05]">
-            Your competitors hire humans.
-          </RevealText>
-          <div className="overflow-hidden mb-5">
-            <TextDecrypt text="You deploy AI employees." className="text-4xl md:text-6xl font-black text-white tracking-tight leading-[1.05]" as="h2" speed={20} delay={400} />
-          </div>
-          <RevealText as="p" delay={0.3} className="text-neutral-400 max-w-lg mx-auto mb-4">
-            130 agents. 39+ models. They work weekends. They don&apos;t need benefits.
-            They cost less than your morning coffee. Start in 60 seconds.
-          </RevealText>
-          <RevealText as="p" delay={0.4} className="text-emerald-400/70 text-sm mb-10">
-            Free forever plan. No credit card. 50 runs/month included.
-          </RevealText>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <ParticleBurst>
-            <MagneticButton href="/free/competitor-scan" strength={0.25}>
-              <span className="cta-glow group flex items-center gap-2 px-8 py-4 bg-white text-black font-bold rounded-full text-sm hover:shadow-[0_0_40px_rgba(255,255,255,0.15)] transition-gpu cursor-pointer">
-                Try Free — Scan a Competitor <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </span>
-            </MagneticButton>
-            </ParticleBurst>
-            <MagneticButton href="/signup" strength={0.15}>
-              <span className="px-7 py-3.5 border border-white/10 text-neutral-300 font-medium rounded-full text-sm hover:border-white/20 hover:text-white transition-gpu cursor-pointer inline-block">
-                Create Free Account
-              </span>
-            </MagneticButton>
-          </div>
-        </div>
-      </section>
-
+        {/* ═══ 10 · FINAL CTA ═══ */}
+        <FinalCTA />
       </main>
 
       {/* ═══ FOOTER ═══ */}
-      <GlowDivider />
-      <footer className="px-6">
-        <div className="max-w-5xl mx-auto py-14">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-12">
-            <div className="col-span-2 md:col-span-1">
-              <div className="flex items-center gap-2.5 mb-4">
-                <SovereignLogo size="sm" />
-                <span className="text-sm font-semibold text-white">Sovereign Matrix</span>
-              </div>
-              <p className="text-xs text-neutral-400 leading-relaxed">The Agent Operating System. 130 agents. 39+ models. $199/mo flat. Built on NVIDIA NIM.</p>
+      <Footer />
+
+      {/* ═══ EASTER EGG · keyboard-triggered command palette ═══ */}
+      <CommandEgg />
+    </div>
+  );
+}
+
+/* ─── SectionHead — editorial monogram + label ─────────────────────
+ * Three-voice system: mono counter (positional) + hairline rule +
+ * serif italic label (editorial). The italic distinguishes this from
+ * a nav label — it reads as a chapter heading, not a UI affordance.
+ */
+function SectionHead({ n, label }: { n: string; label: string }) {
+  return (
+    <div className="mb-8 flex items-center gap-4 flex-wrap">
+      <span className="font-mono text-[10px] text-neutral-600 tracking-[0.2em]">
+        {n} / 10
+      </span>
+      <span aria-hidden="true" className="h-px w-6 bg-white/[0.12]" />
+      <p className="font-serif italic text-[13px] text-neutral-500 tracking-[-0.01em]">
+        {label}
+      </p>
+    </div>
+  );
+}
+
+/* ─── Nav ───────────────────────────────────────────────────────── */
+
+/**
+ * Editorial navigation — sparse, confident, press-/ hint.
+ *
+ * Pattern borrowed from anthropic.com + antigravity.google: a single
+ * wordmark on the left, four content links, login, and one primary
+ * action. Hides on scroll-down and reappears on scroll-up so the
+ * reader isn't re-interrupted every viewport. Opaque after 40px of
+ * scroll (before: translucent over hero, integrates with the page).
+ */
+function Nav({
+  mobileNavOpen,
+  setMobileNavOpen,
+}: {
+  mobileNavOpen: boolean;
+  setMobileNavOpen: (v: boolean) => void;
+}) {
+  const visible = useHideyNav(64);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onScroll = () => setScrolled(window.scrollY > 40);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  return (
+    <motion.nav
+      initial={{ opacity: 0, y: -10 }}
+      animate={{
+        opacity: visible || mobileNavOpen ? 1 : 0,
+        y: visible || mobileNavOpen ? 0 : -64,
+      }}
+      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+      className="fixed top-0 inset-x-0 z-50"
+      aria-label="Primary"
+    >
+      <div
+        className={`relative transition-[background] duration-300 ${
+          scrolled || mobileNavOpen
+            ? "bg-[#030303]/90 backdrop-blur-xl"
+            : "bg-transparent"
+        }`}
+      >
+        {/* Copper gradient hairline — appears after hero scrolls past.
+            A gradient from transparent→copper→transparent reads as light
+            catching a physical edge rather than a flat HTML border. */}
+        <div
+          className={`absolute inset-x-0 bottom-0 h-px transition-opacity duration-500 pointer-events-none ${scrolled ? "opacity-100" : "opacity-0"}`}
+          style={{
+            background: "linear-gradient(to right, transparent 0%, rgba(181,83,44,0.45) 50%, transparent 100%)",
+          }}
+          aria-hidden="true"
+        />
+
+        <div className="max-w-7xl mx-auto px-6 md:px-10 h-[60px] flex items-center justify-between">
+          {/* Wordmark */}
+          <Link href="/" className="group flex items-center gap-2.5 flex-shrink-0" aria-label="Sovereign Matrix — Home">
+            <SovereignLogo size="sm" />
+            <span className="hidden sm:block font-serif text-[17px] tracking-tight text-white group-hover:text-[#E8DDD0] transition-colors">
+              Sovereign Matrix
+            </span>
+          </Link>
+
+          {/* Desktop nav — three groups: pages · live badge · actions */}
+          <div className="hidden md:flex items-center gap-0 text-[13px]">
+            {/* Primary pages */}
+            <div className="flex items-center gap-6 mr-6">
+              <NavLink href={PLATFORM_HREF}>Platform</NavLink>
+              <NavLink href="/customers">Customers</NavLink>
+              <NavLink href="/trust">Trust</NavLink>
+              <NavLink href="/pricing">Pricing</NavLink>
             </div>
-            <div>
-              <h3 className="text-xs font-semibold text-neutral-400 mb-4">Platform</h3>
-              <ul className="space-y-2.5">
-                <li><Link href="/pricing" className="text-xs text-neutral-500 hover:text-white transition-colors">Pricing</Link></li>
-                <li><Link href="/marketplace" className="text-xs text-neutral-500 hover:text-white transition-colors">Agent Marketplace</Link></li>
-                <li><Link href="/developers" className="text-xs text-neutral-500 hover:text-white transition-colors">Developer SDK</Link></li>
-                <li><Link href="/developers/docs" className="text-xs text-neutral-500 hover:text-white transition-colors">API Docs</Link></li>
-                <li><Link href="/integrations" className="text-xs text-neutral-500 hover:text-white transition-colors">Integrations</Link></li>
-                <li><Link href="/roadmap" className="text-xs text-neutral-500 hover:text-white transition-colors">Roadmap</Link></li>
-              </ul>
+
+            {/* Thin rule */}
+            <span aria-hidden="true" className="h-4 w-px bg-white/[0.07] mr-6" />
+
+            {/* Chat with founder — emerald live dot + name */}
+            <Link
+              href="/contact"
+              className="group hidden lg:flex items-center gap-2 mr-6 text-neutral-400 hover:text-white transition-colors"
+              title="Book a 15-minute call with Christiaan, founder of Sovereign Matrix"
+            >
+              {/* Pulsing green availability dot */}
+              <span className="relative inline-flex h-1.5 w-1.5 flex-shrink-0">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              </span>
+              <span className="text-[12.5px] tracking-tight">
+                Chat with founder
+              </span>
+            </Link>
+
+            {/* Keyboard hint — Antigravity signature */}
+            <div
+              className="group hidden xl:flex items-center gap-1.5 text-neutral-700 hover:text-neutral-500 text-[11px] font-mono select-none cursor-default transition-colors mr-6"
+              title="Press / to open the command palette"
+            >
+              <kbd className="rounded-[3px] border border-white/[0.07] bg-white/[0.02] px-1.5 py-0.5 text-[10px] text-neutral-600 group-hover:text-neutral-400 group-hover:border-white/[0.12] transition-colors">
+                /
+              </kbd>
             </div>
-            <div>
-              <h3 className="text-xs font-semibold text-neutral-400 mb-4">Free Tools</h3>
-              <ul className="space-y-2.5">
-                <li><Link href="/free/competitor-scan" className="text-xs text-neutral-500 hover:text-white transition-colors">Competitor Scanner</Link></li>
-                <li><Link href="/free/seo-audit" className="text-xs text-neutral-500 hover:text-white transition-colors">SEO Audit</Link></li>
-                <li><Link href="/free/lead-finder" className="text-xs text-neutral-500 hover:text-white transition-colors">Lead Finder</Link></li>
-                <li><Link href="/changelog" className="text-xs text-neutral-500 hover:text-white transition-colors">Changelog</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="text-xs font-semibold text-neutral-400 mb-4">Compare</h3>
-              <ul className="space-y-2.5">
-                <li><Link href="/vs/hubspot" className="text-xs text-neutral-500 hover:text-white transition-colors">vs HubSpot</Link></li>
-                <li><Link href="/vs/clay" className="text-xs text-neutral-500 hover:text-white transition-colors">vs Clay</Link></li>
-                <li><Link href="/vs/zapier" className="text-xs text-neutral-500 hover:text-white transition-colors">vs Zapier</Link></li>
-                <li><Link href="/vs/crewai" className="text-xs text-neutral-500 hover:text-white transition-colors">vs CrewAI</Link></li>
-                <li><Link href="/vs/n8n" className="text-xs text-neutral-500 hover:text-white transition-colors">vs n8n</Link></li>
-                <li><Link href="/vs/lindy" className="text-xs text-neutral-500 hover:text-white transition-colors">vs Lindy</Link></li>
-                <li><Link href="/vs/sintra" className="text-xs text-neutral-500 hover:text-white transition-colors">vs Sintra</Link></li>
-                <li><Link href="/vs/make" className="text-xs text-neutral-500 hover:text-white transition-colors">vs Make</Link></li>
-                <li><Link href="/vs/claude-agents" className="text-xs text-neutral-500 hover:text-white transition-colors">& Claude Agents</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="text-xs font-semibold text-neutral-400 mb-4">Use Cases</h3>
-              <ul className="space-y-2.5">
-                <li><Link href="/use-cases/lead-gen" className="text-xs text-neutral-500 hover:text-white transition-colors">Lead Generation</Link></li>
-                <li><Link href="/use-cases/content-engine" className="text-xs text-neutral-500 hover:text-white transition-colors">Content Engine</Link></li>
-                <li><Link href="/use-cases/second-brain" className="text-xs text-neutral-500 hover:text-white transition-colors">Second Brain</Link></li>
-                <li><Link href="/for-agencies" className="text-xs text-neutral-500 hover:text-white transition-colors">For Agencies</Link></li>
-                <li><Link href="/for-healthcare" className="text-xs text-neutral-500 hover:text-white transition-colors">For Healthcare</Link></li>
-                <li><Link href="/for-legal" className="text-xs text-neutral-500 hover:text-white transition-colors">For Legal</Link></li>
-                <li><Link href="/for-cybersecurity" className="text-xs text-neutral-500 hover:text-white transition-colors">For Cybersecurity</Link></li>
-                <li><Link href="/for-realestate" className="text-xs text-neutral-500 hover:text-white transition-colors">For Real Estate</Link></li>
-                <li><Link href="/for-recruiting" className="text-xs text-neutral-500 hover:text-white transition-colors">For Recruiting</Link></li>
-                <li><Link href="/for-education" className="text-xs text-neutral-500 hover:text-white transition-colors">For Education</Link></li>
-                <li><Link href="/for-fintech" className="text-xs text-neutral-500 hover:text-white transition-colors">For Fintech</Link></li>
-                <li><Link href="/for-ecommerce" className="text-xs text-neutral-500 hover:text-white transition-colors">For E-Commerce</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="text-xs font-semibold text-neutral-400 mb-4">Legal &amp; Trust</h3>
-              <ul className="space-y-2.5">
-                <li><Link href="/privacy" className="text-xs text-neutral-500 hover:text-white transition-colors">Privacy Policy</Link></li>
-                <li><Link href="/terms" className="text-xs text-neutral-500 hover:text-white transition-colors">Terms of Service</Link></li>
-                <li><Link href="/security" className="text-xs text-neutral-500 hover:text-white transition-colors">Security</Link></li>
-                <li><Link href="/sla" className="text-xs text-neutral-500 hover:text-white transition-colors">SLA</Link></li>
-                <li><Link href="/dpa" className="text-xs text-neutral-500 hover:text-white transition-colors">DPA</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="text-xs font-semibold text-neutral-400 mb-4">Contact</h3>
-              <ul className="space-y-2.5">
-                <li><a href="mailto:christiaan@sovereignmatrix.agency" className="text-xs text-neutral-500 hover:text-white transition-colors">christiaan@sovereignmatrix.agency</a></li>
-                <li><span className="text-xs text-neutral-500">Cape Town, South Africa</span></li>
-                <li className="pt-2 flex items-center gap-3">
-                  <a href="https://x.com/sovereignmatrix" target="_blank" rel="noopener noreferrer" className="text-neutral-500 hover:text-white transition-colors" aria-label="Twitter/X">
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
-                  </a>
-                  <a href="https://linkedin.com/company/sovereignmatrix" target="_blank" rel="noopener noreferrer" className="text-neutral-500 hover:text-white transition-colors" aria-label="LinkedIn">
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" /></svg>
-                  </a>
-                  <a href="https://github.com/sovereignmatrix" target="_blank" rel="noopener noreferrer" className="text-neutral-500 hover:text-white transition-colors" aria-label="GitHub">
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" /></svg>
-                  </a>
-                </li>
-              </ul>
-            </div>
+
+            <SignInButton mode="modal" fallbackRedirectUrl="/dashboard">
+              <button className="text-neutral-500 hover:text-white transition-colors text-[13px] tracking-tight mr-4">
+                Log in
+              </button>
+            </SignInButton>
+
+            {/* CTA — white pill with copper arrow + glow ring on hover */}
+            <Link
+              href={HERO_CTA}
+              className="group relative inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white text-[#030303] font-medium text-[12.5px] tracking-tight rounded-[3px] hover:bg-[#F4EFE6] transition-colors"
+            >
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 rounded-[3px] opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                style={{ boxShadow: "0 0 0 1px rgba(181,83,44,0.4), 0 0 12px rgba(181,83,44,0.2)" }}
+              />
+              Start free
+              <span aria-hidden="true" className="text-[#B5532C] transition-transform group-hover:translate-x-0.5">→</span>
+            </Link>
           </div>
-          <div className="pt-6 border-t border-white/[0.04] flex items-center justify-between">
-            <p className="text-[10px] text-neutral-500">&copy; 2026 Sovereign Matrix</p>
-            <p className="text-[10px] text-neutral-500">Powered by NVIDIA NIM</p>
+
+          {/* Mobile right side — chat dot + hamburger */}
+          <div className="md:hidden flex items-center gap-3">
+            {/* Compact "● Chat" on mobile */}
+            <Link
+              href="/contact"
+              className="flex items-center gap-1.5 text-neutral-400 hover:text-white transition-colors"
+              aria-label="Chat with founder"
+            >
+              <span className="relative inline-flex h-1.5 w-1.5">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              </span>
+              <span className="text-[11px] font-mono text-neutral-500">Chat</span>
+            </Link>
+
+            <button
+              className="p-2 -mr-2 text-neutral-400 hover:text-white transition-colors"
+              onClick={() => setMobileNavOpen(!mobileNavOpen)}
+              aria-label={mobileNavOpen ? "Close menu" : "Open menu"}
+              aria-expanded={mobileNavOpen}
+            >
+              <div className="space-y-1.5">
+                <span className={`block w-5 h-[1.5px] bg-current transition-transform ${mobileNavOpen ? "rotate-45 translate-y-[7px]" : ""}`} />
+                <span className={`block w-5 h-[1.5px] bg-current transition-opacity ${mobileNavOpen ? "opacity-0" : ""}`} />
+                <span className={`block w-5 h-[1.5px] bg-current transition-transform ${mobileNavOpen ? "-rotate-45 -translate-y-[7px]" : ""}`} />
+              </div>
+            </button>
           </div>
         </div>
-      </footer>
+      </div>
 
-      {/* Cursor glow effect is handled by the ambient glow in the hero section */}
+      <AnimatePresence>
+        {mobileNavOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+            className="absolute top-[60px] left-4 right-4 p-5 rounded-[6px] md:hidden bg-[#0A0807]/97 backdrop-blur-2xl border border-white/[0.07] flex flex-col gap-1 shadow-[0_24px_64px_-12px_rgba(0,0,0,0.85)]"
+          >
+            <MobileLink href={PLATFORM_HREF} onClick={() => setMobileNavOpen(false)}>Platform</MobileLink>
+            <MobileLink href="/customers" onClick={() => setMobileNavOpen(false)}>Customers</MobileLink>
+            <MobileLink href="/trust" onClick={() => setMobileNavOpen(false)}>Trust</MobileLink>
+            <MobileLink href="/pricing" onClick={() => setMobileNavOpen(false)}>Pricing</MobileLink>
 
-      {/* Live pulse — shows platform activity in real-time */}
-      <LivePulse />
+            {/* Chat with founder — in mobile menu as a special item */}
+            <div className="h-px bg-white/[0.04] my-1" />
+            <Link
+              href="/contact"
+              onClick={() => setMobileNavOpen(false)}
+              className="flex items-center gap-2 py-1.5 text-[15px] text-emerald-400/80 hover:text-emerald-300 tracking-tight transition-colors"
+            >
+              <span className="relative inline-flex h-1.5 w-1.5">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              </span>
+              Chat with founder
+            </Link>
 
-      {/* Floating conversational AI agent */}
-      <LandingAgent />
+            <Link
+              href={HERO_CTA}
+              className="mt-2 px-5 py-2.5 bg-white text-[#030303] text-sm text-center font-medium rounded-[3px] hover:bg-[#F4EFE6] transition-colors"
+              onClick={() => setMobileNavOpen(false)}
+            >
+              Start free →
+            </Link>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.nav>
+  );
+}
 
-      {/* Exit intent — captures visitors about to leave */}
-      <ExitIntent />
+function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <Link
+      href={href}
+      className="group relative text-neutral-400 hover:text-white transition-colors tracking-tight"
+    >
+      {children}
+      {/* Copper underline slides in on hover — editorial hover state */}
+      <span
+        aria-hidden="true"
+        className="absolute -bottom-0.5 left-0 right-0 h-px scale-x-0 group-hover:scale-x-100 transition-transform duration-200 origin-left"
+        style={{ background: "rgba(181,83,44,0.6)" }}
+      />
+    </Link>
+  );
+}
+
+function MobileLink({
+  href,
+  children,
+  onClick,
+}: {
+  href: string;
+  children: React.ReactNode;
+  onClick: () => void;
+}) {
+  return (
+    <Link
+      href={href}
+      className="text-[15px] text-neutral-200 hover:text-white py-1.5 tracking-tight"
+      onClick={onClick}
+    >
+      {children}
+    </Link>
+  );
+}
+
+/* ─── 01 · Hero ─────────────────────────────────────────────────── */
+
+function Hero() {
+  return (
+    <section className="relative px-6 pt-28 pb-24 md:pt-36 md:pb-32 overflow-hidden">
+      {/* High-tier graphics stack: aurora mesh + engineering grid +
+          cursor spotlight + noise texture + vignette gradients.
+          See src/components/landing/HeroBackdrop.tsx */}
+      <HeroBackdrop />
+
+      {/* Copper-dust particle field — mouse-repelling canvas layer.
+          Sits above the aurora, below content. Auto-disables on mobile
+          and prefers-reduced-motion (the hook handles that). */}
+      <FloatingParticles
+        count={24}
+        maxSize={1.8}
+        colors={[
+          "rgba(181, 83, 44, 0.45)",
+          "rgba(224, 133, 88, 0.30)",
+          "rgba(255, 200, 150, 0.12)",
+        ]}
+        className="absolute inset-0 pointer-events-none"
+      />
+
+      <div className="relative max-w-5xl mx-auto">
+        {/* Monogram + kicker + live pill */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.1, duration: 0.8 }}
+          className="mb-8 flex items-center gap-4 flex-wrap"
+        >
+          <span className="font-mono text-[10px] text-neutral-600 tracking-[0.2em]">
+            01 / 10
+          </span>
+          <span aria-hidden="true" className="h-px w-6 bg-white/[0.12]" />
+          <p className="font-serif italic text-[13px] text-neutral-500 tracking-[-0.01em]">
+            Agent infrastructure · For operators
+          </p>
+          <LiveRunsPill />
+        </motion.div>
+
+        {/*
+          Kept the motion-wrapped monogram block above inline because
+          it composes the LiveRunsPill alongside the label (SectionHead
+          doesn't accept children). Every other section uses <SectionHead />.
+        */}
+
+        <KineticHeadline />
+
+        <motion.p
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.55, duration: 0.7 }}
+          className="max-w-2xl text-[17px] md:text-[19px] text-neutral-400 leading-[1.55] mb-12"
+        >
+          Five focused playbooks. Real output in three minutes.
+          Claude audits every run. No six-month integration project, no
+          developer required.
+        </motion.p>
+
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7, duration: 0.6 }}
+          className="flex flex-wrap items-center gap-x-6 gap-y-3"
+        >
+          <PrimaryCTA href={HERO_CTA} variant="hero">
+            Run your first playbook
+          </PrimaryCTA>
+          <Link
+            href="/customers"
+            className="group inline-flex items-center gap-1.5 text-neutral-400 hover:text-white font-mono text-[13px] tracking-tight transition-colors"
+          >
+            See customer outcomes
+            <span aria-hidden="true" className="transition-transform group-hover:translate-x-0.5">
+              →
+            </span>
+          </Link>
+        </motion.div>
+
+        {/* Live model roster signature — unique to our multi-provider platform */}
+        <div className="mt-8">
+          <ModelPulse />
+        </div>
+
+        <LiveTerminalDemo />
+      </div>
+    </section>
+  );
+}
+
+/* ─── 02 · 3-step proof ─────────────────────────────────────────── */
+
+function ThreeStepProof() {
+  const steps = [
+    {
+      time: "0:00",
+      title: "Sign up",
+      desc: "Email + password. No credit card on free tier. 60 seconds to dashboard.",
+    },
+    {
+      time: "1:00",
+      title: "Pick a playbook",
+      desc: "Five pre-built workflows: Lead Blitz, Competitor Takedown, Content Machine, SEO Domination, Weekly Report.",
+    },
+    {
+      time: "3:00",
+      title: "Get real output",
+      desc: "5+ qualified companies with contact angles, a published post, or a full competitive analysis — real deliverables, not a demo.",
+    },
+  ];
+
+  return (
+    <section className="px-6 py-20 md:py-28 bg-[#030303]">
+      <div className="max-w-5xl mx-auto">
+        <SectionHead n="02" label="The proof" />
+        <h2 className="font-serif text-4xl md:text-6xl lg:text-[68px] leading-[1.05] mb-12 max-w-3xl tracking-[-0.02em]">
+          Sign up at <em className="not-italic text-[#B5532C]">0:00</em>.
+          <br />
+          See output at <em className="not-italic text-[#B5532C]">3:00</em>.
+        </h2>
+
+        <div className="grid md:grid-cols-3 gap-4">
+          {steps.map((step, i) => (
+            <motion.div
+              key={step.title}
+              initial={{ opacity: 0, y: 18 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-60px" }}
+              transition={{ delay: i * 0.1, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+              className="group relative p-7 rounded-[6px] border border-white/[0.06] bg-white/[0.025] hover:border-[#B5532C]/35 hover:bg-[#B5532C]/[0.03] transition-all duration-300 overflow-hidden"
+              style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08), 0 1px 0 rgba(0,0,0,0.5)" }}
+            >
+              {/* Copper hot-spot sweep on hover — concentrated top-left source */}
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                style={{
+                  background: "radial-gradient(circle at 20% 0%, rgba(181,83,44,0.18) 0%, transparent 45%)",
+                }}
+              />
+
+              {/* Step number — neutral, positional not decorative */}
+              <span className="relative inline-flex items-center justify-center h-5 w-5 rounded-full border border-white/[0.12] text-neutral-500 font-mono text-[9px] mb-4">
+                {i + 1}
+              </span>
+
+              <div className="relative text-[32px] font-mono font-bold tabular-nums text-[#B5532C] mb-4 tracking-tight leading-none">
+                {step.time}
+              </div>
+              <h3 className="relative text-[15px] font-semibold text-white mb-2 tracking-tight">
+                {step.title}
+              </h3>
+              <p className="relative text-[13px] text-neutral-400 leading-relaxed">{step.desc}</p>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── 03 · Trust strip ──────────────────────────────────────────── */
+
+function TrustStrip() {
+  const stats = [
+    {
+      stat: "86%",
+      desc: "of AI pilots never reach production",
+      sub: "Sovereign: 5-layer pipeline + signed snapshot export",
+      source: "RAND AI adoption survey, 2025",
+    },
+    {
+      stat: "80%",
+      desc: "of enterprises can't trace what an agent actually did",
+      sub: "Sovereign: every run is a checksummed, exportable snapshot",
+      source: "Gartner AI observability survey, 2025",
+    },
+    {
+      stat: "46%",
+      desc: "cite fragmented integrations as the top scaling barrier",
+      sub: "Sovereign: 17 live integrations, MCP-first distribution",
+      source: "McKinsey State of AI 2025",
+    },
+  ];
+
+  return (
+    <section className="py-16 px-6 border-y border-[#B5532C]/20 bg-[#0A0807] relative overflow-hidden">
+      {/* Ambient copper glow from centre */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: "radial-gradient(ellipse 60% 80% at 50% 50%, rgba(181,83,44,0.07) 0%, transparent 70%)",
+        }}
+        aria-hidden="true"
+      />
+      <div className="relative max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-6 text-center">
+        {stats.map((item, i) => (
+          <motion.div
+            key={item.stat}
+            initial={{ opacity: 0, y: 12 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-40px" }}
+            transition={{ delay: i * 0.1, duration: 0.55 }}
+            className="relative"
+          >
+            {/* Divider between cols on desktop */}
+            {i > 0 && (
+              <span
+                aria-hidden="true"
+                className="hidden md:block absolute -left-3 top-1/2 -translate-y-1/2 h-12 w-px bg-white/[0.06]"
+              />
+            )}
+            <div className="text-[52px] md:text-[60px] font-mono font-bold tabular-nums text-white leading-none mb-3 tracking-tight">
+              {item.stat}
+            </div>
+            <p className="text-[13px] text-neutral-400 mb-3 leading-relaxed max-w-[220px] mx-auto">
+              {item.desc}
+            </p>
+            <p className="text-[11px] text-emerald-400/80 mb-1.5 font-mono">{item.sub}</p>
+            <p className="text-[9px] text-neutral-600 font-mono italic">
+              {item.source}
+            </p>
+          </motion.div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/* ─── 04 · Featured playbooks ───────────────────────────────────── */
+
+function FeaturedPlaybooksSection() {
+  return (
+    <section className="px-6 py-28 md:py-36 bg-[#040303]">
+      <div className="max-w-6xl mx-auto">
+        <SectionHead n="04" label="Five playbooks" />
+        <h2 className="font-serif text-4xl md:text-6xl lg:text-[68px] leading-[1.05] mb-5 max-w-3xl tracking-[-0.02em]">
+          Each one guarantees an output
+          <br />
+          <em className="not-italic text-[#B5532C]">or the run doesn&apos;t count.</em>
+        </h2>
+        <p className="text-neutral-400 max-w-xl leading-relaxed mb-16 text-[15px]">
+          Twenty more live inside the dashboard. These five are where most
+          customers ship their first measurable win.
+        </p>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {FEATURED_PLAYBOOKS.map((pb) => (
+            <TiltCard key={pb.slug} tiltStrength={6} className="h-full">
+              <Link
+                href={`/dashboard/playbooks?auto=${pb.slug}`}
+                onClick={() => trackCtaClick("playbook-card")}
+                className="group relative block h-full p-6 rounded-[6px] border border-white/[0.06] bg-white/[0.025] hover:border-[#B5532C]/35 hover:bg-[#B5532C]/[0.04] transition-all duration-300 overflow-hidden"
+                style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08), 0 1px 0 rgba(0,0,0,0.5)" }}
+              >
+                {/* Copper hot-spot sweep on hover */}
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                  style={{
+                    background:
+                      "radial-gradient(circle at 30% 0%, rgba(181,83,44,0.18) 0%, transparent 45%)",
+                  }}
+                />
+
+                <p className="relative text-[10px] font-mono uppercase tracking-[0.18em] text-neutral-500 mb-3">
+                  {pb.time}
+                </p>
+                <h3 className="relative font-serif text-2xl text-white mb-2 leading-tight tracking-tight">
+                  {pb.name}
+                </h3>
+                <p className="relative text-sm text-neutral-400 leading-relaxed mb-4">
+                  {pb.tagline}
+                </p>
+                <p className="relative text-[11px] text-neutral-500 font-mono italic mb-4 leading-relaxed">
+                  {pb.outcome}
+                </p>
+                <span className="relative text-[11px] font-mono tracking-wide text-neutral-500 group-hover:text-[#B5532C] transition-colors">
+                  Run this →
+                </span>
+              </Link>
+            </TiltCard>
+          ))}
+
+          {/* 6th slot — completes the 3×2 grid, links to the full library */}
+          <Link
+            href="/dashboard/playbooks"
+            className="group relative flex flex-col justify-between h-full p-6 rounded-[6px] border border-dashed border-white/[0.07] hover:border-[#B5532C]/30 transition-all duration-300"
+          >
+            <div>
+              <p className="text-[10px] font-mono uppercase tracking-[0.18em] text-neutral-600 mb-3">
+                25+ playbooks
+              </p>
+              <h3 className="font-serif text-2xl text-neutral-500 group-hover:text-white transition-colors leading-tight tracking-tight mb-2">
+                View all playbooks
+              </h3>
+              <p className="text-sm text-neutral-600 leading-relaxed">
+                Lead gen, content, research, competitive intel, reporting, and more — all with the same 5-layer guarantee.
+              </p>
+            </div>
+            <span className="mt-6 text-[11px] font-mono tracking-wide text-neutral-600 group-hover:text-[#B5532C] transition-colors">
+              Browse library →
+            </span>
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── 05.5 · Dashboard mockup section ──────────────────────────────
+ *
+ * The "show, don't tell" moment. Every elite SaaS landing renders
+ * the product on the page itself — Linear shows boards, Stripe
+ * shows API calls, Vercel shows deploys. Ours shows a live-looking
+ * Lead Blitz run: step list on the left, streaming model output on
+ * the right, model roster in the footer, 5-layer-verified badge.
+ *
+ * The copy above the mockup frames what the visitor is looking at
+ * — the mockup itself is the evidence.
+ */
+function DashboardMockupSection() {
+  return (
+    <section className="relative px-6 py-28 md:py-36 bg-[#030303] overflow-hidden">
+      {/* Soft ambient glow beneath the mockup for depth */}
+      <div
+        className="absolute left-1/2 top-2/3 h-[400px] w-[700px] -translate-x-1/2 rounded-full opacity-20 blur-[120px] pointer-events-none"
+        style={{ background: "radial-gradient(ellipse, rgba(181,83,44,0.3) 0%, transparent 70%)" }}
+        aria-hidden="true"
+      />
+
+      <div className="relative max-w-6xl mx-auto">
+        <div className="max-w-3xl mb-14">
+          <SectionHead n="05" label="What you see when it runs" />
+          <h2 className="font-serif text-4xl md:text-6xl lg:text-[68px] leading-[1.05] mb-6 tracking-[-0.02em]">
+            The dashboard shows every step.
+            <br />
+            <em className="not-italic text-[#B5532C]">
+              Every model. Every second.
+            </em>
+          </h2>
+          <p className="text-[15px] md:text-[17px] text-neutral-400 leading-[1.6] max-w-2xl">
+            No black-box automation. The platform renders every agent
+            step, every model consulted, and every intermediate result
+            as the run unfolds — so when something goes wrong you see
+            exactly where, and when it goes right you own the trail
+            you can export.
+          </p>
+        </div>
+
+        {/* 3D perspective tilt on hover — Stripe / Linear product-shot move.
+            Subtle strength (4) so the mockup responds to cursor position
+            without feeling like a party trick. Disables on mobile. */}
+        <TiltCard tiltStrength={4}>
+          <DashboardMockup />
+        </TiltCard>
+
+        {/* Small caption below the mockup — pulls the eye back up to
+            the real CTA and reminds the reader this is the product */}
+        <p className="mt-8 text-center text-[11px] font-mono text-neutral-600 tracking-wide">
+          Representative view of{" "}
+          <Link
+            href="/dashboard/playbooks?auto=lead-blitz"
+            className="text-[#B5532C] hover:text-white transition-colors underline decoration-[#B5532C]/30"
+          >
+            /dashboard/playbooks
+          </Link>{" "}
+          mid-run · steps + models + output · every run 5-layer verified
+        </p>
+      </div>
+    </section>
+  );
+}
+
+/* ─── 06 · Principles + Built For (bone-cream editorial chapter) ───
+ *
+ * This is the palette-shift moment. Every other landing section runs
+ * on the dark #030303 operator palette; this one switches to the same
+ * bone-cream #F4EFE6 + copper that /trust, /roi, /built-with-claude
+ * and /customers use. The effect: visitors clicking through to those
+ * trust pages land in a palette they already recognize, and the
+ * landing stops feeling like one unbroken dark scroll.
+ *
+ * Structure:
+ *   [Chapter header] → "Chapter II · Principles"
+ *   [Three rules]   → I. Ship on day one / II. Every run audited /
+ *                     III. Guarantees, not promises
+ *   [Built for / Not for] — explicit positioning, not implied
+ *   [Charter link]  → → /trust
+ */
+function Principles() {
+  const principles = [
+    {
+      n: "I",
+      title: "Ship on day one.",
+      body:
+        "Every enterprise AI pilot eventually meets a procurement committee that asks 'what did it actually produce?' We sell the answer to that question — measurable deliverables with an audit trail.",
+    },
+    {
+      n: "II",
+      title: "Every run audited.",
+      body:
+        "Each playbook is generated by one model, critiqued by a second, and synthesized by a third. No run reaches you without a second opinion on the other side of the line.",
+    },
+    {
+      n: "III",
+      title: "Guarantees, not promises.",
+      body:
+        "Each playbook publishes the exact output we guarantee. If the run doesn't meet the bar, we don't charge the run. Simple rule, strictly enforced.",
+    },
+  ];
+
+  const builtFor = [
+    "Operators who need output this week, not a six-month pilot.",
+    "Founders wearing five hats who can't hire a platform team.",
+    "Agencies replacing a stack of SaaS, not adding another one.",
+    "Developers who want MCP-first distribution, not a CRM plugin.",
+  ];
+
+  const notFor = [
+    "Teams building a consumer chatbot for their end users.",
+    "Groups training custom foundation models from scratch.",
+    "Enterprises with six-month procurement and zero-pilot policies.",
+    "Anyone who needs prompt-only tools without an audit trail.",
+  ];
+
+  return (
+    <section className="relative px-6 py-28 md:py-40 bg-[#F4EFE6] text-[#1A1712] overflow-hidden">
+      {/* Soft copper warmth, keeps the palette editorial rather than sterile */}
+      <div
+        className="absolute -right-32 top-1/3 h-[500px] w-[500px] rounded-full opacity-25 blur-[140px] pointer-events-none"
+        style={{ background: "radial-gradient(circle, rgba(181,83,44,0.35) 0%, transparent 70%)" }}
+        aria-hidden="true"
+      />
+
+      <div className="relative max-w-5xl mx-auto">
+        {/* Editorial chapter marker — the "we changed pages" cue */}
+        <div className="mb-8 flex items-center gap-4 flex-wrap">
+          <span className="font-mono text-[10px] text-[#8F8576] tracking-[0.2em]">
+            06 / 10
+          </span>
+          <span aria-hidden="true" className="h-px w-6 bg-[#C7B9A1]" />
+          <p className="text-[10px] font-mono tracking-[0.22em] uppercase text-[#B5532C]">
+            Chapter II · Principles
+          </p>
+        </div>
+
+        <h2 className="font-serif text-4xl md:text-6xl leading-[1.05] mb-20 max-w-3xl tracking-tight">
+          Three rules.
+          <br />
+          <em className="not-italic text-[#B5532C]">Everything else is detail.</em>
+        </h2>
+
+        {/* The three principles */}
+        <div className="grid md:grid-cols-3 gap-12 md:gap-8 mb-24">
+          {principles.map((p) => (
+            <motion.article
+              key={p.n}
+              initial={{ opacity: 0, y: 18 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-80px" }}
+              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              className="relative"
+            >
+              <p className="font-serif text-3xl text-[#B5532C] mb-5 italic">
+                {p.n}
+              </p>
+              <h3 className="font-serif text-[22px] md:text-[26px] text-[#1A1712] mb-4 leading-snug tracking-tight">
+                {p.title}
+              </h3>
+              <p className="text-[15px] text-[#5C544A] leading-[1.7] max-w-sm">
+                {p.body}
+              </p>
+            </motion.article>
+          ))}
+        </div>
+
+        {/* Divider — editorial, not structural */}
+        <div className="border-t border-[#D8CDB7] pt-16 md:pt-20 mb-16">
+          <p className="text-[10px] font-mono tracking-[0.22em] uppercase text-[#8F8576] mb-6">
+            Positioning · In and out of scope
+          </p>
+          <h3 className="font-serif text-3xl md:text-5xl leading-[1.08] mb-14 max-w-3xl tracking-tight">
+            Built for a specific person.
+            <br />
+            <em className="not-italic text-[#B5532C]">Honest about who it&apos;s not.</em>
+          </h3>
+
+          <div className="grid md:grid-cols-2 gap-12 md:gap-16">
+            {/* Built for */}
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#B5532C] mb-5 flex items-center gap-2">
+                <span aria-hidden="true" className="text-lg">✓</span> Built for
+              </p>
+              <ul className="space-y-4">
+                {builtFor.map((line) => (
+                  <li
+                    key={line}
+                    className="text-[15.5px] leading-[1.6] text-[#1A1712] flex gap-3"
+                  >
+                    <span aria-hidden="true" className="text-[#B5532C] mt-[3px] flex-shrink-0">—</span>
+                    <span>{line}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Not for */}
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#8F8576] mb-5 flex items-center gap-2">
+                <span aria-hidden="true" className="text-lg">×</span> Not for
+              </p>
+              <ul className="space-y-4">
+                {notFor.map((line) => (
+                  <li
+                    key={line}
+                    className="text-[15.5px] leading-[1.6] text-[#5C544A] flex gap-3"
+                  >
+                    <span aria-hidden="true" className="text-[#8F8576] mt-[3px] flex-shrink-0">—</span>
+                    <span>{line}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        {/* Editorial closer — links to the fuller doc */}
+        <div className="pt-10 border-t border-[#D8CDB7]">
+          <Link
+            href="/trust"
+            className="group inline-flex items-center gap-2 text-[13px] text-[#5C544A] hover:text-[#1A1712] transition-colors font-mono tracking-tight"
+          >
+            <span className="text-[#B5532C]">→</span>
+            Read the full operating charter
+            <span
+              aria-hidden="true"
+              className="opacity-0 group-hover:opacity-100 transition-opacity text-[#8F8576]"
+            >
+              /trust
+            </span>
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── 07 · Claude critic narrative ──────────────────────────────── */
+
+function ClaudeNarrative() {
+  return (
+    <section className="px-6 py-28 md:py-36 bg-[#0A0807]">
+      <div className="max-w-4xl mx-auto">
+        <SectionHead n="07" label="Claude as critic" />
+        <h2 className="font-serif text-3xl md:text-5xl lg:text-[56px] leading-[1.08] mb-8 tracking-[-0.02em]">
+          Cheaper models generate.
+          <br />
+          <em className="not-italic text-[#B5532C]">Claude checks.</em>
+        </h2>
+        <p className="text-lg text-neutral-300 leading-relaxed mb-6 max-w-3xl">
+          Running Claude on every step of every agent is uneconomical. Running
+          it on none of them means you ship hallucinations. Running Claude only
+          on the quality-verification gate is how we charge $49 instead of
+          $200 — and why your output is still trustworthy.
+        </p>
+        <p className="text-sm text-neutral-500 leading-relaxed max-w-3xl mb-8">
+          Every agent response surfaces{" "}
+          <code className="font-mono text-[13px] text-[#B5532C] bg-white/[0.03] px-1.5 py-0.5 rounded">
+            modelsConsulted
+          </code>{" "}
+          and{" "}
+          <code className="font-mono text-[13px] text-[#B5532C] bg-white/[0.03] px-1.5 py-0.5 rounded">
+            providersConsulted
+          </code>
+          . Every run is exportable as a cryptographically checksummed snapshot.
+        </p>
+
+        {/* Response shape documentation — the fields every agent endpoint
+            returns, with sample values so developers can see the contract
+            before touching the API. Labeled "schema" so no one mistakes
+            this for a real run's output. */}
+        <div className="mb-10 rounded-lg overflow-hidden border border-white/[0.06]">
+          <div className="flex items-center justify-between px-4 py-2 bg-[#060605] border-b border-white/[0.04]">
+            <p className="font-mono text-[10px] text-neutral-600 uppercase tracking-[0.18em]">
+              Agent response schema · sample values
+            </p>
+            <p className="font-mono text-[10px] text-neutral-700">json</p>
+          </div>
+          <pre className="p-5 font-mono text-[12px] leading-[1.7] overflow-x-auto bg-[#030303]/50">
+            <code>
+              <span className="text-neutral-600">{"{"}</span>
+              {"\n  "}
+              <span className="text-[#B5532C]">&quot;result&quot;</span>
+              <span className="text-neutral-500">: </span>
+              <span className="text-neutral-400">&quot;&lt;agent output&gt;&quot;</span>
+              <span className="text-neutral-500">,</span>
+              {"\n  "}
+              <span className="text-[#B5532C]">&quot;modelsConsulted&quot;</span>
+              <span className="text-neutral-500">: [</span>
+              <span className="text-emerald-400/80">&quot;nemotron-ultra-253b-v1&quot;</span>
+              <span className="text-neutral-500">, </span>
+              <span className="text-emerald-400/80">&quot;claude-opus-4.5&quot;</span>
+              <span className="text-neutral-500">],</span>
+              {"\n  "}
+              <span className="text-[#B5532C]">&quot;providersConsulted&quot;</span>
+              <span className="text-neutral-500">: [</span>
+              <span className="text-emerald-400/80">&quot;nvidia-nim&quot;</span>
+              <span className="text-neutral-500">, </span>
+              <span className="text-emerald-400/80">&quot;anthropic&quot;</span>
+              <span className="text-neutral-500">],</span>
+              {"\n  "}
+              <span className="text-[#B5532C]">&quot;criticConfidence&quot;</span>
+              <span className="text-neutral-500">: </span>
+              <span className="text-neutral-400">&lt;0&ndash;1 float&gt;</span>
+              <span className="text-neutral-500">,</span>
+              {"\n  "}
+              <span className="text-[#B5532C]">&quot;snapshotSha&quot;</span>
+              <span className="text-neutral-500">: </span>
+              <span className="text-neutral-400">&quot;sha256:&lt;64 hex&gt;&quot;</span>
+              <span className="text-neutral-500">,</span>
+              {"\n  "}
+              <span className="text-[#B5532C]">&quot;guaranteeMet&quot;</span>
+              <span className="text-neutral-500">: </span>
+              <span className="text-neutral-400">&lt;boolean&gt;</span>
+              {"\n"}
+              <span className="text-neutral-600">{"}"}</span>
+            </code>
+          </pre>
+        </div>
+
+        <p className="text-sm text-neutral-500 leading-relaxed max-w-3xl mb-4">
+          Live production pipeline metrics are at{" "}
+          <Link
+            href="/trust/anthropic"
+            className="underline decoration-[#B5532C]/40 hover:decoration-[#B5532C] text-white"
+          >
+            /trust/anthropic
+          </Link>
+          .
+        </p>
+
+        {/* Animated consensus flow — Generate → Critique → Synthesize */}
+        <ConsensusFlow />
+
+        <div className="flex flex-wrap gap-3">
+          <Link
+            href="/trust/anthropic"
+            className="inline-flex items-center gap-2 px-5 py-2.5 border border-[#B5532C]/50 text-white font-mono text-sm tracking-wide hover:bg-[#B5532C]/10 transition-colors"
+          >
+            See production safety metrics →
+          </Link>
+          <Link
+            href="/benchmarks"
+            className="inline-flex items-center px-5 py-2.5 border border-white/[0.1] text-neutral-400 font-mono text-sm tracking-wide hover:border-white/30 hover:text-white transition-colors"
+          >
+            Public benchmark leaderboard →
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── 07.5 · Founder quote (editorial breath) ──────────────────────
+ *
+ * Anthropic's signature editorial move: a short first-person paragraph
+ * that sounds like a person, not a marketing team. The landing needed
+ * somebody's voice in the middle of all these features. This is that
+ * voice — 2 sentences, signature, Cape Town geography. It reads as a
+ * pull quote from a longer essay (which is the right vibe — we don't
+ * actually need the essay, just the pull).
+ */
+function FounderQuote() {
+  return (
+    <section className="relative px-6 py-28 md:py-36 bg-[#040303] overflow-hidden">
+      <div
+        className="absolute left-0 top-1/2 -translate-y-1/2 h-[400px] w-[400px] rounded-full opacity-20 blur-[120px] pointer-events-none"
+        style={{ background: "radial-gradient(circle, rgba(181,83,44,0.25) 0%, transparent 70%)" }}
+        aria-hidden="true"
+      />
+
+      <div className="relative max-w-3xl mx-auto">
+        <p className="text-[10px] font-mono tracking-[0.22em] uppercase text-[#8F8576] mb-8">
+          From the founder
+        </p>
+
+        <blockquote className="relative">
+          {/* Oversized copper opening quote — editorial drop-cap */}
+          <span
+            aria-hidden="true"
+            className="absolute -left-3 -top-6 md:-left-8 md:-top-10 font-serif text-7xl md:text-9xl text-[#B5532C]/20 select-none leading-none"
+          >
+            &ldquo;
+          </span>
+
+          <p className="relative font-serif text-[22px] md:text-[30px] leading-[1.45] text-white tracking-tight mb-6">
+            I built Sovereign Matrix because I watched five AI pilots
+            fail in a row — not because the models were bad, but
+            because nobody could tell me which model wrote which
+            paragraph, and nobody would guarantee the output.{" "}
+            <em className="not-italic text-[#B5532C]">
+              So I built the thing I wanted.
+            </em>
+          </p>
+
+          <p className="relative text-[15px] md:text-[16px] leading-[1.65] text-neutral-400 max-w-2xl mb-8">
+            One critic on every run. Every model named in the trail.
+            A guaranteed deliverable — the kind of contract I
+            wish someone had offered me in 2024.
+          </p>
+
+          <footer className="flex items-center gap-3 pt-6 border-t border-white/[0.04]">
+            <div className="flex flex-col">
+              <cite className="not-italic font-serif text-[15px] text-white tracking-tight">
+                Christiaan de Wet
+              </cite>
+              <span className="text-[11px] font-mono text-neutral-500 tracking-tight">
+                Founder · Cape Town · Writes every commit
+              </span>
+            </div>
+            <span aria-hidden="true" className="flex-1 h-px bg-white/[0.04]" />
+            <a
+              href="https://github.com/christiaan839-beep/sovereign-v2/commits/main"
+              target="_blank"
+              rel="noopener"
+              className="text-[11px] font-mono text-neutral-500 hover:text-white transition-colors"
+            >
+              See the commits →
+            </a>
+          </footer>
+        </blockquote>
+      </div>
+    </section>
+  );
+}
+
+/* ─── 09 · Ship record ──────────────────────────────────────────── */
+
+function ShipRecord() {
+  return (
+    <section className="px-6 py-20 bg-[#0A0807]">
+      <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-start md:items-center gap-10">
+        <div className="flex-1">
+          <SectionHead n="09" label="Ship record" />
+          <h2 className="font-serif text-2xl md:text-4xl leading-[1.15] mb-4 max-w-xl tracking-tight">
+            <a
+              href="https://github.com/christiaan839-beep/sovereign-v2/commits/main"
+              target="_blank"
+              rel="noopener"
+              className="text-white hover:text-[#B5532C] transition-colors"
+            >
+              700+ commits. 15 migrations. Zero black-box automation.
+            </a>
+            <br />
+            <em className="not-italic text-[#B5532C]">Published weekly.</em>
+          </h2>
+          <p className="text-sm text-neutral-400 leading-relaxed max-w-xl">
+            We write session logs, not marketing copy. The{" "}
+            <Link
+              href="/changelog"
+              className="underline decoration-[#B5532C]/40 hover:decoration-[#B5532C] text-white"
+            >
+              /changelog
+            </Link>{" "}
+            reads the latest SESSION_LOG.md at request time. No CMS, no edits
+            after the fact. Engineering transparency as a moat.
+          </p>
+        </div>
+        <Link
+          href="/changelog"
+          className="inline-flex items-center gap-2 px-5 py-2.5 border border-[#B5532C]/40 text-[#B5532C] font-mono text-sm tracking-wide hover:bg-[#B5532C] hover:text-white transition-colors whitespace-nowrap"
+        >
+          Read the ship record →
+        </Link>
+      </div>
+    </section>
+  );
+}
+
+/* ─── 09 · Final CTA ────────────────────────────────────────────── */
+
+function FinalCTA() {
+  return (
+    <section className="px-6 py-24 md:py-32 bg-[#030303]">
+      <div className="max-w-3xl mx-auto text-center">
+        <div className="mb-8 flex items-center justify-center gap-4 flex-wrap">
+          <span className="font-mono text-[10px] text-neutral-600 tracking-[0.2em]">
+            10 / 10
+          </span>
+          <span aria-hidden="true" className="h-px w-6 bg-white/[0.12]" />
+          <p className="font-serif italic text-[13px] text-neutral-500 tracking-[-0.01em]">
+            Get started
+          </p>
+        </div>
+        <h2 className="font-serif text-4xl md:text-7xl leading-[1.02] mb-10 tracking-tight">
+          Three minutes.
+          <br />
+          <em className="not-italic text-[#B5532C]">One playbook.</em>
+          <br />
+          Real output.
+        </h2>
+        <p className="text-[17px] md:text-[19px] text-neutral-400 mb-12 max-w-xl mx-auto leading-[1.55]">
+          No credit card. No developer. No six-month integration. 50 runs/month
+          free — resets monthly. Next tier is $49/mo, $24.50 with a
+          Founder Network slot.
+        </p>
+
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+          <PrimaryCTA href={HERO_CTA} variant="final">
+            Run your first playbook
+          </PrimaryCTA>
+          <a
+            href="mailto:christiaan@sovereignmatrix.agency"
+            onClick={() => trackCtaClick("email-founder")}
+            className="inline-flex items-center px-7 py-3.5 border border-white/[0.1] text-neutral-400 font-mono text-sm tracking-wide hover:text-white hover:border-white/30 transition-colors"
+          >
+            Email the founder
+          </a>
+        </div>
+
+        <p className="mt-10 text-[11px] font-mono text-neutral-600">
+          Questions, partnerships, or a case-study proposal: christiaan@sovereignmatrix.agency
+        </p>
+      </div>
+    </section>
+  );
+}
+
+/* ─── Footer — editorial masthead ──────────────────────────────── */
+
+/**
+ * Footer styled as an editorial masthead, not a sitemap. Top third
+ * is a manifesto-style closing statement (the same move Claude makes
+ * on anthropic.com: the last thing the reader sees is positioning,
+ * not a column of links). Middle third is the link grid. Bottom
+ * third is the year + independence statement + operator/developer
+ * toggle.
+ */
+function Footer() {
+  return (
+    <footer className="px-6 pt-24 pb-12 border-t border-white/[0.04] bg-[#020202]">
+      <div className="max-w-6xl mx-auto">
+        {/* ── Masthead statement ── */}
+        <div className="grid md:grid-cols-[1fr_auto] gap-x-16 gap-y-8 items-end mb-20 pb-16 border-b border-white/[0.04]">
+          <div className="max-w-2xl">
+            <p className="text-[10px] font-mono tracking-[0.22em] uppercase text-[#B5532C] mb-5">
+              Colophon
+            </p>
+            <p className="font-serif text-[22px] md:text-[28px] leading-[1.35] text-white tracking-tight">
+              Sovereign Matrix is an independent studio building
+              agent infrastructure for operators — one playbook,{" "}
+              <em className="not-italic text-[#B5532C]">one guarantee</em>,
+              one audit trail at a time.
+            </p>
+            <p className="mt-6 text-[14px] text-neutral-400 leading-relaxed max-w-xl">
+              Hand-written in Cape Town. Claude is the critic on every
+              run. We&apos;re not Anthropic — we just build on their
+              model and publish the receipts.
+            </p>
+          </div>
+
+          <Link
+            href={HERO_CTA}
+            className="group inline-flex items-center gap-3 text-[13px] font-mono tracking-tight text-neutral-400 hover:text-white transition-colors whitespace-nowrap"
+          >
+            <span className="font-serif italic text-lg text-[#B5532C] not-italic">→</span>
+            <span className="border-b border-white/[0.1] group-hover:border-[#B5532C] pb-0.5 transition-colors">
+              Run your first playbook
+            </span>
+          </Link>
+        </div>
+
+        {/* ── Link grid ── */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-y-12 gap-x-8 mb-16">
+          <FooterCol
+            title="Product"
+            links={[
+              { href: "/customers", label: "Customers" },
+              { href: "/pricing", label: "Pricing" },
+              { href: "/benchmarks", label: "Benchmarks" },
+              { href: "/changelog", label: "Changelog" },
+              { href: "/roi", label: "ROI calculator" },
+            ]}
+          />
+          <FooterCol
+            title="Trust"
+            links={[
+              { href: "/trust", label: "Operating charter" },
+              { href: "/trust/anthropic", label: "Claude in production" },
+              { href: "/trust/defenders", label: "Defender's ledger" },
+              { href: "/built-with-claude", label: "Built with Claude" },
+              { href: "/.well-known/security.txt", label: "Security contact" },
+            ]}
+          />
+          <FooterCol
+            title="Developers"
+            links={[
+              { href: PLATFORM_HREF, label: "Platform overview" },
+              { href: "/developers/docs", label: "API reference" },
+              { href: "https://www.npmjs.com/package/@sovereignmatrix/mcp", label: "@sovereignmatrix/mcp", external: true },
+              { href: "https://github.com/christiaan839-beep/sovereign-v2", label: "GitHub source", external: true },
+            ]}
+          />
+          <FooterCol
+            title="Company"
+            links={[
+              { href: "mailto:christiaan@sovereignmatrix.agency", label: "Email the founder", external: true },
+              { href: "https://cal.com/christiaan-sovereign/15min", label: "Book 15 minutes", external: true },
+              { href: "/terms", label: "Terms" },
+              { href: "/privacy", label: "Privacy" },
+            ]}
+          />
+        </div>
+
+        {/* ── Baseline — year, legal, live status, toggle ── */}
+        <div className="pt-8 border-t border-white/[0.04] flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div className="flex items-center gap-3">
+            <SovereignLogo size="sm" />
+            <div className="flex flex-col md:flex-row md:items-baseline gap-x-3 gap-y-0.5">
+              <span className="font-serif text-[15px] text-white">
+                Sovereign Matrix
+              </span>
+              <span className="text-[10px] font-mono text-neutral-600 tracking-tight">
+                © 2026 · Operates independently · Not formally affiliated with Anthropic
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-5">
+            {/* Live platform health — polls /api/health/ping every 60s */}
+            <StatusIndicator />
+
+            <span aria-hidden="true" className="h-4 w-px bg-white/[0.06]" />
+
+            {/* Operator / Developer toggle */}
+            <div className="flex items-center gap-3 text-[11px] font-mono tracking-tight">
+              <Link href="/" className="text-[#B5532C]">
+                Operators
+              </Link>
+              <span aria-hidden="true" className="text-neutral-800">·</span>
+              <Link href={PLATFORM_HREF} className="text-neutral-500 hover:text-white transition-colors">
+                Developers
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+function FooterCol({
+  title,
+  links,
+}: {
+  title: string;
+  links: Array<{ href: string; label: string; external?: boolean }>;
+}) {
+  return (
+    <div>
+      <p className="text-[10px] font-mono uppercase tracking-[0.18em] text-neutral-500 mb-5">
+        {title}
+      </p>
+      <ul className="space-y-3">
+        {links.map((link) => (
+          <li key={link.href}>
+            {link.external ? (
+              <a
+                href={link.href}
+                target="_blank"
+                rel="noopener"
+                className="text-[13px] text-neutral-400 hover:text-white transition-colors tracking-tight"
+              >
+                {link.label}
+              </a>
+            ) : (
+              <Link
+                href={link.href}
+                className="text-[13px] text-neutral-400 hover:text-white transition-colors tracking-tight"
+              >
+                {link.label}
+              </Link>
+            )}
+          </li>
+        ))}
+      </ul>
     </div>
-    </CinematicLoader>
   );
 }
