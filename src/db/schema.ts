@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid, integer, index, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, uuid, integer, index, boolean, uniqueIndex } from "drizzle-orm/pg-core";
 
 export const tenants = pgTable("tenants", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -6,9 +6,6 @@ export const tenants = pgTable("tenants", {
   nodeId: text("node_id").notNull().unique(), // e.g., UMB-NX-77492
   createdAt: timestamp("created_at").defaultNow(),
   plan: text("plan").notNull().default("black-card"), // Future-proofing for tiering
-  onboardingGoal: text("onboarding_goal"), // leads, content, compete, automate
-  onboardingIndustry: text("onboarding_industry"), // agency, saas, ecommerce, consulting
-  companyUrl: text("company_url"), // User's website from onboarding
 });
 
 export const activeSwarms = pgTable("active_swarms", {
@@ -48,6 +45,7 @@ export const settings = pgTable("settings", {
   config: text("config").notNull().default('{}'), // JSON object stringified
   apiKeys: text("api_keys").default('{}'), // Store Gemini/Tavily etc
   webhooks: text("webhooks").default('{}'), // Store user saved webhooks
+  weeklyReportOptIn: text("weekly_report_opt_in").default("false"), // "true" | "false" — opt-in for Proposal R
 });
 
 export const scheduledContent = pgTable("scheduled_content", {
@@ -207,10 +205,20 @@ export const usage = pgTable("usage", {
   agentId: text("agent_id").notNull(),
   model: text("model").notNull(),
   tokensUsed: integer("tokens_used").notNull().default(0),
+  // v9 cost-ledger columns — populated from model-costs.ts at request
+  // time. Legacy rows have NULL for the three columns and that's fine;
+  // aggregations filter them out.
+  inputTokens: integer("input_tokens"),
+  outputTokens: integer("output_tokens"),
+  costCents: integer("cost_cents"),
+  provider: text("provider"), // matches model-attribution.ts buckets: anthropic/nvidia-nim/...
+  requestId: text("request_id"), // links to the request-context requestId for cross-log correlation
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => [
   index("usage_user_id_idx").on(table.userId),
   index("usage_created_at_idx").on(table.createdAt),
+  index("usage_provider_idx").on(table.provider),
+  index("usage_request_id_idx").on(table.requestId),
 ]);
 
 // ═══════════════════════════════════════════
@@ -269,17 +277,53 @@ export const chatMessages = pgTable("chat_messages", {
 export const marketplaceAgents = pgTable("marketplace_agents", {
   id: uuid("id").primaryKey().defaultRandom(),
   skillId: uuid("skill_id").references(() => customSkills.id, { onDelete: "set null" }),
+
+  // Author
   authorEmail: text("author_email").notNull(),
   authorName: text("author_name").notNull(),
+  creatorUserId: text("creator_user_id"),            // Clerk user ID — persists across email changes
+
+  // Content
   name: text("name").notNull(),
   description: text("description").notNull(),
-  category: text("category").notNull(), // sales, content, seo, code, automation, research
+  category: text("category").notNull(),              // sales|content|seo|code|automation|research|voice|data
   systemPrompt: text("system_prompt").notNull(),
+  tags: text("tags").notNull().default("[]"),        // JSON string[]
+
+  // Discovery
   isPublic: boolean("is_public").notNull().default(true),
   installs: integer("installs").notNull().default(0),
-  rating: integer("rating").default(0), // 0-5
+  rating: integer("rating").default(0),              // 0-5 star average
+  featured: boolean("featured").notNull().default(false),
+  featuredAt: timestamp("featured_at"),
+
+  // Monetisation
+  pricePerRun: integer("price_per_run").notNull().default(0),            // cents — 0 = free
+  stripeProductId: text("stripe_product_id"),
+  stripePriceId: text("stripe_price_id"),
+  stripeConnectAccountId: text("stripe_connect_account_id"),            // creator's Connect account
+
+  // Usage stats (denormalised for fast leaderboard queries)
+  totalRunCount: integer("total_run_count").notNull().default(0),
+  weeklyRunCount: integer("weekly_run_count").notNull().default(0),
+  revenueCents: integer("revenue_cents").notNull().default(0),           // gross
+  creatorRevenueCents: integer("creator_revenue_cents").notNull().default(0), // 70% share
+
+  // Verification pipeline
+  verificationStatus: text("verification_status").notNull().default("pending"),
+  // pending | in_review | verified | rejected | suspended
+  verifiedAt: timestamp("verified_at"),
+  testRunPassed: boolean("test_run_passed"),
+  safetyScore: integer("safety_score"),              // 0-100 from 5-layer check
+  rejectionReason: text("rejection_reason"),
+
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (table) => [
+  index("idx_marketplace_creator").on(table.creatorUserId),
+  index("idx_marketplace_category").on(table.category),
+  index("idx_marketplace_status").on(table.verificationStatus),
+  index("idx_marketplace_runs").on(table.totalRunCount),
+]);
 
 // ═══════════════════════════════════════════
 // Stripe Subscriptions
@@ -293,11 +337,84 @@ export const subscriptions = pgTable("subscriptions", {
   plan: text("plan").notNull().default("free"),
   status: text("status").notNull().default("active"),
   currentPeriodEnd: timestamp("current_period_end"),
+  /**
+   * Founder Network membership (Proposal L) — separate from the free
+   * 10-slot Founders program. `null` means not a member; a timestamp
+   * marks when they joined. Used for the 50% lifetime discount +
+   * 30% referral commission + badge perks.
+   */
+  founderNetworkJoinedAt: timestamp("founder_network_joined_at"),
+  /** Sequential slot number within the 100-member cohort — purely for display. */
+  founderNetworkSlot: integer("founder_network_slot"),
+  // v10 acquisition attribution — migration 0013. Written ONCE at
+  // signup; immutable after. Lets us answer "did HN or LinkedIn
+  // drive this week's signups?" without guessing.
+  acquisitionSource: text("acquisition_source"),
+  acquisitionMedium: text("acquisition_medium"),
+  acquisitionCampaign: text("acquisition_campaign"),
+  acquisitionReferrer: text("acquisition_referrer"),
+  acquiredAt: timestamp("acquired_at").defaultNow(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
   index("idx_subscriptions_user").on(table.userId),
   index("idx_subscriptions_stripe").on(table.stripeCustomerId),
+  index("idx_subscriptions_founder_network").on(table.founderNetworkJoinedAt),
+  index("idx_subscriptions_acq_source").on(table.acquisitionSource),
+  index("idx_subscriptions_acquired_at").on(table.acquiredAt),
+]);
+
+/**
+ * Stripe webhook deduplication with TWO-STATE processing (received → completed).
+ *
+ * Stripe delivers events at-least-once. A single-state dedup (INSERT-and-skip-
+ * on-conflict) has a race: if we insert at t=0 then crash at t=1ms before
+ * processing, the Stripe retry at t=5s hits the duplicate path and silently
+ * skips a legitimate unprocessed event.
+ *
+ * Two-state fix:
+ *   1. INSERT with status='received' as the first action.
+ *   2. Run the handler switch.
+ *   3. UPDATE status='completed' on success.
+ *
+ * On duplicate-insert: check status.
+ *   - If 'completed' → return 200, skip (real dup, already handled).
+ *   - If 'received' AND received_at > 5 min ago → re-process (stale crash).
+ *   - If 'received' AND received_at ≤ 5 min ago → return 202 (concurrent
+ *     processing; Stripe will retry and we'll pick it up cleanly).
+ */
+export const stripeEvents = pgTable("stripe_events", {
+  eventId: text("event_id").primaryKey(),
+  type: text("type").notNull(),
+  status: text("status").notNull().default("received"), // 'received' | 'completed' | 'failed'
+  receivedAt: timestamp("received_at").defaultNow().notNull(),
+  completedAt: timestamp("completed_at"),
+  /** Serialized error from the handler when status='failed'. */
+  errorMessage: text("error_message"),
+});
+
+/**
+ * OAuth connections — per-user access tokens for Slack / Gmail / HubSpot /
+ * etc. Tokens are encrypted at rest via safeEncrypt. See
+ * docs/adr/0003-slack-oauth-first-integration.md.
+ */
+export const oauthConnections = pgTable("oauth_connections", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull(),
+  provider: text("provider").notNull(),        // "slack", "gmail", "hubspot", ...
+  workspaceId: text("workspace_id").notNull(), // Slack team id / Gmail account id
+  workspaceName: text("workspace_name"),
+  accessToken: text("access_token").notNull(), // safeEncrypt'd
+  refreshToken: text("refresh_token"),         // safeEncrypt'd (nullable for non-rotating providers)
+  scopes: text("scopes").array(),
+  botUserId: text("bot_user_id"),
+  installedAt: timestamp("installed_at").defaultNow().notNull(),
+  revokedAt: timestamp("revoked_at"),
+}, (table) => [
+  uniqueIndex("uniq_oauth_user_provider_workspace").on(
+    table.userId, table.provider, table.workspaceId,
+  ),
+  index("idx_oauth_user_provider").on(table.userId, table.provider),
 ]);
 
 // ═══════════════════════════════════════════
@@ -604,3 +721,68 @@ export const jobs = pgTable("jobs", {
   index("idx_jobs_created").on(table.createdAt),
 ]);
 
+
+// ═══════════════════════════════════════════
+// Case Studies — public /customers feed
+// ═══════════════════════════════════════════
+
+/**
+ * Rows in this table drive the public /customers page. A row with
+ * published_at != NULL appears live; published_at = NULL means it's
+ * a draft. Companies must approve_by_company before publishing —
+ * the /customers page filters on both `approvedByCompany && publishedAt`.
+ *
+ * Insertion flow (intended):
+ *   1. Founder writes the case study as a markdown body during the
+ *      customer's month-end review call
+ *   2. Drafts land here via an admin POST endpoint (v12+)
+ *   3. Customer reviews the rendered draft at /customers/preview/[slug]
+ *   4. On approval, the row gets approvedByCompany=true + published_at=now()
+ *   5. /customers shows it on the next edge-cache revalidation (1 hr)
+ */
+export const caseStudies = pgTable("case_studies", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  slug: text("slug").notNull().unique(),
+  company: text("company").notNull(),
+  industry: text("industry"),
+  outcome: text("outcome").notNull(),    // one-line headline result
+  metric: text("metric").notNull(),      // the number leading the card
+  playbook: text("playbook").notNull(),  // which playbook delivered it
+  body: text("body"),                     // full markdown narrative
+  approvedByCompany: boolean("approved_by_company").notNull().default(false),
+  publishedAt: timestamp("published_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  index("idx_case_studies_published_at").on(table.publishedAt),
+  index("idx_case_studies_slug").on(table.slug),
+]);
+
+// ═══════════════════════════════════════════
+// CTA click tracking — which surfaces convert
+// ═══════════════════════════════════════════
+
+/**
+ * Tracks clicks on named CTAs (FounderCTA, primary hero button,
+ * final-CTA button). Used for launch-week channel analysis paired
+ * with the acquisition pipeline: "visitors from HN clicked the
+ * FounderCTA at 12%, vs LinkedIn at 3%."
+ *
+ * Privacy: no raw user IDs, no PII, only browser-generated session
+ * IDs + hashed user IDs. Referrer is normalized to domain only
+ * before storage. Retention: 180 days via scheduled cleanup job.
+ */
+export const ctaClicks = pgTable("cta_clicks", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  ctaName: text("cta_name").notNull(),
+  sourcePath: text("source_path"),
+  referrerDomain: text("referrer_domain"),
+  userIdHash: text("user_id_hash"),
+  sessionId: text("session_id"),
+  userAgentFamily: text("user_agent_family"),
+  clickedAt: timestamp("clicked_at").notNull().defaultNow(),
+}, (table) => [
+  index("idx_cta_clicks_clicked_at").on(table.clickedAt),
+  index("idx_cta_clicks_cta").on(table.ctaName),
+  index("idx_cta_clicks_source_path").on(table.sourcePath),
+]);

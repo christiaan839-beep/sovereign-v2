@@ -1483,6 +1483,17 @@ function Footer() {
           </div>
 
           <div className="flex items-center gap-5">
+            {/* Built with Claude badge */}
+            <Link
+              href="/built-with-claude"
+              className="inline-flex items-center gap-1.5 text-[10px] font-mono text-neutral-600 hover:text-[#D97706] transition-colors tracking-tight group"
+            >
+              <span className="text-[#D97706]/50 group-hover:text-[#D97706] transition-colors">◆</span>
+              Built with Claude
+            </Link>
+
+            <span aria-hidden="true" className="h-4 w-px bg-white/[0.06]" />
+
             {/* Live platform health — polls /api/health/ping every 60s */}
             <StatusIndicator />
 
