@@ -3,28 +3,29 @@
 import { motion } from "framer-motion";
 
 /**
- * Live model pulse — a visual signature unique to our multi-model
- * platform. Six tiny dots, each representing one of the providers
- * consulted across a typical playbook run: NVIDIA NIM, Anthropic,
- * Google Gemini, DeepSeek, Groq, Cerebras.
+ * Model roster — visual signature of our multi-provider platform.
  *
- * Each dot pulses on its own phase so the row reads as "these
- * models are alive and checking on each other" — the exact
- * positioning our platform rests on. Copper tinted for the
- * primary (Claude) dot, emerald for the rest.
+ * Six dots represent the six providers we integrate with (NVIDIA NIM,
+ * Anthropic, Google, DeepSeek, Cerebras, Alibaba/Qwen). Copper marks
+ * the primary critic (Claude); the rest are generation + synthesis.
  *
- * Purpose on the landing: shows at a glance that this ISN'T a
- * single-model wrapper. It's a multi-provider platform, and here's
- * the visual proof.
+ * HONEST CAVEAT: the dots don't ping live — we don't have real-time
+ * provider health on the marketing page. The StatusIndicator in the
+ * footer polls /api/health/ping (which is real). This is a static
+ * roster, not a live telemetry dashboard. Copy reflects that.
+ *
+ * Purpose: makes the multi-provider positioning legible at a glance.
+ * It's not a one-model wrapper — here are the six providers that
+ * compose a typical run.
  */
 
 const MODELS = [
-  { name: "claude-opus-4.5", family: "anthropic", primary: true, phase: 0 },
-  { name: "nemotron-ultra-253b", family: "nvidia", primary: false, phase: 0.3 },
-  { name: "gemini-3.1-pro", family: "google", primary: false, phase: 0.7 },
-  { name: "deepseek-v3.2", family: "deepseek", primary: false, phase: 1.1 },
-  { name: "llama-4-maverick", family: "cerebras", primary: false, phase: 1.5 },
-  { name: "qwen-3-next-80b", family: "alibaba", primary: false, phase: 1.9 },
+  { name: "claude-opus-4.5", family: "anthropic", primary: true },
+  { name: "nemotron-ultra-253b-v1", family: "nvidia", primary: false },
+  { name: "gemini-3.1-pro", family: "google", primary: false },
+  { name: "deepseek-v3.2", family: "deepseek", primary: false },
+  { name: "llama-4-maverick", family: "cerebras", primary: false },
+  { name: "qwen-3-next-80b", family: "alibaba", primary: false },
 ];
 
 export function ModelPulse() {
@@ -34,46 +35,25 @@ export function ModelPulse() {
       animate={{ opacity: 1 }}
       transition={{ delay: 1.6, duration: 0.8 }}
       className="hidden md:inline-flex items-center gap-3 text-[10px] font-mono text-neutral-600 tracking-tight"
-      role="status"
-      aria-label="Live model availability"
+      aria-label="Multi-provider model roster"
     >
-      <span className="text-neutral-700">Live roster</span>
+      <span className="text-neutral-700">Roster</span>
 
-      {/* Pulse row */}
+      {/* Static dot row — one per provider. Copper = Claude (critic) */}
       <div className="flex items-center gap-2">
         {MODELS.map((m) => (
           <span
             key={m.name}
-            className="relative inline-flex h-1.5 w-1.5"
-            title={`${m.name} · online`}
-          >
-            <motion.span
-              className={`absolute inline-flex h-full w-full rounded-full ${
-                m.primary ? "bg-[#B5532C]" : "bg-emerald-400/70"
-              }`}
-              animate={{
-                opacity: [0.3, 0.9, 0.3],
-                scale: [1, 1.6, 1],
-              }}
-              transition={{
-                duration: 2.4,
-                repeat: Infinity,
-                ease: "easeInOut",
-                delay: m.phase,
-              }}
-            />
-            <span
-              className={`relative inline-flex h-1.5 w-1.5 rounded-full ${
-                m.primary ? "bg-[#B5532C]" : "bg-emerald-400"
-              }`}
-            />
-          </span>
+            className={`inline-flex h-1.5 w-1.5 rounded-full ${
+              m.primary ? "bg-[#B5532C]" : "bg-neutral-400/50"
+            }`}
+            title={`${m.name} · ${m.family}`}
+          />
         ))}
       </div>
 
       <span className="text-neutral-700">
-        6 providers · 38 models · {" "}
-        <span className="text-emerald-400/80">all online</span>
+        6 providers · 38 models · routed per task
       </span>
     </motion.div>
   );

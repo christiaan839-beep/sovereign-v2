@@ -4,24 +4,20 @@ import { motion } from "framer-motion";
 import { Check, Loader2, Circle } from "lucide-react";
 
 /**
- * Dashboard mockup — what visitors see in /dashboard/playbooks when
- * a run is live. Not a screenshot (server-rendered DIVs scale better
- * across viewports and stay crisp on retina); every element matches
- * the actual dashboard typography + spacing so the mockup reads as
- * "this is the product" rather than "this is marketing art."
+ * Dashboard mockup — sample run from /dashboard/playbooks, rendered
+ * as server-side DIVs so the page scales to retina without a
+ * screenshot pipeline. Every element matches the real dashboard
+ * typography + spacing.
  *
- * Animation budget:
- *   - The "running" step's progress bar pulses once and stops
- *   - The output panel reveals line-by-line on viewport entry
- *   - Nothing moves on a loop — the page scrolls past this, it
- *     doesn't sit here forever burning animation
+ * IMPORTANT: this is a static illustration of what a Lead Blitz run
+ * looks like. It's labeled "Sample run" in the chrome so no visitor
+ * thinks they're watching live telemetry on the marketing page.
+ * Numbers and step outputs are representative, not telemetered — for
+ * real data, run a real playbook from the dashboard.
  *
- * The five steps mirror the real Lead Blitz playbook:
- *   1. Classify niche → done
- *   2. Discover companies → done
- *   3. Enrich contacts → running (the one in-flight)
- *   4. Score priority → pending
- *   5. Draft outreach angle → pending
+ * Step layout mirrors the real Lead Blitz playbook (5 steps): classify,
+ * discover, enrich, score, draft — step 3 is shown in-flight so the
+ * reader sees the in-progress state.
  */
 
 interface Step {
@@ -33,20 +29,20 @@ interface Step {
 }
 
 const STEPS: Step[] = [
-  { n: 1, agent: "Classify niche", status: "done", model: "nemotron-ultra", duration: "0.9s" },
-  { n: 2, agent: "Discover companies", status: "done", model: "smart-router", duration: "38.2s" },
-  { n: 3, agent: "Enrich contacts", status: "running", model: "claude-opus-4.5", duration: "12.4s" },
+  { n: 1, agent: "Classify niche", status: "done", model: "nemotron-ultra-253b", duration: "~1s" },
+  { n: 2, agent: "Discover companies", status: "done", model: "gemini-3.1-pro", duration: "~40s" },
+  { n: 3, agent: "Enrich contacts", status: "running", model: "claude-opus-4.5" },
   { n: 4, agent: "Score priority", status: "pending" },
   { n: 5, agent: "Draft outreach angle", status: "pending" },
 ];
 
 const OUTPUT_LINES = [
-  { text: "→ Resolved niche: B2B SaaS / mid-market / North America", color: "text-emerald-400" },
-  { text: "→ Discovered 47 companies matching ICP signals", color: "text-emerald-400" },
-  { text: "  · 12 in Series A–C, 18 bootstrapped, 17 acquired-entity", color: "text-neutral-500" },
-  { text: "→ Enriching 47/47 · Hunter → Apollo → Clearbit fallback chain", color: "text-cyan-400" },
-  { text: "  · Found 34 verified emails, 11 LinkedIn profiles, 2 skipped", color: "text-neutral-500" },
-  { text: "  · Running [Claude-Opus-4.5] quality critic on contact angles...", color: "text-[#B5532C]" },
+  { text: "→ Classified niche: B2B SaaS / mid-market", color: "text-emerald-400" },
+  { text: "→ Discovered companies matching ICP signals", color: "text-emerald-400" },
+  { text: "  · Tiered by funding stage + headcount + signal recency", color: "text-neutral-500" },
+  { text: "→ Enriching via Hunter → Apollo → Clearbit fallback chain", color: "text-cyan-400" },
+  { text: "  · Verified emails + LinkedIn profiles per company", color: "text-neutral-500" },
+  { text: "  · Running claude-opus-4.5 quality critic on contact angles", color: "text-[#B5532C]" },
 ];
 
 export function DashboardMockup() {
@@ -60,7 +56,9 @@ export function DashboardMockup() {
     >
       {/* Window frame — matches the real dashboard's rounded corners + border */}
       <div className="rounded-2xl border border-white/[0.08] bg-[#0A0807] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.6)] overflow-hidden">
-        {/* Chrome bar — traffic lights + address */}
+        {/* Chrome bar — traffic lights + address + sample tag.
+            The copper "Sample run" badge makes it unambiguous: this is
+            an illustration of the dashboard pattern, not live data. */}
         <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.05] bg-[#060605]">
           <span className="h-2.5 w-2.5 rounded-full bg-[#3a3633]" aria-hidden="true" />
           <span className="h-2.5 w-2.5 rounded-full bg-[#3a3633]" aria-hidden="true" />
@@ -73,27 +71,23 @@ export function DashboardMockup() {
             <span className="text-white">playbooks</span>
             <span className="text-neutral-700">?auto=lead-blitz</span>
           </div>
+          <span className="ml-auto text-[9px] font-mono uppercase tracking-[0.18em] text-[#B5532C]/80 border border-[#B5532C]/30 px-1.5 py-0.5 rounded">
+            Sample
+          </span>
         </div>
 
-        {/* Header row — run name + status + elapsed */}
+        {/* Header row — playbook name + step count */}
         <div className="flex items-center justify-between gap-4 px-6 py-5 border-b border-white/[0.04]">
           <div className="flex items-baseline gap-3 min-w-0">
             <h3 className="font-serif text-[17px] text-white truncate tracking-tight">
               Lead Blitz
             </h3>
             <span className="text-[10px] font-mono text-neutral-600 tracking-[0.15em] uppercase">
-              3/5 steps
+              5 steps
             </span>
           </div>
-          <div className="flex items-center gap-4 font-mono text-[11px]">
-            <span className="flex items-center gap-1.5 text-emerald-400">
-              <span className="relative inline-flex h-1.5 w-1.5">
-                <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-70 animate-ping" />
-                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
-              </span>
-              Running
-            </span>
-            <span className="tabular-nums text-neutral-400">02:34</span>
+          <div className="flex items-center gap-4 font-mono text-[11px] text-neutral-500">
+            <span className="text-neutral-600">Step 3 in progress</span>
           </div>
         </div>
 
@@ -106,15 +100,15 @@ export function DashboardMockup() {
             ))}
           </div>
 
-          {/* Streaming output panel */}
+          {/* Output panel — static sample, not streaming telemetry */}
           <div className="p-5 md:p-6 min-h-[260px]">
             <div className="flex items-center gap-2 mb-4">
               <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-neutral-600">
-                Live output · Step 3
+                Output · Step 3
               </p>
               <span aria-hidden="true" className="text-neutral-800">·</span>
               <p className="font-mono text-[10px] text-[#B5532C]">
-                claude-opus-4.5 critic · 96% confidence
+                claude-opus-4.5 critic gates every step
               </p>
             </div>
 
@@ -144,19 +138,22 @@ export function DashboardMockup() {
           </div>
         </div>
 
-        {/* Footer — model roster + guarantee badge */}
+        {/* Footer — model roster + pipeline badge.
+            Models listed are real providers we route through per task.
+            "5-layer verified" refers to the pipeline gates every real
+            run passes through (jailbreak, PII, content, quality, critic) */}
         <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-4 border-t border-white/[0.04] bg-[#060605]">
           <p className="text-[10px] font-mono text-neutral-600 tracking-tight">
-            Models this run:{" "}
+            Typical run:{" "}
             <span className="text-neutral-400">nemotron-ultra-253b</span>
             <span className="text-neutral-800"> · </span>
-            <span className="text-neutral-400">smart-router</span>
+            <span className="text-neutral-400">gemini-3.1-pro</span>
             <span className="text-neutral-800"> · </span>
             <span className="text-white">claude-opus-4.5</span>
           </p>
           <span className="inline-flex items-center gap-1.5 text-[10px] font-mono text-emerald-400/80">
             <Check className="h-3 w-3" />
-            5-layer verified
+            5-layer pipeline
           </span>
         </div>
       </div>

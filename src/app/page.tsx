@@ -871,11 +871,14 @@ function ClaudeNarrative() {
           . Every run is exportable as a cryptographically checksummed snapshot.
         </p>
 
-        {/* Real response shape — technical proof for engineers scanning the page */}
+        {/* Response shape documentation — the fields every agent endpoint
+            returns, with sample values so developers can see the contract
+            before touching the API. Labeled "schema" so no one mistakes
+            this for a real run's output. */}
         <div className="mb-10 rounded-lg overflow-hidden border border-white/[0.06]">
           <div className="flex items-center justify-between px-4 py-2 bg-[#060605] border-b border-white/[0.04]">
             <p className="font-mono text-[10px] text-neutral-600 uppercase tracking-[0.18em]">
-              Every agent response
+              Agent response schema · sample values
             </p>
             <p className="font-mono text-[10px] text-neutral-700">json</p>
           </div>
@@ -885,7 +888,7 @@ function ClaudeNarrative() {
               {"\n  "}
               <span className="text-[#B5532C]">&quot;result&quot;</span>
               <span className="text-neutral-500">: </span>
-              <span className="text-neutral-300">&quot;...&quot;</span>
+              <span className="text-neutral-400">&quot;&lt;agent output&gt;&quot;</span>
               <span className="text-neutral-500">,</span>
               {"\n  "}
               <span className="text-[#B5532C]">&quot;modelsConsulted&quot;</span>
@@ -904,17 +907,17 @@ function ClaudeNarrative() {
               {"\n  "}
               <span className="text-[#B5532C]">&quot;criticConfidence&quot;</span>
               <span className="text-neutral-500">: </span>
-              <span className="text-cyan-400">0.96</span>
+              <span className="text-neutral-400">&lt;0&ndash;1 float&gt;</span>
               <span className="text-neutral-500">,</span>
               {"\n  "}
               <span className="text-[#B5532C]">&quot;snapshotSha&quot;</span>
               <span className="text-neutral-500">: </span>
-              <span className="text-neutral-400">&quot;sha256:4f3c...a91e&quot;</span>
+              <span className="text-neutral-400">&quot;sha256:&lt;64 hex&gt;&quot;</span>
               <span className="text-neutral-500">,</span>
               {"\n  "}
               <span className="text-[#B5532C]">&quot;guaranteeMet&quot;</span>
               <span className="text-neutral-500">: </span>
-              <span className="text-cyan-400">true</span>
+              <span className="text-neutral-400">&lt;boolean&gt;</span>
               {"\n"}
               <span className="text-neutral-600">{"}"}</span>
             </code>
