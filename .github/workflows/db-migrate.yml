@@ -1,0 +1,117 @@
+name: Database Migrations
+
+# Runs Drizzle migrations automatically on merges to main.
+# Staging deploys are gated by the ci.yml workflow; this one owns
+# schema changes specifically so failed migrations fail the deploy
+# loudly instead of silently shipping schema-incompatible code.
+#
+# Security note: `workflow_dispatch.inputs.environment` is constrained
+# to a `choice` of two fixed values, so it cannot be used for command
+# injection. We still prefer `env:` over inline interpolation everywhere
+# run: uses a shell — see
+# https://github.blog/security/vulnerability-research/how-to-catch-github-actions-workflow-injections-before-attackers-do/
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "drizzle/**/*.sql"
+      - "src/db/schema.ts"
+      - ".github/workflows/db-migrate.yml"
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Which environment to migrate"
+        required: true
+        default: "production"
+        type: choice
+        options:
+          - production
+          - staging
+
+# Top-level permissions default to minimum.
+permissions:
+  contents: read
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Use the native GitHub environments feature so the secret
+    # selection is tied to environment protection rules (required
+    # reviewers, etc.) not to a string substitution.
+    environment:
+      name: ${{ github.event.inputs.environment || 'production' }}
+    concurrency:
+      # Prevent parallel migration runs — Drizzle acquires a Postgres
+      # advisory lock anyway, but belt-and-braces at workflow level.
+      group: db-migrate-${{ github.event.inputs.environment || 'production' }}
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Validate migration files
+        # Each file in drizzle/ must be a SQL file with the pattern:
+        # NNNN_description.sql where NNNN is a monotonically increasing
+        # zero-padded integer. This catches the common mistake of
+        # committing a migration with the same number as an existing one.
+        run: |
+          set -e
+          duplicates=$(ls drizzle/*.sql 2>/dev/null \
+            | xargs -n1 basename \
+            | awk -F'_' '{print $1}' \
+            | sort \
+            | uniq -d)
+          if [ -n "$duplicates" ]; then
+            echo "::error::Duplicate migration numbers detected: $duplicates"
+            exit 1
+          fi
+          echo "Migration files OK."
+
+      - name: Apply migrations (Drizzle)
+        # DATABASE_URL_SERVICE is the service-role connection with
+        # BYPASSRLS so migrations can create/alter RLS policies. The
+        # secret is pulled from the GitHub environment selected above.
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_SERVICE }}
+        run: |
+          # drizzle-kit push applies the committed SQL files in order.
+          # In CI we use --force to skip the interactive confirmation;
+          # human review happened at PR-time.
+          npx drizzle-kit push --force
+
+      - name: Verify schema drift
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_SERVICE }}
+        run: |
+          # After push, `drizzle-kit check` should report zero drift —
+          # if it doesn't, something shipped out of sync.
+          npx drizzle-kit check
+
+      - name: Notify on failure
+        if: failure()
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_OPS_WEBHOOK_URL }}
+          ENV_NAME: ${{ github.event.inputs.environment || 'production' }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          # Slack post kept in a single-argument payload so no shell
+          # interpolation of workflow inputs occurs in the URL/message.
+          if [ -n "$SLACK_WEBHOOK_URL" ]; then
+            curl -X POST -H 'Content-type: application/json' \
+              --data "$(jq -n \
+                --arg text "Database migration failed on ${ENV_NAME}. See ${RUN_URL}" \
+                '{text: $text}')" \
+              "$SLACK_WEBHOOK_URL"
+          fi

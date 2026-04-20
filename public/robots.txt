@@ -1,4 +1,56 @@
+# Sovereign Matrix — robots.txt
+# See https://www.robotstxt.org/robotstxt.html
+
 User-agent: *
 Allow: /
+Disallow: /api/
+Disallow: /dashboard/
+Disallow: /admin/
 
+# Agent discovery via .agent.md (re-allowed explicitly)
+Allow: /api/agents/*.agent.md
+
+# Sitemap
 Sitemap: https://sovereignmatrix.agency/sitemap.xml
+
+# ─── AI crawlers ───
+# Anthropic / Claude — explicitly welcomed on public surfaces.
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+# OpenAI GPTBot — public pages only.
+User-agent: GPTBot
+Allow: /
+Disallow: /api/
+Disallow: /dashboard/
+
+# Google-Extended (Bard / Gemini training) — same policy.
+User-agent: Google-Extended
+Allow: /
+Disallow: /api/
+
+# Meta AI bots
+User-agent: FacebookBot
+Allow: /
+
+User-agent: Meta-ExternalAgent
+Allow: /
+
+# ─── SEO / analytics crawlers we'd rather not feed ───
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: DataForSeoBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
+User-agent: PetalBot
+Disallow: /

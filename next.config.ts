@@ -92,6 +92,22 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+
+  // Redirects — RFC-spec compliance for browsers
+  async redirects() {
+    return [
+      {
+        // W3C change-password discovery spec
+        // https://www.w3.org/TR/change-password-url/
+        // Browsers auto-check this when a breach is detected; we route
+        // to the real security settings page so 1Password / iCloud
+        // Keychain can deep-link users to rotate.
+        source: "/.well-known/change-password",
+        destination: "/dashboard/settings/security",
+        permanent: false,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

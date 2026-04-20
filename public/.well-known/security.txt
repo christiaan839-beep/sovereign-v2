@@ -1,0 +1,36 @@
+# Sovereign Matrix — Vulnerability Disclosure Policy
+# Format: RFC 9116 — https://securitytxt.org/
+#
+# If you believe you've found a security issue affecting Sovereign
+# Matrix or our customers, we want to hear from you. We commit to:
+#   - Responding within 24 hours
+#   - Working with you on a reasonable disclosure timeline
+#   - Publicly acknowledging your contribution (if you wish)
+# in exchange for responsible disclosure.
+
+Contact: mailto:security@sovereignmatrix.agency
+Contact: https://sovereignmatrix.agency/contact?reason=security
+Expires: 2027-04-20T00:00:00Z
+Preferred-Languages: en
+Canonical: https://sovereignmatrix.agency/.well-known/security.txt
+Policy: https://sovereignmatrix.agency/trust#disclosure
+
+# ─── What we ask ───
+# - Give us 90 days to respond before public disclosure.
+# - Do not access data that isn't yours.
+# - Do not perform DoS or brute-force attacks against production.
+# - Staging env is available for testing; contact us for access.
+#
+# ─── What we commit ───
+# - Initial response within 24 hours (during business days).
+# - Triage within 72 hours.
+# - Fix + disclosure coordinated within 90 days.
+# - Public credit (if you want it) on our trust page.
+#
+# ─── Out of scope ───
+# - Issues requiring physical access to user devices.
+# - Social engineering of our staff.
+# - Rate-limiting bypass via distributed sources without proof of
+#   actual impact (our Upstash sliding-window is intentional).
+# - Missing security headers on marketing pages without a concrete
+#   exploit (we'll still fix them, just not rewarded).
