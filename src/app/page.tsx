@@ -486,7 +486,7 @@ function ThreeStepProof() {
     {
       time: "3:00",
       title: "Get real output",
-      desc: "50 enriched leads, a published blog post, or a competitive analysis — not a demo, real deliverables.",
+      desc: "5+ qualified companies with contact angles, a published post, or a full competitive analysis — real deliverables, not a demo.",
     },
   ];
 
@@ -554,12 +554,12 @@ function TrustStrip() {
       stat: "80%",
       desc: "of enterprises can't trace what an agent actually did",
       sub: "Sovereign: every run is a checksummed, exportable snapshot",
-      source: "Gartner AI observability report, 2026",
+      source: "Gartner AI observability survey, 2025",
     },
     {
       stat: "46%",
       desc: "cite fragmented integrations as the top scaling barrier",
-      sub: "Sovereign: 25+ native integrations, MCP-first distribution",
+      sub: "Sovereign: 17 live integrations, MCP-first distribution",
       source: "McKinsey State of AI 2025",
     },
   ];
@@ -775,7 +775,7 @@ function Principles() {
       n: "I",
       title: "Ship on day one.",
       body:
-        "86% of enterprise AI projects never ship. We sell shipped outcomes — leads enriched, content drafted, reports written — not pilots and proofs-of-concept.",
+        "Every enterprise AI pilot eventually meets a procurement committee that asks 'what did it actually produce?' We sell the answer to that question — measurable deliverables with an audit trail.",
     },
     {
       n: "II",
@@ -1182,8 +1182,8 @@ function FinalCTA() {
           Real output.
         </h2>
         <p className="text-[17px] md:text-[19px] text-neutral-400 mb-12 max-w-xl mx-auto leading-[1.55]">
-          No credit card. No developer. No six-month integration. Your first
-          50 runs are free; the next tier is $49/mo, $24.50 if you grab a
+          No credit card. No developer. No six-month integration. 50 runs/month
+          free — resets monthly. Next tier is $49/mo, $24.50 with a
           Founder Network slot.
         </p>
 

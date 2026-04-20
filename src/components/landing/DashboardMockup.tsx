@@ -29,9 +29,9 @@ interface Step {
 }
 
 const STEPS: Step[] = [
-  { n: 1, agent: "Classify niche", status: "done", model: "nemotron-ultra-253b", duration: "~1s" },
-  { n: 2, agent: "Discover companies", status: "done", model: "gemini-3.1-pro", duration: "~40s" },
-  { n: 3, agent: "Enrich contacts", status: "running", model: "claude-opus-4.5" },
+  { n: 1, agent: "Classify niche", status: "done", model: "nemotron-ultra-253b-v1", duration: "~1s" },
+  { n: 2, agent: "Discover companies", status: "done", model: "gemini-2.5-flash", duration: "~40s" },
+  { n: 3, agent: "Enrich contacts", status: "running", model: "claude-sonnet-4-6" },
   { n: 4, agent: "Score priority", status: "pending" },
   { n: 5, agent: "Draft outreach angle", status: "pending" },
 ];
@@ -42,7 +42,7 @@ const OUTPUT_LINES = [
   { text: "  · Tiered by funding stage + headcount + signal recency", color: "text-neutral-500" },
   { text: "→ Enriching via Hunter → Apollo → Clearbit fallback chain", color: "text-cyan-400" },
   { text: "  · Verified emails + LinkedIn profiles per company", color: "text-neutral-500" },
-  { text: "  · Running claude-opus-4.5 quality critic on contact angles", color: "text-[#B5532C]" },
+  { text: "  · Running claude-sonnet-4-6 quality critic on contact angles", color: "text-[#B5532C]" },
 ];
 
 export function DashboardMockup() {
@@ -108,7 +108,7 @@ export function DashboardMockup() {
               </p>
               <span aria-hidden="true" className="text-neutral-800">·</span>
               <p className="font-mono text-[10px] text-[#B5532C]">
-                claude-opus-4.5 critic gates every step
+                claude-sonnet-4-6 critic gates every step
               </p>
             </div>
 
@@ -145,11 +145,11 @@ export function DashboardMockup() {
         <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-4 border-t border-white/[0.04] bg-[#060605]">
           <p className="text-[10px] font-mono text-neutral-600 tracking-tight">
             Typical run:{" "}
-            <span className="text-neutral-400">nemotron-ultra-253b</span>
+            <span className="text-neutral-400">nemotron-ultra-253b-v1</span>
             <span className="text-neutral-800"> · </span>
-            <span className="text-neutral-400">gemini-3.1-pro</span>
+            <span className="text-neutral-400">gemini-2.5-flash</span>
             <span className="text-neutral-800"> · </span>
-            <span className="text-white">claude-opus-4.5</span>
+            <span className="text-white">claude-sonnet-4-6</span>
           </p>
           <span className="inline-flex items-center gap-1.5 text-[10px] font-mono text-emerald-400/80">
             <Check className="h-3 w-3" />

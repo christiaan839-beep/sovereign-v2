@@ -22,7 +22,7 @@ import { motion } from "framer-motion";
 const STAGES = [
   {
     label: "Generate",
-    model: "nemotron-ultra-253b",
+    model: "nemotron-ultra-253b-v1",
     role: "Cheap, fast generation",
     color: "emerald",
     accent: "rgb(52, 211, 153)",
@@ -31,7 +31,7 @@ const STAGES = [
   },
   {
     label: "Critique",
-    model: "claude-opus-4.5",
+    model: "claude-sonnet-4-6",
     role: "Quality audit + red-team",
     color: "copper",
     accent: "rgb(181, 83, 44)",
@@ -40,7 +40,7 @@ const STAGES = [
   },
   {
     label: "Synthesize",
-    model: "gemini-3.1-pro",
+    model: "gemini-2.5-pro",
     role: "Merge verified output",
     color: "cyan",
     accent: "rgb(34, 211, 238)",
