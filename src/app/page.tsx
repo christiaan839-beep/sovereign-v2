@@ -28,13 +28,15 @@ import {
 } from "@/components/ui/EliteEffects";
 
 /**
- * Landing page — 10 sections, editorial palette aligned with
+ * Landing page — 12 sections, editorial palette aligned with
  * /trust, /roi, /built-with-claude, /customers, /platform,
  * /benchmarks. Each section is a function below:
  *
- *   01 Hero  · 02 Three-step proof · 03 Trust strip ·
- *   04 Featured playbooks · 05 Stack Killer · 06 Claude critic ·
- *   07 Founder Network · 08 Ship record · 09 Final CTA · 10 Footer
+ *   01 Hero  · 02 Three-step proof · 03 Industry grid ·
+ *   04 Trust strip · 05 Featured playbooks · 05.5 Dashboard mockup ·
+ *   06 Stack Killer · 06.5 Platform scale · 07 Memory moat ·
+ *   08 Principles · 09 Claude critic · 09.5 Founder quote ·
+ *   10 Founder Network · 10.5 Ship record · 11 Final CTA · Footer
  *
  * Palette: #030303 base, #B5532C copper accent, Instrument Serif
  * for display, Inter Tight for body, JetBrains Mono for labels.
@@ -105,8 +107,6 @@ export default function LandingPage() {
         <Hero />
 
         {/* ═══ 02 · BUILT-ON TRUST STRIP — hero warmth bleeds in ═══ */}
-        {/* -mt-20 / pt-20 pulls this section up so the hero aurora's copper
-            warmth continues visually rather than cutting hard to black. */}
         <div className="relative -mt-20 pt-20">
           <div
             className="absolute inset-x-0 top-0 h-32 pointer-events-none"
@@ -118,6 +118,9 @@ export default function LandingPage() {
 
         {/* ═══ 03 · 3-STEP PROOF ═══ */}
         <ThreeStepProof />
+
+        {/* ═══ 03.5 · INDUSTRY GRID — who this is built for ═══ */}
+        <IndustrySection />
 
         {/* ═══ 04 · TRUST STRIP (sourced stats) ═══ */}
         <TrustStrip />
@@ -134,7 +137,10 @@ export default function LandingPage() {
         {/* ═══ 06.5 · PLATFORM SCALE — dense metric fact sheet ═══ */}
         <PlatformScale />
 
-        {/* ═══ 07 · PRINCIPLES + BUILT FOR (bone-cream chapter) ═══ */}
+        {/* ═══ 07 · MEMORY MOAT — the compounding intelligence advantage ═══ */}
+        <MemoryMoat />
+
+        {/* ═══ 08 · PRINCIPLES + BUILT FOR (bone-cream chapter) ═══ */}
         <Principles />
 
         {/* ═══ 08 · CLAUDE CRITIC NARRATIVE ═══ */}
@@ -477,9 +483,10 @@ function Hero() {
           transition={{ delay: 0.55, duration: 0.7 }}
           className="max-w-2xl text-[17px] md:text-[19px] text-neutral-400 leading-[1.55] mb-12"
         >
-          Five focused playbooks. Real output in three minutes.
-          Claude audits every run. No six-month integration project, no
-          developer required.
+          137 agents across healthcare, legal, sales, content, and cybersecurity.
+          Real output in three minutes. Every run audited by Claude.
+          Every run remembers what it learned — agents that compound
+          with every use.
         </motion.p>
 
         <motion.div
@@ -597,22 +604,22 @@ function ThreeStepProof() {
 function TrustStrip() {
   const stats = [
     {
-      stat: "~80%",
-      desc: "of AI pilots never reach production",
-      sub: "Sovereign: 5-layer pipeline + signed snapshot export",
-      source: "Widely cited in enterprise AI adoption research",
+      stat: "137",
+      desc: "production agents across 8 industry verticals",
+      sub: "Healthcare · Legal · Agriculture · Manufacturing · Cybersecurity · Finance · Real Estate · Government",
+      source: "See /platform for the full registry",
     },
     {
-      stat: "Most",
-      desc: "enterprise AI tools can't show you what an agent actually did",
-      sub: "Sovereign: every run is a checksummed, exportable snapshot",
-      source: "A core reason we built the audit trail",
-    },
-    {
-      stat: "17",
-      desc: "live integrations — Slack, Notion, HubSpot, and more",
-      sub: "Sovereign: MCP-first distribution, no webhook glue required",
+      stat: "90+",
+      desc: "native integrations — Slack, HubSpot, Salesforce, Notion, and more",
+      sub: "BYOK for Hunter, Apollo, Clearbit + webhook gateway for anything else",
       source: "See /integrations for the full list",
+    },
+    {
+      stat: "5-layer",
+      desc: "verification pipeline on every single agent run",
+      sub: "Jailbreak probe → PII scan → content policy → quality gate → Claude critic",
+      source: "Architecture documented at /trust",
     },
   ];
 
@@ -844,17 +851,18 @@ function Principles() {
   ];
 
   const builtFor = [
-    "Operators who need output this week, not a six-month pilot.",
-    "Founders wearing five hats who can't hire a platform team.",
-    "Agencies replacing a stack of SaaS, not adding another one.",
-    "Developers who want MCP-first distribution, not a CRM plugin.",
+    "Operators who need measurable output this week, not a six-month pilot.",
+    "Healthcare practices drowning in documentation, billing, and prior auth.",
+    "Law firms that want contract review in minutes, not billable hours.",
+    "Agencies replacing a stack of SaaS tools with one agent infrastructure.",
+    "Developers who want MCP-first distribution and a public API, not a CRM plugin.",
   ];
 
   const notFor = [
     "Teams building a consumer chatbot for their end users.",
     "Groups training custom foundation models from scratch.",
-    "Enterprises with six-month procurement and zero-pilot policies.",
-    "Anyone who needs prompt-only tools without an audit trail.",
+    "Anyone who needs a no-code drag-and-drop AI toy.",
+    "Enterprises with six-month procurement cycles and zero-pilot policies.",
   ];
 
   return (
@@ -1187,27 +1195,27 @@ function FounderQuote() {
  */
 const SCALE_METRICS = [
   {
-    n: "131",
+    n: "137",
     label: "Agents",
-    sub: "Across 19 task categories — leads, content, code, research, voice, vision, and more.",
+    sub: "Across 8 industries and 19 task categories. Healthcare, legal, agriculture, manufacturing, cybersecurity, and more.",
     href: "/platform",
   },
   {
-    n: "25",
-    label: "Playbooks",
-    sub: "Each publishes a guaranteed deliverable. Run doesn't count if it doesn't meet the bar.",
-    href: "/dashboard/playbooks",
+    n: "90+",
+    label: "Integrations",
+    sub: "Slack, HubSpot, Salesforce, Stripe, Notion, Clearbit, Apollo, Hunter — BYOK for data enrichment.",
+    href: "/integrations",
   },
   {
     n: "8",
-    label: "Providers",
-    sub: "NIM · Claude · Gemini · Groq · Cerebras · Ollama · DeepSeek · Tavily. Failover 11 deep.",
+    label: "Model providers",
+    sub: "NIM · Claude · Gemini · Groq · Cerebras · Ollama · DeepSeek · Tavily. 11-deep failover chain.",
     href: "/platform",
   },
   {
     n: "5",
     label: "Verification layers",
-    sub: "Jailbreak → PII → content policy → quality gate → Claude critic. Every single run.",
+    sub: "Jailbreak → PII → content policy → quality gate → Claude critic. Every single run, no exceptions.",
     href: "/trust",
   },
 ] as const;
@@ -1245,7 +1253,7 @@ function PlatformScale() {
         {/* Single-line platform link — editorial, not promotional */}
         <div className="py-5 flex items-center justify-between">
           <p className="text-[11px] font-mono text-neutral-700 tracking-wide">
-            Full platform surface documented at{" "}
+            137 agents · 8 industries · 90+ integrations · full surface at{" "}
             <Link href="/platform" className="text-neutral-500 hover:text-white transition-colors">
               /platform
             </Link>{" "}
@@ -1260,6 +1268,262 @@ function PlatformScale() {
           >
             Open dashboard →
           </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── 03.5 · Industry Section ──────────────────────────────────────
+ *
+ * Shows the 8 verticals we serve. Enterprise buyers skim for their
+ * industry in the first 5 seconds — this is the section that keeps
+ * them. Each card links to the dedicated sector page.
+ */
+function IndustrySection() {
+  const industries = [
+    {
+      icon: "🏥",
+      label: "Healthcare",
+      desc: "SOAP notes, prior auth, ICD-10 coding",
+      href: "/for-healthcare",
+      color: "cyan",
+    },
+    {
+      icon: "⚖️",
+      label: "Legal",
+      desc: "Contract review, compliance monitoring",
+      href: "/for-legal",
+      color: "violet",
+    },
+    {
+      icon: "🌾",
+      label: "Agriculture",
+      desc: "Crop intel, pest risk, yield forecasting",
+      href: "/for-agriculture",
+      color: "emerald",
+    },
+    {
+      icon: "🏭",
+      label: "Manufacturing",
+      desc: "Predictive maintenance, supply chain",
+      href: "/for-manufacturing",
+      color: "amber",
+    },
+    {
+      icon: "🔐",
+      label: "Cybersecurity",
+      desc: "Threat hunting, CVE analysis, SOC automation",
+      href: "/for-cybersecurity",
+      color: "red",
+    },
+    {
+      icon: "💰",
+      label: "Fintech",
+      desc: "Fraud detection, KYC/AML, reporting",
+      href: "/for-fintech",
+      color: "emerald",
+    },
+    {
+      icon: "🏗️",
+      label: "Real Estate",
+      desc: "Listings, lease abstraction, valuations",
+      href: "/for-realestate",
+      color: "amber",
+    },
+    {
+      icon: "🏛️",
+      label: "Government",
+      desc: "Permit processing, benefits, FOIA",
+      href: "/for-government",
+      color: "cyan",
+    },
+  ];
+
+  const colorMap: Record<string, string> = {
+    cyan:    "border-cyan-500/20 hover:border-cyan-500/40 hover:bg-cyan-500/[0.04]",
+    violet:  "border-violet-500/20 hover:border-violet-500/40 hover:bg-violet-500/[0.04]",
+    emerald: "border-emerald-500/20 hover:border-emerald-500/40 hover:bg-emerald-500/[0.04]",
+    amber:   "border-amber-500/20 hover:border-amber-500/40 hover:bg-amber-500/[0.04]",
+    red:     "border-red-500/20 hover:border-red-500/40 hover:bg-red-500/[0.04]",
+  };
+
+  const iconBg: Record<string, string> = {
+    cyan:    "bg-cyan-500/10",
+    violet:  "bg-violet-500/10",
+    emerald: "bg-emerald-500/10",
+    amber:   "bg-amber-500/10",
+    red:     "bg-red-500/10",
+  };
+
+  return (
+    <section className="px-6 py-20 md:py-28 bg-[#040303]">
+      <div className="max-w-6xl mx-auto">
+        <SectionHead n="03" label="Industries served" />
+
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+          <h2 className="font-serif text-4xl md:text-5xl lg:text-[58px] leading-[1.05] max-w-2xl tracking-[-0.02em]">
+            Eight industries.
+            <br />
+            <em className="not-italic text-[#B5532C]">One platform.</em>
+          </h2>
+          <p className="text-[14px] text-neutral-500 max-w-sm leading-relaxed md:text-right">
+            Every vertical has dedicated agents built for its specific
+            regulatory requirements, terminology, and output formats.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {industries.map((ind, i) => (
+            <motion.a
+              key={ind.label}
+              href={ind.href}
+              initial={{ opacity: 0, y: 14 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-40px" }}
+              transition={{ delay: i * 0.05, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              className={`group relative p-5 rounded-[6px] border bg-white/[0.02] transition-all duration-300 overflow-hidden ${colorMap[ind.color] ?? colorMap.emerald}`}
+              style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)" }}
+            >
+              <div className={`inline-flex items-center justify-center w-9 h-9 rounded-[4px] text-lg mb-3 ${iconBg[ind.color] ?? iconBg.emerald}`}>
+                {ind.icon}
+              </div>
+              <p className="text-[14px] font-semibold text-white mb-1 tracking-tight">
+                {ind.label}
+              </p>
+              <p className="text-[11px] text-neutral-500 leading-relaxed">
+                {ind.desc}
+              </p>
+              <span className="absolute bottom-4 right-4 text-[10px] font-mono text-neutral-700 group-hover:text-neutral-400 transition-colors">
+                →
+              </span>
+            </motion.a>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── 07 · Memory Moat ──────────────────────────────────────────────
+ *
+ * The compounding intelligence section. This is the hardest moat
+ * to replicate — competitors can copy features, they cannot copy
+ * 12 months of accumulated user intelligence. Every run teaches
+ * the platform. This section makes that concrete.
+ */
+function MemoryMoat() {
+  const timeline = [
+    {
+      label: "Day 1",
+      desc: "Run a Lead Blitz for SaaS companies in London. Agents find 8 prospects.",
+    },
+    {
+      label: "Week 2",
+      desc: "Run a Competitor Takedown. Agents remember the London SaaS context — no re-briefing.",
+    },
+    {
+      label: "Month 2",
+      desc: "A new Lead run auto-recalls past niches, past angles, past conversion signals.",
+    },
+    {
+      label: "Month 6",
+      desc: "Your agents know your business. They pre-empt what you'll ask. You're running faster than competitors who start blank every time.",
+    },
+  ];
+
+  return (
+    <section className="relative px-6 py-28 md:py-40 bg-[#040303] overflow-hidden">
+      {/* Ambient deep teal glow — distinct from copper, signals "intelligence" */}
+      <div
+        className="absolute right-0 top-1/2 -translate-y-1/2 h-[600px] w-[500px] opacity-[0.07] blur-[140px] pointer-events-none"
+        style={{ background: "radial-gradient(circle, rgba(56,189,248,1) 0%, transparent 70%)" }}
+        aria-hidden="true"
+      />
+
+      <div className="relative max-w-5xl mx-auto">
+        <div className="mb-6 flex items-center gap-4">
+          <span className="font-mono text-[10px] text-neutral-600 tracking-[0.2em]">07 / 12</span>
+          <span aria-hidden="true" className="h-px w-6 bg-white/[0.12]" />
+          <p className="font-serif italic text-[13px] text-neutral-500">The compounding moat</p>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-16 items-start">
+          <div>
+            <h2 className="font-serif text-4xl md:text-5xl lg:text-[58px] leading-[1.05] mb-6 tracking-[-0.02em]">
+              Agents that get
+              <br />
+              <em className="not-italic text-[#B5532C]">smarter every run.</em>
+            </h2>
+            <p className="text-[16px] text-neutral-400 leading-[1.65] mb-6 max-w-md">
+              Every execution is embedded in semantic memory — 1024-dimensional
+              vectors that capture what you worked on, what worked, and
+              what your business is about. Future agents retrieve relevant
+              context automatically. No re-briefing. No lost context.
+            </p>
+            <p className="text-[14px] text-neutral-500 leading-relaxed max-w-md mb-8">
+              After six months of use, your Sovereign agents know your niche,
+              your tone, your past campaigns, your competitors, and your
+              customers. That institutional knowledge is yours — and it
+              compounds with every run.
+            </p>
+            <a
+              href="/dashboard"
+              className="inline-flex items-center gap-2 text-[13px] font-mono text-[#B5532C] hover:text-white transition-colors tracking-tight"
+            >
+              Start building your memory →
+            </a>
+          </div>
+
+          {/* Timeline — shows memory compounding over time */}
+          <div className="relative">
+            {/* Vertical connector line */}
+            <div
+              className="absolute left-[19px] top-6 bottom-6 w-px"
+              style={{ background: "linear-gradient(to bottom, rgba(181,83,44,0.4) 0%, rgba(56,189,248,0.15) 100%)" }}
+              aria-hidden="true"
+            />
+
+            <div className="space-y-8">
+              {timeline.map((item, i) => (
+                <motion.div
+                  key={item.label}
+                  initial={{ opacity: 0, x: 16 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true, margin: "-40px" }}
+                  transition={{ delay: i * 0.12, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+                  className="relative flex gap-5"
+                >
+                  {/* Node */}
+                  <div
+                    className="relative z-10 flex-shrink-0 w-10 h-10 rounded-full border flex items-center justify-center"
+                    style={{
+                      background: i === 3 ? "rgba(56,189,248,0.08)" : "rgba(181,83,44,0.08)",
+                      borderColor: i === 3 ? "rgba(56,189,248,0.35)" : "rgba(181,83,44,0.35)",
+                    }}
+                  >
+                    <span className="font-mono text-[9px] text-neutral-400 tracking-wide">{String(i + 1).padStart(2, "0")}</span>
+                  </div>
+
+                  <div className="pt-1.5">
+                    <p
+                      className="font-mono text-[10px] tracking-[0.18em] uppercase mb-1.5"
+                      style={{ color: i === 3 ? "rgb(56,189,248)" : "#B5532C" }}
+                    >
+                      {item.label}
+                    </p>
+                    <p className="text-[14px] text-neutral-300 leading-[1.6]">{item.desc}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Attribution */}
+            <p className="mt-10 text-[10px] font-mono text-neutral-700 leading-relaxed pl-[60px]">
+              Powered by NVIDIA NIM embeddings (nvidia/nv-embedqa-e5-v5, 1024-dim) ·
+              Stored in your private tenant namespace · Never shared across users
+            </p>
+          </div>
         </div>
       </div>
     </section>
