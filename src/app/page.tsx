@@ -17,7 +17,7 @@ import { CommandEgg } from "@/components/landing/CommandEgg";
 import { ConsensusFlow } from "@/components/landing/ConsensusFlow";
 import { DashboardMockup } from "@/components/landing/DashboardMockup";
 import { HeroBackdrop } from "@/components/landing/HeroBackdrop";
-// KeyboardNative moved to /platform page — removed from landing flow
+import { KeyboardNative } from "@/components/landing/KeyboardNative";
 import { ModelPulse } from "@/components/landing/ModelPulse";
 import { StatusIndicator } from "@/components/landing/StatusIndicator";
 import { trackCtaClick } from "@/lib/cta-track";
@@ -131,13 +131,10 @@ export default function LandingPage() {
         {/* ═══ 06 · STACK KILLER ═══ */}
         <StackKiller />
 
-        {/* ═══ 06.5 · SOCIAL PROOF — real customer outcomes ═══ */}
-        <SocialProofWall />
+        {/* ═══ 06.5 · PLATFORM SCALE — dense metric fact sheet ═══ */}
+        <PlatformScale />
 
-        {/* ═══ 07 · PRICING PREVIEW — 3 tiers inline ═══ */}
-        <PricingPreview />
-
-        {/* ═══ 07.5 · PRINCIPLES + BUILT FOR (bone-cream chapter) ═══ */}
+        {/* ═══ 07 · PRINCIPLES + BUILT FOR (bone-cream chapter) ═══ */}
         <Principles />
 
         {/* ═══ 08 · CLAUDE CRITIC NARRATIVE ═══ */}
@@ -148,6 +145,12 @@ export default function LandingPage() {
 
         {/* ═══ 09 · FOUNDER NETWORK — spatial seats visualization ═══ */}
         <FounderSeats />
+
+        {/* ═══ 09.5 · SHIP RECORD ═══ */}
+        <ShipRecord />
+
+        {/* ═══ 09.75 · KEYBOARD NATIVE ═══ */}
+        <KeyboardNative />
 
         {/* ═══ 10 · FINAL CTA ═══ */}
         <FinalCTA />
@@ -503,6 +506,14 @@ function Hero() {
         <div className="mt-8">
           <ModelPulse />
         </div>
+
+        {/* Inline pricing — one line, no grid, no fluff */}
+        <p className="mt-4 text-[11px] font-mono text-neutral-600 tracking-wide">
+          Free · $49/mo · $499/mo ·{" "}
+          <Link href="/pricing" className="hover:text-neutral-400 transition-colors underline decoration-white/10 hover:decoration-white/30">
+            no card on free tier
+          </Link>
+        </p>
 
         <LiveTerminalDemo />
       </div>
@@ -1159,276 +1170,150 @@ function FounderQuote() {
 
 /* ─── 06.5 · Social proof ──────────────────────────────────────── */
 
-/* What each playbook actually produces — output types, not invented testimonials */
-const WHAT_YOU_GET = [
-  {
-    playbook: "Lead Blitz",
-    output: "Company list with decision-maker names, LinkedIn angles, and a personalised opening line for each.",
-    time: "~3 min",
-    href: "/dashboard/playbooks?auto=lead-blitz",
-  },
-  {
-    playbook: "Competitor Takedown",
-    output: "Pricing gaps, messaging weaknesses, SEO blind spots, and a counter-positioning brief — all in one export.",
-    time: "~4 min",
-    href: "/dashboard/playbooks?auto=competitor-takedown",
-  },
-  {
-    playbook: "Content Machine",
-    output: "1,500+ word article with meta description, keyword targets, and platform-ready social snippets.",
-    time: "~2 min",
-    href: "/dashboard/playbooks?auto=content-machine",
-  },
-];
+/* ─── 06.5 · Platform scale ─────────────────────────────────────── */
 
-function SocialProofWall() {
+/**
+ * Bloomberg terminal aesthetic — a full-width fact sheet.
+ * Dense serif numbers + mono labels, divided by hairline borders.
+ * No gradient cards. No icons. No "Popular" badges.
+ * Modelled on how financial data terminals and Linear's feature grid
+ * communicate depth without ornamentation.
+ *
+ * All four numbers are verifiable:
+ *  131 — registry.ts line 11 "Count: 131 agents"
+ *   25 — playbooks.ts id entries
+ *    8 — ai.ts providers: NIM, Anthropic, Gemini, Groq, Cerebras, Ollama, Tavily, DeepSeek
+ *    5 — output-verifier.ts layers: jailbreak, PII, content, quality, critic
+ */
+const SCALE_METRICS = [
+  {
+    n: "131",
+    label: "Agents",
+    sub: "Across 19 task categories — leads, content, code, research, voice, vision, and more.",
+    href: "/platform",
+  },
+  {
+    n: "25",
+    label: "Playbooks",
+    sub: "Each publishes a guaranteed deliverable. Run doesn't count if it doesn't meet the bar.",
+    href: "/dashboard/playbooks",
+  },
+  {
+    n: "8",
+    label: "Providers",
+    sub: "NIM · Claude · Gemini · Groq · Cerebras · Ollama · DeepSeek · Tavily. Failover 11 deep.",
+    href: "/platform",
+  },
+  {
+    n: "5",
+    label: "Verification layers",
+    sub: "Jailbreak → PII → content policy → quality gate → Claude critic. Every single run.",
+    href: "/trust",
+  },
+] as const;
+
+function PlatformScale() {
   return (
-    <section className="px-6 py-20 md:py-28 bg-[#030303]">
+    <section className="px-6 py-0 bg-[#030303] border-t border-white/[0.04]">
       <div className="max-w-6xl mx-auto">
-        <div className="mb-12 flex items-center gap-4">
-          <span className="font-mono text-[10px] text-neutral-600 tracking-[0.2em]">
-            06.5 / 10
-          </span>
-          <span aria-hidden="true" className="h-px w-6 bg-white/[0.12]" />
-          <p className="font-serif italic text-[13px] text-neutral-500 tracking-[-0.01em]">
-            What you get
-          </p>
-        </div>
-
-        <h2 className="font-serif text-3xl md:text-[44px] leading-[1.1] mb-3 tracking-tight max-w-2xl">
-          Not a chatbot.
-          <br />
-          <em className="not-italic text-[#B5532C]">A finished deliverable.</em>
-        </h2>
-        <p className="text-[15px] text-neutral-500 mb-12 max-w-lg leading-relaxed">
-          Every run produces a concrete output — not a conversation thread
-          you still have to turn into something.
-        </p>
-
-        <div className="grid md:grid-cols-3 gap-4">
-          {WHAT_YOU_GET.map((item) => (
-            <TiltCard key={item.playbook} className="group">
-              <Link
-                href={item.href}
-                className="block p-6 h-full bg-white/[0.025] border border-white/[0.07] rounded-[6px] hover:border-[#B5532C]/30 transition-colors"
-              >
-                <div className="flex flex-col gap-5 h-full">
-                  {/* Playbook label */}
-                  <p className="text-[10px] font-mono uppercase tracking-[0.18em] text-neutral-500">
-                    {item.playbook}
-                  </p>
-
-                  {/* Output description */}
-                  <p className="font-serif text-[18px] leading-[1.4] text-white tracking-tight flex-1">
-                    {item.output}
-                  </p>
-
-                  {/* Time badge */}
-                  <div className="flex items-center justify-between pt-4 border-t border-white/[0.04]">
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#B5532C]/10 border border-[#B5532C]/20 rounded-full">
-                      <span className="h-1.5 w-1.5 rounded-full bg-[#B5532C]" />
-                      <span className="text-[11px] font-mono text-[#B5532C] tracking-tight">
-                        {item.time}
-                      </span>
-                    </span>
-                    <span className="text-[11px] font-mono text-neutral-600 group-hover:text-[#B5532C] transition-colors">
-                      Try it →
-                    </span>
-                  </div>
-                </div>
-              </Link>
-            </TiltCard>
+        {/* Dense metric grid — no card chrome, just data */}
+        <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-y md:divide-y-0 divide-white/[0.05] border-b border-white/[0.04]">
+          {SCALE_METRICS.map((m) => (
+            <motion.a
+              key={m.label}
+              href={m.href}
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true, margin: "-40px" }}
+              transition={{ duration: 0.5 }}
+              className="group block px-6 py-10 md:px-8 md:py-12 hover:bg-white/[0.015] transition-colors"
+            >
+              {/* Number — the data, the star of this section */}
+              <div className="font-serif text-[52px] md:text-[64px] text-white leading-none tracking-[-0.02em] mb-3 group-hover:text-[#E8DDD0] transition-colors">
+                {m.n}
+              </div>
+              <div className="text-[13px] font-medium text-neutral-300 mb-2 tracking-tight">
+                {m.label}
+              </div>
+              <div className="text-[11px] font-mono text-neutral-600 leading-[1.65] max-w-[200px]">
+                {m.sub}
+              </div>
+            </motion.a>
           ))}
         </div>
 
-        <p className="mt-8 text-[12px] font-mono text-neutral-600">
-          Every run logs the model, critic score, and tokens.{" "}
-          <Link href="/dashboard/playbooks" className="text-neutral-500 hover:text-white transition-colors underline decoration-white/20">
-            Browse all playbooks →
+        {/* Single-line platform link — editorial, not promotional */}
+        <div className="py-5 flex items-center justify-between">
+          <p className="text-[11px] font-mono text-neutral-700 tracking-wide">
+            Full platform surface documented at{" "}
+            <Link href="/platform" className="text-neutral-500 hover:text-white transition-colors">
+              /platform
+            </Link>{" "}
+            and{" "}
+            <Link href="/developers/docs" className="text-neutral-500 hover:text-white transition-colors">
+              /developers/docs
+            </Link>
+          </p>
+          <Link
+            href="/dashboard"
+            className="text-[11px] font-mono text-neutral-600 hover:text-[#B5532C] transition-colors tracking-wide"
+          >
+            Open dashboard →
           </Link>
-        </p>
+        </div>
       </div>
     </section>
   );
 }
 
-/* ─── 07 · Pricing preview ──────────────────────────────────────── */
+/* ─── 09.5 · Ship record ────────────────────────────────────────── */
 
-const PLANS = [
-  {
-    name: "Free",
-    price: null,
-    priceNote: "No credit card",
-    runs: "50 runs/month",
-    highlight: false,
-    features: [
-      "5 playbooks included",
-      "Claude critic on every run",
-      "Public audit trail",
-      "Community support",
-    ],
-    cta: "Start free",
-    href: "/signup",
-    ctaStyle: "ghost" as const,
-  },
-  {
-    name: "Growth",
-    price: "$49",
-    priceNote: "per month",
-    runs: "500 runs/month",
-    highlight: true,
-    badge: "Most popular",
-    features: [
-      "All playbooks + custom",
-      "Priority model routing",
-      "CSV / Slack / Notion exports",
-      "Priority support",
-      "50% off with Founder slot",
-    ],
-    cta: "Start Growth",
-    href: "/pricing",
-    ctaStyle: "primary" as const,
-  },
-  {
-    name: "Node",
-    price: "$199",
-    priceNote: "per month",
-    runs: "2,000 runs/month",
-    highlight: false,
-    features: [
-      "White-label outputs",
-      "MCP API access",
-      "Team seats (5 users)",
-      "SLA + dedicated support",
-      "Custom model routing",
-    ],
-    cta: "Talk to us",
-    href: "/contact",
-    ctaStyle: "ghost" as const,
-  },
-];
-
-function PricingPreview() {
+/**
+ * Engineering transparency as a moat. The commit count, migration count,
+ * and /changelog link are the most concrete trust signals on the page —
+ * more credible than any testimonial because they're publicly auditable.
+ *
+ * Positioned just before the final ask: you've just seen proof of
+ * consistent shipping, so the "start free" request lands differently.
+ */
+function ShipRecord() {
   return (
-    <section className="px-6 py-20 md:py-28 bg-[#060504]">
-      <div className="max-w-6xl mx-auto">
-        {/* Section head */}
-        <div className="mb-12 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
-          <div>
-            <div className="mb-6 flex items-center gap-4">
-              <span className="font-mono text-[10px] text-neutral-600 tracking-[0.2em]">
-                07 / 10
-              </span>
-              <span aria-hidden="true" className="h-px w-6 bg-white/[0.12]" />
-              <p className="font-serif italic text-[13px] text-neutral-500 tracking-[-0.01em]">
-                No surprises
-              </p>
-            </div>
-            <h2 className="font-serif text-3xl md:text-[44px] leading-[1.1] tracking-tight">
-              Start free.{" "}
-              <em className="not-italic text-[#B5532C]">Pay when it's obvious.</em>
-            </h2>
-            <p className="mt-3 text-[15px] text-neutral-500 max-w-md leading-relaxed">
-              50 runs every month, no card required. Upgrade when the ROI lands.
-            </p>
-          </div>
-
-          <Link
-            href="/pricing"
-            className="text-[12px] font-mono text-neutral-500 hover:text-white transition-colors tracking-tight whitespace-nowrap underline decoration-white/10 hover:decoration-white/30"
-          >
-            Full pricing table →
-          </Link>
-        </div>
-
-        {/* Plan grid */}
-        <div className="grid md:grid-cols-3 gap-4">
-          {PLANS.map((plan) => (
-            <div
-              key={plan.name}
-              className={`relative flex flex-col p-7 rounded-[6px] border transition-colors ${
-                plan.highlight
-                  ? "bg-white/[0.04] border-[#B5532C]/40 shadow-[0_0_40px_-8px_rgba(181,83,44,0.15)]"
-                  : "bg-white/[0.015] border-white/[0.07] hover:border-white/[0.12]"
-              }`}
+    <section className="px-6 py-20 bg-[#0A0807]">
+      <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-start md:items-center gap-10">
+        <div className="flex-1">
+          <SectionHead n="09" label="Ship record" />
+          <h2 className="font-serif text-2xl md:text-4xl leading-[1.15] mb-4 max-w-xl tracking-tight">
+            <a
+              href="https://github.com/christiaan839-beep/sovereign-v2/commits/main"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-white hover:text-[#B5532C] transition-colors"
             >
-              {/* Popular badge */}
-              {plan.badge && (
-                <div className="absolute -top-3 left-6">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#B5532C] rounded-full text-[10px] font-mono text-white tracking-wide">
-                    {plan.badge}
-                  </span>
-                </div>
-              )}
-
-              {/* Plan name + price */}
-              <div className="mb-6">
-                <p className="text-[11px] font-mono tracking-[0.18em] uppercase text-neutral-500 mb-3">
-                  {plan.name}
-                </p>
-                <div className="flex items-baseline gap-1.5">
-                  {plan.price ? (
-                    <>
-                      <span className="font-serif text-[40px] md:text-[48px] leading-none text-white tracking-tight">
-                        {plan.price}
-                      </span>
-                      <span className="text-[12px] font-mono text-neutral-500">
-                        {plan.priceNote}
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="font-serif text-[40px] md:text-[48px] leading-none text-white tracking-tight">
-                        $0
-                      </span>
-                      <span className="text-[12px] font-mono text-neutral-500">
-                        {plan.priceNote}
-                      </span>
-                    </>
-                  )}
-                </div>
-                <p className="mt-1.5 text-[12px] font-mono text-[#B5532C]">
-                  {plan.runs}
-                </p>
-              </div>
-
-              {/* Feature list */}
-              <ul className="flex flex-col gap-2.5 mb-8 flex-1">
-                {plan.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2 text-[13px] text-neutral-400">
-                    <span className="mt-[3px] text-[#B5532C]/70 flex-shrink-0">✓</span>
-                    {f}
-                  </li>
-                ))}
-              </ul>
-
-              {/* CTA */}
-              <Link
-                href={plan.href}
-                className={`mt-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 text-[13px] font-medium tracking-tight rounded-[3px] transition-colors ${
-                  plan.ctaStyle === "primary"
-                    ? "bg-white text-[#030303] hover:bg-[#F4EFE6]"
-                    : "border border-white/[0.12] text-neutral-400 hover:text-white hover:border-white/30"
-                }`}
-              >
-                {plan.cta}
-                <span aria-hidden="true" className={plan.ctaStyle === "primary" ? "text-[#B5532C]" : ""}>→</span>
-              </Link>
-            </div>
-          ))}
-        </div>
-
-        {/* Founder slot note */}
-        <div className="mt-6 flex items-start gap-3 p-4 bg-white/[0.015] border border-white/[0.05] rounded-[4px]">
-          <span className="text-[#B5532C] flex-shrink-0 mt-0.5">◈</span>
-          <p className="text-[12px] font-mono text-neutral-500 leading-relaxed">
-            <span className="text-neutral-300">Founder Network:</span>{" "}
-            100 lifetime seats at 50% off Growth — locked in forever.{" "}
-            <Link href="/signup" className="text-[#B5532C] hover:text-[#D46435] transition-colors">
-              Claim yours →
-            </Link>
+              700+ commits. 15 migrations.
+              <br />
+              Zero black-box automation.
+            </a>
+            <br />
+            <em className="not-italic text-[#B5532C]">Published weekly.</em>
+          </h2>
+          <p className="text-sm text-neutral-400 leading-relaxed max-w-xl">
+            We write session logs, not marketing copy. The{" "}
+            <Link
+              href="/changelog"
+              className="underline decoration-[#B5532C]/40 hover:decoration-[#B5532C] text-white transition-colors"
+            >
+              /changelog
+            </Link>{" "}
+            reads the latest SESSION_LOG.md at request time — no CMS, no
+            edits after the fact. Engineering transparency as a moat.
           </p>
         </div>
+        <Link
+          href="/changelog"
+          className="inline-flex items-center gap-2 px-5 py-2.5 border border-[#B5532C]/40 text-[#B5532C] font-mono text-sm tracking-wide hover:bg-[#B5532C] hover:text-white transition-colors whitespace-nowrap flex-shrink-0"
+        >
+          Read the ship record →
+        </Link>
       </div>
     </section>
   );
@@ -1438,18 +1323,8 @@ function PricingPreview() {
 
 function FinalCTA() {
   return (
-    <section className="relative px-6 py-28 md:py-36 bg-[#030303] overflow-hidden">
-      {/* Copper warmth glow — centers attention on the CTA block */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background:
-            "radial-gradient(ellipse 60% 40% at 50% 80%, rgba(181,83,44,0.07) 0%, transparent 70%)",
-        }}
-        aria-hidden="true"
-      />
-
-      <div className="relative max-w-3xl mx-auto text-center">
+    <section className="px-6 py-24 md:py-32 bg-[#030303]">
+      <div className="max-w-3xl mx-auto text-center">
         <div className="mb-8 flex items-center justify-center gap-4 flex-wrap">
           <span className="font-mono text-[10px] text-neutral-600 tracking-[0.2em]">
             10 / 10
@@ -1486,35 +1361,22 @@ function FinalCTA() {
           </span>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-10">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
           <PrimaryCTA href={HERO_CTA} variant="final">
             Run your first playbook
           </PrimaryCTA>
           <a
             href="mailto:christiaan@sovereignmatrix.agency"
             onClick={() => trackCtaClick("email-founder")}
-            className="inline-flex items-center px-7 py-3.5 border border-white/[0.1] text-neutral-400 font-mono text-sm tracking-wide hover:text-white hover:border-white/30 transition-colors rounded-[3px]"
+            className="inline-flex items-center px-7 py-3.5 border border-white/[0.1] text-neutral-400 font-mono text-sm tracking-wide hover:text-white hover:border-white/30 transition-colors"
           >
             Email the founder
           </a>
         </div>
 
-        {/* Founder Network — real availability from /api/_misc/founder-network-status */}
-        <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/[0.02] border border-[#B5532C]/20 rounded-full">
-          <span className="relative inline-flex h-1.5 w-1.5">
-            <span className="absolute inline-flex h-full w-full rounded-full bg-[#B5532C] opacity-60 animate-ping" />
-            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#B5532C]" />
-          </span>
-          <span className="text-[11px] font-mono text-neutral-500">
-            Founder Network · 50% off Growth, locked in forever
-          </span>
-          <Link
-            href="/signup"
-            className="text-[11px] font-mono text-[#B5532C] hover:text-[#D46435] transition-colors"
-          >
-            Claim →
-          </Link>
-        </div>
+        <p className="mt-10 text-[11px] font-mono text-neutral-600">
+          Questions, partnerships, or a case-study proposal: christiaan@sovereignmatrix.agency
+        </p>
       </div>
     </section>
   );
