@@ -239,43 +239,61 @@ function Nav({
           aria-hidden="true"
         />
 
-        <div className="max-w-7xl mx-auto px-6 md:px-10 h-14 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-6 md:px-10 h-[60px] flex items-center justify-between">
           {/* Wordmark */}
-          <Link href="/" className="group flex items-center gap-2.5" aria-label="Sovereign Matrix — Home">
+          <Link href="/" className="group flex items-center gap-2.5 flex-shrink-0" aria-label="Sovereign Matrix — Home">
             <SovereignLogo size="sm" />
             <span className="hidden sm:block font-serif text-[17px] tracking-tight text-white group-hover:text-[#E8DDD0] transition-colors">
               Sovereign Matrix
             </span>
           </Link>
 
-          {/* Desktop nav */}
-          <div className="hidden md:flex items-center gap-7 text-[13px]">
-            <NavLink href={PLATFORM_HREF}>Platform</NavLink>
-            <NavLink href="/customers">Customers</NavLink>
-            <NavLink href="/trust">Trust</NavLink>
-            <NavLink href="/pricing">Pricing</NavLink>
+          {/* Desktop nav — three groups: pages · live badge · actions */}
+          <div className="hidden md:flex items-center gap-0 text-[13px]">
+            {/* Primary pages */}
+            <div className="flex items-center gap-6 mr-6">
+              <NavLink href={PLATFORM_HREF}>Platform</NavLink>
+              <NavLink href="/customers">Customers</NavLink>
+              <NavLink href="/trust">Trust</NavLink>
+              <NavLink href="/pricing">Pricing</NavLink>
+            </div>
 
-            {/* Subtle divider */}
-            <span aria-hidden="true" className="h-4 w-px bg-white/[0.08]" />
+            {/* Thin rule */}
+            <span aria-hidden="true" className="h-4 w-px bg-white/[0.07] mr-6" />
+
+            {/* Chat with founder — emerald live dot + name */}
+            <Link
+              href="/contact"
+              className="group hidden lg:flex items-center gap-2 mr-6 text-neutral-400 hover:text-white transition-colors"
+              title="Book a 15-minute call with Christiaan, founder of Sovereign Matrix"
+            >
+              {/* Pulsing green availability dot */}
+              <span className="relative inline-flex h-1.5 w-1.5 flex-shrink-0">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              </span>
+              <span className="text-[12.5px] tracking-tight">
+                Chat with founder
+              </span>
+            </Link>
 
             {/* Keyboard hint — Antigravity signature */}
             <div
-              className="group hidden lg:flex items-center gap-1.5 text-neutral-600 hover:text-neutral-400 text-[11px] font-mono select-none cursor-default transition-colors"
+              className="group hidden xl:flex items-center gap-1.5 text-neutral-700 hover:text-neutral-500 text-[11px] font-mono select-none cursor-default transition-colors mr-6"
               title="Press / to open the command palette"
             >
-              <span>Press</span>
-              <kbd className="rounded-[3px] border border-white/[0.07] bg-white/[0.02] px-1.5 py-0.5 text-[10px] text-neutral-400 group-hover:text-white group-hover:border-white/[0.15] transition-colors">
+              <kbd className="rounded-[3px] border border-white/[0.07] bg-white/[0.02] px-1.5 py-0.5 text-[10px] text-neutral-600 group-hover:text-neutral-400 group-hover:border-white/[0.12] transition-colors">
                 /
               </kbd>
             </div>
 
             <SignInButton mode="modal" fallbackRedirectUrl="/dashboard">
-              <button className="text-neutral-500 hover:text-white transition-colors text-[13px] tracking-tight">
+              <button className="text-neutral-500 hover:text-white transition-colors text-[13px] tracking-tight mr-4">
                 Log in
               </button>
             </SignInButton>
 
-            {/* CTA — white pill with copper arrow, copper glow ring on hover */}
+            {/* CTA — white pill with copper arrow + glow ring on hover */}
             <Link
               href={HERO_CTA}
               className="group relative inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white text-[#030303] font-medium text-[12.5px] tracking-tight rounded-[3px] hover:bg-[#F4EFE6] transition-colors"
@@ -290,45 +308,68 @@ function Nav({
             </Link>
           </div>
 
-          {/* Mobile toggle */}
-          <button
-            className="md:hidden p-2 -mr-2 text-neutral-400 hover:text-white transition-colors"
-            onClick={() => setMobileNavOpen(!mobileNavOpen)}
-            aria-label={mobileNavOpen ? "Close menu" : "Open menu"}
-            aria-expanded={mobileNavOpen}
-          >
-            <div className="space-y-1.5">
-              <span className={`block w-5 h-[1.5px] bg-current transition-transform ${mobileNavOpen ? "rotate-45 translate-y-[7px]" : ""}`} />
-              <span className={`block w-5 h-[1.5px] bg-current transition-opacity ${mobileNavOpen ? "opacity-0" : ""}`} />
-              <span className={`block w-5 h-[1.5px] bg-current transition-transform ${mobileNavOpen ? "-rotate-45 -translate-y-[7px]" : ""}`} />
-            </div>
-          </button>
+          {/* Mobile right side — chat dot + hamburger */}
+          <div className="md:hidden flex items-center gap-3">
+            {/* Compact "● Chat" on mobile */}
+            <Link
+              href="/contact"
+              className="flex items-center gap-1.5 text-neutral-400 hover:text-white transition-colors"
+              aria-label="Chat with founder"
+            >
+              <span className="relative inline-flex h-1.5 w-1.5">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              </span>
+              <span className="text-[11px] font-mono text-neutral-500">Chat</span>
+            </Link>
+
+            <button
+              className="p-2 -mr-2 text-neutral-400 hover:text-white transition-colors"
+              onClick={() => setMobileNavOpen(!mobileNavOpen)}
+              aria-label={mobileNavOpen ? "Close menu" : "Open menu"}
+              aria-expanded={mobileNavOpen}
+            >
+              <div className="space-y-1.5">
+                <span className={`block w-5 h-[1.5px] bg-current transition-transform ${mobileNavOpen ? "rotate-45 translate-y-[7px]" : ""}`} />
+                <span className={`block w-5 h-[1.5px] bg-current transition-opacity ${mobileNavOpen ? "opacity-0" : ""}`} />
+                <span className={`block w-5 h-[1.5px] bg-current transition-transform ${mobileNavOpen ? "-rotate-45 -translate-y-[7px]" : ""}`} />
+              </div>
+            </button>
+          </div>
         </div>
       </div>
 
       <AnimatePresence>
         {mobileNavOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
+            initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="absolute top-14 left-4 right-4 p-5 rounded-[6px] md:hidden bg-[#0A0807]/97 backdrop-blur-2xl border border-white/[0.07] flex flex-col gap-3 shadow-[0_20px_60px_-10px_rgba(0,0,0,0.8)]"
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+            className="absolute top-[60px] left-4 right-4 p-5 rounded-[6px] md:hidden bg-[#0A0807]/97 backdrop-blur-2xl border border-white/[0.07] flex flex-col gap-1 shadow-[0_24px_64px_-12px_rgba(0,0,0,0.85)]"
           >
-            <MobileLink href={PLATFORM_HREF} onClick={() => setMobileNavOpen(false)}>
-              Platform
-            </MobileLink>
-            <MobileLink href="/customers" onClick={() => setMobileNavOpen(false)}>
-              Customers
-            </MobileLink>
-            <MobileLink href="/trust" onClick={() => setMobileNavOpen(false)}>
-              Trust
-            </MobileLink>
-            <MobileLink href="/pricing" onClick={() => setMobileNavOpen(false)}>
-              Pricing
-            </MobileLink>
+            <MobileLink href={PLATFORM_HREF} onClick={() => setMobileNavOpen(false)}>Platform</MobileLink>
+            <MobileLink href="/customers" onClick={() => setMobileNavOpen(false)}>Customers</MobileLink>
+            <MobileLink href="/trust" onClick={() => setMobileNavOpen(false)}>Trust</MobileLink>
+            <MobileLink href="/pricing" onClick={() => setMobileNavOpen(false)}>Pricing</MobileLink>
+
+            {/* Chat with founder — in mobile menu as a special item */}
+            <div className="h-px bg-white/[0.04] my-1" />
+            <Link
+              href="/contact"
+              onClick={() => setMobileNavOpen(false)}
+              className="flex items-center gap-2 py-1.5 text-[15px] text-emerald-400/80 hover:text-emerald-300 tracking-tight transition-colors"
+            >
+              <span className="relative inline-flex h-1.5 w-1.5">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              </span>
+              Chat with founder
+            </Link>
+
             <Link
               href={HERO_CTA}
-              className="mt-3 px-5 py-2.5 bg-white text-[#030303] text-sm text-center font-medium rounded-[3px]"
+              className="mt-2 px-5 py-2.5 bg-white text-[#030303] text-sm text-center font-medium rounded-[3px] hover:bg-[#F4EFE6] transition-colors"
               onClick={() => setMobileNavOpen(false)}
             >
               Start free →
