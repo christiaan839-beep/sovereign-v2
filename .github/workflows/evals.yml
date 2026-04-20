@@ -1,0 +1,68 @@
+name: Agent Evals
+
+# Runs the golden-set agent evals on every PR. Blocks merges if any
+# regression is detected. Unlike contract tests (shape-only), evals
+# verify the agent actually produces meaningful output for known-good
+# inputs.
+#
+# Security: no user-controlled inputs are interpolated into run: steps.
+# Only `secrets.*` (encrypted) is used via env: blocks. See:
+# https://github.blog/security/vulnerability-research/how-to-catch-github-actions-workflow-injections-before-attackers-do/
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/app/api/_agents/**"
+      - "src/lib/agent-factory.ts"
+      - "src/lib/ai.ts"
+      - "src/lib/consensus.ts"
+      - "src/lib/__tests__/agent-evals/**"
+  workflow_dispatch: {}
+  schedule:
+    # Weekly full-eval cadence — catches drift in provider model quality
+    # that isn't triggered by our own code changes (e.g., OpenAI changes
+    # GPT-4o's default settings).
+    - cron: "0 7 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  evals:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: evals
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install
+        run: npm ci --ignore-scripts
+
+      - name: Run agent evals
+        env:
+          NVIDIA_NIM_API_KEY: ${{ secrets.NVIDIA_NIM_API_KEY_EVALS }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY_EVALS }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY_EVALS }}
+          TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY_EVALS }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL_EVALS }}
+          NODE_ENV: test
+        run: npx vitest run src/lib/__tests__/agent-evals --reporter=verbose --bail=5
+
+      - name: Upload eval results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-results
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 14
