@@ -414,11 +414,18 @@ async function groqText(prompt: string, system?: string, maxTokens: number = 200
   const client = new Groq({ apiKey });
   
   // Decide actual model based on route
-  let groqModel = "llama-3.1-8b-instant";
+  let groqModel = "llama-3.1-8b-instant"; // ✅ Meta, US inference
   if (modelTarget === "deepseek") {
-    groqModel = "deepseek-r1-distill-llama-70b"; // DeepSeek reasoning logic
+    // ⚠️ DeepSeek-distilled weights, Groq US inference (data goes to Groq, not China)
+    // Disable with DATA_SOVEREIGNTY_MODE=true
+    groqModel = process.env.DATA_SOVEREIGNTY_MODE === "true"
+      ? "llama-3.1-8b-instant"
+      : "deepseek-r1-distill-llama-70b";
   } else if (modelTarget === "qwen") {
-    groqModel = "qwen-2.5-coder-32b"; // Super-fast dedicated code generation
+    // ⚠️ Alibaba weights, Groq US inference
+    groqModel = process.env.DATA_SOVEREIGNTY_MODE === "true"
+      ? "llama-3.1-8b-instant"
+      : "qwen-2.5-coder-32b";
   }
 
   const messages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [];
