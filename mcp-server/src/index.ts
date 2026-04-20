@@ -125,21 +125,35 @@ server.tool(
     inputs: z.record(z.string(), z.string()).describe("Key-value pairs for the playbook fields (e.g., { niche: 'SaaS', location: 'Texas' })"),
     auto_execute: z.boolean().default(true).describe("Whether to execute immediately (true) or just generate the plan (false)"),
   },
-  async ({ playbook_id, inputs, auto_execute }) => {
-    const result = await apiCall("/api/agents/coordinator", "POST", {
-      playbook_id,
+  async ({ playbook_id, inputs }) => {
+    // Use the canonical playbook engine — not the old /agents/coordinator path.
+    // This ensures DB persistence, plan enforcement, and step tracking.
+    const runResult = await apiCall("/api/playbooks/run", "POST", {
+      playbookId: playbook_id,
       inputs,
-      auto_execute,
-      confirmed: true,
     });
 
+    if (!runResult.data?.runId) {
+      return {
+        content: [{ type: "text" as const, text: JSON.stringify(runResult.data, null, 2) }],
+      };
+    }
+
+    const runId = runResult.data.runId;
+
+    // Poll until done (max 90s, 3s intervals)
+    for (let i = 0; i < 30; i++) {
+      await new Promise((r) => setTimeout(r, 3000));
+      const poll = await apiCall(`/api/playbooks/runs/${runId}`, "GET");
+      if (poll.data?.done) {
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(poll.data, null, 2) }],
+        };
+      }
+    }
+
     return {
-      content: [
-        {
-          type: "text" as const,
-          text: JSON.stringify(result.data, null, 2),
-        },
-      ],
+      content: [{ type: "text" as const, text: `Run ${runId} still in progress. Poll /api/playbooks/runs/${runId} for results.` }],
     };
   }
 );
