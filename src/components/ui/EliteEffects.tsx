@@ -160,8 +160,17 @@ export function FloatingParticles({
 
     let frame: number;
     let time = 0;
+    let lastFrameTime = 0;
+    const TARGET_FPS = 30;
+    const FRAME_BUDGET = 1000 / TARGET_FPS; // ~33 ms
 
-    const animate = () => {
+    const animate = (timestamp: number) => {
+      // Throttle to 30 fps — halves CPU/GPU load vs uncapped 60 fps.
+      // Particle motion is slow enough that 30 fps is imperceptible.
+      frame = requestAnimationFrame(animate);
+      if (timestamp - lastFrameTime < FRAME_BUDGET) return;
+      lastFrameTime = timestamp;
+
       const cw = canvas.offsetWidth;
       const ch = canvas.offsetHeight;
       time += 0.016;
@@ -299,12 +308,24 @@ export function FloatingParticles({
       // Reset composite for next frame
       ctx.globalCompositeOperation = "source-over";
 
-      frame = requestAnimationFrame(animate);
     };
     frame = requestAnimationFrame(animate);
 
+    // Pause the loop when the tab is hidden — prevents background CPU drain
+    // that causes laptop fans to spin / battery drain / overheating.
+    const handleVisibility = () => {
+      if (document.hidden) {
+        cancelAnimationFrame(frame);
+      } else {
+        lastFrameTime = 0; // reset throttle so first frame back fires immediately
+        frame = requestAnimationFrame(animate);
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+
     return () => {
       cancelAnimationFrame(frame);
+      document.removeEventListener("visibilitychange", handleVisibility);
       window.removeEventListener("resize", resize);
       window.removeEventListener("scroll", onScroll);
       canvas.removeEventListener("mousemove", handleMouse);

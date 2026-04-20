@@ -20,8 +20,30 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing URL" }, { status: 400 });
     }
 
-    // Clean the URL
-    const cleanUrl = url.trim().replace(/^(?!https?:\/\/)/, "https://");
+    // Validate URL is a public https:// hostname — blocks internal IPs,
+    // localhost, metadata endpoints, and file:// proto injection.
+    let cleanUrl: string;
+    try {
+      const normalised = url.trim().startsWith("http") ? url.trim() : `https://${url.trim()}`;
+      const parsed = new URL(normalised);
+      if (parsed.protocol !== "https:") {
+        return NextResponse.json({ error: "Only HTTPS URLs are accepted" }, { status: 400 });
+      }
+      const host = parsed.hostname.toLowerCase();
+      const blocked = [
+        "localhost", "127.", "0.0.0.0", "169.254.", // loopback + link-local
+        "10.", "192.168.", "172.16.", "172.17.", "172.18.", "172.19.",
+        "172.20.", "172.21.", "172.22.", "172.23.", "172.24.", "172.25.",
+        "172.26.", "172.27.", "172.28.", "172.29.", "172.30.", "172.31.",
+        "metadata.google.internal", "metadata.", "169.254.169.254",
+      ];
+      if (blocked.some((b) => host === b || host.startsWith(b))) {
+        return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
+      }
+      cleanUrl = `${parsed.protocol}//${parsed.host}`;
+    } catch {
+      return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
+    }
 
     const result = await research_ai(
       `${cleanUrl} marketing strategy SEO website analysis`,
@@ -82,10 +104,9 @@ Keep findings BRUTAL and ACTIONABLE. You are replacing them. Return ONLY valid J
     }
 
     return NextResponse.json({ success: true, scan: parsed });
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Unknown error";
+  } catch {
     return NextResponse.json(
-      { error: "Scan failed. Try again.", details: message },
+      { error: "Scan failed. Try again." },
       { status: 500 }
     );
   }

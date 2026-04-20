@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import {
   users,
@@ -10,35 +9,17 @@ import {
 } from "@/db/schema";
 import { count, sql, gte, eq, desc } from "drizzle-orm";
 import { createLogger } from "@/lib/logger";
+import { requireAdmin } from "@/lib/admin-auth";
+import { getPlanMrrUsd } from "@/lib/plans";
 
 const log = createLogger("admin-analytics");
 
-const HARDCODED_ADMINS = ["admin@sovereignmatrix.agency"];
-
-function isAdmin(email: string): boolean {
-  if (HARDCODED_ADMINS.includes(email.toLowerCase())) return true;
-  const envAdmins = process.env.ADMIN_EMAILS;
-  if (envAdmins) {
-    const list = envAdmins.split(",").map((e) => e.trim().toLowerCase());
-    if (list.includes(email.toLowerCase())) return true;
-  }
-  return false;
-}
-
-import { getPlanMrrUsd } from "@/lib/plans";
-
 export async function GET() {
   try {
-    const user = await currentUser();
-    if (!user?.primaryEmailAddress?.emailAddress) {
-      return NextResponse.json({ error: "Auth required" }, { status: 401 });
-    }
-
-    const email = user.primaryEmailAddress.emailAddress;
-    if (!isAdmin(email)) {
-      log.warn(`Non-admin access attempt: ${email}`);
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    // Gated by immutable Clerk user ID, not mutable email address
+    const gate = await requireAdmin();
+    if (gate instanceof Response) return gate;
+    const { userId } = gate;
 
     const now = new Date();
     const ago24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
@@ -132,7 +113,7 @@ export async function GET() {
       totalMRR += getPlanMrrUsd(planName) * cnt;
     }
 
-    log.info(`Admin analytics served to ${email}`);
+    log.info("Admin analytics served", { userId });
 
     return NextResponse.json({
       revenue: {
