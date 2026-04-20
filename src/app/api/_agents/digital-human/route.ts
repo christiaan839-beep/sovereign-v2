@@ -10,7 +10,9 @@ export const POST = createAgentRoute({
   name: "digital-human",
   handler: async ({ input, email, userId }) => {
 
-    const { name, script, gender = "female", style = "corporate" } = input as Record<string, unknown>;
+    const { name, script, gender = "female", style = "corporate" } = input as {
+      name?: string; script?: string; gender?: "female" | "male"; style?: string;
+    };
     if (!script) return ({ error: "Missing `script`." });
 
     const nimKey = process.env.NVIDIA_NIM_API_KEY;

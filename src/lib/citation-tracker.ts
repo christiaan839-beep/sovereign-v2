@@ -16,7 +16,8 @@
  *   );
  */
 
-import { ai, type AIOptions } from "@/lib/ai";
+import { ai } from "@/lib/ai";
+import type { AIOptions } from "@/types";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("citation-tracker");
@@ -52,8 +53,9 @@ export async function researchWithCitations(
   let researchAvailable = false;
 
   try {
-    // Dynamic import to avoid circular dependency
-    const { default: tavily } = await import("@tavily/core").then(m => m);
+    // Dynamic import to avoid pulling Tavily into edge bundles.
+    // @tavily/core exports `tavily` as a named export (no default).
+    const { tavily } = await import("@tavily/core");
     const tavilyKey = process.env.TAVILY_API_KEY;
     if (!tavilyKey) throw new Error("No Tavily key");
 

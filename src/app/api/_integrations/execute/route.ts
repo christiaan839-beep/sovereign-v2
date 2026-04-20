@@ -4,7 +4,7 @@ import { executeConnector, getAvailableConnectors } from "@/lib/integrations/con
 import { db } from "@/db";
 import { settings } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { safeDecrypt } from "@/lib/encryption";
+import { safeDecrypt } from "@/lib/crypto";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("integration-execute");

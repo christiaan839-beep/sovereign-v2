@@ -14,7 +14,10 @@ export const POST = createAgentRoute({
   name: "gliner-pii",
   handler: async ({ input, email, userId }) => {
 
-    const { text, entities = ["PERSON", "EMAIL", "PHONE", "ADDRESS", "SSN", "CREDIT_CARD", "PASSPORT", "IP_ADDRESS"] } = input as Record<string, unknown>;
+    const { text, entities = ["PERSON", "EMAIL", "PHONE", "ADDRESS", "SSN", "CREDIT_CARD", "PASSPORT", "IP_ADDRESS"] } = input as {
+      text?: string;
+      entities?: string[];
+    };
 
     if (!text) {
       return ({ error: "text is required." });

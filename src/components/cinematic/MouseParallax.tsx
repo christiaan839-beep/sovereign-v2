@@ -93,7 +93,12 @@ export function FloatingElement({
   speed = 1,
   range = 20,
 }: {
-  children: React.ReactNode;
+  /**
+   * Optional. When omitted, the component renders as a pure decorative
+   * floating container whose size/color is supplied via `className`
+   * (e.g. `<FloatingElement className="w-2 h-2 rounded-full bg-emerald-500/25" />`).
+   */
+  children?: React.ReactNode;
   className?: string;
   speed?: number;
   range?: number;

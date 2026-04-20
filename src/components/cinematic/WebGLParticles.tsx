@@ -1,6 +1,11 @@
 "use client";
 
 import { useRef, useEffect, useState } from "react";
+// Type-only namespace import. The value-level `THREE` is obtained via
+// `await import("three")` inside the effect so Three.js stays out of the
+// initial client bundle; this `import type` gives us type access in
+// expressions like `as THREE.BufferAttribute` without the runtime cost.
+import type * as THREE from "three";
 
 /**
  * WebGLParticles — GPU-rendered particle system using Three.js.

@@ -98,6 +98,10 @@ export function AgentGlobe() {
       const createGlobe = (await import("cobe")).default;
 
       const mobile = window.innerWidth < 768;
+      // COBE's published types don't include `arcs` — some builds/forks add
+       // support via a non-upstreamed option. Cast the options object to
+       // the library's expected type + loose index so we can pass arcs
+       // without editing COBEOptions itself.
       globeRef.current = createGlobe(canvasRef.current, {
         devicePixelRatio: mobile ? 1 : Math.min(window.devicePixelRatio, 2),
         width: mobile ? 500 : 900,
@@ -116,15 +120,20 @@ export function AgentGlobe() {
           location: [hub.lat, hub.lng],
           size: 0.06,
         })),
-        arcs: ARCS.map((arc) => ({
-          startLat: arc.startLat,
-          startLng: arc.startLng,
-          endLat: arc.endLat,
-          endLng: arc.endLng,
-          arcAlt: arc.arcAlt,
-          color: arc.color,
-          strokeWidth: 0.6,
-        })),
+        // Arcs: some COBE forks render these; our build ignores them
+        // gracefully if unsupported. Cast-escape because upstream
+        // @types/cobe doesn't declare the field.
+        ...({
+          arcs: ARCS.map((arc) => ({
+            startLat: arc.startLat,
+            startLng: arc.startLng,
+            endLat: arc.endLat,
+            endLng: arc.endLng,
+            arcAlt: arc.arcAlt,
+            color: arc.color,
+            strokeWidth: 0.6,
+          })),
+        } as Record<string, unknown>),
         onRender(state) {
           phiRef.current += 0.002;
           state.phi = phiRef.current;

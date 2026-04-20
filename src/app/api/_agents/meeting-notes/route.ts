@@ -1,6 +1,5 @@
 import { createAgentRoute } from "@/lib/agent-factory";
-import { NextResponse } from "next/server";
-import { guardRoute, sanitizeString, errorResponse } from "@/lib/api-guard";
+import { sanitizeString } from "@/lib/api-guard";
 import { nimChat } from "@/lib/nvidia";
 
 /**
@@ -10,20 +9,21 @@ import { nimChat } from "@/lib/nvidia";
  * Output: structured summary with action items, decisions, and follow-ups.
  *
  * Uses Nemotron Ultra for high-quality summarization.
+ * Auth + rate-limit + safety pipeline run inside createAgentRoute —
+ * the handler receives `input` with the already-parsed + sanitized body.
  */
 export const POST = createAgentRoute({
   name: "meeting-notes",
-  handler: async ({ input, email, userId }) => {
-
-    const guard = await guardRoute();
-    if (!guard.authorized) return guard.response;
-
-    const body = await request.json();
-    const transcript = sanitizeString(body.transcript, 50000);
-    const meetingTitle = sanitizeString(body.title, 200) || "Untitled Meeting";
+  requiredFields: ["transcript"],
+  handler: async ({ input }) => {
+    const body = input as { transcript?: unknown; title?: unknown };
+    const transcript = sanitizeString(typeof body.transcript === "string" ? body.transcript : "", 50000);
+    const meetingTitle = sanitizeString(typeof body.title === "string" ? body.title : "", 200) || "Untitled Meeting";
 
     if (!transcript) {
-      return errorResponse("Missing 'transcript' field", 400, "MISSING_FIELD");
+      // Factory validated `requiredFields` already; this belt-and-braces
+      // path catches the edge case where sanitizeString returns empty.
+      throw new Error("Transcript is empty after sanitization");
     }
 
     const result = await nimChat(
@@ -58,13 +58,12 @@ Be concise and factual. Do not add information not in the transcript.`,
       { maxTokens: 2000, temperature: 0.2 }
     );
 
-    return ({
+    return {
       title: meetingTitle,
       summary: result,
       wordCount: typeof result === "string" ? result.split(/\s+/).length : 0,
       model: "nemotron-ultra-253b",
-    });
-  
+    };
   },
 });
 

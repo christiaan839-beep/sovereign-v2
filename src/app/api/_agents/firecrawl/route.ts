@@ -52,7 +52,10 @@ export const POST = createAgentRoute({
 
     if (!response.ok) {
         const errorText = await response.text();
-        return ({ error: `Firecrawl request failed: ${response.status}`, details: errorText }, { status: response.status });
+        // Factory handlers return plain objects; status codes are assigned
+        // by the factory based on the error shape. Throw to surface the
+        // upstream failure cleanly instead of using the comma operator.
+        throw new Error(`Firecrawl request failed: ${response.status} ${errorText.slice(0, 200)}`);
     }
 
     const data = await response.json();

@@ -10,12 +10,23 @@
 
 interface SkeletonProps {
   className?: string;
-  variant?: "line" | "card" | "stat";
+  /**
+   * Visual variant:
+   *   - "line"   → single skeleton bar (default; accepts className for size)
+   *   - "card"   → grid of full cards
+   *   - "stat"   → grid of stat-style tiles
+   *   - "circle" → round placeholder (for avatars, logos, team members)
+   */
+  variant?: "line" | "card" | "stat" | "circle";
   count?: number;
 }
 
 function SkeletonLine({ className = "h-4 w-full" }: { className?: string }) {
   return <div className={`bg-white/[0.04] rounded animate-pulse ${className}`} />;
+}
+
+function SkeletonCircle({ className = "h-10 w-10" }: { className?: string }) {
+  return <div className={`bg-white/[0.04] rounded-full animate-pulse ${className}`} />;
 }
 
 function SkeletonCard() {
@@ -52,6 +63,9 @@ export function Skeleton({ className, variant = "line", count = 1 }: SkeletonPro
         {Array.from({ length: count }).map((_, i) => <SkeletonStat key={i} />)}
       </div>
     );
+  }
+  if (variant === "circle") {
+    return <SkeletonCircle className={className} />;
   }
   return <SkeletonLine className={className} />;
 }

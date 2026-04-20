@@ -77,7 +77,7 @@ Return ONLY the enhanced prompt (no explanations). The enhanced prompt should:
 
       if (!response.ok) {
         const errDump = await response.text();
-        return ({ error: "Luma API Error", details: errDump }, { status: response.status });
+        throw new Error(`Luma API error ${response.status}: ${errDump.slice(0, 200)}`);
       }
 
       const lumaData = await response.json();

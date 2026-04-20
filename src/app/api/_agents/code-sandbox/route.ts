@@ -18,7 +18,13 @@ export const POST = createAgentRoute({
   handler: async ({ input, email, userId }) => {
 
 
-    const { action = "execute", code, task, data, libraries } = input as Record<string, unknown>;
+    const { action = "execute", code, task, data, libraries } = input as {
+      action?: "execute" | "analyze";
+      code?: string;
+      task?: string;
+      data?: unknown;
+      libraries?: string[];
+    };
 
     if (action === "execute") {
       if (!code) return ({ error: "Missing 'code' parameter" });
@@ -28,7 +34,11 @@ export const POST = createAgentRoute({
 
     if (action === "analyze") {
       if (!task) return ({ error: "Missing 'task' parameter" });
-      const result = await analyzeData(task, data, { libraries });
+      // `data` is typed as unknown in the input schema; analyzeData expects
+      // a string (CSV / JSON). Serialize non-string values for convenience.
+      const dataStr: string | undefined =
+        typeof data === "string" ? data : data !== undefined ? JSON.stringify(data) : undefined;
+      const result = await analyzeData(task, dataStr, { libraries });
       return ({ output: result.output, success: result.success, error: result.error, executionTime: result.executionTime });
     }
 

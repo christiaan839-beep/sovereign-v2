@@ -9,7 +9,12 @@ export const POST = createAgentRoute({
   name: "nemotron-omni",
   handler: async ({ input, email, userId }) => {
 
-    const { prompt, mode = "text", imageUrl, audioContext } = input as Record<string, unknown>;
+    const { prompt, mode = "text", imageUrl, audioContext } = input as {
+      prompt?: string;
+      mode?: "text" | "vision" | "voice";
+      imageUrl?: string;
+      audioContext?: string;
+    };
     if (!prompt) return ({ error: "prompt required" });
 
     const key = getNimKey();
@@ -61,7 +66,7 @@ export const POST = createAgentRoute({
 
     if (!res.ok) {
       const err = await res.text();
-      return ({ error: `NIM error: ${err}` }, { status: res.status });
+      throw new Error(`NIM error ${res.status}: ${err.slice(0, 200)}`);
     }
 
     const data = await res.json();

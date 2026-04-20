@@ -11,7 +11,7 @@ export const POST = createAgentRoute({
   name: "audit",
   handler: async ({ input, email, userId }) => {
 
-    const { targetUrl } = input as Record<string, unknown>;
+    const { targetUrl } = input as { targetUrl?: string };
 
     if (!targetUrl) {
       return ({ error: 'URL is required' });

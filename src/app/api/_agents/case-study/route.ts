@@ -10,7 +10,7 @@ import { getNimKey } from "@/lib/nvidia";
 const schema = z.object({
   clientName: z.string().max(200).optional(),
   industry: z.string().max(100).optional(),
-  metrics: z.record(z.string()).optional(),
+  metrics: z.record(z.string(), z.string()).optional(),
   challenge: z.string().max(2000).optional(),
   result: z.string().max(2000).optional(),
   prompt: z.string().max(5000).optional(),

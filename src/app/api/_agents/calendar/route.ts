@@ -13,7 +13,12 @@ const log = createLogger("calendar-agent");
 export const POST = createAgentRoute({
   name: "calendar",
   handler: async ({ input }) => {
-    const { niche, platforms, weeks, contentGoal } = input as Record<string, unknown>;
+    const { niche, platforms, weeks, contentGoal } = input as {
+      niche?: string;
+      platforms?: string[];
+      weeks?: number;
+      contentGoal?: string;
+    };
 
     const prompt = `Generate a ${weeks || 4}-week content calendar for:
 

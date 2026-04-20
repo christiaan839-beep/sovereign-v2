@@ -109,7 +109,10 @@ export async function hybridQuery(options: QueryOptions): Promise<RetrievalResul
         label: node.label,
         properties: JSON.parse(node.properties || "{}"),
         score: Math.round(combinedScore * 100) / 100,
-        source: "vector" as const,
+        // Initial source — may be upgraded to "both" when a graph edge
+        // bonus lands on this node below. Typed as the union so the later
+        // assignment is allowed without const-narrowing.
+        source: "vector" as "vector" | "graph" | "both",
         confidence: node.confidence || 100,
       };
     });

@@ -12,7 +12,7 @@ export const POST = createAgentRoute({
   name: "pii-redactor",
   handler: async ({ input, email, userId }) => {
 
-    const { text, redact = true } = input as Record<string, unknown>;
+    const { text, redact = true } = input as { text?: string; redact?: boolean };
 
     if (!text) {
       return ({ error: "Text is required." });

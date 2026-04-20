@@ -15,7 +15,12 @@ export const POST = createAgentRoute({
   handler: async ({ input, email, userId }) => {
 
 
-    const { prompt, duration = 30, style, instruments } = input as Record<string, unknown>;
+    const { prompt, duration = 30, style, instruments } = input as {
+      prompt?: string;
+      duration?: number;
+      style?: string;
+      instruments?: string[];
+    };
     if (!prompt) return ({ error: "Missing music prompt" });
 
     const apiKey = process.env.GEMINI_API_KEY;

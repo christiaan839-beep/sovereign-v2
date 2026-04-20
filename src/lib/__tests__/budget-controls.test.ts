@@ -6,7 +6,7 @@ describe("budget-controls.ts — Cost Governance", () => {
   it("allows when no budget set", () => { expect(checkBudget("no-budget-user").allowed).toBe(true); });
 
   it("allows when under budget", () => {
-    setBudget({ userId: "budget-user-1", email: "t@t.com", dailyLimitCents: 1000, monthlyLimitCents: 10000 });
+    setBudget({ userId: "budget-user-1", dailyLimitCents: 1000, monthlyLimitCents: 10000 });
     expect(checkBudget("budget-user-1").allowed).toBe(true);
   });
 
@@ -17,7 +17,7 @@ describe("budget-controls.ts — Cost Governance", () => {
   });
 
   it("blocks when daily budget exceeded", () => {
-    setBudget({ userId: "budget-user-3", email: "t@t.com", dailyLimitCents: 1, monthlyLimitCents: 100000 });
+    setBudget({ userId: "budget-user-3", dailyLimitCents: 1, monthlyLimitCents: 100000 });
     recordSpend("budget-user-3", "gpt-4o", 100000); // Exceeds $0.01 daily
     const result = checkBudget("budget-user-3");
     expect(result.allowed).toBe(false);
@@ -31,7 +31,7 @@ describe("budget-controls.ts — Cost Governance", () => {
   });
 
   it("returns daily/monthly percent", () => {
-    setBudget({ userId: "pct-user", email: "t@t.com", dailyLimitCents: 100, monthlyLimitCents: 1000 });
+    setBudget({ userId: "pct-user", dailyLimitCents: 100, monthlyLimitCents: 1000 });
     const result = checkBudget("pct-user");
     expect(typeof result.dailyPercent).toBe("number");
     expect(typeof result.monthlyPercent).toBe("number");

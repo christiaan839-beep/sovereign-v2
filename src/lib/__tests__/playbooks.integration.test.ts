@@ -57,7 +57,8 @@ describe("playbooks.ts — Integration Tests", () => {
   // ── Step Resolution ──
 
   it("resolves playbook steps with user inputs", () => {
-    const pb = PLAYBOOKS["lead-blitz"];
+    // PLAYBOOKS is an array; look up by slug.
+    const pb = PLAYBOOKS.find((p) => p.id === "lead-blitz");
     if (!pb) return; // Skip if playbook doesn't exist
 
     const resolved = resolvePlaybookSteps(pb, {
@@ -73,7 +74,7 @@ describe("playbooks.ts — Integration Tests", () => {
   });
 
   it("resolves template references between steps", () => {
-    const pb = PLAYBOOKS["lead-blitz"];
+    const pb = PLAYBOOKS.find((p) => p.id === "lead-blitz");
     if (!pb || pb.steps.length < 2) return;
 
     const resolved = resolvePlaybookSteps(pb, { niche: "Dental" });

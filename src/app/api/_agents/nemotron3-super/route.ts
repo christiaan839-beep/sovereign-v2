@@ -19,7 +19,11 @@ export const POST = createAgentRoute({
   name: "nemotron3-super",
   handler: async ({ input, email, userId }) => {
 
-    const { prompt, mode = "reason", max_tokens = 2048 } = input as Record<string, unknown>;
+    const { prompt, mode = "reason", max_tokens = 2048 } = input as {
+      prompt?: string;
+      mode?: string;
+      max_tokens?: number;
+    };
 
     if (!prompt) {
       return ({ error: "prompt is required." });

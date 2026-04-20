@@ -5,8 +5,11 @@ const nextConfig: NextConfig = {
   // so this activates only for self-hosted deployments.
   output: process.env.VERCEL ? undefined : "standalone",
 
-  // Allow build to proceed despite strict TS on dynamic icon components
-  typescript: { ignoreBuildErrors: true },
+  // `ignoreBuildErrors` used to be true as a temporary escape hatch while
+  // the createAgentRoute migration cooled. All 107 inherited errors are
+  // now fixed (see SESSION_LOG v7); the flag is OFF so any future TS
+  // regression fails the build instead of being silently shipped.
+  typescript: { ignoreBuildErrors: false },
 
   // Keep Node.js-only packages out of client/edge bundles
   serverExternalPackages: [

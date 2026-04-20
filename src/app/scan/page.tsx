@@ -268,8 +268,8 @@ export default function AGIAuditorPage() {
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({ email, url: targetUrl }),
                         }).catch(() => ({ json: () => ({}) }));
-                        const demo = await demoRes.json();
-                        
+                        const demo = (await demoRes.json()) as { portalUrl?: string };
+
                         // Redirect to live demo
                         if (demo.portalUrl) {
                           window.location.href = demo.portalUrl;

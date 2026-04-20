@@ -12,7 +12,11 @@ export const POST = createAgentRoute({
   name: "voicechat",
   handler: async ({ input, email, userId }) => {
 
-    const { text, context = "customer-support", voice_style = "professional" } = input as Record<string, unknown>;
+    const { text, context = "customer-support", voice_style = "professional" } = input as {
+      text?: string;
+      context?: string;
+      voice_style?: string;
+    };
 
     if (!text) {
       return ({ error: "text is required." });

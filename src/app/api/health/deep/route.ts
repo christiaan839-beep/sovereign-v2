@@ -48,8 +48,9 @@ export async function GET() {
   // Check Database
   try {
     const { db } = await import("@/db");
+    const { sql } = await import("drizzle-orm");
     const dbStart = Date.now();
-    await db.execute({ sql: "SELECT 1", params: [] });
+    await db.execute(sql`SELECT 1`);
     checks.database = { status: "ok", latency_ms: Date.now() - dbStart };
   } catch {
     checks.database = { status: "down", latency_ms: 0, detail: "DATABASE_URL not configured or unreachable" };

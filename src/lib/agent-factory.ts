@@ -101,8 +101,14 @@ export interface AgentConfig {
   /** Allowed topics — agent will refuse off-topic requests (NeMo Guardrails pattern) */
   allowedTopics?: string[];
 
-  /** The agent's core logic */
-  handler: (ctx: AgentContext) => Promise<Record<string, unknown>>;
+  /** The agent's core logic.
+   *  Return type is `object` (not `Record<string, unknown>`) so that
+   *  agents returning typed result shapes (e.g. `AgentResult` from
+   *  content-factory, or response-literal types from NextResponse-less
+   *  handlers) are assignable without `as Record<string, unknown>`
+   *  casts everywhere. The factory internally treats the result as a
+   *  JSON-serializable blob — any object shape is acceptable. */
+  handler: (ctx: AgentContext) => Promise<object>;
 }
 
 export interface AgentContext {
@@ -510,19 +516,28 @@ export function createAgentRoute(config: AgentConfig) {
       }
 
       // ─── Critic Agent — QA gate for high-value outputs ───
-      if (config.useCritic !== false && finalResult.output && typeof finalResult.output === "string" && finalResult.output.length > 100) {
+      // We read `output` off the result as a loose field — handlers that
+      // return `{ output: "…" }` (most of them) get QA'd; handlers that
+      // return other shapes (e.g. `{ result: … }`) skip the critic naturally.
+      const criticScoped = finalResult as Record<string, unknown>;
+      if (
+        config.useCritic !== false &&
+        criticScoped.output &&
+        typeof criticScoped.output === "string" &&
+        criticScoped.output.length > 100
+      ) {
         try {
           const { criticReview } = await import("@/lib/critic");
           const review = await criticReview(
             typeof body.prompt === "string" ? body.prompt : config.name,
-            finalResult.output as string,
+            criticScoped.output as string,
             config.name,
             { threshold: 0.7, autoCorrect: true }
           );
           if (review.correctedOutput && !review.approved) {
-            finalResult.output = review.correctedOutput;
-            (finalResult as Record<string, unknown>)._criticFeedback = review.feedback;
-            (finalResult as Record<string, unknown>)._criticScore = review.score;
+            criticScoped.output = review.correctedOutput;
+            criticScoped._criticFeedback = review.feedback;
+            criticScoped._criticScore = review.score;
           }
         } catch (criticErr) {
           log.warn("Critic review skipped", { agent: config.name, error: String(criticErr) });
@@ -641,8 +656,8 @@ export function createAgentRoute(config: AgentConfig) {
 // ─── Helpers ───
 
 /** Extract the first meaningful string value from an object (for safety scanning) */
-function getFirstStringValue(obj: Record<string, unknown>): string | null {
-  for (const value of Object.values(obj)) {
+function getFirstStringValue(obj: object): string | null {
+  for (const value of Object.values(obj as Record<string, unknown>)) {
     if (typeof value === "string" && value.length > 0) return value;
   }
   return null;

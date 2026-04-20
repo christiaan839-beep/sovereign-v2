@@ -10,7 +10,11 @@ export const POST = createAgentRoute({
   name: "rag-pipeline",
   handler: async ({ input, email, userId }) => {
 
-    const { query, documents = [], topK = 3 } = input as Record<string, unknown>;
+    const { query, documents = [], topK = 3 } = input as {
+      query?: string;
+      documents?: string[];
+      topK?: number;
+    };
     if (!query) return ({ error: "Missing `query`." });
 
     const nimKey = process.env.NVIDIA_NIM_API_KEY;

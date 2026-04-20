@@ -12,7 +12,12 @@ export const POST = createAgentRoute({
   name: "code-reviewer",
   handler: async ({ input, email, userId }) => {
 
-    const { code, language = "auto-detect", focus = "full" } = input as Record<string, unknown>;
+    const { code, language = "auto-detect", focus = "full" } = input as {
+      code?: string;
+      language?: string;
+      focus?: "full" | "security" | "performance" | "maintainability";
+    };
+    if (!code) throw new Error("Missing `code` field in request body");
 
     if (!code) {
       return ({ error: "code is required." });
@@ -36,7 +41,7 @@ export const POST = createAgentRoute({
         },
         {
           role: "user",
-          content: `Review this ${language} code.\n\nFOCUS: ${focusPrompts[focus] || focusPrompts.full}\n\n\`\`\`${language}\n${code.substring(0, 50000)}\n\`\`\`\n\nOutput JSON:
+          content: `Review this ${language} code.\n\nFOCUS: ${focusPrompts[focus as string] || focusPrompts.full}\n\n\`\`\`${language}\n${code.substring(0, 50000)}\n\`\`\`\n\nOutput JSON:
 {
   "overall_grade": "A|B|C|D|F",
   "security_score": 0-100,

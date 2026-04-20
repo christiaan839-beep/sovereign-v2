@@ -62,7 +62,7 @@ async function discoverNIMModels(): Promise<DiscoveredModel[]> {
       capabilities: inferCapabilities(m.id),
     }));
   } catch (err) {
-    log.warn("NIM model discovery failed", err);
+    log.warn("NIM model discovery failed", { error: String(err) });
     return [];
   }
 }

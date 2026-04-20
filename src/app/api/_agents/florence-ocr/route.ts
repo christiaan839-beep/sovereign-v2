@@ -11,7 +11,11 @@ export const POST = createAgentRoute({
   name: "florence-ocr",
   handler: async ({ input, email, userId }) => {
 
-    const { action = "caption", image_url, question } = input as Record<string, unknown>;
+    const { action = "caption", image_url, question } = input as {
+      action?: "caption" | "ocr" | "vqa";
+      image_url?: string;
+      question?: string;
+    };
 
     if (!image_url) {
       return ({ error: "image_url is required." });

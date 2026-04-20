@@ -9,7 +9,10 @@ export const POST = createAgentRoute({
   name: "ocr",
   handler: async ({ input, email, userId }) => {
 
-    const { imageBase64, imageUrl } = input as Record<string, unknown>;
+    const { imageBase64, imageUrl } = input as {
+      imageBase64?: string;
+      imageUrl?: string;
+    };
     if (!imageBase64 && !imageUrl) {
       return ({ error: "Provide either `imageBase64` or `imageUrl`." });
     }

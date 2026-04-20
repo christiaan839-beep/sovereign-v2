@@ -10,7 +10,10 @@ export const POST = createAgentRoute({
   name: "pii-guard",
   handler: async ({ input, email, userId }) => {
 
-    const { text, action = "detect" } = input as Record<string, unknown>;
+    const { text, action = "detect" } = input as {
+      text?: string;
+      action?: "detect" | "redact";
+    };
     if (!text) return ({ error: "Missing `text`." });
 
     const nimKey = process.env.NVIDIA_NIM_API_KEY;

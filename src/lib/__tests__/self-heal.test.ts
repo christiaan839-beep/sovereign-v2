@@ -64,7 +64,10 @@ describe("withSelfHeal", () => {
       }),
     );
 
-    const wrapped = withSelfHeal(handler, { label: "retry" });
+    const wrapped = withSelfHeal<{ input: Record<string, unknown> }, { ok: boolean; value: string }>(
+      handler,
+      { label: "retry" },
+    );
     const result = await wrapped({ input: { q: "broad" } });
 
     expect(result.ok).toBe(true);
@@ -149,7 +152,10 @@ describe("withSelfHeal", () => {
       '```json\n{"diagnosis":"fence-stripped","modified_input":{"q":"fixed"}}\n```',
     );
 
-    const wrapped = withSelfHeal(handler, { label: "fence" });
+    const wrapped = withSelfHeal<{ input: Record<string, unknown> }, { ok: boolean }>(
+      handler,
+      { label: "fence" },
+    );
     const result = await wrapped({ input: { q: "orig" } });
 
     expect(result.ok).toBe(true);
