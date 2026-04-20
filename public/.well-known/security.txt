@@ -1,36 +1,67 @@
-# Sovereign Matrix — Vulnerability Disclosure Policy
+# Sovereign Matrix — Vulnerability Disclosure Program
 # Format: RFC 9116 — https://securitytxt.org/
 #
-# If you believe you've found a security issue affecting Sovereign
-# Matrix or our customers, we want to hear from you. We commit to:
-#   - Responding within 24 hours
-#   - Working with you on a reasonable disclosure timeline
-#   - Publicly acknowledging your contribution (if you wish)
-# in exchange for responsible disclosure.
+# If you've found a security issue affecting Sovereign Matrix or our
+# customers, we want to hear from you. See our defender's ledger
+# (https://sovereignmatrix.agency/trust/defenders) for published
+# case studies of vulnerabilities we've found and fixed.
 
 Contact: mailto:security@sovereignmatrix.agency
 Contact: https://sovereignmatrix.agency/contact?reason=security
 Expires: 2027-04-20T00:00:00Z
 Preferred-Languages: en
 Canonical: https://sovereignmatrix.agency/.well-known/security.txt
-Policy: https://sovereignmatrix.agency/trust#disclosure
+Policy: https://sovereignmatrix.agency/trust/defenders
+Acknowledgments: https://sovereignmatrix.agency/trust/defenders#researchers
 
-# ─── What we ask ───
-# - Give us 90 days to respond before public disclosure.
-# - Do not access data that isn't yours.
-# - Do not perform DoS or brute-force attacks against production.
-# - Staging env is available for testing; contact us for access.
-#
-# ─── What we commit ───
-# - Initial response within 24 hours (during business days).
-# - Triage within 72 hours.
-# - Fix + disclosure coordinated within 90 days.
-# - Public credit (if you want it) on our trust page.
-#
+# ─── How we respond (commitments) ───
+# - Initial acknowledgement within 24 business hours.
+# - Severity triage within 72 business hours.
+# - Coordinated fix + public disclosure within 90 days of report.
+# - Public credit on /trust/defenders with your name or pseudonym
+#   (if you want it) once the fix is shipped.
+# - For critical issues where we ship a same-day patch, we'll
+#   proactively offer a reward and a joint disclosure post.
+
+# ─── What we ask from researchers ───
+# - 90-day coordinated-disclosure window by default; we'll extend
+#   for complex issues if you need it.
+# - Don't access data that isn't yours. If you encounter real
+#   customer data during research, stop and tell us.
+# - Don't run DoS, brute-force, or automated spam campaigns against
+#   production. Staging access available on request.
+# - Don't modify or delete real customer data — your proof-of-concept
+#   can demonstrate the vuln without actually exercising it.
+
+# ─── In-scope ───
+# The full `sovereignmatrix.agency` apex, all subdomains, the API
+# at `api.sovereignmatrix.agency`, and our published MCP server
+# (`@sovereignmatrix/mcp` on npm). Authentication is Clerk —
+# Clerk-side issues go to Clerk's program, but if you find a way
+# to weaponize Clerk against Sovereign specifically, that's in
+# scope for us.
+
 # ─── Out of scope ───
-# - Issues requiring physical access to user devices.
-# - Social engineering of our staff.
-# - Rate-limiting bypass via distributed sources without proof of
-#   actual impact (our Upstash sliding-window is intentional).
-# - Missing security headers on marketing pages without a concrete
-#   exploit (we'll still fix them, just not rewarded).
+# - Physical access to user devices or social engineering of staff
+# - Rate-limit bypass via distributed sources without demonstrated
+#   user-facing impact (our Upstash sliding-window is intentional)
+# - Missing security headers on marketing-only pages without a
+#   concrete exploit path (we'll still fix, just not rewarded)
+# - Findings against unsupported browsers or outdated OS versions
+# - SPF/DKIM/DMARC on subdomains that don't send email (we only
+#   send from sovereignmatrix.agency + outreach.sovereignmatrix.agency)
+
+# ─── How we audit ourselves ───
+# We run Claude-powered security-reviewer audits on our own code
+# continuously. Published case studies of our internal findings:
+#   - /trust/defenders (ledger index)
+#   - /docs/SECURITY_CASE_STUDY_V8.md (April 2026)
+# Every finding comes with a commit hash; every claim is verifiable
+# against the public GitHub repository at
+# github.com/christiaan839-beep/sovereign-v2
+
+# ─── Safe harbor ───
+# If you follow this policy in good faith, we won't pursue legal
+# action against you, report you to law enforcement, or suspend
+# your account. This applies to researchers in any jurisdiction;
+# we operate under South African + US law.
