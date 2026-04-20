@@ -288,3 +288,321 @@ registerAgentContract({
   ],
   skipIf: () => !process.env.NVIDIA_NIM_API_KEY && !process.env.ANTHROPIC_API_KEY,
 });
+
+/* ─── 14. god-brain — master meta-prompter ─────────────────────── */
+
+registerAgentContract({
+  slug: "god-brain",
+  inputSchema: z.object({
+    input: z.string().min(1),
+    goal: z.string().optional(),
+    modes: z.array(z.string()).optional(),
+  }).passthrough(),
+  outputSchema: Loose,
+  fixtures: [
+    { input: "Draft a 2026 Q2 growth plan for a B2B SaaS", goal: "revenue" },
+  ],
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+});
+
+/* ─── 15. deep-think — long-reasoning agent ────────────────────── */
+
+registerAgentContract({
+  slug: "deep-think",
+  inputSchema: z.object({
+    prompt: z.string().min(1),
+    depth: z.number().optional(),
+  }).passthrough(),
+  outputSchema: Loose,
+  fixtures: [
+    { prompt: "What's the best moat for an AI agent platform?" },
+  ],
+  skipIf: () => !process.env.ANTHROPIC_API_KEY && !process.env.NVIDIA_NIM_API_KEY,
+});
+
+/* ─── 16. grounded-search — Tavily-backed research ─────────────── */
+
+registerAgentContract({
+  slug: "grounded-search",
+  inputSchema: z.object({
+    query: z.string().min(1),
+    depth: z.enum(["basic", "advanced"]).optional(),
+  }).passthrough(),
+  outputSchema: Loose,
+  fixtures: [
+    { query: "latest trends in agentic AI platforms", depth: "basic" },
+  ],
+  skipIf: () => !process.env.TAVILY_API_KEY,
+});
+
+/* ─── 17. seo — SEO action dispatcher ──────────────────────────── */
+
+registerAgentContract({
+  slug: "seo",
+  inputSchema: z.object({
+    action: z.enum(["xray", "content-gap", "schema", "gbp"]),
+    params: z.object({}).passthrough().optional(),
+  }),
+  outputSchema: Loose,
+  fixtures: [
+    { action: "xray", params: { urls: ["https://example.com"], business: "SaaS analytics" } },
+  ],
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+});
+
+/* ─── 18. content — content-action dispatcher ─────────────────── */
+
+registerAgentContract({
+  slug: "content",
+  inputSchema: z.object({
+    action: z.enum(["blog", "email", "social", "video"]),
+    params: z.object({}).passthrough().optional(),
+  }),
+  outputSchema: Loose,
+  fixtures: [
+    { action: "blog", params: { topic: "agentic workflows for RevOps teams" } },
+  ],
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+});
+
+/* ─── 19. brand-voice — brand-aligned content generation ──────── */
+
+registerAgentContract({
+  slug: "brand-voice",
+  inputSchema: z.object({
+    prompt: z.string().optional(),
+    message: z.string().optional(),
+    voice: z.string().optional(),
+    tone: z.string().optional(),
+  }).passthrough(),
+  outputSchema: Loose,
+  fixtures: [
+    { message: "Thank a customer for upgrading to Growth tier", tone: "warm, concise" },
+  ],
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+});
+
+/* ─── 20. brand-audit — brand voice audit ──────────────────────── */
+
+registerAgentContract({
+  slug: "brand-audit",
+  inputSchema: z.object({
+    url: z.string().optional(),
+    content: z.string().optional(),
+    prompt: z.string().optional(),
+  }).passthrough(),
+  outputSchema: Loose,
+  fixtures: [
+    { content: "We deliver innovative cutting-edge synergies…" },
+  ],
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+});
+
+/* ─── 21. proposal-generator — sales proposals ─────────────────── */
+
+registerAgentContract({
+  slug: "proposal-generator",
+  inputSchema: z.object({
+    clientName: z.string().optional(),
+    industry: z.string().optional(),
+    scope: z.string().optional(),
+    prompt: z.string().optional(),
+    budget: z.string().optional(),
+  }).passthrough(),
+  outputSchema: Loose,
+  fixtures: [
+    { clientName: "Acme Robotics", industry: "industrial automation", scope: "agentic workflow platform rollout" },
+  ],
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+});
+
+/* ─── 22. email-sequence — drip campaign generator ─────────────── */
+
+registerAgentContract({
+  slug: "email-sequence",
+  inputSchema: z.object({
+    product: z.string().optional(),
+    audience: z.string().optional(),
+    steps: z.number().optional(),
+    prompt: z.string().optional(),
+  }).passthrough(),
+  outputSchema: Loose,
+  fixtures: [
+    { product: "Sovereign Matrix", audience: "AI-curious ops leaders", steps: 5 },
+  ],
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+});
+
+/* ─── 23. pii-guard — PII detection ─────────────────────────────── */
+
+registerAgentContract({
+  slug: "pii-guard",
+  inputSchema: z.object({
+    text: z.string().min(1),
+    action: z.enum(["detect", "redact"]).optional(),
+  }),
+  outputSchema: Loose,
+  fixtures: [
+    { text: "Contact Jane Doe at jane@example.com or 555-1234", action: "detect" },
+  ],
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+});
+
+/* ─── 24. pii-redactor — PII redaction ─────────────────────────── */
+
+registerAgentContract({
+  slug: "pii-redactor",
+  inputSchema: z.object({
+    text: z.string().min(1),
+    redact: z.boolean().optional(),
+  }),
+  outputSchema: Loose,
+  fixtures: [
+    { text: "SSN 123-45-6789 belongs to Alice", redact: true },
+  ],
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+});
+
+/* ─── 25. embed — vector embeddings ────────────────────────────── */
+
+registerAgentContract({
+  slug: "embed",
+  inputSchema: z.object({
+    input: z.union([z.string(), z.array(z.string())]).optional(),
+    text: z.string().optional(),
+  }).passthrough(),
+  outputSchema: Loose,
+  fixtures: [
+    { input: "Sovereign Matrix agentic platform" },
+  ],
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+});
+
+/* ─── 26. rerank — reranker for RAG ────────────────────────────── */
+
+registerAgentContract({
+  slug: "rerank",
+  inputSchema: z.object({
+    query: z.string().min(1),
+    passages: z.array(z.string()).min(1),
+  }),
+  outputSchema: Loose,
+  fixtures: [
+    {
+      query: "pricing for enterprise tier",
+      passages: ["Our free tier allows 50 runs", "Enterprise starts at $499/mo", "Cancel anytime"],
+    },
+  ],
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+});
+
+/* ─── 27. ocr — image text extraction ──────────────────────────── */
+
+registerAgentContract({
+  slug: "ocr",
+  inputSchema: z.object({
+    imageBase64: z.string().optional(),
+    imageUrl: z.string().optional(),
+  }),
+  outputSchema: Loose,
+  fixtures: [
+    { imageUrl: "https://example.com/test-invoice.png" },
+  ],
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+});
+
+/* ─── 28. meeting-notes — transcript summarizer ───────────────── */
+
+registerAgentContract({
+  slug: "meeting-notes",
+  inputSchema: z.object({
+    transcript: z.string().min(1),
+    title: z.string().optional(),
+  }),
+  outputSchema: z.object({
+    title: z.string().optional(),
+    summary: z.string().optional(),
+    wordCount: z.number().optional(),
+  }).passthrough(),
+  fixtures: [
+    { transcript: "Alice: revenue is up 20%. Bob: great, let's double down on SaaS ads.", title: "Weekly sync" },
+  ],
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+});
+
+/* ─── 29. competitor-scan — lightweight competitor scan ───────── */
+
+registerAgentContract({
+  slug: "competitor-scan",
+  inputSchema: z.object({
+    competitorUrl: z.string().optional(),
+    competitorName: z.string().optional(),
+    prompt: z.string().optional(),
+  }).passthrough(),
+  outputSchema: Loose,
+  fixtures: [
+    { competitorName: "Zapier", competitorUrl: "https://zapier.com" },
+  ],
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+});
+
+/* ─── 30. benchmark — model throughput benchmark ──────────────── */
+
+registerAgentContract({
+  slug: "benchmark",
+  inputSchema: z.object({
+    prompt: z.string().optional(),
+    models: z.array(z.string()).optional(),
+  }).passthrough(),
+  outputSchema: Loose,
+  fixtures: [
+    { prompt: "Summarize agentic AI in one sentence.", models: ["nemotron-ultra"] },
+  ],
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+});
+
+/* ─── 31. feedback — feedback classifier ──────────────────────── */
+
+registerAgentContract({
+  slug: "feedback",
+  inputSchema: z.object({
+    feedback: z.string().optional(),
+    prompt: z.string().optional(),
+  }).passthrough(),
+  outputSchema: Loose,
+  fixtures: [
+    { feedback: "The onboarding was confusing but the playbook worked great" },
+  ],
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+});
+
+/* ─── 32. agentic-planner — GLM-5 planner ─────────────────────── */
+
+registerAgentContract({
+  slug: "agentic-planner",
+  inputSchema: z.object({
+    goal: z.string().min(1),
+    tools: z.array(z.string()).optional(),
+  }).passthrough(),
+  outputSchema: Loose,
+  fixtures: [
+    { goal: "Draft a sales outreach for a Series B company in fintech" },
+  ],
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+});
+
+/* ─── 33. orchestrator — multi-agent orchestration ────────────── */
+
+registerAgentContract({
+  slug: "orchestrator",
+  inputSchema: z.object({
+    task: z.string().optional(),
+    goal: z.string().optional(),
+    prompt: z.string().optional(),
+  }).passthrough(),
+  outputSchema: Loose,
+  fixtures: [
+    { goal: "Generate a full SEO content plan for a B2B SaaS" },
+  ],
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+});
