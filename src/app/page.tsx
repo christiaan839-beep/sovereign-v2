@@ -7,7 +7,6 @@ import { useState } from "react";
 import { SovereignLogo } from "@/components/ui/SovereignLogo";
 import { StackKiller } from "@/components/cinematic/StackKiller";
 import { getMarketingPlaybooks } from "@/lib/playbooks";
-// Landing-page elite components (v12 redesign)
 import { LiveTerminalDemo } from "@/components/landing/LiveTerminalDemo";
 import { LiveRunsPill } from "@/components/landing/LiveRunsPill";
 import { KineticHeadline } from "@/components/landing/KineticHeadline";
@@ -17,32 +16,16 @@ import { PrimaryCTA } from "@/components/landing/PrimaryCTA";
 import { CommandEgg } from "@/components/landing/CommandEgg";
 
 /**
- * LANDING PAGE v11 — editorial rewrite.
+ * Landing page — 10 sections, editorial palette aligned with
+ * /trust, /roi, /built-with-claude, /customers, /platform,
+ * /benchmarks. Each section is a function below:
  *
- * Previous incarnation was 1,804 lines across 30+ sections —
- * a greatest-hits reel of every cinematic component. The audit
- * (design-slop-blocker) flagged it as "aesthetic schizophrenia"
- * against the editorial surfaces at /trust, /roi,
- * /built-with-claude, /customers, /platform, /benchmarks.
+ *   01 Hero  · 02 Three-step proof · 03 Trust strip ·
+ *   04 Featured playbooks · 05 Stack Killer · 06 Claude critic ·
+ *   07 Founder Network · 08 Ship record · 09 Final CTA · 10 Footer
  *
- * This version: 10 sections, one narrative arc, unified aesthetic.
- *
- * Story arc:
- *   01 Hero          "86% never ship. We ship on day one."
- *   02 3-step proof  0:00 Sign up · 1:00 Pick · 3:00 Output
- *   03 Trust strip   3 sourced stats
- *   04 5 playbooks   The curated featured list, linked
- *   05 Stack Killer  Replace 8 tools with one (kept from v10)
- *   06 Claude narr.  Consensus critic in one paragraph, linked
- *   07 Founder Net.  50% off lifetime for first-100 cohort
- *   08 Ship record   Link to /changelog with hook
- *   09 Final CTA     Single button + direct email to founder
- *   10 Footer        Operator ⇄ Platform toggle + legal
- *
- * Palette: #030303 base (tech edge retained), #B5532C copper accent
- * (matches /trust etc), Instrument Serif on all display headlines
- * (no more font-black everywhere), Inter Tight for body, JetBrains
- * Mono for labels + data.
+ * Palette: #030303 base, #B5532C copper accent, Instrument Serif
+ * for display, Inter Tight for body, JetBrains Mono for labels.
  */
 
 const HERO_CTA = "/signup";
@@ -345,17 +328,13 @@ function Hero() {
           </Link>
         </motion.div>
 
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.9, duration: 0.6 }}
-          className="mt-8 text-[11px] font-mono text-neutral-600"
-        >
-          Source: RAND AI adoption survey, 2025. 14% of enterprises have scaled
-          agents to production.
-        </motion.p>
+        {/*
+          Stat source is cited once in the TrustStrip below; we don't
+          repeat it under the hero — the slop agent flagged it as
+          citation inflation. Keep the hero clean; TrustStrip does
+          the sourcing.
+        */}
 
-        {/* Live terminal showing a real Lead Blitz sequence */}
         <LiveTerminalDemo />
       </div>
     </section>
@@ -387,12 +366,12 @@ function ThreeStepProof() {
     <section className="px-6 py-20 md:py-28 border-t border-white/[0.04]">
       <div className="max-w-5xl mx-auto">
         <p className="text-[10px] font-mono tracking-[0.22em] uppercase text-[#8F8576] mb-4">
-          Chapter I · The proof
+          The proof
         </p>
         <h2 className="font-serif text-3xl md:text-4xl leading-tight mb-16 max-w-3xl">
-          Sign up, pick a workflow,
+          Sign up at <em className="not-italic text-[#B5532C]">0:00</em>.
           <br />
-          <em className="not-italic text-[#B5532C]">get paid output in three minutes.</em>
+          See output at <em className="not-italic text-[#B5532C]">3:00</em>.
         </h2>
 
         <div className="grid md:grid-cols-3 gap-4">
@@ -402,7 +381,7 @@ function ThreeStepProof() {
               initial={{ opacity: 0, y: 15 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="p-6 rounded-2xl border border-emerald-500/15 bg-emerald-500/[0.02] hover:border-emerald-500/25 transition-colors"
+              className="p-6 rounded-2xl border border-white/[0.06] bg-white/[0.015] hover:border-[#B5532C]/30 transition-colors"
             >
               <div className="text-2xl font-mono font-semibold tabular-nums text-[#B5532C] mb-3">
                 {step.time}
@@ -477,16 +456,16 @@ function FeaturedPlaybooksSection() {
     <section className="px-6 py-24 md:py-32 border-t border-white/[0.04]">
       <div className="max-w-6xl mx-auto">
         <p className="text-[10px] font-mono tracking-[0.22em] uppercase text-[#8F8576] mb-4">
-          Chapter II · Five playbooks
+          Five playbooks
         </p>
         <h2 className="font-serif text-3xl md:text-4xl leading-tight mb-4 max-w-3xl">
-          Lead with <em className="not-italic text-[#B5532C]">outcomes</em>,
+          Each one guarantees an output
           <br />
-          not feature lists.
+          <em className="not-italic text-[#B5532C]">or the run doesn&apos;t count.</em>
         </h2>
         <p className="text-neutral-400 max-w-xl leading-relaxed mb-16">
-          Twenty more are available inside the dashboard. These five are where
-          most customers ship their first measurable win.
+          Twenty more live inside the dashboard. These five are where most
+          customers ship their first measurable win.
         </p>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -526,7 +505,7 @@ function ClaudeNarrative() {
     <section className="px-6 py-24 md:py-32 border-t border-white/[0.04] bg-[#0A0807]">
       <div className="max-w-4xl mx-auto">
         <p className="text-[10px] font-mono tracking-[0.22em] uppercase text-[#8F8576] mb-4">
-          Chapter III · Claude as critic
+          Claude as critic
         </p>
         <h2 className="font-serif text-3xl md:text-5xl leading-[1.1] mb-8">
           Cheaper models generate.
@@ -574,13 +553,6 @@ function ClaudeNarrative() {
   );
 }
 
-/* ─── 08 · Founder Network — moved to <FounderSeats> component
- *   (src/components/landing/FounderSeats.tsx). Spatial layout with
- *   seats around a conversation bubble, live seat counter, matches
- *   elite benchmarks (linear.app cohort-grid, raycast.com "join
- *   the club" single-focal-point). See page-level <FounderSeats />.
- * ──────────────────────────────────────────────────────────────── */
-
 /* ─── 09 · Ship record ──────────────────────────────────────────── */
 
 function ShipRecord() {
@@ -589,10 +561,17 @@ function ShipRecord() {
       <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-start md:items-center gap-8">
         <div className="flex-1">
           <p className="text-[10px] font-mono tracking-[0.22em] uppercase text-[#8F8576] mb-3">
-            Chapter V · Ship record
+            Ship record
           </p>
           <h2 className="font-serif text-2xl md:text-3xl leading-snug mb-3 max-w-xl">
-            80+ commits. 11 DB migrations. 1,165 tests passing.
+            <a
+              href="https://github.com/christiaan839-beep/sovereign-v2/commits/main"
+              target="_blank"
+              rel="noopener"
+              className="text-white hover:text-[#B5532C] transition-colors"
+            >
+              80+ commits. 12 migrations. 1,165 tests passing.
+            </a>
             <br />
             <em className="not-italic text-[#B5532C]">Published weekly.</em>
           </h2>

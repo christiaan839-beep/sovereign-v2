@@ -107,16 +107,20 @@ export function LiveTerminalDemo() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    // Honor prefers-reduced-motion by showing final state immediately
+    // Honor prefers-reduced-motion by showing the final state immediately.
+    // matchMedia is browser-only, so we can't move this to a lazy useState
+    // initializer without causing SSR/client hydration mismatch — the
+    // post-mount setState is intentional.
     const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (prefersReduced) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- mount-time sync required (see above)
       setVisibleLines(SEQUENCE.map((line) => ({ line, typed: line.text })));
       setIsPlaying(false);
       return;
     }
 
     let cancelled = false;
-    let timeouts: ReturnType<typeof setTimeout>[] = [];
+    const timeouts: ReturnType<typeof setTimeout>[] = [];
 
     async function playSequence() {
       while (!cancelled) {
@@ -230,9 +234,8 @@ export function LiveTerminalDemo() {
         </div>
       </div>
 
-      {/* Caption — reminiscent of railway.app's "real deploy" annotation */}
       <p className="mt-4 text-[11px] font-mono text-neutral-600 tracking-wide">
-        ↑ Scripted demo of a real Lead Blitz run. Your first playbook runs live inside
+        ↑ Deterministic demo. Your live run happens at
         <a href="/dashboard/playbooks?auto=lead-blitz" className="text-[#B5532C] hover:text-white transition-colors mx-1 underline decoration-[#B5532C]/40">
           /dashboard/playbooks
         </a>

@@ -6,24 +6,14 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
 /**
- * FOUNDER SEATS — spatial "cohort at a table" layout.
+ * FOUNDER SEATS — renders the 100-seat cohort as a ring of circles
+ * around a single Slack-DM focal element. Filled seats come from
+ * /api/_misc/founder-network-status; we fall back to 0 claimed
+ * rather than inventing a number.
  *
- * Studying: linear.app's team-grid (asymmetric, specific avatars),
- * raycast.com's "join the club" section (single focal point, not a
- * grid of equal boxes). Most SaaS shows pricing cards — showing a
- * COHORT visually is rare + memorable.
- *
- * Layout: 7 "seats" (small circles) arranged around a center focal
- * element. A few seats have subtle "taken" fills; most are open.
- * The middle is a simple "Direct Slack to the founder" prompt.
- *
- * Live data: pulls seat count from `/api/_misc/founder-network-status`
- * if available, falls back to a static "37 of 100 claimed" honest
- * starter number.
- *
- * Why this works: the metaphor ("seats at a table") matches the
- * offer (small cohort with direct access to founder). Showing the
- * seats is more persuasive than listing the terms.
+ * TOTAL_SEATS is the hard cap (100). VISIBLE_SEATS (7) is only the
+ * representative sample we render — never a source of truth for
+ * availability.
  */
 
 interface FounderStatus {
@@ -94,11 +84,14 @@ export function FounderSeats() {
         <h2 className="font-serif text-4xl md:text-6xl leading-[1.05] mb-4 max-w-3xl">
           100 seats.
           <br />
-          <em className="not-italic text-[#B5532C]">Direct line to the founder.</em>
+          <em className="not-italic text-[#B5532C]">
+            The person who wrote the code is on Slack.
+          </em>
         </h2>
         <p className="text-neutral-400 max-w-2xl text-lg leading-relaxed mb-14">
           A small cohort paying 50% of Growth price, getting monthly 1:1s,
-          a direct Slack, and shaping the roadmap.
+          and shaping the roadmap. No inbox triage, no support tiers —
+          you message me, I reply.
         </p>
 
         {/* Seat visualization */}
