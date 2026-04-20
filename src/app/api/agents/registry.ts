@@ -1,17 +1,19 @@
 /**
- * AUTO-GENERATED — Static import registry for Vercel compatibility.
+ * AUTO-GENERATED — DO NOT EDIT BY HAND.
  *
- * Webpack needs to see all import() paths at build time to include them
- * in the serverless function bundle. Dynamic paths with webpackIgnore
- * are NOT bundled, causing 404s on Vercel.
+ * Produced by scripts/generate-agent-registry.mjs on every build.
+ * Every agent whose route.ts lives at src/app/api/_agents/<slug>/route.ts
+ * is bundled here so Vercel's serverless packer can see the import paths.
  *
- * To add a new agent: add a line to AGENT_REGISTRY below.
+ * Regenerate: `npm run gen:registry`
+ * Count: 137 agents
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type RouteModule = Record<string, any>;
 
 export const AGENT_REGISTRY: Record<string, () => Promise<RouteModule>> = {
+  "agri-intel": () => import("@/app/api/_agents/agri-intel/route"),
   "abm-artillery": () => import("@/app/api/_agents/abm-artillery/route"),
   "ad-report": () => import("@/app/api/_agents/ad-report/route"),
   "ads": () => import("@/app/api/_agents/ads/route"),
@@ -49,6 +51,7 @@ export const AGENT_REGISTRY: Record<string, () => Promise<RouteModule>> = {
   "computer-use": () => import("@/app/api/_agents/computer-use/route"),
   "content": () => import("@/app/api/_agents/content/route"),
   "content-safety": () => import("@/app/api/_agents/content-safety/route"),
+  "compliance-monitor": () => import("@/app/api/_agents/compliance-monitor/route"),
   "contract-analyzer": () => import("@/app/api/_agents/contract-analyzer/route"),
   "coordinator": () => import("@/app/api/_agents/coordinator/route"),
   "cosmos-video": () => import("@/app/api/_agents/cosmos-video/route"),
@@ -73,6 +76,7 @@ export const AGENT_REGISTRY: Record<string, () => Promise<RouteModule>> = {
   "flywheel": () => import("@/app/api/_agents/flywheel/route"),
   "funnel-xray": () => import("@/app/api/_agents/funnel-xray/route"),
   "ghost-fleet": () => import("@/app/api/_agents/ghost-fleet/route"),
+  "healthcare-docs": () => import("@/app/api/_agents/healthcare-docs/route"),
   "gliner-pii": () => import("@/app/api/_agents/gliner-pii/route"),
   "god-brain": () => import("@/app/api/_agents/god-brain/route"),
   "grounded-search": () => import("@/app/api/_agents/grounded-search/route"),
@@ -90,12 +94,14 @@ export const AGENT_REGISTRY: Record<string, () => Promise<RouteModule>> = {
   "nemoclaw-setup": () => import("@/app/api/_agents/nemoclaw-setup/route"),
   "nemotron-omni": () => import("@/app/api/_agents/nemotron-omni/route"),
   "nemotron3-super": () => import("@/app/api/_agents/nemotron3-super/route"),
+  "nexus": () => import("@/app/api/_agents/nexus/route"),
   "ocr": () => import("@/app/api/_agents/ocr/route"),
   "omni-search": () => import("@/app/api/_agents/omni-search/route"),
   "orchestrate": () => import("@/app/api/_agents/orchestrate/route"),
   "orchestrator": () => import("@/app/api/_agents/orchestrator/route"),
   "organic-content": () => import("@/app/api/_agents/organic-content/route"),
   "outbound": () => import("@/app/api/_agents/outbound/route"),
+  "prior-auth": () => import("@/app/api/_agents/prior-auth/route"),
   "page-builder": () => import("@/app/api/_agents/page-builder/route"),
   "page-builder-stream": () => import("@/app/api/_agents/page-builder-stream/route"),
   "pii-guard": () => import("@/app/api/_agents/pii-guard/route"),
@@ -114,11 +120,14 @@ export const AGENT_REGISTRY: Record<string, () => Promise<RouteModule>> = {
   "seo": () => import("@/app/api/_agents/seo/route"),
   "seo-dominator": () => import("@/app/api/_agents/seo-dominator/route"),
   "site-assassin": () => import("@/app/api/_agents/site-assassin/route"),
+  "slack-notify": () => import("@/app/api/_agents/slack-notify/route"),
   "smart-router": () => import("@/app/api/_agents/smart-router/route"),
   "social-router": () => import("@/app/api/_agents/social-router/route"),
+  "supply-chain": () => import("@/app/api/_agents/supply-chain/route"),
   "super-agent": () => import("@/app/api/_agents/super-agent/route"),
   "support-bot": () => import("@/app/api/_agents/support-bot/route"),
   "swarm": () => import("@/app/api/_agents/swarm/route"),
+  "threat-hunt": () => import("@/app/api/_agents/threat-hunt/route"),
   "telegram-router": () => import("@/app/api/_agents/telegram-router/route"),
   "translate": () => import("@/app/api/_agents/translate/route"),
   "trigger": () => import("@/app/api/_agents/trigger/route"),
