@@ -5,6 +5,11 @@ import { db } from "@/db";
 import { subscriptions } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { createLogger } from "@/lib/logger";
+import {
+  extractIdempotencyKey,
+  beginIdempotent,
+  commitIdempotent,
+} from "@/lib/idempotency";
 
 const log = createLogger("payments:refund");
 
@@ -30,9 +35,24 @@ const log = createLogger("payments:refund");
 
 const REFUND_WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
 
-export async function POST() {
+export async function POST(req: Request) {
   const user = await currentUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  // ── Idempotency ──
+  // Refunds are the canonical use case. A user double-clicking "Refund"
+  // must not issue two refunds. We scope the idempotency key to
+  // /refund + user.id so a given user can't replay another user's key.
+  let idempotencyKey: string | null = null;
+  const clientKey = extractIdempotencyKey(req.headers);
+  if (clientKey) {
+    const endpoint = `refund::${user.id}`;
+    const result = await beginIdempotent(clientKey, endpoint);
+    idempotencyKey = result.key;
+    if (result.replay && result.cached) {
+      return NextResponse.json(result.cached.body, { status: result.cached.status });
+    }
+  }
 
   const stripeKey = process.env.STRIPE_SECRET_KEY;
   if (!stripeKey) {
@@ -178,12 +198,21 @@ export async function POST() {
     currency: refund.currency,
   });
 
-  return NextResponse.json({
+  const successBody = {
     ok: true,
     refundId: refund.id,
     amountRefunded: refund.amount,
     currency: refund.currency,
     status: refund.status,
     note: "Refund submitted to your original payment method. Most banks process within 5 business days. Your account access continues until the end of the current billing period.",
-  });
+  };
+
+  // Persist the response into the idempotency record so a retry with
+  // the same key returns this exact payload instead of re-triggering
+  // Stripe.
+  if (idempotencyKey) {
+    await commitIdempotent(idempotencyKey, 200, successBody);
+  }
+
+  return NextResponse.json(successBody);
 }
