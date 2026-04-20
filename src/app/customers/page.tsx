@@ -35,9 +35,7 @@ export const metadata: Metadata = {
  * Instrument Serif + copper accent.
  */
 
-// When the first customer signs up + agrees to a case study, swap in
-// their real data here. Order: newest first.
-const CASE_STUDIES: Array<{
+interface CaseStudyCard {
   id: string;
   company: string;
   industry: string;
@@ -46,9 +44,75 @@ const CASE_STUDIES: Array<{
   playbook: string;
   slug: string;
   date: string;
-}> = [];
+}
 
-export default function CustomersPage() {
+/**
+ * Reads published case studies from the database (see migration
+ * 0014_case_studies.sql). Revalidated every hour at the edge. If
+ * the table is missing or the query fails, returns an empty array
+ * so the page gracefully shows the "no case studies yet" state —
+ * that's the honest state before the first customer ships.
+ *
+ * Server component — runs at request time inside Next.js's RSC
+ * pipeline, so the DB call never blocks the client.
+ */
+async function loadCaseStudies(): Promise<CaseStudyCard[]> {
+  try {
+    const { db } = await import("@/db");
+    const { caseStudies } = await import("@/db/schema");
+    const { eq, and, isNotNull, desc } = await import("drizzle-orm");
+
+    const rows = await db
+      .select({
+        id: caseStudies.id,
+        slug: caseStudies.slug,
+        company: caseStudies.company,
+        industry: caseStudies.industry,
+        outcome: caseStudies.outcome,
+        metric: caseStudies.metric,
+        playbook: caseStudies.playbook,
+        publishedAt: caseStudies.publishedAt,
+      })
+      .from(caseStudies)
+      .where(
+        and(
+          eq(caseStudies.approvedByCompany, true),
+          isNotNull(caseStudies.publishedAt),
+        ),
+      )
+      .orderBy(desc(caseStudies.publishedAt))
+      .limit(50);
+
+    return rows.map((r) => ({
+      id: r.id,
+      slug: r.slug,
+      company: r.company,
+      industry: r.industry ?? "—",
+      outcome: r.outcome,
+      metric: r.metric,
+      playbook: r.playbook,
+      date: r.publishedAt
+        ? r.publishedAt.toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          })
+        : "",
+    }));
+  } catch (err) {
+    const code = (err as { code?: string })?.code;
+    if (code === "42P01") {
+      return []; // Table not migrated yet — honest empty state
+    }
+    console.warn("[customers] case-studies query failed:", err);
+    return [];
+  }
+}
+
+export const revalidate = 3600;
+
+export default async function CustomersPage() {
+  const CASE_STUDIES = await loadCaseStudies();
   return (
     <main className="min-h-screen bg-[#F4EFE6] text-[#1A1712] px-6 py-20 lg:px-20 lg:py-28">
       {/* ─── Editorial header ─── */}

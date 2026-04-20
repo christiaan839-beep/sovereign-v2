@@ -3,14 +3,24 @@
 import { motion } from "framer-motion";
 import { CheckCircle2, X as XIcon, ArrowRight, Shield, HelpCircle, Crown, Zap } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { SovereignLogo } from "@/components/ui/SovereignLogo";
 import { RevealText, GlowDivider, MagneticButton } from "@/components/ui/ScrollAnimations";
+import { getMarketingPlans, PLANS, type PlanId } from "@/lib/plans";
 
 const fadeIn = (d: number) => ({ initial: { opacity: 0, y: 20 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true }, transition: { delay: d, duration: 0.6 } });
 
-/* ─── Tier Data ─── */
+/* ─── Tier Data ───
+ * TIERS below carry marketing copy (feature lists, CTAs, taglines) —
+ * that's UI copy, not plan schema. But every tier's `plan` field
+ * MUST correspond to a PlanId in src/lib/plans.ts with `marketing: true`.
+ *
+ * The dev-time assertion below logs a warning if we ever drift:
+ * e.g., if a new plan gets `marketing: true` in plans.ts but we
+ * forget to add its TIERS entry, or vice versa. Catches the whole
+ * class of "pricing-page-out-of-sync" bugs in development.
+ */
 const TIERS = [
   {
     name: "Founder Access", price: "Free", period: "forever", plan: "free", featured: false,
@@ -97,6 +107,30 @@ const FAQS = [
 export default function PricingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Dev-only sanity check — warn if the pricing UI drifts from
+  // the plan registry's `marketing: true` set. Runs once on mount.
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "development") return;
+    const marketingPlanIds = getMarketingPlans().map((p) => p.id as string);
+    const tierPlanIds = TIERS.map((t) => t.plan);
+    const onlyInTiers = tierPlanIds.filter((id) => !marketingPlanIds.includes(id));
+    const onlyInMarketing = marketingPlanIds.filter((id) => !tierPlanIds.includes(id));
+    if (onlyInTiers.length > 0 || onlyInMarketing.length > 0) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        "[pricing] TIERS ⇄ PLANS drift detected:",
+        { onlyInTiers, onlyInMarketing, hint: "Sync src/lib/plans.ts marketing flag with pricing page TIERS." },
+      );
+    }
+    // Also validate each TIER's plan actually exists in PLANS
+    for (const t of TIERS) {
+      if (!PLANS[t.plan as PlanId]) {
+        // eslint-disable-next-line no-console
+        console.error(`[pricing] Unknown plan id in TIERS: "${t.plan}"`);
+      }
+    }
+  }, []);
 
   const checkout = async (plan: string) => {
     if (plan === "free") {

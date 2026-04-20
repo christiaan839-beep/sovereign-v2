@@ -12,6 +12,7 @@ import {
   Bot,
 } from "lucide-react";
 import Link from "next/link";
+import { FirstRunPrompt } from "@/components/dashboard/FirstRunPrompt";
 // Chat is available via the floating widget (SovereignAssistant) in layout.tsx and /chat page
 
 const ONBOARDING_KEY = "sovereign_onboarding";
@@ -998,6 +999,15 @@ export default function DashboardHome() {
       <AnimatePresence>
         {showTour && <WelcomeTourModal onDismiss={dismissTour} />}
       </AnimatePresence>
+
+      {/*
+        FirstRunPrompt — mounts silently and fires a modal on first
+        visit ONLY if the welcome flow has already been dismissed
+        AND the user hasn't been prompted yet. This avoids stacking
+        three modals on top of each other (welcome → tour → first-run).
+      */}
+      <FirstRunPrompt />
+
 
       {/* Stats — always visible */}
       {!showWelcome && <StatsPanel />}

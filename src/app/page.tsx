@@ -6,6 +6,7 @@ import { SignInButton } from "@clerk/nextjs";
 import { useState } from "react";
 import { SovereignLogo } from "@/components/ui/SovereignLogo";
 import { StackKiller } from "@/components/cinematic/StackKiller";
+import { getMarketingPlaybooks } from "@/lib/playbooks";
 // Landing-page elite components (v12 redesign)
 import { LiveTerminalDemo } from "@/components/landing/LiveTerminalDemo";
 import { LiveRunsPill } from "@/components/landing/LiveRunsPill";
@@ -47,52 +48,54 @@ import { CommandEgg } from "@/components/landing/CommandEgg";
 const HERO_CTA = "/signup";
 const PLATFORM_HREF = "/platform";
 
-interface FeaturedPlaybook {
-  slug: string;
-  name: string;
-  tagline: string;
-  outcome: string;
-  time: string;
-}
-
-// Kept in sync with playbooks.ts `marketing: true` set. Five only.
-const FEATURED_PLAYBOOKS: FeaturedPlaybook[] = [
-  {
-    slug: "lead-blitz",
-    name: "Lead Blitz",
-    tagline: "50 qualified B2B prospects with outreach angles",
+/**
+ * Landing page's featured playbooks are derived from the single
+ * source of truth in src/lib/playbooks.ts (any playbook with
+ * `marketing: true`). That keeps this file in sync automatically
+ * when we add/remove featured playbooks — no more drift between
+ * the hardcoded landing list and the actual registry.
+ *
+ * Outcome + time strings live here because they're positioning copy,
+ * not playbook-runtime data (the engine doesn't need the sales version
+ * of "50 qualified leads in 3 minutes").
+ */
+const PLAYBOOK_COPY: Record<string, { outcome: string; time: string }> = {
+  "lead-blitz": {
     outcome: "5+ companies with contact angles guaranteed, or the run doesn't count.",
     time: "~3 min",
   },
-  {
-    slug: "competitor-takedown",
-    name: "Competitor Takedown",
-    tagline: "SEO + pricing + messaging audit of any competitor URL",
+  "competitor-takedown": {
     outcome: "Full report: weaknesses, market gaps, pricing arbitrage, counter-positioning.",
     time: "~4 min",
   },
-  {
-    slug: "content-machine",
-    name: "Content Machine",
-    tagline: "SEO blog + social spin-out from one topic",
+  "content-machine": {
     outcome: "1,500+ word post, meta + keywords, plus platform-ready social snippets.",
     time: "~2 min",
   },
-  {
-    slug: "seo-domination",
-    name: "SEO Domination",
-    tagline: "Live audit + keyword plan + 30-day content calendar",
+  "seo-domination": {
     outcome: "Content velocity score + ranked keyword gaps + topic sequence.",
     time: "~4 min",
   },
-  {
-    slug: "weekly-report",
-    name: "Weekly Report",
-    tagline: "Auto-generated client status report from your metrics",
+  "weekly-report": {
     outcome: "Executive-ready summary: wins, blockers, next steps. Scheduled every Monday.",
     time: "~2 min",
   },
-];
+};
+
+// Build the featured array from the source-of-truth registry.
+const FEATURED_PLAYBOOKS = getMarketingPlaybooks().map((pb) => {
+  const copy = PLAYBOOK_COPY[pb.id] ?? {
+    outcome: pb.guarantee ?? pb.description,
+    time: pb.estimatedTime,
+  };
+  return {
+    slug: pb.id,
+    name: pb.name,
+    tagline: pb.tagline,
+    outcome: copy.outcome,
+    time: copy.time,
+  };
+});
 
 export default function LandingPage() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);

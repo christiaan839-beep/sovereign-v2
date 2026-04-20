@@ -685,3 +685,39 @@ export const jobs = pgTable("jobs", {
   index("idx_jobs_created").on(table.createdAt),
 ]);
 
+
+// ═══════════════════════════════════════════
+// Case Studies — public /customers feed
+// ═══════════════════════════════════════════
+
+/**
+ * Rows in this table drive the public /customers page. A row with
+ * published_at != NULL appears live; published_at = NULL means it's
+ * a draft. Companies must approve_by_company before publishing —
+ * the /customers page filters on both `approvedByCompany && publishedAt`.
+ *
+ * Insertion flow (intended):
+ *   1. Founder writes the case study as a markdown body during the
+ *      customer's month-end review call
+ *   2. Drafts land here via an admin POST endpoint (v12+)
+ *   3. Customer reviews the rendered draft at /customers/preview/[slug]
+ *   4. On approval, the row gets approvedByCompany=true + published_at=now()
+ *   5. /customers shows it on the next edge-cache revalidation (1 hr)
+ */
+export const caseStudies = pgTable("case_studies", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  slug: text("slug").notNull().unique(),
+  company: text("company").notNull(),
+  industry: text("industry"),
+  outcome: text("outcome").notNull(),    // one-line headline result
+  metric: text("metric").notNull(),      // the number leading the card
+  playbook: text("playbook").notNull(),  // which playbook delivered it
+  body: text("body"),                     // full markdown narrative
+  approvedByCompany: boolean("approved_by_company").notNull().default(false),
+  publishedAt: timestamp("published_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => [
+  index("idx_case_studies_published_at").on(table.publishedAt),
+  index("idx_case_studies_slug").on(table.slug),
+]);
