@@ -23,11 +23,13 @@ import { X, Sparkles } from "lucide-react";
  * case they run another Lead Blitz. Harmless.
  *
  * Shown ONLY on /dashboard root. Dismissible. Auto-hides after
- * 8 seconds if untouched (so returning users aren't trapped).
+ * 20 seconds as a safety net for users who abandoned the tab —
+ * we don't want to dismiss while someone is reading the prompt
+ * (the old 8s window hit mid-read frequently per optimizer audit).
  */
 
 const FIRST_RUN_KEY = "sovereign-first-run-v1";
-const AUTO_HIDE_MS = 8000;
+const AUTO_HIDE_MS = 20_000;
 
 export function FirstRunPrompt() {
   const [visible, setVisible] = useState(false);
@@ -45,8 +47,8 @@ export function FirstRunPrompt() {
 
   useEffect(() => {
     if (!visible) return;
-    // Auto-dismiss after 8s so returning users who cleared localStorage
-    // don't get stuck staring at the prompt.
+    // 20s auto-dismiss — safety net only. Long enough to read + react,
+    // short enough that abandoned tabs self-clean.
     const t = setTimeout(() => {
       setVisible(false);
       localStorage.setItem(FIRST_RUN_KEY, "1");

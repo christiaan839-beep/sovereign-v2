@@ -10,6 +10,7 @@ import { ScrollProgress } from "@/components/cinematic/ScrollProgress";
 import { BackToTop } from "@/components/cinematic/BackToTop";
 import { CookieConsent } from "@/components/ui/CookieConsent";
 import { FounderCTA } from "@/components/ui/FounderCTA";
+import { getMarketingPlans } from "@/lib/plans";
 import "./globals.css";
 
 // Run environment validation on server startup
@@ -69,6 +70,26 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const plausibleDomain = process.env.NEXT_PUBLIC_APP_URL?.replace("https://", "").replace("http://", "") || "sovereignmatrix.agency";
+
+  // JSON-LD Offer entries derive from the single source of truth in
+  // plans.ts so archived tiers never leak into SEO surfaces. A price
+  // of "0" is correct for the Free tier (schema.org accepts it).
+  const marketingOffers = getMarketingPlans().map((p) => ({
+    "@type": "Offer" as const,
+    name: p.name,
+    price: String(Math.round(p.priceUsdCents / 100)),
+    priceCurrency: "USD",
+  }));
+
+  // Resolved once so the FAQ answer matches the Offer list.
+  const pricingSentence = getMarketingPlans()
+    .map((p) =>
+      p.priceUsdCents === 0
+        ? `${p.name} at $0/mo`
+        : `${p.name} at $${Math.round(p.priceUsdCents / 100)}/mo`,
+    )
+    .join(", ");
+
   return (
     <html lang="en">
       <head>
@@ -134,13 +155,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   name: "Sovereign Matrix",
                   applicationCategory: "BusinessApplication",
                   operatingSystem: "Web",
-                  offers: [
-                    { "@type": "Offer", name: "Free", price: "0", priceCurrency: "USD" },
-                    { "@type": "Offer", name: "Starter", price: "19", priceCurrency: "USD" },
-                    { "@type": "Offer", name: "Array", price: "49", priceCurrency: "USD" },
-                    { "@type": "Offer", name: "Node", price: "199", priceCurrency: "USD" },
-                    { "@type": "Offer", name: "Enterprise", price: "499", priceCurrency: "USD" },
-                  ],
+                  offers: marketingOffers,
                   description: "Autonomous AI agent platform with 130 specialized agents, 38 open-source models, and zero per-token cost. Built on NVIDIA NIM. Features: smart routing, adversarial synthesis, knowledge graph memory, 5-layer safety pipeline.",
                   featureList: "AI Agents, Multi-Model Routing, White-Label, Knowledge Graph, PEER Loop, Adversarial Synthesis, Citation Tracking, Policy Engine, Budget Controls",
                 },
@@ -165,7 +180,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     {
                       "@type": "Question",
                       name: "How much does Sovereign Matrix cost?",
-                      acceptedAnswer: { "@type": "Answer", text: "Sovereign Matrix offers a free tier with 50 runs/month. Paid plans: Starter at $19/mo (200 runs), Growth at $49/mo (500 runs), Node at $199/mo (2,000 runs), and Enterprise at $499/mo (10,000 runs with white-label). Month-to-month, no contracts." },
+                      acceptedAnswer: { "@type": "Answer", text: `Sovereign Matrix offers ${pricingSentence}. The Free tier includes 50 runs/month with no credit card required. Growth includes 500 runs/month and every featured playbook. Enterprise includes 10,000 runs/month, SAML SSO, SOC 2 evidence, and a direct Slack line to the founder. Month-to-month, no contracts.` },
                     },
                     {
                       "@type": "Question",
