@@ -1,12 +1,12 @@
-/* FULL REWRITE — copper design system */
+/* FULL REWRITE — copper design system, API-backed agent grid */
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Loader2 } from "lucide-react";
 import { SovereignLogo } from "@/components/ui/SovereignLogo";
 import { useHideyNav } from "@/components/ui/EliteEffects";
-import { AGENT_REGISTRY } from "@/app/api/agents/registry";
 
 /**
  * /marketplace — The Agent Marketplace
@@ -17,9 +17,11 @@ import { AGENT_REGISTRY } from "@/app/api/agents/registry";
  * Sections:
  *   01 Nav · 02 Hero · 03 Category filter + Featured + Agent grid ·
  *   04 Creator CTA · Footer
+ *
+ * Agent data comes from GET /api/marketplace/agents for SSR-friendly pagination.
  */
 
-// ─── Types & helpers ─────────────────────────────────────────────────
+// ─── Types & constants ────────────────────────────────────────────────────────
 
 type Category =
   | "All"
@@ -34,56 +36,30 @@ type Category =
   | "Orchestration"
   | "Intelligence";
 
-function slugToName(slug: string): string {
-  return slug
-    .split("-")
-    .map((w) => {
-      const map: Record<string, string> = {
-        seo: "SEO",
-        pii: "PII",
-        rag: "RAG",
-        asr: "ASR",
-        ocr: "OCR",
-        abm: "ABM",
-        crm: "CRM",
-        ai: "AI",
-        api: "API",
-        r1: "R1",
-      };
-      return map[w.toLowerCase()] ?? w.charAt(0).toUpperCase() + w.slice(1);
-    })
-    .join(" ");
-}
-
-function inferCategory(slug: string): Category {
-  const s = slug.toLowerCase();
-  if (/voice|audio|speak|asr|music|tts|voicechat/.test(s)) return "Voice";
-  if (/vision|image|ocr|flux|florence|visual|imagen|video|cosmos/.test(s)) return "Vision";
-  if (/seo|content|blog|organic|brand|social|creative|filmmaker|page-builder/.test(s)) return "Content";
-  if (/lead|outbound|abm|sales|closer|funnel|ads|email-sequence|email-onboard|ghost-fleet/.test(s)) return "Sales";
-  if (/threat|compliance|pii|guard|audit|nemoclaw|content-safety|claw-queue/.test(s)) return "Safety";
-  if (/code|sandbox|deploy|webhook|pipeline|auto-heal|error-log/.test(s)) return "Code";
-  if (/god-brain|war-room|orchestrat|coordinator|chain|swarm|smart-router|agentic|super-agent|nexus|flywheel/.test(s)) return "Orchestration";
-  if (/healthcare|legal|agri|supply-chain|prior-auth|contract|billing|verticals|whitelabel|digital-human|booking/.test(s)) return "Industry";
-  if (/research|search|deep|benchmark|analytics|report|competitive|firecrawl|grounded|doc|memory/.test(s)) return "Research";
-  return "Intelligence";
-}
-
 const CATEGORIES: Category[] = [
   "All", "Sales", "Content", "Research", "Voice",
   "Vision", "Code", "Industry", "Safety", "Orchestration", "Intelligence",
 ];
 
-const PAGE_SIZE = 24;
+interface Agent {
+  slug:        string;
+  name:        string;
+  category:    string;
+  hireCount:   number;
+  pricePerRun: number;
+}
 
-// Build agent list from registry
-const ALL_AGENTS = Object.keys(AGENT_REGISTRY).map((slug) => ({
-  slug,
-  name: slugToName(slug),
-  category: inferCategory(slug),
-}));
+interface AgentsResponse {
+  agents: Agent[];
+  total:  number;
+  page:   number;
+  limit:  number;
+  pages:  number;
+}
 
-// Featured agents — pinned top row
+const PAGE_LIMIT = 24;
+
+// Featured agents — pinned top row (static, not paginated)
 const FEATURED_AGENTS = [
   {
     slug: "god-brain",
@@ -91,7 +67,6 @@ const FEATURED_AGENTS = [
     tagline: "Master meta-prompter and orchestrator",
     desc: "Top-level intelligence node. Decomposes complex objectives into agent chains, assigns models, and synthesizes final output across any domain.",
     category: "Orchestration" as Category,
-    tier: "Premium",
     hires: "4,218",
     creator: "Sovereign Core",
   },
@@ -101,7 +76,6 @@ const FEATURED_AGENTS = [
     tagline: "Multi-agent debate arena for synthesized intelligence",
     desc: "Spins three independent agents with opposing priors. A moderator agent scores the debate and synthesizes the strongest position.",
     category: "Intelligence" as Category,
-    tier: "Premium",
     hires: "2,891",
     creator: "Sovereign Core",
   },
@@ -111,7 +85,6 @@ const FEATURED_AGENTS = [
     tagline: "Full SEO domination: keywords, content, backlinks",
     desc: "Keyword gap analysis, programmatic content strategy, and a ranked backlink acquisition plan — one run, full playbook.",
     category: "Content" as Category,
-    tier: "Standard",
     hires: "1,547",
     creator: "Sovereign Core",
   },
@@ -119,7 +92,7 @@ const FEATURED_AGENTS = [
 
 const FEATURED_SLUGS = new Set(FEATURED_AGENTS.map((a) => a.slug));
 
-// ─── Page ─────────────────────────────────────────────────────────────
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function MarketplacePage() {
   return (
@@ -135,7 +108,7 @@ export default function MarketplacePage() {
   );
 }
 
-// ─── Nav ──────────────────────────────────────────────────────────────
+// ─── Nav ──────────────────────────────────────────────────────────────────────
 
 function MarketplaceNav() {
   const visible = useHideyNav(64);
@@ -208,7 +181,7 @@ function MarketplaceNav() {
   );
 }
 
-// ─── Hero ─────────────────────────────────────────────────────────────
+// ─── Hero ─────────────────────────────────────────────────────────────────────
 
 function MarketplaceHero() {
   return (
@@ -274,7 +247,7 @@ function MarketplaceHero() {
             { n: "137", label: "agents" },
             { n: "39+", label: "model backends" },
             { n: "70%", label: "creator earnings" },
-            { n: "14", label: "industries" },
+            { n: "14",  label: "industries" },
           ].map((item, i) => (
             <span key={item.label} className="flex items-baseline gap-2">
               {i > 0 && <span aria-hidden="true" className="hidden sm:inline text-white/[0.06] text-[11px] font-mono select-none">·</span>}
@@ -288,28 +261,66 @@ function MarketplaceHero() {
   );
 }
 
-// ─── Agent Grid Section ───────────────────────────────────────────────
+// ─── Agent Grid Section ───────────────────────────────────────────────────────
 
 function AgentGridSection() {
   const [activeCategory, setActiveCategory] = useState<Category>("All");
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const [loadingInitial, setLoadingInitial] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
 
-  // Filter main grid (excluding featured on "All")
-  const gridAgents = useMemo(() => {
-    return ALL_AGENTS.filter((a) => {
-      if (activeCategory === "All" && FEATURED_SLUGS.has(a.slug)) return false;
-      if (activeCategory === "All") return true;
-      return a.category === activeCategory;
-    });
-  }, [activeCategory]);
+  const fetchAgents = useCallback(async (category: Category, nextPage: number, append: boolean) => {
+    // Cancel previous request
+    if (abortRef.current) abortRef.current.abort();
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
 
-  const visibleAgents = gridAgents.slice(0, page * PAGE_SIZE);
-  const hasMore = visibleAgents.length < gridAgents.length;
+    if (append) setLoadingMore(true);
+    else setLoadingInitial(true);
+
+    try {
+      const params = new URLSearchParams({
+        limit:    String(PAGE_LIMIT),
+        page:     String(nextPage),
+        category: category === "All" ? "All" : category,
+      });
+      const res  = await fetch(`/api/marketplace/agents?${params}`, { signal: ctrl.signal });
+      const json = await res.json() as AgentsResponse;
+
+      // Exclude featured slugs from the "All" view grid (they show above)
+      const filtered = category === "All"
+        ? json.agents.filter((a) => !FEATURED_SLUGS.has(a.slug))
+        : json.agents;
+
+      setAgents((prev) => append ? [...prev, ...filtered] : filtered);
+      setTotal(category === "All" ? json.total - FEATURED_SLUGS.size : json.total);
+      setPage(nextPage);
+    } catch (err) {
+      if ((err as { name?: string }).name !== "AbortError") console.error(err);
+    } finally {
+      setLoadingInitial(false);
+      setLoadingMore(false);
+    }
+  }, []);
+
+  // Initial fetch + refetch on category change
+  useEffect(() => {
+    void fetchAgents(activeCategory, 1, false);
+  }, [activeCategory, fetchAgents]);
 
   const handleCategoryChange = (cat: Category) => {
     setActiveCategory(cat);
     setPage(1);
   };
+
+  const handleLoadMore = () => {
+    void fetchAgents(activeCategory, page + 1, true);
+  };
+
+  const hasMore = agents.length < total;
 
   return (
     <section className="px-6 pb-32 bg-[#030303]">
@@ -411,67 +422,100 @@ function AgentGridSection() {
         <div className="flex items-center justify-between mb-5">
           <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-neutral-600">
             {activeCategory === "All" ? "All agents" : activeCategory}{" "}
-            <span className="text-neutral-500">· {gridAgents.length}</span>
+            {!loadingInitial && <span className="text-neutral-500">· {total}</span>}
           </p>
         </div>
 
-        {/* Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-          {visibleAgents.map((agent, i) => (
-            <motion.div
-              key={agent.slug}
-              initial={{ opacity: 0, y: 10 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-40px" }}
-              transition={{ delay: (i % PAGE_SIZE) * 0.025, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-            >
-              <Link
-                href={`/dashboard/agents/${agent.slug}`}
-                className="group relative flex flex-col h-full p-4 rounded-[6px] border border-white/[0.06] bg-white/[0.025] hover:border-[#B5532C]/30 hover:bg-[#B5532C]/[0.03] transition-all duration-250 overflow-hidden"
-                style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06), 0 1px 0 rgba(0,0,0,0.4)" }}
-              >
-                <span
-                  aria-hidden="true"
-                  className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-400"
-                  style={{ background: "radial-gradient(circle at 15% 0%, rgba(181,83,44,0.12) 0%, transparent 50%)" }}
-                />
-                <div className="relative mb-3">
-                  <span className="text-[9px] font-mono uppercase tracking-[0.18em] text-neutral-600 bg-white/[0.03] border border-white/[0.06] px-1.5 py-0.5 rounded-full">
-                    {agent.category}
-                  </span>
-                </div>
-                <h3 className="relative text-[13px] font-medium text-white mb-2 leading-snug tracking-tight flex-1">
-                  {agent.name}
-                </h3>
-                <span className="relative text-[11px] font-mono text-neutral-600 group-hover:text-[#B5532C] transition-colors tracking-wide mt-2">
-                  Hire Agent →
-                </span>
-              </Link>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Load more */}
-        {hasMore && (
-          <div className="mt-10 text-center">
-            <button
-              onClick={() => setPage((p) => p + 1)}
-              className="group inline-flex items-center gap-2 px-6 py-2.5 border border-white/[0.1] text-neutral-400 font-mono text-[12px] tracking-wide hover:border-[#B5532C]/40 hover:text-white transition-colors rounded-[3px]"
-            >
-              Load more agents
-              <span aria-hidden="true" className="text-[#B5532C] transition-transform group-hover:translate-y-0.5">↓</span>
-            </button>
-            <p className="mt-3 text-[10px] font-mono text-neutral-700">
-              Showing {visibleAgents.length} of {gridAgents.length}
-            </p>
+        {/* Loading state — initial */}
+        {loadingInitial ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            {Array.from({ length: PAGE_LIMIT }).map((_, i) => (
+              <div
+                key={i}
+                className="h-28 rounded-[6px] border border-white/[0.06] bg-white/[0.025] animate-pulse"
+              />
+            ))}
           </div>
+        ) : (
+          <>
+            {/* Grid */}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeCategory}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.25 }}
+                className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3"
+              >
+                {agents.map((agent, i) => (
+                  <motion.div
+                    key={agent.slug}
+                    initial={{ opacity: 0, y: 10 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-40px" }}
+                    transition={{ delay: (i % PAGE_LIMIT) * 0.025, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+                  >
+                    <Link
+                      href={`/dashboard/agents/${agent.slug}`}
+                      className="group relative flex flex-col h-full p-4 rounded-[6px] border border-white/[0.06] bg-white/[0.025] hover:border-[#B5532C]/30 hover:bg-[#B5532C]/[0.03] transition-all duration-250 overflow-hidden"
+                      style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06), 0 1px 0 rgba(0,0,0,0.4)" }}
+                    >
+                      <span
+                        aria-hidden="true"
+                        className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-400"
+                        style={{ background: "radial-gradient(circle at 15% 0%, rgba(181,83,44,0.12) 0%, transparent 50%)" }}
+                      />
+                      <div className="relative mb-3">
+                        <span className="text-[9px] font-mono uppercase tracking-[0.18em] text-neutral-600 bg-white/[0.03] border border-white/[0.06] px-1.5 py-0.5 rounded-full">
+                          {agent.category}
+                        </span>
+                      </div>
+                      <h3 className="relative text-[13px] font-medium text-white mb-2 leading-snug tracking-tight flex-1">
+                        {agent.name}
+                      </h3>
+                      <span className="relative text-[11px] font-mono text-neutral-600 group-hover:text-[#B5532C] transition-colors tracking-wide mt-2">
+                        Hire Agent →
+                      </span>
+                    </Link>
+                  </motion.div>
+                ))}
+              </motion.div>
+            </AnimatePresence>
+
+            {/* Load more */}
+            {hasMore && (
+              <div className="mt-10 text-center">
+                <button
+                  onClick={handleLoadMore}
+                  disabled={loadingMore}
+                  className="group inline-flex items-center gap-2 px-6 py-2.5 border border-white/[0.1] text-neutral-400 font-mono text-[12px] tracking-wide hover:border-[#B5532C]/40 hover:text-white transition-colors rounded-[3px] disabled:opacity-50"
+                >
+                  {loadingMore ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      Loading…
+                    </>
+                  ) : (
+                    <>
+                      Load more agents
+                      <span aria-hidden="true" className="text-[#B5532C] transition-transform group-hover:translate-y-0.5">↓</span>
+                    </>
+                  )}
+                </button>
+                <p className="mt-3 text-[10px] font-mono text-neutral-700">
+                  Showing {agents.length} of {total}
+                </p>
+              </div>
+            )}
+          </>
         )}
       </div>
     </section>
   );
 }
 
-// ─── Creator CTA ──────────────────────────────────────────────────────
+// ─── Creator CTA ──────────────────────────────────────────────────────────────
 
 function CreatorCTA() {
   const steps = [
@@ -553,7 +597,7 @@ function CreatorCTA() {
   );
 }
 
-// ─── Footer ───────────────────────────────────────────────────────────
+// ─── Footer ───────────────────────────────────────────────────────────────────
 
 function MarketplaceFooter() {
   return (

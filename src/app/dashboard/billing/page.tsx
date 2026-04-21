@@ -1,410 +1,497 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { useState, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 import {
-  CreditCard, Zap, BarChart3, Activity, CheckCircle2,
-  ExternalLink, Loader2, AlertTriangle, ArrowUpRight,
-  Clock, FileText, Receipt,
+  Loader2, CreditCard, ArrowUpRight, TrendingUp, TrendingDown,
+  CheckCircle2, AlertTriangle, Clock, Receipt, Coins, RefreshCcw,
 } from "lucide-react";
-import { useUsage } from "@/hooks/useUsage";
-import { useSafeUser } from "@/lib/safe-clerk";
-import { Skeleton } from "@/components/ui/Skeleton";
 
-interface Invoice {
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface Transaction {
   id: string;
-  date: string;
-  amount: string;
-  status: "paid" | "pending" | "failed";
+  amountCents: number;
+  type: string;
   description: string;
+  agentId?: string;
+  createdAt: string;
 }
 
-export default function BillingPage() {
-  const { today, limit, total, plan, loaded, isPaid } = useUsage();
-  const { user: _user } = useSafeUser();
-  const [portalLoading, setPortalLoading] = useState(false);
-  const [portalError, setPortalError] = useState<string | null>(null);
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [invoicesLoading, setInvoicesLoading] = useState(true);
+interface CreditsPayload {
+  balance: number;          // cents
+  lifetimeEarned: number;   // cents
+  lifetimeSpent: number;    // cents
+  displayBalance: string;   // "$X.XX"
+  transactions: Transaction[];
+}
 
-  // Attempt to load payment history
-  useEffect(() => {
-    async function fetchInvoices() {
-      try {
-        const res = await fetch("/api/_billing/portal", { method: "POST" });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.invoices && Array.isArray(data.invoices)) {
-            setInvoices(data.invoices);
-          }
-        }
-      } catch {
-        // Billing API not configured yet — show empty state
-      } finally {
-        setInvoicesLoading(false);
-      }
+// ─── Credit packages ─────────────────────────────────────────────────────────
+
+const PACKAGES = [
+  { cents: 500,  label: "$5",  credits: "500 credits",   desc: "For testing",   popular: false },
+  { cents: 1000, label: "$10", credits: "1,000 credits", desc: "Starter",       popular: false },
+  { cents: 2500, label: "$25", credits: "2,500 credits", desc: "Most popular",  popular: true  },
+  { cents: 5000, label: "$50", credits: "5,000 credits", desc: "Power user",    popular: false },
+] as const;
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function formatCents(cents: number): string {
+  return `$${(Math.abs(cents) / 100).toFixed(2)}`;
+}
+
+function formatDate(iso: string): string {
+  try {
+    return new Intl.DateTimeFormat("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    }).format(new Date(iso));
+  } catch {
+    return iso.slice(0, 10);
+  }
+}
+
+const EARN_TYPES = new Set(["purchase", "bonus", "referral", "a2e_earn"]);
+
+function isEarn(type: string): boolean {
+  return EARN_TYPES.has(type);
+}
+
+function typeLabel(type: string): string {
+  switch (type) {
+    case "purchase":   return "Purchase";
+    case "bonus":      return "Bonus";
+    case "referral":   return "Referral";
+    case "a2e_earn":   return "A2E Earned";
+    case "a2e_spend":  return "A2E Hire";
+    case "refund":     return "Refund";
+    default:           return type.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+  }
+}
+
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
+
+function Bone({ w, h = "h-4" }: { w: string; h?: string }) {
+  return (
+    <div className={`${h} ${w} rounded bg-white/[0.06] animate-pulse`} />
+  );
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
+export default function BillingPage() {
+  const [data, setData] = useState<CreditsPayload | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [buying, setBuying] = useState<number | null>(null);
+  const [toast, setToast] = useState<{ type: "success" | "error"; msg: string } | null>(null);
+
+  const fetchCredits = useCallback(async () => {
+    setLoading(true);
+    setFetchError(null);
+    try {
+      const res = await fetch("/api/credits");
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json() as CreditsPayload;
+      setData(json);
+    } catch (err) {
+      setFetchError("Could not load credits. Please refresh.");
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
-    fetchInvoices();
   }, []);
 
-  // Monthly usage calculations
-  const monthlyLimit = isPaid ? 10000 : 50;
-  const monthlyUsed = total;
-  const monthlyRemaining = Math.max(0, monthlyLimit - monthlyUsed);
-  const usagePercent = monthlyLimit > 0 ? Math.min(100, Math.round((monthlyUsed / monthlyLimit) * 100)) : 0;
+  useEffect(() => { void fetchCredits(); }, [fetchCredits]);
 
-  const planDisplay = (() => {
-    switch (plan) {
-      case "free": return "Free";
-      case "starter": return "Starter";
-      case "founder": return "Founder";
-      case "array": return "Growth";
-      case "node": return "Sovereign Node";
-      case "enterprise": return "Enterprise";
-      default: return plan ? plan.charAt(0).toUpperCase() + plan.slice(1) : "Free";
-    }
-  })();
+  // Auto-dismiss toast after 4 s
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 4000);
+    return () => clearTimeout(t);
+  }, [toast]);
 
-  const planPrice = (() => {
-    switch (plan) {
-      case "starter": return "$19/mo";
-      case "array": return "$49/mo";
-      case "node": return "$199/mo";
-      case "enterprise": return "$499/mo";
-      default: return "$0/mo";
-    }
-  })();
-
-  const handleManageSubscription = async () => {
-    setPortalLoading(true);
-    setPortalError(null);
+  const handleBuy = async (cents: number) => {
+    setBuying(cents);
     try {
-      const res = await fetch("/api/_billing/portal", { method: "POST" });
-      const data = await res.json();
-      if (res.ok && data.url) {
-        window.location.assign(data.url);
-      } else if (res.status === 503) {
-        setPortalError("Billing portal is being configured. Please try again shortly.");
-      } else if (res.status === 404) {
-        setPortalError("No active subscription found. Subscribe to a plan first.");
-      } else {
-        setPortalError(data.error || "Could not open billing portal.");
+      const res = await fetch("/api/credits", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amountCents: cents, type: "purchase", description: "Credit purchase" }),
+      });
+      const json = await res.json() as { success?: boolean; error?: string };
+      if (!res.ok || !json.success) {
+        throw new Error(json.error ?? `HTTP ${res.status}`);
       }
-    } catch {
-      setPortalError("Connection failed. Please check your internet and try again.");
+      setToast({ type: "success", msg: `${formatCents(cents)} credits added to your balance.` });
+      await fetchCredits();
+    } catch (err) {
+      setToast({ type: "error", msg: err instanceof Error ? err.message : "Purchase failed." });
     } finally {
-      setPortalLoading(false);
+      setBuying(null);
     }
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 p-4 lg:p-8">
-      {/* Header */}
-      <header>
-        <div className="flex items-center gap-3 mb-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase tracking-widest">
-            <CreditCard className="w-3 h-3" /> Billing
-          </div>
+    <div className="max-w-4xl mx-auto space-y-10 px-4 py-6 lg:px-8 lg:py-10">
+
+      {/* Toast */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            key="toast"
+            initial={{ opacity: 0, y: -12, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.97 }}
+            className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3.5 rounded-[6px] border backdrop-blur-xl shadow-2xl text-[13px] font-mono ${
+              toast.type === "success"
+                ? "border-[#B5532C]/30 bg-[#B5532C]/[0.08] text-white"
+                : "border-rose-500/30 bg-rose-500/[0.06] text-rose-300"
+            }`}
+          >
+            {toast.type === "success"
+              ? <CheckCircle2 className="w-4 h-4 text-[#B5532C] shrink-0" />
+              : <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />}
+            {toast.msg}
+            <button onClick={() => setToast(null)} className="ml-2 text-neutral-500 hover:text-white transition-colors">
+              ×
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Header ── */}
+      <header className="border-b border-white/[0.06] pb-6 flex items-start justify-between gap-4">
+        <div>
+          <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-[#B5532C] mb-1">
+            Billing
+          </p>
+          <h1 className="font-serif text-3xl text-white tracking-tight">Credits &amp; Billing</h1>
+          <p className="text-[13px] text-neutral-500 mt-1.5 leading-snug">
+            Purchase credits, view your balance, and track A2E transactions.
+          </p>
         </div>
-        <h1 className="text-2xl font-bold text-white">Billing &amp; Usage</h1>
-        <p className="text-sm text-neutral-500 mt-1">
-          Manage your subscription, track usage, and view payment history.
-        </p>
+        <button
+          onClick={fetchCredits}
+          aria-label="Refresh credits"
+          className="p-2 border border-white/[0.08] hover:border-white/[0.16] rounded-[4px] transition-colors shrink-0"
+        >
+          <RefreshCcw className={`w-4 h-4 text-neutral-500 ${loading ? "animate-spin" : ""}`} />
+        </button>
       </header>
 
-      {/* Error Banner */}
-      {portalError && (
+      {/* ── Error state ── */}
+      {fetchError && (
         <motion.div
-          initial={{ opacity: 0, y: -8 }}
+          initial={{ opacity: 0, y: -6 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex items-center gap-3 p-4 rounded-xl border border-rose-500/20 bg-rose-500/5"
+          className="flex items-center gap-3 p-4 rounded-[6px] border border-rose-500/20 bg-rose-500/[0.04]"
           role="alert"
         >
-          <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0" />
-          <p className="text-sm text-rose-300 flex-1">{portalError}</p>
+          <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+          <p className="text-[13px] text-rose-300">{fetchError}</p>
           <button
-            onClick={() => setPortalError(null)}
-            className="text-xs text-rose-400 hover:text-rose-300 transition-colors font-medium"
+            onClick={fetchCredits}
+            className="ml-auto text-[12px] font-mono text-rose-400 hover:text-rose-200 transition-colors"
           >
-            Dismiss
+            Retry
           </button>
         </motion.div>
       )}
 
-      {/* Current Plan Card */}
+      {/* ── A. Balance Card ── */}
       <motion.div
-        initial={{ opacity: 0, y: 12 }}
+        initial={{ opacity: 0, y: 14 }}
         animate={{ opacity: 1, y: 0 }}
-        className="p-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.03]"
+        transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+        className="relative rounded-[8px] border border-[#B5532C]/25 bg-white/[0.025] backdrop-blur-xl overflow-hidden"
+        style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06), 0 1px 0 rgba(0,0,0,0.5)" }}
       >
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <span className="text-[10px] uppercase tracking-widest text-emerald-400 font-bold block mb-1">
-              Current Plan
-            </span>
-            {!loaded ? (
-              <Skeleton className="h-8 w-32" />
-            ) : (
-              <div className="flex items-baseline gap-3">
-                <h2 className="text-2xl font-black text-white">{planDisplay}</h2>
-                <span className="text-sm text-neutral-400">{planPrice}</span>
+        {/* Copper top bar */}
+        <div
+          className="absolute top-0 left-0 right-0 h-[2px]"
+          style={{ background: "linear-gradient(to right, rgba(181,83,44,0.9), rgba(181,83,44,0.15))" }}
+          aria-hidden="true"
+        />
+        {/* Ambient glow */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{ background: "radial-gradient(ellipse 60% 50% at 20% 0%, rgba(181,83,44,0.08) 0%, transparent 65%)" }}
+          aria-hidden="true"
+        />
+
+        <div className="relative p-7">
+          {/* Label */}
+          <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-neutral-500 mb-4">
+            Your Credit Balance
+          </p>
+
+          {/* Balance number */}
+          {loading ? (
+            <div className="space-y-2 mb-5">
+              <Bone w="w-36" h="h-10" />
+              <Bone w="w-56" h="h-3.5" />
+            </div>
+          ) : (
+            <>
+              <div className="flex items-baseline gap-4 mb-2">
+                <span className="font-serif text-[52px] leading-none text-white tracking-tight tabular-nums">
+                  {data?.displayBalance ?? "$0.00"}
+                </span>
+                <span className="font-mono text-[13px] text-neutral-500">USD</span>
               </div>
-            )}
-            {loaded && (
-              <p className="text-xs text-neutral-500 mt-1">
-                {isPaid
-                  ? "Your subscription renews monthly. Manage or cancel anytime."
-                  : "You&apos;re on the free tier. Upgrade to unlock more agents and runs."}
+              <p className="text-[12px] font-mono text-neutral-500 mb-6">
+                {data ? (data.balance / 1).toFixed(0) : "0"} credits available
+                <span aria-hidden="true" className="mx-2 text-neutral-700">·</span>
+                credits never expire
               </p>
-            )}
+            </>
+          )}
+
+          {/* Lifetime stats */}
+          <div className="flex flex-wrap gap-8 pt-5 border-t border-white/[0.06]">
+            <div>
+              <p className="text-[10px] font-mono uppercase tracking-[0.18em] text-neutral-600 mb-1">Lifetime Earned</p>
+              {loading ? (
+                <Bone w="w-20" h="h-5" />
+              ) : (
+                <p className="text-[16px] font-mono font-semibold text-emerald-400 tabular-nums">
+                  {formatCents(data?.lifetimeEarned ?? 0)}
+                </p>
+              )}
+            </div>
+            <div>
+              <p className="text-[10px] font-mono uppercase tracking-[0.18em] text-neutral-600 mb-1">Lifetime Spent</p>
+              {loading ? (
+                <Bone w="w-20" h="h-5" />
+              ) : (
+                <p className="text-[16px] font-mono font-semibold text-[#B5532C] tabular-nums">
+                  {formatCents(data?.lifetimeSpent ?? 0)}
+                </p>
+              )}
+            </div>
           </div>
-          <div className="flex gap-3">
-            <a
-              href="/pricing"
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-black text-sm font-bold hover:bg-neutral-200 transition-colors"
-            >
-              <ArrowUpRight className="w-4 h-4" />
-              Upgrade Plan
-            </a>
-            {isPaid && (
-              <button
-                onClick={handleManageSubscription}
-                disabled={portalLoading}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-white/10 text-white text-sm font-medium hover:bg-white/5 transition-colors disabled:opacity-50"
-              >
-                {portalLoading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <ExternalLink className="w-4 h-4" />
-                )}
-                Manage Subscription
-              </button>
-            )}
-          </div>
+
+          {/* A2E explanation */}
+          <p className="mt-5 text-[11px] font-mono text-neutral-600 leading-relaxed">
+            Credits are used when agents hire other agents (A2E Economy).
+            Each agent-to-agent hire costs a small credit fee, automatically deducted.
+          </p>
         </div>
       </motion.div>
 
-      {/* Usage Stats */}
-      <div>
-        <h2 className="text-sm font-semibold text-white mb-4">Usage This Month</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0 }}
-            className="p-5 bg-white/[0.02] border border-white/5 rounded-xl"
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <Zap className="w-4 h-4 text-emerald-400" />
-              <span className="text-xs text-neutral-400">Tasks Used</span>
-            </div>
-            {!loaded ? (
-              <Skeleton className="h-7 w-20 mt-1" />
-            ) : (
-              <span className="text-2xl font-bold text-white">{monthlyUsed.toLocaleString()}</span>
-            )}
-          </motion.div>
+      {/* ── B. Buy Credits ── */}
+      <section aria-labelledby="buy-credits-heading">
+        <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-neutral-600 mb-1.5">Add Credits</p>
+        <h2 id="buy-credits-heading" className="font-serif text-[22px] text-white mb-6 tracking-tight">
+          Top up your balance
+        </h2>
 
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="p-5 bg-white/[0.02] border border-white/5 rounded-xl"
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <BarChart3 className="w-4 h-4 text-cyan-400" />
-              <span className="text-xs text-neutral-400">Tasks Remaining</span>
-            </div>
-            {!loaded ? (
-              <Skeleton className="h-7 w-20 mt-1" />
-            ) : (
-              <span className="text-2xl font-bold text-white">
-                {isPaid && monthlyLimit >= 10000 ? "Unlimited" : monthlyRemaining.toLocaleString()}
-              </span>
-            )}
-          </motion.div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {PACKAGES.map((pkg, i) => (
+            <motion.div
+              key={pkg.cents}
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.07, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <div
+                className={`group relative flex flex-col h-full p-5 rounded-[6px] border bg-white/[0.025] backdrop-blur-xl transition-all duration-300 overflow-hidden ${
+                  pkg.popular
+                    ? "border-[#B5532C]/35 hover:border-[#B5532C]/60"
+                    : "border-white/[0.07] hover:border-[#B5532C]/25"
+                }`}
+                style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06), 0 1px 0 rgba(0,0,0,0.4)" }}
+              >
+                {/* Hover sweep */}
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-400"
+                  style={{ background: "radial-gradient(circle at 15% 0%, rgba(181,83,44,0.12) 0%, transparent 60%)" }}
+                />
 
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="p-5 bg-white/[0.02] border border-white/5 rounded-xl"
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <Activity className="w-4 h-4 text-violet-400" />
-              <span className="text-xs text-neutral-400">Today&apos;s Usage</span>
-            </div>
-            {!loaded ? (
-              <Skeleton className="h-7 w-20 mt-1" />
-            ) : (
-              <span className="text-2xl font-bold text-white">{today} / {limit}</span>
-            )}
-          </motion.div>
+                {/* Popular badge */}
+                {pkg.popular && (
+                  <span className="absolute top-3 right-3 inline-flex items-center px-2 py-0.5 rounded-full bg-[#B5532C]/15 border border-[#B5532C]/35 text-[9px] font-mono text-[#B5532C] tracking-[0.12em] uppercase">
+                    Popular
+                  </span>
+                )}
+
+                <p className="relative font-serif text-[28px] text-white leading-none mb-1 tracking-tight">
+                  {pkg.label}
+                </p>
+                <p className="relative text-[11px] font-mono text-[#B5532C] mb-0.5 tracking-tight">
+                  {pkg.credits}
+                </p>
+                <p className="relative text-[11px] text-neutral-500 mb-5 flex-1">{pkg.desc}</p>
+
+                <button
+                  onClick={() => void handleBuy(pkg.cents)}
+                  disabled={buying !== null}
+                  aria-label={`Buy ${pkg.credits} for ${pkg.label}`}
+                  className={`relative w-full py-2.5 rounded-[4px] font-mono text-[12px] tracking-wide transition-all duration-200 ${
+                    pkg.popular
+                      ? "bg-[#B5532C] text-white hover:bg-[#C96035] disabled:opacity-50"
+                      : "border border-white/[0.12] text-neutral-300 hover:border-[#B5532C]/40 hover:text-white disabled:opacity-40"
+                  }`}
+                >
+                  {buying === pkg.cents ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      Processing…
+                    </span>
+                  ) : (
+                    "Buy Now"
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          ))}
         </div>
 
-        {/* Usage Progress Bar */}
-        {loaded && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="p-5 bg-white/[0.02] border border-white/5 rounded-xl"
-          >
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs text-neutral-400">Monthly Usage</span>
-              <span className="text-xs font-mono text-neutral-500">
-                {monthlyUsed.toLocaleString()} / {isPaid && monthlyLimit >= 10000 ? "10,000+" : monthlyLimit.toLocaleString()} runs
-              </span>
-            </div>
-            <div className="h-2 bg-white/[0.04] rounded-full overflow-hidden">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${usagePercent}%` }}
-                transition={{ duration: 0.8, ease: "easeOut" }}
-                className={`h-full rounded-full ${
-                  usagePercent >= 90
-                    ? "bg-rose-500"
-                    : usagePercent >= 70
-                    ? "bg-amber-500"
-                    : "bg-emerald-500"
-                }`}
-              />
-            </div>
-            {usagePercent >= 80 && (
-              <p className="text-[10px] text-amber-400 mt-2">
-                You&apos;ve used {usagePercent}% of your monthly limit.{" "}
-                <a href="/pricing" className="underline hover:text-amber-300">
-                  Upgrade for more capacity
-                </a>
-              </p>
-            )}
-          </motion.div>
-        )}
-      </div>
+        <p className="mt-4 text-[11px] font-mono text-neutral-600">
+          Stripe payment integration coming soon — credits added instantly for now.
+        </p>
+      </section>
 
-      {/* Payment History */}
-      <div>
-        <h2 className="text-sm font-semibold text-white mb-4">Payment History</h2>
-        {invoicesLoading ? (
-          <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-16 rounded-xl bg-white/[0.02] animate-pulse" />
+      {/* ── C. Transaction History ── */}
+      <section aria-labelledby="txn-heading">
+        <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-neutral-600 mb-1.5">History</p>
+        <h2 id="txn-heading" className="font-serif text-[22px] text-white mb-6 tracking-tight">
+          Recent Transactions
+        </h2>
+
+        {loading ? (
+          <div className="space-y-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="h-14 rounded-[6px] bg-white/[0.025] border border-white/[0.06] animate-pulse" />
             ))}
           </div>
-        ) : invoices.length > 0 ? (
-          <div className="border border-white/5 rounded-xl overflow-hidden">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-white/5">
-                  <th className="text-left text-[10px] uppercase tracking-widest text-neutral-500 px-5 py-3">Date</th>
-                  <th className="text-left text-[10px] uppercase tracking-widest text-neutral-500 px-5 py-3">Description</th>
-                  <th className="text-left text-[10px] uppercase tracking-widest text-neutral-500 px-5 py-3">Amount</th>
-                  <th className="text-left text-[10px] uppercase tracking-widest text-neutral-500 px-5 py-3">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {invoices.map((inv) => (
-                  <tr key={inv.id} className="border-b border-white/[0.03] last:border-0">
-                    <td className="px-5 py-4 text-sm text-neutral-300">{inv.date}</td>
-                    <td className="px-5 py-4 text-sm text-neutral-300">{inv.description}</td>
-                    <td className="px-5 py-4 text-sm font-mono text-white">{inv.amount}</td>
-                    <td className="px-5 py-4">
-                      <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                        inv.status === "paid"
-                          ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                          : inv.status === "pending"
-                          ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
-                          : "bg-rose-500/10 text-rose-400 border border-rose-500/20"
-                      }`}>
-                        {inv.status === "paid" && <CheckCircle2 className="w-3 h-3" />}
-                        {inv.status === "pending" && <Clock className="w-3 h-3" />}
-                        {inv.status === "failed" && <AlertTriangle className="w-3 h-3" />}
-                        {inv.status}
+        ) : data && data.transactions.length > 0 ? (
+          <div
+            className="rounded-[8px] border border-white/[0.06] overflow-hidden"
+            style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)" }}
+          >
+            {/* Table header */}
+            <div className="grid grid-cols-[1fr_100px_120px_90px] gap-4 px-5 py-3 border-b border-white/[0.06] bg-white/[0.015]">
+              {["Date", "Type", "Description", "Amount"].map((h) => (
+                <span key={h} className="text-[10px] font-mono uppercase tracking-[0.18em] text-neutral-600">{h}</span>
+              ))}
+            </div>
+
+            <div className="divide-y divide-white/[0.04]">
+              <AnimatePresence initial={false}>
+                {data.transactions.map((tx, i) => {
+                  const earn = isEarn(tx.type);
+                  return (
+                    <motion.div
+                      key={tx.id}
+                      initial={{ opacity: 0, x: -6 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.025, duration: 0.35 }}
+                      className="grid grid-cols-[1fr_100px_120px_90px] gap-4 px-5 py-4 items-center hover:bg-white/[0.015] transition-colors"
+                    >
+                      {/* Date */}
+                      <span className="text-[12px] font-mono text-neutral-400">
+                        {formatDate(tx.createdAt)}
                       </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+
+                      {/* Type badge */}
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[9px] font-mono tracking-[0.1em] uppercase w-fit ${
+                        earn
+                          ? "border-emerald-500/25 bg-emerald-500/[0.07] text-emerald-400"
+                          : "border-[#B5532C]/25 bg-[#B5532C]/[0.07] text-[#B5532C]"
+                      }`}>
+                        {earn
+                          ? <TrendingUp className="w-2.5 h-2.5" />
+                          : <TrendingDown className="w-2.5 h-2.5" />}
+                        {typeLabel(tx.type)}
+                      </span>
+
+                      {/* Description */}
+                      <span className="text-[12px] text-neutral-500 truncate" title={tx.description}>
+                        {tx.description}
+                      </span>
+
+                      {/* Amount */}
+                      <span className={`text-[13px] font-mono font-semibold tabular-nums text-right ${earn ? "text-emerald-400" : "text-[#B5532C]"}`}>
+                        {earn ? "+" : "−"}{formatCents(tx.amountCents)}
+                      </span>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            </div>
           </div>
         ) : (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="text-center py-12 rounded-2xl border border-white/5 bg-white/[0.01]"
+            className="flex flex-col items-center justify-center py-16 rounded-[8px] border border-white/[0.06] bg-white/[0.015]"
           >
-            <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-4">
-              <Receipt className="w-5 h-5 text-neutral-500" />
+            <div
+              className="w-12 h-12 rounded-[6px] border border-white/[0.08] bg-white/[0.03] flex items-center justify-center mb-4"
+            >
+              <Receipt className="w-5 h-5 text-neutral-600" />
             </div>
-            <h3 className="text-sm font-semibold text-white mb-1">No payment history</h3>
-            <p className="text-xs text-neutral-400 max-w-sm mx-auto">
-              {isPaid
-                ? "Your invoices will appear here after your first billing cycle."
-                : "Payment history will appear here once you upgrade to a paid plan."}
-            </p>
+            <p className="text-[14px] text-neutral-400 font-medium mb-1">No transactions yet</p>
+            <p className="text-[12px] text-neutral-600 font-mono">Buy credits to get started.</p>
           </motion.div>
         )}
-      </div>
+      </section>
 
-      {/* Plan Comparison Quick Cards */}
-      {loaded && !isPaid && (
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-        >
-          <h2 className="text-sm font-semibold text-white mb-4">Available Plans</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {[
-              { name: "Starter", price: "$19/mo", runs: "200 runs/month", highlight: false },
-              { name: "Growth", price: "$49/mo", runs: "500 runs/month", highlight: true },
-              { name: "Sovereign Node", price: "$199/mo", runs: "2,000 runs/month", highlight: false },
-            ].map((p) => (
-              <div
-                key={p.name}
-                className={`p-5 rounded-xl border transition-colors ${
-                  p.highlight
-                    ? "border-emerald-500/20 bg-emerald-500/[0.03] hover:border-emerald-500/30"
-                    : "border-white/5 bg-white/[0.01] hover:border-white/10"
-                }`}
-              >
-                {p.highlight && (
-                  <span className="text-[10px] uppercase tracking-widest text-emerald-400 font-bold mb-2 block">
-                    Popular
-                  </span>
-                )}
-                <h3 className="text-sm font-bold text-white">{p.name}</h3>
-                <div className="flex items-baseline gap-1 mt-1 mb-2">
-                  <span className="text-lg font-black text-white">{p.price}</span>
-                </div>
-                <p className="text-[10px] text-neutral-500 mb-3">{p.runs}</p>
-                <a
-                  href="/pricing"
-                  className="flex items-center justify-center gap-1 w-full py-2 rounded-lg text-xs font-semibold transition-colors bg-white/5 text-neutral-300 hover:bg-white/10"
-                >
-                  View Details <ArrowUpRight className="w-3 h-3" />
-                </a>
-              </div>
-            ))}
+      {/* ── D. Plan upgrade hint ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3, duration: 0.5 }}
+        className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-5 rounded-[6px] border border-white/[0.06] bg-white/[0.015]"
+        style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04)" }}
+      >
+        <div className="flex items-center gap-4">
+          <div
+            className="w-10 h-10 rounded-[5px] border border-[#B5532C]/20 bg-[#B5532C]/[0.06] flex items-center justify-center shrink-0"
+          >
+            <Coins className="w-4.5 h-4.5 text-[#B5532C]" style={{ width: 18, height: 18 }} />
           </div>
-        </motion.div>
-      )}
-
-      {/* Footer Note */}
-      {loaded && (
-        <div className="flex items-center justify-center gap-2 py-2">
-          <FileText className="w-3 h-3 text-neutral-600" />
-          <span className="text-[10px] text-neutral-600 uppercase tracking-wider">
-            Questions? Contact{" "}
-            <a
-              href="mailto:hello@sovereignmatrix.agency"
-              className="text-neutral-500 hover:text-neutral-400 transition-colors"
-            >
-              hello@sovereignmatrix.agency
-            </a>
-          </span>
+          <div>
+            <p className="text-[13px] font-medium text-white leading-snug">Need more agent runs?</p>
+            <p className="text-[12px] font-mono text-neutral-500 mt-0.5">
+              Upgrade your plan for higher monthly run limits.
+            </p>
+          </div>
         </div>
-      )}
+
+        <Link
+          href="/pricing"
+          className="group inline-flex items-center gap-2 px-5 py-2.5 bg-white text-[#030303] font-mono text-[12px] tracking-wide rounded-[4px] hover:bg-[#F4EFE6] transition-colors shrink-0"
+        >
+          View Plans
+          <ArrowUpRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+        </Link>
+      </motion.div>
+
+      {/* ── Stripe Billing link (for paid subscribers) ── */}
+      <div className="flex items-center gap-2 pb-2">
+        <CreditCard className="w-3.5 h-3.5 text-neutral-700" />
+        <span className="text-[11px] font-mono text-neutral-600">
+          Manage your subscription via{" "}
+          <Link href="/dashboard/billing/subscription" className="text-neutral-500 hover:text-[#B5532C] transition-colors underline underline-offset-2">
+            subscription settings
+          </Link>
+          {" · "}
+          Questions?{" "}
+          <a
+            href="mailto:hello@sovereignmatrix.agency"
+            className="text-neutral-500 hover:text-[#B5532C] transition-colors"
+          >
+            hello@sovereignmatrix.agency
+          </a>
+        </span>
+      </div>
     </div>
   );
 }
