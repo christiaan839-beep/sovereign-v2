@@ -13,6 +13,14 @@
  * Docs: https://nextjs.org/docs/app/building-your-application/optimizing/instrumentation
  */
 export async function register() {
+  // ── Env validation — runs before anything else so misconfigured boots
+  // fail loud with a readable error, not mid-request with mystery undefined.
+  // In dev it warns; in prod it throws and prevents the server from serving.
+  if (process.env.NEXT_RUNTIME === "nodejs") {
+    const { assertEnv } = await import("@/lib/env");
+    assertEnv();
+  }
+
   // ── Sentry wiring (runs on every runtime; each config no-ops if DSN missing) ──
   // Dynamic imports keep the edge bundle from pulling in Node-only sentry code.
   if (process.env.NEXT_RUNTIME === "nodejs") {
