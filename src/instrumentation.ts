@@ -1,15 +1,27 @@
 /**
  * INSTRUMENTATION — Next.js server startup hook
  *
- * On Railway (persistent Node.js server): starts background intervals that ping
- * the cron endpoints to process the async job queue and fire scheduled playbooks.
- *
- * On Vercel (serverless): register() is still called but setInterval
- * is a no-op — Vercel crons in vercel.json handle scheduling instead.
+ * Responsibilities:
+ *   1. Wire up Sentry per runtime (nodejs / edge). The config files at the
+ *      project root do nothing until imported here — Next.js 16 moved from
+ *      auto-loading sentry.*.config.ts to requiring an explicit register() call.
+ *   2. On Railway (persistent Node.js server): start background intervals
+ *      that ping cron endpoints to process the async job queue.
+ *   3. On Vercel (serverless): register() is called but setInterval is a
+ *      no-op — Vercel crons in vercel.json handle scheduling instead.
  *
  * Docs: https://nextjs.org/docs/app/building-your-application/optimizing/instrumentation
  */
 export async function register() {
+  // ── Sentry wiring (runs on every runtime; each config no-ops if DSN missing) ──
+  // Dynamic imports keep the edge bundle from pulling in Node-only sentry code.
+  if (process.env.NEXT_RUNTIME === "nodejs") {
+    await import("../sentry.server.config");
+  } else if (process.env.NEXT_RUNTIME === "edge") {
+    await import("../sentry.edge.config");
+  }
+
+  // ── Background loop — Railway only ──
   // Only run the background loop on Railway (persistent server, not edge/serverless)
   if (process.env.NEXT_RUNTIME !== "nodejs" || process.env.VERCEL) return;
   if (!process.env.CRON_SECRET || !process.env.NEXT_PUBLIC_APP_URL) return;

@@ -4,19 +4,10 @@ import { settings } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { createLogger } from "@/lib/logger";
 import { nimBreaker } from "@/lib/circuit-breaker";
+import { withTimeout, TIMEOUTS } from "@/lib/with-timeout";
 
 const log = createLogger("nvidia");
 const NVIDIA_BASE_URL = 'https://integrate.api.nvidia.com/v1';
-
-// ─── Timeout Wrapper ─────────────────────────────────────────
-// Races a promise against a timer to prevent hung requests.
-
-async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
-  const timeout = new Promise<never>((_, reject) =>
-    setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms)
-  );
-  return Promise.race([promise, timeout]);
-}
 
 // ─── Model Registry ──────────────────────────────────────────
 // All models are FREE via NIM API (40 RPM, no expiry)
@@ -183,23 +174,25 @@ export async function nimChat(
 
   const response = await nimBreaker.execute(() =>
     withTimeout(
-      fetch(`${NVIDIA_BASE_URL}/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model,
-          messages,
-          temperature: options.temperature ?? 0.2,
-          max_tokens: options.maxTokens ?? 1024,
-          stream: options.stream ?? false,
+      TIMEOUTS.AI_CALL,
+      (signal) =>
+        fetch(`${NVIDIA_BASE_URL}/chat/completions`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model,
+            messages,
+            temperature: options.temperature ?? 0.2,
+            max_tokens: options.maxTokens ?? 1024,
+            stream: options.stream ?? false,
+          }),
+          signal, // abort the fetch if we time out, not just race it
         }),
-      }),
-      30_000,
-      `NIM API (${model})`
-    )
+      `NIM API (${model})`,
+    ),
   );
 
   if (!response.ok) {
@@ -271,7 +264,9 @@ export async function nimChat(
 
 /**
  * NIM Function Calling — Let NIM models decide which tools to use.
- * OpenAI-compatible tool calling format. GLM-4.7 scores 90.6% on tool use benchmarks.
+ * OpenAI-compatible tool calling format. Default model is Llama 4 Maverick
+ * (128-expert MoE, native tool use + multimodal), chosen for sovereignty-
+ * safe weights and strong tool-use behavior on real agent workflows.
  */
 export async function nimToolCall(
   prompt: string,
@@ -578,10 +573,10 @@ export function selectBestModel(taskType: string): string {
   const routing: Record<string, string> = {
     "reasoning": NIM_MODELS.reasoning,
     "analysis": NIM_MODELS.flagship,
-    "agentic": NIM_MODELS.agenticReasoning,  // GLM-5 for complex agent chains
+    "agentic": NIM_MODELS.agenticReasoning,  // Nemotron 3 Super 120B — complex agent chains (replaced GLM-5 for sovereignty)
     "code": NIM_MODELS.codingInstruct,        // Qwen3-Coder for code generation
     "coding": NIM_MODELS.codingInstruct,
-    "tool-use": NIM_MODELS.agenticCoding,     // GLM-4.7 — 90.6% tool use benchmark
+    "tool-use": NIM_MODELS.agenticCoding,     // Llama 4 Maverick — multimodal + tool use (replaced GLM-4.7)
     "function-calling": NIM_MODELS.agenticCoding,
     "fast": NIM_MODELS.fast,
     "translation": NIM_MODELS.multilingual,
@@ -596,7 +591,7 @@ export function selectBestModel(taskType: string): string {
     "safety": NIM_MODELS.contentSafety,
     "search": NIM_MODELS.embedding,
     "rerank": NIM_MODELS.rerank,
-    "office": NIM_MODELS.office,              // MiniMax M2.5 for office tasks
+    "office": NIM_MODELS.office,              // Nemotron Ultra 253B — coding + reasoning + long-form (replaced MiniMax M2.5)
     "thinking": NIM_MODELS.codingThinking,    // Reasoning-focused
   };
 
@@ -612,9 +607,9 @@ export function getModelRegistry() {
       "Nemotron 3 Super": { id: NIM_MODELS.reasoning, params: "120B (12B active)", context: "1M tokens", speed: "5x Ultra" },
       "Nemotron Ultra": { id: NIM_MODELS.flagship, params: "253B", context: "128K tokens", speed: "Baseline" },
       "Nemotron 3 Nano": { id: NIM_MODELS.fast, params: "30B (3.2B active)", context: "1M tokens", speed: "10x Ultra" },
-      "GLM-5": { id: NIM_MODELS.agenticReasoning, params: "744B MoE", context: "128K tokens", speed: "Long-horizon agentic" },
-      "GLM-4.7": { id: NIM_MODELS.agenticCoding, params: "TBD", context: "128K tokens", speed: "90.6% tool use" },
-      "MiniMax M2.5": { id: NIM_MODELS.office, params: "230B", context: "128K tokens", speed: "Office + reasoning" },
+      // GLM-5, GLM-4.7, MiniMax M2.5 removed per sovereignty audit — no public safety card,
+      // unknown red-team record. Replaced by NVIDIA/Meta weights (see NIM_MODELS remap).
+      "Llama 4 Maverick": { id: NIM_MODELS.agenticCoding, params: "17B (128 experts)", context: "256K tokens", speed: "Multimodal + tool use" },
       "DeepSeek V3.2": { id: "deepseek-ai/deepseek-v3-2-0324", params: "671B MoE", context: "128K tokens", speed: "2x Ultra" },
       "Llama 4 Scout": { id: "meta/llama-4-scout-17b-16e-instruct", params: "17B (16 experts)", context: "10M tokens", speed: "Fast" },
       "Qwen 3": { id: NIM_MODELS.multilingual, params: "235B (22B active)", context: "128K tokens", speed: "3x Ultra" },

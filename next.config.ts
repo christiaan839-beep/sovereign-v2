@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
   // Standalone output for Docker/Railway — Vercel injects VERCEL=1 automatically
@@ -110,4 +111,27 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+/**
+ * Sentry wrapper — uploads source maps to Sentry on production builds so
+ * stack traces stay readable after minification. No-ops in dev and when
+ * SENTRY_AUTH_TOKEN is absent (local/preview builds), so contributors
+ * don't need Sentry credentials to run the app.
+ */
+export default process.env.SENTRY_AUTH_TOKEN
+  ? withSentryConfig(nextConfig, {
+      org: process.env.SENTRY_ORG,
+      project: process.env.SENTRY_PROJECT,
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+      silent: !process.env.CI,
+      widenClientFileUpload: true,
+      // Strip source maps from the client bundle after uploading — keeps
+      // our code out of public DevTools while still giving Sentry readable
+      // stacks. The `deleteSourcemapsAfterUpload` option is the post-v8
+      // replacement for the old `hideSourceMaps` flag.
+      sourcemaps: {
+        deleteSourcemapsAfterUpload: true,
+      },
+      disableLogger: true,
+      automaticVercelMonitors: true,
+    })
+  : nextConfig;

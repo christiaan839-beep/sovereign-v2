@@ -12,6 +12,7 @@ import type { AIOptions } from "@/types";
 import { createLogger } from "@/lib/logger";
 import { geminiBreaker, claudeBreaker, groqBreaker } from "@/lib/circuit-breaker";
 import { withRetry } from "@/lib/retry";
+import { raceTimeout, withTimeout, TIMEOUTS } from "@/lib/with-timeout";
 
 const log = createLogger("ai");
 
@@ -59,6 +60,34 @@ const globalGenAI = new GoogleGenerativeAI(globalGeminiKey);
  */
 export async function ai(prompt: string, options: AIOptions = {}): Promise<string> {
   // Default to NIM (NVIDIA open-source, $0) — Gemini is the paid fallback, not the default.
+  const { model = "nim", system, maxTokens = 2000, thinking, useOpus, useGeminiPro } = options;
+
+  // ── Read-through cache ──
+  // Only active when caller opts in via options.cache. On hit: no LLM call,
+  // no retry, no circuit-breaker consultation — just return the saved string.
+  if (options.cache) {
+    const { getCachedResponse, setCachedResponse } = await import("@/lib/ai-cache");
+    const cached = await getCachedResponse(prompt, options);
+    if (cached !== null) return cached;
+    // Record the result after the live call completes — defer via closure
+    // so the cache write happens once, at the bottom of this function,
+    // without duplicating the logic across every provider branch.
+    const writeBack = async (value: string) => {
+      try { await setCachedResponse(prompt, options, value); } catch { /* never fail user's call for a cache write */ }
+      return value;
+    };
+    // Run the rest of ai() to produce a fresh result, then cache it.
+    return aiUncached(prompt, options).then(writeBack);
+  }
+
+  return aiUncached(prompt, options);
+}
+
+/**
+ * The live-call path — same logic as before, but separated from the cache
+ * wrapper so we only have one implementation of the provider routing.
+ */
+async function aiUncached(prompt: string, options: AIOptions): Promise<string> {
   const { model = "nim", system, maxTokens = 2000, thinking, useOpus, useGeminiPro } = options;
 
   // Lazy-load model-attribution to avoid circular import risk.
@@ -244,6 +273,46 @@ Then give your final answer after your reasoning.`
 }
 
 /**
+ * aiStructured — Type-safe JSON output with schema validation and auto-repair.
+ *
+ * Usage:
+ *   const LeadSchema = z.object({
+ *     company: z.string(),
+ *     score: z.number().min(0).max(10),
+ *     signal: z.string().min(20),
+ *   });
+ *   const lead = await aiStructured(prompt, LeadSchema, { model: "nim" });
+ *   //    ^? Lead (typed, validated, guaranteed to match schema)
+ *
+ * What it does:
+ *   1. Calls ai() with a reminder to return JSON only
+ *   2. Parses response (handles markdown fences, trailing commas, prose)
+ *   3. Validates against the Zod schema
+ *   4. On failure: one repair pass, sending the broken output back with the error
+ *   5. If repair fails: throws ParseError with full context
+ *
+ * Cost: 1 LLM call normally, 2 if repair triggers. Catches ~90% of JSON failures.
+ */
+import type { z } from "zod";
+import { parseWithRepair } from "@/lib/ai-parse";
+
+export async function aiStructured<T>(
+  prompt: string,
+  schema: z.ZodType<T>,
+  options: AIOptions = {},
+): Promise<T> {
+  // Nudge the model toward valid JSON. Short — don't bloat the context for
+  // callers who already include their own schema description.
+  const jsonNudge = "\n\nReturn ONLY valid JSON matching the requested schema. No markdown fences, no prose before or after.";
+  const finalPrompt = prompt.includes("JSON") ? prompt : prompt + jsonNudge;
+
+  const raw = await ai(finalPrompt, options);
+  return parseWithRepair(raw, schema, (repairPrompt) =>
+    ai(repairPrompt, { ...options, cache: false }),
+  );
+}
+
+/**
  * NVIDIA NIM — Free open-source model execution.
  * Routes to Nemotron Ultra 253B (God Brain) for maximum quality.
  */
@@ -258,16 +327,22 @@ async function nimText(prompt: string, system?: string, maxTokens: number = 2000
 async function ollamaText(prompt: string, system?: string, ollamaUrl: string = "http://localhost:11434"): Promise<string> {
   try {
     const url = new URL("/api/generate", ollamaUrl).toString();
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "qwen2.5-coder",
-        prompt: prompt,
-        system: system || "",
-        stream: false
-      })
-    });
+    const res = await withTimeout(
+      TIMEOUTS.AI_CALL,
+      (signal) =>
+        fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "qwen2.5-coder",
+            prompt: prompt,
+            system: system || "",
+            stream: false,
+          }),
+          signal,
+        }),
+      "Ollama"
+    );
     if (!res.ok) throw new Error("Ollama request failed");
     const data = await res.json();
     return data.response;
@@ -290,9 +365,15 @@ async function geminiText(prompt: string, system?: string, maxTokens: number = 2
     systemInstruction: system || undefined,
     generationConfig: { maxOutputTokens: maxTokens }
   });
+  // Use raceTimeout: the Google SDK doesn't accept AbortSignal, so we race
+  // at the Promise level. The hanging SDK call leaks briefly but the caller
+  // gets back control within the deadline. Use deep budget for Pro (slower).
+  const deadline = useProModel ? TIMEOUTS.AI_DEEP : TIMEOUTS.AI_CALL;
   return geminiBreaker.execute(() => withRetry(async () => {
-    const result = await genModel.generateContent(prompt);
-    return result.response.text();
+    return raceTimeout(deadline, async () => {
+      const result = await genModel.generateContent(prompt);
+      return result.response.text();
+    }, "Gemini");
   }, { maxRetries: 2, label: "Gemini" }));
 }
 
@@ -332,12 +413,15 @@ async function claudeText(prompt: string, system?: string, maxTokens: number = 2
     requestParams.max_tokens = maxTokens;
   }
 
+  // Extended thinking / Opus needs a longer deadline; standard Sonnet calls use AI_CALL.
+  const deadline = thinking || useOpus ? TIMEOUTS.AI_DEEP : TIMEOUTS.AI_CALL;
   return claudeBreaker.execute(() => withRetry(async () => {
-    const response = await client.messages.create(requestParams);
-
-    // Filter out thinking blocks and return only text content
-    const textBlock = response.content.find((b: { type: string }) => b.type === "text");
-    return textBlock && textBlock.type === "text" ? (textBlock as { type: "text"; text: string }).text : "";
+    return raceTimeout(deadline, async () => {
+      const response = await client.messages.create(requestParams);
+      // Filter out thinking blocks and return only text content
+      const textBlock = response.content.find((b: { type: string }) => b.type === "text");
+      return textBlock && textBlock.type === "text" ? (textBlock as { type: "text"; text: string }).text : "";
+    }, "Claude");
   }, { maxRetries: 2, label: "Claude" }));
 }
 
@@ -433,13 +517,14 @@ async function groqText(prompt: string, system?: string, maxTokens: number = 200
   messages.push({ role: "user" as const, content: prompt });
 
   return groqBreaker.execute(() => withRetry(async () => {
-    const completion = await client.chat.completions.create({
-      messages,
-      model: groqModel,
-      max_tokens: maxTokens,
-    });
-
-    return completion.choices[0]?.message?.content || "";
+    return raceTimeout(TIMEOUTS.AI_CALL, async () => {
+      const completion = await client.chat.completions.create({
+        messages,
+        model: groqModel,
+        max_tokens: maxTokens,
+      });
+      return completion.choices[0]?.message?.content || "";
+    }, "Groq");
   }, { maxRetries: 2, label: "Groq" }));
 }
 

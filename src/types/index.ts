@@ -15,6 +15,12 @@ export interface AIOptions {
   useOpus?: boolean;
   /** Use Gemini 2.5 Pro instead of Flash (available on Google AI Ultra plan) */
   useGeminiPro?: boolean;
+  /**
+   * Enable read-through response caching. Identical (prompt, system, model)
+   * tuples return cached results (TTL: 15min default). Opt-in because some
+   * callers want fresh output every call (creative tasks, time-sensitive).
+   */
+  cache?: boolean | { ttlSeconds?: number };
 }
 
 // ─── Agents ──────────────────────────────────────────
