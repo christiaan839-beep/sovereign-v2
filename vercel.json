@@ -48,6 +48,10 @@
     {
       "path": "/api/cron/run-evals",
       "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/cron/rollup-agent-stats",
+      "schedule": "0 4 * * *"
     }
   ],
   "headers": [
