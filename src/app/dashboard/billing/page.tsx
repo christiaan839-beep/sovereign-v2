@@ -183,6 +183,9 @@ export default function BillingPage() {
         </button>
       </header>
 
+      {/* ── Run Credits (plan-1, user_credits ledger) ── */}
+      <RunCreditsSection />
+
       {/* ── Error state ── */}
       {fetchError && (
         <motion.div
@@ -492,6 +495,94 @@ export default function BillingPage() {
           </a>
         </span>
       </div>
+    </div>
+  );
+}
+
+/* ───────────────────────────────────────────────────────────────
+ * RunCreditsSection — Plan-1 user_credits balance + recent ledger
+ *
+ * Shows the user's credit balance for running agents (distinct from
+ * the A2E credit system above, which is for agent-to-agent hiring).
+ * Reads /api/credits/balance + /api/credits/history.
+ *
+ * A low balance shows a copper "Top up" CTA that scrolls to the
+ * existing A2E purchase packages — the two systems share a top-up UX
+ * so users never see "which kind of credits am I buying?" friction.
+ * ─────────────────────────────────────────────────────────────── */
+function RunCreditsSection() {
+  const [balance, setBalance] = useState<{
+    balanceCents: number;
+    plan: string;
+    monthlyAllocationCents: number;
+    lowBalance: boolean;
+  } | null>(null);
+  const [history, setHistory] = useState<Array<{
+    id: string;
+    deltaCents: number;
+    reason: string;
+    createdAt: string;
+  }>>([]);
+
+  useEffect(() => {
+    fetch("/api/credits/balance")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((b) => b && setBalance(b))
+      .catch(() => {});
+    fetch("/api/credits/history?limit=5")
+      .then((r) => (r.ok ? r.json() : { entries: [] }))
+      .then((b) => setHistory(b.entries ?? []))
+      .catch(() => {});
+  }, []);
+
+  if (!balance) return null;
+
+  const dollars = (balance.balanceCents / 100).toFixed(2);
+  const allocation = (balance.monthlyAllocationCents / 100).toFixed(0);
+
+  return (
+    <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-5">
+      <div className="flex items-baseline justify-between mb-3">
+        <div>
+          <h3 className="text-sm font-semibold text-white">Run Credits</h3>
+          <p className="text-[11px] text-neutral-500 mt-0.5">
+            Consumed by agent runs · {balance.plan} plan
+            {balance.monthlyAllocationCents > 0 && ` · $${allocation}/mo allocation`}
+          </p>
+        </div>
+        <p className="text-3xl font-mono" style={{ color: "#E08558" }}>
+          ${dollars}
+        </p>
+      </div>
+
+      {balance.lowBalance && (
+        <p className="text-xs mb-3" style={{ color: "#B5532C" }}>
+          Low balance — top up below to keep agents running.
+        </p>
+      )}
+
+      {history.length > 0 && (
+        <div className="mt-4 pt-4 border-t border-white/[0.05] space-y-1.5 text-xs">
+          <p className="text-[10px] font-mono uppercase tracking-wider text-neutral-500 mb-2">
+            Recent activity
+          </p>
+          {history.map((h) => (
+            <div key={h.id} className="flex justify-between text-neutral-400">
+              <span className="truncate">
+                {h.reason.replace(/_/g, " ")}
+                {" · "}
+                {new Date(h.createdAt).toLocaleDateString()}
+              </span>
+              <span
+                className={h.deltaCents > 0 ? "text-emerald-400 font-mono" : "text-neutral-400 font-mono"}
+              >
+                {h.deltaCents > 0 ? "+" : ""}
+                ${(Math.abs(h.deltaCents) / 100).toFixed(2)}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
