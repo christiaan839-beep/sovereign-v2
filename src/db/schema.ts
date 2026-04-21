@@ -874,6 +874,44 @@ export const creditHolds = pgTable("credit_holds", {
 ]);
 
 // ═══════════════════════════════════════════
+// Continuous Evals (migration 0021)
+// ═══════════════════════════════════════════
+// Persists the results of every golden-set eval run so we can track
+// pass-rate trends and detect silent drift via output_hash changes.
+
+export const evalRuns = pgTable("eval_runs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  startedAt: timestamp("started_at").notNull().defaultNow(),
+  completedAt: timestamp("completed_at"),
+  trigger: text("trigger").notNull(), // 'scheduled' | 'manual' | 'ci'
+  total: integer("total").notNull().default(0),
+  passed: integer("passed").notNull().default(0),
+  failed: integer("failed").notNull().default(0),
+  skipped: integer("skipped").notNull().default(0),
+  durationMs: integer("duration_ms"),
+  // REAL in Postgres; Drizzle reads/writes as string to preserve precision
+  passRate: text("pass_rate"),
+}, (table) => [
+  index("idx_eval_runs_started").on(table.startedAt),
+]);
+
+export const evalRunResults = pgTable("eval_run_results", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  runId: uuid("run_id").references(() => evalRuns.id, { onDelete: "cascade" }).notNull(),
+  evalSlug: text("eval_slug").notNull(),
+  agentSlug: text("agent_slug").notNull(),
+  status: text("status").notNull(), // 'passed' | 'failed' | 'skipped'
+  durationMs: integer("duration_ms"),
+  errorMessage: text("error_message"),
+  outputHash: text("output_hash"), // SHA-256 of canonical-JSON output
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_eval_results_run").on(table.runId),
+  index("idx_eval_results_agent").on(table.agentSlug),
+  index("idx_eval_results_status").on(table.status),
+]);
+
+// ═══════════════════════════════════════════
 // Scheduled Playbooks (migration 0022)
 // ═══════════════════════════════════════════
 // Users can schedule any playbook on a cron expression. The
