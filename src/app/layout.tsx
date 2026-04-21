@@ -4,22 +4,34 @@ import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { validateEnvironment } from "@/lib/env-check";
 import { SafeClerkProvider } from "@/components/ui/SafeClerkProvider";
+import { CustomCursor } from "@/components/cinematic/CustomCursor";
+import { CursorGlow } from "@/components/cinematic/CursorGlow";
+import { ScrollProgress } from "@/components/cinematic/ScrollProgress";
+import { BackToTop } from "@/components/cinematic/BackToTop";
 import { CookieConsent } from "@/components/ui/CookieConsent";
-import { ClientOnlyEffects } from "@/components/ui/ClientOnlyEffects";
+import { FounderCTA } from "@/components/ui/FounderCTA";
+import { getMarketingPlans } from "@/lib/plans";
 import "./globals.css";
 
 // Run environment validation on server startup
 validateEnvironment();
 
-// Force dynamic rendering — Clerk's useContext crashes during static prerendering in Next.js 16.
-// For a SaaS app requiring auth, on-demand rendering is the correct approach anyway.
-export const dynamic = "force-dynamic";
+export const revalidate = 3600; // Revalidate static pages every hour
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://sovereignmatrix.agency"),
-  title: "Sovereign Matrix — Your AI Workforce",
-  description: "130+ autonomous AI agents. 39+ AI models. $0 per-token cost. Find leads, write content, build pages, make calls, close deals. Built on NVIDIA NIM.",
-  keywords: ["AI agents", "autonomous AI", "agency automation", "NVIDIA NIM", "NemoClaw", "lead generation", "content automation", "AI platform", "open-source AI", "white-label AI", "AI agency", "agentic AI"],
+  title: {
+    default: "Sovereign Matrix — The Agent Infrastructure Stack",
+    template: "%s | Sovereign Matrix",
+  },
+  description:
+    "137 specialized AI agents. 39+ models. An economy where agents hire agents. Enterprise-grade AI infrastructure with semantic memory, 5-layer verification, and model sovereignty.",
+  keywords: [
+    "AI agents", "agent infrastructure", "AI automation", "enterprise AI",
+    "multi-agent platform", "AI orchestration", "NVIDIA NIM", "semantic memory",
+    "agent marketplace", "AI workforce", "model routing", "agentic AI",
+    "lead generation AI", "content automation", "AI platform"
+  ],
   authors: [{ name: "Sovereign Matrix", url: "https://sovereignmatrix.agency" }],
   creator: "Sovereign Matrix",
   publisher: "Sovereign Matrix",
@@ -28,22 +40,20 @@ export const metadata: Metadata = {
     follow: true,
     googleBot: { index: true, follow: true, "max-video-preview": -1, "max-image-preview": "large", "max-snippet": -1 },
   },
-  alternates: {
-    canonical: "https://sovereignmatrix.agency",
-  },
+  alternates: { canonical: "https://sovereignmatrix.agency" },
   openGraph: {
-    title: "Sovereign Matrix — Your AI Workforce",
-    description: "130+ autonomous AI agents. 39+ AI models. $0 per-token cost. White-label ready. Your competitors hire. You deploy.",
+    title: "Sovereign Matrix — The Agent Infrastructure Stack",
+    description: "137 specialized AI agents. 39+ models. The first AI economy where agents hire agents. Enterprise-grade infrastructure with semantic memory and model sovereignty.",
     type: "website",
     siteName: "Sovereign Matrix",
     locale: "en_US",
     url: "https://sovereignmatrix.agency",
-    images: [{ url: "https://sovereignmatrix.agency/og-image.jpg", width: 1200, height: 630, alt: "Sovereign Matrix — Autonomous AI Agent Platform" }],
+    images: [{ url: "https://sovereignmatrix.agency/og-image.jpg", width: 1200, height: 630, alt: "Sovereign Matrix — The Agent Infrastructure Stack" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Sovereign Matrix — Your AI Workforce",
-    description: "130+ autonomous AI agents. 39+ AI models. $0 per-token cost. White-label ready. Your competitors hire. You deploy.",
+    title: "Sovereign Matrix — The Agent Infrastructure Stack",
+    description: "137 specialized AI agents. 39+ models. The first AI economy where agents hire agents. Enterprise-grade infrastructure with semantic memory and model sovereignty.",
     images: ["https://sovereignmatrix.agency/og-image.jpg"],
   },
   icons: {
@@ -67,6 +77,26 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const plausibleDomain = process.env.NEXT_PUBLIC_APP_URL?.replace("https://", "").replace("http://", "") || "sovereignmatrix.agency";
+
+  // JSON-LD Offer entries derive from the single source of truth in
+  // plans.ts so archived tiers never leak into SEO surfaces. A price
+  // of "0" is correct for the Free tier (schema.org accepts it).
+  const marketingOffers = getMarketingPlans().map((p) => ({
+    "@type": "Offer" as const,
+    name: p.name,
+    price: String(Math.round(p.priceUsdCents / 100)),
+    priceCurrency: "USD",
+  }));
+
+  // Resolved once so the FAQ answer matches the Offer list.
+  const pricingSentence = getMarketingPlans()
+    .map((p) =>
+      p.priceUsdCents === 0
+        ? `${p.name} at $0/mo`
+        : `${p.name} at $${Math.round(p.priceUsdCents / 100)}/mo`,
+    )
+    .join(", ");
+
   return (
     <html lang="en">
       <head>
@@ -78,7 +108,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="dns-prefetch" href="https://api.anthropic.com" />
         {/* eslint-disable-next-line @next/next/no-page-custom-font -- App Router layout.tsx applies fonts globally, not per-page */}
         <link
-          href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Outfit:wght@300;400;500;600;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Outfit:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
           rel="stylesheet"
         />
         {/* PWA Manifest */}
@@ -102,8 +132,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           strategy="afterInteractive"
         />
       </head>
-      <body className="relative bg-midnight text-white antialiased">
-        <SafeClerkProvider>
+      <SafeClerkProvider>
+        <body className="relative bg-midnight text-white antialiased">
           {/* Skip-to-content link — first tab stop for keyboard users (WCAG 2.4.1) */}
           <a
             href="#main-content"
@@ -111,12 +141,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           >
             Skip to main content
           </a>
-          <ClientOnlyEffects />
+          <CustomCursor />
+          <CursorGlow />
+          <ScrollProgress />
           {children}
+          <BackToTop />
           <CookieConsent />
+          <FounderCTA />
           {process.env.NODE_ENV === "production" && <Analytics />}
           {process.env.NODE_ENV === "production" && <SpeedInsights />}
-        </SafeClerkProvider>
           <Script
             id="json-ld"
             type="application/ld+json"
@@ -129,14 +162,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   name: "Sovereign Matrix",
                   applicationCategory: "BusinessApplication",
                   operatingSystem: "Web",
-                  offers: [
-                    { "@type": "Offer", name: "Free", price: "0", priceCurrency: "USD" },
-                    { "@type": "Offer", name: "Starter", price: "19", priceCurrency: "USD" },
-                    { "@type": "Offer", name: "Array", price: "49", priceCurrency: "USD" },
-                    { "@type": "Offer", name: "Node", price: "199", priceCurrency: "USD" },
-                    { "@type": "Offer", name: "Enterprise", price: "499", priceCurrency: "USD" },
-                  ],
-                  description: "Autonomous AI agent platform with 129 specialized agents, 35+ open-source models, and zero per-token cost. Built on NVIDIA NIM. Features: smart routing, adversarial synthesis, knowledge graph memory, 15-layer safety pipeline.",
+                  offers: marketingOffers,
+                  description: "The Agent Infrastructure Stack — 137 specialized AI agents, 39+ models, and the first AI economy where agents hire agents. Enterprise-grade infrastructure with semantic memory, 5-layer verification, and model sovereignty.",
                   featureList: "AI Agents, Multi-Model Routing, White-Label, Knowledge Graph, PEER Loop, Adversarial Synthesis, Citation Tracking, Policy Engine, Budget Controls",
                 },
                 {
@@ -144,6 +171,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   "@type": "Organization",
                   name: "Sovereign Matrix",
                   url: "https://sovereignmatrix.agency",
+                  description: "The Agent Infrastructure Stack — 137 AI agents, 39+ models, agent-to-agent economy",
                   logo: "https://sovereignmatrix.agency/icon-512.png",
                   contactPoint: { "@type": "ContactPoint", email: "christiaan@sovereignmatrix.agency", contactType: "sales" },
                   sameAs: [],
@@ -155,12 +183,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     {
                       "@type": "Question",
                       name: "What is Sovereign Matrix?",
-                      acceptedAnswer: { "@type": "Answer", text: "Sovereign Matrix is an autonomous AI agent platform with 130+ specialized agents that execute business tasks like lead generation, content creation, SEO, voice calls, and competitor analysis. Built on NVIDIA NIM with 39+ AI models at zero per-token cost." },
+                      acceptedAnswer: { "@type": "Answer", text: "Sovereign Matrix is an autonomous AI agent platform with 130+ specialized agents that execute business tasks like lead generation, content creation, SEO, voice calls, and competitor analysis. Built on NVIDIA NIM with 38 AI models at zero per-token cost." },
                     },
                     {
                       "@type": "Question",
                       name: "How much does Sovereign Matrix cost?",
-                      acceptedAnswer: { "@type": "Answer", text: "Sovereign Matrix offers a free tier with 50 runs/month. Paid plans: Starter at $19/mo (200 runs), Growth at $49/mo (500 runs), Node at $199/mo (2,000 runs), and Enterprise at $499/mo (10,000 runs with white-label). Month-to-month, no contracts." },
+                      acceptedAnswer: { "@type": "Answer", text: `Sovereign Matrix offers ${pricingSentence}. The Free tier includes 50 runs/month with no credit card required. Growth includes 500 runs/month and every featured playbook. Enterprise includes 10,000 runs/month, SAML SSO, SOC 2 evidence, and a direct Slack line to the founder. Month-to-month, no contracts.` },
                     },
                     {
                       "@type": "Question",
@@ -169,8 +197,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     },
                     {
                       "@type": "Question",
-                      name: "How is this different from ChatGPT or other AI tools?",
-                      acceptedAnswer: { "@type": "Answer", text: "ChatGPT is a chatbot — you type, it responds. Sovereign Matrix deploys autonomous agents that plan, execute, and self-correct without human intervention. 130+ agents work simultaneously across lead gen, content, SEO, voice calls, and more." },
+                      name: "Is this a chatbot or a platform?",
+                      acceptedAnswer: { "@type": "Answer", text: "Neither. Sovereign Matrix is an agent operating system: 130 autonomous agents that plan, execute, and self-correct without human intervention. Agents work simultaneously across lead gen, content, SEO, voice calls, and research — with a scheduler that fires playbooks on cron." },
                     },
                     {
                       "@type": "Question",
@@ -197,8 +225,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               ]),
             }}
           />
-      </body>
+        </body>
+      </SafeClerkProvider>
     </html>
   );
 }
-// Deploy trigger: 2026-04-09T16:29:56Z

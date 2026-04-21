@@ -1,28 +1,38 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { CheckCircle2, X as XIcon, ArrowRight, Shield, HelpCircle, Crown, GitCompareArrows, Zap } from "lucide-react";
+import { CheckCircle2, X as XIcon, ArrowRight, Shield, HelpCircle, Crown, Zap } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { SovereignLogo } from "@/components/ui/SovereignLogo";
 import { RevealText, GlowDivider, MagneticButton } from "@/components/ui/ScrollAnimations";
+import { getMarketingPlans, PLANS, type PlanId } from "@/lib/plans";
 
 const fadeIn = (d: number) => ({ initial: { opacity: 0, y: 20 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true }, transition: { delay: d, duration: 0.6 } });
 
-/* ─── Tier Data ─── */
+/* ─── Tier Data ───
+ * TIERS below carry marketing copy (feature lists, CTAs, taglines) —
+ * that's UI copy, not plan schema. But every tier's `plan` field
+ * MUST correspond to a PlanId in src/lib/plans.ts with `marketing: true`.
+ *
+ * The dev-time assertion below logs a warning if we ever drift:
+ * e.g., if a new plan gets `marketing: true` in plans.ts but we
+ * forget to add its TIERS entry, or vice versa. Catches the whole
+ * class of "pricing-page-out-of-sync" bugs in development.
+ */
 const TIERS = [
   {
     name: "Founder Access", price: "Free", period: "forever", plan: "free", featured: false,
     tagline: "Full platform access. 50 runs/month. No credit card.",
     cta: "Run a Free Playbook",
     features: [
-      { name: "All 130+ agents", included: true },
+      { name: "All 137 agents", included: true },
       { name: "25 playbook workflows", included: true },
       { name: "5-layer safety pipeline", included: true },
       { name: "50 runs/month", included: true },
       { name: "BYOK (Bring Your Own Key)", included: true },
-      { name: "200+ runs/month", included: false },
+      { name: "A2E credits: 0/mo", included: false },
       { name: "Priority support", included: false },
     ],
   },
@@ -36,7 +46,7 @@ const TIERS = [
       { name: "1,000 API calls/day", included: true },
       { name: "Email support", included: true },
       { name: "All 39+ models", included: true },
-      { name: "Local execution", included: false },
+      { name: "A2E credits: 50/mo", included: true },
       { name: "White-label", included: false },
     ],
   },
@@ -50,7 +60,7 @@ const TIERS = [
       { name: "5,000 API calls/day", included: true },
       { name: "Multi-model consensus verification", included: true },
       { name: "Priority support (24h)", included: true },
-      { name: "NVIDIA Nemotron Voice", included: true },
+      { name: "A2E credits: 200/mo", included: true },
       { name: "White-label", included: false },
     ],
   },
@@ -64,7 +74,7 @@ const TIERS = [
       { name: "NemoClaw Local Execution", included: true },
       { name: "Apollo Ghost Fleet Targeting", included: true },
       { name: "10,000 API calls/day", included: true },
-      { name: "Morpheus Shield", included: true },
+      { name: "A2E credits: 1,000/mo", included: true },
       { name: "White-label", included: false },
     ],
   },
@@ -77,7 +87,7 @@ const TIERS = [
       { name: "10,000 runs/month", included: true },
       { name: "Unlimited API calls", included: true },
       { name: "White-label Dashboard", included: true },
-      { name: "Custom domain branding", included: true },
+      { name: "A2E credits: Unlimited", included: true },
       { name: "Dedicated setup + SLA", included: true },
       { name: "Enterprise sub-licenses (5)", included: true },
     ],
@@ -85,57 +95,42 @@ const TIERS = [
 ];
 
 const FAQS = [
-  { q: "What AI tools are included?", a: "Sovereign Matrix includes AI-powered tools for SEO analysis, content creation, design briefs, landing page generation, lead prospecting, competitor intelligence, and more. All powered by Google Gemini 2.5 Pro." },
-  { q: "Do I need technical skills?", a: "No. The dashboard is designed for founders and operators, not coders. Select a tool, fill in your business name, and the AI generates production-ready marketing assets." },
-  { q: "How is Sovereign Matrix different from GoHighLevel?", a: "GoHighLevel gives you empty templates and makes you do the work. Sovereign Matrix is an autonomous engine that generates the actual content, strategies, and creatives for you. It's the difference between buying a toolkit and hiring a 24/7 marketing team." },
-  { q: "What are AI generations?", a: "Each time you use an AI tool (e.g., generate a blog post, analyze a competitor, create a landing page), that counts as one generation. Free users get 20/day, Pro and Agency get unlimited." },
-  { q: "What is BYOK (Bring Your Own Key)?", a: "You can plug in your own API keys for Gemini, Anthropic, or Tavily. This means your generations use your own API quota, giving you full control over costs and usage." },
-  { q: "Can I cancel anytime?", a: "Yes. No contracts, no cancellation fees. Monthly billing, cancel whenever you want." },
-  { q: "What payment methods do you accept?", a: "We accept credit/debit cards, Instant EFT, Zapper, SnapScan, and bank transfers via PayFast. All payments in South African Rand (ZAR)." },
+  { q: "What AI tools are included?", a: "137 autonomous agents across lead generation, content creation, SEO, competitor intelligence, voice calls, and code review. Every agent routes to the best of 39+ models (Claude Sonnet 4.6 for reasoning, Nemotron Ultra for throughput, Gemini 3.1 Pro for grounded search, and more) via our smart-router." },
+  { q: "Do I need technical skills?", a: "No. The dashboard is designed for founders and operators. Pick a playbook, fill in the inputs, and the agents execute. For engineers, there's also a REST + streaming API and an SDK." },
+  { q: "Do I have to build the agents myself?", a: "No. Sovereign Matrix ships 137 production agents and 25 multi-agent playbooks out of the box. Pick one, give it inputs, run. You can also compose custom playbooks via the workflow builder when you want something bespoke." },
+  { q: "What counts as a 'run'?", a: "One playbook execution = one run. A playbook can chain multiple agents internally (a lead-blitz playbook might run 5 agents), but we count it as one run. Free tier: 50 runs/mo. Starter $19: 200/mo. Growth $49: 500/mo. Node $199: 2,000/mo. Enterprise $499: 10,000/mo." },
+  { q: "What is BYOK (Bring Your Own Key)?", a: "You can plug in your own API keys for Claude, Gemini, NVIDIA NIM, Groq, or Tavily. BYOK runs against your own quota, so you have full control over costs and model access." },
+  { q: "Can I cancel anytime?", a: "Yes. No contracts, no cancellation fees. Monthly billing via Stripe — cancel whenever you want from Settings → Billing." },
+  { q: "What payment methods do you accept?", a: "Credit and debit cards via Stripe. All prices shown in USD. Enterprise invoicing available on request." },
 ];
-
-/* ─── Comparison Table Data ─── */
-const COMPETITORS = [
-  { name: "Sovereign Matrix", highlight: true },
-  { name: "GoHighLevel", highlight: false },
-  { name: "CrewAI", highlight: false },
-  { name: "n8n", highlight: false },
-  { name: "Lindy.ai", highlight: false },
-];
-
-type CellValue = string | boolean;
-
-interface ComparisonRow {
-  label: string;
-  values: CellValue[];
-}
-
-const COMPARISON_ROWS: ComparisonRow[] = [
-  { label: "Monthly price (entry tier)", values: ["$19/mo", "$97/mo", "$99/mo", "$24/mo", "$20/mo"] },
-  { label: "AI agents included", values: ["130+ agents", "0 AI agents", "Build your own", "AI nodes", "50+ templates"] },
-  { label: "Models available", values: ["39+", "0", "5-10", "5-10", "3-5"] },
-  { label: "Voice agents", values: [true, false, false, false, false] },
-  { label: "White-label", values: [true, true, false, false, false] },
-  { label: "Local execution", values: [true, false, true, true, false] },
-  { label: "Workflow builder", values: [true, false, false, true, true] },
-  { label: "Integrations", values: ["25+", "400+", "Python SDK", "400+", "5000+"] },
-  { label: "Free tier", values: ["Yes (100 runs)", false, false, "Yes (limited)", "Yes (400 credits)"] },
-];
-
-function CellDisplay({ value }: { value: CellValue }) {
-  if (typeof value === "boolean") {
-    return value ? (
-      <CheckCircle2 className="w-5 h-5 text-emerald-400 mx-auto" />
-    ) : (
-      <XIcon className="w-4 h-4 text-neutral-500 mx-auto" aria-hidden="true" />
-    );
-  }
-  return <span className="text-sm text-neutral-300">{value}</span>;
-}
 
 export default function PricingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Dev-only sanity check — warn if the pricing UI drifts from
+  // the plan registry's `marketing: true` set. Runs once on mount.
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "development") return;
+    const marketingPlanIds = getMarketingPlans().map((p) => p.id as string);
+    const tierPlanIds = TIERS.map((t) => t.plan);
+    const onlyInTiers = tierPlanIds.filter((id) => !marketingPlanIds.includes(id));
+    const onlyInMarketing = marketingPlanIds.filter((id) => !tierPlanIds.includes(id));
+    if (onlyInTiers.length > 0 || onlyInMarketing.length > 0) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        "[pricing] TIERS ⇄ PLANS drift detected:",
+        { onlyInTiers, onlyInMarketing, hint: "Sync src/lib/plans.ts marketing flag with pricing page TIERS." },
+      );
+    }
+    // Also validate each TIER's plan actually exists in PLANS
+    for (const t of TIERS) {
+      if (!PLANS[t.plan as PlanId]) {
+        // eslint-disable-next-line no-console
+        console.error(`[pricing] Unknown plan id in TIERS: "${t.plan}"`);
+      }
+    }
+  }, []);
 
   const checkout = async (plan: string) => {
     if (plan === "free") {
@@ -226,102 +221,53 @@ export default function PricingPage() {
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           className="relative z-10 max-w-5xl mx-auto text-center"
         >
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold uppercase tracking-[0.2em] mb-8">
-            <GitCompareArrows className="w-3 h-3" /> Platform Comparison
-          </div>
+          <p
+            className="mb-8"
+            style={{
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: "11px",
+              letterSpacing: "0.2em",
+              textTransform: "uppercase",
+              color: "#8F8576",
+            }}
+          >
+            Five tiers · Flat pricing · No per-token fees
+          </p>
 
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white leading-[1.1] mb-6 font-serif">
-            See How We Compare
+          <h1
+            style={{
+              fontFamily: '"Instrument Serif", Georgia, serif',
+              fontSize: "clamp(3rem, 9vw, 7rem)",
+              lineHeight: 0.9,
+              letterSpacing: "-0.025em",
+              fontWeight: 400,
+              color: "#fff",
+              marginBottom: "2rem",
+            }}
+          >
+            Pick one price.{" "}
+            <em style={{ fontStyle: "italic", color: "#B5532C" }}>Keep it.</em>
           </h1>
 
-          <p className="text-lg md:text-xl text-neutral-400 max-w-3xl mx-auto mb-4 leading-relaxed">
-            The only AI agent platform with{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 font-bold">
-              $0 per-token cost
-            </span>
-          </p>
-          <p className="text-sm text-neutral-400 max-w-xl mx-auto">
-            130+ autonomous agents. 39+ open-source models. Local execution. No per-API-call billing surprises.
+          <p
+            className="max-w-2xl mx-auto text-neutral-400"
+            style={{
+              fontFamily: '"Inter Tight", system-ui, sans-serif',
+              fontSize: "19px",
+              lineHeight: 1.55,
+              letterSpacing: "-0.011em",
+            }}
+          >
+            No credit-based pricing. No per-token surprises. No vendor lock-in.
+            One monthly number, every agent, every model — including{" "}
+            <em
+              style={{ fontFamily: '"Instrument Serif", serif', fontStyle: "italic", color: "#fff" }}
+            >
+              Claude
+            </em>{" "}
+            and 38 others.
           </p>
         </motion.div>
-      </section>
-
-      <GlowDivider />
-
-      {/* ─── Comparison Table ─── */}
-      <section className="relative z-10 py-20 px-6">
-        <div className="max-w-6xl mx-auto">
-          <RevealText as="h2" className="text-3xl md:text-4xl font-bold text-center mb-4 font-serif">
-            Feature-by-Feature Breakdown
-          </RevealText>
-          <RevealText as="p" className="text-neutral-500 text-center max-w-2xl mx-auto mb-16" delay={0.1}>
-            Honest comparison. No hidden costs. See exactly what you get.
-          </RevealText>
-
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7 }}
-            className="overflow-x-auto rounded-2xl border border-white/[0.06] bg-white/[0.01] backdrop-blur-xl"
-          >
-            <table className="w-full min-w-[800px] border-collapse">
-              {/* Header */}
-              <thead>
-                <tr className="border-b border-white/[0.06]">
-                  <th className="text-left text-xs text-neutral-500 uppercase tracking-widest font-medium p-5 w-48" />
-                  {COMPETITORS.map((c) => (
-                    <th
-                      key={c.name}
-                      className={`text-center p-5 text-sm font-bold uppercase tracking-wider ${
-                        c.highlight
-                          ? "text-emerald-400 bg-emerald-500/[0.06] border-x-2 border-t-2 border-emerald-500/30"
-                          : "text-neutral-400"
-                      }`}
-                    >
-                      {c.highlight && (
-                        <div className="text-[10px] text-emerald-500 font-bold uppercase tracking-[0.2em] mb-1">
-                          Recommended
-                        </div>
-                      )}
-                      {c.name}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-
-              {/* Body */}
-              <tbody>
-                {COMPARISON_ROWS.map((row, i) => (
-                  <motion.tr
-                    key={row.label}
-                    initial={{ opacity: 0, x: -10 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: i * 0.05, duration: 0.4 }}
-                    className={`border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors ${
-                      i % 2 === 0 ? "bg-white/[0.005]" : ""
-                    }`}
-                  >
-                    <td className="p-5 text-sm text-neutral-300 font-medium">{row.label}</td>
-                    {row.values.map((val, j) => (
-                      <td
-                        key={j}
-                        className={`p-5 text-center ${
-                          j === 0
-                            ? "border-x-2 border-emerald-500/30 bg-emerald-500/[0.06]"
-                            : ""
-                        } ${i === COMPARISON_ROWS.length - 1 && j === 0 ? "border-b-2 border-emerald-500/30" : ""}`}
-                      >
-                        <CellDisplay value={val} />
-                      </td>
-                    ))}
-                  </motion.tr>
-                ))}
-              </tbody>
-            </table>
-          </motion.div>
-        </div>
       </section>
 
       <GlowDivider />
@@ -379,13 +325,15 @@ export default function PricingPage() {
       {/* Guarantee */}
       <section className="relative z-10 px-8 pb-16 pt-20 text-center max-w-lg mx-auto">
         <motion.div {...fadeIn(0)} className="rounded-2xl bg-white/[0.02] border border-white/[0.06] backdrop-blur-xl p-8">
-          <h3 className="text-lg font-bold mb-2">30-Day Money-Back Guarantee</h3>
+          <h3 className="text-lg font-bold mb-2">14-Day Unconditional Refund</h3>
           <p className="text-sm text-neutral-400 leading-relaxed">
-            Try Sovereign Matrix for 30 days. If it doesn&apos;t work for you, we&apos;ll refund you — no questions asked.
+            If Sovereign Matrix isn&apos;t working for you within 14 days of your first paid invoice,
+            email <a href="mailto:refunds@sovereignmatrix.agency" className="text-emerald-400 underline">refunds@sovereignmatrix.agency</a>.
+            One email, full refund, no outcome conditions. See <a href="/terms" className="text-emerald-400 underline">terms</a> for the fine print.
           </p>
           <div className="flex items-center justify-center gap-4 mt-4">
-            <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-bold uppercase tracking-wider"><Shield className="w-3 h-3" /> SSL Secured</span>
-            <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-bold uppercase tracking-wider"><Shield className="w-3 h-3" /> PayFast Verified</span>
+            <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-bold uppercase tracking-wider"><Shield className="w-3 h-3" /> Stripe Secured</span>
+            <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-bold uppercase tracking-wider"><Shield className="w-3 h-3" /> Cancel Anytime</span>
           </div>
         </motion.div>
       </section>
@@ -425,7 +373,7 @@ export default function PricingPage() {
             Start Free — No Credit Card
           </RevealText>
           <RevealText as="p" className="text-neutral-500 mb-10 max-w-xl mx-auto" delay={0.1}>
-            100 free runs. 130+ agents. Zero commitment. See what autonomous AI can do for your business.
+            50 free runs. 137 agents. Zero commitment. See what autonomous AI can do for your business.
           </RevealText>
           <MagneticButton>
             <Link
