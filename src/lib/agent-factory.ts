@@ -33,6 +33,7 @@ import { auditLog } from "@/lib/audit-log";
 import { getAntiSlopRules } from "@/lib/system-prompts";
 import { trackAgentExecution } from "@/lib/analytics";
 import { getMemoryContext, saveMemory } from "@/lib/tenant-memory";
+import { buildMemoryContext, rememberExecution } from "@/lib/semantic-memory";
 import { getActionTier, buildConfirmResponse, buildRestrictedResponse, type ActionTier } from "@/lib/action-tiers";
 import { resolveTenantId } from "@/lib/tenant-resolver";
 import { isAgentAvailable, recordAgentSuccess, recordAgentFailure } from "@/lib/agent-circuit-breaker";
@@ -368,10 +369,44 @@ async function handleAgentRoute(
       }
 
       // ─── Inject Tenant Memory Context ───
+      // Semantic (vector) memory for Growth+ tiers; keyword fallback for Starter/Free.
+      // Memory is a real upgrade reason — Starter users see no recall, Growth+
+      // users get agents that remember every relevant past interaction.
       if (userId) {
-        const memoryCtx = getMemoryContext(userId, config.name);
-        if (memoryCtx) {
-          sanitized._memoryContext = memoryCtx;
+        let memoryTier: string | null = null;
+        try {
+          const { getUserTier } = await import("@/lib/free-tier");
+          memoryTier = await getUserTier(userId);
+        } catch { /* best-effort tier resolution */ }
+
+        const isSemanticTier =
+          !!memoryTier &&
+          ["array", "growth", "node", "sovereign", "enterprise", "founder"].includes(
+            memoryTier.toLowerCase(),
+          );
+
+        if (isSemanticTier) {
+          // Vector recall (top-k semantically similar) — Growth+
+          try {
+            const primaryInput = getFirstStringValue(sanitized);
+            if (primaryInput) {
+              const ctx = await buildMemoryContext(userId, config.name, primaryInput);
+              if (ctx) {
+                // Budget the injection to ~1500 tokens (~6000 chars).
+                sanitized._memoryContext = ctx.slice(0, 6000);
+              }
+            }
+          } catch (err) {
+            log.info("semantic memory recall failed, falling through to keyword", {
+              error: String(err),
+            });
+            const keywordCtx = getMemoryContext(userId, config.name);
+            if (keywordCtx) sanitized._memoryContext = keywordCtx;
+          }
+        } else {
+          // Keyword-only recall for Starter / Free — cheap, no upgrade gate
+          const keywordCtx = getMemoryContext(userId, config.name);
+          if (keywordCtx) sanitized._memoryContext = keywordCtx;
         }
       }
 
@@ -636,6 +671,9 @@ async function handleAgentRoute(
       }
 
       // ─── Save to Tenant Memory ───
+      // Always record via keyword memory (cheap, useful for analytics).
+      // ALSO embed into semantic memory for Growth+ tiers — this is what
+      // makes agents compound (recalled into future runs' system prompts).
       if (userId) {
         const inputText = getFirstStringValue(sanitized);
         const outputText = getFirstStringValue(finalResult);
@@ -645,6 +683,28 @@ async function handleAgentRoute(
           } catch (memErr) {
             log.warn("Tenant memory save failed", { agent: config.name, error: String(memErr) });
           }
+
+          // Semantic memory — fire-and-forget; never block delivery on it.
+          // Gated by tier same as the recall side so the write/read sides
+          // stay symmetric: Growth+ gets embedding, Starter gets keyword only.
+          try {
+            const { getUserTier } = await import("@/lib/free-tier");
+            const tier = await getUserTier(userId);
+            const shouldEmbed =
+              !!tier &&
+              ["array", "growth", "node", "sovereign", "enterprise", "founder"].includes(
+                tier.toLowerCase(),
+              );
+            if (shouldEmbed) {
+              void rememberExecution(userId, config.name, inputText, outputText).catch(
+                (e) =>
+                  log.info("semantic memory embed skipped", {
+                    agent: config.name,
+                    error: String(e),
+                  }),
+              );
+            }
+          } catch { /* tier lookup best-effort */ }
         }
       }
 
