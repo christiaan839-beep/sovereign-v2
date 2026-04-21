@@ -30,6 +30,7 @@ import { CommandPalette } from '@/components/ui/CommandPalette';
 import { SovereignAssistant } from '@/components/dashboard/SovereignAssistant';
 import { NotificationCenter } from '@/components/dashboard/NotificationCenter';
 import { UsageWidget } from '@/components/dashboard/UsageWidget';
+import { CreditsWidget } from '@/components/dashboard/CreditsWidget';
 import { KeyboardShortcutsModal } from '@/components/ui/KeyboardShortcutsModal';
 
 /* ─── "NEW" Badge Helpers ─── */
@@ -530,6 +531,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           {/* Usage meter — only in expanded sidebar */}
           {sidebarExpanded && <UsageWidget />}
+          {/* Credit balance + low-balance nudge */}
+          {sidebarExpanded && <CreditsWidget />}
 
           {/* User Footer */}
           <div
