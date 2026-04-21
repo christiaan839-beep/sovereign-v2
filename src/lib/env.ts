@@ -178,7 +178,6 @@ export function assertEnv(): void {
     if (err instanceof EnvValidationError) {
       // In dev, log the error but don't crash — let the dev fix it
       // iteratively. In prod, re-throw so the deploy fails loud.
-      // eslint-disable-next-line no-console
       console.error(`\n\u001b[31m✗ ${err.message}\u001b[0m\n`);
       if (process.env.NODE_ENV === "production") {
         throw err;
@@ -213,7 +212,6 @@ function logCapabilityBanner(e: Env): void {
     `  ${status(!!e.RESEND_API_KEY)} Resend                 (email)`,
     "",
   ];
-  // eslint-disable-next-line no-console
   console.log(lines.join("\n"));
 
   // Warn if NO AI providers are configured — platform is nearly useless.
@@ -225,7 +223,6 @@ function logCapabilityBanner(e: Env): void {
     e.GROQ_API_KEY ||
     e.CEREBRAS_API_KEY;
   if (!hasAnyAI) {
-    // eslint-disable-next-line no-console
     console.warn(
       "\u001b[33m⚠ No AI provider configured. Set at least one of: " +
         "NVIDIA_NIM_API_KEY, GEMINI_API_KEY, ANTHROPIC_API_KEY, GROQ_API_KEY, CEREBRAS_API_KEY.\u001b[0m",

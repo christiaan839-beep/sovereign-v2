@@ -218,7 +218,7 @@ async function writeToDB(
       sourceAgent: mem.agentName,
       sessionId: mem.sessionId ?? null,
     });
-  } catch (err) {
+  } catch (_err) {
     // Likely the new columns don't exist yet (migration not run). Write without them.
     try {
       await db.insert(tenantMemories).values({
