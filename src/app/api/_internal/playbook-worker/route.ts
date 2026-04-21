@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { verifyQstashSignature, type JobPayload } from "@/lib/job-queue";
-import { runPlaybookStep, updateRunStatus } from "@/lib/playbook-step-runner";
+import { runStepAndContinue } from "@/lib/playbook-step-runner";
 import { createLogger } from "@/lib/logger";
 import {
   runWithRequestContext,
@@ -72,12 +72,11 @@ export async function POST(req: Request) {
     },
     async () => {
       try {
-        const result = await runPlaybookStep(payload);
-
-        // After every step, check if the run is complete. Idempotent —
-        // calling this multiple times when all steps are done produces
-        // the same state.
-        await updateRunStatus(payload.runId);
+        // runStepAndContinue runs this step AND enqueues the next one.
+        // Each step lives in its own function invocation — no 60s Vercel
+        // ceiling on a multi-step chain. If this step fails, the chain
+        // halts and the user can POST /api/playbooks/runs/:id/resume.
+        const result = await runStepAndContinue(payload);
 
         log.info("step processed", {
           runId: payload.runId,
