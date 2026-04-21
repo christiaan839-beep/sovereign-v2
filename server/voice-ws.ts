@@ -21,9 +21,13 @@
 import { createServer } from "node:http";
 import { WebSocketServer } from "ws";
 import { handleVoiceWs, type WsLike } from "../src/lib/voice-ws-server";
+import { makeVoiceBillOnClose } from "../src/lib/voice-billing";
 
 const PORT = Number(process.env.VOICE_WS_PORT ?? 9090);
 const SECRET = process.env.VOICE_SESSION_SECRET ?? "";
+// Mirror the session endpoint's hold amount — single source of truth in
+// prod is the /api/voice/session constant. Kept in sync manually here.
+const HOLD_AMOUNT_CENTS = 75; // 15¢/min × 5 min
 
 if (!SECRET || SECRET.length < 16) {
   console.error("[voice-ws] VOICE_SESSION_SECRET must be set and >= 16 chars");
@@ -40,7 +44,10 @@ const wss = new WebSocketServer({ server: httpServer });
 
 wss.on("connection", (ws) => {
   // ws.WebSocket already has .send / .close / .on, matching WsLike.
-  handleVoiceWs(ws as unknown as WsLike, { secret: SECRET }).catch((err) => {
+  handleVoiceWs(ws as unknown as WsLike, {
+    secret: SECRET,
+    billOnClose: makeVoiceBillOnClose(HOLD_AMOUNT_CENTS),
+  }).catch((err) => {
     console.error("[voice-ws] handler error", err);
   });
 });
