@@ -20,6 +20,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { UserButton } from "@clerk/nextjs";
 import { useSafeUser } from "@/lib/safe-clerk";
 import { TelemetryProvider } from '@/components/providers/TelemetryProvider';
+import { PostHogProvider } from '@/components/providers/PostHogProvider';
 import { JarvisSocket } from '@/components/JarvisSocket';
 import { ToastProvider } from '@/components/ui/ToastProvider';
 import { AcquisitionCapture } from '@/components/ui/AcquisitionCapture';
@@ -484,6 +485,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <TelemetryProvider>
+      <PostHogProvider>
       <title>{`Sovereign Matrix${titleSuffix}`}</title>
       <div className="flex h-screen bg-[#000000] text-white overflow-hidden font-sans">
 
@@ -712,6 +714,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           )}
         </AnimatePresence>
       </div>
+      </PostHogProvider>
     </TelemetryProvider>
   );
 }

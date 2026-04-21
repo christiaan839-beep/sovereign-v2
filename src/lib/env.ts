@@ -54,6 +54,8 @@ const EnvSchema = z.object({
   SENTRY_AUTH_TOKEN: OptionalString,
   SENTRY_ORG: OptionalString,
   SENTRY_PROJECT: OptionalString,
+  NEXT_PUBLIC_POSTHOG_KEY: OptionalString,
+  NEXT_PUBLIC_POSTHOG_HOST: OptionalUrl,
 
   // ─── CACHE / RATE LIMITS ─────────────────────────────────────
   UPSTASH_REDIS_REST_URL: OptionalUrl,
@@ -255,6 +257,7 @@ export const capabilities = {
   get webSearch(): boolean { return !!env.TAVILY_API_KEY; },
 
   get sentry(): boolean { return !!(env.SENTRY_DSN || env.NEXT_PUBLIC_SENTRY_DSN); },
+  get posthog(): boolean { return !!env.NEXT_PUBLIC_POSTHOG_KEY; },
   get cache(): boolean { return !!(env.UPSTASH_REDIS_REST_URL && env.UPSTASH_REDIS_REST_TOKEN); },
   get rateLimits(): boolean { return !!(env.UPSTASH_REDIS_REST_URL && env.UPSTASH_REDIS_REST_TOKEN); },
 
