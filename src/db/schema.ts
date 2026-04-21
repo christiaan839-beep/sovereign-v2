@@ -676,12 +676,16 @@ export const playbookRuns = pgTable("playbook_runs", {
   durationMs: integer("duration_ms"),
   notifyTelegram: boolean("notify_telegram").default(false),
   telegramChatId: text("telegram_chat_id"),
+  // Added in migration 0023 — links a run back to the scheduled_playbooks
+  // row that triggered it. NULL for user-triggered runs.
+  scheduledId: uuid("scheduled_id"),
   createdAt: timestamp("created_at").defaultNow(),
   completedAt: timestamp("completed_at"),
 }, (table) => [
   index("idx_playbook_runs_user").on(table.userId),
   index("idx_playbook_runs_status").on(table.status),
   index("idx_playbook_runs_created").on(table.createdAt),
+  index("idx_playbook_runs_scheduled").on(table.scheduledId),
 ]);
 
 export const playbookRunSteps = pgTable("playbook_run_steps", {

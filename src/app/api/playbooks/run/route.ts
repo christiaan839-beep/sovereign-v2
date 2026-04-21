@@ -28,10 +28,27 @@ export async function POST(req: Request) {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { playbook_id, inputs = {} } = await req.json();
+  const body = await req.json();
+  const {
+    playbook_id,
+    inputs = {},
+    // scheduled_id is sent by the dispatcher cron when the run is
+    // triggered by a scheduled_playbooks row. NULL for user-triggered
+    // runs. We only trust this when the call is internal (the factory
+    // already gates internal-auth, but defense-in-depth: we validate
+    // the shape here and silently drop garbage).
+    scheduled_id,
+  } = body as { playbook_id?: string; inputs?: Record<string, unknown>; scheduled_id?: string };
 
-  const playbook = getPlaybook(playbook_id);
+  const playbook = getPlaybook(playbook_id ?? "");
   if (!playbook) return NextResponse.json({ error: `Playbook "${playbook_id}" not found` }, { status: 404 });
+
+  // UUID v4 shape check so a malformed scheduled_id can't corrupt the column.
+  const validScheduledId =
+    typeof scheduled_id === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(scheduled_id)
+      ? scheduled_id
+      : null;
 
   // Plan enforcement — check monthly run limits
   const planCheck = await checkPlanLimits(userId);
@@ -46,7 +63,13 @@ export async function POST(req: Request) {
     );
   }
 
-  const steps = resolvePlaybookSteps(playbook, inputs);
+  // Coerce inputs to Record<string,string> — resolvePlaybookSteps is
+  // string-typed; anything non-string in the body gets stringified.
+  const stringInputs: Record<string, string> = {};
+  for (const [k, v] of Object.entries(inputs ?? {})) {
+    stringInputs[k] = typeof v === "string" ? v : String(v ?? "");
+  }
+  const steps = resolvePlaybookSteps(playbook, stringInputs);
   const chatId = process.env.TELEGRAM_ADMIN_CHAT_ID || process.env.TELEGRAM_CHAT_ID || "";
   const hasTelegram = !!process.env.TELEGRAM_BOT_TOKEN && !!chatId;
 
@@ -60,11 +83,12 @@ export async function POST(req: Request) {
         userId,
         playbookId: playbook.id,
         playbookName: playbook.name,
-        inputs: JSON.stringify(inputs),
+        inputs: JSON.stringify(stringInputs),
         status: "running",
         stepCount: steps.length,
         notifyTelegram: hasTelegram,
         telegramChatId: chatId || null,
+        scheduledId: validScheduledId,
       })
       .returning();
 
