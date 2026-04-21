@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid, integer, index, boolean, uniqueIndex, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, uuid, integer, index, boolean, uniqueIndex, jsonb, primaryKey, date } from "drizzle-orm/pg-core";
 
 export const tenants = pgTable("tenants", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -768,10 +768,6 @@ export const caseStudies = pgTable("case_studies", {
   index("idx_case_studies_slug").on(table.slug),
 ]);
 
-// ═══════════════════════════════════════════
-// CTA click tracking — which surfaces convert
-// ═══════════════════════════════════════════
-
 /**
  * Tracks clicks on named CTAs (FounderCTA, primary hero button,
  * final-CTA button). Used for launch-week channel analysis paired
@@ -782,6 +778,79 @@ export const caseStudies = pgTable("case_studies", {
  * IDs + hashed user IDs. Referrer is normalized to domain only
  * before storage. Retention: 180 days via scheduled cleanup job.
  */
+
+// ═══════════════════════════════════════════
+// Sovereign World (migration 0020)
+// ═══════════════════════════════════════════
+// Metadata + user interactions for the 137 agents in the registry.
+// Powers /world constellation, /marketplace, /agents/[slug], /leaderboard.
+// slug (text PK) couples to the code registry — rename-as-migration.
+
+export const agentMetadata = pgTable("agent_metadata", {
+  slug: text("slug").primaryKey(),
+  displayName: text("display_name").notNull(),
+  tagline: text("tagline"),
+  description: text("description"),
+  category: text("category").notNull().default("general"),
+  subcategory: text("subcategory"),
+  icon: text("icon"),          // emoji OR lucide name
+  heroColor: text("hero_color"),
+  creatorUserId: text("creator_user_id"),
+  creatorHandle: text("creator_handle"),
+  pricingCents: integer("pricing_cents").notNull().default(0),
+  tags: text("tags").array(),
+  featured: boolean("featured").notNull().default(false),
+  verified: boolean("verified").notNull().default(false),
+  published: boolean("published").notNull().default(true),
+  visibility: text("visibility").notNull().default("public"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_agent_metadata_category").on(table.category),
+  index("idx_agent_metadata_featured").on(table.featured),
+  index("idx_agent_metadata_visibility").on(table.visibility),
+]);
+
+export const agentInstalls = pgTable("agent_installs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull(),
+  agentSlug: text("agent_slug").notNull(),
+  installedAt: timestamp("installed_at").defaultNow(),
+}, (table) => [
+  uniqueIndex("agent_installs_unique").on(table.userId, table.agentSlug),
+  index("idx_agent_installs_user").on(table.userId),
+  index("idx_agent_installs_agent").on(table.agentSlug),
+]);
+
+export const agentReviews = pgTable("agent_reviews", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull(),
+  agentSlug: text("agent_slug").notNull(),
+  rating: integer("rating").notNull(),
+  comment: text("comment"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  uniqueIndex("agent_reviews_one_per_user").on(table.userId, table.agentSlug),
+  index("idx_agent_reviews_agent").on(table.agentSlug, table.createdAt),
+]);
+
+export const agentStatsDaily = pgTable("agent_stats_daily", {
+  agentSlug: text("agent_slug").notNull(),
+  day: date("day").notNull(),
+  runs: integer("runs").notNull().default(0),
+  successes: integer("successes").notNull().default(0),
+  avgDurationMs: integer("avg_duration_ms"),
+  totalCostCents: integer("total_cost_cents").notNull().default(0),
+  uniqueUsers: integer("unique_users").notNull().default(0),
+}, (table) => [
+  primaryKey({ columns: [table.agentSlug, table.day] }),
+  index("idx_agent_stats_day").on(table.day),
+]);
+
+// ═══════════════════════════════════════════
+// CTA click tracking — which surfaces convert
+// ═══════════════════════════════════════════
 export const ctaClicks = pgTable("cta_clicks", {
   id: uuid("id").primaryKey().defaultRandom(),
   ctaName: text("cta_name").notNull(),
