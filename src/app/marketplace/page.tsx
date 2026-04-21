@@ -1,12 +1,11 @@
-/* FULL REWRITE — copper design system, API-backed agent grid */
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { useState, useEffect, useCallback, useRef } from "react";
-import { Loader2 } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
 import { SovereignLogo } from "@/components/ui/SovereignLogo";
 import { useHideyNav } from "@/components/ui/EliteEffects";
+import { AgentCard, type CardAgent } from "@/components/world/AgentCard";
 
 /**
  * /marketplace — The Agent Marketplace
@@ -18,79 +17,21 @@ import { useHideyNav } from "@/components/ui/EliteEffects";
  *   01 Nav · 02 Hero · 03 Category filter + Featured + Agent grid ·
  *   04 Creator CTA · Footer
  *
- * Agent data comes from GET /api/marketplace/agents for SSR-friendly pagination.
+ * Agent data is now the live catalog: GET /api/catalog returns all 137
+ * agents with 30d rollup stats. Featured row = agents with featured=true,
+ * sorted by runs. Grid below = everything else (filtered by category).
+ * Switching categories does NOT refetch — catalog is tiny (~55KB gzipped)
+ * so we filter client-side for instant response.
  */
 
-// ─── Types & constants ────────────────────────────────────────────────────────
-
-type Category =
-  | "All"
-  | "Sales"
-  | "Content"
-  | "Research"
-  | "Voice"
-  | "Vision"
-  | "Code"
-  | "Industry"
-  | "Safety"
-  | "Orchestration"
-  | "Intelligence";
-
-const CATEGORIES: Category[] = [
-  "All", "Sales", "Content", "Research", "Voice",
-  "Vision", "Code", "Industry", "Safety", "Orchestration", "Intelligence",
-];
-
-interface Agent {
-  slug:        string;
-  name:        string;
-  category:    string;
-  hireCount:   number;
-  pricePerRun: number;
+interface CatalogResponse {
+  agents: CardAgent[];
+  counts: Record<string, number>;
+  total: number;
 }
 
-interface AgentsResponse {
-  agents: Agent[];
-  total:  number;
-  page:   number;
-  limit:  number;
-  pages:  number;
-}
-
-const PAGE_LIMIT = 24;
-
-// Featured agents — pinned top row (static, not paginated)
-const FEATURED_AGENTS = [
-  {
-    slug: "god-brain",
-    name: "God Brain",
-    tagline: "Master meta-prompter and orchestrator",
-    desc: "Top-level intelligence node. Decomposes complex objectives into agent chains, assigns models, and synthesizes final output across any domain.",
-    category: "Orchestration" as Category,
-    hires: "4,218",
-    creator: "Sovereign Core",
-  },
-  {
-    slug: "war-room",
-    name: "War Room",
-    tagline: "Multi-agent debate arena for synthesized intelligence",
-    desc: "Spins three independent agents with opposing priors. A moderator agent scores the debate and synthesizes the strongest position.",
-    category: "Intelligence" as Category,
-    hires: "2,891",
-    creator: "Sovereign Core",
-  },
-  {
-    slug: "seo-dominator",
-    name: "SEO Dominator",
-    tagline: "Full SEO domination: keywords, content, backlinks",
-    desc: "Keyword gap analysis, programmatic content strategy, and a ranked backlink acquisition plan — one run, full playbook.",
-    category: "Content" as Category,
-    hires: "1,547",
-    creator: "Sovereign Core",
-  },
-];
-
-const FEATURED_SLUGS = new Set(FEATURED_AGENTS.map((a) => a.slug));
+const ALL = "All" as const;
+type CategoryFilter = typeof ALL | string;
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -264,63 +205,54 @@ function MarketplaceHero() {
 // ─── Agent Grid Section ───────────────────────────────────────────────────────
 
 function AgentGridSection() {
-  const [activeCategory, setActiveCategory] = useState<Category>("All");
-  const [agents, setAgents] = useState<Agent[]>([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
-  const [loadingInitial, setLoadingInitial] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const abortRef = useRef<AbortController | null>(null);
+  const [activeCategory, setActiveCategory] = useState<CategoryFilter>(ALL);
+  const [agents, setAgents] = useState<CardAgent[]>([]);
+  const [counts, setCounts] = useState<Record<string, number>>({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const fetchAgents = useCallback(async (category: Category, nextPage: number, append: boolean) => {
-    // Cancel previous request
-    if (abortRef.current) abortRef.current.abort();
-    const ctrl = new AbortController();
-    abortRef.current = ctrl;
-
-    if (append) setLoadingMore(true);
-    else setLoadingInitial(true);
-
-    try {
-      const params = new URLSearchParams({
-        limit:    String(PAGE_LIMIT),
-        page:     String(nextPage),
-        category: category === "All" ? "All" : category,
-      });
-      const res  = await fetch(`/api/marketplace/agents?${params}`, { signal: ctrl.signal });
-      const json = await res.json() as AgentsResponse;
-
-      // Exclude featured slugs from the "All" view grid (they show above)
-      const filtered = category === "All"
-        ? json.agents.filter((a) => !FEATURED_SLUGS.has(a.slug))
-        : json.agents;
-
-      setAgents((prev) => append ? [...prev, ...filtered] : filtered);
-      setTotal(category === "All" ? json.total - FEATURED_SLUGS.size : json.total);
-      setPage(nextPage);
-    } catch (err) {
-      if ((err as { name?: string }).name !== "AbortError") console.error(err);
-    } finally {
-      setLoadingInitial(false);
-      setLoadingMore(false);
-    }
+  // Single fetch on mount. The catalog is small enough that client-side
+  // filtering beats per-category round-trips on perceived latency.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/catalog");
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data: CatalogResponse = await res.json();
+        if (!cancelled) {
+          setAgents(data.agents);
+          setCounts(data.counts);
+        }
+      } catch (err) {
+        if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load catalog");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  // Initial fetch + refetch on category change
-  useEffect(() => {
-    void fetchAgents(activeCategory, 1, false);
-  }, [activeCategory, fetchAgents]);
+  const categories = useMemo(() => {
+    const sortedKeys = Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .map(([k]) => k);
+    return [ALL, ...sortedKeys] as CategoryFilter[];
+  }, [counts]);
 
-  const handleCategoryChange = (cat: Category) => {
-    setActiveCategory(cat);
-    setPage(1);
-  };
+  const featured = useMemo(
+    () => agents.filter((a) => a.featured).sort((a, b) => b.runs30d - a.runs30d).slice(0, 3),
+    [agents],
+  );
 
-  const handleLoadMore = () => {
-    void fetchAgents(activeCategory, page + 1, true);
-  };
-
-  const hasMore = agents.length < total;
+  const grid = useMemo(() => {
+    const rest = agents.filter((a) => !featured.some((f) => f.slug === a.slug));
+    return activeCategory === ALL
+      ? rest
+      : rest.filter((a) => a.category === activeCategory);
+  }, [agents, featured, activeCategory]);
 
   return (
     <section className="px-6 pb-32 bg-[#030303]">
@@ -329,26 +261,42 @@ function AgentGridSection() {
         <div className="sticky top-[60px] z-30 py-4 bg-[#030303]/96 backdrop-blur-xl border-b border-white/[0.05] mb-14">
           <div className="overflow-x-auto -mx-2 px-2">
             <div className="flex items-center gap-2 min-w-max">
-              {CATEGORIES.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => handleCategoryChange(cat)}
-                  className={`px-4 py-1.5 rounded-full text-[12px] font-mono tracking-wide transition-all duration-200 whitespace-nowrap ${
-                    activeCategory === cat
-                      ? "bg-[#B5532C] text-white border border-[#B5532C]"
-                      : "border border-white/[0.12] text-neutral-400 hover:border-white/[0.25] hover:text-white bg-transparent"
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
+              {categories.map((cat) => {
+                const label = cat === ALL ? "All" : cat;
+                const count = cat === ALL ? agents.length : counts[cat] ?? 0;
+                const selected = activeCategory === cat;
+                return (
+                  <button
+                    key={cat}
+                    onClick={() => setActiveCategory(cat)}
+                    className={`px-4 py-1.5 rounded-full text-[12px] font-mono tracking-wide transition-all duration-200 whitespace-nowrap capitalize ${
+                      selected
+                        ? "bg-[#B5532C] text-white border border-[#B5532C]"
+                        : "border border-white/[0.12] text-neutral-400 hover:border-white/[0.25] hover:text-white bg-transparent"
+                    }`}
+                  >
+                    {label}
+                    {!loading && (
+                      <span className={`ml-1.5 text-[10px] ${selected ? "text-white/70" : "text-neutral-600"}`}>
+                        {count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
 
-        {/* Featured agents — only on "All" */}
+        {error && (
+          <div className="mb-8 p-4 rounded-[6px] border border-red-500/20 bg-red-500/5 text-[13px] font-mono text-red-400">
+            {error}
+          </div>
+        )}
+
+        {/* Featured — only on All */}
         <AnimatePresence mode="wait">
-          {activeCategory === "All" && (
+          {activeCategory === ALL && featured.length > 0 && (
             <motion.div
               key="featured"
               initial={{ opacity: 0, y: 12 }}
@@ -361,57 +309,8 @@ function AgentGridSection() {
                 Featured agents
               </p>
               <div className="grid md:grid-cols-3 gap-4">
-                {FEATURED_AGENTS.map((agent, i) => (
-                  <motion.div
-                    key={agent.slug}
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.08, duration: 0.5 }}
-                  >
-                    <Link
-                      href={`/dashboard/agents/${agent.slug}`}
-                      className="group relative block h-full p-6 rounded-[6px] border border-[#B5532C]/20 bg-white/[0.025] hover:border-[#B5532C]/50 hover:bg-[#B5532C]/[0.04] transition-all duration-300 overflow-hidden"
-                      style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06), 0 1px 0 rgba(0,0,0,0.5)" }}
-                    >
-                      {/* Copper top accent bar */}
-                      <div
-                        className="absolute top-0 left-0 right-0 h-[2px] rounded-t-[6px]"
-                        style={{ background: "linear-gradient(to right, rgba(181,83,44,0.8), rgba(181,83,44,0.15))" }}
-                        aria-hidden="true"
-                      />
-                      {/* Copper hover sweep */}
-                      <span
-                        aria-hidden="true"
-                        className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                        style={{ background: "radial-gradient(circle at 20% 0%, rgba(181,83,44,0.14) 0%, transparent 50%)" }}
-                      />
-
-                      <div className="relative flex items-center justify-between mb-5">
-                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#B5532C]/15 border border-[#B5532C]/30 text-[10px] font-mono text-[#B5532C] tracking-[0.1em] uppercase">
-                          Featured
-                        </span>
-                        <span className="text-[10px] font-mono text-neutral-600 tracking-wide">{agent.category}</span>
-                      </div>
-
-                      <h3 className="relative font-serif text-[22px] text-white mb-1.5 leading-tight tracking-tight">
-                        {agent.name}
-                      </h3>
-                      <p className="relative text-[12.5px] text-[#B5532C] font-mono mb-3 tracking-tight">
-                        {agent.tagline}
-                      </p>
-                      <p className="relative text-[13px] text-neutral-400 leading-[1.6] mb-5">{agent.desc}</p>
-
-                      <div className="relative flex items-center justify-between">
-                        <div className="flex flex-col gap-0.5">
-                          <span className="text-[10px] font-mono text-neutral-600 tracking-wide">{agent.hires} hires</span>
-                          <span className="text-[10px] font-mono text-neutral-700 tracking-wide">by {agent.creator}</span>
-                        </div>
-                        <span className="text-[11px] font-mono text-neutral-500 group-hover:text-[#B5532C] transition-colors tracking-wide">
-                          Hire Agent →
-                        </span>
-                      </div>
-                    </Link>
-                  </motion.div>
+                {featured.map((agent, i) => (
+                  <AgentCard key={agent.slug} agent={agent} variant="featured" index={i} />
                 ))}
               </div>
             </motion.div>
@@ -420,16 +319,16 @@ function AgentGridSection() {
 
         {/* Main grid header */}
         <div className="flex items-center justify-between mb-5">
-          <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-neutral-600">
-            {activeCategory === "All" ? "All agents" : activeCategory}{" "}
-            {!loadingInitial && <span className="text-neutral-500">· {total}</span>}
+          <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-neutral-600 capitalize">
+            {activeCategory === ALL ? "All agents" : activeCategory}
+            {!loading && <span className="text-neutral-500"> · {grid.length}</span>}
           </p>
         </div>
 
-        {/* Loading state — initial */}
-        {loadingInitial ? (
+        {/* Loading skeletons */}
+        {loading ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-            {Array.from({ length: PAGE_LIMIT }).map((_, i) => (
+            {Array.from({ length: 16 }).map((_, i) => (
               <div
                 key={i}
                 className="h-28 rounded-[6px] border border-white/[0.06] bg-white/[0.025] animate-pulse"
@@ -437,78 +336,28 @@ function AgentGridSection() {
             ))}
           </div>
         ) : (
-          <>
-            {/* Grid */}
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activeCategory}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.25 }}
-                className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3"
-              >
-                {agents.map((agent, i) => (
-                  <motion.div
-                    key={agent.slug}
-                    initial={{ opacity: 0, y: 10 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, margin: "-40px" }}
-                    transition={{ delay: (i % PAGE_LIMIT) * 0.025, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-                  >
-                    <Link
-                      href={`/dashboard/agents/${agent.slug}`}
-                      className="group relative flex flex-col h-full p-4 rounded-[6px] border border-white/[0.06] bg-white/[0.025] hover:border-[#B5532C]/30 hover:bg-[#B5532C]/[0.03] transition-all duration-250 overflow-hidden"
-                      style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06), 0 1px 0 rgba(0,0,0,0.4)" }}
-                    >
-                      <span
-                        aria-hidden="true"
-                        className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-400"
-                        style={{ background: "radial-gradient(circle at 15% 0%, rgba(181,83,44,0.12) 0%, transparent 50%)" }}
-                      />
-                      <div className="relative mb-3">
-                        <span className="text-[9px] font-mono uppercase tracking-[0.18em] text-neutral-600 bg-white/[0.03] border border-white/[0.06] px-1.5 py-0.5 rounded-full">
-                          {agent.category}
-                        </span>
-                      </div>
-                      <h3 className="relative text-[13px] font-medium text-white mb-2 leading-snug tracking-tight flex-1">
-                        {agent.name}
-                      </h3>
-                      <span className="relative text-[11px] font-mono text-neutral-600 group-hover:text-[#B5532C] transition-colors tracking-wide mt-2">
-                        Hire Agent →
-                      </span>
-                    </Link>
-                  </motion.div>
-                ))}
-              </motion.div>
-            </AnimatePresence>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={String(activeCategory)}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25 }}
+              className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3"
+            >
+              {grid.map((agent, i) => (
+                <AgentCard key={agent.slug} agent={agent} index={i} />
+              ))}
+            </motion.div>
+          </AnimatePresence>
+        )}
 
-            {/* Load more */}
-            {hasMore && (
-              <div className="mt-10 text-center">
-                <button
-                  onClick={handleLoadMore}
-                  disabled={loadingMore}
-                  className="group inline-flex items-center gap-2 px-6 py-2.5 border border-white/[0.1] text-neutral-400 font-mono text-[12px] tracking-wide hover:border-[#B5532C]/40 hover:text-white transition-colors rounded-[3px] disabled:opacity-50"
-                >
-                  {loadingMore ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      Loading…
-                    </>
-                  ) : (
-                    <>
-                      Load more agents
-                      <span aria-hidden="true" className="text-[#B5532C] transition-transform group-hover:translate-y-0.5">↓</span>
-                    </>
-                  )}
-                </button>
-                <p className="mt-3 text-[10px] font-mono text-neutral-700">
-                  Showing {agents.length} of {total}
-                </p>
-              </div>
-            )}
-          </>
+        {!loading && grid.length === 0 && !error && (
+          <div className="mt-12 text-center">
+            <p className="text-[13px] font-mono text-neutral-600">
+              No agents in this category yet.
+            </p>
+          </div>
         )}
       </div>
     </section>
