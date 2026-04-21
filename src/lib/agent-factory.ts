@@ -509,7 +509,10 @@ async function handleAgentRoute(
           const { placeHold } = await import("@/lib/credits");
           const { estimatedHoldCents } = await import("@/lib/pricing-costs");
           const holdCents = estimatedHoldCents("nvidia/nemotron-3-nano-30b-a3b", 2000);
-          creditHoldId = await placeHold(userId, holdCents, undefined, 5 * 60_000);
+          // L1.4 — tag the hold with "agent_<slug>_<ts>" so the rollup cron
+          // can surface per-agent cost in agent_stats_daily.total_cost_cents.
+          const agentRunTag = `agent_${config.name}_${Date.now()}`;
+          creditHoldId = await placeHold(userId, holdCents, agentRunTag, 5 * 60_000);
         } catch (holdErr) {
           const { InsufficientCreditsError } = await import("@/lib/credits");
           if (holdErr instanceof InsufficientCreditsError) {

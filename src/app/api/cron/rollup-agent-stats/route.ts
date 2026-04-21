@@ -86,10 +86,41 @@ async function handle(request: Request): Promise<Response> {
         avg_duration_ms = EXCLUDED.avg_duration_ms
     `);
 
+    // Phase 3 — Cost rollup from credit_transactions (L1.4).
+    //
+    // Agent holds are tagged with run_id = "agent_<slug>_<timestamp>" so
+    // we can split("_")[1] to recover the slug. Captures are the "real"
+    // spend (placed debits minus any refunds). We sum the absolute
+    // pre-cap amount from the hold_capture entries' metadata.
+    //
+    // For voice, we skip — voice_usage markers have chargeCents in
+    // metadata and are handled by a separate rollup in a future plan.
+    const costs = await db.execute(sql`
+      INSERT INTO agent_stats_daily
+        (agent_slug, day, runs, successes, total_cost_cents)
+      SELECT
+        split_part(run_id, '_', 2) AS agent_slug,
+        (created_at AT TIME ZONE 'UTC')::date AS day,
+        0 AS runs,
+        0 AS successes,
+        COALESCE(SUM((metadata ->> 'capturedCents')::int), 0)::int AS total_cost_cents
+      FROM credit_transactions
+      WHERE created_at >= (CURRENT_DATE - INTERVAL '1 day')
+        AND created_at <  CURRENT_DATE
+        AND reason = 'hold_capture'
+        AND run_id LIKE 'agent_%'
+        AND metadata ? 'capturedCents'
+      GROUP BY split_part(run_id, '_', 2), (created_at AT TIME ZONE 'UTC')::date
+      HAVING split_part(run_id, '_', 2) <> ''
+      ON CONFLICT (agent_slug, day) DO UPDATE SET
+        total_cost_cents = EXCLUDED.total_cost_cents
+    `);
+
     return NextResponse.json({
       ok: true,
       countsAffected: (counts as { rowCount?: number })?.rowCount ?? 0,
       durationsAffected: (durations as { rowCount?: number })?.rowCount ?? 0,
+      costsAffected: (costs as { rowCount?: number })?.rowCount ?? 0,
       rolledUpDay: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
     });
   } catch (err) {

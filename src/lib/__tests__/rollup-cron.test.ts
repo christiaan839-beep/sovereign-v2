@@ -40,12 +40,14 @@ describe("/api/cron/rollup-agent-stats", () => {
     expect(mockExecute).not.toHaveBeenCalled();
   });
 
-  it("performs rollup and reports rows affected", async () => {
+  it("performs three-phase rollup and reports rows affected", async () => {
     mockVerifyCron.mockReturnValue(null);
-    // First call: counts rollup → returns rowCount=12
-    // Second call: duration rollup → rowCount=8
+    // Phase 1: counts (agent_activity) → 12
+    // Phase 2: durations (playbook_run_steps) → 8
+    // Phase 3: costs (credit_transactions) → 5
     mockExecute.mockResolvedValueOnce({ rowCount: 12 });
     mockExecute.mockResolvedValueOnce({ rowCount: 8 });
+    mockExecute.mockResolvedValueOnce({ rowCount: 5 });
 
     const res = await POST(new Request("http://l/api/cron/rollup-agent-stats", { method: "POST" }));
     expect(res.status).toBe(200);
@@ -53,7 +55,8 @@ describe("/api/cron/rollup-agent-stats", () => {
     expect(body.ok).toBe(true);
     expect(body.countsAffected).toBe(12);
     expect(body.durationsAffected).toBe(8);
-    expect(mockExecute).toHaveBeenCalledTimes(2);
+    expect(body.costsAffected).toBe(5);
+    expect(mockExecute).toHaveBeenCalledTimes(3);
   });
 
   it("returns 500 on SQL error with error payload", async () => {
