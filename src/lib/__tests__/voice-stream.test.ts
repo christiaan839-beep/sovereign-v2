@@ -195,8 +195,11 @@ describe("VoiceSession.handleTurn", () => {
 
   it("bargeIn cancels in-flight LLM and prevents pending TTS", async () => {
     const encoder = new TextEncoder();
-    // LLM body hangs after first delta, waiting for abort
-    let resolveBody: (() => void) | null = null;
+    // LLM body hangs after first delta, waiting for abort.
+    // Default resolveBody to a no-op so the type stays a plain `() => void`
+    // — TS narrows `(() => void) | null` inside the start() closure in
+    // a way that makes the outer call site unhappy.
+    let resolveBody: () => void = () => { /* no-op default */ };
     const body = new ReadableStream<Uint8Array>({
       start(ctrl) {
         ctrl.enqueue(encoder.encode(ssePayload("First sentence. ") + "\n\n"));
@@ -225,7 +228,7 @@ describe("VoiceSession.handleTurn", () => {
     await new Promise((r) => setImmediate(r));
 
     session.bargeIn();
-    resolveBody?.();
+    resolveBody();
 
     await turnPromise;
 
