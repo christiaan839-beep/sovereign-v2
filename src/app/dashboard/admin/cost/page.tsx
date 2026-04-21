@@ -25,14 +25,23 @@ export default function CostBreakdownPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setData(null);
-    fetch(`/api/admin/cost?window=${window}`)
-      .then(async (r) => {
-        if (!r.ok) throw new Error(r.status === 403 ? "Admin access required" : `HTTP ${r.status}`);
-        return r.json();
-      })
-      .then(setData)
-      .catch((e) => setError((e as Error).message));
+    let alive = true;
+    // Async IIFE avoids the synchronous setState-in-effect lint error;
+    // `alive` guards against late responses landing after unmount or
+    // after the window toggle fires again.
+    (async () => {
+      try {
+        const res = await fetch(`/api/admin/cost?window=${window}`);
+        if (!res.ok) {
+          throw new Error(res.status === 403 ? "Admin access required" : `HTTP ${res.status}`);
+        }
+        const body = await res.json();
+        if (alive) setData(body);
+      } catch (e) {
+        if (alive) setError((e as Error).message);
+      }
+    })();
+    return () => { alive = false; };
   }, [window]);
 
   if (error) {

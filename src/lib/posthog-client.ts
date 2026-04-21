@@ -24,7 +24,7 @@ export type TrackedEvent =
   // Auth
   | { name: "signup_started"; properties: { source: string } }
   | { name: "signup_completed"; properties: { source: string; plan: string } }
-  | { name: "login_completed"; properties: {} }
+  | { name: "login_completed"; properties: Record<string, never> }
 
   // Agent / playbook flow
   | { name: "playbook_run_started"; properties: { playbook_id: string; via: "manual" | "scheduled" } }
