@@ -86,20 +86,20 @@ async function handle(request: Request): Promise<Response> {
         avg_duration_ms = EXCLUDED.avg_duration_ms
     `);
 
-    // Phase 3 — Cost rollup from credit_transactions (L1.4).
+    // Phase 3 — Cost rollup from credit_transactions (L1.4 + L1.5).
     //
-    // Agent holds are tagged with run_id = "agent_<slug>_<timestamp>" so
-    // we can split("_")[1] to recover the slug. Captures are the "real"
-    // spend (placed debits minus any refunds). We sum the absolute
-    // pre-cap amount from the hold_capture entries' metadata.
+    // placeHold tags its ledger row with metadata.agentSlug, and
+    // captureHold carries it forward onto the hold_capture row. Here
+    // we sum each agent's capturedCents per day from the hold_capture
+    // entries.
     //
-    // For voice, we skip — voice_usage markers have chargeCents in
-    // metadata and are handled by a separate rollup in a future plan.
+    // Voice sessions use voice_usage markers (L1.2) and don't appear
+    // here — they'll get their own rollup in a future sprint.
     const costs = await db.execute(sql`
       INSERT INTO agent_stats_daily
         (agent_slug, day, runs, successes, total_cost_cents)
       SELECT
-        split_part(run_id, '_', 2) AS agent_slug,
+        (metadata ->> 'agentSlug') AS agent_slug,
         (created_at AT TIME ZONE 'UTC')::date AS day,
         0 AS runs,
         0 AS successes,
@@ -108,10 +108,9 @@ async function handle(request: Request): Promise<Response> {
       WHERE created_at >= (CURRENT_DATE - INTERVAL '1 day')
         AND created_at <  CURRENT_DATE
         AND reason = 'hold_capture'
-        AND run_id LIKE 'agent_%'
+        AND metadata ? 'agentSlug'
         AND metadata ? 'capturedCents'
-      GROUP BY split_part(run_id, '_', 2), (created_at AT TIME ZONE 'UTC')::date
-      HAVING split_part(run_id, '_', 2) <> ''
+      GROUP BY (metadata ->> 'agentSlug'), (created_at AT TIME ZONE 'UTC')::date
       ON CONFLICT (agent_slug, day) DO UPDATE SET
         total_cost_cents = EXCLUDED.total_cost_cents
     `);

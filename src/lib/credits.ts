@@ -36,7 +36,28 @@ export type TransactionReason =
   | "adjustment"
   | "promo"
   | "hold_capture"
-  | "hold_release";
+  | "hold_release"
+  | "creator_payout";
+
+/**
+ * Keys that are carried forward from placeHold's "hold_placed" row
+ * onto the matching "hold_capture" row. Everything else stays private
+ * to the hold_placed ledger entry. Keep this list narrow on purpose —
+ * carrying unknown keys risks leaking PII through the rollup queries.
+ */
+const CARRIED_METADATA_KEYS: ReadonlySet<string> = new Set([
+  "agentSlug",
+  "channel",
+]);
+
+function extractCarriedMetadata(raw: unknown): Record<string, unknown> {
+  if (!raw || typeof raw !== "object") return {};
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+    if (CARRIED_METADATA_KEYS.has(k)) out[k] = v;
+  }
+  return out;
+}
 
 export type HoldStatus = "active" | "captured" | "released" | "expired";
 
@@ -73,13 +94,33 @@ export async function getBalance(userId: string): Promise<number> {
  * balance would go non-negative. If no row is affected, we throw
  * InsufficientCreditsError — no partial state left behind.
  */
+export interface PlaceHoldOptions {
+  /** Optional UUID linking the hold to a specific run (playbook/voice/etc). */
+  agentRunId?: string;
+  /** Optional extra keys merged into the ledger transaction's metadata. */
+  extraMetadata?: Record<string, unknown>;
+  /** Override the 5-minute default TTL. */
+  ttlMs?: number;
+}
+
 export async function placeHold(
   userId: string,
   amountCents: number,
-  agentRunId?: string,
-  ttlMs: number = DEFAULT_HOLD_TTL_MS,
+  agentRunIdOrOpts?: string | PlaceHoldOptions,
+  ttlMsLegacy: number = DEFAULT_HOLD_TTL_MS,
 ): Promise<string> {
   if (amountCents <= 0) throw new Error("amountCents must be positive");
+
+  // Back-compat: older callers passed (userId, cents, agentRunId, ttlMs).
+  // New callers pass (userId, cents, { agentRunId?, extraMetadata?, ttlMs? }).
+  const opts: PlaceHoldOptions =
+    typeof agentRunIdOrOpts === "string" || agentRunIdOrOpts === undefined
+      ? { agentRunId: agentRunIdOrOpts, ttlMs: ttlMsLegacy }
+      : agentRunIdOrOpts;
+
+  const agentRunId = opts.agentRunId;
+  const ttlMs = opts.ttlMs ?? DEFAULT_HOLD_TTL_MS;
+  const extraMetadata = opts.extraMetadata ?? {};
 
   return db.transaction(async (tx) => {
     // ensure a row exists for the user — defensive upsert at cost of
@@ -123,13 +164,15 @@ export async function placeHold(
 
     // Ledger entry: negative delta, reason tags this as a hold (captured or
     // released later will create matching hold_capture / hold_release rows).
+    // Merge extraMetadata so callers (agent-factory, voice) can tag the
+    // row with agentSlug / channel / anything the cost rollup needs.
     await tx.insert(creditTransactions).values({
       userId,
       deltaCents: -amountCents,
       reason: "agent_run",
       holdId: hold.id,
       runId: agentRunId,
-      metadata: { stage: "hold_placed", ttlMs },
+      metadata: { stage: "hold_placed", ttlMs, ...extraMetadata },
     });
 
     log.info("hold placed", { userId, amountCents, holdId: hold.id });
@@ -157,6 +200,22 @@ export async function captureHold(holdId: string): Promise<void> {
       throw new Error(`Cannot capture hold ${holdId}: status is ${hold.status}`);
     }
 
+    // Pull the hold-placed transaction so we can forward its extraMetadata
+    // (agentSlug, etc.) onto the capture row. Without this, the cost
+    // rollup has no way to attribute spend to a specific agent.
+    const [placedTx] = await tx
+      .select({ metadata: creditTransactions.metadata })
+      .from(creditTransactions)
+      .where(
+        and(
+          eq(creditTransactions.holdId, holdId),
+          eq(creditTransactions.reason, "agent_run"),
+        ),
+      )
+      .limit(1);
+
+    const carried = extractCarriedMetadata(placedTx?.metadata);
+
     await tx
       .update(creditHolds)
       .set({ status: "captured", capturedAt: new Date() })
@@ -168,7 +227,7 @@ export async function captureHold(holdId: string): Promise<void> {
       reason: "hold_capture",
       holdId: hold.id,
       runId: hold.agentRunId,
-      metadata: { capturedCents: hold.amountCents },
+      metadata: { capturedCents: hold.amountCents, ...carried },
     });
 
     log.info("hold captured", { holdId, userId: hold.userId });
@@ -229,7 +288,7 @@ export async function releaseHold(holdId: string): Promise<void> {
 export async function topUp(
   userId: string,
   amountCents: number,
-  reason: "topup" | "promo" | "refund" | "adjustment" = "topup",
+  reason: "topup" | "promo" | "refund" | "adjustment" | "creator_payout" = "topup",
   metadata: Record<string, unknown> = {},
 ): Promise<number> {
   if (amountCents <= 0) throw new Error("amountCents must be positive for topUp");
@@ -257,6 +316,43 @@ export async function topUp(
     const newBalance = await getBalance(userId);
     log.info("credits topped up", { userId, amountCents, reason, newBalance });
     return newBalance;
+  });
+}
+
+/**
+ * Creator payout — split of a captured agent-run charge to the agent
+ * creator's credit balance. Called after captureHold succeeds for a
+ * paid agent with a known creator.
+ *
+ * sharePct defaults to 0.8 (80%) per Plan 2's submission-wizard promise.
+ *
+ * Idempotency: the caller (agent-factory success path) should only
+ * invoke this once per hold. Not transaction-locked — if a retry
+ * double-pays, the creator gets more credits, which is survivable.
+ * If strong idempotency is needed later we can derive a deterministic
+ * payout_id from holdId + sharePct and add a unique index.
+ */
+export async function creditCreatorPayout(opts: {
+  creatorUserId: string;
+  capturedCents: number;
+  sharePct?: number;
+  agentSlug: string;
+  sourceHoldId: string;
+  sourceUserId: string;
+}): Promise<number> {
+  const sharePct = opts.sharePct ?? 0.8;
+  const payoutCents = Math.floor(opts.capturedCents * sharePct);
+
+  if (payoutCents <= 0) return 0;
+  // Don't pay creators for their own runs — users running their own
+  // agent would double-round the money back to themselves.
+  if (opts.creatorUserId === opts.sourceUserId) return 0;
+
+  return topUp(opts.creatorUserId, payoutCents, "creator_payout", {
+    sharePct,
+    sourceHoldId: opts.sourceHoldId,
+    sourceUserId: opts.sourceUserId,
+    agentSlug: opts.agentSlug,
   });
 }
 

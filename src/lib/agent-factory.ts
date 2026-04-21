@@ -44,6 +44,7 @@ import { checkBudget, recordSpend } from "@/lib/budget-controls";
 import { startReplay, type ReplayBuilder } from "@/lib/agent-replay";
 import { checkAgentAccess } from "@/lib/paywall";
 import { recordSample } from "@/lib/slo-tracking";
+import { payoutCreatorIfApplicable } from "@/lib/creator-payout";
 import {
   runWithAttribution,
   getModelsConsulted,
@@ -509,10 +510,14 @@ async function handleAgentRoute(
           const { placeHold } = await import("@/lib/credits");
           const { estimatedHoldCents } = await import("@/lib/pricing-costs");
           const holdCents = estimatedHoldCents("nvidia/nemotron-3-nano-30b-a3b", 2000);
-          // L1.4 — tag the hold with "agent_<slug>_<ts>" so the rollup cron
-          // can surface per-agent cost in agent_stats_daily.total_cost_cents.
-          const agentRunTag = `agent_${config.name}_${Date.now()}`;
-          creditHoldId = await placeHold(userId, holdCents, agentRunTag, 5 * 60_000);
+          // L1.4 — tag the hold's ledger row with agentSlug via metadata
+          // (NOT via runId, which is a UUID column). captureHold carries
+          // this forward onto the hold_capture row so the nightly rollup
+          // (Phase 3) can attribute cost to the right agent.
+          creditHoldId = await placeHold(userId, holdCents, {
+            ttlMs: 5 * 60_000,
+            extraMetadata: { agentSlug: config.name },
+          });
         } catch (holdErr) {
           const { InsufficientCreditsError } = await import("@/lib/credits");
           if (holdErr instanceof InsufficientCreditsError) {
@@ -847,12 +852,30 @@ async function handleAgentRoute(
       // response (the user has their output already). The sweep cron
       // will retry / expire if capture didn't land.
       if (creditHoldId) {
-        try {
-          const { captureHold } = await import("@/lib/credits");
-          void captureHold(creditHoldId).catch((e) =>
-            log.warn("captureHold failed post-response", { holdId: creditHoldId, error: String(e) }),
-          );
-        } catch { /* never fail the response on a capture import error */ }
+        const heldCents = (await import("@/lib/pricing-costs")).estimatedHoldCents(
+          "nvidia/nemotron-3-nano-30b-a3b",
+          2000,
+        );
+        const holdIdForCapture = creditHoldId;
+        void (async () => {
+          try {
+            const { captureHold } = await import("@/lib/credits");
+            await captureHold(holdIdForCapture);
+            // L1.5 — creator payout (80% of capturedCents) to the agent's
+            // creator_user_id if the agent has one. Fire-and-forget.
+            await payoutCreatorIfApplicable({
+              agentSlug: config.name,
+              capturedCents: heldCents,
+              holdId: holdIdForCapture,
+              sourceUserId: userId ?? "",
+            });
+          } catch (e) {
+            log.warn("captureHold or creator payout failed post-response", {
+              holdId: holdIdForCapture,
+              error: String(e),
+            });
+          }
+        })();
       }
 
       return response;
