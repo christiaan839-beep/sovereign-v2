@@ -273,7 +273,12 @@ export const capabilities = {
   get stripe(): boolean { return !!env.STRIPE_SECRET_KEY; },
   get email(): boolean { return !!env.RESEND_API_KEY; },
   get sms(): boolean { return !!(env.TWILIO_ACCOUNT_SID && env.TWILIO_AUTH_TOKEN); },
+  get whatsapp(): boolean {
+    return !!(env.TWILIO_WHATSAPP_NUMBER && env.TWILIO_ACCOUNT_SID);
+  },
   get telegram(): boolean { return !!env.TELEGRAM_BOT_TOKEN; },
+  get payfast(): boolean { return !!env.PAYFAST_MERCHANT_ID; },
+  get paystack(): boolean { return !!env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY; },
   get hubspot(): boolean { return !!env.HUBSPOT_ACCESS_TOKEN; },
   get salesforce(): boolean { return !!(env.SALESFORCE_CLIENT_ID && env.SALESFORCE_CLIENT_SECRET); },
   get realtime(): boolean {
