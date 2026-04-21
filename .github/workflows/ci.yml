@@ -71,6 +71,44 @@ jobs:
       - name: Run tests
         run: npm test
 
+  reliability:
+    # Dedicated job for the reliability + safety test suites added in
+    # the phase-1 hardening sprint. These are fast, deterministic,
+    # offline tests — no provider keys needed — so they also serve as
+    # a required status check that gates main merges on:
+    #   - with-timeout invariants
+    #   - ai-parse JSON extraction + repair
+    #   - degradation mode behaviour
+    #   - confidence gate threshold logic
+    #   - NemoGuard safety pipeline (input + output checks, hashing,
+    #     Sovereign-tier skip gate)
+    #   - per-endpoint rate-limit rule matcher + window enforcement
+    #   - Stripe dedup state-machine
+    #   - model routing (sovereignty-aware)
+    name: Reliability Tests
+    runs-on: ubuntu-latest
+    needs: lint-and-typecheck
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run reliability + safety + rate-limit + dedup + routing tests
+        run: >
+          npx vitest run
+          src/lib/__tests__/reliability.test.ts
+          src/lib/__tests__/safety-pipeline.test.ts
+          src/lib/__tests__/rate-limits.test.ts
+          src/lib/__tests__/stripe-dedup.test.ts
+          src/lib/__tests__/model-routing.test.ts
+          --reporter=verbose
+
   security-audit:
     name: Security Audit
     runs-on: ubuntu-latest
