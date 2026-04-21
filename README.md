@@ -38,3 +38,62 @@ docker-compose up -d --build
 ```
 
 Execute. Dominate. Extinguish.
+
+---
+
+## Operations
+
+### Environment Variables
+
+All env vars are validated at boot via a Zod schema in `src/lib/env.ts`.
+A misconfigured deploy fails fast in production with a readable error
+listing the missing fields.
+
+1. Copy the template: `cp .env.example .env.local`
+2. Required for any deploy: `CLERK_SECRET_KEY`, `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `DATABASE_URL`
+3. Required for AI to do anything useful: at least one of
+   `NVIDIA_NIM_API_KEY`, `CEREBRAS_API_KEY`, `GEMINI_API_KEY`,
+   `ANTHROPIC_API_KEY`, `GROQ_API_KEY`.
+
+When the server boots, `src/lib/env.ts` prints a capability banner —
+`✓` means wired, `–` means dormant. Use this to confirm a deploy
+before cutting traffic over.
+
+### Health Endpoints
+
+| Endpoint | Purpose | Response |
+|---|---|---|
+| `/api/health` | Liveness — always returns JSON, never 500 | 200 with status object |
+| `/api/health/ping` | Lightweight keepalive | 200 with `{ok: true, ts}` |
+| `/api/health/deep` | All upstreams, 2s per check, parallel | 200 healthy / 503 critical-down |
+
+### UptimeRobot Setup
+
+Point UptimeRobot at `https://sovereignmatrix.agency/api/health/deep`:
+
+1. Sign up at [uptimerobot.com](https://uptimerobot.com) (free tier covers 50 monitors)
+2. **Add New Monitor** → Type: `HTTPS`
+3. **URL**: `https://sovereignmatrix.agency/api/health/deep`
+4. **Monitoring Interval**: 5 minutes
+5. **Alert after**: 2 consecutive fails (avoids flapping)
+6. **Alert Contacts**: email + Slack webhook + PagerDuty
+7. **Keyword Monitoring** (optional): alert if response body loses
+   `"status":"healthy"` — catches degraded-but-up state
+
+The endpoint returns:
+- `200 { status: "healthy" }` — all upstreams up
+- `200 { status: "degraded" }` — advisory service missing (e.g. Pinecone
+  not configured yet); platform still functional
+- `503 { status: "critical" }` — DB or Clerk down; page on-call
+
+### Deployment Checklist
+
+Before cutting over to production:
+1. `npm run build` — must succeed locally
+2. `npm test` — all tests green
+3. `npx tsc --noEmit` — typecheck clean
+4. Run new migrations against Neon production:
+   `drizzle/0018_credit_system.sql` → apply in Neon Console → SQL Editor
+5. Set env vars in Vercel / Railway dashboard (see `.env.example`)
+6. Verify `/api/health/deep` returns `{status: "healthy"}`
+7. Add the endpoint to UptimeRobot
