@@ -3,6 +3,7 @@ import { playbookRunSteps, playbookRuns } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { createLogger } from "@/lib/logger";
 import { getBaseUrl } from "@/lib/base-url";
+import { recordSample } from "@/lib/slo-tracking";
 import type { JobPayload } from "@/lib/job-queue";
 
 const log = createLogger("playbook-step-runner");
@@ -170,6 +171,14 @@ export async function updateRunStatus(runId: string): Promise<void> {
     .where(eq(playbookRuns.id, runId));
 
   log.info("run completed", { runId, status: finalStatus, steps: allSteps.length });
+
+  // Plan 4 SLO — playbook_completion: pass if finalStatus=done AND under 5 min.
+  // Fire-and-forget — Redis outage must not affect run completion.
+  void recordSample(
+    "playbook_completion",
+    totalMs,
+    finalStatus === "done" && totalMs <= 5 * 60 * 1000,
+  );
 
   // Telegram notification — fire-and-forget (never block the chain on it)
   void notifyTelegramOnComplete(runId, finalStatus, succeeded, totalMs, allSteps.length).catch(

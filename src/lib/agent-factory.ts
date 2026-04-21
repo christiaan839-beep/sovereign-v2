@@ -43,6 +43,7 @@ import { evaluatePolicy } from "@/lib/policy-engine";
 import { checkBudget, recordSpend } from "@/lib/budget-controls";
 import { startReplay, type ReplayBuilder } from "@/lib/agent-replay";
 import { checkAgentAccess } from "@/lib/paywall";
+import { recordSample } from "@/lib/slo-tracking";
 import {
   runWithAttribution,
   getModelsConsulted,
@@ -777,6 +778,8 @@ async function handleAgentRoute(
       const durationMs = Date.now() - startTime;
       trackAgentExecution(config.name, durationMs, true);
       recordAgentSuccess(config.name);
+      // Plan 4 SLO — agent latency p95 < 8s. Pass if under target.
+      void recordSample("agent_latency_p95", durationMs, durationMs <= 8000);
 
       // ─── Persist to agentActivity table (fire-and-forget) ───
       if (userId) {
@@ -854,6 +857,9 @@ async function handleAgentRoute(
       const failDurationMs = Date.now() - startTime;
       trackAgentExecution(config.name, failDurationMs, false);
       recordAgentFailure(config.name);
+      // Plan 4 SLO — failure is always a miss for the availability part
+      // of the latency objective, regardless of how fast it failed.
+      void recordSample("agent_latency_p95", failDurationMs, false);
       const message = error instanceof Error ? error.message : "Unknown error";
       log.error("Agent execution failed", { agent: config.name, error: message });
       replay?.fail(message);

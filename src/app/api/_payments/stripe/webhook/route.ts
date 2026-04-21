@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { subscriptions, stripeEvents } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { createLogger } from "@/lib/logger";
+import { recordSample } from "@/lib/slo-tracking";
 
 const log = createLogger("stripe-webhook");
 
@@ -28,6 +29,20 @@ function stripeId<T extends { id: string }>(field: string | T | null | undefined
 }
 
 export async function POST(req: Request) {
+  // Plan 4 SLO — record pass/fail for every webhook. We wrap the body
+  // in an inner function so we only have one place to track the outcome.
+  const sloStart = Date.now();
+  let sloPass = false;
+  try {
+    const res = await handleStripeWebhook(req);
+    sloPass = res.status >= 200 && res.status < 300;
+    return res;
+  } finally {
+    void recordSample("stripe_webhook_ok", Date.now() - sloStart, sloPass);
+  }
+}
+
+async function handleStripeWebhook(req: Request): Promise<NextResponse> {
   const stripeKey = process.env.STRIPE_SECRET_KEY;
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 

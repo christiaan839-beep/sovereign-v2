@@ -21,6 +21,7 @@
 
 import { NextResponse } from "next/server";
 import { createLogger } from "@/lib/logger";
+import { recordSample } from "@/lib/slo-tracking";
 
 const log = createLogger("health-deep");
 
@@ -204,6 +205,10 @@ export async function GET() {
     checked_at: new Date().toISOString(),
     total_latency_ms: Date.now() - start,
   };
+
+  // Fire-and-forget SLO sample (Plan 4): availability = 1 if no critical
+  // check is down. `void` — a Redis hiccup must not fail the health check.
+  void recordSample("health_availability", Date.now() - start, !criticalDown);
 
   // 503 when critical is down so UptimeRobot fires; 200 otherwise.
   return NextResponse.json(body, { status: criticalDown ? 503 : 200 });

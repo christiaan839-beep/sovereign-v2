@@ -29,6 +29,7 @@ import { VoiceSession } from "@/lib/voice-stream";
 import { verifyVoiceToken, type VoiceTokenPayload } from "@/lib/voice-token";
 import { getPersona } from "@/lib/voice-personas";
 import { captureHold, releaseHold } from "@/lib/credits";
+import { recordSample } from "@/lib/slo-tracking";
 
 /**
  * The minimal WebSocket shape we need. Matches `ws` library and the
@@ -78,6 +79,10 @@ export function handleVoiceWs(ws: WsLike, opts: HandleVoiceWsOptions): Promise<v
   let sessionStart: number | null = null;
   let closed = false;
 
+  // Plan 4 SLO — voice_first_audio_p95. Set on `turn-end`, cleared on
+  // first audio chunk of that turn. Null while no turn is in flight.
+  let turnEndAt: number | null = null;
+
   const sendJson = (obj: unknown): void => {
     if (closed) return;
     try {
@@ -120,6 +125,13 @@ export function handleVoiceWs(ws: WsLike, opts: HandleVoiceWsOptions): Promise<v
           voice: persona.voice,
           speed: persona.speed,
           onAudioChunk: (chunk) => {
+            // Plan 4 SLO: record turn-end → first audio latency ONCE per turn.
+            // Target: <1.5s. Subsequent chunks in the same turn don't sample.
+            if (turnEndAt != null) {
+              const firstAudioMs = Date.now() - turnEndAt;
+              void recordSample("voice_first_audio_p95", firstAudioMs, firstAudioMs <= 1500);
+              turnEndAt = null;
+            }
             // Base64-encode binary audio for the JSON message envelope.
             sendJson({ type: "audio", chunk: bufferToBase64(chunk) });
           },
@@ -144,6 +156,10 @@ export function handleVoiceWs(ws: WsLike, opts: HandleVoiceWsOptions): Promise<v
             sendJson({ type: "error", message: "turn-end requires non-empty transcript" });
             return;
           }
+          // Mark the moment the turn started from the server's perspective,
+          // so onAudioChunk can compute first-audio latency on the very
+          // first chunk of the agent's reply.
+          turnEndAt = Date.now();
           // Don't await — handleTurn is long-running; next messages
           // (barge-in, close) need to arrive while it's streaming.
           void session?.handleTurn(msg.transcript);
