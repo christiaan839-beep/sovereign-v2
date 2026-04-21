@@ -136,7 +136,20 @@ function IntelligenceNav() {
 // ─── Hero ─────────────────────────────────────────────────────────────
 
 function IntelligenceHero() {
-  const memoryCount = useCountUp(847, 2400);
+  const [memoryTarget, setMemoryTarget] = useState(847);
+
+  useEffect(() => {
+    fetch("/api/memory/stats")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.platform?.displayMemories) {
+          setMemoryTarget(data.platform.displayMemories);
+        }
+      })
+      .catch(() => {}); // keep 847 fallback
+  }, []);
+
+  const memoryCount = useCountUp(memoryTarget, 2200);
 
   return (
     <section className="relative min-h-[70vh] flex items-center px-6 pt-28 pb-24 overflow-hidden">

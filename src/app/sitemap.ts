@@ -6,6 +6,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const pages: Array<{ path: string; priority: number; changeFreq: "daily" | "weekly" | "monthly" }> = [
     // Core pages (highest priority)
     { path: "", priority: 1.0, changeFreq: "daily" },
+    { path: "/marketplace", priority: 0.9, changeFreq: "daily" },
+    { path: "/intelligence", priority: 0.85, changeFreq: "weekly" },
     { path: "/pricing", priority: 0.9, changeFreq: "weekly" },
     { path: "/onboarding", priority: 0.9, changeFreq: "monthly" },
     { path: "/docs", priority: 0.9, changeFreq: "weekly" },
@@ -54,6 +56,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/for-education", priority: 0.8, changeFreq: "monthly" },
     { path: "/for-fintech", priority: 0.8, changeFreq: "monthly" },
     { path: "/for-ecommerce", priority: 0.8, changeFreq: "monthly" },
+    { path: "/for-agriculture", priority: 0.75, changeFreq: "monthly" },
+    { path: "/for-manufacturing", priority: 0.75, changeFreq: "monthly" },
+    { path: "/for-government", priority: 0.75, changeFreq: "monthly" },
 
     // Contact
     { path: "/contact", priority: 0.7, changeFreq: "monthly" },
@@ -62,7 +67,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/about", priority: 0.7, changeFreq: "monthly" },
     { path: "/partner", priority: 0.7, changeFreq: "monthly" },
     { path: "/blog", priority: 0.8, changeFreq: "daily" },
-    { path: "/marketplace", priority: 0.8, changeFreq: "weekly" },
     { path: "/developers", priority: 0.8, changeFreq: "weekly" },
     { path: "/developers/docs", priority: 0.8, changeFreq: "weekly" },
 

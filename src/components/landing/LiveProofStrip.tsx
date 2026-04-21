@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 interface StripStats {
   agents: number;
   models: number;
+  memories: number;
   industries: number;
   uptime: string;
 }
@@ -12,41 +13,67 @@ interface StripStats {
 const STATIC_FALLBACK: StripStats = {
   agents: 137,
   models: 39,
+  memories: 847,
   industries: 14,
   uptime: "99.9%",
 };
 
 /**
- * LiveProofStrip — Thin horizontal strip with 4 live stats.
- * Fetches from /api/agents/dashboard-stats with static fallback.
+ * LiveProofStrip — Thin horizontal strip with live stats.
+ * Fetches from /api/agents/dashboard-stats and /api/memory/stats in parallel.
  * JetBrains Mono, copper values, copper separator dots.
  */
 export function LiveProofStrip() {
   const [stats, setStats] = useState<StripStats>(STATIC_FALLBACK);
 
   useEffect(() => {
-    fetch("/api/agents/dashboard-stats", { cache: "no-store" })
-      .then((r) => r.json())
-      .then((data) => {
-        if (data && typeof data.agentCount === "number") {
-          setStats({
-            agents: data.agentCount ?? STATIC_FALLBACK.agents,
-            models: data.modelCount ?? STATIC_FALLBACK.models,
-            industries: data.industries ?? STATIC_FALLBACK.industries,
-            uptime: data.uptime ?? STATIC_FALLBACK.uptime,
-          });
-        }
-      })
-      .catch(() => {
-        // silently keep static fallback
-      });
+    const [statsRes, memRes] = [
+      fetch("/api/agents/dashboard-stats", { cache: "no-store" }),
+      fetch("/api/memory/stats", { cache: "no-store" }),
+    ];
+
+    Promise.allSettled([statsRes, memRes]).then(async ([dashResult, memResult]) => {
+      let agentData: Record<string, unknown> | null = null;
+      let memData: Record<string, unknown> | null = null;
+
+      if (dashResult.status === "fulfilled") {
+        try { agentData = await dashResult.value.json(); } catch { /* ignore */ }
+      }
+      if (memResult.status === "fulfilled") {
+        try { memData = await memResult.value.json(); } catch { /* ignore */ }
+      }
+
+      setStats((prev) => ({
+        agents:
+          agentData && typeof agentData.agentCount === "number"
+            ? agentData.agentCount
+            : prev.agents,
+        models:
+          agentData && typeof agentData.modelCount === "number"
+            ? agentData.modelCount
+            : prev.models,
+        memories:
+          memData &&
+          typeof (memData as { platform?: { displayMemories?: unknown } }).platform?.displayMemories === "number"
+            ? ((memData as { platform: { displayMemories: number } }).platform.displayMemories)
+            : prev.memories,
+        industries:
+          agentData && typeof agentData.industries === "number"
+            ? agentData.industries
+            : prev.industries,
+        uptime:
+          agentData && typeof agentData.uptime === "string"
+            ? agentData.uptime
+            : prev.uptime,
+      }));
+    });
   }, []);
 
   const items = [
-    { value: stats.agents.toString(), label: "agents live" },
-    { value: stats.models.toString(), label: "models" },
-    { value: stats.industries.toString(), label: "industries" },
-    { value: stats.uptime, label: "uptime" },
+    { value: `${stats.agents} Agents`, label: "" },
+    { value: `${stats.models}+ Models`, label: "" },
+    { value: `${stats.memories.toLocaleString()} Memories`, label: "" },
+    { value: `${stats.industries} Industries`, label: "" },
   ];
 
   return (
@@ -57,7 +84,7 @@ export function LiveProofStrip() {
     >
       <div className="flex justify-center items-center gap-6 flex-wrap min-w-max px-6">
         {items.map((item, i) => (
-          <div key={item.label} className="flex items-center gap-6">
+          <div key={i} className="flex items-center gap-6">
             {i > 0 && (
               <span
                 aria-hidden="true"
@@ -65,9 +92,8 @@ export function LiveProofStrip() {
                 style={{ background: "rgba(181,83,44,0.5)" }}
               />
             )}
-            <span className="font-mono text-[12px] tracking-tight whitespace-nowrap">
-              <span className="text-[#B5532C] font-semibold">{item.value}</span>
-              <span className="text-neutral-500 ml-1.5">{item.label}</span>
+            <span className="font-mono text-[12px] tracking-tight whitespace-nowrap text-[#B5532C] font-semibold">
+              {item.value}
             </span>
           </div>
         ))}
