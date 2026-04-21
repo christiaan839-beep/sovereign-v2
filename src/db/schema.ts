@@ -870,6 +870,35 @@ export const creditHolds = pgTable("credit_holds", {
 ]);
 
 // ═══════════════════════════════════════════
+// Scheduled Playbooks (migration 0022)
+// ═══════════════════════════════════════════
+// Users can schedule any playbook on a cron expression. The
+// dispatcher cron (runs every minute) picks rows where next_run_at
+// has passed, enqueues via the existing QStash queue, and recomputes
+// next_run_at from the cron_expression + timezone.
+
+export const scheduledPlaybooks = pgTable("scheduled_playbooks", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull(),
+  playbookId: text("playbook_id").notNull(),
+  inputs: text("inputs").notNull().default("{}"),
+  cronExpression: text("cron_expression").notNull(),
+  timezone: text("timezone").notNull().default("UTC"),
+  active: boolean("active").notNull().default(true),
+  nextRunAt: timestamp("next_run_at").notNull(),
+  lastRunAt: timestamp("last_run_at"),
+  lastRunId: uuid("last_run_id"),
+  runCount: integer("run_count").notNull().default(0),
+  failureCount: integer("failure_count").notNull().default(0),
+  name: text("name"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_scheduled_user").on(table.userId),
+  index("idx_scheduled_next_run").on(table.nextRunAt),
+]);
+
+// ═══════════════════════════════════════════
 // Safety Events (migration 0019)
 // ═══════════════════════════════════════════
 // Audit log for every block/warn from the NemoGuard pipeline.
