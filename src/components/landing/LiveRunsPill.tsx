@@ -60,8 +60,8 @@ export function LiveRunsPill() {
       aria-label={`Live platform activity: ${message}`}
     >
       <span className="relative inline-flex h-1.5 w-1.5">
-        <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-70 animate-ping" />
-        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
+        <span className="absolute inline-flex h-full w-full rounded-full bg-[#B5532C] opacity-70 animate-ping" />
+        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#B5532C]" />
       </span>
 
       <AnimatePresence mode="wait">

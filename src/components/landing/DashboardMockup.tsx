@@ -29,20 +29,55 @@ interface Step {
 }
 
 const STEPS: Step[] = [
-  { n: 1, agent: "Classify niche", status: "done", model: "nemotron-ultra-253b-v1", duration: "~1s" },
-  { n: 2, agent: "Discover companies", status: "done", model: "gemini-2.5-flash", duration: "~40s" },
-  { n: 3, agent: "Enrich contacts", status: "running", model: "claude-sonnet-4-6" },
+  {
+    n: 1,
+    agent: "Classify niche",
+    status: "done",
+    model: "nemotron-ultra-253b-v1",
+    duration: "~1s",
+  },
+  {
+    n: 2,
+    agent: "Discover companies",
+    status: "done",
+    model: "gemini-2.5-flash",
+    duration: "~40s",
+  },
+  {
+    n: 3,
+    agent: "Enrich contacts",
+    status: "running",
+    model: "claude-sonnet-4-6",
+  },
   { n: 4, agent: "Score priority", status: "pending" },
   { n: 5, agent: "Draft outreach angle", status: "pending" },
 ];
 
 const OUTPUT_LINES = [
-  { text: "→ Classified niche: B2B SaaS / mid-market", color: "text-emerald-400" },
-  { text: "→ Discovered companies matching ICP signals", color: "text-emerald-400" },
-  { text: "  · Tiered by funding stage + headcount + signal recency", color: "text-neutral-500" },
-  { text: "→ Enriching via Hunter → Apollo → Clearbit fallback chain", color: "text-cyan-400" },
-  { text: "  · Verified emails + LinkedIn profiles per company", color: "text-neutral-500" },
-  { text: "  · Running claude-sonnet-4-6 quality critic on contact angles", color: "text-[#B5532C]" },
+  {
+    text: "→ Classified niche: B2B SaaS / mid-market",
+    color: "text-[#B5532C]",
+  },
+  {
+    text: "→ Discovered companies matching ICP signals",
+    color: "text-[#B5532C]",
+  },
+  {
+    text: "  · Tiered by funding stage + headcount + signal recency",
+    color: "text-neutral-500",
+  },
+  {
+    text: "→ Enriching via Hunter → Apollo → Clearbit fallback chain",
+    color: "text-[#B5532C]/70",
+  },
+  {
+    text: "  · Verified emails + LinkedIn profiles per company",
+    color: "text-neutral-500",
+  },
+  {
+    text: "  · Running claude-sonnet-4-6 quality critic on contact angles",
+    color: "text-[#B5532C]",
+  },
 ];
 
 export function DashboardMockup() {
@@ -60,9 +95,18 @@ export function DashboardMockup() {
             The copper "Sample run" badge makes it unambiguous: this is
             an illustration of the dashboard pattern, not live data. */}
         <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.05] bg-[#060605]">
-          <span className="h-2.5 w-2.5 rounded-full bg-[#3a3633]" aria-hidden="true" />
-          <span className="h-2.5 w-2.5 rounded-full bg-[#3a3633]" aria-hidden="true" />
-          <span className="h-2.5 w-2.5 rounded-full bg-[#3a3633]" aria-hidden="true" />
+          <span
+            className="h-2.5 w-2.5 rounded-full bg-[#3a3633]"
+            aria-hidden="true"
+          />
+          <span
+            className="h-2.5 w-2.5 rounded-full bg-[#3a3633]"
+            aria-hidden="true"
+          />
+          <span
+            className="h-2.5 w-2.5 rounded-full bg-[#3a3633]"
+            aria-hidden="true"
+          />
           <div className="mx-auto flex items-center gap-2 text-[11px] font-mono text-neutral-500">
             <span className="text-neutral-700">sovereign.matrix</span>
             <span>/</span>
@@ -106,7 +150,9 @@ export function DashboardMockup() {
               <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-neutral-600">
                 Output · Step 3
               </p>
-              <span aria-hidden="true" className="text-neutral-800">·</span>
+              <span aria-hidden="true" className="text-neutral-800">
+                ·
+              </span>
               <p className="font-mono text-[10px] text-[#B5532C]">
                 claude-sonnet-4-6 critic gates every step
               </p>
@@ -151,7 +197,7 @@ export function DashboardMockup() {
             <span className="text-neutral-800"> · </span>
             <span className="text-white">claude-sonnet-4-6</span>
           </p>
-          <span className="inline-flex items-center gap-1.5 text-[10px] font-mono text-emerald-400/80">
+          <span className="inline-flex items-center gap-1.5 text-[10px] font-mono text-[#B5532C]/80">
             <Check className="h-3 w-3" />
             5-layer pipeline
           </span>
@@ -176,8 +222,8 @@ function StepRow({ step, index }: { step: Step; index: number }) {
       {/* Step status icon — different per state */}
       <div className="relative mt-0.5 flex-shrink-0">
         {isDone && (
-          <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/15 border border-emerald-500/30">
-            <Check className="h-3 w-3 text-emerald-400" />
+          <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#B5532C]/15 border border-[#B5532C]/30">
+            <Check className="h-3 w-3 text-[#B5532C]" />
           </span>
         )}
         {isRunning && (

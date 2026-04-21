@@ -29,20 +29,20 @@ import { motion } from "framer-motion";
  */
 
 interface TerminalLine {
-  prompt?: string;    // "$" or ">"  — leading symbol
+  prompt?: string; // "$" or ">"  — leading symbol
   promptColor?: string; // tailwind class for the prompt
   text: string;
   pauseBefore?: number; // ms before this line starts typing
-  pauseAfter?: number;  // ms after this line finishes
-  instant?: boolean;    // don't typewriter; appear fully
-  color?: string;       // tailwind class for the text
+  pauseAfter?: number; // ms after this line finishes
+  instant?: boolean; // don't typewriter; appear fully
+  color?: string; // tailwind class for the text
 }
 
 const SEQUENCE: TerminalLine[] = [
   {
     prompt: ">",
     promptColor: "text-[#B5532C]",
-    text: "playbook run lead-blitz --niche=\"B2B SaaS\" --location=\"San Francisco\"",
+    text: 'playbook run lead-blitz --niche="B2B SaaS" --location="San Francisco"',
     pauseBefore: 300,
     pauseAfter: 450,
   },
@@ -61,7 +61,7 @@ const SEQUENCE: TerminalLine[] = [
   {
     text: "[1.18s] Tavily research: found 23 companies matching criteria",
     instant: true,
-    color: "text-emerald-400/80",
+    color: "text-[#B5532C]/80",
     pauseAfter: 250,
   },
   {
@@ -85,7 +85,7 @@ const SEQUENCE: TerminalLine[] = [
   {
     text: "[3.42s] Drafted 23 emails · avg 147 words · 0 PII flags",
     instant: true,
-    color: "text-emerald-400/80",
+    color: "text-[#B5532C]/80",
     pauseAfter: 250,
   },
   {
@@ -100,7 +100,9 @@ const LOOP_DELAY_MS = 20_000;
 const CHARS_PER_MS = 0.04; // Typewriter speed for prompt line (~25ms/char)
 
 export function LiveTerminalDemo() {
-  const [visibleLines, setVisibleLines] = useState<Array<{ line: TerminalLine; typed: string }>>([]);
+  const [visibleLines, setVisibleLines] = useState<
+    Array<{ line: TerminalLine; typed: string }>
+  >([]);
   const [isPlaying, setIsPlaying] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -111,7 +113,9 @@ export function LiveTerminalDemo() {
     // matchMedia is browser-only, so we can't move this to a lazy useState
     // initializer without causing SSR/client hydration mismatch — the
     // post-mount setState is intentional.
-    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const prefersReduced = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
     if (prefersReduced) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- mount-time sync required (see above)
       setVisibleLines(SEQUENCE.map((line) => ({ line, typed: line.text })));
@@ -145,10 +149,16 @@ export function LiveTerminalDemo() {
               function frame() {
                 if (cancelled) return resolve();
                 const elapsed = Date.now() - start;
-                const typedCount = Math.min(chars, Math.floor(elapsed * CHARS_PER_MS));
+                const typedCount = Math.min(
+                  chars,
+                  Math.floor(elapsed * CHARS_PER_MS),
+                );
                 setVisibleLines((prev) => {
                   const next = [...prev];
-                  next[next.length - 1] = { line, typed: line.text.slice(0, typedCount) };
+                  next[next.length - 1] = {
+                    line,
+                    typed: line.text.slice(0, typedCount),
+                  };
                   return next;
                 });
                 if (typedCount >= chars) return resolve();
@@ -204,8 +214,8 @@ export function LiveTerminalDemo() {
             sovereign://playbooks/lead-blitz
           </span>
           {isPlaying && (
-            <span className="ml-auto flex items-center gap-1.5 font-mono text-[10px] text-emerald-400/70">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="ml-auto flex items-center gap-1.5 font-mono text-[10px] text-[#B5532C]/70">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#B5532C] animate-pulse" />
               running
             </span>
           )}
@@ -220,14 +230,18 @@ export function LiveTerminalDemo() {
           {visibleLines.map((entry, i) => (
             <div key={i} className="flex gap-2">
               {entry.line.prompt && (
-                <span className={entry.line.promptColor ?? "text-white"}>{entry.line.prompt}</span>
+                <span className={entry.line.promptColor ?? "text-white"}>
+                  {entry.line.prompt}
+                </span>
               )}
               <span className={entry.line.color ?? "text-white"}>
                 {entry.typed}
                 {/* Cursor on the active (last) line */}
-                {i === visibleLines.length - 1 && !entry.line.instant && entry.typed.length < entry.line.text.length && (
-                  <span className="ml-0.5 inline-block h-[14px] w-[2px] bg-[#B5532C] animate-pulse align-middle" />
-                )}
+                {i === visibleLines.length - 1 &&
+                  !entry.line.instant &&
+                  entry.typed.length < entry.line.text.length && (
+                    <span className="ml-0.5 inline-block h-[14px] w-[2px] bg-[#B5532C] animate-pulse align-middle" />
+                  )}
               </span>
             </div>
           ))}
@@ -236,7 +250,10 @@ export function LiveTerminalDemo() {
 
       <p className="mt-4 text-[11px] font-mono text-neutral-600 tracking-wide">
         ↑ Deterministic demo. Your live run happens at
-        <a href="/dashboard/playbooks?auto=lead-blitz" className="text-[#B5532C] hover:text-white transition-colors mx-1 underline decoration-[#B5532C]/40">
+        <a
+          href="/dashboard/playbooks?auto=lead-blitz"
+          className="text-[#B5532C] hover:text-white transition-colors mx-1 underline decoration-[#B5532C]/40"
+        >
           /dashboard/playbooks
         </a>
         after signup.
