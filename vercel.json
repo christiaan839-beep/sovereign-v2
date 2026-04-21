@@ -40,6 +40,10 @@
     {
       "path": "/api/cron/sweep-expired-holds",
       "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/cron/dispatch-scheduled-playbooks",
+      "schedule": "* * * * *"
     }
   ],
   "headers": [
