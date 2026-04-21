@@ -219,3 +219,95 @@ export function percentile(values: number[], p: number): number {
   const idx = Math.max(0, Math.min(sorted.length - 1, Math.ceil(p * sorted.length) - 1));
   return sorted[idx];
 }
+
+/* ─── Redis read-path for the weekly breach cron ─────────────── */
+
+/**
+ * Parse a sorted-set member back into (value, pass). Members are
+ * written as `${value}:${p|f}:${uniq}` by recordSample.
+ */
+export function parseSampleMember(member: string): { value: number; pass: boolean } | null {
+  const firstColon = member.indexOf(":");
+  if (firstColon < 1) return null;
+  const secondColon = member.indexOf(":", firstColon + 1);
+  if (secondColon < 0) return null;
+
+  const valueStr = member.slice(0, firstColon);
+  const tag = member.slice(firstColon + 1, secondColon);
+  const value = Number(valueStr);
+  if (!Number.isFinite(value)) return null;
+  if (tag !== "p" && tag !== "f") return null;
+  return { value, pass: tag === "p" };
+}
+
+/**
+ * Aggregate all samples for a SLO over the last N days into a
+ * SampleSummary. Reads one Redis key per day (cheap — ~30 round-trips
+ * max for a 30-day window).
+ *
+ * Returns an empty summary if Upstash isn't configured or all reads
+ * fail — upstream classifyBreach handles the zero-count case cleanly.
+ */
+export async function summarizeWindow(
+  slo: SLODefinition,
+): Promise<SampleSummary> {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  const summary: SampleSummary = { count: 0, passed: 0, failed: 0, values: [] };
+  if (!url || !token) return summary;
+
+  const days = slo.windowDays;
+  const now = Date.now();
+
+  // Build the list of day keys to fetch.
+  const dayKeys: string[] = [];
+  for (let i = 0; i < days; i++) {
+    const d = new Date(now - i * 24 * 60 * 60 * 1000);
+    dayKeys.push(`slo:${slo.name}:${d.toISOString().slice(0, 10)}`);
+  }
+
+  const fetches = dayKeys.map(async (key) => {
+    try {
+      // ZRANGE 0 -1 returns all members in ascending score order.
+      // We don't need scores; just the member strings.
+      const res = await fetch(`${url}/zrange/${encodeURIComponent(key)}/0/-1`, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+        signal: AbortSignal.timeout(3000),
+      });
+      if (!res.ok) return [] as string[];
+      const body = (await res.json()) as { result?: string[] };
+      return body.result ?? [];
+    } catch {
+      return [] as string[];
+    }
+  });
+
+  const perDay = await Promise.all(fetches);
+  for (const members of perDay) {
+    for (const m of members) {
+      const parsed = parseSampleMember(m);
+      if (!parsed) continue;
+      summary.count++;
+      if (parsed.pass) summary.passed++;
+      else summary.failed++;
+      summary.values.push(parsed.value);
+    }
+  }
+
+  return summary;
+}
+
+/**
+ * Check every configured SLO against its window. Returns the list of
+ * BreachReports (both breached and OK) so the cron can decide what to
+ * post. Runs all SLOs in parallel — none of them need to block each
+ * other since each reads its own Redis keys.
+ */
+export async function checkAllSLOs(): Promise<BreachReport[]> {
+  const jobs = Object.values(SLOS).map(async (slo) => {
+    const summary = await summarizeWindow(slo);
+    return classifyBreach(slo, summary);
+  });
+  return Promise.all(jobs);
+}

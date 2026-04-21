@@ -52,6 +52,10 @@
     {
       "path": "/api/cron/rollup-agent-stats",
       "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/cron/slo-weekly",
+      "schedule": "0 9 * * 1"
     }
   ],
   "headers": [
