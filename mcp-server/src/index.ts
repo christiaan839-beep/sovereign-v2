@@ -26,11 +26,17 @@ const API_KEY = process.env.SOVEREIGN_API_KEY || "";
 
 // ─── HTTP Helper ─────────────────────────────────────────────────────────────
 
-async function apiCall(
+/**
+ * Generic call helper. Callers pass an expected shape type so
+ * `result.data.foo` type-checks. Without the generic, TypeScript
+ * sees `unknown` and rejects property access — breaking the build
+ * (as seen before phase 3.3 added this signature).
+ */
+async function apiCall<T = unknown>(
   path: string,
   method: "GET" | "POST" = "GET",
   body?: Record<string, unknown>
-): Promise<{ ok: boolean; status: number; data: unknown }> {
+): Promise<{ ok: boolean; status: number; data: T }> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
@@ -47,12 +53,12 @@ async function apiCall(
     });
 
     const data = await res.json().catch(() => ({ error: "Non-JSON response" }));
-    return { ok: res.ok, status: res.status, data };
+    return { ok: res.ok, status: res.status, data: data as T };
   } catch (err) {
     return {
       ok: false,
       status: 0,
-      data: { error: err instanceof Error ? err.message : "Network error" },
+      data: { error: err instanceof Error ? err.message : "Network error" } as T,
     };
   }
 }
@@ -128,7 +134,7 @@ server.tool(
   async ({ playbook_id, inputs }) => {
     // Use the canonical playbook engine — not the old /agents/coordinator path.
     // This ensures DB persistence, plan enforcement, and step tracking.
-    const runResult = await apiCall("/api/playbooks/run", "POST", {
+    const runResult = await apiCall<{ runId?: string }>("/api/playbooks/run", "POST", {
       playbookId: playbook_id,
       inputs,
     });
@@ -144,7 +150,10 @@ server.tool(
     // Poll until done (max 90s, 3s intervals)
     for (let i = 0; i < 30; i++) {
       await new Promise((r) => setTimeout(r, 3000));
-      const poll = await apiCall(`/api/playbooks/runs/${runId}`, "GET");
+      const poll = await apiCall<{ done?: boolean; status?: string }>(
+        `/api/playbooks/runs/${runId}`,
+        "GET",
+      );
       if (poll.data?.done) {
         return {
           content: [{ type: "text" as const, text: JSON.stringify(poll.data, null, 2) }],

@@ -501,6 +501,12 @@ export const tenantMemories = pgTable("tenant_memories", {
   tags: text("tags"),
   metadata: text("metadata"),
   createdAt: timestamp("created_at").defaultNow(),
+  // Added in migration 0017_semantic_memory.sql
+  embeddingJson: text("embedding_json"),       // JSON-stringified float32[1024]
+  importanceScore: text("importance_score"),   // REAL — stored as text for broad PG compat
+  memoryType: text("memory_type"),             // 'execution' | 'insight' | 'preference' | 'fact'
+  sourceAgent: text("source_agent"),
+  sessionId: text("session_id"),
 });
 
 // ═══════════════════════════════════════════

@@ -201,7 +201,10 @@ async function writeToDB(
   metadata?: Record<string, unknown>
 ): Promise<void> {
   try {
-    const insertData: Record<string, unknown> = {
+    // Typed insert — migration 0017 added embeddingJson, importanceScore,
+    // memoryType, sourceAgent, sessionId to the Drizzle schema so we no
+    // longer need the unsafe Record<string, unknown> + cast pattern.
+    await db.insert(tenantMemories).values({
       id: mem.id,
       userId: mem.userId,
       agentName: mem.agentName,
@@ -209,16 +212,12 @@ async function writeToDB(
       outputSummary: mem.output,
       tags: mem.tags.join(","),
       metadata: metadata ? JSON.stringify(metadata) : null,
-    };
-
-    // Only include new columns if migration 0017 has been applied
-    if (vec) insertData.embedding_json = JSON.stringify(Array.from(vec));
-    insertData.importance_score = mem.importanceScore;
-    insertData.memory_type      = mem.memoryType;
-    insertData.source_agent     = mem.agentName;
-    if (mem.sessionId) insertData.session_id = mem.sessionId;
-
-    await (db.insert(tenantMemories) as { values: (v: Record<string, unknown>) => Promise<void> }).values(insertData);
+      embeddingJson: vec ? JSON.stringify(Array.from(vec)) : null,
+      importanceScore: String(mem.importanceScore),
+      memoryType: mem.memoryType,
+      sourceAgent: mem.agentName,
+      sessionId: mem.sessionId ?? null,
+    });
   } catch (err) {
     // Likely the new columns don't exist yet (migration not run). Write without them.
     try {
