@@ -1,145 +1,191 @@
 "use client";
 
-import React, { useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Clock,
-  Plus,
-  Play,
-  Pencil,
-  Trash2,
-  X,
-  Calendar,
-  Target,
-  FileText,
-  Search,
-  Zap,
-  Bot,
-  Shield,
-  ChevronDown,
-} from "lucide-react";
+import { Clock, Plus, Play, Trash2, X, Calendar, AlertCircle } from "lucide-react";
 
-interface ScheduleItem {
+/**
+ * /dashboard/scheduled — live scheduled-playbooks page.
+ *
+ * Reads and writes /api/playbooks/scheduled. Presents a friendly
+ * preset picker (Hourly / Daily / Weekly / Monthly) with an
+ * "Advanced" escape hatch for raw cron — most users never need the
+ * raw path. Timezone defaults to browser local.
+ *
+ * Paired with /api/cron/dispatch-scheduled-playbooks which runs every
+ * minute and fires any schedule whose next_run_at has passed.
+ */
+
+interface Playbook {
   id: string;
-  agentName: string;
-  agentIcon: React.ComponentType<{ className?: string }>;
-  color: string;
-  schedule: string;
-  cron: string;
-  lastRun: string;
-  nextRun: string;
-  active: boolean;
+  name: string;
+  category: string;
+  description: string;
+  fields: Array<{ key: string; label: string; placeholder: string; required: boolean }>;
+  estimatedTime: string;
+  agentCount: number;
 }
 
-const COLOR_MAP: Record<string, { bg: string; text: string; border: string }> = {
-  emerald: { bg: "bg-emerald-500/10", text: "text-emerald-400", border: "border-emerald-500/20" },
-  blue: { bg: "bg-blue-500/10", text: "text-blue-400", border: "border-blue-500/20" },
-  violet: { bg: "bg-violet-500/10", text: "text-violet-400", border: "border-violet-500/20" },
-  amber: { bg: "bg-amber-500/10", text: "text-amber-400", border: "border-amber-500/20" },
-  rose: { bg: "bg-rose-500/10", text: "text-rose-400", border: "border-rose-500/20" },
-  cyan: { bg: "bg-cyan-500/10", text: "text-cyan-400", border: "border-cyan-500/20" },
-};
+interface Schedule {
+  id: string;
+  userId: string;
+  playbookId: string;
+  inputs: string; // JSON-encoded
+  cronExpression: string;
+  timezone: string;
+  active: boolean;
+  nextRunAt: string;
+  lastRunAt: string | null;
+  runCount: number;
+  failureCount: number;
+  name: string | null;
+}
 
-const AGENT_OPTIONS = [
-  { name: "Lead Prospector", icon: Target, color: "emerald" },
-  { name: "SEO Dominator", icon: Search, color: "blue" },
-  { name: "Content Engine", icon: FileText, color: "violet" },
-  { name: "Competitor Intel", icon: Zap, color: "amber" },
-  { name: "Ghost Protocol", icon: Shield, color: "rose" },
-  { name: "System Monitor", icon: Bot, color: "cyan" },
-];
+// ─── Friendly-preset → cron mapping ─────────────────────────────
+// Presets cover the 80% case. Power users drop into the Advanced tab
+// for a raw cron expression. Time format is 24h "HH:MM" — browser
+// <input type="time"> handles localization.
 
-const FREQUENCY_OPTIONS = ["Daily", "Weekly", "Monthly", "Custom cron"];
+type Preset = "hourly" | "daily" | "weekly" | "monthly" | "advanced";
 
-// No fabricated schedules. The UI starts empty; real entries come from
-// /api/_misc/scheduled-runs once the user creates them. Note: scheduled
-// EXECUTION (the cron that fires saved schedules) is not live yet — saved
-// schedules persist to the DB but won't auto-run until the execution loop
-// ships. See the beta banner below.
-const INITIAL_SCHEDULES: ScheduleItem[] = [];
+function presetToCron(
+  preset: Preset,
+  time: string,
+  dayOfWeek: number,
+  dayOfMonth: number,
+  hourlyInterval: number,
+  advancedExpr: string,
+): string {
+  const [h, m] = time.split(":").map(Number);
+  switch (preset) {
+    case "hourly":  return `0 */${hourlyInterval} * * *`;
+    case "daily":   return `${m} ${h} * * *`;
+    case "weekly":  return `${m} ${h} * * ${dayOfWeek}`;
+    case "monthly": return `${m} ${h} ${dayOfMonth} * *`;
+    case "advanced": return advancedExpr;
+  }
+}
 
-export default function ScheduledRunsPage() {
-  const [schedules, setSchedules] = useState<ScheduleItem[]>(INITIAL_SCHEDULES);
+const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+export default function ScheduledPage() {
+  const [schedules, setSchedules] = useState<Schedule[]>([]);
+  const [playbooks, setPlaybooks] = useState<Playbook[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [runningId, setRunningId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  // Modal form state
-  const [selectedAgent, setSelectedAgent] = useState(0);
-  const [frequency, setFrequency] = useState("Daily");
+  // Form state
+  const [selectedPlaybook, setSelectedPlaybook] = useState<Playbook | null>(null);
+  const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
+  const [preset, setPreset] = useState<Preset>("daily");
   const [time, setTime] = useState("09:00");
-  const [customCron, setCustomCron] = useState("");
+  const [dayOfWeek, setDayOfWeek] = useState(1);
+  const [dayOfMonth, setDayOfMonth] = useState(1);
+  const [hourlyInterval, setHourlyInterval] = useState(6);
+  const [advancedExpr, setAdvancedExpr] = useState("0 9 * * 1");
+  const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
+  const [submitting, setSubmitting] = useState(false);
 
-  const toggleActive = (id: string) => {
-    setSchedules((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, active: !s.active } : s))
-    );
-  };
-
-  const runNow = (id: string) => {
-    setRunningId(id);
-    setTimeout(() => setRunningId(null), 2000);
-  };
-
-  const deleteSchedule = (id: string) => {
-    setSchedules((prev) => prev.filter((s) => s.id !== id));
-  };
-
-  const createSchedule = () => {
-    const agent = AGENT_OPTIONS[selectedAgent];
-    let scheduleText = "";
-    let cron = "";
-
-    if (frequency === "Daily") {
-      scheduleText = `Every day at ${time}`;
-      const [h, m] = time.split(":");
-      cron = `${parseInt(m)} ${parseInt(h)} * * *`;
-    } else if (frequency === "Weekly") {
-      scheduleText = `Every Monday at ${time}`;
-      const [h, m] = time.split(":");
-      cron = `${parseInt(m)} ${parseInt(h)} * * 1`;
-    } else if (frequency === "Monthly") {
-      scheduleText = `1st of every month at ${time}`;
-      const [h, m] = time.split(":");
-      cron = `${parseInt(m)} ${parseInt(h)} 1 * *`;
-    } else {
-      scheduleText = `Custom: ${customCron}`;
-      cron = customCron;
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [schedsRes, pbRes] = await Promise.all([
+        fetch("/api/playbooks/scheduled"),
+        fetch("/api/playbooks"),
+      ]);
+      if (schedsRes.ok) setSchedules((await schedsRes.json()).schedules ?? []);
+      if (pbRes.ok) setPlaybooks((await pbRes.json()).playbooks ?? []);
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setLoading(false);
     }
+  }, []);
 
-    const newItem: ScheduleItem = {
-      id: Date.now().toString(),
-      agentName: agent.name,
-      agentIcon: agent.icon,
-      color: agent.color,
-      schedule: scheduleText,
-      cron,
-      lastRun: "Never",
-      nextRun: "Pending...",
-      active: true,
-    };
+  useEffect(() => { void load(); }, [load]);
 
-    setSchedules((prev) => [newItem, ...prev]);
-    setShowModal(false);
-    setSelectedAgent(0);
-    setFrequency("Daily");
+  const previewCron = selectedPlaybook
+    ? presetToCron(preset, time, dayOfWeek, dayOfMonth, hourlyInterval, advancedExpr)
+    : "";
+
+  const resetForm = () => {
+    setSelectedPlaybook(null);
+    setFieldValues({});
+    setPreset("daily");
     setTime("09:00");
-    setCustomCron("");
+    setDayOfWeek(1);
+    setDayOfMonth(1);
+    setHourlyInterval(6);
+    setAdvancedExpr("0 9 * * 1");
+    setTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone);
+  };
+
+  const createSchedule = async () => {
+    if (!selectedPlaybook) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/playbooks/scheduled", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          playbook_id: selectedPlaybook.id,
+          inputs: fieldValues,
+          cron_expression: previewCron,
+          timezone,
+        }),
+      });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(body.error ?? `HTTP ${res.status}`);
+      }
+      await load();
+      setShowModal(false);
+      resetForm();
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const toggleActive = async (id: string, nextActive: boolean) => {
+    await fetch(`/api/playbooks/scheduled/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ active: nextActive }),
+    });
+    await load();
+  };
+
+  const deleteSchedule = async (id: string) => {
+    if (!confirm("Delete this schedule? This cannot be undone.")) return;
+    await fetch(`/api/playbooks/scheduled/${id}`, { method: "DELETE" });
+    await load();
+  };
+
+  const runNow = async (schedule: Schedule) => {
+    await fetch("/api/playbooks/run", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        playbook_id: schedule.playbookId,
+        inputs: JSON.parse(schedule.inputs || "{}"),
+      }),
+    });
   };
 
   const activeCount = schedules.filter((s) => s.active).length;
+  const pausedCount = schedules.length - activeCount;
 
   return (
-    <div className="min-h-screen bg-[#000000] p-6 md:p-10" role="region" aria-label="Scheduled agent runs">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: "easeOut" }}
-        className="mb-8"
-      >
-        <div className="flex items-center justify-between">
+    <div className="min-h-screen bg-[#000000] p-6 md:p-10">
+      <div className="max-w-7xl mx-auto">
+        <header className="mb-8 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm">
+            <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
               <Clock className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -149,308 +195,309 @@ export default function ScheduledRunsPage() {
                   Live
                 </span>
               </div>
-              <p className="text-sm text-neutral-500">
-                Automate your agents to work on autopilot
-              </p>
+              <p className="text-sm text-neutral-500">Automate playbooks to run on a cron schedule</p>
             </div>
           </div>
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+          <button
             onClick={() => setShowModal(true)}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-sm font-semibold shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30 transition-gpu cursor-pointer"
+            disabled={playbooks.length === 0}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-50"
+            style={{ background: "linear-gradient(135deg, #B5532C 0%, #E08558 100%)" }}
           >
-            <Plus className="w-4 h-4" />
-            Create Schedule
-          </motion.button>
-        </div>
-      </motion.div>
+            <Plus className="w-4 h-4" /> New schedule
+          </button>
+        </header>
 
-      {/* Active note — scheduler cron runs every minute */}
-      <div className="max-w-7xl mx-auto px-6 -mt-3 mb-6">
-        <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.04] px-4 py-3 flex items-start gap-3">
-          <Clock className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
-          <div className="text-xs text-neutral-300 leading-relaxed">
-            <span className="text-emerald-400 font-semibold">Scheduled execution is live.</span>{" "}
-            The scheduler checks every minute (UTC) and fires any schedule whose cron expression matches. Pause any schedule from the toggle, or run it manually from the card.
+        {error && (
+          <div className="mb-6 flex items-center gap-3 p-4 rounded-xl border border-rose-500/20 bg-rose-500/[0.04]">
+            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+            <p className="text-sm text-rose-300">{error}</p>
           </div>
+        )}
+
+        <div className="flex items-center gap-3 mb-6">
+          <StatusPill color="emerald" label={`${activeCount} active`} pulse />
+          <StatusPill color="neutral" label={`${pausedCount} paused`} />
+          {loading && <StatusPill color="amber" label="Loading..." />}
         </div>
-      </div>
 
-      {/* Status bar */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.1 }}
-        className="flex items-center gap-3 mb-6"
-      >
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/[0.06]">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-xs font-mono text-neutral-400">{activeCount} active</span>
-        </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/[0.06]">
-          <span className="w-2 h-2 rounded-full bg-neutral-600" />
-          <span className="text-xs font-mono text-neutral-400">
-            {schedules.length - activeCount} paused
-          </span>
-        </div>
-      </motion.div>
-
-      {/* Schedule Cards Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <AnimatePresence mode="popLayout">
-          {schedules.length === 0 ? (
-            <motion.div
-              key="empty"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="col-span-full flex flex-col items-center justify-center py-24 text-center"
-            >
-              <div className="p-4 rounded-2xl bg-white/5 border border-white/10 mb-5">
-                <Calendar className="w-8 h-8 text-neutral-500" />
-              </div>
-              <p className="text-neutral-400 text-sm max-w-md">
-                No scheduled runs yet. Automate your agents to work while you sleep.
-              </p>
-            </motion.div>
-          ) : (
-            schedules.map((schedule, index) => {
-              const colors = COLOR_MAP[schedule.color];
-              const IconComponent = schedule.agentIcon;
-              const isRunning = runningId === schedule.id;
-
-              return (
-                <motion.div
-                  key={schedule.id}
-                  layout
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.3, delay: index * 0.05 }}
-                  className={`rounded-2xl border backdrop-blur-xl p-5 transition-gpu ${
-                    schedule.active
-                      ? "bg-white/[0.04] border-white/10"
-                      : "bg-white/[0.02] border-white/[0.06] opacity-60"
-                  }`}
-                >
-                  {/* Top row: Agent + Toggle */}
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`w-10 h-10 rounded-xl ${colors.bg} border ${colors.border} flex items-center justify-center`}
-                      >
-                        <IconComponent className={`w-5 h-5 ${colors.text}`} />
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-semibold text-white">{schedule.agentName}</h3>
-                        <p className="text-xs text-neutral-500">{schedule.schedule}</p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => toggleActive(schedule.id)}
-                      aria-label={schedule.active ? `Pause ${schedule.agentName}` : `Activate ${schedule.agentName}`}
-                      className={`relative w-11 h-6 rounded-full transition-colors cursor-pointer ${
-                        schedule.active ? "bg-emerald-500" : "bg-neutral-700"
-                      }`}
-                    >
-                      <span
-                        className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-md transition-transform ${
-                          schedule.active ? "translate-x-[22px]" : "translate-x-0.5"
-                        }`}
-                      />
-                    </button>
-                  </div>
-
-                  {/* Schedule details */}
-                  <div className="grid grid-cols-2 gap-3 mb-4">
-                    <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.05]">
-                      <p className="text-[10px] uppercase tracking-wider text-neutral-500 mb-1">
-                        Last Run
-                      </p>
-                      <p className="text-xs text-neutral-300">{schedule.lastRun}</p>
-                    </div>
-                    <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.05]">
-                      <p className="text-[10px] uppercase tracking-wider text-neutral-500 mb-1">
-                        Next Run
-                      </p>
-                      <p className="text-xs text-neutral-300">{schedule.nextRun}</p>
-                    </div>
-                  </div>
-
-                  {/* Status + Actions */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`w-2 h-2 rounded-full ${
-                          schedule.active ? "bg-emerald-500 animate-pulse" : "bg-neutral-600"
-                        }`}
-                      />
-                      <span className="text-xs text-neutral-500">
-                        {schedule.active ? "Active" : "Paused"}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => runNow(schedule.id)}
-                        disabled={isRunning}
-                        className="p-2 rounded-lg hover:bg-white/5 text-neutral-500 hover:text-emerald-400 transition-gpu cursor-pointer disabled:opacity-50"
-                        title="Run Now"
-                      >
-                        <Play
-                          className={`w-3.5 h-3.5 ${isRunning ? "animate-pulse text-emerald-400" : ""}`}
-                        />
-                      </button>
-                      <button
-                        className="p-2 rounded-lg hover:bg-white/5 text-neutral-500 hover:text-blue-400 transition-gpu cursor-pointer"
-                        title="Edit"
-                      >
-                        <Pencil className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => deleteSchedule(schedule.id)}
-                        className="p-2 rounded-lg hover:bg-white/5 text-neutral-500 hover:text-red-400 transition-gpu cursor-pointer"
-                        title="Delete"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                </motion.div>
-              );
-            })
-          )}
-        </AnimatePresence>
-      </div>
-
-      {/* Create Schedule Modal */}
-      <AnimatePresence>
-        {showModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
-            onClick={() => setShowModal(false)}
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              transition={{ duration: 0.25 }}
-              onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-lg rounded-2xl bg-[#0a0a0a] border border-white/10 shadow-2xl overflow-hidden"
-            >
-              {/* Modal Header */}
-              <div className="flex items-center justify-between p-6 border-b border-white/[0.06]">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-                    <Calendar className="w-4 h-4 text-emerald-400" />
-                  </div>
-                  <h2 className="text-lg font-semibold text-white">Create Schedule</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <AnimatePresence mode="popLayout">
+            {schedules.length === 0 && !loading ? (
+              <motion.div
+                key="empty"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="col-span-full flex flex-col items-center justify-center py-24 text-center"
+              >
+                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 mb-5">
+                  <Calendar className="w-8 h-8 text-neutral-500" />
                 </div>
-                <button
-                  onClick={() => setShowModal(false)}
-                  aria-label="Close create schedule dialog"
-                  className="p-2 rounded-lg hover:bg-white/5 text-neutral-500 hover:text-white transition-gpu cursor-pointer"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
+                <p className="text-neutral-400 text-sm max-w-md">
+                  No scheduled runs yet. Pick a playbook and set it on auto-pilot.
+                </p>
+              </motion.div>
+            ) : (
+              schedules.map((s) => {
+                const pb = playbooks.find((p) => p.id === s.playbookId);
+                return (
+                  <motion.div
+                    key={s.id}
+                    layout
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className={`rounded-2xl border backdrop-blur-xl p-5 ${
+                      s.active ? "bg-white/[0.04] border-white/10" : "bg-white/[0.02] border-white/[0.06] opacity-60"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="min-w-0">
+                        <h3 className="text-sm font-semibold text-white truncate">
+                          {s.name ?? pb?.name ?? s.playbookId}
+                        </h3>
+                        <p className="text-xs text-neutral-500 font-mono mt-0.5">
+                          {s.cronExpression} · {s.timezone}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => toggleActive(s.id, !s.active)}
+                        aria-label={s.active ? "Pause schedule" : "Activate schedule"}
+                        className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${
+                          s.active ? "bg-[#B5532C]" : "bg-neutral-700"
+                        }`}
+                      >
+                        <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-md transition-transform ${s.active ? "translate-x-[22px]" : "translate-x-0.5"}`} />
+                      </button>
+                    </div>
 
-              {/* Modal Body */}
-              <div className="p-6 space-y-5">
-                {/* Select Agent */}
-                <div>
-                  <label className="block text-xs uppercase tracking-wider text-neutral-500 mb-2">
-                    Select Agent
-                  </label>
-                  <div className="relative">
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      <MiniStat label="Next run" value={formatRelative(s.nextRunAt)} />
+                      <MiniStat label="Runs" value={String(s.runCount)} />
+                    </div>
+                    {s.failureCount > 0 && (
+                      <p className="text-[11px] text-rose-400 mb-3">
+                        {s.failureCount} consecutive failure{s.failureCount === 1 ? "" : "s"}
+                        {s.failureCount >= 5 && " — auto-paused"}
+                      </p>
+                    )}
+
+                    <div className="flex items-center justify-between">
+                      <span className={`text-xs flex items-center gap-1.5 ${s.active ? "text-emerald-400" : "text-neutral-500"}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${s.active ? "bg-emerald-500 animate-pulse" : "bg-neutral-600"}`} />
+                        {s.active ? "Active" : "Paused"}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => runNow(s)} title="Run now" className="p-2 rounded-lg hover:bg-white/5 text-neutral-500 hover:text-emerald-400 transition-colors">
+                          <Play className="w-3.5 h-3.5" />
+                        </button>
+                        <button onClick={() => deleteSchedule(s.id)} title="Delete" className="p-2 rounded-lg hover:bg-white/5 text-neutral-500 hover:text-rose-400 transition-colors">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Create schedule modal */}
+        <AnimatePresence>
+          {showModal && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+              onClick={() => !submitting && setShowModal(false)}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                onClick={(e) => e.stopPropagation()}
+                className="w-full max-w-lg rounded-2xl bg-[#0a0a0a] border border-white/10 shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto"
+              >
+                <div className="flex items-center justify-between p-6 border-b border-white/[0.06]">
+                  <h2 className="text-lg font-semibold text-white">New scheduled run</h2>
+                  <button onClick={() => setShowModal(false)} className="p-2 rounded-lg hover:bg-white/5 text-neutral-500 hover:text-white">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="p-6 space-y-5">
+                  <div>
+                    <label className="block text-xs uppercase tracking-wider text-neutral-500 mb-2">Playbook</label>
                     <select
-                      value={selectedAgent}
-                      onChange={(e) => setSelectedAgent(Number(e.target.value))}
-                      className="w-full appearance-none px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-emerald-500/40 transition-colors cursor-pointer"
+                      value={selectedPlaybook?.id ?? ""}
+                      onChange={(e) => {
+                        const pb = playbooks.find((p) => p.id === e.target.value);
+                        setSelectedPlaybook(pb ?? null);
+                        setFieldValues({});
+                      }}
+                      className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-[#B5532C]/40"
                     >
-                      {AGENT_OPTIONS.map((agent, i) => (
-                        <option key={agent.name} value={i} className="bg-[#0a0a0a] text-white">
-                          {agent.name}
+                      <option value="" className="bg-[#0a0a0a]">Choose a playbook...</option>
+                      {playbooks.map((p) => (
+                        <option key={p.id} value={p.id} className="bg-[#0a0a0a]">
+                          {p.name} · {p.estimatedTime}
                         </option>
                       ))}
                     </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500 pointer-events-none" />
+                    {selectedPlaybook && (
+                      <p className="text-xs text-neutral-500 mt-2">{selectedPlaybook.description}</p>
+                    )}
                   </div>
+
+                  {selectedPlaybook?.fields.map((f) => (
+                    <div key={f.key}>
+                      <label className="block text-xs uppercase tracking-wider text-neutral-500 mb-2">
+                        {f.label}{f.required && " *"}
+                      </label>
+                      <input
+                        type="text"
+                        value={fieldValues[f.key] ?? ""}
+                        onChange={(e) => setFieldValues({ ...fieldValues, [f.key]: e.target.value })}
+                        placeholder={f.placeholder}
+                        className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm placeholder:text-neutral-600 focus:outline-none focus:border-[#B5532C]/40"
+                      />
+                    </div>
+                  ))}
+
+                  {selectedPlaybook && (
+                    <div>
+                      <label className="block text-xs uppercase tracking-wider text-neutral-500 mb-2">Cadence</label>
+                      <div className="grid grid-cols-5 gap-2 mb-3">
+                        {(["hourly", "daily", "weekly", "monthly", "advanced"] as Preset[]).map((p) => (
+                          <button
+                            key={p}
+                            onClick={() => setPreset(p)}
+                            className={`px-2 py-2 rounded-lg text-xs font-medium capitalize transition-colors ${
+                              preset === p
+                                ? "bg-[#B5532C]/15 border border-[#B5532C]/30 text-[#E08558]"
+                                : "bg-white/[0.03] border border-white/[0.06] text-neutral-500 hover:bg-white/5"
+                            }`}
+                          >
+                            {p}
+                          </button>
+                        ))}
+                      </div>
+
+                      {preset === "hourly" && (
+                        <div className="flex items-center gap-2 text-sm text-neutral-400">
+                          <span>Every</span>
+                          <input
+                            type="number"
+                            min={1}
+                            max={23}
+                            value={hourlyInterval}
+                            onChange={(e) => setHourlyInterval(Math.max(1, Math.min(23, Number(e.target.value) || 1)))}
+                            className="w-16 px-2 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white text-sm text-center"
+                          />
+                          <span>hour{hourlyInterval === 1 ? "" : "s"}</span>
+                        </div>
+                      )}
+                      {preset === "daily" && (
+                        <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm [color-scheme:dark]" />
+                      )}
+                      {preset === "weekly" && (
+                        <div className="grid grid-cols-2 gap-3">
+                          <select value={dayOfWeek} onChange={(e) => setDayOfWeek(Number(e.target.value))} className="px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm">
+                            {WEEKDAYS.map((d, i) => <option key={i} value={i} className="bg-[#0a0a0a]">{d}</option>)}
+                          </select>
+                          <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className="px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm [color-scheme:dark]" />
+                        </div>
+                      )}
+                      {preset === "monthly" && (
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-white/5 border border-white/10">
+                            <span className="text-neutral-500 text-sm">Day</span>
+                            <input type="number" min={1} max={28} value={dayOfMonth} onChange={(e) => setDayOfMonth(Math.max(1, Math.min(28, Number(e.target.value) || 1)))} className="flex-1 bg-transparent text-white text-sm focus:outline-none" />
+                          </div>
+                          <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className="px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm [color-scheme:dark]" />
+                        </div>
+                      )}
+                      {preset === "advanced" && (
+                        <input
+                          type="text"
+                          value={advancedExpr}
+                          onChange={(e) => setAdvancedExpr(e.target.value)}
+                          placeholder="0 9 * * 1"
+                          className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm font-mono placeholder:text-neutral-600 focus:outline-none focus:border-[#B5532C]/40"
+                        />
+                      )}
+
+                      <div className="mt-3">
+                        <label className="block text-xs uppercase tracking-wider text-neutral-500 mb-2">Timezone</label>
+                        <input
+                          type="text"
+                          value={timezone}
+                          onChange={(e) => setTimezone(e.target.value)}
+                          className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm font-mono focus:outline-none focus:border-[#B5532C]/40"
+                        />
+                      </div>
+
+                      <p className="text-[11px] text-neutral-500 font-mono mt-3">
+                        Cron: <span className="text-[#E08558]">{previewCron}</span>
+                      </p>
+                    </div>
+                  )}
                 </div>
 
-                {/* Frequency */}
-                <div>
-                  <label className="block text-xs uppercase tracking-wider text-neutral-500 mb-2">
-                    Frequency
-                  </label>
-                  <div className="grid grid-cols-4 gap-2">
-                    {FREQUENCY_OPTIONS.map((opt) => (
-                      <button
-                        key={opt}
-                        onClick={() => setFrequency(opt)}
-                        className={`px-3 py-2 rounded-xl text-xs font-medium transition-gpu cursor-pointer ${
-                          frequency === opt
-                            ? "bg-emerald-500/15 border border-emerald-500/30 text-emerald-400"
-                            : "bg-white/[0.03] border border-white/[0.06] text-neutral-500 hover:bg-white/5 hover:text-neutral-300"
-                        }`}
-                      >
-                        {opt}
-                      </button>
-                    ))}
-                  </div>
+                <div className="p-6 border-t border-white/[0.06] flex items-center justify-end gap-3">
+                  <button onClick={() => setShowModal(false)} disabled={submitting} className="px-4 py-2.5 rounded-xl text-sm text-neutral-400 hover:text-white hover:bg-white/5 disabled:opacity-50">
+                    Cancel
+                  </button>
+                  <button
+                    onClick={createSchedule}
+                    disabled={!selectedPlaybook || submitting}
+                    className="px-6 py-2.5 rounded-xl text-white text-sm font-semibold disabled:opacity-50"
+                    style={{ background: "linear-gradient(135deg, #B5532C 0%, #E08558 100%)" }}
+                  >
+                    {submitting ? "Creating..." : "Create schedule"}
+                  </button>
                 </div>
-
-                {/* Time / Cron */}
-                {frequency === "Custom cron" ? (
-                  <div>
-                    <label className="block text-xs uppercase tracking-wider text-neutral-500 mb-2">
-                      Cron Expression
-                    </label>
-                    <input
-                      type="text"
-                      value={customCron}
-                      onChange={(e) => setCustomCron(e.target.value)}
-                      placeholder="0 */6 * * *"
-                      className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm font-mono placeholder:text-neutral-500 focus:outline-none focus:border-emerald-500/40 transition-colors"
-                    />
-                  </div>
-                ) : (
-                  <div>
-                    <label className="block text-xs uppercase tracking-wider text-neutral-500 mb-2">
-                      Time
-                    </label>
-                    <input
-                      type="time"
-                      value={time}
-                      onChange={(e) => setTime(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-emerald-500/40 transition-colors [color-scheme:dark]"
-                    />
-                  </div>
-                )}
-              </div>
-
-              {/* Modal Footer */}
-              <div className="p-6 border-t border-white/[0.06] flex items-center justify-end gap-3">
-                <button
-                  onClick={() => setShowModal(false)}
-                  className="px-4 py-2.5 rounded-xl text-sm text-neutral-400 hover:text-white hover:bg-white/5 transition-gpu cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={createSchedule}
-                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-sm font-semibold shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30 transition-gpu cursor-pointer"
-                >
-                  Create Schedule
-                </button>
-              </div>
+              </motion.div>
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
+}
+
+/* ─── Presentational helpers ────────────────────────────── */
+
+function StatusPill({ color, label, pulse }: { color: "emerald" | "neutral" | "amber"; label: string; pulse?: boolean }) {
+  const dot = { emerald: "bg-emerald-500", neutral: "bg-neutral-600", amber: "bg-amber-500" }[color];
+  return (
+    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/[0.06]">
+      <span className={`w-2 h-2 rounded-full ${dot} ${pulse ? "animate-pulse" : ""}`} />
+      <span className="text-xs font-mono text-neutral-400">{label}</span>
+    </div>
+  );
+}
+
+function MiniStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.05]">
+      <p className="text-[10px] uppercase tracking-wider text-neutral-500 mb-1">{label}</p>
+      <p className="text-xs text-neutral-300">{value}</p>
+    </div>
+  );
+}
+
+function formatRelative(iso: string): string {
+  if (!iso) return "—";
+  const now = Date.now();
+  const then = new Date(iso).getTime();
+  const diffMs = then - now;
+  if (Math.abs(diffMs) < 60_000) return "in <1 min";
+  const absMs = Math.abs(diffMs);
+  const sign = diffMs < 0 ? "-" : "in ";
+  if (absMs < 3_600_000) return `${sign}${Math.round(absMs / 60_000)} min`;
+  if (absMs < 86_400_000) return `${sign}${Math.round(absMs / 3_600_000)} h`;
+  return `${sign}${Math.round(absMs / 86_400_000)} d`;
 }
