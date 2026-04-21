@@ -21,7 +21,10 @@ import { UserButton } from "@clerk/nextjs";
 import { useSafeUser } from "@/lib/safe-clerk";
 import { TelemetryProvider } from '@/components/providers/TelemetryProvider';
 import { PostHogProvider } from '@/components/providers/PostHogProvider';
-import { JarvisSocket } from '@/components/JarvisSocket';
+// JarvisSocket was the push-to-talk stub; replaced by the streaming
+// voice experience at /dashboard/voice-assistant (Plan 3). If you
+// need a global mic trigger, wrap the new VoiceAgent in a
+// visibility-gated overlay and import it here.
 import { ToastProvider } from '@/components/ui/ToastProvider';
 import { AcquisitionCapture } from '@/components/ui/AcquisitionCapture';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
@@ -627,7 +630,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </ToastProvider>
             </ErrorBoundary>
           </div>
-          <JarvisSocket />
+          {/* JarvisSocket removed — streaming voice lives at
+              /dashboard/voice-assistant. See comment near the old import. */}
           <CommandPalette />
         </main>
 
