@@ -143,6 +143,38 @@ export async function POST(req: Request) {
             },
           });
           log.info("Subscription activated", { userId, plan });
+
+          // ─── Credits: grant the plan's monthly allocation ───
+          // Phase 1.5 — every successful checkout deposits
+          // planDef.monthlyCreditsCents into the user's balance. The
+          // `stripeEventId` in the metadata makes this idempotent if
+          // Stripe retries — the credits ledger stores one row per
+          // webhook delivery so duplicate topUp calls on the same
+          // event_id would create a duplicate ledger row but no
+          // duplicate balance increment (the stripe_events dedup
+          // above short-circuits before we get here on retry).
+          try {
+            const { getPlan, normalizePlanId } = await import("@/lib/plans");
+            const { topUp } = await import("@/lib/credits");
+            const planDef = getPlan(normalizePlanId(plan));
+            const cents = planDef.monthlyCreditsCents;
+            if (cents > 0) {
+              await topUp(userId, cents, "topup", {
+                stripeEventId: event.id,
+                stripeSubscriptionId: subscriptionId,
+                plan,
+              });
+              log.info("Credits topped up on checkout", { userId, cents, plan });
+            }
+          } catch (creditErr) {
+            // Never fail the webhook on a credits error — the
+            // subscription row is already set; credits can be repaired
+            // by an admin via /api/_misc/admin/credits/repair.
+            log.error("Credit top-up failed (subscription activated anyway)", {
+              userId,
+              error: (creditErr as Error).message,
+            });
+          }
         }
         break;
       }
