@@ -29,6 +29,7 @@ import { LiveActivityConsole } from '@/components/dashboard/LiveActivityConsole'
 import { CommandPalette } from '@/components/ui/CommandPalette';
 import { SovereignAssistant } from '@/components/dashboard/SovereignAssistant';
 import { NotificationCenter } from '@/components/dashboard/NotificationCenter';
+import { UsageWidget } from '@/components/dashboard/UsageWidget';
 import { KeyboardShortcutsModal } from '@/components/ui/KeyboardShortcutsModal';
 
 /* ─── "NEW" Badge Helpers ─── */
@@ -526,6 +527,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
 
           {sidebarExpanded ? renderExpandedNav(false) : renderCollapsedNav()}
+
+          {/* Usage meter — only in expanded sidebar */}
+          {sidebarExpanded && <UsageWidget />}
 
           {/* User Footer */}
           <div

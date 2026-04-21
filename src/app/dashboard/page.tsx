@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { FirstRunPrompt } from "@/components/dashboard/FirstRunPrompt";
+import { CheckoutSuccessBanner } from "@/components/dashboard/CheckoutSuccessBanner";
 // Chat is available via the floating widget (SovereignAssistant) in layout.tsx and /chat page
 
 const ONBOARDING_KEY = "sovereign_onboarding";
@@ -1007,7 +1008,7 @@ export default function DashboardHome() {
         three modals on top of each other (welcome → tour → first-run).
       */}
       <FirstRunPrompt />
-
+      <CheckoutSuccessBanner />
 
       {/* Stats — always visible */}
       {!showWelcome && <StatsPanel />}

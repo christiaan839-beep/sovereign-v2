@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { CheckCircle2, X as XIcon, ArrowRight, Shield, HelpCircle, Crown, Zap } from "lucide-react";
+import { CheckCircle2, X as XIcon, ArrowRight, Shield, HelpCircle, Crown, Zap, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AnimatePresence } from "framer-motion";
@@ -107,6 +107,7 @@ const FAQS = [
 export default function PricingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
 
   // Dev-only sanity check — warn if the pricing UI drifts from
   // the plan registry's `marketing: true` set. Runs once on mount.
@@ -123,7 +124,6 @@ export default function PricingPage() {
         { onlyInTiers, onlyInMarketing, hint: "Sync src/lib/plans.ts marketing flag with pricing page TIERS." },
       );
     }
-    // Also validate each TIER's plan actually exists in PLANS
     for (const t of TIERS) {
       if (!PLANS[t.plan as PlanId]) {
         // eslint-disable-next-line no-console
@@ -142,22 +142,43 @@ export default function PricingPage() {
       return;
     }
 
+    setLoadingPlan(plan);
+    setError(null);
+
     try {
-      const res = await fetch("/api/payments/yoco/checkout", {
+      // Prefer Stripe — it returns { url } on success, { error } on fail, 503 if not configured
+      const stripeRes = await fetch("/api/payments/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plan }),
       });
-      const data = await res.json();
+      const stripeData = await stripeRes.json();
 
-      if (res.ok && data.redirectUrl) {
-        window.location.assign(data.redirectUrl);
+      if (stripeRes.ok && stripeData.url) {
+        window.location.assign(stripeData.url);
         return;
       }
 
-      setError(data.error || "Payment is being set up. Please try again.");
+      // Stripe not yet configured — fall back to Yoco (ZAR market)
+      if (stripeRes.status === 503) {
+        const yocoRes = await fetch("/api/payments/yoco/checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ plan }),
+        });
+        const yocoData = await yocoRes.json();
+        if (yocoRes.ok && yocoData.redirectUrl) {
+          window.location.assign(yocoData.redirectUrl);
+          return;
+        }
+        setError(yocoData.error || "Payment gateway is being set up. Try again in a moment.");
+      } else {
+        setError(stripeData.error || "Checkout failed. Please try again.");
+      }
     } catch {
-      setError("Checkout failed. Please try again.");
+      setError("Connection error. Please try again.");
+    } finally {
+      setLoadingPlan(null);
     }
   };
 
@@ -179,10 +200,12 @@ export default function PricingPage() {
         )}
       </AnimatePresence>
 
-      {/* Background ambience */}
+      {/* Background ambience — copper only */}
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[600px] bg-emerald-500/[0.04] rounded-full blur-[250px]" />
-        <div className="absolute top-40 right-1/4 w-[400px] h-[400px] bg-purple-500/[0.03] rounded-full blur-[200px]" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[600px] rounded-full blur-[280px]"
+          style={{ background: "rgba(181,83,44,0.045)" }} />
+        <div className="absolute bottom-1/3 right-1/4 w-[500px] h-[400px] rounded-full blur-[220px]"
+          style={{ background: "rgba(181,83,44,0.025)" }} />
       </div>
 
       {/* ─── Navigation ─── */}
@@ -282,41 +305,90 @@ export default function PricingPage() {
         </RevealText>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-          {TIERS.map((t, i) => (
-            <motion.div key={i} {...fadeIn(i * 0.1)}
-              className={`rounded-2xl bg-white/[0.02] backdrop-blur-xl border p-7 flex flex-col ${t.featured ? "border-emerald-500/40 relative overflow-hidden scale-[1.02] shadow-[0_0_40px_rgba(16,185,129,0.1)]" : t.plan === "free" ? "border-cyan-500/30 relative overflow-hidden" : "border-white/[0.06]"}`}>
-              {t.featured && <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-500" />}
-              {t.plan === "free" && <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-500 to-blue-500" />}
-              {t.featured && <span className="inline-flex self-start items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase mb-3"><Crown className="w-2.5 h-2.5" /> Most Popular</span>}
-              {t.plan === "free" && <span className="inline-flex self-start items-center gap-1 px-2 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-[10px] font-bold uppercase mb-3"><Zap className="w-2.5 h-2.5" /> No Credit Card</span>}
-              <p className="text-sm font-bold uppercase tracking-widest text-neutral-400 mb-1">{t.name}</p>
-              <p className="text-4xl font-bold text-white mb-1">
-                {t.price}
-                {t.period !== "forever" && <span className="text-base text-neutral-500 font-normal">{t.period}</span>}
-              </p>
-              <p className="text-xs text-neutral-400 mb-6">{t.tagline}</p>
-              <ul className="space-y-2 mb-6 flex-1">
-                {t.features.map((f, j) => (
-                  <li key={j} className={`flex items-center gap-2 text-sm ${f.included ? "text-neutral-300" : "text-neutral-500"}`}>
-                    {f.included ? <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" aria-hidden="true" /> : <XIcon className="w-4 h-4 text-neutral-500 shrink-0" aria-hidden="true" />}
-                    {f.name}
-                  </li>
-                ))}
-              </ul>
-              <button onClick={() => checkout(t.plan)}
-                className={`w-full py-3 font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${
+          {TIERS.map((t, i) => {
+            const isLoading = loadingPlan === t.plan;
+            return (
+              <motion.div key={i} {...fadeIn(i * 0.1)}
+                className={`rounded-2xl bg-white/[0.02] backdrop-blur-xl border p-7 flex flex-col relative overflow-hidden ${
                   t.featured
-                    ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:opacity-90 shadow-[0_0_20px_rgba(16,185,129,0.2)]"
-                    : t.plan === "free"
-                    ? "bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:opacity-90"
-                    : t.plan === "node"
-                    ? "bg-white/5 border border-white/10 text-white hover:bg-white/10"
-                    : "border border-white/[0.06] text-white hover:bg-white/5"
-                }`}>
-                {t.cta} <ArrowRight className="w-4 h-4" />
-              </button>
-            </motion.div>
-          ))}
+                    ? "scale-[1.02]"
+                    : ""
+                }`}
+                style={t.featured ? {
+                  borderColor: "rgba(181,83,44,0.45)",
+                  boxShadow: "0 0 40px rgba(181,83,44,0.10)",
+                } : t.plan === "free" ? {
+                  borderColor: "rgba(181,83,44,0.25)",
+                } : {
+                  borderColor: "rgba(255,255,255,0.06)",
+                }}
+              >
+                {/* Top accent line */}
+                {(t.featured || t.plan === "free") && (
+                  <div className="absolute top-0 left-0 right-0 h-[1.5px]"
+                    style={{ background: t.featured
+                      ? "linear-gradient(to right, rgba(181,83,44,0.8), rgba(224,133,88,0.6))"
+                      : "linear-gradient(to right, rgba(181,83,44,0.4), rgba(181,83,44,0.15))"
+                    }} />
+                )}
+
+                {/* Plan badge */}
+                {t.featured && (
+                  <span className="inline-flex self-start items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase mb-3"
+                    style={{ background: "rgba(181,83,44,0.12)", border: "1px solid rgba(181,83,44,0.25)", color: "#E08558" }}>
+                    <Crown className="w-2.5 h-2.5" /> Most Popular
+                  </span>
+                )}
+                {t.plan === "free" && (
+                  <span className="inline-flex self-start items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase mb-3"
+                    style={{ background: "rgba(181,83,44,0.08)", border: "1px solid rgba(181,83,44,0.18)", color: "#B5532C" }}>
+                    <Zap className="w-2.5 h-2.5" /> No Credit Card
+                  </span>
+                )}
+
+                <p className="text-sm font-bold uppercase tracking-widest text-neutral-400 mb-1">{t.name}</p>
+                <p className="text-4xl font-bold text-white mb-1">
+                  {t.price}
+                  {t.period !== "forever" && <span className="text-base text-neutral-500 font-normal">{t.period}</span>}
+                </p>
+                <p className="text-xs text-neutral-400 mb-6">{t.tagline}</p>
+
+                <ul className="space-y-2 mb-6 flex-1">
+                  {t.features.map((f, j) => (
+                    <li key={j} className={`flex items-center gap-2 text-sm ${f.included ? "text-neutral-300" : "text-neutral-600"}`}>
+                      {f.included
+                        ? <CheckCircle2 className="w-4 h-4 shrink-0" style={{ color: "#B5532C" }} aria-hidden="true" />
+                        : <XIcon className="w-4 h-4 text-neutral-700 shrink-0" aria-hidden="true" />}
+                      {f.name}
+                    </li>
+                  ))}
+                </ul>
+
+                <button
+                  onClick={() => checkout(t.plan)}
+                  disabled={isLoading}
+                  className="w-full py-3 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                  style={t.featured ? {
+                    background: "linear-gradient(135deg, #B5532C 0%, #E08558 100%)",
+                    color: "#fff",
+                    boxShadow: "0 0 20px rgba(181,83,44,0.25)",
+                  } : t.plan === "free" ? {
+                    background: "rgba(181,83,44,0.15)",
+                    border: "1px solid rgba(181,83,44,0.3)",
+                    color: "#E08558",
+                  } : {
+                    background: "rgba(255,255,255,0.04)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    color: "#fff",
+                  }}
+                >
+                  {isLoading
+                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Redirecting…</>
+                    : <>{t.cta} <ArrowRight className="w-4 h-4" /></>}
+                </button>
+              </motion.div>
+            );
+          })}
         </div>
       </section>
 
@@ -328,12 +400,12 @@ export default function PricingPage() {
           <h3 className="text-lg font-bold mb-2">14-Day Unconditional Refund</h3>
           <p className="text-sm text-neutral-400 leading-relaxed">
             If Sovereign Matrix isn&apos;t working for you within 14 days of your first paid invoice,
-            email <a href="mailto:refunds@sovereignmatrix.agency" className="text-emerald-400 underline">refunds@sovereignmatrix.agency</a>.
-            One email, full refund, no outcome conditions. See <a href="/terms" className="text-emerald-400 underline">terms</a> for the fine print.
+            email <a href="mailto:refunds@sovereignmatrix.agency" style={{ color: "#B5532C" }} className="underline">refunds@sovereignmatrix.agency</a>.
+            One email, full refund, no outcome conditions. See <a href="/terms" style={{ color: "#B5532C" }} className="underline">terms</a> for the fine print.
           </p>
           <div className="flex items-center justify-center gap-4 mt-4">
-            <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-bold uppercase tracking-wider"><Shield className="w-3 h-3" /> Stripe Secured</span>
-            <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-bold uppercase tracking-wider"><Shield className="w-3 h-3" /> Cancel Anytime</span>
+            <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider" style={{ color: "#B5532C" }}><Shield className="w-3 h-3" /> Stripe Secured</span>
+            <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider" style={{ color: "#B5532C" }}><Shield className="w-3 h-3" /> Cancel Anytime</span>
           </div>
         </motion.div>
       </section>
@@ -377,8 +449,12 @@ export default function PricingPage() {
           </RevealText>
           <MagneticButton>
             <Link
-              href="/dashboard"
-              className="inline-flex items-center gap-2 px-10 py-4 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-sm font-bold uppercase tracking-widest hover:from-emerald-600 hover:to-teal-600 transition-all shadow-[0_0_30px_rgba(16,185,129,0.3)]"
+              href="/signup"
+              className="inline-flex items-center gap-2 px-10 py-4 rounded-full text-white text-sm font-bold uppercase tracking-widest transition-all"
+              style={{
+                background: "linear-gradient(135deg, #B5532C 0%, #E08558 100%)",
+                boxShadow: "0 0 30px rgba(181,83,44,0.30)",
+              }}
             >
               Start Free <ArrowRight className="w-4 h-4" />
             </Link>
