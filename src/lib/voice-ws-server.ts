@@ -63,6 +63,7 @@ const DEFAULT_BILL_ON_CLOSE = async (
   // Stub billing until Plan 3.8: just release the whole hold.
   // This is the "fail-open on credit" choice — better to refund the
   // user than to double-charge if settlement math is wrong.
+  if (payload.holdId === "none") return; // unlimited plan, no hold to release
   await releaseHold(payload.holdId);
 };
 
@@ -197,10 +198,14 @@ export function handleVoiceWs(ws: WsLike, opts: HandleVoiceWsOptions): Promise<v
           // will reclaim the hold. No state-loss path here.
         }
       } else if (auth) {
-        // Auth'd but zero-length session — just release.
-        try {
-          await releaseHold(auth.holdId);
-        } catch { /* see above */ }
+        // Auth'd but zero-length session. If the session had a real
+        // hold, release it; unlimited-plan sessions used the "none"
+        // sentinel so there's nothing to release.
+        if (auth.holdId !== "none") {
+          try {
+            await releaseHold(auth.holdId);
+          } catch { /* see above */ }
+        }
       }
       resolve();
     });

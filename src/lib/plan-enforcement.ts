@@ -47,7 +47,7 @@ const KNOWN_PLANS = new Set<PlanId>(["free", "starter", "founder", "array", "nod
  *      and currentPeriodEnd > now. Gracefully handles missing table (42P01).
  *   3. Free tier
  */
-async function getUserPlan(userId: string): Promise<PlanId> {
+export async function getUserPlan(userId: string): Promise<PlanId> {
   // 1. Founders
   try {
     const founderMod = (await import("@/app/api/_misc/founders/route")) as {

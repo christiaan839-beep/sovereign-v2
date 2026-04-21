@@ -23,6 +23,12 @@ import { z } from "zod";
 import { placeHold, InsufficientCreditsError } from "@/lib/credits";
 import { getPersona } from "@/lib/voice-personas";
 import { signVoiceToken } from "@/lib/voice-token";
+import { getUserPlan } from "@/lib/plan-enforcement";
+import {
+  isUnlimitedVoicePlan,
+  getVoiceMinutesThisMonth,
+  FREE_TIER_MINUTES_PER_MONTH,
+} from "@/lib/voice-billing";
 
 const BodySchema = z.object({
   personaId: z.string().min(1).max(40),
@@ -67,29 +73,78 @@ export async function POST(req: Request) {
   // for future persona IDs the client may know about).
   const persona = getPersona(parsed.data.personaId);
 
-  // Place the hold. This is a real DB write — atomic debit + credit_holds
-  // row. Insufficient funds throws InsufficientCreditsError.
+  // Plan-aware hold policy:
+  //  - unlimited (founder, enterprise): no hold, sentinel hold id
+  //  - free tier with remaining allowance: no hold (covers up to 5 min)
+  //  - free tier over allowance OR paid tier: 75¢ hold
+  const plan = await getUserPlan(userId);
   let holdId: string;
-  try {
-    holdId = await placeHold(
-      userId,
-      HOLD_AMOUNT_CENTS,
-      `voice_${persona.id}_${Date.now()}`, // agentRunId tag
-      HOLD_TTL_MS,
-    );
-  } catch (err) {
-    if (err instanceof InsufficientCreditsError) {
-      return NextResponse.json(
-        {
-          error: "Insufficient credits",
-          required: err.required,
-          available: err.available,
-          topUpUrl: "/dashboard/billing?topup=true",
-        },
-        { status: 402 },
-      );
+  let freeMinutesRemaining = 0;
+
+  if (isUnlimitedVoicePlan(plan)) {
+    // Skip credits entirely.
+    holdId = "none";
+    freeMinutesRemaining = VOICE_SESSION_MAX_MINUTES;
+  } else if (plan === "free") {
+    // Figure out remaining free minutes. If the user still has all 5 min,
+    // place NO hold (a free-tier user shouldn't need credits at all).
+    // If they've used any, place a partial hold for the paid overflow.
+    const minutesUsed = await getVoiceMinutesThisMonth(userId);
+    freeMinutesRemaining = Math.max(0, FREE_TIER_MINUTES_PER_MONTH - minutesUsed);
+
+    if (freeMinutesRemaining >= VOICE_SESSION_MAX_MINUTES) {
+      // Entire session would fit in free allowance — no hold needed.
+      holdId = "none";
+    } else {
+      // Hold covers only the paid minutes that might overflow.
+      const paidMinutes = VOICE_SESSION_MAX_MINUTES - freeMinutesRemaining;
+      const holdAmount = paidMinutes * VOICE_PRICE_CENTS_PER_MINUTE;
+      try {
+        holdId = await placeHold(
+          userId,
+          holdAmount,
+          `voice_${persona.id}_${Date.now()}`,
+          HOLD_TTL_MS,
+        );
+      } catch (err) {
+        if (err instanceof InsufficientCreditsError) {
+          return NextResponse.json(
+            {
+              error: "Insufficient credits",
+              required: err.required,
+              available: err.available,
+              freeMinutesRemaining,
+              topUpUrl: "/dashboard/billing?topup=true",
+            },
+            { status: 402 },
+          );
+        }
+        throw err;
+      }
     }
-    throw err;
+  } else {
+    // Paid tier (starter/growth/node/pay_per_run) — full 75¢ hold.
+    try {
+      holdId = await placeHold(
+        userId,
+        HOLD_AMOUNT_CENTS,
+        `voice_${persona.id}_${Date.now()}`,
+        HOLD_TTL_MS,
+      );
+    } catch (err) {
+      if (err instanceof InsufficientCreditsError) {
+        return NextResponse.json(
+          {
+            error: "Insufficient credits",
+            required: err.required,
+            available: err.available,
+            topUpUrl: "/dashboard/billing?topup=true",
+          },
+          { status: 402 },
+        );
+      }
+      throw err;
+    }
   }
 
   // Sign a short-lived session token. 60s is plenty — the client hits
@@ -110,7 +165,10 @@ export async function POST(req: Request) {
       wsUrl: "/api/voice/ws",
       personaId: persona.id,
       voice: persona.voice,
-      holdAmountCents: HOLD_AMOUNT_CENTS,
+      plan,
+      // Clients can show "N min free" before the session starts.
+      freeMinutesRemaining,
+      holdAmountCents: holdId === "none" ? 0 : HOLD_AMOUNT_CENTS,
       sessionMaxMinutes: VOICE_SESSION_MAX_MINUTES,
     },
     {
