@@ -13,7 +13,7 @@
 
 // ── Plan IDs ──
 
-export type PlanId = "free" | "starter" | "founder" | "array" | "node" | "enterprise";
+export type PlanId = "free" | "starter" | "founder" | "array" | "node" | "enterprise" | "pay_per_run";
 
 /** Legacy plan names that may exist in the database or older code paths */
 type LegacyPlanId = "pro" | "sniper" | "basic";
@@ -33,6 +33,14 @@ export interface PlanDefinition {
   priceUsdCents: number;
   /** Monthly price in ZAR cents (for PayFast/Yoco) */
   priceZarCents: number;
+  /**
+   * Credits granted at the start of each billing cycle, in cents.
+   * Spent by `placeHold` on agent runs (see lib/credits.ts + lib/pricing-costs.ts).
+   * Free tiers get a small allocation; paid tiers get enough credit to cover
+   * their runsPerMonth at average model cost + headroom. Pay-per-run users
+   * have 0 here — they top up ad hoc via Stripe.
+   */
+  monthlyCreditsCents: number;
   /** Display price string (USD) */
   priceDisplayUsd: string;
   /** Display price string (ZAR) */
@@ -64,6 +72,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     demoRatePerDay: 5,
     priceUsdCents: 0,
     priceZarCents: 0,
+    monthlyCreditsCents: 50, // ~50 cheap-model runs before pay-to-continue
     priceDisplayUsd: "$0/mo",
     priceDisplayZar: "R0/mo",
     stripePriceEnvKey: null,
@@ -82,6 +91,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     demoRatePerDay: 5,
     priceUsdCents: 1_900,
     priceZarCents: 34_900,
+    monthlyCreditsCents: 400, // ~200 avg-model runs + headroom
     priceDisplayUsd: "$19/mo",
     priceDisplayZar: "R349/mo",
     stripePriceEnvKey: "STRIPE_PRICE_STARTER",
@@ -98,6 +108,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     demoRatePerDay: 5,
     priceUsdCents: 0,
     priceZarCents: 0,
+    monthlyCreditsCents: 20_000, // internal tier — effectively unlimited
     priceDisplayUsd: "Free",
     priceDisplayZar: "Free",
     stripePriceEnvKey: null,
@@ -112,6 +123,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     demoRatePerDay: 5,
     priceUsdCents: 4_900,
     priceZarCents: 499_700,
+    monthlyCreditsCents: 1_500, // 500 runs @ avg 3¢ each
     priceDisplayUsd: "$49/mo",
     priceDisplayZar: "R4,997/mo",
     stripePriceEnvKey: "STRIPE_PRICE_ARRAY",
@@ -129,6 +141,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     demoRatePerDay: 5,
     priceUsdCents: 19_900,
     priceZarCents: 999_700,
+    monthlyCreditsCents: 8_000, // 2000 runs @ avg 4¢ each
     priceDisplayUsd: "$199/mo",
     priceDisplayZar: "R9,997/mo",
     stripePriceEnvKey: "STRIPE_PRICE_NODE",
@@ -143,12 +156,32 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     demoRatePerDay: 5,
     priceUsdCents: 49_900,
     priceZarCents: 4_999_700,
+    monthlyCreditsCents: 40_000, // effectively unlimited at this tier
     priceDisplayUsd: "$499/mo",
     priceDisplayZar: "R49,997/mo",
     stripePriceEnvKey: "STRIPE_PRICE_ENTERPRISE",
     purchasable: true,
     marketing: true,
     description: "10,000 runs/month. SAML SSO, SOC 2 evidence, direct Slack.",
+  },
+  // PAY_PER_RUN: no monthly fee; users top up credits ad hoc via
+  // one-time Stripe Payment Links. Runs deduct from balance.
+  // Designed for casual / high-variance use cases that don't fit a
+  // monthly subscription.
+  pay_per_run: {
+    name: "Pay Per Run",
+    runsPerMonth: Infinity, // no cap — balance is the limit
+    apiRatePerDay: 5_000,
+    demoRatePerDay: 5,
+    priceUsdCents: 0,
+    priceZarCents: 0,
+    monthlyCreditsCents: 0, // no automatic allocation — topUp via Stripe Payment Link
+    priceDisplayUsd: "$0 base + credits",
+    priceDisplayZar: "R0 base + krediete",
+    stripePriceEnvKey: null, // one-time charges, not a recurring price
+    purchasable: true,
+    marketing: true,
+    description: "No monthly fee. Top up credits as you go. Every run shows its cost.",
   },
 };
 
@@ -162,12 +195,13 @@ export function getMarketingPlans(): Array<PlanDefinition & { id: PlanId }> {
 // ── Upgrade Path ──
 
 export const UPGRADE_PATH: Record<PlanId, PlanId | null> = {
-  free: "starter",
-  starter: "array",
-  founder: null,
-  array: "node",
+  free: "array",          // Free → Growth (Starter is archived, skipped)
+  starter: "array",        // legacy Starter subscribers upgrade to Growth
+  founder: null,           // internal tier, no upgrade
+  array: "node",           // Growth → Sovereign Node
   node: "enterprise",
   enterprise: null,
+  pay_per_run: "array",    // pay-per-run users upgrade to Growth for predictable billing
 };
 
 /** Maximum number of Free Founder slots (enterprise-level access, no charge). */

@@ -63,11 +63,12 @@ const FEATURE_GATES: Record<string, PlanId> = {
 
 const PLAN_RANK: Record<PlanId, number> = {
   free: 0,
+  pay_per_run: 1, // sits above free — user has paid for credits
   starter: 1,
-  founder: 5, // Founders get enterprise access
   array: 2,
   node: 3,
   enterprise: 4,
+  founder: 5, // Founders get enterprise access
 };
 
 // ── Access Check ──

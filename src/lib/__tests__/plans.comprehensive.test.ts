@@ -120,10 +120,13 @@ describe("plans.ts — Comprehensive Edge Cases", () => {
 
   // ── Stripe Config ──
 
-  it("purchasable plans have Stripe env keys", () => {
-    for (const plan of Object.values(PLANS)) {
-      if (plan.purchasable) {
-        expect(plan.stripePriceEnvKey).toBeTruthy();
+  it("purchasable subscription plans have Stripe env keys", () => {
+    // pay_per_run is purchasable but uses one-time Stripe charges
+    // (not a recurring price) — so its stripePriceEnvKey is null.
+    // Everything else that's purchasable must have a recurring price.
+    for (const [id, plan] of Object.entries(PLANS)) {
+      if (plan.purchasable && id !== "pay_per_run") {
+        expect(plan.stripePriceEnvKey, `plan ${id}`).toBeTruthy();
       }
     }
   });
@@ -131,5 +134,10 @@ describe("plans.ts — Comprehensive Edge Cases", () => {
   it("non-purchasable plans have no Stripe key", () => {
     expect(PLANS.free.stripePriceEnvKey).toBeNull();
     expect(PLANS.founder.stripePriceEnvKey).toBeNull();
+  });
+
+  it("pay_per_run uses one-time charges (null stripePriceEnvKey)", () => {
+    expect(PLANS.pay_per_run.stripePriceEnvKey).toBeNull();
+    expect(PLANS.pay_per_run.purchasable).toBe(true);
   });
 });

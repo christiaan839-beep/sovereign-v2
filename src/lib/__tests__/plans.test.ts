@@ -149,12 +149,15 @@ describe("plans.ts — Single Source of Truth", () => {
   // ── getNextPlan ──
 
   it("returns correct upgrade path", () => {
-    expect(getNextPlan("free")?.name).toBe("Starter");
+    // Starter is archived — Free users upgrade directly to Growth now.
+    expect(getNextPlan("free")?.name).toBe("Growth");
     expect(getNextPlan("starter")?.name).toBe("Growth");
     expect(getNextPlan("array")?.name).toBe("Sovereign Node");
     expect(getNextPlan("node")?.name).toBe("Enterprise");
     expect(getNextPlan("enterprise")).toBeNull();
     expect(getNextPlan("founder")).toBeNull();
+    // Pay-per-run upgrades to the monthly Growth tier
+    expect(getNextPlan("pay_per_run")?.name).toBe("Growth");
   });
 
   // ── PLAN_LIMITS backward compat ──
