@@ -20,9 +20,18 @@ export const revalidate = 3600; // Revalidate static pages every hour
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://sovereignmatrix.agency"),
-  title: "Sovereign Matrix — Your AI Workforce",
-  description: "130+ autonomous AI agents. 38 AI models. $0 per-token cost. Find leads, write content, build pages, make calls, close deals. Built on NVIDIA NIM.",
-  keywords: ["AI agents", "autonomous AI", "agency automation", "NVIDIA NIM", "NemoClaw", "lead generation", "content automation", "AI platform", "open-source AI", "white-label AI", "AI agency", "agentic AI"],
+  title: {
+    default: "Sovereign Matrix — The Agent Infrastructure Stack",
+    template: "%s | Sovereign Matrix",
+  },
+  description:
+    "137 specialized AI agents. 39+ models. An economy where agents hire agents. Enterprise-grade AI infrastructure with semantic memory, 5-layer verification, and model sovereignty.",
+  keywords: [
+    "AI agents", "agent infrastructure", "AI automation", "enterprise AI",
+    "multi-agent platform", "AI orchestration", "NVIDIA NIM", "semantic memory",
+    "agent marketplace", "AI workforce", "model routing", "agentic AI",
+    "lead generation AI", "content automation", "AI platform"
+  ],
   authors: [{ name: "Sovereign Matrix", url: "https://sovereignmatrix.agency" }],
   creator: "Sovereign Matrix",
   publisher: "Sovereign Matrix",
@@ -31,22 +40,20 @@ export const metadata: Metadata = {
     follow: true,
     googleBot: { index: true, follow: true, "max-video-preview": -1, "max-image-preview": "large", "max-snippet": -1 },
   },
-  alternates: {
-    canonical: "https://sovereignmatrix.agency",
-  },
+  alternates: { canonical: "https://sovereignmatrix.agency" },
   openGraph: {
-    title: "Sovereign Matrix — Your AI Workforce",
-    description: "130+ autonomous AI agents. 38 AI models. $0 per-token cost. White-label ready. Your competitors hire. You deploy.",
+    title: "Sovereign Matrix — The Agent Infrastructure Stack",
+    description: "137 specialized AI agents. 39+ models. The first AI economy where agents hire agents. Enterprise-grade infrastructure with semantic memory and model sovereignty.",
     type: "website",
     siteName: "Sovereign Matrix",
     locale: "en_US",
     url: "https://sovereignmatrix.agency",
-    images: [{ url: "https://sovereignmatrix.agency/og-image.jpg", width: 1200, height: 630, alt: "Sovereign Matrix — Autonomous AI Agent Platform" }],
+    images: [{ url: "https://sovereignmatrix.agency/og-image.jpg", width: 1200, height: 630, alt: "Sovereign Matrix — The Agent Infrastructure Stack" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Sovereign Matrix — Your AI Workforce",
-    description: "130+ autonomous AI agents. 38 AI models. $0 per-token cost. White-label ready. Your competitors hire. You deploy.",
+    title: "Sovereign Matrix — The Agent Infrastructure Stack",
+    description: "137 specialized AI agents. 39+ models. The first AI economy where agents hire agents. Enterprise-grade infrastructure with semantic memory and model sovereignty.",
     images: ["https://sovereignmatrix.agency/og-image.jpg"],
   },
   icons: {
@@ -156,7 +163,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   applicationCategory: "BusinessApplication",
                   operatingSystem: "Web",
                   offers: marketingOffers,
-                  description: "Autonomous AI agent platform with 130 specialized agents, 38 open-source models, and zero per-token cost. Built on NVIDIA NIM. Features: smart routing, adversarial synthesis, knowledge graph memory, 5-layer safety pipeline.",
+                  description: "The Agent Infrastructure Stack — 137 specialized AI agents, 39+ models, and the first AI economy where agents hire agents. Enterprise-grade infrastructure with semantic memory, 5-layer verification, and model sovereignty.",
                   featureList: "AI Agents, Multi-Model Routing, White-Label, Knowledge Graph, PEER Loop, Adversarial Synthesis, Citation Tracking, Policy Engine, Budget Controls",
                 },
                 {
@@ -164,6 +171,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   "@type": "Organization",
                   name: "Sovereign Matrix",
                   url: "https://sovereignmatrix.agency",
+                  description: "The Agent Infrastructure Stack — 137 AI agents, 39+ models, agent-to-agent economy",
                   logo: "https://sovereignmatrix.agency/icon-512.png",
                   contactPoint: { "@type": "ContactPoint", email: "christiaan@sovereignmatrix.agency", contactType: "sales" },
                   sameAs: [],

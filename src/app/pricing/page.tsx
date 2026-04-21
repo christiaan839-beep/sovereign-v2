@@ -27,12 +27,12 @@ const TIERS = [
     tagline: "Full platform access. 50 runs/month. No credit card.",
     cta: "Run a Free Playbook",
     features: [
-      { name: "All 130+ agents", included: true },
+      { name: "All 137 agents", included: true },
       { name: "25 playbook workflows", included: true },
       { name: "5-layer safety pipeline", included: true },
       { name: "50 runs/month", included: true },
       { name: "BYOK (Bring Your Own Key)", included: true },
-      { name: "200+ runs/month", included: false },
+      { name: "A2E credits: 0/mo", included: false },
       { name: "Priority support", included: false },
     ],
   },
@@ -45,8 +45,8 @@ const TIERS = [
       { name: "200 runs/month", included: true },
       { name: "1,000 API calls/day", included: true },
       { name: "Email support", included: true },
-      { name: "All 38 models", included: true },
-      { name: "Local execution", included: false },
+      { name: "All 39+ models", included: true },
+      { name: "A2E credits: 50/mo", included: true },
       { name: "White-label", included: false },
     ],
   },
@@ -60,7 +60,7 @@ const TIERS = [
       { name: "5,000 API calls/day", included: true },
       { name: "Multi-model consensus verification", included: true },
       { name: "Priority support (24h)", included: true },
-      { name: "NVIDIA Nemotron Voice", included: true },
+      { name: "A2E credits: 200/mo", included: true },
       { name: "White-label", included: false },
     ],
   },
@@ -74,7 +74,7 @@ const TIERS = [
       { name: "NemoClaw Local Execution", included: true },
       { name: "Apollo Ghost Fleet Targeting", included: true },
       { name: "10,000 API calls/day", included: true },
-      { name: "Morpheus Shield", included: true },
+      { name: "A2E credits: 1,000/mo", included: true },
       { name: "White-label", included: false },
     ],
   },
@@ -87,7 +87,7 @@ const TIERS = [
       { name: "10,000 runs/month", included: true },
       { name: "Unlimited API calls", included: true },
       { name: "White-label Dashboard", included: true },
-      { name: "Custom domain branding", included: true },
+      { name: "A2E credits: Unlimited", included: true },
       { name: "Dedicated setup + SLA", included: true },
       { name: "Enterprise sub-licenses (5)", included: true },
     ],
@@ -95,9 +95,9 @@ const TIERS = [
 ];
 
 const FAQS = [
-  { q: "What AI tools are included?", a: "130 autonomous agents across lead generation, content creation, SEO, competitor intelligence, voice calls, and code review. Every agent routes to the best of 38 models (Claude Sonnet 4.6 for reasoning, Nemotron Ultra for throughput, Gemini 3.1 Pro for grounded search, and more) via our smart-router." },
+  { q: "What AI tools are included?", a: "137 autonomous agents across lead generation, content creation, SEO, competitor intelligence, voice calls, and code review. Every agent routes to the best of 39+ models (Claude Sonnet 4.6 for reasoning, Nemotron Ultra for throughput, Gemini 3.1 Pro for grounded search, and more) via our smart-router." },
   { q: "Do I need technical skills?", a: "No. The dashboard is designed for founders and operators. Pick a playbook, fill in the inputs, and the agents execute. For engineers, there's also a REST + streaming API and an SDK." },
-  { q: "Do I have to build the agents myself?", a: "No. Sovereign Matrix ships 130 production agents and 25 multi-agent playbooks out of the box. Pick one, give it inputs, run. You can also compose custom playbooks via the workflow builder when you want something bespoke." },
+  { q: "Do I have to build the agents myself?", a: "No. Sovereign Matrix ships 137 production agents and 25 multi-agent playbooks out of the box. Pick one, give it inputs, run. You can also compose custom playbooks via the workflow builder when you want something bespoke." },
   { q: "What counts as a 'run'?", a: "One playbook execution = one run. A playbook can chain multiple agents internally (a lead-blitz playbook might run 5 agents), but we count it as one run. Free tier: 50 runs/mo. Starter $19: 200/mo. Growth $49: 500/mo. Node $199: 2,000/mo. Enterprise $499: 10,000/mo." },
   { q: "What is BYOK (Bring Your Own Key)?", a: "You can plug in your own API keys for Claude, Gemini, NVIDIA NIM, Groq, or Tavily. BYOK runs against your own quota, so you have full control over costs and model access." },
   { q: "Can I cancel anytime?", a: "Yes. No contracts, no cancellation fees. Monthly billing via Stripe — cancel whenever you want from Settings → Billing." },
@@ -373,7 +373,7 @@ export default function PricingPage() {
             Start Free — No Credit Card
           </RevealText>
           <RevealText as="p" className="text-neutral-500 mb-10 max-w-xl mx-auto" delay={0.1}>
-            100 free runs. 130+ agents. Zero commitment. See what autonomous AI can do for your business.
+            50 free runs. 137 agents. Zero commitment. See what autonomous AI can do for your business.
           </RevealText>
           <MagneticButton>
             <Link

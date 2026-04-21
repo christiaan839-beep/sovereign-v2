@@ -78,14 +78,14 @@ export function StatusIndicator() {
       case "healthy":
         return {
           label: "All systems operational",
-          dot: "bg-emerald-400",
+          dot: "bg-[#B5532C]",
           text: "text-neutral-500",
           pulse: true,
         };
       case "degraded":
         return {
           label: "Checking status",
-          dot: "bg-amber-400",
+          dot: "bg-neutral-500",
           text: "text-neutral-500",
           pulse: true,
         };
