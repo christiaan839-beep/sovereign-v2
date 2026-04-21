@@ -23,6 +23,7 @@ export type CtaName =
   | "founder-cta"
   | "primary-hero"
   | "primary-final"
+  | "final-cta"
   | "seat-claim"
   | "playbook-card"
   | "email-founder";

@@ -12,10 +12,11 @@ import { CommandEgg } from "@/components/landing/CommandEgg";
 import { PrimaryCTA } from "@/components/landing/PrimaryCTA";
 import { StatusIndicator } from "@/components/landing/StatusIndicator";
 import { trackCtaClick } from "@/lib/cta-track";
-import { useHideyNav, FloatingParticles, TiltCard } from "@/components/ui/EliteEffects";
+import { useHideyNav, TiltCard } from "@/components/ui/EliteEffects";
 
 // New components
 import { A2EGraph } from "@/components/landing/A2EGraph";
+import { ConstellationField } from "@/components/landing/ConstellationField";
 import { LiveProofStrip } from "@/components/landing/LiveProofStrip";
 import { ThreeMoatsGrid } from "@/components/landing/ThreeMoatsGrid";
 import { A2EEconomySection } from "@/components/landing/A2EEconomySection";
@@ -311,30 +312,30 @@ function NavLink({ href, children }: { href: string; children: React.ReactNode }
 function Hero() {
   return (
     <section className="relative min-h-screen flex items-center justify-center px-6 pt-20 pb-16 overflow-hidden">
-      {/* A2EGraph background at low opacity */}
-      <div className="absolute inset-0 pointer-events-none" aria-hidden="true" style={{ opacity: 0.3 }}>
+      {/* A2EGraph — agent network skeleton at low opacity */}
+      <div className="absolute inset-0 pointer-events-none" aria-hidden="true" style={{ opacity: 0.45 }}>
         <A2EGraph className="w-full h-full" />
       </div>
 
-      {/* Copper radial gradient overlay — 4% center */}
+      {/* ConstellationField — 75-node copper particle mesh with proximity lines */}
+      <ConstellationField className="absolute inset-0 w-full h-full" />
+
+      {/* Copper radial glow — warm centre bloom */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: "radial-gradient(ellipse 70% 60% at 50% 40%, rgba(181,83,44,0.04) 0%, transparent 65%)",
+          background: "radial-gradient(ellipse 65% 55% at 50% 38%, rgba(181,83,44,0.07) 0%, transparent 60%)",
         }}
         aria-hidden="true"
       />
 
-      {/* Copper dust particles */}
-      <FloatingParticles
-        count={20}
-        maxSize={1.6}
-        colors={[
-          "rgba(181, 83, 44, 0.4)",
-          "rgba(224, 133, 88, 0.25)",
-          "rgba(255, 190, 130, 0.10)",
-        ]}
+      {/* Subtle vignette — edges dark, focus on centre */}
+      <div
         className="absolute inset-0 pointer-events-none"
+        style={{
+          background: "radial-gradient(ellipse 110% 100% at 50% 50%, transparent 40%, rgba(3,3,3,0.55) 100%)",
+        }}
+        aria-hidden="true"
       />
 
       {/* Bottom fade for smooth section transition */}
