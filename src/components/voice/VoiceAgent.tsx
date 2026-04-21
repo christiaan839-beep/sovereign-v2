@@ -61,6 +61,13 @@ export function VoiceAgent({
   const audioChunksRef = useRef<Uint8Array[]>([]);
   const audioEltRef = useRef<HTMLAudioElement | null>(null);
 
+  // L1.7 — mic stream + MediaRecorder + VAD instance.
+  const micStreamRef = useRef<MediaStream | null>(null);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const vadRef = useRef<{ destroy: () => void; start: () => void; pause: () => void } | null>(null);
+  const [micOn, setMicOn] = useState(false);
+  const [micError, setMicError] = useState<string | null>(null);
+
   /* ─── Playback ────────────────────────────────────────────── */
 
   const flushAndPlay = useCallback(() => {
@@ -177,6 +184,24 @@ export function VoiceAgent({
             flushAndPlay();
             break;
 
+          // L1.7 — server echoing the transcribed user turn so the UI
+          // can render "You said …" before the assistant reply.
+          case "transcript": {
+            if (typeof msg.text !== "string") return;
+            setTranscripts((t) => [
+              ...t,
+              { role: "user", text: msg.text as string, at: Date.now() },
+            ]);
+            onUserTurn?.(msg.text as string);
+            setStatus("thinking");
+            break;
+          }
+
+          case "transcribing":
+            setStatus("thinking");
+            setMessage("Transcribing…");
+            break;
+
           case "error":
             setStatus("error");
             setMessage(typeof msg.message === "string" ? msg.message : "Unknown error");
@@ -235,13 +260,102 @@ export function VoiceAgent({
     setStatus("listening");
   }, [cancelPlayback]);
 
+  // L1.7 — send an audio chunk (base64) over the WS. Called by
+  // MediaRecorder's ondataavailable handler during a VAD-open turn.
+  const sendAudioChunk = useCallback((blob: Blob) => {
+    const ws = wsRef.current;
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    if (blob.size === 0) return;
+    blob.arrayBuffer().then((buf) => {
+      const bytes = new Uint8Array(buf);
+      const chunk = bytesToB64(bytes);
+      ws.send(JSON.stringify({ type: "audio-chunk", chunk }));
+    }).catch(() => {
+      /* swallow — lost chunk is survivable */
+    });
+  }, []);
+
+  // L1.7 — start the mic + VAD. Pulls in @ricky0123/vad-web lazily so
+  // the landing page doesn't pay the ~500KB cost.
+  const startMic = useCallback(async () => {
+    setMicError(null);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true },
+      });
+      micStreamRef.current = stream;
+
+      const { MicVAD } = await import("@ricky0123/vad-web");
+
+      // vad-web v0.0.30 manages its own mic stream internally. Our own
+      // `stream` feeds MediaRecorder. Browser dedupes the mic permission
+      // so the UX is a single prompt — two internal MediaStream objects.
+      const vad = await MicVAD.new({
+        onSpeechStart: () => {
+          // Barge-in: user starts talking while the agent is speaking.
+          const ws = wsRef.current;
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: "barge-in" }));
+          }
+          cancelPlayback();
+          setStatus("listening");
+
+          // Start a fresh MediaRecorder for this turn.
+          const rec = new MediaRecorder(stream, { mimeType: "audio/webm" });
+          rec.ondataavailable = (e) => sendAudioChunk(e.data);
+          rec.start(250); // 250ms timeslice — snappy chunks
+          recorderRef.current = rec;
+        },
+        onSpeechEnd: () => {
+          const rec = recorderRef.current;
+          if (!rec) return;
+          // Final dataavailable fires on stop, so queue the audio-end
+          // message AFTER that chunk is sent.
+          rec.addEventListener(
+            "stop",
+            () => {
+              const ws = wsRef.current;
+              if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: "audio-end" }));
+              }
+            },
+            { once: true },
+          );
+          rec.stop();
+          recorderRef.current = null;
+        },
+      });
+      vad.start();
+      vadRef.current = vad as unknown as typeof vadRef.current;
+      setMicOn(true);
+    } catch (err) {
+      setMicError(err instanceof Error ? err.message : "Mic init failed");
+      setMicOn(false);
+    }
+  }, [cancelPlayback, sendAudioChunk]);
+
+  const stopMic = useCallback(() => {
+    vadRef.current?.destroy();
+    vadRef.current = null;
+    const rec = recorderRef.current;
+    if (rec && rec.state !== "inactive") rec.stop();
+    recorderRef.current = null;
+    const stream = micStreamRef.current;
+    if (stream) {
+      stream.getTracks().forEach((t) => t.stop());
+    }
+    micStreamRef.current = null;
+    setMicOn(false);
+  }, []);
+
   // Cleanup on unmount.
   useEffect(() => {
     return () => {
       cancelPlayback();
+      stopMic();
       wsRef.current?.close();
     };
-  }, [cancelPlayback]);
+  }, [cancelPlayback, stopMic]);
 
   /* ─── UI ──────────────────────────────────────────────────── */
 
@@ -266,6 +380,18 @@ export function VoiceAgent({
           <>
             <button
               type="button"
+              onClick={micOn ? stopMic : startMic}
+              className={`inline-flex items-center gap-2 px-3 py-2 border text-[12px] font-mono tracking-wide rounded-[3px] transition-colors ${
+                micOn
+                  ? "border-[#B5532C]/40 bg-[#B5532C]/10 text-[#B5532C]"
+                  : "border-white/[0.1] text-neutral-400 hover:border-[#B5532C]/40 hover:text-white"
+              }`}
+              title={micOn ? "Stop mic (falls back to typing)" : "Enable mic + auto-turn VAD"}
+            >
+              {micOn ? "Mic on" : "Mic off"}
+            </button>
+            <button
+              type="button"
               onClick={bargeIn}
               disabled={status !== "speaking"}
               className="inline-flex items-center gap-2 px-3 py-2 border border-white/[0.1] text-[12px] font-mono tracking-wide text-neutral-400 rounded-[3px] hover:border-[#B5532C]/40 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
@@ -283,6 +409,10 @@ export function VoiceAgent({
           </>
         )}
       </div>
+
+      {micError && (
+        <p className="text-[11px] font-mono text-red-400">{micError}</p>
+      )}
 
       {sessionActive && (
         <div className="flex items-center gap-2">
@@ -341,4 +471,11 @@ function b64ToBytes(b64: string): Uint8Array {
   const bytes = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
   return bytes;
+}
+
+function bytesToB64(bytes: Uint8Array): string {
+  // btoa can't handle Unicode but our input is raw bytes; step-through is safe.
+  let bin = "";
+  for (let i = 0; i < bytes.byteLength; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin);
 }

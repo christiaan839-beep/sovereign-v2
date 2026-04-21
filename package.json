@@ -25,6 +25,7 @@
     "@pinecone-database/pinecone": "^7.1.0",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
+    "@ricky0123/vad-web": "^0.0.30",
     "@sentry/nextjs": "^10.47.0",
     "@tailwindcss/oxide": "^4.2.2",
     "@tavily/core": "^0.7.2",

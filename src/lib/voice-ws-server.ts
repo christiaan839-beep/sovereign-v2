@@ -30,6 +30,7 @@ import { verifyVoiceToken, type VoiceTokenPayload } from "@/lib/voice-token";
 import { getPersona } from "@/lib/voice-personas";
 import { captureHold, releaseHold } from "@/lib/credits";
 import { recordSample } from "@/lib/slo-tracking";
+import { transcribeAudio } from "@/lib/voice-asr";
 
 /**
  * The minimal WebSocket shape we need. Matches `ws` library and the
@@ -83,6 +84,10 @@ export function handleVoiceWs(ws: WsLike, opts: HandleVoiceWsOptions): Promise<v
   // Plan 4 SLO — voice_first_audio_p95. Set on `turn-end`, cleared on
   // first audio chunk of that turn. Null while no turn is in flight.
   let turnEndAt: number | null = null;
+
+  // L1.7 — audio chunks accumulated during the user's turn. Flushed to
+  // Parakeet ASR on `audio-end` or cleared on `barge-in`.
+  let audioBuffer: Uint8Array[] = [];
 
   const sendJson = (obj: unknown): void => {
     if (closed) return;
@@ -167,7 +172,55 @@ export function handleVoiceWs(ws: WsLike, opts: HandleVoiceWsOptions): Promise<v
           return;
         }
 
+        // L1.7 — audio-chunk carries base64 webm/opus frames from the
+        // client's MediaRecorder. We just accumulate; ASR fires at
+        // audio-end so we don't pay per-chunk latency.
+        case "audio-chunk": {
+          if (typeof msg.chunk !== "string") {
+            sendJson({ type: "error", message: "audio-chunk requires base64 chunk" });
+            return;
+          }
+          try {
+            audioBuffer.push(base64ToBuffer(msg.chunk));
+          } catch {
+            // Skip malformed chunks — better than killing the stream.
+          }
+          return;
+        }
+
+        // L1.7 — client's VAD detected speech-end. Transcribe the
+        // accumulated audio, then proceed as if turn-end had been sent
+        // with the transcribed text.
+        case "audio-end": {
+          if (audioBuffer.length === 0) return;
+          const audio = concatBuffers(audioBuffer);
+          audioBuffer = [];
+          turnEndAt = Date.now();
+          sendJson({ type: "transcribing" });
+          void (async () => {
+            try {
+              const transcript = await transcribeAudio({ audio });
+              if (!transcript) {
+                sendJson({ type: "error", message: "Could not transcribe audio" });
+                return;
+              }
+              // Echo the transcript back so the UI can render it as a
+              // "user said" caption before the assistant replies.
+              sendJson({ type: "transcript", text: transcript });
+              await session?.handleTurn(transcript);
+            } catch (err) {
+              sendJson({
+                type: "error",
+                message: err instanceof Error ? err.message : "ASR failed",
+              });
+            }
+          })();
+          return;
+        }
+
         case "barge-in": {
+          // Drop any buffered-but-not-transcribed audio too.
+          audioBuffer = [];
           session?.bargeIn();
           return;
         }
@@ -238,4 +291,25 @@ function bufferToBase64(chunk: Uint8Array): string {
   let bin = "";
   for (let i = 0; i < chunk.byteLength; i++) bin += String.fromCharCode(chunk[i]);
   return btoa(bin);
+}
+
+function base64ToBuffer(b64: string): Uint8Array {
+  if (typeof Buffer !== "undefined") {
+    return new Uint8Array(Buffer.from(b64, "base64"));
+  }
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+function concatBuffers(chunks: Uint8Array[]): Uint8Array {
+  const total = chunks.reduce((sum, c) => sum + c.byteLength, 0);
+  const out = new Uint8Array(total);
+  let offset = 0;
+  for (const c of chunks) {
+    out.set(c, offset);
+    offset += c.byteLength;
+  }
+  return out;
 }

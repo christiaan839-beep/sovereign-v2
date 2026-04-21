@@ -9,11 +9,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { EventEmitter } from "node:events";
 
-const { mockReleaseHold, mockCaptureHold, mockHandleTurn, mockBargeIn } = vi.hoisted(() => ({
+const { mockReleaseHold, mockCaptureHold, mockHandleTurn, mockBargeIn, mockTranscribe } = vi.hoisted(() => ({
   mockReleaseHold: vi.fn(),
   mockCaptureHold: vi.fn(),
   mockHandleTurn: vi.fn(),
   mockBargeIn: vi.fn(),
+  mockTranscribe: vi.fn(),
 }));
 
 vi.mock("@/lib/credits", () => ({
@@ -29,6 +30,8 @@ vi.mock("@/lib/voice-stream", () => {
   }
   return { VoiceSession };
 });
+
+vi.mock("@/lib/voice-asr", () => ({ transcribeAudio: mockTranscribe }));
 
 process.env.VOICE_SESSION_SECRET = "x".repeat(32);
 
@@ -75,6 +78,7 @@ beforeEach(() => {
   mockCaptureHold.mockReset();
   mockHandleTurn.mockReset();
   mockBargeIn.mockReset();
+  mockTranscribe.mockReset();
   mockReleaseHold.mockResolvedValue(undefined);
   mockHandleTurn.mockResolvedValue(undefined);
 });
@@ -232,5 +236,94 @@ describe("handleVoiceWs", () => {
     await done;
 
     expect(ws.closeCode).toBe(1000);
+  });
+
+  // L1.7 — audio-chunk + audio-end flow
+  it("audio-chunk buffers, audio-end transcribes and routes to handleTurn", async () => {
+    const ws = new MockWs();
+    const done = handleVoiceWs(ws, { secret: process.env.VOICE_SESSION_SECRET! });
+
+    ws.emit("message", JSON.stringify({ type: "auth", token: makeToken() }));
+    await settle();
+    ws.sent = [];
+
+    mockTranscribe.mockResolvedValue("hello there");
+
+    // Send two fake base64 chunks
+    ws.emit("message", JSON.stringify({ type: "audio-chunk", chunk: "AAEC" }));
+    ws.emit("message", JSON.stringify({ type: "audio-chunk", chunk: "AwQF" }));
+    ws.emit("message", JSON.stringify({ type: "audio-end" }));
+    await settle();
+    await settle();
+
+    expect(mockTranscribe).toHaveBeenCalledTimes(1);
+    expect(mockHandleTurn).toHaveBeenCalledWith("hello there");
+
+    const messages = ws.sent.map((s) => JSON.parse(s));
+    expect(messages.some((m) => m.type === "transcribing")).toBe(true);
+    expect(messages.some((m) => m.type === "transcript" && m.text === "hello there")).toBe(true);
+
+    ws.emit("close");
+    await done;
+  });
+
+  it("audio-end with empty buffer is a silent no-op", async () => {
+    const ws = new MockWs();
+    const done = handleVoiceWs(ws, { secret: process.env.VOICE_SESSION_SECRET! });
+
+    ws.emit("message", JSON.stringify({ type: "auth", token: makeToken() }));
+    await settle();
+    ws.sent = [];
+
+    ws.emit("message", JSON.stringify({ type: "audio-end" }));
+    await settle();
+
+    expect(mockTranscribe).not.toHaveBeenCalled();
+    expect(mockHandleTurn).not.toHaveBeenCalled();
+
+    ws.emit("close");
+    await done;
+  });
+
+  it("audio-end with null transcription (no audible speech) surfaces error", async () => {
+    const ws = new MockWs();
+    const done = handleVoiceWs(ws, { secret: process.env.VOICE_SESSION_SECRET! });
+
+    ws.emit("message", JSON.stringify({ type: "auth", token: makeToken() }));
+    await settle();
+    ws.sent = [];
+
+    mockTranscribe.mockResolvedValue(null);
+    ws.emit("message", JSON.stringify({ type: "audio-chunk", chunk: "AAEC" }));
+    ws.emit("message", JSON.stringify({ type: "audio-end" }));
+    await settle();
+    await settle();
+
+    const messages = ws.sent.map((s) => JSON.parse(s));
+    expect(messages.some((m) => m.type === "error")).toBe(true);
+    expect(mockHandleTurn).not.toHaveBeenCalled();
+
+    ws.emit("close");
+    await done;
+  });
+
+  it("barge-in clears buffered audio chunks", async () => {
+    const ws = new MockWs();
+    const done = handleVoiceWs(ws, { secret: process.env.VOICE_SESSION_SECRET! });
+
+    ws.emit("message", JSON.stringify({ type: "auth", token: makeToken() }));
+    await settle();
+
+    ws.emit("message", JSON.stringify({ type: "audio-chunk", chunk: "AAEC" }));
+    ws.emit("message", JSON.stringify({ type: "barge-in" }));
+    ws.emit("message", JSON.stringify({ type: "audio-end" }));
+    await settle();
+
+    // Barge-in drops the buffer, so audio-end is a no-op.
+    expect(mockTranscribe).not.toHaveBeenCalled();
+    expect(mockBargeIn).toHaveBeenCalled();
+
+    ws.emit("close");
+    await done;
   });
 });
