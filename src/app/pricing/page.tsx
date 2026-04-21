@@ -92,6 +92,23 @@ const TIERS = [
       { name: "Enterprise sub-licenses (5)", included: true },
     ],
   },
+  {
+    name: "Pay Per Run",
+    price: "$0",
+    period: " + credits",
+    plan: "pay_per_run",
+    featured: false,
+    tagline: "No monthly fee. Top up credits — every run shows its cost.",
+    cta: "Load $20 credits",
+    features: [
+      { name: "Runs cost $0.01 – $0.50 each", included: true },
+      { name: "Credits never expire", included: true },
+      { name: "5,000 API calls/day", included: true },
+      { name: "All 137 agents + 39 models", included: true },
+      { name: "No subscription to cancel", included: true },
+      { name: "No monthly included runs", included: false },
+    ],
+  },
 ];
 
 const FAQS = [
