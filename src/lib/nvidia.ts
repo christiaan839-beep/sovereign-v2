@@ -27,24 +27,33 @@ const NVIDIA_BASE_URL = 'https://integrate.api.nvidia.com/v1';
  * GLM-5 (Zhipu AI) and MiniMax removed: no public safety card, unknown red-team record.
  */
 
-// Models safe under any policy — US/EU origin AND US inference
+// Models safe under any policy — US/EU origin AND US inference.
+// "Safe" is defined by WEIGHTS ORIGIN, not license — an Apache-2.0 model
+// whose weights came from a Chinese lab still goes in CHINESE_WEIGHT below.
 const SOVEREIGNTY_SAFE_MODELS = [
-  "nvidia/nemotron-3-super-120b-a12b",        // ✅ NVIDIA — Hybrid MoE, 1M context
-  "google/gemma-4-31b-it",                    // ✅ Google — 256K context, Apache 2.0
-  "nvidia/nemotron-ultra-253b-v1",             // ✅ NVIDIA — Flagship reasoning
-  "meta/llama-4-scout-17b-16e-instruct",       // ✅ Meta — 10M context
-  "meta/llama-4-maverick-17b-128e",            // ✅ Meta — multimodal
-  "nvidia/nemotron-3-nano-30b-a3b",            // ✅ NVIDIA — ultra-fast edge
-  "mistralai/mistral-small-3-1-24b-instruct",  // ✅ Mistral (EU) — fast function calling
-  "mistralai/mistral-nemotron",                // ✅ Mistral+NVIDIA coalition
-  "google/gemma-4-e4b-it",                     // ✅ Google — 4B edge fallback
+  "nvidia/nemotron-3-super-120b-a12b",          // ✅ NVIDIA — Hybrid MoE, 1M context
+  "google/gemma-4-31b-it",                      // ✅ Google — 256K context, Apache 2.0
+  "nvidia/nemotron-ultra-253b-v1",              // ✅ NVIDIA — Flagship reasoning
+  "meta/llama-4-scout-17b-16e-instruct",        // ✅ Meta — 10M context
+  "meta/llama-4-maverick-17b-128e",             // ✅ Meta — multimodal
+  "nvidia/nemotron-3-nano-30b-a3b",             // ✅ NVIDIA — ultra-fast edge
+  "mistralai/mistral-small-3-1-24b-instruct",   // ✅ Mistral (EU) — fast function calling
+  "mistralai/mistral-small-4-moe",              // ✅ Mistral (EU) — 119B MoE, Apache 2.0
+  "mistralai/mistral-nemotron",                 // ✅ Mistral+NVIDIA coalition
+  "google/gemma-4-e4b-it",                      // ✅ Google — 4B edge fallback
+  "microsoft/phi-4-reasoning-14b",              // ✅ Microsoft — small+sharp reasoning, MIT
+  "nvidia/nemotron-video-vl-7b",                // ✅ NVIDIA — video understanding
+  "nvidia/nemotron-retriever-rerank-4b",        // ✅ NVIDIA — RAG re-ranking
 ];
 
 // Chinese-weight models hosted on NVIDIA US infrastructure.
 // Data goes to NVIDIA, not China — but some enterprise policies prohibit these regardless.
+// License does NOT matter here — this split is by weights ORIGIN for compliance.
 const CHINESE_WEIGHT_MODELS = [
-  "deepseek-ai/deepseek-v3-2-0324",   // ⚠️ DeepSeek (China) weights, NVIDIA inference — strongest open-source reasoning
-  "qwen/qwen3-235b-a22b",             // ⚠️ Alibaba (China) weights, NVIDIA inference — best multilingual
+  "deepseek-ai/deepseek-v3-2-0324",             // ⚠️ DeepSeek (China) weights, NVIDIA inference — strongest open-source reasoning
+  "qwen/qwen3-235b-a22b",                       // ⚠️ Alibaba (China) weights, NVIDIA inference — best multilingual
+  "qwen/qwen-3.5-397b-a17b",                    // ⚠️ Alibaba (China) weights, Apache 2.0 license — superior reasoning
+  "moonshotai/kimi-k2.5",                       // ⚠️ Moonshot (China) weights, MIT license — best coding agent
 ];
 
 const DATA_SOVEREIGNTY_MODE = process.env.DATA_SOVEREIGNTY_MODE === "true";
@@ -65,6 +74,14 @@ export const NIM_MODELS = {
   office: "nvidia/nemotron-ultra-253b-v1",               // ✅ NVIDIA — coding, reasoning, long-form (replaces MiniMax)
   codingThinking: "qwen/qwen3-30b-a3b-thinking",        // ⚠️ Alibaba weights, NVIDIA inference — reasoning code
   codingInstruct: "qwen/qwen3-coder-30b-a3b-instruct",  // ⚠️ Alibaba weights, NVIDIA inference — code gen
+
+  // ── Added April 2026 — phase 3.1 ──
+  qwen3_5: "qwen/qwen-3.5-397b-a17b",                   // ⚠️ Alibaba weights, Apache 2.0 — superior reasoning
+  kimiK2_5: "moonshotai/kimi-k2.5",                     // ⚠️ Moonshot (China), MIT — 76.8% SWE-bench, best coding
+  mistralSmall4: "mistralai/mistral-small-4-moe",       // ✅ Mistral (EU), Apache 2.0 — 119B MoE
+  phi4Reasoning: "microsoft/phi-4-reasoning-14b",       // ✅ Microsoft, MIT — small + sharp
+  videoVL: "nvidia/nemotron-video-vl-7b",               // ✅ NVIDIA — video understanding
+  retrieverRerank: "nvidia/nemotron-retriever-rerank-4b", // ✅ NVIDIA — RAG re-ranking
 
   // ── Google Gemma 4 (Released April 2, 2026 — Apache 2.0) ──
   gemma4: "google/gemma-4-31b-it",                   // 31B dense — 256K context, vision+audio, 140+ languages
@@ -567,21 +584,34 @@ export async function transcribeMultilingual(
 
 /**
  * 10. Smart Model Router — Select the best model for a specific task type.
- * Uses model strengths: reasoning → Super, speed → Nano, multilingual → Qwen, vision → Qwen3.5 VLM.
+ *
+ * Sovereignty-aware routing: for `code`, `reasoning`, and `rag` tasks we
+ * prefer Chinese-weight models (Kimi K2.5 / Qwen 3.5) when they're the
+ * strongest option — BUT when DATA_SOVEREIGNTY_MODE=true we transparently
+ * swap to safe alternatives (Llama 4 Maverick / Phi-4-Reasoning). The
+ * caller never needs to know which model they're getting; the failover
+ * chain in nimChat handles provider-side outages separately.
  */
 export function selectBestModel(taskType: string): string {
   const routing: Record<string, string> = {
-    "reasoning": NIM_MODELS.reasoning,
+    "reasoning": DATA_SOVEREIGNTY_MODE ? NIM_MODELS.flagship : NIM_MODELS.qwen3_5, // Qwen 3.5 397B — Apache 2.0, superior reasoning
     "analysis": NIM_MODELS.flagship,
-    "agentic": NIM_MODELS.agenticReasoning,  // Nemotron 3 Super 120B — complex agent chains (replaced GLM-5 for sovereignty)
-    "code": NIM_MODELS.codingInstruct,        // Qwen3-Coder for code generation
-    "coding": NIM_MODELS.codingInstruct,
+    "agentic": NIM_MODELS.agenticReasoning,   // Nemotron 3 Super 120B — complex agent chains (replaced GLM-5)
+    // Code generation: Kimi K2.5 (76.8% SWE-bench, MIT) when sovereignty
+    // allows; otherwise Phi-4 Reasoning (MS, MIT) — both handle code well
+    "code":  DATA_SOVEREIGNTY_MODE ? NIM_MODELS.phi4Reasoning : NIM_MODELS.kimiK2_5,
+    "coding": DATA_SOVEREIGNTY_MODE ? NIM_MODELS.phi4Reasoning : NIM_MODELS.kimiK2_5,
     "tool-use": NIM_MODELS.agenticCoding,     // Llama 4 Maverick — multimodal + tool use (replaced GLM-4.7)
     "function-calling": NIM_MODELS.agenticCoding,
     "fast": NIM_MODELS.fast,
+    "fast_tool": NIM_MODELS.agenticCoding,
     "translation": NIM_MODELS.multilingual,
     "multilingual": NIM_MODELS.multilingual,
-    "vision": NIM_MODELS.multimodal,
+    // Multimodal: Gemma 4 31B is natively multimodal (vision/audio/text), Apache 2.0 — always safe
+    "multimodal": NIM_MODELS.gemma4Vision,
+    "vision": NIM_MODELS.multimodal,          // Qwen 3.5 VLM (Chinese-weight) — strongest pure vision
+    "video": NIM_MODELS.videoVL,              // Nemotron Video VL 7B — video understanding
+    "video-understanding": NIM_MODELS.videoVL,
     "document": NIM_MODELS.documentParse,
     "ocr": NIM_MODELS.visionOCR,             // Nemotron Nano 2 VL for OCR
     "document-ocr": NIM_MODELS.visionOCR,
@@ -589,8 +619,13 @@ export function selectBestModel(taskType: string): string {
     "image": NIM_MODELS.imageGen,
     "image-fast": NIM_MODELS.imageGenFast,    // FLUX.2 Klein — faster + editing
     "safety": NIM_MODELS.contentSafety,
+    // RAG pipeline: embedding + rerank. "rag" now routes to the reasoning
+    // model most useful AFTER retrieval (Qwen 3.5 normally, flagship in
+    // sovereignty mode). Rerank uses the new retrieverRerank separately
+    // — call selectBestModel("rerank") for that step.
+    "rag": DATA_SOVEREIGNTY_MODE ? NIM_MODELS.flagship : NIM_MODELS.qwen3_5,
     "search": NIM_MODELS.embedding,
-    "rerank": NIM_MODELS.rerank,
+    "rerank": NIM_MODELS.retrieverRerank,     // Nemotron Retriever Rerank 4B — post-retrieval ranking
     "office": NIM_MODELS.office,              // Nemotron Ultra 253B — coding + reasoning + long-form (replaced MiniMax M2.5)
     "thinking": NIM_MODELS.codingThinking,    // Reasoning-focused
   };
