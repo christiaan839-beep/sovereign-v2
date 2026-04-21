@@ -108,8 +108,29 @@ const isProtectedRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, request) => {
+  // Route-aware rate limiting — runs BEFORE auth redirect so rate limits
+  // on unauthenticated endpoints (auth, stripe webhook) are enforceable.
+  // Must run before sovereignMiddleware() so we short-circuit on 429.
+  const { userId } = await auth();
+  const rateDecision = await evaluateRateLimit(request as NextRequest, userId);
+  if (rateDecision && !rateDecision.allowed) {
+    const response = NextResponse.json(
+      {
+        error: "Too many requests",
+        retry_after_seconds: rateDecision.resetInSeconds,
+        limit: rateDecision.limit,
+        rule: rateDecision.rule,
+      },
+      { status: 429 },
+    );
+    const { rateLimitHeaders } = await import("@/lib/rate-limits");
+    for (const [k, v] of Object.entries(rateLimitHeaders(rateDecision))) {
+      response.headers.set(k, v);
+    }
+    return applySecurityHeaders(response);
+  }
+
   if (isProtectedRoute(request)) {
-    const { userId } = await auth();
     if (!userId) {
       const signInUrl = new URL('/login', request.url);
       signInUrl.searchParams.set('redirect_url', request.nextUrl.pathname);
@@ -118,6 +139,33 @@ export default clerkMiddleware(async (auth, request) => {
   }
   return sovereignMiddleware(request as NextRequest);
 });
+
+/**
+ * Evaluate the path-prefix rate limit (phase 1.5). Returns null when the
+ * path isn't under any rate-limited prefix — callers skip the 429 branch.
+ */
+async function evaluateRateLimit(
+  request: NextRequest,
+  userId: string | null,
+) {
+  const pathname = request.nextUrl.pathname;
+  // Only the /api/* surface uses route-aware rate limits. Everything
+  // else (pages, static assets) doesn't hit this branch.
+  if (!pathname.startsWith("/api/")) return null;
+
+  const { applyRateLimit, matchRule } = await import("@/lib/rate-limits");
+  // If no rule claims this path, skip entirely — don't waste a Redis round-trip.
+  if (!matchRule(pathname)) return null;
+
+  // Extract caller identity
+  const forwardedFor = request.headers.get("x-forwarded-for") ?? "";
+  const ip =
+    forwardedFor.split(",").pop()?.trim() ||
+    request.headers.get("x-real-ip") ||
+    "anonymous";
+
+  return applyRateLimit(pathname, { userId, ip });
+}
 
 async function sovereignMiddleware(request: NextRequest) {
   const url = request.nextUrl;
