@@ -99,6 +99,14 @@ export interface AgentConfig {
   /** Skip quality scoring on output (for scoring/safety agents themselves) */
   skipQualityCheck?: boolean;
 
+  /**
+   * Request that the NemoGuard safety pipeline be skipped. IGNORED unless
+   * the caller is on a Sovereign+ tier (node/sovereign/enterprise/founder).
+   * Free/Starter/Growth users always go through the full pipeline
+   * regardless of this flag.
+   */
+  skipSafetyChecks?: boolean;
+
   /** Action tier override (1=autonomous, 2=confirm, 3=restricted). Auto-detected if omitted. */
   actionTier?: ActionTier;
 
@@ -478,6 +486,38 @@ async function handleAgentRoute(
           if (piiEntities.length > 0) {
             piiWarning = `Output contains ${piiEntities.length} potential PII item(s): ${piiEntities.map(e => e.type).join(", ")}`;
             log.warn("PII detected in output", { agent: config.name, count: piiEntities.length });
+          }
+        }
+      }
+
+      // ─── Safety Post-flight: NemoGuard Content Safety on Output ───
+      // Runs on the agent's response before delivery. Critical for cases
+      // where agents drift or produce unsafe content via tool use even
+      // with a clean input.
+      if (!config.skipSafetyCheck) {
+        const outputText = getFirstStringValue(result);
+        if (outputText) {
+          // Resolve user tier once for the Sovereign-tier skip override.
+          let userTier: string | null = null;
+          if (userId) {
+            try {
+              const { getUserTier } = await import("@/lib/free-tier");
+              userTier = await getUserTier(userId);
+            } catch { /* tier resolution best-effort */ }
+          }
+          const { checkOutputSafety } = await import("@/lib/safety-pipeline");
+          const outSafety = await checkOutputSafety(outputText, {
+            agentId: config.name,
+            userId,
+            userTier,
+            skipIfSovereign: config.skipSafetyChecks,
+          });
+          if (!outSafety.passed) {
+            return errorResponse(
+              outSafety.reason ?? "Response blocked by output safety filter.",
+              403,
+              "OUTPUT_UNSAFE",
+            );
           }
         }
       }

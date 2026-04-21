@@ -862,3 +862,36 @@ export const creditHolds = pgTable("credit_holds", {
   index("idx_credit_holds_expires").on(table.expiresAt),
   index("idx_credit_holds_run").on(table.agentRunId),
 ]);
+
+// ═══════════════════════════════════════════
+// Safety Events (migration 0019)
+// ═══════════════════════════════════════════
+// Audit log for every block/warn from the NemoGuard pipeline.
+// Prompts are SHA-256 hashed — we never store raw flagged content.
+
+/**
+ * Blocked-content audit trail for SOC 2 and dispute resolution.
+ *
+ * `stage` enum: jailbreak | content_in | content_out | pii | topic | quality
+ * `outcome` enum: blocked | warned | skipped | passed
+ *
+ * Retention: 90 days via scheduled cleanup job.
+ */
+export const safetyEvents = pgTable("safety_events", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id"),
+  agentId: text("agent_id").notNull(),
+  stage: text("stage").notNull(),
+  reason: text("reason").notNull(),
+  category: text("category"),
+  promptHash: text("prompt_hash").notNull(),
+  promptLen: integer("prompt_len").notNull(),
+  outcome: text("outcome").notNull(),
+  metadata: jsonb("metadata").default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_safety_events_user_created").on(table.userId, table.createdAt),
+  index("idx_safety_events_agent").on(table.agentId),
+  index("idx_safety_events_stage").on(table.stage),
+  index("idx_safety_events_created").on(table.createdAt),
+]);
