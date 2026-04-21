@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid, integer, index, boolean, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, uuid, integer, index, boolean, uniqueIndex, jsonb } from "drizzle-orm/pg-core";
 
 export const tenants = pgTable("tenants", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -785,4 +785,80 @@ export const ctaClicks = pgTable("cta_clicks", {
   index("idx_cta_clicks_clicked_at").on(table.clickedAt),
   index("idx_cta_clicks_cta").on(table.ctaName),
   index("idx_cta_clicks_source_path").on(table.sourcePath),
+]);
+
+// ═══════════════════════════════════════════
+// Credit System (migration 0018)
+// ═══════════════════════════════════════════
+// Tracks balance, ledger, and in-flight holds for AI agent runs.
+// All amounts are CENTS (integer) — no float arithmetic, no drift.
+
+/**
+ * Current balance per user. One row per user; service-role writes only.
+ * Balance is non-negative (DB constraint). Plan tier drives pricing +
+ * entitlements elsewhere in the app.
+ */
+export const userCredits = pgTable("user_credits", {
+  userId: text("user_id").primaryKey(),
+  balanceCents: integer("balance_cents").notNull().default(0),
+  planTier: text("plan_tier").notNull().default("free"),
+  lastToppedUpAt: timestamp("last_topped_up_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_user_credits_tier").on(table.planTier),
+]);
+
+/**
+ * Append-only ledger. Every balance change has a matching row here so
+ * balances can be reconstructed from zero at any point in time. This is
+ * the audit trail for SOC 2 + the user-facing transaction history.
+ *
+ * `reason` enum (DB-constrained):
+ *   topup          — deposit via Stripe/Yoco
+ *   agent_run      — direct deduction for a run
+ *   refund         — credit returned to user
+ *   adjustment     — manual (admin) correction
+ *   promo          — promotional/signup bonus
+ *   hold_capture   — hold converted to real deduction
+ *   hold_release   — hold cancelled, balance restored
+ */
+export const creditTransactions = pgTable("credit_transactions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull(),
+  deltaCents: integer("delta_cents").notNull(),
+  reason: text("reason").notNull(),
+  agentId: text("agent_id"),
+  runId: uuid("run_id"),
+  holdId: uuid("hold_id"),
+  metadata: jsonb("metadata").default({}),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_credit_tx_user_created").on(table.userId, table.createdAt),
+  index("idx_credit_tx_agent").on(table.agentId),
+  index("idx_credit_tx_run").on(table.runId),
+]);
+
+/**
+ * Pre-reserves credits before a run starts so concurrent requests can't
+ * oversubscribe. On success the hold is captured (becomes a tx row).
+ * On failure/timeout it's released (balance restored). TTL is enforced
+ * by a cleanup job, not a DB trigger.
+ *
+ * `status` enum: active | captured | released | expired
+ */
+export const creditHolds = pgTable("credit_holds", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull(),
+  amountCents: integer("amount_cents").notNull(),
+  agentRunId: uuid("agent_run_id"),
+  expiresAt: timestamp("expires_at").notNull(),
+  status: text("status").notNull().default("active"),
+  createdAt: timestamp("created_at").defaultNow(),
+  capturedAt: timestamp("captured_at"),
+  releasedAt: timestamp("released_at"),
+}, (table) => [
+  index("idx_credit_holds_user").on(table.userId),
+  index("idx_credit_holds_expires").on(table.expiresAt),
+  index("idx_credit_holds_run").on(table.agentRunId),
 ]);
