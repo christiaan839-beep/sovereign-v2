@@ -176,6 +176,9 @@ async function handleAgentRoute(
   let email = "";
   let userId = "";
   let replay: ReplayBuilder | null = null;
+  // Hoisted so the catch block can release an orphaned hold on crash.
+  // Declared null and assigned after the credit-gate fires (line ~500).
+  let creditHoldId: string | null = null;
 
     try {
       // ─── Auth & Rate Limiting ───
@@ -487,6 +490,47 @@ async function handleAgentRoute(
         }
       }
 
+      // ─── Credits: place a hold for this run (plan 1.6) ───
+      // Conservatively reserves enough credit to cover a 2000-token run
+      // on the cheapest sovereignty-safe model. The actual amount is
+      // captured after success (or released on failure). Runs charged
+      // against a monthly plan allocation; pay-per-run users spend
+      // from their topped-up balance.
+      //
+      // Free-tier users with zero balance get a 402 Payment Required
+      // with a top-up URL — NOT a 403 (paywall) or 429 (rate limit).
+      // The client-side UpgradeNudge component keys on 402 to show the
+      // "Top up credits" modal specifically.
+      // creditHoldId is declared at function scope (see let above) so the
+      // catch block can release it on crash.
+      if (userId && !config.public) {
+        try {
+          const { placeHold } = await import("@/lib/credits");
+          const { estimatedHoldCents } = await import("@/lib/pricing-costs");
+          const holdCents = estimatedHoldCents("nvidia/nemotron-3-nano-30b-a3b", 2000);
+          creditHoldId = await placeHold(userId, holdCents, undefined, 5 * 60_000);
+        } catch (holdErr) {
+          const { InsufficientCreditsError } = await import("@/lib/credits");
+          if (holdErr instanceof InsufficientCreditsError) {
+            return NextResponse.json(
+              {
+                error: "Insufficient credits",
+                required: holdErr.required,
+                available: holdErr.available,
+                topUpUrl: "/dashboard/billing?topup=true",
+              },
+              { status: 402 },
+            );
+          }
+          // Any other error — log and fail-open to protect revenue.
+          // A broken credits service must not block all runs.
+          log.warn("Credit hold failed — allowing execution without hold", {
+            agent: config.name,
+            error: String(holdErr),
+          });
+        }
+      }
+
       // ─── Execute Agent Handler ───
       // Wrap in model-attribution context so every AI call made inside
       // the handler (ai(), nimChat(), consensus, research_ai, nested
@@ -548,6 +592,15 @@ async function handleAgentRoute(
             skipIfSovereign: config.skipSafetyChecks,
           });
           if (!outSafety.passed) {
+            // Output safety blocked — compute was consumed, so capture
+            // the hold. The user paid for the run; we blocked the
+            // delivery. A release here would be unfair to the platform.
+            if (creditHoldId) {
+              try {
+                const { captureHold } = await import("@/lib/credits");
+                void captureHold(creditHoldId).catch(() => {});
+              } catch { /* ignore */ }
+            }
             return errorResponse(
               outSafety.reason ?? "Response blocked by output safety filter.",
               403,
@@ -783,6 +836,19 @@ async function handleAgentRoute(
       // ID when reporting an issue and we grep it in our logs + Sentry.
       response.headers.set("X-Request-Id", requestId);
 
+      // ─── Credits: capture the hold on success (plan 1.7) ───
+      // Fire-and-forget — a capture failure logs but never fails the
+      // response (the user has their output already). The sweep cron
+      // will retry / expire if capture didn't land.
+      if (creditHoldId) {
+        try {
+          const { captureHold } = await import("@/lib/credits");
+          void captureHold(creditHoldId).catch((e) =>
+            log.warn("captureHold failed post-response", { holdId: creditHoldId, error: String(e) }),
+          );
+        } catch { /* never fail the response on a capture import error */ }
+      }
+
       return response;
     } catch (error: unknown) {
       const failDurationMs = Date.now() - startTime;
@@ -791,6 +857,18 @@ async function handleAgentRoute(
       const message = error instanceof Error ? error.message : "Unknown error";
       log.error("Agent execution failed", { agent: config.name, error: message });
       replay?.fail(message);
+
+      // ─── Credits: release the hold on failure (plan 1.7) ───
+      // Refund the reserved credit. Best-effort; the sweep cron will
+      // reclaim the hold if this release fails.
+      if (creditHoldId) {
+        try {
+          const { releaseHold } = await import("@/lib/credits");
+          void releaseHold(creditHoldId).catch((e) =>
+            log.warn("releaseHold failed in error path", { holdId: creditHoldId, error: String(e) }),
+          );
+        } catch { /* never compound failures by throwing in the catch */ }
+      }
 
       // ─── Persist failure to agentActivity table ───
       if (userId) {
