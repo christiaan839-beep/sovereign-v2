@@ -3,13 +3,13 @@
  *
  * The AGENT_REGISTRY at ./registry.ts is auto-generated from every
  * `src/app/api/_agents/{slug}/route.ts` and includes every agent that has
- * a handler. That's 177 agents (as of this commit) — more than we want
+ * a handler. That's 198 agents (as of this commit) — more than we want
  * to showcase to a prospect trying to evaluate the platform.
  *
  * This file is HAND-MAINTAINED. It's the curated set of agents
  * the /api/agents public catalog returns to unauthenticated callers
  * and the /playbooks marketing page links to. Authenticated
- * dashboard users still see all 177 via the direct registry.
+ * dashboard users still see all 198 via the direct registry.
  *
  * When you ship a new agent:
  *   1. Auto-registry picks it up on next `npm run gen:registry`
@@ -26,6 +26,43 @@
  */
 
 export const FEATURED_AGENTS: ReadonlySet<string> = new Set([
+  // ═══ WAVE 3: productivity, creative, A2E completion (Apr 2026) ═══
+
+  // Productivity
+  "meeting-scheduler",
+  "inbox-triage",
+  "task-prioritizer",
+
+  // Creative
+  "podcast-editor",
+  "youtube-summarizer",
+  "screenplay-assistant",
+  "book-outliner",
+
+  // Dev deeper
+  "refactor-suggester",
+  "migration-planner",
+  "documentation-writer",
+  "dependency-auditor",
+
+  // E-commerce deeper
+  "shopify-optimizer",
+  "competitor-price-monitor",
+  "abandoned-cart-winback",
+
+  // Finance + Real Estate completion
+  "tax-prep-assistant",
+  "valuation-comparable-finder",
+
+  // Marketing + Customer Success
+  "marketing-attribution",
+  "churn-predictor",
+
+  // A2E moat completion
+  "agent-marketplace-lister",
+  "a2e-chain-planner",
+  "trust-level-auditor",
+
   // ═══ WAVE 2: category wedges (Apr 2026) ═══
 
   // Cybersecurity — new vertical
