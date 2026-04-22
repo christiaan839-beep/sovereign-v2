@@ -5,22 +5,33 @@
  *
  * Owns:
  *   - category filter state (URL-synced via ?category= for shareable links)
- *   - free-text search state (fuzzy across name, slug, tagline, tags)
+ *   - free-text search state (in-page filter, distinct from ⌘K palette)
+ *   - command-palette open state (triggered by ⌘K / Ctrl+K)
  *
  * Does NOT own:
  *   - the data — that's handed in from the server component
  *   - the look-and-feel of the rows — that lives in AgentDossierCard
  *
- * Keyboard: `/` or `⌘K` focuses search. `Esc` clears it.
- * Filter state persists to the URL so a "share the cybersec agents"
- * link works naturally.
+ * Keyboard:
+ *   - "/"      focuses the inline search box
+ *   - "⌘K/Ctrl+K" opens the command palette (ranked fuzzy over full set)
+ *   - "Esc"    clears inline search if it's focused
+ *
+ * URL sync:
+ *   - `?category=Cybersec` selects that filter on page load
+ *   - Category change calls router.replace() so the URL tracks the
+ *     active filter — good for sharing "/agents?category=A2E" links.
+ *   - Inline search query is intentionally NOT URL-synced (too noisy
+ *     for a shared link, and the palette handles discoverability).
  */
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { PublicAgent } from "@/lib/agent-catalog";
 import { DirectoryHeader } from "./DirectoryHeader";
 import { CategoryTabs } from "./CategoryTabs";
 import { AgentDossierCard } from "./AgentDossierCard";
+import { CommandPalette } from "./CommandPalette";
 
 interface Props {
   agents: PublicAgent[];
@@ -42,11 +53,43 @@ function matchesQuery(agent: PublicAgent, q: string): boolean {
 }
 
 export function StaffDirectoryClient({ agents }: Props) {
-  const [category, setCategory] = useState<string>(ALL_CATEGORY);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialCategory = searchParams.get("category") ?? ALL_CATEGORY;
+
+  const [category, setCategoryState] = useState<string>(initialCategory);
   const [query, setQuery] = useState<string>("");
+  const [paletteOpen, setPaletteOpen] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
 
-  // Keyboard: "/" or "⌘K" to focus search, "Esc" to clear.
+  // setCategory: sets local state AND updates URL. Wrapped so the
+  // CategoryTabs only needs to know the simple signature.
+  const setCategory = useCallback(
+    (name: string) => {
+      setCategoryState(name);
+      const params = new URLSearchParams(searchParams.toString());
+      if (name === ALL_CATEGORY) {
+        params.delete("category");
+      } else {
+        params.set("category", name);
+      }
+      const next = params.toString() ? `?${params.toString()}` : "";
+      router.replace(`/agents${next}`, { scroll: false });
+    },
+    [router, searchParams],
+  );
+
+  // React to URL changes from browser back/forward.
+  useEffect(() => {
+    const urlCategory = searchParams.get("category") ?? ALL_CATEGORY;
+    if (urlCategory !== category) {
+      setCategoryState(urlCategory);
+    }
+    // Only need to react to URL changes — adding `category` would loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  // Keyboard handlers.
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       // Don't steal keys from other inputs.
@@ -57,14 +100,18 @@ export function StaffDirectoryClient({ agents }: Props) {
           target.tagName === "TEXTAREA" ||
           target.isContentEditable);
 
+      // ⌘K / Ctrl+K — opens the command palette (works even from inputs).
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setPaletteOpen(true);
+        return;
+      }
+      // "/" — focus the inline search (only outside inputs).
       if (!isTypingElsewhere && e.key === "/") {
         e.preventDefault();
         searchRef.current?.focus();
       }
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        searchRef.current?.focus();
-      }
+      // Esc inside inline search clears it.
       if (e.key === "Escape" && document.activeElement === searchRef.current) {
         setQuery("");
         searchRef.current?.blur();
@@ -130,6 +177,12 @@ export function StaffDirectoryClient({ agents }: Props) {
 
         <ResultsFootnote total={agents.length} visibleCount={visible.length} query={query} category={category} />
       </div>
+
+      <CommandPalette
+        open={paletteOpen}
+        agents={agents}
+        onClose={() => setPaletteOpen(false)}
+      />
     </main>
   );
 }

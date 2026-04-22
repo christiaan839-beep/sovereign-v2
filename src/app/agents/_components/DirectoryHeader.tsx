@@ -88,11 +88,20 @@ export function DirectoryHeader({ total, featured, query, onQueryChange, searchR
         </div>
       </div>
 
-      {/* Search bar */}
+      {/* Search bar + palette hint */}
       <div className="mt-10 ed-enter ed-d-5">
-        <label className="block ed-label mb-3">
-          Search — name, slug, tag, capability
-        </label>
+        <div className="flex items-baseline justify-between mb-3">
+          <label className="block ed-label">
+            Filter — name, slug, tag, capability
+          </label>
+          <span className="ed-caption">
+            Power search:{" "}
+            <kbd className="ed-label px-1.5 py-0.5 border ml-1"
+                 style={{ borderColor: "var(--ed-rule)", color: "var(--ed-copper)" }}>
+              ⌘ K
+            </kbd>
+          </span>
+        </div>
         <div className="flex items-center gap-3 border-b pb-3"
              style={{ borderColor: query ? "var(--ed-copper)" : "var(--ed-rule)" }}>
           <input
@@ -103,14 +112,15 @@ export function DirectoryHeader({ total, featured, query, onQueryChange, searchR
             onChange={(e) => onQueryChange(e.target.value)}
             className="ed-mono flex-1 bg-transparent border-0 outline-none text-lg md:text-xl placeholder:opacity-40"
             style={{ color: "var(--ed-ink)" }}
-            aria-label="Search agents"
+            aria-label="Filter agents in directory"
           />
           <kbd className="ed-label px-2 py-1 border"
                style={{
                  borderColor: "var(--ed-rule)",
                  color: "var(--ed-ink-dim)",
-               }}>
-            ⌘ K
+               }}
+               title="Press / to focus this input">
+            /
           </kbd>
         </div>
       </div>
