@@ -1,0 +1,49 @@
+{
+  "name": "@sovereignmatrix/agent-validator",
+  "version": "1.0.0",
+  "description": "Validate Sovereign Agent Manifest (SAM) v1.0 documents — CLI + programmatic API. Open spec at https://sovereignmatrix.agency/spec/agent-manifest",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "sovereign-agent-validator": "dist/cli.js",
+    "sam-validate": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "keywords": [
+    "sovereign-matrix",
+    "sam",
+    "agent-manifest",
+    "ai-agent",
+    "validator",
+    "mcp",
+    "anthropic",
+    "claude",
+    "json-schema"
+  ],
+  "author": "Sovereign Matrix",
+  "license": "MIT",
+  "homepage": "https://sovereignmatrix.agency/spec/agent-manifest",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/christiaan839-beep/sovereign-v2.git",
+    "directory": "packages/agent-validator"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3",
+    "@types/node": "^22.15.0",
+    "vitest": "^4.1.0"
+  }
+}

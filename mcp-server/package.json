@@ -1,7 +1,7 @@
 {
   "name": "@sovereignmatrix/mcp",
-  "version": "2.0.0",
-  "description": "MCP server exposing the Sovereign Matrix agent platform (20 tools) — leads, SEO, content, code review, safety checks, and auditable snapshots — to Claude, Cline, and Cursor.",
+  "version": "2.1.0",
+  "description": "MCP server exposing the Sovereign Matrix agent platform (24 tools) — 20 specialized agents + full-catalog discovery (198 agents) + SAM v1.0 spec introspection — to Claude Desktop, Cline, and Cursor.",
   "type": "module",
   "main": "dist/index.js",
   "bin": {

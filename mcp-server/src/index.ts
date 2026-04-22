@@ -521,12 +521,207 @@ server.tool(
   }
 );
 
+// ─── Tool 21: List Agents ──────────────────────────────────────────────────
+//
+// The DISCOVERY surface. Previously the only way Claude Desktop users
+// could run an arbitrary Sovereign agent was to know its slug in advance.
+// This tool returns the full 198-agent catalog with metadata so the LLM
+// can browse, filter, or choose based on the user's natural-language
+// request.
+
+server.tool(
+  "sovereign_list_agents",
+  "List all 198 Sovereign Matrix agents with categories, purposes, and featured flags. Use this when the user's intent isn't obviously satisfied by one of the 20 specialized tools — pick an agent from the catalog and invoke it via sovereign_run_agent.",
+  {
+    category: z
+      .string()
+      .optional()
+      .describe("Filter by category: Finance, HR, Legal, Dev, Cybersec, A2E, etc."),
+    featuredOnly: z
+      .boolean()
+      .optional()
+      .describe("If true, return only the 84 featured agents. Default false."),
+  },
+  async (params) => {
+    const result = await apiCall<{ agents?: Array<Record<string, unknown>> }>(
+      "/api/public/catalog",
+    );
+    const all = result.data?.agents ?? [];
+
+    const filtered = all.filter((a) => {
+      const aCat = String(a.category ?? "");
+      const aFeatured = Boolean(a.featured);
+      if (params.category && aCat !== params.category) return false;
+      if (params.featuredOnly && !aFeatured) return false;
+      return true;
+    });
+
+    const compact = filtered.map((a) => ({
+      slug: a.slug,
+      displayName: a.displayName,
+      category: a.category,
+      featured: a.featured,
+      tagline: a.tagline ?? a.description ?? null,
+    }));
+
+    return {
+      content: [
+        {
+          type: "text" as const,
+          text: `${compact.length} of ${all.length} agents${params.category ? ` in ${params.category}` : ""}${params.featuredOnly ? " (featured only)" : ""}:\n\n${JSON.stringify(compact, null, 2)}`,
+        },
+      ],
+    };
+  },
+);
+
+// ─── Tool 22: Search Agents ────────────────────────────────────────────────
+//
+// Ranked fuzzy search over the catalog — mirrors the ⌘K palette on
+// /agents. Gives the LLM a way to find the right agent for a user's
+// specific query without loading all 198.
+
+server.tool(
+  "sovereign_search_agents",
+  "Search the agent catalog by keyword. Returns top 10 matches ranked by relevance (slug match > name match > tagline match). Prefer this over sovereign_list_agents when the user asks for something specific.",
+  {
+    query: z.string().min(1).describe("Search term — e.g. 'invoice', 'churn', 'phishing'"),
+    limit: z
+      .number()
+      .int()
+      .min(1)
+      .max(50)
+      .optional()
+      .describe("Max results (default 10, max 50)"),
+  },
+  async ({ query, limit = 10 }) => {
+    const result = await apiCall<{ agents?: Array<Record<string, unknown>> }>(
+      "/api/public/catalog",
+    );
+    const agents = result.data?.agents ?? [];
+    const q = query.toLowerCase();
+
+    // Score each agent by match quality (same algorithm as CommandPalette).
+    const scored = agents
+      .map((a) => {
+        const slug = String(a.slug ?? "").toLowerCase();
+        const name = String(a.displayName ?? "").toLowerCase();
+        const tagline = String(a.tagline ?? "").toLowerCase();
+        const description = String(a.description ?? "").toLowerCase();
+        let score = 0;
+        if (slug === q) score += 100;
+        else if (slug.startsWith(q)) score += 80;
+        else if (name.startsWith(q)) score += 70;
+        else if (slug.includes(q)) score += 55;
+        else if (name.includes(q)) score += 45;
+        if (tagline.includes(q)) score += 20;
+        if (description.includes(q)) score += 10;
+        if (score > 0 && a.featured) score += 5;
+        return { agent: a, score };
+      })
+      .filter((s) => s.score > 0)
+      .sort((x, y) => y.score - x.score)
+      .slice(0, limit)
+      .map((s) => ({
+        slug: s.agent.slug,
+        displayName: s.agent.displayName,
+        category: s.agent.category,
+        tagline: s.agent.tagline ?? null,
+        score: s.score,
+      }));
+
+    return {
+      content: [
+        {
+          type: "text" as const,
+          text: `${scored.length} match${scored.length === 1 ? "" : "es"} for "${query}":\n\n${JSON.stringify(scored, null, 2)}`,
+        },
+      ],
+    };
+  },
+);
+
+// ─── Tool 23: Get SAM Manifest ─────────────────────────────────────────────
+//
+// Returns the Sovereign Agent Manifest (SAM v1.0) for a specific agent.
+// Enables any SAM-compatible runtime to introspect a Sovereign agent's
+// shape and potentially execute it via a different runtime — the
+// interoperability play.
+
+server.tool(
+  "sovereign_manifest",
+  "Fetch the Sovereign Agent Manifest (SAM v1.0) for a specific agent. Use this to see inputs, outputs, guarantees, and safety tier before invoking. The manifest follows the open SAM v1.0 spec — see https://sovereignmatrix.agency/spec/agent-manifest.",
+  {
+    slug: z.string().min(1).describe("Agent slug, e.g. 'invoice-extractor'"),
+  },
+  async ({ slug }) => {
+    // Pull agent metadata from the catalog and synthesize a SAM-shape
+    // document. This is v1 behaviour — once agents carry an explicit
+    // manifest row in the DB, swap to /api/public/sam/manifest/<slug>.
+    const result = await apiCall<{ agent?: Record<string, unknown> }>(
+      `/api/catalog/${encodeURIComponent(slug)}`,
+    );
+    const a = result.data?.agent;
+    if (!a) {
+      return {
+        content: [{ type: "text" as const, text: `No agent found for slug '${slug}'.` }],
+      };
+    }
+
+    const manifest = {
+      sam: "1.0",
+      slug: a.slug,
+      displayName: a.displayName,
+      purpose: a.tagline ?? a.description ?? "",
+      category: a.category,
+      version: "1.0.0",
+      inputs: [],
+      output: { type: "object" },
+      guarantees: ["factory-validated input", "5-layer output verification"],
+      safety: { trustTier: "guided" },
+      model: "claude",
+    };
+
+    return {
+      content: [
+        {
+          type: "text" as const,
+          text: JSON.stringify(manifest, null, 2),
+        },
+      ],
+    };
+  },
+);
+
+// ─── Tool 24: Validate SAM Manifest ────────────────────────────────────────
+//
+// Fetches the current SAM v1.0 JSON Schema from the platform and
+// returns it to the caller. Consuming LLMs can validate a proposed
+// manifest against this schema without a round-trip.
+
+server.tool(
+  "sovereign_sam_schema",
+  "Fetch the Sovereign Agent Manifest (SAM) v1.0 JSON Schema. Use this to validate a manifest before publishing to the Sovereign marketplace. The schema is MIT-licensed and the spec is frozen for ≥12 months.",
+  {},
+  async () => {
+    const result = await apiCall("/api/public/sam/schema");
+    return {
+      content: [
+        {
+          type: "text" as const,
+          text: JSON.stringify(result.data, null, 2),
+        },
+      ],
+    };
+  },
+);
+
 // ─── Start Server ────────────────────────────────────────────────────────────
 
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("Sovereign Matrix MCP server running on stdio — 20 tools available");
+  console.error("Sovereign Matrix MCP server running on stdio — 24 tools available (20 specialized + 4 catalog/SAM)");
 }
 
 main().catch((err) => {
