@@ -5,7 +5,6 @@ import Link from "next/link";
 import { SignInButton } from "@clerk/nextjs";
 import { useState, useEffect } from "react";
 import { SovereignLogo } from "@/components/ui/SovereignLogo";
-import { StackKiller } from "@/components/cinematic/StackKiller";
 import { getMarketingPlaybooks } from "@/lib/playbooks";
 import { FounderSeats } from "@/components/landing/FounderSeats";
 import { CommandEgg } from "@/components/landing/CommandEgg";
@@ -18,6 +17,7 @@ import { TiltCard } from "@/components/ui/EliteEffects";
 import { ConstellationField } from "@/components/landing/ConstellationField";
 import { LiveProofStrip } from "@/components/landing/LiveProofStrip";
 import { RecentRunsTicker } from "@/components/landing/RecentRunsTicker";
+import { ProofStrip } from "@/components/landing/ProofStrip";
 import { ThreeMoatsGrid } from "@/components/landing/ThreeMoatsGrid";
 import { A2EEconomySection } from "@/components/landing/A2EEconomySection";
 import { ModelRouterSection } from "@/components/landing/ModelRouterSection";
@@ -27,11 +27,14 @@ import { VerificationPipeline } from "@/components/landing/VerificationPipeline"
  * Landing page — Agent Infrastructure Stack narrative.
  * Palette: #030303 base · #B5532C copper · Instrument Serif · Inter Tight · JetBrains Mono
  *
- * Section map:
- *   Nav · 01 Hero · LiveProofStrip · 02 ThreeMoats · 03 A2EEconomy ·
- *   04 MemoryMoat · 05 ModelRouter · 06 VerificationPipeline ·
- *   07 FeaturedPlaybooks · 08 IndustrySection · StackKiller ·
- *   09 PlatformScale · 10 PricingStrip · FinalCTA · Footer · CommandEgg
+ * Section map (as of the landing-redesign in docs/superpowers/specs/
+ * 2026-04-21-landing-redesign-design.md — 10 sections consolidated to 7):
+ *
+ *   Nav · 01 Hero · LiveProofStrip · RecentRunsTicker ·
+ *   02 ThreeMoats · 03 A2EEconomy · 04 MemoryMoat ·
+ *   05 ModelRouter · 06 VerificationPipeline · 07 FeaturedPlaybooks ·
+ *   08 ProofStrip (merged: scale + industries + stack-kill) ·
+ *   10 PricingStrip · FounderSeats · FinalCTA · Footer · CommandEgg
  */
 
 const HERO_CTA = "/signup";
@@ -113,14 +116,8 @@ export default function LandingPage() {
         {/* 07 · Featured Playbooks */}
         <FeaturedPlaybooksSection />
 
-        {/* 08 · Industries */}
-        <IndustrySection />
-
-        {/* Stack Killer — cost displacement */}
-        <StackKiller />
-
-        {/* 09 · Platform Scale */}
-        <PlatformScale />
+        {/* 08 · Proof Strip — consolidates scale + industries + stack-kill */}
+        <ProofStrip />
 
         {/* 10 · Pricing Strip */}
         <PricingStrip />
@@ -626,140 +623,6 @@ function FeaturedPlaybooksSection() {
             <span className="mt-6 text-[11px] font-mono tracking-wide text-neutral-600 group-hover:text-[#B5532C] transition-colors">
               Browse library →
             </span>
-          </Link>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ─── 08 · Industry Section ─────────────────────────────────────── */
-function IndustrySection() {
-  const industries = [
-    { code: "HC", label: "Healthcare",    desc: "Clinical documentation, prior authorization review, and ICD-10 coding — every run checked by Claude before reaching your EHR.", href: "/for-healthcare" },
-    { code: "LG", label: "Legal",         desc: "Contract review in minutes, not billable hours. Compliance monitoring with a cryptographic audit trail on every opinion.",        href: "/for-legal" },
-    { code: "AG", label: "Agriculture",   desc: "Crop intelligence, pest-risk modelling, and yield forecasting tuned to the specific cultivar and region you operate in.",          href: "/for-agriculture" },
-    { code: "MF", label: "Manufacturing", desc: "Predictive maintenance signals and supply-chain disruption alerts read straight off your sensor and ERP streams.",                 href: "/for-manufacturing" },
-    { code: "CS", label: "Cybersecurity", desc: "Threat hunting, CVE triage, and SOC automation with a human-in-the-loop approval layer on anything destructive.",                  href: "/for-cybersecurity" },
-    { code: "FI", label: "Fintech",       desc: "Fraud pattern detection, KYC / AML flagging, and regulator-ready reporting that holds up under an audit.",                        href: "/for-fintech" },
-    { code: "RE", label: "Real Estate",   desc: "Listing generation, lease abstraction, and broker-grade valuation memos produced from the document bundle you already hold.",     href: "/for-realestate" },
-    { code: "GV", label: "Government",    desc: "Permit processing, benefits eligibility, and FOIA response drafting — every step logged to an immutable ledger.",                  href: "/for-government" },
-  ];
-
-  return (
-    <section className="px-6 py-20 md:py-28 bg-[#030303]">
-      <div className="max-w-6xl mx-auto">
-        <SectionHead n="08" label="industries served" />
-
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
-          <h2 className="font-serif text-4xl md:text-5xl lg:text-[58px] leading-[1.05] max-w-2xl tracking-[-0.02em]">
-            Eight industries.
-            <br />
-            <em className="not-italic text-[#B5532C]">One platform.</em>
-          </h2>
-          <p className="text-[14px] text-neutral-500 max-w-sm leading-relaxed md:text-right">
-            Every vertical has dedicated agents built for its specific
-            regulatory requirements, terminology, and output formats.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {industries.map((ind) => (
-            <div key={ind.label}>
-              <Link
-                href={ind.href}
-                className="group relative block h-full p-5 rounded-[6px] border border-white/[0.06] bg-white/[0.025] hover:border-[#B5532C]/35 hover:bg-[#B5532C]/[0.03] transition-all duration-300 overflow-hidden"
-                style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08), 0 1px 0 rgba(0,0,0,0.5)" }}
-              >
-                <span
-                  aria-hidden="true"
-                  className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                  style={{
-                    background: "radial-gradient(circle at 20% 0%, rgba(181,83,44,0.18) 0%, transparent 45%)",
-                  }}
-                />
-                <span className="relative inline-flex items-center justify-center h-6 w-6 rounded-full border border-white/[0.12] text-neutral-500 font-mono text-[10px] mb-4 tracking-wide group-hover:border-[#B5532C]/40 group-hover:text-[#B5532C] transition-colors">
-                  {ind.code}
-                </span>
-                <p className="relative text-[14px] font-semibold text-white mb-1.5 tracking-tight">
-                  {ind.label}
-                </p>
-                <p className="relative text-[11.5px] text-neutral-500 leading-[1.55]">{ind.desc}</p>
-                <span
-                  aria-hidden="true"
-                  className="absolute bottom-4 right-4 text-[10px] font-mono text-neutral-700 group-hover:text-[#B5532C] transition-colors"
-                >
-                  →
-                </span>
-              </Link>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ─── 09 · Platform Scale ───────────────────────────────────────── */
-const SCALE_METRICS = [
-  {
-    n: "137",
-    label: "Agents",
-    sub: "Across 8 industries and 19 task categories. Healthcare, legal, agriculture, manufacturing, cybersecurity, and more.",
-    href: "/platform",
-  },
-  {
-    n: "90+",
-    label: "Integrations",
-    sub: "Slack, HubSpot, Salesforce, Stripe, Notion, Clearbit, Apollo, Hunter — BYOK for data enrichment.",
-    href: "/integrations",
-  },
-  {
-    n: "8",
-    label: "Model providers",
-    sub: "NIM · Claude · Gemini · Groq · Cerebras · Ollama · DeepSeek · Tavily. 11-deep failover chain.",
-    href: "/platform",
-  },
-  {
-    n: "5",
-    label: "Verification layers",
-    sub: "Jailbreak → PII → content policy → quality gate → Claude critic. Every single run, no exceptions.",
-    href: "/trust",
-  },
-] as const;
-
-function PlatformScale() {
-  return (
-    <section className="px-6 py-0 bg-[#030303] border-t border-white/[0.04]">
-      <div className="max-w-6xl mx-auto">
-        <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-y md:divide-y-0 divide-white/[0.05] border-b border-white/[0.04]">
-          {SCALE_METRICS.map((m) => (
-            <a
-              key={m.label}
-              href={m.href}
-              className="group block px-6 py-10 md:px-8 md:py-12 hover:bg-white/[0.015] transition-colors"
-            >
-              <div className="font-serif text-[52px] md:text-[64px] text-white leading-none tracking-[-0.02em] mb-3 group-hover:text-[#E8DDD0] transition-colors">
-                {m.n}
-              </div>
-              <div className="text-[13px] font-medium text-neutral-300 mb-2 tracking-tight">{m.label}</div>
-              <div className="text-[11px] font-mono text-neutral-600 leading-[1.65] max-w-[200px]">{m.sub}</div>
-            </a>
-          ))}
-        </div>
-
-        <div className="py-5 flex items-center justify-between">
-          <p className="text-[11px] font-mono text-neutral-700 tracking-wide">
-            137 agents · 8 industries · 90+ integrations · full surface at{" "}
-            <Link href="/platform" className="text-neutral-500 hover:text-white transition-colors">/platform</Link>
-            {" "}and{" "}
-            <Link href="/developers/docs" className="text-neutral-500 hover:text-white transition-colors">/developers/docs</Link>
-          </p>
-          <Link
-            href="/dashboard"
-            className="text-[11px] font-mono text-neutral-600 hover:text-[#B5532C] transition-colors tracking-wide"
-          >
-            Open dashboard →
           </Link>
         </div>
       </div>
