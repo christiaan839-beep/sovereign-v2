@@ -46,9 +46,42 @@ describe("matchRule", () => {
     expect(rule?.skip).toBe(true);
   });
 
-  it("returns null for unmatched paths", () => {
-    expect(matchRule("/api/usage")).toBeNull();
+  it("non-/api/ paths are never rate-limited (returns null)", () => {
+    // Only /api/ paths are subject to rate limiting. Pages, RSC payloads,
+    // and static assets always pass through without touching Redis.
     expect(matchRule("/dashboard")).toBeNull();
+    expect(matchRule("/")).toBeNull();
+    expect(matchRule("/marketplace")).toBeNull();
+    expect(matchRule("/world")).toBeNull();
+  });
+
+  it("all /api/ paths now match at least the api-default rule", () => {
+    // W1 T3 coverage expansion: previously any /api/ path not covered
+    // by a specific rule returned null (no limit). The new api-default
+    // fallback rule ensures every API path gets at least a
+    // 60/min/caller bucket — defense against scraper/abuse.
+    expect(matchRule("/api/usage")).not.toBeNull();
+    expect(matchRule("/api/usage")?.name).toBe("api-default");
+    expect(matchRule("/api/contact")).not.toBeNull();
+    expect(matchRule("/api/waitlist")).not.toBeNull();
+    expect(matchRule("/api/approvals")).not.toBeNull();
+  });
+
+  it("specific rules beat the api-default fallback (order matters)", () => {
+    expect(matchRule("/api/catalog")?.name).toBe("catalog");
+    expect(matchRule("/api/leaderboard")?.name).toBe("leaderboard");
+    expect(matchRule("/api/public/recent-runs")?.name).toBe("public");
+    expect(matchRule("/api/admin/agents/pending")?.name).toBe("admin");
+    expect(matchRule("/api/credits/balance")?.name).toBe("credits");
+    expect(matchRule("/api/voice/session")?.name).toBe("voice");
+    expect(matchRule("/api/developers/submit")?.name).toBe("developers-submit");
+  });
+
+  it("cron/health/internal prefixes are marked skip=true", () => {
+    expect(matchRule("/api/cron/dispatch-scheduled-playbooks")?.skip).toBe(true);
+    expect(matchRule("/api/health/deep")?.skip).toBe(true);
+    expect(matchRule("/api/_health/ping")?.skip).toBe(true);
+    expect(matchRule("/api/_internal/playbook-worker")?.skip).toBe(true);
   });
 });
 

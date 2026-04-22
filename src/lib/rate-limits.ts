@@ -52,17 +52,64 @@ interface RateRule {
 }
 
 const RULES: readonly RateRule[] = [
+  // ─── SKIP: these have their own gate OR should never be throttled ───
   // Free tools have their own limiter via free-tool-limits.ts — skip here
-  { name: "free-tools",     prefix: "/api/free/",           max: 0,   windowSeconds: 60, identify: "ip_only", skip: true },
+  { name: "free-tools",       prefix: "/api/free/",           max: 0,    windowSeconds: 60, identify: "ip_only", skip: true },
+  // Cron routes use the CRON_SECRET bearer — skipping rate limits
+  // prevents accidental self-throttling when multiple crons tick at
+  // the same minute boundary.
+  { name: "cron",             prefix: "/api/cron/",           max: 0,    windowSeconds: 60, identify: "ip_only", skip: true },
+  // Health endpoints are polled heavily by UptimeRobot + Vercel Cron —
+  // rate limiting them would be self-defeating.
+  { name: "health",           prefix: "/api/health/",         max: 0,    windowSeconds: 60, identify: "ip_only", skip: true },
+  { name: "health-internal",  prefix: "/api/_health/",        max: 0,    windowSeconds: 60, identify: "ip_only", skip: true },
+  // Internal routes carry CRON_SECRET or pair-header auth — no throttle.
+  { name: "internal",         prefix: "/api/_internal/",      max: 0,    windowSeconds: 60, identify: "ip_only", skip: true },
 
-  // Most-specific rules first
-  { name: "webhooks-stripe",prefix: "/api/webhooks/stripe", max: 100, windowSeconds: 60, identify: "ip_only" },
-  { name: "auth",           prefix: "/api/auth/",           max: 10,  windowSeconds: 60, identify: "ip_only" },
-  { name: "playbook-run",   prefix: "/api/playbooks/run",   max: 10,  windowSeconds: 60, identify: "user_only" },
-  { name: "agents",         prefix: "/api/agents/",         max: 60,  windowSeconds: 60, identify: "user_or_ip" },
+  // ─── PER-IP (public endpoints — scrape/abuse defense) ───────────────
+  // Catalog + leaderboard + recent-runs are public GETs. Heavy edge
+  // caching absorbs most traffic; this limit stops a single IP from
+  // hammering the origin.
+  { name: "catalog",          prefix: "/api/catalog",         max: 120,  windowSeconds: 60, identify: "ip_only" },
+  { name: "leaderboard",      prefix: "/api/leaderboard",     max: 60,   windowSeconds: 60, identify: "ip_only" },
+  { name: "public",           prefix: "/api/public/",         max: 120,  windowSeconds: 60, identify: "ip_only" },
+  // Stripe's own retry can burst higher than our user-layer limit; the
+  // signature verification inside the handler is the real gate.
+  { name: "webhooks-stripe",  prefix: "/api/webhooks/stripe", max: 100,  windowSeconds: 60, identify: "ip_only" },
+  { name: "webhooks",         prefix: "/api/webhooks/",       max: 100,  windowSeconds: 60, identify: "ip_only" },
+  // Auth endpoints are the spray-attack surface — keep tight.
+  { name: "auth",             prefix: "/api/auth/",           max: 10,   windowSeconds: 60, identify: "ip_only" },
 
+  // ─── PER-USER (authenticated endpoints — fair-use) ─────────────────
+  // Admin routes need tight limits for defense-in-depth; an exposed
+  // session token shouldn't let an attacker scan the whole admin
+  // surface in seconds.
+  { name: "admin",            prefix: "/api/admin/",          max: 30,   windowSeconds: 60, identify: "user_only" },
+  // Developer submission endpoint — each user gets a handful per minute.
+  { name: "developers-submit",prefix: "/api/developers/submit", max: 10, windowSeconds: 60, identify: "user_only" },
+  // Playbook submission — expensive, tight limit.
+  { name: "playbook-run",     prefix: "/api/playbooks/run",   max: 10,   windowSeconds: 60, identify: "user_only" },
+  // Other playbook endpoints (list/schedule CRUD) — wider budget.
+  { name: "playbooks",        prefix: "/api/playbooks/",      max: 120,  windowSeconds: 60, identify: "user_or_ip" },
+  // Credits/billing endpoints — user-level.
+  { name: "credits",          prefix: "/api/credits/",        max: 60,   windowSeconds: 60, identify: "user_only" },
+  // Voice session open — tight. WebSocket itself is Railway, not this.
+  { name: "voice",            prefix: "/api/voice/",          max: 30,   windowSeconds: 60, identify: "user_only" },
+  // Agents (public + authenticated paths).
+  { name: "agents",           prefix: "/api/agents/",         max: 60,   windowSeconds: 60, identify: "user_or_ip" },
   // Legacy — preserve existing behaviour for /api/_agents/*
-  { name: "agents-legacy",  prefix: "/api/_agents/",        max: 100, windowSeconds: 60, identify: "user_or_ip" },
+  { name: "agents-legacy",    prefix: "/api/_agents/",        max: 100,  windowSeconds: 60, identify: "user_or_ip" },
+  // _admin legacy path (mirrors /api/admin/).
+  { name: "admin-legacy",     prefix: "/api/_admin/",         max: 30,   windowSeconds: 60, identify: "user_only" },
+  // _teams endpoint legacy.
+  { name: "teams-legacy",     prefix: "/api/_teams/",         max: 60,   windowSeconds: 60, identify: "user_only" },
+  // _payments legacy.
+  { name: "payments-legacy",  prefix: "/api/_payments/",      max: 60,   windowSeconds: 60, identify: "user_or_ip" },
+
+  // ─── DEFAULT: everything else under /api/ gets a moderate per-IP cap.
+  // Placed LAST so the specific rules above win. Catches /api/approvals,
+  // /api/contact, /api/waitlist, /api/integrations/*, etc.
+  { name: "api-default",      prefix: "/api/",                max: 60,   windowSeconds: 60, identify: "user_or_ip" },
 ];
 
 export function matchRule(pathname: string): RateRule | null {
