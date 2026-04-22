@@ -39,6 +39,7 @@ export const FEATURED_AGENTS: ReadonlySet<string> = new Set([
   "ads",
   "case-study",
   "brand-voice",
+  "product-description-writer",
 
   // SEO + research
   "seo-dominator",
@@ -52,16 +53,45 @@ export const FEATURED_AGENTS: ReadonlySet<string> = new Set([
   "god-brain",
   "meeting-notes",
   "contract-analyzer",
+  "review-analyzer",
+
+  // Finance — new verticals
+  "invoice-extractor",
+  "expense-categorizer",
+
+  // HR — new vertical
+  "resume-screener",
+  "offer-letter-gen",
+
+  // Legal — expanding
+  "nda-triage",
 
   // Developer-facing
   "code-reviewer",
   "translate",
   "claude-think",
+  "sql-generator",
+  "test-generator",
+
+  // Accessibility
+  "alt-text-generator",
+  "plain-language-rewriter",
+
+  // Productivity
+  "daily-briefing",
 
   // Orchestration / control-plane
   "smart-router",
   "coordinator",
   "consensus",
+
+  // A2E moat — agents that help other agents (platform differentiator)
+  "agent-builder",
+  "agent-reviewer",
+  "playbook-builder",
+  "cost-optimizer",
+  "prompt-ab-tester",
+  "agent-pricer",
 
   // Safety + compliance
   "content-safety",
