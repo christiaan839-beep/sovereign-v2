@@ -803,6 +803,14 @@ export const agentMetadata = pgTable("agent_metadata", {
   verified: boolean("verified").notNull().default(false),
   published: boolean("published").notNull().default(true),
   visibility: text("visibility").notNull().default("public"),
+  useCases: jsonb("use_cases").$type<Array<{
+    title: string;
+    description: string;
+    exampleInput?: string;
+    exampleOutput?: string;
+  }>>(),
+  faq: jsonb("faq").$type<Array<{ question: string; answer: string }>>(),
+  sampleOutputRunId: uuid("sample_output_run_id"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => [
