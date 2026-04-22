@@ -1,0 +1,48 @@
+{
+  "name": "@sovereignmatrix/cli",
+  "version": "1.0.0",
+  "description": "Command-line tool for authoring and submitting Sovereign Agent Manifest (SAM) v1.0 agents. Validate local manifests, submit to the marketplace, inspect the spec.",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "sovereign": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "keywords": [
+    "sovereign-matrix",
+    "sam",
+    "agent-manifest",
+    "ai-agent",
+    "cli",
+    "marketplace"
+  ],
+  "author": "Sovereign Matrix",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sovereign-matrix/sovereign-v2.git",
+    "directory": "packages/sovereign-cli"
+  },
+  "homepage": "https://sovereignmatrix.agency/developers/build-an-agent",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@sovereignmatrix/agent-validator": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^3.0.0"
+  }
+}
