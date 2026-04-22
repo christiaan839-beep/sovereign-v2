@@ -4,7 +4,7 @@
 
 **Goal:** Ship an elite-tier landing page redesign (Staff Directory hero, Atlas graph, live product demos, editorial playbook profiles) in parallel with closing eight Tier 1 platform gaps that the new landing depends on — atomic cutover at end of Week 3, followed by three weeks of Tier 2 parity work.
 
-**Architecture:** Parallel staging via Next.js route group `src/app/(landing-v2)/` keeps production `src/app/page.tsx` untouched until the cutover commit. Five new `/api/public/*` endpoints power live sections using real data from a dedicated `sovereign-public-demo` tenant. Seven new landing components (`StaffDirectory`, `AgentDossier`, `AtlasGraph`, `MemoryDemoCard`, `RouterPassVis`, `VerificationDemo`, `PlaybookProfile`) replace nine deprecated ones. `/agents/[slug]` thickened with use cases / FAQ / sample output migration. `/platform` palette converted to dark for visual continuity. Atomic cutover: one commit renames `(landing-v2)/page.tsx` → `page.tsx`; rollback is one `git revert`.
+**Architecture:** Parallel staging via Next.js route group `src/app/(landing-v2)/` keeps production `src/app/page.tsx` untouched until the cutover commit. Five new `/api/public/*` endpoints power live sections using real data scoped to a fixed Clerk-style user id `PUBLIC_DEMO_USER_ID = "user_publicdemo"` — avoids any schema change to the tenants table and matches the user-scoped design of `playbook_runs` + `tenant_memories`. Seven new landing components (`StaffDirectory`, `AgentDossier`, `AtlasGraph`, `MemoryDemoCard`, `RouterPassVis`, `VerificationDemo`, `PlaybookProfile`) replace nine deprecated ones. `/agents/[slug]` thickened with use cases / FAQ / sample output migration. `/platform` palette converted to dark for visual continuity. Atomic cutover: one commit renames `(landing-v2)/page.tsx` → `page.tsx`; rollback is one `git revert`.
 
 **Tech Stack:** Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS v4 · Framer Motion · Drizzle ORM + Neon PostgreSQL · Clerk · Upstash Redis (rate limits + caching) · Vitest · Playwright · D3 (force simulation) · Vercel.
 
@@ -12,7 +12,7 @@
 - `docs/superpowers/specs/2026-04-22-landing-v2-design.md`
 - `docs/superpowers/specs/2026-04-22-platform-tier1-gap-audit.md`
 
-**Decisions locked (commit `1ae11136`):** dark palette on `/platform` · headline `Meet the 137 agents.` · character names `Apex/Velox/Scribe` (Section 06 only) · typographic-only profile art · dedicated `sovereign-public-demo` tenant.
+**Decisions locked (commit `1ae11136`, refined during Day 3 schema audit):** dark palette on `/platform` · headline `Meet the 137 agents.` · character names `Apex/Velox/Scribe` (Section 06 only) · typographic-only profile art · public demo data scoped by a fixed Clerk user id `PUBLIC_DEMO_USER_ID = "user_publicdemo"` (revised from "dedicated tenant" — see §0 note and Day 3 detail).
 
 ---
 
@@ -45,9 +45,16 @@ The sprint creates and modifies the following files. This is the complete invent
 ```
 docs/superpowers/plans/2026-04-22-landing-v2-sprint.md       (THIS FILE)
 
-drizzle/migrations/
-  0046_public_demo_tenant.sql                                (new migration)
-  0047_agent_metadata_usecases_faq.sql                       (new migration)
+drizzle/
+  0024_agent_metadata_usecases_faq.sql                       (new migration — only one needed)
+
+# NOTE: initial plan drafted migration 0046_public_demo_tenant.sql for
+# a dedicated public-demo tenant. On schema inspection that approach
+# conflicts with reality: tenants.id is UUID (not text slug) AND
+# playbook_runs / tenant_memories are user-scoped (user_id TEXT),
+# not tenant-scoped. Revised approach: fix a synthetic Clerk-style
+# user id PUBLIC_DEMO_USER_ID = "user_publicdemo" in code and scope
+# all public-demo rows by it. No tenant-table migration required.
 
 src/app/(landing-v2)/
   layout.tsx                                                 (route-group layout)
@@ -112,8 +119,8 @@ docs/superpowers/plans/
 ### Modified
 
 ```
-src/db/schema.ts                                             (new columns: is_public_demo, useCases, faq)
-src/lib/agent-catalog.ts                                     (if needed — add demo-tenant filter)
+src/db/schema.ts                                             (new columns on agentMetadata only: useCases, faq, sampleOutputRunId)
+src/lib/agent-catalog.ts                                     (no change required; existing listCatalog is fine as-is)
 src/lib/rate-limits.ts                                       (add 3 new rules for expensive demo endpoints)
 src/lib/env.ts                                               (if any new env vars needed)
 src/lib/webhook-dispatcher.ts                                (T1-G retry + idempotency)
@@ -169,83 +176,100 @@ If any verification fails, stop and fix before proceeding.
 
 # WEEK 1 — Foundation Data Layer + Hero
 
-## Day 3 — Public Demo Tenant + DB Migrations
+## Day 3 — Public Demo User Scope + agent_metadata migration
 
-Goal: stand up the dedicated `sovereign-public-demo` tenant and the new schema columns (`is_public_demo` on tenants; `useCases` + `faq` on agent_metadata). This unblocks every downstream task.
+Goal: establish the `PUBLIC_DEMO_USER_ID` invariant (code constant + test) and the `0024_agent_metadata_usecases_faq.sql` migration that `/agents/[slug]` thickening depends on. **No tenants-table migration.**
 
-### Task 1: Read `src/db/schema.ts` to locate tenants + agentMetadata table definitions
+**Why user-scoped, not tenant-scoped:** `playbookRuns.userId` and `tenantMemories.userId` are both TEXT Clerk user ids — there is no `tenantId` column on either table. We scope all public demo data to a fixed Clerk-style user id `"user_publicdemo"`. No schema change to `tenants` is needed. This is a simpler, reliability-winning approach that matches how the tables were actually designed.
 
-- [ ] **Step 1: Open the schema file**
+### Task 1 (1 min — controller runs): Prerequisites verification
+
+Run these checks from the repo root to confirm the starting state matches the plan's assumptions:
 
 ```bash
-grep -n "export const tenants\|export const agentMetadata" src/db/schema.ts
+git log --oneline -5
+npx tsc --noEmit
+grep -n "export const tenants\|export const agentMetadata\|export const playbookRuns\|export const tenantMemories" src/db/schema.ts
+ls drizzle/*.sql | tail -3
 ```
 
-Expected: two line numbers, one per table. Note the exact schema.
+Expected:
+- Latest commits include `5f1685cc plan(...)`, `1ae11136 spec(...)`, `66da15da spec(...)`.
+- `tsc --noEmit` exits 0.
+- `tenants`, `agentMetadata`, `playbookRuns`, `tenantMemories` all present.
+- Latest migration is `drizzle/0023_playbook_run_scheduled_id.sql` (so next is `0024`).
 
-### Task 2: Write migration `0046_public_demo_tenant.sql`
+If any check fails, stop before proceeding.
+
+### Task 2: Write migration `drizzle/0024_agent_metadata_usecases_faq.sql`
 
 **Files:**
-- Create: `drizzle/migrations/0046_public_demo_tenant.sql`
+- Create: `drizzle/0024_agent_metadata_usecases_faq.sql`
 
-- [ ] **Step 1: Inspect existing migrations for format conventions**
+- [ ] **Step 1: Inspect existing migration conventions**
 
 ```bash
-ls drizzle/migrations/ | tail -3
-cat drizzle/migrations/$(ls drizzle/migrations/ | tail -1)
+cat drizzle/0023_playbook_run_scheduled_id.sql
 ```
 
-Expected: see the SQL style (bare SQL, or Drizzle's `-- custom` comment markers).
+Confirm bare SQL style (no Drizzle `-- custom` markers).
 
 - [ ] **Step 2: Write the migration**
 
 ```sql
--- drizzle/migrations/0046_public_demo_tenant.sql
--- Adds is_public_demo flag to tenants and seeds the sovereign-public-demo row.
+-- drizzle/0024_agent_metadata_usecases_faq.sql
+-- Thickens agent_metadata for the landing v2 /agents/[slug] detail pages
+-- (Tier 1 gap T1-B). Adds:
+--   use_cases         — JSON array of { title, description, exampleInput, exampleOutput }
+--   faq               — JSON array of { question, answer }
+--   sample_output_run_id — reference to a real playbook_runs.id to show as sample
+--
+-- All columns nullable: initial rollout seeds ~20 flagship agents;
+-- remaining ~117 agents render their detail page without the new
+-- sections until they're backfilled.
 
-ALTER TABLE tenants
-  ADD COLUMN IF NOT EXISTS is_public_demo BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE agent_metadata
+  ADD COLUMN IF NOT EXISTS use_cases JSONB,
+  ADD COLUMN IF NOT EXISTS faq JSONB,
+  ADD COLUMN IF NOT EXISTS sample_output_run_id UUID;
 
-CREATE INDEX IF NOT EXISTS idx_tenants_is_public_demo
-  ON tenants (is_public_demo)
-  WHERE is_public_demo = TRUE;
-
-INSERT INTO tenants (id, clerk_user_id, plan, is_public_demo, created_at, updated_at)
-VALUES (
-  'sovereign-public-demo',
-  'public-demo-virtual-clerk-id',
-  'enterprise',
-  TRUE,
-  NOW(),
-  NOW()
-)
-ON CONFLICT (id) DO UPDATE SET is_public_demo = TRUE;
+CREATE INDEX IF NOT EXISTS idx_agent_metadata_sample_output_run_id
+  ON agent_metadata (sample_output_run_id);
 ```
 
 - [ ] **Step 3: Commit the migration**
 
 ```bash
-git add drizzle/migrations/0046_public_demo_tenant.sql
-git commit -m "feat(db): add is_public_demo flag + seed sovereign-public-demo tenant"
+git add drizzle/0024_agent_metadata_usecases_faq.sql
+git commit -m "feat(db): migration 0024 — agent_metadata.use_cases/faq/sample_output_run_id"
 ```
 
-### Task 3: Add `is_public_demo` to schema.ts
+### Task 3: Add `useCases` / `faq` / `sampleOutputRunId` columns to `src/db/schema.ts`
 
 **Files:**
-- Modify: `src/db/schema.ts` (the tenants table definition)
+- Modify: `src/db/schema.ts` (the `agentMetadata` table definition)
 
-- [ ] **Step 1: Find the tenants table**
+- [ ] **Step 1: Check imports at top of schema.ts — confirm `jsonb` + `uuid` already imported**
 
 ```bash
-grep -n "export const tenants" src/db/schema.ts
+head -1 src/db/schema.ts
 ```
 
-- [ ] **Step 2: Add the column**
+Expected: `import { pgTable, text, timestamp, uuid, integer, index, boolean, uniqueIndex, jsonb, primaryKey, date } from "drizzle-orm/pg-core";` — both `jsonb` and `uuid` already present.
 
-Edit the tenants definition to add (inside the pgTable column block):
+- [ ] **Step 2: Locate the `agentMetadata` table (line ~789) and add three columns inside the pgTable definition**
+
+Insert right after `visibility: text("visibility").notNull().default("public"),` and before `createdAt: timestamp(...)`:
 
 ```ts
-isPublicDemo: boolean("is_public_demo").notNull().default(false),
+useCases: jsonb("use_cases").$type<Array<{
+  title: string;
+  description: string;
+  exampleInput?: string;
+  exampleOutput?: string;
+}>>(),
+faq: jsonb("faq").$type<Array<{ question: string; answer: string }>>(),
+sampleOutputRunId: uuid("sample_output_run_id"),
 ```
 
 - [ ] **Step 3: Verify TypeScript**
@@ -260,140 +284,16 @@ Expected: 0 errors.
 
 ```bash
 git add src/db/schema.ts
-git commit -m "feat(schema): tenants.isPublicDemo column"
+git commit -m "feat(schema): agentMetadata.useCases/faq/sampleOutputRunId"
 ```
 
-### Task 4: Write migration `0047_agent_metadata_usecases_faq.sql`
+### Task 4: Add `PUBLIC_DEMO_USER_ID` invariant to `src/lib/tenant-scope.ts` (with test)
+
+This is the replacement for the originally-planned "public demo tenant" approach. We scope public demo data by a fixed Clerk-style user id and export a helper for recognising it.
 
 **Files:**
-- Create: `drizzle/migrations/0047_agent_metadata_usecases_faq.sql`
-
-- [ ] **Step 1: Write the migration**
-
-```sql
--- drizzle/migrations/0047_agent_metadata_usecases_faq.sql
--- Adds use cases + FAQ columns to agent_metadata for T1-B
--- /agents/[slug] page thickening.
-
-ALTER TABLE agent_metadata
-  ADD COLUMN IF NOT EXISTS use_cases JSONB,
-  ADD COLUMN IF NOT EXISTS faq JSONB,
-  ADD COLUMN IF NOT EXISTS sample_output_run_id UUID;
-
--- use_cases: JSON array of { title, description, exampleInput, exampleOutput }
--- faq: JSON array of { question, answer }
--- sample_output_run_id: reference to a real playbook_runs.id to show as sample
-
-CREATE INDEX IF NOT EXISTS idx_agent_metadata_sample_output_run_id
-  ON agent_metadata (sample_output_run_id);
-```
-
-- [ ] **Step 2: Add columns to schema.ts**
-
-Locate `export const agentMetadata` in `src/db/schema.ts` and add to the table definition:
-
-```ts
-useCases: jsonb("use_cases").$type<Array<{
-  title: string;
-  description: string;
-  exampleInput?: string;
-  exampleOutput?: string;
-}>>(),
-faq: jsonb("faq").$type<Array<{ question: string; answer: string }>>(),
-sampleOutputRunId: uuid("sample_output_run_id"),
-```
-
-(If `jsonb` or `uuid` isn't already imported from `drizzle-orm/pg-core` at the top of schema.ts, add them.)
-
-- [ ] **Step 3: Verify TypeScript**
-
-```bash
-npx tsc --noEmit
-```
-
-- [ ] **Step 4: Commit**
-
-```bash
-git add drizzle/migrations/0047_agent_metadata_usecases_faq.sql src/db/schema.ts
-git commit -m "feat(schema): agent_metadata use_cases/faq/sample_output_run_id"
-```
-
-### Task 5: Write `scripts/seed-public-demo-tenant.ts`
-
-**Files:**
-- Create: `scripts/seed-public-demo-tenant.ts`
-
-- [ ] **Step 1: Write a minimal TS seed script**
-
-```ts
-/**
- * scripts/seed-public-demo-tenant.ts
- *
- * Seeds the sovereign-public-demo tenant with real-looking data for the
- * landing v2 live demo sections. Safe to re-run; uses ON CONFLICT / upsert.
- *
- * Run: npx tsx scripts/seed-public-demo-tenant.ts
- */
-
-import { db } from "@/db";
-import { tenants, agentMetadata, playbookRuns, tenantMemories } from "@/db/schema";
-import { eq } from "drizzle-orm";
-
-const PUBLIC_DEMO_TENANT_ID = "sovereign-public-demo";
-
-async function main() {
-  // 1. Verify the tenant row exists (migration 0046 seeded it).
-  const [existing] = await db
-    .select()
-    .from(tenants)
-    .where(eq(tenants.id, PUBLIC_DEMO_TENANT_ID))
-    .limit(1);
-
-  if (!existing) {
-    throw new Error(
-      `Tenant ${PUBLIC_DEMO_TENANT_ID} not found. Run migration 0046 first.`,
-    );
-  }
-
-  if (!existing.isPublicDemo) {
-    throw new Error(
-      `Tenant ${PUBLIC_DEMO_TENANT_ID} exists but is_public_demo=false.`,
-    );
-  }
-
-  console.log(`✓ Tenant ${PUBLIC_DEMO_TENANT_ID} verified.`);
-
-  // Extended in Task 14: seed 3 sample playbook runs + memory embeddings
-  // for the memory-demo endpoint to recall. Kept skeletal here so the
-  // file exists for Task 6 (tenant-scope invariant) to import from.
-  console.log("Seed skeleton complete. Extended seed lands in Task 14.");
-}
-
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
-```
-
-- [ ] **Step 2: Run the script to verify it works against the seeded tenant**
-
-```bash
-npx tsx scripts/seed-public-demo-tenant.ts
-```
-
-Expected: `✓ Tenant sovereign-public-demo verified.` (after the migration has been applied to the dev database).
-
-- [ ] **Step 3: Commit**
-
-```bash
-git add scripts/seed-public-demo-tenant.ts
-git commit -m "chore(scripts): scaffold public demo tenant seed"
-```
-
-### Task 6: Add public-demo tenant invariant to `src/lib/tenant-scope.ts`
-
-**Files:**
-- Modify: `src/lib/tenant-scope.ts`
+- Modify: `src/lib/tenant-scope.ts` (append new export)
+- Create: `src/lib/__tests__/tenant-scope-public-demo.test.ts`
 
 - [ ] **Step 1: Read the current tenant-scope implementation**
 
@@ -403,35 +303,38 @@ cat src/lib/tenant-scope.ts
 
 Note the exported functions (`requireTenantId`, `guardTenantAccess`, `belongsToTenant`).
 
-- [ ] **Step 2: Write a test first**
-
-Create `src/lib/__tests__/tenant-scope-public-demo.test.ts`:
+- [ ] **Step 2: Write the failing test**
 
 ```ts
+// src/lib/__tests__/tenant-scope-public-demo.test.ts
 import { describe, it, expect } from "vitest";
-import { isPublicDemoTenant, PUBLIC_DEMO_TENANT_ID } from "@/lib/tenant-scope";
+import { isPublicDemoUser, PUBLIC_DEMO_USER_ID } from "@/lib/tenant-scope";
 
-describe("public demo tenant invariant", () => {
-  it("recognises the public demo tenant id", () => {
-    expect(isPublicDemoTenant(PUBLIC_DEMO_TENANT_ID)).toBe(true);
+describe("public demo user invariant", () => {
+  it("recognises the public demo user id", () => {
+    expect(isPublicDemoUser(PUBLIC_DEMO_USER_ID)).toBe(true);
   });
 
-  it("rejects every other tenant id", () => {
-    expect(isPublicDemoTenant("tenant_user_123")).toBe(false);
-    expect(isPublicDemoTenant("")).toBe(false);
-    expect(isPublicDemoTenant(null)).toBe(false);
-    expect(isPublicDemoTenant(undefined)).toBe(false);
+  it("rejects every other user id", () => {
+    expect(isPublicDemoUser("user_real_person")).toBe(false);
+    expect(isPublicDemoUser("")).toBe(false);
+    expect(isPublicDemoUser(null)).toBe(false);
+    expect(isPublicDemoUser(undefined)).toBe(false);
+  });
+
+  it("PUBLIC_DEMO_USER_ID follows Clerk user_* prefix convention", () => {
+    expect(PUBLIC_DEMO_USER_ID).toMatch(/^user_/);
   });
 });
 ```
 
-- [ ] **Step 3: Run the test and verify it fails**
+- [ ] **Step 3: Run — verify fails**
 
 ```bash
 npx vitest run src/lib/__tests__/tenant-scope-public-demo.test.ts
 ```
 
-Expected: FAIL with "isPublicDemoTenant is not defined" or similar.
+Expected: FAIL with `isPublicDemoUser is not defined` or similar.
 
 - [ ] **Step 4: Implement**
 
@@ -439,16 +342,25 @@ Append to `src/lib/tenant-scope.ts`:
 
 ```ts
 /**
- * Dedicated tenant ID for all public demo data (landing-v2 live sections).
- * This tenant's data is safe to expose on public endpoints — no real user
- * PII ever lands here.
+ * Fixed Clerk user id for all public demo data surfaced on the landing
+ * v2 live sections. Every public demo playbook run and tenant_memory
+ * row is owned by this synthetic user. Clerk does not need to know
+ * about this id — it exists only as a scope label in our own tables.
+ *
+ * Using a user-scoped demo avoids touching the tenants table (which
+ * has a UUID PK + unique clerk_user_id + unique node_id) and matches
+ * the fact that playbook_runs + tenant_memories are user-scoped in
+ * schema.
+ *
+ * All /api/public/* endpoints that pull "public demo data" filter
+ * their queries by eq(table.userId, PUBLIC_DEMO_USER_ID).
  */
-export const PUBLIC_DEMO_TENANT_ID = "sovereign-public-demo";
+export const PUBLIC_DEMO_USER_ID = "user_publicdemo";
 
-export function isPublicDemoTenant(
-  tenantId: string | null | undefined,
+export function isPublicDemoUser(
+  userId: string | null | undefined,
 ): boolean {
-  return tenantId === PUBLIC_DEMO_TENANT_ID;
+  return userId === PUBLIC_DEMO_USER_ID;
 }
 ```
 
@@ -462,37 +374,89 @@ npx vitest run src/lib/__tests__/tenant-scope-public-demo.test.ts
 
 ```bash
 git add src/lib/tenant-scope.ts src/lib/__tests__/tenant-scope-public-demo.test.ts
-git commit -m "feat(tenant-scope): PUBLIC_DEMO_TENANT_ID + isPublicDemoTenant invariant"
+git commit -m "feat(scope): PUBLIC_DEMO_USER_ID + isPublicDemoUser invariant"
 ```
 
-### Task 7: Day 3 success criteria + checkpoint
+### Task 5: Write `scripts/seed-public-demo-data.ts` skeleton
 
-- [ ] **Step 1: Run all gates**
+**Files:**
+- Create: `scripts/seed-public-demo-data.ts` (renamed from `seed-public-demo-tenant.ts` — reflects user-scoped approach)
+
+- [ ] **Step 1: Write the skeleton**
+
+```ts
+/**
+ * scripts/seed-public-demo-data.ts
+ *
+ * Seeds public-demo playbook runs + tenant memories scoped to
+ * PUBLIC_DEMO_USER_ID so the landing v2 live demo sections
+ * (memory-demo, router-demo, verify-demo) have real data to show.
+ *
+ * Skeleton — only verifies the invariant + DB connectivity. Extended
+ * in Task 14 to insert 3 real playbook runs + 3 recalled-context
+ * tenant_memories rows.
+ *
+ * Run: npx tsx scripts/seed-public-demo-data.ts
+ */
+
+import { db } from "@/db";
+import { playbookRuns } from "@/db/schema";
+import { eq } from "drizzle-orm";
+import { PUBLIC_DEMO_USER_ID } from "@/lib/tenant-scope";
+
+async function main() {
+  console.log(`Public demo user id: ${PUBLIC_DEMO_USER_ID}`);
+
+  // Probe query — confirms DB connectivity and that the user_id
+  // column exists on playbook_runs.
+  const existing = await db
+    .select({ id: playbookRuns.id })
+    .from(playbookRuns)
+    .where(eq(playbookRuns.userId, PUBLIC_DEMO_USER_ID))
+    .limit(5);
+
+  console.log(
+    `Existing public-demo runs: ${existing.length}. Extended seed lands in Task 14.`,
+  );
+}
+
+main().catch((err) => {
+  console.error("Seed failed:", err);
+  process.exit(1);
+});
+```
+
+- [ ] **Step 2: Run the script to verify it works**
 
 ```bash
-npx tsc --noEmit && npm run lint && npx vitest run
+npx tsx scripts/seed-public-demo-data.ts
 ```
 
-Expected: 0 TS errors, 0 lint errors, all tests pass.
+Expected: logs `Public demo user id: user_publicdemo` and an existing-runs count (0 on a fresh DB).
 
-- [ ] **Step 2: Verify git log**
+- [ ] **Step 3: Commit**
 
 ```bash
-git log --oneline -5
+git add scripts/seed-public-demo-data.ts
+git commit -m "chore(seed): scaffold public-demo data seed (user-scoped)"
 ```
 
-Expected: 5 new commits from today's work (migrations, schema, seed, tenant-scope, test).
+### Task 6: Apply the migration in the dev database
 
-- [ ] **Step 3: Push for preview**
+This step is typically manual (Neon console or wrangler psql). For the plan, we document the exact SQL to run. Actual execution happens out-of-band and is NOT a subagent task — the controller (or user) runs it.
 
-```bash
-git push origin claude/wizardly-benz
-```
+**To apply in Neon:**
+1. Open Neon console → SQL Editor.
+2. Paste the contents of `drizzle/0024_agent_metadata_usecases_faq.sql`.
+3. Run.
+4. Verify columns exist: `\d agent_metadata` → confirm `use_cases`, `faq`, `sample_output_run_id` present.
 
 **Day 3 success criteria:**
-- ✅ 2 DB migrations landed (0046, 0047) and schema.ts matches
-- ✅ `PUBLIC_DEMO_TENANT_ID` constant exported + tested
-- ✅ Seed script exists (will be extended next task)
+- ✅ Migration 0024 exists + committed
+- ✅ `agentMetadata` columns in `src/db/schema.ts` match the migration
+- ✅ `PUBLIC_DEMO_USER_ID` exported from `src/lib/tenant-scope.ts` with tests
+- ✅ Seed skeleton script exists + runs without error
+- ✅ Migration applied to dev DB (manual)
 - ✅ All reliability gates green
 
 ---
@@ -886,7 +850,7 @@ grep -n "export const tenantMemories\|export const playbookRuns" src/db/schema.t
 
 Then extend the seed to insert 3 sample completed runs + their recalled-context memory entries. Use real `lead-blitz` playbook shape. Full TS seed code is prescribed — see companion gap spec §3 T1-A for exact run shapes to insert.
 
-(For the plan: the seed extension is ~80 lines. Full code omitted here to keep plan scannable; engineer implementing this task reads the schema and writes inserts matching the existing run shape from any real completed run. Test: rerun the seed script and verify 3 rows land in `playbook_runs` with `tenant_id = 'sovereign-public-demo'`.)
+(For the plan: the seed extension is ~80 lines. Full code omitted here to keep plan scannable; engineer implementing this task reads the schema and writes inserts matching the existing run shape from any real completed run. Test: rerun the seed script and verify 3 rows land in `playbook_runs` with `user_id = 'user_publicdemo'` — user-scoped, not tenant-scoped.)
 
 - [ ] **Step 2: Run the seed**
 
@@ -921,8 +885,8 @@ const { mockDb } = vi.hoisted(() => ({
 
 vi.mock("@/db", () => ({ db: mockDb }));
 vi.mock("@/lib/tenant-scope", () => ({
-  PUBLIC_DEMO_TENANT_ID: "sovereign-public-demo",
-  isPublicDemoTenant: (id: string) => id === "sovereign-public-demo",
+  PUBLIC_DEMO_USER_ID: "user_publicdemo",
+  isPublicDemoUser: (id: string) => id === "user_publicdemo",
 }));
 
 beforeEach(() => mockDb.select.mockReset());
@@ -973,11 +937,11 @@ describe("GET /api/public/memory-demo", () => {
 /**
  * GET /api/public/memory-demo
  *
- * Returns the most recent playbook run from the sovereign-public-demo
- * tenant, along with its 3 most similar recalled-context entries from
- * past runs (cosine distance). Powers landing v2 Section 03 (Memory
- * at Work) — shows real "agent remembered these past runs" data without
- * any real user's data.
+ * Returns the most recent playbook run owned by the synthetic public-demo
+ * user (PUBLIC_DEMO_USER_ID), along with its 3 most similar recalled-context
+ * entries from past runs (cosine distance). Powers landing v2 Section 03
+ * (Memory at Work) — shows real "agent remembered these past runs" data
+ * without any real user's data.
  *
  * Shape:
  *   {
@@ -994,7 +958,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { playbookRuns, tenantMemories } from "@/db/schema";
 import { and, desc, eq, ne } from "drizzle-orm";
-import { PUBLIC_DEMO_TENANT_ID } from "@/lib/tenant-scope";
+import { PUBLIC_DEMO_USER_ID } from "@/lib/tenant-scope";
 
 export async function GET(): Promise<Response> {
   try {
@@ -1007,7 +971,7 @@ export async function GET(): Promise<Response> {
       .from(playbookRuns)
       .where(
         and(
-          eq(playbookRuns.tenantId, PUBLIC_DEMO_TENANT_ID),
+          eq(playbookRuns.userId, PUBLIC_DEMO_USER_ID),
           eq(playbookRuns.status, "done"),
         ),
       )
@@ -1021,7 +985,7 @@ export async function GET(): Promise<Response> {
       );
     }
 
-    // Past runs from the same tenant, ordered by recency (placeholder for
+    // Past runs from the same demo user, ordered by recency (placeholder for
     // real vector-similarity ranking — extend in next iteration).
     const recalls = await db
       .select({
@@ -1032,7 +996,7 @@ export async function GET(): Promise<Response> {
       .from(playbookRuns)
       .where(
         and(
-          eq(playbookRuns.tenantId, PUBLIC_DEMO_TENANT_ID),
+          eq(playbookRuns.userId, PUBLIC_DEMO_USER_ID),
           eq(playbookRuns.status, "done"),
           ne(playbookRuns.id, latest.id),
         ),
