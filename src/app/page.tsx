@@ -482,7 +482,7 @@ function MemoryMoat() {
 
         <div className="grid md:grid-cols-2 gap-16 items-start">
           <div>
-            <h2 className="font-serif text-4xl md:text-5xl lg:text-[58px] leading-[1.05] mb-6 tracking-[-0.02em]">
+            <h2 className="font-serif text-3xl md:text-5xl lg:text-[48px] leading-[1.08] mb-6 tracking-[-0.02em]">
               Agents that get
               <br />
               <em className="not-italic text-[#B5532C]">smarter every run.</em>
@@ -562,7 +562,7 @@ function FeaturedPlaybooksSection() {
     <section className="px-6 py-28 md:py-36 bg-[#040303]">
       <div className="max-w-6xl mx-auto">
         <SectionHead n="07" label="five playbooks" />
-        <h2 className="font-serif text-4xl md:text-6xl lg:text-[68px] leading-[1.05] mb-5 max-w-3xl tracking-[-0.02em]">
+        <h2 className="font-serif text-3xl md:text-5xl lg:text-[58px] leading-[1.06] mb-5 max-w-3xl tracking-[-0.02em]">
           Each one guarantees an output
           <br />
           <em className="not-italic text-[#B5532C]">or the run doesn&apos;t count.</em>
@@ -721,7 +721,7 @@ function FinalCTA() {
           </p>
         </div>
 
-        <h2 className="font-serif text-4xl md:text-6xl leading-[1.04] mb-6 tracking-tight">
+        <h2 className="font-serif text-3xl md:text-5xl leading-[1.06] mb-6 tracking-tight">
           Your AI Workforce
           <br />
           <em className="not-italic text-[#B5532C]">Starts Free</em>
