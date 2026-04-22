@@ -7,6 +7,7 @@ import {
   Clock, CheckCircle2, XCircle, BarChart3, Cpu,
   ArrowUp, ArrowDown, Minus,
 } from "lucide-react";
+import { isAnalyticsEmpty } from "@/lib/dashboard-empty-states";
 
 /**
  * ANALYTICS DASHBOARD — Real platform metrics.
@@ -132,7 +133,12 @@ export default function AnalyticsPage() {
     return () => clearInterval(iv);
   }, [fetchMetrics]);
 
-  const hasData = metrics && (metrics.agentExecutions > 0 || metrics.playbooks.total > 0);
+  const hasData =
+    metrics !== null &&
+    !isAnalyticsEmpty({
+      agentExecutions: metrics.agentExecutions,
+      playbookRuns: metrics.playbooks.total,
+    });
 
   return (
     <div className="p-6 lg:p-8 max-w-6xl mx-auto">

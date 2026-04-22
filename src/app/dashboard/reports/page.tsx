@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 import {
   FileText,
   Users,
@@ -14,7 +15,13 @@ import {
   Download,
   CheckCircle2,
   ChevronDown,
+  ArrowRight,
+  Zap,
 } from "lucide-react";
+import {
+  REPORTS_MIN_RUNS,
+  isReportsEmpty,
+} from "@/lib/dashboard-empty-states";
 
 /* ─── Types ─── */
 
@@ -418,6 +425,34 @@ export default function ReportsPage() {
   const [generating, setGenerating] = useState<string | null>(null);
   const [generatedReports, setGeneratedReports] = useState<GeneratedReport[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [playbookRuns, setPlaybookRuns] = useState<number | null>(null);
+
+  // Fetch playbook run count so we can gate the warm-up empty state.
+  // Silent failure — if the API is unavailable we fall back to null and
+  // skip the gating banner (treat account as "has enough runs").
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/playbooks/runs")
+      .then((r) => (r.ok ? r.json() : { runs: [] }))
+      .then((data) => {
+        if (cancelled) return;
+        const runs = Array.isArray(data?.runs) ? data.runs.length : 0;
+        setPlaybookRuns(runs);
+      })
+      .catch(() => {
+        if (!cancelled) setPlaybookRuns(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const showWarmUpBanner =
+    playbookRuns !== null &&
+    isReportsEmpty({
+      playbookRuns,
+      generatedReportCount: generatedReports.length,
+    });
 
   const handleRangeChange = (id: string, range: string) => {
     setSelectedRanges((prev) => ({ ...prev, [id]: range }));
@@ -554,12 +589,37 @@ export default function ReportsPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
-          className="text-center py-12"
+          className="rounded-2xl border border-emerald-500/15 bg-emerald-500/[0.03] backdrop-blur-xl p-8 text-center"
         >
-          <FileText className="w-10 h-10 text-neutral-700 mx-auto mb-3" />
-          <p className="text-sm text-neutral-500">
-            No reports generated yet. Select a report type above and click &apos;Generate Report&apos; to get started.
-          </p>
+          {showWarmUpBanner ? (
+            <>
+              <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto mb-4">
+                <Zap className="w-6 h-6 text-emerald-400" />
+              </div>
+              <h3 className="text-base font-semibold text-white mb-2">
+                Reports populate after your first {REPORTS_MIN_RUNS} runs
+              </h3>
+              <p className="text-sm text-neutral-400 mb-5 max-w-md mx-auto">
+                You have {playbookRuns} run{playbookRuns === 1 ? "" : "s"} so
+                far. Kick off a few more playbooks to unlock richer,
+                data-backed reports.
+              </p>
+              <Link
+                href="/dashboard/playbooks"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-500 text-black text-sm font-semibold hover:bg-emerald-400 transition-colors"
+              >
+                Run a Playbook <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </>
+          ) : (
+            <>
+              <FileText className="w-10 h-10 text-neutral-700 mx-auto mb-3" />
+              <p className="text-sm text-neutral-500">
+                No reports generated yet. Select a report type above and click
+                &apos;Generate Report&apos; to get started.
+              </p>
+            </>
+          )}
         </motion.div>
       )}
     </div>

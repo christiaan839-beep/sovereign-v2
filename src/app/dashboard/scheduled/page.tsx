@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Clock, Plus, Play, Trash2, X, Calendar, AlertCircle } from "lucide-react";
+import { isScheduledEmpty } from "@/lib/dashboard-empty-states";
 
 /**
  * /dashboard/scheduled — live scheduled-playbooks page.
@@ -223,7 +224,7 @@ export default function ScheduledPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <AnimatePresence mode="popLayout">
-            {schedules.length === 0 && !loading ? (
+            {isScheduledEmpty({ scheduleCount: schedules.length }) && !loading ? (
               <motion.div
                 key="empty"
                 initial={{ opacity: 0 }}
@@ -233,9 +234,18 @@ export default function ScheduledPage() {
                 <div className="p-4 rounded-2xl bg-white/5 border border-white/10 mb-5">
                   <Calendar className="w-8 h-8 text-neutral-500" />
                 </div>
-                <p className="text-neutral-400 text-sm max-w-md">
-                  No scheduled runs yet. Pick a playbook and set it on auto-pilot.
+                <p className="text-neutral-400 text-sm max-w-md mb-5">
+                  Schedule a playbook to automate. Try: <em className="not-italic text-neutral-300">daily lead scan</em>
+                  <span className="text-neutral-600"> or </span>
+                  <em className="not-italic text-neutral-300">weekly competitor report</em>.
                 </p>
+                <button
+                  onClick={() => setShowModal(true)}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-[#B5532C] text-white font-medium text-[13px] tracking-tight rounded-[3px] hover:bg-[#C96234] transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  Create your first schedule
+                </button>
               </motion.div>
             ) : (
               schedules.map((s) => {
