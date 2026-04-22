@@ -89,6 +89,11 @@ const RULES: readonly RateRule[] = [
   // because it's a flow description, not full code). Same 3/hour/IP.
   { name: "public-playbook-builder-demo",
                                 prefix: "/api/public/playbook-builder-demo", max: 3, windowSeconds: 3600, identify: "ip_only" },
+  // cost-optimizer-demo is the cheapest of the live demos — short
+  // structured recommendation. 5/hour is generous enough for repeat
+  // 'what if' exploration without burning significant token budget.
+  { name: "public-cost-optimizer-demo",
+                                prefix: "/api/public/cost-optimizer-demo", max: 5, windowSeconds: 3600, identify: "ip_only" },
   // ─── generic /api/public/* catch-all (catalog, atlas-edges, recent-runs) ─────
   { name: "public",           prefix: "/api/public/",         max: 120,  windowSeconds: 60, identify: "ip_only" },
   // Stripe's own retry can burst higher than our user-layer limit; the

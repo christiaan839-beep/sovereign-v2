@@ -48,6 +48,14 @@ describe("rate-limit rules — landing v2 public demo endpoints", () => {
     expect(rule?.identify).toBe("ip_only");
   });
 
+  it("cost-optimizer-demo matches its own rule with max=5/hour/IP (cheapest demo)", () => {
+    const rule = matchRule("/api/public/cost-optimizer-demo");
+    expect(rule?.name).toBe("public-cost-optimizer-demo");
+    expect(rule?.max).toBe(5);
+    expect(rule?.windowSeconds).toBe(3600);
+    expect(rule?.identify).toBe("ip_only");
+  });
+
   it("catalog (cheap) falls through to the generic public rule", () => {
     const rule = matchRule("/api/public/catalog");
     expect(rule?.name).toBe("public");

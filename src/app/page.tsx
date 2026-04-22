@@ -24,6 +24,7 @@ import { ModelRouterSection } from "@/components/landing/ModelRouterSection";
 import { VerificationPipeline } from "@/components/landing/VerificationPipeline";
 import { AgentBuilderLiveDemo } from "@/components/landing/AgentBuilderLiveDemo";
 import { PlaybookBuilderLiveDemo } from "@/components/landing/PlaybookBuilderLiveDemo";
+import { CostOptimizerLiveDemo } from "@/components/landing/CostOptimizerLiveDemo";
 
 /**
  * Landing page — Agent Infrastructure Stack narrative.
@@ -127,7 +128,10 @@ export default function LandingPage() {
         {/* 10 · Playbook Builder live demo — type goal, watch it orchestrated */}
         <PlaybookBuilderLiveDemo />
 
-        {/* 11 · Pricing Strip */}
+        {/* 11 · Cost Optimizer live demo — see how we route cheap when we can */}
+        <CostOptimizerLiveDemo />
+
+        {/* 12 · Pricing Strip */}
         <PricingStrip />
 
         {/* Founder network seats */}
@@ -641,7 +645,7 @@ function FeaturedPlaybooksSection() {
   );
 }
 
-/* ─── 11 · Pricing Strip ────────────────────────────────────────── */
+/* ─── 12 · Pricing Strip ────────────────────────────────────────── */
 function PricingStrip() {
   const tiers = [
     { name: "Free",       price: null,   popular: false },
@@ -656,7 +660,7 @@ function PricingStrip() {
              style={{ background: "var(--ed-bg)" }}>
       <div className="max-w-4xl mx-auto">
         <p className="ed-label mb-8" style={{ color: "var(--ed-copper)" }}>
-          Section 11 · Pricing
+          Section 12 · Pricing
         </p>
 
         <h2 className="ed-display text-4xl md:text-6xl leading-[0.95] mb-10 max-w-3xl"
