@@ -8,9 +8,11 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const { mockAuth, mockPlaceHold } = vi.hoisted(() => ({
+const { mockAuth, mockPlaceHold, mockGetUserPlan, mockGetMinutes } = vi.hoisted(() => ({
   mockAuth: vi.fn(),
   mockPlaceHold: vi.fn(),
+  mockGetUserPlan: vi.fn(),
+  mockGetMinutes: vi.fn(),
 }));
 
 vi.mock("@clerk/nextjs/server", () => ({ auth: mockAuth }));
@@ -30,6 +32,16 @@ vi.mock("@/lib/credits", () => {
     InsufficientCreditsError,
   };
 });
+vi.mock("@/lib/plan-enforcement", () => ({ getUserPlan: mockGetUserPlan }));
+vi.mock("@/lib/voice-billing", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/voice-billing")>(
+    "@/lib/voice-billing",
+  );
+  return {
+    ...actual,
+    getVoiceMinutesThisMonth: mockGetMinutes,
+  };
+});
 
 // Give the token module a secret via process.env before importing the route.
 process.env.VOICE_SESSION_SECRET = "x".repeat(32);
@@ -47,6 +59,12 @@ const jsonBody = (body: unknown) =>
 beforeEach(() => {
   mockAuth.mockReset();
   mockPlaceHold.mockReset();
+  mockGetUserPlan.mockReset();
+  mockGetMinutes.mockReset();
+  // Defaults mirror a paid-plan user with no monthly voice usage yet.
+  // Individual tests override as needed.
+  mockGetUserPlan.mockResolvedValue("array");
+  mockGetMinutes.mockResolvedValue(0);
 });
 
 describe("POST /api/voice/session", () => {
