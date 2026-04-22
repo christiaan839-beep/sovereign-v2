@@ -15,7 +15,6 @@ import { trackCtaClick } from "@/lib/cta-track";
 import { useHideyNav, TiltCard } from "@/components/ui/EliteEffects";
 
 // New components
-import { A2EGraph } from "@/components/landing/A2EGraph";
 import { ConstellationField } from "@/components/landing/ConstellationField";
 import { LiveProofStrip } from "@/components/landing/LiveProofStrip";
 import { ThreeMoatsGrid } from "@/components/landing/ThreeMoatsGrid";
@@ -312,13 +311,15 @@ function NavLink({ href, children }: { href: string; children: React.ReactNode }
 function Hero() {
   return (
     <section className="relative min-h-screen flex items-center justify-center px-6 pt-20 pb-16 overflow-hidden">
-      {/* A2EGraph — agent network skeleton at low opacity */}
-      <div className="absolute inset-0 pointer-events-none" aria-hidden="true" style={{ opacity: 0.45 }}>
-        <A2EGraph className="w-full h-full" />
+      {/*
+       * ConstellationField — 75-node copper particle mesh with proximity lines.
+       * Wrapped in a 22%-opacity div (was ~45% inline on ConstellationField
+       * itself + 45% A2EGraph overlay previously — the combined backdrop was
+       * too busy for a calm hero). Drops to 22% as one clean layer.
+       */}
+      <div className="absolute inset-0 pointer-events-none" aria-hidden="true" style={{ opacity: 0.22 }}>
+        <ConstellationField className="absolute inset-0 w-full h-full" />
       </div>
-
-      {/* ConstellationField — 75-node copper particle mesh with proximity lines */}
-      <ConstellationField className="absolute inset-0 w-full h-full" />
 
       {/* Copper radial glow — warm centre bloom */}
       <div
@@ -368,34 +369,26 @@ function Hero() {
           </div>
         </motion.div>
 
-        {/* Headline */}
+        {/* Headline — one step smaller across breakpoints for a calmer hero */}
         <motion.h1
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="font-serif text-5xl sm:text-7xl md:text-8xl lg:text-9xl leading-[1.02] tracking-[-0.02em] mb-6"
+          className="font-serif text-5xl sm:text-6xl md:text-7xl lg:text-8xl leading-[1.04] tracking-[-0.02em] mb-6"
         >
           <span className="block text-white">The Agent</span>
           <span className="block" style={{ color: "#B5532C" }}>Infrastructure</span>
           <span className="block" style={{ color: "#B5532C" }}>Stack</span>
         </motion.h1>
 
-        {/* Sub-headline */}
+        {/* Sub-headline — condensed to one line for faster scan */}
         <motion.p
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4, duration: 0.7 }}
-          className="text-[17px] md:text-[19px] text-neutral-400 leading-[1.55] mb-4 max-w-2xl mx-auto"
+          className="text-[15px] md:text-[17px] text-neutral-400 leading-[1.55] mb-10 max-w-2xl mx-auto"
         >
-          137 specialized agents. 39+ models. An economy where agents hire agents.
-        </motion.p>
-        <motion.p
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5, duration: 0.6 }}
-          className="text-[15px] md:text-[16px] text-neutral-500 leading-[1.55] mb-10 max-w-xl mx-auto"
-        >
-          Built for enterprises that can&apos;t afford to get AI wrong.
+          137 verified agents. 39+ models. Built for enterprises that can&apos;t afford to get AI wrong.
         </motion.p>
 
         {/* CTAs */}
