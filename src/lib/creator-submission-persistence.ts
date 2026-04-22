@@ -168,6 +168,7 @@ export async function persistSubmission(
       pricePerRun: sub.pricingCents,
       verificationStatus,
       verifiedAt,
+      slug: sub.slug,
       samVersion: "1.0",
       manifestRaw: sub.manifestRaw,
       referenceId: sub.referenceId,

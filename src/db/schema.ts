@@ -317,6 +317,12 @@ export const marketplaceAgents = pgTable("marketplace_agents", {
   safetyScore: integer("safety_score"),              // 0-100 from 5-layer check
   rejectionReason: text("rejection_reason"),
 
+  // User-facing URL slug — /marketplace/{slug}. Nullable for legacy
+  // rows with no SAM provenance; populated from manifest.slug for SAM
+  // submissions. Unique (partial index) among non-null values.
+  // See drizzle/0026_marketplace_slug.sql.
+  slug: text("slug"),
+
   // SAM v1.0 submission fields (null for rows created pre-SAM / via
   // /api/marketplace/submit). See drizzle/0025_sam_submission_fields.sql
   // for the migration. `submissionSource` discriminates the entry point:
@@ -337,6 +343,7 @@ export const marketplaceAgents = pgTable("marketplace_agents", {
   index("idx_marketplace_runs").on(table.totalRunCount),
   index("idx_marketplace_reference_id").on(table.referenceId),
   index("idx_marketplace_author_status").on(table.authorEmail, table.verificationStatus),
+  index("idx_marketplace_slug").on(table.slug),
 ]);
 
 // ═══════════════════════════════════════════
