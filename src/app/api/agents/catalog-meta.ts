@@ -3,13 +3,13 @@
  *
  * The AGENT_REGISTRY at ./registry.ts is auto-generated from every
  * `src/app/api/_agents/{slug}/route.ts` and includes every agent that has
- * a handler. That's 131 agents — more than we want to showcase to
- * a prospect trying to evaluate the platform.
+ * a handler. That's 177 agents (as of this commit) — more than we want
+ * to showcase to a prospect trying to evaluate the platform.
  *
  * This file is HAND-MAINTAINED. It's the curated set of agents
  * the /api/agents public catalog returns to unauthenticated callers
  * and the /playbooks marketing page links to. Authenticated
- * dashboard users still see all 131 via the direct registry.
+ * dashboard users still see all 177 via the direct registry.
  *
  * When you ship a new agent:
  *   1. Auto-registry picks it up on next `npm run gen:registry`
@@ -26,6 +26,36 @@
  */
 
 export const FEATURED_AGENTS: ReadonlySet<string> = new Set([
+  // ═══ WAVE 2: category wedges (Apr 2026) ═══
+
+  // Cybersecurity — new vertical
+  "phishing-detector",
+  "vulnerability-scanner",
+  "incident-responder",
+
+  // Research rigor
+  "citation-verifier",
+  "literature-review",
+  "paper-summarizer",
+
+  // Real Estate — new vertical
+  "tenant-screener",
+  "listing-writer",
+
+  // Finance — deeper
+  "cash-flow-forecaster",
+  "revenue-recognition",
+
+  // Gov + Enterprise — new verticals
+  "rfp-responder",
+  "grant-finder-writer",
+
+  // Dev + Ops
+  "api-design-reviewer",
+  "anomaly-detector",
+
+  // ═══ EXISTING CATALOG ═══
+
   // Growth — lead gen, outreach, conversion
   "leads",
   "abm-artillery",
