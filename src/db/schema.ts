@@ -317,12 +317,26 @@ export const marketplaceAgents = pgTable("marketplace_agents", {
   safetyScore: integer("safety_score"),              // 0-100 from 5-layer check
   rejectionReason: text("rejection_reason"),
 
+  // SAM v1.0 submission fields (null for rows created pre-SAM / via
+  // /api/marketplace/submit). See drizzle/0025_sam_submission_fields.sql
+  // for the migration. `submissionSource` discriminates the entry point:
+  //   "dashboard"  — logged-in user via /api/marketplace/submit
+  //   "sam-v1"     — external creator via /api/creators/submit
+  samVersion: text("sam_version"),
+  manifestRaw: jsonb("manifest_raw"),
+  referenceId: text("reference_id"),                 // SAM-xxxxxxxx-xxxx
+  submissionPolicy: text("submission_policy"),        // open | curated | trust-tiered
+  submissionReason: text("submission_reason"),
+  submissionSource: text("submission_source").default("dashboard"),
+
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => [
   index("idx_marketplace_creator").on(table.creatorUserId),
   index("idx_marketplace_category").on(table.category),
   index("idx_marketplace_status").on(table.verificationStatus),
   index("idx_marketplace_runs").on(table.totalRunCount),
+  index("idx_marketplace_reference_id").on(table.referenceId),
+  index("idx_marketplace_author_status").on(table.authorEmail, table.verificationStatus),
 ]);
 
 // ═══════════════════════════════════════════

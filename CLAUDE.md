@@ -206,5 +206,7 @@ Key endpoints:
 - **CRITICAL**: Disable Vercel Deployment Protection for production (Vercel Dashboard → Settings → Deployment Protection → "Only Preview Deployments")
 - Run DB migration: drizzle/0003_playbook_runs.sql (Neon Console → SQL Editor)
 - Run DB migration: drizzle/0002_async_jobs.sql (Neon Console → SQL Editor)
+- Run DB migration: drizzle/0025_sam_submission_fields.sql (extends marketplace_agents with SAM v1.0 fields; required for /api/creators/submit persistence + trust-tiered approval policy to read prior approvals)
 - Add CEREBRAS_API_KEY env var (free at inference.cerebras.ai)
 - Connect Stripe/Yoco price IDs in env vars for paid tier checkout
+- Optional: set SOVEREIGN_APPROVAL_POLICY env var to "trust-tiered" once operator review routinely clears <24h (default "curated" queues every submission)

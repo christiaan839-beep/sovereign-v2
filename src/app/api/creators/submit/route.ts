@@ -30,6 +30,10 @@ import {
   type CreatorContext,
   type ManifestContext,
 } from "@/lib/creator-approval-policy";
+import {
+  countPriorApprovals,
+  persistSubmission,
+} from "@/lib/creator-submission-persistence";
 
 /* ─── SAM v1.0 validator (server-side mirror) ──────────────────── */
 /*
@@ -132,13 +136,18 @@ function buildManifestContext(m: Record<string, unknown>): ManifestContext {
   };
 }
 
-function buildCreatorContext(contactEmail: string | null): CreatorContext {
-  // TODO(persistence): when the creator_submissions table lands, replace
-  // this `0` with `await countApprovedAgentsByEmail(contactEmail)`. Until
-  // then trust-tiered behaves identically to curated, which is safe.
+async function buildCreatorContext(
+  contactEmail: string | null,
+): Promise<CreatorContext> {
+  // Queries marketplace_agents for how many agents this email has had
+  // approved ("verified"). Safe when DB is unconfigured or query fails
+  // — returns 0 (treat as new creator, queue submission). This means
+  // trust-tiered without a DB degrades to curated behaviour, which is
+  // the intended safe default.
+  const priorApprovedCount = await countPriorApprovals(contactEmail);
   return {
     contactEmail,
-    priorApprovedCount: 0,
+    priorApprovedCount,
   };
 }
 
@@ -219,13 +228,34 @@ export async function POST(request: Request): Promise<Response> {
 
   const validManifest = manifest as Record<string, unknown>;
   const manifestCtx = buildManifestContext(validManifest);
-  const creatorCtx = buildCreatorContext(contactEmail);
+  const creatorCtx = await buildCreatorContext(contactEmail);
   const decision = evaluateSubmission(manifestCtx, creatorCtx);
   const referenceId = generateReferenceId();
   const receivedAt = new Date().toISOString();
 
+  // Persist to marketplace_agents. Graceful-no-DB: returns false if
+  // DATABASE_URL is unset or insert failed; the structured log below is
+  // the durable audit trail of last resort.
+  const persisted = await persistSubmission({
+    referenceId,
+    slug: manifestCtx.slug,
+    displayName: manifestCtx.displayName,
+    purpose: String(validManifest.purpose ?? ""),
+    samCategory: manifestCtx.category,
+    pricingCents: manifestCtx.pricingCents ?? 0,
+    contactEmail,
+    guarantees: Array.isArray(validManifest.guarantees)
+      ? (validManifest.guarantees as unknown[]).map((g) => String(g))
+      : [],
+    manifestRaw: validManifest,
+    policy: decision.policy,
+    reason: decision.reason,
+    autoPublished: decision.outcome === "auto-publish",
+  });
+
   // Structured log — one line per submission, parseable by any log
-  // aggregator. Operators tail this stream until persistence lands.
+  // aggregator. `persisted: false` + a `reason` in the log tells
+  // operators which submissions might need hand-processing.
   console.log(
     JSON.stringify({
       event: "creator_submission",
@@ -235,9 +265,11 @@ export async function POST(request: Request): Promise<Response> {
       category: manifestCtx.category,
       pricingCents: manifestCtx.pricingCents ?? null,
       contactEmail: contactEmail ?? "(not provided)",
+      priorApprovedCount: creatorCtx.priorApprovedCount,
       policy: decision.policy,
       outcome: decision.outcome,
       reason: decision.reason,
+      persisted,
       receivedAt,
     }),
   );
