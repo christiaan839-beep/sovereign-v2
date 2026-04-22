@@ -95,26 +95,23 @@ export function ThreeMoatsGrid() {
   ];
 
   return (
-    <section className="px-6 py-20 md:py-28 bg-[#030303]">
+    <section className="editorial-dark px-6 py-24 md:py-32" style={{ background: "var(--ed-bg)" }}>
       <div className="max-w-5xl mx-auto">
-        <div className="mb-8 flex items-center gap-4 flex-wrap">
-          <span className="font-mono text-[10px] text-neutral-600 tracking-[0.2em]">02 / 10</span>
-          <span aria-hidden="true" className="h-px w-6 bg-white/[0.12]" />
-          <p className="font-serif italic text-[13px] text-neutral-500 tracking-[-0.01em]">
-            three moats
-          </p>
-        </div>
+        <p className="ed-label mb-10" style={{ color: "var(--ed-copper)" }}>
+          Section 02 · Three moats
+        </p>
 
-        <h2 className="font-serif text-4xl md:text-5xl lg:text-[58px] leading-[1.05] mb-4 tracking-[-0.02em] max-w-3xl">
+        <h2 className="ed-display text-4xl md:text-5xl lg:text-[58px] leading-[0.95] mb-4 max-w-3xl"
+            style={{ color: "var(--ed-ink)" }}>
           Why competitors can&apos;t
           <br />
-          <em className="not-italic text-[#B5532C]">catch up.</em>
+          <span className="ed-display-italic" style={{ color: "var(--ed-copper)" }}>catch up.</span>
         </h2>
-        <p className="text-neutral-400 text-[15px] mb-12 max-w-lg leading-relaxed">
+        <p className="ed-body text-[15px] mb-14 max-w-lg leading-relaxed" style={{ color: "var(--ed-ink-soft)" }}>
           Three structural advantages that compound over time. Not features — moats.
         </p>
 
-        <div className="grid md:grid-cols-3 gap-4">
+        <div className="grid md:grid-cols-3 gap-5">
           {moats.map((moat, i) => (
             <motion.div
               key={moat.id}
@@ -122,27 +119,28 @@ export function ThreeMoatsGrid() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-60px" }}
               transition={{ delay: i * 0.1, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-              className="group relative p-7 rounded-[6px] border border-white/[0.06] bg-white/[0.025] overflow-hidden transition-all duration-300 hover:border-[#B5532C]/30"
+              className="group relative p-7 overflow-hidden transition-all duration-300"
               style={{
-                borderTopColor: "rgba(181,83,44,0.55)",
-                borderTopWidth: "2px",
-                boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06), 0 1px 0 rgba(0,0,0,0.5)",
+                border: "1px solid var(--ed-rule)",
+                borderTop: "2px solid var(--ed-copper)",
+                background: "var(--ed-bg-raised)",
+                borderRadius: "2px",
               }}
             >
-              {/* Copper hover glow */}
+              {/* Copper hover wash */}
               <span
                 aria-hidden="true"
                 className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
                 style={{
-                  background: "radial-gradient(ellipse at 50% 0%, rgba(181,83,44,0.12) 0%, transparent 60%)",
+                  background: "radial-gradient(ellipse at 50% 0%, var(--ed-copper-wash) 0%, transparent 60%)",
                 }}
               />
 
-              <div className="relative mb-5">{moat.icon}</div>
-              <h3 className="relative font-serif text-[22px] text-white mb-3 leading-tight tracking-tight">
+              <div className="relative mb-6">{moat.icon}</div>
+              <h3 className="ed-display relative text-[24px] mb-4 leading-tight" style={{ color: "var(--ed-ink)" }}>
                 {moat.title}
               </h3>
-              <p className="relative text-[13.5px] text-neutral-400 leading-[1.65]">
+              <p className="ed-body relative text-[14px] leading-relaxed" style={{ color: "var(--ed-ink-soft)" }}>
                 {moat.desc}
               </p>
             </motion.div>

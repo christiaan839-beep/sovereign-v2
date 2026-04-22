@@ -43,73 +43,79 @@ export function VerificationPipeline() {
   const [openId, setOpenId] = useState<string | null>(null);
 
   return (
-    <section className="px-6 py-28 md:py-36 bg-[#0A0807]">
+    <section className="editorial-dark px-6 py-28 md:py-36" style={{ background: "var(--ed-bg)" }}>
       <div className="max-w-4xl mx-auto">
-        <div className="mb-8 flex items-center gap-4 flex-wrap">
-          <span className="font-mono text-[10px] text-neutral-600 tracking-[0.2em]">06 / 10</span>
-          <span aria-hidden="true" className="h-px w-6 bg-white/[0.12]" />
-          <p className="font-serif italic text-[13px] text-neutral-500 tracking-[-0.01em]">
-            trust layer
-          </p>
-        </div>
+        <p className="ed-label mb-10" style={{ color: "var(--ed-copper)" }}>
+          Section 06 · Trust layer
+        </p>
 
-        <h2 className="font-serif text-4xl md:text-5xl lg:text-[58px] leading-[1.05] mb-4 tracking-[-0.02em] max-w-3xl">
+        <h2 className="ed-display text-4xl md:text-5xl lg:text-[58px] leading-[0.95] mb-4 max-w-3xl"
+            style={{ color: "var(--ed-ink)" }}>
           5 Layers of Safety.
           <br />
-          <em className="not-italic text-[#B5532C]">Every Single Run.</em>
+          <span className="ed-display-italic" style={{ color: "var(--ed-copper)" }}>Every single run.</span>
         </h2>
-        <p className="text-neutral-400 text-[15px] mb-12 max-w-xl leading-relaxed">
+        <p className="ed-body text-[15px] mb-14 max-w-xl leading-relaxed" style={{ color: "var(--ed-ink-soft)" }}>
           Not optional. Not enterprise-only. Every execution — free tier included — passes through
           the full verification pipeline before output reaches you.
         </p>
 
         {/* Accordion */}
-        <div className="border border-white/[0.06] rounded-[6px] overflow-hidden">
+        <div className="overflow-hidden"
+             style={{ border: "1px solid var(--ed-rule)", borderRadius: "2px" }}>
           {LAYERS.map((layer, i) => {
             const isOpen = openId === layer.id;
             return (
               <div
                 key={layer.id}
-                className={`border-b border-white/[0.06] last:border-b-0 ${isOpen ? "bg-white/[0.02]" : ""} transition-colors`}
+                className="transition-colors last:border-b-0"
+                style={{
+                  borderBottom: "1px solid var(--ed-rule)",
+                  background: isOpen ? "var(--ed-bg-raised)" : "transparent",
+                }}
               >
                 <button
-                  className="w-full flex items-center gap-4 px-6 py-5 text-left hover:bg-white/[0.015] transition-colors"
+                  className="w-full flex items-center gap-4 px-6 py-5 text-left transition-colors"
                   onClick={() => setOpenId(isOpen ? null : layer.id)}
                   aria-expanded={isOpen}
+                  style={{ color: "var(--ed-ink)" }}
                 >
                   {/* Copper check */}
                   <span
-                    className="flex-shrink-0 w-5 h-5 rounded-full border flex items-center justify-center"
+                    className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center"
                     style={{
-                      borderColor: "rgba(181,83,44,0.5)",
-                      background: "rgba(181,83,44,0.08)",
+                      border: "1px solid var(--ed-copper)",
+                      background: "var(--ed-copper-wash)",
                     }}
                     aria-hidden="true"
                   >
                     <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
-                      <path d="M1 3l2 2 4-4" stroke="#B5532C" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M1 3l2 2 4-4" stroke="var(--ed-copper)" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   </span>
 
                   {/* Step number */}
-                  <span className="font-mono text-[10px] text-neutral-600 flex-shrink-0 w-5 text-center">
+                  <span className="ed-mono text-[10px] flex-shrink-0 w-5 text-center"
+                        style={{ color: "var(--ed-ink-dim)" }}>
                     {String(i + 1).padStart(2, "0")}
                   </span>
 
                   {/* Title */}
-                  <span className="flex-1 font-serif text-[17px] md:text-[19px] text-white tracking-tight">
+                  <span className="ed-display flex-1 text-[18px] md:text-[20px]" style={{ color: "var(--ed-ink)" }}>
                     {layer.title}
                   </span>
 
                   {/* Pass rate */}
-                  <span className="font-mono text-[11px] text-[#B5532C] flex-shrink-0 hidden sm:block">
+                  <span className="ed-mono text-[11px] flex-shrink-0 hidden sm:block"
+                        style={{ color: "var(--ed-copper)" }}>
                     {layer.passRate}
                   </span>
 
                   {/* Chevron */}
                   <span
-                    className={`flex-shrink-0 ml-2 text-neutral-500 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+                    className={`flex-shrink-0 ml-2 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
                     aria-hidden="true"
+                    style={{ color: "var(--ed-ink-dim)" }}
                   >
                     <svg width="12" height="7" viewBox="0 0 12 7" fill="none">
                       <path d="M1 1l5 5 5-5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
@@ -127,10 +133,11 @@ export function VerificationPipeline() {
                       style={{ overflow: "hidden" }}
                     >
                       <div className="px-6 pb-5 pl-16 md:pl-20">
-                        <p className="text-[13.5px] text-neutral-400 leading-[1.7]">
+                        <p className="ed-body text-[14px] leading-relaxed" style={{ color: "var(--ed-ink-soft)" }}>
                           {layer.desc}
                         </p>
-                        <span className="mt-2 block font-mono text-[10px] text-[#B5532C] sm:hidden">
+                        <span className="mt-2 block ed-mono text-[10px] sm:hidden"
+                              style={{ color: "var(--ed-copper)" }}>
                           Pass rate: {layer.passRate}
                         </span>
                       </div>
@@ -143,9 +150,11 @@ export function VerificationPipeline() {
         </div>
 
         {/* Audit trail note */}
-        <p className="mt-8 text-[12px] font-mono text-neutral-600 leading-relaxed">
+        <p className="ed-caption mt-8 leading-relaxed">
           Every execution is immutably logged.{" "}
-          <span className="text-neutral-500">CISO-ready audit trail available on Node and Enterprise plans.</span>
+          <span style={{ color: "var(--ed-ink-soft)" }}>
+            CISO-ready audit trail available on Node and Enterprise plans.
+          </span>
         </p>
       </div>
     </section>

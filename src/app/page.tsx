@@ -641,7 +641,7 @@ function FeaturedPlaybooksSection() {
   );
 }
 
-/* ─── 10 · Pricing Strip ────────────────────────────────────────── */
+/* ─── 11 · Pricing Strip ────────────────────────────────────────── */
 function PricingStrip() {
   const tiers = [
     { name: "Free",       price: null,   popular: false },
@@ -652,29 +652,49 @@ function PricingStrip() {
   ];
 
   return (
-    <section className="px-6 py-20 md:py-28 bg-[#040303]">
+    <section className="editorial-dark px-6 py-24 md:py-32"
+             style={{ background: "var(--ed-bg)" }}>
       <div className="max-w-4xl mx-auto">
-        <SectionHead n="10" label="pricing" />
+        <p className="ed-label mb-8" style={{ color: "var(--ed-copper)" }}>
+          Section 11 · Pricing
+        </p>
 
-        <h2 className="font-serif text-3xl md:text-5xl leading-[1.08] mb-8 tracking-[-0.02em] max-w-2xl">
+        <h2 className="ed-display text-4xl md:text-6xl leading-[0.95] mb-10 max-w-3xl"
+            style={{ color: "var(--ed-ink)" }}>
           Start free.{" "}
-          <em className="not-italic text-[#B5532C]">Scale when it clicks.</em>
+          <span className="ed-display-italic" style={{ color: "var(--ed-ink-soft)" }}>
+            Scale when it clicks.
+          </span>
         </h2>
 
-        <div className="flex flex-wrap gap-2 mb-6">
+        <div className="flex flex-wrap gap-3 mb-8">
           {tiers.map((tier) => (
             <div
               key={tier.name}
-              className={`relative flex items-center gap-2 px-3 py-1.5 rounded-[3px] border ${
-                tier.popular ? "border-[#B5532C]/55 bg-[#B5532C]/[0.08]" : "border-white/[0.07] bg-white/[0.02]"
-              }`}
+              className="relative flex items-baseline gap-2 px-3.5 py-2 transition-colors"
+              style={{
+                border: `1px solid ${tier.popular ? "var(--ed-copper)" : "var(--ed-rule)"}`,
+                background: tier.popular ? "var(--ed-copper-wash)" : "var(--ed-bg-raised)",
+                borderRadius: "2px",
+              }}
             >
-              <span className="font-mono text-[11px] text-white tracking-tight">{tier.name}</span>
+              <span className="ed-mono text-[12px]" style={{ color: "var(--ed-ink)" }}>
+                {tier.name}
+              </span>
               {tier.price && (
-                <span className="font-mono text-[11px] text-[#B5532C]">{tier.price}/mo</span>
+                <span className="ed-mono text-[12px]" style={{ color: "var(--ed-copper)" }}>
+                  {tier.price}/mo
+                </span>
               )}
               {tier.popular && (
-                <span className="absolute -top-2 -right-1 font-mono text-[8px] text-[#B5532C] bg-[#B5532C]/10 border border-[#B5532C]/35 px-1.5 py-0.5 rounded-full tracking-wide">
+                <span
+                  className="ed-label absolute -top-2 -right-1 px-1.5 py-0.5 border"
+                  style={{
+                    color: "var(--ed-copper)",
+                    borderColor: "var(--ed-copper)",
+                    background: "var(--ed-bg)",
+                  }}
+                >
                   Popular
                 </span>
               )}
@@ -682,11 +702,12 @@ function PricingStrip() {
           ))}
         </div>
 
-        <p className="text-[12px] font-mono text-neutral-500 mb-2">
-          Free tier: 50 agent runs/month · no card · cancel anytime.{" "}
+        <p className="ed-caption">
+          Free tier — 50 agent runs per month — no card — cancel anytime.{" "}
           <Link
             href="/pricing"
-            className="text-[#B5532C] hover:text-white transition-colors"
+            className="transition-colors hover:opacity-80"
+            style={{ color: "var(--ed-copper)" }}
           >
             Full pricing →
           </Link>
@@ -699,24 +720,33 @@ function PricingStrip() {
 /* ─── Final CTA ─────────────────────────────────────────────────── */
 function FinalCTA() {
   return (
-    <section className="px-6 py-24 md:py-32 mx-6 mb-12 md:mx-12 lg:mx-20 rounded-[10px] border border-[#B5532C]/20 overflow-hidden relative"
-      style={{ background: "rgba(181,83,44,0.06)" }}
+    <section className="editorial-dark px-6 py-28 md:py-36 mx-6 mb-12 md:mx-12 lg:mx-20 overflow-hidden relative"
+      style={{
+        background: "var(--ed-copper-wash)",
+        border: "1px solid var(--ed-copper)",
+        borderRadius: "3px",
+      }}
     >
       {/* Glow */}
       <div
         className="absolute inset-0 pointer-events-none"
-        style={{ background: "radial-gradient(ellipse 60% 70% at 50% 50%, rgba(181,83,44,0.06) 0%, transparent 70%)" }}
+        style={{ background: "radial-gradient(ellipse 60% 70% at 50% 50%, rgba(181,83,44,0.08) 0%, transparent 70%)" }}
         aria-hidden="true"
       />
 
       <div className="relative max-w-2xl mx-auto text-center">
-        {/* Sub-badge removed in commit 6/7 — the headline alone sets the tone */}
+        <p className="ed-label mb-8" style={{ color: "var(--ed-copper)" }}>
+          — Start here —
+        </p>
 
-        <h2 className="font-serif text-3xl md:text-5xl leading-[1.06] mb-6 tracking-tight">
-          Your AI Workforce <em className="not-italic text-[#B5532C]">Starts Free</em>
+        <h2 className="ed-display text-4xl md:text-6xl leading-[0.95] mb-6"
+            style={{ color: "var(--ed-ink)" }}>
+          Your AI Workforce{" "}
+          <span className="ed-display-italic" style={{ color: "var(--ed-copper)" }}>Starts Free.</span>
         </h2>
 
-        <p className="text-[14px] md:text-[15px] text-neutral-400 mb-10 leading-[1.65] max-w-lg mx-auto">
+        <p className="ed-body text-[15px] md:text-[16px] mb-12 leading-relaxed max-w-lg mx-auto"
+           style={{ color: "var(--ed-ink-soft)" }}>
           No credit card. 198 agents in 60 seconds. 50 runs reset every month.
         </p>
 

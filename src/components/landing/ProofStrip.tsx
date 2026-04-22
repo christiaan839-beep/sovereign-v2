@@ -61,38 +61,38 @@ const INDUSTRIES: ReadonlyArray<{ code: string; label: string; href: string }> =
 
 export function ProofStrip() {
   return (
-    <section className="px-6 py-20 md:py-24 bg-[#030303] border-t border-white/[0.04]">
+    <section className="editorial-dark px-6 py-24 md:py-28 border-t"
+             style={{ background: "var(--ed-bg)", borderColor: "var(--ed-rule)" }}>
       <div className="max-w-6xl mx-auto">
-        <div className="mb-8 flex items-center gap-4 flex-wrap">
-          <span className="font-mono text-[10px] text-neutral-600 tracking-[0.2em]">
-            08 / 10
-          </span>
-          <span aria-hidden="true" className="h-px w-6 bg-white/[0.12]" />
-          <p className="font-serif italic text-[13px] text-neutral-500 tracking-[-0.01em]">
-            the shape of the platform
+        <div className="mb-10 flex items-center gap-4 flex-wrap">
+          <p className="ed-label" style={{ color: "var(--ed-copper)" }}>
+            Section 08 · Shape of the platform
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-10 md:gap-16">
+        <div className="grid md:grid-cols-2 gap-12 md:gap-20">
           {/* Left column — scale metrics */}
           <div>
-            <h2 className="font-serif text-2xl md:text-3xl leading-tight tracking-[-0.02em] mb-8 text-white">
+            <h2 className="ed-display text-3xl md:text-4xl leading-tight mb-10"
+                style={{ color: "var(--ed-ink)" }}>
               The scale.
             </h2>
-            <div className="grid grid-cols-2 gap-y-8 gap-x-4">
+            <div className="grid grid-cols-2 gap-y-10 gap-x-4">
               {SCALE_METRICS.map((m) => (
                 <Link
                   key={m.label}
                   href={m.href}
-                  className="group block"
+                  className="group block transition-colors"
                 >
-                  <div className="font-serif text-4xl md:text-5xl text-white leading-none tracking-[-0.02em] mb-2 group-hover:text-[#E8DDD0] transition-colors tabular-nums">
+                  <div className="ed-display text-5xl md:text-6xl leading-none mb-3 tabular-nums transition-colors"
+                       style={{ color: "var(--ed-ink)" }}>
                     {m.n}
                   </div>
-                  <div className="text-[12px] font-medium text-neutral-400 mb-1 tracking-tight">
+                  <div className="ed-mono text-[12px] mb-2 tracking-tight transition-colors group-hover:text-[var(--ed-copper)]"
+                       style={{ color: "var(--ed-ink-soft)" }}>
                     {m.label}
                   </div>
-                  <div className="text-[10px] font-mono text-neutral-600 leading-[1.6] max-w-[220px]">
+                  <div className="ed-caption leading-relaxed max-w-[260px]">
                     {m.sub}
                   </div>
                 </Link>
@@ -102,32 +102,51 @@ export function ProofStrip() {
 
           {/* Right column — industries */}
           <div>
-            <h2 className="font-serif text-2xl md:text-3xl leading-tight tracking-[-0.02em] mb-8 text-white">
-              The surface.
+            <h2 className="ed-display text-3xl md:text-4xl leading-tight mb-10"
+                style={{ color: "var(--ed-ink)" }}>
+              <span className="ed-display-italic" style={{ color: "var(--ed-ink-soft)" }}>
+                The surface.
+              </span>
             </h2>
             <div className="grid grid-cols-2 gap-2">
               {INDUSTRIES.map((ind) => (
                 <Link
                   key={ind.label}
                   href={ind.href}
-                  className="group flex items-center gap-2.5 px-3 py-2.5 rounded-[4px] border border-white/[0.06] bg-white/[0.015] hover:border-[#B5532C]/30 hover:bg-[#B5532C]/[0.04] transition-colors"
+                  className="group flex items-center gap-2.5 px-3 py-2.5 transition-colors"
+                  style={{
+                    border: "1px solid var(--ed-rule)",
+                    background: "var(--ed-bg-raised)",
+                    borderRadius: "2px",
+                  }}
                 >
-                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-full border border-white/[0.1] text-neutral-500 font-mono text-[9px] tracking-wide group-hover:border-[#B5532C]/40 group-hover:text-[#B5532C] transition-colors flex-shrink-0">
+                  <span
+                    className="ed-mono inline-flex items-center justify-center w-6 h-6 text-[9px] tracking-wide flex-shrink-0 transition-colors group-hover:text-[var(--ed-copper)]"
+                    style={{
+                      border: "1px solid var(--ed-rule)",
+                      color: "var(--ed-ink-dim)",
+                      borderRadius: "50%",
+                    }}
+                  >
                     {ind.code}
                   </span>
-                  <span className="text-[12.5px] text-neutral-300 tracking-tight group-hover:text-white transition-colors truncate">
+                  <span
+                    className="text-[12.5px] tracking-tight truncate transition-colors"
+                    style={{ color: "var(--ed-ink-soft)" }}
+                  >
                     {ind.label}
                   </span>
                   <span
                     aria-hidden="true"
-                    className="ml-auto text-[10px] font-mono text-neutral-700 group-hover:text-[#B5532C] transition-colors"
+                    className="ml-auto ed-mono text-[10px] transition-colors group-hover:text-[var(--ed-copper)]"
+                    style={{ color: "var(--ed-ink-dim)" }}
                   >
                     →
                   </span>
                 </Link>
               ))}
             </div>
-            <p className="mt-4 text-[10px] font-mono text-neutral-700 leading-relaxed">
+            <p className="ed-caption mt-5 leading-relaxed max-w-sm">
               Each vertical has dedicated agents tuned to its regulatory
               requirements, terminology, and output formats.
             </p>
