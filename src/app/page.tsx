@@ -23,6 +23,7 @@ import { A2EEconomySection } from "@/components/landing/A2EEconomySection";
 import { ModelRouterSection } from "@/components/landing/ModelRouterSection";
 import { VerificationPipeline } from "@/components/landing/VerificationPipeline";
 import { AgentBuilderLiveDemo } from "@/components/landing/AgentBuilderLiveDemo";
+import { PlaybookBuilderLiveDemo } from "@/components/landing/PlaybookBuilderLiveDemo";
 
 /**
  * Landing page — Agent Infrastructure Stack narrative.
@@ -123,7 +124,10 @@ export default function LandingPage() {
         {/* 09 · Agent Builder live demo — type agent, watch it built */}
         <AgentBuilderLiveDemo />
 
-        {/* 10 · Pricing Strip */}
+        {/* 10 · Playbook Builder live demo — type goal, watch it orchestrated */}
+        <PlaybookBuilderLiveDemo />
+
+        {/* 11 · Pricing Strip */}
         <PricingStrip />
 
         {/* Founder network seats */}

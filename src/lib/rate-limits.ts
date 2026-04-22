@@ -85,6 +85,10 @@ const RULES: readonly RateRule[] = [
   // budget gate lives inside the route handler itself.
   { name: "public-agent-builder-demo",
                                 prefix: "/api/public/agent-builder-demo", max: 3,  windowSeconds: 3600, identify: "ip_only" },
+  // playbook-builder-demo emits ~2500 tokens (shorter than agent-builder
+  // because it's a flow description, not full code). Same 3/hour/IP.
+  { name: "public-playbook-builder-demo",
+                                prefix: "/api/public/playbook-builder-demo", max: 3, windowSeconds: 3600, identify: "ip_only" },
   // ─── generic /api/public/* catch-all (catalog, atlas-edges, recent-runs) ─────
   { name: "public",           prefix: "/api/public/",         max: 120,  windowSeconds: 60, identify: "ip_only" },
   // Stripe's own retry can burst higher than our user-layer limit; the
