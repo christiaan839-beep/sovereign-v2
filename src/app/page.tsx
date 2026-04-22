@@ -198,6 +198,7 @@ function Nav({
           <div className="hidden md:flex items-center gap-0 text-[13px]">
             <div className="flex items-center gap-6 mr-6">
               <NavLink href={PLATFORM_HREF}>Platform</NavLink>
+              <NavLink href="/agents">Directory</NavLink>
               <NavLink href="/marketplace">Marketplace</NavLink>
               <NavLink href="/trust">Trust</NavLink>
               <NavLink href="/pricing">Pricing</NavLink>
@@ -263,6 +264,7 @@ function Nav({
           >
             {[
               { href: PLATFORM_HREF, label: "Platform" },
+              { href: "/agents", label: "Directory — 198 agents" },
               { href: "/marketplace", label: "Marketplace" },
               { href: "/trust", label: "Trust" },
               { href: "/pricing", label: "Pricing" },
@@ -781,7 +783,8 @@ function Footer() {
           <FooterCol
             title="Product"
             links={[
-              { href: "/platform", label: "Agents" },
+              { href: "/agents", label: "Staff Directory" },
+              { href: "/platform", label: "Platform Overview" },
               { href: "/dashboard/playbooks", label: "Playbooks" },
               { href: "/dashboard", label: "Dashboard" },
               { href: "/marketplace", label: "Marketplace" },
