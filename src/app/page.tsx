@@ -645,55 +645,41 @@ function PricingStrip() {
       <div className="max-w-4xl mx-auto">
         <SectionHead n="10" label="pricing" />
 
-        <h2 className="font-serif text-3xl md:text-5xl leading-[1.08] mb-4 tracking-[-0.02em] max-w-2xl">
-          Simple, Transparent Pricing.
-          <br />
-          <em className="not-italic text-[#B5532C]">Start free. Scale when it clicks.</em>
+        <h2 className="font-serif text-3xl md:text-5xl leading-[1.08] mb-8 tracking-[-0.02em] max-w-2xl">
+          Start free.{" "}
+          <em className="not-italic text-[#B5532C]">Scale when it clicks.</em>
         </h2>
-        <p className="text-neutral-400 text-[14px] mb-10 max-w-lg leading-relaxed">
-          No credit card on free tier. No annual contracts. Cancel anytime.
-        </p>
 
-        <div
-          className="p-6 rounded-[8px] border border-white/[0.06] bg-white/[0.025]"
-          style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)" }}
-        >
-          <div className="flex flex-wrap gap-3 mb-6">
-            {tiers.map((tier) => (
-              <div
-                key={tier.name}
-                className="relative flex items-center gap-2 px-4 py-2 rounded-[4px] border"
-                style={{
-                  borderColor: tier.popular ? "rgba(181,83,44,0.55)" : "rgba(255,255,255,0.07)",
-                  background: tier.popular ? "rgba(181,83,44,0.08)" : "rgba(255,255,255,0.02)",
-                }}
-              >
-                <span className="font-mono text-[12px] text-white">{tier.name}</span>
-                {tier.price && (
-                  <span className="font-mono text-[12px] text-[#B5532C]">{tier.price}/mo</span>
-                )}
-                {tier.popular && (
-                  <span className="absolute -top-2 -right-1 font-mono text-[8px] text-[#B5532C] bg-[#B5532C]/10 border border-[#B5532C]/35 px-1.5 py-0.5 rounded-full tracking-wide">
-                    Popular
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
-
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <p className="text-[12px] font-mono text-neutral-500">
-              Free tier: 50 agent runs/month · No card required · Upgrade when it&apos;s obvious
-            </p>
-            <Link
-              href="/pricing"
-              className="group inline-flex items-center gap-1.5 text-[12px] font-mono text-[#B5532C] hover:text-white transition-colors tracking-tight"
+        <div className="flex flex-wrap gap-2 mb-6">
+          {tiers.map((tier) => (
+            <div
+              key={tier.name}
+              className={`relative flex items-center gap-2 px-3 py-1.5 rounded-[3px] border ${
+                tier.popular ? "border-[#B5532C]/55 bg-[#B5532C]/[0.08]" : "border-white/[0.07] bg-white/[0.02]"
+              }`}
             >
-              See full pricing
-              <span className="transition-transform group-hover:translate-x-0.5">→</span>
-            </Link>
-          </div>
+              <span className="font-mono text-[11px] text-white tracking-tight">{tier.name}</span>
+              {tier.price && (
+                <span className="font-mono text-[11px] text-[#B5532C]">{tier.price}/mo</span>
+              )}
+              {tier.popular && (
+                <span className="absolute -top-2 -right-1 font-mono text-[8px] text-[#B5532C] bg-[#B5532C]/10 border border-[#B5532C]/35 px-1.5 py-0.5 rounded-full tracking-wide">
+                  Popular
+                </span>
+              )}
+            </div>
+          ))}
         </div>
+
+        <p className="text-[12px] font-mono text-neutral-500 mb-2">
+          Free tier: 50 agent runs/month · no card · cancel anytime.{" "}
+          <Link
+            href="/pricing"
+            className="text-[#B5532C] hover:text-white transition-colors"
+          >
+            Full pricing →
+          </Link>
+        </p>
       </div>
     </section>
   );
@@ -713,23 +699,14 @@ function FinalCTA() {
       />
 
       <div className="relative max-w-2xl mx-auto text-center">
-        <div className="mb-8 flex items-center justify-center gap-4 flex-wrap">
-          <span className="font-mono text-[10px] text-neutral-600 tracking-[0.2em]">10 / 10</span>
-          <span aria-hidden="true" className="h-px w-6 bg-white/[0.12]" />
-          <p className="font-serif italic text-[13px] text-neutral-500 tracking-[-0.01em]">
-            your move
-          </p>
-        </div>
+        {/* Sub-badge removed in commit 6/7 — the headline alone sets the tone */}
 
         <h2 className="font-serif text-3xl md:text-5xl leading-[1.06] mb-6 tracking-tight">
-          Your AI Workforce
-          <br />
-          <em className="not-italic text-[#B5532C]">Starts Free</em>
+          Your AI Workforce <em className="not-italic text-[#B5532C]">Starts Free</em>
         </h2>
 
-        <p className="text-[15px] md:text-[17px] text-neutral-400 mb-10 leading-[1.6] max-w-lg mx-auto">
-          No credit card required. 137 agents ready in 60 seconds.
-          50 runs reset every month — free forever.
+        <p className="text-[14px] md:text-[15px] text-neutral-400 mb-10 leading-[1.65] max-w-lg mx-auto">
+          No credit card. 137 agents in 60 seconds. 50 runs reset every month.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8">
