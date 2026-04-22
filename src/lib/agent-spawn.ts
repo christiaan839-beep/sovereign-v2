@@ -46,7 +46,12 @@
  *   output; this is intentional and documented at the function boundary.
  */
 
-import { addCredits, deductCredits } from "@/lib/a2e";
+import {
+  placeHold,
+  captureHold,
+  releaseHold,
+  InsufficientCreditsError,
+} from "@/lib/credits";
 import { AGENT_REGISTRY } from "@/app/api/agents/registry";
 import { getBaseUrl } from "@/lib/base-url";
 import { createLogger } from "@/lib/logger";
@@ -228,39 +233,40 @@ export async function spawnAgent(opts: SpawnOptions): Promise<SpawnResult> {
   }
 
   const childDepth = parent.depth + 1;
-  const childHoldId = `a2e_${Date.now()}_${Math.floor(Math.random() * 1e9).toString(36)}`;
 
-  // 4. Place the credit hold.
-  //    NOTE: On this branch the newer credits.ts hold/capture/release
-  //    primitives aren't present yet — we use deductCredits (place) +
-  //    addCredits(refund) (release) as the semantic equivalent and tag
-  //    the transactions with rich metadata that mirrors what
-  //    captureHold's metadata safelist would carry on main. When
-  //    credits.ts lands, swap `deductCredits` → `placeHold` with the
-  //    PlaceHoldOptions shape documented in the spec.
+  // 4. Place the credit hold using the canonical credits.ts primitive.
+  //    Uses extraMetadata to propagate the A2E attribution keys
+  //    (agentSlug, parentHoldId, parentAgentSlug, a2eDepth). The
+  //    credits.ts safelist carries these onto the hold_capture row
+  //    automatically, so the billing/analytics surface can reconstruct
+  //    the spawn tree without a separate schema change.
   //
-  //    extraMetadata to propagate: { agentSlug, parentHoldId,
-  //    parentAgentSlug, a2eDepth } — these are not passed to
-  //    deductCredits directly (API mismatch) so we pass
-  //    { agentId, runId } instead and embed the extra keys in the
-  //    description for now. TODO: remove the description encoding once
-  //    credits.ts' safelist is available here.
-  const metadataTag = [
-    `agentSlug=${slug}`,
-    `parentHoldId=${parent.parentHoldId}`,
-    `parentAgentSlug=${parent.parentAgentSlug}`,
-    `a2eDepth=${childDepth}`,
-  ].join(" ");
-
+  //    TTL: same 5 min default as the agent-factory's own holds. Capture
+  //    or release happens on the same call so TTL is a safety net,
+  //    not a runtime dependency.
+  let childHoldId: string;
   try {
-    await deductCredits(
-      parent.userId,
-      holdCents,
-      "a2e_hire",
-      `A2E spawn: ${parent.parentAgentSlug} → ${slug} [${metadataTag}]`,
-      { agentId: slug, runId: childHoldId },
-    );
+    childHoldId = await placeHold(parent.userId, holdCents, {
+      ttlMs: 5 * 60_000,
+      extraMetadata: {
+        agentSlug: slug,
+        parentHoldId: parent.parentHoldId,
+        parentAgentSlug: parent.parentAgentSlug,
+        a2eDepth: childDepth,
+      },
+    });
   } catch (err) {
+    // InsufficientCreditsError is a specific subclass — preserve its
+    // required/available fields via SpawnError.cause so route handlers
+    // can surface a 402 upstream.
+    if (err instanceof InsufficientCreditsError) {
+      const spawnErr = new SpawnError(
+        `Insufficient credits: need ${err.required}c, have ${err.available}c`,
+        "INSUFFICIENT_CREDITS",
+      );
+      (spawnErr as SpawnError & { cause?: unknown }).cause = err;
+      throw spawnErr;
+    }
     throw new SpawnError(
       `Failed to place A2E hold: ${err instanceof Error ? err.message : String(err)}`,
       "HOLD_FAILED",
@@ -313,19 +319,16 @@ export async function spawnAgent(opts: SpawnOptions): Promise<SpawnResult> {
     childBody = (await res.json()) as SpawnResult;
   } catch (err) {
     // Release the hold on any failure (network error, non-2xx, or
-    // SpawnError we just threw above).
+    // SpawnError we just threw above). releaseHold refunds the user's
+    // balance + marks the hold row status=released — the sweep-expired
+    // cron won't double-refund it later.
     try {
-      await addCredits(
-        parent.userId,
-        holdCents,
-        "refund",
-        `A2E spawn failed: ${parent.parentAgentSlug} → ${slug}`,
-        { agentId: slug, runId: childHoldId },
-      );
+      await releaseHold(childHoldId);
     } catch (refundErr) {
-      log.warn("A2E refund failed after spawn error", {
+      log.warn("A2E releaseHold failed after spawn error", {
         slug,
         parentHoldId: parent.parentHoldId,
+        childHoldId,
         error: String(refundErr),
       });
     }
@@ -338,9 +341,25 @@ export async function spawnAgent(opts: SpawnOptions): Promise<SpawnResult> {
     throw err;
   }
 
-  // 6. Capture the hold — in the legacy primitive, the deduct already
-  //    moved the balance, so capture is a no-op ledger tag. We log it
-  //    at info level so ops can trace successful A2E hires.
+  // 6. Capture the hold on success. captureHold reads the hold-placed
+  //    transaction's metadata and carries the A2E safelist keys
+  //    (agentSlug, parentHoldId, parentAgentSlug, a2eDepth) onto the
+  //    hold_capture row automatically.
+  try {
+    await captureHold(childHoldId);
+  } catch (captureErr) {
+    // Capture failure on a successful child call means ledger drift.
+    // Log loudly — the sweep-expired-holds cron will NOT reconcile
+    // this for us because the hold still looks "active." Surface to
+    // ops so they can manually capture.
+    log.error("A2E captureHold failed — ledger drift", {
+      slug,
+      parentHoldId: parent.parentHoldId,
+      childHoldId,
+      error: String(captureErr),
+    });
+  }
+
   log.info("A2E spawn captured", {
     slug,
     parentAgentSlug: parent.parentAgentSlug,

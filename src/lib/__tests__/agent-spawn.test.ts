@@ -24,14 +24,29 @@ vi.mock("@/lib/logger", () => ({
   }),
 }));
 
-const { deductCredits, addCredits } = vi.hoisted(() => ({
-  deductCredits: vi.fn(),
-  addCredits: vi.fn(),
+const { placeHold, captureHold, releaseHold } = vi.hoisted(() => ({
+  placeHold: vi.fn(),
+  captureHold: vi.fn(),
+  releaseHold: vi.fn(),
 }));
-vi.mock("@/lib/a2e", () => ({
-  deductCredits: (...args: unknown[]) => deductCredits(...args),
-  addCredits: (...args: unknown[]) => addCredits(...args),
-}));
+vi.mock("@/lib/credits", () => {
+  class InsufficientCreditsError extends Error {
+    constructor(
+      public userId: string,
+      public required: number,
+      public available: number,
+    ) {
+      super(`Insufficient credits for ${userId}: need ${required}c, have ${available}c`);
+      this.name = "InsufficientCreditsError";
+    }
+  }
+  return {
+    placeHold: (...args: unknown[]) => placeHold(...args),
+    captureHold: (...args: unknown[]) => captureHold(...args),
+    releaseHold: (...args: unknown[]) => releaseHold(...args),
+    InsufficientCreditsError,
+  };
+});
 
 vi.mock("@/app/api/agents/registry", () => ({
   // Minimal registry — three slugs are enough to cover all branches.
@@ -95,8 +110,11 @@ describe("spawnAgent", () => {
     _resetParentSpend();
     process.env.CRON_SECRET = "test_internal_secret";
     delete process.env.A2E_MAX_SPEND_CENTS_PER_PARENT;
-    deductCredits.mockResolvedValue({ balanceCents: 0 });
-    addCredits.mockResolvedValue({ balanceCents: 0 });
+    // Default: placeHold returns a deterministic child-hold id, capture
+    // + release are both no-op resolvers. Individual tests override.
+    placeHold.mockImplementation(async () => `hold_${Math.random().toString(36).slice(2, 10)}`);
+    captureHold.mockResolvedValue(undefined);
+    releaseHold.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -120,8 +138,9 @@ describe("spawnAgent", () => {
     });
 
     // Critical: unknown-slug path must never touch billing.
-    expect(deductCredits).not.toHaveBeenCalled();
-    expect(addCredits).not.toHaveBeenCalled();
+    expect(placeHold).not.toHaveBeenCalled();
+    expect(captureHold).not.toHaveBeenCalled();
+    expect(releaseHold).not.toHaveBeenCalled();
     expect(globalThis.fetch).not.toHaveBeenCalled();
   });
 
@@ -141,7 +160,7 @@ describe("spawnAgent", () => {
       code: "A2E_DEPTH_EXCEEDED",
     });
 
-    expect(deductCredits).not.toHaveBeenCalled();
+    expect(placeHold).not.toHaveBeenCalled();
     expect(globalThis.fetch).not.toHaveBeenCalled();
   });
 
@@ -185,8 +204,10 @@ describe("spawnAgent", () => {
       code: "A2E_CAP_EXCEEDED",
     });
 
-    // Confirm the cap check happens BEFORE the hold is placed.
-    expect(deductCredits).toHaveBeenCalledTimes(1);
+    // Confirm the cap check happens BEFORE the hold is placed for the
+    // OVER-cap call. The first spawn DID place a hold; the over-cap
+    // spawn short-circuits before touching credits.
+    expect(placeHold).toHaveBeenCalledTimes(1);
   });
 
   it("different parents share no spend ledger", async () => {
@@ -226,26 +247,25 @@ describe("spawnAgent", () => {
 
     expect(out).toEqual({ ok: true, result: "hello" });
 
-    // Hold placed with agentSlug + parentHoldId context baked in.
-    expect(deductCredits).toHaveBeenCalledTimes(1);
-    const [userId, amountCents, txType, description, metadata] =
-      deductCredits.mock.calls[0] as [
-        string,
-        number,
-        string,
-        string,
-        { agentId: string; runId: string },
-      ];
+    // Hold placed with extraMetadata carrying full A2E attribution.
+    // The credits.ts safelist (agentSlug, parentHoldId, parentAgentSlug,
+    // a2eDepth) propagates these onto the hold_capture row automatically.
+    expect(placeHold).toHaveBeenCalledTimes(1);
+    const [userId, amountCents, opts] = placeHold.mock.calls[0] as [
+      string,
+      number,
+      { ttlMs?: number; extraMetadata?: Record<string, unknown> },
+    ];
     expect(userId).toBe("user_123");
     expect(amountCents).toBe(estimatedHoldCents("competitor"));
-    expect(txType).toBe("a2e_hire");
-    // Description carries the A2E metadata until credits.ts safelist lands.
-    expect(description).toContain("agentSlug=competitor");
-    expect(description).toContain("parentHoldId=parent_hold_xyz");
-    expect(description).toContain("parentAgentSlug=leads");
-    expect(description).toContain("a2eDepth=1"); // parent depth was 0 → child is 1
-    expect(metadata.agentId).toBe("competitor");
-    expect(typeof metadata.runId).toBe("string");
+    expect(opts.extraMetadata).toEqual({
+      agentSlug: "competitor",
+      parentHoldId: "parent_hold_xyz",
+      parentAgentSlug: "leads",
+      a2eDepth: 1, // parent depth was 0 → child is 1
+    });
+    // TTL is 5 minutes (matches agent-factory's default).
+    expect(opts.ttlMs).toBe(5 * 60_000);
 
     // Child was invoked via fetch with the internal-secret headers.
     expect(globalThis.fetch).toHaveBeenCalledTimes(1);
@@ -265,8 +285,9 @@ describe("spawnAgent", () => {
     expect(body._a2eDepth).toBe(1);
     expect(body._a2eParentSlug).toBe("leads");
 
-    // On success, refund is never called.
-    expect(addCredits).not.toHaveBeenCalled();
+    // On success: captureHold fires once, releaseHold never.
+    expect(captureHold).toHaveBeenCalledTimes(1);
+    expect(releaseHold).not.toHaveBeenCalled();
   });
 
   it("happy path increments the per-parent ledger", async () => {
@@ -284,7 +305,7 @@ describe("spawnAgent", () => {
 
   // ── 5. Child HTTP failure → release hold, bubble error ─────────────────
 
-  it("releases hold via addCredits(refund) when the child HTTP call returns non-2xx", async () => {
+  it("releases hold via releaseHold when the child HTTP call returns non-2xx", async () => {
     mockFetchFail(500);
 
     await expect(
@@ -299,17 +320,16 @@ describe("spawnAgent", () => {
     });
 
     // Hold placed ...
-    expect(deductCredits).toHaveBeenCalledTimes(1);
-    // ... and refunded.
-    expect(addCredits).toHaveBeenCalledTimes(1);
-    const [userId, amountCents, txType] = addCredits.mock.calls[0] as [
-      string,
-      number,
-      string,
-    ];
-    expect(userId).toBe("user_123");
-    expect(amountCents).toBe(estimatedHoldCents("competitor"));
-    expect(txType).toBe("refund");
+    expect(placeHold).toHaveBeenCalledTimes(1);
+    // ... and released (refunds the user's balance + marks hold
+    // released so the sweep-expired cron doesn't double-refund).
+    expect(releaseHold).toHaveBeenCalledTimes(1);
+    // captureHold must NOT be called on failure.
+    expect(captureHold).not.toHaveBeenCalled();
+    // releaseHold takes the childHoldId returned from placeHold.
+    const [releasedHoldId] = releaseHold.mock.calls[0] as [string];
+    expect(typeof releasedHoldId).toBe("string");
+    expect(releasedHoldId).toMatch(/^hold_/);
 
     // Ledger was rolled back so subsequent spawns for this parent still
     // have their full budget available.
@@ -329,8 +349,9 @@ describe("spawnAgent", () => {
       }),
     ).rejects.toThrow(/ECONNREFUSED/);
 
-    expect(deductCredits).toHaveBeenCalledTimes(1);
-    expect(addCredits).toHaveBeenCalledTimes(1); // refund
+    expect(placeHold).toHaveBeenCalledTimes(1);
+    expect(releaseHold).toHaveBeenCalledTimes(1);
+    expect(captureHold).not.toHaveBeenCalled();
     expect(_getParentSpendCents("parent_hold_abc")).toBe(0);
   });
 
@@ -355,8 +376,9 @@ describe("spawnAgent", () => {
     // rejected the outbound call. This is the correct ordering: we cannot
     // know CRON_SECRET is unset until we're about to make the call, since
     // other env cases (transient unset, hot-reload) should still refund.
-    expect(deductCredits).toHaveBeenCalledTimes(1);
-    expect(addCredits).toHaveBeenCalledTimes(1);
+    expect(placeHold).toHaveBeenCalledTimes(1);
+    expect(releaseHold).toHaveBeenCalledTimes(1);
+    expect(captureHold).not.toHaveBeenCalled();
     expect(globalThis.fetch).not.toHaveBeenCalled();
   });
 });

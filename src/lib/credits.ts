@@ -48,6 +48,14 @@ export type TransactionReason =
 const CARRIED_METADATA_KEYS: ReadonlySet<string> = new Set([
   "agentSlug",
   "channel",
+  // A2E attribution — propagated from placeHold metadata onto the
+  // hold_capture ledger row so the billing/analytics surface can
+  // reconstruct the spawn tree and per-parent spend without a join
+  // to a separate table. All four are server-generated (not user
+  // input) so including them in the safelist is PII-safe.
+  "parentHoldId",
+  "parentAgentSlug",
+  "a2eDepth",
 ]);
 
 function extractCarriedMetadata(raw: unknown): Record<string, unknown> {
