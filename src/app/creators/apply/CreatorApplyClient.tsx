@@ -32,8 +32,14 @@ interface ValidationError {
   message: string;
 }
 
+type SubmitStatus = "live" | "queued";
+
 interface SubmitResult {
   referenceId: string;
+  status: SubmitStatus;
+  policy: string;
+  reason: string;
+  liveUrl?: string;
   nextSteps: string[];
 }
 
@@ -159,7 +165,14 @@ export function CreatorApplyClient() {
         setPhase("error");
         return;
       }
-      setResult({ referenceId: body.referenceId, nextSteps: body.nextSteps });
+      setResult({
+        referenceId: body.referenceId,
+        status: body.status === "live" ? "live" : "queued",
+        policy: body.policy ?? "curated",
+        reason: body.reason ?? "",
+        liveUrl: body.liveUrl,
+        nextSteps: body.nextSteps ?? [],
+      });
       setPhase("submitted");
     } catch {
       setServerError("Network error. Try again in a moment.");
@@ -350,37 +363,75 @@ function SubmittedPanel({
   result: SubmitResult;
   onReset: () => void;
 }) {
+  const isLive = result.status === "live";
+
+  // Masthead copy is the single biggest UX signal of outcome — a live
+  // agent gets a victory lap; a queued one gets the calmer "review
+  // pending" framing. The rest of the panel shares structure so a
+  // creator who flips between the two states over time sees familiar
+  // scaffolding and notices only the meaningful differences.
+  const masthead = isLive ? "Live — your agent is in the marketplace" : "Accepted — review pending";
+
   return (
     <div className="py-4">
-      <div className="p-8"
-           style={{
-             border: "1px solid var(--ed-copper)",
-             background: "var(--ed-copper-wash)",
-             borderRadius: "2px",
-           }}>
+      <div
+        className="p-8"
+        style={{
+          border: "1px solid var(--ed-copper)",
+          background: "var(--ed-copper-wash)",
+          borderRadius: "2px",
+        }}
+      >
         <p className="ed-label mb-3" style={{ color: "var(--ed-copper)" }}>
-          Accepted — review pending
+          {masthead}
         </p>
-        <p className="ed-display text-4xl mb-2" style={{ color: "var(--ed-ink)" }}>
-          Reference{" "}
-          <span className="ed-mono text-2xl" style={{ color: "var(--ed-copper)" }}>
-            {result.referenceId}
-          </span>
+
+        {isLive && result.liveUrl ? (
+          <a
+            href={result.liveUrl}
+            className="ed-display text-4xl mb-2 block transition-opacity hover:opacity-75"
+            style={{ color: "var(--ed-ink)" }}
+          >
+            {result.liveUrl}
+            <span className="ed-mono text-base ml-3" style={{ color: "var(--ed-copper)" }}>
+              →
+            </span>
+          </a>
+        ) : (
+          <p className="ed-display text-4xl mb-2" style={{ color: "var(--ed-ink)" }}>
+            Reference{" "}
+            <span className="ed-mono text-2xl" style={{ color: "var(--ed-copper)" }}>
+              {result.referenceId}
+            </span>
+          </p>
+        )}
+
+        <p className="ed-caption mb-6">
+          {isLive
+            ? `Reference ${result.referenceId} — save for your records. Post-hoc audit runs silently.`
+            : "Save this reference — you can quote it if anything needs follow-up."}
         </p>
-        <p className="ed-caption mb-6">Save this ID — you can quote it if anything needs follow-up.</p>
 
         <ol className="space-y-3">
           {result.nextSteps.map((step, i) => (
-            <li key={i} className="flex gap-3 ed-body text-[15px]"
-                style={{ color: "var(--ed-ink-soft)" }}>
-              <span className="ed-mono flex-shrink-0"
-                    style={{ color: "var(--ed-copper)" }}>
+            <li
+              key={i}
+              className="flex gap-3 ed-body text-[15px]"
+              style={{ color: "var(--ed-ink-soft)" }}
+            >
+              <span className="ed-mono flex-shrink-0" style={{ color: "var(--ed-copper)" }}>
                 {i + 1}.
               </span>
               <span>{step}</span>
             </li>
           ))}
         </ol>
+
+        <p className="ed-caption mt-6 pt-4" style={{ borderTop: "1px solid var(--ed-rule)" }}>
+          Policy in effect: <span className="ed-mono">{result.policy}</span>
+          {" · "}
+          {result.reason}
+        </p>
       </div>
 
       <button

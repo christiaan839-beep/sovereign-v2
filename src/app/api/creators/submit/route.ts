@@ -2,29 +2,41 @@
  * POST /api/creators/submit
  *
  * Receives a Sovereign Agent Manifest (SAM v1.0) from a prospective
- * creator and enqueues it for safety review. Returns a reference ID
- * the creator can use to check status.
+ * creator and — after validation — consults the active approval policy
+ * (see src/lib/creator-approval-policy.ts) to decide whether to:
  *
- * The actual review queue is out of scope for v1 — this endpoint
- * validates the manifest server-side (defense in depth; the UI also
- * validates client-side), generates a reference ID, logs it, and
- * returns 202 Accepted. A follow-up migration + review dashboard
- * persists submissions for operator review.
+ *   • auto-publish immediately (outcome: "auto-publish", HTTP 201)
+ *   • queue for operator review (outcome: "queue",       HTTP 202)
  *
- * Server-side validation is a deliberate duplication of the client
- * validation. Never trust the client — a manifest submitted directly
- * to this endpoint via curl must fail the same way as one submitted
- * via the form.
+ * Defence in depth: server validation deliberately duplicates the
+ * client validator in CreatorApplyClient. A manifest submitted directly
+ * via curl must fail the same way as one submitted through the form.
  *
- * Rate limit: 10/hour/IP via a new rule. Low cap because a spam
- * submission burns operator-review time, not model tokens.
+ * Persistence note: this route does not yet write to a
+ * `creator_submissions` table. Submissions are emitted as structured
+ * log lines (event="creator_submission") that operators tail. When the
+ * table lands in a subsequent migration the priorApprovedCount query
+ * will replace the `0` stub in buildCreatorContext() and trust-tiered
+ * behaviour will differentiate from curated.
+ *
+ * Rate limit: 10 submissions/hour/IP via an edge rule. Low cap because
+ * spam submissions burn operator-review time, not model tokens.
  */
 
 import { NextResponse } from "next/server";
+import {
+  evaluateSubmission,
+  type ApprovalDecision,
+  type CreatorContext,
+  type ManifestContext,
+} from "@/lib/creator-approval-policy";
 
-// Inline SAM v1.0 validator — mirrors the @sovereignmatrix/agent-validator
-// package. Kept inline here to avoid cross-package import complications in
-// Next.js App Router; the external package exists for third-party tooling.
+/* ─── SAM v1.0 validator (server-side mirror) ──────────────────── */
+/*
+ * Kept inline to avoid cross-package import complications in Next.js
+ * App Router. The external @sovereignmatrix/agent-validator package
+ * exists for third-party tooling; this code path must stay in-repo.
+ */
 
 const VALID_CATEGORIES = new Set([
   "Growth",
@@ -106,12 +118,57 @@ function validateManifest(manifest: unknown): ValidationError[] {
   return errors;
 }
 
+/* ─── Context builders ─────────────────────────────────────────── */
+
+function buildManifestContext(m: Record<string, unknown>): ManifestContext {
+  const pricing = m.pricing as { cents?: unknown } | undefined;
+  const pricingCents =
+    pricing && typeof pricing.cents === "number" ? pricing.cents : undefined;
+  return {
+    slug: String(m.slug ?? ""),
+    displayName: String(m.displayName ?? ""),
+    category: String(m.category ?? ""),
+    pricingCents,
+  };
+}
+
+function buildCreatorContext(contactEmail: string | null): CreatorContext {
+  // TODO(persistence): when the creator_submissions table lands, replace
+  // this `0` with `await countApprovedAgentsByEmail(contactEmail)`. Until
+  // then trust-tiered behaves identically to curated, which is safe.
+  return {
+    contactEmail,
+    priorApprovedCount: 0,
+  };
+}
+
+/* ─── Reference ID ─────────────────────────────────────────────── */
+
 function generateReferenceId(): string {
   // Short, human-friendly. 8 hex chars timestamp + 4 random.
   const time = Date.now().toString(16);
   const rand = Math.random().toString(16).slice(2, 6);
   return `SAM-${time.slice(-8)}-${rand}`;
 }
+
+/* ─── Next-steps copy (per outcome) ────────────────────────────── */
+
+function nextStepsFor(decision: ApprovalDecision, slug: string): string[] {
+  if (decision.outcome === "auto-publish") {
+    return [
+      `Your agent is live at /marketplace/${slug}.`,
+      "You'll earn 70% of every invocation (payout monthly via Stripe Connect).",
+      "Post-hoc safety audit runs in the background — we'll email if anything needs revision.",
+    ];
+  }
+  return [
+    "Operator will review within 24 hours (business days).",
+    "You'll receive an email at the provided address with the verdict.",
+    "Approved agents are listed in the Staff Directory + Marketplace immediately after approval.",
+  ];
+}
+
+/* ─── Handler ──────────────────────────────────────────────────── */
 
 export async function POST(request: Request): Promise<Response> {
   let manifest: unknown;
@@ -140,7 +197,7 @@ export async function POST(request: Request): Promise<Response> {
     );
   }
 
-  // Server-side validation (defense in depth).
+  // Server-side validation (defence in depth).
   const errors = validateManifest(manifest);
   if (errors.length > 0) {
     return NextResponse.json(
@@ -152,7 +209,7 @@ export async function POST(request: Request): Promise<Response> {
     );
   }
 
-  // Basic email format sanity check (optional field).
+  // Optional email format sanity check.
   if (contactEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) {
     return NextResponse.json(
       { error: "contactEmail is not a valid email address." },
@@ -160,34 +217,50 @@ export async function POST(request: Request): Promise<Response> {
     );
   }
 
+  const validManifest = manifest as Record<string, unknown>;
+  const manifestCtx = buildManifestContext(validManifest);
+  const creatorCtx = buildCreatorContext(contactEmail);
+  const decision = evaluateSubmission(manifestCtx, creatorCtx);
   const referenceId = generateReferenceId();
-  const m = manifest as { slug?: string; displayName?: string };
+  const receivedAt = new Date().toISOString();
 
-  // Log for operator follow-up. Persistence to a creator_submissions table
-  // lands in a follow-up migration — for now, the log trail is the queue.
+  // Structured log — one line per submission, parseable by any log
+  // aggregator. Operators tail this stream until persistence lands.
   console.log(
     JSON.stringify({
       event: "creator_submission",
       referenceId,
-      slug: m.slug,
-      displayName: m.displayName,
+      slug: manifestCtx.slug,
+      displayName: manifestCtx.displayName,
+      category: manifestCtx.category,
+      pricingCents: manifestCtx.pricingCents ?? null,
       contactEmail: contactEmail ?? "(not provided)",
-      receivedAt: new Date().toISOString(),
+      policy: decision.policy,
+      outcome: decision.outcome,
+      reason: decision.reason,
+      receivedAt,
     }),
   );
+
+  const status = decision.outcome === "auto-publish" ? "live" : "queued";
+  const httpStatus = decision.outcome === "auto-publish" ? 201 : 202;
+  const liveUrl =
+    decision.outcome === "auto-publish"
+      ? `/marketplace/${manifestCtx.slug}`
+      : undefined;
 
   return NextResponse.json(
     {
       success: true,
       referenceId,
-      nextSteps: [
-        "Operator will review within 24 hours (business days).",
-        "You'll receive an email at the provided address with the verdict.",
-        "Approved agents are listed in the Staff Directory + Marketplace immediately.",
-      ],
+      status,
+      policy: decision.policy,
+      reason: decision.reason,
+      liveUrl,
+      nextSteps: nextStepsFor(decision, manifestCtx.slug),
     },
     {
-      status: 202,
+      status: httpStatus,
       headers: { "Cache-Control": "no-store" },
     },
   );
