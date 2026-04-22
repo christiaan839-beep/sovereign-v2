@@ -12,7 +12,7 @@ import { CommandEgg } from "@/components/landing/CommandEgg";
 import { PrimaryCTA } from "@/components/landing/PrimaryCTA";
 import { StatusIndicator } from "@/components/landing/StatusIndicator";
 import { trackCtaClick } from "@/lib/cta-track";
-import { useHideyNav, TiltCard } from "@/components/ui/EliteEffects";
+import { TiltCard } from "@/components/ui/EliteEffects";
 
 // New components
 import { ConstellationField } from "@/components/landing/ConstellationField";
@@ -157,7 +157,9 @@ function Nav({
   mobileNavOpen: boolean;
   setMobileNavOpen: (v: boolean) => void;
 }) {
-  const visible = useHideyNav(64);
+  // Nav is now always pinned — useHideyNav removed in commit 3/7 of
+  // the landing redesign. A scrolled state still toggles the backdrop
+  // blur so the nav reads cleanly on both dark and content sections.
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -169,13 +171,7 @@ function Nav({
   }, []);
 
   return (
-    <motion.nav
-      initial={{ opacity: 0, y: -10 }}
-      animate={{
-        opacity: visible || mobileNavOpen ? 1 : 0,
-        y: visible || mobileNavOpen ? 0 : -64,
-      }}
-      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+    <nav
       className="fixed top-0 inset-x-0 z-50"
       aria-label="Primary"
     >
@@ -295,7 +291,7 @@ function Nav({
           </motion.div>
         )}
       </AnimatePresence>
-    </motion.nav>
+    </nav>
   );
 }
 
@@ -523,12 +519,8 @@ function MemoryMoat() {
 
             <div className="space-y-8">
               {timeline.map((item, i) => (
-                <motion.div
+                <div
                   key={item.label}
-                  initial={{ opacity: 0, x: 16 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true, margin: "-40px" }}
-                  transition={{ delay: i * 0.12, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
                   className="relative flex gap-5"
                 >
                   <div
@@ -552,7 +544,7 @@ function MemoryMoat() {
                     </p>
                     <p className="text-[14px] text-neutral-300 leading-[1.6]">{item.desc}</p>
                   </div>
-                </motion.div>
+                </div>
               ))}
             </div>
 
@@ -672,14 +664,8 @@ function IndustrySection() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {industries.map((ind, i) => (
-            <motion.div
-              key={ind.label}
-              initial={{ opacity: 0, y: 14 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-40px" }}
-              transition={{ delay: i * 0.05, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            >
+          {industries.map((ind) => (
+            <div key={ind.label}>
               <Link
                 href={ind.href}
                 className="group relative block h-full p-5 rounded-[6px] border border-white/[0.06] bg-white/[0.025] hover:border-[#B5532C]/35 hover:bg-[#B5532C]/[0.03] transition-all duration-300 overflow-hidden"
@@ -706,7 +692,7 @@ function IndustrySection() {
                   →
                 </span>
               </Link>
-            </motion.div>
+            </div>
           ))}
         </div>
       </div>
@@ -748,13 +734,9 @@ function PlatformScale() {
       <div className="max-w-6xl mx-auto">
         <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-y md:divide-y-0 divide-white/[0.05] border-b border-white/[0.04]">
           {SCALE_METRICS.map((m) => (
-            <motion.a
+            <a
               key={m.label}
               href={m.href}
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true, margin: "-40px" }}
-              transition={{ duration: 0.5 }}
               className="group block px-6 py-10 md:px-8 md:py-12 hover:bg-white/[0.015] transition-colors"
             >
               <div className="font-serif text-[52px] md:text-[64px] text-white leading-none tracking-[-0.02em] mb-3 group-hover:text-[#E8DDD0] transition-colors">
@@ -762,7 +744,7 @@ function PlatformScale() {
               </div>
               <div className="text-[13px] font-medium text-neutral-300 mb-2 tracking-tight">{m.label}</div>
               <div className="text-[11px] font-mono text-neutral-600 leading-[1.65] max-w-[200px]">{m.sub}</div>
-            </motion.a>
+            </a>
           ))}
         </div>
 
