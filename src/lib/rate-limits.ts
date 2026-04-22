@@ -72,6 +72,15 @@ const RULES: readonly RateRule[] = [
   // hammering the origin.
   { name: "catalog",          prefix: "/api/catalog",         max: 120,  windowSeconds: 60, identify: "ip_only" },
   { name: "leaderboard",      prefix: "/api/leaderboard",     max: 60,   windowSeconds: 60, identify: "ip_only" },
+  // ─── PUBLIC DEMO ENDPOINTS (expensive pipelines, tight caps) ─────
+  // These sit BEFORE the generic /api/public/ rule (first match wins).
+  // Each invocation triggers a real AI pipeline — abuse would burn
+  // real money through Anthropic/NIM/Groq. Keep tight until we add
+  // billing hooks to the demo endpoints.
+  { name: "public-router-demo",  prefix: "/api/public/router-demo",  max: 5,   windowSeconds: 3600, identify: "ip_only" },
+  { name: "public-verify-demo",  prefix: "/api/public/verify-demo",  max: 5,   windowSeconds: 3600, identify: "ip_only" },
+  { name: "public-memory-demo",  prefix: "/api/public/memory-demo",  max: 10,  windowSeconds: 3600, identify: "ip_only" },
+  // ─── generic /api/public/* catch-all (catalog, atlas-edges, recent-runs) ─────
   { name: "public",           prefix: "/api/public/",         max: 120,  windowSeconds: 60, identify: "ip_only" },
   // Stripe's own retry can burst higher than our user-layer limit; the
   // signature verification inside the handler is the real gate.
