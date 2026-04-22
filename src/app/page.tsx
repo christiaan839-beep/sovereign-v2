@@ -22,6 +22,7 @@ import { ThreeMoatsGrid } from "@/components/landing/ThreeMoatsGrid";
 import { A2EEconomySection } from "@/components/landing/A2EEconomySection";
 import { ModelRouterSection } from "@/components/landing/ModelRouterSection";
 import { VerificationPipeline } from "@/components/landing/VerificationPipeline";
+import { AgentBuilderLiveDemo } from "@/components/landing/AgentBuilderLiveDemo";
 
 /**
  * Landing page — Agent Infrastructure Stack narrative.
@@ -118,6 +119,9 @@ export default function LandingPage() {
 
         {/* 08 · Proof Strip — consolidates scale + industries + stack-kill */}
         <ProofStrip />
+
+        {/* 09 · Agent Builder live demo — type agent, watch it built */}
+        <AgentBuilderLiveDemo />
 
         {/* 10 · Pricing Strip */}
         <PricingStrip />

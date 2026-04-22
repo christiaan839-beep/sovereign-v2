@@ -80,6 +80,11 @@ const RULES: readonly RateRule[] = [
   { name: "public-router-demo",  prefix: "/api/public/router-demo",  max: 5,   windowSeconds: 3600, identify: "ip_only" },
   { name: "public-verify-demo",  prefix: "/api/public/verify-demo",  max: 5,   windowSeconds: 3600, identify: "ip_only" },
   { name: "public-memory-demo",  prefix: "/api/public/memory-demo",  max: 10,  windowSeconds: 3600, identify: "ip_only" },
+  // agent-builder-demo is the most expensive of all — it emits ~4000 output
+  // tokens from Claude per call. Tightest cap (3/hour/IP) and a daily
+  // budget gate lives inside the route handler itself.
+  { name: "public-agent-builder-demo",
+                                prefix: "/api/public/agent-builder-demo", max: 3,  windowSeconds: 3600, identify: "ip_only" },
   // ─── generic /api/public/* catch-all (catalog, atlas-edges, recent-runs) ─────
   { name: "public",           prefix: "/api/public/",         max: 120,  windowSeconds: 60, identify: "ip_only" },
   // Stripe's own retry can burst higher than our user-layer limit; the
