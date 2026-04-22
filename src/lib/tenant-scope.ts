@@ -71,3 +71,25 @@ export function belongsToTenant(resourceTenantId: string | null | undefined, use
   if (!resourceTenantId || !userTenantId) return false;
   return resourceTenantId === userTenantId;
 }
+
+/**
+ * Fixed Clerk user id for all public demo data surfaced on the landing
+ * v2 live sections. Every public demo playbook run and tenant_memory
+ * row is owned by this synthetic user. Clerk does not need to know
+ * about this id — it exists only as a scope label in our own tables.
+ *
+ * Using a user-scoped demo avoids touching the tenants table (which
+ * has a UUID PK + unique clerk_user_id + unique node_id) and matches
+ * the fact that playbook_runs + tenant_memories are user-scoped in
+ * schema.
+ *
+ * All /api/public/* endpoints that pull "public demo data" filter
+ * their queries by eq(table.userId, PUBLIC_DEMO_USER_ID).
+ */
+export const PUBLIC_DEMO_USER_ID = "user_publicdemo";
+
+export function isPublicDemoUser(
+  userId: string | null | undefined,
+): boolean {
+  return userId === PUBLIC_DEMO_USER_ID;
+}
