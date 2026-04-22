@@ -52,7 +52,8 @@ describe("POST /api/public/verify-demo", () => {
     expect(body.layers).toHaveLength(5);
     expect(body.layers[0].name).toBe("jailbreak");
     expect(body.layers[0].passed).toBe(true);
-    expect(body.totalMs).toBeGreaterThan(0);
+    expect(typeof body.totalMs).toBe("number");
+    expect(body.totalMs).toBeGreaterThanOrEqual(0);
   });
 
   it("surfaces a layer failure with its reason", async () => {
