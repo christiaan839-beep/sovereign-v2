@@ -17,6 +17,7 @@ import { useHideyNav, TiltCard } from "@/components/ui/EliteEffects";
 // New components
 import { ConstellationField } from "@/components/landing/ConstellationField";
 import { LiveProofStrip } from "@/components/landing/LiveProofStrip";
+import { RecentRunsTicker } from "@/components/landing/RecentRunsTicker";
 import { ThreeMoatsGrid } from "@/components/landing/ThreeMoatsGrid";
 import { A2EEconomySection } from "@/components/landing/A2EEconomySection";
 import { ModelRouterSection } from "@/components/landing/ModelRouterSection";
@@ -86,6 +87,13 @@ export default function LandingPage() {
 
         {/* Live stats strip */}
         <LiveProofStrip />
+
+        {/*
+         * Rolling ticker of the last few real playbook completions.
+         * Hidden entirely when there's no run data — no fake activity
+         * on a fresh deploy. See src/components/landing/RecentRunsTicker.tsx.
+         */}
+        <RecentRunsTicker />
 
         {/* 02 · Three Moats */}
         <ThreeMoatsGrid />
