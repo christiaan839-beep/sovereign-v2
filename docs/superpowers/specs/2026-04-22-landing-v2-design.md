@@ -667,20 +667,36 @@ Aligned with the Month 1 Sprint (`docs/superpowers/specs/2026-04-21-month-1-spri
 
 ---
 
-## 21. Open Questions — User Decision Needed
+## 21. Open Questions — RESOLVED 2026-04-22
 
-1. **`/platform` palette.** Currently editorial cream (`#F4EFE6`). Convert to dark `#030303` for consistency with v2, or keep as intentional developer-audience split? Recommendation: **convert to dark.** Rationale: landing v2 is the entry point for everyone (operators and devs); a different palette one click away feels like two companies.
+All 5 open questions resolved by user delegation ("do what's good for the project and reliable"). Decisions applied with reliability-first reasoning.
 
-2. **Hero headline — pick one:**
-   - `Meet the 137 agents.` (recommended)
-   - `137 agents. Hired and waiting.`
-   - `The agents your business should have hired.`
+1. **`/platform` palette → CONVERT TO DARK `#030303`.**
+   *Rationale:* Landing v2 is the entry for all audiences; a palette split one click away reads as "two different companies." Conversion is additive (colors + type sizes only, layout unchanged) so the risk surface is small. Implementation: Tier 1 gap T1-C, 2 days.
 
-3. **Playbook character names — Apex / Velox / Scribe — or functional slugs only?** Character names give editorial weight to Section 06 and future marketing collateral without touching code. Recommendation: **use character names in Section 06 only**, functional slugs (`lead-blitz`, `competitor-takedown`, `content-machine`) remain the system-of-record everywhere else.
+2. **Hero headline → `Meet the 137 agents.`**
+   *Rationale:* Bold in restraint. Matches Anthropic-leaning editorial DNA. Shortest of the three options = lowest revise-later cost if A/B data shows we need a tweak. Length: 26 chars — fits on a single line even at `text-6xl` on 375px mobile.
 
-4. **Profile photos / monograms for Section 06?** We can commission tight editorial monogram illustrations (~$200 each × 3 = $600, 2-week turn) or use typographic-only treatments (free, ships Day 11). Recommendation: **typographic-only for launch**, commission later.
+3. **Playbook character names → USE `Apex / Velox / Scribe` IN SECTION 06 ONLY.**
+   *Rationale:* Marketing-layer naming with zero code coupling. Functional slugs (`lead-blitz`, `competitor-takedown`, `content-machine`) remain the system-of-record in `src/lib/playbooks.ts` and all URLs. The character names appear only as the editorial headline of each profile card and in future marketing collateral. Fully reversible at any time without touching code.
 
-5. **Public memory demo tenant.** We need one (or more) consented demo tenant with real, public-safe run data. Do you want to create a dedicated `sovereign-public-demo` tenant and seed it, or reuse a founder tenant with a flag?
+4. **Section 06 profile art → TYPOGRAPHIC-ONLY FOR LAUNCH.**
+   *Rationale:* Ships on Day 11 with zero external-vendor dependency. Commissioning monogram illustrations (~$600, 2-week turn) is deferred to a post-launch enhancement where we can validate with real usage data whether custom art moves conversion.
+
+5. **Public memory demo tenant → CREATE DEDICATED `sovereign-public-demo` TENANT.**
+   *Rationale:* Clean isolation eliminates any risk of PII bleeding from a real founder tenant into the public demo endpoints. The seed script for this tenant is part of Tier 1 gap T1-A (endpoint delivery). Tenant is marked `is_public_demo = true` in the tenants table (new boolean column) and excluded from all non-demo queries by an invariant in `src/lib/tenant-scope.ts`.
+
+---
+
+### Locked configuration summary
+
+| Variable | Value |
+|---|---|
+| `LANDING_V2_HEADLINE` | `Meet the 137 agents.` |
+| `PLATFORM_PAGE_PALETTE` | dark (`#030303` + copper `#B5532C`) |
+| `PLAYBOOK_CHARACTER_NAMES` | `{ lead-blitz: "Apex", competitor-takedown: "Velox", content-machine: "Scribe" }` (Section 06 only) |
+| `PROFILE_ART_STRATEGY` | typographic-only |
+| `PUBLIC_DEMO_TENANT_ID` | `sovereign-public-demo` (to be seeded in Day 3–4 of Week 1) |
 
 ---
 
@@ -697,5 +713,5 @@ Aligned with the Month 1 Sprint (`docs/superpowers/specs/2026-04-21-month-1-spri
 - [ ] WCAG 2.2 AA audit passes (contrast, keyboard, focus order, aria labels).
 - [ ] Sentry shows no new error class 24h post-cutover.
 - [ ] Rollback playbook tested in staging.
-- [ ] All 5 open questions in §21 resolved.
+- [x] All 5 open questions in §21 resolved (2026-04-22).
 - [ ] User has reviewed and approved this spec + the companion gap spec.

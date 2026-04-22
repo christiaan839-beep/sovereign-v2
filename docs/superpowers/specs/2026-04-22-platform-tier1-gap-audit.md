@@ -319,12 +319,10 @@ This is the full 6-week unified plan. Landing v2 + Tier 1 run in parallel within
 
 ---
 
-## 9. Sign-off Required Before Implementation
+## 9. Sign-off — RESOLVED 2026-04-22
 
-Before we write the implementation plan (via the writing-plans skill), user must confirm:
+1. ✅ Gap audit approved.
+2. ✅ Companion landing v2 design spec approved.
+3. ✅ All 5 open questions in landing v2 spec §21 resolved (palette → dark, headline → "Meet the 137 agents.", character names → Apex/Velox/Scribe Section 06 only, profile art → typographic-only, demo tenant → dedicated `sovereign-public-demo`).
 
-1. ✅ Approve this gap audit.
-2. ✅ Approve the companion landing v2 design spec.
-3. ✅ Resolve open questions in landing v2 spec §21 (palette decision, headline, character names, profile art, demo tenant).
-
-Once all three are checked, writing-plans skill produces a day-by-day implementation plan covering all 6 weeks.
+Writing-plans skill now invoked to produce day-by-day 6-week implementation plan.
