@@ -596,7 +596,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="relative z-10 w-full min-h-full max-w-[1600px] mx-auto">
             {/* Breadcrumb Bar + Notification Bell */}
             <div className="px-6 lg:px-8 pt-3 pb-1 flex items-center justify-between">
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-2">
+                {/*
+                  Mobile hamburger — opens the existing slide-out drawer
+                  overlay. Hidden on lg+ where the permanent sidebar is
+                  visible. Kept next to the breadcrumbs so the top nav
+                  stays visible even while the sidebar is collapsed.
+                */}
+                <button
+                  onClick={() => setMobileMenuOpen(true)}
+                  aria-label="Open navigation menu"
+                  aria-expanded={mobileMenuOpen}
+                  className="lg:hidden p-1.5 -ml-1 rounded-md text-neutral-400 hover:text-white hover:bg-white/5 transition-colors"
+                >
+                  <Menu className="w-4 h-4" />
+                </button>
                 {!isHome && pageLabel && (
                   <>
                     <Link
@@ -688,33 +702,69 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </button>
         </nav>
 
-        {/* === MOBILE FULL MENU OVERLAY === */}
+        {/* === MOBILE SLIDE-OUT DRAWER === */}
+        {/*
+          On sub-lg viewports the sidebar is collapsed; this drawer replaces
+          it. Slides in from the left, backdrop dims the rest of the page
+          and dismisses on tap. The breadcrumb bar (top-nav) stays visible
+          behind the drawer so users never lose page context.
+        */}
         <AnimatePresence>
           {mobileMenuOpen && (
-            <motion.div
-              role="dialog"
-              aria-label="Navigation menu"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-              className="lg:hidden fixed inset-0 z-[100] bg-[#000000] flex flex-col"
-            >
-              <div className="flex items-center justify-between p-5 border-b border-white/10">
-                <span className="text-sm font-semibold tracking-wide text-white">
-                  Sovereign
-                </span>
-                <button
-                  onClick={() => setMobileMenuOpen(false)}
-                  aria-label="Close navigation menu"
-                  className="p-2 text-neutral-400 hover:text-white"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              <div className="flex-1 overflow-y-auto">
-                {renderExpandedNav(true)}
-              </div>
-            </motion.div>
+            <>
+              {/* Backdrop — tap anywhere outside the drawer to dismiss */}
+              <motion.div
+                key="drawer-backdrop"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                onClick={() => setMobileMenuOpen(false)}
+                aria-hidden="true"
+                className="lg:hidden fixed inset-0 z-[99] bg-black/60 backdrop-blur-sm"
+              />
+              {/* Drawer panel — slides in from the left */}
+              <motion.div
+                key="drawer-panel"
+                role="dialog"
+                aria-modal="true"
+                aria-label="Navigation menu"
+                initial={{ x: "-100%" }}
+                animate={{ x: 0 }}
+                exit={{ x: "-100%" }}
+                transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
+                className="lg:hidden fixed inset-y-0 left-0 z-[100] w-[80vw] max-w-[320px] bg-[#050505] border-r border-white/10 flex flex-col shadow-[0_0_40px_rgba(0,0,0,0.8)]"
+              >
+                <div className="flex items-center justify-between p-5 border-b border-white/10">
+                  <Link
+                    href="/dashboard"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-2.5"
+                  >
+                    <Image
+                      src="/logo.png"
+                      alt="Sovereign"
+                      width={20}
+                      height={20}
+                      className="rounded-md opacity-90"
+                    />
+                    <span className="text-sm font-semibold tracking-wide text-white">
+                      Sovereign
+                    </span>
+                  </Link>
+                  <button
+                    onClick={() => setMobileMenuOpen(false)}
+                    aria-label="Close navigation menu"
+                    className="p-2 rounded-md text-neutral-400 hover:text-white hover:bg-white/5 transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                <div className="flex-1 overflow-y-auto custom-scrollbar">
+                  {renderExpandedNav(true)}
+                </div>
+              </motion.div>
+            </>
           )}
         </AnimatePresence>
       </div>
