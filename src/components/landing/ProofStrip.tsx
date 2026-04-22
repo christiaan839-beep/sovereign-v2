@@ -23,9 +23,9 @@ import Link from "next/link";
 
 const SCALE_METRICS = [
   {
-    n: "137",
+    n: "198",
     label: "Agents",
-    sub: "8 industries · 19 task categories",
+    sub: "18 industries · 84 featured in the public catalog",
     href: "/platform",
   },
   {

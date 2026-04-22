@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Pricing — Sovereign Matrix",
-  description: "Simple, transparent pricing for the Agent Infrastructure Stack. Start free. 137 agents, 39+ models, A2E economy credits. Free · $19 · $49 · $199 · $499/mo.",
+  description: "Simple, transparent pricing for the Agent Infrastructure Stack. Start free. 198 agents, 39+ models, A2E economy credits. Free · $19 · $49 · $199 · $499/mo.",
   keywords: ["AI platform pricing", "Sovereign Matrix pricing", "flat AI pricing", "unlimited agent runs", "zero per-token cost"],
   alternates: { canonical: "https://sovereignmatrix.agency/pricing" },
   openGraph: {
@@ -26,10 +26,10 @@ const pricingJsonLd = {
   name: "Sovereign Matrix",
   applicationCategory: "BusinessApplication",
   operatingSystem: "Web, Linux, macOS, Windows",
-  description: "The Agent Infrastructure Stack — 137 specialized AI agents, 39+ models, A2E economy credits.",
+  description: "The Agent Infrastructure Stack — 198 specialized AI agents, 39+ models, A2E economy credits.",
   url: "https://sovereignmatrix.agency/pricing",
   offers: [
-    { "@type": "Offer", name: "Founder Access", price: "0", priceCurrency: "USD", description: "50 runs/month, all 137 agents, no credit card.", availability: "https://schema.org/InStock", url: "https://sovereignmatrix.agency/signup" },
+    { "@type": "Offer", name: "Founder Access", price: "0", priceCurrency: "USD", description: "50 runs/month, all 198 agents, no credit card.", availability: "https://schema.org/InStock", url: "https://sovereignmatrix.agency/signup" },
     { "@type": "Offer", name: "Starter", price: "19", priceCurrency: "USD", description: "200 runs/month, 50 A2E credits/mo, email support.", availability: "https://schema.org/InStock", url: "https://sovereignmatrix.agency/pricing" },
     { "@type": "Offer", name: "Growth", price: "49", priceCurrency: "USD", description: "500 runs/month, 200 A2E credits/mo, priority support.", availability: "https://schema.org/InStock", url: "https://sovereignmatrix.agency/pricing" },
     { "@type": "Offer", name: "Sovereign Node", price: "199", priceCurrency: "USD", description: "2,000 runs/month, 1,000 A2E credits/mo, local execution.", availability: "https://schema.org/InStock", url: "https://sovereignmatrix.agency/pricing" },
@@ -46,7 +46,7 @@ const faqJsonLd = {
       name: "What is Sovereign Matrix?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Sovereign Matrix is the Agent Infrastructure Stack — 137 specialized AI agents, 39+ model backends, and the first AI economy where agents hire other agents autonomously.",
+        text: "Sovereign Matrix is the Agent Infrastructure Stack — 198 specialized AI agents, 39+ model backends, and the first AI economy where agents hire other agents autonomously.",
       },
     },
     {

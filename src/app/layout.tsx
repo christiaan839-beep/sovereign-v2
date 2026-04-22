@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     template: "%s | Sovereign Matrix",
   },
   description:
-    "137 specialized AI agents. 39+ models. An economy where agents hire agents. Enterprise-grade AI infrastructure with semantic memory, 5-layer verification, and model sovereignty.",
+    "198 specialized AI agents. 39+ models. An economy where agents hire agents. Enterprise-grade AI infrastructure with semantic memory, 5-layer verification, and model sovereignty.",
   keywords: [
     "AI agents", "agent infrastructure", "AI automation", "enterprise AI",
     "multi-agent platform", "AI orchestration", "NVIDIA NIM", "semantic memory",
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "https://sovereignmatrix.agency" },
   openGraph: {
     title: "Sovereign Matrix — The Agent Infrastructure Stack",
-    description: "137 specialized AI agents. 39+ models. The first AI economy where agents hire agents. Enterprise-grade infrastructure with semantic memory and model sovereignty.",
+    description: "198 specialized AI agents. 39+ models. The first AI economy where agents hire agents. Enterprise-grade infrastructure with semantic memory and model sovereignty.",
     type: "website",
     siteName: "Sovereign Matrix",
     locale: "en_US",
@@ -53,7 +53,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Sovereign Matrix — The Agent Infrastructure Stack",
-    description: "137 specialized AI agents. 39+ models. The first AI economy where agents hire agents. Enterprise-grade infrastructure with semantic memory and model sovereignty.",
+    description: "198 specialized AI agents. 39+ models. The first AI economy where agents hire agents. Enterprise-grade infrastructure with semantic memory and model sovereignty.",
     images: ["https://sovereignmatrix.agency/og-image.jpg"],
   },
   icons: {
@@ -163,7 +163,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   applicationCategory: "BusinessApplication",
                   operatingSystem: "Web",
                   offers: marketingOffers,
-                  description: "The Agent Infrastructure Stack — 137 specialized AI agents, 39+ models, and the first AI economy where agents hire agents. Enterprise-grade infrastructure with semantic memory, 5-layer verification, and model sovereignty.",
+                  description: "The Agent Infrastructure Stack — 198 specialized AI agents, 39+ models, and the first AI economy where agents hire agents. Enterprise-grade infrastructure with semantic memory, 5-layer verification, and model sovereignty.",
                   featureList: "AI Agents, Multi-Model Routing, White-Label, Knowledge Graph, PEER Loop, Adversarial Synthesis, Citation Tracking, Policy Engine, Budget Controls",
                 },
                 {
@@ -171,7 +171,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   "@type": "Organization",
                   name: "Sovereign Matrix",
                   url: "https://sovereignmatrix.agency",
-                  description: "The Agent Infrastructure Stack — 137 AI agents, 39+ models, agent-to-agent economy",
+                  description: "The Agent Infrastructure Stack — 198 AI agents, 39+ models, agent-to-agent economy",
                   logo: "https://sovereignmatrix.agency/icon-512.png",
                   contactPoint: { "@type": "ContactPoint", email: "christiaan@sovereignmatrix.agency", contactType: "sales" },
                   sameAs: [],

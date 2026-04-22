@@ -254,7 +254,7 @@ export default function FreeLeadFinderPage() {
                 <CheckCircle2 className="w-7 h-7 mx-auto mb-3" style={{ color: "#B5532C" }} />
                 <h3 className="text-sm font-semibold text-white mb-1">All {leads.length} leads unlocked.</h3>
                 <p className="text-xs text-neutral-400 mb-4">
-                  Want 137 agents running automated outreach to this entire list?
+                  Want 198 agents running automated outreach to this entire list?
                 </p>
                 <Link href="/signup"
                   className="inline-flex items-center gap-2 px-6 py-2.5 text-white font-semibold rounded-lg text-sm transition-opacity hover:opacity-90"

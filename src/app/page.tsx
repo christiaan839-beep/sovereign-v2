@@ -368,7 +368,7 @@ function Hero() {
               <span className="absolute inline-flex h-full w-full rounded-full bg-[#B5532C] opacity-70 animate-ping" />
               <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#B5532C]" />
             </span>
-            <span>137 agents</span>
+            <span>198 agents</span>
             <span className="text-neutral-700">·</span>
             <span>39+ models</span>
             <span className="text-neutral-700">·</span>
@@ -381,11 +381,12 @@ function Hero() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="font-serif text-5xl sm:text-6xl md:text-7xl lg:text-8xl leading-[1.04] tracking-[-0.02em] mb-6"
+          className="ed-display text-5xl sm:text-6xl md:text-7xl lg:text-8xl leading-[0.95] tracking-[-0.01em] mb-6"
+          style={{ fontFamily: "'Instrument Serif', 'GT Sectra', 'Cormorant Garamond', Georgia, serif" }}
         >
           <span className="block text-white">The Agent</span>
-          <span className="block" style={{ color: "#B5532C" }}>Infrastructure</span>
-          <span className="block" style={{ color: "#B5532C" }}>Stack</span>
+          <span className="block ed-display-italic" style={{ color: "#B5532C", fontStyle: "italic" }}>Infrastructure</span>
+          <span className="block" style={{ color: "#B5532C" }}>Stack.</span>
         </motion.h1>
 
         {/* Sub-headline — condensed to one line for faster scan */}
@@ -395,7 +396,7 @@ function Hero() {
           transition={{ delay: 0.4, duration: 0.7 }}
           className="text-[15px] md:text-[17px] text-neutral-400 leading-[1.55] mb-10 max-w-2xl mx-auto"
         >
-          137 verified agents. 39+ models. Built for enterprises that can&apos;t afford to get AI wrong.
+          198 verified agents. 39+ models. Built for enterprises that can&apos;t afford to get AI wrong.
         </motion.p>
 
         {/* CTAs */}
@@ -712,7 +713,7 @@ function FinalCTA() {
         </h2>
 
         <p className="text-[14px] md:text-[15px] text-neutral-400 mb-10 leading-[1.65] max-w-lg mx-auto">
-          No credit card. 137 agents in 60 seconds. 50 runs reset every month.
+          No credit card. 198 agents in 60 seconds. 50 runs reset every month.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8">

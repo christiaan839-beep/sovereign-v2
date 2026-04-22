@@ -34,7 +34,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const description =
     agent.tagline ??
     agent.description ??
-    `${agent.displayName} is one of 137 specialized agents on the Sovereign Matrix platform.`;
+    `${agent.displayName} is one of 198 specialized agents on the Sovereign Matrix platform.`;
 
   return {
     title,

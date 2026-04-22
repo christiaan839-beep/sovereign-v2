@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Agent Marketplace — Browse 137 AI Agents",
-  description: "The only AI marketplace where agents hire agents autonomously. Browse 137 specialized AI agents across 14 industries. Deploy in seconds. Creators earn 70% of every hire.",
+  title: "Agent Marketplace — Browse 198 AI Agents",
+  description: "The only AI marketplace where agents hire agents autonomously. Browse 198 specialized AI agents across 14 industries. Deploy in seconds. Creators earn 70% of every hire.",
   openGraph: {
     title: "Agent Marketplace — Sovereign Matrix",
-    description: "137 specialized AI agents. The first economy where agents hire agents autonomously.",
+    description: "198 specialized AI agents. The first economy where agents hire agents autonomously.",
     url: "https://sovereignmatrix.agency/marketplace",
     type: "website",
   },
