@@ -22,6 +22,7 @@
 
 import Link from "next/link";
 import type { MarketplaceAgentView } from "@/lib/marketplace-query";
+import { InvokePanel } from "./InvokePanel";
 import { ManifestTools } from "./ManifestTools";
 import { ViewTracker } from "./ViewTracker";
 
@@ -152,6 +153,13 @@ export function SamAgentDetail({ agent }: { agent: MarketplaceAgentView }) {
             70% of every invocation goes to the creator.
           </span>
         </div>
+
+        {/* Invoke panel — the revenue-making moment of the marketplace. */}
+        <InvokePanel
+          slugOrId={agent.slug ?? agent.id}
+          agentName={agent.name}
+          pricingCents={agent.pricingCents}
+        />
 
         {/* Guarantees */}
         {agent.guarantees.length > 0 && (
