@@ -54,8 +54,17 @@ export function InvokePanel({ slugOrId, agentName, pricingCents }: Props) {
     }
     setPhase("running");
     setErrMsg("");
+    setResult("");
 
     try {
+      // Stream first; fall back to the non-streaming endpoint if the
+      // SSE response itself failed (e.g. proxy strips streams).
+      const streamed = await runStreaming(trimmed, setResult, setEarnings);
+      if (streamed === "ok") {
+        setPhase("success");
+        return;
+      }
+      // Fallback — some infra strips event-stream responses.
       const res = await fetch("/api/agents/invoke", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -78,6 +87,65 @@ export function InvokePanel({ slugOrId, agentName, pricingCents }: Props) {
       setErrMsg("Network error. Try again.");
       setPhase("error");
     }
+  }
+
+  async function runStreaming(
+    trimmed: string,
+    appendResult: (fn: (prev: string) => string) => void,
+    setEarningsCb: (e: Earnings) => void,
+  ): Promise<"ok" | "fallback"> {
+    const res = await fetch("/api/agents/invoke/stream", {
+      method: "POST",
+      headers: { "content-type": "application/json", Accept: "text/event-stream" },
+      body: JSON.stringify({ agent: slugOrId, input: trimmed }),
+    });
+    if (!res.ok || !res.body) return "fallback";
+    const ctype = res.headers.get("content-type") ?? "";
+    if (!ctype.includes("text/event-stream")) return "fallback";
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let erroredOut = false;
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      let idx = buffer.indexOf("\n\n");
+      while (idx !== -1) {
+        const frame = buffer.slice(0, idx);
+        buffer = buffer.slice(idx + 2);
+        idx = buffer.indexOf("\n\n");
+        // Parse "event: X\ndata: Y"
+        const eventMatch = frame.match(/^event:\s*(.+)$/m);
+        const dataMatch = frame.match(/^data:\s*(.+)$/m);
+        if (!eventMatch || !dataMatch) continue;
+        const eventType = eventMatch[1].trim();
+        let payload: unknown;
+        try {
+          payload = JSON.parse(dataMatch[1]);
+        } catch {
+          continue;
+        }
+        if (eventType === "token") {
+          const t = (payload as { text?: string }).text ?? "";
+          appendResult((prev) => prev + t);
+        } else if (eventType === "done") {
+          const e = (payload as { earnings?: Earnings }).earnings;
+          if (e) setEarningsCb(e);
+        } else if (eventType === "error") {
+          const msg = (payload as { message?: string }).message ?? "stream error";
+          setErrMsg(msg);
+          erroredOut = true;
+        }
+      }
+    }
+    if (erroredOut) {
+      setPhase("error");
+      return "ok"; // handled (don't fall back further)
+    }
+    return "ok";
   }
 
   const isRunning = phase === "running";
