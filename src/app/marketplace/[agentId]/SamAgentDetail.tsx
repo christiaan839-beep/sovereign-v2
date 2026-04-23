@@ -23,6 +23,7 @@
 import Link from "next/link";
 import type { MarketplaceAgentView } from "@/lib/marketplace-query";
 import { ManifestTools } from "./ManifestTools";
+import { ViewTracker } from "./ViewTracker";
 
 function formatPrice(cents: number): string {
   if (cents === 0) return "Free";
@@ -55,6 +56,8 @@ export function SamAgentDetail({ agent }: { agent: MarketplaceAgentView }) {
 
   return (
     <div className="min-h-screen" style={{ background: "var(--ed-bg)" }}>
+      {/* Privacy-minimal view tracking — anonymous UUID, no cookies. */}
+      <ViewTracker agentId={agent.id} slug={agent.slug} />
       <article className="max-w-5xl mx-auto px-6 pt-14 pb-24">
         {/* Breadcrumb */}
         <nav className="ed-caption mb-10">

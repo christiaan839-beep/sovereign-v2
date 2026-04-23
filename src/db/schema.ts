@@ -347,6 +347,27 @@ export const marketplaceAgents = pgTable("marketplace_agents", {
 ]);
 
 // ═══════════════════════════════════════════
+// Marketplace View Tracking (privacy-minimal)
+// ═══════════════════════════════════════════
+// See drizzle/0027_marketplace_agent_views.sql. No IP, no raw UA, no
+// referrer path — only the host. Identity is an anonymous UUID
+// minted client-side in localStorage.
+export const marketplaceAgentViews = pgTable("marketplace_agent_views", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  agentId: uuid("agent_id")
+    .notNull()
+    .references(() => marketplaceAgents.id, { onDelete: "cascade" }),
+  slug: text("slug"),
+  anonymousId: text("anonymous_id").notNull(),
+  referrerHost: text("referrer_host"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => [
+  index("idx_views_agent_time").on(table.agentId, table.createdAt),
+  index("idx_views_time").on(table.createdAt),
+  index("idx_views_anon_agent").on(table.anonymousId, table.agentId, table.createdAt),
+]);
+
+// ═══════════════════════════════════════════
 // Stripe Subscriptions
 // ═══════════════════════════════════════════
 
