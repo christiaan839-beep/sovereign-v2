@@ -110,6 +110,7 @@ export const AGENT_REGISTRY: Record<string, () => Promise<RouteModule>> = {
   "inbox-triage": () => import("@/app/api/_agents/inbox-triage/route"),
   "incident-responder": () => import("@/app/api/_agents/incident-responder/route"),
   "invoice-extractor": () => import("@/app/api/_agents/invoice-extractor/route"),
+  "invoice-ocr": () => import("@/app/api/_agents/invoice-ocr/route"),
   "leads": () => import("@/app/api/_agents/leads/route"),
   "listing-writer": () => import("@/app/api/_agents/listing-writer/route"),
   "literature-review": () => import("@/app/api/_agents/literature-review/route"),
