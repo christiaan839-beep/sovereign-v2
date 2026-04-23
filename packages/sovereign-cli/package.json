@@ -38,7 +38,7 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "@sovereignmatrix/agent-validator": "workspace:*"
+    "@sovereignmatrix/agent-validator": "^1.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

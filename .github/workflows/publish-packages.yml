@@ -1,0 +1,102 @@
+name: Publish packages to npm
+
+# Publish either @sovereignmatrix/agent-validator or @sovereignmatrix/cli
+# (or both) on demand. Triggered by pushing a tag of the form:
+#
+#   sam-validator-v1.0.1     → publishes packages/agent-validator
+#   sam-cli-v1.0.1           → publishes packages/sovereign-cli
+#   sam-all-v1.0.1           → publishes both
+#
+# Or manually via workflow_dispatch with the target input.
+#
+# Required repo secret:
+#   NPM_TOKEN   — classic "Automation" token from an npm account
+#                 with publish rights to the @sovereignmatrix scope.
+#
+# Security note: every template expression used in a `run:` shell
+# block is isolated through env: first. This prevents workflow
+# injection via tag names, refs, or inputs. See:
+#   https://github.blog/security/vulnerability-research/how-to-catch-github-actions-workflow-injections-before-attackers-do/
+
+on:
+  push:
+    tags:
+      - "sam-validator-v*"
+      - "sam-cli-v*"
+      - "sam-all-v*"
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Which package(s) to publish"
+        required: true
+        default: "both"
+        type: choice
+        options:
+          - validator
+          - cli
+          - both
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # for provenance attestation
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+
+      # Resolve the target from either the pushed tag or the dispatch
+      # input. Both values are first placed in env: so they never
+      # interpolate directly into the shell.
+      - name: Resolve target
+        id: target
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          DISPATCH_TARGET: ${{ inputs.target }}
+          REF_NAME: ${{ github.ref_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            case "$DISPATCH_TARGET" in
+              validator|cli|both) echo "target=$DISPATCH_TARGET" >> "$GITHUB_OUTPUT" ;;
+              *) echo "::error::Unexpected dispatch target '$DISPATCH_TARGET'"; exit 1 ;;
+            esac
+          else
+            case "$REF_NAME" in
+              sam-validator-v*) echo "target=validator" >> "$GITHUB_OUTPUT" ;;
+              sam-cli-v*)       echo "target=cli"       >> "$GITHUB_OUTPUT" ;;
+              sam-all-v*)       echo "target=both"      >> "$GITHUB_OUTPUT" ;;
+              *) echo "::error::Tag did not match any expected pattern"; exit 1 ;;
+            esac
+          fi
+
+      - name: Publish validator
+        if: ${{ steps.target.outputs.target == 'validator' || steps.target.outputs.target == 'both' }}
+        working-directory: packages/agent-validator
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: "true"
+        run: |
+          set -euo pipefail
+          npm install --no-audit --no-fund
+          npm run build
+          npm test
+          npm publish --access public
+
+      - name: Publish CLI
+        if: ${{ steps.target.outputs.target == 'cli' || steps.target.outputs.target == 'both' }}
+        working-directory: packages/sovereign-cli
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: "true"
+        run: |
+          set -euo pipefail
+          npm install --no-audit --no-fund
+          npm run build
+          npm publish --access public
