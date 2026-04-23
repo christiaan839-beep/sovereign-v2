@@ -31,6 +31,7 @@
 
 import { ai } from "@/lib/ai";
 import { createLogger } from "@/lib/logger";
+import { runNemoSafety } from "@/lib/nemo-safety";
 
 const log = createLogger("submission-safety");
 
@@ -297,34 +298,102 @@ Return ONLY JSON: {"approved": true|false, "safetyScore": 0-100, "reason": "..."
 }
 
 /**
- * Run the paid LLM-powered safety layers. Caller should only invoke
- * this when the approval policy has decided to auto-publish — queued
- * submissions will be reviewed by a human and don't need the cost.
+ * Run the deep LLM-powered safety layers before auto-publish.
  *
- * Fail-open on provider errors: individual LLM failures DO NOT block
- * auto-publish. The synchronous layer + human post-hoc audit are the
- * safety net. This keeps a Claude outage from halting the marketplace.
+ * Provider is selectable via the SOVEREIGN_SAFETY_PROVIDER env var:
+ *
+ *   "nemoguard" (default) — three free NIM safety models run in
+ *                           parallel (content + jailbreak + topic).
+ *                           Zero AI cost. ~700ms p50.
+ *
+ *   "claude"              — legacy Claude critic + legacy jailbreak probe.
+ *                           ~$0.01/call. ~3s p50. Kept for parity
+ *                           during rollouts of new NemoGuard versions.
+ *
+ *   "both"                — run both stacks and require unanimous pass.
+ *                           Maximum safety, maximum cost. Use only
+ *                           during NemoGuard eval windows.
+ *
+ * Fail-open on provider errors: individual layer failures do not block
+ * auto-publish. Synchronous layer + human post-hoc audit are the
+ * safety net.
  */
+export type DeepSafetyProvider = "nemoguard" | "claude" | "both";
+
+export function activeDeepSafetyProvider(): DeepSafetyProvider {
+  const raw = process.env.SOVEREIGN_SAFETY_PROVIDER;
+  if (raw === "claude" || raw === "both" || raw === "nemoguard") return raw;
+  return "nemoguard";
+}
+
 export async function runDeepSafety(
   input: SafetyInput,
+  override?: DeepSafetyProvider,
 ): Promise<DeepSafetyResult> {
-  const [jailbreak, critic] = await Promise.all([
+  const provider = override ?? activeDeepSafetyProvider();
+
+  if (provider === "nemoguard") {
+    const nemo = await runNemoSafety(input);
+    return {
+      passed: nemo.passed,
+      safetyScore: nemo.safetyScore,
+      reason: nemo.reason,
+      layers: {
+        // Surface NemoGuard's contributing layers under the same
+        // jailbreakProbe + claudeCritic keys so downstream renderers
+        // (admin dashboard, logs) don't branch on the provider.
+        jailbreakProbe: nemo.layers.jailbreakProbe,
+        claudeCritic: {
+          passed: nemo.layers.contentSafety.passed && nemo.layers.topicControl.passed,
+          safetyScore: Math.min(
+            nemo.layers.contentSafety.score,
+            nemo.layers.topicControl.score,
+          ),
+          reason: [
+            nemo.layers.contentSafety.reason,
+            nemo.layers.topicControl.reason,
+          ].filter(Boolean).join(" | ") || undefined,
+        },
+      },
+    };
+  }
+
+  if (provider === "claude") {
+    const [jailbreak, critic] = await Promise.all([
+      runJailbreakProbe(input.systemPrompt),
+      runClaudeCritic(input),
+    ]);
+    return {
+      passed: jailbreak.passed && critic.passed,
+      safetyScore: critic.safetyScore,
+      reason: !jailbreak.passed || !critic.passed
+        ? [jailbreak.reason, critic.reason].filter(Boolean).join(" | ")
+        : undefined,
+      layers: { jailbreakProbe: jailbreak, claudeCritic: critic },
+    };
+  }
+
+  // "both" — maximum-rigor mode. Require both stacks to pass.
+  const [nemo, jailbreak, critic] = await Promise.all([
+    runNemoSafety(input),
     runJailbreakProbe(input.systemPrompt),
     runClaudeCritic(input),
   ]);
-
-  const passed = jailbreak.passed && critic.passed;
-  const safetyScore = critic.safetyScore;
+  const passed = nemo.passed && jailbreak.passed && critic.passed;
+  const safetyScore = Math.min(nemo.safetyScore, critic.safetyScore);
   const reason = !passed
-    ? [jailbreak.reason, critic.reason].filter(Boolean).join(" | ")
+    ? [nemo.reason, jailbreak.reason, critic.reason].filter(Boolean).join(" | ")
     : undefined;
-
   return {
     passed,
     safetyScore,
     reason,
     layers: {
-      jailbreakProbe: jailbreak,
+      jailbreakProbe: {
+        passed: jailbreak.passed && nemo.layers.jailbreakProbe.passed,
+        reason: [jailbreak.reason, nemo.layers.jailbreakProbe.reason]
+          .filter(Boolean).join(" | ") || undefined,
+      },
       claudeCritic: critic,
     },
   };
