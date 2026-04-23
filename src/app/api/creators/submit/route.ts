@@ -25,6 +25,10 @@
 
 import { NextResponse } from "next/server";
 import {
+  checkIpRateLimit,
+  extractClientIp,
+} from "@/lib/api-guard";
+import {
   evaluateSubmission,
   type ApprovalDecision,
   type CreatorContext,
@@ -33,7 +37,13 @@ import {
 import {
   countPriorApprovals,
   persistSubmission,
+  synthesizeSystemPromptFromManifest,
 } from "@/lib/creator-submission-persistence";
+import {
+  runDeepSafety,
+  runSyncSafety,
+  type SafetyInput,
+} from "@/lib/submission-safety";
 
 /* ─── SAM v1.0 validator (server-side mirror) ──────────────────── */
 /*
@@ -180,6 +190,32 @@ function nextStepsFor(decision: ApprovalDecision, slug: string): string[] {
 /* ─── Handler ──────────────────────────────────────────────────── */
 
 export async function POST(request: Request): Promise<Response> {
+  // IP-keyed rate limit. This endpoint is public + unauthenticated by
+  // design (creators can submit before signing up), so a user-ID key
+  // isn't available. 10 submissions/hour/IP — spam bots hit the wall
+  // long before they cost us a meaningful Claude bill.
+  const ip = extractClientIp(request.headers);
+  const gate = checkIpRateLimit(ip, {
+    bucket: "creators-submit",
+    windowMs: 60 * 60 * 1000,
+    max: 10,
+  });
+  if (!gate.allowed) {
+    return NextResponse.json(
+      {
+        error: "Too many submissions from this IP. Try again later.",
+        resetIn: gate.resetIn,
+      },
+      {
+        status: 429,
+        headers: {
+          "Cache-Control": "no-store",
+          "Retry-After": String(Math.ceil(gate.resetIn / 1000)),
+        },
+      },
+    );
+  }
+
   let manifest: unknown;
   let contactEmail: string | null = null;
 
@@ -229,7 +265,65 @@ export async function POST(request: Request): Promise<Response> {
   const validManifest = manifest as Record<string, unknown>;
   const manifestCtx = buildManifestContext(validManifest);
   const creatorCtx = await buildCreatorContext(contactEmail);
+
+  // Build the safety input once — used for both sync + (conditional) deep checks.
+  const guaranteesArr: string[] = Array.isArray(validManifest.guarantees)
+    ? (validManifest.guarantees as unknown[]).map((g) => String(g))
+    : [];
+  const purposeStr = String(validManifest.purpose ?? "");
+  const safetyInput: SafetyInput = {
+    displayName: manifestCtx.displayName,
+    purpose: purposeStr,
+    guarantees: guaranteesArr,
+    pricingCents: manifestCtx.pricingCents ?? 0,
+    systemPrompt: synthesizeSystemPromptFromManifest(
+      manifestCtx.displayName,
+      purposeStr,
+      guaranteesArr,
+    ),
+  };
+
+  // Layer 1-3: synchronous safety (always runs, ~$0). Hard-rejects if
+  // the submission contains PII / jailbreak boilerplate / out-of-bounds
+  // fields. These are the kind of issues a human reviewer would also
+  // reject — blocking at the gate saves everyone time.
+  const syncSafety = runSyncSafety(safetyInput);
+  if (!syncSafety.passed) {
+    return NextResponse.json(
+      {
+        error: "Submission failed safety review.",
+        reason: syncSafety.reason,
+        code: syncSafety.code,
+        field: syncSafety.field,
+      },
+      { status: 400, headers: { "Cache-Control": "no-store" } },
+    );
+  }
+
+  // Policy decision: auto-publish vs queue.
   const decision = evaluateSubmission(manifestCtx, creatorCtx);
+  let effectiveOutcome = decision.outcome;
+  let effectiveReason = decision.reason;
+  let deepSafetyScore: number | null = null;
+
+  // Layer 4-5: deep LLM safety ONLY when the policy decided to
+  // auto-publish. Queued submissions will be reviewed by a human and
+  // don't need the expensive check.
+  //
+  // If deep safety fails, we DOWNGRADE to queue rather than reject —
+  // the submission is still recorded (so the creator has a reference
+  // ID), it just goes into the review queue with the failure reason
+  // annotated. This protects the creator UX: a false positive from the
+  // LLM critic becomes a 24-hour wait, not a hard rejection.
+  if (decision.outcome === "auto-publish") {
+    const deep = await runDeepSafety(safetyInput);
+    deepSafetyScore = deep.safetyScore;
+    if (!deep.passed) {
+      effectiveOutcome = "queue";
+      effectiveReason = `auto-publish blocked by deep safety (${deep.reason ?? "LLM critic"}); queued for human review`;
+    }
+  }
+
   const referenceId = generateReferenceId();
   const receivedAt = new Date().toISOString();
 
@@ -240,22 +334,22 @@ export async function POST(request: Request): Promise<Response> {
     referenceId,
     slug: manifestCtx.slug,
     displayName: manifestCtx.displayName,
-    purpose: String(validManifest.purpose ?? ""),
+    purpose: purposeStr,
     samCategory: manifestCtx.category,
     pricingCents: manifestCtx.pricingCents ?? 0,
     contactEmail,
-    guarantees: Array.isArray(validManifest.guarantees)
-      ? (validManifest.guarantees as unknown[]).map((g) => String(g))
-      : [],
+    guarantees: guaranteesArr,
     manifestRaw: validManifest,
     policy: decision.policy,
-    reason: decision.reason,
-    autoPublished: decision.outcome === "auto-publish",
+    reason: effectiveReason,
+    autoPublished: effectiveOutcome === "auto-publish",
   });
 
   // Structured log — one line per submission, parseable by any log
   // aggregator. `persisted: false` + a `reason` in the log tells
   // operators which submissions might need hand-processing.
+  // `downgradedByDeepSafety` flags rows where auto-publish was blocked
+  // and is the most important signal for post-hoc audit.
   console.log(
     JSON.stringify({
       event: "creator_submission",
@@ -267,19 +361,29 @@ export async function POST(request: Request): Promise<Response> {
       contactEmail: contactEmail ?? "(not provided)",
       priorApprovedCount: creatorCtx.priorApprovedCount,
       policy: decision.policy,
-      outcome: decision.outcome,
-      reason: decision.reason,
+      originalOutcome: decision.outcome,
+      effectiveOutcome,
+      downgradedByDeepSafety:
+        decision.outcome === "auto-publish" && effectiveOutcome !== "auto-publish",
+      deepSafetyScore,
+      reason: effectiveReason,
       persisted,
       receivedAt,
     }),
   );
 
-  const status = decision.outcome === "auto-publish" ? "live" : "queued";
-  const httpStatus = decision.outcome === "auto-publish" ? 201 : 202;
+  const status = effectiveOutcome === "auto-publish" ? "live" : "queued";
+  const httpStatus = effectiveOutcome === "auto-publish" ? 201 : 202;
   const liveUrl =
-    decision.outcome === "auto-publish"
+    effectiveOutcome === "auto-publish"
       ? `/marketplace/${manifestCtx.slug}`
       : undefined;
+
+  const effectiveDecision: ApprovalDecision = {
+    outcome: effectiveOutcome,
+    policy: decision.policy,
+    reason: effectiveReason,
+  };
 
   return NextResponse.json(
     {
@@ -287,9 +391,10 @@ export async function POST(request: Request): Promise<Response> {
       referenceId,
       status,
       policy: decision.policy,
-      reason: decision.reason,
+      reason: effectiveReason,
       liveUrl,
-      nextSteps: nextStepsFor(decision, manifestCtx.slug),
+      safetyScore: deepSafetyScore,
+      nextSteps: nextStepsFor(effectiveDecision, manifestCtx.slug),
     },
     {
       status: httpStatus,

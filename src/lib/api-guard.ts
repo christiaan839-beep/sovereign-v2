@@ -54,6 +54,83 @@ setInterval(() => {
   }
 }, 300_000);
 
+// ─── IP-keyed rate limiting (for public/unauthenticated endpoints) ─
+
+/**
+ * Extract the caller's IP from standard proxy headers. Order:
+ *   1. x-forwarded-for (first entry — Vercel + most CDNs)
+ *   2. x-real-ip       (some reverse proxies)
+ *   3. "unknown"       (shared bucket — safer than skipping the check)
+ *
+ * Exported so test fixtures can exercise the parsing logic directly.
+ */
+export function extractClientIp(headers: Headers): string {
+  const xff = headers.get("x-forwarded-for");
+  if (xff) {
+    const first = xff.split(",")[0]?.trim();
+    if (first) return first;
+  }
+  const realIp = headers.get("x-real-ip");
+  if (realIp) return realIp.trim();
+  return "unknown";
+}
+
+export interface IpRateLimitOptions {
+  /** Namespace so different endpoints don't share buckets. */
+  bucket: string;
+  /** Window length in ms. Defaults to 60 minutes. */
+  windowMs?: number;
+  /** Max requests per window. Defaults to 10. */
+  max?: number;
+}
+
+/**
+ * IP-keyed sliding window rate limit — intended for PUBLIC endpoints
+ * where there's no userId to key against (e.g. /api/creators/submit
+ * is unauthenticated by design).
+ *
+ * Returns `{ allowed: false }` once the quota is exceeded. Callers
+ * should respond with 429 + a Retry-After header.
+ *
+ * Single-instance in-memory store. In a multi-region Vercel setup
+ * each instance has its own bucket, which under-counts but never
+ * over-counts — good enough for spam prevention. Swap to Upstash
+ * Redis when UPSTASH_REDIS_REST_URL is set for cross-instance accuracy.
+ */
+export function checkIpRateLimit(
+  ip: string,
+  options: IpRateLimitOptions,
+): { allowed: boolean; remaining: number; resetIn: number } {
+  const windowMs = options.windowMs ?? 60 * 60 * 1000; // 1 hour
+  const max = options.max ?? 10;
+  const key = `${options.bucket}:${ip}`;
+
+  const now = Date.now();
+  const entry = rateLimitStore.get(key);
+
+  if (!entry || now > entry.resetTime) {
+    rateLimitStore.set(key, { count: 1, resetTime: now + windowMs });
+    return { allowed: true, remaining: max - 1, resetIn: windowMs };
+  }
+
+  entry.count++;
+  const remaining = Math.max(0, max - entry.count);
+  const resetIn = entry.resetTime - now;
+
+  if (entry.count > max) {
+    return { allowed: false, remaining: 0, resetIn };
+  }
+  return { allowed: true, remaining, resetIn };
+}
+
+/**
+ * Test-only: clear the in-memory rate-limit store between test cases
+ * so each test starts with a fresh quota.
+ */
+export function _resetRateLimitStoreForTests(): void {
+  rateLimitStore.clear();
+}
+
 // ─── Input Validation ───────────────────────────────────────────
 
 export function sanitizeString(input: unknown, maxLength = 2000): string {
