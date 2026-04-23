@@ -39,6 +39,7 @@ import {
   persistSubmission,
   synthesizeSystemPromptFromManifest,
 } from "@/lib/creator-submission-persistence";
+import { notifySubmissionReceived } from "@/lib/creator-emails";
 import {
   runDeepSafety,
   runSyncSafety,
@@ -384,6 +385,23 @@ export async function POST(request: Request): Promise<Response> {
     policy: decision.policy,
     reason: effectiveReason,
   };
+
+  // Fire-and-forget acknowledgement email. Creators get the reference
+  // ID + status URL in their inbox even if they close the browser tab
+  // before reading the success panel. Silent degradation without
+  // RESEND_API_KEY — the HTTP response is still authoritative.
+  if (contactEmail) {
+    void notifySubmissionReceived({
+      to: contactEmail,
+      displayName: manifestCtx.displayName,
+      referenceId,
+      effectiveOutcome,
+      liveUrl:
+        effectiveOutcome === "auto-publish"
+          ? `/marketplace/${manifestCtx.slug}`
+          : undefined,
+    });
+  }
 
   return NextResponse.json(
     {

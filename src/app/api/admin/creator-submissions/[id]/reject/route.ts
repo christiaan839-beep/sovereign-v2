@@ -12,6 +12,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import { rejectSamSubmission } from "@/lib/admin-submissions";
+import { notifyRejected } from "@/lib/creator-emails";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -62,6 +63,18 @@ export async function POST(
   }
 
   if (result.ok && result.row) {
+    // Fire-and-forget: tell the creator why, with the reason the admin
+    // typed. Rejection emails are the most-read transactional email in
+    // any marketplace — creators parse them carefully. `trimmed` is
+    // the same validated string that went into the DB.
+    void notifyRejected({
+      to: result.row.authorEmail,
+      displayName: result.row.name,
+      referenceId: result.row.referenceId ?? "",
+      reason: trimmed,
+      reviewedBy: gate.userId,
+    });
+
     return NextResponse.json(
       { success: true, submission: result.row },
       { status: 200, headers: { "Cache-Control": "no-store" } },

@@ -11,6 +11,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import { approveSamSubmission } from "@/lib/admin-submissions";
+import { notifyApproved } from "@/lib/creator-emails";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -28,6 +29,18 @@ export async function POST(
   const result = await approveSamSubmission(id, gate.userId);
 
   if (result.ok && result.row) {
+    // Fire-and-forget email. We don't await Promise rejection to the
+    // HTTP response — the admin action is already persisted; a
+    // delivery failure is operator-noise, not blocking. Degrades
+    // silently when RESEND_API_KEY is unset.
+    void notifyApproved({
+      to: result.row.authorEmail,
+      displayName: result.row.name,
+      slug: result.row.slug,
+      referenceId: result.row.referenceId ?? "",
+      reviewedBy: gate.userId,
+    });
+
     return NextResponse.json(
       { success: true, submission: result.row },
       { status: 200, headers: { "Cache-Control": "no-store" } },

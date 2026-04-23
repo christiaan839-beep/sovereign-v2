@@ -347,6 +347,50 @@ export const marketplaceAgents = pgTable("marketplace_agents", {
 ]);
 
 // ═══════════════════════════════════════════
+// Creator Earnings Ledger
+// ═══════════════════════════════════════════
+// See drizzle/0028_creator_earnings.sql. Immutable append-only ledger;
+// one row per agent invocation. The 70/30 split (creator / platform)
+// is stored as cents per row for audit + query speed.
+export const creatorEarnings = pgTable("creator_earnings", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  agentId: uuid("agent_id")
+    .notNull()
+    .references(() => marketplaceAgents.id, { onDelete: "cascade" }),
+  creatorEmail: text("creator_email").notNull(),
+  invocationId: text("invocation_id"),
+
+  grossCents: integer("gross_cents").notNull(),
+  creatorCents: integer("creator_cents").notNull(),
+  platformCents: integer("platform_cents").notNull(),
+
+  status: text("status").notNull().default("pending"), // pending | paid | reversed
+  payoutBatchId: uuid("payout_batch_id"),
+
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  paidAt: timestamp("paid_at", { withTimezone: true }),
+}, (table) => [
+  index("idx_earnings_creator").on(table.creatorEmail, table.createdAt),
+  index("idx_earnings_agent").on(table.agentId, table.createdAt),
+  index("idx_earnings_status").on(table.status),
+  index("idx_earnings_batch").on(table.payoutBatchId),
+]);
+
+export const creatorPayoutBatches = pgTable("creator_payout_batches", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  creatorEmail: text("creator_email").notNull(),
+  totalCents: integer("total_cents").notNull(),
+  stripeTransferId: text("stripe_transfer_id"),
+  status: text("status").notNull().default("pending"), // pending | sent | failed
+  periodStart: date("period_start").notNull(),
+  periodEnd: date("period_end").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  index("idx_payout_batch_creator").on(table.creatorEmail, table.createdAt),
+  index("idx_payout_batch_status").on(table.status),
+]);
+
+// ═══════════════════════════════════════════
 // Marketplace View Tracking (privacy-minimal)
 // ═══════════════════════════════════════════
 // See drizzle/0027_marketplace_agent_views.sql. No IP, no raw UA, no
