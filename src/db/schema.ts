@@ -323,6 +323,15 @@ export const marketplaceAgents = pgTable("marketplace_agents", {
   // See drizzle/0026_marketplace_slug.sql.
   slug: text("slug"),
 
+  // Semantic-search embedding (migration 0029). Produced by
+  // nvidia/llama-3.2-nv-embedqa-1b-v2 (2048-dim). Stored as JSONB
+  // because pg_vector is opt-in on Neon; we run cosine similarity
+  // in app code for now. When agent count exceeds ~10k, migrate to
+  // pg_vector without touching call sites.
+  embedding: jsonb("embedding"),
+  embeddingModel: text("embedding_model"),
+  embeddingUpdatedAt: timestamp("embedding_updated_at", { withTimezone: true }),
+
   // SAM v1.0 submission fields (null for rows created pre-SAM / via
   // /api/marketplace/submit). See drizzle/0025_sam_submission_fields.sql
   // for the migration. `submissionSource` discriminates the entry point:

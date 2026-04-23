@@ -14,6 +14,10 @@ import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { marketplaceAgents } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
+import {
+  agentCorpusText,
+  embedAndStoreAgent,
+} from "@/lib/marketplace-search";
 
 const log = createLogger("admin-submissions");
 
@@ -192,6 +196,20 @@ export async function approveSamSubmission(
     });
 
     const fresh = await getSamSubmission(id);
+    if (fresh) {
+      // Fire-and-forget embedding. Failure here doesn't block approval
+      // — the agent is live, it's just not yet semantic-searchable.
+      // A nightly backfill can catch rows without embeddings.
+      void embedAndStoreAgent({
+        id: fresh.id,
+        corpusText: agentCorpusText({
+          name: fresh.name,
+          description: fresh.description,
+          category: fresh.category,
+          manifestRaw: fresh.manifestRaw,
+        }),
+      });
+    }
     return fresh ? { ok: true, row: fresh } : { ok: false, error: "insert_failed" };
   } catch (err) {
     log.error("approveSamSubmission failed", {

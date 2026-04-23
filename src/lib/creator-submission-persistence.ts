@@ -34,6 +34,7 @@ import { and, count, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { marketplaceAgents } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
+import { agentCorpusText, embedAndStoreAgent } from "@/lib/marketplace-search";
 
 const log = createLogger("creator-submission-persistence");
 
@@ -155,27 +156,46 @@ export async function persistSubmission(
   const marketplaceCategory = mapSamCategoryToMarketplace(sub.samCategory);
 
   try {
-    await db.insert(marketplaceAgents).values({
-      authorEmail: sub.contactEmail ?? "anonymous@sovereignmatrix.agency",
-      authorName: "Anonymous Creator",
-      creatorUserId: null,
-      name: sub.displayName,
-      description: sub.purpose,
-      category: marketplaceCategory,
-      systemPrompt,
-      tags: JSON.stringify([sub.samCategory, "sam-v1"]),
-      isPublic,
-      pricePerRun: sub.pricingCents,
-      verificationStatus,
-      verifiedAt,
-      slug: sub.slug,
-      samVersion: "1.0",
-      manifestRaw: sub.manifestRaw,
-      referenceId: sub.referenceId,
-      submissionPolicy: sub.policy,
-      submissionReason: sub.reason,
-      submissionSource: "sam-v1",
-    });
+    const inserted = await db
+      .insert(marketplaceAgents)
+      .values({
+        authorEmail: sub.contactEmail ?? "anonymous@sovereignmatrix.agency",
+        authorName: "Anonymous Creator",
+        creatorUserId: null,
+        name: sub.displayName,
+        description: sub.purpose,
+        category: marketplaceCategory,
+        systemPrompt,
+        tags: JSON.stringify([sub.samCategory, "sam-v1"]),
+        isPublic,
+        pricePerRun: sub.pricingCents,
+        verificationStatus,
+        verifiedAt,
+        slug: sub.slug,
+        samVersion: "1.0",
+        manifestRaw: sub.manifestRaw,
+        referenceId: sub.referenceId,
+        submissionPolicy: sub.policy,
+        submissionReason: sub.reason,
+        submissionSource: "sam-v1",
+      })
+      .returning({ id: marketplaceAgents.id });
+
+    // Compute + store the search embedding ONLY when the agent is
+    // actually live (auto-published). Queued submissions get an
+    // embedding at admin-approve time. Fire-and-forget: embedding
+    // failure doesn't block the 201 response.
+    if (sub.autoPublished && inserted[0]?.id) {
+      void embedAndStoreAgent({
+        id: inserted[0].id,
+        corpusText: agentCorpusText({
+          name: sub.displayName,
+          description: sub.purpose,
+          category: marketplaceCategory,
+          manifestRaw: sub.manifestRaw,
+        }),
+      });
+    }
     return true;
   } catch (err) {
     log.error("Failed to persist SAM submission", {
