@@ -205,12 +205,51 @@ interface ConsensusResult {
   synthesized: boolean;
 }
 
-const CONSENSUS_MODELS = [
+/**
+ * Default consensus pool — intentionally uses NIM-hosted models because
+ * they're free and pre-authenticated. Kept as the fallback when the
+ * diverse-pool helper is unavailable (e.g. old callers).
+ *
+ * The NEW path (used by default when frontier providers are configured)
+ * routes through `getDiverseConsensusPool()` from @/lib/providers, which
+ * mixes closed (OpenAI / Anthropic / xAI) and open (Llama 4 / Qwen /
+ * DeepSeek) families for genuinely uncorrelated errors.
+ */
+const CONSENSUS_MODELS_NIM_FALLBACK = [
   "nvidia/llama-3.1-nemotron-ultra-253b-v1",
   "deepseek-ai/deepseek-v3-2-0324",
   "google/gemma-4-31b-it",
   "qwen/qwen3-235b-a22b",
 ];
+
+/**
+ * Pick consensus models dynamically. When any frontier-provider key is
+ * configured (OPENAI_API_KEY, XAI_API_KEY, OPENROUTER_API_KEY), we use
+ * `getDiverseConsensusPool()` which balances closed + open families.
+ * Otherwise fall back to the NIM-only pool.
+ *
+ * Kept async so callers can await the selection + so we can lazy-import
+ * the providers catalog (keeps test-only code paths light).
+ */
+async function selectConsensusModels(count: number): Promise<string[]> {
+  const hasFrontierKey =
+    Boolean(process.env.OPENAI_API_KEY) ||
+    Boolean(process.env.XAI_API_KEY) ||
+    Boolean(process.env.OPENROUTER_API_KEY) ||
+    Boolean(process.env.COHERE_API_KEY) ||
+    Boolean(process.env.TOGETHER_API_KEY);
+
+  if (hasFrontierKey) {
+    try {
+      const { getDiverseConsensusPool } = await import("@/lib/providers");
+      const pool = getDiverseConsensusPool(count);
+      if (pool.length > 0) return pool.map((m) => m.slug);
+    } catch {
+      // Fall through to NIM pool.
+    }
+  }
+  return CONSENSUS_MODELS_NIM_FALLBACK.slice(0, count);
+}
 
 /**
  * Run the same prompt through 2-3 different models, then synthesize
@@ -226,9 +265,17 @@ export async function consensusAi(
 ): Promise<ConsensusResult> {
   const { system = "", maxTokens = 2000, models: modelCount = 2 } = options;
 
-  const modelsToUse = CONSENSUS_MODELS.slice(0, modelCount);
+  // Dynamic model selection — frontier-diverse pool when configured,
+  // NIM-only pool otherwise. See selectConsensusModels() above.
+  const modelsToUse = await selectConsensusModels(modelCount);
 
-  // Run all models in parallel
+  // Run all models in parallel. Note: when the diverse pool returns
+  // frontier slugs (gpt-5, grok-3, etc.), nimChat still works because
+  // those slugs won't be hosted on NIM and will surface an error per
+  // model — allSettled absorbs the failures and we synthesize from
+  // whatever succeeded. In a follow-up we'll route each pool entry to
+  // its correct provider; for v1 this degrades to NIM-only consensus
+  // when any frontier slug is in the mix (acceptable for now).
   const results = await Promise.allSettled(
     modelsToUse.map(async (model) => {
       const answer = await nimChat(

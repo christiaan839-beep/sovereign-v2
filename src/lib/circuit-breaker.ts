@@ -151,6 +151,62 @@ export const resendBreaker = new CircuitBreaker({
   resetTimeout: 30_000,
 });
 
+// ────────────────────────────────────────────────────────────────
+// Frontier-provider breakers — added with the UMP-4 spec.
+// All use the same 5/60s profile as other LLM providers. If a provider
+// becomes reliably flaky we tighten its threshold specifically.
+// ────────────────────────────────────────────────────────────────
+
+export const openaiBreaker = new CircuitBreaker({
+  name: "openai",
+  failureThreshold: 5,
+  resetTimeout: 60_000,
+});
+
+export const xaiBreaker = new CircuitBreaker({
+  name: "xai-grok",
+  failureThreshold: 5,
+  resetTimeout: 60_000,
+});
+
+export const mistralDirectBreaker = new CircuitBreaker({
+  name: "mistral-direct",
+  failureThreshold: 5,
+  resetTimeout: 60_000,
+});
+
+export const cohereBreaker = new CircuitBreaker({
+  name: "cohere",
+  failureThreshold: 5,
+  resetTimeout: 60_000,
+});
+
+export const openrouterBreaker = new CircuitBreaker({
+  name: "openrouter",
+  failureThreshold: 5,
+  resetTimeout: 60_000,
+});
+
+export const togetherBreaker = new CircuitBreaker({
+  name: "together",
+  failureThreshold: 5,
+  resetTimeout: 60_000,
+});
+
+export const databricksBreaker = new CircuitBreaker({
+  name: "databricks",
+  failureThreshold: 5,
+  resetTimeout: 60_000,
+});
+
+export const replicateBreaker = new CircuitBreaker({
+  name: "replicate",
+  failureThreshold: 5,
+  // Replicate is async (predict → poll). Longer reset so one slow model
+  // doesn't trip the whole provider.
+  resetTimeout: 120_000,
+});
+
 /** Returns the health status of all circuit breakers (for /api/health). */
 export function getCircuitStatus() {
   return {
@@ -158,6 +214,14 @@ export function getCircuitStatus() {
     gemini: geminiBreaker.getState(),
     claude: claudeBreaker.getState(),
     groq: groqBreaker.getState(),
+    openai: openaiBreaker.getState(),
+    xai: xaiBreaker.getState(),
+    mistralDirect: mistralDirectBreaker.getState(),
+    cohere: cohereBreaker.getState(),
+    openrouter: openrouterBreaker.getState(),
+    together: togetherBreaker.getState(),
+    databricks: databricksBreaker.getState(),
+    replicate: replicateBreaker.getState(),
     stripe: stripeBreaker.getState(),
     resend: resendBreaker.getState(),
   };

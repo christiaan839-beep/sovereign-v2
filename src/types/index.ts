@@ -1,7 +1,49 @@
 /** Shared types for the SOVEREIGN platform */
 
 // ─── AI ──────────────────────────────────────────────
-export type AIModel = "gemini" | "claude" | "nim" | "ollama" | "groq" | "deepseek" | "mistral" | "qwen" | "cerebras";
+// Short canonical provider / model keys. The list below is the SET that
+// the router in src/lib/ai.ts branches on; frontier providers added
+// 2026-04-24 (UMP-4 — see docs/superpowers/specs/2026-04-24-frontier-providers-design.md).
+// The `string` fallback at the end keeps this permissive: callers can
+// pass full model slugs like "gpt-5" or "openai/gpt-4.1" and the router
+// handles them. The union branches above give IDE autocomplete for the
+// common cases without forcing narrow typing.
+export type AIModel =
+  // Existing providers
+  | "gemini"
+  | "claude"
+  | "nim"
+  | "ollama"
+  | "groq"
+  | "deepseek"
+  | "mistral"
+  | "qwen"
+  | "cerebras"
+  // Frontier providers (added UMP-4)
+  | "openai"
+  | "gpt5"
+  | "gpt-5"
+  | "gpt-4.1"
+  | "o1"
+  | "o3"
+  | "o3-mini"
+  | "xai"
+  | "grok"
+  | "grok-3"
+  | "grok-4"
+  | "mistral-direct"
+  | "cohere"
+  | "command-r-plus"
+  | "command-r"
+  | "openrouter"
+  | "together"
+  | "llama4-405b"
+  | "deepseek-v3-together"
+  | "databricks"
+  | "dbrx"
+  // Permissive escape: any string (e.g. "owner/model" for OpenRouter, or
+  // a custom slug). IDE autocomplete prefers the named options above.
+  | (string & {});
 export type TaskType = "content" | "analysis" | "code" | "sales";
 
 export interface AIOptions {

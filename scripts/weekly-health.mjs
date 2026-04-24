@@ -137,12 +137,48 @@ check(
 );
 
 check(
-  "unique LLM models referenced",
+  "unique LLM models referenced (NIM catalog)",
   uniqueMatches(
     join(ROOT, "src/lib/nvidia.ts"),
     /"[a-z0-9-]+\/[a-z0-9.-]+"/g,
   ),
   30,
+  { dimension: "catalog" },
+);
+
+// Frontier-provider catalog — post-UMP-4 the platform addresses 8 additional
+// providers beyond the NIM catalog (OpenAI, xAI, Mistral direct, Cohere,
+// OpenRouter, Together, Databricks, Replicate). Each exposes 3-10 slugs.
+// Counting them here lets "N models" claims on the landing stay verifiable.
+const providerFiles = [
+  "openai.ts",
+  "xai.ts",
+  "mistral.ts",
+  "cohere.ts",
+  "openrouter.ts",
+  "together.ts",
+  "databricks.ts",
+  "replicate.ts",
+];
+let frontierSlugs = 0;
+for (const f of providerFiles) {
+  // Each adapter exports a MODELS object with quoted string values —
+  // count those as the provider's addressable slugs.
+  frontierSlugs += countMatches(
+    join(ROOT, "src/lib/providers", f),
+    /:\s*"[a-zA-Z0-9@\/._-]+"/g,
+  );
+}
+check("frontier provider model slugs", frontierSlugs, 30, {
+  dimension: "catalog",
+});
+
+check(
+  "provider adapters on disk",
+  providerFiles.filter((f) =>
+    existsSync(join(ROOT, "src/lib/providers", f)),
+  ).length,
+  8,
   { dimension: "catalog" },
 );
 
@@ -261,6 +297,33 @@ const hasMergeStrategy = existsSync(join(ROOT, "docs/MERGE-STRATEGY.md"));
 check("MERGE-STRATEGY.md (ops playbook)", hasMergeStrategy ? 1 : 0, 1, {
   dimension: "process",
 });
+
+// ──────────────────────────────────────────────────────────────
+// Environment health — added after the 2026-04-24 ENOSPC incident
+// that silently halted sprint A until disk was manually cleaned.
+// Tool-runner writes output captures to /tmp; when /tmp fills up,
+// EVERY bash command fails with ENOSPC + the session is hard-stopped.
+// Threshold: warn at <1GB free on /tmp (cheap buffer, 5 min to fix).
+// ──────────────────────────────────────────────────────────────
+
+import { statfsSync } from "node:fs";
+let tmpFreeMB = -1;
+try {
+  // statfsSync is available in Node 18.15+; gracefully skip otherwise.
+  if (typeof statfsSync === "function") {
+    const s = statfsSync("/tmp");
+    // bsize + bavail → bytes free → MB
+    tmpFreeMB = Math.round((s.bsize * s.bavail) / (1024 * 1024));
+  }
+} catch {
+  // statfs failed (older Node, non-POSIX filesystem); skip without crashing.
+}
+
+if (tmpFreeMB >= 0) {
+  check("/tmp free space (MB)", tmpFreeMB, 1024, {
+    dimension: "environment",
+  });
+}
 
 // ──────────────────────────────────────────────────────────────
 // Report

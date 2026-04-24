@@ -131,7 +131,56 @@ async function aiUncached(prompt: string, options: AIOptions): Promise<string> {
     return groqText(prompt, system, maxTokens, userKeys, model);
   }
 
-  // 7. Gemini (default) → fallback to NIM → fallback to Groq
+  // ───── Frontier providers (UMP-4, 2026-04-24) ─────
+  // Each branch gated behind an explicit model match. Adapters throw
+  // ProviderError("provider_not_configured") when env key missing —
+  // the router's failover catches it and tries the next option.
+
+  if (model === "openai" || model === "gpt5" || model === "gpt-5" || model === "gpt-4.1" || model === "o1" || model === "o3" || model === "o3-mini") {
+    const { openaiChat } = await import("@/lib/providers");
+    recordModel(`openai-${model}`);
+    return openaiChat({ prompt, system, maxTokens, model });
+  }
+
+  if (model === "xai" || model === "grok" || model === "grok-3" || model === "grok-4") {
+    const { xaiChat } = await import("@/lib/providers");
+    recordModel(`xai-${model}`);
+    return xaiChat({ prompt, system, maxTokens, model });
+  }
+
+  if (model === "mistral-direct") {
+    const { mistralDirectChat } = await import("@/lib/providers");
+    recordModel("mistral-direct");
+    return mistralDirectChat({ prompt, system, maxTokens });
+  }
+
+  if (model === "cohere" || model === "command-r-plus" || model === "command-r") {
+    const { cohereChat } = await import("@/lib/providers");
+    recordModel(`cohere-${model}`);
+    return cohereChat({ prompt, system, maxTokens, model });
+  }
+
+  if (model === "openrouter" || (typeof model === "string" && model.includes("/"))) {
+    // "openrouter" → auto; "owner/slug" → specific OpenRouter model.
+    const { openrouterChat } = await import("@/lib/providers");
+    recordModel(`openrouter-${model}`);
+    return openrouterChat({ prompt, system, maxTokens, model });
+  }
+
+  if (model === "together" || model === "llama4-405b" || model === "deepseek-v3-together") {
+    const { togetherChat } = await import("@/lib/providers");
+    recordModel(`together-${model}`);
+    return togetherChat({ prompt, system, maxTokens, model });
+  }
+
+  if (model === "databricks" || model === "dbrx") {
+    const { databricksChat } = await import("@/lib/providers");
+    recordModel(`databricks-${model}`);
+    return databricksChat({ prompt, system, maxTokens, model });
+  }
+
+  // 7. Gemini (default) → extended 6-stop failover:
+  //    Gemini → NIM → OpenAI → OpenRouter → Groq → [error]
   try {
     recordModel(useGeminiPro ? "gemini-pro" : "gemini-flash");
     return await geminiText(prompt, system, maxTokens, userKeys, useGeminiPro);
@@ -141,12 +190,34 @@ async function aiUncached(prompt: string, options: AIOptions): Promise<string> {
       recordModel("nvidia-nim-fallback");
       return await nimText(prompt, system, maxTokens);
     } catch (nimErr) {
-      log.warn("NIM failed, falling back to Groq", { error: (nimErr as Error).message });
+      log.warn("NIM failed, falling back to OpenAI", { error: (nimErr as Error).message });
       try {
-        return await groqText(prompt, system, maxTokens, userKeys, "groq");
-      } catch (groqErr) {
-        log.error("All AI providers failed", { gemini: (geminiErr as Error).message, nim: (nimErr as Error).message, groq: (groqErr as Error).message });
-        throw new Error("All AI models are temporarily unavailable. Please try again in a few seconds.");
+        if (!process.env.OPENAI_API_KEY) throw new Error("no-openai-key");
+        const { openaiChat } = await import("@/lib/providers");
+        recordModel("openai-fallback");
+        return await openaiChat({ prompt, system, maxTokens, model: "gpt-4.1" });
+      } catch (openaiErr) {
+        log.warn("OpenAI failed, falling back to OpenRouter", { error: (openaiErr as Error).message });
+        try {
+          if (!process.env.OPENROUTER_API_KEY) throw new Error("no-openrouter-key");
+          const { openrouterChat } = await import("@/lib/providers");
+          recordModel("openrouter-fallback");
+          return await openrouterChat({ prompt, system, maxTokens });
+        } catch (openrouterErr) {
+          log.warn("OpenRouter failed, falling back to Groq", { error: (openrouterErr as Error).message });
+          try {
+            return await groqText(prompt, system, maxTokens, userKeys, "groq");
+          } catch (groqErr) {
+            log.error("All AI providers failed", {
+              gemini: (geminiErr as Error).message,
+              nim: (nimErr as Error).message,
+              openai: (openaiErr as Error).message,
+              openrouter: (openrouterErr as Error).message,
+              groq: (groqErr as Error).message,
+            });
+            throw new Error("All AI models are temporarily unavailable. Please try again in a few seconds.");
+          }
+        }
       }
     }
   }
