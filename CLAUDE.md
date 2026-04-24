@@ -207,6 +207,89 @@ Key endpoints:
 - Run DB migration: drizzle/0003_playbook_runs.sql (Neon Console → SQL Editor)
 - Run DB migration: drizzle/0002_async_jobs.sql (Neon Console → SQL Editor)
 - Run DB migration: drizzle/0025_sam_submission_fields.sql (extends marketplace_agents with SAM v1.0 fields; required for /api/creators/submit persistence + trust-tiered approval policy to read prior approvals)
+- Run DB migration: drizzle/0033_audit_log_hash_chain.sql (adds prev_hash + row_hash to audit_logs; non-breaking for pre-existing rows)
+- Run DB migration: drizzle/0034_api_key_scoping.sql (adds scopes/allowed_agents/allowed_ips JSONB to api_keys; non-breaking — NULL = legacy full-access)
 - Add CEREBRAS_API_KEY env var (free at inference.cerebras.ai)
 - Connect Stripe/Yoco price IDs in env vars for paid tier checkout
 - Optional: set SOVEREIGN_APPROVAL_POLICY env var to "trust-tiered" once operator review routinely clears <24h (default "curated" queues every submission)
+- Optional: set SOVEREIGN_FREE_ONLY=true to strip paid providers from the failover chain (free-tier guarantee for cost-sensitive deployments)
+- CRON_SECRET env var must be set so /api/cron/verify-audit-chain (every 6h) authenticates against Vercel Cron
+
+## Session Learnings (April 24-25 2026)
+
+### Reliability + Security Hardening Sprint
+Four defense-in-depth layers added; all pure-function, fail-open where the user's response is at stake, and additive (no breaking changes to existing contracts). 50+ unit tests across these surfaces.
+
+#### Layer 1 — PII output guard (src/lib/pii-guard.ts)
+- Regex + Luhn scanner: SSN, credit card, E.164/US phone, email
+- `scrubPiiDeep` walks JSON tree (maxDepth=10 by default)
+- Wired into agent-factory + vision-agent-factory via `piiGuardMode`:
+  - `"mask"` (DEFAULT) — scrubs SSN/CC/phone/email in place
+  - `"flag"` — log findings, don't modify (resume-normalizer, business-card-reader, coi-verifier)
+  - `"skip"` — bypass (synthetic data generators only)
+- Fail-open: scan errors NEVER block the user response (defense-in-depth, not primary defense)
+- US phone regex: `/(?:\(\d{3}\)\s*|\b\d{3}[-.\s])\d{3}[-.\s]\d{4}\b/g` — leading `\b` was removed to allow `(###) ###-####` after a word
+
+#### Layer 2 — Audit log hash chain (drizzle/0033, src/lib/audit-log.ts)
+- SHA-256 chain: `row_hash = h(prev_hash | userId | action | resource | details | createdAt)`
+- Any in-place edit breaks the chain — `verifyAuditChain()` walks rows forward and returns `{valid, brokenAt, expectedPrev, foundPrev}`
+- GET `/api/admin/audit/verify-chain` (admin-gated, 404s for non-admins) for on-demand check
+- `/api/cron/verify-audit-chain` runs every 6h via Vercel Cron — returns 500 + ERROR log on a broken chain
+- Pre-migration rows skip the chain (NULL row_hash) — non-breaking for existing fleets
+- Genesis sentinel = literal string "GENESIS" for the first row
+- 8 audit-log tests including 3 distinct tampering scenarios (details mutation / forged prev_hash / forged row_hash)
+
+#### Layer 3 — API-key scoping (drizzle/0034, src/lib/api-key-scopes.ts)
+- JSONB columns on api_keys: `scopes`, `allowed_agents`, `allowed_ips`
+- `evaluateScope()` is pure-function and unit-testable
+- NULL scopes = legacy full-access (back-compat); `[]` = revoked-in-place
+- Per-agent scopes (`agent:execute:<slug>`) > generic > admin escape
+- IPv4 CIDR matching for IP allowlists; `ip_required` reason when `allowed_ips` is set but no client IP
+- Wired into /api/v1/[...path] gateway:
+  - `/api/v1/agents/<slug>` → `agent:execute` on `<slug>`
+  - `/api/v1/playbooks/*` + `/api/v1/workflows/*` → `agent:execute`
+  - `/api/v1/health/*` + `/api/v1/status/*` → `data:read`
+  - Any other GET → `data:read`; non-GET → `agent:execute`
+- `validateApiKey()` cache now stores the FULL ApiKeyRecord (5-min TTL bounds revocation latency)
+- `classifyV1Request()` extracted to api-key-scopes for unit testing (9 tests)
+
+#### Layer 4 — Free-first router (src/lib/provider-costs.ts + ai.ts gate)
+- `SOVEREIGN_FREE_ONLY=true` mirrors `DATA_SOVEREIGNTY_MODE` pattern from nvidia.ts
+- Strips paid steps from failover chain → NIM → Groq → honest error ("Set SOVEREIGN_FREE_ONLY=false to use paid fallbacks")
+- `PROVIDER_COSTS` map catalogues every provider as `free|paid|metered`
+- Frontier providers (openai, xai, mistral-direct, cohere, openrouter, together, databricks, replicate) = paid
+- Free tier (ollama, nim, nvidia-nim, cerebras) = free; groq = metered
+
+### Testing
+- 192 test files / 2448 tests / tsc clean / lint <25
+- 36 tests in security-hardening.test.ts (PII guard / API-key scopes / free-first router / classifier)
+- 8 tests in audit-log.test.ts (fail-open + 3 tampering scenarios + legacy row skip)
+- weekly-health.mjs invariant 28/28 green after every commit
+
+### Patterns Worth Preserving
+- **Fail-open everywhere user-facing**: PII scrubber errors, audit log writes, scope evaluator failures must NEVER block the user response. Errors get logged for ops; the request still completes. The audit log hash chain is the safety net, not the gate.
+- **Pure-function evaluators**: `evaluateScope`, `scanPii`, `classifyV1Request` etc. all have NO Request/DB/NextResponse dependency. Wire-up code lives in route files; logic lives in libs. Easy to test in isolation.
+- **Vitest hoisting + vi.hoisted()**: When a `vi.mock` factory needs to close over shared state, that state MUST be inside `vi.hoisted(() => ({...}))` — otherwise you get `Cannot access 'X' before initialization`. Used in audit-log.test.ts.
+- **Cache the full record, not just the lookup result**: validateApiKey() caches the full ApiKeyRecord (plan + userId + scopes + allowedAgents + allowedIps) so downstream scope checks don't need a second DB hit.
+- **JSDoc + cron syntax footgun**: Putting `*/N` (every-N-units cron expression) inside a `/**...*/` comment closes the comment early. Use prose like "every 6 hours" instead.
+
+### Files Added
+- src/lib/pii-guard.ts — Regex + Luhn PII scanner (240 LOC)
+- src/lib/api-key-scopes.ts — Scope evaluator + classifyV1Request (~230 LOC)
+- src/lib/provider-costs.ts — Free/paid/metered catalog + FREE_ONLY_MODE
+- src/lib/__tests__/security-hardening.test.ts — 36 unit tests
+- src/lib/__tests__/audit-log.test.ts — 8 tests including tampering scenarios
+- src/app/api/admin/audit/verify-chain/route.ts — On-demand admin verification
+- src/app/api/cron/verify-audit-chain/route.ts — Continuous monitoring cron (every 6h)
+- drizzle/0033_audit_log_hash_chain.sql — prev_hash + row_hash columns
+- drizzle/0034_api_key_scoping.sql — scopes + allowed_agents + allowed_ips columns
+
+### Files Modified
+- src/lib/audit-log.ts — From 38 LOC to ~150 LOC with hash chain
+- src/lib/agent-factory.ts — piiGuardMode config, result made let-mutable for scrubber
+- src/lib/vision-agent-factory.ts — Forwards piiGuardMode
+- src/lib/ai.ts — FREE_ONLY_MODE gate in failover chain
+- src/db/schema.ts — apiKeys: scopes/allowedAgents/allowedIps jsonb columns
+- src/app/api/v1/[...path]/route.ts — evaluateScope + classifyV1Request integration
+- src/app/api/_agents/{resume-normalizer,business-card-reader,coi-verifier}/route.ts — opt into piiGuardMode: "flag"
+- vercel.json — registers /api/cron/verify-audit-chain (every 6h)
