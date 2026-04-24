@@ -15,6 +15,14 @@ import {
   Zap,
 } from "lucide-react";
 import Link from "next/link";
+import { IndustrySignature } from "@/components/industries/IndustrySignature";
+
+const LOGISTICS_FEATURED_AGENTS = [
+  { slug: "bill-of-lading-reader", name: "BOL Reader", category: "Logistics" },
+  { slug: "hs-code-classifier", name: "HS Classifier", category: "Logistics" },
+  { slug: "invoice-ocr", name: "Invoice OCR", category: "Finance" },
+  { slug: "business-card-reader", name: "Biz Card", category: "Sales" },
+];
 
 const CAPABILITIES = [
   {
@@ -112,6 +120,21 @@ export default function ForLogisticsPage() {
             <Link href="/signup" className="inline-flex items-center gap-2 px-8 py-4 bg-white text-black font-semibold rounded-full text-sm hover:bg-neutral-100 transition-all">
               Deploy logistics agents <ArrowRight className="w-4 h-4" />
             </Link>
+          </motion.div>
+
+          {/* Industry signature — pipeline line for Logistics */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.5, duration: 0.8 }}
+            className="mt-16 mx-auto"
+          >
+            <IndustrySignature
+              industry="logistics"
+              agents={LOGISTICS_FEATURED_AGENTS}
+              size={480}
+              className="mx-auto"
+            />
           </motion.div>
         </div>
       </section>

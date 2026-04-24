@@ -29,6 +29,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Activity, Zap, CheckCircle2, Layers } from "lucide-react";
+import { LiveDataHero } from "./LiveDataHero";
 
 interface SloShape {
   platform: {
@@ -84,6 +85,18 @@ export function LivePlatformMetrics() {
             "radial-gradient(ellipse 60% 40% at 50% 50%, rgba(181,83,44,0.04) 0%, transparent 70%)",
         }}
       />
+
+      {/* Live-data particle field — reacts to real SLO + cache state.
+       *  Under the content at 22% opacity so it reads as atmosphere, not
+       *  foreground chrome. On fresh deploys (no traffic yet) behaves as
+       *  an ambient decorative field. */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 pointer-events-none"
+        style={{ opacity: 0.22 }}
+      >
+        <LiveDataHero />
+      </div>
 
       <div className="relative max-w-6xl mx-auto">
         <div className="mb-10 flex items-center gap-4 flex-wrap">

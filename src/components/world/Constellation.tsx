@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { sigilPalette } from "@/lib/agent-sigil";
 
 /**
  * Constellation — the interactive 137-node canvas at the heart of /world.
@@ -19,6 +20,40 @@ import { useEffect, useRef, useState } from "react";
 const CU = { r: 181, g: 83, b: 44 } as const;
 const LINE_DIST = 140;
 const HOVER_RADIUS = 18;
+
+/**
+ * Convert a hex color to an {r,g,b} triple. Used to paint each node in
+ * its category's sigil palette color, so the constellation becomes a
+ * category-taxonomy visualization instead of a monochrome copper field.
+ * Falls back to copper on parse failure.
+ */
+function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  const m = hex.match(/^#?([0-9a-fA-F]{6})$/);
+  if (!m) return CU;
+  const n = parseInt(m[1], 16);
+  return { r: (n >> 16) & 0xff, g: (n >> 8) & 0xff, b: n & 0xff };
+}
+
+/**
+ * Memo cache for category → rgb. There are only ~17 categories; this
+ * keeps the per-frame `sigilPalette` lookup from re-parsing a hex on
+ * every one of 218 nodes at 60fps.
+ */
+const rgbCache = new Map<string, { r: number; g: number; b: number }>();
+function rgbForCategory(category: string): { r: number; g: number; b: number } {
+  let hit = rgbCache.get(category);
+  if (!hit) {
+    hit = hexToRgb(sigilPalette(category).fg);
+    rgbCache.set(category, hit);
+  }
+  return hit;
+}
+
+/** Per-category rgba formatter — drop-in for `cu()` below. */
+function catRgba(category: string, alpha: number): string {
+  const c = rgbForCategory(category);
+  return `rgba(${c.r},${c.g},${c.b},${alpha.toFixed(3)})`;
+}
 const CATEGORY_SEEDS: Record<string, [number, number]> = {
   content: [0.2, 0.25],
   leads: [0.75, 0.2],
@@ -166,7 +201,10 @@ export function Constellation({ agents, selectedSlug, onSelect, onHover }: Props
         }
       }
 
-      // Nodes
+      // Nodes — each painted in its category palette color so the
+      // constellation reads as a taxonomy at a glance. Copper only
+      // remains for the selected node (signal: "this is the chosen one")
+      // and the proximity lines above.
       ctx.globalCompositeOperation = "source-over";
       for (const n of nodes) {
         const pulse = prefersReduced ? 0 : Math.sin(n.phase) * 0.15;
@@ -174,25 +212,29 @@ export function Constellation({ agents, selectedSlug, onSelect, onHover }: Props
         const isSelected = n.slug === selectedSlug;
         const isFeatured = n.featured;
 
-        // Glow
+        // Glow — use category color, brighter on selection + featured
         if (isSelected || isFeatured) {
           ctx.beginPath();
           ctx.arc(n.x, n.y, r * 3, 0, Math.PI * 2);
-          ctx.fillStyle = cu(isSelected ? 0.18 : 0.08);
+          ctx.fillStyle = catRgba(n.category, isSelected ? 0.22 : 0.1);
           ctx.fill();
         }
 
-        // Body
+        // Body — category color replaces monochrome copper. Selected
+        // node gets the warm cream accent (#E8DDD0) as before so it
+        // still pops out of its category cluster.
         ctx.beginPath();
         ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
-        ctx.fillStyle = isSelected ? "#E8DDD0" : cu(isFeatured ? 0.95 : 0.7);
+        ctx.fillStyle = isSelected
+          ? "#E8DDD0"
+          : catRgba(n.category, isFeatured ? 1.0 : 0.8);
         ctx.fill();
 
-        // Verified ring
+        // Verified ring — thin category-color halo
         if (n.verified) {
           ctx.beginPath();
           ctx.arc(n.x, n.y, r + 2.5, 0, Math.PI * 2);
-          ctx.strokeStyle = cu(0.5);
+          ctx.strokeStyle = catRgba(n.category, 0.6);
           ctx.lineWidth = 0.8;
           ctx.stroke();
         }

@@ -15,6 +15,14 @@ import {
   Zap,
 } from "lucide-react";
 import Link from "next/link";
+import { IndustrySignature } from "@/components/industries/IndustrySignature";
+
+const CONSTRUCTION_FEATURED_AGENTS = [
+  { slug: "permit-form-filler", name: "Permit Filler", category: "Real Estate" },
+  { slug: "safety-incident-reporter", name: "Safety Report", category: "Real Estate" },
+  { slug: "blueprint-parser", name: "Blueprint Parser", category: "Real Estate" },
+  { slug: "id-verifier", name: "ID Verifier", category: "Compliance" },
+];
 
 const CAPABILITIES = [
   {
@@ -112,6 +120,21 @@ export default function ForConstructionPage() {
             <Link href="/signup" className="inline-flex items-center gap-2 px-8 py-4 bg-white text-black font-semibold rounded-full text-sm hover:bg-neutral-100 transition-all">
               Deploy construction agents <ArrowRight className="w-4 h-4" />
             </Link>
+          </motion.div>
+
+          {/* Industry signature — blueprint grid for Construction */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.5, duration: 0.8 }}
+            className="mt-16 mx-auto"
+          >
+            <IndustrySignature
+              industry="construction"
+              agents={CONSTRUCTION_FEATURED_AGENTS}
+              size={420}
+              className="mx-auto"
+            />
           </motion.div>
         </div>
       </section>
