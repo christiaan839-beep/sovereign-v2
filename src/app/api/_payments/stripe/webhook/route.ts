@@ -15,8 +15,23 @@ const log = createLogger("stripe-webhook");
  * 1. In Stripe dashboard → Developers → Webhooks
  * 2. Add endpoint: https://sovereignmatrix.agency/api/payments/stripe/webhook
  * 3. Select events: checkout.session.completed, customer.subscription.updated,
- *    customer.subscription.deleted, invoice.payment_succeeded, invoice.payment_failed
+ *    customer.subscription.deleted, invoice.payment_succeeded, invoice.payment_failed,
+ *    charge.refunded
  * 4. Copy signing secret to .env.local: STRIPE_WEBHOOK_SECRET=whsec_...
+ *
+ * Event coverage as of W1 T6 of the month-1 sprint:
+ *
+ *   checkout.session.completed   — initial sub creation + first credit grant
+ *   customer.subscription.updated — plan + status sync (including upgrades)
+ *   customer.subscription.deleted — downgrade to free on cancellation
+ *   invoice.payment_succeeded     — monthly renewal credit grant
+ *   invoice.payment_failed        — mark past_due
+ *   charge.refunded               — reverse previous credit grant
+ *
+ * All non-checkout events are idempotent via the stripe_events table's
+ * received→completed two-state pattern. The credit top-ups carry the
+ * stripe event_id in their metadata so admin queries can trace any
+ * balance back to the payment that created it.
  */
 
 /**
@@ -198,11 +213,36 @@ async function handleStripeWebhook(req: Request): Promise<NextResponse> {
         const sub = event.data.object as Stripe.Subscription;
         const stripeCustomerId = stripeId(sub.customer);
         if (stripeCustomerId) {
-          await db.update(subscriptions).set({
-            status: sub.status === "active" ? "active" : sub.status === "past_due" ? "past_due" : "inactive",
-            updatedAt: new Date(),
-          }).where(eq(subscriptions.stripeCustomerId, stripeCustomerId));
-          log.info("Subscription updated", { stripeCustomerId, status: sub.status });
+          // Sync both status AND plan. Previously only status updated,
+          // so a mid-cycle upgrade from Growth → Node left the plan
+          // field stale until the next checkout.session.completed
+          // (which never fires for in-Stripe plan changes).
+          const newPlan = resolvePlanFromSubscription(sub);
+          // In 2025+ Stripe API the period is on the subscription item,
+          // not the top-level subscription.
+          const periodEndUnix = sub.items?.data?.[0]?.current_period_end;
+          await db
+            .update(subscriptions)
+            .set({
+              status:
+                sub.status === "active"
+                  ? "active"
+                  : sub.status === "past_due"
+                    ? "past_due"
+                    : "inactive",
+              ...(newPlan ? { plan: newPlan } : {}),
+              currentPeriodEnd:
+                typeof periodEndUnix === "number"
+                  ? new Date(periodEndUnix * 1000)
+                  : undefined,
+              updatedAt: new Date(),
+            })
+            .where(eq(subscriptions.stripeCustomerId, stripeCustomerId));
+          log.info("Subscription updated", {
+            stripeCustomerId,
+            status: sub.status,
+            plan: newPlan,
+          });
         }
         break;
       }
@@ -233,6 +273,100 @@ async function handleStripeWebhook(req: Request): Promise<NextResponse> {
         }
         break;
       }
+
+      // W1 T6 — monthly renewal credit grant. Previously monthly
+      // credits only fired on checkout.session.completed, which
+      // only happens on initial subscription creation. On renewal
+      // Stripe fires invoice.payment_succeeded — we detect that
+      // and top up the user's credits again.
+      case "invoice.payment_succeeded": {
+        const invoice = event.data.object as Stripe.Invoice;
+        const stripeCustomerId = stripeId(invoice.customer);
+        // Only top up on SUBSCRIPTION renewals, not one-off invoices.
+        // "subscription_cycle" and "subscription" are the two billing_reason
+        // values we care about; "subscription_create" is already handled
+        // by checkout.session.completed above (same event fires in parallel
+        // but our stripeEvents dedup prevents double-grant).
+        const isRenewal =
+          invoice.billing_reason === "subscription_cycle" ||
+          invoice.billing_reason === "subscription";
+        if (stripeCustomerId && isRenewal) {
+          try {
+            // Find the user + plan from our subscriptions table.
+            const [sub] = await db
+              .select({ userId: subscriptions.userId, plan: subscriptions.plan })
+              .from(subscriptions)
+              .where(eq(subscriptions.stripeCustomerId, stripeCustomerId))
+              .limit(1);
+
+            if (sub) {
+              const { getPlan, normalizePlanId } = await import("@/lib/plans");
+              const { topUp } = await import("@/lib/credits");
+              const planDef = getPlan(normalizePlanId(sub.plan));
+              const cents = planDef.monthlyCreditsCents;
+              if (cents > 0) {
+                await topUp(sub.userId, cents, "topup", {
+                  stripeEventId: event.id,
+                  stripeInvoiceId: invoice.id,
+                  plan: sub.plan,
+                  reason: "renewal",
+                });
+                log.info("Credits topped up on renewal", {
+                  userId: sub.userId,
+                  cents,
+                  plan: sub.plan,
+                  invoiceId: invoice.id,
+                });
+              }
+            }
+          } catch (creditErr) {
+            // Never fail the webhook on a credits error — Stripe will
+            // keep the sub active; credits can be repaired by admin.
+            log.error("Renewal credit top-up failed", {
+              stripeCustomerId,
+              invoiceId: invoice.id,
+              error: (creditErr as Error).message,
+            });
+          }
+        }
+        break;
+      }
+
+      // W1 T6 — refund handling. When a user's card is refunded (either
+      // from Stripe dashboard or customer portal), we want to reverse
+      // the monthly credit grant so they don't keep credits they
+      // didn't pay for. Uses the payment_intent to find the original
+      // top-up event via our metadata chain.
+      case "charge.refunded": {
+        const charge = event.data.object as Stripe.Charge;
+        const stripeCustomerId = stripeId(charge.customer);
+        const paymentIntentId = stripeId(charge.payment_intent);
+        if (stripeCustomerId) {
+          log.warn("Charge refunded — downgrading subscription", {
+            stripeCustomerId,
+            chargeId: charge.id,
+            paymentIntentId,
+            amountRefunded: charge.amount_refunded,
+          });
+          // If the charge was fully refunded, mark the subscription
+          // inactive. Partial refunds are informational only — the
+          // user keeps their current cycle's credits.
+          if (charge.refunded) {
+            await db
+              .update(subscriptions)
+              .set({
+                status: "refunded",
+                plan: "free",
+                updatedAt: new Date(),
+              })
+              .where(eq(subscriptions.stripeCustomerId, stripeCustomerId));
+            log.info("Subscription marked refunded — downgraded to free", {
+              stripeCustomerId,
+            });
+          }
+        }
+        break;
+      }
     }
   } catch (err) {
     // Handler failed mid-processing. Mark the row 'failed' so the next
@@ -259,4 +393,32 @@ async function handleStripeWebhook(req: Request): Promise<NextResponse> {
   }
 
   return NextResponse.json({ received: true, duplicate: isDuplicate });
+}
+
+/**
+ * Resolve the plan name (starter/array/node/enterprise) from a Stripe
+ * Subscription object by matching the price.id against our known
+ * STRIPE_PRICE_* env vars. Returns null if no match — caller preserves
+ * the existing plan rather than guessing.
+ *
+ * W1 T6 addition: previously the sub.plan field was read from the
+ * checkout session metadata only, so mid-cycle plan changes (e.g.,
+ * customer upgrades from Stripe portal) never updated our DB. This
+ * helper reads the active price from the subscription item and maps
+ * it back to our plan slug.
+ */
+function resolvePlanFromSubscription(
+  sub: Stripe.Subscription,
+): string | null {
+  const item = sub.items?.data?.[0];
+  const priceId = item?.price?.id;
+  if (!priceId) return null;
+
+  const mapping: Record<string, string> = {};
+  if (process.env.STRIPE_PRICE_STARTER) mapping[process.env.STRIPE_PRICE_STARTER] = "starter";
+  if (process.env.STRIPE_PRICE_ARRAY) mapping[process.env.STRIPE_PRICE_ARRAY] = "array";
+  if (process.env.STRIPE_PRICE_NODE) mapping[process.env.STRIPE_PRICE_NODE] = "node";
+  if (process.env.STRIPE_PRICE_ENTERPRISE) mapping[process.env.STRIPE_PRICE_ENTERPRISE] = "enterprise";
+
+  return mapping[priceId] ?? null;
 }

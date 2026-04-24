@@ -4,7 +4,43 @@ import { motion } from "framer-motion";
 import { ArrowRight, Heart, CalendarCheck, FileText, Receipt, Shield, Database, Layers, Zap, MessageSquare, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 
-const CAPABILITIES = [
+/**
+ * Tailwind v4 JIT cannot see interpolated class names (e.g.
+ * `bg-${cap.color}-500/10`) — they never make it into the compiled CSS
+ * and render as silent no-ops. This literal map is the documented safe
+ * pattern: every class is spelled out so the scanner finds them.
+ */
+const COLOR_CLASSES = {
+  cyan: {
+    iconBg: "bg-cyan-500/10",
+    iconFg: "text-cyan-400",
+    borderHover: "hover:border-cyan-500/20",
+  },
+  emerald: {
+    iconBg: "bg-emerald-500/10",
+    iconFg: "text-emerald-400",
+    borderHover: "hover:border-emerald-500/20",
+  },
+  violet: {
+    iconBg: "bg-violet-500/10",
+    iconFg: "text-violet-400",
+    borderHover: "hover:border-violet-500/20",
+  },
+  amber: {
+    iconBg: "bg-amber-500/10",
+    iconFg: "text-amber-400",
+    borderHover: "hover:border-amber-500/20",
+  },
+} as const;
+
+type ColorKey = keyof typeof COLOR_CLASSES;
+
+const CAPABILITIES: Array<{
+  icon: typeof Heart;
+  title: string;
+  desc: string;
+  color: ColorKey;
+}> = [
   {
     icon: Heart,
     title: "Patient intake automation",
@@ -133,22 +169,25 @@ export default function ForHealthcarePage() {
           </div>
 
           <div className="grid md:grid-cols-2 gap-6">
-            {CAPABILITIES.map((cap, i) => (
-              <motion.div
-                key={cap.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.08 }}
-                className={`p-6 rounded-2xl border bg-[#080808] transition-all hover:border-${cap.color}-500/20 border-white/[0.05]`}
-              >
-                <div className={`w-10 h-10 rounded-xl bg-${cap.color}-500/10 flex items-center justify-center mb-4`}>
-                  <cap.icon className={`w-5 h-5 text-${cap.color}-400`} />
-                </div>
-                <h3 className="text-base font-semibold text-white mb-2">{cap.title}</h3>
-                <p className="text-sm text-neutral-400 leading-relaxed">{cap.desc}</p>
-              </motion.div>
-            ))}
+            {CAPABILITIES.map((cap, i) => {
+              const cls = COLOR_CLASSES[cap.color];
+              return (
+                <motion.div
+                  key={cap.title}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.08 }}
+                  className={`p-6 rounded-2xl border bg-[#080808] transition-all border-white/[0.05] ${cls.borderHover}`}
+                >
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 ${cls.iconBg}`}>
+                    <cap.icon className={`w-5 h-5 ${cls.iconFg}`} />
+                  </div>
+                  <h3 className="text-base font-semibold text-white mb-2">{cap.title}</h3>
+                  <p className="text-sm text-neutral-400 leading-relaxed">{cap.desc}</p>
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       </section>

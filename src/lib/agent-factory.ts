@@ -37,6 +37,7 @@ import { buildMemoryContext, rememberExecution } from "@/lib/semantic-memory";
 import { getActionTier, buildConfirmResponse, buildRestrictedResponse, type ActionTier } from "@/lib/action-tiers";
 import { resolveTenantId } from "@/lib/tenant-resolver";
 import { isAgentAvailable, recordAgentSuccess, recordAgentFailure } from "@/lib/agent-circuit-breaker";
+import { recordSloEvent } from "@/lib/slo-tracker";
 import { persistAgentActivity } from "@/lib/activity-persist";
 import { notifyAgentComplete } from "@/lib/notify";
 import { evaluatePolicy } from "@/lib/policy-engine";
@@ -788,6 +789,9 @@ async function handleAgentRoute(
       recordAgentSuccess(config.name);
       // Plan 4 SLO — agent latency p95 < 8s. Pass if under target.
       void recordSample("agent_latency_p95", durationMs, durationMs <= 8000);
+      // SLO tracker — per-endpoint rolling uptime + latency for the
+      // public /api/_health/slo and /api/_health/performance dashboards.
+      recordSloEvent(`/api/agents/${config.name}`, { success: true, ms: durationMs });
 
       // ─── Persist to agentActivity table (fire-and-forget) ───
       if (userId) {
@@ -886,6 +890,14 @@ async function handleAgentRoute(
       // Plan 4 SLO — failure is always a miss for the availability part
       // of the latency objective, regardless of how fast it failed.
       void recordSample("agent_latency_p95", failDurationMs, false);
+      // SLO tracker — per-endpoint failure event with its error code
+      // aggregated into topErrorCodes for the status dashboard.
+      const errCode = error instanceof Error ? error.name || "Error" : "unknown";
+      recordSloEvent(`/api/agents/${config.name}`, {
+        success: false,
+        ms: failDurationMs,
+        errorCode: errCode,
+      });
       const message = error instanceof Error ? error.message : "Unknown error";
       log.error("Agent execution failed", { agent: config.name, error: message });
       replay?.fail(message);

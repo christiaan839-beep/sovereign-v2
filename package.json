@@ -12,7 +12,9 @@
     "lint": "eslint",
     "ws": "ts-node server/ws.ts",
     "test": "vitest run",
-    "gen:registry": "node scripts/generate-agent-registry.mjs"
+    "gen:registry": "node scripts/generate-agent-registry.mjs",
+    "db:apply": "node scripts/apply-migrations.mjs",
+    "db:apply:dry": "node scripts/apply-migrations.mjs --dry-run"
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.43",

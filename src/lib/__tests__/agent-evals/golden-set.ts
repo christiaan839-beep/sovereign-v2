@@ -274,3 +274,273 @@ registerEval({
     !process.env.NVIDIA_NIM_API_KEY && !process.env.ANTHROPIC_API_KEY,
   timeoutMs: 60_000,
 });
+
+/* ─── 11. FNOL intake: classifies claim type + severity ─────── */
+registerEval({
+  slug: "fnol-intake",
+  name: "FNOL intake classifies claim type + severity",
+  input: {
+    description:
+      "Caller rear-ended by another driver at the intersection of 3rd and Main, downtown Seattle. Minor bumper damage, no injuries, police report filed.",
+    policyNumber: "AUT-12345",
+    claimantName: "Sample Caller",
+  },
+  expect: EnvelopeWithMeta.and(
+    z.object({ fnol: z.string().optional() }).passthrough(),
+  ),
+  assertions: (output) => {
+    const o = output as { fnol?: string };
+    if (o.fnol) {
+      assertStringMinLength(o.fnol, 100, "fnol");
+      assertStringContains(o.fnol, ["auto", "collision", "moderate", "minor"], "fnol");
+    }
+  },
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+});
+
+/* ─── 12. HS code classifier: finds reasonable code ─────────── */
+registerEval({
+  slug: "hs-code-classifier",
+  name: "HS code classifier returns an HS6 with reasoning",
+  input: {
+    productDescription: "Bamboo kitchen cutting board, 45cm x 30cm, for retail",
+    countryOfOrigin: "Vietnam",
+    destinationCountry: "US",
+  },
+  expect: EnvelopeWithMeta.and(
+    z.object({ classification: z.string().optional() }).passthrough(),
+  ),
+  assertions: (output) => {
+    const o = output as { classification?: string };
+    if (o.classification) {
+      assertStringMinLength(o.classification, 80, "classification");
+      assertStringContains(o.classification, ["4419", "wood", "bamboo", "kitchen"], "classification");
+    }
+  },
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+});
+
+/* ─── 13. ICD-10 coder: suggests primary diagnosis ──────────── */
+registerEval({
+  slug: "icd10-coder",
+  name: "ICD-10 coder suggests a primary diagnosis",
+  input: {
+    clinicalNote:
+      "40yo male presenting with polyuria, polydipsia, and HbA1c of 8.2%. No prior diagnosis of diabetes. Weight stable. Planning metformin start.",
+    encounterType: "outpatient",
+  },
+  expect: EnvelopeWithMeta.and(
+    z.object({ coding: z.string().optional() }).passthrough(),
+  ),
+  assertions: (output) => {
+    const o = output as { coding?: string };
+    if (o.coding) {
+      assertStringMinLength(o.coding, 100, "coding");
+      assertStringContains(o.coding, ["E11", "diabetes"], "coding");
+    }
+  },
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+});
+
+/* ─── 14. Prior-auth drafter: returns JSON-ish structure ────── */
+registerEval({
+  slug: "prior-auth-drafter",
+  name: "Prior-auth drafter produces clinical justification",
+  input: {
+    patientData:
+      "65F with rheumatoid arthritis, inadequate response to 6 months of methotrexate 20mg weekly and 3 months of sulfasalazine. CRP elevated.",
+    proposedTreatment: "Adalimumab 40mg SC every 2 weeks",
+    diagnosis: "M05.79 — Rheumatoid arthritis with rheumatoid factor",
+    payerName: "Aetna",
+  },
+  expect: EnvelopeWithMeta.and(
+    z.object({ priorAuth: z.string().optional() }).passthrough(),
+  ),
+  assertions: (output) => {
+    const o = output as { priorAuth?: string };
+    if (o.priorAuth) {
+      assertStringMinLength(o.priorAuth, 300, "priorAuth");
+      assertStringContains(
+        o.priorAuth,
+        ["methotrexate", "adalimumab", "step therapy", "inadequate"],
+        "priorAuth",
+      );
+    }
+  },
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+});
+
+/* ─── 15. Permit-form filler: IBC occupancy classification ─── */
+registerEval({
+  slug: "permit-form-filler",
+  name: "Permit drafter returns IBC occupancy + scope",
+  input: {
+    projectDetails:
+      "Tenant improvement at 123 Main St, converting 2,400 sqft from retail to general office. Owner: Acme Corp. GC: Smith Construction. Scope: demo 2 non-load-bearing walls, new HVAC VAV boxes, new partitions, ADA-compliant restroom upgrade.",
+    jurisdiction: "Seattle, WA",
+  },
+  expect: EnvelopeWithMeta.and(
+    z.object({ permitDraft: z.string().optional() }).passthrough(),
+  ),
+  assertions: (output) => {
+    const o = output as { permitDraft?: string };
+    if (o.permitDraft) {
+      assertStringMinLength(o.permitDraft, 300, "permitDraft");
+      assertStringContains(o.permitDraft, ["tenant", "office", "alteration", "occupancy"], "permitDraft");
+    }
+  },
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+});
+
+/* ─── 16. Safety incident reporter: OSHA recordability test ── */
+registerEval({
+  slug: "safety-incident-reporter",
+  name: "Safety reporter produces recordability analysis",
+  input: {
+    incidentDescription:
+      "At 10:45 AM, concrete finisher Maria Lopez slipped on wet plastic sheeting near pour zone C, landing on her left knee. She reported pain, was driven to occupational-health clinic for X-ray (negative for fracture), returned to modified duty same day.",
+    location: "Building 2, Level 3",
+    projectName: "Harbor Plaza Phase 2",
+  },
+  expect: EnvelopeWithMeta.and(
+    z.object({ safetyReport: z.string().optional() }).passthrough(),
+  ),
+  assertions: (output) => {
+    const o = output as { safetyReport?: string };
+    if (o.safetyReport) {
+      assertStringMinLength(o.safetyReport, 300, "safetyReport");
+      assertStringContains(o.safetyReport, ["recordab", "OSHA", "slip", "knee"], "safetyReport");
+    }
+  },
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+});
+
+/* ─── 17. God-brain: meta-prompt expansion ──────────────────── */
+registerEval({
+  slug: "god-brain",
+  name: "God-brain expands a terse brief into a plan",
+  input: {
+    prompt:
+      "Launch a product in the insurance vertical. We have an FNOL intake agent, COI verifier, and 208 other agents. Two-person founding team.",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  skipIf: () =>
+    !process.env.NVIDIA_NIM_API_KEY &&
+    !process.env.ANTHROPIC_API_KEY &&
+    !process.env.GEMINI_API_KEY,
+  timeoutMs: 60_000,
+});
+
+/* ─── 18. Physics reasoner: Newtonian kinematics ────────────── */
+registerEval({
+  slug: "physics-reasoner",
+  name: "Physics reasoner handles kinematics with units",
+  input: {
+    problem:
+      "A ball is thrown vertically upward at 15 m/s from a height of 1.5m. Assuming only gravity (g=9.81 m/s²), at what time does it land?",
+  },
+  expect: EnvelopeWithMeta.and(
+    z.object({ reasoning: z.string().optional() }).passthrough(),
+  ),
+  assertions: (output) => {
+    const o = output as { reasoning?: string };
+    if (o.reasoning) {
+      assertStringMinLength(o.reasoning, 150, "reasoning");
+      assertStringContains(o.reasoning, ["gravity", "velocity", "m/s"], "reasoning");
+    }
+  },
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+});
+
+/* ─── 19. Healthcare docs: medical record summarization ─────── */
+registerEval({
+  slug: "healthcare-docs",
+  name: "Healthcare docs produces structured summary",
+  input: {
+    document:
+      "Patient: 68yo M. PMH: HTN (lisinopril 20mg), T2DM (metformin 1000mg BID, HbA1c 7.1%), CAD s/p CABG 2019. Labs today: LDL 98, Cr 1.1, K 4.3. BP 132/78. Currently asymptomatic at 6-month follow-up.",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 60_000,
+});
+
+/* ─── 20. NDA triage: classification + redline suggestions ── */
+registerEval({
+  slug: "nda-triage",
+  name: "NDA triage identifies problematic clauses",
+  input: {
+    document:
+      "MUTUAL NON-DISCLOSURE AGREEMENT. Term: 10 years from disclosure. Jurisdiction: California. Confidential information includes any information, oral or written, marked or not, shared between the parties. Return or destruction required within 5 days of termination.",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 60_000,
+});
+
+/* ─── 21. Market analysis: structural output ────────────────── */
+registerEval({
+  slug: "market-analysis",
+  name: "Market analysis covers size + competitors",
+  input: {
+    prompt: "Analyze the US commercial insurance brokerage market for a tech vendor entry.",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  skipIf: () =>
+    !process.env.NVIDIA_NIM_API_KEY && !process.env.ANTHROPIC_API_KEY,
+  timeoutMs: 60_000,
+});
+
+/* ─── 22. Meta-prompt: prompt-engineering output ────────────── */
+registerEval({
+  slug: "meta-prompt",
+  name: "Meta-prompt returns a refined prompt",
+  input: {
+    rawPrompt: "write a thing about dogs",
+    goal: "blog post for a veterinary clinic",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 60_000,
+});
+
+/* ─── 23. Vulnerability scanner: security summary ───────────── */
+registerEval({
+  slug: "vulnerability-scanner",
+  name: "Vulnerability scanner produces security summary",
+  input: {
+    context: "Production Node.js 18 app with Express 4.17, lodash 4.17.21, jsonwebtoken 9.0.0.",
+    question: "What are the top 3 security concerns I should audit first?",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 60_000,
+});
+
+/* ─── 24. Weekly report: structural summary ─────────────────── */
+registerEval({
+  slug: "weekly-report",
+  name: "Weekly report aggregates structured events",
+  input: {
+    events: [
+      { type: "agent.execute", agent: "leads", durationMs: 1200, ts: Date.now() - 86400000 },
+      { type: "agent.execute", agent: "blog-gen", durationMs: 8400, ts: Date.now() - 43200000 },
+      { type: "agent.execute", agent: "leads", durationMs: 980, ts: Date.now() - 3600000 },
+    ],
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 60_000,
+});
+
+/* ─── 25. Grounded search: citations + answer ───────────────── */
+registerEval({
+  slug: "grounded-search",
+  name: "Grounded search returns answer with sources",
+  input: {
+    query: "What does Sovereign Matrix's SAM v1.0 spec freeze commit to?",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  skipIf: () => !process.env.TAVILY_API_KEY && !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 60_000,
+});

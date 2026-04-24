@@ -14,6 +14,7 @@ import { TiltCard } from "@/components/ui/EliteEffects";
 
 // Above-the-fold — static-imported so they ship in the initial chunk.
 import { LiveProofStrip } from "@/components/landing/LiveProofStrip";
+import { LivePlatformMetrics } from "@/components/landing/LivePlatformMetrics";
 import { ProofStrip } from "@/components/landing/ProofStrip";
 import { ThreeMoatsGrid } from "@/components/landing/ThreeMoatsGrid";
 import { A2EEconomySection } from "@/components/landing/A2EEconomySection";
@@ -170,6 +171,9 @@ export default function LandingPage() {
         {/* 06 · Verification Pipeline */}
         <VerificationPipeline />
 
+        {/* 06a · Live platform metrics — honest uptime + P95 + cache */}
+        <LivePlatformMetrics />
+
         {/* 07 · Featured Playbooks */}
         <FeaturedPlaybooksSection />
 
@@ -266,6 +270,7 @@ function Nav({
               <NavLink href={PLATFORM_HREF}>Platform</NavLink>
               <NavLink href="/agents">Directory</NavLink>
               <NavLink href="/marketplace">Marketplace</NavLink>
+              <NavLink href="/compare">Compare</NavLink>
               <NavLink href="/trust">Trust</NavLink>
               <NavLink href="/pricing">Pricing</NavLink>
               <NavLink href="/developers/docs">Docs</NavLink>
@@ -330,8 +335,9 @@ function Nav({
           >
             {[
               { href: PLATFORM_HREF, label: "Platform" },
-              { href: "/agents", label: "Directory — 203 agents" },
+              { href: "/agents", label: "Directory — 218 agents" },
               { href: "/marketplace", label: "Marketplace" },
+              { href: "/compare", label: "Compare vs. others" },
               { href: "/trust", label: "Trust" },
               { href: "/pricing", label: "Pricing" },
               { href: "/developers/docs", label: "Docs" },
@@ -430,7 +436,7 @@ function Hero() {
               <span className="absolute inline-flex h-full w-full rounded-full bg-[#B5532C] opacity-70 animate-ping" />
               <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#B5532C]" />
             </span>
-            <span>203 agents</span>
+            <span>218 agents</span>
             <span className="text-neutral-700">·</span>
             <span>39 models</span>
             <span className="text-neutral-700">·</span>
@@ -805,7 +811,7 @@ function FinalCTA() {
 
         <p className="ed-body text-[15px] md:text-[16px] mb-12 leading-relaxed max-w-lg mx-auto"
            style={{ color: "var(--ed-ink-soft)" }}>
-          No credit card. 203 agents in 60 seconds. 50 runs reset every month.
+          No credit card. 218 agents in 60 seconds. 50 runs reset every month.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8">
@@ -889,12 +895,15 @@ function Footer() {
             ]}
           />
           <FooterCol
-            title="Solutions"
+            title="Industries"
             links={[
+              { href: "/for-insurance", label: "Insurance" },
+              { href: "/for-logistics", label: "Logistics" },
               { href: "/for-healthcare", label: "Healthcare" },
-              { href: "/for-legal", label: "Legal" },
               { href: "/for-agriculture", label: "Agriculture" },
-              { href: "/for-manufacturing", label: "Manufacturing" },
+              { href: "/for-construction", label: "Construction" },
+              { href: "/for-legal", label: "Legal" },
+              { href: "/for-realestate", label: "Real Estate" },
               { href: "/for-cybersecurity", label: "Security" },
             ]}
           />
