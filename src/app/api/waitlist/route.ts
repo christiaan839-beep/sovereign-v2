@@ -86,7 +86,7 @@ async function sendWelcomeEmail(email: string) {
             </div>
             <p style="color: #525252; font-size: 12px; line-height: 1.6; margin: 32px 0 0 0; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 24px;">
               Sovereign Matrix — Agent Operating System<br/>
-              130 agents. 38 models. $199/mo flat.<br/>
+              223 agents. 38 models. $199/mo flat.<br/>
               <a href="https://sovereignmatrix.agency" style="color: #10b981; text-decoration: none;">sovereignmatrix.agency</a>
             </p>
           </div>

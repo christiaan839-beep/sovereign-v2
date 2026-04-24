@@ -2,7 +2,7 @@
  * GET /api/public/catalog
  *
  * Public catalog feed for the landing v2 Staff Directory + Atlas.
- * Returns the 137 agents with 30-day rollup stats in the shape:
+ * Returns the 223 agents with 30-day rollup stats in the shape:
  *
  *   { agents: PublicAgent[], count: number }
  *

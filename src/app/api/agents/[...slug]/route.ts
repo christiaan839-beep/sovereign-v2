@@ -3,7 +3,7 @@ import { AGENT_REGISTRY } from "../registry";
 import { buildAgentResume, serializeAgentResume } from "@/lib/agent-resume";
 
 /**
- * UNIFIED AGENT ROUTER — Single serverless function for ALL 126 agents.
+ * UNIFIED AGENT ROUTER — Single serverless function for ALL 223 agents.
  *
  * Uses a static import registry (registry.ts) so webpack bundles all agent
  * modules into this serverless function. This is required for Vercel

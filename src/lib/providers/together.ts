@@ -13,6 +13,7 @@ import {
   requireKey,
   type OpenAICompatMessage,
 } from "./provider-utils";
+import { assertSovereignty } from "./sovereignty";
 import { togetherBreaker } from "@/lib/circuit-breaker";
 
 export const TOGETHER_MODELS = {
@@ -42,6 +43,10 @@ export async function togetherChat(args: TogetherChatArgs): Promise<string> {
     "together",
   );
   const model = resolveModel(args.model);
+  // Parity with src/lib/nvidia.ts DATA_SOVEREIGNTY_MODE gate: block
+  // Chinese-weight models (DeepSeek, Qwen, etc.) when the flag is set.
+  // Router catches the ProviderError and falls through to next step.
+  assertSovereignty(model, "together");
 
   const messages: OpenAICompatMessage[] = [
     ...(args.system ? [{ role: "system" as const, content: args.system }] : []),

@@ -137,7 +137,7 @@ export default function LaunchPage() {
           <span className="text-emerald-400">You deploy agents.</span>
         </h2>
         <p className="text-neutral-400 max-w-md mx-auto mb-8">
-          130 agents. 38 models. $199/mo. Start in 60 seconds.
+          223 agents. 38 models. $199/mo. Start in 60 seconds.
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
           <Link href="/signup" className="inline-flex items-center gap-2 px-8 py-4 bg-emerald-500 text-black font-semibold rounded-full text-sm hover:bg-emerald-400 transition-all">

@@ -312,7 +312,7 @@ describe("extract-meeting", () => {
             </p>
             <CodeBlock lang="bash">
 {`npm run gen:registry
-# [gen:registry] wrote 199 agents → src/app/api/agents/registry.ts`}
+# [gen:registry] wrote 223 agents → src/app/api/agents/registry.ts`}
             </CodeBlock>
             <p className="mt-4">
               Your agent is now reachable at <Mono>POST /api/agents/extract-meeting</Mono>.

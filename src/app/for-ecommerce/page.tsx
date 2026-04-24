@@ -103,7 +103,7 @@ export default function ForEcommercePage() {
             transition={{ delay: 0.2 }}
             className="text-lg text-neutral-400 max-w-xl mx-auto leading-relaxed mb-8"
           >
-            130 agents handle your entire catalog at once. Voice agents handle customer inquiries 24/7.
+            223 agents handle your entire catalog at once. Voice agents handle customer inquiries 24/7.
           </motion.p>
 
           <motion.div

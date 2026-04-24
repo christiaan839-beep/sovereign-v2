@@ -34,7 +34,7 @@ export default async function AgentLayout({ children, params }: Props) {
     description:
       agent.description ??
       agent.tagline ??
-      `${agent.displayName} — one of 198 agents on the Sovereign Matrix platform.`,
+      `${agent.displayName} — one of 223 agents on the Sovereign Matrix platform.`,
     applicationCategory: "BusinessApplication",
     applicationSubCategory: agent.category,
     operatingSystem: "Web",

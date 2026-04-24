@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     "How a solo founder built 130 AI agents, a multi-model consensus engine, and a live production platform using Claude as the reasoning core.",
   openGraph: {
     title: "Built with Claude — Sovereign Matrix",
-    description: "130 agents, one founder, Claude as the reasoning core.",
+    description: "223 agents, one founder, Claude as the reasoning core.",
     type: "article",
   },
 };
@@ -62,7 +62,7 @@ const HOW_BUILT = [
   { count: "01", title: "Written with Claude Code",   body: "Every line of Sovereign Matrix was authored in a Claude Code session. The commit log reads like a correspondence with an engineering partner." },
   { count: "02", title: "Reviewed by Claude",         body: "Three specialized review agents — slop-hunter, security-review, gap-finder — run before every push. The platform audits itself." },
   { count: "03", title: "Architected with Claude",   body: "Architecture decisions, trade-offs, migration plans — all worked out in writing. The reasoning is in the repo." },
-  { count: "04", title: "Shipped solo — at scale",   body: "131 agents, 39 model integrations, a playbook engine, a multi-tenant safety pipeline, a live metering layer. One person, one AI partner." },
+  { count: "04", title: "Shipped solo — at scale",   body: "223 agents, 39 model integrations, a playbook engine, a multi-tenant safety pipeline, a live metering layer. One person, one AI partner." },
 ];
 
 const CLAUDE_API_FEATURES = [

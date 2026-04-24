@@ -172,7 +172,7 @@ export function AgentGlobe() {
               <span className="text-emerald-400">Operating everywhere.</span>
             </h2>
             <p className="text-neutral-400 text-sm leading-relaxed mb-8 max-w-sm">
-              130 agents deployed across 25 global hubs on 6 continents.
+              223 agents deployed across 25 global hubs on 6 continents.
               27 active data routes. Zero latency regardless of where your leads are.
             </p>
 

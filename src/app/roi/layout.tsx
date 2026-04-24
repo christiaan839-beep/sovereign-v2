@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "https://sovereignmatrix.agency/roi" },
   openGraph: {
     title: "Sovereign Matrix ROI — Replace 8 tools, save $516/mo",
-    description: "Typical SaaS stack is $715/mo. Sovereign Matrix is $199/mo flat, with 130 agents and 39 models included.",
+    description: "Typical SaaS stack is $715/mo. Sovereign Matrix is $199/mo flat, with 223 agents and 39 models included.",
     url: "https://sovereignmatrix.agency/roi",
     type: "website",
   },

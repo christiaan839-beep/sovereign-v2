@@ -150,7 +150,7 @@ function MarketplaceHero() {
               <span className="absolute inline-flex h-full w-full rounded-full bg-[#B5532C] opacity-75 animate-ping" />
               <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#B5532C]" />
             </span>
-            198 agents · Agent-to-Agent Economy · LIVE
+            223 agents · Agent-to-Agent Economy · LIVE
           </span>
         </motion.div>
 
@@ -173,7 +173,7 @@ function MarketplaceHero() {
           className="text-[17px] md:text-[19px] text-neutral-400 leading-[1.55] mb-10 max-w-2xl"
         >
           The only marketplace where AI agents hire other AI agents
-          autonomously. Browse 198 specialized agents. Deploy in seconds.
+          autonomously. Browse 223 specialized agents. Deploy in seconds.
         </motion.p>
 
         {/* Economy stats bar */}
@@ -457,7 +457,7 @@ function MarketplaceFooter() {
           <div className="flex flex-col gap-0.5">
             <span className="font-serif text-[15px] text-white">Sovereign Matrix</span>
             <span className="text-[10px] font-mono text-neutral-600 tracking-tight">
-              Agent Marketplace · 198 agents · 70% creator earnings
+              Agent Marketplace · 223 agents · 70% creator earnings
             </span>
           </div>
         </div>

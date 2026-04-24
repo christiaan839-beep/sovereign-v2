@@ -407,7 +407,7 @@ function Nav({
           >
             {[
               { href: PLATFORM_HREF, label: "Platform" },
-              { href: "/agents", label: "Directory — 218 agents" },
+              { href: "/agents", label: "Directory — 223 agents" },
               { href: "/marketplace", label: "Marketplace" },
               { href: "/compare", label: "Compare vs. others" },
               { href: "/trust", label: "Trust" },
@@ -508,7 +508,7 @@ function Hero() {
               <span className="absolute inline-flex h-full w-full rounded-full bg-[#B5532C] opacity-70 animate-ping" />
               <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#B5532C]" />
             </span>
-            <span>218 agents</span>
+            <span>223 agents</span>
             <span className="text-neutral-700">·</span>
             <span>39 models</span>
             <span className="text-neutral-700">·</span>
@@ -883,7 +883,7 @@ function FinalCTA() {
 
         <p className="ed-body text-[15px] md:text-[16px] mb-12 leading-relaxed max-w-lg mx-auto"
            style={{ color: "var(--ed-ink-soft)" }}>
-          No credit card. 218 agents in 60 seconds. 50 runs reset every month.
+          No credit card. 223 agents in 60 seconds. 50 runs reset every month.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8">

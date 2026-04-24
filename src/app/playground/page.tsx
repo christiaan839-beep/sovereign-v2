@@ -28,13 +28,13 @@ import { listCatalog } from "@/lib/agent-catalog";
 import { PlaygroundClient } from "./PlaygroundClient";
 
 export const metadata: Metadata = {
-  title: "Playground — try 218 agents without signing up · Sovereign Matrix",
+  title: "Playground — try 223 agents without signing up · Sovereign Matrix",
   description:
-    "Interactive agent playground. Run any of 218 first-party agents with no signup. See real results, real latency. Deep-linkable via ?agent=<slug>.",
+    "Interactive agent playground. Run any of 223 first-party agents with no signup. See real results, real latency. Deep-linkable via ?agent=<slug>.",
   alternates: { canonical: "https://sovereignmatrix.agency/playground" },
   openGraph: {
     title: "Sovereign Matrix Playground",
-    description: "Run 218 agents with no signup. Real results, real latency.",
+    description: "Run 223 agents with no signup. Real results, real latency.",
     url: "https://sovereignmatrix.agency/playground",
     type: "website",
   },

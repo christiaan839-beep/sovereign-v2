@@ -18,6 +18,7 @@ import {
   ProviderError,
   type OpenAICompatMessage,
 } from "./provider-utils";
+import { assertSovereignty } from "./sovereignty";
 import { databricksBreaker } from "@/lib/circuit-breaker";
 
 export const DATABRICKS_MODELS = {
@@ -56,6 +57,9 @@ export async function databricksChat(
     );
   }
   const model = resolveModel(args.model);
+  // Databricks hosts Llama + DBRX (sovereignty-safe) but future catalog
+  // additions could include CN-weight hosts. Keep the guard for parity.
+  assertSovereignty(model, "databricks");
 
   const messages: OpenAICompatMessage[] = [
     ...(args.system ? [{ role: "system" as const, content: args.system }] : []),

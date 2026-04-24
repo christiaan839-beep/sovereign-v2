@@ -34,7 +34,7 @@ function AgentAvatar({ personality, isActive, isThinking }: { personality: Agent
  * AI agents collaborating in real-time. Each agent has a role,
  * workspace, and active conversation/task.
  *
- * Used on the landing page to demonstrate what "124 autonomous agents"
+ * Used on the landing page to demonstrate what "223 autonomous agents"
  * actually looks like in practice.
  */
 

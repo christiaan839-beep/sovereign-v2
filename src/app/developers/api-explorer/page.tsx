@@ -22,7 +22,7 @@ import { ApiExplorerClient } from "./ApiExplorerClient";
 export const metadata: Metadata = {
   title: "API Explorer — Sovereign Matrix",
   description:
-    "Browse the Sovereign Matrix API. 218 agents + platform endpoints. Copy cURL for any endpoint. Feeds openapi-generator, Stainless, Speakeasy.",
+    "Browse the Sovereign Matrix API. 223 agents + platform endpoints. Copy cURL for any endpoint. Feeds openapi-generator, Stainless, Speakeasy.",
   alternates: {
     canonical: "https://sovereignmatrix.agency/developers/api-explorer",
   },

@@ -231,7 +231,7 @@ export default function DevelopersPage() {
             The agent marketplace is open.
           </h2>
           <p className="text-neutral-400 mb-8">
-            130 agents. 10,000+ potential users. Your agent could be next.
+            223 agents. 10,000+ potential users. Your agent could be next.
           </p>
           <Link
             href="/signup"

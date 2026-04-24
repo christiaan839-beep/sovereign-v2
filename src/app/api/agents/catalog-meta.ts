@@ -3,7 +3,7 @@
  *
  * The AGENT_REGISTRY at ./registry.ts is auto-generated from every
  * `src/app/api/_agents/{slug}/route.ts` and includes every agent that has
- * a handler. That's 198 agents (as of this commit) — more than we want
+ * a handler. That's 223 agents (as of this commit) — more than we want
  * to showcase to a prospect trying to evaluate the platform.
  *
  * This file is HAND-MAINTAINED. It's the curated set of agents

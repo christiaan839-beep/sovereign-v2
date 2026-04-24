@@ -165,7 +165,7 @@ export function IndustriesShowcase() {
               <span className="ed-display-italic text-[#B5532C]">A vertical stack.</span>
             </h2>
             <p className="text-sm md:text-base text-neutral-400 leading-relaxed mb-6">
-              218 agents grouped into 10 industries — each with output shapes
+              223 agents grouped into 10 industries — each with output shapes
               that plug straight into the incumbent system of record.
               Guidewire for insurance. McLeod for freight. John Deere Operations
               Center for ag. Procore for construction. You don&apos;t replace the

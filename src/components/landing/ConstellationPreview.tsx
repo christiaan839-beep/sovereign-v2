@@ -92,7 +92,7 @@ export function ConstellationPreview({ agents, totalCount = 218 }: Props) {
         <div className="grid md:grid-cols-12 gap-10 md:gap-14 items-center">
           <div className="md:col-span-5">
             <h2 className="ed-display text-3xl md:text-5xl leading-[1.02] mb-6">
-              218 agents.<br />
+              223 agents.<br />
               <span className="ed-display-italic text-[#B5532C]">One living map.</span>
             </h2>
             <p className="text-sm md:text-base text-neutral-400 leading-relaxed mb-6">

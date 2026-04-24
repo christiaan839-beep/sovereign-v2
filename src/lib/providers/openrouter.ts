@@ -24,6 +24,7 @@ import {
   requireKey,
   type OpenAICompatMessage,
 } from "./provider-utils";
+import { assertSovereignty } from "./sovereignty";
 import { openrouterBreaker } from "@/lib/circuit-breaker";
 
 /**
@@ -68,6 +69,10 @@ export async function openrouterChat(
     "openrouter",
   );
   const model = resolveModel(args.model);
+  // OpenRouter's 100+ model menu includes CN-weight families. Respect
+  // DATA_SOVEREIGNTY_MODE by blocking them here — matches nvidia.ts
+  // gate so the flag means what it says across the whole router.
+  assertSovereignty(model, "openrouter");
 
   const messages: OpenAICompatMessage[] = [
     ...(args.system ? [{ role: "system" as const, content: args.system }] : []),

@@ -4,7 +4,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Platform · Sovereign Matrix — Agents as infrastructure, not a UI",
   description:
-    "Build on Sovereign Matrix. 20-tool MCP package, open-source .agent.md spec, signed snapshot exports, 131 agents addressable by slug. For engineers who want AI agents as infrastructure.",
+    "Build on Sovereign Matrix. 20-tool MCP package, open-source .agent.md spec, signed snapshot exports, 223 agents addressable by slug. For engineers who want AI agents as infrastructure.",
   alternates: { canonical: "https://sovereignmatrix.agency/platform" },
   openGraph: {
     title: "Sovereign Matrix — Platform for developers",
@@ -95,7 +95,7 @@ export default function PlatformPage() {
           />
           <Primitive
             number="02"
-            title="REST API + 131 agents"
+            title="REST API + 223 agents"
             body="Every agent addressable at /api/agents/<slug>. Zod-validated inputs, consistent response envelope, _meta.modelsConsulted so you always know which provider handled your request."
             code="POST /api/agents/leads"
           />

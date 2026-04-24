@@ -50,7 +50,16 @@
  * 30 pixels.
  */
 
-import { createHash } from "node:crypto";
+// NOTE: intentionally NOT importing `node:crypto`. Previous version used
+// createHash("sha256") which made this module Node-only — it broke on
+// Vercel Edge Runtime (where OG image routes live) AND pulled a Node
+// builtin into client bundles via React client components that import
+// agentSigilDataUrl. The hash only needs to be deterministic + well-
+// distributed for the mulberry32 seed — cryptographic strength is
+// irrelevant. FNV-1a (below) gives us that in 20 lines, runs in every
+// JS runtime, and produces byte-identical output to the SHA-256 prefix
+// we used previously would have — so existing sigil outputs change on
+// this commit but then stay stable from here on.
 
 // ─── Types ────────────────────────────────────────────────────
 
@@ -88,12 +97,22 @@ function mulberry32(seed: number): () => number {
   };
 }
 
-/** Hash a string to a 32-bit integer seed (deterministic, pure). */
+/**
+ * FNV-1a 32-bit hash — deterministic, runs in any JS runtime (Node,
+ * Edge, browser), no dependencies. Used to seed the mulberry32 PRNG
+ * below; no cryptographic use.
+ *
+ * Reference: http://www.isthe.com/chongo/tech/comp/fnv/
+ */
 function hashSeed(input: string): number {
-  // SHA-256 is overkill numerically but guarantees no pathological
-  // collisions for short strings like slugs. We only need 32 bits.
-  const hex = createHash("sha256").update(input).digest("hex").slice(0, 8);
-  return parseInt(hex, 16);
+  let h = 0x811c9dc5; // FNV offset basis (32-bit)
+  for (let i = 0; i < input.length; i++) {
+    h ^= input.charCodeAt(i);
+    // FNV prime = 16777619, implemented via Math.imul for 32-bit truncation.
+    h = Math.imul(h, 0x01000193);
+  }
+  // Return unsigned 32-bit.
+  return h >>> 0;
 }
 
 // ─── Palettes ──────────────────────────────────────────────────

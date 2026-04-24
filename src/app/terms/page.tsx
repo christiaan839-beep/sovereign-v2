@@ -32,7 +32,7 @@ const SECTIONS: Section[] = [
     children: (
       <>
         <p><strong>&quot;Platform&quot;</strong> means Sovereign Matrix — the web application at sovereignmatrix.agency, including its dashboard, APIs, marketplace, and any associated services.</p>
-        <p><strong>&quot;Agent&quot;</strong> means a discrete automation routine (one of 137 first-party agents or a third-party submission) that performs a specific task when invoked.</p>
+        <p><strong>&quot;Agent&quot;</strong> means a discrete automation routine (one of 223 first-party agents or a third-party submission) that performs a specific task when invoked.</p>
         <p><strong>&quot;Playbook&quot;</strong> means a sequenced chain of agents plus user-supplied inputs that executes as a single run.</p>
         <p><strong>&quot;Credits&quot;</strong> means the prepaid ledger units used to run paid agents. Credits are non-refundable except as stated in §10 and cannot be redeemed for cash.</p>
         <p><strong>&quot;You&quot;</strong> means the natural or legal person accepting these Terms by creating an account.</p>

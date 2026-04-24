@@ -178,7 +178,7 @@ export default function SovereignApp() {
           });
           const demoData = await demoRes.json();
           setMessages((prev) =>
-            prev.map((m) => m.id === assistantMsg.id ? { ...m, content: demoData.output || demoData.result || "Sign in to use all 130 agents.", model: "Demo" } : m)
+            prev.map((m) => m.id === assistantMsg.id ? { ...m, content: demoData.output || demoData.result || "Sign in to use all 223 agents.", model: "Demo" } : m)
           );
         }
       }
@@ -232,7 +232,7 @@ export default function SovereignApp() {
             </div>
             <h2 className="text-xl font-bold text-white mb-2">What can I help you with?</h2>
             <p className="text-sm text-neutral-400 max-w-sm mb-8">
-              I have 35+ AI models and 130 specialized agents. Ask me anything — I&apos;ll pick the best model for your task automatically.
+              I have 35+ AI models and 223 specialized agents. Ask me anything — I&apos;ll pick the best model for your task automatically.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-w-lg w-full">
               {SUGGESTIONS.slice(0, 4).map((s) => (

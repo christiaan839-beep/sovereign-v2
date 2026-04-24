@@ -8,7 +8,7 @@
  *
  * DESIGN INTENT
  * ─────────────
- * - Agent picker is a combobox with search (218 agents is too many for a dropdown)
+ * - Agent picker is a combobox with search (223 agents is too many for a dropdown)
  * - Default agent comes from ?agent=<slug> or falls back to smart-router
  * - Prompt input shows a category-aware example
  * - "Run" posts to /api/agents/<slug> (the public path, not /api/_agents/)

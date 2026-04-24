@@ -198,7 +198,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     {
                       "@type": "Question",
                       name: "Is this a chatbot or a platform?",
-                      acceptedAnswer: { "@type": "Answer", text: "Neither. Sovereign Matrix is an agent operating system: 130 autonomous agents that plan, execute, and self-correct without human intervention. Agents work simultaneously across lead gen, content, SEO, voice calls, and research — with a scheduler that fires playbooks on cron." },
+                      acceptedAnswer: { "@type": "Answer", text: "Neither. Sovereign Matrix is an agent operating system: 223 autonomous agents that plan, execute, and self-correct without human intervention. Agents work simultaneously across lead gen, content, SEO, voice calls, and research — with a scheduler that fires playbooks on cron." },
                     },
                     {
                       "@type": "Question",

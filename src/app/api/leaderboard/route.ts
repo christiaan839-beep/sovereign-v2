@@ -55,7 +55,7 @@ export async function GET(req: Request) {
   const since = sinceISO(windowParam);
 
   // Build the rollup join. Aggregates are computed in SQL so we don't ship
-  // 30d × 137 agents worth of rows back just to sort in JS.
+  // 30d × 223 agents worth of rows back just to sort in JS.
   const runs = sql<number>`COALESCE(SUM(${agentStatsDaily.runs}), 0)::int`.as("runs");
   const successes = sql<number>`COALESCE(SUM(${agentStatsDaily.successes}), 0)::int`.as("successes");
   const avgDuration = sql<number | null>`AVG(${agentStatsDaily.avgDurationMs})::int`.as("avgDurationMs");

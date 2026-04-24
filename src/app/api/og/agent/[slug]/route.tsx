@@ -164,7 +164,7 @@ export async function GET(
           </div>
         </div>
 
-        {/* Footer — url only. The stat dump ("218 agents · 16 providers · 126+ models")
+        {/* Footer — url only. The stat dump ("223 agents · 16 providers · 126+ models")
          *  was noise at 30% scale in a Twitter feed per design review.
          *  The sigil + name + tagline already sells it. */}
         <div

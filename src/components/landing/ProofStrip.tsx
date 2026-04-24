@@ -6,7 +6,7 @@ import Link from "next/link";
  * ProofStrip — consolidates 3 previously-separate sections into one.
  *
  * Replaces:
- *   - PlatformScale   (137 agents / 90+ integrations / 8 providers / 5 verif)
+ *   - PlatformScale   (223 agents / 90+ integrations / 8 providers / 5 verif)
  *   - IndustrySection (8 industry cards)
  *   - StackKiller     (cost displacement — the strongest claim stayed in
  *                      ThreeMoatsGrid; this strip shows the proof numbers)

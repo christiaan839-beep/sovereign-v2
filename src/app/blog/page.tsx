@@ -69,7 +69,7 @@ const ARTICLES = [
   {
     slug: "hubspot-alternative-for-agencies",
     title: "The Best HubSpot Alternative for Growth-Stage Agencies in 2026",
-    excerpt: "HubSpot costs $890/mo for marketing automation. Sovereign Matrix gives you 130 autonomous agents for $199/mo — and they actually execute, not just automate.",
+    excerpt: "HubSpot costs $890/mo for marketing automation. Sovereign Matrix gives you 223 autonomous agents for $199/mo — and they actually execute, not just automate.",
     category: "Comparison",
     readTime: "8 min",
     date: "Apr 3, 2026",

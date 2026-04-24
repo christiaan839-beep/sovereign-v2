@@ -7,7 +7,7 @@ import { FilterRail } from "@/components/world/FilterRail";
 import { AgentDrawer } from "@/components/world/AgentDrawer";
 
 /**
- * /world — the constellation. All 137 agents as clickable nodes, filtered
+ * /world — the constellation. All 223 agents as clickable nodes, filtered
  * by category and search, with a right-side drawer for details.
  *
  * Data path:

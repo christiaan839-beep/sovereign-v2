@@ -160,11 +160,24 @@ async function aiUncached(prompt: string, options: AIOptions): Promise<string> {
     return cohereChat({ prompt, system, maxTokens, model });
   }
 
-  if (model === "openrouter" || (typeof model === "string" && model.includes("/"))) {
-    // "openrouter" → auto; "owner/slug" → specific OpenRouter model.
+  // OpenRouter requires an explicit opt-in. The earlier version matched
+  // ANY string containing "/", which silently captured NIM slugs like
+  // "nvidia/nemotron-ultra-253b-v1" and "google/gemma-4-31b-it" —
+  // redirecting them to OpenRouter (wrong billing, wrong model, and
+  // critically bypassing DATA_SOVEREIGNTY_MODE from nvidia.ts).
+  //
+  // Now: match "openrouter" (auto) OR the explicit prefixed form
+  // "openrouter/<owner>/<model>". The adapter receives the raw
+  // "owner/model" with the "openrouter/" prefix stripped.
+  if (
+    model === "openrouter" ||
+    (typeof model === "string" && model.startsWith("openrouter/"))
+  ) {
     const { openrouterChat } = await import("@/lib/providers");
-    recordModel(`openrouter-${model}`);
-    return openrouterChat({ prompt, system, maxTokens, model });
+    const realModel =
+      model === "openrouter" ? "openrouter" : model.slice("openrouter/".length);
+    recordModel(`openrouter-${realModel}`);
+    return openrouterChat({ prompt, system, maxTokens, model: realModel });
   }
 
   if (model === "together" || model === "llama4-405b" || model === "deepseek-v3-together") {

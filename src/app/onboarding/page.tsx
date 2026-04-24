@@ -58,7 +58,7 @@ const STEPS = [
   {
     id: "complete",
     title: "You're live.",
-    subtitle: "130 agents deployed. 38 models active. $199/mo flat — no per-token cost.",
+    subtitle: "223 agents deployed. 38 models active. $199/mo flat — no per-token cost.",
     icon: CheckCircle2,
     isComplete: true,
   },

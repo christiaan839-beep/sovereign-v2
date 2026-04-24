@@ -116,13 +116,64 @@ const t0 = Date.now();
 // Catalog
 // ──────────────────────────────────────────────────────────────
 
+const registeredAgentCount = countMatches(
+  join(ROOT, "src/app/api/agents/registry.ts"),
+  /\(\) => import/g,
+);
+check("agents in registry", registeredAgentCount, 200, { dimension: "catalog" });
+
+// Verifiable-claims invariant (STAY-ELITE rule 1). If any public landing
+// surface cites an agent count, that number MUST match the registry.
+// Grep every occurrence of "NNN agents" in src/app and the landing
+// components; fail if any cited number differs from registeredAgentCount.
+//
+// Intent: catches the class of drift where the landing page says "218
+// agents" but the registry has 223 — exactly the issue the 2026-04-24
+// code review flagged. Claim-drift regressions can't merge again.
+function findCitedAgentCounts() {
+  const cited = new Set();
+  // Scan every public .tsx / .ts in src/app and src/components.
+  // Previously restricted to a hand-maintained path list; that let
+  // blog.tsx and root layout.tsx slip through — catches went stale.
+  // Full scan is cheap (~2s) and impossible to maintain-drift around.
+  const scanRoots = [
+    join(ROOT, "src/app"),
+    join(ROOT, "src/components"),
+  ];
+  const visit = (p) => {
+    if (!existsSync(p)) return;
+    const st = statSync(p);
+    if (st.isDirectory()) {
+      walk(p, (rel) => {
+        const full = join(p, rel);
+        if (full.endsWith(".tsx") || full.endsWith(".ts")) visit(full);
+      });
+      return;
+    }
+    const text = readFileSync(p, "utf8");
+    // Match "<number> <optional adjective> agents". Captures NNN from
+    // phrases like "218 agents", "130 autonomous agents", "198
+    // production agents", "223 first-party agents". Skips comments
+    // and string constants that include historical counts.
+    const re = /\b(\d{2,4})\s+(?:autonomous\s+|production\s+|first-party\s+|specialized\s+)?agents\b/g;
+    let m;
+    while ((m = re.exec(text)) !== null) {
+      const n = parseInt(m[1], 10);
+      if (Number.isFinite(n) && n >= 100 && n <= 1000) cited.add(n);
+    }
+  };
+  for (const r of scanRoots) visit(r);
+  return [...cited].sort((a, b) => a - b);
+}
+
+const citedCounts = findCitedAgentCounts();
+const claimsMatchRegistry =
+  citedCounts.length === 0 ||
+  citedCounts.every((n) => n === registeredAgentCount);
 check(
-  "agents in registry",
-  countMatches(
-    join(ROOT, "src/app/api/agents/registry.ts"),
-    /\(\) => import/g,
-  ),
-  200,
+  "landing agent-count claims match registry",
+  claimsMatchRegistry ? 1 : 0,
+  1,
   { dimension: "catalog" },
 );
 
