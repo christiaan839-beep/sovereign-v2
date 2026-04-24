@@ -4,6 +4,11 @@ import { usage, apiKeys } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import crypto from "crypto";
 import { createLogger } from "@/lib/logger";
+import {
+  evaluateScope,
+  buildScopeDeniedResponse,
+  type ApiKeyRecord,
+} from "@/lib/api-key-scopes";
 const log = createLogger("api-v1-proxy");
 
 /**
@@ -22,9 +27,13 @@ const log = createLogger("api-v1-proxy");
 const apiRateLimits = new Map<string, { count: number; resetAt: number }>();
 
 // ── API Key Validation Cache (prevents DB hit on every request) ──
+//
+// Cache shape note: we now cache the FULL ApiKeyRecord shape (including
+// scopes/allowedAgents/allowedIps). That's an extra 0.1-1 KB per key
+// even at the high end — negligible at 1K cache cap.
 const API_KEY_CACHE_TTL = 5 * 60_000; // 5 minutes
 const API_KEY_CACHE_MAX = 1_000;
-const apiKeyCache = new Map<string, { plan: string; userId: string; cachedAt: number }>();
+const apiKeyCache = new Map<string, { record: ApiKeyRecord; cachedAt: number }>();
 
 /** Invalidate a cached API key (call on revocation). */
 export function invalidateApiKeyCache(keyHash: string): void {
@@ -54,14 +63,18 @@ function extractApiKey(request: NextRequest): string | null {
   return null;
 }
 
-/** Validate API key against database with LRU cache. Returns plan or null if invalid. */
-async function validateApiKey(rawKey: string): Promise<{ plan: string; userId: string } | null> {
+/**
+ * Validate API key against database with LRU cache. Returns the full
+ * key record (including scope columns) for downstream scope enforcement,
+ * or null if invalid/expired/revoked.
+ */
+async function validateApiKey(rawKey: string): Promise<ApiKeyRecord | null> {
   const keyHash = crypto.createHash("sha256").update(rawKey).digest("hex");
 
   // Check cache first (avoids DB query on every request)
   const cached = apiKeyCache.get(keyHash);
   if (cached && Date.now() - cached.cachedAt < API_KEY_CACHE_TTL) {
-    return { plan: cached.plan, userId: cached.userId };
+    return cached.record;
   }
 
   try {
@@ -73,15 +86,25 @@ async function validateApiKey(rawKey: string): Promise<{ plan: string; userId: s
     if (row.revokedAt) { apiKeyCache.delete(keyHash); return null; }
     if (row.expiresAt && row.expiresAt < new Date()) { apiKeyCache.delete(keyHash); return null; }
 
-    // Populate cache
-    apiKeyCache.set(keyHash, { plan: row.plan, userId: row.userId, cachedAt: Date.now() });
+    const record: ApiKeyRecord = {
+      id: row.id,
+      userId: row.userId,
+      plan: row.plan,
+      scopes: row.scopes ?? null,
+      allowedAgents: row.allowedAgents ?? null,
+      allowedIps: row.allowedIps ?? null,
+    };
+
+    // Populate cache with the full record so scope checks don't need a
+    // second DB hit on each request.
+    apiKeyCache.set(keyHash, { record, cachedAt: Date.now() });
     pruneApiKeyCache();
 
     // Update last used timestamp (best-effort — log failures but don't block)
     db.update(apiKeys).set({ lastUsedAt: new Date() }).where(eq(apiKeys.id, row.id)).catch((err) => {
       log.warn("Failed to update lastUsedAt on API key", { keyId: row.id, error: (err as Error).message });
     });
-    return { plan: row.plan, userId: row.userId };
+    return record;
   } catch (err) {
     // DB unavailable — deny. The in-memory cache already covers recently-used
     // keys for up to 5 minutes; we MUST NOT grant access based on a key prefix
@@ -89,6 +112,56 @@ async function validateApiKey(rawKey: string): Promise<{ plan: string; userId: s
     log.error("API key DB validation failed — denying request", { error: (err as Error).message });
     return null;
   }
+}
+
+/**
+ * Map a v1 request to the {scope, agentSlug} pair the scope evaluator
+ * expects. The v1 gateway is primarily an agent-execution surface, so:
+ *   - /api/v1/agents/<slug> → agent:execute on <slug>
+ *   - /api/v1/playbooks/* and other write paths → agent:execute (no slug)
+ *   - /api/v1/health/* and other read-only paths → data:read
+ *
+ * GET requests on any other path default to data:read; non-GET defaults
+ * to agent:execute. This keeps the rule conservative — most v1 traffic
+ * IS agent execution, and read-only health checks are explicitly opt-in.
+ */
+function classifyV1Request(
+  path: string[],
+  method: string,
+): { scope: "agent:execute" | "data:read" | "data:write"; agentSlug?: string } {
+  if (path[0] === "agents" && path[1]) {
+    return { scope: "agent:execute", agentSlug: path[1] };
+  }
+  if (path[0] === "playbooks" || path[0] === "workflows") {
+    return { scope: "agent:execute" };
+  }
+  if (path[0] === "health" || path[0] === "status") {
+    return { scope: "data:read" };
+  }
+  // Generic fallback: GET = read, anything else = write/execute.
+  return method === "GET"
+    ? { scope: "data:read" }
+    : { scope: "agent:execute" };
+}
+
+/**
+ * Pull the client IP from the request's x-forwarded-for / x-real-ip
+ * headers. Vercel sets x-forwarded-for to "client-ip, proxy-1, proxy-2",
+ * so we take the first entry.
+ *
+ * Returns undefined when no IP can be determined — the scope evaluator
+ * will treat that as `ip_required` if the key has an allowedIps list,
+ * which is the safe default.
+ */
+function getClientIp(request: NextRequest): string | undefined {
+  const xff = request.headers.get("x-forwarded-for");
+  if (xff) {
+    const first = xff.split(",")[0]?.trim();
+    if (first) return first;
+  }
+  const xri = request.headers.get("x-real-ip");
+  if (xri) return xri.trim();
+  return undefined;
 }
 
 function checkRateLimit(apiKey: string, plan: string = "free"): {
@@ -133,11 +206,38 @@ async function handleRequest(
     );
   }
 
-  // Validate key against DB (falls back to prefix convention if DB unavailable)
+  // Validate key against DB (deny if invalid — never trust the prefix)
   const keyInfo = await validateApiKey(apiKey);
+  if (!keyInfo) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Invalid or revoked API key.",
+      },
+      { status: 401 },
+    );
+  }
 
-  // Rate limit check — use DB-resolved plan if available
-  const rateCheck = checkRateLimit(apiKey, keyInfo?.plan);
+  // Scope check — least-privilege enforcement. NULL scopes = legacy
+  // full-access (back-compat); any concrete scopes get evaluated against
+  // the request's agent slug + client IP.
+  const requested = classifyV1Request(path, request.method);
+  const scopeResult = evaluateScope(keyInfo, {
+    scope: requested.scope,
+    agentSlug: requested.agentSlug,
+    ipAddress: getClientIp(request),
+  });
+  if (!scopeResult.allowed) {
+    log.warn("api v1: scope denied", {
+      keyId: keyInfo.id,
+      requested,
+      reason: scopeResult.reason,
+    });
+    return buildScopeDeniedResponse(scopeResult.reason);
+  }
+
+  // Rate limit check — use DB-resolved plan
+  const rateCheck = checkRateLimit(apiKey, keyInfo.plan);
   if (!rateCheck.allowed) {
     return NextResponse.json(
       {
@@ -200,7 +300,7 @@ async function handleRequest(
     try {
       const agentId = path.join("/");
       await db.insert(usage).values({
-        userId: keyInfo?.userId || "unknown",
+        userId: keyInfo.userId,
         agentId,
         model: (data as Record<string, unknown>)?.model as string || "unknown",
         tokensUsed: (data as Record<string, unknown>)?.tokensUsed as number || 0,

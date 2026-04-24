@@ -733,6 +733,13 @@ export const apiKeys = pgTable("api_keys", {
   lastUsedAt: timestamp("last_used_at"),
   expiresAt: timestamp("expires_at"),           // null = never expires
   revokedAt: timestamp("revoked_at"),           // null = active
+  // ─── Scope columns (added in migration 0034) ───
+  // NULL on `scopes` = legacy full-access. Empty array = revoked-in-place.
+  // Per-agent scopes ("agent:execute:<slug>") take precedence over generic.
+  // Evaluated by src/lib/api-key-scopes.ts → evaluateScope().
+  scopes: jsonb("scopes").$type<string[] | null>(),
+  allowedAgents: jsonb("allowed_agents").$type<string[] | null>(),
+  allowedIps: jsonb("allowed_ips").$type<string[] | null>(),
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => [
   index("idx_api_keys_key").on(table.key),
