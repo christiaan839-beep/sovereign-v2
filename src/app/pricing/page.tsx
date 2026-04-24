@@ -8,6 +8,7 @@ import { AnimatePresence } from "framer-motion";
 import { SovereignLogo } from "@/components/ui/SovereignLogo";
 import { RevealText, GlowDivider, MagneticButton } from "@/components/ui/ScrollAnimations";
 import { getMarketingPlans, PLANS, type PlanId } from "@/lib/plans";
+import { PricingCalculator } from "@/components/pricing/PricingCalculator";
 
 const fadeIn = (d: number) => ({ initial: { opacity: 0, y: 20 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true }, transition: { delay: d, duration: 0.6 } });
 
@@ -311,6 +312,9 @@ export default function PricingPage() {
       </section>
 
       <GlowDivider />
+
+      {/* ─── Interactive cost calculator ─── */}
+      <PricingCalculator />
 
       {/* ─── Pricing Cards ─── */}
       <section className="relative z-10 px-8 py-20 max-w-5xl mx-auto">

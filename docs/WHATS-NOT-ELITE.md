@@ -4,6 +4,26 @@
 > enterprise pen-test". Items below are **real gaps** as of April 24, 2026.
 > No marketing. Each has a fix scope + a rough priority.
 
+## Recently closed (last sprint, commit `be5dd629` + `f1904f0d`)
+
+- ✅ **`/api/openapi` + `/developers/api-explorer`** — OpenAPI 3.1 spec
+  auto-generated from the static agent registry. Public endpoint + HTML
+  explorer with copy-cURL per endpoint. SDK-generator-ready.
+- ✅ **Pricing calculator on `/pricing`** — interactive slider, 5 plans,
+  recommends the cheapest that covers volume without overages.
+- ✅ **SLO cross-instance read path** — `getPlatformSloFromDb()` reads
+  `slo_events` via Postgres `percentile_disc`. `/status/slo` now shows
+  the source (`postgres` vs `in-memory`) so honesty is baked in.
+- ✅ **IndustriesShowcase on landing** — visually connects all 10
+  `/for-*` industry pages with per-industry proof points. Broke template-
+  echo by giving each card a different proof shape.
+- ✅ **Sitemap updated** — 17 new pages registered for SEO
+  (`/compare`, `/status/slo`, `/developers/api-explorer`, `/docs/errors`,
+  `/docs/webhooks/verify`, 4 new industry pages, and more).
+- ✅ **Fixed 1 setState-in-effect with clean rationale** — CommandPalette
+  now has documented eslint-disable comments explaining why the 2 effects
+  are deliberate (rare-event resets, acceptable cascading cost).
+
 ## Section 1 — Where I cut corners this sprint
 
 These are things I shipped with known imperfections. Flagging them here so

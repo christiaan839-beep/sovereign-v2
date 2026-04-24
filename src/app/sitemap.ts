@@ -47,7 +47,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // Launch
     { path: "/launch", priority: 1.0, changeFreq: "weekly" },
 
-    // Sector pages
+    // Sector pages — 10 live industries
     { path: "/for-healthcare", priority: 0.8, changeFreq: "monthly" },
     { path: "/for-legal", priority: 0.8, changeFreq: "monthly" },
     { path: "/for-realestate", priority: 0.8, changeFreq: "monthly" },
@@ -56,9 +56,22 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/for-education", priority: 0.8, changeFreq: "monthly" },
     { path: "/for-fintech", priority: 0.8, changeFreq: "monthly" },
     { path: "/for-ecommerce", priority: 0.8, changeFreq: "monthly" },
-    { path: "/for-agriculture", priority: 0.75, changeFreq: "monthly" },
+    { path: "/for-insurance", priority: 0.85, changeFreq: "monthly" },
+    { path: "/for-logistics", priority: 0.85, changeFreq: "monthly" },
+    { path: "/for-agriculture", priority: 0.85, changeFreq: "monthly" },
+    { path: "/for-construction", priority: 0.85, changeFreq: "monthly" },
     { path: "/for-manufacturing", priority: 0.75, changeFreq: "monthly" },
     { path: "/for-government", priority: 0.75, changeFreq: "monthly" },
+
+    // Competitive positioning + live metrics
+    { path: "/compare", priority: 0.9, changeFreq: "weekly" },
+    { path: "/benchmarks", priority: 0.85, changeFreq: "daily" },
+    { path: "/status/slo", priority: 0.8, changeFreq: "daily" },
+
+    // Developer surface — OpenAPI + error taxonomy + webhook verification
+    { path: "/developers/api-explorer", priority: 0.85, changeFreq: "weekly" },
+    { path: "/docs/errors", priority: 0.8, changeFreq: "monthly" },
+    { path: "/docs/webhooks/verify", priority: 0.8, changeFreq: "monthly" },
 
     // Contact
     { path: "/contact", priority: 0.7, changeFreq: "monthly" },

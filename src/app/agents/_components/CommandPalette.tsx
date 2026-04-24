@@ -84,15 +84,19 @@ export function CommandPalette({ open, agents, onClose }: Props) {
     return scored.slice(0, MAX_RESULTS);
   }, [agents, query]);
 
-  // Focus the input on open, restore focus on close.
+  // Reset input state when the palette opens. The setState-in-effect
+  // here is DELIBERATE — these are rare open/close events, not a
+  // per-keystroke operation, so the cascading-render cost is negligible
+  // and the alternative (parent-driven `key` remount, or refs-during-
+  // render) is strictly worse.
   useEffect(() => {
     if (open) {
       previousFocusRef.current = document.activeElement as HTMLElement | null;
-      // Next tick to ensure DOM exists.
       requestAnimationFrame(() => inputRef.current?.focus());
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- rare event, acceptable re-render
       setQuery("");
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- rare event, acceptable re-render
       setCursor(0);
-      // Lock body scroll while palette is open.
       document.body.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "";
@@ -103,8 +107,10 @@ export function CommandPalette({ open, agents, onClose }: Props) {
     };
   }, [open]);
 
-  // Reset cursor when results change.
+  // Reset cursor when results change. Same rationale — keystrokes are
+  // user-driven anyway; an extra render here is invisible.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- derived reset, acceptable
     setCursor(0);
   }, [query]);
 

@@ -15,6 +15,7 @@ import { TiltCard } from "@/components/ui/EliteEffects";
 // Above-the-fold — static-imported so they ship in the initial chunk.
 import { LiveProofStrip } from "@/components/landing/LiveProofStrip";
 import { LivePlatformMetrics } from "@/components/landing/LivePlatformMetrics";
+import { IndustriesShowcase } from "@/components/landing/IndustriesShowcase";
 import { ProofStrip } from "@/components/landing/ProofStrip";
 import { ThreeMoatsGrid } from "@/components/landing/ThreeMoatsGrid";
 import { A2EEconomySection } from "@/components/landing/A2EEconomySection";
@@ -173,6 +174,9 @@ export default function LandingPage() {
 
         {/* 06a · Live platform metrics — honest uptime + P95 + cache */}
         <LivePlatformMetrics />
+
+        {/* 06b · Industries showcase — 10 verticals, visual connect */}
+        <IndustriesShowcase />
 
         {/* 07 · Featured Playbooks */}
         <FeaturedPlaybooksSection />

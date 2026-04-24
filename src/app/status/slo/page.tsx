@@ -20,7 +20,7 @@
 
 import Link from "next/link";
 import type { Metadata } from "next";
-import { getPlatformSlo } from "@/lib/slo-tracker";
+import { getPlatformSlo, getPlatformSloFromDb } from "@/lib/slo-tracker";
 import { getAiCacheStats } from "@/lib/ai-cache";
 
 export const revalidate = 30;
@@ -39,8 +39,13 @@ function statusBucket(successRatePct: number) {
   return { label: "Incident", color: "text-rose-400", bg: "bg-rose-500/10", dot: "bg-rose-400" };
 }
 
-export default function SloStatusPage() {
-  const slo = getPlatformSlo({ windowMs: 24 * 60 * 60 * 1000 });
+export default async function SloStatusPage() {
+  // Prefer cross-instance aggregation from Postgres. Fall back to
+  // per-instance in-memory buffer when DB is unavailable — ensures
+  // the page always renders SOMETHING instead of breaking.
+  const dbSlo = await getPlatformSloFromDb({ windowMs: 24 * 60 * 60 * 1000 });
+  const slo = dbSlo ?? getPlatformSlo({ windowMs: 24 * 60 * 60 * 1000 });
+  const source: "postgres" | "in-memory" = dbSlo ? "postgres" : "in-memory";
   const cache = getAiCacheStats();
   const hasTraffic = slo.overall.totalRequests > 0;
   const status = hasTraffic
@@ -196,7 +201,7 @@ export default function SloStatusPage() {
               <span className="text-[#B5532C] shrink-0">·</span>
               <span>
                 <span className="text-emerald-400">Cross-instance survival:</span> Every event
-                also writes to the <code className="font-mono text-xs">slo_events</code> Postgres
+                writes to the <code className="font-mono text-xs">slo_events</code> Postgres
                 table (migration 0032) via <code className="font-mono text-xs">queueMicrotask</code>.
                 Numbers survive cold-starts + aggregate across Vercel lambdas.
               </span>
@@ -204,9 +209,13 @@ export default function SloStatusPage() {
             <li className="flex gap-3">
               <span className="text-[#B5532C] shrink-0">·</span>
               <span>
-                <span className="text-amber-400">Remaining gap:</span> Current page still reads
-                from the in-memory buffer for speed. Reading the Postgres aggregate across
-                instances is Q2 work (adds one SQL query per render; acceptable with edge caching).
+                <span className="text-emerald-400">Current render source:</span>{" "}
+                <code className="font-mono text-xs">{source}</code>
+                {source === "postgres" ? (
+                  <> — cross-instance aggregate via Postgres <code className="font-mono text-xs">percentile_disc</code>.</>
+                ) : (
+                  <> — DB unavailable, falling back to the in-memory ring buffer on this lambda.</>
+                )}
               </span>
             </li>
             <li className="flex gap-3">

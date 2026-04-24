@@ -260,3 +260,119 @@ export function getPlatformSlo(opts: { windowMs?: number } = {}): {
 export function __resetSloTrackerForTesting(): void {
   buffers.clear();
 }
+
+// ────────────────────────────────────────────────────────────────
+// Cross-instance read path (closes gap §1.1 in WHATS-NOT-ELITE.md)
+// ────────────────────────────────────────────────────────────────
+
+/**
+ * Aggregate SLO snapshot read from the `slo_events` Postgres table.
+ *
+ * Why: in-memory `getPlatformSlo()` is per-instance. Vercel runs many
+ * serverless lambdas, each with its own ring buffer — rendering the
+ * status page from instance A shows different numbers than instance B.
+ * This function hits Postgres so numbers are consistent cross-instance.
+ *
+ * Graceful fallback: if DATABASE_URL is missing or the query fails,
+ * returns `null`. Callers should fall back to `getPlatformSlo()` when
+ * this returns null so the status page NEVER breaks.
+ *
+ * Cost: 1 SQL query per render. Intended to be cached at the edge
+ * (30s via Next.js `revalidate`). At scale you'd precompute rollups
+ * in a cron; for now on-demand aggregation is adequate.
+ */
+export async function getPlatformSloFromDb(opts: { windowMs?: number } = {}): Promise<{
+  endpoints: SloSnapshot[];
+  overall: {
+    windowSeconds: number;
+    totalRequests: number;
+    successRatePct: number;
+    p95Ms: number;
+    observedEndpoints: number;
+  };
+} | null> {
+  if (!process.env.DATABASE_URL) return null;
+
+  const windowMs = opts.windowMs ?? 24 * 60 * 60 * 1000;
+  const cutoff = Date.now() - windowMs;
+
+  try {
+    // Lazy import so tests without Drizzle don't pay the cost.
+    const { db } = await import("@/db");
+    const { sql } = await import("drizzle-orm");
+
+    // Aggregate rollup per endpoint. Postgres has percentile_cont; using
+    // percentile_disc (simpler + no interpolation) matches our in-memory
+    // implementation. Single query, group-by-endpoint.
+    const rows = await db.execute(sql`
+      SELECT
+        endpoint,
+        COUNT(*) AS total,
+        SUM(CASE WHEN success THEN 1 ELSE 0 END) AS successes,
+        percentile_disc(0.5) WITHIN GROUP (ORDER BY duration_ms) AS p50,
+        percentile_disc(0.95) WITHIN GROUP (ORDER BY duration_ms) AS p95,
+        percentile_disc(0.99) WITHIN GROUP (ORDER BY duration_ms) AS p99,
+        AVG(duration_ms)::INT AS avg_ms
+      FROM slo_events
+      WHERE ts >= ${cutoff}
+      GROUP BY endpoint
+      ORDER BY total DESC
+    `);
+
+    // Type-narrow the rows — Drizzle .execute() returns unknown-shape rows.
+    const typed = rows as unknown as Array<{
+      endpoint: string;
+      total: number | string;
+      successes: number | string;
+      p50: number | string;
+      p95: number | string;
+      p99: number | string;
+      avg_ms: number | string;
+    }>;
+
+    const endpoints: SloSnapshot[] = typed.map((r) => {
+      const total = Number(r.total);
+      const successes = Number(r.successes);
+      return {
+        endpoint: r.endpoint,
+        windowSeconds: Math.round(windowMs / 1000),
+        totalRequests: total,
+        successCount: successes,
+        errorCount: total - successes,
+        successRatePct:
+          total === 0 ? 100 : Math.round((successes / total) * 10_000) / 100,
+        p50Ms: Number(r.p50) || 0,
+        p95Ms: Number(r.p95) || 0,
+        p99Ms: Number(r.p99) || 0,
+        avgMs: Number(r.avg_ms) || 0,
+        topErrorCodes: [], // would need a second query; skipped for cost
+      };
+    });
+
+    const totalRequests = endpoints.reduce((acc, e) => acc + e.totalRequests, 0);
+    const totalSuccess = endpoints.reduce((acc, e) => acc + e.successCount, 0);
+    const p95Weighted = endpoints.reduce(
+      (acc, e) => acc + e.p95Ms * e.totalRequests,
+      0,
+    );
+
+    return {
+      endpoints,
+      overall: {
+        windowSeconds: Math.round(windowMs / 1000),
+        totalRequests,
+        successRatePct:
+          totalRequests === 0
+            ? 100
+            : Math.round((totalSuccess / totalRequests) * 10_000) / 100,
+        p95Ms: totalRequests === 0 ? 0 : Math.round(p95Weighted / totalRequests),
+        observedEndpoints: endpoints.length,
+      },
+    };
+  } catch (err) {
+    log.warn("getPlatformSloFromDb failed — caller should fall back to in-memory", {
+      error: (err as Error).message,
+    });
+    return null;
+  }
+}
