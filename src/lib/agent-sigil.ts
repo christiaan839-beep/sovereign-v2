@@ -109,7 +109,10 @@ const PALETTES: Record<string, Palette> = {
 
   // Industries (match /for-* page accents)
   Insurance: { bg: "#0E0607", fg: "#F87171", accent: "#FECACA", dim: "#7F1D1D" },
-  Logistics: { bg: "#0F0A05", fg: "#F59E0B", accent: "#FCD34D", dim: "#78350F" },
+  // Logistics shifted to yellow-gold — readably distinct from Real Estate's
+  // warmer orange at 32px. Previous amber (#F59E0B) and orange (#FB923C)
+  // read as the same brand color on the playground dropdown.
+  Logistics: { bg: "#0F0A05", fg: "#FDE047", accent: "#FEF08A", dim: "#854D0E" },
   Healthcare: { bg: "#05090F", fg: "#22D3EE", accent: "#A5F3FC", dim: "#164E63" },
   Agriculture: { bg: "#050E08", fg: "#34D399", accent: "#A7F3D0", dim: "#064E3B" },
   "Real Estate": { bg: "#080805", fg: "#FB923C", accent: "#FED7AA", dim: "#7C2D12" },
@@ -131,6 +134,64 @@ const PALETTES: Record<string, Palette> = {
 
 function paletteFor(category?: string): Palette {
   return PALETTES[category ?? "default"] ?? PALETTES.default;
+}
+
+/**
+ * Inner-mark types, in stable order. Category affinity weights (below)
+ * bias which mark a category *tends* to get without making it deterministic.
+ * The slug-derived PRNG still chooses the final mark — the weighting just
+ * shifts the probability distribution so the sigil *signals* the domain.
+ *
+ *   0 triangle      → general geometric, no strong semantic
+ *   1 pentagon      → seal / authority / legal
+ *   2 hexagon+dot   → compliance / regulation / structure
+ *   3 spiral        → growth / reasoning / process
+ *   4 concentric    → scan / data / health / monitoring
+ */
+type MarkType = 0 | 1 | 2 | 3 | 4;
+
+/**
+ * Category → mark-weight distribution. Each row is a 5-tuple of
+ * integer weights summing to 10. Slug's PRNG picks a cumulative
+ * bucket — so a Healthcare agent is 5/10 likely to get a concentric-
+ * rings mark but can still get a spiral or triangle for variety.
+ *
+ * Unlisted categories use the uniform `default` [2,2,2,2,2].
+ */
+const MARK_AFFINITY: Record<string, [number, number, number, number, number]> = {
+  default:        [2, 2, 2, 2, 2],
+
+  // Industries
+  Healthcare:     [0, 1, 1, 3, 5],  // concentric = scan, spiral = physiology
+  "Real Estate":  [1, 1, 4, 2, 2],  // hexagon = structure / blueprint
+  Compliance:     [0, 2, 5, 1, 2],  // hexagon = regulation / seal
+  Legal:          [0, 5, 3, 1, 1],  // pentagon = seal, hexagon = charter
+  Insurance:      [1, 3, 2, 2, 2],  // pentagon (policy seal) + mixed
+  Logistics:      [3, 1, 2, 1, 3],  // triangle (directional) + concentric (scan)
+  Agriculture:    [1, 1, 1, 5, 2],  // spiral = growth, rings = seasons
+  Finance:        [0, 2, 1, 3, 4],  // spiral + concentric (charts, flow)
+
+  // Functional categories
+  Sales:          [2, 2, 1, 3, 2],  // slight spiral lean (funnel/flow)
+  Content:        [2, 1, 1, 4, 2],  // spiral (flow / narrative)
+  Research:       [1, 2, 1, 2, 4],  // concentric (inquiry depth)
+  Meta:           [2, 3, 2, 2, 1],  // pentagon / hex lean (architecture)
+  Voice:          [2, 1, 1, 4, 2],  // spiral (waveform echo)
+  "Vision & Media":[1, 1, 2, 2, 4], // concentric (lens / aperture)
+  Safety:         [0, 3, 4, 1, 2],  // pentagon + hex (shield feel)
+  Ecommerce:      [3, 1, 2, 2, 2],  // triangle (checkout flow)
+  General:        [2, 2, 2, 2, 2],
+};
+
+function pickMarkType(rng: () => number, category?: string): MarkType {
+  const weights = MARK_AFFINITY[category ?? "default"] ?? MARK_AFFINITY.default;
+  const total = weights[0] + weights[1] + weights[2] + weights[3] + weights[4];
+  let pick = rng() * total;
+  for (let i = 0; i < 5; i++) {
+    pick -= weights[i];
+    if (pick < 0) return i as MarkType;
+  }
+  return 4; // numerical safety net
 }
 
 // ─── Sigil generator ──────────────────────────────────────────
@@ -177,8 +238,12 @@ export function agentSigil(slug: string, opts: SigilOptions = {}): string {
     );
   }
 
-  // ── Layer 3: inner mark — one of 5 parametric shapes ──
-  const markType = Math.floor(rng() * 5);
+  // ── Layer 3: inner mark — one of 5 parametric shapes, category-biased ──
+  // The slug's PRNG still chooses, but category affinity shifts the
+  // probability so Healthcare tends to get concentric rings (scan),
+  // Legal tends to get a pentagon (seal), Agriculture tends to get a
+  // spiral (growth), etc. Variety persists but domain is now readable.
+  const markType = pickMarkType(rng, opts.category);
   const innerRadius = 14 + rng() * 4;
   let inner = "";
   switch (markType) {

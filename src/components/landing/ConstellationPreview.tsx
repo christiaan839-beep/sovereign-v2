@@ -121,10 +121,20 @@ export function ConstellationPreview({ agents, totalCount = 218 }: Props) {
                 transition: "transform 120ms ease-out",
               }}
             >
-              {/* Subtle orbital rings for context */}
+              {/* Subtle orbital rings for context.
+               *  Outermost ring rotates slowly (60s loop) to signal "living
+               *  map" without animating the sigils themselves. Respects
+               *  prefers-reduced-motion via the CSS media query below. */}
               <div
                 aria-hidden="true"
                 className="absolute inset-[12%] rounded-full border border-white/[0.04]"
+                style={{
+                  animation:
+                    "sovereign-ring-rotate 60s linear infinite",
+                  // Stop rotating when user prefers reduced motion — set
+                  // via the inline stylesheet below so it applies in SSR
+                  // before hydration.
+                }}
               />
               <div
                 aria-hidden="true"
@@ -134,6 +144,20 @@ export function ConstellationPreview({ agents, totalCount = 218 }: Props) {
                 aria-hidden="true"
                 className="absolute inset-[48%] rounded-full border border-white/[0.02]"
               />
+              {/* Keyframes for the outer-ring rotation. Scoped to this
+               *  component via unique animation name. Zero-dep, no Framer
+               *  for this one since it's a single ambient 60s loop. */}
+              <style>{`
+                @keyframes sovereign-ring-rotate {
+                  from { transform: rotate(0deg); }
+                  to   { transform: rotate(360deg); }
+                }
+                @media (prefers-reduced-motion: reduce) {
+                  div[style*="sovereign-ring-rotate"] {
+                    animation: none !important;
+                  }
+                }
+              `}</style>
 
               {/* Sigil nodes */}
               {agents.map((agent, i) => {

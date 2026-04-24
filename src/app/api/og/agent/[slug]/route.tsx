@@ -164,12 +164,12 @@ export async function GET(
           </div>
         </div>
 
-        {/* Footer */}
+        {/* Footer — url only. The stat dump ("218 agents · 16 providers · 126+ models")
+         *  was noise at 30% scale in a Twitter feed per design review.
+         *  The sigil + name + tagline already sells it. */}
         <div
           style={{
             display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
             marginTop: 28,
             fontFamily: "monospace",
             fontSize: 18,
@@ -177,9 +177,6 @@ export async function GET(
           }}
         >
           <span style={{ display: "flex" }}>sovereignmatrix.agency/agents/{slug}</span>
-          <span style={{ display: "flex", color: palette.fg }}>
-            218 agents · 16 providers · 126+ models
-          </span>
         </div>
       </div>
     ),

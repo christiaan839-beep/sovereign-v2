@@ -223,6 +223,16 @@ export function PlaygroundClient({ catalog, initialSlug }: Props) {
                             a.slug === agent.slug ? "bg-[#B5532C]/[0.04]" : ""
                           }`}
                         >
+                          {/* 22px sigil keeps the identity-system consistent
+                           *  between the picker trigger + its search results. */}
+                          <span className="shrink-0 rounded-[3px] overflow-hidden">
+                            <AgentSigil
+                              slug={a.slug}
+                              category={a.category}
+                              size={22}
+                              detail="minimal"
+                            />
+                          </span>
                           <span className="font-mono text-xs text-white flex-1 truncate">
                             {a.slug}
                           </span>
