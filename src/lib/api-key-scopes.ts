@@ -175,3 +175,40 @@ export function buildScopeDeniedResponse(
     detail: `API key lacks required permission (${reason})`,
   }) as unknown as NextResponse;
 }
+
+/**
+ * Map a v1 gateway request to the {scope, agentSlug} pair the evaluator
+ * expects. The v1 gateway is primarily an agent-execution surface, so:
+ *   - /api/v1/agents/<slug>     → agent:execute on <slug>
+ *   - /api/v1/playbooks/*       → agent:execute (no slug)
+ *   - /api/v1/workflows/*       → agent:execute (no slug)
+ *   - /api/v1/health/*          → data:read
+ *   - /api/v1/status/*          → data:read
+ *   - /api/v1/* (other GET)     → data:read
+ *   - /api/v1/* (other write)   → agent:execute
+ *
+ * Pure function — no Request/NextRequest dependency, so it's
+ * unit-testable in isolation. Returns the SCOPE (always one of the
+ * non-templated literal scopes; per-agent specialization happens inside
+ * evaluateScope based on agentSlug).
+ */
+export function classifyV1Request(
+  path: readonly string[],
+  method: string,
+): {
+  scope: "agent:execute" | "data:read" | "data:write";
+  agentSlug?: string;
+} {
+  if (path[0] === "agents" && path[1]) {
+    return { scope: "agent:execute", agentSlug: path[1] };
+  }
+  if (path[0] === "playbooks" || path[0] === "workflows") {
+    return { scope: "agent:execute" };
+  }
+  if (path[0] === "health" || path[0] === "status") {
+    return { scope: "data:read" };
+  }
+  return method === "GET"
+    ? { scope: "data:read" }
+    : { scope: "agent:execute" };
+}

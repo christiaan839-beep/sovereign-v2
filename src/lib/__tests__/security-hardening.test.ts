@@ -11,7 +11,7 @@
 
 import { describe, it, expect, afterEach, vi } from "vitest";
 import { scanPii, scrubPii, scrubPiiDeep } from "@/lib/pii-guard";
-import { evaluateScope, type ApiKeyRecord } from "@/lib/api-key-scopes";
+import { evaluateScope, classifyV1Request, type ApiKeyRecord } from "@/lib/api-key-scopes";
 import { isProviderAllowedFree, PROVIDER_COSTS } from "@/lib/provider-costs";
 
 // ────────────────────────────────────────────────────────────
@@ -306,5 +306,61 @@ describe("provider-costs · isProviderAllowedFree", () => {
     if (process.env.SOVEREIGN_FREE_ONLY === "true") {
       expect(result).toBe(false);
     }
+  });
+});
+
+// ────────────────────────────────────────────────────────────
+// V1 gateway request classifier
+// ────────────────────────────────────────────────────────────
+
+describe("api-key-scopes · classifyV1Request", () => {
+  it("/agents/<slug> → agent:execute on slug", () => {
+    expect(classifyV1Request(["agents", "leads"], "POST")).toEqual({
+      scope: "agent:execute",
+      agentSlug: "leads",
+    });
+  });
+
+  it("/agents (no slug) is treated as a generic /agents/ traversal — falls through to method-based default", () => {
+    // Without a slug we can't enforce a per-agent scope. The classifier
+    // falls back to the generic GET-vs-non-GET rule.
+    expect(classifyV1Request(["agents"], "GET")).toEqual({ scope: "data:read" });
+    expect(classifyV1Request(["agents"], "POST")).toEqual({ scope: "agent:execute" });
+  });
+
+  it("/playbooks/* → agent:execute (no slug — playbooks orchestrate multiple agents)", () => {
+    expect(classifyV1Request(["playbooks", "run"], "POST")).toEqual({
+      scope: "agent:execute",
+    });
+  });
+
+  it("/workflows/* → agent:execute", () => {
+    expect(classifyV1Request(["workflows", "abc"], "POST")).toEqual({
+      scope: "agent:execute",
+    });
+  });
+
+  it("/health/* → data:read regardless of method", () => {
+    expect(classifyV1Request(["health", "ping"], "GET")).toEqual({ scope: "data:read" });
+    expect(classifyV1Request(["health", "ping"], "POST")).toEqual({ scope: "data:read" });
+  });
+
+  it("/status/* → data:read", () => {
+    expect(classifyV1Request(["status", "slo"], "GET")).toEqual({ scope: "data:read" });
+  });
+
+  it("unknown GET → data:read (conservative)", () => {
+    expect(classifyV1Request(["something", "new"], "GET")).toEqual({ scope: "data:read" });
+  });
+
+  it("unknown non-GET → agent:execute (treats writes as execution)", () => {
+    expect(classifyV1Request(["something", "new"], "POST")).toEqual({ scope: "agent:execute" });
+    expect(classifyV1Request(["something", "new"], "PATCH")).toEqual({ scope: "agent:execute" });
+    expect(classifyV1Request(["something", "new"], "DELETE")).toEqual({ scope: "agent:execute" });
+  });
+
+  it("empty path → falls through to method default", () => {
+    expect(classifyV1Request([], "GET")).toEqual({ scope: "data:read" });
+    expect(classifyV1Request([], "POST")).toEqual({ scope: "agent:execute" });
   });
 });

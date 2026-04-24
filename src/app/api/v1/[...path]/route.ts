@@ -7,6 +7,7 @@ import { createLogger } from "@/lib/logger";
 import {
   evaluateScope,
   buildScopeDeniedResponse,
+  classifyV1Request,
   type ApiKeyRecord,
 } from "@/lib/api-key-scopes";
 const log = createLogger("api-v1-proxy");
@@ -112,36 +113,6 @@ async function validateApiKey(rawKey: string): Promise<ApiKeyRecord | null> {
     log.error("API key DB validation failed — denying request", { error: (err as Error).message });
     return null;
   }
-}
-
-/**
- * Map a v1 request to the {scope, agentSlug} pair the scope evaluator
- * expects. The v1 gateway is primarily an agent-execution surface, so:
- *   - /api/v1/agents/<slug> → agent:execute on <slug>
- *   - /api/v1/playbooks/* and other write paths → agent:execute (no slug)
- *   - /api/v1/health/* and other read-only paths → data:read
- *
- * GET requests on any other path default to data:read; non-GET defaults
- * to agent:execute. This keeps the rule conservative — most v1 traffic
- * IS agent execution, and read-only health checks are explicitly opt-in.
- */
-function classifyV1Request(
-  path: string[],
-  method: string,
-): { scope: "agent:execute" | "data:read" | "data:write"; agentSlug?: string } {
-  if (path[0] === "agents" && path[1]) {
-    return { scope: "agent:execute", agentSlug: path[1] };
-  }
-  if (path[0] === "playbooks" || path[0] === "workflows") {
-    return { scope: "agent:execute" };
-  }
-  if (path[0] === "health" || path[0] === "status") {
-    return { scope: "data:read" };
-  }
-  // Generic fallback: GET = read, anything else = write/execute.
-  return method === "GET"
-    ? { scope: "data:read" }
-    : { scope: "agent:execute" };
 }
 
 /**
