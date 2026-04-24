@@ -6,7 +6,7 @@
  * is bundled here so Vercel's serverless packer can see the import paths.
  *
  * Regenerate: `npm run gen:registry`
- * Count: 198 agents
+ * Count: 203 agents
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -143,8 +143,8 @@ export const AGENT_REGISTRY: Record<string, () => Promise<RouteModule>> = {
   "page-builder-stream": () => import("@/app/api/_agents/page-builder-stream/route"),
   "paper-summarizer": () => import("@/app/api/_agents/paper-summarizer/route"),
   "phishing-detector": () => import("@/app/api/_agents/phishing-detector/route"),
-  "pii-guard": () => import("@/app/api/_agents/pii-guard/route"),
   "physics-reasoner": () => import("@/app/api/_agents/physics-reasoner/route"),
+  "pii-guard": () => import("@/app/api/_agents/pii-guard/route"),
   "pii-redactor": () => import("@/app/api/_agents/pii-redactor/route"),
   "pipeline": () => import("@/app/api/_agents/pipeline/route"),
   "plain-language-rewriter": () => import("@/app/api/_agents/plain-language-rewriter/route"),

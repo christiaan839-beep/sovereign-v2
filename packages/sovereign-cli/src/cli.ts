@@ -12,8 +12,9 @@
  *   NO_COLOR / FORCE_COLOR standard colour-off signals
  */
 
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import {
+  runGenerateTypes,
   runInfo,
   runSubmit,
   runValidate,
@@ -55,13 +56,17 @@ Usage
   sovereign <command> [options]
 
 Commands
-  validate <path>          Validate a SAM v1.0 manifest file locally
-  submit   <path>          Validate + POST to /api/creators/submit
-  info                     Show version + resolved API URL
+  validate <path>           Validate a SAM v1.0 manifest file locally
+  submit   <path>           Validate + POST to /api/creators/submit
+  generate-types <path>     Emit a TypeScript interface for the agent's output
+  info                      Show version + resolved API URL
 
 Options for submit
-  --email <addr>           Contact email used for review correspondence
-  --api   <url>            Override the API URL (default: ${DEFAULT_API_URL})
+  --email <addr>            Contact email used for review correspondence
+  --api   <url>             Override the API URL (default: ${DEFAULT_API_URL})
+
+Options for generate-types
+  --out <file.ts>           Write the type to a file instead of stdout
 
 Environment
   SOVEREIGN_API_URL        Same effect as --api
@@ -156,6 +161,17 @@ async function main(): Promise<number> {
     case "info":
       result = runInfo({ apiUrl });
       break;
+    case "generate-types":
+    case "gen-types": {
+      const outFlag = typeof parsed.flags.out === "string" ? parsed.flags.out : undefined;
+      result = await runGenerateTypes({
+        path: parsed.positional[0],
+        outPath: outFlag,
+        fs: realFs,
+        writeTextFile: outFlag ? (path, content) => writeFile(path, content, "utf8") : undefined,
+      });
+      break;
+    }
     case "help":
     case "--help":
       console.log(HELP);

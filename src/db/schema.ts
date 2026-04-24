@@ -356,6 +356,84 @@ export const marketplaceAgents = pgTable("marketplace_agents", {
 ]);
 
 // ═══════════════════════════════════════════
+// Webhook Subscriptions (migration 0031)
+// ═══════════════════════════════════════════
+export const webhookSubscriptions = pgTable("webhook_subscriptions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  label: text("label").notNull(),
+  agentSlug: text("agent_slug").notNull(),
+  callbackUrl: text("callback_url").notNull(),
+  secret: text("secret").notNull(),
+  ownerEmail: text("owner_email").notNull(),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  lastTriggeredAt: timestamp("last_triggered_at", { withTimezone: true }),
+  triggerCount: integer("trigger_count").notNull().default(0),
+  failureCount: integer("failure_count").notNull().default(0),
+}, (table) => [
+  index("idx_webhooks_active_agent").on(table.agentSlug, table.isActive),
+  index("idx_webhooks_owner").on(table.ownerEmail),
+]);
+
+export const webhookDeliveryAttempts = pgTable("webhook_delivery_attempts", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  subscriptionId: uuid("subscription_id")
+    .notNull()
+    .references(() => webhookSubscriptions.id, { onDelete: "cascade" }),
+  invocationId: text("invocation_id").notNull(),
+  attemptNumber: integer("attempt_number").notNull().default(1),
+  responseStatus: integer("response_status"),
+  responseBodyPreview: text("response_body_preview"),
+  delivered: boolean("delivered").notNull().default(false),
+  errorMessage: text("error_message"),
+  attemptedAt: timestamp("attempted_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  index("idx_deliveries_subscription").on(table.subscriptionId, table.attemptedAt),
+  index("idx_deliveries_failed").on(table.delivered, table.attemptedAt),
+]);
+
+// ═══════════════════════════════════════════
+// Agent Bundles (migration 0030)
+// ═══════════════════════════════════════════
+// Curated sets of agents published as one unit. See
+// drizzle/0030_agent_bundles.sql. Membership shares sum to 100.
+export const agentBundles = pgTable("agent_bundles", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  slug: text("slug").notNull().unique(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  category: text("category").notNull(),
+  publisherEmail: text("publisher_email").notNull(),
+  priceCents: integer("price_cents").notNull().default(0),
+  creatorSharePct: integer("creator_share_pct").notNull().default(70),
+  isPublic: boolean("is_public").notNull().default(false),
+  publishedAt: timestamp("published_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  index("idx_bundles_public").on(table.isPublic, table.category),
+  index("idx_bundles_publisher").on(table.publisherEmail),
+]);
+
+export const agentBundleMemberships = pgTable("agent_bundle_memberships", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  bundleId: uuid("bundle_id")
+    .notNull()
+    .references(() => agentBundles.id, { onDelete: "cascade" }),
+  agentId: uuid("agent_id")
+    .notNull()
+    .references(() => marketplaceAgents.id, { onDelete: "cascade" }),
+  agentSlug: text("agent_slug").notNull(),
+  sharePct: integer("share_pct").notNull(),
+  position: integer("position").notNull().default(0),
+  addedAt: timestamp("added_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  uniqueIndex("ux_bundle_memberships_pair").on(table.bundleId, table.agentId),
+  index("idx_bundle_memberships_bundle").on(table.bundleId, table.position),
+  index("idx_bundle_memberships_agent").on(table.agentId),
+]);
+
+// ═══════════════════════════════════════════
 // Creator Earnings Ledger
 // ═══════════════════════════════════════════
 // See drizzle/0028_creator_earnings.sql. Immutable append-only ledger;

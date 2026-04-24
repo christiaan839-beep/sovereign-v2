@@ -64,6 +64,27 @@ Validate locally, then POST to `/api/creators/submit`. The response tells you wh
 
 Print the CLI version, resolved API URL, and the SAM version this CLI targets. Useful for bug reports.
 
+### `sovereign generate-types <path> [--out <file.ts>]`
+
+Emit a TypeScript interface describing the agent's output shape. Reads `extensions.outputSchema` (SAM 1.1) if present, otherwise falls back to `output.properties`. Without either, emits `export type <Slug>Output = unknown` plus a comment pointing the creator at the right extension to add.
+
+```bash
+sovereign generate-types invoice-ocr.sam.json --out types/invoice-ocr.ts
+```
+
+Typed output becomes importable directly from your integration:
+
+```ts
+import type { InvoiceOcrOutput } from "./types/invoice-ocr";
+
+const res = await fetch("/api/agents/invoke", {
+  method: "POST",
+  body: JSON.stringify({ agent: "invoice-ocr", input: "..." }),
+});
+const body = (await res.json()) as { result: InvoiceOcrOutput };
+// body.result is now fully typed.
+```
+
 ## Environment
 
 | Variable | Effect |

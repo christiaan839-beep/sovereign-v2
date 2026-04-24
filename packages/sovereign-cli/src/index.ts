@@ -12,6 +12,7 @@
 export { runValidate } from "./commands/validate.js";
 export { runSubmit, DEFAULT_API_URL } from "./commands/submit.js";
 export { runInfo, CLI_VERSION } from "./commands/info.js";
+export { runGenerateTypes } from "./commands/generate-types.js";
 
 export type {
   CommandResult,
