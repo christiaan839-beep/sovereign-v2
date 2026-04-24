@@ -15,7 +15,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { Play } from "lucide-react";
 import { getAgentPublic, listCatalog } from "@/lib/agent-catalog";
+import { getSloSnapshot } from "@/lib/slo-tracker";
 import { InstallButton } from "./InstallButton";
 import { AgentCard } from "@/components/world/AgentCard";
 
@@ -34,7 +36,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const description =
     agent.tagline ??
     agent.description ??
-    `${agent.displayName} is one of 198 specialized agents on the Sovereign Matrix platform.`;
+    `${agent.displayName} is one of 218 specialized agents on the Sovereign Matrix platform.`;
 
   return {
     title,
@@ -66,6 +68,14 @@ export default async function AgentPage({ params }: Props) {
   const related = (await listCatalog({ category: agent.category, limit: 10 }))
     .filter((a) => a.slug !== agent.slug)
     .slice(0, 4);
+
+  // Pull the live SLO snapshot for THIS endpoint. If the in-memory ring
+  // buffer has no data yet (fresh deploy), we simply don't render the
+  // live block — keeps the page honest.
+  const sloSnap = getSloSnapshot(`/api/agents/${slug}`, {
+    windowMs: 24 * 60 * 60 * 1000,
+  });
+  const hasLiveData = sloSnap.totalRequests > 0;
 
   return (
     <div className="min-h-screen bg-[#030303] text-white antialiased">
@@ -168,7 +178,7 @@ export default async function AgentPage({ params }: Props) {
           </div>
 
           {/* Install + pricing */}
-          <div className="mb-12 p-5 rounded-[6px] border border-white/[0.08] bg-white/[0.02]">
+          <div className="mb-8 p-5 rounded-[6px] border border-white/[0.08] bg-white/[0.02]">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
                 <p className="text-[10px] font-mono uppercase tracking-[0.18em] text-neutral-500 mb-1">
@@ -183,12 +193,45 @@ export default async function AgentPage({ params }: Props) {
                   </p>
                 )}
               </div>
-              <InstallButton
-                slug={agent.slug}
-                pricingCents={agent.pricingCents}
-              />
+              <div className="flex items-center gap-2">
+                <Link
+                  href={`/playground?agent=${agent.slug}`}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-[4px] bg-[#B5532C] hover:bg-[#C96234] text-white text-[13px] font-semibold transition-colors"
+                >
+                  <Play className="w-3.5 h-3.5" />
+                  Try in playground
+                </Link>
+                <InstallButton slug={agent.slug} pricingCents={agent.pricingCents} />
+              </div>
             </div>
           </div>
+
+          {/* Live SLO for THIS endpoint — renders only when we've seen traffic. */}
+          {hasLiveData && (
+            <div className="mb-12 p-5 rounded-[6px] border border-emerald-500/[0.15] bg-emerald-500/[0.02]">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <p className="text-[10px] font-mono uppercase tracking-[0.18em] text-emerald-400">
+                  Live · last 24h
+                </p>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <LiveSlo label="Uptime" value={`${sloSnap.successRatePct.toFixed(2)}%`} />
+                <LiveSlo label="P50" value={`${sloSnap.p50Ms}ms`} />
+                <LiveSlo label="P95" value={`${sloSnap.p95Ms}ms`} />
+                <LiveSlo
+                  label="Requests"
+                  value={sloSnap.totalRequests.toLocaleString()}
+                />
+              </div>
+              <p className="mt-3 text-[10px] font-mono text-neutral-600">
+                Measured in-platform via the SLO tracker.{" "}
+                <Link href="/status/slo" className="underline hover:text-neutral-400">
+                  See full platform status →
+                </Link>
+              </p>
+            </div>
+          )}
 
           {/* Tags */}
           {agent.tags.length > 0 && (
@@ -276,4 +319,15 @@ function formatDuration(ms: number | null): string {
   if (ms < 1000) return `${ms}ms`;
   if (ms < 60_000) return `${(ms / 1000).toFixed(1)}s`;
   return `${Math.round(ms / 60_000)}m`;
+}
+
+function LiveSlo({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="font-serif text-xl text-white tabular-nums leading-tight">{value}</p>
+      <p className="mt-0.5 text-[9px] font-mono text-neutral-500 tracking-[0.15em] uppercase">
+        {label}
+      </p>
+    </div>
+  );
 }

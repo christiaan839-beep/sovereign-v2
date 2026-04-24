@@ -27,9 +27,13 @@ jobs:
       - name: Run ESLint
         run: npm run lint
 
-      # TypeScript strict check intentionally omitted — next.config.ts sets
-      # ignoreBuildErrors: true for dynamic icon components. Type safety is
-      # validated end-to-end via the Build job below.
+      - name: Run strict TypeScript check (noEmit)
+        # The Build job (below) uses Next.js's `ignoreBuildErrors: true` to tolerate
+        # dynamic-icon edge cases. But we want a SEPARATE strict gate that does NOT
+        # tolerate errors, so a clean `tsc --noEmit` is required for every PR.
+        # If this ever flags a legit dynamic-only case, narrow the fix (declare a
+        # type, add a cast with a comment) rather than loosen this gate.
+        run: npx tsc --noEmit
 
   build:
     name: Build
@@ -108,6 +112,52 @@ jobs:
           src/lib/__tests__/stripe-dedup.test.ts
           src/lib/__tests__/model-routing.test.ts
           --reporter=verbose
+
+  e2e:
+    # End-to-end tests via Playwright. Boots a production build of the app,
+    # runs against http://localhost:3000. Catches real user-flow regressions
+    # that unit tests can't — e.g. "the landing page stopped rendering the hero"
+    # or "the compare page crashes because SLO endpoint changed shape".
+    #
+    # Keeps ~2 min on GitHub Actions, well under the PR turnaround budget.
+    name: E2E (Playwright)
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Build application
+        run: npm run build
+        env:
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+          # The E2E suite deliberately tests graceful-degradation paths,
+          # so no DATABASE_URL is set here — the app must render without it.
+
+      - name: Run Playwright tests
+        run: npx playwright test
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:3000
+          CI: true
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
 
   security-audit:
     name: Security Audit

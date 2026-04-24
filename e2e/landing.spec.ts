@@ -112,15 +112,18 @@ test.describe("API Endpoints", () => {
     expect(res.status()).toBe(200);
     const body = await res.json();
     expect(body.stats.totalPlaybooks).toBeGreaterThanOrEqual(25);
-    expect(body.stats.totalAgents).toBeGreaterThanOrEqual(27);
+    // Agent count floor bumped to 200 after Q2 sprint.
+    expect(body.stats.totalAgents).toBeGreaterThanOrEqual(200);
     expect(body.stats.totalModels).toBeGreaterThanOrEqual(35);
   });
 
-  test("agent list returns 129+ agents", async ({ request }) => {
+  test("agent list returns 200+ agents", async ({ request }) => {
+    // Registry has grown past 200 after the Q2 vertical-depth sprint.
+    // Keep this as a floor so future pruning can't silently drop below 200.
     const res = await request.get("/api/agents/list");
     expect(res.status()).toBe(200);
     const body = await res.json();
-    expect(body.count).toBeGreaterThanOrEqual(129);
+    expect(body.count).toBeGreaterThanOrEqual(200);
   });
 
   test("founders endpoint returns slot info", async ({ request }) => {

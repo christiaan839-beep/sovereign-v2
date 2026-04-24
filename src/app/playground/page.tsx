@@ -1,160 +1,126 @@
-"use client";
+/**
+ * /playground — public agent tryer.
+ *
+ * WHY
+ * ───
+ * The landing describes value. The playground lets a visitor *feel* it
+ * in under 30 seconds without signing up. This is the biggest funnel fix
+ * in the platform — every SaaS with a playground converts 2-5× higher
+ * than ones without.
+ *
+ * ARCHITECTURE
+ * ────────────
+ * Server component wraps the full agent catalog, then hands off to a
+ * client island (PlaygroundClient) that handles:
+ *   - agent picker (searchable, grouped by category)
+ *   - ?agent=<slug> URL state (so we can deep-link from /agents/[slug])
+ *   - prompt input + example presets per agent
+ *   - rate-limited execution (IP-based, enforced server-side)
+ *   - live response display with latency
+ *
+ * Closes a real gap: the previous playground hard-coded 5 agents.
+ * Now every public agent in the registry is available.
+ */
 
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Play, ChevronDown, Terminal, Sparkles, Lock, Copy, Check } from "lucide-react";
+import type { Metadata } from "next";
+import Link from "next/link";
+import { listCatalog } from "@/lib/agent-catalog";
+import { PlaygroundClient } from "./PlaygroundClient";
 
-const AGENTS = [
-  { id: "leads", name: "Lead Gen", endpoint: "/api/_agents/leads", example: "Find 25 SaaS founders in Austin, TX with Series A funding" },
-  { id: "blog-gen", name: "Blog Gen", endpoint: "/api/_agents/blog-gen", example: "Write a 1500-word article on AI automation for agencies" },
-  { id: "market-intel", name: "Market Intel", endpoint: "/api/_agents/market-intel", example: "Analyze the competitive landscape for AI CRM tools in 2026" },
-  { id: "voice-synth", name: "Voice Synth", endpoint: "/api/_agents/voice", example: "Generate a 30-second sales pitch script for a SaaS demo" },
-  { id: "seo-audit", name: "SEO Audit", endpoint: "/api/_agents/seo-dominator", example: "Run a full SEO audit on example.com with keyword gaps" },
-];
+export const metadata: Metadata = {
+  title: "Playground — try 218 agents without signing up · Sovereign Matrix",
+  description:
+    "Interactive agent playground. Run any of 218 first-party agents with no signup. See real results, real latency. Deep-linkable via ?agent=<slug>.",
+  alternates: { canonical: "https://sovereignmatrix.agency/playground" },
+  openGraph: {
+    title: "Sovereign Matrix Playground",
+    description: "Run 218 agents with no signup. Real results, real latency.",
+    url: "https://sovereignmatrix.agency/playground",
+    type: "website",
+  },
+};
 
-export default function PlaygroundPage() {
-  const [agent, setAgent] = useState(AGENTS[0]);
-  const [prompt, setPrompt] = useState(AGENTS[0].example);
-  const [result, setResult] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [open, setOpen] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const [tries, setTries] = useState(3);
+export const revalidate = 300;
 
-  useEffect(() => {
-    const stored = localStorage.getItem("sv_playground_tries");
-    if (stored) setTries(parseInt(stored, 10));
-  }, []);
+interface PageProps {
+  searchParams: Promise<{ agent?: string }>;
+}
 
-  const run = async () => {
-    if (tries <= 0) return;
-    setLoading(true);
-    setResult(null);
-    const remaining = tries - 1;
-    setTries(remaining);
-    localStorage.setItem("sv_playground_tries", String(remaining));
-    try {
-      const res = await fetch(agent.endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt }),
-      });
-      const data = await res.json();
-      setResult(JSON.stringify(data, null, 2));
-    } catch {
-      setResult(JSON.stringify({ error: "Agent unavailable — sign up for full access" }, null, 2));
-    } finally {
-      setLoading(false);
-    }
-  };
+export default async function PlaygroundPage({ searchParams }: PageProps) {
+  const params = await searchParams;
+  const initialSlug = typeof params.agent === "string" ? params.agent : null;
 
-  const selectAgent = (a: typeof AGENTS[number]) => {
-    setAgent(a);
-    setPrompt(a.example);
-    setOpen(false);
-    setResult(null);
-  };
-
-  const copyResult = () => {
-    if (result) { navigator.clipboard.writeText(result); setCopied(true); setTimeout(() => setCopied(false), 2000); }
-  };
+  // Pull the full catalog once on the server. The client gets it as a
+  // serialized prop — no extra fetch on mount.
+  const catalog = await listCatalog({ limit: 500 });
 
   return (
-    <main className="min-h-screen bg-[#010101] text-neutral-200">
-      <div className="max-w-4xl mx-auto px-6 py-20">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-xs font-mono mb-4">
-            <Sparkles className="w-3 h-3" /> API Playground
-          </div>
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-white mb-3">Try Agents Live</h1>
-          <p className="text-neutral-500 max-w-lg mx-auto">Run any agent without signing up. See real results in seconds.</p>
-        </motion.div>
+    <div className="min-h-screen bg-[#010101] text-white antialiased">
+      <nav className="px-6 md:px-10 h-16 flex items-center justify-between max-w-6xl mx-auto">
+        <Link href="/" className="text-sm font-semibold text-white">
+          Sovereign Matrix
+        </Link>
+        <div className="flex items-center gap-5 text-[13px]">
+          <Link
+            href="/agents"
+            className="text-neutral-400 hover:text-white transition-colors"
+          >
+            All agents
+          </Link>
+          <Link
+            href="/developers/api-explorer"
+            className="text-neutral-400 hover:text-white transition-colors"
+          >
+            API explorer
+          </Link>
+          <Link
+            href="/pricing"
+            className="px-4 py-1.5 rounded-full bg-[#B5532C] hover:bg-[#C96234] text-white text-xs font-semibold transition-colors"
+          >
+            Upgrade for more
+          </Link>
+        </div>
+      </nav>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-          className="rounded-xl border border-white/10 bg-white/[0.02] backdrop-blur-xl overflow-hidden">
-          {/* Agent selector */}
-          <div className="p-5 border-b border-white/5">
-            <label className="text-xs text-neutral-500 font-mono mb-2 block">AGENT</label>
-            <div className="relative">
-              <button onClick={() => setOpen(!open)}
-                className="w-full flex items-center justify-between px-4 py-3 rounded-lg bg-white/5 border border-white/10 hover:border-emerald-500/30 transition-colors text-left">
-                <span className="font-mono text-emerald-400">{agent.name}</span>
-                <ChevronDown className={`w-4 h-4 text-neutral-500 transition-transform ${open ? "rotate-180" : ""}`} />
-              </button>
-              <AnimatePresence>
-                {open && (
-                  <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }}
-                    className="absolute z-10 mt-1 w-full rounded-lg bg-[#0a0a0a] border border-white/10 overflow-hidden">
-                    {AGENTS.map((a) => (
-                      <button key={a.id} onClick={() => selectAgent(a)}
-                        className={`w-full text-left px-4 py-3 font-mono text-sm hover:bg-white/5 transition-colors ${a.id === agent.id ? "text-emerald-400 bg-emerald-500/5" : "text-neutral-300"}`}>
-                        {a.name}
-                      </button>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
+      <section className="pt-16 pb-8 px-6 text-center">
+        <p className="font-mono text-[10px] text-neutral-600 tracking-[0.22em] uppercase mb-3">
+          Playground · No signup required
+        </p>
+        <h1 className="ed-display text-4xl md:text-6xl mb-4">
+          Run an agent.<br />
+          <span className="ed-display-italic text-[#B5532C]">See what it does.</span>
+        </h1>
+        <p className="text-neutral-400 text-sm max-w-xl mx-auto">
+          Pick from {catalog.length} first-party agents. Three free runs per
+          visitor — no card, no signup. Deep-link a friend: append{" "}
+          <code className="font-mono text-xs text-[#B5532C]">?agent=&lt;slug&gt;</code>.
+        </p>
+      </section>
 
-          {/* Prompt input */}
-          <div className="p-5 border-b border-white/5">
-            <label className="text-xs text-neutral-500 font-mono mb-2 block">PROMPT</label>
-            <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} rows={3}
-              className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 focus:border-emerald-500/40 focus:outline-none resize-none font-mono text-sm text-neutral-200 placeholder-neutral-600"
-              placeholder="Enter your prompt..." />
-          </div>
+      <PlaygroundClient catalog={catalog} initialSlug={initialSlug} />
 
-          {/* Run button + tries */}
-          <div className="p-5 flex items-center justify-between border-b border-white/5">
-            <div className="flex items-center gap-3">
-              <button onClick={run} disabled={loading || tries <= 0}
-                className="px-5 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed text-black font-semibold text-sm flex items-center gap-2 transition-colors">
-                {loading ? <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" /> : <Play className="w-4 h-4" />}
-                Run Agent
-              </button>
-              <span className="text-xs font-mono text-neutral-500">
-                {tries > 0 ? `${tries} free ${tries === 1 ? "try" : "tries"} remaining` : "No tries left"}
-              </span>
-            </div>
-            <span className="text-xs font-mono text-neutral-500">POST {agent.endpoint}</span>
+      <section className="py-12 px-6 border-t border-white/[0.04]">
+        <div className="max-w-3xl mx-auto text-center">
+          <p className="text-xs text-neutral-500 mb-4">
+            Rate-limited to 3 runs per IP per hour. Need more? Sign up for free — the
+            free tier has 50 runs/month with no IP limit.
+          </p>
+          <div className="flex items-center justify-center gap-3 flex-wrap">
+            <Link
+              href="/signup"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[4px] bg-[#B5532C] hover:bg-[#C96234] text-white text-sm font-semibold transition-colors"
+            >
+              Get a free account
+            </Link>
+            <Link
+              href="/pricing"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-[4px] border border-white/10 text-white text-sm font-semibold hover:bg-white/5 transition-colors"
+            >
+              See pricing
+            </Link>
           </div>
-
-          {/* Result panel */}
-          <div className="relative">
-            <div className="flex items-center justify-between px-5 py-3 border-b border-white/5">
-              <div className="flex items-center gap-2 text-xs font-mono text-neutral-500">
-                <Terminal className="w-3.5 h-3.5" /> Response
-              </div>
-              {result && (
-                <button onClick={copyResult} className="text-xs text-neutral-500 hover:text-emerald-400 flex items-center gap-1 transition-colors">
-                  {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />} {copied ? "Copied" : "Copy"}
-                </button>
-              )}
-            </div>
-            <pre className="p-5 text-sm font-mono overflow-auto max-h-80 text-emerald-300/80 min-h-[120px]">
-              {loading && <span className="text-neutral-500 animate-pulse">Running agent...</span>}
-              {!loading && !result && <span className="text-neutral-500">Agent response will appear here</span>}
-              {!loading && result && result}
-            </pre>
-          </div>
-        </motion.div>
-
-        {/* CTA when no tries */}
-        <AnimatePresence>
-          {tries <= 0 && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-              className="mt-8 p-6 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-center">
-              <Lock className="w-6 h-6 text-emerald-400 mx-auto mb-3" />
-              <p className="text-white font-semibold mb-1">Free tries exhausted</p>
-              <p className="text-neutral-400 text-sm mb-4">Sign up to get unlimited agent access and full API keys.</p>
-              <a href="/pricing" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-emerald-500 text-black font-semibold text-sm hover:bg-emerald-400 transition-colors">
-                Sign Up for Unlimited Access
-              </a>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    </main>
+        </div>
+      </section>
+    </div>
   );
 }

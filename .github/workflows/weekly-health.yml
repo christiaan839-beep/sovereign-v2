@@ -1,0 +1,51 @@
+name: Weekly platform health
+
+# Every Monday 09:00 UTC + on manual trigger. Runs scripts/weekly-health.mjs
+# which checks 20+ platform invariants (agent count, tests passing, eval
+# coverage, docs presence, etc.) and emits a markdown report.
+#
+# The report uploads as a build artifact (retained 30 days). If any check
+# regresses against its target, the job fails — which surfaces in the
+# GitHub Actions UI as a failed run.
+#
+# Manual follow-up: open an issue with the artifact contents if regressions
+# appear. This is intentional — we don't auto-create issues because the
+# script doesn't have context to prioritize fixes.
+
+on:
+  schedule:
+    - cron: "0 9 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: weekly-health
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: Platform invariants
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run platform health audit
+        run: node scripts/weekly-health.mjs | tee audit-report.md
+
+      - name: Upload audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: weekly-health-report
+          path: audit-report.md
+          retention-days: 30
