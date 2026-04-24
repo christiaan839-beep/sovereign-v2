@@ -39,6 +39,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     agent.description ??
     `${agent.displayName} is one of 218 specialized agents on the Sovereign Matrix platform.`;
 
+  const ogImageUrl = `https://sovereignmatrix.agency/api/og/agent/${slug}`;
+
   return {
     title,
     description,
@@ -51,11 +53,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       type: "article",
       url: `https://sovereignmatrix.agency/agents/${slug}`,
       siteName: "Sovereign Matrix",
+      images: [
+        {
+          url: ogImageUrl,
+          width: 1200,
+          height: 630,
+          alt: `${agent.displayName} — Sovereign Matrix agent`,
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
+      images: [ogImageUrl],
     },
   };
 }

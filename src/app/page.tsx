@@ -16,6 +16,7 @@ import { TiltCard } from "@/components/ui/EliteEffects";
 import { LiveProofStrip } from "@/components/landing/LiveProofStrip";
 import { LivePlatformMetrics } from "@/components/landing/LivePlatformMetrics";
 import { IndustriesShowcase } from "@/components/landing/IndustriesShowcase";
+import { ConstellationPreview } from "@/components/landing/ConstellationPreview";
 import { ProofStrip } from "@/components/landing/ProofStrip";
 import { ThreeMoatsGrid } from "@/components/landing/ThreeMoatsGrid";
 import { A2EEconomySection } from "@/components/landing/A2EEconomySection";
@@ -136,6 +137,67 @@ const FEATURED_PLAYBOOKS = getMarketingPlaybooks().map((pb) => {
   };
 });
 
+// Curated slice for the constellation preview — 40 agents across every
+// major category. Picked for visual diversity (palettes spread) + name
+// recognition (buyers scanning the landing see familiar capabilities).
+// Full /world page shows all 218.
+const CONSTELLATION_PREVIEW_AGENTS = [
+  // Meta / brain
+  { slug: "god-brain", displayName: "God Brain", category: "Meta" },
+  { slug: "smart-router", displayName: "Smart Router", category: "Meta" },
+  { slug: "meta-prompt", displayName: "Meta Prompt", category: "Meta" },
+  { slug: "war-room", displayName: "War Room", category: "Meta" },
+  // Insurance
+  { slug: "fnol-intake", displayName: "FNOL Intake", category: "Insurance" },
+  { slug: "coi-verifier", displayName: "COI Verifier", category: "Insurance" },
+  // Logistics
+  { slug: "bill-of-lading-reader", displayName: "Bill of Lading", category: "Logistics" },
+  { slug: "hs-code-classifier", displayName: "HS Code", category: "Logistics" },
+  // Healthcare
+  { slug: "icd10-coder", displayName: "ICD-10 Coder", category: "Healthcare" },
+  { slug: "prior-auth-drafter", displayName: "Prior Auth", category: "Healthcare" },
+  { slug: "healthcare-docs", displayName: "Healthcare Docs", category: "Healthcare" },
+  // Agriculture
+  { slug: "soil-report-extractor", displayName: "Soil Report", category: "Agriculture" },
+  { slug: "crop-health-scout", displayName: "Crop Scout", category: "Agriculture" },
+  // Construction
+  { slug: "permit-form-filler", displayName: "Permit Filler", category: "Real Estate" },
+  { slug: "safety-incident-reporter", displayName: "Safety Report", category: "Real Estate" },
+  { slug: "blueprint-parser", displayName: "Blueprint Parser", category: "Real Estate" },
+  // Finance
+  { slug: "w2-reader", displayName: "W-2 Reader", category: "Finance" },
+  { slug: "invoice-extractor", displayName: "Invoice Extractor", category: "Finance" },
+  { slug: "invoice-ocr", displayName: "Invoice OCR", category: "Finance" },
+  // Sales
+  { slug: "leads", displayName: "Lead Gen", category: "Sales" },
+  { slug: "business-card-reader", displayName: "Biz Card Reader", category: "Sales" },
+  { slug: "booking", displayName: "Booking", category: "Sales" },
+  // Content
+  { slug: "blog-gen", displayName: "Blog Gen", category: "Content" },
+  { slug: "seo-dominator", displayName: "SEO Dominator", category: "Content" },
+  { slug: "ad-report", displayName: "Ad Report", category: "Content" },
+  // Research
+  { slug: "market-analysis", displayName: "Market Analysis", category: "Research" },
+  { slug: "competitor", displayName: "Competitor", category: "Research" },
+  { slug: "grounded-search", displayName: "Grounded Search", category: "Research" },
+  // Voice / Vision
+  { slug: "voice-synth", displayName: "Voice Synth", category: "Voice" },
+  { slug: "voice-clone", displayName: "Voice Clone", category: "Voice" },
+  { slug: "image-gen", displayName: "Image Gen", category: "Vision & Media" },
+  { slug: "video-gen", displayName: "Video Gen", category: "Vision & Media" },
+  { slug: "vision", displayName: "Vision", category: "Vision & Media" },
+  // Safety + Compliance
+  { slug: "nemoclaw", displayName: "NemoClaw", category: "Safety" },
+  { slug: "gliner-pii", displayName: "GLiNER PII", category: "Safety" },
+  { slug: "id-verifier", displayName: "ID Verifier", category: "Compliance" },
+  { slug: "nda-triage", displayName: "NDA Triage", category: "Legal" },
+  // Ecommerce
+  { slug: "menu-digitizer", displayName: "Menu Digitizer", category: "Ecommerce" },
+  { slug: "abandoned-cart-winback", displayName: "Cart Winback", category: "Ecommerce" },
+  // Misc
+  { slug: "weekly-report", displayName: "Weekly Report", category: "General" },
+];
+
 export default function LandingPage() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
@@ -177,6 +239,12 @@ export default function LandingPage() {
 
         {/* 06b · Industries showcase — 10 verticals, visual connect */}
         <IndustriesShowcase />
+
+        {/* 06c · Constellation preview — 40 live sigils → /world deep-link */}
+        <ConstellationPreview
+          agents={CONSTELLATION_PREVIEW_AGENTS}
+          totalCount={218}
+        />
 
         {/* 07 · Featured Playbooks */}
         <FeaturedPlaybooksSection />
