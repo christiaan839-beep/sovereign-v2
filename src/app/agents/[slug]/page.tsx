@@ -20,6 +20,7 @@ import { getAgentPublic, listCatalog } from "@/lib/agent-catalog";
 import { getSloSnapshot } from "@/lib/slo-tracker";
 import { InstallButton } from "./InstallButton";
 import { AgentCard } from "@/components/world/AgentCard";
+import { AgentSigil } from "@/components/agent/AgentSigil";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -119,17 +120,13 @@ export default async function AgentPage({ params }: Props) {
 
           {/* Hero */}
           <div className="flex items-start gap-4 mb-8">
-            <div
-              className="flex-shrink-0 w-14 h-14 rounded-full border flex items-center justify-center"
-              style={{
-                background: `${agent.heroColor ?? "#B5532C"}20`,
-                borderColor: `${agent.heroColor ?? "#B5532C"}55`,
-              }}
-              aria-hidden="true"
-            >
-              <span className="font-mono text-[14px] text-[#B5532C]">
-                {agent.displayName.slice(0, 2).toUpperCase()}
-              </span>
+            <div className="flex-shrink-0 rounded-lg overflow-hidden">
+              <AgentSigil
+                slug={agent.slug}
+                category={agent.category}
+                size={72}
+                detail="normal"
+              />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">

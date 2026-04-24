@@ -21,6 +21,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Play, Search, Terminal, Copy, Check, Clock, Zap, Lock } from "lucide-react";
 import Link from "next/link";
 import type { PublicAgent } from "@/lib/agent-catalog";
+import { AgentSigil } from "@/components/agent/AgentSigil";
 
 interface Props {
   catalog: PublicAgent[];
@@ -171,11 +172,13 @@ export function PlaygroundClient({ catalog, initialSlug }: Props) {
               className="w-full flex items-center justify-between px-4 py-3 rounded-[4px] bg-white/[0.04] hover:bg-white/[0.06] border border-white/[0.06] transition-colors text-left"
             >
               <div className="flex items-center gap-3 min-w-0">
-                <span
-                  className="w-8 h-8 rounded-[4px] bg-[#B5532C]/15 text-[#B5532C] font-mono text-xs flex items-center justify-center shrink-0"
-                  aria-hidden="true"
-                >
-                  {agent.displayName.slice(0, 2).toUpperCase()}
+                <span className="w-8 h-8 rounded-[4px] overflow-hidden shrink-0">
+                  <AgentSigil
+                    slug={agent.slug}
+                    category={agent.category}
+                    size={32}
+                    detail="minimal"
+                  />
                 </span>
                 <div className="min-w-0">
                   <p className="font-mono text-sm text-white truncate">{agent.slug}</p>

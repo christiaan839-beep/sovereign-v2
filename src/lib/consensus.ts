@@ -222,16 +222,23 @@ const CONSENSUS_MODELS_NIM_FALLBACK = [
   "qwen/qwen3-235b-a22b",
 ];
 
+interface ConsensusPoolEntry {
+  slug: string;
+  /** Which provider to route through. "nim" = existing nimChat; others → adapters. */
+  provider: "nim" | "openai" | "xai" | "mistral" | "cohere" | "openrouter" | "together" | "databricks";
+}
+
 /**
  * Pick consensus models dynamically. When any frontier-provider key is
  * configured (OPENAI_API_KEY, XAI_API_KEY, OPENROUTER_API_KEY), we use
  * `getDiverseConsensusPool()` which balances closed + open families.
  * Otherwise fall back to the NIM-only pool.
  *
- * Kept async so callers can await the selection + so we can lazy-import
- * the providers catalog (keeps test-only code paths light).
+ * Returns pool entries tagged with the correct provider so `consensusAi`
+ * can route each to its adapter. This closes the loose end from Sprint A
+ * where all pool entries went through nimChat regardless of origin.
  */
-async function selectConsensusModels(count: number): Promise<string[]> {
+async function selectConsensusModels(count: number): Promise<ConsensusPoolEntry[]> {
   const hasFrontierKey =
     Boolean(process.env.OPENAI_API_KEY) ||
     Boolean(process.env.XAI_API_KEY) ||
@@ -243,12 +250,70 @@ async function selectConsensusModels(count: number): Promise<string[]> {
     try {
       const { getDiverseConsensusPool } = await import("@/lib/providers");
       const pool = getDiverseConsensusPool(count);
-      if (pool.length > 0) return pool.map((m) => m.slug);
+      if (pool.length > 0) {
+        return pool.map((m) => ({
+          slug: m.slug,
+          provider: m.provider as ConsensusPoolEntry["provider"],
+        }));
+      }
     } catch {
       // Fall through to NIM pool.
     }
   }
-  return CONSENSUS_MODELS_NIM_FALLBACK.slice(0, count);
+  // NIM fallback — all entries route through the existing nimChat.
+  return CONSENSUS_MODELS_NIM_FALLBACK.slice(0, count).map((slug) => ({
+    slug,
+    provider: "nim" as const,
+  }));
+}
+
+/**
+ * Route a single consensus model call to the correct provider adapter.
+ * Keeps the switch local so `consensusAi` stays short and easy to read.
+ */
+async function runConsensusModel(
+  entry: ConsensusPoolEntry,
+  prompt: string,
+  system: string,
+  maxTokens: number,
+): Promise<string> {
+  const systemMsg = system ? [{ role: "system" as const, content: system }] : [];
+  const userMsg = { role: "user" as const, content: prompt };
+  switch (entry.provider) {
+    case "nim":
+      return nimChat(entry.slug, [...systemMsg, userMsg], {
+        maxTokens,
+        temperature: 0.5,
+      }) as Promise<string>;
+    case "openai": {
+      const { openaiChat } = await import("@/lib/providers");
+      return openaiChat({ prompt, system, maxTokens, model: entry.slug, temperature: 0.5 });
+    }
+    case "xai": {
+      const { xaiChat } = await import("@/lib/providers");
+      return xaiChat({ prompt, system, maxTokens, model: entry.slug, temperature: 0.5 });
+    }
+    case "mistral": {
+      const { mistralDirectChat } = await import("@/lib/providers");
+      return mistralDirectChat({ prompt, system, maxTokens, model: entry.slug, temperature: 0.5 });
+    }
+    case "cohere": {
+      const { cohereChat } = await import("@/lib/providers");
+      return cohereChat({ prompt, system, maxTokens, model: entry.slug, temperature: 0.5 });
+    }
+    case "openrouter": {
+      const { openrouterChat } = await import("@/lib/providers");
+      return openrouterChat({ prompt, system, maxTokens, model: entry.slug, temperature: 0.5 });
+    }
+    case "together": {
+      const { togetherChat } = await import("@/lib/providers");
+      return togetherChat({ prompt, system, maxTokens, model: entry.slug, temperature: 0.5 });
+    }
+    case "databricks": {
+      const { databricksChat } = await import("@/lib/providers");
+      return databricksChat({ prompt, system, maxTokens, model: entry.slug, temperature: 0.5 });
+    }
+  }
 }
 
 /**
@@ -266,27 +331,19 @@ export async function consensusAi(
   const { system = "", maxTokens = 2000, models: modelCount = 2 } = options;
 
   // Dynamic model selection — frontier-diverse pool when configured,
-  // NIM-only pool otherwise. See selectConsensusModels() above.
-  const modelsToUse = await selectConsensusModels(modelCount);
+  // NIM-only pool otherwise. Each entry is tagged with its provider so
+  // the pool can span multiple APIs in parallel for genuinely uncorrelated
+  // consensus (closed-source gpt-5 + open-source llama-4 + reasoning-tuned
+  // o3 + RAG-tuned command-r-plus, etc.).
+  const pool = await selectConsensusModels(modelCount);
 
-  // Run all models in parallel. Note: when the diverse pool returns
-  // frontier slugs (gpt-5, grok-3, etc.), nimChat still works because
-  // those slugs won't be hosted on NIM and will surface an error per
-  // model — allSettled absorbs the failures and we synthesize from
-  // whatever succeeded. In a follow-up we'll route each pool entry to
-  // its correct provider; for v1 this degrades to NIM-only consensus
-  // when any frontier slug is in the mix (acceptable for now).
+  // Fan out in parallel. Each entry hits its correct provider adapter
+  // via runConsensusModel(). Promise.allSettled absorbs per-provider
+  // failures — we synthesize from whatever succeeded.
   const results = await Promise.allSettled(
-    modelsToUse.map(async (model) => {
-      const answer = await nimChat(
-        model,
-        [
-          ...(system ? [{ role: "system", content: system }] : []),
-          { role: "user", content: prompt },
-        ],
-        { maxTokens, temperature: 0.5 }
-      );
-      return { model, answer };
+    pool.map(async (entry) => {
+      const answer = await runConsensusModel(entry, prompt, system, maxTokens);
+      return { model: entry.slug, answer };
     })
   );
 
@@ -338,7 +395,7 @@ Do NOT say "Model 1 said..." — just give the best unified answer.`,
     return {
       answer: synthesized,
       modelAnswers: successful,
-      agreement: successful.length / modelsToUse.length,
+      agreement: successful.length / pool.length,
       synthesized: true,
     };
   } catch {
@@ -347,7 +404,7 @@ Do NOT say "Model 1 said..." — just give the best unified answer.`,
     return {
       answer: best.answer,
       modelAnswers: successful,
-      agreement: successful.length / modelsToUse.length,
+      agreement: successful.length / pool.length,
       synthesized: false,
     };
   }
