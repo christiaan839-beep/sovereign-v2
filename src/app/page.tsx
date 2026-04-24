@@ -330,7 +330,7 @@ function Nav({
           >
             {[
               { href: PLATFORM_HREF, label: "Platform" },
-              { href: "/agents", label: "Directory — 198 agents" },
+              { href: "/agents", label: "Directory — 203 agents" },
               { href: "/marketplace", label: "Marketplace" },
               { href: "/trust", label: "Trust" },
               { href: "/pricing", label: "Pricing" },
@@ -430,9 +430,9 @@ function Hero() {
               <span className="absolute inline-flex h-full w-full rounded-full bg-[#B5532C] opacity-70 animate-ping" />
               <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#B5532C]" />
             </span>
-            <span>198 agents</span>
+            <span>203 agents</span>
             <span className="text-neutral-700">·</span>
-            <span>39+ models</span>
+            <span>39 models</span>
             <span className="text-neutral-700">·</span>
             <span className="text-[#B5532C]">LIVE</span>
           </div>
@@ -458,7 +458,7 @@ function Hero() {
           transition={{ delay: 0.4, duration: 0.7 }}
           className="text-[15px] md:text-[17px] text-neutral-400 leading-[1.55] mb-10 max-w-2xl mx-auto"
         >
-          198 verified agents. 39+ models. Built for enterprises that can&apos;t afford to get AI wrong.
+          203 verified agents. 39 models. 5-layer safety pipeline. 70/30 creator earnings with SLA-triggered refunds.
         </motion.p>
 
         {/* CTAs */}
@@ -805,7 +805,7 @@ function FinalCTA() {
 
         <p className="ed-body text-[15px] md:text-[16px] mb-12 leading-relaxed max-w-lg mx-auto"
            style={{ color: "var(--ed-ink-soft)" }}>
-          No credit card. 198 agents in 60 seconds. 50 runs reset every month.
+          No credit card. 203 agents in 60 seconds. 50 runs reset every month.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8">

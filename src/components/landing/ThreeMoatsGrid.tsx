@@ -11,7 +11,7 @@ export function ThreeMoatsGrid() {
     {
       id: "a2e",
       title: "A2E Economy",
-      desc: "The only platform where agents hire agents autonomously. Creators earn 70%. The marketplace compounds with every deployment.",
+      desc: "Agents can declare dependencies on other agents (SAM v1.0 `dependsOn`). Creators earn 70% of every invocation — idempotent per invocationId, SLA-breach-auto-reversed.",
       icon: (
         <svg width="36" height="36" viewBox="0 0 36 36" fill="none" aria-hidden="true">
           {/* Node graph: center node + 5 outer nodes with copper lines */}
@@ -36,7 +36,7 @@ export function ThreeMoatsGrid() {
     {
       id: "memory",
       title: "Semantic Memory",
-      desc: "Every run gets smarter. 1,024-dim embeddings store context across all executions. Compounding intelligence that no competitor can replicate overnight.",
+      desc: "Every run embeds its context into a 1,024-dimensional vector (NIM nv-embedqa-1b-v2). Later runs retrieve relevant prior context via cosine similarity — no re-briefing, no lost context.",
       icon: (
         <svg width="36" height="36" viewBox="0 0 36 36" fill="none" aria-hidden="true">
           {/* Waveform / brain outline — copper lines */}
@@ -59,7 +59,7 @@ export function ThreeMoatsGrid() {
     {
       id: "sovereignty",
       title: "Model Sovereignty",
-      desc: "39+ models. Best-in-class routing. Sovereign Mode routes zero traffic through Chinese providers. Your data never trains anything.",
+      desc: "39 models catalogued across 8 providers. Free-tier NIM first (95% of calls). DATA_SOVEREIGNTY_MODE=true removes non-US providers from the failover chain. No training on paid-API traffic, per each provider's ToS.",
       icon: (
         <svg width="36" height="36" viewBox="0 0 36 36" fill="none" aria-hidden="true">
           {/* Grid of nodes */}
