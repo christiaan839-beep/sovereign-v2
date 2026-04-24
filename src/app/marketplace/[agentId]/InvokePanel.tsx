@@ -36,6 +36,15 @@ interface SlaInfo {
   description?: string;
 }
 
+interface AttestationSummary {
+  invocationId: string;
+  inputHash: string;
+  outputHash: string;
+  timestamp: string;
+  slaVerdict: string;
+  signed: boolean;
+}
+
 interface Props {
   slugOrId: string;
   agentName: string;
@@ -54,6 +63,7 @@ export function InvokePanel({ slugOrId, agentName, pricingCents }: Props) {
   const [result, setResult] = useState<string>("");
   const [earnings, setEarnings] = useState<Earnings | null>(null);
   const [sla, setSla] = useState<SlaInfo | null>(null);
+  const [attestation, setAttestation] = useState<AttestationSummary | null>(null);
   const [errMsg, setErrMsg] = useState<string>("");
 
   async function run() {
@@ -95,6 +105,24 @@ export function InvokePanel({ slugOrId, agentName, pricingCents }: Props) {
         refundIssued: Boolean(body.earnings?.refundIssued),
       });
       if (body.sla) setSla(body.sla as SlaInfo);
+      if (body.attestation) {
+        const a = body.attestation as {
+          invocationId?: string;
+          inputHash?: string;
+          outputHash?: string;
+          timestamp?: string;
+          slaVerdict?: string;
+          _sig?: unknown;
+        };
+        setAttestation({
+          invocationId: a.invocationId ?? "",
+          inputHash: a.inputHash ?? "",
+          outputHash: a.outputHash ?? "",
+          timestamp: a.timestamp ?? "",
+          slaVerdict: a.slaVerdict ?? "not_enforced",
+          signed: Boolean(a._sig),
+        });
+      }
       setPhase("success");
     } catch {
       setErrMsg("Network error. Try again.");
@@ -144,6 +172,23 @@ export function InvokePanel({ slugOrId, agentName, pricingCents }: Props) {
         if (eventType === "token") {
           const t = (payload as { text?: string }).text ?? "";
           appendResult((prev) => prev + t);
+        } else if (eventType === "attestation") {
+          const a = payload as {
+            invocationId?: string;
+            inputHash?: string;
+            outputHash?: string;
+            timestamp?: string;
+            slaVerdict?: string;
+            _sig?: unknown;
+          };
+          setAttestation({
+            invocationId: a.invocationId ?? "",
+            inputHash: a.inputHash ?? "",
+            outputHash: a.outputHash ?? "",
+            timestamp: a.timestamp ?? "",
+            slaVerdict: a.slaVerdict ?? "not_enforced",
+            signed: Boolean(a._sig),
+          });
         } else if (eventType === "done") {
           const e = (payload as { earnings?: Earnings }).earnings;
           if (e) setEarningsCb(e);
@@ -277,6 +322,37 @@ export function InvokePanel({ slugOrId, agentName, pricingCents }: Props) {
               <span className="ed-mono">{Math.round(sla.confidence * 100)}%</span>
               {sla.reason ? ` · ${sla.reason}` : ""}
             </p>
+          )}
+
+          {attestation && (
+            <div
+              className="ed-caption pt-3 mt-3 space-y-1"
+              style={{
+                borderTop: "1px solid var(--ed-rule)",
+                color: "var(--ed-ink-soft)",
+              }}
+            >
+              <p>
+                {attestation.signed ? "🔐 Signed attestation" : "📝 Attestation (unsigned)"}
+                {" · "}
+                <span className="ed-mono">{attestation.invocationId}</span>
+              </p>
+              <p>
+                Input hash: <span className="ed-mono">{attestation.inputHash.slice(7, 19)}…</span>
+                {" · "}
+                Output hash: <span className="ed-mono">{attestation.outputHash.slice(7, 19)}…</span>
+              </p>
+              {attestation.signed && (
+                <p>
+                  <a
+                    href="/platform/verify"
+                    className="transition-colors hover:text-[var(--ed-copper)]"
+                  >
+                    Verify this proof →
+                  </a>
+                </p>
+              )}
+            </div>
           )}
         </div>
       )}

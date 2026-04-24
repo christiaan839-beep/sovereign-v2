@@ -5,10 +5,14 @@
  * and pipes the model's token deltas to the client in real time.
  *
  * Event types emitted:
- *   event: agent     data: {id, name, slug, pricingCents}
- *   event: token     data: {text}            (many)
- *   event: done      data: {earnings, invocationId}
- *   event: error     data: {code, message}
+ *   event: agent        data: {id, name, slug, pricingCents}
+ *   event: token        data: {text}            (many)
+ *   event: attestation  data: {agentId, invocationId, inputHash, outputHash,
+ *                              modelUsed, timestamp, slaVerdict, platform, _sig?}
+ *                       — cryptographic proof of the completed run,
+ *                         emitted once after the last token
+ *   event: done         data: {earnings, invocationId, charsEmitted}
+ *   event: error        data: {code, message}
  *
  * Same rate limit + input validation as the non-streaming endpoint.
  * Earnings are credited when the stream completes successfully —
@@ -17,9 +21,11 @@
  */
 
 import { checkIpRateLimit, extractClientIp } from "@/lib/api-guard";
+import { evaluateSla } from "@/lib/agent-sla";
 import { streamAi } from "@/lib/ai-stream";
 import { creditEarning } from "@/lib/creator-earnings";
 import { synthesizeSystemPromptFromManifest } from "@/lib/creator-submission-persistence";
+import { signInvocation, type SlaVerdictLabel } from "@/lib/invocation-attestation";
 import { createLogger } from "@/lib/logger";
 import { recordSample } from "@/lib/slo-tracking";
 import { db } from "@/db";
@@ -164,12 +170,18 @@ export async function POST(request: Request): Promise<Response> {
         );
 
         let charsEmitted = 0;
-        for await (const token of streamAi(input.slice(0, 8000), {
+        // Accumulate the full streamed output for attestation hashing.
+        // Memory cost is bounded by maxTokens; for 2000 tokens that's
+        // ~8KB — negligible vs the streaming savings.
+        let fullOutput = "";
+        const truncatedInput = input.slice(0, 8000);
+        for await (const token of streamAi(truncatedInput, {
           system: systemPrompt,
           maxTokens: 2000,
           signal: request.signal,
         })) {
           charsEmitted += token.length;
+          fullOutput += token;
           controller.enqueue(encoder.encode(sseEvent("token", { text: token })));
         }
 
@@ -204,6 +216,35 @@ export async function POST(request: Request): Promise<Response> {
 
         const grossCents = agent.pricePerRun;
         const creatorCents = Math.floor(grossCents * 0.7);
+
+        // Evaluate SLA + sign the attestation BEFORE emitting "done".
+        // Order matters: buyers watching the stream want the attestation
+        // delivered first so their UI can show "verified" right when
+        // the last token arrives.
+        if (charsEmitted > 0) {
+          const slaVerdict = evaluateSla({
+            manifestRaw: agent.manifestRaw,
+            output: fullOutput,
+            expectedJson: false,
+          });
+          const slaLabel: SlaVerdictLabel = slaVerdict.enforced
+            ? slaVerdict.breached
+              ? "breached"
+              : "met"
+            : "not_enforced";
+          const attestationResult = await signInvocation({
+            agentId: agent.id,
+            invocationId,
+            input: truncatedInput,
+            output: fullOutput,
+            modelUsed: "nim",
+            slaVerdict: slaLabel,
+          });
+          controller.enqueue(
+            encoder.encode(sseEvent("attestation", attestationResult.attestation)),
+          );
+        }
+
         controller.enqueue(
           encoder.encode(
             sseEvent("done", {
