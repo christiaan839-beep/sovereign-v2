@@ -1,30 +1,84 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { SignInButton } from "@clerk/nextjs";
 import { useState, useEffect } from "react";
 import { SovereignLogo } from "@/components/ui/SovereignLogo";
 import { getMarketingPlaybooks } from "@/lib/playbooks";
-import { FounderSeats } from "@/components/landing/FounderSeats";
-import { CommandEgg } from "@/components/landing/CommandEgg";
 import { PrimaryCTA } from "@/components/landing/PrimaryCTA";
 import { StatusIndicator } from "@/components/landing/StatusIndicator";
 import { trackCtaClick } from "@/lib/cta-track";
 import { TiltCard } from "@/components/ui/EliteEffects";
 
-// New components
-import { ConstellationField } from "@/components/landing/ConstellationField";
+// Above-the-fold — static-imported so they ship in the initial chunk.
 import { LiveProofStrip } from "@/components/landing/LiveProofStrip";
-import { RecentRunsTicker } from "@/components/landing/RecentRunsTicker";
 import { ProofStrip } from "@/components/landing/ProofStrip";
 import { ThreeMoatsGrid } from "@/components/landing/ThreeMoatsGrid";
 import { A2EEconomySection } from "@/components/landing/A2EEconomySection";
 import { ModelRouterSection } from "@/components/landing/ModelRouterSection";
 import { VerificationPipeline } from "@/components/landing/VerificationPipeline";
-import { AgentBuilderLiveDemo } from "@/components/landing/AgentBuilderLiveDemo";
-import { PlaybookBuilderLiveDemo } from "@/components/landing/PlaybookBuilderLiveDemo";
-import { CostOptimizerLiveDemo } from "@/components/landing/CostOptimizerLiveDemo";
+
+// Below-the-fold / decorative / network-dependent — code-split via
+// next/dynamic. The browser fetches each chunk only when React
+// commits the node, cutting the initial JS payload significantly
+// (3 live demos + ConstellationField + RecentRunsTicker = ~1,500 LOC
+// moved out of the first-paint budget).
+//
+// `ssr: false` is deliberate for components that:
+//   - rely on browser APIs (canvas, IntersectionObserver)
+//   - fetch at mount (wastes SSR cycles)
+//   - are decorative / don't impact SEO
+const ConstellationField = dynamic(
+  () =>
+    import("@/components/landing/ConstellationField").then((m) => ({
+      default: m.ConstellationField,
+    })),
+  { ssr: false, loading: () => null },
+);
+const RecentRunsTicker = dynamic(
+  () =>
+    import("@/components/landing/RecentRunsTicker").then((m) => ({
+      default: m.RecentRunsTicker,
+    })),
+  { ssr: false, loading: () => null },
+);
+const AgentBuilderLiveDemo = dynamic(
+  () =>
+    import("@/components/landing/AgentBuilderLiveDemo").then((m) => ({
+      default: m.AgentBuilderLiveDemo,
+    })),
+  { ssr: false, loading: () => null },
+);
+const PlaybookBuilderLiveDemo = dynamic(
+  () =>
+    import("@/components/landing/PlaybookBuilderLiveDemo").then((m) => ({
+      default: m.PlaybookBuilderLiveDemo,
+    })),
+  { ssr: false, loading: () => null },
+);
+const CostOptimizerLiveDemo = dynamic(
+  () =>
+    import("@/components/landing/CostOptimizerLiveDemo").then((m) => ({
+      default: m.CostOptimizerLiveDemo,
+    })),
+  { ssr: false, loading: () => null },
+);
+const FounderSeats = dynamic(
+  () =>
+    import("@/components/landing/FounderSeats").then((m) => ({
+      default: m.FounderSeats,
+    })),
+  { ssr: false, loading: () => null },
+);
+const CommandEgg = dynamic(
+  () =>
+    import("@/components/landing/CommandEgg").then((m) => ({
+      default: m.CommandEgg,
+    })),
+  { ssr: false, loading: () => null },
+);
 
 /**
  * Landing page — Agent Infrastructure Stack narrative.

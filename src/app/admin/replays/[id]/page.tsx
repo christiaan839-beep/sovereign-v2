@@ -69,6 +69,26 @@ export default async function Page({
       ? firstInputStep.data.text
       : "";
 
+  // Derive the ORIGINAL output from the last step that carries a
+  // stringable output-ish field. The factory typically records the
+  // final output under 'output' / 'response' / 'result' — check all
+  // three in order of preference. Scans in REVERSE so the
+  // final-step output wins over any intermediate step's payload.
+  const lastOutputStep = [...trace.steps].reverse().find(
+    (s) =>
+      typeof s.data?.output === "string" ||
+      typeof s.data?.response === "string" ||
+      typeof s.data?.result === "string",
+  );
+  const recordedOutput =
+    typeof lastOutputStep?.data?.output === "string"
+      ? lastOutputStep.data.output
+      : typeof lastOutputStep?.data?.response === "string"
+      ? lastOutputStep.data.response
+      : typeof lastOutputStep?.data?.result === "string"
+      ? lastOutputStep.data.result
+      : "";
+
   return (
     <div className="min-h-screen" style={{ background: "var(--ed-bg)" }}>
       <div className="max-w-5xl mx-auto px-6 pt-10 pb-24">
@@ -108,6 +128,7 @@ export default async function Page({
         <ReplayRerunPanel
           agentName={trace.agentName}
           initialInput={initialRerunInput}
+          originalOutput={recordedOutput}
         />
 
         {/* Step timeline */}

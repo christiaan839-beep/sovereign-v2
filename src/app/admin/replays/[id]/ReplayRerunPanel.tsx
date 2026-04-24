@@ -4,27 +4,45 @@
  * ReplayRerunPanel — client island inside /admin/replays/[id] that
  * lets an admin re-invoke the agent with either the original input
  * or a modified version. Uses the streaming /api/agents/invoke/stream
- * endpoint so the tokens appear live, same as the marketplace UX.
+ * endpoint so the tokens appear live.
  *
- * Power-user flow: tune a prompt, watch output stream, compare with
- * the recorded output in the timeline above. No bouncing through
- * the buyer-facing marketplace page.
+ * Power-user flow: tune a prompt, watch output stream, then see the
+ * word-level diff vs the recorded output — the closest thing to
+ * git-blame for agent output. No bouncing through the marketplace UI.
  */
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { diffWords, similarity } from "@/lib/text-diff";
 
 type Phase = "idle" | "running" | "done" | "error";
 
 interface Props {
   agentName: string;
   initialInput: string;
+  /** Original output recorded in the replay trace — used for diff view. */
+  originalOutput?: string;
 }
 
-export function ReplayRerunPanel({ agentName, initialInput }: Props) {
+export function ReplayRerunPanel({ agentName, initialInput, originalOutput }: Props) {
   const [input, setInput] = useState(initialInput);
   const [output, setOutput] = useState("");
   const [phase, setPhase] = useState<Phase>("idle");
   const [err, setErr] = useState<string>("");
+  const [showDiff, setShowDiff] = useState(true);
+
+  // Compute diff only when we have both sides + the user wants it.
+  // useMemo so tab-toggling doesn't re-run LCS on every render.
+  const diffParts = useMemo(() => {
+    if (!showDiff || phase !== "done") return null;
+    const prev = (originalOutput ?? "").trim();
+    if (!prev || !output.trim()) return null;
+    return diffWords(prev, output);
+  }, [showDiff, phase, originalOutput, output]);
+
+  const similarityPct = useMemo(() => {
+    if (!originalOutput || !output) return null;
+    return Math.round(similarity(originalOutput, output) * 100);
+  }, [originalOutput, output]);
 
   async function rerun() {
     const trimmed = input.trim();
@@ -156,6 +174,76 @@ export function ReplayRerunPanel({ agentName, initialInput }: Props) {
         >
           {output}
         </pre>
+      )}
+
+      {/* Diff view — shown only when we have both sides of the compare. */}
+      {phase === "done" && originalOutput && output && (
+        <div className="mt-5">
+          <div className="flex items-center justify-between mb-2 ed-caption">
+            <span>
+              vs recorded output{" "}
+              {similarityPct !== null && (
+                <span className="ed-mono" style={{ color: "var(--ed-copper)" }}>
+                  · {similarityPct}% similar
+                </span>
+              )}
+            </span>
+            <button
+              type="button"
+              onClick={() => setShowDiff(!showDiff)}
+              className="ed-caption transition-colors hover:text-[var(--ed-copper)]"
+            >
+              {showDiff ? "Hide diff" : "Show diff"}
+            </button>
+          </div>
+          {showDiff && diffParts && (
+            <pre
+              className="p-4 ed-mono text-[12px] whitespace-pre-wrap"
+              style={{
+                border: "1px solid var(--ed-copper)",
+                background: "var(--ed-bg)",
+                borderRadius: "2px",
+                maxHeight: "400px",
+                overflow: "auto",
+              }}
+            >
+              {diffParts.map((p, i) => {
+                if (p.op === "eq") {
+                  return (
+                    <span key={i} style={{ color: "var(--ed-ink-soft)" }}>
+                      {p.text}
+                    </span>
+                  );
+                }
+                if (p.op === "add") {
+                  return (
+                    <span
+                      key={i}
+                      style={{
+                        color: "var(--ed-copper)",
+                        background: "var(--ed-copper-wash)",
+                      }}
+                    >
+                      {p.text}
+                    </span>
+                  );
+                }
+                return (
+                  <span
+                    key={i}
+                    style={{
+                      color: "var(--ed-ink-soft)",
+                      textDecoration: "line-through",
+                      opacity: 0.55,
+                    }}
+                  >
+                    {p.text}
+                  </span>
+                );
+              })}
+            </pre>
+          )}
+        </div>
       )}
     </section>
   );

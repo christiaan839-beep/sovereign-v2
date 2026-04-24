@@ -75,6 +75,20 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/sla", priority: 0.6, changeFreq: "monthly" },
     { path: "/status", priority: 0.6, changeFreq: "daily" },
     { path: "/changelog", priority: 0.6, changeFreq: "weekly" },
+    { path: "/trust", priority: 0.7, changeFreq: "monthly" },
+
+    // Platform surfaces (operator + procurement)
+    { path: "/platform/status", priority: 0.8, changeFreq: "daily" },
+    { path: "/platform/trust", priority: 0.85, changeFreq: "monthly" },
+
+    // Marketplace depth (buyer entry points beyond the homepage)
+    { path: "/marketplace/search", priority: 0.9, changeFreq: "daily" },
+    { path: "/marketplace/leaderboard", priority: 0.85, changeFreq: "daily" },
+
+    // Spec + creator acquisition
+    { path: "/spec/agent-manifest", priority: 0.85, changeFreq: "monthly" },
+    { path: "/developers/build-an-agent", priority: 0.9, changeFreq: "weekly" },
+    { path: "/creators/apply", priority: 0.85, changeFreq: "weekly" },
 
     // Legal
     { path: "/privacy", priority: 0.5, changeFreq: "monthly" },

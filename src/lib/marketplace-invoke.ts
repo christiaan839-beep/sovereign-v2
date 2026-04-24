@@ -37,6 +37,11 @@ import { ai } from "@/lib/ai";
 import { evaluateSla, type SlaVerdict } from "@/lib/agent-sla";
 import { creditEarning } from "@/lib/creator-earnings";
 import { synthesizeSystemPromptFromManifest } from "@/lib/creator-submission-persistence";
+import {
+  signInvocation,
+  type Attestation,
+  type SlaVerdictLabel,
+} from "@/lib/invocation-attestation";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("marketplace-invoke");
@@ -70,6 +75,15 @@ export interface InvokeSuccess {
     refundIssued: boolean;
   };
   sla: SlaVerdict;
+  /**
+   * Ed25519 attestation of this invocation. When the platform signing
+   * key is configured, `attestation._sig` is present and verifiable
+   * by any third party with our public key (available at
+   * /api/platform/public-key). When the key isn't configured the
+   * attestation is still emitted but unsigned — auditors can still
+   * cross-reference the hashes but have no cryptographic binding.
+   */
+  attestation: Attestation;
 }
 
 export interface InvokeFailure {
@@ -303,6 +317,21 @@ export async function invokeMarketplaceAgent(
   // Counter bump happens after success. Cosmetic — never blocks.
   void bumpUsageCounters(agent.id, grossCents, creatorCents);
 
+  // Build the cryptographic attestation for this run. Signs the
+  // HASHES of input/output (privacy-preserving) + agent + model +
+  // timestamp + SLA verdict with the platform's ed25519 key.
+  const slaLabel: SlaVerdictLabel = sla.enforced
+    ? sla.breached ? "breached" : "met"
+    : "not_enforced";
+  const attestationResult = await signInvocation({
+    agentId: agent.id,
+    invocationId,
+    input: truncated,
+    output: result,
+    modelUsed: "nim",
+    slaVerdict: slaLabel,
+  });
+
   return {
     ok: true,
     invocationId,
@@ -321,5 +350,6 @@ export async function invokeMarketplaceAgent(
       refundIssued,
     },
     sla,
+    attestation: attestationResult.attestation,
   };
 }
