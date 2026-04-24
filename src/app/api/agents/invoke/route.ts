@@ -25,6 +25,7 @@ import {
   invokeMarketplaceAgent,
   type InvokeErrorCode,
 } from "@/lib/marketplace-invoke";
+import { recordSample } from "@/lib/slo-tracking";
 
 const ERROR_HTTP: Record<InvokeErrorCode, number> = {
   bad_input: 400,
@@ -36,6 +37,11 @@ const ERROR_HTTP: Record<InvokeErrorCode, number> = {
 };
 
 export async function POST(request: Request): Promise<Response> {
+  // Start the latency clock here so SLO samples reflect user-perceived
+  // latency, not just AI-call time. Rate-limit checks + JSON parsing
+  // are part of the path the user actually waits on.
+  const t0 = Date.now();
+
   // Rate limit: 30 invocations / minute / IP. Generous enough for
   // live playground demos, tight enough to block crawlers.
   const ip = extractClientIp(request.headers);
@@ -89,16 +95,32 @@ export async function POST(request: Request): Promise<Response> {
     maxTokens,
   });
 
+  // SLO recording: agent-latency sample in ms. Passes if invocation
+  // succeeded AND total latency under the 8s p95 target. Fire-and-
+  // forget — a failed SLO write never surfaces to the user.
+  const latency = Date.now() - t0;
+  const passed = result.ok && latency < 8000;
+  void recordSample("agent_latency_p95", latency, passed);
+
   if (result.ok) {
     return NextResponse.json(result, {
       status: 200,
-      headers: { "Cache-Control": "no-store" },
+      headers: {
+        "Cache-Control": "no-store",
+        "Server-Timing": `invoke;dur=${latency}`,
+      },
     });
   }
 
   const status = ERROR_HTTP[result.code] ?? 500;
   return NextResponse.json(
     { ok: false, error: result.message, code: result.code },
-    { status, headers: { "Cache-Control": "no-store" } },
+    {
+      status,
+      headers: {
+        "Cache-Control": "no-store",
+        "Server-Timing": `invoke;dur=${latency}`,
+      },
+    },
   );
 }

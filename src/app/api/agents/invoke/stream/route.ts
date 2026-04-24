@@ -21,6 +21,7 @@ import { streamAi } from "@/lib/ai-stream";
 import { creditEarning } from "@/lib/creator-earnings";
 import { synthesizeSystemPromptFromManifest } from "@/lib/creator-submission-persistence";
 import { createLogger } from "@/lib/logger";
+import { recordSample } from "@/lib/slo-tracking";
 import { db } from "@/db";
 import { marketplaceAgents } from "@/db/schema";
 import { eq, or, sql } from "drizzle-orm";
@@ -142,6 +143,9 @@ export async function POST(request: Request): Promise<Response> {
 
   const invocationId = generateInvocationId();
   const encoder = new TextEncoder();
+  // Stream-latency clock starts HERE (after agent resolution) so the
+  // SLO sample reflects model-facing latency, not DB lookup time.
+  const streamStart = Date.now();
 
   // Build the SSE stream. Emits agent metadata first, then tokens,
   // then done event with earnings, then closes.
@@ -214,6 +218,12 @@ export async function POST(request: Request): Promise<Response> {
             }),
           ),
         );
+
+        // Record SLO: a stream run is "successful" if it emitted any
+        // tokens in under the 8s p95 target.
+        const latency = Date.now() - streamStart;
+        const passed = charsEmitted > 0 && latency < 8000;
+        void recordSample("agent_latency_p95", latency, passed);
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         log.warn("stream errored mid-flight", { invocationId, error: msg });
@@ -225,6 +235,9 @@ export async function POST(request: Request): Promise<Response> {
             }),
           ),
         );
+        // Record the failed sample so SLO reflects reality.
+        const latency = Date.now() - streamStart;
+        void recordSample("agent_latency_p95", latency, false);
       } finally {
         controller.close();
       }

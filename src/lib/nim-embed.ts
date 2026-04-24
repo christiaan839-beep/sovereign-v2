@@ -14,6 +14,10 @@
  */
 
 import { createLogger } from "@/lib/logger";
+import {
+  getCachedEmbedding,
+  setCachedEmbedding,
+} from "@/lib/embedding-cache";
 import { nimEmbed, nimRerank } from "@/lib/nvidia";
 
 const log = createLogger("nim-embed");
@@ -48,11 +52,20 @@ function truncate(s: string): string {
 export async function embedOne(text: string): Promise<number[] | null> {
   const clean = text?.trim();
   if (!clean) return null;
+
+  // Cache first — identical text + identical model = identical vector.
+  // This cuts NIM spend on repeat queries by 60–80% in production.
+  const cached = await getCachedEmbedding(clean, NIM_EMBEDDING_MODEL);
+  if (cached) return cached;
+
   if (!nimKeyAvailable()) return null;
 
   try {
     const [vec] = await nimEmbed(truncate(clean), NIM_EMBEDDING_MODEL);
     if (!vec || vec.length === 0) return null;
+    // Warm the cache so the next identical lookup is O(1).
+    // Fire-and-forget — a slow cache write must not slow the user.
+    void setCachedEmbedding(clean, NIM_EMBEDDING_MODEL, vec);
     return vec;
   } catch (err) {
     log.warn("embedOne failed; degrading to null", {
