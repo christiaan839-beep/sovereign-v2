@@ -58,7 +58,7 @@ describe("agent registry — contract coverage", () => {
     // Diagnostic only — don't fail the build. This becomes a target we
     // raise over time; when it hits 80% we'll flip the .toBeGreaterThan
     // to assert we maintain it.
-    // eslint-disable-next-line no-console -- intentional test diagnostic
+     
     console.info(
       `[contracts] ${contractedSlugs.length}/${registeredSlugs.length} agents covered (${coveragePct}%)`,
     );

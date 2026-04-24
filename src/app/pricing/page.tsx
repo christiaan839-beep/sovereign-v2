@@ -135,7 +135,7 @@ export default function PricingPage() {
     const onlyInTiers = tierPlanIds.filter((id) => !marketingPlanIds.includes(id));
     const onlyInMarketing = marketingPlanIds.filter((id) => !tierPlanIds.includes(id));
     if (onlyInTiers.length > 0 || onlyInMarketing.length > 0) {
-      // eslint-disable-next-line no-console
+       
       console.warn(
         "[pricing] TIERS ⇄ PLANS drift detected:",
         { onlyInTiers, onlyInMarketing, hint: "Sync src/lib/plans.ts marketing flag with pricing page TIERS." },
@@ -143,7 +143,7 @@ export default function PricingPage() {
     }
     for (const t of TIERS) {
       if (!PLANS[t.plan as PlanId]) {
-        // eslint-disable-next-line no-console
+         
         console.error(`[pricing] Unknown plan id in TIERS: "${t.plan}"`);
       }
     }

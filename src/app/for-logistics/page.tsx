@@ -87,10 +87,10 @@ export default function ForLogisticsPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-4xl md:text-6xl font-black tracking-tight leading-[1.05] mb-6"
+            className="ed-display text-4xl md:text-6xl mb-6"
           >
             AI agents for<br />
-            <span className="text-amber-400">logistics.</span>
+            <span className="ed-display-italic text-amber-400">logistics.</span>
           </motion.h1>
 
           <motion.p

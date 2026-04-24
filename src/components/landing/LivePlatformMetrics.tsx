@@ -26,6 +26,7 @@
  */
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { Activity, Zap, CheckCircle2, Layers } from "lucide-react";
 
@@ -94,12 +95,13 @@ export function LivePlatformMetrics() {
             Numbers you can verify.
           </p>
           <span aria-hidden="true" className="h-px flex-1 bg-white/[0.04]" />
-          <a
+          <Link
             href="/api/_health/slo"
+            prefetch={false}
             className="font-mono text-[10px] text-neutral-600 hover:text-[#B5532C] transition-colors tracking-[0.1em]"
           >
             /api/_health/slo →
-          </a>
+          </Link>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -162,21 +164,23 @@ export function LivePlatformMetrics() {
 
         <p className="mt-6 font-mono text-[10px] text-neutral-600 tracking-[0.08em]">
           Source:{" "}
-          <a
+          <Link
             href="/api/_health/slo"
+            prefetch={false}
             className="underline decoration-white/[0.12] hover:decoration-[#B5532C]"
           >
             /api/_health/slo
-          </a>
+          </Link>
           {" · "}
-          <a
+          <Link
             href="/api/_health/performance"
+            prefetch={false}
             className="underline decoration-white/[0.12] hover:decoration-[#B5532C]"
           >
             /api/_health/performance
-          </a>
+          </Link>
           {" · "}
-          Window resets with instance. Cross-instance aggregation is Q3 work.
+          Now cross-instance aggregated via slo_events table (migration 0032).
         </p>
       </div>
     </section>

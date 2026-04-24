@@ -166,7 +166,7 @@ interface Row {
 
 function StatusDot({ good }: { good: boolean | null }) {
   if (good === true)
-    return <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 inline shrink-0" />;
+    return <CheckCircle2 className="w-3.5 h-3.5 text-[#B5532C] inline shrink-0" />;
   if (good === false)
     return <XCircle className="w-3.5 h-3.5 text-neutral-600 inline shrink-0" />;
   return <MinusCircle className="w-3.5 h-3.5 text-amber-400/60 inline shrink-0" />;
@@ -196,15 +196,15 @@ export default function ComparePage() {
 
       <section className="py-24 px-6">
         <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/[0.06] mb-6">
-            <Activity className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="text-[11px] font-semibold text-emerald-400 uppercase tracking-[0.2em]">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#B5532C]/20 bg-[#B5532C]/[0.06] mb-6">
+            <Activity className="w-3.5 h-3.5 text-[#B5532C]" />
+            <span className="text-[11px] font-semibold text-[#B5532C] uppercase tracking-[0.2em]">
               Live comparison
             </span>
           </div>
-          <h1 className="text-4xl md:text-6xl font-black tracking-tight leading-[1.05] mb-6">
+          <h1 className="ed-display text-4xl md:text-6xl mb-6">
             Every number here<br />
-            <span className="text-emerald-400">has a command.</span>
+            <span className="ed-display-italic text-[#B5532C]">has a command.</span>
           </h1>
           <p className="text-lg text-neutral-400 max-w-xl mx-auto leading-relaxed mb-8">
             No rounded marketing. No &quot;best-in-class.&quot; Each claim
@@ -218,7 +218,7 @@ export default function ComparePage() {
       {/* Live status block */}
       <section className="py-12 px-6 border-y border-white/[0.03] bg-[#030303]">
         <div className="max-w-5xl mx-auto">
-          <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-3">
+          <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-[#B5532C]/60 mb-3">
             Current state (this instance, last 24h)
           </p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -263,7 +263,7 @@ export default function ComparePage() {
       <section className="py-20 px-6">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
-            <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">
+            <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-[#B5532C]/60 mb-4">
               Side by side
             </p>
             <h2 className="text-2xl md:text-4xl font-bold text-white tracking-tight mb-3">
@@ -280,7 +280,7 @@ export default function ComparePage() {
               <thead>
                 <tr className="bg-[#080808] text-[10px] uppercase tracking-[0.2em] text-neutral-500">
                   <th className="text-left py-3 px-4 font-semibold">Metric</th>
-                  <th className="text-left py-3 px-4 font-semibold text-emerald-400">Sovereign</th>
+                  <th className="text-left py-3 px-4 font-semibold text-[#B5532C]">Sovereign</th>
                   <th className="text-left py-3 px-4 font-semibold">CrewAI</th>
                   <th className="text-left py-3 px-4 font-semibold">Zapier</th>
                   <th className="text-left py-3 px-4 font-semibold">n8n</th>
@@ -297,7 +297,7 @@ export default function ComparePage() {
                         {row.note}
                       </div>
                     </td>
-                    <td className="py-4 px-4 text-emerald-400 font-semibold whitespace-nowrap">
+                    <td className="py-4 px-4 text-[#B5532C] font-semibold whitespace-nowrap">
                       <StatusDot good={row.sovereign.good} /> {row.sovereign.value}
                     </td>
                     {(["crewai", "zapier", "n8n", "langchain", "lindy"] as const).map(
@@ -363,7 +363,7 @@ export default function ComparePage() {
       <section className="py-20 px-6">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
-            <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-cyan-500/60 mb-4">
+            <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-neutral-400 mb-4">
               Elite-tier defences
             </p>
             <h2 className="text-2xl md:text-4xl font-bold text-white tracking-tight">
@@ -395,7 +395,7 @@ export default function ComparePage() {
         <div className="max-w-2xl mx-auto">
           <h2 className="text-3xl md:text-5xl font-black text-white tracking-tight mb-4">
             Try it.<br />
-            <span className="text-emerald-400">Verify every claim.</span>
+            <span className="text-[#B5532C]">Verify every claim.</span>
           </h2>
           <p className="text-neutral-400 mb-8 max-w-md mx-auto">
             Every number on this page runs as a shell command against our public code.
@@ -464,8 +464,8 @@ function DefenceCard({
 }) {
   return (
     <div className="p-6 rounded-2xl border border-white/[0.06] bg-[#080808]">
-      <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center mb-4">
-        <Icon className="w-5 h-5 text-cyan-400" />
+      <div className="w-10 h-10 rounded-xl bg-white/[0.05] flex items-center justify-center mb-4">
+        <Icon className="w-5 h-5 text-neutral-300" />
       </div>
       <h3 className="text-base font-semibold text-white mb-2">{title}</h3>
       <p className="text-sm text-neutral-400 leading-relaxed">{body}</p>

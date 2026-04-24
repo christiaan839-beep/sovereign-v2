@@ -112,7 +112,7 @@ export default function ROIAnalyticsPage() {
 
   useEffect(() => {
     fetchData();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);  
 
   const maxAgentCalls = agents.length > 0 ? Math.max(...agents.map((a) => a.calls)) : 1;
   const maxMonthly = monthlyTrend.length > 0 ? Math.max(...monthlyTrend.map((m) => m.calls)) : 1;

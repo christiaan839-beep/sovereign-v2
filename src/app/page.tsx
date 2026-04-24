@@ -911,6 +911,9 @@ function Footer() {
             title="Developers"
             links={[
               { href: "/developers/docs", label: "API Docs" },
+              { href: "/docs/errors", label: "Error codes" },
+              { href: "/docs/webhooks/verify", label: "Webhook HMAC" },
+              { href: "/status/slo", label: "SLO" },
               { href: "/integrations", label: "Integrations" },
               { href: "https://www.npmjs.com/package/@sovereignmatrix/mcp", label: "MCP Server", external: true },
               { href: "/changelog", label: "Changelog" },

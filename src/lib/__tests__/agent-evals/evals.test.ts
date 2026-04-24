@@ -37,7 +37,7 @@ describe("agent evals — golden set registration", () => {
     const registered = Object.keys(AGENT_REGISTRY).length;
     const evals = getAllEvals().length;
     const pct = Math.round((evals / registered) * 100);
-    // eslint-disable-next-line no-console -- intentional diagnostic
+     
     console.info(`[evals] ${evals}/${registered} agents have an eval (${pct}%)`);
     expect(evals).toBeGreaterThanOrEqual(1);
   });

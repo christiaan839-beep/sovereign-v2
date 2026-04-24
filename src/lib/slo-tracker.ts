@@ -72,14 +72,24 @@ function push(endpoint: string, event: SloEvent): void {
 /**
  * Record one request's outcome. Never throws — SLO telemetry MUST NOT
  * break user requests. Any error here is swallowed + logged.
+ *
+ * CROSS-INSTANCE AGGREGATION
+ * ──────────────────────────
+ * Writes to both (a) the per-instance ring buffer (always, instant),
+ * AND (b) the `slo_events` Postgres table (fire-and-forget, 0-latency
+ * from the caller's perspective via setImmediate). The table makes
+ * numbers survive cold-starts + aggregate across Vercel lambdas.
+ * If the DB is misconfigured, the write fails silently + the ring
+ * buffer remains the honest source of truth (STAY-ELITE rule 4).
  */
 export function recordSloEvent(
   endpoint: string,
   event: { success: boolean; ms: number; errorCode?: string },
 ): void {
+  const ts = Date.now();
   try {
     push(endpoint, {
-      ts: Date.now(),
+      ts,
       success: event.success,
       ms: event.ms,
       errorCode: event.errorCode,
@@ -88,7 +98,45 @@ export function recordSloEvent(
     log.warn("recordSloEvent failed — swallowing", {
       error: (err as Error).message,
     });
+    return;
   }
+
+  // Fire-and-forget Postgres write. Runs on the next tick so it never
+  // blocks the caller's response. If the DB isn't configured or the
+  // write fails, we log + move on — the in-memory buffer still serves.
+  queueMicrotask(() => {
+    writeSloEventToDb({ endpoint, ts, ...event }).catch((err) => {
+      log.debug("slo_events write skipped", {
+        reason: (err as Error)?.message ?? "unknown",
+      });
+    });
+  });
+}
+
+/**
+ * Writes one SLO event to the `slo_events` table. Imports are lazy
+ * so this module stays cheap to require in environments without Drizzle
+ * configured. Returns the write promise; caller decides whether to await.
+ */
+async function writeSloEventToDb(row: {
+  endpoint: string;
+  ts: number;
+  success: boolean;
+  ms: number;
+  errorCode?: string;
+}): Promise<void> {
+  // Graceful no-DB: silently skip when DATABASE_URL isn't set.
+  if (!process.env.DATABASE_URL) return;
+
+  // Lazy import so the tracker module doesn't force-load Drizzle in
+  // environments that don't need it (Ollama-only, air-gapped, tests).
+  const { db } = await import("@/db");
+  const { sql } = await import("drizzle-orm");
+
+  await db.execute(sql`
+    INSERT INTO slo_events (endpoint, ts, success, duration_ms, error_code)
+    VALUES (${row.endpoint}, ${row.ts}, ${row.success}, ${row.ms}, ${row.errorCode ?? null})
+  `);
 }
 
 /**

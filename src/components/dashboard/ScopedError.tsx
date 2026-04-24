@@ -23,7 +23,7 @@ export function ScopedError(area: string) {
     // Forward to Sentry (if configured) and log locally. Dynamic import
     // keeps the browser Sentry client out of initial bundles.
     useEffect(() => {
-      // eslint-disable-next-line no-console -- intentional diagnostic
+       
       console.error(`[dashboard:${area}]`, error);
       if (typeof window !== "undefined" && process.env.NEXT_PUBLIC_SENTRY_DSN) {
         import("@sentry/nextjs").then((Sentry) => {
