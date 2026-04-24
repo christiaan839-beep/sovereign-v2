@@ -84,4 +84,8 @@ export const POST = createVisionAgentRoute({
   extractionPrompt: EXTRACTION_PROMPT,
   outputSchema: COISchema,
   extraMeta: { samVersion: "1.0", category: "Insurance" },
+  // COIs contain insured business addresses, producer contact info, and
+  // certificate holder details — all required for vendor-management
+  // intake. Flag-mode logs findings without mutating the output.
+  piiGuardMode: "flag",
 });

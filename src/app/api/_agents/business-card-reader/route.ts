@@ -55,4 +55,8 @@ export const POST = createVisionAgentRoute({
   extractionPrompt: EXTRACTION_PROMPT,
   outputSchema: BusinessCardSchema,
   extraMeta: { samVersion: "1.0", category: "Sales" },
+  // Business cards are literally email + phone + URL containers. Scrubbing
+  // them defeats the purpose. Flag-mode logs findings for observability
+  // while leaving the output intact for CRM import.
+  piiGuardMode: "flag",
 });

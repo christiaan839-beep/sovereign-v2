@@ -67,6 +67,15 @@ export interface VisionAgentConfig<TSchema extends z.ZodTypeAny> {
    * (e.g. model name, confidence). Included in the API response.
    */
   extraMeta?: Record<string, unknown>;
+
+  /**
+   * Forwards to createAgentRoute.piiGuardMode — set to "flag" for vision
+   * agents whose output legitimately contains PII (business-card-reader,
+   * coi-verifier, menu-digitizer with staff phone numbers, etc.).
+   * Default ("mask") scrubs SSNs, credit cards, phones, emails from the
+   * output; individual agents override when PII is the intended payload.
+   */
+  piiGuardMode?: "mask" | "flag" | "skip";
 }
 
 /** Standard input shape accepted by every vision agent. */
@@ -162,6 +171,7 @@ export function createVisionAgentRoute<TSchema extends z.ZodTypeAny>(
     // detection. The synthesized extraction prompt is fully owned by
     // us, not the user.
     skipJailbreakCheck: true,
+    piiGuardMode: config.piiGuardMode,
     handler: async (ctx: AgentContext) => {
       const imageUrl = String(ctx.input.imageUrl ?? "");
       const extraContext = typeof ctx.input.extraContext === "string"

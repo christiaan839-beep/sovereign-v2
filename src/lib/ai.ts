@@ -192,17 +192,50 @@ async function aiUncached(prompt: string, options: AIOptions): Promise<string> {
     return databricksChat({ prompt, system, maxTokens, model });
   }
 
-  // 7. Gemini (default) → extended 6-stop failover:
-  //    Gemini → NIM → OpenAI → OpenRouter → Groq → [error]
+  // 7. Default failover chain.
+  //
+  // Normal mode: Gemini → NIM → OpenAI → OpenRouter → Groq → [error]
+  //              ^paid^  free   ^paid^      ^paid^     free
+  //
+  // SOVEREIGN_FREE_ONLY=true: strips paid steps → NIM → Groq → [error]
+  //                                               free   free
+  // If the user (or operator) explicitly set the flag, a failure
+  // across all free providers is surfaced honestly as "unavailable"
+  // rather than silently escalating to a paid provider behind the
+  // user's back. See src/lib/provider-costs.ts.
+  const { FREE_ONLY_MODE } = await import("@/lib/provider-costs");
   try {
+    // Gemini's free tier is closely metered — we classify it "paid" for
+    // safety under FREE_ONLY_MODE, skipping to NIM first in that mode.
+    if (FREE_ONLY_MODE) throw new Error("free-only-mode-skip-gemini");
     recordModel(useGeminiPro ? "gemini-pro" : "gemini-flash");
     return await geminiText(prompt, system, maxTokens, userKeys, useGeminiPro);
   } catch (geminiErr) {
-    log.warn("Gemini failed, falling back to NIM", { error: (geminiErr as Error).message });
+    if (!FREE_ONLY_MODE) {
+      log.warn("Gemini failed, falling back to NIM", { error: (geminiErr as Error).message });
+    }
     try {
       recordModel("nvidia-nim-fallback");
       return await nimText(prompt, system, maxTokens);
     } catch (nimErr) {
+      // Under free-only mode, skip paid providers — go straight to Groq.
+      if (FREE_ONLY_MODE) {
+        log.warn("NIM failed under FREE_ONLY_MODE, trying Groq (free tier)", {
+          error: (nimErr as Error).message,
+        });
+        try {
+          return await groqText(prompt, system, maxTokens, userKeys, "groq");
+        } catch (groqErr) {
+          log.error("All free providers failed under SOVEREIGN_FREE_ONLY", {
+            nim: (nimErr as Error).message,
+            groq: (groqErr as Error).message,
+          });
+          throw new Error(
+            "All free AI models are temporarily unavailable. " +
+              "Set SOVEREIGN_FREE_ONLY=false to use paid fallbacks, or retry in a few seconds.",
+          );
+        }
+      }
       log.warn("NIM failed, falling back to OpenAI", { error: (nimErr as Error).message });
       try {
         if (!process.env.OPENAI_API_KEY) throw new Error("no-openai-key");

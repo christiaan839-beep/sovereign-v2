@@ -89,6 +89,11 @@ Rules:
 export const POST = createAgentRoute({
   name: "resume-normalizer",
   requiredFields: ["resumeText"],
+  // Resumes legitimately contain email + phone. Application submission
+  // = consent to process. We use flag-mode so findings are still logged
+  // for observability but the output contact info passes through to the
+  // ATS unmodified.
+  piiGuardMode: "flag",
   handler: async ({ input }) => {
     const { resumeText } = input as { resumeText: string };
 

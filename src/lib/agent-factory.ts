@@ -100,6 +100,24 @@ export interface AgentConfig {
   /** Skip PII scanning on output (for PII agents themselves) */
   skipPiiScan?: boolean;
 
+  /**
+   * PII output-guard mode (defense-in-depth alongside the prompt-level
+   * rules each agent carries).
+   *   "mask"  — DEFAULT. Scan output, mask SSN/CC/phone/email in place.
+   *             Recipient names + addresses pass through — only numeric
+   *             identifiers are scrubbed.
+   *   "flag"  — Scan + log findings, don't modify output. Useful for
+   *             agents where PII is the desired output (resume-normalizer
+   *             should KEEP contact info; flag-mode gives us telemetry
+   *             without breaking function).
+   *   "skip"  — Bypass the output guard entirely. Use only when you
+   *             own the output contract (e.g., synthetic data generators
+   *             that emit fake SSNs for testing).
+   *
+   * See src/lib/pii-guard.ts for the underlying scanner.
+   */
+  piiGuardMode?: "mask" | "flag" | "skip";
+
   /** Skip quality scoring on output (for scoring/safety agents themselves) */
   skipQualityCheck?: boolean;
 
@@ -549,7 +567,11 @@ async function handleAgentRoute(
       // surface it alongside the result — honoring the "transparent
       // provider selection" principle (Anthropic Constitution §3).
       replay?.addStep("handler_start", { agent: config.name });
-      const { result, modelsConsulted, providersConsulted } = await runWithAttribution(async () => {
+      // Note: `result` is `let` (not `const`) because the PII output guard
+      // below may swap in a scrubbed copy. The destructure binds an
+      // initial value; re-assignment happens only inside the safe-mask
+      // branch of the structural PII scrubber.
+      const handlerOutcome = await runWithAttribution(async () => {
         const r = await config.handler({
           input: sanitized,
           request: req,
@@ -564,9 +586,23 @@ async function handleAgentRoute(
           providersConsulted: getProvidersConsulted(),
         };
       });
+      let result = handlerOutcome.result;
+      const { modelsConsulted, providersConsulted } = handlerOutcome;
       replay?.addStep("handler_complete", { outputKeys: Object.keys(result), outputSize: JSON.stringify(result).length });
 
-      // ─── Safety Post-flight: PII Scan on Output ───
+      // ─── Safety Post-flight: PII Scan + Guard on Output ───
+      //
+      // Two layers, both defense-in-depth after the agent's own system-
+      // prompt rules:
+      //   1. `scanForPiiPatterns` (existing) — broad LLM-based detector,
+      //      produces human-readable warning strings for telemetry.
+      //   2. `scrubPiiDeep` (new, src/lib/pii-guard.ts) — regex+Luhn
+      //      scrubber that MUTATES the result in place. Masks SSNs,
+      //      credit cards, phone numbers, and emails. Walks the entire
+      //      response object (not just a single string field) so
+      //      structured JSON payloads are fully covered.
+      //
+      // Configurable via `piiGuardMode` (default "mask").
       let piiWarning: string | undefined;
       if (!config.skipPiiScan) {
         const outputText = getFirstStringValue(result);
@@ -575,6 +611,35 @@ async function handleAgentRoute(
           if (piiEntities.length > 0) {
             piiWarning = `Output contains ${piiEntities.length} potential PII item(s): ${piiEntities.map(e => e.type).join(", ")}`;
             log.warn("PII detected in output", { agent: config.name, count: piiEntities.length });
+          }
+        }
+
+        // Structural guard — runs on the full response tree regardless
+        // of whether the language-model-based scan flagged anything.
+        // Regex+Luhn catches patterns the LLM scanner's model can miss.
+        const guardMode = config.piiGuardMode ?? "mask";
+        if (guardMode !== "skip") {
+          try {
+            const { scrubPiiDeep } = await import("@/lib/pii-guard");
+            const guardResult = scrubPiiDeep(result, guardMode);
+            if (guardResult.findings.length > 0) {
+              log.warn("pii-guard: structural scrubber found patterns", {
+                agent: config.name,
+                count: guardResult.findings.length,
+                types: [...new Set(guardResult.findings.map((f) => f.type))],
+                mode: guardMode,
+              });
+              if (guardMode === "mask") {
+                // Replace the result payload with the scrubbed tree.
+                // Safe cast: scrubPiiDeep preserves shape.
+                result = guardResult.scrubbed as typeof result;
+              }
+            }
+          } catch (err) {
+            // Fail-open — guard bugs must not block user responses.
+            log.warn("pii-guard import/scan failed — passing through", {
+              error: (err as Error).message,
+            });
           }
         }
       }
