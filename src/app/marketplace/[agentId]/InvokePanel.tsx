@@ -24,6 +24,16 @@ interface Earnings {
   grossCents: number;
   creatorCents: number;
   creditRecorded: boolean;
+  refundIssued?: boolean;
+}
+
+interface SlaInfo {
+  enforced: boolean;
+  breached: boolean;
+  confidence: number;
+  refundPct: number;
+  reason?: string;
+  description?: string;
 }
 
 interface Props {
@@ -43,6 +53,7 @@ export function InvokePanel({ slugOrId, agentName, pricingCents }: Props) {
   const [phase, setPhase] = useState<Phase>("idle");
   const [result, setResult] = useState<string>("");
   const [earnings, setEarnings] = useState<Earnings | null>(null);
+  const [sla, setSla] = useState<SlaInfo | null>(null);
   const [errMsg, setErrMsg] = useState<string>("");
 
   async function run() {
@@ -81,7 +92,9 @@ export function InvokePanel({ slugOrId, agentName, pricingCents }: Props) {
         grossCents: body.earnings?.grossCents ?? 0,
         creatorCents: body.earnings?.creatorCents ?? 0,
         creditRecorded: Boolean(body.earnings?.creditRecorded),
+        refundIssued: Boolean(body.earnings?.refundIssued),
       });
+      if (body.sla) setSla(body.sla as SlaInfo);
       setPhase("success");
     } catch {
       setErrMsg("Network error. Try again.");
@@ -243,9 +256,26 @@ export function InvokePanel({ slugOrId, agentName, pricingCents }: Props) {
           </pre>
           {earnings && earnings.grossCents > 0 && (
             <p className="ed-caption pt-3" style={{ borderTop: "1px solid var(--ed-rule)" }}>
-              {earnings.creditRecorded
+              {earnings.refundIssued
+                ? `SLA breach — ${formatCents(earnings.grossCents)} refunded. Creator not credited.`
+                : earnings.creditRecorded
                 ? `✓ ${formatCents(earnings.creatorCents)} credited to creator's pending earnings.`
                 : "Earnings ledger offline — admin review pending."}
+            </p>
+          )}
+
+          {sla?.enforced && (
+            <p
+              className="ed-caption pt-3 mt-3"
+              style={{
+                borderTop: "1px solid var(--ed-rule)",
+                color: sla.breached ? "var(--ed-copper)" : "var(--ed-ink-soft)",
+              }}
+            >
+              {sla.breached ? "⚠ " : "✓ "}
+              SLA {sla.breached ? "breached" : "met"} — confidence{" "}
+              <span className="ed-mono">{Math.round(sla.confidence * 100)}%</span>
+              {sla.reason ? ` · ${sla.reason}` : ""}
             </p>
           )}
         </div>

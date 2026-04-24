@@ -32,8 +32,9 @@
 
 import { eq, or, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { marketplaceAgents } from "@/db/schema";
+import { creatorEarnings, marketplaceAgents } from "@/db/schema";
 import { ai } from "@/lib/ai";
+import { evaluateSla, type SlaVerdict } from "@/lib/agent-sla";
 import { creditEarning } from "@/lib/creator-earnings";
 import { synthesizeSystemPromptFromManifest } from "@/lib/creator-submission-persistence";
 import { createLogger } from "@/lib/logger";
@@ -65,7 +66,10 @@ export interface InvokeSuccess {
     creatorCents: number;
     platformCents: number;
     creditRecorded: boolean;
+    /** True if the SLA was breached and the creator credit was reversed. */
+    refundIssued: boolean;
   };
+  sla: SlaVerdict;
 }
 
 export interface InvokeFailure {
@@ -246,6 +250,14 @@ export async function invokeMarketplaceAgent(
     };
   }
 
+  // Evaluate SLA BEFORE crediting. If the output breached the
+  // declared SLA, the creator credit is immediately reversed.
+  const sla = evaluateSla({
+    manifestRaw: agent.manifestRaw,
+    output: result,
+    expectedJson: false, // future: derive from manifest.output.type
+  });
+
   // Credit earnings. Fire-and-await (not fire-and-forget) because we
   // want the credit to be durable before we return a success. The
   // creditEarning function is idempotent on invocationId so retries
@@ -262,6 +274,31 @@ export async function invokeMarketplaceAgent(
         invocationId,
       })
     : true;
+
+  // If the SLA breached, flip the just-credited row to "reversed".
+  // The earnings ledger remains the source of truth; this is a
+  // documented, auditable refund rather than a silent deletion.
+  let refundIssued = false;
+  if (sla.breached && grossCents > 0 && creditRecorded) {
+    try {
+      await db
+        .update(creatorEarnings)
+        .set({ status: "reversed" })
+        .where(eq(creatorEarnings.invocationId, invocationId));
+      refundIssued = true;
+      log.info("SLA-triggered refund applied", {
+        invocationId,
+        agentId: agent.id,
+        refundPct: sla.refundPct,
+        confidence: sla.confidence,
+      });
+    } catch (err) {
+      log.warn("SLA refund update failed — credit remains pending", {
+        invocationId,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
 
   // Counter bump happens after success. Cosmetic — never blocks.
   void bumpUsageCounters(agent.id, grossCents, creatorCents);
@@ -281,6 +318,8 @@ export async function invokeMarketplaceAgent(
       creatorCents,
       platformCents,
       creditRecorded,
+      refundIssued,
     },
+    sla,
   };
 }

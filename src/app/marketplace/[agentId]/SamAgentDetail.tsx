@@ -21,6 +21,7 @@
  */
 
 import Link from "next/link";
+import { parseDependsOn } from "@/lib/agent-dependencies";
 import type { MarketplaceAgentView } from "@/lib/marketplace-query";
 import { InvokePanel } from "./InvokePanel";
 import { ManifestTools } from "./ManifestTools";
@@ -54,6 +55,25 @@ function redactEmail(email: string): string {
 export function SamAgentDetail({ agent }: { agent: MarketplaceAgentView }) {
   const categoryLabel = agent.samCategory ?? agent.category;
   const manifestJson = JSON.stringify(agent.manifestRaw ?? {}, null, 2);
+  const dependsOn = parseDependsOn(agent.manifestRaw);
+
+  // Read SLA + signature surface from the manifest for buyer-facing badges.
+  const manifestObj =
+    agent.manifestRaw && typeof agent.manifestRaw === "object"
+      ? (agent.manifestRaw as Record<string, unknown>)
+      : null;
+  const slaBlock =
+    manifestObj && typeof manifestObj.sla === "object" && manifestObj.sla !== null
+      ? (manifestObj.sla as Record<string, unknown>)
+      : null;
+  const slaDescription =
+    slaBlock && typeof slaBlock.description === "string"
+      ? slaBlock.description
+      : slaBlock && typeof slaBlock.confidenceMin === "number"
+      ? `${Math.round(slaBlock.confidenceMin * 100)}% confidence or refund`
+      : null;
+  const isSigned =
+    manifestObj && typeof manifestObj._sig === "object" && manifestObj._sig !== null;
 
   return (
     <div className="min-h-screen" style={{ background: "var(--ed-bg)" }}>
@@ -72,7 +92,7 @@ export function SamAgentDetail({ agent }: { agent: MarketplaceAgentView }) {
 
         {/* Masthead */}
         <header className="mb-10">
-          <div className="flex items-baseline gap-4 flex-wrap mb-4">
+          <div className="flex items-baseline gap-3 flex-wrap mb-4">
             <h1 className="ed-display text-6xl" style={{ color: "var(--ed-ink)" }}>
               {agent.name}
             </h1>
@@ -86,6 +106,32 @@ export function SamAgentDetail({ agent }: { agent: MarketplaceAgentView }) {
             >
               ✓ 5-Layer Verified
             </span>
+            {slaDescription && (
+              <span
+                className="ed-label px-2 py-1"
+                style={{
+                  color: "var(--ed-copper)",
+                  border: "1px solid var(--ed-copper)",
+                  borderRadius: "2px",
+                }}
+                title="Creator declared SLA — auto-refund on breach"
+              >
+                SLA · {slaDescription}
+              </span>
+            )}
+            {isSigned && (
+              <span
+                className="ed-label px-2 py-1"
+                style={{
+                  color: "var(--ed-ink)",
+                  border: "1px solid var(--ed-rule)",
+                  borderRadius: "2px",
+                }}
+                title="Ed25519-signed SAM manifest — tamper-detected on submit"
+              >
+                🔐 Signed
+              </span>
+            )}
           </div>
           <p className="ed-body text-xl max-w-3xl" style={{ color: "var(--ed-ink-soft)" }}>
             {agent.description}
@@ -182,6 +228,33 @@ export function SamAgentDetail({ agent }: { agent: MarketplaceAgentView }) {
                 </li>
               ))}
             </ul>
+          </section>
+        )}
+
+        {/* Dependencies */}
+        {dependsOn.length > 0 && (
+          <section className="mb-14">
+            <h2 className="ed-label mb-5">Depends on</h2>
+            <p className="ed-caption mb-4" style={{ color: "var(--ed-ink-soft)" }}>
+              This agent composes on top of other marketplace agents. Each dependency is independently verified.
+            </p>
+            <div className="flex gap-3 flex-wrap">
+              {dependsOn.map((slug) => (
+                <Link
+                  key={slug}
+                  href={`/marketplace/${slug}`}
+                  className="ed-mono text-sm px-3 py-2 transition-opacity hover:opacity-75"
+                  style={{
+                    border: "1px solid var(--ed-rule)",
+                    background: "var(--ed-bg-raised)",
+                    color: "var(--ed-copper)",
+                    borderRadius: "2px",
+                  }}
+                >
+                  {slug} →
+                </Link>
+              ))}
+            </div>
           </section>
         )}
 

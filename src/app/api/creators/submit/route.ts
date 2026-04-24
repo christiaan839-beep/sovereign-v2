@@ -39,7 +39,9 @@ import {
   persistSubmission,
   synthesizeSystemPromptFromManifest,
 } from "@/lib/creator-submission-persistence";
+import { detectCycles, parseDependsOn } from "@/lib/agent-dependencies";
 import { notifySubmissionReceived } from "@/lib/creator-emails";
+import { verifyManifestSignature } from "@/lib/sam-signing";
 import {
   runDeepSafety,
   runSyncSafety,
@@ -253,6 +255,51 @@ export async function POST(request: Request): Promise<Response> {
       },
       { status: 400, headers: { "Cache-Control": "no-store" } },
     );
+  }
+
+  // Optional signature verification. Manifests without `_sig` are
+  // accepted normally (unsigned:true). Manifests WITH _sig must
+  // verify successfully; otherwise we reject — a malformed or
+  // invalid signature is a strong signal of tampering or error
+  // that should not silently pass.
+  const sigVerdict = await verifyManifestSignature(manifest);
+  if (!sigVerdict.unsigned && !sigVerdict.valid) {
+    return NextResponse.json(
+      {
+        error: "Manifest carries an invalid signature.",
+        reason: sigVerdict.reason,
+        code: "invalid_signature",
+      },
+      { status: 400, headers: { "Cache-Control": "no-store" } },
+    );
+  }
+
+  // Dependency cycle check. A submission that depends (directly or
+  // transitively up to 4 levels) on itself is rejected so the graph
+  // stays acyclic. Self-deps are caught without DB access; deeper
+  // cycles require the DB.
+  const declaredDeps = parseDependsOn(manifest);
+  if (declaredDeps.length > 0) {
+    const manifestObj = manifest as Record<string, unknown>;
+    const thisSlug = typeof manifestObj.slug === "string"
+      ? String(manifestObj.slug).toLowerCase()
+      : "";
+    if (thisSlug) {
+      const cycles = await detectCycles({
+        thisSlug,
+        dependsOn: declaredDeps,
+      });
+      if (cycles.length > 0) {
+        return NextResponse.json(
+          {
+            error: "Manifest dependency graph contains a cycle.",
+            cycles,
+            code: "dependency_cycle",
+          },
+          { status: 400, headers: { "Cache-Control": "no-store" } },
+        );
+      }
+    }
   }
 
   // Optional email format sanity check.
