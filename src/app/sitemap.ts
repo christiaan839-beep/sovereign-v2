@@ -97,6 +97,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // Marketplace depth (buyer entry points beyond the homepage)
     { path: "/marketplace/search", priority: 0.9, changeFreq: "daily" },
     { path: "/marketplace/leaderboard", priority: 0.85, changeFreq: "daily" },
+    { path: "/marketplace/starter-packs", priority: 0.9, changeFreq: "weekly" },
+    { path: "/leaderboard", priority: 0.85, changeFreq: "daily" },
 
     // Spec + creator acquisition
     { path: "/spec/agent-manifest", priority: 0.85, changeFreq: "monthly" },

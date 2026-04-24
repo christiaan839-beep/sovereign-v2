@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { AgentSigil } from "@/components/agent/AgentSigil";
 
 /**
  * LeaderboardTable — sortable table for /leaderboard.
@@ -84,6 +85,18 @@ export function LeaderboardTable({ entries, sort, loading = false }: Props) {
               aria-label={`Rank ${i + 1}`}
             >
               {i < 3 ? MEDALS[i] : i + 1}
+            </span>
+
+            {/* Agent sigil — category-palette visual identity at a glance.
+             *  Makes the leaderboard scannable by industry: you can see
+             *  "oh, the top 3 are all Insurance" from the palette alone. */}
+            <span className="shrink-0 rounded-[4px] overflow-hidden">
+              <AgentSigil
+                slug={entry.slug}
+                category={entry.category}
+                size={36}
+                detail="minimal"
+              />
             </span>
 
             {/* Name + meta */}

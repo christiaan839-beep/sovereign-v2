@@ -961,6 +961,7 @@ function Footer() {
               { href: "/agents", label: "Staff Directory" },
               { href: "/platform", label: "Platform Overview" },
               { href: "/dashboard/playbooks", label: "Playbooks" },
+              { href: "/marketplace/starter-packs", label: "Starter packs" },
               { href: "/dashboard", label: "Dashboard" },
               { href: "/marketplace", label: "Marketplace" },
               { href: "/trust", label: "Trust" },

@@ -544,3 +544,410 @@ registerEval({
   skipIf: () => !process.env.TAVILY_API_KEY && !process.env.NVIDIA_NIM_API_KEY,
   timeoutMs: 60_000,
 });
+
+// ════════════════════════════════════════════════════════════════
+// Sprint C expansion — push coverage 11% → 25%+ (2026-04-24)
+// ════════════════════════════════════════════════════════════════
+
+/* ─── 26. Bank reconciler ──────────────────────────────────────── */
+registerEval({
+  slug: "bank-reconciler",
+  name: "Bank reconciler identifies FX variance",
+  input: {
+    bankRow: "2024-11-15, PAYPAL *ACME CO, -EUR 128.50",
+    candidateEntries: "Entry E-482: 2024-11-14, Acme Co invoice 1203, USD -135.15",
+    currency: "EUR",
+    fxRate: "1.05",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 60_000,
+});
+
+/* ─── 27. Resume normalizer ────────────────────────────────────── */
+registerEval({
+  slug: "resume-normalizer",
+  name: "Resume normalizer extracts ATS-ready structured JSON",
+  input: {
+    resumeText:
+      "John Chen\njohn.chen@example.com | (415) 555-0103\n\nSOFTWARE ENGINEER\n\nAcme Corp — Senior Engineer — 2021-present\n- Built payment pipeline handling $200M/year\n- Led migration from PHP to TypeScript\n\nBeta Inc — Engineer — 2018-2021\n\nSTANFORD UNIVERSITY\nBS Computer Science, 2018\n\nSKILLS: TypeScript, Python, PostgreSQL, Kubernetes",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 60_000,
+});
+
+/* ─── 28. Reference check generator ────────────────────────────── */
+registerEval({
+  slug: "reference-check-generator",
+  name: "Reference check drafter produces behavioral questions",
+  input: {
+    role: "Senior Engineering Manager",
+    competencies: "technical judgment, coaching, conflict resolution",
+    jurisdiction: "California",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 60_000,
+});
+
+/* ─── 29. SKU normalizer ───────────────────────────────────────── */
+registerEval({
+  slug: "sku-normalizer",
+  name: "SKU normalizer extracts canonical product record",
+  input: {
+    title:
+      "2024 Updated Version OEM #34116858047 Front Brake Pad Set BMW X3/X5 Genuine — FREE SHIPPING",
+    vendor: "eBay: euroautoparts99",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 60_000,
+});
+
+/* ─── 30. Marketing attribution ────────────────────────────────── */
+registerEval({
+  slug: "marketing-attribution",
+  name: "Marketing attribution reports channel contribution",
+  input: {
+    touchpoints:
+      "organic-search, google-ad, linkedin-ad, newsletter, retargeting, direct",
+    conversionValue: 4900,
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 60_000,
+});
+
+/* ─── 31. Incident responder ───────────────────────────────────── */
+registerEval({
+  slug: "incident-responder",
+  name: "Incident responder produces triage + runbook",
+  input: {
+    alert:
+      "Production database CPU >95% for 8 minutes. Connection pool exhausted. Hourly backup also running.",
+    context: "Payments service timeouts spiking 500ms→8s since 14:02 UTC",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 60_000,
+});
+
+/* ─── 32. Literature review ────────────────────────────────────── */
+registerEval({
+  slug: "literature-review",
+  name: "Literature review synthesizes a research topic",
+  input: {
+    topic: "Retrieval-Augmented Generation for clinical decision support",
+    maxSources: 5,
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 60_000,
+});
+
+/* ─── 33. Grant finder + writer ────────────────────────────────── */
+registerEval({
+  slug: "grant-finder-writer",
+  name: "Grant writer drafts SBIR proposal intro",
+  input: {
+    companyDescription:
+      "Pre-seed startup building AI-assisted precision-agriculture tools",
+    fundingTarget: "SBIR Phase I",
+    focusArea: "AI + USDA research",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 60_000,
+});
+
+/* ─── 34. Migration planner ────────────────────────────────────── */
+registerEval({
+  slug: "migration-planner",
+  name: "Migration planner drafts zero-downtime plan",
+  input: {
+    fromSystem: "PostgreSQL 12 with 2TB data + 400 tables",
+    toSystem: "PostgreSQL 16 on Neon",
+    constraints: "zero downtime, 48-hour window, compliance: SOC 2",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 60_000,
+});
+
+/* ─── 35. Inbox triage ──────────────────────────────────────────── */
+registerEval({
+  slug: "inbox-triage",
+  name: "Inbox triage categorizes + drafts replies",
+  input: {
+    emails:
+      "1. From a customer asking about refund policy.\n2. From legal asking for contract review.\n3. Newsletter from TechCrunch.\n4. Urgent: production DB down.",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 60_000,
+});
+
+/* ─── 36. Meeting scheduler ────────────────────────────────────── */
+registerEval({
+  slug: "meeting-scheduler",
+  name: "Meeting scheduler proposes time slots",
+  input: {
+    participants: "alice@acme.com, bob@beta.co",
+    durationMin: 30,
+    timeframe: "next Tuesday morning PT",
+    purpose: "pricing negotiation",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 60_000,
+});
+
+/* ─── 37. Meeting transcriber ──────────────────────────────────── */
+registerEval({
+  slug: "meeting-transcriber",
+  name: "Meeting transcriber summarizes + action items",
+  input: {
+    transcript:
+      "ALICE: We're seeing 20% churn in month 2. BOB: Let's audit the onboarding funnel. ALICE: Agreed. Action: Bob ships analytics by Friday. BOB: Done.",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 60_000,
+});
+
+/* ─── 38. Listing writer ──────────────────────────────────────── */
+registerEval({
+  slug: "listing-writer",
+  name: "Listing writer produces real-estate copy",
+  input: {
+    propertyDetails:
+      "3-bed 2-bath, 1850 sqft, Craftsman 1942, Berkeley CA, fenced yard, ADU permit approved, near Elmwood schools",
+    pricePoint: "1.2M",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 60_000,
+});
+
+/* ─── 39. Valuation comparable finder ──────────────────────────── */
+registerEval({
+  slug: "valuation-comparable-finder",
+  name: "Valuation comparable finder returns candidates",
+  input: {
+    subjectAddress: "1234 Pine St, Berkeley CA 94703",
+    subjectDetails: "3BR/2BA 1850sqft, built 1942, renovated 2020",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 60_000,
+});
+
+/* ─── 40. NemoClaw safety ──────────────────────────────────────── */
+registerEval({
+  slug: "nemoclaw",
+  name: "NemoClaw safety pipeline accepts benign input",
+  input: {
+    input: "Explain the difference between TCP and UDP.",
+    mode: "input",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 60_000,
+});
+
+/* ─── 41. GLiNER PII detection ─────────────────────────────────── */
+registerEval({
+  slug: "gliner-pii",
+  name: "GLiNER PII detector flags sensitive entities",
+  input: {
+    text: "Contact Jane Doe at jane.doe@acme.com or (415) 555-0123. Her SSN is 123-45-6789.",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 60_000,
+});
+
+/* ─── 42. Image gen ────────────────────────────────────────────── */
+registerEval({
+  slug: "image-gen",
+  name: "Image gen returns a media URL",
+  input: {
+    prompt: "A minimalist orange sigil on black background, geometric",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  skipIf: () =>
+    !process.env.NVIDIA_NIM_API_KEY && !process.env.REPLICATE_API_TOKEN,
+  timeoutMs: 60_000,
+});
+
+/* ─── 43. Voice synth ──────────────────────────────────────────── */
+registerEval({
+  slug: "voice-synth",
+  name: "Voice synth accepts text + returns audio ref",
+  input: {
+    text: "Hello from Sovereign Matrix.",
+    voice: "default",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 60_000,
+});
+
+/* ─── 44. HS code classifier round 2 (different product) ───────── */
+registerEval({
+  slug: "hs-code-classifier",
+  name: "HS code classifier handles electronics",
+  input: {
+    productDescription: "Wireless mechanical keyboard, hot-swappable switches, aluminum frame",
+    countryOfOrigin: "Taiwan",
+    destinationCountry: "US",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 60_000,
+});
+
+/* ─── 45. Blog gen round 2 (technical topic) ───────────────────── */
+registerEval({
+  slug: "blog-gen",
+  name: "Blog gen handles a technical deep-dive prompt",
+  input: {
+    topic: "Circuit breakers in distributed systems",
+    audience: "Senior backend engineers",
+    lengthWords: 1200,
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 60_000,
+});
+
+/* ─── 46. Crop health scout (vision — skip unless key set) ────── */
+registerEval({
+  slug: "crop-health-scout",
+  name: "Crop health scout accepts sample image URL",
+  input: {
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/Corn_field.jpg/320px-Corn_field.jpg",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 60_000,
+});
+
+/* ─── 47. Soil report extractor (vision — sample image) ────────── */
+registerEval({
+  slug: "soil-report-extractor",
+  name: "Soil report extractor accepts a PDF URL",
+  input: {
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Placeholder_soil_report.svg/320px-Placeholder_soil_report.svg.png",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 60_000,
+});
+
+/* ─── 48. COI verifier (vision — sample image) ─────────────────── */
+registerEval({
+  slug: "coi-verifier",
+  name: "COI verifier accepts a certificate URL",
+  input: {
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/US_paper.svg/320px-US_paper.svg.png",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 60_000,
+});
+
+/* ─── 49. 1099 reader (vision) ─────────────────────────────────── */
+registerEval({
+  slug: "1099-reader",
+  name: "1099 reader accepts a sample form URL",
+  input: {
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/US_paper.svg/320px-US_paper.svg.png",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 60_000,
+});
+
+/* ─── 50. Business card reader (vision) ────────────────────────── */
+registerEval({
+  slug: "business-card-reader",
+  name: "Business card reader accepts a card URL",
+  input: {
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/US_paper.svg/320px-US_paper.svg.png",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 60_000,
+});
+
+/* ─── 51. Bill of lading reader (vision) ───────────────────────── */
+registerEval({
+  slug: "bill-of-lading-reader",
+  name: "Bill of lading reader accepts a doc URL",
+  input: {
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/US_paper.svg/320px-US_paper.svg.png",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 60_000,
+});
+
+/* ─── 52. Menu digitizer (vision) ──────────────────────────────── */
+registerEval({
+  slug: "menu-digitizer",
+  name: "Menu digitizer accepts a menu image URL",
+  input: {
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/US_paper.svg/320px-US_paper.svg.png",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 60_000,
+});
+
+/* ─── 53. Blueprint parser (vision) ────────────────────────────── */
+registerEval({
+  slug: "blueprint-parser",
+  name: "Blueprint parser accepts a plan image URL",
+  input: {
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/US_paper.svg/320px-US_paper.svg.png",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 60_000,
+});
+
+/* ─── 54. ID verifier (vision) ─────────────────────────────────── */
+registerEval({
+  slug: "id-verifier",
+  name: "ID verifier accepts an ID doc URL",
+  input: {
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/US_paper.svg/320px-US_paper.svg.png",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 60_000,
+});
+
+/* ─── 55. W-2 reader (vision) ──────────────────────────────────── */
+registerEval({
+  slug: "w2-reader",
+  name: "W-2 reader accepts a form URL",
+  input: {
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/US_paper.svg/320px-US_paper.svg.png",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 60_000,
+});

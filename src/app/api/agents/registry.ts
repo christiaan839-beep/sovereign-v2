@@ -6,13 +6,14 @@
  * is bundled here so Vercel's serverless packer can see the import paths.
  *
  * Regenerate: `npm run gen:registry`
- * Count: 218 agents
+ * Count: 223 agents
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type RouteModule = Record<string, any>;
 
 export const AGENT_REGISTRY: Record<string, () => Promise<RouteModule>> = {
+  "1099-reader": () => import("@/app/api/_agents/1099-reader/route"),
   "a2e-chain-planner": () => import("@/app/api/_agents/a2e-chain-planner/route"),
   "abandoned-cart-winback": () => import("@/app/api/_agents/abandoned-cart-winback/route"),
   "abm-artillery": () => import("@/app/api/_agents/abm-artillery/route"),
@@ -36,6 +37,7 @@ export const AGENT_REGISTRY: Record<string, () => Promise<RouteModule>> = {
   "audit": () => import("@/app/api/_agents/audit/route"),
   "auto-heal": () => import("@/app/api/_agents/auto-heal/route"),
   "auto-onboard": () => import("@/app/api/_agents/auto-onboard/route"),
+  "bank-reconciler": () => import("@/app/api/_agents/bank-reconciler/route"),
   "benchmark": () => import("@/app/api/_agents/benchmark/route"),
   "bill-of-lading-reader": () => import("@/app/api/_agents/bill-of-lading-reader/route"),
   "billing": () => import("@/app/api/_agents/billing/route"),
@@ -172,9 +174,11 @@ export const AGENT_REGISTRY: Record<string, () => Promise<RouteModule>> = {
   "reasoning-chain": () => import("@/app/api/_agents/reasoning-chain/route"),
   "receipt-scanner": () => import("@/app/api/_agents/receipt-scanner/route"),
   "refactor-suggester": () => import("@/app/api/_agents/refactor-suggester/route"),
+  "reference-check-generator": () => import("@/app/api/_agents/reference-check-generator/route"),
   "replays": () => import("@/app/api/_agents/replays/route"),
   "reputation": () => import("@/app/api/_agents/reputation/route"),
   "rerank": () => import("@/app/api/_agents/rerank/route"),
+  "resume-normalizer": () => import("@/app/api/_agents/resume-normalizer/route"),
   "resume-screener": () => import("@/app/api/_agents/resume-screener/route"),
   "revenue-recognition": () => import("@/app/api/_agents/revenue-recognition/route"),
   "review-analyzer": () => import("@/app/api/_agents/review-analyzer/route"),
@@ -188,6 +192,7 @@ export const AGENT_REGISTRY: Record<string, () => Promise<RouteModule>> = {
   "seo-dominator": () => import("@/app/api/_agents/seo-dominator/route"),
   "shopify-optimizer": () => import("@/app/api/_agents/shopify-optimizer/route"),
   "site-assassin": () => import("@/app/api/_agents/site-assassin/route"),
+  "sku-normalizer": () => import("@/app/api/_agents/sku-normalizer/route"),
   "slack-notify": () => import("@/app/api/_agents/slack-notify/route"),
   "smart-router": () => import("@/app/api/_agents/smart-router/route"),
   "social-router": () => import("@/app/api/_agents/social-router/route"),
