@@ -30,7 +30,7 @@
  */
 
 import { agentSigilDataUrl } from "@/lib/agent-sigil";
-import { useReducedMotion } from "@/hooks/useReducedMotion";
+import { useReducedMotion } from "@/lib/hooks/use-reduced-motion";
 
 type IndustryKey =
   | "insurance"

@@ -1,36 +1,20 @@
 "use client";
 
-import React, { useRef, useEffect, useState, useCallback, useSyncExternalStore } from "react";
+import React, { useRef, useEffect, useState, useCallback } from "react";
 import { motion, useMotionValue, useSpring } from "framer-motion";
-import { useReducedMotion as usePrefersReducedMotion } from "@/hooks/useReducedMotion";
+import { useReducedMotion as usePrefersReducedMotion } from "@/lib/hooks/use-reduced-motion";
+import { useIsMobile } from "@/lib/hooks/use-is-mobile";
 
-/* ── Shared: detect mobile via useSyncExternalStore ──
+/*
+ * Both useReducedMotion and useIsMobile live in src/lib/hooks/. They're
+ * useSyncExternalStore-based (React 18+) — the textbook external-store
+ * pattern that satisfies React 19's react-hooks/set-state-in-effect
+ * rule and gives correct SSR snapshots for free.
  *
- * useReducedMotion lives in src/hooks/useReducedMotion.ts and is shared
- * across 10+ components. useIsMobile is local for now since only this
- * file uses it; if more callers appear it should also move to /hooks.
- *
- * Both follow the textbook useSyncExternalStore pattern: subscribe to a
- * browser API, expose its state to React. setState moves into the
- * subscribe-callback (a real external sync point), eliminating the
- * react-hooks/set-state-in-effect warning + giving correct SSR
- * snapshots for free.
+ * Rule: any component subscribing to matchMedia / window resize MUST
+ * use these shared hooks rather than write its own. Enforced by the
+ * "no duplicate matchMedia hooks" invariant in scripts/weekly-health.mjs.
  */
-
-function useIsMobile() {
-  const subscribe = useCallback((cb: () => void) => {
-    window.addEventListener("resize", cb);
-    return () => window.removeEventListener("resize", cb);
-  }, []);
-  const getSnapshot = useCallback(
-    () => window.innerWidth < 768 || "ontouchstart" in window,
-    [],
-  );
-  // Server snapshot defaults to "not mobile" — desktop-first SSR.
-  // Hydration corrects on the client without flicker.
-  const getServerSnapshot = useCallback(() => false, []);
-  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
-}
 
 /**
  * FloatingParticles — Antigravity-level particle system.

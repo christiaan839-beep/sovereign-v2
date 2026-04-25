@@ -412,6 +412,50 @@ for (const { path, name } of trustAssets) {
   check(name, present, 1, { dimension: "security" });
 }
 
+// PII guard surface — IBAN/SWIFT/BIC support is a real product feature
+// for European + financial customers. Lock it in so a future refactor
+// can't quietly remove the patterns or the validators.
+check(
+  "IBAN mod-97 validator in pii-guard",
+  fileContains("src/lib/pii-guard.ts", "ibanValid") &&
+    fileContains("src/lib/pii-guard.ts", "IBAN_RE")
+    ? 1
+    : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "SWIFT/BIC pattern in pii-guard",
+  fileContains("src/lib/pii-guard.ts", "SWIFT_BIC_RE") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+// Architecture invariant: there must be exactly ONE hook implementing
+// matchMedia('(prefers-reduced-motion: reduce)') so the rule "use the
+// shared useReducedMotion hook" can't decay into "everyone implements
+// their own copy again". Counts files with a useSyncExternalStore-style
+// implementation (not framer-motion's import, not direct inline reads
+// during render).
+function countDuplicateReducedMotionHooks() {
+  const candidates = [
+    "src/lib/hooks/use-reduced-motion.ts",
+    "src/hooks/useReducedMotion.ts",
+  ];
+  let found = 0;
+  for (const p of candidates) {
+    if (existsSync(join(ROOT, p))) found++;
+  }
+  return found;
+}
+check(
+  "single canonical useReducedMotion hook (no duplicates)",
+  countDuplicateReducedMotionHooks(),
+  1,
+  { dimension: "security" },
+);
+
 // ──────────────────────────────────────────────────────────────
 // Database migrations
 // ──────────────────────────────────────────────────────────────

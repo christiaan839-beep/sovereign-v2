@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useReducedMotion } from "@/lib/hooks/use-reduced-motion";
 
 /**
  * KINETIC HEADLINE — single purposeful animation moment, now with a
@@ -20,9 +21,9 @@ import { motion } from "framer-motion";
 
 export function KineticHeadline() {
   // Intentional: single render, no loop. The animation plays ONCE.
-  const reduceMotion =
-    typeof window !== "undefined" &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // useReducedMotion is the canonical shared hook (useSyncExternalStore-
+  // based, correct SSR snapshot, satisfies React 19 lint).
+  const reduceMotion = useReducedMotion();
 
   return (
     <motion.h1

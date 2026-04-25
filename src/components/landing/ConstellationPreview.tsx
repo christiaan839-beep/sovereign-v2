@@ -21,7 +21,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { agentSigilDataUrl, type SigilOptions } from "@/lib/agent-sigil";
-import { useReducedMotion } from "@/hooks/useReducedMotion";
+import { useReducedMotion } from "@/lib/hooks/use-reduced-motion";
 
 interface PreviewAgent {
   slug: string;
