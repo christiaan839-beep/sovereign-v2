@@ -75,6 +75,34 @@ jobs:
       - name: Run tests
         run: npm test
 
+  anti-drift:
+    # weekly-health.mjs is the anti-drift machine — 43 invariants that
+    # check artifact presence, wiring content, and quality metrics
+    # (test count, eval coverage, lint budget, security wiring, etc.).
+    # Running it on every PR means a future change that silently deletes
+    # a security artifact (pii-guard.ts, audit-log hash chain, etc.) or
+    # reverts a wiring line (evaluateScope, scrubPiiDeep, FREE_ONLY_MODE)
+    # blocks the merge instead of slipping through.
+    #
+    # The script exits 1 on any regression, so this job naturally fails
+    # the PR when invariants break.
+    name: Anti-Drift Invariants
+    runs-on: ubuntu-latest
+    needs: lint-and-typecheck
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run weekly-health invariants (43 checks)
+        run: node scripts/weekly-health.mjs
+
   reliability:
     # Dedicated job for the reliability + safety test suites added in
     # the phase-1 hardening sprint. These are fast, deterministic,
