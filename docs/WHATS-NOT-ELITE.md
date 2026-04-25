@@ -29,19 +29,22 @@
 These are things I shipped with known imperfections. Flagging them here so
 nobody rediscovers them as surprises.
 
-### 1.1 — SLO tracker Postgres write is one-way
+### 1.1 — SLO tracker Postgres write is one-way [CLOSED 2026-04-25]
 
-**What's true**: Every agent request writes to both the per-instance ring
-buffer + the `slo_events` Postgres table. Cross-instance persistence works.
+**Original gap**: Every agent request wrote to both the per-instance ring
+buffer + the `slo_events` Postgres table — but `/status/slo` and
+`/api/_health/slo` only READ from the ring buffer, so two Vercel lambdas
+in parallel rendered divergent numbers.
 
-**What's not true**: The `/status/slo` and `/api/_health/slo` endpoints
-still read **only** from the ring buffer. So two Vercel lambdas running
-in parallel render divergent numbers — lambda-A says "99.97%, 120 reqs",
-lambda-B says "100%, 8 reqs". The data is in Postgres; we just don't
-query it on render yet.
-
-**Fix scope**: 1 day. Add a Postgres read path with a 30s cache + fall
-back to in-memory buffer when DB is absent. Tracked as Q2 in the playbook.
+**Fixed**:
+  - `src/lib/slo-tracker.ts` — `getPlatformSloFromDb()` aggregates from
+    `slo_events` via `percentile_disc` GROUP BY endpoint
+  - `/status/slo/page.tsx` already used the DB path with in-memory
+    fallback
+  - `/api/_health/slo/route.ts` (this commit) now does the same — DB
+    first, in-memory fallback, `meta.source` field exposes which path
+    served the response so monitoring can detect persistent fallback
+    states
 
 ### 1.2 — Four industry landing pages are template clones
 

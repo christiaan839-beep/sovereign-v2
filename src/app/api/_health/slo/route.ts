@@ -23,7 +23,7 @@
  */
 
 import { NextResponse } from "next/server";
-import { getPlatformSlo } from "@/lib/slo-tracker";
+import { getPlatformSlo, getPlatformSloFromDb } from "@/lib/slo-tracker";
 
 export const runtime = "nodejs";
 // This endpoint is deliberately cacheable for 30s — SLO numbers don't
@@ -31,8 +31,26 @@ export const runtime = "nodejs";
 // the latency numbers themselves.
 export const revalidate = 30;
 
+/**
+ * Cross-instance read path:
+ *   1. Try Postgres aggregation (slo_events table). Consistent across
+ *      every Vercel lambda + survives cold starts. Source of truth in
+ *      production.
+ *   2. Fall back to per-instance in-memory ring buffer when the DB is
+ *      unavailable (DATABASE_URL unset, query failed). The status page
+ *      MUST NOT break — accurate-but-divergent in-memory numbers beat
+ *      a 500.
+ *
+ * The `meta.source` field tells the client which path served the
+ * response so monitoring can detect persistent DB-fallback states.
+ */
 export async function GET(): Promise<NextResponse> {
-  const slo = getPlatformSlo({ windowMs: 24 * 60 * 60 * 1000 });
+  const dbSlo = await getPlatformSloFromDb({ windowMs: 24 * 60 * 60 * 1000 });
+  const slo = dbSlo ?? getPlatformSlo({ windowMs: 24 * 60 * 60 * 1000 });
+  const source = dbSlo
+    ? "postgres slo_events (cross-instance)"
+    : "in-memory ring buffer (per-instance fallback — DATABASE_URL unset or query failed)";
+
   return NextResponse.json(
     {
       platform: slo.overall,
@@ -41,8 +59,7 @@ export async function GET(): Promise<NextResponse> {
       topEndpoints: slo.endpoints.slice(0, 10),
       generatedAt: new Date().toISOString(),
       meta: {
-        source: "in-memory ring buffer (per-instance)",
-        note: "Numbers reset on instance restart. Cross-instance aggregation is future work.",
+        source,
       },
     },
     {
