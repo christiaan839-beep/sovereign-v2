@@ -29,8 +29,8 @@
  * Renders in <10ms. Respects prefers-reduced-motion (disables drift animation).
  */
 
-import { useEffect, useState } from "react";
 import { agentSigilDataUrl } from "@/lib/agent-sigil";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 type IndustryKey =
   | "insurance"
@@ -56,15 +56,7 @@ export function IndustrySignature({
   size = 520,
   className,
 }: Props) {
-  const [reducedMotion, setReducedMotion] = useState(false);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReducedMotion(mq.matches);
-    const onChange = () => setReducedMotion(mq.matches);
-    mq.addEventListener?.("change", onChange);
-    return () => mq.removeEventListener?.("change", onChange);
-  }, []);
+  const reducedMotion = useReducedMotion();
 
   const h = size; // square
 

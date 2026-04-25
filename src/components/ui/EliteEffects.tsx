@@ -2,15 +2,20 @@
 
 import React, { useRef, useEffect, useState, useCallback, useSyncExternalStore } from "react";
 import { motion, useMotionValue, useSpring } from "framer-motion";
+import { useReducedMotion as usePrefersReducedMotion } from "@/hooks/useReducedMotion";
 
-/* ── Shared: detect mobile + reduced motion ── */
-//
-// Both hooks are textbook useSyncExternalStore cases — they subscribe
-// to a browser API (window resize / matchMedia) and surface its state
-// to React. useSyncExternalStore is React 18's purpose-built API for
-// this; it eliminates the useState + useEffect + setState pattern that
-// trips the react-hooks/set-state-in-effect rule, and it gives correct
-// SSR snapshots for free (no flicker on hydration).
+/* ── Shared: detect mobile via useSyncExternalStore ──
+ *
+ * useReducedMotion lives in src/hooks/useReducedMotion.ts and is shared
+ * across 10+ components. useIsMobile is local for now since only this
+ * file uses it; if more callers appear it should also move to /hooks.
+ *
+ * Both follow the textbook useSyncExternalStore pattern: subscribe to a
+ * browser API, expose its state to React. setState moves into the
+ * subscribe-callback (a real external sync point), eliminating the
+ * react-hooks/set-state-in-effect warning + giving correct SSR
+ * snapshots for free.
+ */
 
 function useIsMobile() {
   const subscribe = useCallback((cb: () => void) => {
@@ -23,20 +28,6 @@ function useIsMobile() {
   );
   // Server snapshot defaults to "not mobile" — desktop-first SSR.
   // Hydration corrects on the client without flicker.
-  const getServerSnapshot = useCallback(() => false, []);
-  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
-}
-
-function usePrefersReducedMotion() {
-  const subscribe = useCallback((cb: () => void) => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    mq.addEventListener("change", cb);
-    return () => mq.removeEventListener("change", cb);
-  }, []);
-  const getSnapshot = useCallback(
-    () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-    [],
-  );
   const getServerSnapshot = useCallback(() => false, []);
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }

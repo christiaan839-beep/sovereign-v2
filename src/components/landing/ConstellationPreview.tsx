@@ -21,6 +21,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { agentSigilDataUrl, type SigilOptions } from "@/lib/agent-sigil";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 interface PreviewAgent {
   slug: string;
@@ -38,15 +39,7 @@ interface Props {
 export function ConstellationPreview({ agents, totalCount = 218 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [parallax, setParallax] = useState({ x: 0, y: 0 });
-  const [reducedMotion, setReducedMotion] = useState(false);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReducedMotion(mq.matches);
-    const onChange = () => setReducedMotion(mq.matches);
-    mq.addEventListener?.("change", onChange);
-    return () => mq.removeEventListener?.("change", onChange);
-  }, []);
+  const reducedMotion = useReducedMotion();
 
   useEffect(() => {
     if (reducedMotion) return;
