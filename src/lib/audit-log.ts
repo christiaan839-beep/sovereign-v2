@@ -16,7 +16,12 @@ export type AuditAction =
   | "webhook.received"
   | "data.export"
   | "data.delete"
-  | "admin.provision";
+  | "admin.provision"
+  // Admin moderation actions on the SAM v1.0 marketplace. Specific
+  // verbs (rather than "admin.action") so a SOC-2 reviewer can pull
+  // "all submission rejections in 2026-Q2" with a single WHERE filter.
+  | "admin.submission_approve"
+  | "admin.submission_reject";
 
 interface AuditEntry {
   userId: string;

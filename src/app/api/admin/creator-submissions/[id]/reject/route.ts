@@ -13,6 +13,7 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import { rejectSamSubmission } from "@/lib/admin-submissions";
 import { notifyRejected } from "@/lib/creator-emails";
+import { auditLog } from "@/lib/audit-log";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -63,6 +64,24 @@ export async function POST(
   }
 
   if (result.ok && result.row) {
+    // Audit — moderation rejection. The reason text is part of the
+    // audit row (and therefore the hash chain), so a creator disputing
+    // "what reason was given for my rejection?" can be answered from
+    // the tamper-detected log, not just the DB row that was inserted.
+    await auditLog({
+      userId: gate.userId,
+      action: "admin.submission_reject",
+      resource: id,
+      details: {
+        authorEmail: result.row.authorEmail,
+        referenceId: result.row.referenceId ?? null,
+        reason: trimmed,
+      },
+      ipAddress: request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+        ?? request.headers.get("x-real-ip")?.trim()
+        ?? undefined,
+    });
+
     // Fire-and-forget: tell the creator why, with the reason the admin
     // typed. Rejection emails are the most-read transactional email in
     // any marketplace — creators parse them carefully. `trimmed` is

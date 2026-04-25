@@ -6,8 +6,19 @@ import { and, eq, isNull, desc } from "drizzle-orm";
 import { z } from "zod";
 import { randomBytes, createHash } from "node:crypto";
 import { createLogger } from "@/lib/logger";
+import { auditLog } from "@/lib/audit-log";
 
 const log = createLogger("tokens");
+
+/** Pull the client IP from forwarding headers (best-effort). */
+function getClientIp(req: Request): string | undefined {
+  const xff = req.headers.get("x-forwarded-for");
+  if (xff) {
+    const first = xff.split(",")[0]?.trim();
+    if (first) return first;
+  }
+  return req.headers.get("x-real-ip")?.trim() || undefined;
+}
 
 /**
  * Platform API token management (customer-facing, authenticates
@@ -170,6 +181,23 @@ export async function POST(req: Request) {
     // Never log the raw token, even at debug level.
     log.info("token minted", { userId, keyPrefix, label: label ?? null });
 
+    // Audit trail — this is a credential-creation event, the highest
+    // signal a SOC-2 timeline can carry. The keyPrefix + tokenId give
+    // forensics a stable handle without leaking the secret. The hash
+    // chain in audit-log.ts ensures the row can't be silently edited.
+    await auditLog({
+      userId,
+      action: "api_key.create",
+      resource: created.id,
+      details: {
+        keyPrefix,
+        label: label ?? null,
+        plan,
+        expiresAt: expiresAt?.toISOString() ?? null,
+      },
+      ipAddress: getClientIp(req),
+    });
+
     return NextResponse.json({
       token: { ...created, value: rawToken },
       warning:
@@ -211,6 +239,19 @@ export async function DELETE(req: Request) {
     }
 
     log.info("token revoked", { userId, keyPrefix: result[0].keyPrefix });
+
+    // Audit — explicit credential-revocation event. A revoked key that
+    // gets used (cache or replay) downstream will produce its own
+    // 401/403 audit row, but the revoke itself is the operator-action
+    // worth a permanent record.
+    await auditLog({
+      userId,
+      action: "api_key.delete",
+      resource: result[0].id,
+      details: { keyPrefix: result[0].keyPrefix },
+      ipAddress: getClientIp(req),
+    });
+
     return NextResponse.json({ ok: true });
   } catch (err) {
     log.error("token revoke failed", { error: String(err) });

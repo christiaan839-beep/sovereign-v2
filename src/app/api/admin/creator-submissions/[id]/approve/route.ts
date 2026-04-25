@@ -12,13 +12,14 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import { approveSamSubmission } from "@/lib/admin-submissions";
 import { notifyApproved } from "@/lib/creator-emails";
+import { auditLog } from "@/lib/audit-log";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
 }
 
 export async function POST(
-  _request: Request,
+  request: Request,
   ctx: RouteContext,
 ): Promise<Response> {
   const gate = await requireAdmin();
@@ -29,6 +30,23 @@ export async function POST(
   const result = await approveSamSubmission(id, gate.userId);
 
   if (result.ok && result.row) {
+    // Audit — admin moderation action on third-party content. The hash
+    // chain in audit-log.ts ensures this can't be silently rewritten if
+    // a creator later disputes "did the admin actually approve me?".
+    await auditLog({
+      userId: gate.userId,
+      action: "admin.submission_approve",
+      resource: id,
+      details: {
+        slug: result.row.slug,
+        authorEmail: result.row.authorEmail,
+        referenceId: result.row.referenceId ?? null,
+      },
+      ipAddress: request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+        ?? request.headers.get("x-real-ip")?.trim()
+        ?? undefined,
+    });
+
     // Fire-and-forget email. We don't await Promise rejection to the
     // HTTP response — the admin action is already persisted; a
     // delivery failure is operator-noise, not blocking. Degrades

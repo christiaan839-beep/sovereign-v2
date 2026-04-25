@@ -6,8 +6,18 @@ import { and, eq, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { randomBytes, createHash } from "node:crypto";
 import { createLogger } from "@/lib/logger";
+import { auditLog } from "@/lib/audit-log";
 
 const log = createLogger("tokens:rotate");
+
+function getClientIp(req: Request): string | undefined {
+  const xff = req.headers.get("x-forwarded-for");
+  if (xff) {
+    const first = xff.split(",")[0]?.trim();
+    if (first) return first;
+  }
+  return req.headers.get("x-real-ip")?.trim() || undefined;
+}
 
 /**
  * POST /api/_tokens/rotate
@@ -157,6 +167,36 @@ export async function POST(req: Request) {
       oldTokenId,
       newKeyPrefix: keyPrefix,
       gracePeriodMin,
+    });
+
+    // Audit — rotation is two distinct events (mint + revoke-or-expire).
+    // Recording both keeps the SOC-2 timeline accurate: an investigator
+    // sees a continuous "key X retired at Y, key Z minted at W" trail
+    // rather than a single "rotation" event that obscures the structure.
+    const ip = getClientIp(req);
+    await auditLog({
+      userId,
+      action: "api_key.create",
+      resource: result.id,
+      details: {
+        keyPrefix,
+        label: newLabel,
+        plan,
+        rotatedFrom: oldTokenId,
+        gracePeriodMin,
+      },
+      ipAddress: ip,
+    });
+    await auditLog({
+      userId,
+      action: "api_key.delete",
+      resource: oldTokenId,
+      details: {
+        rotatedTo: result.id,
+        gracePeriodMin,
+        revokesAt: oldRevokesAt.toISOString(),
+      },
+      ipAddress: ip,
     });
 
     return NextResponse.json({
