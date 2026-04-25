@@ -159,8 +159,12 @@ export default function JobsPage() {
   const [newGoal, setNewGoal] = useState("");
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const fetchJobs = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true);
+  // fetchJobs is the pure data fetcher — it updates `jobs` and that's
+  // all. Loading-state management is the caller's job. This avoids the
+  // synchronous-setState-in-effect warning the React 19 lint rule
+  // raises, because the only setState here happens AFTER an await
+  // (i.e. on a microtask boundary, not in the effect's call stack).
+  const fetchJobs = useCallback(async () => {
     try {
       const res = await fetch("/api/jobs");
       if (res.ok) {
@@ -168,24 +172,41 @@ export default function JobsPage() {
         setJobs(data.jobs || []);
       }
     } catch { /* silent */ }
-    if (!silent) setLoading(false);
   }, []);
 
-  // Auto-refresh every 3s when any job is running/pending
+  // Mount fetch. `loading` starts at true (useState default) and flips
+  // to false once the first response lands. The setState inside
+  // .finally() runs on a microtask AFTER the await — not synchronously
+  // in the effect's call stack — so there's no actual cascading-render
+  // risk. The lint rule is too strict for the conventional mount-fetch
+  // idiom (same rationale as the documented eslint-disable in
+  // CommandPalette).
   useEffect(() => {
-    fetchJobs();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchJobs().finally(() => setLoading(false));
   }, [fetchJobs]);
 
+  // Auto-refresh every 3s when any job is running/pending. Polling is
+  // silent — it never toggles `loading` (that would cause flicker on
+  // every poll). The dependency on `jobs` is intentional: when all
+  // jobs reach a terminal state, the effect tears down the interval.
   useEffect(() => {
     const hasLive = jobs.some(j => j.status === "pending" || j.status === "running");
     if (hasLive && !pollRef.current) {
-      pollRef.current = setInterval(() => fetchJobs(true), 3000);
+      pollRef.current = setInterval(() => { void fetchJobs(); }, 3000);
     } else if (!hasLive && pollRef.current) {
       clearInterval(pollRef.current);
       pollRef.current = null;
     }
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, [jobs, fetchJobs]);
+
+  // Manual refresh — explicit loading-state management so the spinner
+  // shows during the refetch.
+  const handleRefresh = useCallback(() => {
+    setLoading(true);
+    fetchJobs().finally(() => setLoading(false));
+  }, [fetchJobs]);
 
   const submitJob = async (goal: string) => {
     if (!goal.trim() || submitting) return;
@@ -198,7 +219,7 @@ export default function JobsPage() {
       });
       if (res.ok) {
         setNewGoal("");
-        await fetchJobs(true);
+        await fetchJobs();
       }
     } catch { /* silent */ }
     setSubmitting(false);
@@ -227,7 +248,7 @@ export default function JobsPage() {
             </div>
           </div>
           <button
-            onClick={() => fetchJobs()}
+            onClick={handleRefresh}
             className="flex items-center gap-1.5 rounded-lg border border-white/8 bg-white/4 px-3 py-1.5 text-xs text-neutral-400 transition hover:bg-white/8"
           >
             <RefreshCw size={12} />
