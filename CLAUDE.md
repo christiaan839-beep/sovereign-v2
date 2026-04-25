@@ -293,3 +293,50 @@ Four defense-in-depth layers added; all pure-function, fail-open where the user'
 - src/app/api/v1/[...path]/route.ts — evaluateScope + classifyV1Request integration
 - src/app/api/_agents/{resume-normalizer,business-card-reader,coi-verifier}/route.ts — opt into piiGuardMode: "flag"
 - vercel.json — registers /api/cron/verify-audit-chain (every 6h)
+
+### Continued: April 25 (afternoon)
+
+#### Audit-log coverage expansion
+- POST/DELETE /api/_tokens (mint + revoke) → audit api_key.create / api_key.delete with keyPrefix + plan + IP
+- POST /api/_tokens/rotate → records BOTH events (api_key.create + api_key.delete) so rotation isn't a single opaque action in the SOC-2 timeline
+- POST /api/admin/creator-submissions/[id]/approve → admin.submission_approve (NEW AuditAction enum variant)
+- POST /api/admin/creator-submissions/[id]/reject → admin.submission_reject; rejection reason is part of the chained `details` so disputes are settled by the immutable record
+
+#### CI integration
+- .github/workflows/ci.yml gains an `anti-drift` job that runs `node scripts/weekly-health.mjs` on every PR. Script exits 1 on regression → CI blocks merge if any of the 47 invariants break.
+
+#### /security page modernized
+- Cite specific files (src/lib/pii-guard.ts) instead of generic claims
+- New "Verifiable hardening — April 2026" callout with file paths + test counts per layer
+- New "Cost Sovereignty" card (SOVEREIGN_FREE_ONLY mode)
+
+#### Public threat model
+- docs/THREAT_MODEL.md — STRIDE-based, every claim cites a file or test command. Used as the procurement-ready security artifact for enterprise sales.
+
+#### useReducedMotion shared hook
+- src/hooks/useReducedMotion.ts — useSyncExternalStore-based, replaces the duplicated useState+useEffect+matchMedia pattern across 10+ components. Migrated EliteEffects, ConstellationPreview, IndustrySignature so far.
+
+#### IBAN + SWIFT/BIC PII detection
+- IBAN (ISO 13616) with full mod-97 checksum validation. Chunk-by-chunk modular arithmetic to fit within JS Number precision.
+- SWIFT/BIC (ISO 9362) with strict 8/11-char structural regex.
+- New dedup ranking: ssn > iban > credit_card > swift_bic > phone > email
+- 4 unit tests covering valid IBAN, invalid mod-97, BIC 8+11 forms, end-to-end scrub.
+
+#### setState-in-effect fixes (React 19's react-hooks/set-state-in-effect)
+- /dashboard/jobs: split fetcher from loading-state mgmt. Pure async fetcher, callers manage loading via .finally().
+- /dashboard/page (QuickRunBanner): localStorage read moved to lazy useState initializer (no flicker, no effect).
+- /components/ui/EliteEffects: useIsMobile + usePrefersReducedMotion → useSyncExternalStore.
+- /components/dashboard/NotificationBell: localStorage read → lazy useState initializer.
+- ConstellationPreview + IndustrySignature: migrated to shared useReducedMotion hook.
+
+#### Anti-drift expansion
+- weekly-health.mjs: 28 → 47 invariants (was 28 at start of session)
+- 15 new "security" dimension checks (artifact presence + wiring content)
+- 4 new "trust-asset" checks (/security page, /trust/defenders, security.txt, threat model)
+- CI now runs the anti-drift gate on every PR
+
+### Result of April 24-25 cumulative
+- Tests: 2433 → 2452 (+19)
+- Lint errors: 17 → 10 (-7)
+- Weekly-health invariants: 28 → 47 (+19)
+- Security commits: 13 in this session, all green
