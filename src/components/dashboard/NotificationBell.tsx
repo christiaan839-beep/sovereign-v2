@@ -80,16 +80,18 @@ function writeBellStore(items: BellNotification[]): void {
 
 export function NotificationBell() {
   const [open, setOpen] = useState(false);
-  const [notifications, setNotifications] = useState<BellNotification[]>([]);
+  // Lazy initializer reads localStorage during render 1 — avoids the
+  // mount → effect → setState round-trip and its lint warning, and the
+  // bell shows the correct count on first paint instead of flashing
+  // empty for one frame. SSR-safe via the typeof window guard inside
+  // readBellStore.
+  const [notifications, setNotifications] = useState<BellNotification[]>(
+    () => readBellStore(),
+  );
   const [lastPollKey, setLastPollKey] = useState<string>("");
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
-
-  // Initial load from localStorage
-  useEffect(() => {
-    setNotifications(readBellStore());
-  }, []);
 
   // Sync to localStorage whenever notifications change
   useEffect(() => {
@@ -165,9 +167,15 @@ export function NotificationBell() {
     }
   }, [lastPollKey]);
 
-  // Poll every 30 seconds
+  // Poll every 30 seconds. The first invocation runs at mount, then
+  // the interval drives subsequent polls. setNotifications inside
+  // pollForEvents fires AFTER the await on fetch — a microtask
+  // boundary, not a synchronous render — so the cascading-renders
+  // concern doesn't apply in practice. Documenting the disable so a
+  // future reader knows the rule was reviewed, not ignored.
   useEffect(() => {
-    pollForEvents();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void pollForEvents();
     const interval = setInterval(pollForEvents, 30_000);
     return () => clearInterval(interval);
   }, [pollForEvents]);

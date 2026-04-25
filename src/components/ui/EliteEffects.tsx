@@ -1,31 +1,44 @@
 "use client";
 
-import React, { useRef, useEffect, useState, useCallback } from "react";
+import React, { useRef, useEffect, useState, useCallback, useSyncExternalStore } from "react";
 import { motion, useMotionValue, useSpring } from "framer-motion";
 
 /* ── Shared: detect mobile + reduced motion ── */
+//
+// Both hooks are textbook useSyncExternalStore cases — they subscribe
+// to a browser API (window resize / matchMedia) and surface its state
+// to React. useSyncExternalStore is React 18's purpose-built API for
+// this; it eliminates the useState + useEffect + setState pattern that
+// trips the react-hooks/set-state-in-effect rule, and it gives correct
+// SSR snapshots for free (no flicker on hydration).
 
 function useIsMobile() {
-  const [mobile, setMobile] = useState(false);
-  useEffect(() => {
-    const check = () => setMobile(window.innerWidth < 768 || "ontouchstart" in window);
-    check();
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
+  const subscribe = useCallback((cb: () => void) => {
+    window.addEventListener("resize", cb);
+    return () => window.removeEventListener("resize", cb);
   }, []);
-  return mobile;
+  const getSnapshot = useCallback(
+    () => window.innerWidth < 768 || "ontouchstart" in window,
+    [],
+  );
+  // Server snapshot defaults to "not mobile" — desktop-first SSR.
+  // Hydration corrects on the client without flicker.
+  const getServerSnapshot = useCallback(() => false, []);
+  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
 
 function usePrefersReducedMotion() {
-  const [reduced, setReduced] = useState(false);
-  useEffect(() => {
+  const subscribe = useCallback((cb: () => void) => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReduced(mq.matches);
-    const handler = (e: MediaQueryListEvent) => setReduced(e.matches);
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
+    mq.addEventListener("change", cb);
+    return () => mq.removeEventListener("change", cb);
   }, []);
-  return reduced;
+  const getSnapshot = useCallback(
+    () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+    [],
+  );
+  const getServerSnapshot = useCallback(() => false, []);
+  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
 
 /**

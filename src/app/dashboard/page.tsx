@@ -456,17 +456,21 @@ function QuickRunBanner() {
     return !!localStorage.getItem("sovereign_quickrun_dismissed");
   });
 
-  const [goal, setGoal] = useState<string | null>(null);
-
-  useEffect(() => {
+  // Lazy initializer reads localStorage during the first render rather
+  // than after mount + via an effect. Two wins: no synchronous setState
+  // in an effect (lint rule clean) AND no flash of "no goal" → "goal X"
+  // on first paint (the value is already correct on render 1).
+  const [goal] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
     try {
       const onboarding = localStorage.getItem("sovereign_onboarding_data");
-      if (onboarding) {
-        const data = JSON.parse(onboarding);
-        if (data.goal) setGoal(data.goal);
-      }
-    } catch { /* no onboarding data */ }
-  }, []);
+      if (!onboarding) return null;
+      const data = JSON.parse(onboarding);
+      return typeof data?.goal === "string" ? data.goal : null;
+    } catch {
+      return null;
+    }
+  });
 
   if (dismissed) return null;
 
