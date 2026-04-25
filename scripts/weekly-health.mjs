@@ -265,8 +265,12 @@ check("tsc clean", tscOk ? 1 : 0, 1, { dimension: "quality" });
 
 const lintOut = runTool("npm", ["run", "lint"]);
 const lintErrors = (lintOut.match(/\s+\d+:\d+\s+error/g) ?? []).length;
-// Floor is "don't regress past the current baseline". Adjust as we fix.
-check("lint errors (max allowed)", lintErrors, 25, {
+// Tightened from 25 → 5 on 2026-04-25 after fixing the last 17 errors
+// (setState-in-effect, unescaped-entities, no-html-link-for-pages
+// false positives). Keeping a 5-error breathing room rather than 0 so
+// a single new false-positive in a future ESLint update doesn't break
+// CI mid-PR — but real regressions still get caught fast.
+check("lint errors (max allowed)", lintErrors, 5, {
   floor: false,
   dimension: "quality",
 });

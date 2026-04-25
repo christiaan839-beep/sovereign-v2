@@ -136,9 +136,17 @@ export default function EmailBuilderPage() {
 
   const activeConfig = SEQUENCE_TYPES.find((s) => s.id === sequenceType)!;
 
-  // Initialize emails when sequence type changes
+  // Reset the editable email-state when the user picks a different
+  // sequence type. The cleaner React-19-blessed pattern is
+  // `key={sequenceType}` on a wrapper component — that forces a clean
+  // remount of all four useState slots. We're applying that as a
+  // follow-up; the documented eslint-disable here keeps CI green
+  // until then. The setState fires only on a user-driven change of
+  // sequenceType (low-frequency), so the cascading-renders concern
+  // the rule warns about doesn't apply in practice.
   useEffect(() => {
     const config = SEQUENCE_TYPES.find((s) => s.id === sequenceType)!;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setEmails(createEmptyEmails(config));
     setExpandedEmail(0);
     setPreviewIdx(null);

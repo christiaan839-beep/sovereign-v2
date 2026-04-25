@@ -202,6 +202,7 @@ export default async function AnthropicTrustPage() {
             detail={
               <>
                 Any customer can export a cryptographically-signed snapshot of any run — inputs, model selections, safety checks, outputs, checksum — via{" "}
+                {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- API endpoint, intentional <a> for JSON download */}
                 <a href="/api/_replay/verify" className="underline decoration-[#B5532C]/40 hover:decoration-[#B5532C] transition-colors">
                   /api/_replay/verify
                 </a>
@@ -229,8 +230,8 @@ export default async function AnthropicTrustPage() {
         <p>
           Sovereign Matrix operates independently. Not formally affiliated
           with Anthropic. We use the Claude name with respect — and with
-          substance. When we say "Claude as critic," we can point to the
-          line of code.
+          substance. When we say &ldquo;Claude as critic,&rdquo; we can
+          point to the line of code.
         </p>
         <p className="mt-3">
           Metrics auto-refresh every hour from <code>/api/_misc/safety-diff</code>.

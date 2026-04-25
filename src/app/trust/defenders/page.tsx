@@ -241,6 +241,7 @@ export default function DefendersPage() {
             detail={
               <>
                 A cryptographically-checksummed{" "}
+                {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- API endpoint, intentional <a> for JSON download */}
                 <a href="/api/_replay/verify" className="underline decoration-[#B5532C]/40 hover:decoration-[#B5532C]">
                   snapshot
                 </a>{" "}

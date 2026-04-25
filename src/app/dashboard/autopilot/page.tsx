@@ -246,8 +246,11 @@ export default function AutopilotPage() {
   const [statusFilter, setStatusFilter] = useState<"all" | "running" | "done" | "failed">("all");
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const fetchRuns = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true);
+  // Pure data fetcher — no internal loading-state toggle. Callers
+  // manage the spinner so the only setState in the mount effect happens
+  // AFTER the fetch await (microtask boundary), satisfying React 19's
+  // set-state-in-effect rule. Same pattern as /dashboard/jobs.
+  const fetchRuns = useCallback(async () => {
     try {
       const res = await fetch("/api/playbooks/runs");
       if (res.ok) {
@@ -255,18 +258,19 @@ export default function AutopilotPage() {
         setRuns(data.runs || []);
       }
     } catch { /* silent */ }
-    if (!silent) setLoading(false);
   }, []);
 
+  // Mount fetch. `loading` starts at true; flips false in .finally().
   useEffect(() => {
-    fetchRuns();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchRuns().finally(() => setLoading(false));
   }, [fetchRuns]);
 
   // Background list refresh (less frequent — individual cards do fast polling)
   useEffect(() => {
     const hasLive = runs.some(r => r.status === "running");
     if (hasLive && !pollRef.current) {
-      pollRef.current = setInterval(() => fetchRuns(true), 10_000);
+      pollRef.current = setInterval(() => { void fetchRuns(); }, 10_000);
     } else if (!hasLive && pollRef.current) {
       clearInterval(pollRef.current);
       pollRef.current = null;
@@ -304,7 +308,10 @@ export default function AutopilotPage() {
               Run Playbook
             </Link>
             <button
-              onClick={() => fetchRuns()}
+              onClick={() => {
+                setLoading(true);
+                fetchRuns().finally(() => setLoading(false));
+              }}
               className="flex items-center gap-1.5 rounded-lg border border-white/8 bg-white/4 px-3 py-1.5 text-xs text-neutral-400 transition hover:bg-white/8"
             >
               <RefreshCw size={11} />

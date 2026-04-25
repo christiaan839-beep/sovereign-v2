@@ -239,6 +239,10 @@ export default async function BenchmarksPage() {
       <footer className="mt-24 pt-12 border-t border-[#D8CDB7] max-w-4xl text-[11px] font-mono text-[#8F8576] leading-loose">
         <p>
           Raw JSON:{" "}
+          {/* Intentional <a>: this links to a JSON endpoint, not a Next.js
+            page. We want a full GET (browser dl + content negotiation),
+            not next/link's client-side route push. */}
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
           <a
             href="/api/_misc/benchmarks"
             className="underline decoration-[#B5532C]/40 hover:decoration-[#B5532C]"

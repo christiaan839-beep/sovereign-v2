@@ -227,6 +227,7 @@ export default function AgentManifestSpecPage() {
               submit to the Sovereign marketplace.
             </p>
             <div className="flex gap-3">
+              {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- JSON schema endpoint, not a Next page; full GET intended */}
               <a
                 href="/api/public/sam/schema"
                 className="ed-mono text-sm px-4 py-2 transition-opacity hover:opacity-80"

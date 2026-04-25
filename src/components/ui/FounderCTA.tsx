@@ -31,21 +31,23 @@ const DISMISS_KEY = "founder-cta-dismissed-v1";
 const FALLBACK_URL = "https://cal.com/christiaan-sovereign/15min";
 
 export function FounderCTA() {
+  // Lazy initializer reads localStorage during render 1 — no flicker,
+  // no synchronous setState in effect. SSR-safe via the typeof window
+  // guard.
+  const [dismissed, setDismissed] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem(DISMISS_KEY) === "1";
+  });
   const [visible, setVisible] = useState(false);
-  const [dismissed, setDismissed] = useState(false);
 
+  // Visibility timer is a real external subscription (setTimeout). The
+  // setVisible call fires inside the setTimeout callback, which is the
+  // textbook external-system-callback the lint rule wants — no warning.
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    // Check dismiss flag first — doesn't change per-session
-    const wasDismissed = localStorage.getItem(DISMISS_KEY) === "1";
-    if (wasDismissed) {
-      setDismissed(true);
-      return;
-    }
-    // Delay appearance so it doesn't flash during initial render
+    if (dismissed) return;
     const t = setTimeout(() => setVisible(true), 2000);
     return () => clearTimeout(t);
-  }, []);
+  }, [dismissed]);
 
   const calUrl =
     process.env.NEXT_PUBLIC_FOUNDER_CAL_URL ?? FALLBACK_URL;

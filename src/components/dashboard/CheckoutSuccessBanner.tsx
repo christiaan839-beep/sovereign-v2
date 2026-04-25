@@ -30,47 +30,57 @@ const PLAN_MESSAGES: Record<string, string> = {
   enterprise: "Unlimited runs, white-label, and dedicated SLA are fully enabled.",
 };
 
+// Read the checkout-success params during render 1 (lazy useState
+// initializer) instead of mount → effect → setState. Avoids the
+// react-hooks/set-state-in-effect warning AND eliminates the flash
+// where the banner is invisible for one frame after a successful
+// checkout. Also clears the URL so a refresh doesn't re-show.
+//
+// SSR-safe: typeof-window guard returns null on the server.
+function readCheckoutFromUrl(): string | null {
+  if (typeof window === "undefined") return null;
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("checkout") !== "success") return null;
+  const plan = params.get("plan");
+  if (!plan) return null;
+  // Clean the URL — running this in render is not idempotent in
+  // strict mode, but replaceState is a no-op when the URL already
+  // matches, so a double-call is fine.
+  params.delete("checkout");
+  params.delete("plan");
+  const clean = params.toString()
+    ? `${window.location.pathname}?${params.toString()}`
+    : window.location.pathname;
+  window.history.replaceState({}, "", clean);
+  return plan;
+}
+
 export function CheckoutSuccessBanner() {
-  const [plan, setPlan] = useState<string | null>(null);
-  const [visible, setVisible] = useState(false);
+  const [plan] = useState<string | null>(() => readCheckoutFromUrl());
+  const [visible, setVisible] = useState<boolean>(plan !== null);
   const [progress, setProgress] = useState(100);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const params = new URLSearchParams(window.location.search);
-    const checkout = params.get("checkout");
-    const planParam = params.get("plan");
-
-    if (checkout !== "success" || !planParam) return;
-
-    // Clean URL immediately — prevent re-showing on refresh
-    params.delete("checkout");
-    params.delete("plan");
-    const clean = params.toString()
-      ? `${window.location.pathname}?${params.toString()}`
-      : window.location.pathname;
-    window.history.replaceState({}, "", clean);
-
-    setPlan(planParam);
-    setVisible(true);
-
-    // Progress bar counts down over 10s
+    if (!visible) return;
+    // Progress bar counts down over 10s. setProgress fires inside
+    // requestAnimationFrame's callback — a real external-system
+    // subscription, satisfies the lint rule cleanly.
     const start = Date.now();
     const duration = 10_000;
+    let raf = 0;
     const tick = () => {
       const elapsed = Date.now() - start;
       const pct = Math.max(0, 100 - (elapsed / duration) * 100);
       setProgress(pct);
       if (elapsed < duration) {
-        requestAnimationFrame(tick);
+        raf = requestAnimationFrame(tick);
       } else {
         setVisible(false);
       }
     };
-    const raf = requestAnimationFrame(tick);
+    raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, []);
+  }, [visible]);
 
   const planName = plan ? (PLAN_NAMES[plan] ?? plan) : "";
   const message = plan ? (PLAN_MESSAGES[plan] ?? "Your plan has been upgraded.") : "";
