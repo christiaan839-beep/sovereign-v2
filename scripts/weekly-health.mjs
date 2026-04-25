@@ -397,6 +397,21 @@ check(
   { dimension: "security" },
 );
 
+// Public trust assets — these are referenced from security.txt and
+// from the .security policy. If a future session deletes them as part
+// of a "marketing cleanup", procurement teams hit 404s and the
+// security disclosure flow breaks.
+const trustAssets = [
+  { path: "src/app/security/page.tsx", name: "Public /security page" },
+  { path: "src/app/trust/defenders/page.tsx", name: "/trust/defenders ledger" },
+  { path: "public/.well-known/security.txt", name: "RFC 9116 security.txt" },
+  { path: "docs/THREAT_MODEL.md", name: "Threat model document" },
+];
+for (const { path, name } of trustAssets) {
+  const present = existsSync(join(ROOT, path)) ? 1 : 0;
+  check(name, present, 1, { dimension: "security" });
+}
+
 // ──────────────────────────────────────────────────────────────
 // Database migrations
 // ──────────────────────────────────────────────────────────────
