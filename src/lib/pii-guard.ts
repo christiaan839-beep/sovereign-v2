@@ -45,7 +45,7 @@ const log = createLogger("pii-guard");
 export type PiiMode = "mask" | "flag" | "skip";
 
 export interface PiiFinding {
-  type: "ssn" | "credit_card" | "phone" | "email";
+  type: "ssn" | "credit_card" | "iban" | "swift_bic" | "phone" | "email";
   matchedText: string;
   maskedText: string;
   /** 0-based character offset where the match starts. */
@@ -87,6 +87,21 @@ const EMAIL_RE =
   // Pragmatic email — not RFC 5322, but close enough for leak detection.
   /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g;
 
+const IBAN_RE =
+  // ISO 13616. Two country letters + two check digits + 11..30
+  // alphanumerics (BBAN). Total 15..34 chars. Allows internal spaces
+  // (a common formatting choice in EU bank statements: "DE89 3704 ...").
+  // We strip the spaces before mod-97 validation.
+  // Final mod-97 == 1 check is enforced in `ibanValid()` below.
+  /\b[A-Z]{2}\d{2}(?:[ ]?[A-Z0-9]){11,30}\b/g;
+
+const SWIFT_BIC_RE =
+  // ISO 9362. Bank (4 letters) + country (2 letters) + location (2 alnum)
+  // + optional branch (3 alnum). 8 or 11 chars total. We don't perform
+  // mod-97 (BICs don't carry one) — just structural match. Most false
+  // positives in real text are filtered by the strict 8/11-only length.
+  /\b[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}(?:[A-Z0-9]{3})?\b/g;
+
 // ─── Maskers ───────────────────────────────────────────────────
 
 function maskSsn(s: string): string {
@@ -115,6 +130,26 @@ function maskEmail(s: string): string {
   return `${first}${"*".repeat(Math.max(1, local.length - 1))}@${domain}`;
 }
 
+function maskIban(s: string): string {
+  // "DE89 3704 0044 0532 0130 00" → "DE89 **** **** **** **** 0000"
+  // Preserve country code + check digits (first 4) and last 4 of the
+  // BBAN. Pattern matches what most banks display in statements.
+  const cleaned = s.replace(/\s/g, "");
+  const head = cleaned.slice(0, 4);
+  const tail = cleaned.slice(-4);
+  const middleLen = Math.max(0, cleaned.length - 8);
+  // Group the middle in 4-char blocks of asterisks for readability.
+  const middle = "*".repeat(middleLen).match(/.{1,4}/g)?.join(" ") ?? "";
+  return `${head} ${middle}${middle ? " " : ""}${tail}`.trim();
+}
+
+function maskSwiftBic(s: string): string {
+  // "DEUTDEFF500" → "DEUT**FF500"
+  // Preserve bank code + last block — country code is the most-leaky
+  // segment, so mask only its 2 letters.
+  return `${s.slice(0, 4)}**${s.slice(6)}`;
+}
+
 // ─── Luhn (credit card checksum) ───────────────────────────────
 
 function luhnValid(digits: string): boolean {
@@ -133,6 +168,44 @@ function luhnValid(digits: string): boolean {
     alt = !alt;
   }
   return sum % 10 === 0;
+}
+
+// ─── IBAN mod-97 checksum (ISO 13616) ──────────────────────────
+//
+// Algorithm:
+//   1. Strip spaces, uppercase
+//   2. Move first 4 chars (country + check digits) to the end
+//   3. Replace each letter with its decimal value (A=10, B=11, ..., Z=35)
+//   4. Compute mod 97 — must equal 1
+//
+// We compute mod 97 in chunks because the resulting number can have
+// 30+ digits, beyond JS Number precision. Chunk-by-chunk modular
+// arithmetic is the textbook approach (and the same one Wikipedia
+// describes as the reference implementation).
+function ibanValid(raw: string): boolean {
+  const cleaned = raw.replace(/\s+/g, "").toUpperCase();
+  if (cleaned.length < 15 || cleaned.length > 34) return false;
+  if (!/^[A-Z]{2}\d{2}[A-Z0-9]+$/.test(cleaned)) return false;
+
+  // Move first 4 chars to the end, expand letters to digits.
+  const rearranged = cleaned.slice(4) + cleaned.slice(0, 4);
+  let expanded = "";
+  for (const ch of rearranged) {
+    if (ch >= "0" && ch <= "9") {
+      expanded += ch;
+    } else {
+      // A=10, B=11, ..., Z=35
+      expanded += (ch.charCodeAt(0) - 55).toString();
+    }
+  }
+
+  // Chunked mod-97 to fit within Number precision.
+  let remainder = 0;
+  for (let i = 0; i < expanded.length; i += 7) {
+    const chunk = remainder.toString() + expanded.slice(i, i + 7);
+    remainder = parseInt(chunk, 10) % 97;
+  }
+  return remainder === 1;
 }
 
 // ─── Public API ────────────────────────────────────────────────
@@ -156,13 +229,30 @@ export function scanPii(text: string): PiiFinding[] {
     });
   }
 
+  // IBAN — mod-97 checksum gates final acceptance. Without the check,
+  // strings like "DE89 ABCD EFGH ..." that match the structural regex
+  // but aren't real IBANs would get masked unnecessarily.
+  for (const match of text.matchAll(IBAN_RE)) {
+    if (match.index === undefined) continue;
+    const m = match[0];
+    if (!ibanValid(m)) continue;
+    findings.push({
+      type: "iban",
+      matchedText: m,
+      maskedText: maskIban(m),
+      index: match.index,
+    });
+  }
+
+  pushMatches(text, SWIFT_BIC_RE, "swift_bic", maskSwiftBic, findings);
   pushMatches(text, E164_PHONE_RE, "phone", maskPhone, findings);
   pushMatches(text, US_PHONE_RE, "phone", maskPhone, findings);
   pushMatches(text, EMAIL_RE, "email", maskEmail, findings);
 
-  // Dedupe overlapping findings — SSN regex sometimes catches phone-
-  // shaped strings. Prefer the more-specific type (ssn > card > phone >
-  // email) when positions overlap.
+  // Dedupe overlapping findings. Specificity ranking (lowest = most
+  // specific): ssn → iban → credit_card → swift_bic → phone → email.
+  // IBAN beats card because IBAN's mod-97 + structural prefix is
+  // stricter than Luhn alone, so when they overlap we trust IBAN.
   return dedupeOverlapping(findings);
 }
 
@@ -185,8 +275,17 @@ function pushMatches(
 }
 
 function dedupeOverlapping(findings: PiiFinding[]): PiiFinding[] {
-  // Sort by (index, specificity). SSN=0, card=1, phone=2, email=3 — lower = more specific.
-  const rank = { ssn: 0, credit_card: 1, phone: 2, email: 3 } as const;
+  // Sort by (index, specificity). Lower rank = more specific = wins
+  // when two findings overlap. IBAN sits between SSN and card because
+  // its structural prefix + mod-97 is stricter than card's Luhn alone.
+  const rank = {
+    ssn: 0,
+    iban: 1,
+    credit_card: 2,
+    swift_bic: 3,
+    phone: 4,
+    email: 5,
+  } as const;
   const sorted = [...findings].sort((a, b) => {
     if (a.index !== b.index) return a.index - b.index;
     return rank[a.type] - rank[b.type];

@@ -65,6 +65,41 @@ describe("pii-guard · scanPii", () => {
     const f = scanPii("The quick brown fox jumps over the lazy dog.");
     expect(f).toHaveLength(0);
   });
+
+  it("detects IBAN with mod-97 checksum (DE89 — Wikipedia's reference example)", () => {
+    const f = scanPii("Wire to DE89 3704 0044 0532 0130 00 by EOD.");
+    const iban = f.find((x) => x.type === "iban");
+    expect(iban).toBeDefined();
+    expect(iban?.matchedText).toBe("DE89 3704 0044 0532 0130 00");
+    // Cleaned: "DE89370400440532013000" (22 chars). Mask preserves
+    // country + check digits (head) and last 4 of BBAN (which is
+    // "3000" — the trailing 4 chars of the cleaned account number).
+    expect(iban?.maskedText.startsWith("DE89")).toBe(true);
+    expect(iban?.maskedText.endsWith("3000")).toBe(true);
+  });
+
+  it("rejects an IBAN-shaped string with a wrong check digit", () => {
+    // Same as above but check digit changed from 89 → 99 → fails mod-97.
+    const f = scanPii("Wire to DE99 3704 0044 0532 0130 00 by EOD.");
+    const iban = f.find((x) => x.type === "iban");
+    expect(iban).toBeUndefined();
+  });
+
+  it("detects SWIFT/BIC code — 8 char and 11 char forms", () => {
+    const f = scanPii("Beneficiary bank: DEUTDEFF and routing DEUTDEFF500.");
+    const bics = f.filter((x) => x.type === "swift_bic");
+    expect(bics.length).toBeGreaterThanOrEqual(2);
+    // Mask preserves bank code + location/branch, hides country.
+    expect(bics.find((b) => b.matchedText === "DEUTDEFF")?.maskedText).toBe("DEUT**FF");
+    expect(bics.find((b) => b.matchedText === "DEUTDEFF500")?.maskedText).toBe("DEUT**FF500");
+  });
+
+  it("scrubs IBAN end-to-end (mask mode)", () => {
+    const r = scrubPii("Wire to DE89 3704 0044 0532 0130 00 by EOD.");
+    expect(r.mutated).toBe(true);
+    expect(r.scrubbed).not.toContain("3704 0044 0532 0130 00");
+    expect(r.scrubbed.includes("DE89")).toBe(true); // country preserved
+  });
 });
 
 describe("pii-guard · scrubPii", () => {
