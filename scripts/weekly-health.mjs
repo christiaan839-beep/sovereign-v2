@@ -320,6 +320,84 @@ for (const { path, name } of infraChecks) {
 }
 
 // ──────────────────────────────────────────────────────────────
+// Security hardening — locks in the April 2026 sprint so future
+// sessions can't silently revert any of the four defense layers.
+// Each check is a presence test for an artifact OR a content test
+// for a specific wiring line. Cheap to run, high signal.
+// ──────────────────────────────────────────────────────────────
+
+const securityArtifacts = [
+  { path: "src/lib/pii-guard.ts", name: "PII output guard module" },
+  { path: "src/lib/api-key-scopes.ts", name: "API-key scope evaluator" },
+  { path: "src/lib/provider-costs.ts", name: "Provider cost catalog (free-first)" },
+  { path: "drizzle/0033_audit_log_hash_chain.sql", name: "Audit-log hash chain migration" },
+  { path: "drizzle/0034_api_key_scoping.sql", name: "API-key scoping migration" },
+  { path: "src/app/api/admin/audit/verify-chain/route.ts", name: "Admin verify-chain endpoint" },
+  { path: "src/app/api/cron/verify-audit-chain/route.ts", name: "Cron verify-audit-chain (every 6h)" },
+  { path: "src/lib/__tests__/audit-log.test.ts", name: "Audit-log tampering tests" },
+  { path: "src/lib/__tests__/security-hardening.test.ts", name: "Security hardening tests" },
+];
+
+for (const { path, name } of securityArtifacts) {
+  const present = existsSync(join(ROOT, path)) ? 1 : 0;
+  check(name, present, 1, { dimension: "security" });
+}
+
+// Wiring checks — content matches that prove the artifacts are
+// actually integrated, not just sitting on disk. If a future session
+// deletes the import or call site, the invariant fails.
+function fileContains(relPath, needle) {
+  const p = join(ROOT, relPath);
+  if (!existsSync(p)) return false;
+  return readFileSync(p, "utf8").includes(needle);
+}
+
+check(
+  "evaluateScope wired into v1 gateway",
+  fileContains("src/app/api/v1/[...path]/route.ts", "evaluateScope") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "scrubPiiDeep wired into agent-factory",
+  fileContains("src/lib/agent-factory.ts", "scrubPiiDeep") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "FREE_ONLY_MODE gate in ai.ts",
+  fileContains("src/lib/ai.ts", "FREE_ONLY_MODE") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "audit-log hash chain in audit-log.ts",
+  fileContains("src/lib/audit-log.ts", "row_hash") &&
+    fileContains("src/lib/audit-log.ts", "verifyAuditChain")
+    ? 1
+    : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "verify-audit-chain cron registered in vercel.json",
+  fileContains("vercel.json", "/api/cron/verify-audit-chain") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "Content-Security-Policy header in next.config.ts",
+  fileContains("next.config.ts", "Content-Security-Policy") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+// ──────────────────────────────────────────────────────────────
 // Database migrations
 // ──────────────────────────────────────────────────────────────
 

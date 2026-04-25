@@ -13,6 +13,8 @@ import {
   Scale,
   AlertCircle,
   Trash2,
+  Coins,
+  GitCommit,
 } from "lucide-react";
 import { PrintButton } from "@/components/ui/PrintButton";
 
@@ -42,24 +44,24 @@ const SECTIONS = [
   },
   {
     icon: Shield,
-    title: "Access Control",
+    title: "Access Control + API-Key Scoping",
     color: "text-purple-400",
     content:
-      "Role-based access control (RBAC) with four roles: Owner, Admin, Editor, and Viewer. Over 16 granular permissions govern access to agents, billing, API keys, team management, webhooks, and audit logs. All permission changes are logged and auditable.",
+      "Role-based access control (RBAC) with four roles: Owner, Admin, Editor, Viewer. Over 16 granular permissions govern access to agents, billing, API keys, teams, webhooks, and audit logs. API keys carry their own least-privilege scoping: per-agent scopes (agent:execute:<slug>), generic scopes (agent:execute / data:read), CIDR-based IP allowlists, and per-key agent allowlists. Pure-function evaluator (src/lib/api-key-scopes.ts) enforced at /api/v1/[...path] gateway. NULL scopes = legacy full-access for back-compat.",
   },
   {
     icon: Brain,
-    title: "AI Safety",
+    title: "AI Safety + PII Guard",
     color: "text-orange-400",
     content:
-      "A 5-layer NeMo Guardrails pipeline protects every AI interaction: jailbreak detection blocks prompt injection attacks, content moderation filters harmful outputs, topic control enforces semantic boundaries, PII scanning provides real-time redaction for GDPR/POPIA compliance, and quality assurance cross-checks outputs against enterprise data.",
+      "Five-layer guardrail pipeline (jailbreak / content / topic / PII / quality) on every request, plus a structural post-extraction guard: src/lib/pii-guard.ts uses regex + Luhn to scan SSN, credit card, E.164/US phone, and email patterns in every agent's structured output. Defense-in-depth alongside the prompt-level rules. Per-agent piiGuardMode (mask | flag | skip) lets resume-normalizer + business-card-reader keep contact info while still logging findings.",
   },
   {
     icon: ClipboardList,
-    title: "Audit Trail",
+    title: "Tamper-Detectable Audit Trail",
     color: "text-cyan-400",
     content:
-      "Every action on the platform is logged with the acting user, timestamp, IP address, and affected resource. Audit logs are immutable and retained for 90 days on standard plans, with extended retention available for enterprise customers. Logs can be exported in JSON or CSV format.",
+      "Every action is logged with user, timestamp, IP, and resource. Each row is SHA-256-chained to the previous one (row_hash = h(prev_hash | userId | action | resource | details | createdAt)). Any in-place edit breaks the chain. /api/cron/verify-audit-chain re-walks the chain every 6 hours and pages on-call on a break. Eight unit tests prove the verifier catches three distinct attack scenarios — details mutation, forged prev_hash, and forged row_hash — at the exact broken row id.",
   },
   {
     icon: Server,
@@ -96,6 +98,13 @@ const SECTIONS = [
     content:
       "Users can export all their data (conversations, agent outputs, configurations) and request full account deletion from Settings > Export. Upon deletion, all personal data is purged within 30 days. Anonymized, aggregated analytics data may be retained for service improvement.",
   },
+  {
+    icon: Coins,
+    title: "Cost Sovereignty",
+    color: "text-emerald-300",
+    content:
+      "Set SOVEREIGN_FREE_ONLY=true and the AI failover chain strips paid providers — NIM → Groq → honest 'unavailable' error, never silent escalation to a paid provider. Provider costs are catalogued in src/lib/provider-costs.ts (free | paid | metered) so a deployment's cost surface is auditable from the code, not a vendor invoice. Mirrors the DATA_SOVEREIGNTY_MODE pattern that blocks China-host providers in regulated environments.",
+  },
 ];
 
 export default function SecurityPage() {
@@ -129,9 +138,64 @@ export default function SecurityPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.5 }}
-          className="mb-12"
+          className="mb-8"
         >
           <PrintButton />
+        </motion.div>
+
+        {/* Verifiable hardening — every claim cites a file path or commit hash */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.5 }}
+          className="mb-12 rounded-2xl border border-emerald-500/15 bg-emerald-500/[0.03] p-6"
+        >
+          <div className="flex items-center gap-2 mb-3">
+            <GitCommit className="w-4 h-4 text-emerald-400" />
+            <h2 className="text-sm font-semibold text-white">Verifiable hardening — April 2026</h2>
+          </div>
+          <p className="text-xs text-neutral-400 leading-relaxed mb-4">
+            Marketing pages claim defense-in-depth. We cite the files, the
+            tests, and the commit hash. Every claim below maps to a public
+            artifact in our GitHub repo.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-[11px]">
+            <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">
+              <div className="font-semibold text-white mb-1">PII output guard</div>
+              <div className="text-neutral-500 font-mono leading-snug">
+                src/lib/pii-guard.ts<br />
+                drizzle/—<br />
+                tests: 23 (regex + Luhn + scrubber)
+              </div>
+            </div>
+            <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">
+              <div className="font-semibold text-white mb-1">Audit-log hash chain</div>
+              <div className="text-neutral-500 font-mono leading-snug">
+                src/lib/audit-log.ts<br />
+                drizzle/0033_audit_log_hash_chain.sql<br />
+                tests: 8 (3 tampering scenarios)
+              </div>
+            </div>
+            <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">
+              <div className="font-semibold text-white mb-1">API-key scoping</div>
+              <div className="text-neutral-500 font-mono leading-snug">
+                src/lib/api-key-scopes.ts<br />
+                drizzle/0034_api_key_scoping.sql<br />
+                tests: 13 (eval + classifier + CIDR)
+              </div>
+            </div>
+            <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">
+              <div className="font-semibold text-white mb-1">Free-first router</div>
+              <div className="text-neutral-500 font-mono leading-snug">
+                src/lib/provider-costs.ts<br />
+                src/lib/ai.ts (FREE_ONLY_MODE)<br />
+                tests: 4 (catalog + fallback)
+              </div>
+            </div>
+          </div>
+          <p className="text-[10px] text-neutral-600 mt-4">
+            Continuous integrity check: <span className="font-mono">/api/cron/verify-audit-chain</span> runs every 6 hours and pages on a hash mismatch. weekly-health.mjs runs 28 invariants on every commit.
+          </p>
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
