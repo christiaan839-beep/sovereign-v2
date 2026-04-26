@@ -11,7 +11,9 @@
     "start": "next start",
     "lint": "eslint",
     "ws": "ts-node server/ws.ts",
-    "test": "vitest run"
+    "test": "vitest run",
+    "db:apply": "tsx scripts/apply-pending-migrations.ts",
+    "ts:check": "tsx scripts/check-ts-regression.ts"
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.43",
