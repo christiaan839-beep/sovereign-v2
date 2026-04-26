@@ -1,6 +1,5 @@
 import { createAgentRoute } from "@/lib/agent-factory";
-import { NextResponse } from "next/server";
-import { guardRoute, sanitizeString, errorResponse } from "@/lib/api-guard";
+import { sanitizeString } from "@/lib/api-guard";
 import { nimChat } from "@/lib/nvidia";
 
 /**
@@ -10,20 +9,26 @@ import { nimChat } from "@/lib/nvidia";
  * Output: structured summary with action items, decisions, and follow-ups.
  *
  * Uses Nemotron Ultra for high-quality summarization.
+ *
+ * Note: createAgentRoute already runs auth, rate-limit, sanitization,
+ * and parses the body into `input`. We just pull fields off `input`.
  */
 export const POST = createAgentRoute({
   name: "meeting-notes",
-  handler: async ({ input, email, userId }) => {
-
-    const guard = await guardRoute();
-    if (!guard.authorized) return guard.response;
-
-    const body = await req.json();
-    const transcript = sanitizeString(body.transcript, 50000);
-    const meetingTitle = sanitizeString(body.title, 200) || "Untitled Meeting";
+  handler: async ({ input }) => {
+    const transcript = sanitizeString(
+      (input as Record<string, unknown>).transcript,
+      50000,
+    );
+    const meetingTitle =
+      sanitizeString((input as Record<string, unknown>).title, 200) ||
+      "Untitled Meeting";
 
     if (!transcript) {
-      return errorResponse("Missing 'transcript' field", 400, "MISSING_FIELD");
+      return {
+        error: "Missing 'transcript' field",
+        code: "MISSING_FIELD",
+      };
     }
 
     const result = await nimChat(
@@ -55,16 +60,14 @@ Be concise and factual. Do not add information not in the transcript.`,
           content: `Meeting: "${meetingTitle}"\n\nTranscript:\n${transcript}`,
         },
       ],
-      { maxTokens: 2000, temperature: 0.2 }
+      { maxTokens: 2000, temperature: 0.2 },
     );
 
-    return ({
+    return {
       title: meetingTitle,
       summary: result,
       wordCount: typeof result === "string" ? result.split(/\s+/).length : 0,
       model: "nemotron-ultra-253b",
-    });
-  
+    };
   },
 });
-
