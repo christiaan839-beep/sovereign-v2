@@ -1,8 +1,36 @@
 /** Shared types for the SOVEREIGN platform */
 
 // ─── AI ──────────────────────────────────────────────
-export type AIModel = "gemini" | "claude" | "nim" | "ollama" | "groq" | "deepseek" | "mistral" | "qwen";
-export type TaskType = "content" | "analysis" | "code" | "sales";
+export type AIModel =
+  | "gemini"
+  | "claude"
+  | "nim"
+  | "ollama"
+  | "groq"
+  | "deepseek"
+  | "mistral"
+  | "qwen";
+/**
+ * TaskType — drives router decisions in src/lib/ai.ts
+ *
+ * Generic categories (legacy): content, analysis, sales
+ * Routing-aware categories (cost/latency optimized):
+ *   - classify | extract | json → fast structured output → Cerebras (Llama 3.3)
+ *   - code → Groq Qwen 2.5 Coder
+ *   - reasoning → NIM Nemotron Ultra (then Claude Sonnet w/o thinking)
+ *   - creative | longform → Gemini Pro / Claude Sonnet
+ */
+export type TaskType =
+  | "content"
+  | "analysis"
+  | "code"
+  | "sales"
+  | "classify"
+  | "extract"
+  | "json"
+  | "creative"
+  | "longform"
+  | "reasoning";
 
 export interface AIOptions {
   model?: AIModel;

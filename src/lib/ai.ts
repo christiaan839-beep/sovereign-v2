@@ -87,6 +87,7 @@ export async function ai(
     thinking,
     useOpus,
     useGeminiPro,
+    taskType,
   } = options;
 
   // Lazy-load model-attribution to avoid circular import risk.
@@ -94,19 +95,72 @@ export async function ai(
 
   const userKeys = await getUserKeys();
 
-  // 1. Local execution (cost: $0)
+  // 0. Local execution always wins on cost — checked before taskType so a local
+  //    Ollama still serves classification etc.
   if (userKeys.ollama) {
     recordModel("ollama-local");
     return ollamaText(prompt, system, userKeys.ollama);
   }
 
-  // 2. Cerebras — ultra-fast inference (2000+ tok/s). Use for classification and routing.
-  if (model === "cerebras") {
+  // ─── taskType-based routing ─────────────────────────────
+  // When the caller declares the *kind* of task it wants, route to the model
+  // best suited for it (cost + latency + capability tradeoff). Only kicks in
+  // when the caller did not pin a specific provider via `model:`.
+  // The fallback chain inside each branch is graceful — failures cascade to
+  // the default ladder at the end of the function.
+  if (taskType && (model === "nim" || (model as string) === "auto")) {
+    try {
+      switch (taskType) {
+        case "classify":
+        case "extract":
+        case "json": {
+          // Fast structured output → Cerebras Llama 3.3 70B (2000+ tok/s).
+          // Falls through to the NIM default ladder if Cerebras is unkeyed/down.
+          recordModel(`cerebras-task-${taskType}`);
+          return await cerebrasText(prompt, system, maxTokens);
+        }
+        case "code": {
+          // Code gen / review → Groq Qwen 2.5 Coder 32B.
+          recordModel("groq-qwen-coder");
+          return await groqText(prompt, system, maxTokens, userKeys, "qwen");
+        }
+        case "reasoning": {
+          // Multi-step reasoning → NIM Nemotron Ultra (open-weight, free).
+          // Quality miss escalation to Claude Sonnet (no thinking mode) is
+          // handled by smartAi(). Plain ai() stays on Nemotron.
+          recordModel("nim-nemotron-reasoning");
+          return await nimText(prompt, system, maxTokens);
+        }
+        case "creative":
+        case "longform": {
+          // Quality-driven generation → Gemini 2.5 Pro / Claude Sonnet.
+          // Falls through to default ladder so we keep the existing
+          // Gemini → NIM → Groq fallback chain.
+          break;
+        }
+        case "content":
+        case "analysis":
+        case "sales":
+          // Legacy task types — no override, use default routing below.
+          break;
+      }
+    } catch (taskErr) {
+      log.warn("taskType-routed model failed, falling through to default", {
+        taskType,
+        error: (taskErr as Error).message,
+      });
+      // Drop into the default ladder below.
+    }
+  }
+
+  // ─── Explicit-provider routes ───────────────────────────
+  // 1. Cerebras — ultra-fast inference (2000+ tok/s). Use for classification and routing.
+  if ((model as string) === "cerebras") {
     recordModel("cerebras");
     return cerebrasText(prompt, system, maxTokens);
   }
 
-  // 3. NVIDIA NIM open-source models (cost: $0)
+  // 2. NVIDIA NIM open-source models (cost: $0)
   if (
     model === "nim" ||
     (userKeys.nvidia && model !== "claude" && model !== "gemini")
@@ -115,7 +169,7 @@ export async function ai(
     return nimText(prompt, system, maxTokens);
   }
 
-  // 4. Claude (BYOK only) - Opus or Sonnet
+  // 3. Claude (BYOK only) - Opus or Sonnet
   if (
     model === "claude" ||
     (userKeys.anthropic && !userKeys.gemini && !userKeys.groq)
@@ -124,13 +178,13 @@ export async function ai(
     return claudeText(prompt, system, maxTokens, userKeys, thinking, useOpus);
   }
 
-  // 5. Mistral Large 2 (EU Compliance / Open Weights via NIM)
+  // 4. Mistral Large 2 (EU Compliance / Open Weights via NIM)
   if (model === "mistral") {
     recordModel("mistral-large");
     return mistralText(prompt, system, maxTokens);
   }
 
-  // 6. Groq (DeepSeek-R1, Qwen 2.5 Coder, Llama 3.1)
+  // 5. Groq (DeepSeek-R1, Qwen 2.5 Coder, Llama 3.1)
   if (
     model === "groq" ||
     model === "deepseek" ||
@@ -141,7 +195,21 @@ export async function ai(
     return groqText(prompt, system, maxTokens, userKeys, model);
   }
 
-  // 7. Gemini (default) → fallback to NIM → fallback to Groq
+  // 6. Default ladder per CLAUDE.md priority:
+  //    Cerebras (fast, free tier) → Gemini → NIM → Groq.
+  //    Cerebras only joins the ladder when its key is configured, so
+  //    deployments without it keep the original Gemini-first behavior.
+  if (globalCerebrasKey) {
+    try {
+      recordModel("cerebras-ladder");
+      return await cerebrasText(prompt, system, maxTokens);
+    } catch (cerebrasErr) {
+      log.warn("Cerebras ladder hop failed, falling back to Gemini", {
+        error: (cerebrasErr as Error).message,
+      });
+    }
+  }
+
   try {
     recordModel(useGeminiPro ? "gemini-pro" : "gemini-flash");
     return await geminiText(prompt, system, maxTokens, userKeys, useGeminiPro);
