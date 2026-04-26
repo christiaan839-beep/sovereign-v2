@@ -37,29 +37,48 @@ async () => {
   try {
     generatedCode = await ai(`Objective: ${objective}`, {
       system: systemPrompt,
-      model: "claude",
+      model: "groq",
       taskType: "code",
     });
 
     // Clean markdown wrappers
-    generatedCode = generatedCode.replace(/^```(js|javascript)?\s*/i, "").replace(/```$/i, "").trim();
+    generatedCode = generatedCode
+      .replace(/^```(js|javascript)?\s*/i, "")
+      .replace(/```$/i, "")
+      .trim();
 
     // Security: block dangerous code patterns before execution
     const blockedPatterns = [
-      /\bprocess\b/, /\brequire\b/, /\bimport\b/, /\b__dirname\b/, /\b__filename\b/,
-      /\bchild_process\b/, /\bfs\b\./, /\bnet\b\./, /\bhttp\b\./, /\bdns\b\./,
-      /\beval\b\(/, /\bglobalThis\b/, /\bwindow\b/,
-      /\bfetch\b\(/, /\bXMLHttpRequest\b/, /\bWebSocket\b/,
+      /\bprocess\b/,
+      /\brequire\b/,
+      /\bimport\b/,
+      /\b__dirname\b/,
+      /\b__filename\b/,
+      /\bchild_process\b/,
+      /\bfs\b\./,
+      /\bnet\b\./,
+      /\bhttp\b\./,
+      /\bdns\b\./,
+      /\beval\b\(/,
+      /\bglobalThis\b/,
+      /\bwindow\b/,
+      /\bfetch\b\(/,
+      /\bXMLHttpRequest\b/,
+      /\bWebSocket\b/,
     ];
     for (const pattern of blockedPatterns) {
       if (pattern.test(generatedCode)) {
-        throw new Error(`Generated code contains blocked pattern: ${pattern.source}. Code execution denied for security.`);
+        throw new Error(
+          `Generated code contains blocked pattern: ${pattern.source}. Code execution denied for security.`,
+        );
       }
     }
 
     // Limit code length to prevent abuse
     if (generatedCode.length > 10_000) {
-      throw new Error("Generated code exceeds maximum allowed length (10,000 chars)");
+      throw new Error(
+        "Generated code exceeds maximum allowed length (10,000 chars)",
+      );
     }
 
     // SECURITY NOTE: new Function() is used intentionally here for the Tool Factory feature.
@@ -69,7 +88,12 @@ async () => {
     const execute = new Function(`return (${generatedCode})();`);
     const result = await execute();
 
-    return { objective, generatedCode, result, executionTimeMs: Date.now() - start };
+    return {
+      objective,
+      generatedCode,
+      result,
+      executionTimeMs: Date.now() - start,
+    };
   } catch (error) {
     return {
       objective,
