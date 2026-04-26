@@ -1,5 +1,6 @@
 import { createAgentRoute } from "@/lib/agent-factory";
 import { nimChat } from "@/lib/nvidia";
+import { safeFetch, SafeFetchError } from "@/lib/safe-fetch";
 
 /**
  * COMPETITIVE INTELLIGENCE RADAR
@@ -23,17 +24,22 @@ export const POST = createAgentRoute({
     // Step 1: Fetch target site metadata
     let siteData = "";
     try {
-      const res = await fetch(url, {
+      const res = await safeFetch(url, {
         headers: { "User-Agent": "Mozilla/5.0 (compatible; SovereignBot/1.0)" },
-        signal: AbortSignal.timeout(8000),
+        timeoutMs: 8000,
       });
       const html = await res.text();
 
       // Extract key signals from HTML (first 15KB only)
       const truncated = html.slice(0, 15000);
       const title = truncated.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1] || "";
-      const description = truncated.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)/i)?.[1] || "";
-      const h1s = Array.from(truncated.matchAll(/<h1[^>]*>([^<]+)<\/h1>/gi)).map(m => m[1]).slice(0, 5);
+      const description =
+        truncated.match(
+          /<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)/i,
+        )?.[1] || "";
+      const h1s = Array.from(truncated.matchAll(/<h1[^>]*>([^<]+)<\/h1>/gi))
+        .map((m) => m[1])
+        .slice(0, 5);
       const techSignals: string[] = [];
       if (truncated.includes("next/")) techSignals.push("Next.js");
       if (truncated.includes("react")) techSignals.push("React");
@@ -45,7 +51,8 @@ export const POST = createAgentRoute({
       if (truncated.includes("stripe")) techSignals.push("Stripe");
       if (truncated.includes("intercom")) techSignals.push("Intercom");
       if (truncated.includes("hubspot")) techSignals.push("HubSpot");
-      if (truncated.includes("gtag") || truncated.includes("analytics")) techSignals.push("Google Analytics");
+      if (truncated.includes("gtag") || truncated.includes("analytics"))
+        techSignals.push("Google Analytics");
       if (truncated.includes("hotjar")) techSignals.push("Hotjar");
       if (truncated.includes("segment")) techSignals.push("Segment");
 
@@ -62,7 +69,10 @@ Server: ${server}
 X-Powered-By: ${poweredBy}
 Status: ${res.status}
 Content-Type: ${headers["content-type"] || ""}`;
-    } catch {
+    } catch (e) {
+      if (e instanceof SafeFetchError) {
+        return { error: e.message };
+      }
       siteData = `URL: ${url}\nFailed to fetch — site may block automated requests.`;
     }
 
@@ -93,13 +103,16 @@ Return JSON only:
         },
         { role: "user", content: siteData },
       ],
-      { maxTokens: 1500, temperature: 0.3 }
+      { maxTokens: 1500, temperature: 0.3 },
     );
 
     // Parse the analysis
     let parsed;
     try {
-      const cleaned = analysis.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
+      const cleaned = analysis
+        .replace(/```json?\n?/g, "")
+        .replace(/```/g, "")
+        .trim();
       parsed = JSON.parse(cleaned);
     } catch {
       parsed = { raw_analysis: analysis, parse_error: true };

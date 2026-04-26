@@ -1,4 +1,5 @@
 import { createAgentRoute } from "@/lib/agent-factory";
+import { assertSafeUrl, SafeFetchError } from "@/lib/safe-fetch";
 
 /**
  * URL CONTEXT ANALYZER — Gemini reads any URL directly.
@@ -16,9 +17,22 @@ export const POST = createAgentRoute({
   requiredFields: ["url"],
   handler: async ({ input }) => {
     const url = input.url as string;
-    const question = (input.question as string) || "Analyze this page. Extract the key information, purpose, target audience, and any notable strengths or weaknesses.";
+    const question =
+      (input.question as string) ||
+      "Analyze this page. Extract the key information, purpose, target audience, and any notable strengths or weaknesses.";
 
-    const geminiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY;
+    // Reject internal/loopback/private URLs before handing them to Gemini
+    // (Gemini will fetch the URL on our behalf, so SSRF still applies).
+    let safeUrl: string;
+    try {
+      safeUrl = assertSafeUrl(url).toString();
+    } catch (e) {
+      if (e instanceof SafeFetchError) return { error: e.message };
+      return { error: "Invalid URL" };
+    }
+
+    const geminiKey =
+      process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY;
     if (!geminiKey) {
       return { error: "Google AI API key not configured." };
     }
@@ -34,7 +48,7 @@ export const POST = createAgentRoute({
               role: "user",
               parts: [
                 { text: question },
-                { fileData: { fileUri: url, mimeType: "text/html" } },
+                { fileData: { fileUri: safeUrl, mimeType: "text/html" } },
               ],
             },
           ],
@@ -50,7 +64,7 @@ export const POST = createAgentRoute({
             maxOutputTokens: 3000,
           },
         }),
-      }
+      },
     );
 
     if (!res.ok) {
@@ -64,13 +78,17 @@ export const POST = createAgentRoute({
             contents: [
               {
                 role: "user",
-                parts: [{ text: `Analyze this URL and answer: ${question}\n\nURL: ${url}` }],
+                parts: [
+                  {
+                    text: `Analyze this URL and answer: ${question}\n\nURL: ${safeUrl}`,
+                  },
+                ],
               },
             ],
             tools: [{ google_search: {} }],
             generationConfig: { temperature: 0.3, maxOutputTokens: 3000 },
           }),
-        }
+        },
       );
 
       if (!fallbackRes.ok) {
@@ -78,12 +96,23 @@ export const POST = createAgentRoute({
       }
 
       const fallbackData = await fallbackRes.json();
-      const answer = fallbackData.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text || "").join("") || "";
-      return { analysis: answer, url, method: "grounded-search-fallback", model: "gemini-2.5-pro" };
+      const answer =
+        fallbackData.candidates?.[0]?.content?.parts
+          ?.map((p: { text?: string }) => p.text || "")
+          .join("") || "";
+      return {
+        analysis: answer,
+        url,
+        method: "grounded-search-fallback",
+        model: "gemini-2.5-pro",
+      };
     }
 
     const data = await res.json();
-    const analysis = data.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text || "").join("") || "";
+    const analysis =
+      data.candidates?.[0]?.content?.parts
+        ?.map((p: { text?: string }) => p.text || "")
+        .join("") || "";
 
     return {
       analysis,
