@@ -50,7 +50,11 @@ export async function POST(req: Request) {
     const stripe = new Stripe(stripeKey, {
       apiVersion: "2025-04-30.basil" as Stripe.LatestApiVersion,
     });
-    const { plan } = await req.json();
+    const body = await req.json();
+    const { plan, referrerUserId } = body as {
+      plan?: string;
+      referrerUserId?: string;
+    };
     const priceId = getStripePriceId(plan);
 
     if (!priceId) {
@@ -62,13 +66,24 @@ export async function POST(req: Request) {
 
     const appUrl = getPublicUrl();
 
+    // Validate referrer format and reject self-referrals
+    const validReferrer =
+      typeof referrerUserId === "string" &&
+      /^[A-Za-z0-9_-]{4,80}$/.test(referrerUserId) &&
+      referrerUserId !== userId
+        ? referrerUserId
+        : undefined;
+
+    const metadata: Record<string, string> = { plan: plan || "node", userId };
+    if (validReferrer) metadata.referrerUserId = validReferrer;
+
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       payment_method_types: ["card"],
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${appUrl}/dashboard?checkout=success&plan=${plan}`,
       cancel_url: `${appUrl}/pricing?checkout=cancelled`,
-      metadata: { plan, userId },
+      metadata,
       allow_promotion_codes: true,
     });
 
