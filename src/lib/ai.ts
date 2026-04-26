@@ -536,28 +536,50 @@ async function claudeWithCitations(
   const keys = await getUserKeys();
   const apiKey = keys.anthropic || globalAnthropicKey;
 
+  // Stack both citations + prompt-caching betas (comma-separated).
+  // Documents and system prompt are typically reused across calls in the same
+  // research session, so caching them slashes repeat token spend ~90%.
   const client = new Anthropic({
     apiKey,
-    defaultHeaders: { "anthropic-beta": "citations-2025-01-24" },
+    defaultHeaders: {
+      "anthropic-beta": "citations-2025-01-24,prompt-caching-2024-07-31",
+    },
   });
 
-  // Build document content blocks
-  const documentBlocks = documents.map((doc) => ({
-    type: "document" as const,
-    source: {
-      type: "text" as const,
-      media_type: "text/plain" as const,
-      data: doc.content,
-    },
-    title: doc.title,
-    citations: { enabled: true },
-  }));
+  // Build document content blocks. Mark the *last* document with cache_control
+  // so Anthropic caches all preceding documents in one ephemeral key.
+  const documentBlocks = documents.map((doc, idx) => {
+    const block: Record<string, unknown> = {
+      type: "document" as const,
+      source: {
+        type: "text" as const,
+        media_type: "text/plain" as const,
+        data: doc.content,
+      },
+      title: doc.title,
+      citations: { enabled: true },
+    };
+    if (idx === documents.length - 1) {
+      block.cache_control = { type: "ephemeral" };
+    }
+    return block;
+  });
+
+  const systemParam = system
+    ? [
+        {
+          type: "text" as const,
+          text: system,
+          cache_control: { type: "ephemeral" as const },
+        },
+      ]
+    : undefined;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const response = await (client.messages.create as any)({
     model: "claude-sonnet-4-6",
     max_tokens: maxTokens,
-    ...(system ? { system } : {}),
+    ...(systemParam ? { system: systemParam } : {}),
     messages: [
       {
         role: "user",
@@ -763,7 +785,11 @@ export async function claudeToolUse(
 }> {
   const userKeys = await getUserKeys();
   const apiKey = userKeys.anthropic || globalAnthropicKey;
-  const client = new Anthropic({ apiKey });
+  // Enable Anthropic prompt caching — cuts repeat tool/system token spend ~90%.
+  const client = new Anthropic({
+    apiKey,
+    defaultHeaders: { "anthropic-beta": "prompt-caching-2024-07-31" },
+  });
 
   const MAX_ITERATIONS = 10;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -771,13 +797,33 @@ export async function claudeToolUse(
   const allToolCalls: Array<{ name: string; input: Record<string, unknown> }> =
     [];
 
+  // Mark the system prompt and the *last* tool definition with cache_control;
+  // Anthropic caches everything up to and including that point, so a single
+  // marker on the trailing tool covers all tools + system in one cache key.
+  const systemParam = system
+    ? [
+        {
+          type: "text" as const,
+          text: system,
+          cache_control: { type: "ephemeral" as const },
+        },
+      ]
+    : undefined;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const cachedTools: any[] = tools.map((t, idx) =>
+    idx === tools.length - 1
+      ? { ...t, cache_control: { type: "ephemeral" } }
+      : t,
+  );
+
   for (let i = 0; i < MAX_ITERATIONS; i++) {
     const response = await client.messages.create({
       model: "claude-sonnet-4-6",
       max_tokens: maxTokens,
-      ...(system ? { system } : {}),
+      ...(systemParam ? { system: systemParam } : {}),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      tools: tools as any,
+      tools: cachedTools as any,
       messages,
     });
 
