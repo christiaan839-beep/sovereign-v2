@@ -61,7 +61,7 @@ ${PLATFORM_RULES.blog}`,
 ${ANTI_SLOP_RULES}`,
     
     maxRounds: 3,
-    model: "claude",
+    model: "gemini",
   });
 
   await remember(`Blog post: ${topic} | Keywords: ${keywordList}`);
@@ -105,7 +105,7 @@ Sequence Arc:
 
 Every email must stand alone (reader may open any one) but also build narrative momentum.`,
     {
-      model: "claude",
+      model: "gemini",
       system: `You are an email marketing strategist who has written sequences generating $10M+ in revenue. You know that subject lines are 80% of the battle. Your emails feel personal, never corporate. You use psychological triggers ethically and effectively.
 
 ${ANTI_SLOP_RULES}
@@ -163,7 +163,7 @@ TIKTOK:
 
 Each post should feel native to its platform — no copy-paste across channels.`,
     {
-      model: "claude",
+      model: "gemini",
       system: `You are a social media strategist who has grown accounts from 0 to 1M followers. Each platform has its own language: Instagram rewards storytelling, LinkedIn rewards authority, Twitter rewards wit, TikTok rewards authenticity. You never sound like an AI.
 
 ${ANTI_SLOP_RULES}
@@ -230,7 +230,7 @@ Format as a timestamped production script:
 
 Make the hook so compelling that viewers CANNOT scroll past.`,
     {
-      model: "claude",
+      model: "gemini",
       system: `You are a video director and scriptwriter who has produced content with 100M+ cumulative views. You know that the first 3 seconds determine everything. Your scripts are visual — you think in shots, not just words. Every second of dead air is a viewer lost.
 
 ${ANTI_SLOP_RULES}

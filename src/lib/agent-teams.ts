@@ -37,7 +37,10 @@ interface TeamResult {
   team: string;
   objective: string;
   perspectives: Array<{ role: string; analysis: string }>;
-  debate: Array<{ round: number; critiques: Array<{ from: string; to: string; critique: string }> }>;
+  debate: Array<{
+    round: number;
+    critiques: Array<{ from: string; to: string; critique: string }>;
+  }>;
   synthesis: string;
   confidence: number;
   duration: number;
@@ -51,28 +54,33 @@ const TEAMS: Record<string, TeamConfig> = {
     lead: {
       role: "Strategic Commander",
       perspective: "synthesis",
-      systemPrompt: "You are the Strategic Commander. Synthesize multiple expert analyses into a single decisive battle plan. Be strategic, specific, and actionable. Cut fluff. Prioritize moves by impact.",
+      systemPrompt:
+        "You are the Strategic Commander. Synthesize multiple expert analyses into a single decisive battle plan. Be strategic, specific, and actionable. Cut fluff. Prioritize moves by impact.",
     },
     members: [
       {
         role: "Market Analyst",
         perspective: "market",
-        systemPrompt: "You are a Market Analyst. Analyze market positioning, pricing strategy, target audience, and competitive landscape. Identify gaps and opportunities. Use data-driven reasoning.",
+        systemPrompt:
+          "You are a Market Analyst. Analyze market positioning, pricing strategy, target audience, and competitive landscape. Identify gaps and opportunities. Use data-driven reasoning.",
       },
       {
         role: "Technical Auditor",
         perspective: "technical",
-        systemPrompt: "You are a Technical Auditor. Analyze technology stack, infrastructure, performance, security posture, and engineering decisions. Identify technical advantages and vulnerabilities.",
+        systemPrompt:
+          "You are a Technical Auditor. Analyze technology stack, infrastructure, performance, security posture, and engineering decisions. Identify technical advantages and vulnerabilities.",
       },
       {
         role: "Growth Hacker",
         perspective: "growth",
-        systemPrompt: "You are a Growth Hacker. Analyze acquisition channels, conversion funnels, content strategy, SEO positioning, and viral mechanics. Find the fastest path to market share.",
+        systemPrompt:
+          "You are a Growth Hacker. Analyze acquisition channels, conversion funnels, content strategy, SEO positioning, and viral mechanics. Find the fastest path to market share.",
       },
       {
         role: "Devil's Advocate",
         perspective: "critique",
-        systemPrompt: "You are the Devil's Advocate. Challenge every assumption. Find holes in the analysis. Identify risks the team is blind to. Be constructively contrarian — your job is to make the plan stronger by stress-testing it.",
+        systemPrompt:
+          "You are the Devil's Advocate. Challenge every assumption. Find holes in the analysis. Identify risks the team is blind to. Be constructively contrarian — your job is to make the plan stronger by stress-testing it.",
       },
     ],
     maxDebateRounds: 2,
@@ -83,23 +91,27 @@ const TEAMS: Record<string, TeamConfig> = {
     lead: {
       role: "Editor-in-Chief",
       perspective: "editorial",
-      systemPrompt: "You are the Editor-in-Chief. Combine content perspectives into a cohesive content strategy. Balance SEO, storytelling, and conversion. Output a prioritized content calendar.",
+      systemPrompt:
+        "You are the Editor-in-Chief. Combine content perspectives into a cohesive content strategy. Balance SEO, storytelling, and conversion. Output a prioritized content calendar.",
     },
     members: [
       {
         role: "SEO Strategist",
         perspective: "seo",
-        systemPrompt: "You are an SEO Strategist. Analyze keyword opportunities, content gaps, search intent, and ranking potential. Every recommendation must have search volume and difficulty data.",
+        systemPrompt:
+          "You are an SEO Strategist. Analyze keyword opportunities, content gaps, search intent, and ranking potential. Every recommendation must have search volume and difficulty data.",
       },
       {
         role: "Copywriter",
         perspective: "copy",
-        systemPrompt: "You are a Senior Copywriter. Focus on messaging, tone, hooks, and conversion copy. Every piece must have a clear CTA and emotional resonance.",
+        systemPrompt:
+          "You are a Senior Copywriter. Focus on messaging, tone, hooks, and conversion copy. Every piece must have a clear CTA and emotional resonance.",
       },
       {
         role: "Distribution Expert",
         perspective: "distribution",
-        systemPrompt: "You are a Distribution Expert. For every content piece, define the optimal channels, posting times, repurposing strategy, and amplification tactics.",
+        systemPrompt:
+          "You are a Distribution Expert. For every content piece, define the optimal channels, posting times, repurposing strategy, and amplification tactics.",
       },
     ],
     maxDebateRounds: 1,
@@ -110,23 +122,27 @@ const TEAMS: Record<string, TeamConfig> = {
     lead: {
       role: "Sales Director",
       perspective: "strategy",
-      systemPrompt: "You are the Sales Director. Synthesize research into a winning deal strategy. Output: qualification assessment, objection handling playbook, negotiation anchors, and close timeline.",
+      systemPrompt:
+        "You are the Sales Director. Synthesize research into a winning deal strategy. Output: qualification assessment, objection handling playbook, negotiation anchors, and close timeline.",
     },
     members: [
       {
         role: "Account Researcher",
         perspective: "account",
-        systemPrompt: "You are an Account Researcher. Analyze the prospect's company, decision-makers, recent news, funding, tech stack, and pain points. Every insight must be actionable for sales.",
+        systemPrompt:
+          "You are an Account Researcher. Analyze the prospect's company, decision-makers, recent news, funding, tech stack, and pain points. Every insight must be actionable for sales.",
       },
       {
         role: "Competitive Intel",
         perspective: "competitive",
-        systemPrompt: "You are the Competitive Intelligence agent. Identify what competitors are pitching this account, their pricing, and their weaknesses. Find the angle that makes us the obvious choice.",
+        systemPrompt:
+          "You are the Competitive Intelligence agent. Identify what competitors are pitching this account, their pricing, and their weaknesses. Find the angle that makes us the obvious choice.",
       },
       {
         role: "Objection Coach",
         perspective: "objections",
-        systemPrompt: "You are the Objection Coach. Anticipate every objection the prospect will raise (price, timeline, risk, switching cost, internal politics). For each, provide a specific counter with proof points.",
+        systemPrompt:
+          "You are the Objection Coach. Anticipate every objection the prospect will raise (price, timeline, risk, switching cost, internal politics). For each, provide a specific counter with proof points.",
       },
     ],
     maxDebateRounds: 1,
@@ -145,10 +161,15 @@ export async function runAgentTeam(options: {
 }): Promise<TeamResult> {
   const { objective, team: teamKey, context } = options;
   const team = TEAMS[teamKey];
-  if (!team) throw new Error(`Unknown team: ${teamKey}. Available: ${Object.keys(TEAMS).join(", ")}`);
+  if (!team)
+    throw new Error(
+      `Unknown team: ${teamKey}. Available: ${Object.keys(TEAMS).join(", ")}`,
+    );
 
   const startTime = Date.now();
-  log.info(`[${team.name}] Starting team analysis`, { objective: objective.slice(0, 100) });
+  log.info(`[${team.name}] Starting team analysis`, {
+    objective: objective.slice(0, 100),
+  });
 
   // Phase 1: Parallel independent analysis from each team member
   const analysisPromises = team.members.map(async (member) => {
@@ -158,7 +179,8 @@ export async function runAgentTeam(options: {
 
     const analysis = await ai(prompt, {
       system: member.systemPrompt,
-      model: "gemini",
+      // Parallel independent analyses — Cerebras at 2000+ tok/s for fan-out
+      model: "cerebras",
       maxTokens: 2000,
     });
 
@@ -189,10 +211,12 @@ Original objective: ${objective}
 Keep your critique to 3-4 specific points. Be constructive but rigorous.`;
 
       const critique = await ai(critiquePrompt, {
-        system: critic.role === "Devil's Advocate"
-          ? "You are the Devil's Advocate. Be especially rigorous. Challenge assumptions with specific counter-examples."
-          : `You are ${critic.role}. Critique from your area of expertise.`,
-        model: "gemini",
+        system:
+          critic.role === "Devil's Advocate"
+            ? "You are the Devil's Advocate. Be especially rigorous. Challenge assumptions with specific counter-examples."
+            : `You are ${critic.role}. Critique from your area of expertise.`,
+        // Critique loop runs N×N — keep this on NIM (free open-source)
+        model: "nim",
         maxTokens: 800,
       });
 
@@ -206,14 +230,19 @@ Keep your critique to 3-4 specific points. Be constructive but rigorous.`;
       for (let i = 0; i < perspectives.length; i++) {
         const member = perspectives[i];
         const receivedCritiques = critiques
-          .filter(c => c.to === member.role)
-          .map(c => `${c.from}: ${c.critique}`)
+          .filter((c) => c.to === member.role)
+          .map((c) => `${c.from}: ${c.critique}`)
           .join("\n\n");
 
         if (receivedCritiques) {
           const refinedAnalysis = await ai(
             `Refine your original analysis based on this feedback:\n\n${receivedCritiques}\n\nOriginal objective: ${objective}\n\nYour original analysis:\n${member.analysis}\n\nProvide your updated analysis addressing the valid critiques.`,
-            { system: team.members[i].systemPrompt, model: "gemini", maxTokens: 2000 }
+            {
+              system: team.members[i].systemPrompt,
+              // Refinement loop — NIM keeps it free per round
+              model: "nim",
+              maxTokens: 2000,
+            },
           );
           perspectives[i] = { ...member, analysis: refinedAnalysis };
         }
@@ -229,9 +258,9 @@ Keep your critique to 3-4 specific points. Be constructive but rigorous.`;
 OBJECTIVE: ${objective}
 
 TEAM ANALYSES:
-${perspectives.map(p => `\n### ${p.role}\n${p.analysis}`).join("\n")}
+${perspectives.map((p) => `\n### ${p.role}\n${p.analysis}`).join("\n")}
 
-${debate.length > 0 ? `\nDEBATE HIGHLIGHTS:\n${debate.map(d => d.critiques.map(c => `${c.from} → ${c.to}: ${c.critique}`).join("\n")).join("\n\n")}` : ""}
+${debate.length > 0 ? `\nDEBATE HIGHLIGHTS:\n${debate.map((d) => d.critiques.map((c) => `${c.from} → ${c.to}: ${c.critique}`).join("\n")).join("\n\n")}` : ""}
 
 Synthesize everything into a single, decisive output. Include:
 1. Executive summary (3 sentences)
@@ -253,7 +282,9 @@ Be concise, specific, and actionable. No fluff.`;
 
   // Extract confidence from the synthesis (look for percentage or rating)
   const confidenceMatch = synthesis.match(/(\d{1,3})%?\s*confiden/i);
-  const confidence = confidenceMatch ? parseInt(confidenceMatch[1]) / 100 : 0.75;
+  const confidence = confidenceMatch
+    ? parseInt(confidenceMatch[1]) / 100
+    : 0.75;
 
   return {
     team: team.name,
@@ -271,7 +302,7 @@ export function getAvailableTeams() {
   return Object.entries(TEAMS).map(([key, team]) => ({
     key,
     name: team.name,
-    members: team.members.map(m => m.role),
+    members: team.members.map((m) => m.role),
     lead: team.lead.role,
   }));
 }
