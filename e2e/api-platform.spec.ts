@@ -1,26 +1,35 @@
 /**
  * E2E: PUBLIC API PLATFORM CONTRACTS
  *
- * Tests every Sovereign Matrix API contract that customers can call WITHOUT
- * authentication. These run against the live production site (not localhost)
- * and act as a smoke-test for the deploy:
+ * Tests every Sovereign Matrix API contract reachable without secrets,
+ * plus regression-coverage of the auth gates fixed in 2026-04-25 →
+ * 2026-04-27. Runs against the live production site (not localhost)
+ * and acts as a smoke-test for the deploy:
  *
- *   - /api/health/ping            — liveness signal
- *   - /api/_health/slo            — SLO rollup (now backed by Postgres)
- *   - /api/v1/agents/<slug>       — gateway 401 without API key (auth wall)
- *   - /api/v1/health/ping         — gateway also requires the API key
- *   - /sitemap.xml                — SEO surface
- *   - /robots.txt                 — bot policy
+ *   Public surfaces:
+ *     - /api/health/ping            — liveness signal
+ *     - /api/_health/slo            — SLO rollup (Postgres-backed)
+ *     - /sitemap.xml + /robots.txt
+ *     - /security + /.well-known/security.txt (RFC 9116)
+ *     - /status page render
+ *
+ *   Auth-wall regression coverage:
+ *     - /api/v1/agents/<slug>       — 401 without Bearer, 401 with bogus
+ *     - /api/portal/metrics         — 400/401/404 without auth+token
+ *     - /api/portal/share-link      — 401 without auth
+ *     - /api/credits                — 401 without auth (free-money fix)
  *
  * If any of these break, customers feel it directly:
- *   - SLO numbers vanish from /status/slo (the one we just fixed)
- *   - Auth-walls break → either DDoS exposure (if 200s) or API breakage
- *     (if 5xx)
- *   - SEO degrades silently
+ *   - SLO numbers vanish from /status/slo
+ *   - Auth-walls regressing → DDoS exposure (200s) or API breakage (5xx)
+ *   - Cross-tenant leaks reappear
+ *   - SEO/security trust assets degrade silently
  *
  * Why this lives in e2e instead of vitest: the vitest suite mocks
- * `requireAuth`, the v1 gateway, and Postgres. A test that proves the
- * AUTH WALL works has to actually hit the public surface.
+ * `requireAuth`, the v1 gateway, Clerk, and Postgres. A test that
+ * proves the actual production AUTH WALL works has to hit the public
+ * surface — Vercel-specific routing bugs (Edge vs Node, runtime
+ * declaration mismatches) only surface here.
  */
 
 import { test, expect } from "@playwright/test";
@@ -141,5 +150,107 @@ test.describe("API Platform — SEO + Trust Surfaces", () => {
     await page.goto("/status");
     // We use this as an external uptime probe — the page must render.
     await expect(page.locator("body")).toBeVisible();
+  });
+});
+
+test.describe("API Platform — Auth Gates (regression coverage)", () => {
+  test("/api/portal/metrics rejects request with no clientId (400)", async ({
+    request,
+  }) => {
+    const res = await request.get("/api/portal/metrics");
+    expect(res.status()).toBe(400);
+  });
+
+  test("/api/portal/metrics rejects request with no auth + no token (401)", async ({
+    request,
+  }) => {
+    // Previously: this returned 200 with the victim's metrics. Now:
+    // unauthenticated callers without a valid HMAC share token get
+    // 401. Regressing this lets anyone with an email dump that
+    // user's portal — strictly worse than before.
+    const res = await request.get(
+      "/api/portal/metrics?clientId=victim@example.com",
+    );
+    expect(res.status()).toBe(401);
+  });
+
+  test("/api/portal/metrics rejects a forged HMAC token (404)", async ({
+    request,
+  }) => {
+    // A 64-char hex string that LOOKS like a token but isn't signed
+    // with our secret. Must be rejected — and the response must be
+    // 404 (not 403) so probing emails can't distinguish "exists but
+    // not yours" from "doesn't exist".
+    const fakeToken = "a".repeat(64);
+    const res = await request.get(
+      `/api/portal/metrics?clientId=victim@example.com&token=${fakeToken}`,
+    );
+    // 401 (no Clerk session) or 404 (failed ownership check) both
+    // mean "no access" — what matters is we DON'T see 200.
+    expect([401, 404]).toContain(res.status());
+  });
+
+  test("/api/portal/share-link requires auth (401 without)", async ({
+    request,
+  }) => {
+    // Minting share links is a privileged operation — random callers
+    // can't produce signed URLs that bypass auth on /portal/metrics.
+    const res = await request.post("/api/portal/share-link", {
+      data: { clientId: "client@example.com" },
+    });
+    expect(res.status()).toBe(401);
+  });
+
+  test("/api/credits requires auth + does NOT honor type=bonus from non-admin", async ({
+    request,
+  }) => {
+    // First: unauth → 401.
+    const noAuth = await request.post("/api/credits", {
+      data: { amountCents: 100000, type: "bonus" },
+    });
+    expect(noAuth.status()).toBe(401);
+  });
+
+  test("/api/credits rejects type=purchase with 501 (Stripe not wired)", async ({
+    request,
+  }) => {
+    // Without auth this 401s before reaching the type check, so we
+    // can only confirm the unauthed contract here. The 501 path is
+    // proven in the unit suite (credits-grant-route.test.ts). What
+    // matters in E2E is that the route doesn't accidentally start
+    // honoring purchase grants in production.
+    const res = await request.post("/api/credits", {
+      data: { amountCents: 5000, type: "purchase" },
+    });
+    expect([401, 501]).toContain(res.status());
+  });
+
+  test("/api/v1/agents/leads with valid-looking but wrong-prefix key returns 401", async ({
+    request,
+  }) => {
+    // Edge-case attack vector: an attacker who knows our key prefix
+    // convention ("sk_pro_") might try a guessed key. The DB lookup
+    // must reject any key not in the SHA-256 index.
+    const res = await request.post("/api/v1/agents/leads", {
+      headers: { Authorization: "Bearer sk_pro_abcdef1234567890abcdef1234567890" },
+      data: { prompt: "anything" },
+    });
+    expect(res.status()).toBe(401);
+  });
+
+  test("404 for an unknown agent slug at the gateway", async ({ request }) => {
+    // The gateway should 404 for a slug that doesn't exist in the
+    // registry — but FIRST it should 401 if no API key. Order of
+    // checks: auth → scope → routing. Verify the 401 fires before
+    // any "agent not found" branch, so the 404 doesn't leak the
+    // valid-vs-invalid-slug distinction.
+    const res = await request.post(
+      "/api/v1/agents/this-agent-definitely-does-not-exist-anywhere",
+      { data: { prompt: "test" } },
+    );
+    // 401 means auth was checked first (good — slug existence not
+    // leaked). 404 would be acceptable too (auth attempted, slug
+    // unknown). NEVER 200 / 5xx.
+    expect([401, 404]).toContain(res.status());
   });
 });

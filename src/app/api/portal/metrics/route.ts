@@ -4,9 +4,13 @@ import { db } from "@/db";
 import { leads, generations, bookings, agentActivity } from "@/db/schema";
 import { eq, desc, sql, count } from "drizzle-orm";
 import { createLogger } from "@/lib/logger";
+import { verifyShareToken } from "@/lib/portal-share-link";
 
-// Edge runtime is fine — Clerk's auth() works on Edge.
-export const runtime = "edge";
+// node:crypto (used by verifyShareToken via portal-share-link) requires
+// the Node runtime — declared explicitly so the build doesn't trace
+// the route into Edge bundles. The route was previously `runtime = "edge"`,
+// which only worked because nothing in it touched Node APIs.
+export const runtime = "nodejs";
 
 const log = createLogger("portal/metrics");
 
@@ -29,16 +33,28 @@ const log = createLogger("portal/metrics");
  * activity (with summary text), and revenue-by-agent. Cross-tenant
  * data leak.
  *
- * The fix: require a Clerk-authenticated caller AND the caller's
- * email/userId must match the requested clientId. If you need
- * cross-account access (e.g., agency admin viewing a client's
- * portal), the right primitive is a signed HMAC share link with a
- * server-side secret — that's tracked as a follow-up. For now the
- * route fails closed.
+ * Two valid auth paths:
+ *
+ *   1. Clerk-authenticated caller AND caller.userId/email matches
+ *      the requested clientId. Supports the common case where the
+ *      user logs into Sovereign and views their own portal.
+ *
+ *   2. A signed HMAC share token (?token=<HMAC>) from
+ *      src/lib/portal-share-link.ts. Lets agencies hand out a
+ *      share URL to a client who doesn't have a Sovereign account.
+ *      The token is HMAC-SHA256 over clientId + PORTAL_SHARE_SECRET,
+ *      so it can't be forged. Rotating PORTAL_SHARE_SECRET kills
+ *      every outstanding share link.
+ *
+ * Anything else returns 404 (not 403) so the URL doesn't leak
+ * whether the clientId exists. An attacker probing emails can't
+ * tell "this user exists but isn't you" from "this user doesn't
+ * exist".
  */
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const clientId = searchParams.get("clientId") || searchParams.get("tenantId");
+  const token = searchParams.get("token");
 
   if (!clientId) {
     return NextResponse.json(
@@ -47,38 +63,39 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  // Auth + ownership check. Caller must be signed in AND requesting
-  // their own metrics. We accept either a userId match OR an email
-  // match because different tables key by different columns and the
-  // clientId is provided by the front-end which doesn't always know
-  // which one to use.
-  const { userId } = await auth();
-  if (!userId) {
-    return NextResponse.json(
-      { success: false, error: "Authentication required" },
-      { status: 401 }
-    );
-  }
+  // Path 2 first: a valid HMAC token is sufficient on its own.
+  // The token IS the proof of authorization (the agency vouched
+  // for the client by minting it).
+  if (token && verifyShareToken(clientId, token)) {
+    // Token verified — fall through to the metrics computation.
+  } else {
+    // Path 1: Clerk auth + ownership match.
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, error: "Authentication required" },
+        { status: 401 }
+      );
+    }
 
-  const user = await currentUser();
-  const callerEmail = user?.primaryEmailAddress?.emailAddress?.toLowerCase() ?? "";
-  const requested = clientId.toLowerCase();
-  const ownsThisPortal =
-    requested === userId.toLowerCase() || requested === callerEmail;
+    const user = await currentUser();
+    const callerEmail = user?.primaryEmailAddress?.emailAddress?.toLowerCase() ?? "";
+    const requested = clientId.toLowerCase();
+    const ownsThisPortal =
+      requested === userId.toLowerCase() || requested === callerEmail;
 
-  if (!ownsThisPortal) {
-    log.warn("portal access denied — caller does not own clientId", {
-      callerUserId: userId,
-      callerEmail,
-      requestedClientId: clientId,
-    });
-    // Return 404 instead of 403 so the URL doesn't leak whether the
-    // clientId exists. An attacker probing emails can't tell apart
-    // "this user exists but isn't you" vs "this user doesn't exist".
-    return NextResponse.json(
-      { success: false, error: "Not found" },
-      { status: 404 }
-    );
+    if (!ownsThisPortal) {
+      log.warn("portal access denied — caller does not own clientId and no valid token", {
+        callerUserId: userId,
+        callerEmail,
+        requestedClientId: clientId,
+        tokenProvided: Boolean(token),
+      });
+      return NextResponse.json(
+        { success: false, error: "Not found" },
+        { status: 404 }
+      );
+    }
   }
 
   try {

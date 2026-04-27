@@ -1201,3 +1201,436 @@ registerEval({
   skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
   timeoutMs: 45_000,
 });
+
+// ────────────────────────────────────────────────────────────────
+// Sprint E expansion — 2026-04-27 (push 30% → 40%)
+// 22 more high-traffic agents covered. Slugs verified against
+// src/app/api/_agents/<slug>/route.ts; inputs satisfy each agent's
+// declared requiredFields. Structural-only assertions throughout.
+// ────────────────────────────────────────────────────────────────
+
+/* ─── 68. Meeting notes ────────────────────────────────────────── */
+registerEval({
+  slug: "meeting-notes",
+  name: "Meeting-notes summarizer extracts action items from a transcript",
+  input: {
+    transcript:
+      "John: I'll own the pricing review by EOM. Sarah: I'll take customer health. Mike: Engineering capacity is the blocker — confirming next sprint.",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  assertions: (output) => {
+    const o = output as { actionItems?: unknown[]; actions?: unknown[]; summary?: string };
+    const list = o.actionItems ?? o.actions ?? [];
+    if ((!Array.isArray(list) || list.length === 0) && !o.summary) {
+      throw new Error("meeting-notes returned no actions/summary");
+    }
+  },
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+});
+
+/* ─── 69. Paper summarizer ─────────────────────────────────────── */
+registerEval({
+  slug: "paper-summarizer",
+  name: "Paper summarizer distills a research-paper abstract",
+  input: {
+    paperText:
+      "We present Constellation Search, a multi-model routing approach that cuts token cost by 38% on B2B sales tasks while preserving p95 quality. The method runs a 4B classifier in front of larger models, dispatching only when the input crosses a complexity threshold.",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  assertions: (output) => {
+    const o = output as { summary?: string; tldr?: string; bullets?: unknown[] };
+    if (!o.summary && !o.tldr && !o.bullets) {
+      throw new Error("paper-summarizer returned no summary/tldr/bullets");
+    }
+  },
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 45_000,
+});
+
+/* ─── 70. Plain-language rewriter ──────────────────────────────── */
+registerEval({
+  slug: "plain-language-rewriter",
+  name: "Plain-language rewriter simplifies dense regulatory text",
+  input: {
+    text:
+      "Pursuant to Section 4(b)(iii), the Counterparty shall indemnify and hold harmless the Provider from any and all claims arising out of or in connection with the Counterparty's breach of the foregoing representations and warranties.",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  assertions: (output) => {
+    const o = output as { rewritten?: string; plainText?: string; output?: string };
+    const text = o.rewritten ?? o.plainText ?? o.output;
+    if (!text) throw new Error("plain-language-rewriter returned no rewritten text");
+    assertStringMinLength(typeof text === "string" ? text : "", 30, "rewritten");
+  },
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+});
+
+/* ─── 71. Expense categorizer ──────────────────────────────────── */
+registerEval({
+  slug: "expense-categorizer",
+  name: "Expense categorizer classifies a SaaS transaction",
+  input: {
+    transaction: {
+      description: "VERCEL.COM CARD PURCHASE",
+      amountCents: 2000,
+      date: "2026-03-15",
+    },
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  assertions: (output) => {
+    const o = output as { category?: string; classification?: string };
+    if (!o.category && !o.classification) {
+      throw new Error("expense-categorizer returned no category/classification");
+    }
+  },
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+});
+
+/* ─── 72. Deep-think reasoning ─────────────────────────────────── */
+registerEval({
+  slug: "deep-think",
+  name: "Deep-think reasoning agent works through a multi-step problem",
+  input: {
+    problem:
+      "We have 7 servers, each handling 1000 req/s. We need to handle 12000 req/s total during peak. How many additional servers do we need, and what's the failure mode if one server dies?",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  assertions: (output) => {
+    const o = output as { answer?: string; reasoning?: string; conclusion?: string };
+    const text = o.answer ?? o.conclusion ?? o.reasoning;
+    if (!text) throw new Error("deep-think returned no answer/reasoning/conclusion");
+    assertStringMinLength(typeof text === "string" ? text : "", 50, "deep-think output");
+  },
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 60_000,
+});
+
+/* ─── 73. Cost optimizer ───────────────────────────────────────── */
+registerEval({
+  slug: "cost-optimizer",
+  name: "Cost optimizer recommends a model for a quality-quality tradeoff",
+  input: {
+    taskDescription: "Summarize a 2k-word customer support thread into 3 bullets",
+    qualityRequirement: "high",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  assertions: (output) => {
+    const o = output as { recommendedModel?: string; recommendation?: unknown };
+    if (!o.recommendedModel && !o.recommendation) {
+      throw new Error("cost-optimizer returned no recommendedModel/recommendation");
+    }
+  },
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+});
+
+/* ─── 74. Documentation writer ─────────────────────────────────── */
+registerEval({
+  slug: "documentation-writer",
+  name: "Documentation writer drafts JSDoc for a TS function",
+  input: {
+    code: "export function divideSafe(a: number, b: number): number | null {\n  if (b === 0) return null;\n  return a / b;\n}\n",
+    language: "typescript",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  assertions: (output) => {
+    const o = output as { documentation?: string; docs?: string; jsdoc?: string };
+    const text = o.documentation ?? o.docs ?? o.jsdoc;
+    if (!text) throw new Error("documentation-writer returned no documentation");
+    assertStringMinLength(typeof text === "string" ? text : "", 30, "doc text");
+  },
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 45_000,
+});
+
+/* ─── 75. Phishing detector ────────────────────────────────────── */
+registerEval({
+  slug: "phishing-detector",
+  name: "Phishing detector flags an obvious credential-theft email",
+  input: {
+    content:
+      "Subject: URGENT - Your account will be suspended in 24 hours. Click here to verify: http://amaz0n-secure.tk/verify?u=1",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  assertions: (output) => {
+    const o = output as { isPhishing?: boolean; verdict?: string; risk?: string };
+    if (o.isPhishing === undefined && !o.verdict && !o.risk) {
+      throw new Error("phishing-detector returned no isPhishing/verdict/risk");
+    }
+  },
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+});
+
+/* ─── 76. Dispute resolver ─────────────────────────────────────── */
+registerEval({
+  slug: "dispute-resolver",
+  name: "Dispute resolver mediates a producer-consumer agent rejection",
+  input: {
+    producerAgent: "lead-qualifier",
+    consumerAgent: "outreach-personalizer",
+    rejectedOutput: { lead: { name: "Acme", score: 0.4 } },
+    rejectionReason: "Consumer expects score >= 0.7 to personalize",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  assertions: (output) => {
+    const o = output as { resolution?: unknown; verdict?: string; recommendation?: unknown };
+    if (!o.resolution && !o.verdict && !o.recommendation) {
+      throw new Error("dispute-resolver returned no resolution/verdict/recommendation");
+    }
+  },
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+});
+
+/* ─── 77. Daily briefing ───────────────────────────────────────── */
+registerEval({
+  slug: "daily-briefing",
+  name: "Daily briefing summarizes a day's calendar",
+  input: {
+    meetings: [
+      { time: "09:00", title: "Eng standup", attendees: ["John", "Sarah", "Mike"] },
+      { time: "11:00", title: "Customer demo — Acme", attendees: ["You", "Maya"] },
+      { time: "14:00", title: "Pricing review", attendees: ["You", "John"] },
+    ],
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  assertions: (output) => {
+    const o = output as { briefing?: string; summary?: string; bullets?: unknown[] };
+    if (!o.briefing && !o.summary && !o.bullets) {
+      throw new Error("daily-briefing returned no briefing/summary/bullets");
+    }
+  },
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+});
+
+/* ─── 78. Compliance monitor ───────────────────────────────────── */
+registerEval({
+  slug: "compliance-monitor",
+  name: "Compliance monitor flags applicable regulations for a B2B SaaS",
+  input: {
+    industry: "B2B SaaS",
+    jurisdiction: "US-California",
+    businessDescription: "AI agent platform that processes customer support tickets containing PII",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  assertions: (output) => {
+    const o = output as { regulations?: unknown[]; flags?: unknown[]; analysis?: unknown };
+    if (!o.regulations && !o.flags && !o.analysis) {
+      throw new Error("compliance-monitor returned no regulations/flags/analysis");
+    }
+  },
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 60_000,
+});
+
+/* ─── 79. Data cleaner ─────────────────────────────────────────── */
+registerEval({
+  slug: "data-cleaner",
+  name: "Data cleaner identifies an issue in a sample dataset",
+  input: {
+    sample: [
+      { id: 1, email: "alice@example.com", country: "USA" },
+      { id: 2, email: "bob@example", country: "USA" },
+      { id: 3, email: "carol@example.com", country: "U.S." },
+    ],
+    issueHypothesis: "Inconsistent country codes and a malformed email",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  assertions: (output) => {
+    const o = output as { issues?: unknown[]; cleaned?: unknown; report?: unknown };
+    if (!o.issues && !o.cleaned && !o.report) {
+      throw new Error("data-cleaner returned no issues/cleaned/report");
+    }
+  },
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+});
+
+/* ─── 80. Dependency auditor ───────────────────────────────────── */
+registerEval({
+  slug: "dependency-auditor",
+  name: "Dependency auditor reviews a tiny package.json snippet",
+  input: {
+    manifest: '{ "dependencies": { "left-pad": "1.0.0", "lodash": "4.17.21" } }',
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  assertions: (output) => {
+    const o = output as { findings?: unknown[]; audit?: unknown; report?: unknown };
+    if (!o.findings && !o.audit && !o.report) {
+      throw new Error("dependency-auditor returned no findings/audit/report");
+    }
+  },
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+});
+
+/* ─── 81. Flywheel mapper ──────────────────────────────────────── */
+registerEval({
+  slug: "flywheel",
+  name: "Flywheel agent identifies compounding loops for a product action",
+  input: {
+    action: "Onboarded a new customer who just ran their first agent",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  assertions: (output) => {
+    const o = output as { loops?: unknown[]; flywheel?: unknown; analysis?: unknown };
+    if (!o.loops && !o.flywheel && !o.analysis) {
+      throw new Error("flywheel returned no loops/flywheel/analysis");
+    }
+  },
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+});
+
+/* ─── 82. Playbook builder ─────────────────────────────────────── */
+registerEval({
+  slug: "playbook-builder",
+  name: "Playbook builder drafts a multi-step plan for a goal",
+  input: {
+    goal: "Convert 50 free-tier users to paid in the next 30 days",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  assertions: (output) => {
+    const o = output as { steps?: unknown[]; playbook?: unknown };
+    const list = o.steps ?? [];
+    if ((!Array.isArray(list) || list.length < 3) && !o.playbook) {
+      throw new Error("playbook-builder returned <3 steps");
+    }
+  },
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 45_000,
+});
+
+/* ─── 83. Feedback loop ────────────────────────────────────────── */
+registerEval({
+  slug: "feedback",
+  name: "Feedback agent processes a user-submitted feedback action",
+  input: {
+    action: "submit",
+    feedback: "The new model picker is great but the speed indicator is hidden on mobile.",
+    rating: 4,
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  assertions: (output) => {
+    const o = output as { saved?: boolean; success?: boolean; analysis?: unknown };
+    if (o.saved !== true && o.success !== true && !o.analysis) {
+      throw new Error("feedback returned no saved/success/analysis");
+    }
+  },
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+});
+
+/* ─── 84. Creative director ────────────────────────────────────── */
+registerEval({
+  slug: "creative-director",
+  name: "Creative director provides brand-aligned campaign direction",
+  input: {
+    brand: "Sovereign Matrix",
+    campaign: "Q2 launch — Constellation Search",
+    audience: "B2B mid-market ops leaders",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  assertions: (output) => {
+    const o = output as { direction?: unknown; brief?: unknown; strategy?: unknown };
+    if (!o.direction && !o.brief && !o.strategy) {
+      throw new Error("creative-director returned no direction/brief/strategy");
+    }
+  },
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 45_000,
+});
+
+/* ─── 85. Doc analyst ──────────────────────────────────────────── */
+registerEval({
+  slug: "doc-analyst",
+  name: "Doc analyst extracts insights from a contract excerpt",
+  input: {
+    document: "This Master Services Agreement begins on April 1, 2026 and renews automatically for 12 months unless terminated with 90 days' notice.",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  assertions: (output) => {
+    const o = output as { insights?: unknown[]; analysis?: unknown; summary?: string };
+    if (!o.insights && !o.analysis && !o.summary) {
+      throw new Error("doc-analyst returned no insights/analysis/summary");
+    }
+  },
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+});
+
+/* ─── 86. Outbound ─────────────────────────────────────────────── */
+registerEval({
+  slug: "outbound",
+  name: "Outbound agent drafts a cold-email sequence",
+  input: {
+    target: "VP of Operations at a mid-market logistics company",
+    valueProp: "Cut freight booking time from hours to minutes with agents",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  assertions: (output) => {
+    const o = output as { emails?: unknown[]; sequence?: unknown[]; output?: unknown };
+    const list = o.emails ?? o.sequence ?? [];
+    if ((!Array.isArray(list) || list.length === 0) && !o.output) {
+      throw new Error("outbound returned no emails/sequence/output");
+    }
+  },
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 45_000,
+});
+
+/* ─── 87. Competitor scan ──────────────────────────────────────── */
+registerEval({
+  slug: "competitor-scan",
+  name: "Competitor scan compares features for a target competitor",
+  input: {
+    company: "Sovereign Matrix",
+    competitor: "Lindy",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  assertions: (output) => {
+    const o = output as { comparison?: unknown; report?: unknown; analysis?: unknown };
+    if (!o.comparison && !o.report && !o.analysis) {
+      throw new Error("competitor-scan returned no comparison/report/analysis");
+    }
+  },
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 60_000,
+});
+
+/* ─── 88. Funnel x-ray ─────────────────────────────────────────── */
+registerEval({
+  slug: "funnel-xray",
+  name: "Funnel x-ray analyzes a sample conversion funnel",
+  input: {
+    funnel: [
+      { step: "landing-page-view", count: 10000 },
+      { step: "signup-form-start", count: 1200 },
+      { step: "signup-complete", count: 800 },
+      { step: "first-agent-run", count: 320 },
+      { step: "paid-conversion", count: 18 },
+    ],
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  assertions: (output) => {
+    const o = output as { analysis?: unknown; bottlenecks?: unknown[]; xray?: unknown };
+    if (!o.analysis && !o.bottlenecks && !o.xray) {
+      throw new Error("funnel-xray returned no analysis/bottlenecks/xray");
+    }
+  },
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+});
+
+/* ─── 89. Email sequence ───────────────────────────────────────── */
+registerEval({
+  slug: "email-sequence",
+  name: "Email sequence builder drafts a multi-touch nurture",
+  input: {
+    sequenceName: "Free-trial activation",
+    audience: "B2B users who signed up but haven't run their first agent",
+    touches: 4,
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  assertions: (output) => {
+    const o = output as { emails?: unknown[]; sequence?: unknown[]; touches?: unknown[] };
+    const list = o.emails ?? o.sequence ?? o.touches ?? [];
+    if (!Array.isArray(list) || list.length === 0) {
+      throw new Error("email-sequence returned no emails/sequence/touches");
+    }
+  },
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 45_000,
+});
