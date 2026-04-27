@@ -5,6 +5,8 @@ import { eq } from "drizzle-orm";
 import { requireAuth } from "@/lib/auth-guard";
 import { createLogger } from "@/lib/logger";
 import { safeEncrypt, safeDecrypt } from "@/lib/crypto";
+import { auditLog } from "@/lib/audit-log";
+import { loggedFireForget } from "@/lib/safe-async";
 
 const log = createLogger("settings-byok");
 
@@ -120,6 +122,21 @@ export async function POST(req: Request) {
     }
 
     log.info("BYOK key saved", { email: userEmail, key });
+
+    // Audit trail — SOC 2 / GDPR require logging every credential write so
+    // a rogue admin (or compromised account) leaves a paper trail. Only the
+    // KEY NAME is recorded; the value never lands in audit_logs.
+    if (auth.userId) {
+      loggedFireForget(
+        auditLog({
+          userId: auth.userId,
+          action: "api_key.create",
+          resource: key,
+          details: { masked: true },
+        }),
+        { source: "byok:save", meta: { key } },
+      );
+    }
 
     return NextResponse.json({ success: true, key, stored: true });
   } catch (err) {

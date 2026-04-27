@@ -3,6 +3,8 @@ import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { whitelabelConfig } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { auditLog } from "@/lib/audit-log";
+import { loggedFireForget } from "@/lib/safe-async";
 
 export async function GET() {
   const user = await currentUser();
@@ -14,7 +16,7 @@ export async function GET() {
 
   try {
     const config = await db.query.whitelabelConfig.findFirst({
-      where: eq(whitelabelConfig.userEmail, userEmail)
+      where: eq(whitelabelConfig.userEmail, userEmail),
     });
 
     return NextResponse.json({ config: config || null });
@@ -36,7 +38,7 @@ export async function POST(req: Request) {
     const { agencyName, logoUrl, primaryColor, supportEmail, domain } = body;
 
     const existing = await db.query.whitelabelConfig.findFirst({
-      where: eq(whitelabelConfig.userEmail, userEmail)
+      where: eq(whitelabelConfig.userEmail, userEmail),
     });
 
     // Build partial update — only set fields that were provided
@@ -48,7 +50,8 @@ export async function POST(req: Request) {
     if (domain !== undefined) updates.domain = domain;
 
     if (existing) {
-      await db.update(whitelabelConfig)
+      await db
+        .update(whitelabelConfig)
         .set(updates)
         .where(eq(whitelabelConfig.userEmail, userEmail));
     } else {
@@ -61,6 +64,21 @@ export async function POST(req: Request) {
         domain: domain || "",
       });
     }
+
+    // Audit trail — agency rebrand changes are SOC2-relevant (controls who
+    // can publish under your brand) and need a paper trail for support.
+    loggedFireForget(
+      auditLog({
+        userId: user.id,
+        action: "settings.update",
+        resource: "whitelabel",
+        details: {
+          fields: Object.keys(updates).filter((k) => k !== "updatedAt"),
+          domain,
+        },
+      }),
+      { source: "whitelabel:save", meta: { userId: user.id } },
+    );
 
     return NextResponse.json({ success: true });
   } catch (_err) {

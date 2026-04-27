@@ -4,6 +4,8 @@ import { db } from "@/db";
 import { generations, leads, settings } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { createLogger } from "@/lib/logger";
+import { auditLog } from "@/lib/audit-log";
+import { loggedFireForget } from "@/lib/safe-async";
 
 const log = createLogger("api/data-export");
 
@@ -14,12 +16,16 @@ const log = createLogger("api/data-export");
  */
 export async function GET() {
   const { userId } = await auth();
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!userId)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const user = await currentUser();
   const email = user?.emailAddresses?.[0]?.emailAddress;
   if (!email) {
-    return NextResponse.json({ error: "No email found for user" }, { status: 400 });
+    return NextResponse.json(
+      { error: "No email found for user" },
+      { status: 400 },
+    );
   }
 
   const result: {
@@ -81,6 +87,22 @@ export async function GET() {
   }
 
   log.info("Data export completed", { userId, email });
+
+  // GDPR audit trail — every export of personal data is logged so the
+  // subject can later see when their data was exported and from where.
+  loggedFireForget(
+    auditLog({
+      userId,
+      action: "data.export",
+      resource: "all",
+      details: {
+        generations: result.generations.length,
+        leads: result.leads.length,
+        hasSettings: !!result.settings,
+      },
+    }),
+    { source: "data-export", meta: { userId } },
+  );
 
   return new NextResponse(JSON.stringify(result, null, 2), {
     status: 200,
