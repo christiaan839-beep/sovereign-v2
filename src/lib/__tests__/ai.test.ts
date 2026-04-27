@@ -66,7 +66,9 @@ vi.mock("@google/generative-ai", () => {
       getGenerativeModel() {
         return {
           generateContent: mockGeminiGenerateContent,
-          embedContent: vi.fn().mockResolvedValue({ embedding: { values: [] } }),
+          embedContent: vi
+            .fn()
+            .mockResolvedValue({ embedding: { values: [] } }),
         };
       }
     },
@@ -131,17 +133,27 @@ describe("ai() — Unified Router", () => {
     });
   });
 
-  // ─── Default Route → Gemini ───
+  // ─── Default Route → NIM ───
+  // Router default is "nim" (free, $0). Gemini is the paid fallback in the
+  // Gemini-explicit branch only. See `ai.ts:61` — "Default to NIM ... Gemini
+  // is the paid fallback, not the default."
 
-  it("default route goes to Gemini", async () => {
+  it("default route goes to NIM (free open-source)", async () => {
     const result = await ai("test prompt");
-    expect(result).toBe("gemini-response");
-    expect(mockGeminiGenerateContent).toHaveBeenCalledWith("test prompt");
+    expect(result).toBe("nim-response");
+    expect(mockNimChat).toHaveBeenCalled();
+    expect(mockGeminiGenerateContent).not.toHaveBeenCalled();
   });
 
-  it("default route passes system instruction to Gemini", async () => {
+  it("default route passes system instruction to NIM", async () => {
     await ai("test", { system: "You are helpful" });
-    expect(mockGeminiGenerateContent).toHaveBeenCalled();
+    expect(mockNimChat).toHaveBeenCalled();
+    const messages = mockNimChat.mock.calls[0][1] as Array<{
+      role: string;
+      content: string;
+    }>;
+    const systemMsg = messages.find((m) => m.role === "system");
+    expect(systemMsg?.content).toBe("You are helpful");
   });
 
   // ─── model="nim" → NIM ───
@@ -163,36 +175,41 @@ describe("ai() — Unified Router", () => {
     expect(mockGeminiGenerateContent).not.toHaveBeenCalled();
   });
 
-  // ─── Gemini Failure Falls Back to NIM ───
+  // ─── Gemini Failure Falls Back to NIM (explicit gemini route) ───
+  // The Gemini-explicit branch has a fallback chain: Gemini → NIM → Groq.
+  // The default branch (no model specified) goes straight to NIM and does
+  // NOT fall back, since NIM is already the cheapest provider.
 
-  it("Gemini failure falls back to NIM", async () => {
-    mockGeminiGenerateContent.mockRejectedValue(new Error("Gemini quota exceeded"));
+  it("explicit Gemini failure falls back to NIM", async () => {
+    mockGeminiGenerateContent.mockRejectedValue(
+      new Error("Gemini quota exceeded"),
+    );
 
-    const result = await ai("fallback prompt");
+    const result = await ai("fallback prompt", { model: "gemini" });
     expect(result).toBe("nim-response");
     expect(mockNimChat).toHaveBeenCalled();
   });
 
-  // ─── NIM Failure Falls Back to Groq ───
+  // ─── NIM Failure Falls Back to Groq (explicit gemini route only) ───
 
-  it("Gemini + NIM failure falls back to Groq", async () => {
+  it("explicit Gemini + NIM failure falls back to Groq", async () => {
     mockGeminiGenerateContent.mockRejectedValue(new Error("Gemini down"));
     mockNimChat.mockRejectedValue(new Error("NIM down"));
 
-    const result = await ai("double fallback");
+    const result = await ai("double fallback", { model: "gemini" });
     expect(result).toBe("groq-response");
     expect(mockGroqCreate).toHaveBeenCalled();
   });
 
-  // ─── All Providers Fail → Clean Error ───
+  // ─── All Providers Fail → Clean Error (explicit gemini route only) ───
 
-  it("all providers fail returns clean error message", async () => {
+  it("explicit Gemini route: all providers fail returns clean error", async () => {
     mockGeminiGenerateContent.mockRejectedValue(new Error("Gemini down"));
     mockNimChat.mockRejectedValue(new Error("NIM down"));
     mockGroqCreate.mockRejectedValue(new Error("Groq down"));
 
-    await expect(ai("doomed prompt")).rejects.toThrow(
-      "All AI models are temporarily unavailable"
+    await expect(ai("doomed prompt", { model: "gemini" })).rejects.toThrow(
+      "All AI models are temporarily unavailable",
     );
   });
 
