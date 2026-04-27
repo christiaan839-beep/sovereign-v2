@@ -295,7 +295,10 @@ const goldenSet = join(
 const evalCount = countMatches(goldenSet, /^registerEval\({/gm);
 const agentCount = checks.find((c) => c.name === "agents in registry")?.value ?? 1;
 const evalCoveragePct = Math.round((evalCount / Math.max(1, agentCount)) * 100);
-check("eval coverage %", evalCoveragePct, 10, { dimension: "quality" });
+// Floor: don't regress past 25%. Sprint D pushed coverage 25% → 30%
+// (2026-04-27); the floor was 10% before that. Bumping prevents
+// silent regressions if someone deletes evals during a refactor.
+check("eval coverage %", evalCoveragePct, 25, { dimension: "quality" });
 
 // ──────────────────────────────────────────────────────────────
 // Elite-tier infrastructure presence

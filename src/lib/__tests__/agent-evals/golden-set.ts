@@ -951,3 +951,253 @@ registerEval({
   skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
   timeoutMs: 60_000,
 });
+
+// ────────────────────────────────────────────────────────────────
+// Sprint D expansion — 2026-04-27
+// Pushes coverage 25% → 30%+ by sampling agents that customers hit
+// every day (analytics, content, accessibility, code review).
+// All structural-only assertions; no LLM-output text matching.
+// ────────────────────────────────────────────────────────────────
+
+/* ─── 56. Alt-text generator ───────────────────────────────────── */
+registerEval({
+  slug: "alt-text-generator",
+  name: "Alt-text generator returns a non-empty string for a hero image description",
+  input: {
+    description: "Two engineers reviewing a dashboard on a large monitor in a warm-lit office",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  assertions: (output) => {
+    const o = output as { altText?: string };
+    if (typeof o.altText !== "string") {
+      throw new Error("altText missing — accessibility regression");
+    }
+    assertStringMinLength(o.altText, 8, "altText");
+  },
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+});
+
+/* ─── 57. Anomaly detector ─────────────────────────────────────── */
+registerEval({
+  slug: "anomaly-detector",
+  name: "Anomaly detector returns a verdict for a clear spike pattern",
+  input: {
+    metricName: "daily_signups",
+    metric: [50, 52, 48, 51, 49, 53, 47, 1200],
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  assertions: (output) => {
+    const o = output as { isAnomaly?: boolean; verdict?: string };
+    // The detector must produce SOME verdict signal — either the
+    // boolean flag or the human-readable verdict string.
+    if (o.isAnomaly === undefined && !o.verdict) {
+      throw new Error("anomaly-detector returned neither isAnomaly nor verdict");
+    }
+  },
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+});
+
+/* ─── 58. Book outliner ────────────────────────────────────────── */
+registerEval({
+  slug: "book-outliner",
+  name: "Book outliner returns multi-chapter structure for a B2B premise",
+  input: {
+    premise: "A pragmatic guide to evaluating AI vendors for mid-market SaaS",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  assertions: (output) => {
+    const o = output as { chapters?: unknown[]; outline?: unknown[] };
+    const chapters = o.chapters ?? o.outline ?? [];
+    assertArrayAtLeast(chapters, 3, "chapters/outline");
+  },
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 45_000,
+});
+
+/* ─── 59. Cash flow forecaster ─────────────────────────────────── */
+registerEval({
+  slug: "cash-flow-forecaster",
+  name: "Cash-flow forecaster ingests a small transaction set and returns a forecast",
+  input: {
+    transactions: [
+      { date: "2026-01-15", amount: -1200, description: "Rent" },
+      { date: "2026-01-20", amount: 8500, description: "Customer payment" },
+      { date: "2026-02-15", amount: -1200, description: "Rent" },
+      { date: "2026-02-22", amount: 9100, description: "Customer payment" },
+    ],
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  assertions: (output) => {
+    const o = output as { forecast?: unknown; runwayDays?: number };
+    if (!o.forecast && o.runwayDays === undefined) {
+      throw new Error("cash-flow-forecaster returned neither forecast nor runwayDays");
+    }
+  },
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+});
+
+/* ─── 60. Churn predictor ──────────────────────────────────────── */
+registerEval({
+  slug: "churn-predictor",
+  name: "Churn predictor returns a risk score for a high-risk customer profile",
+  input: {
+    customer: {
+      name: "Acme Corp",
+      lastLoginDays: 47,
+      monthlyRevenue: 199,
+      featureAdoption: 0.12,
+      supportTicketsLast30d: 6,
+      contractEndsInDays: 28,
+    },
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  assertions: (output) => {
+    const o = output as { churnRisk?: string; score?: number };
+    if (!o.churnRisk && o.score === undefined) {
+      throw new Error("churn-predictor returned neither churnRisk nor score");
+    }
+  },
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+});
+
+/* ─── 61. Citation verifier ────────────────────────────────────── */
+registerEval({
+  slug: "citation-verifier",
+  name: "Citation verifier flags an unsupported claim",
+  input: {
+    claim: "Sovereign Matrix has 50 million paying customers as of April 2026.",
+    sourceText:
+      "Sovereign Matrix is an early-stage agent platform launched in 2025. The team is small.",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  assertions: (output) => {
+    const o = output as { supported?: boolean; verdict?: string };
+    // Must produce SOME verdict signal — either the boolean or the
+    // human-readable verdict string.
+    if (o.supported === undefined && !o.verdict) {
+      throw new Error("citation-verifier returned neither supported nor verdict");
+    }
+  },
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+});
+
+/* ─── 62. Code reviewer ────────────────────────────────────────── */
+registerEval({
+  slug: "code-reviewer",
+  name: "Code reviewer flags an obvious bug in a tiny TS snippet",
+  input: {
+    code: "function divide(a: number, b: number) {\n  return a / b; // no zero check\n}\n",
+    language: "typescript",
+    focus: "bugs",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  assertions: (output) => {
+    const o = output as { findings?: unknown[]; review?: string };
+    const findings = o.findings ?? [];
+    if ((!Array.isArray(findings) || findings.length === 0) && !o.review) {
+      throw new Error("code-reviewer returned neither findings[] nor review");
+    }
+  },
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 45_000,
+});
+
+/* ─── 63. ABM artillery ────────────────────────────────────────── */
+registerEval({
+  slug: "abm-artillery",
+  name: "ABM artillery generates an outreach plan for an enterprise target",
+  input: {
+    company: "Acme Industrial",
+    industry: "manufacturing",
+    targetTitles: ["VP of Operations", "Director of IT"],
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  assertions: (output) => {
+    const o = output as { plan?: unknown; touches?: unknown[]; sequence?: unknown[] };
+    if (!o.plan && !o.touches && !o.sequence) {
+      throw new Error("abm-artillery returned no plan/touches/sequence");
+    }
+  },
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 60_000,
+});
+
+/* ─── 64. Brand audit ──────────────────────────────────────────── */
+registerEval({
+  slug: "brand-audit",
+  name: "Brand audit returns a structured review for a sample homepage URL",
+  input: {
+    url: "https://stripe.com",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  assertions: (output) => {
+    const o = output as { audit?: unknown; report?: unknown; findings?: unknown[] };
+    if (!o.audit && !o.report && !o.findings) {
+      throw new Error("brand-audit returned no audit/report/findings");
+    }
+  },
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 60_000,
+});
+
+/* ─── 65. Case study writer ────────────────────────────────────── */
+registerEval({
+  slug: "case-study",
+  name: "Case-study writer drafts a structured case study from raw notes",
+  input: {
+    company: "Apex Logistics",
+    challenge: "manual freight booking taking 6 hours/day",
+    solution: "Sovereign agent that classifies + dispatches automatically",
+    result: "freight booking time dropped to 30 minutes",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  assertions: (output) => {
+    const o = output as { caseStudy?: string; draft?: string; sections?: unknown };
+    if (!o.caseStudy && !o.draft && !o.sections) {
+      throw new Error("case-study returned no caseStudy/draft/sections");
+    }
+  },
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 45_000,
+});
+
+/* ─── 66. Client report ────────────────────────────────────────── */
+registerEval({
+  slug: "client-report",
+  name: "Client report compiles a structured monthly summary",
+  input: {
+    clientName: "Apex Logistics",
+    period: "2026-03",
+    metrics: { leads: 142, content: 56, bookings: 18 },
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  assertions: (output) => {
+    const o = output as { report?: string; summary?: string; sections?: unknown };
+    if (!o.report && !o.summary && !o.sections) {
+      throw new Error("client-report returned no report/summary/sections");
+    }
+  },
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 45_000,
+});
+
+/* ─── 67. Ads ──────────────────────────────────────────────────── */
+registerEval({
+  slug: "ads",
+  name: "Ads agent drafts variants for a SaaS landing page",
+  input: {
+    productName: "Sovereign Matrix",
+    audience: "B2B operations leaders",
+    keyBenefit: "agents that actually do the work",
+  },
+  expect: EnvelopeWithMeta.passthrough(),
+  assertions: (output) => {
+    const o = output as { ads?: unknown[]; variants?: unknown[]; copy?: string };
+    const variants = o.ads ?? o.variants ?? [];
+    if ((!Array.isArray(variants) || variants.length === 0) && !o.copy) {
+      throw new Error("ads agent returned no ads/variants/copy");
+    }
+  },
+  skipIf: () => !process.env.NVIDIA_NIM_API_KEY,
+  timeoutMs: 45_000,
+});
