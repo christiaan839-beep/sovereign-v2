@@ -1,6 +1,8 @@
 /**
  * SOVEREIGN MATRIX — Persistent Tenant Memory System
  *
+ * New code: prefer `@/lib/memory-system` (canonical barrel).
+ *
  * Per-user memory that stores agent execution history and makes it
  * available to future agent calls. This is the data moat — agents
  * that get smarter with every use because they remember past interactions.
@@ -27,8 +29,8 @@ export interface MemoryEntry {
   id: string;
   userId: string;
   agentName: string;
-  input: string;   // truncated to 200 chars
-  output: string;  // truncated to 500 chars
+  input: string; // truncated to 200 chars
+  output: string; // truncated to 500 chars
   timestamp: number;
   tags: string[];
 }
@@ -62,7 +64,42 @@ function extractTags(agentName: string, input: string): string[] {
   const tags: string[] = [agentName];
   // Pull simple keyword tags from the input
   const words = input.toLowerCase().split(/\s+/);
-  const stopWords = new Set(["the", "a", "an", "is", "are", "was", "were", "be", "to", "of", "and", "in", "for", "on", "with", "at", "by", "from", "this", "that", "it", "as", "or", "not", "but", "if", "my", "your", "i", "you", "we", "they", "he", "she"]);
+  const stopWords = new Set([
+    "the",
+    "a",
+    "an",
+    "is",
+    "are",
+    "was",
+    "were",
+    "be",
+    "to",
+    "of",
+    "and",
+    "in",
+    "for",
+    "on",
+    "with",
+    "at",
+    "by",
+    "from",
+    "this",
+    "that",
+    "it",
+    "as",
+    "or",
+    "not",
+    "but",
+    "if",
+    "my",
+    "your",
+    "i",
+    "you",
+    "we",
+    "they",
+    "he",
+    "she",
+  ]);
   for (const w of words) {
     if (w.length > 3 && !stopWords.has(w) && tags.length < 10) {
       tags.push(w);
@@ -86,7 +123,10 @@ function dbRowToEntry(row: typeof tenantMemories.$inferSelect): MemoryEntry {
 
 // ── DB Helpers (non-blocking) ──
 
-async function persistToDb(entry: MemoryEntry, metadata?: Record<string, unknown>): Promise<void> {
+async function persistToDb(
+  entry: MemoryEntry,
+  metadata?: Record<string, unknown>,
+): Promise<void> {
   try {
     await db.insert(tenantMemories).values({
       id: entry.id.startsWith("tm_") ? undefined : entry.id, // let DB generate UUID if using old ID format
@@ -97,7 +137,9 @@ async function persistToDb(entry: MemoryEntry, metadata?: Record<string, unknown
       tags: entry.tags.join(","),
       metadata: metadata ? JSON.stringify(metadata) : null,
     });
-    log.info(`Memory persisted to DB for ${entry.userId}`, { agent: entry.agentName });
+    log.info(`Memory persisted to DB for ${entry.userId}`, {
+      agent: entry.agentName,
+    });
   } catch (err) {
     log.info(`DB persist failed (cache still works)`, { error: String(err) });
   }
@@ -152,7 +194,7 @@ export function saveMemory(
   agentName: string,
   input: string,
   output: string,
-  metadata?: Record<string, unknown>
+  metadata?: Record<string, unknown>,
 ): MemoryEntry {
   const entry: MemoryEntry = {
     id: `tm_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
@@ -183,7 +225,10 @@ export function saveMemory(
   }
 
   store.set(userId, entries);
-  log.info(`Memory saved for ${userId}`, { agent: agentName, total: entries.length });
+  log.info(`Memory saved for ${userId}`, {
+    agent: agentName,
+    total: entries.length,
+  });
 
   // Fire-and-forget DB write — cache is the source of truth for speed
   persistToDb(entry, metadata);
@@ -198,7 +243,7 @@ export function saveMemory(
 export async function queryMemory(
   userId: string,
   query: string,
-  limit: number = 10
+  limit: number = 10,
 ): Promise<MemoryEntry[]> {
   let entries = store.get(userId);
 
@@ -208,18 +253,21 @@ export async function queryMemory(
     if (dbEntries.length > 0) {
       store.set(userId, dbEntries);
       entries = dbEntries;
-      log.info(`Cache hydrated from DB for ${userId}`, { count: dbEntries.length });
+      log.info(`Cache hydrated from DB for ${userId}`, {
+        count: dbEntries.length,
+      });
     }
   }
 
   if (!entries || entries.length === 0) return [];
 
   const queryLower = query.toLowerCase();
-  const keywords = queryLower.split(/\s+/).filter(w => w.length > 2);
+  const keywords = queryLower.split(/\s+/).filter((w) => w.length > 2);
 
   // Score each entry by keyword overlap
-  const scored = entries.map(entry => {
-    const searchable = `${entry.agentName} ${entry.input} ${entry.output} ${entry.tags.join(" ")}`.toLowerCase();
+  const scored = entries.map((entry) => {
+    const searchable =
+      `${entry.agentName} ${entry.input} ${entry.output} ${entry.tags.join(" ")}`.toLowerCase();
     let score = 0;
     for (const kw of keywords) {
       if (searchable.includes(kw)) score++;
@@ -228,10 +276,10 @@ export async function queryMemory(
   });
 
   return scored
-    .filter(s => s.score > 0)
+    .filter((s) => s.score > 0)
     .sort((a, b) => b.score - a.score || b.entry.timestamp - a.entry.timestamp)
     .slice(0, limit)
-    .map(s => s.entry);
+    .map((s) => s.entry);
 }
 
 /**
@@ -244,21 +292,26 @@ export function getMemoryContext(userId: string, agentName: string): string {
 
   // Prioritize memories from the same agent, then recent from others
   const sameAgent = entries
-    .filter(e => e.agentName === agentName)
+    .filter((e) => e.agentName === agentName)
     .sort((a, b) => b.timestamp - a.timestamp)
     .slice(0, 5);
 
   const otherAgents = entries
-    .filter(e => e.agentName !== agentName)
+    .filter((e) => e.agentName !== agentName)
     .sort((a, b) => b.timestamp - a.timestamp)
     .slice(0, 3);
 
   const relevant = [...sameAgent, ...otherAgents];
   if (relevant.length === 0) return "";
 
-  const lines = relevant.map(e => {
+  const lines = relevant.map((e) => {
     const age = Math.round((Date.now() - e.timestamp) / 60000);
-    const ageStr = age < 60 ? `${age}m ago` : age < 1440 ? `${Math.round(age / 60)}h ago` : `${Math.round(age / 1440)}d ago`;
+    const ageStr =
+      age < 60
+        ? `${age}m ago`
+        : age < 1440
+          ? `${Math.round(age / 60)}h ago`
+          : `${Math.round(age / 1440)}d ago`;
     return `[${ageStr}] ${e.agentName}: "${e.input}" => ${e.output.slice(0, 150)}`;
   });
 
@@ -273,7 +326,13 @@ export async function getMemoryStats(userId: string): Promise<MemoryStats> {
   const dbCount = await countInDb(userId);
 
   if (!entries || entries.length === 0) {
-    return { totalMemories: 0, dbMemories: dbCount, topAgents: [], oldestMemory: null, newestMemory: null };
+    return {
+      totalMemories: 0,
+      dbMemories: dbCount,
+      topAgents: [],
+      oldestMemory: null,
+      newestMemory: null,
+    };
   }
 
   const agentCounts: Record<string, number> = {};

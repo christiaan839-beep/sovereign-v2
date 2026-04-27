@@ -1,6 +1,8 @@
 /**
  * SOVEREIGN MATRIX — Cross-Agent Learning Loop
  *
+ * New code: prefer `@/lib/memory-system` (canonical barrel).
+ *
  * When one agent discovers something valuable, it broadcasts to other agents
  * that can act on it. This is the closed-loop intelligence system that no
  * competitor has.
@@ -23,23 +25,23 @@ const log = createLogger("agent-memory");
 // ── Signal Types ──
 
 export type SignalType =
-  | "keyword_discovered"      // SEO found a keyword gap
-  | "lead_qualified"          // Lead agent qualified a prospect
-  | "competitor_weakness"     // Competitor agent found a vulnerability
-  | "content_published"       // Content was created and published
-  | "deal_closed"             // A deal was successfully closed
-  | "error_pattern"           // Multiple agents hitting same error
-  | "model_performance"       // A model performed exceptionally on a task
-  | "user_preference";        // User preference learned from interaction
+  | "keyword_discovered" // SEO found a keyword gap
+  | "lead_qualified" // Lead agent qualified a prospect
+  | "competitor_weakness" // Competitor agent found a vulnerability
+  | "content_published" // Content was created and published
+  | "deal_closed" // A deal was successfully closed
+  | "error_pattern" // Multiple agents hitting same error
+  | "model_performance" // A model performed exceptionally on a task
+  | "user_preference"; // User preference learned from interaction
 
 export interface AgentSignal {
   id: string;
   type: SignalType;
-  source: string;            // Agent that produced the signal
+  source: string; // Agent that produced the signal
   data: Record<string, unknown>;
   timestamp: number;
   consumed: boolean;
-  consumers: string[];       // Agents that have consumed this signal
+  consumers: string[]; // Agents that have consumed this signal
 }
 
 interface SignalSubscription {
@@ -60,7 +62,7 @@ const MAX_SIGNALS = 1000;
 export async function emitSignal(
   type: SignalType,
   source: string,
-  data: Record<string, unknown>
+  data: Record<string, unknown>,
 ): Promise<void> {
   const signal: AgentSignal = {
     id: `sig_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
@@ -84,7 +86,7 @@ export async function emitSignal(
 
   // Notify subscribers (non-blocking)
   const matchingSubs = subscriptions.filter(
-    sub => sub.signalTypes.includes(type) && sub.agentName !== source
+    (sub) => sub.signalTypes.includes(type) && sub.agentName !== source,
   );
 
   for (const sub of matchingSubs) {
@@ -92,7 +94,9 @@ export async function emitSignal(
       await sub.handler(signal);
       signal.consumers.push(sub.agentName);
     } catch (err) {
-      log.error(`Signal handler failed for ${sub.agentName}`, { error: String(err) });
+      log.error(`Signal handler failed for ${sub.agentName}`, {
+        error: String(err),
+      });
     }
   }
 
@@ -107,10 +111,10 @@ export async function emitSignal(
 export function subscribeAgent(
   agentName: string,
   signalTypes: SignalType[],
-  handler: (signal: AgentSignal) => Promise<void>
+  handler: (signal: AgentSignal) => Promise<void>,
 ): void {
   // Remove existing subscription for this agent
-  const existingIdx = subscriptions.findIndex(s => s.agentName === agentName);
+  const existingIdx = subscriptions.findIndex((s) => s.agentName === agentName);
   if (existingIdx >= 0) subscriptions.splice(existingIdx, 1);
 
   subscriptions.push({ agentName, signalTypes, handler });
@@ -128,9 +132,10 @@ export function getRecentSignals(options?: {
 }): AgentSignal[] {
   let filtered = [...signalStore];
 
-  if (options?.type) filtered = filtered.filter(s => s.type === options.type);
-  if (options?.source) filtered = filtered.filter(s => s.source === options.source);
-  if (options?.unconsumedOnly) filtered = filtered.filter(s => !s.consumed);
+  if (options?.type) filtered = filtered.filter((s) => s.type === options.type);
+  if (options?.source)
+    filtered = filtered.filter((s) => s.source === options.source);
+  if (options?.unconsumedOnly) filtered = filtered.filter((s) => !s.consumed);
 
   return filtered
     .sort((a, b) => b.timestamp - a.timestamp)
@@ -143,13 +148,13 @@ export function getRecentSignals(options?: {
  */
 export function getAgentContext(agentName: string): string {
   const relevantSignals = signalStore
-    .filter(s => s.source !== agentName && Date.now() - s.timestamp < 3600000) // Last hour
+    .filter((s) => s.source !== agentName && Date.now() - s.timestamp < 3600000) // Last hour
     .sort((a, b) => b.timestamp - a.timestamp)
     .slice(0, 5);
 
   if (relevantSignals.length === 0) return "";
 
-  const contextLines = relevantSignals.map(s => {
+  const contextLines = relevantSignals.map((s) => {
     const age = Math.round((Date.now() - s.timestamp) / 60000);
     return `[${age}m ago] ${s.source}: ${s.type} — ${JSON.stringify(s.data).slice(0, 200)}`;
   });
@@ -162,8 +167,8 @@ export function getAgentContext(agentName: string): string {
  */
 export function getSignalStats() {
   const now = Date.now();
-  const lastHour = signalStore.filter(s => now - s.timestamp < 3600000);
-  const lastDay = signalStore.filter(s => now - s.timestamp < 86400000);
+  const lastHour = signalStore.filter((s) => now - s.timestamp < 3600000);
+  const lastDay = signalStore.filter((s) => now - s.timestamp < 86400000);
 
   const byType: Record<string, number> = {};
   for (const s of lastDay) {
@@ -177,20 +182,30 @@ export function getSignalStats() {
     activeSubscriptions: subscriptions.length,
     byType,
     topSources: Object.entries(
-      lastDay.reduce((acc, s) => ({ ...acc, [s.source]: (acc[s.source] || 0) + 1 }), {} as Record<string, number>)
-    ).sort(([, a], [, b]) => b - a).slice(0, 5).map(([source, count]) => ({ source, count })),
+      lastDay.reduce(
+        (acc, s) => ({ ...acc, [s.source]: (acc[s.source] || 0) + 1 }),
+        {} as Record<string, number>,
+      ),
+    )
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 5)
+      .map(([source, count]) => ({ source, count })),
   };
 }
 
 // ── Default Subscriptions (auto-registered) ──
 
 // Content agent listens for SEO keyword discoveries
-subscribeAgent("content-auto", ["keyword_discovered", "competitor_weakness"], async (signal) => {
-  log.info(`[Content Auto] Received ${signal.type} from ${signal.source}`, {
-    data: JSON.stringify(signal.data).slice(0, 100),
-  });
-  // In production: auto-queue a content brief based on the keyword/weakness
-});
+subscribeAgent(
+  "content-auto",
+  ["keyword_discovered", "competitor_weakness"],
+  async (signal) => {
+    log.info(`[Content Auto] Received ${signal.type} from ${signal.source}`, {
+      data: JSON.stringify(signal.data).slice(0, 100),
+    });
+    // In production: auto-queue a content brief based on the keyword/weakness
+  },
+);
 
 // Email agent listens for qualified leads
 subscribeAgent("email-auto", ["lead_qualified"], async (signal) => {
@@ -201,7 +216,11 @@ subscribeAgent("email-auto", ["lead_qualified"], async (signal) => {
 });
 
 // Analytics listens for deal closures (revenue attribution)
-subscribeAgent("analytics-auto", ["deal_closed", "content_published"], async (signal) => {
-  log.info(`[Analytics Auto] Tracking ${signal.type} from ${signal.source}`);
-  // In production: update revenue attribution chain
-});
+subscribeAgent(
+  "analytics-auto",
+  ["deal_closed", "content_published"],
+  async (signal) => {
+    log.info(`[Analytics Auto] Tracking ${signal.type} from ${signal.source}`);
+    // In production: update revenue attribution chain
+  },
+);
