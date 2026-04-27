@@ -4,6 +4,7 @@ import { settings } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { requireAuth } from "@/lib/auth-guard";
 import { createLogger } from "@/lib/logger";
+import { safeJsonParseObject } from "@/lib/safe-json";
 const log = createLogger("settings-base");
 
 export async function POST(req: Request) {
@@ -30,9 +31,18 @@ export async function POST(req: Request) {
       }
 
       if (existing.length > 0) {
-        // Merge with existing
-        const oldApiKeys = existing[0].apiKeys ? JSON.parse(existing[0].apiKeys) : {};
-        const oldConfig = existing[0].config ? JSON.parse(existing[0].config) : {};
+        // Merge with existing. safeJsonParseObject treats null /
+        // missing / corrupt JSON as `{}` — so a previously-broken row
+        // gets unstuck on the next save instead of silently 500'ing
+        // forever.
+        const oldApiKeys = safeJsonParseObject<Record<string, string>>(
+          existing[0].apiKeys,
+          "settings.apiKeys",
+        );
+        const oldConfig = safeJsonParseObject<Record<string, string>>(
+          existing[0].config,
+          "settings.config",
+        );
         const mergedApiKeys = { ...oldApiKeys, ...apiKeyData };
         const mergedConfig = { ...oldConfig, ...configData };
 
@@ -55,7 +65,13 @@ export async function POST(req: Request) {
 
     if (action === "load") {
       const existing = await db.select().from(settings).where(eq(settings.userEmail, userEmail));
-      const savedApiKeys = existing.length > 0 && existing[0].apiKeys ? JSON.parse(existing[0].apiKeys) : {};
+      const savedApiKeys =
+        existing.length > 0
+          ? safeJsonParseObject<Record<string, string>>(
+              existing[0].apiKeys,
+              "settings.apiKeys",
+            )
+          : {};
 
       // Mask sensitive values (show first 4 + last 4 chars)
       const masked: Record<string, string> = {};

@@ -4,6 +4,7 @@ import { settings } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { requireAuth } from "@/lib/auth-guard";
 import { createLogger } from "@/lib/logger";
+import { safeJsonParseObject } from "@/lib/safe-json";
 
 const log = createLogger("settings-byok");
 

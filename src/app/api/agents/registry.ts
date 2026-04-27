@@ -5,6 +5,15 @@
  * Every agent whose route.ts lives at src/app/api/_agents/<slug>/route.ts
  * is bundled here so Vercel's serverless packer can see the import paths.
  *
+ * Use ONLY from runtime-invocation paths (api/v1/* gateway, agent
+ * factory fallthrough). Pulling this in from non-runtime contexts
+ * (Edge OG image, public catalog) drags 200+ handler files + their
+ * transitive node:* deps into bundles that don't need them — and
+ * Turbopack emits a wall of 'node module loaded in Edge runtime'
+ * warnings as a result.
+ *
+ * For read-only existence checks, import from `./slugs` instead.
+ *
  * Regenerate: `npm run gen:registry`
  * Count: 223 agents
  */
