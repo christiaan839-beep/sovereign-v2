@@ -5,6 +5,9 @@ import Link from "next/link";
 import { topoSort, dryRun, type PlaybookDag } from "@/lib/playbook-dag";
 import { PlaybookCanvas } from "@/components/playbook/PlaybookCanvas";
 import { NodePalette } from "@/components/playbook/NodePalette";
+import { ConfidenceBadge } from "@/components/agent/ConfidenceBadge";
+import { TokenBudgetMeter } from "@/components/agent/TokenBudgetMeter";
+import { extractConfidence, extractTokenBudget } from "@/lib/agent-meta";
 
 /**
  * D1 PHASE 2 — drag-drop visual playbook editor.
@@ -329,9 +332,20 @@ export default function PlaybookEditorPage() {
                   {r.status === "completed" ? "✓" : r.status === "failed" ? "✗" : "—"}
                 </span>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-baseline gap-2">
+                  <div className="flex items-baseline gap-2 flex-wrap">
                     <span className="font-mono text-xs text-neutral-300">{r.nodeId}</span>
                     <span className="text-xs text-neutral-500">{r.agent}</span>
+                    {/*
+                      Confidence + token-budget pills — surface
+                      _meta.confidence and _meta.tokenBudget from the
+                      gateway response. Closes OWASP LLM09 (Overreliance)
+                      and LLM04 (DoS / runaway cost) on the visual-editor
+                      surface: a node that "completed" but with low
+                      confidence or near-cap budget shows the same
+                      trust-aware UI a top-level agent invocation would.
+                    */}
+                    <ConfidenceBadge confidence={extractConfidence(r.output)} compact />
+                    <TokenBudgetMeter budget={extractTokenBudget(r.output)} compact />
                     <span className="text-xs text-neutral-600 font-mono ml-auto">
                       {r.durationMs}ms
                     </span>
