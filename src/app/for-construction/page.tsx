@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { IndustrySignature } from "@/components/industries/IndustrySignature";
+import { PermitStageTimeline } from "@/components/industries/PermitStageTimeline";
 
 const CONSTRUCTION_FEATURED_AGENTS = [
   { slug: "permit-form-filler", name: "Permit Filler", category: "Real Estate" },
@@ -170,6 +171,14 @@ export default function ForConstructionPage() {
           </div>
         </div>
       </section>
+
+      {/* Unique-to-construction section: permit-stage timeline.
+          Closes WHATS-NOT-ELITE.md §1.2 (industry pages were template
+          clones). Construction projects move through 5 distinct
+          municipal stages and the agent set + time-saved at each stage
+          differs — that story doesn't fit the generic capabilities →
+          workflow → integrations rhythm. */}
+      <PermitStageTimeline />
 
       <section className="py-24 px-6">
         <div className="max-w-4xl mx-auto">
