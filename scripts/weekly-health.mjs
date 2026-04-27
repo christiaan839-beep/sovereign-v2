@@ -413,6 +413,16 @@ const trustAssets = [
   { path: "src/app/trust/defenders/page.tsx", name: "/trust/defenders ledger" },
   { path: "public/.well-known/security.txt", name: "RFC 9116 security.txt" },
   { path: "docs/THREAT_MODEL.md", name: "Threat model document" },
+  // Machine-readable transparency manifest. The "Sovereign Bill of
+  // Trust" — auditor LLMs (FMTI, EU AI Act baseline, NIST AI RMF,
+  // ATLAS) ingest the full claim surface in one GET. Deleting this
+  // route makes the platform invisible to those audit pipelines AND
+  // breaks the `Transparency:` link in security.txt — both outcomes
+  // worth blocking at PR time.
+  {
+    path: "src/app/api/_meta/transparency/route.ts",
+    name: "Sovereign Bill of Trust (transparency manifest)",
+  },
 ];
 for (const { path, name } of trustAssets) {
   const present = existsSync(join(ROOT, path)) ? 1 : 0;

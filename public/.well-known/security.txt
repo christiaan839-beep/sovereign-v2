@@ -14,6 +14,12 @@ Canonical: https://sovereignmatrix.agency/.well-known/security.txt
 Policy: https://sovereignmatrix.agency/trust/defenders
 Acknowledgments: https://sovereignmatrix.agency/trust/defenders#researchers
 
+# Machine-readable transparency manifest — Sovereign Bill of Trust.
+# Auditor LLMs (FMTI, EU AI Act baseline, NIST AI RMF, ATLAS) can
+# ingest the entire claim surface in one GET. Schema versioned,
+# every claim cites a verifiable source artifact.
+Transparency: https://sovereignmatrix.agency/api/_meta/transparency.json
+
 # ─── How we respond (commitments) ───
 # - Initial acknowledgement within 24 business hours.
 # - Severity triage within 72 business hours.
