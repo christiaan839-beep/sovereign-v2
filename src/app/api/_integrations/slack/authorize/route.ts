@@ -21,6 +21,10 @@ import { randomBytes } from "node:crypto";
  *   NEXT_PUBLIC_APP_URL (where Slack redirects back)
  */
 
+// Force Node runtime — uses node:crypto.randomBytes() for the OAuth
+// state nonce (CSRF defense). Edge runtime would crash on the import.
+export const runtime = "nodejs";
+
 const SLACK_SCOPES = [
   "chat:write",
   "chat:write.public",

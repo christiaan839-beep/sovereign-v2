@@ -13,6 +13,20 @@
  * Docs: https://nextjs.org/docs/app/building-your-application/optimizing/instrumentation
  */
 export async function register() {
+  // ── ALS-backed stores (Node only) ──
+  // Installs the AsyncLocalStorage-backed implementations of:
+  //   - request-context (per-request correlation IDs, used by logger)
+  //   - model-attribution (which models touched each request)
+  // on globalThis so the shared modules pick them up. Both shared
+  // modules are Edge/Browser-safe (no `node:async_hooks` import);
+  // these Node-only files are the ONLY places we touch async_hooks.
+  // See request-context.ts and model-attribution.ts for the full
+  // runtime-compat rationale.
+  if (process.env.NEXT_RUNTIME === "nodejs") {
+    await import("@/lib/request-context-node");
+    await import("@/lib/model-attribution-node");
+  }
+
   // ── Env validation — runs before anything else so misconfigured boots
   // fail loud with a readable error, not mid-request with mystery undefined.
   // In dev it warns; in prod it throws and prevents the server from serving.

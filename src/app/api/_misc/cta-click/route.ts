@@ -5,6 +5,11 @@ import { ctaClicks } from "@/db/schema";
 import { createHash } from "node:crypto";
 import { createLogger } from "@/lib/logger";
 
+// Force Node runtime — node:crypto is required for the SHA-256 hash on
+// IP addresses (privacy: we want to count distinct visitors without
+// storing raw IPs). Edge runtime would crash on the import.
+export const runtime = "nodejs";
+
 const log = createLogger("cta-click");
 
 /**

@@ -19,6 +19,16 @@ import { AGENT_REGISTRY } from "@/app/api/agents/registry";
  *   2. Agent mode:    { agent, prompt, api_key }
  */
 
+// Force Node.js runtime — uses node:crypto for constant-time API key
+// comparison (timingSafeEqual). Without this declaration, Next.js
+// defaults the route handler to Edge, where node:crypto is unavailable
+// and the build emits a warning + the route crashes at runtime if
+// Vercel routes a request to an Edge worker. Web Crypto's subtle.digest
+// returns a hash but there's no constant-time comparison primitive in
+// the Edge runtime; forcing Node keeps the side-channel-resistant
+// comparison intact.
+export const runtime = "nodejs";
+
 const log = createLogger("trigger-engine");
 
 // ─── Types ──────────────────────────────────────────────────────────────────

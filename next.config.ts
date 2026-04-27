@@ -1,7 +1,20 @@
 import type { NextConfig } from "next";
+import path from "node:path";
 import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
+  // Pin Turbopack's workspace root to THIS file's directory.
+  //
+  // Without this, Next.js walks up looking for the highest package-lock.json
+  // and chooses that as the workspace root. When the project lives in a
+  // git worktree (./.claude/worktrees/<name>), the parent repo also has a
+  // lockfile, so Next picks the WRONG root and emits a warning on every
+  // build. Pinning here makes both the parent repo and any worktree build
+  // deterministically with the local lockfile.
+  turbopack: {
+    root: path.resolve(__dirname),
+  },
+
   // Standalone output for Docker/Railway — Vercel injects VERCEL=1 automatically
   // so this activates only for self-hosted deployments.
   output: process.env.VERCEL ? undefined : "standalone",

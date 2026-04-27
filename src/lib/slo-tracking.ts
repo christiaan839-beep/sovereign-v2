@@ -24,8 +24,14 @@
  * against targets, and posts breaches to Slack (if SLACK_WEBHOOK_URL).
  */
 
-import { createHash } from "node:crypto";
 import { createLogger } from "@/lib/logger";
+
+// Note: this module is intentionally edge-safe. It used to import
+// node:crypto for an 8-char unique suffix on sorted-set members, but
+// that pulled the whole logger graph into Edge bundles via the OG
+// image route + smart-router → Edge App Route. The uniqueness suffix
+// doesn't need crypto-grade randomness — it just has to avoid sorted-
+// set dedup collisions. `Math.random()` is plenty.
 
 const log = createLogger("slo");
 
@@ -110,8 +116,10 @@ export async function recordSample(
   const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
   const key = `slo:${slo}:${today}`;
   const ts = Date.now();
-  // member uniqueness — timestamp + hash to avoid sorted-set dedup
-  const uniq = createHash("sha256").update(`${ts}:${Math.random()}`).digest("hex").slice(0, 8);
+  // member uniqueness — timestamp + random suffix avoids sorted-set
+  // dedup. `Math.random()` is fine: the suffix isn't a secret, just a
+  // tie-breaker for samples recorded in the same millisecond.
+  const uniq = Math.random().toString(36).slice(2, 10).padEnd(8, "0");
   const member = `${value}:${pass ? "p" : "f"}:${uniq}`;
 
   try {

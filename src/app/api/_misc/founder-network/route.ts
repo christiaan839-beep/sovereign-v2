@@ -11,6 +11,10 @@ import {
 } from "@/lib/plans";
 import { randomBytes } from "node:crypto";
 
+// Force Node runtime — uses node:crypto.randomBytes() to generate
+// affiliate IDs. Edge runtime would crash on the import.
+export const runtime = "nodejs";
+
 const log = createLogger("founder-network");
 
 /**

@@ -8,6 +8,11 @@ import { randomBytes, createHash } from "node:crypto";
 import { createLogger } from "@/lib/logger";
 import { auditLog } from "@/lib/audit-log";
 
+// Force Node runtime — uses node:crypto for randomBytes (mint API
+// keys) and createHash (store the SHA-256 of the key, never the
+// raw secret). Both are unavailable in Edge.
+export const runtime = "nodejs";
+
 const log = createLogger("tokens");
 
 /** Pull the client IP from forwarding headers (best-effort). */
