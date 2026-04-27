@@ -35,6 +35,10 @@ import { trackAgentExecution } from "@/lib/analytics";
 import { getMemoryContext, saveMemory } from "@/lib/tenant-memory";
 import { buildMemoryContext, rememberExecution } from "@/lib/semantic-memory";
 import { getActionTier, buildConfirmResponse, buildRestrictedResponse, type ActionTier } from "@/lib/action-tiers";
+import { AGENT_MANIFESTS } from "@/lib/agent-manifests.generated";
+import { getAgentOverride, applyOverride } from "@/lib/agent-manifest-overrides";
+import { scoreConfidence, computeInputOutputOverlap } from "@/lib/agent-confidence";
+import { signAttestation } from "@/lib/response-attestation";
 import { resolveTenantId } from "@/lib/tenant-resolver";
 import { isAgentAvailable, recordAgentSuccess, recordAgentFailure } from "@/lib/agent-circuit-breaker";
 import { recordSloEvent } from "@/lib/slo-tracker";
@@ -308,8 +312,19 @@ async function handleAgentRoute(
       }
 
       // ─── Action Tier Gate ───
+      // Manifest is the source of truth (post-Sprint-F). Falls back to
+      // the legacy `getActionTier()` enumeration only for agents not yet
+      // covered by the static analyzer. The merged manifest reconciles
+      // generated + override (see src/lib/agent-manifest-overrides.ts).
+      const generatedManifest = AGENT_MANIFESTS[config.name];
+      const manifestOverride = getAgentOverride(config.name);
+      const mergedManifest = generatedManifest
+        ? applyOverride(generatedManifest, manifestOverride)
+        : null;
       const tierInfo = getActionTier(config.name);
-      const effectiveTier = config.actionTier ?? tierInfo.tier;
+      const effectiveTier =
+        config.actionTier ??
+        (mergedManifest?.tier ?? tierInfo.tier);
 
       if (effectiveTier >= 2 && !body.confirmed) {
         if (effectiveTier === 3) {
@@ -889,6 +904,55 @@ async function handleAgentRoute(
         replay.complete({ durationMs, agent: config.name, success: true });
       }
 
+      // ─── Manifest drift detection ───
+      // If the agent at runtime consulted models that ITS PUBLISHED
+      // MANIFEST didn't declare, that's a transparency leak — the
+      // agents.json endpoint says "this agent uses Claude" but the
+      // request actually used Gemini. Log it loudly so ops can either
+      // (a) update the manifest or (b) constrain the model selection.
+      // Read-only check today; runtime blocking is deferred to A1.5.
+      if (mergedManifest && modelsConsulted.length > 0) {
+        const declaredProviders = new Set<string>(
+          mergedManifest.models.map((m) => m.provider as string),
+        );
+        const actualProviders = new Set(providersConsulted);
+        const undeclared: string[] = [];
+        for (const p of actualProviders) {
+          // Tolerate "google-gemini" vs "google" provider-bucket fuzzy match.
+          const normalized = p.replace(/-.*$/, "");
+          if (!declaredProviders.has(p) && !declaredProviders.has(normalized)) {
+            undeclared.push(p);
+          }
+        }
+        if (undeclared.length > 0) {
+          log.warn("manifest drift — runtime providers exceed declared manifest", {
+            agent: config.name,
+            declared: [...declaredProviders],
+            undeclared,
+            modelsConsulted,
+          });
+        }
+      }
+
+      // ─── Confidence scoring (LLM09 — Overreliance) ───
+      // Cheap structural inputs from the data we already computed
+      // (consensus, safety, eval pass-rate placeholder). No extra
+      // LLM call. Score lives in _meta so customers can wire UI off
+      // it without parsing the safety pipeline internals.
+      const promptForConfidence = getFirstStringValue(sanitized) ?? "";
+      const outputForConfidence = getFirstStringValue(finalResult) ?? "";
+      const overlap = computeInputOutputOverlap(promptForConfidence, outputForConfidence);
+      const confidence = scoreConfidence({
+        schemaMatch: config.schema ? "clean" : "no-schema",
+        modelsConsulted: modelsConsulted.length,
+        consensusAgreed:
+          modelsConsulted.length >= 2 ? true : null, // best-effort; consensus engine doesn't surface disagreement yet
+        safetyFlagged: piiWarning !== undefined,
+        inputOutputOverlap: overlap,
+        evalPassRate: null, // wired in C2 — lookup from eval-runs table
+      });
+
+      const timestampIso = new Date().toISOString();
       const remainingCheck = userId ? await checkFreeUsage(userId) : undefined;
       const remaining = remainingCheck?.remaining;
       const response = NextResponse.json({
@@ -896,7 +960,7 @@ async function handleAgentRoute(
         _meta: {
           agent: config.name,
           durationMs: Date.now() - startTime,
-          timestamp: new Date().toISOString(),
+          timestamp: timestampIso,
           // Anthropic Constitution §3: transparent provider selection.
           // Surface every model the handler consulted (and a coarse
           // provider bucket so customers can see "anthropic+nvidia"
@@ -906,8 +970,49 @@ async function handleAgentRoute(
             : {}),
           ...(piiWarning ? { piiWarning } : {}),
           ...(qualityScore ? { qualityScore: qualityScore.overall, qualityPassed: qualityScore.passed } : {}),
+          // Per-request manifest snapshot — auditor agents reading the
+          // response can verify the platform's claims about THIS agent
+          // match the public /api/_meta/agents.json document. Linkable.
+          ...(mergedManifest
+            ? {
+                manifest: {
+                  tier: mergedManifest.tier,
+                  outputClass: mergedManifest.outputClass,
+                  piiGuardMode: mergedManifest.pii.guardMode,
+                  declaredProviders: [
+                    ...new Set(mergedManifest.models.map((m) => m.provider)),
+                  ],
+                  ref: `https://sovereignmatrix.agency/api/_meta/agents.json#${config.name}`,
+                },
+              }
+            : {}),
+          // Confidence scoring — LLM09 surface. Customers see a 0..1
+          // score + a recommended action band, not just raw output.
+          confidence: {
+            score: confidence.score,
+            band: confidence.band,
+            recommendedAction: confidence.recommendedAction,
+          },
         },
       });
+
+      // ─── Response attestation (LLM05 — supply-chain proof) ───
+      // HMAC-SHA256 over (agent, requestId, sha256(input), sha256(output),
+      // providers, models, timestamp). Customers can verify the response
+      // was produced by Sovereign + match the claimed model. Header
+      // omitted gracefully when SOVEREIGN_ATTESTATION_SECRET isn't set.
+      const attestation = signAttestation({
+        agent: config.name,
+        requestId,
+        inputJson: JSON.stringify(sanitized),
+        outputJson: JSON.stringify(finalResult),
+        providers: providersConsulted,
+        models: modelsConsulted,
+        timestampIso,
+      });
+      if (attestation) {
+        response.headers.set("X-Sovereign-Attestation", attestation);
+      }
 
       if (remaining !== undefined) {
         response.headers.set("X-Free-Remaining", String(remaining));
