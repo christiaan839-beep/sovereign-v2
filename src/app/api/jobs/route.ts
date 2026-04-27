@@ -5,6 +5,8 @@ import { jobs } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { sendTelegram, formatJobStarted } from "@/lib/telegram";
 import { createLogger } from "@/lib/logger";
+import { handleDBError, isPgTableMissing } from "@/lib/db-error";
+import { loggedFireForget } from "@/lib/safe-async";
 
 const log = createLogger("jobs-api");
 
@@ -23,18 +25,26 @@ const log = createLogger("jobs-api");
  */
 export async function POST(req: Request) {
   const { userId } = await auth();
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!userId)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
   const { goal, notifyTelegram, telegramChatId } = body;
 
   if (!goal || typeof goal !== "string" || goal.trim().length < 5) {
-    return NextResponse.json({ error: "goal is required (5+ chars)" }, { status: 400 });
+    return NextResponse.json(
+      { error: "goal is required (5+ chars)" },
+      { status: 400 },
+    );
   }
 
   const hasTelegram = !!process.env.TELEGRAM_BOT_TOKEN;
   const shouldNotify = notifyTelegram ?? hasTelegram;
-  const chatId = telegramChatId || process.env.TELEGRAM_ADMIN_CHAT_ID || process.env.TELEGRAM_CHAT_ID || "";
+  const chatId =
+    telegramChatId ||
+    process.env.TELEGRAM_ADMIN_CHAT_ID ||
+    process.env.TELEGRAM_CHAT_ID ||
+    "";
 
   let job;
   try {
@@ -49,13 +59,8 @@ export async function POST(req: Request) {
       })
       .returning();
   } catch (err: unknown) {
-    const pgCode = (err as { code?: string })?.code;
-    const msg = err instanceof Error ? err.message : String(err);
-    if (pgCode === "42P01" || msg.includes("does not exist")) {
-      return NextResponse.json({
-        error: "Database tables not ready. Run migration: drizzle/0002_async_jobs.sql",
-        hint: "Neon Console → SQL Editor → paste the migration file → Run",
-      }, { status: 503 });
+    if (isPgTableMissing(err)) {
+      return handleDBError(err, { route: "/api/jobs" });
     }
     throw err;
   }
@@ -64,16 +69,22 @@ export async function POST(req: Request) {
 
   // Fire-and-forget Telegram acknowledgment
   if (shouldNotify && chatId) {
-    sendTelegram(chatId, formatJobStarted(goal.trim(), job.id)).catch(() => {});
+    loggedFireForget(
+      sendTelegram(chatId, formatJobStarted(goal.trim(), job.id)),
+      { source: "jobs:start", meta: { jobId: job.id } },
+    );
   }
 
-  return NextResponse.json({
-    jobId: job.id,
-    status: "pending",
-    goal: job.goal,
-    pollUrl: `/api/jobs/${job.id}`,
-    tip: "Poll pollUrl every few seconds, or wait for your Telegram notification.",
-  }, { status: 202 });
+  return NextResponse.json(
+    {
+      jobId: job.id,
+      status: "pending",
+      goal: job.goal,
+      pollUrl: `/api/jobs/${job.id}`,
+      tip: "Poll pollUrl every few seconds, or wait for your Telegram notification.",
+    },
+    { status: 202 },
+  );
 }
 
 /**
@@ -82,7 +93,8 @@ export async function POST(req: Request) {
  */
 export async function GET() {
   const { userId } = await auth();
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!userId)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
     const userJobs = await db
@@ -103,11 +115,11 @@ export async function GET() {
 
     return NextResponse.json({ jobs: userJobs });
   } catch (err: unknown) {
-    const pgCode = (err as { code?: string })?.code;
-    const msg = err instanceof Error ? err.message : String(err);
-    if (pgCode === "42P01" || msg.includes("does not exist")) {
-      return NextResponse.json({ jobs: [] });
-    }
-    throw err;
+    return handleDBError(err, {
+      route: "/api/jobs",
+      // Read-only list endpoint: when the migration hasn't run yet, render
+      // an empty list rather than 503 the dashboard.
+      emptyOnMissing: { jobs: [] },
+    });
   }
 }
