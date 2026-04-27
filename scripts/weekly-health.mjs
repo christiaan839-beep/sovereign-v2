@@ -535,6 +535,22 @@ const trustAssets = [
     path: "src/app/dashboard/appeals/page.tsx",
     name: "User appeal queue UI (file + view)",
   },
+  // Round 14 (D2) — per-call pricing transparency. The estimator is
+  // pure-function and reusable across the API + page + editor preview;
+  // deleting any one of these regresses the FMTI pricing-transparency
+  // subdomain.
+  {
+    path: "src/lib/agent-pricing-estimate.ts",
+    name: "Per-agent cost estimator (provider-band model)",
+  },
+  {
+    path: "src/app/api/_meta/pricing/route.ts",
+    name: "Machine-readable pricing endpoint (/api/_meta/pricing.json)",
+  },
+  {
+    path: "src/app/pricing/per-call/page.tsx",
+    name: "Per-call pricing transparency page",
+  },
 ];
 for (const { path, name } of trustAssets) {
   const present = existsSync(join(ROOT, path)) ? 1 : 0;

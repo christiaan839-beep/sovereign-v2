@@ -139,9 +139,36 @@ const SUBDOMAINS = [
     section: "Model — Access",
     verifier: () => {
       const pricingPage = existsSync(join(ROOT, "src/app/pricing/page.tsx"));
-      return pricingPage
-        ? { ok: true, score: 0.7, evidence: "Plan tiers published on /pricing; per-call pricing calculator pending (D2)." }
-        : { ok: false, score: 0.0, evidence: "/pricing page missing" };
+      const perCallPage = existsSync(
+        join(ROOT, "src/app/pricing/per-call/page.tsx"),
+      );
+      const pricingApi = existsSync(
+        join(ROOT, "src/app/api/_meta/pricing/route.ts"),
+      );
+      // Round 14 (D2) shipped:
+      //   - per-call pricing rate card at /pricing/per-call (human-readable)
+      //   - /api/_meta/pricing.json (machine-readable for auditor LLMs)
+      //   - DAG cost preview in the visual editor
+      // Together that pushes this subdomain from 70% (plan tiers only)
+      // to 90% (plan tiers + per-call rate card + machine-readable feed).
+      // Reaching 100% would mean exposing per-run actual cost in the
+      // user's billing dashboard, which is tracked but not yet rendered.
+      const everything = pricingPage && perCallPage && pricingApi;
+      return everything
+        ? {
+            ok: true,
+            score: 0.9,
+            evidence:
+              "Plan tiers on /pricing, per-call rate card at /pricing/per-call, machine-readable feed at /api/_meta/pricing.json, DAG cost preview in visual editor. Per-run actual-cost dashboard pending.",
+          }
+        : pricingPage
+          ? {
+              ok: true,
+              score: 0.7,
+              evidence:
+                "Plan tiers published on /pricing; per-call pricing calculator pending (D2).",
+            }
+          : { ok: false, score: 0.0, evidence: "/pricing page missing" };
     },
   },
   // ─── Capabilities ───

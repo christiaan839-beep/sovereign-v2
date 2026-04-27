@@ -10,6 +10,10 @@ import { MyDagsPanel } from "@/components/playbook/MyDagsPanel";
 import { ConfidenceBadge } from "@/components/agent/ConfidenceBadge";
 import { TokenBudgetMeter } from "@/components/agent/TokenBudgetMeter";
 import { extractConfidence, extractTokenBudget } from "@/lib/agent-meta";
+import {
+  estimateDagCost,
+  formatCents,
+} from "@/lib/agent-pricing-estimate";
 
 /**
  * D1 — drag-drop visual playbook editor.
@@ -28,6 +32,8 @@ interface AgentSummary {
   slug: string;
   tier: 1 | 2 | 3;
   outputClass?: string;
+  /** Provider list — needed for the cost preview. */
+  providers?: string[];
 }
 
 interface NodeRunResult {
@@ -141,10 +147,19 @@ export default function PlaybookEditorPage() {
       .then((body) => {
         if (!alive) return;
         const map: Record<string, AgentSummary> = {};
+        type ManifestModel = { provider?: string };
+        type ManifestAgent = {
+          tier: 1 | 2 | 3;
+          outputClass?: string;
+          models?: ManifestModel[];
+        };
         for (const [slug, m] of Object.entries(
-          (body as { agents?: Record<string, { tier: 1 | 2 | 3; outputClass?: string }> }).agents ?? {},
+          (body as { agents?: Record<string, ManifestAgent> }).agents ?? {},
         )) {
-          map[slug] = { slug, tier: m.tier, outputClass: m.outputClass };
+          const providers = (m.models ?? [])
+            .map((mod) => mod.provider)
+            .filter((p): p is string => Boolean(p));
+          map[slug] = { slug, tier: m.tier, outputClass: m.outputClass, providers };
         }
         setAgents(map);
         setRequiredBySlug({
@@ -163,6 +178,26 @@ export default function PlaybookEditorPage() {
   }, []);
 
   const result = useMemo(() => dryRun(dag, requiredBySlug), [dag, requiredBySlug]);
+
+  /**
+   * Worst- and best-case cost preview for the current DAG. Recomputes
+   * on every dag/agents change but the work is trivially cheap (sum
+   * of N integer ops) — no need to debounce.
+   *
+   * Closes FMTI's pricing-transparency subdomain on the SURFACE side:
+   * the user sees the cost ceiling BEFORE running, not as a surprise
+   * on the next bill.
+   */
+  const costPreview = useMemo(() => {
+    return estimateDagCost({
+      nodes: dag.nodes,
+      agentLookup: (slug) => {
+        const a = agents[slug];
+        if (!a) return undefined;
+        return { providers: a.providers ?? [] };
+      },
+    });
+  }, [dag, agents]);
   const order = useMemo(() => topoSort(dag).order, [dag]);
 
   const handleAddNode = useCallback((slug: string) => {
@@ -508,6 +543,29 @@ export default function PlaybookEditorPage() {
               <span className="text-neutral-300">
                 ~{result.estimatedKtokens} Ktokens / run
               </span>
+            </li>
+            {/*
+              D2 / Round 14 — cost preview. The estimate is best-case to
+              worst-case across each node's provider chain. Never under-
+              promises — the worst-case is the upper bound on what this
+              run can cost.
+            */}
+            <li className="flex items-baseline gap-2">
+              <span className="text-neutral-500 text-xs">cost</span>
+              <span className="text-neutral-300">
+                {costPreview.totalBestCaseCents === costPreview.totalWorstCaseCents
+                  ? formatCents(costPreview.totalWorstCaseCents)
+                  : `${formatCents(costPreview.totalBestCaseCents)} – ${formatCents(costPreview.totalWorstCaseCents)}`}
+                {" "}
+                <span className="text-neutral-500 text-[10px]">/ run</span>
+              </span>
+              <Link
+                href="/pricing/per-call"
+                className="ml-auto text-[10px] text-neutral-500 hover:text-neutral-300"
+                title="See the full per-agent rate card"
+              >
+                rate card →
+              </Link>
             </li>
           </ul>
         </div>
