@@ -188,7 +188,8 @@ export async function POST(
       error,
     });
 
-    // Persist step (best-effort)
+    // Persist step (best-effort, but logged on failure so we can spot
+    // outages instead of losing audit trail silently).
     if (runId) {
       db.insert(playbookRunSteps)
         .values({
@@ -202,7 +203,13 @@ export async function POST(
           startedAt: new Date(stepStart),
           completedAt: new Date(),
         })
-        .catch(() => {}); // non-blocking
+        .catch((err) =>
+          log.warn("playbookRunSteps insert failed", {
+            runId,
+            stepIndex: i,
+            error: String(err),
+          }),
+        );
     }
   }
 
@@ -210,7 +217,8 @@ export async function POST(
   const finalStatus: "completed" | "failed" | "partial" =
     failed === 0 ? "completed" : succeeded === 0 ? "failed" : "partial";
 
-  // Close the run
+  // Close the run — logged so a Neon blip during finalize doesn't leave
+  // a silently-stuck "running" row.
   if (runId) {
     db.update(playbookRuns)
       .set({
@@ -221,7 +229,12 @@ export async function POST(
         completedAt: new Date(),
       })
       .where(eq(playbookRuns.id, runId))
-      .catch(() => {});
+      .catch((err) =>
+        log.warn("playbookRuns close update failed", {
+          runId,
+          error: String(err),
+        }),
+      );
   }
 
   // Bump workflow's lastRunAt + run count
@@ -231,10 +244,25 @@ export async function POST(
       runCount: (workflow.runCount ?? 0) + 1,
     })
     .where(eq(workflows.id, workflow.id))
-    .catch(() => {});
+    .catch((err) =>
+      log.warn("workflow lastRunAt update failed", {
+        workflowId: workflow.id,
+        error: String(err),
+      }),
+    );
 
-  // Count the workflow execution as one billable run
-  incrementUsage(userId, `workflow:${workflow.id}`).catch(() => {});
+  // Count the workflow execution as one billable run.
+  // Awaited so the usage row is durable before the response returns —
+  // Vercel can kill the worker before fire-and-forget promises land.
+  try {
+    await incrementUsage(userId, `workflow:${workflow.id}`);
+  } catch (err) {
+    log.warn("workflow usage increment failed", {
+      workflowId: workflow.id,
+      userId,
+      error: String(err),
+    });
+  }
 
   log.info("workflow run complete", {
     workflowId: workflow.id,

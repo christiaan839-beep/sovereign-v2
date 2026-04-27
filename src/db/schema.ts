@@ -920,3 +920,30 @@ export const ctaClicks = pgTable(
     index("idx_cta_clicks_source_path").on(table.sourcePath),
   ],
 );
+
+// ═══════════════════════════════════════════
+// Deferred Jobs (DLQ) — failed fire-and-forget operations
+// Populated by withDLQ() in src/lib/safe-async.ts. A background worker
+// retries pending entries with exponential backoff.
+// ═══════════════════════════════════════════
+
+export const deferredJobs = pgTable(
+  "deferred_jobs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    kind: text("kind").notNull(), // webhook, usage, audit, notification, memory
+    target: text("target").notNull(), // e.g., "ClientReport", "incrementUsage"
+    payload: text("payload"), // serialized JSON args for retry
+    userId: text("user_id"), // tenant scope (null for system-level jobs)
+    lastError: text("last_error"),
+    attempts: integer("attempts").notNull().default(0),
+    status: text("status").notNull().default("pending"), // pending, succeeded, abandoned
+    nextAttemptAt: timestamp("next_attempt_at"),
+    completedAt: timestamp("completed_at"),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (table) => [
+    index("idx_dlq_status_next").on(table.status, table.nextAttemptAt),
+    index("idx_dlq_user").on(table.userId),
+  ],
+);

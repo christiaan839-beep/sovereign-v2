@@ -60,8 +60,15 @@ export async function POST(
   });
   const responseTimeMs = Math.round(performance.now() - start);
 
-  // Increment usage for the run
-  if (userId) incrementUsage(userId, `skill:${id}`).catch(() => {});
+  // Increment usage for the run — awaited so the row lands before response
+  // (Vercel-kill-safe; matches the pattern in lib/metered-endpoint.ts).
+  if (userId) {
+    try {
+      await incrementUsage(userId, `skill:${id}`);
+    } catch {
+      /* swallow — usage tracking failure must not break the user's response */
+    }
+  }
 
   return NextResponse.json({
     result,

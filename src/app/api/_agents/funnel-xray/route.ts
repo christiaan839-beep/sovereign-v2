@@ -3,6 +3,7 @@ import { z } from "zod";
 import { ai } from "@/lib/ai";
 import { ANTI_SLOP_RULES } from "@/lib/content-engine";
 import { fireUserWebhook } from "@/lib/webhooks";
+import { withDLQ } from "@/lib/safe-async";
 
 /**
  * FUNNEL X-RAY — Analyzes competitor landing pages and generates superior variants.
@@ -24,15 +25,20 @@ When analyzing a competitor landing page, extract:
 7. COPY WEAKNESSES — Generic claims, missing specificity
 8. VISUAL WEAKNESSES — Stock photos, cluttered layout, poor hierarchy`;
 
-const schema = z.object({
-  action: z.enum(["analyze", "synthesize"]),
-  url: z.string().max(500).optional(),
-  analysis: z.record(z.unknown()).optional(),
-  prompt: z.string().max(5000).optional(),
-}).refine(
-  (d) => (d.action === "analyze" && d.url) || (d.action === "synthesize" && d.analysis) || d.prompt,
-  { message: "analyze requires url; synthesize requires analysis" }
-);
+const schema = z
+  .object({
+    action: z.enum(["analyze", "synthesize"]),
+    url: z.string().max(500).optional(),
+    analysis: z.record(z.unknown()).optional(),
+    prompt: z.string().max(5000).optional(),
+  })
+  .refine(
+    (d) =>
+      (d.action === "analyze" && d.url) ||
+      (d.action === "synthesize" && d.analysis) ||
+      d.prompt,
+    { message: "analyze requires url; synthesize requires analysis" },
+  );
 
 export const POST = createAgentRoute({
   name: "funnel-xray",
@@ -43,12 +49,17 @@ export const POST = createAgentRoute({
     if (action === "analyze") {
       const result = await ai(
         `Analyze this competitor landing page: ${url}\n\nBased on the domain and likely page structure, extract conversion intelligence.\n\nRespond in JSON:\n{"domain": "${url}", "primaryHook": {"text": "...", "score": 5, "weakness": "..."}, "pricingModel": {"structure": "...", "weakness": "..."}, "proofElements": {"count": 3, "types": [], "weakness": "..."}, "ctaStructure": {"primary": "...", "urgency": "low/medium/high", "weakness": "..."}, "overallConversionScore": 6, "topVulnerabilities": ["..."], "recommendedAttackVector": "..."}`,
-        { system: FUNNEL_XRAY_PROMPT, maxTokens: 2000 }
+        { system: FUNNEL_XRAY_PROMPT, maxTokens: 2000 },
       );
 
       let parsed;
       try {
-        parsed = JSON.parse(result.replace(/```json?\n?/g, "").replace(/```/g, "").trim());
+        parsed = JSON.parse(
+          result
+            .replace(/```json?\n?/g, "")
+            .replace(/```/g, "")
+            .trim(),
+        );
       } catch {
         parsed = { analysis: result, domain: url };
       }
@@ -59,17 +70,25 @@ export const POST = createAgentRoute({
     if (action === "synthesize") {
       const result = await ai(
         `Based on this competitor analysis, generate a SUPERIOR landing page variant:\n\n${JSON.stringify(analysis, null, 2)}\n\nRespond in JSON with: superiorHook, pricingArchitecture, layout, ctas, socialProof, urgency, confidenceScore.`,
-        { system: FUNNEL_XRAY_PROMPT, maxTokens: 3000 }
+        { system: FUNNEL_XRAY_PROMPT, maxTokens: 3000 },
       );
 
       let parsed;
       try {
-        parsed = JSON.parse(result.replace(/```json?\n?/g, "").replace(/```/g, "").trim());
+        parsed = JSON.parse(
+          result
+            .replace(/```json?\n?/g, "")
+            .replace(/```/g, "")
+            .trim(),
+        );
       } catch {
         parsed = { synthesis: result };
       }
 
-      await fireUserWebhook("FunnelXRay", "Synthesized", { url }).catch(() => {});
+      await withDLQ(
+        () => fireUserWebhook("FunnelXRay", "Synthesized", { url }),
+        { kind: "webhook", target: "FunnelXRay", payload: { url } },
+      );
       return { success: true, synthesis: parsed };
     }
 

@@ -209,3 +209,20 @@ CREATE TABLE IF NOT EXISTS "scheduled_runs" (
 );
 CREATE INDEX IF NOT EXISTS "idx_scheduled_runs_user" ON "scheduled_runs" ("user_id");
 CREATE INDEX IF NOT EXISTS "idx_scheduled_runs_next" ON "scheduled_runs" ("next_run_at");
+
+-- ─── DLQ for failed fire-and-forget operations ───
+CREATE TABLE IF NOT EXISTS "deferred_jobs" (
+  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+  "kind" text NOT NULL,
+  "target" text NOT NULL,
+  "payload" text,
+  "user_id" text,
+  "last_error" text,
+  "attempts" integer NOT NULL DEFAULT 0,
+  "status" text NOT NULL DEFAULT 'pending',
+  "next_attempt_at" timestamp,
+  "completed_at" timestamp,
+  "created_at" timestamp DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS "idx_dlq_status_next" ON "deferred_jobs" ("status", "next_attempt_at");
+CREATE INDEX IF NOT EXISTS "idx_dlq_user" ON "deferred_jobs" ("user_id");
