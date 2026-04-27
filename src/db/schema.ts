@@ -15,6 +15,12 @@ export const tenants = pgTable("tenants", {
   nodeId: text("node_id").notNull().unique(), // e.g., UMB-NX-77492
   createdAt: timestamp("created_at").defaultNow(),
   plan: text("plan").notNull().default("black-card"), // Future-proofing for tiering
+  // ── Channel attribution (P17) — captured at first landing-page visit, ──
+  // persisted at first auth-call. Null for users acquired before P17 ships.
+  utmSource: text("utm_source"),
+  utmMedium: text("utm_medium"),
+  utmCampaign: text("utm_campaign"),
+  utmReferrer: text("utm_referrer"), // document.referrer at landing
 });
 
 export const activeSwarms = pgTable(

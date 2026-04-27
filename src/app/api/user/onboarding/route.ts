@@ -19,13 +19,31 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { goal, industry, companyUrl } = body as {
+    const { goal, industry, companyUrl, utm } = body as {
       goal?: string;
       industry?: string;
       companyUrl?: string;
+      utm?: {
+        source?: string;
+        medium?: string;
+        campaign?: string;
+        referrer?: string;
+      };
     };
 
-    // Upsert tenant with onboarding data
+    const utmFields = utm
+      ? {
+          ...(utm.source && { utmSource: utm.source.slice(0, 200) }),
+          ...(utm.medium && { utmMedium: utm.medium.slice(0, 200) }),
+          ...(utm.campaign && { utmCampaign: utm.campaign.slice(0, 200) }),
+          ...(utm.referrer && { utmReferrer: utm.referrer.slice(0, 500) }),
+        }
+      : {};
+
+    // Upsert tenant with onboarding data. UTM fields use first-touch
+    // attribution: only persisted on FIRST tenant insert; later /onboarding
+    // calls leave the captured channel intact (don't let a returning user's
+    // direct visit overwrite their original Twitter referral).
     const existing = await db
       .select({ id: tenants.id })
       .from(tenants)
@@ -33,13 +51,16 @@ export async function POST(req: Request) {
       .limit(1);
 
     if (existing.length > 0) {
-      await db.update(tenants).set({
-        ...(goal && { onboardingGoal: goal }),
-        ...(industry && { onboardingIndustry: industry }),
-        ...(companyUrl && { companyUrl }),
-      }).where(eq(tenants.clerkUserId, userId));
+      await db
+        .update(tenants)
+        .set({
+          ...(goal && { onboardingGoal: goal }),
+          ...(industry && { onboardingIndustry: industry }),
+          ...(companyUrl && { companyUrl }),
+        })
+        .where(eq(tenants.clerkUserId, userId));
     } else {
-      // Create tenant if first time
+      // Create tenant if first time — UTM lands here.
       const nodeId = `SM-${userId.slice(-6).toUpperCase()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
       await db.insert(tenants).values({
         clerkUserId: userId,
@@ -48,10 +69,16 @@ export async function POST(req: Request) {
         onboardingGoal: goal || null,
         onboardingIndustry: industry || null,
         companyUrl: companyUrl || null,
+        ...utmFields,
       });
     }
 
-    log.info("Onboarding saved", { userId, goal, industry });
+    log.info("Onboarding saved", {
+      userId,
+      goal,
+      industry,
+      utmSource: utmFields.utmSource ?? null,
+    });
     return NextResponse.json({ success: true });
   } catch (err: unknown) {
     const pgCode = (err as { code?: string })?.code;
@@ -72,7 +99,11 @@ export async function GET() {
   try {
     const { userId } = await auth();
     if (!userId) {
-      return NextResponse.json({ goal: null, industry: null, companyUrl: null });
+      return NextResponse.json({
+        goal: null,
+        industry: null,
+        companyUrl: null,
+      });
     }
 
     const [tenant] = await db

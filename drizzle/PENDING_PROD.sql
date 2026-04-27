@@ -74,6 +74,12 @@ ALTER TABLE "tenants" ADD COLUMN IF NOT EXISTS "onboarding_goal" text;
 ALTER TABLE "tenants" ADD COLUMN IF NOT EXISTS "onboarding_industry" text;
 ALTER TABLE "tenants" ADD COLUMN IF NOT EXISTS "company_url" text;
 
+-- ─── P17: UTM channel attribution ───
+ALTER TABLE "tenants" ADD COLUMN IF NOT EXISTS "utm_source" text;
+ALTER TABLE "tenants" ADD COLUMN IF NOT EXISTS "utm_medium" text;
+ALTER TABLE "tenants" ADD COLUMN IF NOT EXISTS "utm_campaign" text;
+ALTER TABLE "tenants" ADD COLUMN IF NOT EXISTS "utm_referrer" text;
+
 -- ─── 0004: Graph memory fabric ───
 CREATE TABLE IF NOT EXISTS "graph_nodes" (
   "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
