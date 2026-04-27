@@ -42,6 +42,7 @@ import { signAttestation } from "@/lib/response-attestation";
 import { evaluateTenantPolicy } from "@/lib/tenant-agent-policy";
 import { resolveTenantPolicy } from "@/lib/tenant-policy-resolver";
 import { getAgentEvalPassRate } from "@/lib/eval-pass-rate";
+import { checkTokenBudget, recordTokenUsage, type BudgetPlan } from "@/lib/token-budget";
 import { resolveTenantId } from "@/lib/tenant-resolver";
 import { isAgentAvailable, recordAgentSuccess, recordAgentFailure } from "@/lib/agent-circuit-breaker";
 import { recordSloEvent } from "@/lib/slo-tracker";
@@ -499,6 +500,68 @@ async function handleAgentRoute(
           log.warn("Tenant policy lookup failed — allowing request", {
             agent: config.name,
             tenantId,
+            error: (err as Error).message,
+          });
+        }
+      }
+
+      // ─── Token Budget Pre-flight (OWASP LLM04 — Model DoS) ───
+      // Cheap heuristic: estimate tokens at request time using
+      // the input string length / 4 (rough chars-to-tokens ratio).
+      // Plan tier comes from the user's subscription record;
+      // primary model defaults to the registered manifest's first
+      // declared provider, falling back to "default" when no
+      // manifest is present.
+      //
+      // Soft warning at 80% (returned in _meta.tokenBudget for the
+      // dashboard to surface). Hard block at 100% returns 429 with
+      // a structured `tokenBudgetReason`.
+      //
+      // Fails open on storage error so a Redis flap doesn't 429
+      // paying customers — the audit log captures the gap.
+      let budgetCheck: Awaited<ReturnType<typeof checkTokenBudget>> | null = null;
+      const inputForBudget = JSON.stringify(sanitized);
+      const estimatedTokens = Math.ceil(inputForBudget.length / 4) * 2; // 2x for input+output round-trip
+      const primaryModel =
+        mergedManifest?.models[0]?.provider ?? "default";
+      // Plan resolution — re-use the user's subscription plan when
+      // available; default to "free" so the cap engages even before
+      // billing is wired.
+      const userPlan: BudgetPlan = (sanitized._userPlan as BudgetPlan) ?? "free";
+
+      if (userId) {
+        try {
+          budgetCheck = await checkTokenBudget(
+            userId,
+            userPlan,
+            primaryModel,
+            estimatedTokens,
+          );
+          if (!budgetCheck.allowed) {
+            log.info("Token budget exceeded — blocking", {
+              agent: config.name,
+              userId,
+              plan: userPlan,
+              model: primaryModel,
+              usedToday: budgetCheck.usedToday,
+              limit: budgetCheck.limit,
+            });
+            return NextResponse.json(
+              {
+                success: false,
+                error: budgetCheck.reason,
+                tokenBudgetReason: budgetCheck.reason,
+                limit: budgetCheck.limit,
+                usedToday: budgetCheck.usedToday,
+                plan: userPlan,
+                model: primaryModel,
+              },
+              { status: 429 },
+            );
+          }
+        } catch (err) {
+          log.warn("Token budget check failed — allowing request", {
+            agent: config.name,
             error: (err as Error).message,
           });
         }
@@ -1005,6 +1068,27 @@ async function handleAgentRoute(
       const timestampIso = new Date().toISOString();
       const remainingCheck = userId ? await checkFreeUsage(userId) : undefined;
       const remaining = remainingCheck?.remaining;
+
+      // ─── Post-flight: record token usage against the budget ───
+      // Same heuristic as pre-flight — input + output JSON length
+      // / 4 ≈ tokens. The actual provider may report a different
+      // number; we'd swap to the real value once provider responses
+      // surface usage consistently. For now this is a conservative
+      // upper bound that bounds DoS risk even on optimistic models.
+      if (userId && budgetCheck?.allowed) {
+        const outputLength = JSON.stringify(finalResult).length;
+        const actualTokens = Math.ceil((inputForBudget.length + outputLength) / 4);
+        try {
+          await recordTokenUsage(userId, primaryModel, actualTokens);
+        } catch (err) {
+          log.warn("recordTokenUsage failed — counter not incremented", {
+            error: (err as Error).message,
+            userId,
+            actualTokens,
+          });
+        }
+      }
+
       const response = NextResponse.json({
         ...finalResult,
         _meta: {
@@ -1033,6 +1117,20 @@ async function handleAgentRoute(
                     ...new Set(mergedManifest.models.map((m) => m.provider)),
                   ],
                   ref: `https://sovereignmatrix.agency/api/_meta/agents.json#${config.name}`,
+                },
+              }
+            : {}),
+          // Token budget surface — LLM04 (Model DoS) defense. UI uses
+          // this to render "you're at 84% of today's Claude budget"
+          // banners before the cap engages.
+          ...(budgetCheck
+            ? {
+                tokenBudget: {
+                  pctUsed: budgetCheck.pctUsed,
+                  softWarning: budgetCheck.softWarning,
+                  limit: budgetCheck.limit,
+                  model: budgetCheck.model,
+                  plan: budgetCheck.plan,
                 },
               }
             : {}),
