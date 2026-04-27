@@ -932,7 +932,8 @@ export const playbookDagRuns = pgTable("playbook_dag_runs", {
   // the live `dag` column on the parent because the user may have
   // edited it since this run completed.
   dagSnapshot: jsonb("dag_snapshot").notNull(),
-  status: text("status").notNull(), // completed | failed
+  // running | completed | failed. running = in-flight async execution.
+  status: text("status").notNull(),
   nodeCount: integer("node_count").notNull(),
   edgeCount: integer("edge_count").notNull(),
   // Per-node NodeRunResult[] — see src/lib/playbook-dag.ts. The
@@ -942,6 +943,17 @@ export const playbookDagRuns = pgTable("playbook_dag_runs", {
   totalDurationMs: integer("total_duration_ms").notNull(),
   // nodeId of the first failing node (mirrors ExecuteDagResult.failedAt).
   failedAt: text("failed_at"),
+  // ─── Round 12 / drizzle 0037: async-execution telemetry ──────────
+  // Number of nodes whose status is "completed" or "failed" so far.
+  // Updated incrementally during async runs so the editor's polling
+  // client can render "5 of 12 nodes" without re-parsing results.
+  progressNodesCompleted: integer("progress_nodes_completed").notNull().default(0),
+  // Distinct from createdAt because async runs may queue briefly
+  // before pickup. For sync runs the two are effectively equal.
+  startedAt: timestamp("started_at"),
+  // Touched on every node-complete write. Orphan-detection cleanup
+  // (future cron) uses this to find stuck "running" rows.
+  lastProgressAt: timestamp("last_progress_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (table) => [
   index("idx_playbook_dag_runs_user_created").on(table.userId, table.createdAt),

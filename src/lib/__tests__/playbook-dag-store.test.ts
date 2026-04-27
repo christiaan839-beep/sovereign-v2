@@ -111,6 +111,75 @@ describe("playbook-dag-store — graceful no-DB fallbacks", () => {
     });
     expect(result).toBeNull();
   });
+
+  // ─── Round 12: async-execution helpers ──────────────────────────
+  it("createPendingRun returns null when DB is unavailable", async () => {
+    // The async route MUST detect this null and fall back to sync —
+    // a successful response with no runId would orphan the user (no
+    // way to poll, no way to come back to it).
+    const { createPendingRun } = await importStore();
+    const result = await createPendingRun({
+      userId: "user_1",
+      dagId: null,
+      dag: { nodes: [{ id: "n1", agent: "leads", position: { x: 0, y: 0 }, config: {} }], edges: [] },
+    });
+    expect(result).toBeNull();
+  });
+
+  it("updateRunProgress returns updated=false when DB is unavailable", async () => {
+    const { updateRunProgress } = await importStore();
+    const result = await updateRunProgress({
+      runId: "run-1",
+      userId: "user_1",
+      results: [],
+      progressNodesCompleted: 0,
+    });
+    expect(result).toEqual({ updated: false });
+  });
+
+  it("finalizeRun returns finalized=false when DB is unavailable", async () => {
+    const { finalizeRun } = await importStore();
+    const result = await finalizeRun({
+      runId: "run-1",
+      userId: "user_1",
+      dagId: null,
+      status: "completed",
+      results: [],
+      totalDurationMs: 100,
+      failedAt: null,
+    });
+    expect(result).toEqual({ finalized: false });
+  });
+
+  it("async helpers never throw on hostile inputs (graceful contract)", async () => {
+    const { createPendingRun, updateRunProgress, finalizeRun } = await importStore();
+    await expect(
+      createPendingRun({
+        userId: "u",
+        dagId: null,
+        dag: { nodes: [], edges: [] } as never,
+      }),
+    ).resolves.not.toThrow();
+    await expect(
+      updateRunProgress({
+        runId: "r",
+        userId: "u",
+        results: [],
+        progressNodesCompleted: 0,
+      }),
+    ).resolves.not.toThrow();
+    await expect(
+      finalizeRun({
+        runId: "r",
+        userId: "u",
+        dagId: null,
+        status: "completed",
+        results: [],
+        totalDurationMs: 0,
+        failedAt: null,
+      }),
+    ).resolves.not.toThrow();
+  });
 });
 
 describe("playbook-dag-store — fallback semantics", () => {

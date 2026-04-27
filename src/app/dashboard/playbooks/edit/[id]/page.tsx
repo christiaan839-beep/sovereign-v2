@@ -41,12 +41,19 @@ interface NodeRunResult {
 
 interface RunResponse {
   success: boolean;
-  status: "completed" | "failed";
+  status: "running" | "completed" | "failed";
   results: NodeRunResult[];
   totalDurationMs: number;
-  failedAt?: string;
+  failedAt?: string | null;
   runId?: string | null;
   recorded?: boolean;
+  /** True when the run was dispatched async; false (or absent) for sync. */
+  async?: boolean;
+  /** Polling URL — present only on async dispatches. */
+  pollUrl?: string;
+  /** Async progress, when polling. */
+  progressNodesCompleted?: number;
+  nodeCount?: number;
 }
 
 const STARTER_DAG: PlaybookDag = {
@@ -251,8 +258,88 @@ export default function PlaybookEditorPage() {
         }),
       });
       const body = (await res.json()) as RunResponse;
-      setRunResult(body);
-      setRunState(body.success ? "done" : "error");
+
+      // ── Sync path: response carries the full result ──────────────
+      if (!body.async) {
+        setRunResult(body);
+        setRunState(body.success ? "done" : "error");
+        return;
+      }
+
+      // ── Async path: response is the dispatch ack; poll for state ─
+      // Show the dispatch immediately so the user sees "running…"
+      // status with the runId. Polling fills in per-node results as
+      // they complete.
+      setRunResult({
+        ...body,
+        results: [],
+        totalDurationMs: 0,
+      });
+
+      const runId = body.runId;
+      if (!runId) {
+        setRunState("error");
+        return;
+      }
+
+      // Poll every 2s. Cap at 5 minutes so a stuck run doesn't poll
+      // forever — the run detail page is the right place to keep
+      // watching. Editor cleanup runs on unmount.
+      const startedAt = Date.now();
+      const POLL_INTERVAL_MS = 2000;
+      const POLL_TIMEOUT_MS = 5 * 60 * 1000;
+
+      const tick = async (): Promise<void> => {
+        if (Date.now() - startedAt > POLL_TIMEOUT_MS) {
+          setRunState("error");
+          return;
+        }
+        try {
+          const r = await fetch(`/api/playbooks/dag/runs/${runId}`);
+          if (!r.ok) {
+            // Transient — keep polling. If the row eventually
+            // becomes available we resume; if it never does, the
+            // timeout above closes the loop.
+            setTimeout(() => void tick(), POLL_INTERVAL_MS);
+            return;
+          }
+          const detail = (await r.json()) as {
+            run: {
+              status: "running" | "completed" | "failed";
+              results: NodeRunResult[];
+              totalDurationMs: number;
+              failedAt: string | null;
+              progressNodesCompleted: number;
+              nodeCount: number;
+            };
+          };
+          setRunResult({
+            success: detail.run.status === "completed",
+            status: detail.run.status,
+            results: detail.run.results,
+            totalDurationMs: detail.run.totalDurationMs,
+            failedAt: detail.run.failedAt ?? undefined,
+            progressNodesCompleted: detail.run.progressNodesCompleted,
+            nodeCount: detail.run.nodeCount,
+            runId,
+            recorded: true,
+            async: true,
+          });
+          if (detail.run.status === "running") {
+            setTimeout(() => void tick(), POLL_INTERVAL_MS);
+          } else {
+            setRunState(detail.run.status === "completed" ? "done" : "error");
+          }
+        } catch {
+          // Network blip — retry once and let the timeout cut
+          // things off if it persists.
+          setTimeout(() => void tick(), POLL_INTERVAL_MS);
+        }
+      };
+
+      // Kick off the first poll after a short delay so the worker
+      // has time to start writing results.
+      setTimeout(() => void tick(), POLL_INTERVAL_MS);
     } catch {
       setRunState("error");
     }
@@ -435,28 +522,49 @@ export default function PlaybookEditorPage() {
         <section className="mt-6 rounded-lg border border-white/10 bg-white/[0.02] p-5">
           <header className="flex items-baseline justify-between border-b border-white/5 pb-3">
             <div className="flex items-baseline gap-3 flex-wrap">
-              <span
-                className={`text-sm font-semibold ${
-                  runResult.success ? "text-emerald-300" : "text-rose-300"
-                }`}
-              >
-                {runResult.success ? "✓ Run completed" : "✗ Run failed"}
-              </span>
-              <span className="text-xs text-neutral-500 font-mono">
-                {runResult.totalDurationMs}ms total
-              </span>
-              {runResult.failedAt && (
-                <span className="text-xs text-rose-400 font-mono">
-                  failed at: {runResult.failedAt}
-                </span>
+              {/*
+                Three terminal states + one in-flight state. The in-flight
+                state shows progress (n of m nodes done) so the user has
+                a visual cue that work is happening — the polling loop
+                fills this in.
+              */}
+              {runResult.status === "running" ? (
+                <>
+                  <span className="text-sm font-semibold text-amber-300">
+                    ⟳ Running…
+                  </span>
+                  <span className="text-xs text-neutral-500 font-mono">
+                    {runResult.progressNodesCompleted ?? 0} of {runResult.nodeCount ?? "?"} nodes
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span
+                    className={`text-sm font-semibold ${
+                      runResult.success ? "text-emerald-300" : "text-rose-300"
+                    }`}
+                  >
+                    {runResult.success ? "✓ Run completed" : "✗ Run failed"}
+                  </span>
+                  <span className="text-xs text-neutral-500 font-mono">
+                    {runResult.totalDurationMs}ms total
+                  </span>
+                  {runResult.failedAt && (
+                    <span className="text-xs text-rose-400 font-mono">
+                      failed at: {runResult.failedAt}
+                    </span>
+                  )}
+                </>
               )}
               {/*
-                Link to the forensic detail page. Only appears when the
-                run was actually persisted (runId present + recorded).
-                The user can come back to this run later, share the
-                URL with a teammate, etc.
+                Link to the forensic detail page. Appears for any run
+                that has a persisted runId — including async dispatches
+                where the user can navigate away and the run will keep
+                progressing. (The UI above polls the same endpoint to
+                update in-place; the link is for "save this URL" use
+                cases — share with a teammate, come back tomorrow.)
               */}
-              {runResult.runId && runResult.recorded && (
+              {runResult.runId && (
                 <Link
                   href={`/dashboard/playbooks/runs/${runResult.runId}`}
                   className="text-xs text-emerald-400 hover:text-emerald-300 underline-offset-4 hover:underline"

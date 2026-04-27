@@ -198,4 +198,54 @@ describe("playbook-dag · executeDag", () => {
     expect(r.results).toEqual([]);
     expect(r.failedAt).toBeDefined();
   });
+
+  // ─── Round 12: onProgress callback ─────────────────────────────
+  it("calls onProgress after each node reaches a terminal state (3 nodes → 3 calls)", async () => {
+    const calls: Array<{ count: number; nodeIds: string[] }> = [];
+    const runner = async () => ({ ok: true });
+    await executeDag(linear, runner, {
+      onProgress: (results, completedCount) => {
+        calls.push({
+          count: completedCount,
+          nodeIds: results.map((r) => r.nodeId),
+        });
+      },
+    });
+    // linear has 2 nodes; expect 2 progress calls, after each.
+    expect(calls).toHaveLength(2);
+    expect(calls[0].count).toBe(1);
+    expect(calls[0].nodeIds).toEqual(["a"]);
+    expect(calls[1].count).toBe(2);
+    expect(calls[1].nodeIds).toEqual(["a", "b"]);
+  });
+
+  it("onProgress fires for skipped nodes too (so the polling client sees the final shape)", async () => {
+    let calls = 0;
+    const runner = async (slug: string) => {
+      if (slug === "leads") throw new Error("boom");
+      return {};
+    };
+    await executeDag(linear, runner, {
+      onProgress: () => {
+        calls += 1;
+      },
+    });
+    // 1 failed + 1 skipped = 2 onProgress fires.
+    expect(calls).toBe(2);
+  });
+
+  it("onProgress callback errors NEVER propagate (observation must not kill execution)", async () => {
+    // The whole point of fail-open observability is that a transient
+    // DB hiccup in updateRunProgress shouldn't drop the whole run.
+    // We throw from onProgress and assert executeDag still returns
+    // the full result.
+    const runner = async () => ({ ok: true });
+    const r = await executeDag(linear, runner, {
+      onProgress: () => {
+        throw new Error("DB down");
+      },
+    });
+    expect(r.status).toBe("completed");
+    expect(r.results).toHaveLength(2);
+  });
 });

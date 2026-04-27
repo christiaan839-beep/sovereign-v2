@@ -64,6 +64,14 @@ A fourth commitment, added in the Round 10 sprint:
    insert. Same trust UI as the live editor, rendered from stored data.
    See [`src/app/dashboard/playbooks/runs/[runId]/page.tsx`](../src/app/dashboard/playbooks/runs/%5BrunId%5D/page.tsx).
 
+   Round 12 lifted the **20-node sync ceiling**. DAGs over 5 nodes auto-
+   route through the async path: insert a `running` row, return
+   `{runId, pollUrl}` immediately, continue execution in `after()` for
+   up to 5 minutes. The same `executeDag()` runs both modes — only the
+   delivery differs. Polling clients (editor + run detail page) read
+   `progress_nodes_completed` for live partial-result rendering.
+   See [`drizzle/0037_playbook_dag_async.sql`](../drizzle/0037_playbook_dag_async.sql).
+
 ---
 
 ## What we do NOT claim

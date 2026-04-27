@@ -44,18 +44,29 @@ export interface SavedDag {
 
 /**
  * Public shape of a DAG run record — what the run history view renders.
+ *
+ * `running` is the in-flight async state. It transitions to either
+ * `completed` or `failed` when the background worker finalises. Polling
+ * clients can read `progressNodesCompleted` to render a partial view
+ * without re-parsing the results JSONB.
  */
 export interface SavedDagRun {
   id: string;
   userId: string;
   dagId: string | null;
   dagSnapshot: PlaybookDag;
-  status: "completed" | "failed";
+  status: "running" | "completed" | "failed";
   nodeCount: number;
   edgeCount: number;
   results: NodeRunResult[];
   totalDurationMs: number;
   failedAt: string | null;
+  /** How many nodes have reached completed/failed/skipped so far. 0 to nodeCount. */
+  progressNodesCompleted: number;
+  /** Async pickup time. NULL for sync runs (where it equals createdAt). */
+  startedAt: string | null;
+  /** Heartbeat for orphan detection. Touched after every node complete. */
+  lastProgressAt: string | null;
   createdAt: string;
 }
 
@@ -303,6 +314,168 @@ export async function archiveDag(input: {
 }
 
 /**
+ * Round 12 — create an in-flight run row for the async path.
+ *
+ * Returns the new runId immediately (before any execution). The caller
+ * (typically /api/playbooks/run-dag in async mode) then runs the DAG
+ * via after() and updates this row as it progresses.
+ *
+ * Status starts as 'running'. progressNodesCompleted=0. results=[].
+ * The dagSnapshot is captured here, so even if the live DAG changes
+ * later the run's own snapshot reflects what the worker is executing.
+ *
+ * Returns null when DB is unavailable — async-path callers must
+ * fall back to sync execution rather than silently dropping the run.
+ */
+export async function createPendingRun(input: {
+  userId: string;
+  dagId: string | null;
+  dag: PlaybookDag;
+}): Promise<{ runId: string } | null> {
+  const db = await getDb();
+  if (!db) return null;
+
+  try {
+    const { playbookDagRuns } = await import("@/db/schema");
+    const now = new Date();
+    const inserted = await db
+      .insert(playbookDagRuns)
+      .values({
+        userId: input.userId,
+        dagId: input.dagId,
+        dagSnapshot: input.dag as unknown as object,
+        status: "running",
+        nodeCount: input.dag.nodes.length,
+        edgeCount: input.dag.edges.length,
+        results: [] as unknown as object,
+        totalDurationMs: 0,
+        progressNodesCompleted: 0,
+        startedAt: now,
+        lastProgressAt: now,
+      })
+      .returning({ id: playbookDagRuns.id });
+    const runId = inserted[0]?.id;
+    return runId ? { runId } : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Round 12 — incremental progress update during async execution.
+ *
+ * Called after each node completes (or fails / skips). Writes the
+ * partial results array, bumps progressNodesCompleted, and touches
+ * lastProgressAt for orphan detection.
+ *
+ * Tenant-scoped via the WHERE — a hostile actor can't push progress
+ * for someone else's run.
+ *
+ * NEVER throws. A progress update failure (DB hiccup) shouldn't kill
+ * the worker; the next update will likely succeed.
+ */
+export async function updateRunProgress(input: {
+  runId: string;
+  userId: string;
+  results: NodeRunResult[];
+  progressNodesCompleted: number;
+}): Promise<{ updated: boolean }> {
+  const db = await getDb();
+  if (!db) return { updated: false };
+
+  try {
+    const { playbookDagRuns } = await import("@/db/schema");
+    const truncated = truncateResults(input.results);
+    const result = await db
+      .update(playbookDagRuns)
+      .set({
+        results: truncated as unknown as object,
+        progressNodesCompleted: input.progressNodesCompleted,
+        lastProgressAt: new Date(),
+      })
+      .where(
+        and(
+          eq(playbookDagRuns.id, input.runId),
+          eq(playbookDagRuns.userId, input.userId),
+        ),
+      )
+      .returning({ id: playbookDagRuns.id });
+    return { updated: result.length > 0 };
+  } catch {
+    return { updated: false };
+  }
+}
+
+/**
+ * Round 12 — finalise an async run. Sets terminal status, writes the
+ * final results array + totalDurationMs + failedAt, and bumps the
+ * parent DAG's last_run_* fields the same way recordDagRun does for
+ * sync runs.
+ *
+ * Idempotent: calling twice with the same status leaves the row in
+ * the same state.
+ */
+export async function finalizeRun(input: {
+  runId: string;
+  userId: string;
+  dagId: string | null;
+  status: "completed" | "failed";
+  results: NodeRunResult[];
+  totalDurationMs: number;
+  failedAt: string | null;
+}): Promise<{ finalized: boolean }> {
+  const db = await getDb();
+  if (!db) return { finalized: false };
+
+  try {
+    const { playbookDags, playbookDagRuns } = await import("@/db/schema");
+    const truncated = truncateResults(input.results);
+    const completedNodes = input.results.filter(
+      (r) => r.status === "completed" || r.status === "failed" || r.status === "skipped",
+    ).length;
+    const finalRow = await db
+      .update(playbookDagRuns)
+      .set({
+        status: input.status,
+        results: truncated as unknown as object,
+        totalDurationMs: input.totalDurationMs,
+        failedAt: input.failedAt,
+        progressNodesCompleted: completedNodes,
+        lastProgressAt: new Date(),
+      })
+      .where(
+        and(
+          eq(playbookDagRuns.id, input.runId),
+          eq(playbookDagRuns.userId, input.userId),
+        ),
+      )
+      .returning({ id: playbookDagRuns.id });
+
+    // Mirror recordDagRun's parent-update so MyDagsPanel pills show
+    // the right state regardless of whether the run was sync or async.
+    if (input.dagId) {
+      await db
+        .update(playbookDags)
+        .set({
+          lastRunAt: new Date(),
+          lastRunStatus: input.status,
+          lastRunDurationMs: input.totalDurationMs,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(playbookDags.id, input.dagId),
+            eq(playbookDags.userId, input.userId),
+          ),
+        );
+    }
+    return { finalized: finalRow.length > 0 };
+  } catch {
+    return { finalized: false };
+  }
+}
+
+/**
  * Record a DAG run. Also updates the parent DAG's last_run fields
  * in the same transaction so the "My playbooks" panel can show
  * status pills without joining.
@@ -326,6 +499,10 @@ export async function recordDagRun(input: {
   try {
     const { playbookDags, playbookDagRuns } = await import("@/db/schema");
     const truncated = truncateResults(input.results);
+    const now = new Date();
+    const completedNodes = input.results.filter(
+      (r) => r.status === "completed" || r.status === "failed" || r.status === "skipped",
+    ).length;
     const inserted = await db
       .insert(playbookDagRuns)
       .values({
@@ -338,6 +515,12 @@ export async function recordDagRun(input: {
         results: truncated as unknown as object,
         totalDurationMs: input.totalDurationMs,
         failedAt: input.failedAt,
+        // Sync runs hit terminal state immediately; record both
+        // started_at and last_progress_at as "now" so the row's
+        // telemetry stays consistent with the async path.
+        progressNodesCompleted: completedNodes,
+        startedAt: now,
+        lastProgressAt: now,
       })
       .returning({ id: playbookDagRuns.id });
     const runId = inserted[0]?.id ?? null;
@@ -478,6 +661,9 @@ function rowToSavedDagRun(row: {
   results: unknown;
   totalDurationMs: number;
   failedAt: string | null;
+  progressNodesCompleted: number | null;
+  startedAt: Date | null;
+  lastProgressAt: Date | null;
   createdAt: Date;
 }): SavedDagRun {
   return {
@@ -491,6 +677,11 @@ function rowToSavedDagRun(row: {
     results: (row.results as NodeRunResult[]) ?? [],
     totalDurationMs: row.totalDurationMs,
     failedAt: row.failedAt,
+    // Pre-Round-12 rows have NULL for these. Default to sensible
+    // values so the SavedDagRun contract stays clean for old data.
+    progressNodesCompleted: row.progressNodesCompleted ?? row.nodeCount,
+    startedAt: row.startedAt?.toISOString() ?? null,
+    lastProgressAt: row.lastProgressAt?.toISOString() ?? null,
     createdAt: row.createdAt.toISOString(),
   };
 }

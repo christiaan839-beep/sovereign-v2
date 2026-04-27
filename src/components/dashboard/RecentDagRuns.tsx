@@ -19,7 +19,7 @@ import Link from "next/link";
 interface RunSummary {
   id: string;
   dagId: string | null;
-  status: "completed" | "failed";
+  status: "running" | "completed" | "failed";
   nodeCount: number;
   edgeCount: number;
   totalDurationMs: number;
@@ -101,7 +101,14 @@ export function RecentDagRuns() {
       ) : (
         <ul className="mt-4 space-y-1.5">
           {runs.map((r) => {
+            const inFlight = r.status === "running";
             const ok = r.status === "completed";
+            const glyph = inFlight ? "⟳" : ok ? "✓" : "✗";
+            const glyphColor = inFlight
+              ? "text-amber-400"
+              : ok
+                ? "text-emerald-400"
+                : "text-rose-400";
             return (
               <li key={r.id}>
                 <Link
@@ -110,10 +117,10 @@ export function RecentDagRuns() {
                   title="View run detail"
                 >
                   <span
-                    className={`shrink-0 text-xs font-mono ${ok ? "text-emerald-400" : "text-rose-400"}`}
-                    aria-label={ok ? "completed" : "failed"}
+                    className={`shrink-0 text-xs font-mono ${glyphColor} ${inFlight ? "animate-pulse" : ""}`}
+                    aria-label={r.status}
                   >
-                    {ok ? "✓" : "✗"}
+                    {glyph}
                   </span>
                   <span className="text-xs text-neutral-300 flex-1 truncate">
                     {r.dagId ? (

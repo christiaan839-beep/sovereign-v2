@@ -497,6 +497,16 @@ const trustAssets = [
     path: "src/app/api/playbooks/dag/[id]/clone/route.ts",
     name: "Playbook clone endpoint (POST /api/playbooks/dag/[id]/clone)",
   },
+  // Round 12 — async/queued DAG execution. The migration must stay
+  // around because the schema-typescript pair depends on the columns
+  // it adds (progress_nodes_completed, started_at, last_progress_at).
+  // The route file is the smart sync-vs-async dispatcher; deleting
+  // it would break visual-editor execution entirely. Both shipped
+  // together; both stay locked.
+  {
+    path: "drizzle/0037_playbook_dag_async.sql",
+    name: "Async DAG migration (running status + progress columns)",
+  },
 ];
 for (const { path, name } of trustAssets) {
   const present = existsSync(join(ROOT, path)) ? 1 : 0;

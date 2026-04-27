@@ -225,11 +225,22 @@ export function resolvePlaceholders(
  * Default behavior: stop on first failure. Set continueOnError=true
  * to keep going (downstream nodes are still skipped if their inputs
  * couldn't be resolved).
+ *
+ * `onProgress` is fired after each node reaches a terminal state
+ * (completed / failed / skipped). The callback receives the partial
+ * results array AND the count of nodes done so far. Used by the
+ * async/queued path (Round 12) to persist incremental progress so
+ * the editor's polling client sees a live view. NEVER throws — a
+ * progress-callback failure is logged upstream but doesn't kill the
+ * execution.
  */
 export async function executeDag(
   dag: PlaybookDag,
   runAgent: (slug: string, input: Record<string, unknown>) => Promise<unknown>,
-  options: { continueOnError?: boolean } = {},
+  options: {
+    continueOnError?: boolean;
+    onProgress?: (results: NodeRunResult[], completedCount: number) => void | Promise<void>;
+  } = {},
 ): Promise<ExecuteDagResult> {
   const t0 = Date.now();
   const { order, cycle } = topoSort(dag);
@@ -246,6 +257,19 @@ export async function executeDag(
   const results: NodeRunResult[] = [];
   let failed = false;
 
+  // Helper: fire onProgress without ever throwing. The progress
+  // callback's only job is observation (persist to DB, push a log
+  // line); it must not affect execution. We swallow errors here so
+  // a transient DB hiccup doesn't kill the run.
+  const fireProgress = async () => {
+    if (!options.onProgress) return;
+    try {
+      await options.onProgress(results, results.length);
+    } catch {
+      // intentional: never let observation kill execution
+    }
+  };
+
   for (const nodeId of order) {
     const node = dag.nodes.find((n) => n.id === nodeId);
     if (!node) continue;
@@ -257,6 +281,7 @@ export async function executeDag(
         status: "skipped",
         durationMs: 0,
       });
+      await fireProgress();
       continue;
     }
 
@@ -283,6 +308,8 @@ export async function executeDag(
         durationMs: Date.now() - nodeStart,
       });
     }
+
+    await fireProgress();
   }
 
   return {

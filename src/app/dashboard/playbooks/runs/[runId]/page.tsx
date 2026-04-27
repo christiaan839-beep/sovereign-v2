@@ -29,6 +29,7 @@ import { ConfidenceBadge } from "@/components/agent/ConfidenceBadge";
 import { TokenBudgetMeter } from "@/components/agent/TokenBudgetMeter";
 import { extractConfidence, extractTokenBudget } from "@/lib/agent-meta";
 import { RunOutputDetail } from "./RunOutputDetail";
+import { RunDetailRefresher } from "./RunDetailRefresher";
 
 interface PageProps {
   params: Promise<{ runId: string }>;
@@ -50,13 +51,35 @@ export default async function RunDetailPage({ params }: PageProps) {
   if (!run) notFound();
 
   const succeeded = run.status === "completed";
+  const inFlight = run.status === "running";
   const startedAt = new Date(run.createdAt);
   const completedNodes = run.results.filter((r) => r.status === "completed").length;
   const failedNodes = run.results.filter((r) => r.status === "failed").length;
   const skippedNodes = run.results.filter((r) => r.status === "skipped").length;
 
+  // Status display config — three terminal states + one in-flight.
+  // Centralizing these constants here keeps the render below clean.
+  const statusGlyph = inFlight ? "⟳" : succeeded ? "✓" : "✗";
+  const statusColor = inFlight
+    ? "text-amber-300"
+    : succeeded
+      ? "text-emerald-300"
+      : "text-rose-300";
+  const statusBadgeColor = inFlight
+    ? "text-amber-400"
+    : succeeded
+      ? "text-emerald-400"
+      : "text-rose-400";
+
   return (
     <main className="mx-auto max-w-5xl px-6 py-8 text-neutral-200">
+      {/*
+        Auto-refresh while running. The component renders nothing —
+        it's a pure side-effect island that calls router.refresh()
+        every 2s when status='running' and otherwise stays inert.
+      */}
+      <RunDetailRefresher status={run.status} />
+
       <header className="mb-6">
         <div className="flex items-baseline gap-3 text-xs">
           <Link
@@ -70,37 +93,48 @@ export default async function RunDetailPage({ params }: PageProps) {
 
         <h1 className="mt-3 flex items-baseline gap-3 text-2xl font-bold">
           <span
-            className={succeeded ? "text-emerald-300" : "text-rose-300"}
-            aria-label={succeeded ? "completed" : "failed"}
+            className={`${statusColor} ${inFlight ? "animate-pulse" : ""}`}
+            aria-label={run.status}
           >
-            {succeeded ? "✓" : "✗"}
+            {statusGlyph}
           </span>
           <span>Playbook run</span>
-          <span
-            className={`text-xs uppercase tracking-wider ${
-              succeeded ? "text-emerald-400" : "text-rose-400"
-            }`}
-          >
+          <span className={`text-xs uppercase tracking-wider ${statusBadgeColor}`}>
             {run.status}
           </span>
         </h1>
 
         <p className="mt-2 text-sm text-neutral-400">
-          {run.nodeCount} node{run.nodeCount === 1 ? "" : "s"}
-          {", "}
-          {run.edgeCount} edge{run.edgeCount === 1 ? "" : "s"}
-          {" — "}
-          {formatDuration(run.totalDurationMs)} total
-          {run.failedAt && (
+          {inFlight ? (
             <>
+              {run.progressNodesCompleted} of {run.nodeCount} nodes complete
               {" — "}
-              <span className="text-rose-400">failed at node {run.failedAt}</span>
+              <span className="text-amber-400">in flight</span>
+            </>
+          ) : (
+            <>
+              {run.nodeCount} node{run.nodeCount === 1 ? "" : "s"}
+              {", "}
+              {run.edgeCount} edge{run.edgeCount === 1 ? "" : "s"}
+              {" — "}
+              {formatDuration(run.totalDurationMs)} total
+              {run.failedAt && (
+                <>
+                  {" — "}
+                  <span className="text-rose-400">failed at node {run.failedAt}</span>
+                </>
+              )}
             </>
           )}
         </p>
 
         <p className="mt-1 text-xs text-neutral-500">
           Started <time dateTime={run.createdAt}>{startedAt.toLocaleString()}</time>
+          {inFlight && (
+            <span className="ml-2 text-amber-400">
+              · auto-refreshing every 2s
+            </span>
+          )}
         </p>
       </header>
 

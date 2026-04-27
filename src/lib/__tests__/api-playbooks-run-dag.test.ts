@@ -82,10 +82,13 @@ describe("POST /api/playbooks/run-dag", () => {
     expect(body.error).toBe("Invalid request");
   });
 
-  it("rejects DAGs over the 20-node synchronous cap", async () => {
+  it("rejects DAGs over the 100-node hard cap (validation)", async () => {
+    // Round 12 raised the cap from 20 to 100 (the async path can
+    // run much larger DAGs than sync). 100 is now the absolute
+    // hard cap from the Zod schema; over that returns 400.
     mockRequireAuth.mockResolvedValue({ userId: "user_1" });
     const huge = {
-      nodes: Array.from({ length: 21 }, (_, i) => ({
+      nodes: Array.from({ length: 101 }, (_, i) => ({
         id: `n${i}`,
         agent: "leads",
         position: { x: i * 50, y: 0 },
