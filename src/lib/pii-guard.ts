@@ -45,7 +45,15 @@ const log = createLogger("pii-guard");
 export type PiiMode = "mask" | "flag" | "skip";
 
 export interface PiiFinding {
-  type: "ssn" | "credit_card" | "iban" | "swift_bic" | "phone" | "email";
+  type:
+    | "ssn"
+    | "credit_card"
+    | "iban"
+    | "swift_bic"
+    | "phone"
+    | "email"
+    | "us_zip"
+    | "ipv4";
   matchedText: string;
   maskedText: string;
   /** 0-based character offset where the match starts. */
@@ -102,6 +110,22 @@ const SWIFT_BIC_RE =
   // positives in real text are filtered by the strict 8/11-only length.
   /\b[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}(?:[A-Z0-9]{3})?\b/g;
 
+const US_ZIP_RE =
+  // ZIP+4 only (e.g. "94103-1234"). We deliberately do NOT match
+  // bare 5-digit ZIPs because too many strings of 5 digits in agent
+  // output ARE NOT zip codes (years, IDs, page numbers). The +4 form
+  // has very low false-positive risk while still being the most
+  // specific HIPAA-relevant geographic identifier.
+  /\b\d{5}-\d{4}\b/g;
+
+const IPV4_RE =
+  // Pragmatic IPv4 — 0-255 per octet. Excludes reserved private ranges
+  // (10.x, 172.16-31.x, 192.168.x) so we don't mask LAN/test addresses
+  // every CI run logs. Public IPs in agent output ARE worth flagging:
+  // they reveal hosting provider, can identify users, and enterprises
+  // may forbid them in transcripts.
+  /\b(?!(?:10|127)\.)(?!192\.168\.)(?!172\.(?:1[6-9]|2\d|3[01])\.)((?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.){3}(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\b/g;
+
 // ─── Maskers ───────────────────────────────────────────────────
 
 function maskSsn(s: string): string {
@@ -148,6 +172,20 @@ function maskSwiftBic(s: string): string {
   // Preserve bank code + last block — country code is the most-leaky
   // segment, so mask only its 2 letters.
   return `${s.slice(0, 4)}**${s.slice(6)}`;
+}
+
+function maskZip(s: string): string {
+  // "94103-1234" → "94***-****" — preserve the leading 2 digits
+  // (broad geo region) which on its own can't pinpoint an individual.
+  return `${s.slice(0, 2)}***-****`;
+}
+
+function maskIp(s: string): string {
+  // "203.0.113.42" → "203.0.***.***" — preserve the /16 prefix so
+  // ops can still tell roughly which provider/ASN, but not the host.
+  const parts = s.split(".");
+  if (parts.length !== 4) return "***.***.***.***";
+  return `${parts[0]}.${parts[1]}.***.***`;
 }
 
 // ─── Luhn (credit card checksum) ───────────────────────────────
@@ -248,11 +286,14 @@ export function scanPii(text: string): PiiFinding[] {
   pushMatches(text, E164_PHONE_RE, "phone", maskPhone, findings);
   pushMatches(text, US_PHONE_RE, "phone", maskPhone, findings);
   pushMatches(text, EMAIL_RE, "email", maskEmail, findings);
+  pushMatches(text, US_ZIP_RE, "us_zip", maskZip, findings);
+  pushMatches(text, IPV4_RE, "ipv4", maskIp, findings);
 
   // Dedupe overlapping findings. Specificity ranking (lowest = most
-  // specific): ssn → iban → credit_card → swift_bic → phone → email.
-  // IBAN beats card because IBAN's mod-97 + structural prefix is
-  // stricter than Luhn alone, so when they overlap we trust IBAN.
+  // specific). IBAN beats card because IBAN's mod-97 + structural
+  // prefix is stricter than Luhn alone. ZIP+4 beats nothing else
+  // (its 9-digit + dash form is unique). IPv4 only matches public
+  // ranges so it doesn't overlap with the others by design.
   return dedupeOverlapping(findings);
 }
 
@@ -285,6 +326,8 @@ function dedupeOverlapping(findings: PiiFinding[]): PiiFinding[] {
     swift_bic: 3,
     phone: 4,
     email: 5,
+    us_zip: 6,
+    ipv4: 7,
   } as const;
   const sorted = [...findings].sort((a, b) => {
     if (a.index !== b.index) return a.index - b.index;

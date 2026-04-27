@@ -100,6 +100,39 @@ describe("pii-guard · scanPii", () => {
     expect(r.scrubbed).not.toContain("3704 0044 0532 0130 00");
     expect(r.scrubbed.includes("DE89")).toBe(true); // country preserved
   });
+
+  it("detects ZIP+4 (HIPAA geographic identifier)", () => {
+    const f = scanPii("Mailing: 1 Market St, San Francisco CA 94103-1234");
+    const zip = f.find((x) => x.type === "us_zip");
+    expect(zip).toBeDefined();
+    expect(zip?.matchedText).toBe("94103-1234");
+    expect(zip?.maskedText).toBe("94***-****");
+  });
+
+  it("does NOT flag bare 5-digit ZIP (too noisy)", () => {
+    // Years, IDs, page numbers, etc. all look like 5-digit ZIPs.
+    // We only catch the +4 form which has near-zero false-positive risk.
+    const f = scanPii("Page 12345 of the manual.");
+    const zip = f.find((x) => x.type === "us_zip");
+    expect(zip).toBeUndefined();
+  });
+
+  it("detects public IPv4 addresses but skips private ranges", () => {
+    const f = scanPii(
+      "Server logs: 203.0.113.42 hit /api at 12:00. LAN test: 192.168.1.10 also responded.",
+    );
+    const ipv4s = f.filter((x) => x.type === "ipv4");
+    expect(ipv4s).toHaveLength(1);
+    expect(ipv4s[0].matchedText).toBe("203.0.113.42");
+    expect(ipv4s[0].maskedText).toBe("203.0.***.***");
+  });
+
+  it("does NOT flag 10.x or 172.16-31.x or 127.x (RFC 1918 + loopback)", () => {
+    const f = scanPii(
+      "Internal: 10.0.0.5, 172.16.5.10, 127.0.0.1 — none should leak.",
+    );
+    expect(f.filter((x) => x.type === "ipv4")).toHaveLength(0);
+  });
 });
 
 describe("pii-guard · scrubPii", () => {
