@@ -133,6 +133,9 @@ CREATE TABLE IF NOT EXISTS "referrals" (
 CREATE INDEX IF NOT EXISTS "idx_affiliates_code" ON "affiliates" ("referral_code");
 CREATE INDEX IF NOT EXISTS "idx_affiliates_user" ON "affiliates" ("user_id");
 CREATE INDEX IF NOT EXISTS "idx_referrals_affiliate" ON "referrals" ("affiliate_id");
+-- Idempotency guard: one referral row per (affiliate, referred user). Prevents
+-- double-credit on Stripe webhook retries past the event-id idempotency window.
+CREATE UNIQUE INDEX IF NOT EXISTS "uq_referrals_affiliate_user" ON "referrals" ("affiliate_id", "referred_user_id");
 
 -- ─── 0004: Audit logs ───
 CREATE TABLE IF NOT EXISTS "audit_logs" (

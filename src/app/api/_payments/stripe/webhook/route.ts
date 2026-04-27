@@ -127,34 +127,48 @@ export async function POST(req: Request) {
                   (monthlyCents * (affiliate.commissionRate || 20)) / 100,
                 );
 
-                // Use ON CONFLICT semantics via raw upsert keyed on referredUserId
-                // to keep webhook retries idempotent.
+                // Idempotent insert: unique index on (affiliate_id, referred_user_id)
+                // means a Stripe replay past the event-id window cannot double-credit.
+                // .returning() yields zero rows on conflict, so we only bump
+                // aggregates when this is genuinely the first credit.
                 const customerEmail = session.customer_details?.email || "";
-                await db.insert(referrals).values({
-                  affiliateId: affiliate.id,
-                  referredUserId: userId,
-                  referredEmail: customerEmail,
-                  plan,
-                  revenue: monthlyCents,
-                  status: "active",
-                  convertedAt: new Date(),
-                });
-
-                // Bump affiliate aggregates
-                await db
-                  .update(affiliates)
-                  .set({
-                    totalReferrals: sql`${affiliates.totalReferrals} + 1`,
-                    totalEarnings: sql`${affiliates.totalEarnings} + ${commissionCents}`,
+                const inserted = await db
+                  .insert(referrals)
+                  .values({
+                    affiliateId: affiliate.id,
+                    referredUserId: userId,
+                    referredEmail: customerEmail,
+                    plan,
+                    revenue: monthlyCents,
+                    status: "active",
+                    convertedAt: new Date(),
                   })
-                  .where(eq(affiliates.id, affiliate.id));
+                  .onConflictDoNothing({
+                    target: [referrals.affiliateId, referrals.referredUserId],
+                  })
+                  .returning({ id: referrals.id });
 
-                log.info("Referral credited", {
-                  affiliateId: affiliate.id,
-                  referredUserId: userId,
-                  plan,
-                  commissionCents,
-                });
+                if (inserted.length > 0) {
+                  await db
+                    .update(affiliates)
+                    .set({
+                      totalReferrals: sql`${affiliates.totalReferrals} + 1`,
+                      totalEarnings: sql`${affiliates.totalEarnings} + ${commissionCents}`,
+                    })
+                    .where(eq(affiliates.id, affiliate.id));
+
+                  log.info("Referral credited", {
+                    affiliateId: affiliate.id,
+                    referredUserId: userId,
+                    plan,
+                    commissionCents,
+                  });
+                } else {
+                  log.info("Referral already credited (idempotent skip)", {
+                    affiliateId: affiliate.id,
+                    referredUserId: userId,
+                  });
+                }
               } else {
                 log.warn("Referrer userId not found in affiliates table", {
                   referrerUserId,

@@ -114,8 +114,19 @@ export function withMetering(
     }
 
     // ── Increment usage on successful 2xx ──
+    // Awaited so the row lands BEFORE we return — on Vercel a fire-and-forget
+    // .catch() can be killed when the function completes, letting users blast
+    // past their quota by parallelizing requests faster than the DB writes.
     if (userId && !options.skipUsageTracking && response.ok) {
-      incrementUsage(userId, name).catch(() => {}); // fire-and-forget
+      try {
+        await incrementUsage(userId, name);
+      } catch (err) {
+        log.warn("usage increment failed", {
+          route: name,
+          userId,
+          error: String(err),
+        });
+      }
     }
 
     log.info("request complete", {
