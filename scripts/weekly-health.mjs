@@ -452,6 +452,15 @@ const trustAssets = [
     path: "docs/FMTI-SELF-AUDIT.md",
     name: "FMTI self-audit report (auto-regenerated)",
   },
+  // Read-me-first reflexive document. Tells auditors and future
+  // Claude agents the honest story — what we are, what we do not
+  // claim, where the gaps are. Removing it wipes out the deliberate
+  // "what we do NOT claim" framing that makes the rest of our
+  // transparency story credible. Tracked at PR time.
+  {
+    path: "docs/PLATFORM-NARRATIVE.md",
+    name: "Platform narrative (read-me-first reflexive doc)",
+  },
 ];
 for (const { path, name } of trustAssets) {
   const present = existsSync(join(ROOT, path)) ? 1 : 0;

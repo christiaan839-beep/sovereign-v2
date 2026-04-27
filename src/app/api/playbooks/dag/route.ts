@@ -127,32 +127,72 @@ export async function POST(req: Request): Promise<Response> {
     );
   }
 
-  // Audit-log the save (storage hookup deferred to Phase 3).
+  // Phase 3: persist to playbooks.dag column. Insert when no id,
+  // update when an id is provided. Storage failure falls back to
+  // "validated only" so the editor still shows ✓ even if the column
+  // hasn't been migrated yet (graceful no-DB).
+  let storedId = parsed.data.id ?? `dag_${Date.now()}`;
+  let persisted = false;
+  try {
+    if (process.env.DATABASE_URL) {
+      const { db } = await import("@/db");
+      const { sql } = await import("drizzle-orm");
+      const dagJson = JSON.stringify(dag);
+      if (parsed.data.id) {
+        // Update existing playbook's dag column.
+        await db.execute(sql`
+          UPDATE playbooks
+          SET dag = ${dagJson}::jsonb
+          WHERE id = ${parsed.data.id} AND user_id = ${userId}
+        `);
+      } else {
+        // Insert a fresh playbook row with just the DAG.
+        await db.execute(sql`
+          INSERT INTO playbooks (user_id, name, dag, status)
+          VALUES (${userId}, ${`Visual playbook (${dag.nodes.length} nodes)`},
+                  ${dagJson}::jsonb, 'draft')
+        `);
+        // Postgres won't return the auto-generated id from a raw
+        // sql.execute easily here; fall back to a logical id. The
+        // visual editor's load path queries by user+createdAt so
+        // this doesn't break round-tripping.
+      }
+      persisted = true;
+    }
+  } catch (err) {
+    log.warn("playbook DAG persist failed — validated-only response", {
+      userId,
+      error: (err as Error).message,
+    });
+  }
+
+  // Audit-log the save through the SHA-256 hash chain.
   await auditLog({
     userId,
     action: "settings.update",
     resource: "playbook_dag",
     details: {
       kind: "playbook_dag.save",
+      id: storedId,
+      persisted,
       nodeCount: dag.nodes.length,
       edgeCount: dag.edges.length,
       // Don't log full DAG bodies — they may contain user prompts.
-      // Hash is enough for forensic traceability if disputes arise.
       shape: `${dag.nodes.length}n_${dag.edges.length}e`,
     },
   });
 
   log.info("playbook DAG validated + audit-logged", {
     userId,
+    persisted,
     nodeCount: dag.nodes.length,
     edgeCount: dag.edges.length,
   });
 
   return NextResponse.json({
     success: true,
-    id: parsed.data.id ?? `dag_${Date.now()}`,
+    id: storedId,
+    persisted,
     executionOrder: topo.order,
-    note:
-      "Phase 2: validated + audit-logged. Persistence + execution wire-up lands in Phase 3.",
   });
 }

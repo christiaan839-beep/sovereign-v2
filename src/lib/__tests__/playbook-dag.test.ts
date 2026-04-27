@@ -97,3 +97,105 @@ describe("playbook-dag · dryRun", () => {
     expect(dryRun(branch, {}).estimatedKtokens).toBe(6);
   });
 });
+
+import { resolvePlaceholders, executeDag } from "@/lib/playbook-dag";
+
+describe("playbook-dag · resolvePlaceholders", () => {
+  it("passes through literal values unchanged", () => {
+    const r = resolvePlaceholders({ a: 1, b: "hello" }, {});
+    expect(r).toEqual({ a: 1, b: "hello" });
+  });
+
+  it("substitutes $.<nodeId> with the full upstream output", () => {
+    const r = resolvePlaceholders({ x: "$.n1" }, { n1: { foo: 42 } });
+    expect(r.x).toEqual({ foo: 42 });
+  });
+
+  it("substitutes $.<nodeId>.<path>", () => {
+    const r = resolvePlaceholders(
+      { x: "$.n1.foo.bar" },
+      { n1: { foo: { bar: "deep" } } },
+    );
+    expect(r.x).toBe("deep");
+  });
+
+  it("returns null when the upstream node hasn't run", () => {
+    const r = resolvePlaceholders({ x: "$.n_missing" }, {});
+    expect(r.x).toBeNull();
+  });
+
+  it("returns null when the path doesn't exist on the upstream output", () => {
+    const r = resolvePlaceholders(
+      { x: "$.n1.missing.path" },
+      { n1: { other: 1 } },
+    );
+    expect(r.x).toBeNull();
+  });
+});
+
+describe("playbook-dag · executeDag", () => {
+  const linearDag = {
+    nodes: [
+      { id: "a", agent: "leads", position: { x: 0, y: 0 }, config: { count: 5 } },
+      { id: "b", agent: "outreach", position: { x: 200, y: 0 }, config: { input: "$.a" } },
+    ],
+    edges: [{ from: "a.out", to: "b.input" }],
+  };
+
+  it("walks the topo order and threads outputs through placeholders", async () => {
+    const calls: string[] = [];
+    const runner = async (slug: string, input: Record<string, unknown>) => {
+      calls.push(slug);
+      if (slug === "leads") return { leads: ["a@example.com", "b@example.com"] };
+      return { processed: input.input };
+    };
+    const r = await executeDag(linearDag, runner);
+    expect(r.status).toBe("completed");
+    expect(calls).toEqual(["leads", "outreach"]);
+    expect(r.results).toHaveLength(2);
+    const second = r.results[1];
+    expect(second.status).toBe("completed");
+    if (second.status === "completed") {
+      expect(second.output).toEqual({ processed: { leads: ["a@example.com", "b@example.com"] } });
+    }
+  });
+
+  it("stops on first failure by default", async () => {
+    const runner = async (slug: string) => {
+      if (slug === "leads") throw new Error("provider down");
+      return { ok: true };
+    };
+    const r = await executeDag(linearDag, runner);
+    expect(r.status).toBe("failed");
+    expect(r.failedAt).toBe("a");
+    expect(r.results[1].status).toBe("skipped");
+  });
+
+  it("continues with continueOnError + downstream sees null upstream", async () => {
+    const runner = async (slug: string) => {
+      if (slug === "leads") throw new Error("provider down");
+      return { ok: true };
+    };
+    const r = await executeDag(linearDag, runner, { continueOnError: true });
+    expect(r.status).toBe("failed");
+    expect(r.results[1].status).toBe("completed");
+  });
+
+  it("returns status:failed when the DAG has a cycle (no execution attempted)", async () => {
+    const runner = async () => ({ never: "called" });
+    const cyclicDag = {
+      nodes: [
+        { id: "a", agent: "leads", position: { x: 0, y: 0 }, config: {} },
+        { id: "b", agent: "blog-gen", position: { x: 0, y: 0 }, config: {} },
+      ],
+      edges: [
+        { from: "a.out", to: "b.in" },
+        { from: "b.out", to: "a.in" },
+      ],
+    };
+    const r = await executeDag(cyclicDag, runner);
+    expect(r.status).toBe("failed");
+    expect(r.results).toEqual([]);
+    expect(r.failedAt).toBeDefined();
+  });
+});

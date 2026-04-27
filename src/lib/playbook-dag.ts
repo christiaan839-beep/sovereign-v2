@@ -154,3 +154,141 @@ export function dryRun(
     estimatedKtokens: dag.nodes.length * 2, // rough average — replace with per-agent stats later
   };
 }
+
+/**
+ * Per-node execution result from `executeDag()`.
+ */
+export interface NodeRunResult {
+  nodeId: string;
+  agent: string;
+  status: "completed" | "failed" | "skipped";
+  output?: unknown;
+  durationMs: number;
+  error?: string;
+}
+
+export interface ExecuteDagResult {
+  status: "completed" | "failed";
+  results: NodeRunResult[];
+  totalDurationMs: number;
+  failedAt?: string;
+}
+
+/**
+ * Resolve `$.<nodeId>.<jsonPath>` placeholders in a node's config
+ * against the accumulated outputs of previous nodes. Pure function.
+ */
+export function resolvePlaceholders(
+  config: Record<string, unknown>,
+  results: Record<string, unknown>,
+): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(config)) {
+    if (typeof value !== "string") {
+      out[key] = value;
+      continue;
+    }
+    const match = value.match(/^\$\.([\w-]+)(?:\.(.+))?$/);
+    if (!match) {
+      out[key] = value;
+      continue;
+    }
+    const [, nodeId, path] = match;
+    const upstream = results[nodeId];
+    if (upstream === undefined) {
+      out[key] = null;
+      continue;
+    }
+    if (!path) {
+      out[key] = upstream;
+      continue;
+    }
+    let cursor: unknown = upstream;
+    for (const seg of path.split(".")) {
+      if (cursor && typeof cursor === "object" && seg in cursor) {
+        cursor = (cursor as Record<string, unknown>)[seg];
+      } else {
+        cursor = null;
+        break;
+      }
+    }
+    out[key] = cursor;
+  }
+  return out;
+}
+
+/**
+ * Execute a DAG by topo-walking nodes and invoking each via the
+ * supplied runner. The agent runner is injected so this module stays
+ * testable without the full runtime.
+ *
+ * Default behavior: stop on first failure. Set continueOnError=true
+ * to keep going (downstream nodes are still skipped if their inputs
+ * couldn't be resolved).
+ */
+export async function executeDag(
+  dag: PlaybookDag,
+  runAgent: (slug: string, input: Record<string, unknown>) => Promise<unknown>,
+  options: { continueOnError?: boolean } = {},
+): Promise<ExecuteDagResult> {
+  const t0 = Date.now();
+  const { order, cycle } = topoSort(dag);
+  if (!order) {
+    return {
+      status: "failed",
+      results: [],
+      totalDurationMs: Date.now() - t0,
+      failedAt: cycle?.[0],
+    };
+  }
+
+  const outputs: Record<string, unknown> = {};
+  const results: NodeRunResult[] = [];
+  let failed = false;
+
+  for (const nodeId of order) {
+    const node = dag.nodes.find((n) => n.id === nodeId);
+    if (!node) continue;
+
+    if (failed && !options.continueOnError) {
+      results.push({
+        nodeId,
+        agent: node.agent,
+        status: "skipped",
+        durationMs: 0,
+      });
+      continue;
+    }
+
+    const nodeStart = Date.now();
+    const resolvedConfig = resolvePlaceholders(node.config, outputs);
+
+    try {
+      const output = await runAgent(node.agent, resolvedConfig);
+      outputs[nodeId] = output;
+      results.push({
+        nodeId,
+        agent: node.agent,
+        status: "completed",
+        output,
+        durationMs: Date.now() - nodeStart,
+      });
+    } catch (err) {
+      failed = true;
+      results.push({
+        nodeId,
+        agent: node.agent,
+        status: "failed",
+        error: err instanceof Error ? err.message : String(err),
+        durationMs: Date.now() - nodeStart,
+      });
+    }
+  }
+
+  return {
+    status: failed ? "failed" : "completed",
+    results,
+    totalDurationMs: Date.now() - t0,
+    failedAt: results.find((r) => r.status === "failed")?.nodeId,
+  };
+}

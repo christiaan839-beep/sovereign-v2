@@ -359,9 +359,120 @@ function bucket(score) {
   return "⚪ N/A";
 }
 
+/**
+ * LLM peer-review of the deterministic scoring.
+ *
+ * The deterministic verifier above is mechanical — it grades artifact
+ * presence, not the *quality* of those artifacts. The LLM pass asks
+ * Claude to second-guess our scores: where would an external auditor
+ * disagree, and on what specific evidence?
+ *
+ * Costs ONE Claude call per audit run (not 23) because we batch the
+ * whole table into a single prompt. Output is appended to the audit
+ * markdown as an "LLM peer review" section — clearly attributed.
+ *
+ * No-op when ANTHROPIC_API_KEY is unset so the script always runs
+ * cleanly in CI / dev environments without secrets.
+ */
+async function llmPeerReview(results) {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    return {
+      enabled: false,
+      reason: "ANTHROPIC_API_KEY not set — peer review skipped",
+      review: null,
+    };
+  }
+
+  // Compact the results table for the prompt.
+  const table = results.map((r) => ({
+    id: r.id,
+    name: r.name,
+    section: r.section,
+    deterministic_score: r.score,
+    evidence: r.evidence,
+  }));
+
+  const systemPrompt = [
+    "You are an external transparency auditor evaluating an AI orchestration",
+    "platform's FMTI (Stanford Foundation Model Transparency Index) self-audit.",
+    "",
+    "The vendor has run a deterministic rule-based audit against its own public",
+    "artifacts. Your job: peer-review their scores. For each subdomain, decide",
+    "whether you would score it the same, higher, or lower than they did, and",
+    "explain why in ONE sentence per disagreement.",
+    "",
+    "Be skeptical. The vendor wants this audit to be honest, so flag generous",
+    "scoring. Do not invent evidence — only critique what they cite.",
+    "",
+    "Return ONLY a JSON object: { disagreements: [{ id, vendor_score, your_score,",
+    "reason }], note: <2-3 sentence overall assessment> }. No prose outside JSON.",
+  ].join("\n");
+
+  const userPrompt = `Vendor's audit table:\n\n${JSON.stringify(table, null, 2)}`;
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: "claude-3-5-sonnet-20241022",
+        max_tokens: 4096,
+        system: systemPrompt,
+        messages: [{ role: "user", content: userPrompt }],
+      }),
+      // 30s ceiling — peer review is nice-to-have, not blocking.
+      signal: AbortSignal.timeout(30_000),
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => res.statusText);
+      return {
+        enabled: true,
+        reason: `Anthropic API error ${res.status}: ${text.slice(0, 200)}`,
+        review: null,
+      };
+    }
+    const body = await res.json();
+    const text = body?.content?.[0]?.text ?? "";
+    // Extract JSON; the model sometimes wraps in fences despite the prompt.
+    const match = text.match(/\{[\s\S]*\}/);
+    if (!match) {
+      return { enabled: true, reason: "LLM did not return JSON", review: null };
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(match[0]);
+    } catch (err) {
+      return {
+        enabled: true,
+        reason: `Could not parse LLM JSON: ${(err && err.message) || err}`,
+        review: null,
+      };
+    }
+    return { enabled: true, reason: null, review: parsed };
+  } catch (err) {
+    return {
+      enabled: true,
+      reason: `LLM call failed: ${(err && err.message) || err}`,
+      review: null,
+    };
+  }
+}
+
 async function main() {
+  const args = new Set(process.argv.slice(2));
+  const useLlm = args.has("--with-llm");
+
   const artifacts = await loadArtifacts();
   const results = SUBDOMAINS.map((d) => ({ ...d, ...d.verifier(artifacts) }));
+
+  const peerReview = useLlm
+    ? await llmPeerReview(results)
+    : { enabled: false, reason: null, review: null };
 
   const total = results.length;
   const scored = results.filter((r) => r.ok || r.score > 0);
@@ -440,12 +551,52 @@ async function main() {
     }
   }
   lines.push("");
+
+  // ─── LLM peer review (--with-llm) ──────────────────────────────
+  if (peerReview.enabled || peerReview.review) {
+    lines.push("## LLM peer review");
+    lines.push("");
+    lines.push(
+      "An external-auditor LLM (Claude 3.5 Sonnet) was asked to peer-review",
+    );
+    lines.push(
+      "the deterministic scores above. The model was instructed to be",
+    );
+    lines.push("skeptical — flag generous scoring, do not invent evidence.");
+    lines.push("");
+    if (peerReview.review) {
+      const r = peerReview.review;
+      if (r.note) {
+        lines.push("> " + String(r.note).replace(/\n/g, "\n> "));
+        lines.push("");
+      }
+      const disagreements = Array.isArray(r.disagreements) ? r.disagreements : [];
+      if (disagreements.length === 0) {
+        lines.push("- Auditor LLM concurred with all 23 deterministic scores.");
+      } else {
+        lines.push("**Disagreements:**");
+        lines.push("");
+        for (const d of disagreements) {
+          const v = typeof d.vendor_score === "number" ? `${(d.vendor_score * 100).toFixed(0)}%` : "?";
+          const y = typeof d.your_score === "number" ? `${(d.your_score * 100).toFixed(0)}%` : "?";
+          lines.push(
+            `- **${d.id}**: vendor=${v}, auditor=${y} — ${d.reason || "(no reason)"}`,
+          );
+        }
+      }
+    } else if (peerReview.reason) {
+      lines.push(`_Peer review unavailable: ${peerReview.reason}_`);
+    }
+    lines.push("");
+  }
+
   lines.push("## Reproducibility");
   lines.push("");
   lines.push("This audit is deterministic — run the same script against the");
   lines.push("same commit and you get the same scores. The LLM-driven variant");
-  lines.push("(point Claude at the artifacts and have it majority-vote-score)");
-  lines.push("is the `--with-llm` flag, which requires `ANTHROPIC_API_KEY`.");
+  lines.push("(Claude 3.5 Sonnet peer-reviews the deterministic scoring) is");
+  lines.push("the `--with-llm` flag, which requires `ANTHROPIC_API_KEY`. The");
+  lines.push("peer review is appended above when run.");
   lines.push("");
   lines.push("---");
   lines.push("");
@@ -458,7 +609,14 @@ async function main() {
   // eslint-disable-next-line no-console
   console.log(
     `[fmti-self-audit] wrote ${OUTPUT}\n` +
-    `[fmti-self-audit] overall: ${(overall * 100).toFixed(1)}% across ${scored.length} applicable subdomains`,
+    `[fmti-self-audit] overall: ${(overall * 100).toFixed(1)}% across ${scored.length} applicable subdomains` +
+    (useLlm
+      ? `\n[fmti-self-audit] peer review: ${
+          peerReview.review
+            ? `${(peerReview.review.disagreements?.length ?? 0)} disagreement(s)`
+            : `unavailable (${peerReview.reason})`
+        }`
+      : ""),
   );
 }
 

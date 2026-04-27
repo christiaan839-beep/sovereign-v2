@@ -13,7 +13,7 @@ import {
   BarChart3, Eye, Shield, Wrench,
   Wand2, Workflow, MessageSquare, Zap, Rocket, Network,
   Bot, ClipboardList, Store, Code2, Mail, FileText, Bell,
-  CreditCard, Users,
+  CreditCard, Users, GitBranch,
 } from "lucide-react";
 import { useKeyboardShortcuts } from "@/lib/keyboard-shortcuts";
 import { motion, AnimatePresence } from "framer-motion";
@@ -41,6 +41,7 @@ import { KeyboardShortcutsModal } from '@/components/ui/KeyboardShortcutsModal';
 
 const NEW_BADGE_ITEMS = new Set([
   "/dashboard/autopilot",
+  "/dashboard/playbooks/edit/new",
 ]);
 
 const NEW_BADGE_STORAGE_PREFIX = "sovereign_new_dismissed_";
@@ -99,6 +100,7 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/dashboard/competitor", label: "Market Intel", icon: Shield, tooltip: "Competitor analysis" },
       { href: "/dashboard/build", label: "Page Builder", icon: Wand2, tooltip: "Build landing pages with AI" },
       { href: "/dashboard/workflow-builder", label: "Workflows", icon: Workflow, tooltip: "Visual multi-step automations" },
+      { href: "/dashboard/playbooks/edit/new", label: "Visual Editor", icon: GitBranch, tooltip: "Drag-drop DAG playbooks (D1) — every node passes the full safety pipeline" },
     ],
   },
   {

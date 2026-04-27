@@ -24,6 +24,23 @@ interface AgentSummary {
   outputClass?: string;
 }
 
+interface NodeRunResult {
+  nodeId: string;
+  agent: string;
+  status: "completed" | "failed" | "skipped";
+  output?: unknown;
+  durationMs: number;
+  error?: string;
+}
+
+interface RunResponse {
+  success: boolean;
+  status: "completed" | "failed";
+  results: NodeRunResult[];
+  totalDurationMs: number;
+  failedAt?: string;
+}
+
 const STARTER_DAG: PlaybookDag = {
   nodes: [
     { id: "n1", agent: "leads", position: { x: 80, y: 100 }, config: { count: 10 } },
@@ -37,6 +54,8 @@ export default function PlaybookEditorPage() {
   const [agents, setAgents] = useState<Record<string, AgentSummary>>({});
   const [requiredBySlug, setRequiredBySlug] = useState<Record<string, string[]>>({});
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [runState, setRunState] = useState<"idle" | "running" | "done" | "error">("idle");
+  const [runResult, setRunResult] = useState<RunResponse | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -105,6 +124,27 @@ export default function PlaybookEditorPage() {
     }
   }, [dag]);
 
+  // D1 Phase 3 — actually execute the DAG. Calls the run-dag endpoint
+  // which self-fetches each node through the agent gateway so every
+  // safety gate fires per node (manifest tier, tenant policy, token
+  // budget, capability check, audit log, attestation).
+  const handleRun = useCallback(async () => {
+    setRunState("running");
+    setRunResult(null);
+    try {
+      const res = await fetch("/api/playbooks/run-dag", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dag, continueOnError: false }),
+      });
+      const body = (await res.json()) as RunResponse;
+      setRunResult(body);
+      setRunState(body.success ? "done" : "error");
+    } catch {
+      setRunState("error");
+    }
+  }, [dag]);
+
   return (
     <main className="mx-auto max-w-7xl px-6 py-8 text-neutral-200">
       <header className="mb-6 flex items-baseline justify-between">
@@ -132,7 +172,7 @@ export default function PlaybookEditorPage() {
           <button
             onClick={handleSave}
             disabled={!result.valid || saveState === "saving"}
-            className="rounded-md bg-emerald-500 px-4 py-1.5 text-sm font-medium text-black hover:bg-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="rounded-md border border-white/10 bg-white/5 px-4 py-1.5 text-sm font-medium text-neutral-200 hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {saveState === "saving"
               ? "Saving…"
@@ -141,6 +181,20 @@ export default function PlaybookEditorPage() {
                 : saveState === "error"
                   ? "Retry"
                   : "Save"}
+          </button>
+          <button
+            onClick={handleRun}
+            disabled={!result.valid || runState === "running"}
+            className="rounded-md bg-emerald-500 px-4 py-1.5 text-sm font-medium text-black hover:bg-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed"
+            title="Execute the DAG. Every node passes through the same safety gates as a top-level agent invocation."
+          >
+            {runState === "running"
+              ? "Running…"
+              : runState === "done"
+                ? "Run again"
+                : runState === "error"
+                  ? "Retry run"
+                  : "▶ Run"}
           </button>
         </div>
       </header>
@@ -223,6 +277,84 @@ export default function PlaybookEditorPage() {
           </ul>
         </div>
       </section>
+
+      {/*
+        D1 Phase 3 — execution results panel. Renders nothing until the
+        first Run. After completion, shows per-node status + duration so
+        the user can see where time was spent and which node failed.
+      */}
+      {runResult && (
+        <section className="mt-6 rounded-lg border border-white/10 bg-white/[0.02] p-5">
+          <header className="flex items-baseline justify-between border-b border-white/5 pb-3">
+            <div className="flex items-baseline gap-3">
+              <span
+                className={`text-sm font-semibold ${
+                  runResult.success ? "text-emerald-300" : "text-rose-300"
+                }`}
+              >
+                {runResult.success ? "✓ Run completed" : "✗ Run failed"}
+              </span>
+              <span className="text-xs text-neutral-500 font-mono">
+                {runResult.totalDurationMs}ms total
+              </span>
+              {runResult.failedAt && (
+                <span className="text-xs text-rose-400 font-mono">
+                  failed at: {runResult.failedAt}
+                </span>
+              )}
+            </div>
+            <button
+              onClick={() => setRunResult(null)}
+              className="text-xs text-neutral-500 hover:text-neutral-300"
+            >
+              Clear
+            </button>
+          </header>
+
+          <ol className="mt-4 space-y-2">
+            {runResult.results.map((r) => (
+              <li
+                key={r.nodeId}
+                className="flex items-start gap-3 rounded border border-white/5 bg-white/[0.01] p-3"
+              >
+                <span
+                  className={`text-xs font-mono shrink-0 ${
+                    r.status === "completed"
+                      ? "text-emerald-400"
+                      : r.status === "failed"
+                        ? "text-rose-400"
+                        : "text-neutral-500"
+                  }`}
+                >
+                  {r.status === "completed" ? "✓" : r.status === "failed" ? "✗" : "—"}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-baseline gap-2">
+                    <span className="font-mono text-xs text-neutral-300">{r.nodeId}</span>
+                    <span className="text-xs text-neutral-500">{r.agent}</span>
+                    <span className="text-xs text-neutral-600 font-mono ml-auto">
+                      {r.durationMs}ms
+                    </span>
+                  </div>
+                  {r.error && (
+                    <p className="mt-1 text-xs text-rose-300 break-words">{r.error}</p>
+                  )}
+                  {r.output !== undefined && (
+                    <details className="mt-1.5">
+                      <summary className="text-xs text-neutral-500 cursor-pointer hover:text-neutral-300">
+                        Output
+                      </summary>
+                      <pre className="mt-2 overflow-auto rounded bg-black/40 p-2 text-[11px] text-neutral-300 max-h-48">
+                        {JSON.stringify(r.output, null, 2).slice(0, 2000)}
+                      </pre>
+                    </details>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
     </main>
   );
 }
