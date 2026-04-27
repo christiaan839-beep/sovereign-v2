@@ -18,6 +18,7 @@ import { db } from "@/db";
 import { settings } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { createLogger } from "@/lib/logger";
+import { safeJsonParseObject } from "@/lib/safe-json";
 
 const log = createLogger("scheduler");
 
@@ -127,11 +128,10 @@ async function getConfig(userEmail: string): Promise<SettingsConfig> {
     where: eq(settings.userEmail, userEmail),
   });
   if (!row) return {};
-  try {
-    return JSON.parse(row.config) as SettingsConfig;
-  } catch {
-    return {};
-  }
+  return safeJsonParseObject<SettingsConfig>(
+    row.config,
+    "settings.config (scheduler)",
+  );
 }
 
 async function saveConfig(userEmail: string, config: SettingsConfig): Promise<void> {

@@ -16,6 +16,7 @@ import { db } from "@/db";
 import { settings } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { createLogger } from "@/lib/logger";
+import { safeJsonParseObject } from "@/lib/safe-json";
 
 const log = createLogger("enrichment");
 
@@ -68,7 +69,10 @@ export async function loadEnrichmentKeys(userEmail: string): Promise<EnrichmentK
     const rows = await db.select().from(settings).where(eq(settings.userEmail, userEmail));
     if (!rows.length || !rows[0].apiKeys) return {};
 
-    const stored: Record<string, string> = JSON.parse(rows[0].apiKeys);
+    const stored = safeJsonParseObject<Record<string, string>>(
+      rows[0].apiKeys,
+      "settings.apiKeys (loadEnrichmentKeys)",
+    );
     return {
       HUNTER_API_KEY: stored["HUNTER_API_KEY"] || undefined,
       APOLLO_API_KEY: stored["APOLLO_API_KEY"] || undefined,

@@ -487,7 +487,10 @@ check(
   "API routes use Clerk auth, not spoofable x-user-id header",
   countXUserIdAuthRoutes(),
   0,
-  { dimension: "security" },
+  // floor: false → "ok" iff value <= target (max-allowed semantics).
+  // With the default floor:true, value >= target would always be ✅ for
+  // target=0, masking real regressions.
+  { dimension: "security", floor: false },
 );
 
 // Anti-Edge-runtime-crash invariant: any route file that imports a
@@ -518,7 +521,38 @@ check(
   "API routes importing node:* declare runtime = 'nodejs'",
   countNodeImportsWithoutRuntime(),
   0,
-  { dimension: "security" },
+  // Max-allowed: 0 routes should import node:* without `runtime = "nodejs"`.
+  { dimension: "security", floor: false },
+);
+
+// Reliability invariant: don't reintroduce the stuck-state-bug pattern
+// `JSON.parse(row.apiKeys)` directly. The standard is to use
+// safeJsonParseObject() from @/lib/safe-json, which logs corruption and
+// treats it as `{}` so the user becomes unstuck on the next save instead
+// of being permanently 500'd. Tests are exempt (they explicitly exercise
+// JSON.parse paths). The invariant only fires if the bare pattern shows
+// up against settings.apiKeys / config columns.
+function countUnsafeJsonParseSettings() {
+  let bad = 0;
+  walk(join(ROOT, "src"), (rel) => {
+    if (!rel.endsWith(".ts") && !rel.endsWith(".tsx")) return;
+    if (rel.includes("__tests__/")) return;
+    if (rel.endsWith("safe-json.ts")) return; // the helper itself
+    const body = readFileSync(join(ROOT, "src", rel), "utf8");
+    // Match `JSON.parse(<row>.apiKeys|config|metadata)` literal — the
+    // common stuck-state shape.  Any reasonable wrapper (safeJsonParseX,
+    // try { JSON.parse(...) } with explicit fallback) will not match.
+    const matches = body.match(/JSON\.parse\([^)]*\.(?:apiKeys|config|metadata|details)\)/g);
+    if (matches) bad += matches.length;
+  });
+  return bad;
+}
+check(
+  "no unsafe JSON.parse(row.apiKeys/config/metadata) — use safeJsonParseObject",
+  countUnsafeJsonParseSettings(),
+  0,
+  // Max-allowed: 0 unsafe sites. Anything >0 fails CI.
+  { dimension: "security", floor: false },
 );
 
 // ──────────────────────────────────────────────────────────────

@@ -3,6 +3,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { db } from "@/db";
 import { settings } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { safeJsonParseObject } from "@/lib/safe-json";
 
 /**
  * CLAUDE COMPUTER USE API — Autonomous Browser Control
@@ -30,7 +31,10 @@ export const POST = createAgentRoute({
         where: eq(settings.userEmail, email)
       });
       if (userSettings?.apiKeys) {
-        const keys = JSON.parse(userSettings.apiKeys);
+        const keys = safeJsonParseObject<Record<string, string>>(
+          userSettings.apiKeys,
+          "settings.apiKeys (computer-use)",
+        );
         if (keys.anthropic) apiKey = keys.anthropic;
       }
     }

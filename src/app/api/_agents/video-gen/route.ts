@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { settings } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { ai } from "@/lib/ai";
+import { safeJsonParseObject } from "@/lib/safe-json";
 
 /**
  * AUTONOMOUS FILMMAKER NODE
@@ -51,7 +52,12 @@ Return ONLY the enhanced prompt (no explanations). The enhanced prompt should:
           where: eq(settings.userEmail, email)
         });
         if (userSettings?.apiKeys) {
-          const keys = JSON.parse(userSettings.apiKeys);
+          // Corrupt apiKeys row → keys = {} → user falls back to env
+          // var. Never crashes the request.
+          const keys = safeJsonParseObject<Record<string, string>>(
+            userSettings.apiKeys,
+            "settings.apiKeys (video-gen)",
+          );
           if (keys.luma && provider === "luma") apiKey = keys.luma;
           if (keys.runway && provider === "runway") apiKey = keys.runway;
         }

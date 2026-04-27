@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Key, Save, Loader2, CheckCircle2, ShieldAlert } from "lucide-react";
 import { motion } from "framer-motion";
+import { safeJsonParseObject } from "@/lib/safe-json";
 
 export default function ApiKeysPage() {
   const [keys, setKeys] = useState({
@@ -25,10 +26,15 @@ export default function ApiKeysPage() {
         const res = await fetch("/api/settings/api-keys");
         const data = await res.json();
         if (data.apiKeys) {
-          try {
-            const parsed = JSON.parse(data.apiKeys);
-            setKeys(prev => ({ ...prev, ...parsed }));
-          } catch { /* keys may not be JSON */ }
+          // safeJsonParseObject returns {} on corrupt input — never throws.
+          // The previous try/catch was equivalent but bespoke; the
+          // shared helper logs corruption for ops and keeps the
+          // codebase consistent.
+          const parsed = safeJsonParseObject<Record<string, string>>(
+            data.apiKeys,
+            "settings api-keys page",
+          );
+          setKeys(prev => ({ ...prev, ...parsed }));
         }
       } catch { /* API unavailable */ }
       finally {

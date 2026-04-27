@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { createLogger } from "@/lib/logger";
 import { nimBreaker } from "@/lib/circuit-breaker";
 import { withTimeout, TIMEOUTS } from "@/lib/with-timeout";
+import { safeJsonParseObject } from "@/lib/safe-json";
 
 const log = createLogger("nvidia");
 const NVIDIA_BASE_URL = 'https://integrate.api.nvidia.com/v1';
@@ -151,7 +152,13 @@ export async function getNimKey(): Promise<string> {
         where: eq(settings.userEmail, user.primaryEmailAddress.emailAddress)
       });
       if (userSettings?.apiKeys) {
-        const keys = JSON.parse(userSettings.apiKeys);
+        // Already inside an outer try/catch, but use safeJsonParseObject
+        // anyway — gives us a structured warning log for ops vs. a
+        // silently-swallowed error.
+        const keys = safeJsonParseObject<Record<string, string>>(
+          userSettings.apiKeys,
+          "settings.apiKeys (getNimKey)",
+        );
         if (keys.nvidia) return keys.nvidia;
       }
     }

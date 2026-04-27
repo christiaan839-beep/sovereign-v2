@@ -6,6 +6,7 @@ import {
   History, Search, RefreshCw, Copy, Play, CheckCircle2,
   Clock, Filter, ChevronDown,
 } from "lucide-react";
+import { safeJsonParseObject } from "@/lib/safe-json";
 import Link from "next/link";
 import { timeAgo } from "@/lib/format-time";
 
@@ -181,7 +182,21 @@ export default function ResultsLibraryPage() {
         ) : (
           <div className="space-y-3">
             {filtered.map((item, i) => {
-              const meta = item.metadata ? JSON.parse(item.metadata) : {};
+              // Critical: if `item.metadata` was a corrupt JSON string,
+              // a bare parse here would throw INSIDE a React render —
+              // crashing the entire results page for the user.
+              // safeJsonParseObject treats any failure as {}; the row
+              // renders with empty metadata instead of taking the page
+              // down. (See src/lib/safe-json.ts for the rationale.)
+              //
+              // Narrow shape to the fields actually consumed below
+              // (currently just durationMs). Anything else stays
+              // typed as unknown so the compiler catches accidental
+              // reads of fields that may not exist.
+              const meta = safeJsonParseObject<{ durationMs?: number } & Record<string, unknown>>(
+                item.metadata,
+                "agent_run.metadata (results page)",
+              );
               return (
                 <motion.div
                   key={item.id}

@@ -30,13 +30,24 @@ async function getUserKeys(): Promise<{ gemini?: string, tavily?: string, anthro
         where: eq(settings.userEmail, user.primaryEmailAddress.emailAddress)
       });
       if (userSettings?.apiKeys) {
-        try {
-          const decrypted = safeDecrypt(userSettings.apiKeys);
-          return JSON.parse(decrypted);
-        } catch {
-          // Fallback: try parsing as plain JSON (legacy unencrypted data)
-          return JSON.parse(userSettings.apiKeys);
-        }
+        // Two valid paths:
+        //   1. Encrypted JSON (current). safeDecrypt → safeJsonParseObject.
+        //   2. Plaintext JSON (legacy rows that pre-date encryption).
+        //      safeDecrypt returns the original string unchanged in that
+        //      case, then safeJsonParseObject handles the parse.
+        // Either path returns {} on corruption — never throws — so a
+        // single bad row doesn't block other AI calls.
+        type UserKeys = { gemini?: string; tavily?: string; anthropic?: string; ollama?: string; nvidia?: string; groq?: string };
+        const decrypted = safeJsonParseObject<UserKeys>(
+          safeDecrypt(userSettings.apiKeys),
+          "settings.apiKeys (ai.ts decrypted)",
+        );
+        if (Object.keys(decrypted).length > 0) return decrypted;
+        // Fall through to a raw-parse attempt for legacy unencrypted rows.
+        return safeJsonParseObject<UserKeys>(
+          userSettings.apiKeys,
+          "settings.apiKeys (ai.ts legacy plain)",
+        );
       }
     }
   } catch (e) {
@@ -412,6 +423,7 @@ Then give your final answer after your reasoning.`
  */
 import type { z } from "zod";
 import { parseWithRepair } from "@/lib/ai-parse";
+import { safeJsonParseObject } from "@/lib/safe-json";
 
 export async function aiStructured<T>(
   prompt: string,

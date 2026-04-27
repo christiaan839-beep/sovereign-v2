@@ -6,6 +6,7 @@ import { settings } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { safeDecrypt } from "@/lib/crypto";
 import { createLogger } from "@/lib/logger";
+import { safeJsonParseObject } from "@/lib/safe-json";
 
 const log = createLogger("integration-execute");
 
@@ -50,7 +51,15 @@ export async function POST(req: Request) {
         where: eq(settings.userEmail, userId),
       });
       if (userSettings?.apiKeys) {
-        const keys = JSON.parse(safeDecrypt(userSettings.apiKeys));
+        // safeDecrypt may return either valid JSON, or — if the row was
+        // never encrypted (legacy data) — the raw plaintext. In either
+        // case safeJsonParseObject treats anything other than a valid
+        // JSON object as `{}`, so callers fall through to the env-var
+        // backup instead of throwing.
+        const keys = safeJsonParseObject<Record<string, string>>(
+          safeDecrypt(userSettings.apiKeys),
+          "settings.apiKeys (integrations execute)",
+        );
         // Look for integration-specific key (e.g., "hubspot_token", "slack_token")
         token = keys[`${integrationId}_token`] || keys[`${integrationId}_api_key`] || "";
       }

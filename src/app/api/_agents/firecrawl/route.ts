@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { settings } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { safeJsonParseObject } from "@/lib/safe-json";
 
 /**
  * FIRECRAWL AGENT — Open-Source Web Scraper
@@ -27,7 +28,10 @@ export const POST = createAgentRoute({
           where: eq(settings.userEmail, email)
         });
         if (userSettings?.apiKeys) {
-          const keys = JSON.parse(userSettings.apiKeys);
+          const keys = safeJsonParseObject<Record<string, string>>(
+            userSettings.apiKeys,
+            "settings.apiKeys (firecrawl)",
+          );
           if (keys.firecrawl) apiKey = keys.firecrawl;
         }
       } catch { /* BYOK lookup failed */ }

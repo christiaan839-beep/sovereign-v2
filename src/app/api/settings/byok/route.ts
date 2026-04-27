@@ -91,10 +91,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
     }
 
-    // Load existing settings
+    // Load existing settings. safeJsonParseObject ensures a corrupt
+    // apiKeys blob unsticks on the next save (logs a warning, treats
+    // as `{}`, the merge below overwrites the bad data) instead of
+    // 500'ing every save until ops manually fixes the row.
     const existing = await db.select().from(settings).where(eq(settings.userEmail, userEmail));
-    const oldApiKeys: Record<string, string> = existing.length > 0 && existing[0].apiKeys
-      ? JSON.parse(existing[0].apiKeys)
+    const oldApiKeys = existing.length > 0
+      ? safeJsonParseObject<Record<string, string>>(
+          existing[0].apiKeys,
+          "settings.apiKeys (byok save)",
+        )
       : {};
 
     const merged = { ...oldApiKeys, [key]: value };
@@ -128,8 +134,11 @@ export async function GET() {
   try {
     const userEmail = auth.email || "";
     const existing = await db.select().from(settings).where(eq(settings.userEmail, userEmail));
-    const savedKeys: Record<string, string> = existing.length > 0 && existing[0].apiKeys
-      ? JSON.parse(existing[0].apiKeys)
+    const savedKeys = existing.length > 0
+      ? safeJsonParseObject<Record<string, string>>(
+          existing[0].apiKeys,
+          "settings.apiKeys (byok load)",
+        )
       : {};
 
     // Return configured status — never the raw values
