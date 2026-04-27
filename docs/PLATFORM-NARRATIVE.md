@@ -57,6 +57,13 @@ A fourth commitment, added in the Round 10 sprint:
    See [`drizzle/0036_playbook_dag_tables.sql`](../drizzle/0036_playbook_dag_tables.sql)
    and [`src/lib/playbook-dag-store.ts`](../src/lib/playbook-dag-store.ts).
 
+   The forensic property is **read-back complete** in Round 11: the run
+   detail page at `/dashboard/playbooks/runs/[runId]` renders the frozen
+   snapshot, per-node results with confidence + token-budget pills, and a
+   truncation banner when the store clipped large outputs (>32KB) on
+   insert. Same trust UI as the live editor, rendered from stored data.
+   See [`src/app/dashboard/playbooks/runs/[runId]/page.tsx`](../src/app/dashboard/playbooks/runs/%5BrunId%5D/page.tsx).
+
 ---
 
 ## What we do NOT claim

@@ -248,6 +248,34 @@ export async function getDag(input: {
 }
 
 /**
+ * Clone a DAG into a new row owned by the same user. Useful for the
+ * "fork this playbook" UX — copy an existing DAG, give it a new name,
+ * leave the original alone. The new row starts as `draft` regardless
+ * of the source's status; cloning isn't publishing.
+ *
+ * Tenant-scoped read: the source must belong to the requesting user.
+ * Returns null on miss (same response as not-found / wrong-owner).
+ */
+export async function cloneDag(input: {
+  sourceId: string;
+  userId: string;
+  /** Optional override; defaults to "<source name> (copy)". */
+  name?: string;
+}): Promise<{ id: string; persisted: boolean } | null> {
+  const source = await getDag({ id: input.sourceId, userId: input.userId });
+  if (!source) return null;
+  const newName = input.name ?? `${source.name} (copy)`;
+  const result = await insertDag({
+    userId: input.userId,
+    name: newName,
+    description: source.description,
+    dag: source.dag,
+    status: "draft",
+  });
+  return { id: result.id, persisted: result.persisted };
+}
+
+/**
  * Soft-delete a DAG by setting status='archived'. Hard delete is not
  * exposed — the run history references this row and we want SET NULL
  * to fire predictably. If the row is gone the FK breaks tellingly.
@@ -337,6 +365,37 @@ export async function recordDagRun(input: {
     return { recorded: !!runId, runId };
   } catch {
     return { recorded: false, runId: null };
+  }
+}
+
+/**
+ * Fetch one run by id, scoped to user. Returns null when not found OR
+ * when the user doesn't own it — same response either way (no
+ * information leak via 404 vs 403).
+ *
+ * Returns the FULL SavedDagRun including `dagSnapshot` + `results[]`
+ * for the forensic detail page. Costs more bytes than listDagRuns
+ * deliberately — this is the single-row lookup, not the list.
+ */
+export async function getDagRun(input: {
+  id: string;
+  userId: string;
+}): Promise<SavedDagRun | null> {
+  const db = await getDb();
+  if (!db) return null;
+
+  try {
+    const { playbookDagRuns } = await import("@/db/schema");
+    const rows = await db
+      .select()
+      .from(playbookDagRuns)
+      .where(
+        and(eq(playbookDagRuns.id, input.id), eq(playbookDagRuns.userId, input.userId)),
+      )
+      .limit(1);
+    return rows[0] ? rowToSavedDagRun(rows[0]) : null;
+  } catch {
+    return null;
   }
 }
 

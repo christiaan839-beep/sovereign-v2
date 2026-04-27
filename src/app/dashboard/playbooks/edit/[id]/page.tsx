@@ -206,6 +206,28 @@ export default function PlaybookEditorPage() {
     }
   }, [dag, name, savedId, isNew, router]);
 
+  // Clone the current playbook into a fresh draft. Useful for "I
+  // want to try variations of this without losing the working version".
+  // Only available once we have a savedId (the source must be in the
+  // DB; cloning a fresh "new" page that hasn't been saved is a no-op
+  // — they should just save first).
+  const handleClone = useCallback(async () => {
+    if (!savedId) return;
+    try {
+      const res = await fetch(`/api/playbooks/dag/${savedId}/clone`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      });
+      if (!res.ok) return;
+      const body = (await res.json()) as { id: string };
+      router.push(`/dashboard/playbooks/edit/${body.id}`);
+    } catch {
+      // Clone failure isn't blocking — the user can retry. No surface
+      // banner; they'll notice the URL didn't change.
+    }
+  }, [savedId, router]);
+
   // D1 Phase 3 — actually execute the DAG. Calls the run-dag endpoint
   // which self-fetches each node through the agent gateway so every
   // safety gate fires per node (manifest tier, tenant policy, token
@@ -281,6 +303,19 @@ export default function PlaybookEditorPage() {
               ? "✓ DAG valid"
               : `${result.missingFields.length} issue${result.missingFields.length === 1 ? "" : "s"}`}
           </div>
+          {/*
+            Clone button — only meaningful for an already-saved DAG.
+            Subtle styling because the primary actions are Save + Run.
+          */}
+          {savedId && (
+            <button
+              onClick={handleClone}
+              className="rounded-md border border-white/10 bg-white/[0.02] px-3 py-1.5 text-xs text-neutral-400 hover:bg-white/[0.05] hover:text-neutral-200"
+              title="Fork this playbook into a new draft"
+            >
+              Clone
+            </button>
+          )}
           <button
             onClick={handleSave}
             disabled={!result.valid || saveState === "saving"}
@@ -399,7 +434,7 @@ export default function PlaybookEditorPage() {
       {runResult && (
         <section className="mt-6 rounded-lg border border-white/10 bg-white/[0.02] p-5">
           <header className="flex items-baseline justify-between border-b border-white/5 pb-3">
-            <div className="flex items-baseline gap-3">
+            <div className="flex items-baseline gap-3 flex-wrap">
               <span
                 className={`text-sm font-semibold ${
                   runResult.success ? "text-emerald-300" : "text-rose-300"
@@ -414,6 +449,20 @@ export default function PlaybookEditorPage() {
                 <span className="text-xs text-rose-400 font-mono">
                   failed at: {runResult.failedAt}
                 </span>
+              )}
+              {/*
+                Link to the forensic detail page. Only appears when the
+                run was actually persisted (runId present + recorded).
+                The user can come back to this run later, share the
+                URL with a teammate, etc.
+              */}
+              {runResult.runId && runResult.recorded && (
+                <Link
+                  href={`/dashboard/playbooks/runs/${runResult.runId}`}
+                  className="text-xs text-emerald-400 hover:text-emerald-300 underline-offset-4 hover:underline"
+                >
+                  View run detail →
+                </Link>
               )}
             </div>
             <button

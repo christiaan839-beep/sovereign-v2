@@ -92,6 +92,25 @@ describe("playbook-dag-store — graceful no-DB fallbacks", () => {
     const result = await listDagRuns({ userId: "user_1" });
     expect(result).toEqual({ runs: [] });
   });
+
+  it("getDagRun returns null when DB is unavailable", async () => {
+    const { getDagRun } = await importStore();
+    const result = await getDagRun({ id: "any-id", userId: "user_1" });
+    expect(result).toBeNull();
+  });
+
+  it("cloneDag returns null when source DAG is unreachable (no DB)", async () => {
+    // cloneDag chains getDag → insertDag. With no DB, getDag returns
+    // null, so cloneDag short-circuits to null too. The route then
+    // surfaces this as 404 (no information leak).
+    const { cloneDag } = await importStore();
+    const result = await cloneDag({
+      sourceId: "any-id",
+      userId: "user_1",
+      name: "fork",
+    });
+    expect(result).toBeNull();
+  });
 });
 
 describe("playbook-dag-store — fallback semantics", () => {

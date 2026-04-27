@@ -482,6 +482,21 @@ const trustAssets = [
     path: "src/app/api/playbooks/dag/runs/route.ts",
     name: "Run-history endpoint (GET /api/playbooks/dag/runs)",
   },
+  // Round 11 — forensic detail surfaces. Without these, the run-history
+  // table accumulates rows that nobody can read; the load-back loop is
+  // incomplete. Lock both ends in (single-run detail + clone).
+  {
+    path: "src/app/api/playbooks/dag/runs/[runId]/route.ts",
+    name: "Single-run detail endpoint (GET /api/playbooks/dag/runs/[runId])",
+  },
+  {
+    path: "src/app/dashboard/playbooks/runs/[runId]/page.tsx",
+    name: "Run detail forensic view (server-rendered)",
+  },
+  {
+    path: "src/app/api/playbooks/dag/[id]/clone/route.ts",
+    name: "Playbook clone endpoint (POST /api/playbooks/dag/[id]/clone)",
+  },
 ];
 for (const { path, name } of trustAssets) {
   const present = existsSync(join(ROOT, path)) ? 1 : 0;

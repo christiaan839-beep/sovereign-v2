@@ -103,43 +103,41 @@ export function RecentDagRuns() {
           {runs.map((r) => {
             const ok = r.status === "completed";
             return (
-              <li
-                key={r.id}
-                className="flex items-baseline gap-3 rounded px-2 py-1.5 hover:bg-white/[0.02]"
-              >
-                <span
-                  className={`shrink-0 text-xs font-mono ${ok ? "text-emerald-400" : "text-rose-400"}`}
-                  aria-label={ok ? "completed" : "failed"}
+              <li key={r.id}>
+                <Link
+                  href={`/dashboard/playbooks/runs/${r.id}`}
+                  className="flex items-baseline gap-3 rounded px-2 py-1.5 hover:bg-white/[0.04] transition-colors"
+                  title="View run detail"
                 >
-                  {ok ? "✓" : "✗"}
-                </span>
-                <span className="text-xs text-neutral-300 flex-1 truncate">
-                  {r.dagId ? (
-                    <Link
-                      href={`/dashboard/playbooks/edit/${r.dagId}`}
-                      className="hover:text-neutral-100"
-                    >
-                      Playbook · {r.nodeCount}n / {r.edgeCount}e
-                    </Link>
-                  ) : (
-                    <span className="text-neutral-500 italic">Anonymous run · {r.nodeCount}n</span>
-                  )}
-                </span>
-                {!ok && r.failedAt && (
-                  <span className="text-[10px] text-rose-400 font-mono">
-                    failed: {r.failedAt}
+                  <span
+                    className={`shrink-0 text-xs font-mono ${ok ? "text-emerald-400" : "text-rose-400"}`}
+                    aria-label={ok ? "completed" : "failed"}
+                  >
+                    {ok ? "✓" : "✗"}
                   </span>
-                )}
-                <span className="text-[10px] text-neutral-600 font-mono shrink-0">
-                  {formatDuration(r.totalDurationMs)}
-                </span>
-                <time
-                  dateTime={r.createdAt}
-                  className="text-[10px] text-neutral-600 font-mono shrink-0 w-12 text-right"
-                  title={new Date(r.createdAt).toLocaleString()}
-                >
-                  {relativeTime(r.createdAt)}
-                </time>
+                  <span className="text-xs text-neutral-300 flex-1 truncate">
+                    {r.dagId ? (
+                      <span>Playbook · {r.nodeCount}n / {r.edgeCount}e</span>
+                    ) : (
+                      <span className="text-neutral-500 italic">Anonymous run · {r.nodeCount}n</span>
+                    )}
+                  </span>
+                  {!ok && r.failedAt && (
+                    <span className="text-[10px] text-rose-400 font-mono">
+                      failed: {r.failedAt}
+                    </span>
+                  )}
+                  <span className="text-[10px] text-neutral-600 font-mono shrink-0">
+                    {formatDuration(r.totalDurationMs)}
+                  </span>
+                  <time
+                    dateTime={r.createdAt}
+                    className="text-[10px] text-neutral-600 font-mono shrink-0 w-12 text-right"
+                    title={new Date(r.createdAt).toLocaleString()}
+                  >
+                    {relativeTime(r.createdAt)}
+                  </time>
+                </Link>
               </li>
             );
           })}
