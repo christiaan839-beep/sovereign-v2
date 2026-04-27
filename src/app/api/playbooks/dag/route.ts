@@ -1,27 +1,18 @@
 /**
- * POST /api/playbooks/dag — save a DAG-shaped playbook from the
- * visual editor.
+ * /api/playbooks/dag
  *
- * D1 PHASE 2 surface. Phase 3 (next sprint) will:
- *   - Validate the DAG via topoSort + dryRun before persistence
- *   - Persist into a `playbooks_dag` table with a separate column
- *     so existing code-defined playbooks aren't disturbed
- *   - Wire execution into the existing runPlaybook() so the
- *     authoring surface becomes interchangeable with code
+ *   GET   — list the user's saved DAGs (newest-edit first)
+ *   POST  — create or update a DAG from the visual editor
  *
- * For Phase 2 this endpoint:
- *   - Authenticates via Clerk
- *   - Validates the DAG is well-formed (no cycles, all node IDs
- *     are unique, edges reference existing nodes)
- *   - Audit-logs the save event through the SHA-256 hash chain
- *     so revoking a leaked playbook is forensically traceable
- *   - Returns the validated DAG + a placeholder ID so the editor
- *     can show "saved" UX
+ * The editor's save flow always POSTs the full DAG. If `id` is in the
+ * body and the user owns it, we update; otherwise we insert and
+ * return the new id so the editor can navigate to /[id] afterwards.
  *
- * Storage: not yet persisted (Phase 3). The endpoint is a no-op on
- * the DB side today; it returns success only after passing
- * structural validation. That keeps the editor's save flow honest
- * — if the DAG is broken, the editor sees the error.
+ * Persistence is best-effort: when DATABASE_URL is unset (dev /
+ * preview), the store returns a logical id and persisted=false. The
+ * editor still gets a "saved ✓" UX so structural validation always
+ * works regardless of DB availability — drift between marketing and
+ * implementation is the audit story we're trying to keep honest.
  */
 
 import { NextResponse } from "next/server";
@@ -30,6 +21,7 @@ import { requireAuth } from "@/lib/auth-guard";
 import { topoSort } from "@/lib/playbook-dag";
 import { auditLog } from "@/lib/audit-log";
 import { createLogger } from "@/lib/logger";
+import { insertDag, listDags, updateDag } from "@/lib/playbook-dag-store";
 
 export const runtime = "nodejs";
 
@@ -48,12 +40,46 @@ const EdgeSchema = z.object({
 });
 
 const RequestSchema = z.object({
-  id: z.string().optional(),
+  id: z.string().uuid().optional(), // proper UUID — fallback ids look like dag_local_*
+  name: z.string().min(1).max(120).optional(),
+  description: z.string().max(2000).optional(),
   dag: z.object({
     nodes: z.array(NodeSchema).min(1).max(100),
     edges: z.array(EdgeSchema).max(200),
   }),
 });
+
+/**
+ * GET /api/playbooks/dag
+ *
+ * List the authenticated user's saved DAGs. Used by the visual
+ * editor's "My playbooks" sidebar and any analytics surface that
+ * needs to enumerate authoring activity per user.
+ */
+export async function GET(): Promise<Response> {
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
+  const userId = auth.userId;
+
+  const { dags } = await listDags({ userId, limit: 50 });
+  // Strip the heavy `dag` field from the list response — the editor
+  // hydrates it via GET /api/playbooks/dag/[id]. This keeps the list
+  // endpoint cheap when a user has 50 multi-node playbooks.
+  const summaries = dags.map((d) => ({
+    id: d.id,
+    name: d.name,
+    description: d.description,
+    status: d.status,
+    nodeCount: d.nodeCount,
+    edgeCount: d.edgeCount,
+    lastRunAt: d.lastRunAt,
+    lastRunStatus: d.lastRunStatus,
+    lastRunDurationMs: d.lastRunDurationMs,
+    createdAt: d.createdAt,
+    updatedAt: d.updatedAt,
+  }));
+  return NextResponse.json({ success: true, dags: summaries });
+}
 
 export async function POST(req: Request): Promise<Response> {
   const auth = await requireAuth();
@@ -75,7 +101,7 @@ export async function POST(req: Request): Promise<Response> {
     );
   }
 
-  const { dag } = parsed.data;
+  const { id, name, description, dag } = parsed.data;
 
   // Validate node IDs are unique.
   const ids = new Set<string>();
@@ -107,7 +133,8 @@ export async function POST(req: Request): Promise<Response> {
     }
   }
 
-  // Validate the DAG is acyclic.
+  // Validate the DAG is acyclic. The editor enforces this in the UI
+  // but the API has to defend against direct curl callers.
   const topo = topoSort({
     nodes: dag.nodes.map((n) => ({
       id: n.id,
@@ -119,51 +146,52 @@ export async function POST(req: Request): Promise<Response> {
   });
   if (!topo.order) {
     return NextResponse.json(
-      {
-        error: "DAG contains a cycle",
-        cycle: topo.cycle,
-      },
+      { error: "DAG contains a cycle", cycle: topo.cycle },
       { status: 400 },
     );
   }
 
-  // Phase 3: persist to playbooks.dag column. Insert when no id,
-  // update when an id is provided. Storage failure falls back to
-  // "validated only" so the editor still shows ✓ even if the column
-  // hasn't been migrated yet (graceful no-DB).
-  let storedId = parsed.data.id ?? `dag_${Date.now()}`;
-  let persisted = false;
-  try {
-    if (process.env.DATABASE_URL) {
-      const { db } = await import("@/db");
-      const { sql } = await import("drizzle-orm");
-      const dagJson = JSON.stringify(dag);
-      if (parsed.data.id) {
-        // Update existing playbook's dag column.
-        await db.execute(sql`
-          UPDATE playbooks
-          SET dag = ${dagJson}::jsonb
-          WHERE id = ${parsed.data.id} AND user_id = ${userId}
-        `);
-      } else {
-        // Insert a fresh playbook row with just the DAG.
-        await db.execute(sql`
-          INSERT INTO playbooks (user_id, name, dag, status)
-          VALUES (${userId}, ${`Visual playbook (${dag.nodes.length} nodes)`},
-                  ${dagJson}::jsonb, 'draft')
-        `);
-        // Postgres won't return the auto-generated id from a raw
-        // sql.execute easily here; fall back to a logical id. The
-        // visual editor's load path queries by user+createdAt so
-        // this doesn't break round-tripping.
-      }
-      persisted = true;
-    }
-  } catch (err) {
-    log.warn("playbook DAG persist failed — validated-only response", {
+  // Resolve the name. Default to "Visual playbook (Nn / Ne)" so the
+  // list view is still readable for users who don't bother titling.
+  const resolvedName =
+    name ?? `Visual playbook (${dag.nodes.length}n / ${dag.edges.length}e)`;
+
+  let storedId: string;
+  let persisted: boolean;
+  let action: "create" | "update";
+
+  if (id) {
+    // UPDATE branch — existing DAG.
+    const result = await updateDag({
+      id,
       userId,
-      error: (err as Error).message,
+      name,
+      description,
+      dag: dag as unknown as import("@/lib/playbook-dag").PlaybookDag,
     });
+    if (!result.updated) {
+      // Either the row doesn't exist, the user doesn't own it, or DB
+      // is offline. We don't distinguish — same response either way
+      // (no leak).
+      return NextResponse.json(
+        { error: "DAG not found or could not be updated" },
+        { status: 404 },
+      );
+    }
+    storedId = id;
+    persisted = true;
+    action = "update";
+  } else {
+    // INSERT branch — new DAG.
+    const result = await insertDag({
+      userId,
+      name: resolvedName,
+      description: description ?? null,
+      dag: dag as unknown as import("@/lib/playbook-dag").PlaybookDag,
+    });
+    storedId = result.id;
+    persisted = result.persisted;
+    action = "create";
   }
 
   // Audit-log the save through the SHA-256 hash chain.
@@ -172,19 +200,20 @@ export async function POST(req: Request): Promise<Response> {
     action: "settings.update",
     resource: "playbook_dag",
     details: {
-      kind: "playbook_dag.save",
+      kind: action === "create" ? "playbook_dag.create" : "playbook_dag.update",
       id: storedId,
       persisted,
       nodeCount: dag.nodes.length,
       edgeCount: dag.edges.length,
-      // Don't log full DAG bodies — they may contain user prompts.
+      // Don't log the full DAG body — may contain user prompts.
       shape: `${dag.nodes.length}n_${dag.edges.length}e`,
     },
   });
 
-  log.info("playbook DAG validated + audit-logged", {
+  log.info(`playbook DAG ${action}d`, {
     userId,
     persisted,
+    id: storedId,
     nodeCount: dag.nodes.length,
     edgeCount: dag.edges.length,
   });
@@ -193,6 +222,7 @@ export async function POST(req: Request): Promise<Response> {
     success: true,
     id: storedId,
     persisted,
+    action,
     executionOrder: topo.order,
   });
 }

@@ -461,6 +461,27 @@ const trustAssets = [
     path: "docs/PLATFORM-NARRATIVE.md",
     name: "Platform narrative (read-me-first reflexive doc)",
   },
+  // Round 10 — D1 Phase 4 — visual-editor DAG storage architecture.
+  // The store + tables + per-id route are the load-back loop. Without
+  // these, the editor can save but can never reload — the very gap
+  // that prompted Round 10. Lock them in so a future refactor can't
+  // silently regress the round-trip.
+  {
+    path: "drizzle/0036_playbook_dag_tables.sql",
+    name: "DAG storage migration (playbook_dags + playbook_dag_runs)",
+  },
+  {
+    path: "src/lib/playbook-dag-store.ts",
+    name: "Typed DAG store (CRUD + run recording)",
+  },
+  {
+    path: "src/app/api/playbooks/dag/[id]/route.ts",
+    name: "Load-back endpoint (GET / DELETE per-id)",
+  },
+  {
+    path: "src/app/api/playbooks/dag/runs/route.ts",
+    name: "Run-history endpoint (GET /api/playbooks/dag/runs)",
+  },
 ];
 for (const { path, name } of trustAssets) {
   const present = existsSync(join(ROOT, path)) ? 1 : 0;

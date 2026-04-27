@@ -2,23 +2,26 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
 import { topoSort, dryRun, type PlaybookDag } from "@/lib/playbook-dag";
 import { PlaybookCanvas } from "@/components/playbook/PlaybookCanvas";
 import { NodePalette } from "@/components/playbook/NodePalette";
+import { MyDagsPanel } from "@/components/playbook/MyDagsPanel";
 import { ConfidenceBadge } from "@/components/agent/ConfidenceBadge";
 import { TokenBudgetMeter } from "@/components/agent/TokenBudgetMeter";
 import { extractConfidence, extractTokenBudget } from "@/lib/agent-meta";
 
 /**
- * D1 PHASE 2 — drag-drop visual playbook editor.
+ * D1 — drag-drop visual playbook editor.
  *
- * Replaces Phase 1's read-only SVG with a React Flow canvas that
- * supports:
- *   - Drag a node to reposition
- *   - Click an agent in the palette → adds at a default position
- *   - Connect nodes by drawing edges between handles
- *   - Live dry-run validation (cycle detection, missing fields)
- *   - Save → POST /api/playbooks/dag (Phase 3 wires execution)
+ * Phase 2 (canvas) + Phase 3 (execution) + Phase 4 (load-back loop).
+ *
+ *   /dashboard/playbooks/edit/new   → fresh STARTER_DAG, never hits GET
+ *   /dashboard/playbooks/edit/<id>  → fetches GET /api/playbooks/dag/<id>
+ *
+ * After saving a "new" DAG, the editor router-pushes to /<id> so
+ * subsequent saves are updates, not duplicates. This is the standard
+ * Notion / Linear pattern for create-then-edit flows.
  */
 
 interface AgentSummary {
@@ -42,6 +45,8 @@ interface RunResponse {
   results: NodeRunResult[];
   totalDurationMs: number;
   failedAt?: string;
+  runId?: string | null;
+  recorded?: boolean;
 }
 
 const STARTER_DAG: PlaybookDag = {
@@ -53,12 +58,74 @@ const STARTER_DAG: PlaybookDag = {
 };
 
 export default function PlaybookEditorPage() {
+  const router = useRouter();
+  const params = useParams<{ id: string }>();
+  // The URL segment "new" is the sentinel for "render STARTER_DAG;
+  // do not fetch". Anything else is treated as a UUID and triggers
+  // hydration. The DB layer enforces tenant ownership; an unknown id
+  // returns 404 and we fall back to STARTER_DAG with a notice.
+  const urlId = params?.id;
+  const isNew = !urlId || urlId === "new";
+
   const [dag, setDag] = useState<PlaybookDag>(STARTER_DAG);
+  const [savedId, setSavedId] = useState<string | null>(isNew ? null : urlId);
+  const [name, setName] = useState<string>("Untitled playbook");
+  // We derive `hydrating` from "did we finish loading THIS url?" rather
+  // than maintaining a separate boolean flag. That avoids the
+  // set-state-in-effect cascade lint warning AND naturally handles
+  // navigation between DAGs — when urlId changes, lastLoadedUrl is
+  // still the old one, so hydrating flips back to true automatically.
+  const [lastLoadedUrl, setLastLoadedUrl] = useState<string | null>(null);
+  const hydrating = !isNew && lastLoadedUrl !== urlId;
+  const [hydrationError, setHydrationError] = useState<string | null>(null);
   const [agents, setAgents] = useState<Record<string, AgentSummary>>({});
   const [requiredBySlug, setRequiredBySlug] = useState<Record<string, string[]>>({});
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [runState, setRunState] = useState<"idle" | "running" | "done" | "error">("idle");
   const [runResult, setRunResult] = useState<RunResponse | null>(null);
+
+  // Hydrate from /api/playbooks/dag/[id] when we have an id from the
+  // URL. The DAG fetch is intentionally separate from the agents
+  // fetch below — they're independent and parallel.
+  useEffect(() => {
+    if (isNew) return;
+    let alive = true;
+    fetch(`/api/playbooks/dag/${urlId}`)
+      .then(async (r) => {
+        if (!alive) return;
+        if (!r.ok) {
+          // 404 / 401 / 500 all surface the same way to the user.
+          // The store can't distinguish "doesn't exist" from "wrong
+          // owner" — both should look like "not found". The editor
+          // falls back to STARTER_DAG so the user can still author
+          // something instead of seeing a blank screen.
+          setHydrationError(
+            r.status === 404
+              ? "This playbook isn't available — it may have been archived or you may not have access."
+              : "Failed to load this playbook. Try refreshing.",
+          );
+          // Mark the URL as "loaded" (with an error) so we don't show
+          // the loading spinner forever on a permanent 404.
+          setLastLoadedUrl(urlId ?? null);
+          return;
+        }
+        const body = (await r.json()) as { dag: { id: string; name: string; dag: PlaybookDag } };
+        if (!alive) return;
+        setDag(body.dag.dag);
+        setSavedId(body.dag.id);
+        setName(body.dag.name);
+        setHydrationError(null);
+        setLastLoadedUrl(urlId ?? null);
+      })
+      .catch(() => {
+        if (!alive) return;
+        setHydrationError("Network error loading playbook.");
+        setLastLoadedUrl(urlId ?? null);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [isNew, urlId]);
 
   useEffect(() => {
     let alive = true;
@@ -113,24 +180,41 @@ export default function PlaybookEditorPage() {
   const handleSave = useCallback(async () => {
     setSaveState("saving");
     try {
+      const payload: Record<string, unknown> = { dag, name };
+      if (savedId) payload.id = savedId;
       const res = await fetch("/api/playbooks/dag", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ dag }),
+        body: JSON.stringify(payload),
       });
-      setSaveState(res.ok ? "saved" : "error");
-      if (res.ok) {
-        setTimeout(() => setSaveState("idle"), 2000);
+      if (!res.ok) {
+        setSaveState("error");
+        return;
       }
+      const body = (await res.json()) as { id: string; action: "create" | "update" };
+      setSaveState("saved");
+      setSavedId(body.id);
+      // After the first save of a fresh "new" playbook, replace the
+      // URL with the real id so browser-back works and subsequent
+      // saves correctly UPDATE rather than duplicate.
+      if (body.action === "create" && isNew) {
+        router.replace(`/dashboard/playbooks/edit/${body.id}`);
+      }
+      setTimeout(() => setSaveState("idle"), 2000);
     } catch {
       setSaveState("error");
     }
-  }, [dag]);
+  }, [dag, name, savedId, isNew, router]);
 
   // D1 Phase 3 — actually execute the DAG. Calls the run-dag endpoint
   // which self-fetches each node through the agent gateway so every
   // safety gate fires per node (manifest tier, tenant policy, token
   // budget, capability check, audit log, attestation).
+  //
+  // When the DAG has a savedId, we pass it so the run is recorded
+  // against that parent — that's what makes the "previous runs"
+  // sidebar scope correctly. Pre-save runs (savedId still null) are
+  // anonymous one-shots; they record but with dagId=null.
   const handleRun = useCallback(async () => {
     setRunState("running");
     setRunResult(null);
@@ -138,7 +222,11 @@ export default function PlaybookEditorPage() {
       const res = await fetch("/api/playbooks/run-dag", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ dag, continueOnError: false }),
+        body: JSON.stringify({
+          dag,
+          dagId: savedId ?? undefined,
+          continueOnError: false,
+        }),
       });
       const body = (await res.json()) as RunResponse;
       setRunResult(body);
@@ -146,18 +234,39 @@ export default function PlaybookEditorPage() {
     } catch {
       setRunState("error");
     }
-  }, [dag]);
+  }, [dag, savedId]);
 
   return (
     <main className="mx-auto max-w-7xl px-6 py-8 text-neutral-200">
-      <header className="mb-6 flex items-baseline justify-between">
-        <div>
+      <header className="mb-6 flex items-baseline justify-between gap-6">
+        <div className="flex-1 min-w-0">
           <Link href="/dashboard/playbooks" className="text-xs text-neutral-500 hover:text-neutral-300">
             ← Playbooks
           </Link>
-          <h1 className="mt-2 text-2xl font-bold">Playbook editor</h1>
+          {/*
+            Inline-editable playbook name. Plain input, no chrome —
+            looks like a heading until the user clicks. The Notion /
+            Linear pattern: a click-to-rename heading is friction-free
+            and avoids dialog-modal noise.
+          */}
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Untitled playbook"
+            className="mt-2 block w-full bg-transparent text-2xl font-bold text-neutral-100 outline-none placeholder:text-neutral-600 focus:bg-white/[0.02] rounded -mx-1 px-1"
+            aria-label="Playbook name"
+          />
           <p className="mt-1 text-sm text-neutral-400">
-            Drag agents from the palette. Click to add. Connect handles to wire data flow.
+            {hydrating
+              ? "Loading playbook…"
+              : hydrationError
+                ? hydrationError
+                : "Drag agents from the palette. Click to add. Connect handles to wire data flow."}
+            {savedId && !isNew && !hydrating && (
+              <span className="ml-2 text-xs text-neutral-600 font-mono">
+                · {savedId.slice(0, 8)}
+              </span>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -207,6 +316,7 @@ export default function PlaybookEditorPage() {
         <div className="flex-1">
           <PlaybookCanvas dag={dag} agents={agents} onChange={setDag} />
         </div>
+        <MyDagsPanel currentDagId={savedId} />
       </div>
 
       <section className="mt-8 grid gap-4 lg:grid-cols-2">

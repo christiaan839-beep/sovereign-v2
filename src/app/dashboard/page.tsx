@@ -14,6 +14,7 @@ import {
 import Link from "next/link";
 import { FirstRunPrompt } from "@/components/dashboard/FirstRunPrompt";
 import { CheckoutSuccessBanner } from "@/components/dashboard/CheckoutSuccessBanner";
+import { RecentDagRuns } from "@/components/dashboard/RecentDagRuns";
 // Chat is available via the floating widget (SovereignAssistant) in layout.tsx and /chat page
 
 const ONBOARDING_KEY = "sovereign_onboarding";
@@ -1117,6 +1118,14 @@ export default function DashboardHome() {
 
       {/* Recent Playbook Runs — real data from /api/playbooks/runs */}
       {!showWelcome && <RecentRunsFeed />}
+
+      {/*
+        Recent VISUAL-EDITOR runs — separate widget reading from the
+        dedicated playbook_dag_runs table (drizzle 0036). Renders
+        nothing for users with no DAG run history, so adding it is
+        zero-cost for everyone who hasn't used the visual editor yet.
+      */}
+      {!showWelcome && <RecentDagRuns />}
 
       {/* Chat available via floating widget (bottom-right) or /chat page */}
     </div>

@@ -27,6 +27,7 @@ import { executeDag, type PlaybookDag } from "@/lib/playbook-dag";
 import { auditLog } from "@/lib/audit-log";
 import { getBaseUrl } from "@/lib/base-url";
 import { createLogger } from "@/lib/logger";
+import { recordDagRun } from "@/lib/playbook-dag-store";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -48,6 +49,13 @@ const RequestSchema = z.object({
       .max(100)
       .default([]),
   }),
+  /**
+   * If the DAG was loaded from the visual editor, the parent saved
+   * DAG's id. Used to record the run against that DAG so the
+   * "previous runs" panel can scope correctly. Optional — anonymous
+   * one-shot runs (paste-and-execute) just don't get a parent link.
+   */
+  dagId: z.string().uuid().optional(),
   /** Optional initial inputs merged into the first node's config. */
   inputs: z.record(z.string(), z.unknown()).optional(),
   /** When true, downstream nodes still run after a failure. */
@@ -74,7 +82,7 @@ export async function POST(req: NextRequest): Promise<Response> {
     );
   }
 
-  const { dag, inputs = {}, continueOnError } = parsed.data;
+  const { dag, dagId, inputs = {}, continueOnError } = parsed.data;
   // Cast to satisfy executeDag's typed PlaybookDag — Zod's parsed
   // shape is structurally identical, this is just TS narrowing.
   const typedDag = dag as PlaybookDag;
@@ -119,6 +127,19 @@ export async function POST(req: NextRequest): Promise<Response> {
 
   const result = await executeDag(typedDag, runAgent, { continueOnError });
 
+  // Record the run into playbook_dag_runs. Best-effort — never blocks
+  // the response if persistence fails. The dagId may be null (one-shot
+  // execution from a paste, or pre-save run); the row still records.
+  const recordOutcome = await recordDagRun({
+    userId,
+    dagId: dagId ?? null,
+    dag: typedDag,
+    status: result.status,
+    results: result.results,
+    totalDurationMs: result.totalDurationMs,
+    failedAt: result.failedAt ?? null,
+  });
+
   // Audit-log the run through the SHA-256 chain so even visual-editor
   // executions show up in the immutable trail.
   await auditLog({
@@ -132,6 +153,9 @@ export async function POST(req: NextRequest): Promise<Response> {
       edgeCount: typedDag.edges.length,
       totalDurationMs: result.totalDurationMs,
       failedAt: result.failedAt,
+      runId: recordOutcome.runId,
+      dagId: dagId ?? null,
+      recorded: recordOutcome.recorded,
     },
   });
 
@@ -140,10 +164,14 @@ export async function POST(req: NextRequest): Promise<Response> {
     status: result.status,
     nodeCount: typedDag.nodes.length,
     durationMs: result.totalDurationMs,
+    runId: recordOutcome.runId,
+    recorded: recordOutcome.recorded,
   });
 
   return NextResponse.json({
     success: result.status === "completed",
+    runId: recordOutcome.runId,
+    recorded: recordOutcome.recorded,
     ...result,
   });
 }

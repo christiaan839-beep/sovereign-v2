@@ -138,14 +138,14 @@ export default function PricingCalculatorPage() {
         </Link>
         <h1 className="mt-3 text-3xl font-bold">Pricing calculator</h1>
         <p className="mt-2 max-w-2xl text-sm text-neutral-400">
-          Pick the kinds of agents you'll run + how often. We'll
+          Pick the kinds of agents you&apos;ll run + how often. We&apos;ll
           recommend the plan that fits your envelope, with honest
           overage math when you cross the included allotment.
         </p>
         <p className="mt-3 max-w-2xl text-xs text-neutral-500">
           All math happens client-side — your numbers never leave your
           browser. The plan tiers + per-run overage rates here match
-          what's published on{" "}
+          what&apos;s published on{" "}
           <Link href="/pricing" className="underline hover:text-neutral-300">
             /pricing
           </Link>

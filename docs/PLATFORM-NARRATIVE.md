@@ -46,6 +46,17 @@ surface.
 See [`src/app/dashboard/playbooks/edit/[id]/page.tsx`](../src/app/dashboard/playbooks/edit/[id]/page.tsx)
 and [`src/lib/playbook-dag.ts`](../src/lib/playbook-dag.ts).
 
+A fourth commitment, added in the Round 10 sprint:
+
+4. **DAG definitions and run history are first-class tables.** The visual
+   editor persists into `playbook_dags`; every execution writes a row into
+   `playbook_dag_runs` with a frozen DAG snapshot at run time. Deleting a
+   DAG keeps its run history (FK is `SET NULL` + snapshot). This is the
+   forensic property: "what did this run actually execute?" can be answered
+   weeks later, even if the source DAG has been edited.
+   See [`drizzle/0036_playbook_dag_tables.sql`](../drizzle/0036_playbook_dag_tables.sql)
+   and [`src/lib/playbook-dag-store.ts`](../src/lib/playbook-dag-store.ts).
+
 ---
 
 ## What we do NOT claim
@@ -224,6 +235,9 @@ document **honest first**. Resist the temptation to soften the
 "What we do NOT claim" section. The credibility of the rest of the document
 depends on the willingness to under-promise.
 
-— Last updated 2026-04-27, paired with `drizzle/0035_playbook_dag.sql` +
-[`src/app/api/playbooks/run-dag/route.ts`](../src/app/api/playbooks/run-dag/route.ts)
-(D1 Phase 3 — visual editor end-to-end loop).
+— Last updated 2026-04-27 (Round 10), paired with
+[`drizzle/0036_playbook_dag_tables.sql`](../drizzle/0036_playbook_dag_tables.sql)
++ [`src/lib/playbook-dag-store.ts`](../src/lib/playbook-dag-store.ts)
+(D1 Phase 4 — DAG definitions persisted, run history tabled, editor
+load-back loop closed). Previous round (Round 8) shipped Phase 3 — the
+synchronous executor at [`src/app/api/playbooks/run-dag/route.ts`](../src/app/api/playbooks/run-dag/route.ts).

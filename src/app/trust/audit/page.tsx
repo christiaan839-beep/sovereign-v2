@@ -200,7 +200,7 @@ export default async function TrustAuditPage() {
           Audience: <span className="text-neutral-300">human, ai-agent</span>.
           The machine-readable endpoints carry an{" "}
           <code>X-Sovereign-Transparency-Audience</code> header so auditor
-          crawlers know they're a first-class consumer.
+          crawlers know they&apos;re a first-class consumer.
         </p>
         <p className="mt-3">
           Found a gap? File it via{" "}

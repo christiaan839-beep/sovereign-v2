@@ -885,6 +885,71 @@ export const playbookRunSteps = pgTable("playbook_run_steps", {
 ]);
 
 // ═══════════════════════════════════════════
+// Visual-editor DAG playbooks (D1 — drizzle/0036)
+//
+// Two tables:
+//   playbookDags     — definitions authored in the visual editor
+//   playbookDagRuns  — execution history with frozen DAG snapshot
+//
+// Separated from playbookRuns because the latter is for code-defined
+// playbook runs (linear pipelines from src/lib/playbooks.ts). DAG-shaped
+// playbooks have a different shape (graph not list) and a different
+// lifecycle (authored in-app vs. shipped in-code).
+// ═══════════════════════════════════════════
+
+export const playbookDags = pgTable("playbook_dags", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  // The full DAG payload — { nodes: [...], edges: [...] }. Type lives
+  // in src/lib/playbook-dag.ts as PlaybookDag.
+  dag: jsonb("dag").notNull(),
+  status: text("status").notNull().default("draft"), // draft | published | archived
+  // Denormalized counts so list endpoints don't parse JSONB per row.
+  nodeCount: integer("node_count").notNull().default(0),
+  edgeCount: integer("edge_count").notNull().default(0),
+  // Last-run telemetry. NULL until first execution. Powers the
+  // "My playbooks" panel status pills.
+  lastRunAt: timestamp("last_run_at"),
+  lastRunStatus: text("last_run_status"), // completed | failed | NULL
+  lastRunDurationMs: integer("last_run_duration_ms"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_playbook_dags_user_updated").on(table.userId, table.updatedAt),
+  index("idx_playbook_dags_user_status").on(table.userId, table.status),
+]);
+
+export const playbookDagRuns = pgTable("playbook_dag_runs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull(),
+  // SET NULL on delete so the run history survives parent deletion.
+  // The dagSnapshot below freezes the shape that actually ran, so
+  // forensics work even after the DAG is gone.
+  dagId: uuid("dag_id").references(() => playbookDags.id, { onDelete: "set null" }),
+  // Frozen DAG shape at execution time. Cannot be answered by reading
+  // the live `dag` column on the parent because the user may have
+  // edited it since this run completed.
+  dagSnapshot: jsonb("dag_snapshot").notNull(),
+  status: text("status").notNull(), // completed | failed
+  nodeCount: integer("node_count").notNull(),
+  edgeCount: integer("edge_count").notNull(),
+  // Per-node NodeRunResult[] — see src/lib/playbook-dag.ts. The
+  // store layer truncates large per-node outputs before insertion
+  // (~32KB cap per result) so rows don't bloat.
+  results: jsonb("results").notNull(),
+  totalDurationMs: integer("total_duration_ms").notNull(),
+  // nodeId of the first failing node (mirrors ExecuteDagResult.failedAt).
+  failedAt: text("failed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_playbook_dag_runs_user_created").on(table.userId, table.createdAt),
+  index("idx_playbook_dag_runs_dag").on(table.dagId, table.createdAt),
+  index("idx_playbook_dag_runs_user_status").on(table.userId, table.status),
+]);
+
+// ═══════════════════════════════════════════
 // Async Job Queue
 // Fire-and-forget agent execution — user submits a goal,
 // gets a job ID back immediately, result arrives via Telegram.
