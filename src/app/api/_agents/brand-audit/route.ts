@@ -3,6 +3,7 @@ import { z } from "zod";
 import { research_ai } from "@/lib/ai";
 import { ANTI_SLOP_RULES } from "@/lib/content-engine";
 import { fireUserWebhook } from "@/lib/webhooks";
+import { withDLQ } from "@/lib/safe-async";
 
 /**
  * BRAND AUDIT — Analyzes a competitor's brand via live web research
@@ -13,17 +14,18 @@ const BRAND_SYSTEM = `You are a brand strategist who identifies positioning gaps
 
 ${ANTI_SLOP_RULES}`;
 
-const schema = z.object({
-  competitorUrl: z.string().max(500).optional(),
-  competitorName: z.string().max(200).optional(),
-  yourBusiness: z.string().max(500).optional(),
-  industry: z.string().max(200).optional(),
-  prompt: z.string().max(5000).optional(),
-  context: z.string().max(5000).optional(),
-}).refine(
-  (d) => d.competitorUrl || d.competitorName || d.prompt,
-  { message: "Provide a competitorUrl, competitorName, or prompt" }
-);
+const schema = z
+  .object({
+    competitorUrl: z.string().max(500).optional(),
+    competitorName: z.string().max(200).optional(),
+    yourBusiness: z.string().max(500).optional(),
+    industry: z.string().max(200).optional(),
+    prompt: z.string().max(5000).optional(),
+    context: z.string().max(5000).optional(),
+  })
+  .refine((d) => d.competitorUrl || d.competitorName || d.prompt, {
+    message: "Provide a competitorUrl, competitorName, or prompt",
+  });
 
 export const POST = createAgentRoute({
   name: "brand-audit",
@@ -46,7 +48,7 @@ ${context ? `CONTEXT:\n${context.slice(0, 2000)}` : ""}
 
 Provide a JSON response with: competitorBrand (name, tagline, brandVoice, values, targetAudience), strengthsWeaknesses (strengths, weaknesses, positioningGaps), counterStrategy (positioning, tagline, keyMessages, visualDirection), actionPlan (action, priority, impact).
 Return ONLY valid JSON.`,
-      { system: BRAND_SYSTEM, maxTokens: 3000 }
+      { system: BRAND_SYSTEM, maxTokens: 3000 },
     );
 
     researchAvailable = result.length > 100;
@@ -59,7 +61,10 @@ Return ONLY valid JSON.`,
       parsed = { raw: result };
     }
 
-    await fireUserWebhook("Brand Audit", "Analysis Complete", parsed).catch(() => {});
+    await withDLQ(
+      () => fireUserWebhook("Brand Audit", "Analysis Complete", parsed),
+      { kind: "webhook", target: "Brand Audit" },
+    );
 
     return {
       success: true,

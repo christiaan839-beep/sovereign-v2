@@ -3,20 +3,30 @@ import Anthropic from "@anthropic-ai/sdk";
 import { db } from "@/db";
 import { settings } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { safeDecrypt } from "@/lib/crypto";
 
 /**
  * CLAUDE COMPUTER USE API — Autonomous Browser Control
  * Allows Claude 3.5 Sonnet to natively control the virtual browser:
  * clicking, typing, taking screenshots, and executing bash commands.
+ *
+ * SECURITY: Tier 3 (restricted) — driving a Linux desktop + bash shell from
+ * arbitrary user input is high-blast-radius. Approval is required before
+ * each invocation; the action-tier gate in agent-factory enforces this.
  */
 
 export const POST = createAgentRoute({
   name: "computer-use",
+  actionTier: 3,
   handler: async ({ input, email }) => {
     const {
       instructions,
-      resolution = { type: "computer_20251124", display_width_px: 1920, display_height_px: 1080 },
-      history = []
+      resolution = {
+        type: "computer_20251124",
+        display_width_px: 1920,
+        display_height_px: 1080,
+      },
+      history = [],
     } = input as Record<string, unknown>;
 
     if (!instructions && (history as unknown[]).length === 0) {
@@ -27,11 +37,15 @@ export const POST = createAgentRoute({
     let apiKey = process.env.ANTHROPIC_API_KEY || "";
     if (email) {
       const userSettings = await db.query.settings.findFirst({
-        where: eq(settings.userEmail, email)
+        where: eq(settings.userEmail, email),
       });
       if (userSettings?.apiKeys) {
-        const keys = JSON.parse(userSettings.apiKeys);
-        if (keys.anthropic) apiKey = keys.anthropic;
+        try {
+          const keys = JSON.parse(safeDecrypt(userSettings.apiKeys));
+          if (keys.anthropic) apiKey = keys.anthropic;
+        } catch {
+          /* corrupt or unrecognized — fall back to global key */
+        }
       }
     }
 
@@ -41,11 +55,16 @@ export const POST = createAgentRoute({
 
     // 2. Initialize Claude with Beta headers for Computer Use
     const anthropic = new Anthropic({ apiKey });
-    const res = resolution as { display_width_px: number; display_height_px: number };
+    const res = resolution as {
+      display_width_px: number;
+      display_height_px: number;
+    };
 
     const messages = [
       ...(history as Array<{ role: "user" | "assistant"; content: string }>),
-      ...(instructions ? [{ role: "user" as const, content: instructions as string }] : [])
+      ...(instructions
+        ? [{ role: "user" as const, content: instructions as string }]
+        : []),
     ];
 
     // 3. Request Computer Use action
@@ -53,7 +72,8 @@ export const POST = createAgentRoute({
       model: "claude-sonnet-4-6",
       max_tokens: 1024,
       betas: ["computer-use-2025-11-24"],
-      system: "You are the Sovereign Matrix Ghost Browser. You have access to a virtual Linux desktop. Use the computer tools to navigate the web, analyze competitors, and fulfill the user's instructions. Always verify the UI state with screenshots before clicking.",
+      system:
+        "You are the Sovereign Matrix Ghost Browser. You have access to a virtual Linux desktop. Use the computer tools to navigate the web, analyze competitors, and fulfill the user's instructions. Always verify the UI state with screenshots before clicking.",
       tools: [
         {
           type: "computer_20251124",
@@ -64,25 +84,30 @@ export const POST = createAgentRoute({
         },
         {
           type: "text_editor_20250429",
-          name: "str_replace_based_edit_tool"
+          name: "str_replace_based_edit_tool",
         },
         {
           type: "bash_20250124",
-          name: "bash"
-        }
+          name: "bash",
+        },
       ] as any, // eslint-disable-line @typescript-eslint/no-explicit-any
       messages: messages as any, // eslint-disable-line @typescript-eslint/no-explicit-any
     });
 
     // 4. Extract tool calls and text
-    const textBlocks = response.content.filter((c): c is Anthropic.TextBlock => c.type === "text").map(c => c.text).join("\n");
-    const toolCalls = response.content.filter((c): c is Anthropic.ToolUseBlock => c.type === "tool_use");
+    const textBlocks = response.content
+      .filter((c): c is Anthropic.TextBlock => c.type === "text")
+      .map((c) => c.text)
+      .join("\n");
+    const toolCalls = response.content.filter(
+      (c): c is Anthropic.ToolUseBlock => c.type === "tool_use",
+    );
 
     return {
       success: true,
       text: textBlocks,
       tool_calls: toolCalls,
-      raw: response.content
+      raw: response.content,
     };
   },
 });

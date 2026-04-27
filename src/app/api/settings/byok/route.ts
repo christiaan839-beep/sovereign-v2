@@ -4,6 +4,9 @@ import { settings } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { requireAuth } from "@/lib/auth-guard";
 import { createLogger } from "@/lib/logger";
+import { safeEncrypt, safeDecrypt } from "@/lib/crypto";
+import { auditLog } from "@/lib/audit-log";
+import { loggedFireForget } from "@/lib/safe-async";
 
 const log = createLogger("settings-byok");
 
@@ -71,7 +74,7 @@ export async function POST(req: Request) {
   if (auth.error) return auth.error;
 
   try {
-    const body = await req.json() as { key?: string; value?: string };
+    const body = (await req.json()) as { key?: string; value?: string };
     const { key, value } = body;
 
     if (!key || typeof key !== "string" || !BYOK_ALLOWED_KEYS.has(key)) {
@@ -82,7 +85,10 @@ export async function POST(req: Request) {
     }
     // Sanity check: value shouldn't look like a template or placeholder
     if (value.includes("YOUR_") || value === "undefined" || value === "null") {
-      return NextResponse.json({ error: "Value looks like a placeholder" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Value looks like a placeholder" },
+        { status: 400 },
+      );
     }
 
     const userEmail = auth.email || "";
@@ -91,26 +97,46 @@ export async function POST(req: Request) {
     }
 
     // Load existing settings
-    const existing = await db.select().from(settings).where(eq(settings.userEmail, userEmail));
-    const oldApiKeys: Record<string, string> = existing.length > 0 && existing[0].apiKeys
-      ? JSON.parse(existing[0].apiKeys)
-      : {};
+    const existing = await db
+      .select()
+      .from(settings)
+      .where(eq(settings.userEmail, userEmail));
+    const oldApiKeys: Record<string, string> =
+      existing.length > 0 && existing[0].apiKeys
+        ? JSON.parse(safeDecrypt(existing[0].apiKeys))
+        : {};
 
     const merged = { ...oldApiKeys, [key]: value };
 
     if (existing.length > 0) {
-      await db.update(settings)
-        .set({ apiKeys: JSON.stringify(merged) })
+      await db
+        .update(settings)
+        .set({ apiKeys: safeEncrypt(JSON.stringify(merged)) })
         .where(eq(settings.userEmail, userEmail));
     } else {
       await db.insert(settings).values({
         userEmail,
-        apiKeys: JSON.stringify(merged),
+        apiKeys: safeEncrypt(JSON.stringify(merged)),
         config: "{}",
       });
     }
 
     log.info("BYOK key saved", { email: userEmail, key });
+
+    // Audit trail — SOC 2 / GDPR require logging every credential write so
+    // a rogue admin (or compromised account) leaves a paper trail. Only the
+    // KEY NAME is recorded; the value never lands in audit_logs.
+    if (auth.userId) {
+      loggedFireForget(
+        auditLog({
+          userId: auth.userId,
+          action: "api_key.create",
+          resource: key,
+          details: { masked: true },
+        }),
+        { source: "byok:save", meta: { key } },
+      );
+    }
 
     return NextResponse.json({ success: true, key, stored: true });
   } catch (err) {
@@ -126,10 +152,14 @@ export async function GET() {
 
   try {
     const userEmail = auth.email || "";
-    const existing = await db.select().from(settings).where(eq(settings.userEmail, userEmail));
-    const savedKeys: Record<string, string> = existing.length > 0 && existing[0].apiKeys
-      ? JSON.parse(existing[0].apiKeys)
-      : {};
+    const existing = await db
+      .select()
+      .from(settings)
+      .where(eq(settings.userEmail, userEmail));
+    const savedKeys: Record<string, string> =
+      existing.length > 0 && existing[0].apiKeys
+        ? JSON.parse(safeDecrypt(existing[0].apiKeys))
+        : {};
 
     // Return configured status — never the raw values
     const status: Record<string, boolean> = {};

@@ -74,7 +74,7 @@ Step 3: Objection handler
 Step 4: Urgency play
 Step 5: Final close with risk reversal`,
     {
-      model: "claude",
+      model: "gemini",
       system: `You are a senior high-ticket closer who has sold $50M+ in consulting services. You know:
 - Pressure kills deals. Curiosity sells.
 - Every objection is a buying signal.

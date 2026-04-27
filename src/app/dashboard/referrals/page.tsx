@@ -1,11 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
-  Users, Copy, Check, Gift, Zap, DollarSign,
-  Share2, Twitter, Linkedin, Mail, ArrowRight,
-  UserPlus, Sparkles, TrendingUp, Clock,
+  Users,
+  Copy,
+  Check,
+  Gift,
+  Zap,
+  DollarSign,
+  Share2,
+  Twitter,
+  Linkedin,
+  Mail,
+  ArrowRight,
+  UserPlus,
+  Sparkles,
+  TrendingUp,
+  Clock,
 } from "lucide-react";
 import { useSafeUser } from "@/lib/safe-clerk";
 
@@ -13,15 +25,24 @@ interface ReferralRecord {
   id: string;
   email: string;
   date: string;
-  status: "active" | "pending" | "churned";
+  status: "active" | "pending" | "churned" | "signed_up";
   plan: string;
+  revenue?: number;
+  convertedAt?: string | null;
+}
+
+interface ReferralStats {
+  totalReferrals: number;
+  totalEarnings: number; // cents
+  commissionRate: number; // percent
 }
 
 const COMMISSION_TIERS = [
   {
     tier: "Affiliate",
     rate: "10%",
-    description: "Share your link and earn on every referral&apos;s subscription",
+    description:
+      "Share your link and earn on every referral&apos;s subscription",
     color: "emerald",
     icon: Share2,
   },
@@ -44,11 +65,36 @@ const COMMISSION_TIERS = [
 export default function ReferralsPage() {
   const { user } = useSafeUser();
   const [copied, setCopied] = useState(false);
-  const [referrals] = useState<ReferralRecord[]>([]);
+  const [referrals, setReferrals] = useState<ReferralRecord[]>([]);
+  const [referralCode, setReferralCode] = useState<string | null>(null);
+  const [stats, setStats] = useState<ReferralStats>({
+    totalReferrals: 0,
+    totalEarnings: 0,
+    commissionRate: 20,
+  });
+  const [loading, setLoading] = useState(true);
 
-  // Build referral link from user ID
-  const userId = user?.id || "YOUR_ID";
-  const referralLink = `https://sovereignmatrix.agency?ref=${userId}`;
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/referrals")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled || !data) return;
+        if (data.referralCode) setReferralCode(data.referralCode);
+        if (data.stats) setStats(data.stats);
+        if (Array.isArray(data.referrals)) setReferrals(data.referrals);
+      })
+      .catch(() => {})
+      .finally(() => !cancelled && setLoading(false));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Use the affiliate's stable code when available; fall back to userId so the
+  // page is still useful before the affiliate row is provisioned.
+  const linkRef = referralCode || user?.id || "YOUR_ID";
+  const referralLink = `https://sovereignmatrix.agency?ref=${linkRef}`;
 
   const copyLink = async () => {
     try {
@@ -60,12 +106,12 @@ export default function ReferralsPage() {
     }
   };
 
-  const shareTextRaw = "I'm using Sovereign Matrix -- 130+ AI agents that actually execute. Find leads, write content, make calls, all automated. Try it free:";
+  const shareTextRaw =
+    "I'm using Sovereign Matrix -- 130+ AI agents that actually execute. Find leads, write content, make calls, all automated. Try it free:";
 
-  // Stats derived from referral data (honest zeros for now)
-  const totalReferrals = referrals.length;
+  const totalReferrals = stats.totalReferrals;
   const activeReferrals = referrals.filter((r) => r.status === "active").length;
-  const estimatedRevenue = activeReferrals * 4.9; // 10% of $49 average
+  const estimatedRevenueDollars = stats.totalEarnings / 100;
 
   return (
     <div className="max-w-4xl mx-auto space-y-8 p-4 lg:p-8">
@@ -78,7 +124,8 @@ export default function ReferralsPage() {
         </div>
         <h1 className="text-2xl font-bold text-white">Referral Program</h1>
         <p className="text-sm text-neutral-500 mt-1">
-          Invite others to Sovereign Matrix and earn recurring commissions on every subscription.
+          Invite others to Sovereign Matrix and earn recurring commissions on
+          every subscription.
         </p>
       </header>
 
@@ -99,7 +146,10 @@ export default function ReferralsPage() {
           },
           {
             label: "Revenue Earned",
-            value: estimatedRevenue > 0 ? `$${estimatedRevenue.toFixed(2)}` : "$0.00",
+            value:
+              estimatedRevenueDollars > 0
+                ? `$${estimatedRevenueDollars.toFixed(2)}`
+                : "$0.00",
             icon: DollarSign,
             color: "text-violet-400",
           },
@@ -129,10 +179,13 @@ export default function ReferralsPage() {
       >
         <div className="flex items-center gap-2 mb-3">
           <Gift className="w-4 h-4 text-emerald-400" />
-          <span className="text-sm font-semibold text-white">Your Referral Link</span>
+          <span className="text-sm font-semibold text-white">
+            Your Referral Link
+          </span>
         </div>
         <p className="text-xs text-neutral-500 mb-4">
-          Share this link. When someone signs up through it, you&apos;ll earn a commission on their subscription.
+          Share this link. When someone signs up through it, you&apos;ll earn a
+          commission on their subscription.
         </p>
         <div className="flex gap-2">
           <input
@@ -145,7 +198,11 @@ export default function ReferralsPage() {
             onClick={copyLink}
             className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-emerald-500 text-black font-semibold text-sm hover:bg-emerald-400 transition-colors shrink-0"
           >
-            {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+            {copied ? (
+              <Check className="w-4 h-4" />
+            ) : (
+              <Copy className="w-4 h-4" />
+            )}
             {copied ? "Copied!" : "Copy"}
           </button>
         </div>
@@ -193,7 +250,9 @@ export default function ReferralsPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
       >
-        <h2 className="text-sm font-semibold text-white mb-4">Commission Tiers</h2>
+        <h2 className="text-sm font-semibold text-white mb-4">
+          Commission Tiers
+        </h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {COMMISSION_TIERS.map((tier, i) => (
             <motion.div
@@ -207,19 +266,29 @@ export default function ReferralsPage() {
                   : "border-white/5 bg-white/[0.01] hover:border-white/10"
               }`}
             >
-              <tier.icon className={`w-5 h-5 mb-3 ${
-                tier.color === "emerald" ? "text-emerald-400" :
-                tier.color === "cyan" ? "text-cyan-400" : "text-violet-400"
-              }`} />
+              <tier.icon
+                className={`w-5 h-5 mb-3 ${
+                  tier.color === "emerald"
+                    ? "text-emerald-400"
+                    : tier.color === "cyan"
+                      ? "text-cyan-400"
+                      : "text-violet-400"
+                }`}
+              />
               <div className="flex items-baseline gap-2 mb-1">
-                <span className="text-2xl font-black text-white">{tier.rate}</span>
+                <span className="text-2xl font-black text-white">
+                  {tier.rate}
+                </span>
                 <span className="text-xs text-neutral-500">commission</span>
               </div>
               <h3 className="text-sm font-bold text-white mb-1">{tier.tier}</h3>
               <p className="text-[10px] text-neutral-500 leading-relaxed">
-                {tier.tier === "Affiliate" && "Share your link and earn on every referral\u2019s subscription"}
-                {tier.tier === "Reseller" && "Manage 10+ active referrals to unlock reseller commission"}
-                {tier.tier === "Agency Partner" && "White-label and resell with dedicated partner support"}
+                {tier.tier === "Affiliate" &&
+                  "Share your link and earn on every referral\u2019s subscription"}
+                {tier.tier === "Reseller" &&
+                  "Manage 10+ active referrals to unlock reseller commission"}
+                {tier.tier === "Agency Partner" &&
+                  "White-label and resell with dedicated partner support"}
               </p>
               {i === 0 && (
                 <span className="inline-block mt-3 text-[10px] uppercase tracking-widest text-emerald-400 font-bold">
@@ -237,32 +306,53 @@ export default function ReferralsPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
       >
-        <h2 className="text-sm font-semibold text-white mb-4">Referral History</h2>
+        <h2 className="text-sm font-semibold text-white mb-4">
+          Referral History
+        </h2>
         {referrals.length > 0 ? (
           <div className="border border-white/5 rounded-xl overflow-hidden">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-white/5">
-                  <th className="text-left text-[10px] uppercase tracking-widest text-neutral-500 px-5 py-3">Referral</th>
-                  <th className="text-left text-[10px] uppercase tracking-widest text-neutral-500 px-5 py-3">Date</th>
-                  <th className="text-left text-[10px] uppercase tracking-widest text-neutral-500 px-5 py-3">Plan</th>
-                  <th className="text-left text-[10px] uppercase tracking-widest text-neutral-500 px-5 py-3">Status</th>
+                  <th className="text-left text-[10px] uppercase tracking-widest text-neutral-500 px-5 py-3">
+                    Referral
+                  </th>
+                  <th className="text-left text-[10px] uppercase tracking-widest text-neutral-500 px-5 py-3">
+                    Date
+                  </th>
+                  <th className="text-left text-[10px] uppercase tracking-widest text-neutral-500 px-5 py-3">
+                    Plan
+                  </th>
+                  <th className="text-left text-[10px] uppercase tracking-widest text-neutral-500 px-5 py-3">
+                    Status
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {referrals.map((ref) => (
-                  <tr key={ref.id} className="border-b border-white/[0.03] last:border-0">
-                    <td className="px-5 py-4 text-sm text-neutral-300">{ref.email}</td>
-                    <td className="px-5 py-4 text-sm text-neutral-400">{ref.date}</td>
-                    <td className="px-5 py-4 text-sm text-neutral-300">{ref.plan}</td>
+                  <tr
+                    key={ref.id}
+                    className="border-b border-white/[0.03] last:border-0"
+                  >
+                    <td className="px-5 py-4 text-sm text-neutral-300">
+                      {ref.email}
+                    </td>
+                    <td className="px-5 py-4 text-sm text-neutral-400">
+                      {ref.date}
+                    </td>
+                    <td className="px-5 py-4 text-sm text-neutral-300">
+                      {ref.plan}
+                    </td>
                     <td className="px-5 py-4">
-                      <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                        ref.status === "active"
-                          ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                          : ref.status === "pending"
-                          ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
-                          : "bg-neutral-500/10 text-neutral-400 border border-neutral-500/20"
-                      }`}>
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                          ref.status === "active"
+                            ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                            : ref.status === "pending"
+                              ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                              : "bg-neutral-500/10 text-neutral-400 border border-neutral-500/20"
+                        }`}
+                      >
                         {ref.status}
                       </span>
                     </td>
@@ -276,9 +366,12 @@ export default function ReferralsPage() {
             <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-4">
               <Users className="w-5 h-5 text-neutral-500" />
             </div>
-            <h3 className="text-sm font-semibold text-white mb-1">No referrals yet</h3>
+            <h3 className="text-sm font-semibold text-white mb-1">
+              No referrals yet
+            </h3>
             <p className="text-xs text-neutral-400 max-w-sm mx-auto">
-              Share your referral link above to start earning commissions. Your referred users will appear here.
+              Share your referral link above to start earning commissions. Your
+              referred users will appear here.
             </p>
           </div>
         )}
@@ -297,19 +390,22 @@ export default function ReferralsPage() {
             {
               step: "1",
               title: "Share",
-              description: "Copy your unique referral link and share it with your network",
+              description:
+                "Copy your unique referral link and share it with your network",
               icon: Share2,
             },
             {
               step: "2",
               title: "They sign up",
-              description: "Your referral creates an account and starts using the platform",
+              description:
+                "Your referral creates an account and starts using the platform",
               icon: UserPlus,
             },
             {
               step: "3",
               title: "You earn",
-              description: "Earn recurring commission on every subscription they pay for",
+              description:
+                "Earn recurring commission on every subscription they pay for",
               icon: DollarSign,
             },
           ].map((item, i) => (
@@ -340,8 +436,9 @@ export default function ReferralsPage() {
       >
         <Zap className="w-5 h-5 text-emerald-400 shrink-0" />
         <p className="text-xs text-neutral-400">
-          <span className="text-emerald-400 font-semibold">Bonus:</span>{" "}
-          Both you and your referral get 50 extra agent runs when they sign up — on top of commissions.
+          <span className="text-emerald-400 font-semibold">Bonus:</span> Both
+          you and your referral get 50 extra agent runs when they sign up — on
+          top of commissions.
         </p>
       </motion.div>
 

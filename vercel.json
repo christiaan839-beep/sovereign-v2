@@ -32,6 +32,14 @@
     {
       "path": "/api/health/ping",
       "schedule": "*/4 * * * *"
+    },
+    {
+      "path": "/api/cron/churn-alerts",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/dlq-drain",
+      "schedule": "*/10 * * * *"
     }
   ],
   "headers": [

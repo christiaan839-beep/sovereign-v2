@@ -25,42 +25,62 @@ const log = createLogger("playbooks:run");
  */
 export async function POST(req: Request) {
   const { userId } = await auth();
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!userId)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { playbook_id, inputs = {}, async: runAsync = false } = await req.json();
+  const {
+    playbook_id,
+    inputs = {},
+    async: runAsync = false,
+  } = await req.json();
 
   const playbook = getPlaybook(playbook_id);
-  if (!playbook) return NextResponse.json({ error: `Playbook "${playbook_id}" not found` }, { status: 404 });
+  if (!playbook)
+    return NextResponse.json(
+      { error: `Playbook "${playbook_id}" not found` },
+      { status: 404 },
+    );
 
   // ── Plan enforcement — check monthly run limits ──
   const planCheck = await checkPlanLimits(userId);
   if (!planCheck.allowed) {
-    return NextResponse.json({
-      error: planCheck.message,
-      usage: { used: planCheck.used, limit: planCheck.limit, plan: planCheck.planName },
-      upgradeUrl: planCheck.upgradeUrl,
-    }, { status: 429 });
+    return NextResponse.json(
+      {
+        error: planCheck.message,
+        usage: {
+          used: planCheck.used,
+          limit: planCheck.limit,
+          plan: planCheck.planName,
+        },
+        upgradeUrl: planCheck.upgradeUrl,
+      },
+      { status: 429 },
+    );
   }
 
   // Resolve template fields
   const steps = resolvePlaybookSteps(playbook, inputs);
 
-  const chatId = process.env.TELEGRAM_ADMIN_CHAT_ID || process.env.TELEGRAM_CHAT_ID || "";
+  const chatId =
+    process.env.TELEGRAM_ADMIN_CHAT_ID || process.env.TELEGRAM_CHAT_ID || "";
   const hasTelegram = !!process.env.TELEGRAM_BOT_TOKEN && !!chatId;
 
   // Create run record (gracefully handle missing tables)
   let run: typeof playbookRuns.$inferSelect;
   try {
-    [run] = await db.insert(playbookRuns).values({
-      userId,
-      playbookId: playbook.id,
-      playbookName: playbook.name,
-      inputs: JSON.stringify(inputs),
-      status: "running",
-      stepCount: steps.length,
-      notifyTelegram: hasTelegram,
-      telegramChatId: chatId || null,
-    }).returning();
+    [run] = await db
+      .insert(playbookRuns)
+      .values({
+        userId,
+        playbookId: playbook.id,
+        playbookName: playbook.name,
+        inputs: JSON.stringify(inputs),
+        status: "running",
+        stepCount: steps.length,
+        notifyTelegram: hasTelegram,
+        telegramChatId: chatId || null,
+      })
+      .returning();
 
     // Pre-create all step records as "pending"
     await db.insert(playbookRunSteps).values(
@@ -70,46 +90,80 @@ export async function POST(req: Request) {
         agentName: step.agent,
         reason: step.reason || "",
         status: "pending" as const,
-      }))
+      })),
     );
   } catch (err: unknown) {
     const pgCode = (err as { code?: string })?.code;
     const msg = err instanceof Error ? err.message : String(err);
     if (pgCode === "42P01" || msg.includes("does not exist")) {
       log.error("DB table missing — run migrations", { error: msg });
-      return NextResponse.json({
-        error: "Database tables not ready. Run migrations: drizzle/0003_playbook_runs.sql",
-        hint: "Neon Console → SQL Editor → paste the migration file → Run",
-      }, { status: 503 });
+      return NextResponse.json(
+        {
+          error:
+            "Database tables not ready. Run migrations: drizzle/0003_playbook_runs.sql",
+          hint: "Neon Console → SQL Editor → paste the migration file → Run",
+        },
+        { status: 503 },
+      );
     }
     throw err; // Re-throw if it's a different error
   }
 
-  log.info("playbook run started", { runId: run.id, playbookId: playbook.id, userId, steps: steps.length });
+  log.info("playbook run started", {
+    runId: run.id,
+    playbookId: playbook.id,
+    userId,
+    steps: steps.length,
+  });
 
-  // Track usage for plan enforcement (logs warnings when approaching limits)
-  incrementUsage(userId).catch(() => {});
+  // Track usage for plan enforcement (awaited so the row is durable before
+  // the response returns — Vercel can kill the worker before fire-and-forget
+  // promises land, which lets users blast past quota by parallelizing).
+  try {
+    await incrementUsage(userId);
+  } catch (err) {
+    log.warn("usage increment failed", { userId, error: String(err) });
+  }
 
   if (runAsync) {
     // Start execution in background, return immediately
-    executePlaybook(run.id, steps, userId).catch(err =>
-      log.error("async playbook failed", { runId: run.id, error: String(err) })
+    executePlaybook(run.id, steps, userId).catch((err) =>
+      log.error("async playbook failed", { runId: run.id, error: String(err) }),
     );
-    return NextResponse.json({ runId: run.id, status: "running", pollUrl: `/api/playbooks/runs/${run.id}` }, { status: 202 });
+    return NextResponse.json(
+      {
+        runId: run.id,
+        status: "running",
+        pollUrl: `/api/playbooks/runs/${run.id}`,
+      },
+      { status: 202 },
+    );
   }
 
   // Synchronous — execute and wait
   await executePlaybook(run.id, steps, userId);
-  const [finalRun] = await db.select().from(playbookRuns).where(eq(playbookRuns.id, run.id)).limit(1);
-  return NextResponse.json({ runId: run.id, status: finalRun.status, pollUrl: `/api/playbooks/runs/${run.id}` });
+  const [finalRun] = await db
+    .select()
+    .from(playbookRuns)
+    .where(eq(playbookRuns.id, run.id))
+    .limit(1);
+  return NextResponse.json({
+    runId: run.id,
+    status: finalRun.status,
+    pollUrl: `/api/playbooks/runs/${run.id}`,
+  });
 }
 
 /* ─── Core execution engine ─── */
 
 async function executePlaybook(
   runId: string,
-  steps: Array<{ agent: string; params: Record<string, string>; reason?: string }>,
-  userId: string
+  steps: Array<{
+    agent: string;
+    params: Record<string, string>;
+    reason?: string;
+  }>,
+  userId: string,
 ) {
   const baseUrl = getBaseUrl();
   const start = Date.now();
@@ -118,19 +172,24 @@ async function executePlaybook(
   let failed = 0;
 
   // Pre-fetch step IDs so we can update by primary key (not by runId which hits ALL steps)
-  const stepRows = await db.select({ id: playbookRunSteps.id, stepIndex: playbookRunSteps.stepIndex })
+  const stepRows = await db
+    .select({ id: playbookRunSteps.id, stepIndex: playbookRunSteps.stepIndex })
     .from(playbookRunSteps)
     .where(eq(playbookRunSteps.runId, runId))
     .orderBy(playbookRunSteps.stepIndex);
-  const stepIdMap = new Map(stepRows.map(s => [s.stepIndex, s.id]));
+  const stepIdMap = new Map(stepRows.map((s) => [s.stepIndex, s.id]));
 
   for (let i = 0; i < steps.length; i++) {
     const step = steps[i];
     const stepId = stepIdMap.get(i);
-    if (!stepId) { log.error(`step ${i} has no DB row`, { runId }); continue; }
+    if (!stepId) {
+      log.error(`step ${i} has no DB row`, { runId });
+      continue;
+    }
 
     // Mark THIS step running (by primary key, not runId)
-    await db.update(playbookRunSteps)
+    await db
+      .update(playbookRunSteps)
       .set({ status: "running", startedAt: new Date() })
       .where(eq(playbookRunSteps.id, stepId));
 
@@ -145,7 +204,10 @@ async function executePlaybook(
 
       // Resolve {{step_N}} references in params
       for (const [key, val] of Object.entries(params)) {
-        params[key] = val.replace(/\{\{step_(\d+)\}\}/g, (_, n) => stepOutputs[parseInt(n)] || "");
+        params[key] = val.replace(
+          /\{\{step_(\d+)\}\}/g,
+          (_, n) => stepOutputs[parseInt(n)] || "",
+        );
       }
 
       const res = await fetch(`${baseUrl}/api/agents/${step.agent}`, {
@@ -153,7 +215,7 @@ async function executePlaybook(
         headers: {
           "Content-Type": "application/json",
           "X-Sovereign-Internal": "playbook-runner",
-          "Authorization": `Bearer ${process.env.CRON_SECRET}`,
+          Authorization: `Bearer ${process.env.CRON_SECRET}`,
           "X-User-Id": userId,
         },
         body: JSON.stringify({ ...params, confirmed: true }),
@@ -165,18 +227,37 @@ async function executePlaybook(
       stepOutputs[i] = resultText;
 
       // Mark THIS step done (by primary key)
-      await db.update(playbookRunSteps)
-        .set({ status: "done", result: resultText.slice(0, 8000), durationMs: Date.now() - stepStart, completedAt: new Date() })
+      await db
+        .update(playbookRunSteps)
+        .set({
+          status: "done",
+          result: resultText.slice(0, 8000),
+          durationMs: Date.now() - stepStart,
+          completedAt: new Date(),
+        })
         .where(eq(playbookRunSteps.id, stepId));
 
       succeeded++;
-      log.info(`step ${i + 1}/${steps.length} done`, { agent: step.agent, runId });
+      log.info(`step ${i + 1}/${steps.length} done`, {
+        agent: step.agent,
+        runId,
+      });
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : String(err);
-      log.error(`step ${i + 1} failed`, { agent: step.agent, error: errorMsg, runId });
+      log.error(`step ${i + 1} failed`, {
+        agent: step.agent,
+        error: errorMsg,
+        runId,
+      });
 
-      await db.update(playbookRunSteps)
-        .set({ status: "failed", error: errorMsg, durationMs: Date.now() - stepStart, completedAt: new Date() })
+      await db
+        .update(playbookRunSteps)
+        .set({
+          status: "failed",
+          error: errorMsg,
+          durationMs: Date.now() - stepStart,
+          completedAt: new Date(),
+        })
         .where(eq(playbookRunSteps.id, stepId));
 
       failed++;
@@ -186,27 +267,37 @@ async function executePlaybook(
   const totalMs = Date.now() - start;
   const finalStatus = failed > 0 && succeeded === 0 ? "failed" : "done";
 
-  await db.update(playbookRuns).set({
-    status: finalStatus,
-    stepsSucceeded: succeeded,
-    stepsFailed: failed,
-    durationMs: totalMs,
-    completedAt: new Date(),
-  }).where(eq(playbookRuns.id, runId));
+  await db
+    .update(playbookRuns)
+    .set({
+      status: finalStatus,
+      stepsSucceeded: succeeded,
+      stepsFailed: failed,
+      durationMs: totalMs,
+      completedAt: new Date(),
+    })
+    .where(eq(playbookRuns.id, runId));
 
   // Telegram notification
-  const [run] = await db.select().from(playbookRuns).where(eq(playbookRuns.id, runId)).limit(1);
+  const [run] = await db
+    .select()
+    .from(playbookRuns)
+    .where(eq(playbookRuns.id, runId))
+    .limit(1);
   if (run.notifyTelegram && run.telegramChatId) {
     const emoji = finalStatus === "done" ? "✅" : "⚠️";
     const shortId = runId.slice(-8);
-    await sendTelegram(run.telegramChatId, [
-      `${emoji} *Playbook complete* \`${shortId}\``,
-      ``,
-      `*${run.playbookName}*`,
-      `${succeeded}/${steps.length} steps succeeded · ${(totalMs / 1000).toFixed(1)}s`,
-      ``,
-      `View at /dashboard/autopilot`,
-    ].join("\n"));
+    await sendTelegram(
+      run.telegramChatId,
+      [
+        `${emoji} *Playbook complete* \`${shortId}\``,
+        ``,
+        `*${run.playbookName}*`,
+        `${succeeded}/${steps.length} steps succeeded · ${(totalMs / 1000).toFixed(1)}s`,
+        ``,
+        `View at /dashboard/autopilot`,
+      ].join("\n"),
+    );
   }
 
   log.info("playbook run complete", { runId, succeeded, failed, totalMs });

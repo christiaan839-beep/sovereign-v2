@@ -1,3 +1,5 @@
+// New code: prefer `@/lib/circuit` (canonical barrel) — this module is the
+// per-model breaker layer (gemini / claude / nim / groq).
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("circuit-breaker");
@@ -37,7 +39,7 @@ class CircuitBreaker {
           retriesIn: `${Math.ceil((this.config.resetTimeout - elapsed) / 1000)}s`,
         });
         throw new Error(
-          `Circuit breaker "${this.config.name}" is OPEN — provider unavailable. Retry in ${Math.ceil((this.config.resetTimeout - elapsed) / 1000)}s.`
+          `Circuit breaker "${this.config.name}" is OPEN — provider unavailable. Retry in ${Math.ceil((this.config.resetTimeout - elapsed) / 1000)}s.`,
         );
       }
       // Reset timeout elapsed — transition to half-open
@@ -70,7 +72,9 @@ class CircuitBreaker {
 
   private onSuccess(): void {
     if (this.state !== "closed") {
-      log.info("Circuit closed — provider recovered", { breaker: this.config.name });
+      log.info("Circuit closed — provider recovered", {
+        breaker: this.config.name,
+      });
     }
     this.failures = 0;
     this.state = "closed";

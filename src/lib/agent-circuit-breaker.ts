@@ -1,6 +1,8 @@
 /**
  * SOVEREIGN MATRIX — Agent-Level Circuit Breaker
  *
+ * New code: prefer `@/lib/circuit` (canonical barrel).
+ *
  * Tracks consecutive failures per agent. After a threshold of failures,
  * the agent is temporarily disabled ("open" state) for a cooldown period.
  * After cooldown, one probe request is allowed ("half-open"). If it succeeds,
@@ -26,9 +28,9 @@ interface CircuitInfo {
 }
 
 // ── Configuration ──
-const FAILURE_THRESHOLD = 5;      // Open circuit after 5 consecutive failures
-const COOLDOWN_MS = 60_000;       // 60 seconds before allowing a probe
-const RESET_WINDOW_MS = 300_000;  // Reset failure count if no failure in 5 minutes
+const FAILURE_THRESHOLD = 5; // Open circuit after 5 consecutive failures
+const COOLDOWN_MS = 60_000; // 60 seconds before allowing a probe
+const RESET_WINDOW_MS = 300_000; // Reset failure count if no failure in 5 minutes
 
 // In-memory state (per agent name)
 const circuits = new Map<string, CircuitInfo>();
@@ -52,7 +54,9 @@ export function isAgentAvailable(agentName: string): boolean {
       // Check if cooldown has elapsed
       if (now - circuit.openedAt >= COOLDOWN_MS) {
         circuit.state = "half-open";
-        log.info(`Agent circuit half-open: ${agentName} (allowing probe request)`);
+        log.info(
+          `Agent circuit half-open: ${agentName} (allowing probe request)`,
+        );
         return true;
       }
       return false;
@@ -92,7 +96,13 @@ export function recordAgentFailure(agentName: string): void {
   let circuit = circuits.get(agentName);
 
   if (!circuit) {
-    circuit = { state: "closed", failures: 0, lastFailure: 0, openedAt: 0, probing: false };
+    circuit = {
+      state: "closed",
+      failures: 0,
+      lastFailure: 0,
+      openedAt: 0,
+      probing: false,
+    };
     circuits.set(agentName, circuit);
   }
 
@@ -117,14 +127,19 @@ export function recordAgentFailure(agentName: string): void {
   if (circuit.failures >= FAILURE_THRESHOLD) {
     circuit.state = "open";
     circuit.openedAt = now;
-    log.warn(`Agent circuit opened: ${agentName} (${circuit.failures} consecutive failures)`);
+    log.warn(
+      `Agent circuit opened: ${agentName} (${circuit.failures} consecutive failures)`,
+    );
   }
 }
 
 /**
  * Get the current state of an agent's circuit breaker (for monitoring).
  */
-export function getAgentCircuitState(agentName: string): { state: CircuitState; failures: number } {
+export function getAgentCircuitState(agentName: string): {
+  state: CircuitState;
+  failures: number;
+} {
   const circuit = circuits.get(agentName);
   return circuit
     ? { state: circuit.state, failures: circuit.failures }

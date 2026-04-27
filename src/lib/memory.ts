@@ -1,3 +1,5 @@
+// New code should import from `@/lib/memory-system` (canonical barrel) —
+// this module is the Pinecone primitive layer.
 import { Pinecone } from "@pinecone-database/pinecone";
 import { embed, ai } from "./ai";
 import { createLogger } from "@/lib/logger";
@@ -7,7 +9,7 @@ const log = createLogger("memory");
 export async function getPineconeClient(apiKey?: string, indexName?: string) {
   const key = apiKey || process.env.PINECONE_API_KEY;
   const index = indexName || process.env.PINECONE_INDEX || "sovereign";
-  
+
   if (!key) return null;
   return { client: new Pinecone({ apiKey: key }), index };
 }
@@ -19,17 +21,19 @@ export async function getPineconeClient(apiKey?: string, indexName?: string) {
  * to the chunk before embedding, completely obliterating vector hallucinations.
  */
 export async function ingestContextualDocument(
-  documentTitle: string, 
+  documentTitle: string,
   fullDocumentText: string,
   pineconeKey?: string,
-  pineconeIndex?: string
+  pineconeIndex?: string,
 ): Promise<{ success: boolean; chunksProcessed: number }> {
   try {
     const pc = await getPineconeClient(pineconeKey, pineconeIndex);
     if (!pc) throw new Error("Pinecone credentials missing.");
 
     // Extremely naive chunking for demonstration of Contextual RAG Methodology
-    const chunks = fullDocumentText.match(/[\s\S]{1,1000}/g) || [fullDocumentText];
+    const chunks = fullDocumentText.match(/[\s\S]{1,1000}/g) || [
+      fullDocumentText,
+    ];
     const index = pc.client.index(pc.index);
     let processed = 0;
 
@@ -51,28 +55,36 @@ Generate a concise 2-sentence context summary explaining exactly what this chunk
 
       // Use Cerebras for per-chunk summaries: 2000+ tok/s, sub-$0.01/1K tokens.
       // Claude is 60× more expensive for 2-sentence outputs that don't need its reasoning depth.
-      const contextSummary = await ai(prompt, { model: "cerebras", maxTokens: 150 });
-      
+      const contextSummary = await ai(prompt, {
+        model: "cerebras",
+        maxTokens: 150,
+      });
+
       const contextualizedChunk = `[Source: ${documentTitle}]\n[Context: ${contextSummary}]\n\n${chunk}`;
       const vector = await embed(contextualizedChunk);
 
-      await index.upsert({ records: [
-        {
-          id: `${documentTitle.replace(/\s+/g, "_")}-chunk-${i}-${Date.now()}`,
-          values: vector,
-          metadata: {
-            title: documentTitle,
-            text: contextualizedChunk, // We store the prepended chunk
-            originalChunk: chunk
-          }
-        }
-      ] });
+      await index.upsert({
+        records: [
+          {
+            id: `${documentTitle.replace(/\s+/g, "_")}-chunk-${i}-${Date.now()}`,
+            values: vector,
+            metadata: {
+              title: documentTitle,
+              text: contextualizedChunk, // We store the prepended chunk
+              originalChunk: chunk,
+            },
+          },
+        ],
+      });
       processed++;
     }
 
     return { success: true, chunksProcessed: processed };
   } catch (err) {
-    log.error("Contextual RAG Ingestion Failed:", err as Record<string, unknown>);
+    log.error(
+      "Contextual RAG Ingestion Failed:",
+      err as Record<string, unknown>,
+    );
     return { success: false, chunksProcessed: 0 };
   }
 }
@@ -80,18 +92,30 @@ Generate a concise 2-sentence context summary explaining exactly what this chunk
 /**
  * Legacy Fallback or Direct Key-Value Memory
  */
-export async function remember(key: string, value?: string, pineconeKey?: string): Promise<void> {
+export async function remember(
+  key: string,
+  value?: string,
+  pineconeKey?: string,
+): Promise<void> {
   const pc = await getPineconeClient(pineconeKey);
   if (!pc) return; // No-op if not configured
-  
+
   const textToEmbed = `${key}: ${value || "triggered"}`;
   const vector = await embed(textToEmbed);
-  
-  await pc.client.index(pc.index).upsert({ records: [{
-    id: `mem-${Date.now()}`,
-    values: vector,
-    metadata: { text: textToEmbed, type: "short-term", timestamp: Date.now() }
-  }] });
+
+  await pc.client.index(pc.index).upsert({
+    records: [
+      {
+        id: `mem-${Date.now()}`,
+        values: vector,
+        metadata: {
+          text: textToEmbed,
+          type: "short-term",
+          timestamp: Date.now(),
+        },
+      },
+    ],
+  });
 }
 
 /**
@@ -100,14 +124,21 @@ export async function remember(key: string, value?: string, pineconeKey?: string
 /**
  * Alias for remember() — used by MCP tool bridge.
  */
-export async function memorize(text: string, namespace?: string): Promise<void> {
+export async function memorize(
+  text: string,
+  namespace?: string,
+): Promise<void> {
   return remember(text, namespace);
 }
 
 /**
  * Recall exact contextual nodes matching the query.
  */
-export async function recall(query: string, limit: number = 2, pineconeKey?: string): Promise<Array<{ entry: { text: string }; score: number }>> {
+export async function recall(
+  query: string,
+  limit: number = 2,
+  pineconeKey?: string,
+): Promise<Array<{ entry: { text: string }; score: number }>> {
   try {
     const pc = await getPineconeClient(pineconeKey);
     if (!pc) return [];
@@ -116,7 +147,7 @@ export async function recall(query: string, limit: number = 2, pineconeKey?: str
     const results = await pc.client.index(pc.index).query({
       vector: queryVector,
       topK: limit,
-      includeMetadata: true
+      includeMetadata: true,
     });
 
     return (results.matches || []).map((m) => ({

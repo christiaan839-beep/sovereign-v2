@@ -1,7 +1,16 @@
 /** Shared types for the SOVEREIGN platform */
 
 // ─── AI ──────────────────────────────────────────────
-export type AIModel = "gemini" | "claude" | "nim" | "ollama" | "groq" | "deepseek" | "mistral" | "qwen";
+export type AIModel =
+  | "gemini"
+  | "claude"
+  | "nim"
+  | "ollama"
+  | "groq"
+  | "deepseek"
+  | "mistral"
+  | "qwen"
+  | "cerebras";
 export type TaskType = "content" | "analysis" | "code" | "sales";
 
 export interface AIOptions {

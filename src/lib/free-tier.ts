@@ -58,6 +58,17 @@ const USAGE_CACHE_TTL = 10_000; // 10 seconds — prevents DB hammering on rapid
 const tierCache = new Map<string, { tier: TierType; cachedAt: number }>();
 const TIER_CACHE_TTL = 5 * 60_000; // 5 minutes
 
+// LRU caps prevent OOM at scale (reliability audit finding). Map iteration
+// order is insertion order, so deleting the first key evicts the oldest.
+const USAGE_CACHE_MAX = 100_000;
+const TIER_CACHE_MAX = 100_000;
+
+function evictOldest<V>(cache: Map<string, V>, max: number): void {
+  if (cache.size < max) return;
+  const oldest = cache.keys().next().value;
+  if (oldest !== undefined) cache.delete(oldest);
+}
+
 // ── Helpers ──
 
 function getCurrentPeriod(): { key: string; start: Date } {
@@ -92,6 +103,7 @@ export async function getUserTier(userId: string): Promise<TierType> {
       where: eq(subscriptions.userId, userId),
     });
     const tier = (row?.plan as TierType) || "free";
+    evictOldest(tierCache, TIER_CACHE_MAX);
     tierCache.set(userId, { tier, cachedAt: Date.now() });
     return tier;
   } catch {
@@ -118,6 +130,7 @@ async function countMonthlyUsage(userId: string): Promise<number> {
       .from(usage)
       .where(and(eq(usage.userId, userId), gte(usage.createdAt, start)));
     const count = result[0]?.count ?? 0;
+    evictOldest(usageCache, USAGE_CACHE_MAX);
     usageCache.set(cacheKey, { count, cachedAt: Date.now() });
     return count;
   } catch (err) {
@@ -152,7 +165,10 @@ export async function checkFreeUsage(userId: string): Promise<UsageCheck> {
  * Uses atomic DB insert as source of truth — cache is invalidated, not incremented.
  * This prevents race conditions where concurrent requests both read the same count.
  */
-export async function incrementUsage(userId: string, agentId: string = "unknown"): Promise<void> {
+export async function incrementUsage(
+  userId: string,
+  agentId: string = "unknown",
+): Promise<void> {
   const { key } = getCurrentPeriod();
   const cacheKey = `${userId}:${key}`;
 
@@ -193,7 +209,10 @@ export async function getUsageStats(userId: string): Promise<UsageStats> {
  * Grants extra runs by inserting a negative-token "credit" row in usage,
  * effectively raising the user's limit for the current period.
  */
-export async function addBonusRuns(userId: string, runs: number): Promise<void> {
+export async function addBonusRuns(
+  userId: string,
+  runs: number,
+): Promise<void> {
   try {
     // Insert a credit row (negative tokens = bonus runs)
     await db.insert(usage).values({
@@ -235,7 +254,9 @@ export interface SmartUpgradeInfo {
 /**
  * Build a structured upgrade prompt with plan comparison details.
  */
-export async function getSmartUpgradeInfo(userId: string): Promise<SmartUpgradeInfo> {
+export async function getSmartUpgradeInfo(
+  userId: string,
+): Promise<SmartUpgradeInfo> {
   const [used, tier] = await Promise.all([
     countMonthlyUsage(userId),
     getUserTier(userId),
