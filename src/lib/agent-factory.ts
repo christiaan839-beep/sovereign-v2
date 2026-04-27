@@ -39,6 +39,9 @@ import { AGENT_MANIFESTS } from "@/lib/agent-manifests.generated";
 import { getAgentOverride, applyOverride } from "@/lib/agent-manifest-overrides";
 import { scoreConfidence, computeInputOutputOverlap } from "@/lib/agent-confidence";
 import { signAttestation } from "@/lib/response-attestation";
+import { evaluateTenantPolicy } from "@/lib/tenant-agent-policy";
+import { resolveTenantPolicy } from "@/lib/tenant-policy-resolver";
+import { getAgentEvalPassRate } from "@/lib/eval-pass-rate";
 import { resolveTenantId } from "@/lib/tenant-resolver";
 import { isAgentAvailable, recordAgentSuccess, recordAgentFailure } from "@/lib/agent-circuit-breaker";
 import { recordSloEvent } from "@/lib/slo-tracker";
@@ -321,6 +324,10 @@ async function handleAgentRoute(
       const mergedManifest = generatedManifest
         ? applyOverride(generatedManifest, manifestOverride)
         : null;
+
+      // (Tenant policy gate fires AFTER tenantId is resolved below;
+      // it's deferred so we can read the tenant's stored policy.)
+
       const tierInfo = getActionTier(config.name);
       const effectiveTier =
         config.actionTier ??
@@ -457,6 +464,45 @@ async function handleAgentRoute(
 
       // Extract orgId from request body if provided (for org-scoped operations)
       const orgId = typeof sanitized.orgId === "string" ? sanitized.orgId : undefined;
+
+      // ─── Tenant Agent Policy Gate ───
+      // Now that tenantId is resolved, check whether the tenant's
+      // stored policy permits this agent. Denied → 403 with the
+      // policyRule + reason so the client can show "ask your admin
+      // to enable this agent". Falls open on lookup error so a
+      // transient DB blip doesn't 403 paying customers.
+      if (mergedManifest && tenantId) {
+        try {
+          const policy = await resolveTenantPolicy(tenantId);
+          if (policy) {
+            const verdict = evaluateTenantPolicy(mergedManifest, policy);
+            if (!verdict.allowed) {
+              log.info("Tenant policy denied agent", {
+                agent: config.name,
+                tenantId,
+                rule: verdict.rule,
+                reason: verdict.reason,
+              });
+              return NextResponse.json(
+                {
+                  success: false,
+                  error: "This agent is disabled by your tenant policy.",
+                  policyRule: verdict.rule,
+                  policyReason: verdict.reason,
+                  agent: config.name,
+                },
+                { status: 403 },
+              );
+            }
+          }
+        } catch (err) {
+          log.warn("Tenant policy lookup failed — allowing request", {
+            agent: config.name,
+            tenantId,
+            error: (err as Error).message,
+          });
+        }
+      }
 
       // ─── Circuit Breaker Check ───
       if (!isAgentAvailable(config.name)) {
@@ -942,6 +988,10 @@ async function handleAgentRoute(
       const promptForConfidence = getFirstStringValue(sanitized) ?? "";
       const outputForConfidence = getFirstStringValue(finalResult) ?? "";
       const overlap = computeInputOutputOverlap(promptForConfidence, outputForConfidence);
+      // Real per-agent rolling 7d eval pass rate. Cached for 5 min so
+      // we don't hammer the DB; null when no data, neutral
+      // contribution.
+      const evalPassRate = await getAgentEvalPassRate(config.name);
       const confidence = scoreConfidence({
         schemaMatch: config.schema ? "clean" : "no-schema",
         modelsConsulted: modelsConsulted.length,
@@ -949,7 +999,7 @@ async function handleAgentRoute(
           modelsConsulted.length >= 2 ? true : null, // best-effort; consensus engine doesn't surface disagreement yet
         safetyFlagged: piiWarning !== undefined,
         inputOutputOverlap: overlap,
-        evalPassRate: null, // wired in C2 — lookup from eval-runs table
+        evalPassRate,
       });
 
       const timestampIso = new Date().toISOString();
