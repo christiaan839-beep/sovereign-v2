@@ -60,6 +60,10 @@
     {
       "path": "/api/cron/verify-audit-chain",
       "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/cron/dag-orphan-cleanup",
+      "schedule": "*/5 * * * *"
     }
   ],
   "headers": [

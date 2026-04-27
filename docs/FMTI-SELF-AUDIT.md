@@ -1,8 +1,8 @@
 # Sovereign Matrix — FMTI Self-Audit
 
-**Generated:** 2026-04-27T20:56:54.107Z
+**Generated:** 2026-04-27T21:10:39.151Z
 **Method:** `scripts/run-fmti-self-audit.mjs` deterministic rule-based scoring against /api/_meta/transparency.json + /api/_meta/agents.json + repo artifacts.
-**Overall:** 82.9% across 17 applicable subdomains (5 N/A).
+**Overall:** 87.9% across 17 applicable subdomains (5 N/A).
 
 ## Why publish our own audit
 
@@ -89,20 +89,20 @@ Re-run any time: `node scripts/run-fmti-self-audit.mjs`
 | Mitigations: PII handling | 100% | 🟢 high | Regex+Luhn+IBAN mod-97 PII guard on every agent response. Modes: mask (default), flag (consent-based), skip (synthetic). 8 PII types: ssn, credit_card, iban, swift_bic, phone, email, us_zip, ipv4. 36 unit tests. |
 | Mitigations: audit trail / immutability | 100% | 🟢 high | SHA-256 audit-log hash chain (drizzle/0033). Tamper detection via /api/admin/audit/verify-chain (admin) + /api/cron/verify-audit-chain (every 6h). 8 tests including 3 distinct tampering scenarios. |
 
-### Distribution — 73% (3 subdomains)
+### Distribution — 92% (3 subdomains)
 
 | Subdomain | Score | Bucket | Evidence |
 |---|---|---|---|
-| Distribution: terms of service + acceptable use | 70% | 🟡 moderate | Terms published; standalone AUP page pending |
-| Usage policy: prohibited use disclosure | 70% | 🟡 moderate | Action tier system (autonomous/confirm/admin-approval) per agent — Tier 3 agents require admin approval before each invocation. Documented per-agent in /api/_meta/agents.json. |
+| Distribution: terms of service + acceptable use | 100% | 🟢 high | Terms + AUP both published |
+| Usage policy: prohibited use disclosure | 95% | 🟢 high | Standalone Acceptable Use Policy at /acceptable-use with 8 prohibited-use categories, the 5-layer safety pipeline, the enforcement flow, and the appeal path. Plus per-agent action tier system (autonomous/confirm/admin-approval) in /api/_meta/agents.json. |
 | Usage: monitoring + abuse detection | 80% | 🟡 moderate | Per-model token budgets (token-budget.ts), Upstash sliding-window rate limits, per-provider circuit breakers, audit chain on every authenticated action. |
 
-### Feedback — 80% (2 subdomains)
+### Feedback — 95% (2 subdomains)
 
 | Subdomain | Score | Bucket | Evidence |
 |---|---|---|---|
 | Feedback: vulnerability disclosure program | 100% | 🟢 high | RFC 9116 security.txt published. Defenders ledger at /trust/defenders. 24h ack / 72h triage / 90d disclosure SLA. |
-| Feedback: user appeal / agent rerun mechanism | 60% | 🟡 moderate | Replay mechanism via /api/_replay/verify (cryptographically-checksummed input + output snapshots). User-facing appeal queue pending. |
+| Feedback: user appeal / agent rerun mechanism | 90% | 🟢 high | Replay mechanism via /api/_replay/verify (cryptographically-checksummed input + output snapshots) PLUS user-facing appeal queue at /dashboard/appeals + /api/appeals. Documented 5-business-day reviewer SLA. Deep-link from run-detail page. |
 
 ### Reflexive — 100% (2 subdomains)
 
@@ -119,7 +119,6 @@ either fix the data or fix the claim:
 
 - **Capabilities: published evaluations** (60%): 89 golden-set evals across 223 agents (40% coverage). Floor locked at 25% via weekly-health.mjs. Coverage gap to 60%+ tracked as C2.
 - **Capabilities: external audits / certifications** (20%): No SOC 2 Type II / HIPAA BAA yet. Internal audit chain + threat model published. Tracked as WHATS-NOT-ELITE.md §2.4.
-- **Feedback: user appeal / agent rerun mechanism** (60%): Replay mechanism via /api/_replay/verify (cryptographically-checksummed input + output snapshots). User-facing appeal queue pending.
 
 ## Reproducibility
 

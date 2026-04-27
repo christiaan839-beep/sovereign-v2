@@ -507,6 +507,34 @@ const trustAssets = [
     path: "drizzle/0037_playbook_dag_async.sql",
     name: "Async DAG migration (running status + progress columns)",
   },
+  // Round 13 — orphan cleanup + AUP + appeals. Three artifacts that
+  // close real operational + compliance gaps. Each is the only
+  // copy; deleting any one regresses an FMTI subdomain or removes
+  // a documented user right.
+  {
+    path: "src/app/api/cron/dag-orphan-cleanup/route.ts",
+    name: "Orphan-cleanup cron (reaps stuck async runs)",
+  },
+  {
+    path: "src/app/acceptable-use/page.tsx",
+    name: "Acceptable Use Policy page (FMTI distribution subdomain)",
+  },
+  {
+    path: "drizzle/0038_user_appeals.sql",
+    name: "User appeals table (FMTI feedback subdomain)",
+  },
+  {
+    path: "src/lib/appeals-store.ts",
+    name: "Appeals store (typed CRUD with idempotency)",
+  },
+  {
+    path: "src/app/api/appeals/route.ts",
+    name: "Appeals API (file + list)",
+  },
+  {
+    path: "src/app/dashboard/appeals/page.tsx",
+    name: "User appeal queue UI (file + view)",
+  },
 ];
 for (const { path, name } of trustAssets) {
   const present = existsSync(join(ROOT, path)) ? 1 : 0;

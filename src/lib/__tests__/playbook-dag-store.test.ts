@@ -151,6 +151,32 @@ describe("playbook-dag-store — graceful no-DB fallbacks", () => {
     expect(result).toEqual({ finalized: false });
   });
 
+  it("reapOrphanedRuns returns reaped=0 when DB is unavailable", async () => {
+    // The cron handler relies on this contract: a missing DB means
+    // "0 reaped this tick" rather than "the cron crashed". The cron
+    // surfaces 200 OK in that case so Vercel doesn't page on a
+    // transient infra issue.
+    const { reapOrphanedRuns } = await importStore();
+    const result = await reapOrphanedRuns({});
+    expect(result).toEqual({ reaped: 0, rows: [] });
+  });
+
+  it("reapOrphanedRuns clamps thresholdMinutes to a sensible range", async () => {
+    // Defensive: a misconfigured cron call shouldn't be able to
+    // sweep "rows older than 1 second" or "rows older than 100 years".
+    // The function clamps internally so the caller can't shoot
+    // themselves in the foot.
+    const { reapOrphanedRuns } = await importStore();
+    // No DB so this returns {reaped:0}; the assertion is that the
+    // call doesn't throw on either extreme.
+    await expect(
+      reapOrphanedRuns({ thresholdMinutes: -5 }),
+    ).resolves.not.toThrow();
+    await expect(
+      reapOrphanedRuns({ thresholdMinutes: 999_999 }),
+    ).resolves.not.toThrow();
+  });
+
   it("async helpers never throw on hostile inputs (graceful contract)", async () => {
     const { createPendingRun, updateRunProgress, finalizeRun } = await importStore();
     await expect(

@@ -85,9 +85,11 @@ Direct quotes from our own audit (lower scores intentional):
 - **Eval coverage: 60%.** 89 golden-set evals across 223 agents (~40% coverage,
   floor locked at 25% via `scripts/weekly-health.mjs`). Coverage gap to 60%+
   is tracked as project C2.
-- **User appeal queue: 60%.** Replay verification works
-  ([`/api/_replay/verify`](../src/app/api/_replay/verify/route.ts)) but the
-  user-facing appeal UI is not yet shipped.
+- **User appeal queue: 90%** (Round 13). User-facing UI at
+  [`/dashboard/appeals`](../src/app/dashboard/appeals/page.tsx) + filing API +
+  5-business-day reviewer SLA + deep-link from every run-detail page. The
+  reviewer-side admin tooling lives in a separate (private) UI and is not
+  part of this codebase, hence 90% rather than 100%.
 - **Pricing transparency: 70%.** Plan tiers published; per-call pricing
   calculator pending (project D2).
 

@@ -583,6 +583,92 @@ export async function getDagRun(input: {
 }
 
 /**
+ * Round 13 — orphan-detection cleanup.
+ *
+ * Round 12's async path uses Vercel's after() to extend execution
+ * past the response. If the function gets killed (timeout, OOM,
+ * deploy mid-run, etc.), the row stays at status='running' forever
+ * and the user sees an indefinitely-spinning UI.
+ *
+ * This sweep runs periodically and finalises rows where:
+ *   - status = 'running'
+ *   - last_progress_at < (now - threshold)
+ *
+ * Threshold default: 10 minutes. Async runs that go quiet for that
+ * long are presumed dead — the function's hard ceiling is 5 minutes,
+ * so anything past ~10 minutes is definitely orphaned.
+ *
+ * Returns the count of rows reaped so the cron handler can log it
+ * and the SLO dashboard can graph "orphans/hour" over time.
+ *
+ * Tenant-agnostic: this is a system sweep, not a per-user action.
+ * The cron handler is auth'd via CRON_SECRET; this function trusts
+ * the caller to be the cron worker.
+ */
+export async function reapOrphanedRuns(input: {
+  /** Minutes since last_progress_at before declaring a run orphaned. Default 10. */
+  thresholdMinutes?: number;
+  /** Cap on rows reaped per invocation. Bounded so a runaway sweep
+   *  doesn't dominate a cron window. Default 200. */
+  limit?: number;
+}): Promise<{ reaped: number; rows: { id: string; userId: string }[] }> {
+  const db = await getDb();
+  if (!db) return { reaped: 0, rows: [] };
+
+  const thresholdMinutes = Math.max(1, input.thresholdMinutes ?? 10);
+  const limit = Math.min(Math.max(1, input.limit ?? 200), 1000);
+
+  try {
+    const { playbookDagRuns } = await import("@/db/schema");
+    const cutoff = new Date(Date.now() - thresholdMinutes * 60_000);
+
+    // Find candidates first so we can return ids for logging.
+    const candidates = await db
+      .select({
+        id: playbookDagRuns.id,
+        userId: playbookDagRuns.userId,
+      })
+      .from(playbookDagRuns)
+      .where(
+        and(
+          eq(playbookDagRuns.status, "running"),
+          sql`${playbookDagRuns.lastProgressAt} < ${cutoff}`,
+        ),
+      )
+      .limit(limit);
+
+    if (candidates.length === 0) {
+      return { reaped: 0, rows: [] };
+    }
+
+    // Mark them failed in one batch update. The set fields:
+    //   status = 'failed'
+    //   failed_at = '__orphaned__' (sentinel — distinguishes orphan
+    //     reaps from real node-level failures in the failed_at column)
+    //   last_progress_at = now (so a retry of the sweep doesn't
+    //     reprocess the same row)
+    const ids = candidates.map((r) => r.id);
+    await db
+      .update(playbookDagRuns)
+      .set({
+        status: "failed",
+        failedAt: "__orphaned__",
+        lastProgressAt: new Date(),
+      })
+      .where(
+        and(
+          eq(playbookDagRuns.status, "running"),
+          sql`${playbookDagRuns.id} = ANY(${ids})`,
+        ),
+      );
+
+    return { reaped: candidates.length, rows: candidates };
+  } catch {
+    return { reaped: 0, rows: [] };
+  }
+}
+
+/**
  * List the user's recent runs. Powers the dashboard widget AND the
  * editor's "previous runs" sidebar. `dagId` filter scopes to a single
  * DAG when provided.

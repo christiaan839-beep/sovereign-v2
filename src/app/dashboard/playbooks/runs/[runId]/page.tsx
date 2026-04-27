@@ -118,11 +118,26 @@ export default async function RunDetailPage({ params }: PageProps) {
               {run.edgeCount} edge{run.edgeCount === 1 ? "" : "s"}
               {" — "}
               {formatDuration(run.totalDurationMs)} total
-              {run.failedAt && (
+              {run.failedAt === "__orphaned__" ? (
+                // Orphan-cleanup sentinel from /api/cron/dag-orphan-cleanup.
+                // Distinguished from real node failures so support /
+                // procurement understands "infra ate the function" vs
+                // "agent threw" — different SLO categories.
                 <>
                   {" — "}
-                  <span className="text-rose-400">failed at node {run.failedAt}</span>
+                  <span className="text-amber-400">
+                    orphaned (worker timeout)
+                  </span>
                 </>
+              ) : (
+                run.failedAt && (
+                  <>
+                    {" — "}
+                    <span className="text-rose-400">
+                      failed at node {run.failedAt}
+                    </span>
+                  </>
+                )
               )}
             </>
           )}
@@ -236,6 +251,34 @@ export default async function RunDetailPage({ params }: PageProps) {
           </pre>
         </details>
       </section>
+
+      {/*
+        Appeal CTA — only when the run failed. Successful runs don't
+        usually need to be appealed. Deep-links the appeals page with
+        the run prefilled. Closes FMTI's user-appeal subdomain on the
+        SURFACE side: the path from "this is wrong" to "I have filed
+        a request" is one click.
+      */}
+      {!inFlight && !succeeded && (
+        <section className="mt-6 rounded-lg border border-amber-500/20 bg-amber-500/5 p-4">
+          <div className="flex items-baseline justify-between gap-3">
+            <div>
+              <h3 className="text-sm font-semibold text-amber-200">
+                Think this run was wrongly blocked or failed?
+              </h3>
+              <p className="mt-1 text-xs text-amber-300/80">
+                File an appeal — a human reviewer responds within 5 business days.
+              </p>
+            </div>
+            <Link
+              href={`/dashboard/appeals?targetKind=run&targetId=${runId}`}
+              className="rounded-md bg-amber-500 px-3 py-1.5 text-xs font-medium text-black hover:bg-amber-400"
+            >
+              Request review →
+            </Link>
+          </div>
+        </section>
+      )}
 
       {/*
         Footer linking back to the parent DAG (if it still exists) AND

@@ -962,6 +962,36 @@ export const playbookDagRuns = pgTable("playbook_dag_runs", {
 ]);
 
 // ═══════════════════════════════════════════
+// User appeals (Round 13 / drizzle 0038)
+//
+// User-initiated requests to re-review a blocked output, failed run,
+// or suspension. Closes FMTI's "user appeal / agent rerun
+// mechanism" subdomain — the replay infra existed but no UI did.
+//
+// Reviewer side is in the policy team's tooling (separate UI). The
+// store + API in this codebase covers the user-facing file + view
+// flow.
+// ═══════════════════════════════════════════
+
+export const userAppeals = pgTable("user_appeals", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull(),
+  // 'run' | 'output' | 'suspension' (open-ended TEXT for future cats).
+  targetKind: text("target_kind").notNull(),
+  targetId: text("target_id").notNull(),
+  message: text("message").notNull(),
+  // pending | reviewing | upheld | overturned
+  status: text("status").notNull().default("pending"),
+  reviewerId: text("reviewer_id"),
+  reviewerNotes: text("reviewer_notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  resolvedAt: timestamp("resolved_at"),
+}, (table) => [
+  index("idx_user_appeals_user_created").on(table.userId, table.createdAt),
+  index("idx_user_appeals_target").on(table.targetKind, table.targetId),
+]);
+
+// ═══════════════════════════════════════════
 // Async Job Queue
 // Fire-and-forget agent execution — user submits a goal,
 // gets a job ID back immediately, result arrives via Telegram.
