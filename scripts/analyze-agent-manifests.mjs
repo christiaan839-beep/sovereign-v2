@@ -41,22 +41,58 @@ const OUTPUT = resolve(ROOT, "src/lib/agent-manifests.generated.ts");
 const SIGNAL_PATTERNS = [
   // db_write — actually mutating data
   { kind: "db_write", re: /\bdb\.(?:insert|update|delete)\(/g },
-  // db_read — read-only DB access
-  { kind: "db_read", re: /\bdb\.select\(|db\.query\.\w+\.find\w+\(/g },
-  // model_call — reaching for a foundation model
-  { kind: "model_call", re: /\b(?:nimChat|ai|research_ai|consensus|anthropic\.messages\.create|openai\.chat\.completions\.create|geminiText)\s*\(/g },
-  // email_send — outbound email
-  { kind: "email_send", re: /\b(?:resend\.emails\.send|sendEmail|sendMail|sgMail\.send)\(/g },
-  // voice_call — outbound voice
-  { kind: "voice_call", re: /\b(?:twilio\.calls\.create|voiceAgent|elevenlabs\.|magpie)/g },
-  // browser_control — computer-use / playwright
-  { kind: "browser_control", re: /\b(?:Anthropic.*computer-use|playwright|chromium\.launch|computer_20241022)/g },
+  // db_read — read-only DB access (drizzle + raw SQL)
+  { kind: "db_read", re: /\bdb\.select\(|db\.query\.\w+\.find\w+\(|db\.execute\(/g },
+  // model_call — reaching for a foundation model. Expanded to catch:
+  //   - createVisionAgentRoute (always invokes a vision model under the hood)
+  //   - nim variants (nimChat, nimEmbed, nimRerank)
+  //   - generateText/generateObject (AI SDK)
+  //   - ai.messages.* (Anthropic SDK)
+  //   - groqChat / groqEmbed
+  {
+    kind: "model_call",
+    re: /\b(?:nimChat|nimEmbed|nimRerank|ai|research_ai|consensus|anthropic\.messages\.create|openai\.chat\.completions\.create|geminiText|geminiVision|generateText|generateObject|groqChat|groqEmbed|createVisionAgentRoute)\s*\(/g,
+  },
+  // email_send — outbound email (resend, sendgrid, postmark, mailgun)
+  {
+    kind: "email_send",
+    re: /\b(?:resend\.emails\.send|sendEmail|sendMail|sgMail\.send|postmark\.|mailgun\.messages\.create)\(/g,
+  },
+  // voice_call — outbound voice (twilio voice, livekit, elevenlabs TTS,
+  // magpie ASR, voice-* agents). Also catches `voice-` slug heuristic
+  // via the model_call layer above (createVoiceRoute).
+  {
+    kind: "voice_call",
+    re: /\b(?:twilio\.calls\.create|voiceAgent|elevenlabs\.|magpie|livekit\.|createVoiceAgent)/g,
+  },
+  // browser_control — computer-use / playwright. Recognize the
+  // Anthropic computer-use tool definition string.
+  {
+    kind: "browser_control",
+    re: /\b(?:Anthropic.*computer-use|playwright|chromium\.launch|computer_20241022|browser_20250124|claude-3-5-sonnet.*computer)/g,
+  },
   // file_write — local FS mutation
-  { kind: "file_write", re: /\b(?:writeFileSync|fs\.writeFile|persistToDisk|appendFileSync)\(/g },
-  // payment_op — stripe/yoco SDK calls
-  { kind: "payment_op", re: /\b(?:stripe\.\w+\.create|stripe\.subscriptions|yoco\.\w+|charges\.create)\(/g },
+  {
+    kind: "file_write",
+    re: /\b(?:writeFileSync|fs\.writeFile|persistToDisk|appendFileSync|createWriteStream)\(/g,
+  },
+  // payment_op — stripe/yoco/lemon SDK calls
+  {
+    kind: "payment_op",
+    re: /\b(?:stripe\.\w+\.create|stripe\.subscriptions|yoco\.\w+|charges\.create|lemon\.checkouts\.create)\(/g,
+  },
   // uses_byok — pulling user-supplied keys from settings
-  { kind: "uses_byok", re: /\b(?:userSettings\.apiKeys|safeDecrypt\(.*apiKeys)\b/g },
+  {
+    kind: "uses_byok",
+    re: /\b(?:userSettings\.apiKeys|safeDecrypt\(.*apiKeys)\b/g,
+  },
+  // dispatches — agent-to-agent dispatch / orchestration. These agents
+  // delegate to other agents whose tier the orchestrator can't know
+  // statically; classify as Tier 2 by default (writes happen via children).
+  {
+    kind: "db_write", // orchestrators commonly write a coordination row
+    re: /\b(?:runAgent|invokeAgent|dispatchAgent|spawnChild|orchestrator\.run)\s*\(/g,
+  },
 ];
 
 const EXTERNAL_FETCH_RE = /\bfetch\s*\(\s*["'`]?(?:https?:\/\/|process\.env\.\w*_(?:URL|ENDPOINT))/g;

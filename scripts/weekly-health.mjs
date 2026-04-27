@@ -295,10 +295,11 @@ const goldenSet = join(
 const evalCount = countMatches(goldenSet, /^registerEval\({/gm);
 const agentCount = checks.find((c) => c.name === "agents in registry")?.value ?? 1;
 const evalCoveragePct = Math.round((evalCount / Math.max(1, agentCount)) * 100);
-// Floor: don't regress past 25%. Sprint D pushed coverage 25% → 30%
-// (2026-04-27); the floor was 10% before that. Bumping prevents
-// silent regressions if someone deletes evals during a refactor.
-check("eval coverage %", evalCoveragePct, 25, { dimension: "quality" });
+// Floor: don't regress past 40%. Sprint trajectory:
+//   11% → 25% (Sprint C) → 30% (Sprint D) → 40% (Sprint E) → 50% (F).
+// Floor at 40% catches regressions past 50% without false positives
+// from a single deleted eval.
+check("eval coverage %", evalCoveragePct, 40, { dimension: "quality" });
 
 // ──────────────────────────────────────────────────────────────
 // Elite-tier infrastructure presence
@@ -442,6 +443,14 @@ const trustAssets = [
   {
     path: "src/app/api/_meta/agents/route.ts",
     name: "Per-agent manifest endpoint (/api/_meta/agents.json)",
+  },
+  {
+    path: "scripts/run-fmti-self-audit.mjs",
+    name: "FMTI self-audit script",
+  },
+  {
+    path: "docs/FMTI-SELF-AUDIT.md",
+    name: "FMTI self-audit report (auto-regenerated)",
   },
 ];
 for (const { path, name } of trustAssets) {

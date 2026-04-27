@@ -5,7 +5,7 @@
  * from static analysis of src/app/api/_agents/<slug>/route.ts.
  * Manual overrides go in src/lib/agent-manifest-overrides.ts.
  *
- * Generated at: 2026-04-27T16:37:54.499Z
+ * Generated at: 2026-04-27T16:55:16.402Z
  * Agent count: 223
  */
 
@@ -23,8 +23,13 @@ export const AGENT_MANIFESTS: Record<string, AgentManifest> = {
       "handlesByDesign": false
     },
     "outputClass": "tenant-private",
-    "signals": [],
-    "classifierConfidence": 0.45
+    "signals": [
+      {
+        "kind": "model_call",
+        "detail": "1 occurrence"
+      }
+    ],
+    "classifierConfidence": 0.7
   },
   "a2e-chain-planner": {
     "slug": "a2e-chain-planner",
@@ -445,8 +450,13 @@ export const AGENT_MANIFESTS: Record<string, AgentManifest> = {
       "handlesByDesign": false
     },
     "outputClass": "tenant-private",
-    "signals": [],
-    "classifierConfidence": 0.45
+    "signals": [
+      {
+        "kind": "model_call",
+        "detail": "1 occurrence"
+      }
+    ],
+    "classifierConfidence": 0.7
   },
   "auto-heal": {
     "slug": "auto-heal",
@@ -550,8 +560,13 @@ export const AGENT_MANIFESTS: Record<string, AgentManifest> = {
       "handlesByDesign": false
     },
     "outputClass": "tenant-private",
-    "signals": [],
-    "classifierConfidence": 0.45
+    "signals": [
+      {
+        "kind": "model_call",
+        "detail": "1 occurrence"
+      }
+    ],
+    "classifierConfidence": 0.7
   },
   "billing": {
     "slug": "billing",
@@ -611,8 +626,13 @@ export const AGENT_MANIFESTS: Record<string, AgentManifest> = {
       "handlesByDesign": false
     },
     "outputClass": "tenant-private",
-    "signals": [],
-    "classifierConfidence": 0.45
+    "signals": [
+      {
+        "kind": "model_call",
+        "detail": "1 occurrence"
+      }
+    ],
+    "classifierConfidence": 0.7
   },
   "book-outliner": {
     "slug": "book-outliner",
@@ -709,8 +729,13 @@ export const AGENT_MANIFESTS: Record<string, AgentManifest> = {
       "handlesByDesign": true
     },
     "outputClass": "tenant-private",
-    "signals": [],
-    "classifierConfidence": 0.45
+    "signals": [
+      {
+        "kind": "model_call",
+        "detail": "1 occurrence"
+      }
+    ],
+    "classifierConfidence": 0.7
   },
   "calendar": {
     "slug": "calendar",
@@ -984,8 +1009,13 @@ export const AGENT_MANIFESTS: Record<string, AgentManifest> = {
       "handlesByDesign": true
     },
     "outputClass": "tenant-private",
-    "signals": [],
-    "classifierConfidence": 0.45
+    "signals": [
+      {
+        "kind": "model_call",
+        "detail": "1 occurrence"
+      }
+    ],
+    "classifierConfidence": 0.7
   },
   "collab-room": {
     "slug": "collab-room",
@@ -1240,8 +1270,13 @@ export const AGENT_MANIFESTS: Record<string, AgentManifest> = {
       "handlesByDesign": false
     },
     "outputClass": "confidential",
-    "signals": [],
-    "classifierConfidence": 0.45
+    "signals": [
+      {
+        "kind": "model_call",
+        "detail": "1 occurrence"
+      }
+    ],
+    "classifierConfidence": 0.7
   },
   "coordinator": {
     "slug": "coordinator",
@@ -1345,8 +1380,13 @@ export const AGENT_MANIFESTS: Record<string, AgentManifest> = {
       "handlesByDesign": false
     },
     "outputClass": "tenant-private",
-    "signals": [],
-    "classifierConfidence": 0.45
+    "signals": [
+      {
+        "kind": "model_call",
+        "detail": "1 occurrence"
+      }
+    ],
+    "classifierConfidence": 0.7
   },
   "daily-briefing": {
     "slug": "daily-briefing",
@@ -2101,8 +2141,13 @@ export const AGENT_MANIFESTS: Record<string, AgentManifest> = {
       "handlesByDesign": false
     },
     "outputClass": "tenant-private",
-    "signals": [],
-    "classifierConfidence": 0.45
+    "signals": [
+      {
+        "kind": "model_call",
+        "detail": "1 occurrence"
+      }
+    ],
+    "classifierConfidence": 0.7
   },
   "image-gen": {
     "slug": "image-gen",
@@ -2220,8 +2265,13 @@ export const AGENT_MANIFESTS: Record<string, AgentManifest> = {
       "handlesByDesign": false
     },
     "outputClass": "tenant-private",
-    "signals": [],
-    "classifierConfidence": 0.45
+    "signals": [
+      {
+        "kind": "model_call",
+        "detail": "1 occurrence"
+      }
+    ],
+    "classifierConfidence": 0.7
   },
   "leads": {
     "slug": "leads",
@@ -2439,8 +2489,13 @@ export const AGENT_MANIFESTS: Record<string, AgentManifest> = {
       "handlesByDesign": false
     },
     "outputClass": "tenant-private",
-    "signals": [],
-    "classifierConfidence": 0.45
+    "signals": [
+      {
+        "kind": "model_call",
+        "detail": "1 occurrence"
+      }
+    ],
+    "classifierConfidence": 0.7
   },
   "meta-prompt": {
     "slug": "meta-prompt",
@@ -3218,8 +3273,13 @@ export const AGENT_MANIFESTS: Record<string, AgentManifest> = {
       "handlesByDesign": false
     },
     "outputClass": "tenant-private",
-    "signals": [],
-    "classifierConfidence": 0.45
+    "signals": [
+      {
+        "kind": "model_call",
+        "detail": "1 occurrence"
+      }
+    ],
+    "classifierConfidence": 0.7
   },
   "refactor-suggester": {
     "slug": "refactor-suggester",
@@ -3692,8 +3752,13 @@ export const AGENT_MANIFESTS: Record<string, AgentManifest> = {
       "handlesByDesign": false
     },
     "outputClass": "tenant-private",
-    "signals": [],
-    "classifierConfidence": 0.45
+    "signals": [
+      {
+        "kind": "model_call",
+        "detail": "1 occurrence"
+      }
+    ],
+    "classifierConfidence": 0.7
   },
   "sql-generator": {
     "slug": "sql-generator",
@@ -4345,8 +4410,13 @@ export const AGENT_MANIFESTS: Record<string, AgentManifest> = {
       "handlesByDesign": false
     },
     "outputClass": "tenant-private",
-    "signals": [],
-    "classifierConfidence": 0.45
+    "signals": [
+      {
+        "kind": "model_call",
+        "detail": "1 occurrence"
+      }
+    ],
+    "classifierConfidence": 0.7
   },
   "war-room": {
     "slug": "war-room",

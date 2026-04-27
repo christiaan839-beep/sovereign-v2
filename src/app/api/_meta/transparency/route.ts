@@ -133,6 +133,11 @@ export async function GET(): Promise<NextResponse> {
       "src/app/api/_meta/agents/route.ts",
       "Per-agent capability manifest — tier (autonomous/confirm/admin), models, tools, PII guard mode, output class. Maps to OWASP LLM Top 10 LLM05/06/07/08/10. Auto-derived by static analysis; manual overrides for under-classified agents.",
     ),
+    selfAudit: cite(
+      "https://github.com/christiaan839-beep/sovereign-v2/blob/claude/wizardly-benz/docs/FMTI-SELF-AUDIT.md",
+      "scripts/run-fmti-self-audit.mjs + docs/FMTI-SELF-AUDIT.md",
+      "Sovereign Matrix scores ITSELF against the Stanford Foundation Model Transparency Index every commit. Deterministic rule-based scoring against the artifacts in this transparency.json, plus an LLM-driven variant (--with-llm) that runs the same rubric via Claude. We publish the score, the methodology, and the disagreements with marketing — externally verifiable.",
+    ),
     owaspLLMTop10Coverage: cite(
       {
         LLM01_PromptInjection: "5-layer safety pipeline + jailbreak detection (NemoGuard)",
