@@ -460,6 +460,67 @@ check(
   { dimension: "security" },
 );
 
+// Anti-spoofing invariant: NO production API route should resolve user
+// identity from `req.headers.get("x-user-id")`. That header is fully
+// client-controlled — we do not have any middleware setting it — so
+// reading it as auth is the same as no auth at all (the
+// _misc/scheduled-runs / inbox / projects routes shipped this anti-
+// pattern in three different places before being fixed 2026-04-27).
+//
+// Tests + docstrings are allowed to MENTION the header (they're just
+// strings); the rule fires only if a real route file CALLS `headers
+// .get("x-user-id")`. We grep for the function-call form to skip
+// false-positive matches inside JSDoc.
+function countXUserIdAuthRoutes() {
+  let found = 0;
+  const apiRoot = join(ROOT, "src/app/api");
+  walk(apiRoot, (rel) => {
+    if (!rel.endsWith("route.ts") && !rel.endsWith("route.tsx")) return;
+    const body = readFileSync(join(apiRoot, rel), "utf8");
+    // Match the actual call form. JSDoc and string literals don't have
+    // `.get(...)` after them.
+    if (/\.get\(\s*["']x-user-id["']/.test(body)) found++;
+  });
+  return found;
+}
+check(
+  "API routes use Clerk auth, not spoofable x-user-id header",
+  countXUserIdAuthRoutes(),
+  0,
+  { dimension: "security" },
+);
+
+// Anti-Edge-runtime-crash invariant: any route file that imports a
+// node:* module MUST declare `export const runtime = "nodejs"`.
+// Without the declaration, Next.js may bundle the route for Edge,
+// where node:crypto / node:async_hooks / node:fs etc. don't exist —
+// the build emits a warning + the route crashes at runtime if Vercel
+// happens to route a request to an Edge worker. This catches the
+// problem at PR time instead of during a 2 AM page.
+function countNodeImportsWithoutRuntime() {
+  let bad = 0;
+  const apiRoot = join(ROOT, "src/app/api");
+  walk(apiRoot, (rel) => {
+    if (!rel.endsWith("route.ts")) return;
+    const body = readFileSync(join(apiRoot, rel), "utf8");
+    const usesNodeModule = /from\s+["']node:(crypto|async_hooks|fs|path|os|stream|buffer|http|https|net|child_process|cluster|worker_threads)["']/.test(
+      body,
+    );
+    if (!usesNodeModule) return;
+    const hasRuntimeDecl = /export\s+const\s+runtime\s*=\s*["']nodejs["']/.test(
+      body,
+    );
+    if (!hasRuntimeDecl) bad++;
+  });
+  return bad;
+}
+check(
+  "API routes importing node:* declare runtime = 'nodejs'",
+  countNodeImportsWithoutRuntime(),
+  0,
+  { dimension: "security" },
+);
+
 // ──────────────────────────────────────────────────────────────
 // Database migrations
 // ──────────────────────────────────────────────────────────────

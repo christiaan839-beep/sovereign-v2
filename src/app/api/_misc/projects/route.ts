@@ -2,10 +2,23 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { clientProjects } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
+import { requireAuth } from "@/lib/auth-guard";
 
-// GET — List all client projects
-export async function GET(req: NextRequest) {
-  const userId = req.headers.get("x-user-id") || "anonymous";
+/**
+ * CLIENT PROJECTS — agency-style project tracking, scoped to the
+ * authenticated user.
+ *
+ * SECURITY: every handler authenticates via Clerk. Earlier versions
+ * trusted an `x-user-id` request header (no middleware was setting it),
+ * so any caller could read, mutate, or delete another user's projects
+ * by spoofing that header. Fixed 2026-04-27.
+ */
+
+// GET — List the authenticated user's projects
+export async function GET(_req: NextRequest) {
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
+  const userId = auth.userId;
 
   try {
     const projects = await db
@@ -20,11 +33,13 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST — Create a new client project
+// POST — Create a new project owned by the authenticated user
 export async function POST(req: NextRequest) {
-  const userId = req.headers.get("x-user-id") || "anonymous";
-  const body = await req.json();
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
+  const userId = auth.userId;
 
+  const body = await req.json();
   const { name, clientName, industry, website, color, notes } = body;
 
   if (!name || !clientName) {
@@ -57,9 +72,12 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// PUT — Update a project
+// PUT — Update one of the user's projects
 export async function PUT(req: NextRequest) {
-  const userId = req.headers.get("x-user-id") || "anonymous";
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
+  const userId = auth.userId;
+
   const body = await req.json();
   const { id, ...updates } = body;
 
@@ -83,9 +101,12 @@ export async function PUT(req: NextRequest) {
   }
 }
 
-// DELETE — Remove a project
+// DELETE — Remove one of the user's projects
 export async function DELETE(req: NextRequest) {
-  const userId = req.headers.get("x-user-id") || "anonymous";
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
+  const userId = auth.userId;
+
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");
 

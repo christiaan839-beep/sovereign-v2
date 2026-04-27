@@ -3,10 +3,25 @@ import { db } from "@/db";
 import { scheduledRuns } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { nextRun, validateCron } from "@/lib/cron-next";
+import { requireAuth } from "@/lib/auth-guard";
 
-// GET — List all scheduled runs for a user
-export async function GET(req: NextRequest) {
-  const userId = req.headers.get("x-user-id") || "anonymous";
+/**
+ * SCHEDULED RUNS — CRUD over a user's cron-scheduled agent invocations.
+ *
+ * SECURITY: every handler authenticates via Clerk (`requireAuth`) and
+ * scopes all DB queries by the resolved `userId`. Earlier versions of
+ * this file pulled `userId` from the `x-user-id` request header — that
+ * was fully client-controlled (no middleware was setting it), so any
+ * caller could spoof another user and create/edit/delete their
+ * scheduled runs (and worse: the scheduler would later FIRE those
+ * runs against the spoofed user's tenant + budget). Fixed 2026-04-27.
+ */
+
+// GET — List all scheduled runs for the authenticated user
+export async function GET(_req: NextRequest) {
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
+  const userId = auth.userId;
 
   try {
     const runs = await db
@@ -21,11 +36,13 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST — Create a new scheduled run
+// POST — Create a new scheduled run owned by the authenticated user
 export async function POST(req: NextRequest) {
-  const userId = req.headers.get("x-user-id") || "anonymous";
-  const body = await req.json();
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
+  const userId = auth.userId;
 
+  const body = await req.json();
   const { agentType, agentName, prompt, schedule, timezone, projectId } = body;
 
   if (!agentType || !prompt || !schedule) {
@@ -71,9 +88,12 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// PUT — Update a scheduled run (enable/disable, change schedule)
+// PUT — Update one of the user's scheduled runs (enable/disable, change schedule)
 export async function PUT(req: NextRequest) {
-  const userId = req.headers.get("x-user-id") || "anonymous";
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
+  const userId = auth.userId;
+
   const body = await req.json();
   const { id, ...updates } = body;
 
@@ -97,9 +117,12 @@ export async function PUT(req: NextRequest) {
   }
 }
 
-// DELETE — Remove a scheduled run
+// DELETE — Remove one of the user's scheduled runs
 export async function DELETE(req: NextRequest) {
-  const userId = req.headers.get("x-user-id") || "anonymous";
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
+  const userId = auth.userId;
+
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");
 

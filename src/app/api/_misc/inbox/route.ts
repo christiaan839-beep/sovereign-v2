@@ -2,10 +2,24 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { agentActivity } from "@/db/schema";
 import { eq, and, desc } from "drizzle-orm";
+import { requireAuth } from "@/lib/auth-guard";
 
-// GET — Get agent activity feed (Smart Inbox)
+/**
+ * SMART INBOX — agent activity feed for the authenticated user.
+ *
+ * SECURITY: all handlers go through Clerk's `requireAuth`. Previously
+ * the route trusted an `x-user-id` request header (no middleware was
+ * setting it), so any caller could read another user's activity log
+ * or mark someone else's events as read by setting that header.
+ * Fixed 2026-04-27.
+ */
+
+// GET — Get agent activity feed (Smart Inbox) for the authenticated user
 export async function GET(req: NextRequest) {
-  const userId = req.headers.get("x-user-id") || "anonymous";
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
+  const userId = auth.userId;
+
   const { searchParams } = new URL(req.url);
   const limit = parseInt(searchParams.get("limit") || "50");
   const unreadOnly = searchParams.get("unread") === "true";
@@ -35,11 +49,13 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST — Log a new agent activity
+// POST — Log a new agent activity for the authenticated user
 export async function POST(req: NextRequest) {
-  const userId = req.headers.get("x-user-id") || "anonymous";
-  const body = await req.json();
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
+  const userId = auth.userId;
 
+  const body = await req.json();
   const { agentName, agentType, action, summary, result, projectId, metadata } = body;
 
   if (!agentName || !action || !summary) {
@@ -73,9 +89,12 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// PUT — Mark activities as read
+// PUT — Mark activities as read (only the caller's own)
 export async function PUT(req: NextRequest) {
-  const userId = req.headers.get("x-user-id") || "anonymous";
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
+  const userId = auth.userId;
+
   const body = await req.json();
   const { ids, markAll } = body;
 
