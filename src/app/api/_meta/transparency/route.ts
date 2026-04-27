@@ -128,6 +128,26 @@ export async function GET(): Promise<NextResponse> {
       "src/app/api/_meta/transparency/route.ts",
       "Schema is stable; previous versions remain reachable for 90 days post-bump.",
     ),
+    perAgentManifest: cite(
+      "https://sovereignmatrix.agency/api/_meta/agents.json",
+      "src/app/api/_meta/agents/route.ts",
+      "Per-agent capability manifest — tier (autonomous/confirm/admin), models, tools, PII guard mode, output class. Maps to OWASP LLM Top 10 LLM05/06/07/08/10. Auto-derived by static analysis; manual overrides for under-classified agents.",
+    ),
+    owaspLLMTop10Coverage: cite(
+      {
+        LLM01_PromptInjection: "5-layer safety pipeline + jailbreak detection (NemoGuard)",
+        LLM02_InsecureOutputHandling: "PII guard regex+Luhn+IBAN mod-97 on every agent response",
+        LLM04_ModelDoS: "Upstash sliding-window rate limit + per-provider circuit breakers",
+        LLM05_SupplyChain: "/api/_meta/agents.json — per-agent SBOM (models[]) + provider classification",
+        LLM06_SensitiveInfoDisclosure: "PII guard fail-open with structural scrubber",
+        LLM07_InsecurePluginDesign: "API-key scoping (CIDR + per-agent allowlists)",
+        LLM08_ExcessiveAgency: "Per-agent ActionTier (1=autonomous, 2=confirm, 3=admin) — published per-agent",
+        LLM09_Overreliance: "Confidence scoring via SLA tracker + consensus engine",
+        LLM10_ModelTheft: "Anti-distillation canary in system-prompts.ts + per-agent outputClass",
+      },
+      "https://owasp.org/www-project-top-10-for-large-language-model-applications/",
+      "Each control maps to an artifact in this codebase. LLM03 (Training Data Poisoning) is not applicable — Sovereign does not train models, only orchestrates frontier-model inference.",
+    ),
 
     // ─── Identity ──────────────────────────────────────────────
     identity: {

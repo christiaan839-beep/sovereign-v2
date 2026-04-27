@@ -12,7 +12,9 @@
     "lint": "eslint",
     "ws": "ts-node server/ws.ts",
     "test": "vitest run",
-    "gen:registry": "node scripts/generate-agent-registry.mjs",
+    "gen:registry": "node scripts/generate-agent-registry.mjs && node scripts/analyze-agent-manifests.mjs",
+    "gen:manifests": "node scripts/analyze-agent-manifests.mjs",
+    "gen:manifests:report": "node scripts/analyze-agent-manifests.mjs --report",
     "db:apply": "node scripts/apply-migrations.mjs",
     "db:apply:dry": "node scripts/apply-migrations.mjs --dry-run"
   },

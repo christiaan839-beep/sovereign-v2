@@ -423,6 +423,26 @@ const trustAssets = [
     path: "src/app/api/_meta/transparency/route.ts",
     name: "Sovereign Bill of Trust (transparency manifest)",
   },
+  // Per-agent capability manifests. Maps directly to OWASP LLM Top
+  // 10 controls (LLM05/06/07/08/10) and lets auditor LLMs ingest the
+  // full agent taxonomy in one GET. Deleting either side breaks the
+  // public agents.json endpoint.
+  {
+    path: "src/lib/agent-manifest.ts",
+    name: "Agent capability manifest schema",
+  },
+  {
+    path: "src/lib/agent-manifests.generated.ts",
+    name: "Agent capability manifests (generated)",
+  },
+  {
+    path: "src/lib/agent-manifest-overrides.ts",
+    name: "Agent manifest overrides (audited corrections)",
+  },
+  {
+    path: "src/app/api/_meta/agents/route.ts",
+    name: "Per-agent manifest endpoint (/api/_meta/agents.json)",
+  },
 ];
 for (const { path, name } of trustAssets) {
   const present = existsSync(join(ROOT, path)) ? 1 : 0;
@@ -566,6 +586,53 @@ check(
   0,
   // Max-allowed: 0 unsafe sites. Anything >0 fails CI.
   { dimension: "security", floor: false },
+);
+
+// OWASP LLM08 invariant: every agent in the registry must have a
+// capability manifest. The static analyzer builds these on every
+// `npm run gen:registry`; if the analyzer breaks (or a future PR
+// deletes the generated file), this fails CI before the platform
+// ships with auditor-invisible agents.
+function manifestCoverage() {
+  const generated = join(ROOT, "src/lib/agent-manifests.generated.ts");
+  const slugs = join(ROOT, "src/app/api/agents/slugs.ts");
+  if (!existsSync(generated) || !existsSync(slugs)) return 0;
+  const generatedText = readFileSync(generated, "utf8");
+  const slugsText = readFileSync(slugs, "utf8");
+  const manifestSlugs = (generatedText.match(/^\s+"([\w-]+)":\s*\{/gm) ?? [])
+    .map((m) => m.match(/"([\w-]+)"/)?.[1])
+    .filter(Boolean);
+  const registrySlugs = (slugsText.match(/^\s+"([\w-]+)",/gm) ?? [])
+    .map((m) => m.match(/"([\w-]+)"/)?.[1])
+    .filter(Boolean);
+  if (registrySlugs.length === 0) return 0;
+  const present = new Set(manifestSlugs);
+  const missing = registrySlugs.filter((s) => !present.has(s)).length;
+  return missing;
+}
+check(
+  "every registered agent has a capability manifest (LLM08)",
+  manifestCoverage(),
+  0,
+  { dimension: "security", floor: false },
+);
+
+// Surface the low-confidence count as info — not a hard fail. This
+// is the analyzer telling us "these agents need manual override or
+// improved patterns"; useful in the dashboard but not a blocker.
+function lowConfidenceCount() {
+  const generated = join(ROOT, "src/lib/agent-manifests.generated.ts");
+  if (!existsSync(generated)) return 0;
+  const text = readFileSync(generated, "utf8");
+  // Count manifests where classifierConfidence < 0.6.
+  const matches = text.match(/"classifierConfidence":\s*0\.[0-5]\d?/g);
+  return matches ? matches.length : 0;
+}
+check(
+  "agents with low classifier confidence (info only)",
+  lowConfidenceCount(),
+  null,
+  { dimension: "security" },
 );
 
 // ──────────────────────────────────────────────────────────────
