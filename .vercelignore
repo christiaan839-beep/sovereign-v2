@@ -1,0 +1,33 @@
+# .vercelignore — files NOT copied into the Vercel build.
+#
+# CRITICAL: Python virtualenv has machine-specific absolute symlinks
+# (e.g. venv/bin/python → /Users/<owner>/.../python3.11). Vercel's
+# Turbopack walks the filesystem looking for module references and
+# fails on broken symlinks ("Symlink ... points out of the
+# filesystem root"). This file blocks them from being copied at all.
+#
+# General rule: if it's not part of the Next.js runtime, ignore it.
+
+# Python virtual environments — machine-specific, not for the Next.js build.
+server/python-agents/venv/
+**/venv/
+**/.venv/
+**/__pycache__/
+
+# Local-only test scaffolding.
+server/python-agents/test_*.py
+e2e/
+
+# Worktree leftovers (none should ever leak, but defence-in-depth).
+.claude/worktrees/
+
+# Already-built artifacts (Vercel rebuilds anyway).
+.next/
+node_modules/
+
+# Local environment.
+.env.local
+.env.*.local
+
+# Build cache.
+.turbo/

@@ -54,3 +54,11 @@ next-env.d.ts
 # IDE
 .idea/
 .vscode/
+
+# Python virtual environments — machine-specific symlinks; never commit.
+# (See .vercelignore for the build-time block — Turbopack chokes on
+# broken venv symlinks pointing out of the filesystem root.)
+**/venv/
+**/.venv/
+**/__pycache__/
+*.pyc

@@ -2192,6 +2192,24 @@ check(
   { dimension: "security" },
 );
 
+// .vercelignore must exist + must exclude python venvs.
+// R32 build fail root cause: Turbopack walks the filesystem and trips
+// over broken Python venv symlinks ("Symlink ... points out of the
+// filesystem root"). The fix is .vercelignore — and this gate ensures
+// nobody removes it without realizing the build will break again.
+check(
+  ".vercelignore present (blocks broken-symlink directories from build)",
+  existsSync(join(ROOT, ".vercelignore")) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+check(
+  ".vercelignore excludes Python venvs (Turbopack symlink-walker safety)",
+  fileContains(".vercelignore", "venv") ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
 // Public reasoning trace (customer-facing trust artifact)
 check(
   "public reasoning trace endpoint present",
