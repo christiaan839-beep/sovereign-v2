@@ -7,6 +7,7 @@ import { topoSort, dryRun, type PlaybookDag } from "@/lib/playbook-dag";
 import { PlaybookCanvas } from "@/components/playbook/PlaybookCanvas";
 import { NodePalette } from "@/components/playbook/NodePalette";
 import { MyDagsPanel } from "@/components/playbook/MyDagsPanel";
+import { DagStatsPanel } from "@/components/playbook/DagStatsPanel";
 import { ConfidenceBadge } from "@/components/agent/ConfidenceBadge";
 import { TokenBudgetMeter } from "@/components/agent/TokenBudgetMeter";
 import { extractConfidence, extractTokenBudget } from "@/lib/agent-meta";
@@ -474,6 +475,15 @@ export default function PlaybookEditorPage() {
           <PlaybookCanvas dag={dag} agents={agents} onChange={setDag} />
         </div>
         <MyDagsPanel currentDagId={savedId} />
+      </div>
+
+      {/*
+        Round 18 — per-DAG analytics. Renders nothing until the
+        playbook has been saved (savedId set) AND has at least one
+        recorded run. First-run UX stays clean.
+      */}
+      <div className="mt-8">
+        <DagStatsPanel dagId={savedId} />
       </div>
 
       <section className="mt-8 grid gap-4 lg:grid-cols-2">

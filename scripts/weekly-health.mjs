@@ -579,6 +579,17 @@ const trustAssets = [
     path: "src/lib/run-cost-actual.ts",
     name: "Per-run actual cost lib (derives from _meta.tokenBudget)",
   },
+  // Round 18 — per-DAG analytics. The stats endpoint + the UI panel
+  // are the procurement-grade "what's your reliability per playbook"
+  // surface. Deleting either silently regresses the answer.
+  {
+    path: "src/app/api/playbooks/dag/[id]/stats/route.ts",
+    name: "Per-DAG stats endpoint",
+  },
+  {
+    path: "src/components/playbook/DagStatsPanel.tsx",
+    name: "Per-DAG stats panel (editor reliability card)",
+  },
 ];
 for (const { path, name } of trustAssets) {
   const present = existsSync(join(ROOT, path)) ? 1 : 0;

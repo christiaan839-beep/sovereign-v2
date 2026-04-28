@@ -154,6 +154,19 @@ describe("playbook-dag-store — graceful no-DB fallbacks", () => {
     expect(result).toEqual({ finalized: false });
   });
 
+  it("getDagStats returns empty-shape when DB is unavailable", async () => {
+    // Round 18: stats endpoint depends on this contract. Empty zeros
+    // (not null, not error) so the UI's "render-nothing-if-totalRuns=0"
+    // logic short-circuits cleanly without distinguishing missing-DB
+    // from genuinely-no-runs.
+    const { getDagStats } = await importStore();
+    const result = await getDagStats({ dagId: "any", userId: "u" });
+    expect(result.totalRuns).toBe(0);
+    expect(result.successRate).toBe(0);
+    expect(result.p50DurationMs).toBeNull();
+    expect(result.lastRunAt).toBeNull();
+  });
+
   it("reapOrphanedRuns returns reaped=0 when DB is unavailable", async () => {
     // The cron handler relies on this contract: a missing DB means
     // "0 reaped this tick" rather than "the cron crashed". The cron

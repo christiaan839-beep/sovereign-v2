@@ -1,6 +1,6 @@
 # Sovereign Matrix — FMTI Self-Audit
 
-**Generated:** 2026-04-28T02:10:08.858Z
+**Generated:** 2026-04-28T04:17:59.869Z
 **Method:** `scripts/run-fmti-self-audit.mjs` deterministic rule-based scoring against /api/_meta/transparency.json + /api/_meta/agents.json + repo artifacts.
 **Overall:** 91.2% across 17 applicable subdomains (5 N/A).
 

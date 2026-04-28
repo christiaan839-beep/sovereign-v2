@@ -583,6 +583,133 @@ export async function getDagRun(input: {
 }
 
 /**
+ * Round 18 — per-DAG aggregate statistics.
+ *
+ * Powers the analytics card on the editor + run-detail pages.
+ * Procurement teams ask "what's your reliability per playbook?" —
+ * this answers it from real run data, not estimates.
+ *
+ * Returns:
+ *   - totalRuns / completedRuns / failedRuns / runningRuns
+ *   - successRate (0..1)
+ *   - p50DurationMs / p95DurationMs (NULL when fewer than 5 runs —
+ *     percentile noise dominates at low N)
+ *   - lastRunAt / lastRunStatus / lastRunDurationMs
+ *
+ * Tenant-scoped via userId. Returns zeros when DB is unavailable
+ * OR the DAG has no runs — same shape either way, the UI doesn't
+ * care which.
+ */
+export interface DagStats {
+  totalRuns: number;
+  completedRuns: number;
+  failedRuns: number;
+  runningRuns: number;
+  successRate: number; // 0..1, computed only over terminal runs
+  p50DurationMs: number | null;
+  p95DurationMs: number | null;
+  lastRunAt: string | null;
+  lastRunStatus: "running" | "completed" | "failed" | null;
+  lastRunDurationMs: number | null;
+}
+
+export async function getDagStats(input: {
+  dagId: string;
+  userId: string;
+}): Promise<DagStats> {
+  const empty: DagStats = {
+    totalRuns: 0,
+    completedRuns: 0,
+    failedRuns: 0,
+    runningRuns: 0,
+    successRate: 0,
+    p50DurationMs: null,
+    p95DurationMs: null,
+    lastRunAt: null,
+    lastRunStatus: null,
+    lastRunDurationMs: null,
+  };
+
+  const db = await getDb();
+  if (!db) return empty;
+
+  try {
+    const { playbookDagRuns } = await import("@/db/schema");
+
+    // Single aggregate query. Postgres' percentile_cont handles
+    // p50 / p95 in one pass; conditional sums give the per-status
+    // counts without separate queries.
+    const rows = await db
+      .select({
+        total: sql<number>`count(*)::int`,
+        completed: sql<number>`sum(case when ${playbookDagRuns.status} = 'completed' then 1 else 0 end)::int`,
+        failed: sql<number>`sum(case when ${playbookDagRuns.status} = 'failed' then 1 else 0 end)::int`,
+        running: sql<number>`sum(case when ${playbookDagRuns.status} = 'running' then 1 else 0 end)::int`,
+        // Percentile only over terminal (non-running) runs — a
+        // running row has duration 0 which would skew p50 to 0.
+        p50: sql<number | null>`percentile_cont(0.5) within group (
+          order by case when ${playbookDagRuns.status} != 'running' then ${playbookDagRuns.totalDurationMs} else null end
+        )`,
+        p95: sql<number | null>`percentile_cont(0.95) within group (
+          order by case when ${playbookDagRuns.status} != 'running' then ${playbookDagRuns.totalDurationMs} else null end
+        )`,
+      })
+      .from(playbookDagRuns)
+      .where(
+        and(
+          eq(playbookDagRuns.dagId, input.dagId),
+          eq(playbookDagRuns.userId, input.userId),
+        ),
+      );
+
+    const agg = rows[0];
+    if (!agg || agg.total === 0) return empty;
+
+    // Find the latest run for the lastRun fields.
+    const latest = await db
+      .select({
+        createdAt: playbookDagRuns.createdAt,
+        status: playbookDagRuns.status,
+        totalDurationMs: playbookDagRuns.totalDurationMs,
+      })
+      .from(playbookDagRuns)
+      .where(
+        and(
+          eq(playbookDagRuns.dagId, input.dagId),
+          eq(playbookDagRuns.userId, input.userId),
+        ),
+      )
+      .orderBy(desc(playbookDagRuns.createdAt))
+      .limit(1);
+
+    const terminalRuns = (agg.completed ?? 0) + (agg.failed ?? 0);
+    const successRate = terminalRuns > 0 ? (agg.completed ?? 0) / terminalRuns : 0;
+
+    // Percentile noise at low N: only surface p50/p95 when we have
+    // 5+ terminal runs. Below that, the numbers are dominated by
+    // outliers and create false confidence.
+    const showPercentiles = terminalRuns >= 5;
+
+    const lastRow = latest[0];
+
+    return {
+      totalRuns: agg.total ?? 0,
+      completedRuns: agg.completed ?? 0,
+      failedRuns: agg.failed ?? 0,
+      runningRuns: agg.running ?? 0,
+      successRate,
+      p50DurationMs: showPercentiles ? Math.round(agg.p50 ?? 0) : null,
+      p95DurationMs: showPercentiles ? Math.round(agg.p95 ?? 0) : null,
+      lastRunAt: lastRow?.createdAt?.toISOString() ?? null,
+      lastRunStatus: (lastRow?.status as DagStats["lastRunStatus"]) ?? null,
+      lastRunDurationMs: lastRow?.totalDurationMs ?? null,
+    };
+  } catch {
+    return empty;
+  }
+}
+
+/**
  * Round 13 — orphan-detection cleanup.
  *
  * Round 12's async path uses Vercel's after() to extend execution
