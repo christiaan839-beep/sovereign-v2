@@ -1629,6 +1629,143 @@ check(
   { dimension: "security" },
 );
 
+// ─── Elite-tier sprint — public trust + ops invariants ────────────────
+//
+// These artifacts make the platform's reliability story queryable
+// by procurement teams without auth, and operable by the team via
+// the admin tenants dashboard. Removing any one of them silently
+// breaks the public moat.
+
+// TIER S enabler — migration runner + manual checklist must exist.
+check(
+  "TIER S deploy checklist present",
+  existsSync(join(ROOT, "docs/TIER-S-CHECKLIST.md")) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+check(
+  "production migration runner present (idempotent + tracked)",
+  existsSync(join(ROOT, "scripts/apply-prod-migrations.mjs")) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+// Provider health — the live moat. /reliability page renders this.
+check(
+  "provider-health route present (private)",
+  existsSync(join(ROOT, "src/app/api/_health/providers/route.ts")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "provider-health public re-export present",
+  existsSync(join(ROOT, "src/app/api/health/providers/route.ts")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+// /incidents — public hash-chain-derived events feed.
+check(
+  "incidents route present (private)",
+  existsSync(join(ROOT, "src/app/api/_health/incidents/route.ts")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "incidents public re-export present",
+  existsSync(join(ROOT, "src/app/api/health/incidents/route.ts")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "/incidents page present",
+  existsSync(join(ROOT, "src/app/incidents/page.tsx")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+// Admin tenants — operator dashboard for the cost ledger.
+check(
+  "admin tenants API present",
+  existsSync(join(ROOT, "src/app/api/admin/tenants/route.ts")) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "admin tenants UI present",
+  existsSync(join(ROOT, "src/app/dashboard/admin/tenants/page.tsx")) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "admin tenants API uses requireAdmin gate",
+  fileContains(
+    "src/app/api/admin/tenants/route.ts",
+    "requireAdmin",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+// /trust/customers + anonymizer — the published-stats moat.
+check(
+  "customer-stats anonymizer lib present",
+  existsSync(join(ROOT, "src/lib/customer-stats-anonymizer.ts")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "customer-stats anonymizer tests present",
+  existsSync(
+    join(ROOT, "src/lib/__tests__/customer-stats-anonymizer.test.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "/api/health/customers endpoint present",
+  existsSync(join(ROOT, "src/app/api/_health/customers/route.ts")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "/trust/customers page present",
+  existsSync(join(ROOT, "src/app/trust/customers/page.tsx")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+// CI integration — dep-rot blocks PRs with new HIGH/CRITICAL CVEs.
+check(
+  "CI runs dep-rot detector on every PR",
+  fileContains(".github/workflows/ci.yml", "dep-rot-detector.mjs") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+// Constitution amendment hint: when /reliability already imports
+// from permanence, /incidents from audit_logs, and /trust/customers
+// from anonymizer — those imports are the actual wiring that turns
+// "files exist" into "page renders correctly".
+check(
+  "/reliability page fetches /api/health/permanence",
+  fileContains("src/app/reliability/page.tsx", "/api/health/permanence") ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "/reliability page fetches /api/health/providers",
+  fileContains("src/app/reliability/page.tsx", "/api/health/providers") ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "/incidents page fetches /api/health/incidents",
+  fileContains("src/app/incidents/page.tsx", "/api/health/incidents") ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
 // ──────────────────────────────────────────────────────────────
 // Report
 // ──────────────────────────────────────────────────────────────

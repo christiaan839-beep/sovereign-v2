@@ -31,7 +31,30 @@ import {
   Lock,
   Hash,
   Database,
+  Cpu,
+  Circle,
 } from "lucide-react";
+
+interface ProviderHealth {
+  provider: string;
+  status: "healthy" | "degraded" | "unhealthy" | "unconfigured";
+  latencyMs: number | null;
+  costTier: "free" | "paid" | "metered" | "unknown";
+  note?: string;
+}
+
+interface ProviderHealthDoc {
+  summary: {
+    overall: "healthy" | "degraded" | "unhealthy";
+    healthy: number;
+    degraded: number;
+    unhealthy: number;
+    unconfigured: number;
+    total: number;
+  };
+  providers: ProviderHealth[];
+  generatedAt: string;
+}
 
 interface PermanenceData {
   headline: {
@@ -122,6 +145,7 @@ function formatRelative(iso: string | null): string {
 
 export default function ReliabilityPage() {
   const [data, setData] = useState<PermanenceData | null>(null);
+  const [providers, setProviders] = useState<ProviderHealthDoc | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
 
@@ -129,17 +153,27 @@ export default function ReliabilityPage() {
     let alive = true;
     const load = async () => {
       try {
-        const res = await fetch("/api/health/permanence", {
-          cache: "no-store",
-        });
+        // Fire BOTH endpoints in parallel — each is independently
+        // cached at the edge so the cost is one round-trip per
+        // 30-60s, not two.
+        const [permRes, provRes] = await Promise.all([
+          fetch("/api/health/permanence", { cache: "no-store" }),
+          fetch("/api/health/providers", { cache: "no-store" }),
+        ]);
         if (!alive) return;
-        if (!res.ok) {
-          setErr(`HTTP ${res.status}`);
+        if (!permRes.ok) {
+          setErr(`Permanence HTTP ${permRes.status}`);
           setLoading(false);
           return;
         }
-        const json = (await res.json()) as PermanenceData;
-        setData(json);
+        const permJson = (await permRes.json()) as PermanenceData;
+        setData(permJson);
+        // Provider health is best-effort. If it 5xxs, the rest of the
+        // page still renders.
+        if (provRes.ok) {
+          const provJson = (await provRes.json()) as ProviderHealthDoc;
+          setProviders(provJson);
+        }
         setLoading(false);
       } catch (e) {
         if (!alive) return;
@@ -289,6 +323,52 @@ export default function ReliabilityPage() {
           />
         </div>
       </section>
+
+      {/* Provider grid — live per-provider latency. The honesty surface
+          most platforms hide behind sales calls. */}
+      {providers && (
+        <section className="mx-auto max-w-6xl px-6 pb-16">
+          <div className="flex items-baseline justify-between flex-wrap gap-4 mb-6">
+            <div>
+              <h2 className="text-2xl md:text-3xl font-light text-white tracking-tight">
+                Upstream provider health
+              </h2>
+              <p className="mt-2 text-neutral-400 max-w-2xl">
+                Live round-trip latency to each AI provider, probed every
+                30 seconds. Most platforms hide which providers they use
+                AND when those providers are degraded — we publish both.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span
+                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium ${
+                  providers.summary.overall === "healthy"
+                    ? "border-emerald-500/20 bg-emerald-500/5 text-emerald-300"
+                    : providers.summary.overall === "degraded"
+                    ? "border-yellow-500/20 bg-yellow-500/5 text-yellow-300"
+                    : "border-red-500/20 bg-red-500/5 text-red-300"
+                }`}
+              >
+                <Circle
+                  className={`w-2 h-2 ${
+                    providers.summary.overall === "healthy"
+                      ? "fill-emerald-400 text-emerald-400"
+                      : providers.summary.overall === "degraded"
+                      ? "fill-yellow-400 text-yellow-400"
+                      : "fill-red-400 text-red-400"
+                  }`}
+                />
+                {providers.summary.healthy}/{providers.summary.total - providers.summary.unconfigured} configured providers healthy
+              </span>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {providers.providers.map((p) => (
+              <ProviderCard key={p.provider} provider={p} />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Failing-checks panel — only renders when there's a regression */}
       {data?.healthSnapshot && data.healthSnapshot.failingChecks.length > 0 && (
@@ -444,6 +524,51 @@ function HeadlineStat({
       </div>
       <div className="mt-2 text-xs text-neutral-500">{hint}</div>
     </motion.div>
+  );
+}
+
+function ProviderCard({ provider }: { provider: ProviderHealth }) {
+  const statusColor =
+    provider.status === "healthy"
+      ? "text-emerald-400"
+      : provider.status === "degraded"
+      ? "text-yellow-400"
+      : provider.status === "unhealthy"
+      ? "text-red-400"
+      : "text-neutral-500";
+  const statusLabel =
+    provider.status === "unconfigured"
+      ? "not configured"
+      : provider.status;
+  return (
+    <div className="rounded-xl border border-white/5 bg-white/[0.02] backdrop-blur-xl px-4 py-3.5 hover:border-white/10 transition-colors">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <Cpu className={`w-4 h-4 ${statusColor}`} />
+          <div>
+            <div className="text-sm font-medium text-white capitalize">
+              {provider.provider}
+            </div>
+            <div className="text-[10px] uppercase tracking-wider text-neutral-500 mt-0.5">
+              {provider.costTier}
+            </div>
+          </div>
+        </div>
+        <div className="text-right">
+          <div className={`text-xs font-medium ${statusColor}`}>
+            {statusLabel}
+          </div>
+          {provider.latencyMs !== null && (
+            <div className="text-[11px] tabular-nums text-neutral-500 mt-0.5">
+              {provider.latencyMs}ms
+            </div>
+          )}
+        </div>
+      </div>
+      {provider.note && (
+        <div className="mt-2 text-[10px] text-neutral-500">{provider.note}</div>
+      )}
+    </div>
   );
 }
 

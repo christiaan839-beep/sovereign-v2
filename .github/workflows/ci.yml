@@ -76,7 +76,7 @@ jobs:
         run: npm test
 
   anti-drift:
-    # weekly-health.mjs is the anti-drift machine — 43 invariants that
+    # weekly-health.mjs is the anti-drift machine — 162 invariants that
     # check artifact presence, wiring content, and quality metrics
     # (test count, eval coverage, lint budget, security wiring, etc.).
     # Running it on every PR means a future change that silently deletes
@@ -100,8 +100,22 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run weekly-health invariants (43 checks)
+      - name: Run weekly-health invariants (162 checks)
         run: node scripts/weekly-health.mjs
+
+      - name: Run dependency rot detector (vulns + outdated majors)
+        # Blocks PRs that introduce HIGH/CRITICAL CVEs (Round 22 shipped
+        # 2 CRITICALs precisely because nothing blocked them). Tolerates
+        # moderate vulns + up to 10 outdated majors as background noise.
+        # See scripts/dep-rot-detector.mjs THRESHOLDS for tuning.
+        run: node scripts/dep-rot-detector.mjs --check
+
+      - name: Run CHANGELOG drift check (informational)
+        # Reports >5 user-facing commits since last CHANGELOG entry.
+        # NON-BLOCKING for now (uses `|| true`) until the team adopts
+        # Conventional Commits across the board. Promote to a hard
+        # gate once `feat:`/`fix:` prefixes are standard.
+        run: node scripts/generate-changelog.mjs --check || true
 
   reliability:
     # Dedicated job for the reliability + safety test suites added in
