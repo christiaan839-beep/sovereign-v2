@@ -902,9 +902,15 @@ export const playbookDags = pgTable("playbook_dags", {
   userId: text("user_id").notNull(),
   name: text("name").notNull(),
   description: text("description"),
-  // The full DAG payload — { nodes: [...], edges: [...] }. Type lives
-  // in src/lib/playbook-dag.ts as PlaybookDag.
-  dag: jsonb("dag").notNull(),
+  // The full DAG payload — { nodes: [...], edges: [...] }. The
+  // $type<>() annotation lets the store layer write+read this column
+  // as a typed PlaybookDag instead of `unknown`, removing a class of
+  // `as unknown as object` casts. We import the type lazily via a
+  // type-only declaration to avoid a runtime cycle (schema.ts loads
+  // before lib/playbook-dag.ts in some paths).
+  dag: jsonb("dag")
+    .$type<import("@/lib/playbook-dag").PlaybookDag>()
+    .notNull(),
   status: text("status").notNull().default("draft"), // draft | published | archived
   // Denormalized counts so list endpoints don't parse JSONB per row.
   nodeCount: integer("node_count").notNull().default(0),
@@ -928,18 +934,20 @@ export const playbookDagRuns = pgTable("playbook_dag_runs", {
   // The dagSnapshot below freezes the shape that actually ran, so
   // forensics work even after the DAG is gone.
   dagId: uuid("dag_id").references(() => playbookDags.id, { onDelete: "set null" }),
-  // Frozen DAG shape at execution time. Cannot be answered by reading
-  // the live `dag` column on the parent because the user may have
-  // edited it since this run completed.
-  dagSnapshot: jsonb("dag_snapshot").notNull(),
+  // Frozen DAG shape at execution time. Typed via $type<>() so the
+  // store layer can read this column as a real PlaybookDag without
+  // a double-cast.
+  dagSnapshot: jsonb("dag_snapshot")
+    .$type<import("@/lib/playbook-dag").PlaybookDag>()
+    .notNull(),
   // running | completed | failed. running = in-flight async execution.
   status: text("status").notNull(),
   nodeCount: integer("node_count").notNull(),
   edgeCount: integer("edge_count").notNull(),
-  // Per-node NodeRunResult[] — see src/lib/playbook-dag.ts. The
-  // store layer truncates large per-node outputs before insertion
-  // (~32KB cap per result) so rows don't bloat.
-  results: jsonb("results").notNull(),
+  // Per-node NodeRunResult[] — same $type<>() pattern.
+  results: jsonb("results")
+    .$type<import("@/lib/playbook-dag").NodeRunResult[]>()
+    .notNull(),
   totalDurationMs: integer("total_duration_ms").notNull(),
   // nodeId of the first failing node (mirrors ExecuteDagResult.failedAt).
   failedAt: text("failed_at"),

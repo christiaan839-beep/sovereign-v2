@@ -599,6 +599,15 @@ const trustAssets = [
     path: "src/lib/retry-with-backoff.ts",
     name: "Retry-with-backoff (central reliability primitive)",
   },
+  // Round 21 — honest-gaps doc. Procurement-readable acknowledgement
+  // of what's NOT done. Removing it would push the project back
+  // toward the "everything is fine" posture this project explicitly
+  // rejects. The gaps doc is the truth artifact, not a marketing
+  // page.
+  {
+    path: "docs/HONEST-GAPS.md",
+    name: "Honest gap analysis (verified, not aspirational)",
+  },
 ];
 for (const { path, name } of trustAssets) {
   const present = existsSync(join(ROOT, path)) ? 1 : 0;

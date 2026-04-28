@@ -142,7 +142,7 @@ export async function insertDag(input: {
         userId: input.userId,
         name: input.name,
         description: input.description ?? null,
-        dag: input.dag as unknown as object,
+        dag: input.dag,
         status: input.status ?? "draft",
         nodeCount: input.dag.nodes.length,
         edgeCount: input.dag.edges.length,
@@ -178,7 +178,7 @@ export async function updateDag(input: {
     if (input.name !== undefined) patch.name = input.name;
     if (input.description !== undefined) patch.description = input.description;
     if (input.dag !== undefined) {
-      patch.dag = input.dag as unknown as object;
+      patch.dag = input.dag;
       patch.nodeCount = input.dag.nodes.length;
       patch.edgeCount = input.dag.edges.length;
     }
@@ -343,11 +343,11 @@ export async function createPendingRun(input: {
       .values({
         userId: input.userId,
         dagId: input.dagId,
-        dagSnapshot: input.dag as unknown as object,
+        dagSnapshot: input.dag,
         status: "running",
         nodeCount: input.dag.nodes.length,
         edgeCount: input.dag.edges.length,
-        results: [] as unknown as object,
+        results: [],
         totalDurationMs: 0,
         progressNodesCompleted: 0,
         startedAt: now,
@@ -389,7 +389,7 @@ export async function updateRunProgress(input: {
     const result = await db
       .update(playbookDagRuns)
       .set({
-        results: truncated as unknown as object,
+        results: truncated,
         progressNodesCompleted: input.progressNodesCompleted,
         lastProgressAt: new Date(),
       })
@@ -437,7 +437,7 @@ export async function finalizeRun(input: {
       .update(playbookDagRuns)
       .set({
         status: input.status,
-        results: truncated as unknown as object,
+        results: truncated,
         totalDurationMs: input.totalDurationMs,
         failedAt: input.failedAt,
         progressNodesCompleted: completedNodes,
@@ -508,11 +508,11 @@ export async function recordDagRun(input: {
       .values({
         userId: input.userId,
         dagId: input.dagId,
-        dagSnapshot: input.dag as unknown as object,
+        dagSnapshot: input.dag,
         status: input.status,
         nodeCount: input.dag.nodes.length,
         edgeCount: input.dag.edges.length,
-        results: truncated as unknown as object,
+        results: truncated,
         totalDurationMs: input.totalDurationMs,
         failedAt: input.failedAt,
         // Sync runs hit terminal state immediately; record both
