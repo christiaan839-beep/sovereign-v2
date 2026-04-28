@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { PLAYBOOKS, PLAYBOOK_CATEGORIES } from "@/lib/playbooks";
+import { TOTAL_AGENTS, TOTAL_MODELS } from "@/lib/platform-stats";
 
 /**
  * API CATALOG — Auto-generated documentation endpoint
@@ -46,12 +47,12 @@ export async function GET() {
   return NextResponse.json({
     platform: "Sovereign Matrix",
     version: "2.1.0",
-    description: "Autonomous AI agent platform — 130+ specialized agents, 38 AI models, zero per-token cost",
+    description: `Autonomous AI agent platform — ${TOTAL_AGENTS} specialized agents, ${TOTAL_MODELS} AI models, zero per-token cost`,
 
     stats: {
       totalAgents: AGENT_CATALOG.length,
       totalPlaybooks: PLAYBOOKS.length,
-      totalModels: 39,
+      totalModels: TOTAL_MODELS,
       supportedProviders: ["NVIDIA NIM", "Google Gemini", "Anthropic Claude", "Groq", "DeepSeek", "Ollama"],
     },
 

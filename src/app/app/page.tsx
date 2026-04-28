@@ -3,12 +3,14 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Send, Loader2, Sparkles, Plus, Mic, MicOff, ArrowDown } from "lucide-react";
+import { TOTAL_AGENTS, TOTAL_MODELS } from "@/lib/platform-stats";
 
 /**
  * SOVEREIGN MATRIX APP — Premium Chat Experience
  *
  * A clean, full-screen AI chat — no sidebar, no dashboard clutter.
- * Like opening the Claude or Gemini app, but powered by 38 models.
+ * Like opening the Claude or Gemini app, but powered by the full
+ * model registry.
  *
  * Features:
  * - Auto-selects best model per message (Smart Router)
@@ -132,7 +134,7 @@ export default function SovereignApp() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           prompt: text,
-          systemInstruction: "You are Sovereign AI — a powerful assistant backed by 35+ AI models. Be helpful, direct, and actionable. Use markdown for formatting. Never use AI slop phrases.",
+          systemInstruction: `You are Sovereign AI — a powerful assistant backed by ${TOTAL_MODELS}+ AI models. Be helpful, direct, and actionable. Use markdown for formatting. Never use AI slop phrases.`,
         }),
       });
 
@@ -178,7 +180,7 @@ export default function SovereignApp() {
           });
           const demoData = await demoRes.json();
           setMessages((prev) =>
-            prev.map((m) => m.id === assistantMsg.id ? { ...m, content: demoData.output || demoData.result || "Sign in to use all 223 agents.", model: "Demo" } : m)
+            prev.map((m) => m.id === assistantMsg.id ? { ...m, content: demoData.output || demoData.result || `Sign in to use all ${TOTAL_AGENTS} agents.`, model: "Demo" } : m)
           );
         }
       }
@@ -207,7 +209,7 @@ export default function SovereignApp() {
           </div>
           <div>
             <h1 className="text-sm font-bold text-white">Sovereign AI</h1>
-            <p className="text-[10px] text-neutral-500">38 models • auto-routed</p>
+            <p className="text-[10px] text-neutral-500">{TOTAL_MODELS} models • auto-routed</p>
           </div>
         </div>
         <button
@@ -232,7 +234,7 @@ export default function SovereignApp() {
             </div>
             <h2 className="text-xl font-bold text-white mb-2">What can I help you with?</h2>
             <p className="text-sm text-neutral-400 max-w-sm mb-8">
-              I have 35+ AI models and 223 specialized agents. Ask me anything — I&apos;ll pick the best model for your task automatically.
+              I have {TOTAL_MODELS}+ AI models and {TOTAL_AGENTS} specialized agents. Ask me anything — I&apos;ll pick the best model for your task automatically.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-w-lg w-full">
               {SUGGESTIONS.slice(0, 4).map((s) => (
@@ -321,7 +323,7 @@ export default function SovereignApp() {
           </div>
         </div>
         <p className="text-center text-[10px] text-neutral-500 mt-2">
-          Sovereign AI • 38 models • auto-routed • sovereignmatrix.agency
+          Sovereign AI • {TOTAL_MODELS} models • auto-routed • sovereignmatrix.agency
         </p>
       </div>
     </main>

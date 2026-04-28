@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { TOTAL_AGENTS, TOTAL_MODELS } from "@/lib/platform-stats";
 
 export const runtime = "edge";
 export const alt = "Sovereign Matrix — Agent Operating System";
@@ -79,7 +80,7 @@ export default function OGImage() {
             maxWidth: "600px",
           }}
         >
-          130 AI agents. 38 models. $199/mo flat.
+          {`${TOTAL_AGENTS} AI agents. ${TOTAL_MODELS} models. Flat-rate pricing.`}
         </p>
 
         {/* Bottom stats */}

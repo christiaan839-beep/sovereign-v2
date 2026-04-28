@@ -2,6 +2,7 @@
 
 import { motion, useInView } from "framer-motion";
 import { useRef, useState, useEffect } from "react";
+import { TOTAL_AGENTS } from "@/lib/platform-stats";
 
 
 const PLATFORM_FACTS = [
@@ -122,7 +123,7 @@ export function ToolShowcase() {
           transition={{ duration: 0.8 }}
         >
           <h2 className="text-4xl md:text-5xl font-bold text-white serif-text mb-4">
-            130+ AI Agents. One Dashboard.
+            {TOTAL_AGENTS} AI Agents. One Dashboard.
           </h2>
           <p className="text-neutral-400 text-sm uppercase tracking-[0.2em]">
             From lead generation to deployment — every function automated

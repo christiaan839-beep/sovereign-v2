@@ -154,7 +154,7 @@ The enterprise-procurement surface. Every claim references a real code path.
 ### Agent factories
 - **`createAgentRoute`** (`src/lib/agent-factory.ts`) — full-feature factory: auth, rate limit, jailbreak check, PII scan, quality gate, critic, memory, audit, circuit breaker
 - **`createVisionAgentRoute`** (`src/lib/vision-agent-factory.ts`) — thin wrapper for image → structured JSON agents. ~40 LOC per new vision agent.
-- **Static registry** (`src/app/api/agents/registry.ts`) — Vercel-compatible import map for all 198+ agents
+- **Static registry** (`src/app/api/agents/registry.ts`) — Vercel-compatible import map for all 223 agents
 
 ### Data model highlights
 | Table | Purpose |

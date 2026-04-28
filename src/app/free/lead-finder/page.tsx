@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Target, Loader2, ArrowRight, CheckCircle2, Lock, MapPin } from "lucide-react";
 import Link from "next/link";
+import { TOTAL_AGENTS } from "@/lib/platform-stats";
 
 /**
  * FREE LEAD FINDER — Public tool for organic traffic.
@@ -254,7 +255,7 @@ export default function FreeLeadFinderPage() {
                 <CheckCircle2 className="w-7 h-7 mx-auto mb-3" style={{ color: "#B5532C" }} />
                 <h3 className="text-sm font-semibold text-white mb-1">All {leads.length} leads unlocked.</h3>
                 <p className="text-xs text-neutral-400 mb-4">
-                  Want 223 agents running automated outreach to this entire list?
+                  Want {TOTAL_AGENTS} agents running automated outreach to this entire list?
                 </p>
                 <Link href="/signup"
                   className="inline-flex items-center gap-2 px-6 py-2.5 text-white font-semibold rounded-lg text-sm transition-opacity hover:opacity-90"

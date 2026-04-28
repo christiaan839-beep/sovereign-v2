@@ -5,6 +5,7 @@ import { CheckCircle2, X as XIcon, Zap, Crown, Server, ArrowRight, Shield, Shiel
 import { motion, AnimatePresence } from "framer-motion";
 import { SovereignLogo } from "@/components/ui/SovereignLogo";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
+import { TOTAL_AGENTS } from "@/lib/platform-stats";
 
 export function Pricing() {
   const [notification, setNotification] = useState<{ message: string; type: "error" | "success" } | null>(null);
@@ -88,7 +89,7 @@ export function Pricing() {
     },
     {
       name: "Sovereign Node",
-      description: "All 130+ agents with 2,000 tasks. Local execution via NemoClaw OS.",
+      description: `All ${TOTAL_AGENTS} agents with 2,000 tasks. Local execution via NemoClaw OS.`,
       price: "$199",
       priceUSD: "$199",
       period: "/mo",

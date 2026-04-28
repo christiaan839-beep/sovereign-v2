@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useKeyboardShortcuts } from "@/lib/keyboard-shortcuts";
 import { motion, AnimatePresence } from "framer-motion";
+import { TOTAL_AGENTS } from "@/lib/platform-stats";
 import { UserButton } from "@clerk/nextjs";
 import { useSafeUser } from "@/lib/safe-clerk";
 import { TelemetryProvider } from '@/components/providers/TelemetryProvider';
@@ -118,7 +119,7 @@ const NAV_GROUPS: NavGroup[] = [
 
 // ── Ecosystem: Marketplace + Developer tools ──
 const ECOSYSTEM_NAV: NavItem[] = [
-  { href: "/marketplace", label: "Marketplace", icon: Store, tooltip: "Browse and install 130+ agents" },
+  { href: "/marketplace", label: "Marketplace", icon: Store, tooltip: `Browse and install ${TOTAL_AGENTS} agents` },
   { href: "/developers", label: "Developer SDK", icon: Code2, tooltip: "Build agents, earn 80% revenue" },
 ];
 

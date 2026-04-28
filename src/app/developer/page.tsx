@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Code2, Key, Zap, ArrowRight, Terminal, Shield, ExternalLink } from "lucide-react";
+import { TOTAL_AGENTS } from "@/lib/platform-stats";
 
 /**
  * /developer — Public API documentation page.
@@ -80,7 +81,7 @@ export default function DeveloperPage() {
             Sovereign Matrix API
           </h1>
           <p className="text-lg text-neutral-400 max-w-2xl mx-auto">
-            Build on 130+ autonomous AI agents. Lead generation, content creation, SEO, page building, voice AI, and more -- all through a single REST API.
+            Build on {TOTAL_AGENTS} autonomous AI agents. Lead generation, content creation, SEO, page building, voice AI, and more -- all through a single REST API.
           </p>
         </motion.div>
       </div>

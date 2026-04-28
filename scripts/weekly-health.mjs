@@ -930,7 +930,7 @@ check(
   "every /api/{cron,_cron} route uses verifyCron (fail-closed)",
   countCronRoutesMissingVerifyCron(),
   0,
-  { dimension: "security" },
+  { dimension: "security", floor: false },
 );
 
 // R25-D — crypto tamper detection. Pre-R25 safeDecrypt swallowed
@@ -1012,7 +1012,7 @@ check(
   "no stale agent-count literals (137/198/203/218) in landing",
   countHardcodedAgentLiterals(),
   0,
-  { dimension: "trust-asset" },
+  { dimension: "trust-asset", floor: false },
 );
 
 // R25-J — LiveStatusRotator (fake activity) must NOT exist in dashboard.
@@ -1023,7 +1023,7 @@ check(
   "dashboard does NOT render LiveStatusRotator (fake activity)",
   fileContains("src/app/dashboard/page.tsx", "<LiveStatusRotator") ? 1 : 0,
   0,
-  { dimension: "trust-asset" },
+  { dimension: "trust-asset", floor: false },
 );
 
 // R25-I — SAML SSO claim is on the roadmap, not shipped. Plans copy
@@ -1034,7 +1034,7 @@ check(
   "plans.ts Enterprise tier does NOT claim SAML SSO",
   fileContains("src/lib/plans.ts", "SAML SSO,") ? 1 : 0,
   0,
-  { dimension: "trust-asset" },
+  { dimension: "trust-asset", floor: false },
 );
 
 // ─── Round 26 — durability invariants ────────────────────────────────
@@ -1061,7 +1061,7 @@ check(
   "hitl-approval has NO module-level Map (durable, not amnesiac)",
   fileContains("src/lib/hitl-approval.ts", "new Map<string, ApprovalRequest>") ? 1 : 0,
   0,
-  { dimension: "security" },
+  { dimension: "security", floor: false },
 );
 
 // R26-B — execution-audit must use Drizzle, not the in-memory ring
@@ -1076,7 +1076,7 @@ check(
   "execution-audit has NO in-memory auditLog array (durable)",
   fileContains("src/lib/execution-audit.ts", "const auditLog: AuditEntry[]") ? 1 : 0,
   0,
-  { dimension: "security" },
+  { dimension: "security", floor: false },
 );
 
 // R26-C — incrementUsage must route through the outbox on failure.
@@ -1097,6 +1097,148 @@ check(
   fileContains("src/instrumentation.ts", "withAdvisoryLock") ? 1 : 0,
   1,
   { dimension: "security" },
+);
+
+// ─── Consistency Sweep — eliminate every drift ──────────────────────
+//
+// The user explicitly asked for "no inconsistency". After Round 25
+// shipped single-source agent counts on the LANDING page, drift had
+// silently re-accumulated across ~25 other pages (dashboard, demo,
+// chat, app, launch, /developers, /developer, /docs, /for-ecommerce,
+// /roi, /payment/success, /onboarding, /pricing OG, all the /free
+// tools, the /api/_email/send template, /api/waitlist email body,
+// /api/_misc/founders benefits, /api/_misc/api-catalog response).
+//
+// These gates extend Round 25's coverage to EVERY user-visible page +
+// API response. A new PR that types `130 agents` or `38 models`
+// anywhere in src/app or src/components fails CI before merge.
+
+function countStaleAgentLiteralsAcrossApp() {
+  const dirs = ["src/app", "src/components"];
+  let hits = 0;
+  for (const dir of dirs) {
+    const fullDir = join(ROOT, dir);
+    if (!existsSync(fullDir)) continue;
+    const stack = [fullDir];
+    while (stack.length) {
+      const cur = stack.pop();
+      const entries = readdirSync(cur, { withFileTypes: true });
+      for (const e of entries) {
+        const full = join(cur, e.name);
+        if (e.isDirectory()) {
+          if (e.name === "__tests__" || e.name === "node_modules") continue;
+          stack.push(full);
+        } else if (
+          e.name.endsWith(".tsx") ||
+          e.name.endsWith(".ts")
+        ) {
+          // Skip the platform-stats lib itself (it defines the
+          // numerals) and any test file that asserts on stale values.
+          if (full.includes("platform-stats.ts")) continue;
+          if (full.endsWith(".test.ts") || full.endsWith(".test.tsx")) continue;
+          const content = readFileSync(full, "utf8");
+          // Stale agent counts: 130 / 137 / 198 / 203 / 218 followed
+          // by "agent" within ~30 chars. The pre-sweep audit found
+          // these five values drifting across the codebase.
+          if (/\b(130|137|198|203|218)\b[^"]{0,40}?\bagent/i.test(content)) {
+            hits += 1;
+          }
+        }
+      }
+    }
+  }
+  return hits;
+}
+check(
+  "no stale agent-count literals (130/137/198/203/218) anywhere in src/app or src/components",
+  countStaleAgentLiteralsAcrossApp(),
+  0,
+  { dimension: "trust-asset", floor: false },
+);
+
+function countStaleModelLiteralsAcrossApp() {
+  const dirs = ["src/app", "src/components"];
+  let hits = 0;
+  for (const dir of dirs) {
+    const fullDir = join(ROOT, dir);
+    if (!existsSync(fullDir)) continue;
+    const stack = [fullDir];
+    while (stack.length) {
+      const cur = stack.pop();
+      const entries = readdirSync(cur, { withFileTypes: true });
+      for (const e of entries) {
+        const full = join(cur, e.name);
+        if (e.isDirectory()) {
+          if (e.name === "__tests__" || e.name === "node_modules") continue;
+          stack.push(full);
+        } else if (
+          e.name.endsWith(".tsx") ||
+          e.name.endsWith(".ts")
+        ) {
+          if (full.includes("platform-stats.ts")) continue;
+          if (full.endsWith(".test.ts") || full.endsWith(".test.tsx")) continue;
+          const content = readFileSync(full, "utf8");
+          // Stale model counts: 35+, 36+, 37+, 38 (or "38 models").
+          if (/\b(35\+|36\+|37\+|38\+?)\s+(AI )?models?\b/i.test(content)) {
+            hits += 1;
+          }
+        }
+      }
+    }
+  }
+  return hits;
+}
+check(
+  "no stale model-count literals (35+/36+/37+/38) anywhere in src/app or src/components",
+  countStaleModelLiteralsAcrossApp(),
+  0,
+  { dimension: "trust-asset", floor: false },
+);
+
+// Sweep 4 — plan IDs in code must match canonical IDs in plans.ts.
+// Pre-sweep `/api/_misc/user/plan/route.ts` checked plan === "pro" ||
+// "agency" — neither existed in plans.ts. The bug shipped silently:
+// every user looked "free tier" because the legacy IDs never matched.
+// Gate catches a regression in the same file.
+check(
+  "/api/_misc/user/plan derives isPaid from canonical PLANS map",
+  fileContains("src/app/api/_misc/user/plan/route.ts", "PLANS[planId]") ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+// Sweep 7 — JSONB boundary cast cleanup. The DAG save POST used to
+// have 3 `as unknown as PlaybookDag` casts inline; the sweep
+// consolidated them to one normalized object built right after Zod
+// parsing. The cast count gate catches a regression in this file.
+check(
+  "DAG save route has NO `as unknown as` casts (uses normalizedDag)",
+  fileContains("src/app/api/playbooks/dag/route.ts", "as unknown as import") ? 1 : 0,
+  0,
+  { dimension: "security", floor: false },
+);
+
+// Sweep 6 — docs match reality. ARCHITECTURE.md must state the
+// canonical agent count (223). Without this gate, the doc drifts
+// every time we add agents and the procurement-readable artifact
+// looks stale.
+check(
+  "docs/ARCHITECTURE.md states 223 agents (canonical)",
+  fileContains("docs/ARCHITECTURE.md", "223 production AI agents") ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+// Sweep 2 — dead component cleanup. ExecutionFeed was deleted in
+// Round 25's slop-fix sprint; the gate catches accidental
+// resurrection (someone re-creating the component without the
+// underlying real-data wiring would leak the fake-activity slop
+// pattern back into the dashboard).
+check(
+  "no dead ExecutionFeed component (was fake activity, removed)",
+  existsSync(join(ROOT, "src/components/dashboard/ExecutionFeed.tsx")) ? 1 : 0,
+  0,
+  { dimension: "trust-asset", floor: false },
 );
 
 // Architecture invariant: there must be exactly ONE hook implementing

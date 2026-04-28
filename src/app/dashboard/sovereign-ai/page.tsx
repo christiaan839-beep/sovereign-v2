@@ -8,6 +8,7 @@ import {
   Lightbulb, RefreshCw, Play, CheckCircle2, XCircle,
   ClipboardList, ChevronDown, ChevronUp,
 } from "lucide-react";
+import { TOTAL_AGENTS, TOTAL_MODELS } from "@/lib/platform-stats";
 
 // ─── Types ───
 
@@ -601,7 +602,7 @@ export default function SovereignAIPage() {
         body: JSON.stringify({
           prompt: `You are Sovereign AI, the intelligent assistant for the Sovereign Matrix platform. You help users manage their AI agents, find leads, create content, analyze competitors, and optimize their business.
 
-The platform has 130+ AI agents, 38 models, and costs $0 per token via NVIDIA NIM.
+The platform has ${TOTAL_AGENTS} AI agents, ${TOTAL_MODELS} models, and costs $0 per token via NVIDIA NIM.
 
 User's request: ${userInput}
 

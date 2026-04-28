@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { rateLimit } from "@/lib/rate-limit";
 import { requireAuth } from "@/lib/auth-guard";
 import { createLogger } from "@/lib/logger";
+import { TOTAL_AGENTS, TOTAL_MODELS } from "@/lib/platform-stats";
 const log = createLogger("email-send");
 
 export const maxDuration = 30;
@@ -147,7 +148,7 @@ function renderTemplate(template: string, data: Record<string, string>): string 
   const templates: Record<string, string> = {
     welcome: `
       <h2 style="color: #00B7FF; font-weight: 300; font-size: 22px;">Welcome to Sovereign Matrix</h2>
-      <p>Your account is active. All 130+ agents and 38 models are ready to use.</p>
+      <p>Your account is active. All ${TOTAL_AGENTS} agents and ${TOTAL_MODELS} models are ready to use.</p>
       <p>Account ID: <strong style="color: white;">${safe.nodeId || "UMB-NX-00000"}</strong></p>
       <a href="${safe.dashboardUrl || "#"}" style="display: inline-block; padding: 12px 30px; background: #00B7FF15; border: 1px solid #00B7FF30; color: #00B7FF; text-decoration: none; border-radius: 8px; font-size: 12px; letter-spacing: 0.15em; text-transform: uppercase; margin-top: 20px;">Open Dashboard →</a>`,
 

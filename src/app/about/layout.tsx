@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { JsonLd, breadcrumbSchema } from "@/components/seo/JsonLd";
+import { TOTAL_AGENTS } from "@/lib/platform-stats";
 
 export const metadata: Metadata = {
   title: "About — Autonomous Intelligence Systems | Sovereign Matrix",
-  description: "We build the autonomous agent infrastructure other agencies sell as their own. 130+ specialized agents. Zero per-token cost. Built on NVIDIA NIM.",
+  description: `We build the autonomous agent infrastructure other agencies sell as their own. ${TOTAL_AGENTS} specialized agents. Zero per-token cost. Built on NVIDIA NIM.`,
   alternates: { canonical: "https://sovereignmatrix.agency/about" },
   openGraph: {
     title: "About Sovereign Matrix",

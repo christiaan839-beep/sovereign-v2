@@ -19,8 +19,8 @@ during diligence — and that engineering teams pretend don't exist.
 These were spot-checked, not just claimed.
 
 **Build pipeline** — `npm run build` succeeds (exit 0). All shipped
-routes appear in the build manifest. Route count: 486 (223 agents +
-263 platform). 96 dashboard pages.
+routes appear in the build manifest. Route count: 491 (223 agents +
+268 platform). 209 dashboard pages.
 
 **Secret hygiene** — Real grep across `src/` and `scripts/` for live-
 looking keys (`sk-...`, `nvapi-...`, `AIza...`, `xoxb-...`, `ghp_...`,
@@ -33,8 +33,8 @@ Zero `as any`, `@ts-ignore`, or `@ts-expect-error` in this session's
 production code (`grep` confirmed). `noImplicitAny` and friends fall
 out of strict mode.
 
-**Test suite** — 219 test files / 2,868 tests passing. Suite runtime
-~13s. Anti-drift gate (`scripts/weekly-health.mjs`) blocks PRs on 96
+**Test suite** — 226 test files / 2,948 tests passing. Suite runtime
+~13s. Anti-drift gate (`scripts/weekly-health.mjs`) blocks PRs on 136
 invariants, runs in CI.
 
 **Audit chain** — SHA-256 hash chain implemented and CI-monitored
@@ -215,7 +215,7 @@ better than typical**:
   Procurement teams can ingest the whole story in one HTTP call.
 - **Reliability primitive** (`retryWithBackoff` from Round 20) with
   anti-drift wiring that prevents accidental removal.
-- **96 anti-drift invariants** in `weekly-health.mjs` blocking PRs.
+- **136 anti-drift invariants** in `weekly-health.mjs` blocking PRs.
   This is the kind of CI gate most teams imagine but never build.
 
 These aren't aspirational — they're verifiable in this commit's

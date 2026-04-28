@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState, useEffect, useMemo } from "react";
 import { SovereignLogo } from "@/components/ui/SovereignLogo";
 import { useHideyNav } from "@/components/ui/EliteEffects";
+import { TOTAL_AGENTS } from "@/lib/platform-stats";
 import { AgentCard, type CardAgent } from "@/components/world/AgentCard";
 
 /**
@@ -17,8 +18,8 @@ import { AgentCard, type CardAgent } from "@/components/world/AgentCard";
  *   01 Nav · 02 Hero · 03 Category filter + Featured + Agent grid ·
  *   04 Creator CTA · Footer
  *
- * Agent data is now the live catalog: GET /api/catalog returns all 137
- * agents with 30d rollup stats. Featured row = agents with featured=true,
+ * Agent data is now the live catalog: GET /api/catalog returns the
+ * full registry with 30d rollup stats. Featured row = agents with featured=true,
  * sorted by runs. Grid below = everything else (filtered by category).
  * Switching categories does NOT refetch — catalog is tiny (~55KB gzipped)
  * so we filter client-side for instant response.
@@ -185,7 +186,7 @@ function MarketplaceHero() {
           style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06), 0 1px 0 rgba(0,0,0,0.5)" }}
         >
           {[
-            { n: "198", label: "agents" },
+            { n: String(TOTAL_AGENTS), label: "agents" },
             { n: "39+", label: "model backends" },
             { n: "70%", label: "creator earnings" },
             { n: "14",  label: "industries" },

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { JsonLd, breadcrumbSchema } from "@/components/seo/JsonLd";
+import { TOTAL_AGENTS } from "@/lib/platform-stats";
 
 export const metadata: Metadata = {
   title: "Case Studies — Real Results from Autonomous AI | Sovereign Matrix",
@@ -7,7 +8,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "https://sovereignmatrix.agency/case-studies" },
   openGraph: {
     title: "Case Studies — Sovereign Matrix",
-    description: "Real agency scaling results with 130+ autonomous AI agents.",
+    description: `Real agency scaling results with ${TOTAL_AGENTS} autonomous AI agents.`,
     url: "https://sovereignmatrix.agency/case-studies",
     type: "website",
   },

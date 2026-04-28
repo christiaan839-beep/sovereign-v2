@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Target, Loader2, ArrowRight, CheckCircle2, AlertTriangle, Lock, Zap, Shield, TrendingUp, Crosshair, Eye } from "lucide-react";
 import Link from "next/link";
+import { TOTAL_MODELS } from "@/lib/platform-stats";
 
 /**
  * FREE COMPETITOR SCANNER — The viral free tool.
@@ -396,7 +397,7 @@ export default function FreeCompetitorScanPage() {
         {/* Footer */}
         <div className="mt-16 text-center space-y-2">
           <p className="text-xs text-neutral-600">
-            Powered by 35+ AI models. Zero per-token cost. Your data stays private.
+            Powered by {TOTAL_MODELS}+ AI models. Zero per-token cost. Your data stays private.
           </p>
           <div className="flex items-center justify-center gap-4 text-xs">
             <Link href="/free/seo-audit" className="text-emerald-500/60 hover:text-emerald-400 transition-colors">

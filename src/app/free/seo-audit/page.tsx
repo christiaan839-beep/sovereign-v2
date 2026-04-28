@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Search, Loader2, ArrowRight, CheckCircle2, AlertTriangle, Lock } from "lucide-react";
 import Link from "next/link";
+import { TOTAL_AGENTS, TOTAL_MODELS } from "@/lib/platform-stats";
 
 /**
  * FREE SEO AUDIT — Public tool page for organic traffic.
@@ -248,7 +249,7 @@ export default function FreeSeoAuditPage() {
         {/* Social proof footer */}
         <div className="mt-16 text-center">
           <p className="text-xs text-neutral-600">
-            Powered by 35+ AI models. Used by 130+ agents. Zero per-token cost.
+            Powered by {TOTAL_MODELS}+ AI models. Used by {TOTAL_AGENTS} agents. Zero per-token cost.
           </p>
           <Link href="/pricing" className="text-xs text-emerald-500/60 hover:text-emerald-400 transition-colors mt-2 inline-block">
             See pricing →

@@ -92,11 +92,16 @@ export default function UsageDashboard() {
           .sort((a, b) => b.count - a.count)
           .slice(0, 8);
 
+        // Sweep 4 fix — was checking legacy "pro" tier ID that
+        // doesn't exist in plans.ts. Canonical tiers: free / starter
+        // / founder / array / node / enterprise / pay_per_run.
+        // The runs limit per tier matches PLAN_LIMITS in plans.ts.
         const limit =
-          plan === "enterprise" ? Infinity :
-          plan === "pro" ? 5000 :
-          plan === "array" ? 10000 :
-          plan === "node" ? 2000 : 100;
+          plan === "enterprise" || plan === "founder" ? 10000 :
+          plan === "node" ? 2000 :
+          plan === "array" ? 500 :
+          plan === "starter" ? 200 :
+          50;
 
         setData({
           plan,

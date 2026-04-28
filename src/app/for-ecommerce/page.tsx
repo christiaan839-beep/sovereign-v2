@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { ArrowRight, FileText, DollarSign, Megaphone, Star, Shield, Database, Layers, Zap, MessageSquare, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
+import { TOTAL_AGENTS } from "@/lib/platform-stats";
 
 const CAPABILITIES = [
   {
@@ -103,7 +104,7 @@ export default function ForEcommercePage() {
             transition={{ delay: 0.2 }}
             className="text-lg text-neutral-400 max-w-xl mx-auto leading-relaxed mb-8"
           >
-            223 agents handle your entire catalog at once. Voice agents handle customer inquiries 24/7.
+            {TOTAL_AGENTS} agents handle your entire catalog at once. Voice agents handle customer inquiries 24/7.
           </motion.p>
 
           <motion.div
@@ -219,7 +220,7 @@ export default function ForEcommercePage() {
               { icon: Database, label: "Pinecone", desc: "Vector memory — semantic search across product catalogs and review data" },
               { icon: Layers, label: "Neon Postgres", desc: "Tenant-scoped relational store — catalog isolation per storefront" },
               { icon: Shield, label: "5-Layer Pipeline", desc: "Every output passes through brand voice, content policy, and quality guardrails" },
-              { icon: Zap, label: "130 Agents", desc: "Full catalog processing — descriptions, pricing, reviews, and ads in parallel" },
+              { icon: Zap, label: `${TOTAL_AGENTS} Agents`, desc: "Full catalog processing — descriptions, pricing, reviews, and ads in parallel" },
             ].map((item) => (
               <div key={item.label} className="p-4 rounded-xl border border-white/[0.05] bg-white/[0.02]">
                 <item.icon className="w-5 h-5 text-amber-400 mb-3" />

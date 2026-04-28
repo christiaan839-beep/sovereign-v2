@@ -3,6 +3,7 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { subscriptions } from "@/db/schema";
 import { eq, count } from "drizzle-orm";
+import { TOTAL_MODELS, TOTAL_PLAYBOOKS } from "@/lib/platform-stats";
 import { createLogger } from "@/lib/logger";
 import { MAX_FOUNDERS } from "@/lib/free-tier";
 
@@ -16,8 +17,8 @@ const log = createLogger("founders");
  *
  * Founders get:
  *   - 10,000 agent runs/month (same as enterprise)
- *   - All 25 playbooks
- *   - All 35+ AI models
+ *   - All featured playbooks
+ *   - All AI models
  *   - Priority support
  *   - "Founding Member" badge
  *   - Free forever (as long as they stay active)
@@ -57,8 +58,8 @@ export async function GET() {
       isFounder,
       benefits: [
         "10,000 agent runs/month (enterprise-level)",
-        "All 25 playbooks + industry packs",
-        "All 35+ AI models",
+        `All ${TOTAL_PLAYBOOKS} playbooks + industry packs`,
+        `All ${TOTAL_MODELS}+ AI models`,
         "Priority support",
         "Founding Member badge",
         "Free forever while active",

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Code2, Zap, DollarSign, ArrowRight, Copy, CheckCircle2, Terminal, Users, TrendingUp } from "lucide-react";
 import Link from "next/link";
+import { TOTAL_AGENTS, TOTAL_MODELS } from "@/lib/platform-stats";
 
 /**
  * DEVELOPER SDK PAGE — The Agent App Store for developers.
@@ -161,11 +162,11 @@ export default function DevelopersPage() {
             {[
               { title: "Authentication & auth", desc: "Clerk-based user auth. Your agent never touches credentials." },
               { title: "5-layer safety pipeline", desc: "Jailbreak detection, content safety, PII scan, quality scoring, critic review." },
-              { title: "Multi-model routing", desc: "38 models. Smart router picks the best one for each request." },
+              { title: "Multi-model routing", desc: `${TOTAL_MODELS} models. Smart router picks the best one for each request.` },
               { title: "Rate limiting & plan enforcement", desc: "Free tier limits, paid tier quotas — all handled automatically." },
               { title: "Billing & revenue share", desc: "Stripe integration. 80% goes to you. Monthly payouts." },
               { title: "Analytics dashboard", desc: "See installs, usage, revenue, ratings — all in real time." },
-              { title: "Distribution to 130+ agents", desc: "Your agent joins a catalog of 130+ specialized agents." },
+              { title: `Distribution to ${TOTAL_AGENTS} agents`, desc: `Your agent joins a catalog of ${TOTAL_AGENTS} specialized agents.` },
               { title: "White-label ready", desc: "Agencies can rebrand and resell your agent under their brand." },
             ].map((item) => (
               <div key={item.title} className="flex items-start gap-3 p-4 rounded-xl border border-white/[0.04] bg-white/[0.01]">

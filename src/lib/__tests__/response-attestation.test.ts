@@ -17,6 +17,14 @@ afterAll(() => {
   else process.env.SOVEREIGN_ATTESTATION_SECRET = ORIGINAL;
 });
 
+// Stable per-test-run timestamp. Captured once at module load so
+// the determinism test (a == b for two baseInputs() calls) holds,
+// but recent enough that the verifier's 1-day staleness check
+// passes regardless of wall-clock time. Pre-fix this was a hardcoded
+// 2026-04-27 string that rotted the moment the calendar moved past
+// it.
+const TEST_NOW_ISO = new Date().toISOString();
+
 const baseInputs = () => ({
   agent: "leads",
   requestId: "abc123def456",
@@ -24,7 +32,7 @@ const baseInputs = () => ({
   outputJson: JSON.stringify({ result: "ok" }),
   providers: ["anthropic", "nvidia-nim"],
   models: ["claude-sonnet-4.6", "nemotron-ultra-253b-v1"],
-  timestampIso: "2026-04-27T12:00:00.000Z",
+  timestampIso: TEST_NOW_ISO,
 });
 
 describe("canonicalizeAttestation", () => {

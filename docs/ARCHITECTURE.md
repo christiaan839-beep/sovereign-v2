@@ -10,11 +10,11 @@ and the founder six months from now who's forgotten how this works.
 ## The one-paragraph summary
 
 Sovereign Matrix is a multi-tenant **agent operating system**. Users
-invoke one of 130 production AI agents (lead gen, content, SEO, voice,
+invoke one of 223 production AI agents (lead gen, content, SEO, voice,
 code review, research) — individually via the API/dashboard, chained
-into 25 pre-built playbooks, or scheduled on cron. Every agent call
+into 26 pre-built playbooks, or scheduled on cron. Every agent call
 passes through a 5-layer safety pipeline (jailbreak → PII → policy →
-quality → critic), routes via a smart-router to the best of 38
+quality → critic), routes via a smart-router to the best of 39+
 available models (Claude Sonnet 4.6 for judgment, NVIDIA Nemotron for
 throughput, Gemini for grounded search, DeepSeek/Qwen/Mistral/Groq as
 failover), writes an immutable audit entry, and meters usage against

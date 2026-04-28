@@ -66,7 +66,7 @@ deeply differentiated). Flagged in design-slop-blocker review.
 
 ### 1.3 — Eval coverage is 11%, not 30%
 
-**What's true**: 25 / 218 agents have golden-set evals. I doubled coverage
+**What's true**: 25 / 223 agents have golden-set evals. I doubled coverage
 this sprint (10 → 25) and added fixtures for every new vertical agent.
 
 **What's not true**: "11% covered" ≠ "quality regressions will be caught".
@@ -216,7 +216,7 @@ To keep the balance honest — things that **are** legitimately elite:
    disclosure. Not even fake numbers (FTC-compliant on the existing
    `/status` page).
 8. **In-platform benchmarks + `/compare`** — every claim maps to a command.
-9. **218 first-party agents across 10 verticals** — broadest published.
+9. **223 first-party agents across 10 verticals** — broadest published.
 10. **Eval harness built + wired to CI** — quality floor exists, even at
     11% coverage. The machine is running, just undersupplied with fixtures.
 

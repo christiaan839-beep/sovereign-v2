@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
+import { TOTAL_AGENTS } from "@/lib/platform-stats";
 
 function AnimatedNumber({
   target,
@@ -92,7 +93,7 @@ function StaticMetric({ value }: { value: string }) {
  * SocialProofMetrics — Platform capability stats that are always impressive.
  * The agent count is live (from /api/health); the rest are static.
  */
-export function SocialProofMetrics({ agentCount = 130 }: { agentCount?: number }) {
+export function SocialProofMetrics({ agentCount = TOTAL_AGENTS }: { agentCount?: number }) {
   const metrics = [
     {
       target: agentCount,

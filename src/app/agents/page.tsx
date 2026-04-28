@@ -1,7 +1,7 @@
 /**
  * /agents — Staff Directory (public index).
  *
- * Server component. Fetches the full 198-agent catalog via
+ * Server component. Fetches the full agent catalog via
  * `listCatalog()` (direct DB, no HTTP hop) and hands it to a client
  * shell that owns the filter + search state.
  *
@@ -22,18 +22,17 @@ import type { Metadata } from "next";
 import { listCatalog, type PublicAgent } from "@/lib/agent-catalog";
 import { isFeaturedAgent } from "@/app/api/agents/catalog-meta";
 import { StaffDirectoryClient } from "./_components/StaffDirectoryClient";
+import { TOTAL_AGENTS } from "@/lib/platform-stats";
 
 export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: "Staff Directory — Sovereign Matrix",
-  description:
-    "198 AI agents across 18 domains. Every one real. Every one tested. Finance, HR, legal, cybersecurity, research, real estate, gov, A2E moat.",
+  description: `${TOTAL_AGENTS} AI agents across 18 domains. Every one real. Every one tested. Finance, HR, legal, cybersecurity, research, real estate, gov, A2E moat.`,
   alternates: { canonical: "https://sovereignmatrix.agency/agents" },
   openGraph: {
     title: "Staff Directory — Sovereign Matrix",
-    description:
-      "The 198-agent workforce. Browse by category, search by capability, hire by playbook.",
+    description: `The ${TOTAL_AGENTS}-agent workforce. Browse by category, search by capability, hire by playbook.`,
     url: "https://sovereignmatrix.agency/agents",
     siteName: "Sovereign Matrix",
     type: "website",

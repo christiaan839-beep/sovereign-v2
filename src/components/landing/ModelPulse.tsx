@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { TOTAL_MODELS } from "@/lib/platform-stats";
 
 /**
  * Model roster — visual signature of our multi-provider platform.
@@ -53,7 +54,7 @@ export function ModelPulse() {
       </div>
 
       <span className="text-neutral-700">
-        6 providers · 38 models · routed per task
+        6 providers · {TOTAL_MODELS} models · routed per task
       </span>
     </motion.div>
   );

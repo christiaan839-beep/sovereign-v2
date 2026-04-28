@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { SovereignLogo } from "@/components/ui/SovereignLogo";
+import { TOTAL_AGENTS, TOTAL_MODELS } from "@/lib/platform-stats";
 
 const STEPS = [
   {
@@ -58,7 +59,7 @@ const STEPS = [
   {
     id: "complete",
     title: "You're live.",
-    subtitle: "223 agents deployed. 38 models active. $199/mo flat — no per-token cost.",
+    subtitle: `${TOTAL_AGENTS} agents deployed. ${TOTAL_MODELS} models active. Flat-rate pricing — no per-token cost.`,
     icon: CheckCircle2,
     isComplete: true,
   },

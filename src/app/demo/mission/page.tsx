@@ -12,6 +12,7 @@ import {
   Clock,
   Rocket,
 } from "lucide-react";
+import { TOTAL_MODELS } from "@/lib/platform-stats";
 
 /* ─── types ─── */
 type StepStatus = "waiting" | "running" | "done";
@@ -524,7 +525,7 @@ export default function MissionControlDemo() {
                   <span className="text-white font-bold">{TOTAL_DISPLAY_TIME}</span>
                   <span className="text-neutral-500 mx-2">&bull;</span>
                   Powered by{" "}
-                  <span className="text-emerald-400 font-bold">35+ AI models</span>
+                  <span className="text-emerald-400 font-bold">{TOTAL_MODELS}+ AI models</span>
                 </span>
               </div>
             </motion.div>

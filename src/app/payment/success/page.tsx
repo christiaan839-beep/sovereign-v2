@@ -5,6 +5,7 @@ import { CheckCircle2, ArrowRight, Shield, Mail, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import { TOTAL_AGENTS, TOTAL_MODELS } from "@/lib/platform-stats";
 
 interface ParticleProps {
   id: number;
@@ -82,7 +83,7 @@ function PaymentSuccessContent() {
         </h1>
         <p className="text-neutral-400 text-base mb-8 max-w-md mx-auto">
           Your <span className="text-white font-medium">{planLabel}</span> plan is active.
-          All 130+ agents and 38 models are ready to use.
+          All {TOTAL_AGENTS} agents and {TOTAL_MODELS} models are ready to use.
         </p>
 
         <div className="flex flex-wrap items-center justify-center gap-2 mb-8">

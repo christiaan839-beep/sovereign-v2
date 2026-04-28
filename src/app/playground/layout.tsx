@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
+import { TOTAL_MODELS } from "@/lib/platform-stats";
 
 export const metadata: Metadata = {
   title: "AI Playground — Test Any Model | Sovereign Matrix",
-  description: "Test 38 AI models side by side. Compare outputs, latency, and quality across NVIDIA, Google, Anthropic, and more.",
+  description: `Test ${TOTAL_MODELS} AI models side by side. Compare outputs, latency, and quality across NVIDIA, Google, Anthropic, and more.`,
   openGraph: {
     title: "AI Playground — Test Any Model | Sovereign Matrix",
-    description: "Test 38 AI models side by side. Compare outputs, latency, and quality across NVIDIA, Google, Anthropic, and more.",
+    description: `Test ${TOTAL_MODELS} AI models side by side. Compare outputs, latency, and quality across NVIDIA, Google, Anthropic, and more.`,
     siteName: "Sovereign Matrix",
   },
 };

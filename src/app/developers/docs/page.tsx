@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { TOTAL_AGENTS, TOTAL_MODELS } from "@/lib/platform-stats";
 import {
   Key,
   Bot,
@@ -71,7 +72,7 @@ const SECTIONS: Section[] = [
     title: "Agents",
     icon: Bot,
     description:
-      "Execute any of 130+ specialized AI agents. Each agent handles a specific task -- lead generation, content writing, SEO analysis, competitor scanning, and more.",
+      `Execute any of ${TOTAL_AGENTS} specialized AI agents. Each agent handles a specific task -- lead generation, content writing, SEO analysis, competitor scanning, and more.`,
     endpoints: [
       {
         id: "free-run",
@@ -301,7 +302,7 @@ const SECTIONS: Section[] = [
     title: "Models",
     icon: BarChart3,
     description:
-      "The platform routes requests through 35+ models across 6 providers (NVIDIA NIM, Google Gemini, Anthropic Claude, Groq, Ollama, Tavily). The smart router selects the optimal model per task, with an 11-model failover chain.",
+      `The platform routes requests through ${TOTAL_MODELS}+ models across 6 providers (NVIDIA NIM, Google Gemini, Anthropic Claude, Groq, Ollama, Tavily). The smart router selects the optimal model per task, with an 11-model failover chain.`,
     endpoints: [
       {
         id: "model-list",
@@ -320,9 +321,9 @@ const SECTIONS: Section[] = [
     "voice-chat",
     "competitor-scan",
     "brand-voice",
-    "...130+ agents"
+    "...${TOTAL_AGENTS} agents total"
   ],
-  "count": 130,
+  "count": ${TOTAL_AGENTS},
   "usage": "POST /api/agents/{agent-name} with { prompt: '...' }"
 }`,
         notes:
@@ -738,7 +739,7 @@ export default function ApiDocsPage() {
                 Sovereign Matrix API
               </h1>
               <p className="text-base text-neutral-400 max-w-2xl leading-relaxed">
-                Build on 130+ autonomous AI agents. Execute agents, run multi-step playbooks,
+                Build on {TOTAL_AGENTS} autonomous AI agents. Execute agents, run multi-step playbooks,
                 retrieve analytics, and trigger workflows -- all through a single REST API
                 with built-in safety, rate limiting, and model routing.
               </p>

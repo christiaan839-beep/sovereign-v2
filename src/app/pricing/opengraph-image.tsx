@@ -1,7 +1,8 @@
 import { ImageResponse } from "next/og";
+import { TOTAL_AGENTS, TOTAL_MODELS } from "@/lib/platform-stats";
 
 export const runtime = "edge";
-export const alt = "Sovereign Matrix Pricing — $199/mo flat, no credits";
+export const alt = "Sovereign Matrix Pricing — Flat-rate, no credits";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -12,8 +13,8 @@ export default function OGImage() {
         <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "8px 20px", borderRadius: "9999px", border: "1px solid rgba(16,185,129,0.3)", background: "rgba(16,185,129,0.08)", marginBottom: "24px" }}>
           <span style={{ color: "#10b981", fontSize: "14px", fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase" as const }}>Pricing</span>
         </div>
-        <h1 style={{ color: "white", fontSize: "56px", fontWeight: 900, margin: 0 }}>$199/month. Flat.</h1>
-        <p style={{ color: "#737373", fontSize: "24px", marginTop: "16px" }}>No credits. No per-token fees. 223 agents. 38 models.</p>
+        <h1 style={{ color: "white", fontSize: "56px", fontWeight: 900, margin: 0 }}>Flat-rate pricing.</h1>
+        <p style={{ color: "#737373", fontSize: "24px", marginTop: "16px" }}>No credits. No per-token fees. {TOTAL_AGENTS} agents. {TOTAL_MODELS} models.</p>
         <div style={{ display: "flex", gap: "24px", marginTop: "40px" }}>
           {[
             { name: "Free", price: "$0" },

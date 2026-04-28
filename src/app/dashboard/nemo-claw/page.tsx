@@ -10,6 +10,7 @@ import {
   ThumbsUp, ThumbsDown, Loader2, ChevronDown, ChevronRight,
   Lock, Unlock, Zap,
 } from "lucide-react";
+import { TOTAL_MODELS } from "@/lib/platform-stats";
 
 // ── Types ──
 
@@ -419,7 +420,7 @@ export default function NemoClawPage() {
                   {executionMode === "cloud" && <Zap className="w-3 h-3 text-cyan-400 ml-auto" />}
                 </div>
                 <p className="text-[11px] text-neutral-500 leading-relaxed">
-                  38 models via NVIDIA NIM, Gemini, Groq. Zero hardware required. 5-layer pipeline enforced.
+                  {TOTAL_MODELS} models via NVIDIA NIM, Gemini, Groq. Zero hardware required. 5-layer pipeline enforced.
                 </p>
               </button>
 

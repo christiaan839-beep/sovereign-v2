@@ -11,6 +11,7 @@ import { BackToTop } from "@/components/cinematic/BackToTop";
 import { CookieConsent } from "@/components/ui/CookieConsent";
 import { FounderCTA } from "@/components/ui/FounderCTA";
 import { getMarketingPlans } from "@/lib/plans";
+import { TOTAL_AGENTS, TOTAL_MODELS } from "@/lib/platform-stats";
 import "./globals.css";
 
 // Run environment validation on server startup
@@ -25,7 +26,7 @@ export const metadata: Metadata = {
     template: "%s | Sovereign Matrix",
   },
   description:
-    "198 specialized AI agents. 39+ models. An economy where agents hire agents. Enterprise-grade AI infrastructure with semantic memory, 5-layer verification, and model sovereignty.",
+    `${TOTAL_AGENTS} specialized AI agents. ${TOTAL_MODELS}+ models. An economy where agents hire agents. Enterprise-grade AI infrastructure with semantic memory, 5-layer verification, and model sovereignty.`,
   keywords: [
     "AI agents", "agent infrastructure", "AI automation", "enterprise AI",
     "multi-agent platform", "AI orchestration", "NVIDIA NIM", "semantic memory",
@@ -43,7 +44,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "https://sovereignmatrix.agency" },
   openGraph: {
     title: "Sovereign Matrix — The Agent Infrastructure Stack",
-    description: "198 specialized AI agents. 39+ models. The first AI economy where agents hire agents. Enterprise-grade infrastructure with semantic memory and model sovereignty.",
+    description: `${TOTAL_AGENTS} specialized AI agents. ${TOTAL_MODELS}+ models. The first AI economy where agents hire agents. Enterprise-grade infrastructure with semantic memory and model sovereignty.`,
     type: "website",
     siteName: "Sovereign Matrix",
     locale: "en_US",
@@ -53,7 +54,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Sovereign Matrix — The Agent Infrastructure Stack",
-    description: "198 specialized AI agents. 39+ models. The first AI economy where agents hire agents. Enterprise-grade infrastructure with semantic memory and model sovereignty.",
+    description: `${TOTAL_AGENTS} specialized AI agents. ${TOTAL_MODELS}+ models. The first AI economy where agents hire agents. Enterprise-grade infrastructure with semantic memory and model sovereignty.`,
     images: ["https://sovereignmatrix.agency/og-image.jpg"],
   },
   icons: {
@@ -163,7 +164,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   applicationCategory: "BusinessApplication",
                   operatingSystem: "Web",
                   offers: marketingOffers,
-                  description: "The Agent Infrastructure Stack — 198 specialized AI agents, 39+ models, and the first AI economy where agents hire agents. Enterprise-grade infrastructure with semantic memory, 5-layer verification, and model sovereignty.",
+                  description: `The Agent Infrastructure Stack — ${TOTAL_AGENTS} specialized AI agents, ${TOTAL_MODELS}+ models, and the first AI economy where agents hire agents. Enterprise-grade infrastructure with semantic memory, 5-layer verification, and model sovereignty.`,
                   featureList: "AI Agents, Multi-Model Routing, White-Label, Knowledge Graph, PEER Loop, Adversarial Synthesis, Citation Tracking, Policy Engine, Budget Controls",
                 },
                 {
@@ -171,7 +172,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   "@type": "Organization",
                   name: "Sovereign Matrix",
                   url: "https://sovereignmatrix.agency",
-                  description: "The Agent Infrastructure Stack — 198 AI agents, 39+ models, agent-to-agent economy",
+                  description: `The Agent Infrastructure Stack — ${TOTAL_AGENTS} AI agents, ${TOTAL_MODELS}+ models, agent-to-agent economy`,
                   logo: "https://sovereignmatrix.agency/icon-512.png",
                   contactPoint: { "@type": "ContactPoint", email: "christiaan@sovereignmatrix.agency", contactType: "sales" },
                   sameAs: [],
@@ -183,7 +184,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     {
                       "@type": "Question",
                       name: "What is Sovereign Matrix?",
-                      acceptedAnswer: { "@type": "Answer", text: "Sovereign Matrix is an autonomous AI agent platform with 130+ specialized agents that execute business tasks like lead generation, content creation, SEO, voice calls, and competitor analysis. Built on NVIDIA NIM with 38 AI models at zero per-token cost." },
+                      acceptedAnswer: { "@type": "Answer", text: `Sovereign Matrix is an autonomous AI agent platform with ${TOTAL_AGENTS} specialized agents that execute business tasks like lead generation, content creation, SEO, voice calls, and competitor analysis. Built on NVIDIA NIM with ${TOTAL_MODELS}+ AI models at zero per-token cost.` },
                     },
                     {
                       "@type": "Question",
@@ -198,7 +199,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     {
                       "@type": "Question",
                       name: "Is this a chatbot or a platform?",
-                      acceptedAnswer: { "@type": "Answer", text: "Neither. Sovereign Matrix is an agent operating system: 223 autonomous agents that plan, execute, and self-correct without human intervention. Agents work simultaneously across lead gen, content, SEO, voice calls, and research — with a scheduler that fires playbooks on cron." },
+                      acceptedAnswer: { "@type": "Answer", text: `Neither. Sovereign Matrix is an agent operating system: ${TOTAL_AGENTS} autonomous agents that plan, execute, and self-correct without human intervention. Agents work simultaneously across lead gen, content, SEO, voice calls, and research — with a scheduler that fires playbooks on cron.` },
                     },
                     {
                       "@type": "Question",

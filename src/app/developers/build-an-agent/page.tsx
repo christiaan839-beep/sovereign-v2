@@ -344,7 +344,7 @@ describe("extract-meeting", () => {
                 style={{ color: "var(--ed-ink-soft)" }}>
               <li>The{" "}
                 <InlineLink href="/agents">Staff Directory</InlineLink>{" "}
-                — the public 198-agent catalog
+                — the public agent catalog
               </li>
               <li>
                 The Marketplace detail page at{" "}

@@ -168,6 +168,21 @@ export async function POST(req: Request): Promise<Response> {
   const resolvedName =
     name ?? `Visual playbook (${dag.nodes.length}n / ${dag.edges.length}e)`;
 
+  // Sweep 7 fix — normalize the Zod-parsed payload into the strict
+  // PlaybookDag type ONCE. Pre-sweep there were 3 `as unknown as`
+  // casts inline. The shape difference is just `config` defaulting
+  // to `{}` (Zod handles it via .default({})). Building the
+  // normalized object here makes the store calls below cast-free.
+  const normalizedDag: import("@/lib/playbook-dag").PlaybookDag = {
+    nodes: dag.nodes.map((n) => ({
+      id: n.id,
+      agent: n.agent,
+      position: n.position,
+      config: n.config ?? {},
+    })),
+    edges: dag.edges,
+  };
+
   let storedId: string;
   let persisted: boolean;
   let action: "create" | "update";
@@ -217,7 +232,7 @@ export async function POST(req: Request): Promise<Response> {
     const version = await createDagVersion({
       dagId: id,
       userId,
-      dag: dag as unknown as import("@/lib/playbook-dag").PlaybookDag,
+      dag: normalizedDag,
       note: note ?? null,
     });
     if (!version) {
@@ -242,7 +257,7 @@ export async function POST(req: Request): Promise<Response> {
       userId,
       name: resolvedName,
       description: description ?? null,
-      dag: dag as unknown as import("@/lib/playbook-dag").PlaybookDag,
+      dag: normalizedDag,
     });
     storedId = result.id;
     persisted = result.persisted;
@@ -256,7 +271,7 @@ export async function POST(req: Request): Promise<Response> {
       const version = await createDagVersion({
         dagId: storedId,
         userId,
-        dag: dag as unknown as import("@/lib/playbook-dag").PlaybookDag,
+        dag: normalizedDag,
         note: note ?? null,
       });
       versionAfterSave = version?.version ?? 1;

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Play, Loader2, CheckCircle2, ArrowRight, Sparkles, Target, FileText, Search, Copy, Check } from "lucide-react";
 import Link from "next/link";
+import { TOTAL_MODELS } from "@/lib/platform-stats";
 
 /**
  * LIVE DEMO — Let visitors run a real agent without signing up.
@@ -190,7 +191,7 @@ export default function LiveDemoPage() {
 
         {triesLeft > 0 && !result && (
           <p className="text-center text-xs text-neutral-500 mt-8">
-            Powered by 38 AI models via NVIDIA NIM. Zero per-token cost.
+            Powered by {TOTAL_MODELS} AI models via NVIDIA NIM. Zero per-token cost.
           </p>
         )}
       </div>

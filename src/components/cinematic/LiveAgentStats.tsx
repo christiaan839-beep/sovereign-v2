@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Activity, Shield, Cpu, Zap } from "lucide-react";
+import { TOTAL_AGENTS, TOTAL_MODELS } from "@/lib/platform-stats";
 
 /**
  * LiveAgentStats — Fetches real platform metrics from the API.
@@ -33,9 +34,9 @@ export function LiveAgentStats() {
 
         setStats({
           totalExecutions: data.agentExecutions || 0,
-          activeAgents: data.activeAgents || 130,
+          activeAgents: data.activeAgents || TOTAL_AGENTS,
           pipelinePassRate: data.agentExecutions > 0 ? 99.6 : 0,
-          modelsOnline: 39,
+          modelsOnline: TOTAL_MODELS,
         });
       } catch {
         // Silent fail — component hides when no data

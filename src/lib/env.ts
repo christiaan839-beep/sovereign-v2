@@ -110,6 +110,14 @@ const EnvSchema = z.object({
   PUSHER_KEY: OptionalString,
   PUSHER_SECRET: OptionalString,
 
+  // ─── SECRETS (encryption-at-rest, webhook auth) ──────────────
+  // Round 25 — production-required. assertProductionRequiredEnv
+  // boot-fails on missing ENCRYPTION_KEY. Round 26 added the
+  // PREVIOUS variant for key rotation reads.
+  ENCRYPTION_KEY: OptionalString,
+  ENCRYPTION_KEY_PREVIOUS: OptionalString,
+  WEBHOOK_API_KEY: OptionalString,
+
   // ─── MODES ───────────────────────────────────────────────────
   DATA_SOVEREIGNTY_MODE: OptionalString,
   DEGRADATION_MODE: z.enum(["normal", "reduced", "minimal"]).optional(),

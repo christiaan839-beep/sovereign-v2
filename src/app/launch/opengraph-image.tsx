@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { TOTAL_AGENTS, TOTAL_MODELS } from "@/lib/platform-stats";
 
 export const runtime = "edge";
 export const alt = "Sovereign Matrix — The Agent Operating System is Live";
@@ -16,7 +17,7 @@ export default function OGImage() {
         </div>
         <h1 style={{ color: "white", fontSize: "60px", fontWeight: 900, textAlign: "center" as const, lineHeight: 1.1, margin: 0 }}>The Agent</h1>
         <h1 style={{ color: "#10b981", fontSize: "60px", fontWeight: 900, textAlign: "center" as const, lineHeight: 1.1, margin: 0 }}>Operating System.</h1>
-        <p style={{ color: "#737373", fontSize: "22px", marginTop: "20px" }}>223 agents. 38 models. $199/mo flat.</p>
+        <p style={{ color: "#737373", fontSize: "22px", marginTop: "20px" }}>{TOTAL_AGENTS} agents. {TOTAL_MODELS} models. Flat-rate pricing.</p>
       </div>
     ),
     { ...size }

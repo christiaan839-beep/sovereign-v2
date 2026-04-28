@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { JsonLd, breadcrumbSchema } from "@/components/seo/JsonLd";
+import { TOTAL_AGENTS } from "@/lib/platform-stats";
 
 export const metadata: Metadata = {
   title: "API Reference — Sovereign Matrix Developer Docs",
@@ -8,8 +9,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "https://sovereignmatrix.agency/developers/docs" },
   openGraph: {
     title: "API Reference — Sovereign Matrix",
-    description:
-      "REST API documentation for 130+ AI agents. Authentication, playbooks, webhooks, rate limits, and code examples.",
+    description: `REST API documentation for ${TOTAL_AGENTS} AI agents. Authentication, playbooks, webhooks, rate limits, and code examples.`,
     url: "https://sovereignmatrix.agency/developers/docs",
     type: "website",
   },

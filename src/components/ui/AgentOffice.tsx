@@ -4,6 +4,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { TOTAL_AGENTS } from "@/lib/platform-stats";
 
 /**
  * AgentOffice — A miniature isometric digital city.
@@ -512,7 +513,7 @@ export function AgentOffice() {
                 {log[0]}
               </motion.div>
             </div>
-            <span className="text-[6px] text-white/10 font-mono shrink-0">130+ agents · $0 cost</span>
+            <span className="text-[6px] text-white/10 font-mono shrink-0">{TOTAL_AGENTS} agents · $0 cost</span>
           </div>
         </div>
 

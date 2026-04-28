@@ -5,7 +5,7 @@
  * from static analysis of src/app/api/_agents/<slug>/route.ts.
  * Manual overrides go in src/lib/agent-manifest-overrides.ts.
  *
- * Generated at: 2026-04-28T06:47:13.561Z
+ * Generated at: 2026-04-28T09:41:23.506Z
  * Agent count: 223
  */
 

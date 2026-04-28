@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { Target, FileText, Search, Mic, Shield, Brain, Zap, Globe, Code2 } from "lucide-react";
 import Link from "next/link";
+import { TOTAL_AGENTS, TOTAL_MODELS } from "@/lib/platform-stats";
 
 /**
  * BentoGrid — Linear/Vercel-style feature showcase.
@@ -14,23 +15,23 @@ import Link from "next/link";
 
 const BENTO_ITEMS = [
   {
-    title: "130 AI Agents",
+    title: `${TOTAL_AGENTS} AI Agents`,
     desc: "Lead gen, content, SEO, voice, code, competitive intel. All pre-built. All autonomous.",
     icon: Brain,
     color: "emerald",
     size: "large", // spans 2 columns
     href: "/marketplace",
-    stat: "130",
+    stat: String(TOTAL_AGENTS),
     statLabel: "agents ready",
   },
   {
-    title: "38 Models",
+    title: `${TOTAL_MODELS} Models`,
     desc: "Claude Sonnet 4.6, Nemotron Ultra, Gemini 3.1, DeepSeek V3, Llama 4 Maverick. Auto-routed per task.",
     icon: Zap,
     color: "cyan",
     size: "small",
     href: "/developers/docs",
-    stat: "38",
+    stat: String(TOTAL_MODELS),
     statLabel: "models",
   },
   {

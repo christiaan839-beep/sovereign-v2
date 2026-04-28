@@ -3,10 +3,11 @@
 import { motion } from "framer-motion";
 import { ArrowRight, Zap, Shield, Brain, Target, Mic, Code2, Globe, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
+import { TOTAL_AGENTS, TOTAL_MODELS } from "@/lib/platform-stats";
 
 const LAUNCH_FEATURES = [
-  { icon: Brain, title: "130 AI Agents", desc: "Lead gen, content, SEO, voice, code, competitive intel — all pre-built and ready.", color: "emerald" },
-  { icon: Zap, title: "38 Models", desc: "Claude Sonnet 4.6, Nemotron Ultra, Gemini 3.1 Pro, DeepSeek V3, Llama 4 Maverick. Auto-routed per task.", color: "cyan" },
+  { icon: Brain, title: `${TOTAL_AGENTS} AI Agents`, desc: "Lead gen, content, SEO, voice, code, competitive intel — all pre-built and ready.", color: "emerald" },
+  { icon: Zap, title: `${TOTAL_MODELS} Models`, desc: "Claude Sonnet 4.6, Nemotron Ultra, Gemini 3.1 Pro, DeepSeek V3, Llama 4 Maverick. Auto-routed per task.", color: "cyan" },
   { icon: Shield, title: "5-Layer Safety", desc: "Jailbreak detection, PII scanning, content safety, quality scoring, critic review. Every request.", color: "violet" },
   { icon: Mic, title: "Voice Agents", desc: "AI that makes phone calls, qualifies leads, books meetings. Discloses AI on every call.", color: "amber" },
   { icon: Target, title: "$199/mo Flat", desc: "No credits. No per-token fees. No usage limits. One price for everything.", color: "emerald" },
@@ -44,7 +45,7 @@ export default function LaunchPage() {
           </h1>
 
           <p className="text-lg text-neutral-400 max-w-xl mx-auto leading-relaxed mb-4">
-            130 AI agents. 38 models. One flat price.
+            {TOTAL_AGENTS} AI agents. {TOTAL_MODELS} models. One flat price.
             They find leads, write content, scan competitors, make calls, and close deals.
             Autonomously.
           </p>
@@ -97,11 +98,11 @@ export default function LaunchPage() {
           <h2 className="text-xl md:text-3xl font-black text-white mb-8">One price. Everything included.</h2>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             {[
-              { label: "Agents",       value: "130",       sub: "pre-built" },
-              { label: "Models",       value: "38",        sub: "auto-routed" },
-              { label: "Integrations", value: "25+",       sub: "live" },
-              { label: "Safety",       value: "5-layer",   sub: "every call" },
-              { label: "Cost",         value: "$19–199",   sub: "flat /mo" },
+              { label: "Agents",       value: String(TOTAL_AGENTS), sub: "pre-built" },
+              { label: "Models",       value: String(TOTAL_MODELS), sub: "auto-routed" },
+              { label: "Integrations", value: "25+",                sub: "live" },
+              { label: "Safety",       value: "5-layer",            sub: "every call" },
+              { label: "Cost",         value: "$19–499",            sub: "flat /mo" },
             ].map((c) => (
               <div key={c.label} className="p-3 rounded-xl border border-emerald-500/15 bg-emerald-500/[0.04]">
                 <p className="text-[10px] text-neutral-500 mb-1 uppercase tracking-widest">{c.label}</p>
@@ -117,9 +118,9 @@ export default function LaunchPage() {
       <section className="py-16 px-6">
         <div className="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
           {[
-            { value: "130", label: "AI Agents" },
-            { value: "38", label: "Models" },
-            { value: "$199", label: "/month flat" },
+            { value: String(TOTAL_AGENTS), label: "AI Agents" },
+            { value: String(TOTAL_MODELS), label: "Models" },
+            { value: "$19–499", label: "/month flat" },
             { value: "5", label: "Safety layers" },
           ].map((stat) => (
             <div key={stat.label}>
@@ -137,7 +138,7 @@ export default function LaunchPage() {
           <span className="text-emerald-400">You deploy agents.</span>
         </h2>
         <p className="text-neutral-400 max-w-md mx-auto mb-8">
-          223 agents. 38 models. $199/mo. Start in 60 seconds.
+          {TOTAL_AGENTS} agents. {TOTAL_MODELS} models. Flat-rate pricing. Start in 60 seconds.
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
           <Link href="/signup" className="inline-flex items-center gap-2 px-8 py-4 bg-emerald-500 text-black font-semibold rounded-full text-sm hover:bg-emerald-400 transition-all">

@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Cpu, Zap, ArrowRight, Globe, Code, Brain, BookOpen, Shield, ChevronRight, Sparkles, FileText, Monitor, Plug, Database, RotateCcw } from "lucide-react";
+import { TOTAL_MODELS } from "@/lib/platform-stats";
 
 const MODELS = [
   { name: "Nemotron Ultra 253B", params: "253B", tag: "Reasoning", provider: "NIM", color: "#00ff66" },
@@ -58,7 +59,7 @@ export default function NimArsenalPage() {
             <Zap className="w-7 h-7 text-[#00ff66]" />
             <h1 className="text-2xl font-bold tracking-tight">Model Registry</h1>
           </div>
-          <p className="text-sm text-neutral-500">View all 38 AI models available on the platform. See routing rules, failover chains, and model capabilities.</p>
+          <p className="text-sm text-neutral-500">View all {TOTAL_MODELS} AI models available on the platform. See routing rules, failover chains, and model capabilities.</p>
         </motion.header>
 
         {/* Stats */}

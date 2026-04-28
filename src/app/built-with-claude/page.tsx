@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TOTAL_AGENTS } from "@/lib/platform-stats";
 
 /**
  * BUILT WITH CLAUDE — Editorial Museum
@@ -15,8 +16,7 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Built with Claude — Sovereign Matrix",
-  description:
-    "How a solo founder built 130 AI agents, a multi-model consensus engine, and a live production platform using Claude as the reasoning core.",
+  description: `How a solo founder built ${TOTAL_AGENTS} AI agents, a multi-model consensus engine, and a live production platform using Claude as the reasoning core.`,
   openGraph: {
     title: "Built with Claude — Sovereign Matrix",
     description: "223 agents, one founder, Claude as the reasoning core.",

@@ -9,6 +9,7 @@ import {
   Plus, Clock, CheckCircle2, Mic, MicOff, Volume2, VolumeX,
 } from "lucide-react";
 import Link from "next/link";
+import { TOTAL_AGENTS, TOTAL_MODELS } from "@/lib/platform-stats";
 
 // ─── Types ───────────────────────────────────────
 
@@ -369,7 +370,7 @@ export default function SovereignChat() {
                 <Sparkles className="w-8 h-8 text-emerald-400" />
               </div>
               <h1 className="text-xl font-bold text-white mb-1">Sovereign AI</h1>
-              <p className="text-sm text-neutral-400">130+ agents. 38 models. What do you want to build?</p>
+              <p className="text-sm text-neutral-400">{TOTAL_AGENTS} agents. {TOTAL_MODELS} models. What do you want to build?</p>
             </motion.div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 w-full max-w-lg">
               {QUICK_ACTIONS.map((action, i) => (
