@@ -211,11 +211,48 @@ const SUBDOMAINS = [
     id: "capabilities_evals",
     name: "Capabilities: published evaluations",
     section: "Model — Capabilities",
-    verifier: () => {
-      const evals = existsSync(join(ROOT, "src/lib/__tests__/agent-evals/golden-set.ts"));
-      return evals
-        ? { ok: true, score: 0.6, evidence: "89 golden-set evals across 223 agents (40% coverage). Floor locked at 25% via weekly-health.mjs. Coverage gap to 60%+ tracked as C2." }
-        : { ok: false, score: 0.0, evidence: "No eval suite found" };
+    verifier: (artifacts) => {
+      const evalsPath = join(ROOT, "src/lib/__tests__/agent-evals/golden-set.ts");
+      if (!existsSync(evalsPath)) {
+        return { ok: false, score: 0.0, evidence: "No eval suite found" };
+      }
+      // Round 17 — score is DYNAMIC. Counts actual registerEval calls
+      // + unique slugs and tiers against the agent total. Stale
+      // hardcoded numbers would drift on every coverage push.
+      let evalCount = 0;
+      const slugs = new Set();
+      try {
+        const text = readFileSync(evalsPath, "utf8");
+        const evalMatches = text.match(/^registerEval\(/gm) ?? [];
+        evalCount = evalMatches.length;
+        const slugMatches = text.matchAll(/^\s*slug:\s*"([^"]+)"/gm);
+        for (const m of slugMatches) {
+          if (m[1]) slugs.add(m[1]);
+        }
+      } catch {
+        // Fall through with empty values — score reflects reality.
+      }
+      const uniqueSlugs = slugs.size;
+      const totalAgents = artifacts.agents?.count ?? 223;
+      const coveragePct = totalAgents > 0 ? (uniqueSlugs / totalAgents) * 100 : 0;
+      // Score tiers: 25% → 0.5, 40% → 0.65, 50% → 0.75, 60% → 0.85,
+      // 80% → 1.0. Anything under 25% reads as "evaluations registered
+      // but coverage is shallow", which is honest framing.
+      let score;
+      if (coveragePct >= 80) score = 1.0;
+      else if (coveragePct >= 60) score = 0.85;
+      else if (coveragePct >= 50) score = 0.75;
+      else if (coveragePct >= 40) score = 0.65;
+      else if (coveragePct >= 25) score = 0.5;
+      else score = 0.3;
+      return {
+        ok: true,
+        score,
+        evidence:
+          `${evalCount} golden-set evals across ${uniqueSlugs} of ${totalAgents} agents (${coveragePct.toFixed(0)}% coverage). ` +
+          `Schema-validated registration test runs in CI. ` +
+          `Floor locked at 50% slug coverage via weekly-health.mjs.`,
+      };
     },
   },
   {

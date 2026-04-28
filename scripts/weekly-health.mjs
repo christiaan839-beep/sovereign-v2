@@ -295,11 +295,10 @@ const goldenSet = join(
 const evalCount = countMatches(goldenSet, /^registerEval\({/gm);
 const agentCount = checks.find((c) => c.name === "agents in registry")?.value ?? 1;
 const evalCoveragePct = Math.round((evalCount / Math.max(1, agentCount)) * 100);
-// Floor: don't regress past 50%. Sprint trajectory:
-//   11% → 25% (C) → 30% (D) → 40% (E) → 50% (F) → 60% (G).
-// Floor at 50% catches regressions past 60% without false positives
-// from a single deleted eval.
-check("eval coverage %", evalCoveragePct, 50, { dimension: "quality" });
+// Floor trajectory: 11 → 25 (C) → 30 (D) → 40 (E) → 50 (F) → 60 (G) →
+// 65 (Round 17, after eval push to 74%). Floor at 65% catches
+// regressions past 70% without false positives from a single delete.
+check("eval coverage %", evalCoveragePct, 65, { dimension: "quality" });
 
 // ──────────────────────────────────────────────────────────────
 // Elite-tier infrastructure presence

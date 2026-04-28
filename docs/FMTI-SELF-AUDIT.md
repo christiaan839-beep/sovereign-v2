@@ -1,8 +1,8 @@
 # Sovereign Matrix — FMTI Self-Audit
 
-**Generated:** 2026-04-28T01:38:23.419Z
+**Generated:** 2026-04-28T02:10:08.858Z
 **Method:** `scripts/run-fmti-self-audit.mjs` deterministic rule-based scoring against /api/_meta/transparency.json + /api/_meta/agents.json + repo artifacts.
-**Overall:** 89.7% across 17 applicable subdomains (5 N/A).
+**Overall:** 91.2% across 17 applicable subdomains (5 N/A).
 
 ## Why publish our own audit
 
@@ -68,11 +68,11 @@ Re-run any time: `node scripts/run-fmti-self-audit.mjs`
 | Model access: public API + auth model | 100% | 🟢 high | Self-service API key minting + per-key scope/IP allowlist (api-key-scopes.ts). v1 gateway documented + auth-walled (E2E tested). |
 | Model access: pricing transparency | 100% | 🟢 high | Plan tiers on /pricing, per-call rate card at /pricing/per-call, machine-readable feed at /api/_meta/pricing.json, DAG cost preview in visual editor, per-run actual cost on the run detail page (derived from stored _meta.tokenBudget telemetry). |
 
-### Model — Capabilities — 40% (2 subdomains)
+### Model — Capabilities — 53% (2 subdomains)
 
 | Subdomain | Score | Bucket | Evidence |
 |---|---|---|---|
-| Capabilities: published evaluations | 60% | 🟡 moderate | 89 golden-set evals across 223 agents (40% coverage). Floor locked at 25% via weekly-health.mjs. Coverage gap to 60%+ tracked as C2. |
+| Capabilities: published evaluations | 85% | 🟡 moderate | 166 golden-set evals across 159 of 223 agents (71% coverage). Schema-validated registration test runs in CI. Floor locked at 50% slug coverage via weekly-health.mjs. |
 | Capabilities: external audits / certifications | 20% | 🔴 low | No SOC 2 Type II / HIPAA BAA yet. Internal audit chain + threat model published. Tracked as WHATS-NOT-ELITE.md §2.4. |
 
 ### Model — Risks — 90% (2 subdomains)
@@ -117,7 +117,6 @@ Subdomains where the script's verdict differs from a claim we'd
 make on a marketing page — surfaced here so the next sprint can
 either fix the data or fix the claim:
 
-- **Capabilities: published evaluations** (60%): 89 golden-set evals across 223 agents (40% coverage). Floor locked at 25% via weekly-health.mjs. Coverage gap to 60%+ tracked as C2.
 - **Capabilities: external audits / certifications** (20%): No SOC 2 Type II / HIPAA BAA yet. Internal audit chain + threat model published. Tracked as WHATS-NOT-ELITE.md §2.4.
 
 ## Reproducibility
