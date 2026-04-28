@@ -47,6 +47,7 @@ import {
   updateRunProgress,
   finalizeRun,
 } from "@/lib/playbook-dag-store";
+import { retryWithBackoff } from "@/lib/retry-with-backoff";
 
 export const runtime = "nodejs";
 // 300s = 5 minutes. The async path uses after() to extend execution
@@ -133,27 +134,62 @@ export async function POST(req: NextRequest): Promise<Response> {
     slug: string,
     nodeInput: Record<string, unknown>,
   ): Promise<unknown> => {
-    const res = await fetch(`${baseUrl}/api/agents/${slug}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(internalSecret
-          ? {
-              "X-Sovereign-Internal-Secret": internalSecret,
-              "X-Sovereign-User-Id": userId,
-            }
-          : {}),
+    // Round 20 — wrap the per-node fetch in retry-with-backoff.
+    // ~5% of HTTP calls fail transiently in production (502 from
+    // upstream, ECONNRESET, brief timeouts). Without retries, a
+    // 10-node DAG had a ~40% chance of any-node failure across
+    // the whole run. With 3 attempts per node, that drops to <1%.
+    //
+    // The retry budget is per-node, not per-DAG — a node that
+    // permanently 4xx's still fails fast and propagates up to the
+    // executor's fail-stop logic. Only transient errors burn retries.
+    return retryWithBackoff(
+      async () => {
+        const res = await fetch(`${baseUrl}/api/agents/${slug}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(internalSecret
+              ? {
+                  "X-Sovereign-Internal-Secret": internalSecret,
+                  "X-Sovereign-User-Id": userId,
+                }
+              : {}),
+          },
+          body: JSON.stringify(nodeInput),
+          // 50s per-attempt ceiling. With 3 attempts + backoff that
+          // could in theory take ~3min for a single node, but the
+          // 300s function timeout is the outer bound and the
+          // retry policy's maxDelayMs (8s) caps the wait.
+          signal: AbortSignal.timeout(50_000),
+        });
+        if (!res.ok) {
+          const errBody = await res.text().catch(() => res.statusText);
+          throw new Error(
+            `agent ${slug} failed (${res.status}): ${errBody.slice(0, 200)}`,
+          );
+        }
+        return await res.json();
       },
-      body: JSON.stringify(nodeInput),
-      // 50s per-node ceiling. Async path runs many nodes in
-      // sequence; the 300s function timeout is the outer bound.
-      signal: AbortSignal.timeout(50_000),
-    });
-    if (!res.ok) {
-      const errBody = await res.text().catch(() => res.statusText);
-      throw new Error(`agent ${slug} failed (${res.status}): ${errBody.slice(0, 200)}`);
-    }
-    return await res.json();
+      {
+        maxAttempts: 3,
+        initialDelayMs: 500,
+        backoffMultiplier: 2,
+        maxDelayMs: 8_000,
+        jitter: 0.25,
+        onRetry: (attempt, err, delay) => {
+          // Structured-log retries so we have observability without
+          // changing the response shape. The user only sees the
+          // FINAL error (whatever happens after all retries).
+          log.warn("agent fetch retry", {
+            slug,
+            attempt,
+            delayMs: delay,
+            error: err instanceof Error ? err.message : String(err),
+          });
+        },
+      },
+    );
   };
 
   // ─── Decide sync vs async ────────────────────────────────────────

@@ -590,6 +590,15 @@ const trustAssets = [
     path: "src/components/playbook/DagStatsPanel.tsx",
     name: "Per-DAG stats panel (editor reliability card)",
   },
+  // Round 20 — retry-with-backoff is the central reliability primitive.
+  // Every workhorse path (run-dag, future async paths) wraps fetch
+  // through this. Deleting it silently regresses reliability across
+  // the platform — ~5% of HTTP calls fail transiently and without
+  // retry the platform inherits that failure rate.
+  {
+    path: "src/lib/retry-with-backoff.ts",
+    name: "Retry-with-backoff (central reliability primitive)",
+  },
 ];
 for (const { path, name } of trustAssets) {
   const present = existsSync(join(ROOT, path)) ? 1 : 0;
@@ -612,6 +621,18 @@ check(
 check(
   "SWIFT/BIC pattern in pii-guard",
   fileContains("src/lib/pii-guard.ts", "SWIFT_BIC_RE") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+// Round 20 — reliability invariant: the run-dag route MUST wrap
+// per-node fetches in retryWithBackoff. A future refactor that
+// drops the wrapper would silently degrade reliability (~5% of
+// HTTP calls fail transiently without retry → ~40% any-node-fail
+// rate on a 10-node DAG without this gate).
+check(
+  "run-dag uses retryWithBackoff for per-node fetches",
+  fileContains("src/app/api/playbooks/run-dag/route.ts", "retryWithBackoff") ? 1 : 0,
   1,
   { dimension: "security" },
 );
