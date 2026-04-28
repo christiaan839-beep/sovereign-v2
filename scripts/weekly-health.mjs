@@ -572,6 +572,14 @@ const trustAssets = [
     path: "src/app/share/[token]/page.tsx",
     name: "Public read-only run share page",
   },
+  // Round 16 — per-run actual cost transparency. The lib derives cost
+  // from stored _meta.tokenBudget; the run detail page renders it. If
+  // either goes missing the FMTI pricing-transparency subdomain
+  // regresses from 100% to 90%.
+  {
+    path: "src/lib/run-cost-actual.ts",
+    name: "Per-run actual cost lib (derives from _meta.tokenBudget)",
+  },
 ];
 for (const { path, name } of trustAssets) {
   const present = existsSync(join(ROOT, path)) ? 1 : 0;

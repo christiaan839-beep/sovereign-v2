@@ -28,6 +28,8 @@ import { getDagRun } from "@/lib/playbook-dag-store";
 import { ConfidenceBadge } from "@/components/agent/ConfidenceBadge";
 import { TokenBudgetMeter } from "@/components/agent/TokenBudgetMeter";
 import { extractConfidence, extractTokenBudget } from "@/lib/agent-meta";
+import { computeRunCostBreakdown } from "@/lib/run-cost-actual";
+import { formatCents } from "@/lib/agent-pricing-estimate";
 import { RunOutputDetail } from "./RunOutputDetail";
 import { RunDetailRefresher } from "./RunDetailRefresher";
 import { RunShareManager } from "./RunShareManager";
@@ -57,6 +59,16 @@ export default async function RunDetailPage({ params }: PageProps) {
   const completedNodes = run.results.filter((r) => r.status === "completed").length;
   const failedNodes = run.results.filter((r) => r.status === "failed").length;
   const skippedNodes = run.results.filter((r) => r.status === "skipped").length;
+
+  // Round 16 — cost breakdown derived from stored _meta.tokenBudget.
+  // "actual" = every node had real telemetry; "estimated" = none did
+  // (rare for AI agents); "mixed" = some did, some didn't.
+  const costBreakdown = inFlight
+    ? null
+    : computeRunCostBreakdown({
+        results: run.results,
+        dagSnapshot: run.dagSnapshot,
+      });
 
   // Status display config — three terminal states + one in-flight.
   // Centralizing these constants here keeps the render below clean.
@@ -157,9 +169,11 @@ export default async function RunDetailPage({ params }: PageProps) {
       {/*
         Quick stats row. Each card shows one dimension so the eye
         gets a status read in 200ms before scrolling into per-node
-        detail.
+        detail. Cost card appears for non-running runs.
       */}
-      <section className="grid grid-cols-3 gap-3 mb-6">
+      <section
+        className={`grid gap-3 mb-6 ${costBreakdown ? "grid-cols-2 md:grid-cols-4" : "grid-cols-3"}`}
+      >
         <StatCard
           label="Completed"
           value={completedNodes}
@@ -175,6 +189,25 @@ export default async function RunDetailPage({ params }: PageProps) {
           value={skippedNodes}
           tone={skippedNodes > 0 ? "amber" : "neutral"}
         />
+        {costBreakdown && (
+          <CostCard
+            label={
+              costBreakdown.kind === "actual"
+                ? "Cost (actual)"
+                : costBreakdown.kind === "estimated"
+                  ? "Cost (estimated)"
+                  : "Cost (mixed)"
+            }
+            cents={costBreakdown.totalCents}
+            sublabel={
+              costBreakdown.kind === "mixed"
+                ? `${costBreakdown.actualNodeCount} actual · ${costBreakdown.estimatedNodeCount} estimated`
+                : costBreakdown.kind === "estimated"
+                  ? "from declared providers"
+                  : "from telemetry"
+            }
+          />
+        )}
       </section>
 
       <section className="rounded-lg border border-white/10 bg-white/[0.02] p-5">
@@ -359,6 +392,31 @@ function StatCard({
     <div className="rounded-lg border border-white/10 bg-white/[0.02] p-4">
       <div className="text-xs uppercase tracking-wider text-neutral-500">{label}</div>
       <div className={`mt-2 text-2xl font-bold ${toneClass}`}>{value}</div>
+    </div>
+  );
+}
+
+/**
+ * Cost variant of StatCard. Distinct enough from a counter that we
+ * give it its own component — formats the value via formatCents and
+ * adds a sublabel for the source ("from telemetry" / "estimated").
+ */
+function CostCard({
+  label,
+  cents,
+  sublabel,
+}: {
+  label: string;
+  cents: number;
+  sublabel: string;
+}) {
+  return (
+    <div className="rounded-lg border border-white/10 bg-white/[0.02] p-4">
+      <div className="text-xs uppercase tracking-wider text-neutral-500">{label}</div>
+      <div className="mt-2 text-2xl font-bold text-sky-300">
+        {formatCents(cents)}
+      </div>
+      <div className="mt-1 text-[10px] text-neutral-500">{sublabel}</div>
     </div>
   );
 }

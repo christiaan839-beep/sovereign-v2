@@ -670,35 +670,58 @@ export async function reapOrphanedRuns(input: {
 
 /**
  * List the user's recent runs. Powers the dashboard widget AND the
- * editor's "previous runs" sidebar. `dagId` filter scopes to a single
- * DAG when provided.
+ * editor's "previous runs" sidebar.
+ *
+ * Filters (all optional, AND-combined):
+ *   - dagId: scope to a single DAG
+ *   - status: 'running' | 'completed' | 'failed'
+ *   - before: cursor — only return runs older than this createdAt
+ *     (exclusive). Used for "Load more" pagination.
+ *
+ * Returns runs newest-first and a `nextCursor` (the createdAt of the
+ * last row) when the result hits the limit. The caller passes that
+ * back as `before` for the next page.
  */
 export async function listDagRuns(input: {
   userId: string;
   dagId?: string;
+  status?: "running" | "completed" | "failed";
+  before?: string; // ISO timestamp
   limit?: number;
-}): Promise<{ runs: SavedDagRun[] }> {
+}): Promise<{ runs: SavedDagRun[]; nextCursor: string | null }> {
   const db = await getDb();
-  if (!db) return { runs: [] };
+  if (!db) return { runs: [], nextCursor: null };
 
   try {
     const { playbookDagRuns } = await import("@/db/schema");
     const limit = Math.min(Math.max(1, input.limit ?? 20), 100);
-    const where = input.dagId
-      ? and(
-          eq(playbookDagRuns.userId, input.userId),
-          eq(playbookDagRuns.dagId, input.dagId),
-        )
-      : eq(playbookDagRuns.userId, input.userId);
+
+    const conditions = [eq(playbookDagRuns.userId, input.userId)];
+    if (input.dagId) conditions.push(eq(playbookDagRuns.dagId, input.dagId));
+    if (input.status) conditions.push(eq(playbookDagRuns.status, input.status));
+    if (input.before) {
+      const beforeDate = new Date(input.before);
+      if (Number.isFinite(beforeDate.getTime())) {
+        conditions.push(sql`${playbookDagRuns.createdAt} < ${beforeDate}`);
+      }
+    }
+
     const rows = await db
       .select()
       .from(playbookDagRuns)
-      .where(where)
+      .where(and(...conditions))
       .orderBy(desc(playbookDagRuns.createdAt))
       .limit(limit);
-    return { runs: rows.map(rowToSavedDagRun) };
+
+    // Set nextCursor only when the page was full — otherwise we know
+    // there are no more rows. Saves the client one round-trip on the
+    // last page.
+    const nextCursor =
+      rows.length === limit ? rows[rows.length - 1].createdAt.toISOString() : null;
+
+    return { runs: rows.map(rowToSavedDagRun), nextCursor };
   } catch {
-    return { runs: [] };
+    return { runs: [], nextCursor: null };
   }
 }
 

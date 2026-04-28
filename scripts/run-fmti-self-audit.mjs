@@ -46,7 +46,7 @@
 import { readFile, writeFile, stat } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, "..");
@@ -154,14 +154,49 @@ const SUBDOMAINS = [
       // Reaching 100% would mean exposing per-run actual cost in the
       // user's billing dashboard, which is tracked but not yet rendered.
       const everything = pricingPage && perCallPage && pricingApi;
-      return everything
+      // Round 16 — per-run actual cost surfaces in the run detail page,
+      // derived from stored _meta.tokenBudget. That closes the last
+      // gap on this subdomain (pricing transparency: 90% → 100%).
+      // The signal is the run-cost-actual lib + the CostCard usage
+      // in the run detail page.
+      const runCostLib = existsSync(
+        join(ROOT, "src/lib/run-cost-actual.ts"),
+      );
+      const runCostInPage =
+        existsSync(
+          join(ROOT, "src/app/dashboard/playbooks/runs/[runId]/page.tsx"),
+        ) &&
+        // grep for "computeRunCostBreakdown" in the page source as a
+        // wiring check — the lib alone isn't proof it's surfaced
+        (() => {
+          try {
+            return readFileSync(
+              join(
+                ROOT,
+                "src/app/dashboard/playbooks/runs/[runId]/page.tsx",
+              ),
+              "utf8",
+            ).includes("computeRunCostBreakdown");
+          } catch {
+            return false;
+          }
+        })();
+      const fullStack = everything && runCostLib && runCostInPage;
+      return fullStack
         ? {
             ok: true,
-            score: 0.9,
+            score: 1.0,
             evidence:
-              "Plan tiers on /pricing, per-call rate card at /pricing/per-call, machine-readable feed at /api/_meta/pricing.json, DAG cost preview in visual editor. Per-run actual-cost dashboard pending.",
+              "Plan tiers on /pricing, per-call rate card at /pricing/per-call, machine-readable feed at /api/_meta/pricing.json, DAG cost preview in visual editor, per-run actual cost on the run detail page (derived from stored _meta.tokenBudget telemetry).",
           }
-        : pricingPage
+        : everything
+          ? {
+              ok: true,
+              score: 0.9,
+              evidence:
+                "Plan tiers on /pricing, per-call rate card at /pricing/per-call, machine-readable feed at /api/_meta/pricing.json, DAG cost preview in visual editor. Per-run actual-cost dashboard pending.",
+            }
+          : pricingPage
           ? {
               ok: true,
               score: 0.7,

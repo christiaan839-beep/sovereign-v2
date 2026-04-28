@@ -1,8 +1,8 @@
 # Sovereign Matrix — FMTI Self-Audit
 
-**Generated:** 2026-04-27T21:23:22.983Z
+**Generated:** 2026-04-28T01:38:23.419Z
 **Method:** `scripts/run-fmti-self-audit.mjs` deterministic rule-based scoring against /api/_meta/transparency.json + /api/_meta/agents.json + repo artifacts.
-**Overall:** 89.1% across 17 applicable subdomains (5 N/A).
+**Overall:** 89.7% across 17 applicable subdomains (5 N/A).
 
 ## Why publish our own audit
 
@@ -61,12 +61,12 @@ Re-run any time: `node scripts/run-fmti-self-audit.mjs`
 | Model: input/output modalities per agent | 100% | 🟢 high | Per-agent input/output declared via createAgentRoute.requiredFields + Zod schemas; surfaced in agents.json `signals[]` field. |
 | Model: per-agent declared providers + models | 100% | 🟢 high | Every agent's manifest declares models[] and tools[] with provider classification. Coverage: 100% of registered agents (artifacts.agents.count). |
 
-### Model — Access — 95% (2 subdomains)
+### Model — Access — 100% (2 subdomains)
 
 | Subdomain | Score | Bucket | Evidence |
 |---|---|---|---|
 | Model access: public API + auth model | 100% | 🟢 high | Self-service API key minting + per-key scope/IP allowlist (api-key-scopes.ts). v1 gateway documented + auth-walled (E2E tested). |
-| Model access: pricing transparency | 90% | 🟢 high | Plan tiers on /pricing, per-call rate card at /pricing/per-call, machine-readable feed at /api/_meta/pricing.json, DAG cost preview in visual editor. Per-run actual-cost dashboard pending. |
+| Model access: pricing transparency | 100% | 🟢 high | Plan tiers on /pricing, per-call rate card at /pricing/per-call, machine-readable feed at /api/_meta/pricing.json, DAG cost preview in visual editor, per-run actual cost on the run detail page (derived from stored _meta.tokenBudget telemetry). |
 
 ### Model — Capabilities — 40% (2 subdomains)
 

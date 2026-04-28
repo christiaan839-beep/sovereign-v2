@@ -86,6 +86,12 @@ function AppealsPageInner() {
   }, []);
 
   useEffect(() => {
+    // Fetch on mount + on refresh-fn identity changes. The refresh
+    // callback only writes state via setAppeals/setError AFTER the
+    // network response resolves — so the writes are async, not the
+    // synchronous-cascade pattern the lint rule guards against. The
+    // disable directive documents the deliberate choice.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- async setState via fetch resolution, not synchronous cascade
     void refresh();
   }, [refresh]);
 

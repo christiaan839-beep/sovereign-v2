@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { CheckCircle2 } from "lucide-react";
 
@@ -77,7 +78,7 @@ export function PermitStageTimeline() {
             Construction projects move through five discrete municipal stages.
             Each stage has different paperwork, different deadlines, and
             different people you need to keep informed. The agents below auto-
-            fire at the right moment — you don't choreograph them.
+            fire at the right moment — you don&apos;t choreograph them.
           </p>
         </div>
 
@@ -136,12 +137,12 @@ export function PermitStageTimeline() {
         <div className="mt-12 text-center text-xs text-neutral-500">
           Time-saved figures are 30-day rolling averages across active
           customer projects. See{" "}
-          <a
+          <Link
             href="/api/_misc/benchmarks"
             className="underline decoration-neutral-700 hover:decoration-neutral-400"
           >
             /api/_misc/benchmarks
-          </a>{" "}
+          </Link>{" "}
           for the live source.
         </div>
       </div>

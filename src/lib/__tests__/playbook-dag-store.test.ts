@@ -87,10 +87,13 @@ describe("playbook-dag-store — graceful no-DB fallbacks", () => {
     expect(result).toEqual({ recorded: false, runId: null });
   });
 
-  it("listDagRuns returns empty array when DB is unavailable", async () => {
+  it("listDagRuns returns empty array + null cursor when DB is unavailable", async () => {
+    // Round 16: shape evolved from `{runs}` to `{runs, nextCursor}`
+    // for cursor pagination support. The cursor is null when the page
+    // is incomplete OR there's no DB at all.
     const { listDagRuns } = await importStore();
     const result = await listDagRuns({ userId: "user_1" });
-    expect(result).toEqual({ runs: [] });
+    expect(result).toEqual({ runs: [], nextCursor: null });
   });
 
   it("getDagRun returns null when DB is unavailable", async () => {

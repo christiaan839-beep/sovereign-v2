@@ -252,7 +252,7 @@ export default function PricingCalculatorPage() {
 
       <div className="mt-10 text-xs text-neutral-500">
         <strong className="text-neutral-400">Why these numbers:</strong>{" "}
-        Each agent bucket's average tokens per run comes from the rolling 30-day
+        Each agent bucket&apos;s average tokens per run comes from the rolling 30-day
         production average ({" "}
         <Link href="/api/_misc/benchmarks" className="underline hover:text-neutral-300">
           /api/_misc/benchmarks
