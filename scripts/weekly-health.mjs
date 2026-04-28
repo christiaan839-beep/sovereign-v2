@@ -551,6 +551,27 @@ const trustAssets = [
     path: "src/app/pricing/per-call/page.tsx",
     name: "Per-call pricing transparency page",
   },
+  // Round 15 — public run-share infrastructure. The schema, store,
+  // management API, and public page must move together — deleting
+  // any one regresses the procurement-grade "share with auditor"
+  // workflow. The /share page in particular is the only way a
+  // non-account holder sees a forensic run record.
+  {
+    path: "drizzle/0039_dag_run_shares.sql",
+    name: "DAG run share migration (token + expiry + audit fields)",
+  },
+  {
+    path: "src/lib/share-token-store.ts",
+    name: "Share-token store (rotating + revocable + expiring)",
+  },
+  {
+    path: "src/app/api/playbooks/dag/runs/[runId]/share/route.ts",
+    name: "Share-management endpoint (POST create, GET list)",
+  },
+  {
+    path: "src/app/share/[token]/page.tsx",
+    name: "Public read-only run share page",
+  },
 ];
 for (const { path, name } of trustAssets) {
   const present = existsSync(join(ROOT, path)) ? 1 : 0;

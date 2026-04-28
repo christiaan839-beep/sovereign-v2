@@ -962,6 +962,36 @@ export const playbookDagRuns = pgTable("playbook_dag_runs", {
 ]);
 
 // ═══════════════════════════════════════════
+// DAG run share tokens (Round 15 / drizzle 0039)
+//
+// Public share links for visual-editor playbook runs. Owner generates
+// a rotating opaque token, hands the /share/[token] URL to anyone
+// outside the platform (auditor, lawyer, customer), and revokes when
+// done. Every resolve bumps last_accessed_at + access_count so the
+// owner can see surprise traffic.
+// ═══════════════════════════════════════════
+
+export const dagRunShares = pgTable("dag_run_shares", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  runId: uuid("run_id")
+    .references(() => playbookDagRuns.id, { onDelete: "cascade" })
+    .notNull(),
+  userId: text("user_id").notNull(),
+  // Opaque 128-bit hex secret in the share URL.
+  token: text("token").notNull().unique(),
+  // Owner-supplied label, e.g. "Lawyer review".
+  label: text("label"),
+  expiresAt: timestamp("expires_at").notNull(),
+  revokedAt: timestamp("revoked_at"),
+  lastAccessedAt: timestamp("last_accessed_at"),
+  accessCount: integer("access_count").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_dag_run_shares_token").on(table.token),
+  index("idx_dag_run_shares_user_created").on(table.userId, table.createdAt),
+]);
+
+// ═══════════════════════════════════════════
 // User appeals (Round 13 / drizzle 0038)
 //
 // User-initiated requests to re-review a blocked output, failed run,

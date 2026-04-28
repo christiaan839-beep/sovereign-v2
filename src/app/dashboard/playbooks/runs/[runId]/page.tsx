@@ -30,6 +30,7 @@ import { TokenBudgetMeter } from "@/components/agent/TokenBudgetMeter";
 import { extractConfidence, extractTokenBudget } from "@/lib/agent-meta";
 import { RunOutputDetail } from "./RunOutputDetail";
 import { RunDetailRefresher } from "./RunDetailRefresher";
+import { RunShareManager } from "./RunShareManager";
 
 interface PageProps {
   params: Promise<{ runId: string }>;
@@ -279,6 +280,13 @@ export default async function RunDetailPage({ params }: PageProps) {
           </div>
         </section>
       )}
+
+      {/*
+        Round 15 — share management. Only render once the run is no
+        longer in flight; sharing a still-running run produces a
+        moving target that's confusing for the recipient.
+      */}
+      {!inFlight && <RunShareManager runId={runId} />}
 
       {/*
         Footer linking back to the parent DAG (if it still exists) AND

@@ -72,6 +72,16 @@ A fourth commitment, added in the Round 10 sprint:
    `progress_nodes_completed` for live partial-result rendering.
    See [`drizzle/0037_playbook_dag_async.sql`](../drizzle/0037_playbook_dag_async.sql).
 
+   Round 15 closes the **share-with-an-auditor** loop. Owners generate
+   rotating share tokens (128-bit hex, default 7-day expiry, capped at
+   90), hand the `/share/[token]` URL to anyone outside the platform,
+   and revoke when done. Each resolve bumps `last_accessed_at` +
+   `access_count` so the owner sees surprise traffic. The public page
+   strips owner-internal fields and renders the same forensic shape
+   procurement diligence teams need.
+   See [`drizzle/0039_dag_run_shares.sql`](../drizzle/0039_dag_run_shares.sql)
+   + [`src/lib/share-token-store.ts`](../src/lib/share-token-store.ts).
+
 ---
 
 ## What we do NOT claim
