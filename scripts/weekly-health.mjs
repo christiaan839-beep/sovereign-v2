@@ -2142,6 +2142,83 @@ check(
   { dimension: "security" },
 );
 
+// ─── Round 32 — full-send sprint: per-request budget + public trace ──
+//
+// Closes 2 of the 10 remaining agentic gaps from R31 review.
+
+// Per-request token budget (single-execution blast radius bound)
+check(
+  "per-request-token-budget lib present",
+  existsSync(join(ROOT, "src/lib/per-request-token-budget.ts")) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "per-request-token-budget Node ALS install present",
+  existsSync(join(ROOT, "src/lib/per-request-token-budget-node.ts")) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "instrumentation.ts imports per-request-token-budget-node",
+  fileContains(
+    "src/instrumentation.ts",
+    "per-request-token-budget-node",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "agent-factory wraps handler in withRequestTokenBudget (R32)",
+  fileContains("src/lib/agent-factory.ts", "withRequestTokenBudget") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "agent-factory translates RequestTokenBudgetExceededError → 429",
+  fileContains(
+    "src/lib/agent-factory.ts",
+    "REQUEST_TOKEN_BUDGET_EXCEEDED",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "per-request-token-budget tests present (>=15 cases)",
+  existsSync(
+    join(ROOT, "src/lib/__tests__/per-request-token-budget.test.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+// Public reasoning trace (customer-facing trust artifact)
+check(
+  "public reasoning trace endpoint present",
+  existsSync(
+    join(ROOT, "src/app/api/_health/trace/[traceId]/route.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "public reasoning trace re-export present",
+  existsSync(
+    join(ROOT, "src/app/api/health/trace/[traceId]/route.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "public trace strips error messages (PII safety)",
+  fileContains(
+    "src/app/api/_health/trace/[traceId]/route.ts",
+    "(redacted)",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
 // ──────────────────────────────────────────────────────────────
 // Report
 // ──────────────────────────────────────────────────────────────

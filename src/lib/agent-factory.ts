@@ -32,6 +32,10 @@ import { onCostCapHit } from "@/lib/cost-cap-alert";
 import { withA2eDepthCheck, A2eDepthExceededError, currentA2eDepth, getA2eMaxDepth, readA2eDepthHeader } from "@/lib/a2e-depth";
 import { withTrace, withSpan } from "@/lib/agent-trace";
 import { persistTrace } from "@/lib/agent-trace-persist";
+import {
+  withRequestTokenBudget,
+  RequestTokenBudgetExceededError,
+} from "@/lib/per-request-token-budget";
 import { scoreOutput, type QualityScore } from "@/lib/quality-scorer";
 import { createLogger } from "@/lib/logger";
 import { auditLog } from "@/lib/audit-log";
@@ -804,27 +808,40 @@ async function handleAgentRoute(
       // R31 — wrap in withTrace too: every model/tool/sub-agent call
       // inside the handler can call addSpan() to record a flame-graph
       // step. The trace is persisted to agent_traces at the end.
+      // R32 — wrap in withRequestTokenBudget: bounds the single-
+      // request token blast radius (complements R27 day-cap + R28
+      // depth-cap). Model-call sites consume budget via consumeTokens().
+      let budgetExceeded = false;
       const traceOutcome = await withTrace(config.name, async () =>
-        withA2eDepthCheck(config.name, () =>
-          Promise.resolve(
-            runWithAttribution(async () =>
-              withSpan(
-                { kind: "agent_call", name: `agent:${config.name}` },
-                async () => {
-                  const r = await config.handler({
-                    input: sanitized,
-                    request: req,
-                    email,
-                    userId,
-                    tenantId,
-                    orgId,
-                  });
-                  return {
-                    result: r,
-                    modelsConsulted: getModelsConsulted(),
-                    providersConsulted: getProvidersConsulted(),
-                  };
-                },
+        withRequestTokenBudget(config.name, () =>
+          withA2eDepthCheck(config.name, () =>
+            Promise.resolve(
+              runWithAttribution(async () =>
+                withSpan(
+                  { kind: "agent_call", name: `agent:${config.name}` },
+                  async () => {
+                    try {
+                      const r = await config.handler({
+                        input: sanitized,
+                        request: req,
+                        email,
+                        userId,
+                        tenantId,
+                        orgId,
+                      });
+                      return {
+                        result: r,
+                        modelsConsulted: getModelsConsulted(),
+                        providersConsulted: getProvidersConsulted(),
+                      };
+                    } catch (err) {
+                      if (err instanceof RequestTokenBudgetExceededError) {
+                        budgetExceeded = true;
+                      }
+                      throw err;
+                    }
+                  },
+                ),
               ),
             ),
           ),
@@ -841,6 +858,23 @@ async function handleAgentRoute(
       // Re-throw the original error if the handler threw, AFTER
       // we've captured the trace.
       if ("error" in traceOutcome) {
+        if (budgetExceeded) {
+          // Translate the budget error to a 429 with a clear code
+          // so callers can backoff/retry with smaller payloads.
+          const e = traceOutcome.error as RequestTokenBudgetExceededError;
+          return new NextResponse(
+            JSON.stringify({
+              error: e.message,
+              code: "REQUEST_TOKEN_BUDGET_EXCEEDED",
+              consumedTokens: e.consumedTokens,
+              ceilingTokens: e.ceilingTokens,
+            }),
+            {
+              status: 429,
+              headers: { "Content-Type": "application/json" },
+            },
+          );
+        }
         throw traceOutcome.error;
       }
       const handlerOutcome = traceOutcome.result;

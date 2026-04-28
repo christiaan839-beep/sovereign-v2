@@ -31,6 +31,9 @@ export async function register() {
     // R31 — Agent execution trace (ALS-backed). Edge runtime falls
     // back to per-instance context (see agent-trace.ts).
     await import("@/lib/agent-trace-node");
+    // R32 — Per-request token budget (ALS-backed). Bounds single-
+    // request blast radius; complements R27 day-cap + R28 depth-cap.
+    await import("@/lib/per-request-token-budget-node");
   }
 
   // ── Env validation — runs before anything else so misconfigured boots
