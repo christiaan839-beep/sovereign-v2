@@ -8,6 +8,44 @@
 >
 > Total time: **~45 minutes**.
 
+## ⚡ Step 0 — Self-service diagnostic (60 seconds)
+
+Before anything else, hit the **diagnostic endpoint** to see exactly
+what's broken in your specific deploy:
+
+```bash
+curl https://sovereignmatrix.agency/api/health/diagnose | jq .
+```
+
+This returns:
+- Every boot-required env var with present/missing
+- DB reachability with the verbatim SQL error
+- Every expected table with found/missing
+- Migration files that need to run
+- Specific actionable hints
+
+If you're staring at a "production is broken, where do I start?"
+moment, this endpoint is the answer. It's the difference between
+guessing and knowing.
+
+### Example output when broken
+
+```json
+{
+  "status": "broken",
+  "summary": "Database unreachable.",
+  "hints": [
+    "Database unreachable (ep-xxx.us-east-2.aws.neon.tech). Common causes: (1) Neon branch paused — wake via dashboard or new connection. (2) DATABASE_URL points at wrong branch. (3) sslmode=require missing from URL.",
+    "Run pending migrations: 0042_platform_health_and_cost_runaway.sql, 0043_agent_traces.sql, 0044_agent_spend_authorizations.sql"
+  ],
+  "database": {
+    "reachable": false,
+    "error": "Connection terminated unexpectedly",
+    "host": "ep-xxx.us-east-2.aws.neon.tech"
+  }
+}
+```
+
 ## 1 — Apply pending migrations (15 min)
 
 13 migrations (0030–0042) are unapplied per `docs/HONEST-GAPS.md`.
