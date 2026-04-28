@@ -64,6 +64,21 @@ export const A2E_HARD_CEILING = 10;
  * Default soft limit when not configured via env. 5 allows
  * playbook → coordinator → sub-agent → tool → leaf, which covers
  * most legitimate patterns in the agent registry.
+ *
+ * SHIPPED CHOICE (R29): 5 is the canonical default.
+ *
+ * Rationale: the deepest legitimate chain in the codebase is
+ * playbook-engine → DAG-node → coordinator → leaf-agent → AI-call,
+ * which is exactly 5. A misconfigured agent calling itself reaches
+ * limit at depth 6 — that's a sharp boundary with no false-positives.
+ *
+ * Operators can override via SOVEREIGN_A2E_MAX_DEPTH env (capped
+ * at A2E_HARD_CEILING=10 — env can lower but never raise above 10).
+ *
+ * Revisit when an agent author legitimately needs depth 6+ (e.g.
+ * a swarm-style coordinator-of-coordinators pattern). At that point
+ * either raise the default to 7 or document the env override in
+ * the agent's manifest.
  */
 export const A2E_DEFAULT_LIMIT = 5;
 
@@ -137,6 +152,67 @@ export async function withA2eDepthCheck<T>(
     throw new A2eDepthExceededError(agentName, next - 1, limit);
   }
   return store.enter(fn);
+}
+
+/**
+ * The HTTP header used to propagate A2E depth across fetch
+ * boundaries. ALS gives us in-process tracking; for fetch-based
+ * recursion (one agent's handler fetches another agent's route),
+ * the header threads the depth through the request pipeline.
+ *
+ * Conventions:
+ *   - Sent from the OUTBOUND fetch with the CURRENT depth
+ *   - Read on INBOUND request; the receiver runs at depth+1
+ *   - Capped at A2E_HARD_CEILING — values above are clamped to 0
+ *     (treated as missing) to defeat header-spoofing attempts that
+ *     try to "skip" the depth gate by sending negative or huge values
+ */
+export const A2E_DEPTH_HEADER = "X-A2E-Depth";
+
+/**
+ * Parse the X-A2E-Depth header from a Request. Returns 0 for any
+ * malformed / hostile / out-of-range value (never throws).
+ *
+ * The clamping behavior is deliberate:
+ *   - missing → 0 (request is the root)
+ *   - negative → 0 (defends against underflow attempts)
+ *   - non-numeric → 0 (defends against header-injection garbage)
+ *   - > A2E_HARD_CEILING → A2E_HARD_CEILING (clamps to ceiling, NOT 0,
+ *     so a malicious caller can't forge "depth=999 means I'm at root")
+ */
+export function readA2eDepthHeader(req: Request): number {
+  const raw = req.headers.get(A2E_DEPTH_HEADER);
+  if (!raw) return 0;
+  // STRICT numeric: only ASCII digits, no signs, no whitespace,
+  // no trailing garbage. parseInt() permissively accepts "3; DROP",
+  // which we DO NOT want — defence-in-depth treats any non-clean
+  // value as missing rather than as the leading numeric prefix.
+  if (!/^\d+$/.test(raw)) return 0;
+  const parsed = parseInt(raw, 10);
+  if (!Number.isFinite(parsed) || parsed < 0) return 0;
+  if (parsed > A2E_HARD_CEILING) return A2E_HARD_CEILING;
+  return parsed;
+}
+
+/**
+ * Build a Headers object for an outbound fetch with the propagated
+ * depth. Caller passes their `seed` arg (typically `currentA2eDepth() + headerSeed`)
+ * so the receiver sees the next-deeper depth.
+ *
+ * Use case: when an agent's handler calls another agent via fetch,
+ * pass the result of this function to the fetch's `headers`.
+ *
+ * Example:
+ *   const headers = a2eOutboundHeaders({ baseHeaders: { "Content-Type": "application/json" } });
+ *   await fetch("/api/_agents/sub-agent", { method: "POST", headers, body: JSON.stringify(...) });
+ */
+export function a2eOutboundHeaders(opts?: {
+  baseHeaders?: HeadersInit;
+}): Headers {
+  const headers = new Headers(opts?.baseHeaders ?? {});
+  // Send CURRENT depth — the receiver will check (depth+1 > limit).
+  headers.set(A2E_DEPTH_HEADER, String(currentA2eDepth()));
+  return headers;
 }
 
 /**

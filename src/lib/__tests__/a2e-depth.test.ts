@@ -20,6 +20,9 @@ import {
   A2eDepthExceededError,
   A2E_HARD_CEILING,
   A2E_DEFAULT_LIMIT,
+  A2E_DEPTH_HEADER,
+  readA2eDepthHeader,
+  a2eOutboundHeaders,
 } from "../a2e-depth";
 // Force the Node-side ALS install for tests.
 import "../a2e-depth-node";
@@ -156,6 +159,74 @@ describe("a2e-depth — limit enforcement", () => {
     expect(caught?.limit).toBe(1);
     expect(caught?.message).toContain("inner");
     expect(caught?.message).toContain("1");
+  });
+});
+
+describe("a2e-depth — HTTP header propagation (R29)", () => {
+  function reqWith(depth: string | null): Request {
+    const headers = new Headers();
+    if (depth !== null) headers.set(A2E_DEPTH_HEADER, depth);
+    return new Request("http://example/test", { headers });
+  }
+
+  it("reads valid header values", () => {
+    expect(readA2eDepthHeader(reqWith("0"))).toBe(0);
+    expect(readA2eDepthHeader(reqWith("3"))).toBe(3);
+    expect(readA2eDepthHeader(reqWith("9"))).toBe(9);
+  });
+
+  it("missing header → depth 0 (request is the root)", () => {
+    expect(readA2eDepthHeader(reqWith(null))).toBe(0);
+  });
+
+  it("SECURITY: negative values → 0 (defeats underflow attempts)", () => {
+    expect(readA2eDepthHeader(reqWith("-1"))).toBe(0);
+    expect(readA2eDepthHeader(reqWith("-999"))).toBe(0);
+  });
+
+  it("SECURITY: non-numeric → 0 (defeats injection attempts via strict regex)", () => {
+    expect(readA2eDepthHeader(reqWith("abc"))).toBe(0);
+    expect(readA2eDepthHeader(reqWith(""))).toBe(0);
+    expect(readA2eDepthHeader(reqWith("3; DROP TABLE"))).toBe(0);
+    // Strict regex: anything containing non-digits after the Headers
+    // class's whitespace trim is rejected wholesale. (The whatwg
+    // Headers class auto-trims surrounding whitespace, so " 3" and
+    // "3 " arrive as "3" — not under our control. The regex still
+    // catches signs and decimals.)
+    expect(readA2eDepthHeader(reqWith("3.5"))).toBe(0);
+    expect(readA2eDepthHeader(reqWith("+3"))).toBe(0);
+    expect(readA2eDepthHeader(reqWith("-3"))).toBe(0);
+    expect(readA2eDepthHeader(reqWith("3a"))).toBe(0);
+  });
+
+  it("SECURITY: values above A2E_HARD_CEILING are clamped to ceiling", () => {
+    // A malicious caller can't forge "depth=999 means I'm at root".
+    // Clamping to ceiling means "depth=999" is treated as
+    // "depth=hard-ceiling" which gets rejected by the limit check.
+    expect(readA2eDepthHeader(reqWith("100"))).toBe(A2E_HARD_CEILING);
+    expect(readA2eDepthHeader(reqWith("999999"))).toBe(A2E_HARD_CEILING);
+  });
+
+  it("a2eOutboundHeaders sends the CURRENT in-process depth", async () => {
+    // Outside any enter() — depth is 0.
+    const headers0 = a2eOutboundHeaders();
+    expect(headers0.get(A2E_DEPTH_HEADER)).toBe("0");
+
+    // Inside enter() — depth is 1.
+    let captured: string | null = null;
+    await withA2eDepthCheck("agent", async () => {
+      captured = a2eOutboundHeaders().get(A2E_DEPTH_HEADER);
+    });
+    expect(captured).toBe("1");
+  });
+
+  it("a2eOutboundHeaders preserves base headers", () => {
+    const headers = a2eOutboundHeaders({
+      baseHeaders: { "Content-Type": "application/json", "X-Custom": "abc" },
+    });
+    expect(headers.get("Content-Type")).toBe("application/json");
+    expect(headers.get("X-Custom")).toBe("abc");
+    expect(headers.get(A2E_DEPTH_HEADER)).toBeDefined();
   });
 });
 

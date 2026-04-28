@@ -1840,6 +1840,82 @@ check(
   { dimension: "security" },
 );
 
+// ─── Round 29 — User-contribution closure + power-tool follow-ups ───
+//
+// Three open user-contribution points closed with defensible defaults
+// (locked into source as comments + ADR-style notes). Two follow-up
+// power tools shipped: HTTP-header A2E propagation + replay viewer.
+
+// Cost-cap alert is wired (no longer a TODO)
+check(
+  "cost-cap-alert dispatches via notifyUser (in-app + slack + email)",
+  fileContains("src/lib/cost-cap-alert.ts", "notifyUser") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "cost-cap-alert resolves user email via Clerk",
+  fileContains("src/lib/cost-cap-alert.ts", "@clerk/nextjs/server") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+// Customer-stats anonymizer posture is documented
+check(
+  "anonymizer config is documented as SHIPPED CHOICE (R29)",
+  fileContains("src/lib/customer-stats-anonymizer.ts", "SHIPPED CHOICE") ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+// A2E HTTP-header propagation (R29 closure of R28's TODO follow-up)
+check(
+  "a2e-depth exports A2E_DEPTH_HEADER + readA2eDepthHeader",
+  fileContains("src/lib/a2e-depth.ts", "A2E_DEPTH_HEADER") &&
+    fileContains("src/lib/a2e-depth.ts", "readA2eDepthHeader") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "agent-factory reads X-A2E-Depth header (cross-fetch propagation)",
+  fileContains("src/lib/agent-factory.ts", "readA2eDepthHeader") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "agent-factory MAX(als, header) for depth (defence-in-depth)",
+  fileContains("src/lib/agent-factory.ts", "Math.max(alsDepth, headerDepth)") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+// Agent run replay viewer
+check(
+  "replay viewer API present (/api/admin/replay/[auditId])",
+  existsSync(
+    join(ROOT, "src/app/api/admin/replay/[auditId]/route.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "replay viewer UI present",
+  existsSync(
+    join(ROOT, "src/app/dashboard/admin/replay/[auditId]/page.tsx"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "replay viewer API uses requireAdmin gate",
+  fileContains(
+    "src/app/api/admin/replay/[auditId]/route.ts",
+    "requireAdmin",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
 // ──────────────────────────────────────────────────────────────
 // Report
 // ──────────────────────────────────────────────────────────────

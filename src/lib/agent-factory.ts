@@ -29,7 +29,7 @@ import { checkContentSafety } from "@/lib/content-safety";
 import { checkFreeUsage, incrementUsage, getSmartUpgradeInfo, getUserTier } from "@/lib/free-tier";
 import { checkTenantCostCap, recordCost } from "@/lib/cost-runaway";
 import { onCostCapHit } from "@/lib/cost-cap-alert";
-import { withA2eDepthCheck, A2eDepthExceededError, currentA2eDepth, getA2eMaxDepth } from "@/lib/a2e-depth";
+import { withA2eDepthCheck, A2eDepthExceededError, currentA2eDepth, getA2eMaxDepth, readA2eDepthHeader } from "@/lib/a2e-depth";
 import { scoreOutput, type QualityScore } from "@/lib/quality-scorer";
 import { createLogger } from "@/lib/logger";
 import { auditLog } from "@/lib/audit-log";
@@ -263,7 +263,7 @@ async function handleAgentRoute(
         if (userId) setRequestUserId(userId);
       }
 
-      // ─── A2E Recursion Depth Guard (R28) ───
+      // ─── A2E Recursion Depth Guard (R28 + R29 HTTP propagation) ───
       // Hard limit on agent-calling-agent depth. Reactive cost cap
       // catches recursion symptomatically (it bills tokens); this
       // catches it BEFORE any LLM call, bounding worst-case spend
@@ -272,9 +272,15 @@ async function handleAgentRoute(
       // 422 (not 429/402) because semantically this is "request shape
       // is wrong" — the recursion graph is malformed.
       //
+      // R29: depth comes from MAX(in-process ALS, X-A2E-Depth header)
+      // so cross-fetch recursion is also caught. The header is
+      // clamped to A2E_HARD_CEILING — defeats spoofing.
+      //
       // See: src/lib/a2e-depth.ts and Constitution Principle 7.
       try {
-        const currentDepth = currentA2eDepth();
+        const alsDepth = currentA2eDepth();
+        const headerDepth = readA2eDepthHeader(req);
+        const currentDepth = Math.max(alsDepth, headerDepth);
         if (currentDepth >= getA2eMaxDepth()) {
           // Fast-path reject without invoking the wrapper, so the error
           // comes back with the right metadata.

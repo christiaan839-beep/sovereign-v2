@@ -116,8 +116,22 @@ export function bucketCount(
  *      early-stage scale, an exact "473 users" tells competitors
  *      exactly how big the business is.
  *
- * The default below is STANDARD. Edit these constants to pick a
- * different posture; the rest of the system flows from this choice.
+ * SHIPPED CHOICE (R29): STANDARD posture.
+ *
+ * Rationale: the platform is past pilot but pre-mass-scale. Conservative
+ * thresholds (10K runs / 100 users) would suppress every legitimate
+ * range a procurement reviewer needs to evaluate. Aggressive (100 / 5)
+ * leaks too much at our current scale. Exact would let competitors
+ * estimate ARR.
+ *
+ * Standard hits the procurement-friendly band: "1,000–5,000 runs" or
+ * "25–100 users" is informative AND non-revealing. When platform
+ * scale grows past the upper buckets (1M+ runs / 10K+ users), the
+ * "1M+" / "10K+" labels naturally take over.
+ *
+ * Revisit this when monthly active users cross 5,000 or annual run
+ * count crosses 1M. At that point, Aggressive becomes the right call —
+ * the absolute numbers are no longer business-sensitive.
  *
  * ────────────────────────────────────────────────────────────────
  */

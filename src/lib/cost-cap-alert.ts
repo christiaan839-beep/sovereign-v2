@@ -116,33 +116,60 @@ export async function onCostCapHit(event: CostCapHitEvent): Promise<void> {
     triggerAgentId: event.triggerAgentId,
   });
 
-  // ── USER CONTRIBUTION ──────────────────────────────────────────
+  // STEP 3 — User-facing notification + operator alert (R29).
   //
-  // Add your alert dispatch here. Examples:
+  // Implementation: opportunistic full fanout via the existing
+  // notifyUser() infrastructure. notifyUser writes to in-app
+  // activity feed (always), Slack webhook (if SLACK_WEBHOOK_URL),
+  // and email (if email is provided + RESEND_API_KEY exists).
   //
-  //   // Option A — email the user via Resend
-  //   await import("@/lib/notify").then(m => m.notifyCostCapHit?.({
-  //     userId: event.userId,
-  //     dailyCap: event.capCents / 100,
-  //     resetAt: nextUtcMidnight(),
-  //   }));
+  // Each channel skips gracefully when its env var is absent —
+  // a deployment without Slack still gets in-app + email; one
+  // without email still gets in-app + Slack. The audit log
+  // (step 1) is the durable backstop regardless.
   //
-  //   // Option B — page operator via Slack
-  //   await import("@/lib/slack-incident").then(m => m.postIncident?.({
-  //     severity: "warning",
-  //     title: `Tenant ${event.userId} hit daily cost cap`,
-  //     details: `Spent $${event.cumulativeCents / 100} of $${event.capCents / 100} cap`,
-  //   }));
-  //
-  //   // Option C — both, in parallel
-  //   await Promise.allSettled([emailUser, pageOps]);
-  //
-  // What's right for YOUR deployment depends on:
-  //   - How often the cap legitimately gets hit
-  //   - Whether ops has a 24/7 Slack channel
-  //   - Whether email infra (Resend) is healthy
-  //
-  // ───────────────────────────────────────────────────────────────
+  // Email lookup: best-effort via Clerk. We never block the
+  // alert dispatch on Clerk being reachable.
+  let userEmail: string | undefined;
+  try {
+    const { clerkClient } = await import("@clerk/nextjs/server");
+    const client = await clerkClient();
+    const user = await client.users.getUser(event.userId);
+    userEmail = user.primaryEmailAddress?.emailAddress;
+  } catch {
+    // Clerk lookup failed — proceed without email; Slack + in-app still fire.
+    userEmail = undefined;
+  }
+
+  const dollars = (event.capCents / 100).toFixed(0);
+  const spent = (event.cumulativeCents / 100).toFixed(2);
+  const resetAt = nextUtcMidnight();
+
+  try {
+    const { notifyUser } = await import("@/lib/notify");
+    await notifyUser(event.userId, {
+      title: "Daily cost cap reached",
+      message:
+        `Your daily spend cap of $${dollars} was reached after $${spent} ` +
+        `of agent runs (last triggered by "${event.triggerAgentId}"). ` +
+        `Agent execution will resume automatically at ${resetAt.toISOString()} ` +
+        `(next UTC midnight). Contact support if you need an early lift.`,
+      agent: event.triggerAgentId,
+      channel: "all", // in-app + slack + email, each fail-safe
+      email: userEmail,
+      metadata: {
+        cumulativeCents: event.cumulativeCents,
+        capCents: event.capCents,
+        planId: event.planId,
+        autoResumeAt: resetAt.toISOString(),
+      },
+    });
+  } catch (err) {
+    // notifyUser is itself fail-safe; this catch is the belt-and-braces
+    // for unexpected import failures. The audit log (step 1) is the
+    // durable record either way.
+    log.warn("Cost-cap notify dispatch failed", { error: String(err) });
+  }
 }
 
 /**
