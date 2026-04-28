@@ -1055,6 +1055,86 @@ export const platformHealthSnapshots = pgTable("platform_health_snapshots", {
   index("idx_platform_health_recent").on(table.createdAt),
 ]);
 
+// Round 30 — Agent Spend Authorizations + Charges (the agentic-commerce
+// foundation). User grants an agent a bounded, scoped, time-limited
+// spend authorization; the platform atomically validates + decrements
+// on each charge. See drizzle/0044 for shape rationale.
+export const agentSpendAuthorizations = pgTable("agent_spend_authorizations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull(),
+  agentName: text("agent_name").notNull(),
+  maxCents: integer("max_cents").notNull(),
+  spentCents: integer("spent_cents").notNull().default(0),
+  categoryLimits: jsonb("category_limits").$type<Record<string, number>>().notNull().default({}),
+  allowedMerchants: jsonb("allowed_merchants").$type<string[] | null>(),
+  expiresAt: timestamp("expires_at").notNull(),
+  revokedAt: timestamp("revoked_at"),
+  revokeReason: text("revoke_reason"),
+  hitlThresholdCents: integer("hitl_threshold_cents"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_agent_spend_auth_user").on(table.userId, table.expiresAt),
+  index("idx_agent_spend_auth_agent").on(table.agentName, table.expiresAt),
+  index("idx_agent_spend_auth_expiry").on(table.expiresAt),
+]);
+
+export const agentSpendCharges = pgTable("agent_spend_charges", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  authorizationId: uuid("authorization_id").notNull(),
+  userId: text("user_id").notNull(),
+  agentName: text("agent_name").notNull(),
+  idempotencyKey: text("idempotency_key").notNull(),
+  amountCents: integer("amount_cents").notNull(),
+  merchantName: text("merchant_name").notNull(),
+  merchantCategory: text("merchant_category").notNull(),
+  metadata: jsonb("metadata").$type<Record<string, unknown>>().notNull().default({}),
+  // 'reserved' | 'completed' | 'reversed' | 'failed'
+  status: text("status").notNull(),
+  receiptHash: text("receipt_hash").notNull(),
+  reversalWindowUntil: timestamp("reversal_window_until").notNull(),
+  reversedAt: timestamp("reversed_at"),
+  reversedBy: text("reversed_by"),
+  reverseReason: text("reverse_reason"),
+  failedReason: text("failed_reason"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("idx_agent_spend_charges_idempotency").on(table.authorizationId, table.idempotencyKey),
+  index("idx_agent_spend_charges_user_recent").on(table.userId, table.createdAt),
+  index("idx_agent_spend_charges_auth").on(table.authorizationId, table.createdAt),
+]);
+
+// Round 30 — Agent execution traces. One row per agent run; spans
+// (per-step model/tool/decision/agent calls) live as JSONB so the
+// whole trace fits in one query. See drizzle/0043 for shape rationale.
+export const agentTraces = pgTable("agent_traces", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  auditId: text("audit_id"),
+  userId: text("user_id").notNull(),
+  agentName: text("agent_name").notNull(),
+  totalDurationMs: integer("total_duration_ms").notNull(),
+  totalCostCents: integer("total_cost_cents").notNull().default(0),
+  spans: jsonb("spans").$type<Array<{
+    id: string;
+    parentId: string | null;
+    kind: "model_call" | "tool_call" | "agent_call" | "decision";
+    name: string;
+    startMs: number;
+    durationMs: number;
+    costCents: number;
+    inputBytes: number;
+    outputBytes: number;
+    error?: string;
+  }>>().notNull(),
+  spanCount: integer("span_count").notNull(),
+  firstError: text("first_error"),
+  retainUntil: timestamp("retain_until").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_agent_traces_user_recent").on(table.userId, table.createdAt),
+  index("idx_agent_traces_cost").on(table.totalCostCents, table.createdAt),
+]);
+
 // Round 27 — Per-tenant per-day cost ledger. Bounds the financial
 // blast radius (Constitution Principle 7). The runaway guard reads
 // this in O(1) per request to enforce the daily cap.

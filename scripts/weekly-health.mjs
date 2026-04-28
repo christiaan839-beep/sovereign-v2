@@ -1916,6 +1916,144 @@ check(
   { dimension: "security" },
 );
 
+// ─── Round 30 — Agentic Commerce primitives ───────────────────────────
+//
+// The platform's first move into the agentic-commerce category.
+// Every agent action with money has these gates: spend authorization,
+// atomic charge, reversal window, hash-chained receipt. Removing any
+// piece silently breaks the trust contract.
+
+check(
+  "migration 0044 (agent_spend_authorizations + charges) on disk",
+  existsSync(
+    join(ROOT, "drizzle/0044_agent_spend_authorizations.sql"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "database" },
+);
+check(
+  "schema.ts declares agentSpendAuthorizations table",
+  fileContains("src/db/schema.ts", "agentSpendAuthorizations") ? 1 : 0,
+  1,
+  { dimension: "database" },
+);
+check(
+  "schema.ts declares agentSpendCharges table",
+  fileContains("src/db/schema.ts", "agentSpendCharges") ? 1 : 0,
+  1,
+  { dimension: "database" },
+);
+check(
+  "agent-spend lib present (spend authorization + atomic charge)",
+  existsSync(join(ROOT, "src/lib/agent-spend.ts")) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "agent-spend uses SELECT FOR UPDATE (atomic charge)",
+  fileContains("src/lib/agent-spend.ts", '.for("update")') ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "agent-spend tests present (>=20 cases)",
+  existsSync(join(ROOT, "src/lib/__tests__/agent-spend.test.ts")) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "audit-log enum includes commerce.charge (hash-chained)",
+  fileContains("src/lib/audit-log.ts", '"commerce.charge"') ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "audit-log enum includes commerce.authorize",
+  fileContains("src/lib/audit-log.ts", '"commerce.authorize"') ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "audit-log enum includes commerce.reverse",
+  fileContains("src/lib/audit-log.ts", '"commerce.reverse"') ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+// API routes
+check(
+  "/api/agent-commerce/authorize route present",
+  existsSync(
+    join(ROOT, "src/app/api/agent-commerce/authorize/route.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "/api/agent-commerce/charge route present",
+  existsSync(
+    join(ROOT, "src/app/api/agent-commerce/charge/route.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "/api/agent-commerce/reverse/[chargeId] route present",
+  existsSync(
+    join(ROOT, "src/app/api/agent-commerce/reverse/[chargeId]/route.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "/api/agent-commerce/verify/[authorizationId] route present (public)",
+  existsSync(
+    join(
+      ROOT,
+      "src/app/api/agent-commerce/verify/[authorizationId]/route.ts",
+    ),
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "agent-commerce charge route uses requireMutatingAuth (CSRF + Clerk)",
+  fileContains(
+    "src/app/api/agent-commerce/charge/route.ts",
+    "requireMutatingAuth",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+// Public surface
+check(
+  "/agentic-commerce public page present",
+  existsSync(join(ROOT, "src/app/agentic-commerce/page.tsx")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "docs/AGENTIC-COMMERCE.md present (strategy + architecture)",
+  existsSync(join(ROOT, "docs/AGENTIC-COMMERCE.md")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+// Trace schema staged for future R30 trace work (migration 0043).
+check(
+  "migration 0043 (agent_traces) staged",
+  existsSync(join(ROOT, "drizzle/0043_agent_traces.sql")) ? 1 : 0,
+  1,
+  { dimension: "database" },
+);
+check(
+  "schema.ts declares agentTraces table",
+  fileContains("src/db/schema.ts", "agentTraces") ? 1 : 0,
+  1,
+  { dimension: "database" },
+);
+
 // ──────────────────────────────────────────────────────────────
 // Report
 // ──────────────────────────────────────────────────────────────

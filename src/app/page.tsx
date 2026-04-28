@@ -985,6 +985,7 @@ function Footer() {
             title="Developers"
             links={[
               { href: "/developers/docs", label: "API Docs" },
+              { href: "/agentic-commerce", label: "Agentic Commerce" },
               { href: "/docs/errors", label: "Error codes" },
               { href: "/docs/webhooks/verify", label: "Webhook HMAC" },
               { href: "/status/slo", label: "SLO" },
