@@ -2210,6 +2210,29 @@ check(
   { dimension: "process" },
 );
 
+// Self-service deploy diagnostic (returns specific failure reasons)
+check(
+  "/api/health/diagnose endpoint present (self-service deploy)",
+  existsSync(join(ROOT, "src/app/api/_health/diagnose/route.ts")) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+check(
+  "/api/health/diagnose public re-export present",
+  existsSync(join(ROOT, "src/app/api/health/diagnose/route.ts")) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+check(
+  "diagnose endpoint hashes DATABASE_URL (no leak)",
+  fileContains(
+    "src/app/api/_health/diagnose/route.ts",
+    "createHash",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
 // Public reasoning trace (customer-facing trust artifact)
 check(
   "public reasoning trace endpoint present",
