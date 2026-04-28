@@ -29,6 +29,7 @@ import { checkContentSafety } from "@/lib/content-safety";
 import { checkFreeUsage, incrementUsage, getSmartUpgradeInfo, getUserTier } from "@/lib/free-tier";
 import { checkTenantCostCap, recordCost } from "@/lib/cost-runaway";
 import { onCostCapHit } from "@/lib/cost-cap-alert";
+import { withA2eDepthCheck, A2eDepthExceededError, currentA2eDepth, getA2eMaxDepth } from "@/lib/a2e-depth";
 import { scoreOutput, type QualityScore } from "@/lib/quality-scorer";
 import { createLogger } from "@/lib/logger";
 import { auditLog } from "@/lib/audit-log";
@@ -260,6 +261,46 @@ async function handleAgentRoute(
 
         // Sync to request context for log correlation
         if (userId) setRequestUserId(userId);
+      }
+
+      // ─── A2E Recursion Depth Guard (R28) ───
+      // Hard limit on agent-calling-agent depth. Reactive cost cap
+      // catches recursion symptomatically (it bills tokens); this
+      // catches it BEFORE any LLM call, bounding worst-case spend
+      // to ~N × per-call instead of unbounded.
+      //
+      // 422 (not 429/402) because semantically this is "request shape
+      // is wrong" — the recursion graph is malformed.
+      //
+      // See: src/lib/a2e-depth.ts and Constitution Principle 7.
+      try {
+        const currentDepth = currentA2eDepth();
+        if (currentDepth >= getA2eMaxDepth()) {
+          // Fast-path reject without invoking the wrapper, so the error
+          // comes back with the right metadata.
+          throw new A2eDepthExceededError(
+            config.name,
+            currentDepth,
+            getA2eMaxDepth(),
+          );
+        }
+      } catch (err) {
+        if (err instanceof A2eDepthExceededError) {
+          return new NextResponse(
+            JSON.stringify({
+              error: "Agent call depth exceeded",
+              message: err.message,
+              code: "A2E_DEPTH_EXCEEDED",
+              depthAtCall: err.depthAtCall,
+              limit: err.limit,
+            }),
+            {
+              status: 422,
+              headers: { "Content-Type": "application/json" },
+            },
+          );
+        }
+        throw err;
       }
 
       // ─── Cost-Runaway Guard (R27) ───
@@ -732,21 +773,33 @@ async function handleAgentRoute(
       // below may swap in a scrubbed copy. The destructure binds an
       // initial value; re-assignment happens only inside the safe-mask
       // branch of the structural PII scrubber.
-      const handlerOutcome = await runWithAttribution(async () => {
-        const r = await config.handler({
-          input: sanitized,
-          request: req,
-          email,
-          userId,
-          tenantId,
-          orgId,
-        });
-        return {
-          result: r,
-          modelsConsulted: getModelsConsulted(),
-          providersConsulted: getProvidersConsulted(),
-        };
-      });
+      // R28 — wrap handler in withA2eDepthCheck so any in-process
+      // sub-agent calls during this handler see incremented depth.
+      // The check at the top of this route already verified the
+      // CALLER's depth; this wrapper increments for any IN-PROCESS
+      // children. Cross-fetch recursion needs the X-A2E-Depth header
+      // (TODO follow-up).
+      // Promise.resolve() normalizes runWithAttribution's `T | Promise<T>`
+      // signature into the Promise<T> withA2eDepthCheck expects.
+      const handlerOutcome = await withA2eDepthCheck(config.name, () =>
+        Promise.resolve(
+          runWithAttribution(async () => {
+            const r = await config.handler({
+              input: sanitized,
+              request: req,
+              email,
+              userId,
+              tenantId,
+              orgId,
+            });
+            return {
+              result: r,
+              modelsConsulted: getModelsConsulted(),
+              providersConsulted: getProvidersConsulted(),
+            };
+          }),
+        ),
+      );
       let result = handlerOutcome.result;
       const { modelsConsulted, providersConsulted } = handlerOutcome;
       replay?.addStep("handler_complete", { outputKeys: Object.keys(result), outputSize: JSON.stringify(result).length });

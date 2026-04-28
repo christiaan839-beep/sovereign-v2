@@ -25,6 +25,9 @@ export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
     await import("@/lib/request-context-node");
     await import("@/lib/model-attribution-node");
+    // R28 — A2E recursion depth tracker (ALS-backed). Edge runtime
+    // falls back to a per-instance counter (see a2e-depth.ts).
+    await import("@/lib/a2e-depth-node");
   }
 
   // ── Env validation — runs before anything else so misconfigured boots

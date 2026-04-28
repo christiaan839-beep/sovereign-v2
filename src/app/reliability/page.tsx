@@ -56,6 +56,22 @@ interface ProviderHealthDoc {
   generatedAt: string;
 }
 
+interface AgentSloRow {
+  agentName: string;
+  runs: number;
+  p50Ms: number;
+  p95Ms: number;
+  successRatePct: number;
+  latencyTier: "fast" | "med" | "slow";
+}
+
+interface AgentSloDoc {
+  agents: AgentSloRow[];
+  windowDays: number;
+  minRunsThreshold: number;
+  note?: string;
+}
+
 interface PermanenceData {
   headline: {
     uptime30Day: number | null;
@@ -146,6 +162,7 @@ function formatRelative(iso: string | null): string {
 export default function ReliabilityPage() {
   const [data, setData] = useState<PermanenceData | null>(null);
   const [providers, setProviders] = useState<ProviderHealthDoc | null>(null);
+  const [slo, setSlo] = useState<AgentSloDoc | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
 
@@ -153,12 +170,12 @@ export default function ReliabilityPage() {
     let alive = true;
     const load = async () => {
       try {
-        // Fire BOTH endpoints in parallel — each is independently
-        // cached at the edge so the cost is one round-trip per
-        // 30-60s, not two.
-        const [permRes, provRes] = await Promise.all([
+        // Fire all endpoints in parallel — each is independently
+        // edge-cached, so the cost is one round-trip per refresh.
+        const [permRes, provRes, sloRes] = await Promise.all([
           fetch("/api/health/permanence", { cache: "no-store" }),
           fetch("/api/health/providers", { cache: "no-store" }),
+          fetch("/api/health/agent-slo", { cache: "no-store" }),
         ]);
         if (!alive) return;
         if (!permRes.ok) {
@@ -168,11 +185,13 @@ export default function ReliabilityPage() {
         }
         const permJson = (await permRes.json()) as PermanenceData;
         setData(permJson);
-        // Provider health is best-effort. If it 5xxs, the rest of the
-        // page still renders.
         if (provRes.ok) {
           const provJson = (await provRes.json()) as ProviderHealthDoc;
           setProviders(provJson);
+        }
+        if (sloRes.ok) {
+          const sloJson = (await sloRes.json()) as AgentSloDoc;
+          setSlo(sloJson);
         }
         setLoading(false);
       } catch (e) {
@@ -367,6 +386,82 @@ export default function ReliabilityPage() {
               <ProviderCard key={p.provider} provider={p} />
             ))}
           </div>
+        </section>
+      )}
+
+      {/* Per-agent SLO panel — uses execution_audit_log over 7 days.
+          Only shown when there's data. Honest empty state otherwise. */}
+      {slo && slo.agents.length > 0 && (
+        <section className="mx-auto max-w-6xl px-6 pb-16">
+          <div className="mb-6">
+            <h2 className="text-2xl md:text-3xl font-light text-white tracking-tight">
+              Per-agent SLO ({slo.windowDays}-day rolling)
+            </h2>
+            <p className="mt-2 text-neutral-400 max-w-2xl">
+              p50 + p95 latency and success rate for every agent with at
+              least {slo.minRunsThreshold} runs in the window. Sourced
+              from <code className="text-xs">execution_audit_log</code>;
+              tenant identifiers stripped.
+            </p>
+          </div>
+          <div className="rounded-xl border border-white/5 bg-white/[0.02] overflow-hidden">
+            <div className="grid grid-cols-12 gap-2 px-4 py-2.5 text-[10px] uppercase tracking-wider text-neutral-500 border-b border-white/5 bg-white/[0.02]">
+              <div className="col-span-5 sm:col-span-4">Agent</div>
+              <div className="col-span-2 text-right">Runs</div>
+              <div className="col-span-2 text-right">p50</div>
+              <div className="col-span-2 text-right">p95</div>
+              <div className="col-span-1 sm:col-span-2 text-right">Success</div>
+            </div>
+            <div className="divide-y divide-white/[0.04] max-h-96 overflow-y-auto">
+              {slo.agents.slice(0, 50).map((a) => (
+                <div
+                  key={a.agentName}
+                  className="grid grid-cols-12 gap-2 px-4 py-2 text-xs hover:bg-white/[0.02] transition-colors"
+                >
+                  <div className="col-span-5 sm:col-span-4 truncate">
+                    <code className="text-neutral-200 font-mono">{a.agentName}</code>
+                    <span
+                      className={`ml-2 inline-block w-1.5 h-1.5 rounded-full ${
+                        a.latencyTier === "fast"
+                          ? "bg-emerald-400"
+                          : a.latencyTier === "med"
+                          ? "bg-yellow-400"
+                          : "bg-red-400"
+                      }`}
+                      aria-hidden
+                    />
+                  </div>
+                  <div className="col-span-2 text-right tabular-nums text-neutral-400">
+                    {a.runs.toLocaleString()}
+                  </div>
+                  <div className="col-span-2 text-right tabular-nums text-neutral-300">
+                    {a.p50Ms < 1000 ? `${a.p50Ms}ms` : `${(a.p50Ms / 1000).toFixed(1)}s`}
+                  </div>
+                  <div className="col-span-2 text-right tabular-nums text-neutral-300">
+                    {a.p95Ms < 1000 ? `${a.p95Ms}ms` : `${(a.p95Ms / 1000).toFixed(1)}s`}
+                  </div>
+                  <div className="col-span-1 sm:col-span-2 text-right tabular-nums">
+                    <span
+                      className={
+                        a.successRatePct >= 99
+                          ? "text-emerald-300"
+                          : a.successRatePct >= 95
+                          ? "text-yellow-300"
+                          : "text-red-300"
+                      }
+                    >
+                      {a.successRatePct.toFixed(1)}%
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          {slo.agents.length > 50 && (
+            <p className="mt-3 text-xs text-neutral-500">
+              Showing top 50 by run volume; total {slo.agents.length} qualifying agents.
+            </p>
+          )}
         </section>
       )}
 

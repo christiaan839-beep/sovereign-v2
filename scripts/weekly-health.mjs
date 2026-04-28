@@ -1766,6 +1766,80 @@ check(
   { dimension: "trust-asset" },
 );
 
+// ─── Round 28 — Power Tools sprint ───────────────────────────────────
+//
+// Three power-tool layers locked in:
+//   1. A2E recursion depth tracker (Constitution Principle 7)
+//   2. Per-agent SLO surface (uses execution_audit_log)
+//   3. Multi-tenant isolation regression tests (SOC-2 evidence)
+
+// A2E depth — the lib + the Node ALS install + the agent-factory wire.
+// Removing any one of these silently disables the depth gate.
+check(
+  "a2e-depth lib present (recursion depth tracker)",
+  existsSync(join(ROOT, "src/lib/a2e-depth.ts")) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "a2e-depth-node ALS install present",
+  existsSync(join(ROOT, "src/lib/a2e-depth-node.ts")) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "instrumentation.ts imports a2e-depth-node",
+  fileContains("src/instrumentation.ts", "a2e-depth-node") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "agent-factory imports A2eDepthExceededError (wired)",
+  fileContains("src/lib/agent-factory.ts", "A2eDepthExceededError") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "agent-factory wraps handler in withA2eDepthCheck (depth increments)",
+  fileContains("src/lib/agent-factory.ts", "withA2eDepthCheck") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "a2e-depth tests present",
+  existsSync(join(ROOT, "src/lib/__tests__/a2e-depth.test.ts")) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+// Per-agent SLO — endpoint + public re-export + reliability page wiring.
+check(
+  "/api/_health/agent-slo route present",
+  existsSync(join(ROOT, "src/app/api/_health/agent-slo/route.ts")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "public /api/health/agent-slo re-export present",
+  existsSync(join(ROOT, "src/app/api/health/agent-slo/route.ts")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "/reliability page fetches /api/health/agent-slo",
+  fileContains("src/app/reliability/page.tsx", "/api/health/agent-slo") ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+// Multi-tenant isolation regression suite.
+check(
+  "tenant-isolation regression tests present",
+  existsSync(join(ROOT, "src/lib/__tests__/tenant-isolation.test.ts")) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
 // ──────────────────────────────────────────────────────────────
 // Report
 // ──────────────────────────────────────────────────────────────
