@@ -133,6 +133,19 @@ const RULES: readonly RateRule[] = [
   // Placed LAST so the specific rules above win. Catches /api/approvals,
   // /api/contact, /api/waitlist, /api/integrations/*, etc.
   { name: "api-default",      prefix: "/api/",                max: 60,   windowSeconds: 60, identify: "user_or_ip" },
+
+  // ─── PUBLIC SHARE LINKS (Round 23) ─────────────────────────────────
+  // /share/[token] is the unauthenticated public surface for run
+  // forensics. Tighter limit than /api/public/* because:
+  //   1. Each request bumps access_count + last_accessed_at, which
+  //      pollutes the owner's "is this share being abused?" metric
+  //      if an attacker hammers it
+  //   2. Each request hits the DB twice (resolveShareToken +
+  //      getDagRun), making it a cheap DoS vector if uncapped
+  //   3. The recipient (auditor / lawyer / customer) realistically
+  //      views each share fewer than 10 times — 30/min is generous
+  //      while still catching abuse cleanly
+  { name: "share-public",     prefix: "/share/",              max: 30,   windowSeconds: 60, identify: "ip_only" },
 ];
 
 export function matchRule(pathname: string): RateRule | null {

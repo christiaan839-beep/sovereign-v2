@@ -149,9 +149,13 @@ async function evaluateRateLimit(
   userId: string | null,
 ) {
   const pathname = request.nextUrl.pathname;
-  // Only the /api/* surface uses route-aware rate limits. Everything
-  // else (pages, static assets) doesn't hit this branch.
-  if (!pathname.startsWith("/api/")) return null;
+  // /api/* (the API surface) AND /share/* (public share-link surface)
+  // both go through route-aware rate limiting. Everything else (pages,
+  // static assets) skips this branch — Vercel's CDN handles those.
+  // Round 23 — adds /share/* coverage. Without it, an attacker could
+  // hammer a known share token to flood the audit log + bump
+  // access_count metrics.
+  if (!pathname.startsWith("/api/") && !pathname.startsWith("/share/")) return null;
 
   const { applyRateLimit, matchRule } = await import("@/lib/rate-limits");
   // If no rule claims this path, skip entirely — don't waste a Redis round-trip.

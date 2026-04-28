@@ -1,0 +1,65 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    ":semanticCommits"
+  ],
+  "_comment": "Automated dependency PRs. Round 22 found 2 CRITICAL CVEs already shipped (Clerk middleware bypass, Next.js HTTP request smuggling). Without Renovate, the next CVE lands in production the same way — silently. With it, a PR opens within an hour of the upstream patch.",
+  "schedule": ["before 9am on monday"],
+  "timezone": "Africa/Johannesburg",
+  "labels": ["dependencies"],
+  "prHourlyLimit": 4,
+  "prConcurrentLimit": 8,
+  "rangeStrategy": "bump",
+
+  "vulnerabilityAlerts": {
+    "_comment": "Security alerts ALWAYS open a PR immediately, ignoring the schedule. CRITICAL upgrades skip the queue entirely.",
+    "enabled": true,
+    "schedule": ["at any time"],
+    "labels": ["security", "vulnerability"],
+    "prHourlyLimit": 0,
+    "prConcurrentLimit": 0
+  },
+
+  "packageRules": [
+    {
+      "_comment": "Group Next.js + React + related into one PR — they version together",
+      "matchPackagePatterns": ["^next$", "^next-", "^@next/", "^react$", "^react-dom$"],
+      "groupName": "next + react",
+      "schedule": ["before 9am on monday"]
+    },
+    {
+      "_comment": "Group Clerk packages — they release together",
+      "matchPackagePatterns": ["^@clerk/"],
+      "groupName": "clerk"
+    },
+    {
+      "_comment": "Auto-merge patch + minor bumps in dev-dependencies. They can't break prod runtime.",
+      "matchDepTypes": ["devDependencies"],
+      "matchUpdateTypes": ["patch", "minor"],
+      "automerge": true
+    },
+    {
+      "_comment": "Lock files and tooling - allow auto-merge for patches",
+      "matchPackagePatterns": ["^typescript$", "^vitest$", "^@vitest/", "^prettier$", "^eslint", "^@typescript-eslint/"],
+      "matchUpdateTypes": ["patch"],
+      "automerge": true
+    },
+    {
+      "_comment": "Major bumps NEVER auto-merge. Require human review (breaking changes possible).",
+      "matchUpdateTypes": ["major"],
+      "automerge": false,
+      "labels": ["major-version", "breaking-possible"]
+    }
+  ],
+
+  "lockFileMaintenance": {
+    "_comment": "Refresh package-lock.json weekly to capture transitive-dep CVE patches even when our top-level pins haven't changed.",
+    "enabled": true,
+    "schedule": ["before 9am on monday"]
+  },
+
+  "osvVulnerabilityAlerts": true,
+  "transitiveRemediation": true
+}

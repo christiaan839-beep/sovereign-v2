@@ -315,6 +315,35 @@ export default async function RunDetailPage({ params }: PageProps) {
       )}
 
       {/*
+        Round 23 — compare with another run. Helps the regression-
+        diagnosis workflow ("what changed between this run and the
+        last good one"). Only meaningful for terminal-state runs +
+        runs that belong to a saved DAG (the comparison aligns nodes
+        by ID, which requires a stable parent).
+      */}
+      {!inFlight && run.dagId && (
+        <section className="mt-6 rounded-lg border border-white/10 bg-white/[0.02] p-4">
+          <div className="flex items-baseline justify-between gap-3 flex-wrap">
+            <div>
+              <h3 className="text-sm font-semibold text-neutral-200">
+                Compare with another run
+              </h3>
+              <p className="mt-0.5 text-xs text-neutral-500">
+                Diff per-node results to spot regressions, recoveries,
+                and slowdowns.
+              </p>
+            </div>
+            <Link
+              href={`/dashboard/playbooks/runs?dagId=${run.dagId}`}
+              className="text-xs text-emerald-400 hover:text-emerald-300 underline-offset-4 hover:underline"
+            >
+              Pick another run →
+            </Link>
+          </div>
+        </section>
+      )}
+
+      {/*
         Round 15 — share management. Only render once the run is no
         longer in flight; sharing a still-running run produces a
         moving target that's confusing for the recipient.

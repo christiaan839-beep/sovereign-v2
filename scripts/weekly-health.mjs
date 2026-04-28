@@ -615,6 +615,28 @@ const trustAssets = [
     path: "src/lib/ssrf-guard.ts",
     name: "SSRF guard (blocks cloud metadata / private IPs / link-local)",
   },
+  // Round 23 — automated dependency-CVE catching. Round 22 found 2
+  // CRITICAL CVEs already shipped because no automated update flow
+  // was running. With Renovate, a PR opens within hours of any
+  // upstream patch; without it, CVEs land in production silently.
+  {
+    path: "renovate.json",
+    name: "Renovate config (automated dep-CVE PRs)",
+  },
+  // Round 23 — SOC 2 pre-readiness mapping. Procurement-grade
+  // artifact for "are you SOC 2 ready?" diligence. Tracks technical
+  // controls vs process gaps with verifiable evidence per criterion.
+  {
+    path: "docs/SOC2-PRE-READINESS.md",
+    name: "SOC 2 pre-readiness mapping (TSC 2017 trust criteria)",
+  },
+  // Round 23 — run comparison page. Procurement-asked-for feature
+  // (regression diagnosis) that builds on the per-DAG analytics
+  // foundation from Round 18.
+  {
+    path: "src/app/dashboard/playbooks/runs/[runId]/compare/page.tsx",
+    name: "Run comparison view (regression diagnosis surface)",
+  },
 ];
 for (const { path, name } of trustAssets) {
   const present = existsSync(join(ROOT, path)) ? 1 : 0;
@@ -683,6 +705,25 @@ check(
 check(
   "next.config has Cross-Origin-Resource-Policy header",
   fileContains("next.config.ts", "Cross-Origin-Resource-Policy") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+// Round 23 — public-share rate limit. /share/[token] is an
+// unauthenticated surface that bumps DB counters on every resolve.
+// Without a per-IP limit, an attacker can hammer a known token to
+// pollute audit metrics + DoS the share-resolution path. The
+// rate-limits.ts rule + middleware coverage are independent invariants
+// (either can regress without the other catching).
+check(
+  "rate-limits has share-public rule",
+  fileContains("src/lib/rate-limits.ts", "share-public") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "middleware applies rate-limit to /share/* paths",
+  fileContains("src/proxy.ts", "/share/") ? 1 : 0,
   1,
   { dimension: "security" },
 );
