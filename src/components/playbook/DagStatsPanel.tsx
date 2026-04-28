@@ -15,6 +15,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { Sparkline, type SparklinePoint } from "./Sparkline";
 
 interface DagStats {
   totalRuns: number;
@@ -27,6 +28,12 @@ interface DagStats {
   lastRunAt: string | null;
   lastRunStatus: "running" | "completed" | "failed" | null;
   lastRunDurationMs: number | null;
+  recentRuns: Array<{
+    id: string;
+    status: "running" | "completed" | "failed";
+    totalDurationMs: number;
+    createdAt: string;
+  }>;
 }
 
 interface DagStatsPanelProps {
@@ -156,6 +163,39 @@ export function DagStatsPanel({ dagId }: DagStatsPanelProps) {
           }
         />
       </dl>
+
+      {/*
+        Round 19 — duration trend sparkline. Renders only when there
+        are at least 2 runs (Sparkline gates internally too, but we
+        skip the section header for cleaner visuals on first runs).
+      */}
+      {stats.recentRuns.length >= 2 && (
+        <div className="mt-4 pt-3 border-t border-white/5">
+          <div className="flex items-baseline justify-between gap-3 mb-1">
+            <span className="text-[10px] uppercase tracking-wider text-neutral-500">
+              Duration trend (last {stats.recentRuns.length} runs, oldest → newest)
+            </span>
+            <span className="text-[10px] text-neutral-600 font-mono">
+              {formatDuration(
+                Math.min(...stats.recentRuns.map((r) => r.totalDurationMs)),
+              )}{" "}
+              –{" "}
+              {formatDuration(
+                Math.max(...stats.recentRuns.map((r) => r.totalDurationMs)),
+              )}
+            </span>
+          </div>
+          <Sparkline
+            points={stats.recentRuns.map((r): SparklinePoint => ({
+              value: r.totalDurationMs,
+              status: r.status,
+              label: `${formatDuration(r.totalDurationMs)} (${r.status})`,
+            }))}
+            width={520}
+            ariaLabel={`Duration trend across ${stats.recentRuns.length} recent runs`}
+          />
+        </div>
+      )}
 
       <footer className="mt-3 text-[10px] text-neutral-500">
         <Link

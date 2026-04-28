@@ -611,6 +611,14 @@ export interface DagStats {
   lastRunAt: string | null;
   lastRunStatus: "running" | "completed" | "failed" | null;
   lastRunDurationMs: number | null;
+  /** Round 19 — last 30 runs (oldest first) for sparkline rendering.
+   *  Lightweight shape: just what the trend chart needs. */
+  recentRuns: Array<{
+    id: string;
+    status: "running" | "completed" | "failed";
+    totalDurationMs: number;
+    createdAt: string;
+  }>;
 }
 
 export async function getDagStats(input: {
@@ -628,6 +636,7 @@ export async function getDagStats(input: {
     lastRunAt: null,
     lastRunStatus: null,
     lastRunDurationMs: null,
+    recentRuns: [],
   };
 
   const db = await getDb();
@@ -665,9 +674,13 @@ export async function getDagStats(input: {
     const agg = rows[0];
     if (!agg || agg.total === 0) return empty;
 
-    // Find the latest run for the lastRun fields.
-    const latest = await db
+    // Round 19 — fetch last 30 runs for the sparkline trend AND
+    // pluck the latest run for the lastRun fields. One query covers
+    // both: sort newest-first, take 30, then the [0] entry IS the
+    // latest. Saves a round-trip vs separate queries.
+    const recent = await db
       .select({
+        id: playbookDagRuns.id,
         createdAt: playbookDagRuns.createdAt,
         status: playbookDagRuns.status,
         totalDurationMs: playbookDagRuns.totalDurationMs,
@@ -680,7 +693,7 @@ export async function getDagStats(input: {
         ),
       )
       .orderBy(desc(playbookDagRuns.createdAt))
-      .limit(1);
+      .limit(30);
 
     const terminalRuns = (agg.completed ?? 0) + (agg.failed ?? 0);
     const successRate = terminalRuns > 0 ? (agg.completed ?? 0) / terminalRuns : 0;
@@ -690,7 +703,16 @@ export async function getDagStats(input: {
     // outliers and create false confidence.
     const showPercentiles = terminalRuns >= 5;
 
-    const lastRow = latest[0];
+    const lastRow = recent[0];
+
+    // Sparkline wants oldest-first (left to right = oldest to newest).
+    // Reverse the newest-first DB order for the rendered array.
+    const recentRuns = [...recent].reverse().map((r) => ({
+      id: r.id,
+      status: (r.status as "running" | "completed" | "failed") ?? "completed",
+      totalDurationMs: r.totalDurationMs,
+      createdAt: r.createdAt.toISOString(),
+    }));
 
     return {
       totalRuns: agg.total ?? 0,
@@ -703,6 +725,7 @@ export async function getDagStats(input: {
       lastRunAt: lastRow?.createdAt?.toISOString() ?? null,
       lastRunStatus: (lastRow?.status as DagStats["lastRunStatus"]) ?? null,
       lastRunDurationMs: lastRow?.totalDurationMs ?? null,
+      recentRuns,
     };
   } catch {
     return empty;

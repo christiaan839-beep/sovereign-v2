@@ -54,6 +54,8 @@ const emptyStats = {
   lastRunAt: null,
   lastRunStatus: null,
   lastRunDurationMs: null,
+  // Round 19 — recentRuns added to the contract for sparkline rendering.
+  recentRuns: [],
 };
 
 describe("GET /api/playbooks/dag/[id]/stats", () => {
@@ -141,5 +143,49 @@ describe("GET /api/playbooks/dag/[id]/stats", () => {
 
     await GET(new Request("http://l/x"), ctx(fakeUuid));
     expect(mockAuditLog).not.toHaveBeenCalled();
+  });
+
+  it("returns recentRuns for sparkline rendering (Round 19 contract)", async () => {
+    // The sparkline depends on the `recentRuns` array being present
+    // on every successful response. Empty array is fine; missing field
+    // would break the client-side render.
+    mockRequireAuth.mockResolvedValue({ userId: "u" });
+    mockGetDag.mockResolvedValue({ id: fakeUuid });
+    mockGetDagStats.mockResolvedValue({
+      ...emptyStats,
+      totalRuns: 3,
+      completedRuns: 2,
+      failedRuns: 1,
+      successRate: 2 / 3,
+      recentRuns: [
+        {
+          id: "r1",
+          status: "completed" as const,
+          totalDurationMs: 1000,
+          createdAt: "2026-04-26T00:00:00.000Z",
+        },
+        {
+          id: "r2",
+          status: "failed" as const,
+          totalDurationMs: 5000,
+          createdAt: "2026-04-27T00:00:00.000Z",
+        },
+        {
+          id: "r3",
+          status: "completed" as const,
+          totalDurationMs: 1100,
+          createdAt: "2026-04-28T00:00:00.000Z",
+        },
+      ],
+    });
+
+    const res = await GET(new Request("http://l/x"), ctx(fakeUuid));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(Array.isArray(body.stats.recentRuns)).toBe(true);
+    expect(body.stats.recentRuns).toHaveLength(3);
+    expect(body.stats.recentRuns[0].status).toBe("completed");
+    expect(body.stats.recentRuns[1].status).toBe("failed");
+    expect(body.stats.recentRuns[2].totalDurationMs).toBe(1100);
   });
 });
