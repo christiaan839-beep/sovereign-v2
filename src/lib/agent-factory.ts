@@ -30,6 +30,8 @@ import { checkFreeUsage, incrementUsage, getSmartUpgradeInfo, getUserTier } from
 import { checkTenantCostCap, recordCost } from "@/lib/cost-runaway";
 import { onCostCapHit } from "@/lib/cost-cap-alert";
 import { withA2eDepthCheck, A2eDepthExceededError, currentA2eDepth, getA2eMaxDepth, readA2eDepthHeader } from "@/lib/a2e-depth";
+import { withTrace, withSpan } from "@/lib/agent-trace";
+import { persistTrace } from "@/lib/agent-trace-persist";
 import { scoreOutput, type QualityScore } from "@/lib/quality-scorer";
 import { createLogger } from "@/lib/logger";
 import { auditLog } from "@/lib/audit-log";
@@ -67,7 +69,7 @@ import {
   generateRequestId,
   setUserId as setRequestUserId,
 } from "@/lib/request-context";
-import type { ZodObject, ZodRawShape } from "zod";
+import type { ZodObject, ZodRawShape, ZodTypeAny } from "zod";
 
 const log = createLogger("agent-factory");
 
@@ -95,6 +97,24 @@ export interface AgentConfig {
   /** Zod schema for input validation. When provided, input is validated before the handler runs.
    *  Falls back to `requiredFields` check if not provided. */
   schema?: ZodObject<ZodRawShape>;
+
+  /**
+   * Zod schema for OUTPUT validation (R31 — Best in Category).
+   *
+   * When provided, the handler's return value is validated against
+   * the schema BEFORE being sent to the user. Validation failure:
+   *   - Returns 502 BAD_AGENT_OUTPUT to the user (not 200 — the
+   *     output didn't meet the agent's own contract)
+   *   - Logs the failure as a span in the active trace
+   *   - Logs the failure to the audit log (data integrity event)
+   *
+   * Use this for any agent that returns structured data: prevents
+   * hallucinated JSON shapes, missing fields, wrong types from
+   * leaking to callers. Critic re-runs are NOT auto-triggered here
+   * (would compound cost); operators can replay the failed trace
+   * to investigate.
+   */
+  outputSchema?: ZodTypeAny;
 
   /** Skip authentication (for public demo endpoints) */
   public?: boolean;
@@ -781,34 +801,100 @@ async function handleAgentRoute(
       // branch of the structural PII scrubber.
       // R28 — wrap handler in withA2eDepthCheck so any in-process
       // sub-agent calls during this handler see incremented depth.
-      // The check at the top of this route already verified the
-      // CALLER's depth; this wrapper increments for any IN-PROCESS
-      // children. Cross-fetch recursion needs the X-A2E-Depth header
-      // (TODO follow-up).
-      // Promise.resolve() normalizes runWithAttribution's `T | Promise<T>`
-      // signature into the Promise<T> withA2eDepthCheck expects.
-      const handlerOutcome = await withA2eDepthCheck(config.name, () =>
-        Promise.resolve(
-          runWithAttribution(async () => {
-            const r = await config.handler({
-              input: sanitized,
-              request: req,
-              email,
-              userId,
-              tenantId,
-              orgId,
-            });
-            return {
-              result: r,
-              modelsConsulted: getModelsConsulted(),
-              providersConsulted: getProvidersConsulted(),
-            };
-          }),
+      // R31 — wrap in withTrace too: every model/tool/sub-agent call
+      // inside the handler can call addSpan() to record a flame-graph
+      // step. The trace is persisted to agent_traces at the end.
+      const traceOutcome = await withTrace(config.name, async () =>
+        withA2eDepthCheck(config.name, () =>
+          Promise.resolve(
+            runWithAttribution(async () =>
+              withSpan(
+                { kind: "agent_call", name: `agent:${config.name}` },
+                async () => {
+                  const r = await config.handler({
+                    input: sanitized,
+                    request: req,
+                    email,
+                    userId,
+                    tenantId,
+                    orgId,
+                  });
+                  return {
+                    result: r,
+                    modelsConsulted: getModelsConsulted(),
+                    providersConsulted: getProvidersConsulted(),
+                  };
+                },
+              ),
+            ),
+          ),
         ),
       );
+      // Persist the trace asynchronously — never block the user
+      // response on trace persistence (best-effort).
+      if (userId) {
+        void persistTrace({
+          trace: traceOutcome.trace,
+          userId,
+        }).catch(() => {});
+      }
+      // Re-throw the original error if the handler threw, AFTER
+      // we've captured the trace.
+      if ("error" in traceOutcome) {
+        throw traceOutcome.error;
+      }
+      const handlerOutcome = traceOutcome.result;
       let result = handlerOutcome.result;
       const { modelsConsulted, providersConsulted } = handlerOutcome;
       replay?.addStep("handler_complete", { outputKeys: Object.keys(result), outputSize: JSON.stringify(result).length });
+
+      // ─── Output Schema Validation (R31 — Best in Category) ───
+      // If the agent declared an outputSchema, validate the handler's
+      // return value BEFORE serving it. Hallucinated JSON shapes,
+      // missing fields, wrong types: caught here, logged to trace
+      // and audit, returned as 502 BAD_AGENT_OUTPUT (the agent
+      // produced an output that doesn't meet its own contract).
+      if (config.outputSchema) {
+        const validation = config.outputSchema.safeParse(result);
+        if (!validation.success) {
+          const issues = validation.error.issues.map(i =>
+            `${i.path.join(".") || "(root)"}: ${i.message}`,
+          ).join("; ");
+          // Log the failure as a trace span (the trace was already
+          // captured but we add this as a coda).
+          const { addSpan } = await import("@/lib/agent-trace");
+          addSpan({
+            kind: "decision",
+            name: "output_schema_validation_failed",
+            durationMs: 0,
+            error: issues,
+          });
+          // Hash-chained audit record of the failure.
+          auditLog({
+            userId: userId ?? "anonymous",
+            action: "agent.execute",
+            resource: config.name,
+            details: {
+              outcome: "schema_validation_failed",
+              issues: issues.slice(0, 1000),
+            },
+          }).catch(() => {});
+          return new NextResponse(
+            JSON.stringify({
+              error: "Agent output failed its declared schema. The platform refuses to serve untrusted output shapes.",
+              code: "BAD_AGENT_OUTPUT",
+              issues: validation.error.issues.slice(0, 20),
+            }),
+            {
+              status: 502,
+              headers: { "Content-Type": "application/json" },
+            },
+          );
+        }
+        // result is now schema-validated; re-bind to the parsed value
+        // (Zod may transform — e.g. coerce strings to numbers).
+        result = validation.data as typeof result;
+      }
 
       // ─── Safety Post-flight: PII Scan + Guard on Output ───
       //

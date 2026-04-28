@@ -28,6 +28,9 @@ export async function register() {
     // R28 — A2E recursion depth tracker (ALS-backed). Edge runtime
     // falls back to a per-instance counter (see a2e-depth.ts).
     await import("@/lib/a2e-depth-node");
+    // R31 — Agent execution trace (ALS-backed). Edge runtime falls
+    // back to per-instance context (see agent-trace.ts).
+    await import("@/lib/agent-trace-node");
   }
 
   // ── Env validation — runs before anything else so misconfigured boots

@@ -2054,6 +2054,94 @@ check(
   { dimension: "database" },
 );
 
+// ─── Round 31 — Best in Category: trace + output schema gate ──────────
+//
+// Two pillars: full execution-trace recorder (closes R30 staged work)
+// + output schema validation (prevents hallucinated JSON shapes).
+
+// Agent execution trace
+check(
+  "agent-trace lib present (ALS-backed flame graph)",
+  existsSync(join(ROOT, "src/lib/agent-trace.ts")) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "agent-trace-node ALS install present",
+  existsSync(join(ROOT, "src/lib/agent-trace-node.ts")) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "agent-trace-persist lib present",
+  existsSync(join(ROOT, "src/lib/agent-trace-persist.ts")) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "instrumentation.ts imports agent-trace-node",
+  fileContains("src/instrumentation.ts", "agent-trace-node") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "agent-factory wraps handler in withTrace (R31)",
+  fileContains("src/lib/agent-factory.ts", "withTrace") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "agent-factory persists trace via persistTrace",
+  fileContains("src/lib/agent-factory.ts", "persistTrace") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "agent-trace tests present (14 cases)",
+  existsSync(join(ROOT, "src/lib/__tests__/agent-trace.test.ts")) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+// Trace viewer
+check(
+  "/api/admin/trace/[traceId] route present",
+  existsSync(join(ROOT, "src/app/api/admin/trace/[traceId]/route.ts")) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "/dashboard/admin/trace/[traceId] page present (flame graph)",
+  existsSync(
+    join(ROOT, "src/app/dashboard/admin/trace/[traceId]/page.tsx"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "trace API uses requireAdmin gate",
+  fileContains(
+    "src/app/api/admin/trace/[traceId]/route.ts",
+    "requireAdmin",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+// Output schema validation
+check(
+  "AgentConfig has outputSchema field",
+  fileContains("src/lib/agent-factory.ts", "outputSchema?:") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "agent-factory validates output schema before returning (R31)",
+  fileContains("src/lib/agent-factory.ts", "BAD_AGENT_OUTPUT") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
 // ──────────────────────────────────────────────────────────────
 // Report
 // ──────────────────────────────────────────────────────────────
