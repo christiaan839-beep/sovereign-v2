@@ -21,7 +21,11 @@ export type AuditAction =
   // verbs (rather than "admin.action") so a SOC-2 reviewer can pull
   // "all submission rejections in 2026-Q2" with a single WHERE filter.
   | "admin.submission_approve"
-  | "admin.submission_reject";
+  | "admin.submission_reject"
+  // R27 — Cost-runaway guard fires this when a tenant auto-pauses
+  // on the daily spend cap. Hash-chained so disputes ("you over-charged
+  // me") settle by the immutable record, not by Slack screenshots.
+  | "cost.cap_hit";
 
 interface AuditEntry {
   userId: string;

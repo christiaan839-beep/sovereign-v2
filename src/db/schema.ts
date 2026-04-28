@@ -1036,6 +1036,42 @@ export const usageOutbox = pgTable("usage_outbox", {
   index("idx_usage_outbox_pending").on(table.status, table.createdAt),
 ]);
 
+// Round 27 — Self-healing telemetry. Hourly cron writes one row.
+// Admin dashboard graphs invariants/passing/failing over time.
+// This is the single most important leading indicator of project
+// decay; "we've been at 141/141 for 90 days" is the trust artifact.
+export const platformHealthSnapshots = pgTable("platform_health_snapshots", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  invariantsTotal: integer("invariants_total").notNull(),
+  invariantsPassing: integer("invariants_passing").notNull(),
+  invariantsFailing: integer("invariants_failing").notNull(),
+  failingChecks: jsonb("failing_checks").$type<string[]>().notNull().default([]),
+  testsPassing: integer("tests_passing"),
+  testsTotal: integer("tests_total"),
+  healthy: boolean("healthy").notNull(),
+  durationMs: integer("duration_ms").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_platform_health_recent").on(table.createdAt),
+]);
+
+// Round 27 — Per-tenant per-day cost ledger. Bounds the financial
+// blast radius (Constitution Principle 7). The runaway guard reads
+// this in O(1) per request to enforce the daily cap.
+export const tenantCostLedger = pgTable("tenant_cost_ledger", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull(),
+  day: date("day").notNull(),
+  costCents: integer("cost_cents").notNull().default(0),
+  runCount: integer("run_count").notNull().default(0),
+  pausedAt: timestamp("paused_at"),
+  pauseReason: text("pause_reason"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("idx_tenant_cost_user_day").on(table.userId, table.day),
+]);
+
 export const playbookDagRuns = pgTable("playbook_dag_runs", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: text("user_id").notNull(),

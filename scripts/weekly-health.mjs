@@ -1464,6 +1464,171 @@ if (tmpFreeMB >= 0) {
   });
 }
 
+// ─── Round 27 — Permanence Sprint invariants ─────────────────────────
+//
+// The permanence layer's job is to make the platform OUTLIVE its
+// current maintainer. These gates lock in:
+//   - Constitution + Succession Plan (governance artifacts)
+//   - Self-heal cron (continuous anti-drift telemetry)
+//   - Cost-runaway guard (financial blast radius bound)
+//   - CHANGELOG generator + dep-rot detector (meta-state hygiene)
+//   - ADR scaffolding (decision history)
+//
+// A merge that deletes any of these silently fails CI on the next PR.
+// Per Constitution Principle 6: "Anti-drift is the immune system."
+
+// Constitution + Succession — the governance artifacts. These docs
+// are the appellate court for every decision; their absence means
+// the project lost its operating manual.
+check(
+  "Project Constitution present (governance: 7 principles)",
+  existsSync(join(ROOT, "docs/PROJECT-CONSTITUTION.md")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "Succession Plan present (bus-factor handover)",
+  existsSync(join(ROOT, "docs/SUCCESSION.md")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+// Self-heal cron — the hourly anti-drift snapshot route. Without
+// this, regressions only get caught on PR (could be days between).
+check(
+  "self-heal cron route present (hourly anti-drift telemetry)",
+  existsSync(join(ROOT, "src/app/api/cron/self-heal/route.ts")) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "self-heal cron registered in vercel.json",
+  fileContains("vercel.json", "/api/cron/self-heal") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "self-heal route uses verifyCron (auth gated)",
+  fileContains("src/app/api/cron/self-heal/route.ts", "verifyCron") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+// Cost-runaway guard — the per-tenant per-day spend ceiling. The
+// presence of the lib + the wire-up in agent-factory are independent
+// invariants because either can be deleted without breaking the
+// build.
+check(
+  "cost-runaway lib present (per-tenant cost ceiling)",
+  existsSync(join(ROOT, "src/lib/cost-runaway.ts")) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "cost-cap-alert lib present (operator notification hook)",
+  existsSync(join(ROOT, "src/lib/cost-cap-alert.ts")) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "agent-factory wires checkTenantCostCap (pre-execution gate)",
+  fileContains("src/lib/agent-factory.ts", "checkTenantCostCap") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "agent-factory wires recordCost (post-execution ledger)",
+  fileContains("src/lib/agent-factory.ts", "recordCost") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "agent-factory wires onCostCapHit (operator alert)",
+  fileContains("src/lib/agent-factory.ts", "onCostCapHit") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "audit-log AuditAction enum includes cost.cap_hit (hash-chained)",
+  fileContains("src/lib/audit-log.ts", '"cost.cap_hit"') ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+// Migration 0042 — the schema piece. Drift here would mean the
+// runtime can't actually persist anything.
+check(
+  "migration 0042 (platform_health + cost_ledger) on disk",
+  existsSync(
+    join(ROOT, "drizzle/0042_platform_health_and_cost_runaway.sql"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "database" },
+);
+check(
+  "schema.ts declares platformHealthSnapshots table",
+  fileContains("src/db/schema.ts", "platformHealthSnapshots") ? 1 : 0,
+  1,
+  { dimension: "database" },
+);
+check(
+  "schema.ts declares tenantCostLedger table",
+  fileContains("src/db/schema.ts", "tenantCostLedger") ? 1 : 0,
+  1,
+  { dimension: "database" },
+);
+
+// CHANGELOG generator + dep-rot detector — meta-state hygiene.
+// These don't affect runtime, but their absence means the project
+// loses two important hygiene gates.
+check(
+  "CHANGELOG generator script present",
+  existsSync(join(ROOT, "scripts/generate-changelog.mjs")) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+check(
+  "dep-rot detector script present",
+  existsSync(join(ROOT, "scripts/dep-rot-detector.mjs")) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+// ADR scaffolding — the decision-history surface. Template + index
+// + at least 4 ADRs (the existing 3 + R27's ADR-0004).
+check(
+  "ADR template present (TEMPLATE.md)",
+  existsSync(join(ROOT, "docs/adr/TEMPLATE.md")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "ADR index README present",
+  existsSync(join(ROOT, "docs/adr/README.md")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "ADR-0004 (Permanence Sprint) present",
+  existsSync(
+    join(
+      ROOT,
+      "docs/adr/0004-permanence-sprint-self-healing-and-cost-guard.md",
+    ),
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+// Cost-runaway test coverage — at least 15 tests across the three
+// libs (cost-runaway, cost-cap-alert).
+check(
+  "cost-runaway tests present (>=15 cases)",
+  existsSync(join(ROOT, "src/lib/__tests__/cost-runaway.test.ts")) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
 // ──────────────────────────────────────────────────────────────
 // Report
 // ──────────────────────────────────────────────────────────────

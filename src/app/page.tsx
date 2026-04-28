@@ -988,6 +988,7 @@ function Footer() {
               { href: "/docs/errors", label: "Error codes" },
               { href: "/docs/webhooks/verify", label: "Webhook HMAC" },
               { href: "/status/slo", label: "SLO" },
+              { href: "/reliability", label: "Reliability" },
               { href: "/integrations", label: "Integrations" },
               { href: "https://www.npmjs.com/package/@sovereignmatrix/mcp", label: "MCP Server", external: true },
               { href: "/changelog", label: "Changelog" },

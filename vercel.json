@@ -72,6 +72,10 @@
     {
       "path": "/api/cron/prune-hitl-approvals",
       "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/self-heal",
+      "schedule": "0 * * * *"
     }
   ],
   "headers": [

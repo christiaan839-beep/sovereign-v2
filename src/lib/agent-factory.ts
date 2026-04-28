@@ -26,7 +26,9 @@ import { NextResponse } from "next/server";
 import { guardRoute, sanitizeString, errorResponse } from "@/lib/api-guard";
 import { detectJailbreak } from "@/lib/jailbreak-detect";
 import { checkContentSafety } from "@/lib/content-safety";
-import { checkFreeUsage, incrementUsage, getSmartUpgradeInfo } from "@/lib/free-tier";
+import { checkFreeUsage, incrementUsage, getSmartUpgradeInfo, getUserTier } from "@/lib/free-tier";
+import { checkTenantCostCap, recordCost } from "@/lib/cost-runaway";
+import { onCostCapHit } from "@/lib/cost-cap-alert";
 import { scoreOutput, type QualityScore } from "@/lib/quality-scorer";
 import { createLogger } from "@/lib/logger";
 import { auditLog } from "@/lib/audit-log";
@@ -258,6 +260,41 @@ async function handleAgentRoute(
 
         // Sync to request context for log correlation
         if (userId) setRequestUserId(userId);
+      }
+
+      // ─── Cost-Runaway Guard (R27) ───
+      // Per-tenant per-day spend cap. Catches misconfigured agents,
+      // recursive A2E loops, and abuse from stolen API keys BEFORE
+      // they bankrupt the platform. Fail-OPEN on DB error: a Postgres
+      // blip should not break the platform; the per-provider circuit
+      // breaker is the hard gate, this is defence-in-depth.
+      // See: src/lib/cost-runaway.ts and Constitution Principle 7.
+      if (userId) {
+        try {
+          const planId = await getUserTier(userId);
+          const cap = await checkTenantCostCap({ userId, planId });
+          if (!cap.allowed) {
+            return new NextResponse(
+              JSON.stringify({
+                error: "Daily cost cap reached",
+                message: cap.reason ?? "You've hit today's spend cap. Resets at UTC midnight.",
+                spentCents: cap.spentCents,
+                capCents: cap.capCents,
+                code: "DAILY_COST_CAP_REACHED",
+              }),
+              {
+                status: 402, // Payment Required (semantic match for cost cap)
+                headers: { "Content-Type": "application/json" },
+              },
+            );
+          }
+        } catch (err) {
+          // Fail-open: never break the platform on a cost-guard failure.
+          log.warn("Cost-cap pre-check failed; allowing run", {
+            userId,
+            error: String(err),
+          });
+        }
       }
 
       // ─── Free Tier Usage Check ───
@@ -965,6 +1002,39 @@ async function handleAgentRoute(
         await incrementUsage(userId, config.name);
         // Track spend for budget controls (estimates token cost by model)
         recordSpend(userId, "nim-default", 500); // ~500 tokens per agent call average
+
+        // R27 — Per-tenant cost ledger update. The cost figure here is
+        // a rough estimate; the platform-wide accounting (PROVIDER_COSTS
+        // in provider-costs.ts) does fine-grained per-model billing.
+        // We use ~$0.005/run (50 milli-cents) as the agent-level
+        // estimate — coarse on purpose because the cost cap exists to
+        // catch ABUSE (1000s of runs/day), not to bill correctly.
+        try {
+          const planId = await getUserTier(userId);
+          const { getDailyCapCents } = await import("@/lib/cost-runaway");
+          const capCents = getDailyCapCents(planId);
+          // Estimate: 1 cent per run. Caps from $50 (5000 runs/day for free)
+          // up to $2000 (200K runs/day for enterprise) — generous for
+          // legitimate use, hard ceiling for runaway loops.
+          const result = await recordCost({ userId, costCents: 1, capCents });
+          if (result.paused) {
+            // Tenant just crossed the cap. Fire the operator alert.
+            // Implementation lives in src/lib/cost-cap-alert.ts so the
+            // alerting strategy can evolve independently of the factory.
+            void onCostCapHit({
+              userId,
+              planId,
+              cumulativeCents: result.cumulativeCents,
+              capCents,
+              triggerAgentId: config.name,
+            }).catch((err) =>
+              log.warn("Cost-cap alert dispatch failed", { error: String(err) }),
+            );
+          }
+        } catch (err) {
+          log.warn("Cost ledger update failed", { error: String(err) });
+        }
+
         // Audit every agent execution (SOC 2 compliance)
         auditLog({
           userId,
