@@ -608,6 +608,13 @@ const trustAssets = [
     path: "docs/HONEST-GAPS.md",
     name: "Honest gap analysis (verified, not aspirational)",
   },
+  // Round 22 — SSRF guard. Without this, URL-fetching agents are an
+  // internal-network port scanner an attacker can drive. The library
+  // is the central primitive (the per-agent wiring uses it).
+  {
+    path: "src/lib/ssrf-guard.ts",
+    name: "SSRF guard (blocks cloud metadata / private IPs / link-local)",
+  },
 ];
 for (const { path, name } of trustAssets) {
   const present = existsSync(join(ROOT, path)) ? 1 : 0;
@@ -642,6 +649,40 @@ check(
 check(
   "run-dag uses retryWithBackoff for per-node fetches",
   fileContains("src/app/api/playbooks/run-dag/route.ts", "retryWithBackoff") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+// Round 22 — SSRF invariants. URL-fetching agents MUST guard against
+// private-IP / cloud-metadata fetches. Without these, an attacker
+// who can submit a URL to the agent can steal IAM tokens from
+// 169.254.169.254 or scan our internal network.
+check(
+  "competitive-radar uses SSRF guard",
+  fileContains("src/app/api/_agents/competitive-radar/route.ts", "checkUrlForSsrf") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "url-context uses SSRF guard",
+  fileContains("src/app/api/_agents/url-context/route.ts", "checkUrlForSsrf") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+// Round 22 — origin isolation headers. COOP + CORP + Origin-Agent-
+// Cluster are the modern Spectre / cross-origin-window-name
+// mitigations. Removing them silently regresses our browser-side
+// security posture.
+check(
+  "next.config has Cross-Origin-Opener-Policy header",
+  fileContains("next.config.ts", "Cross-Origin-Opener-Policy") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "next.config has Cross-Origin-Resource-Policy header",
+  fileContains("next.config.ts", "Cross-Origin-Resource-Policy") ? 1 : 0,
   1,
   { dimension: "security" },
 );

@@ -1,4 +1,5 @@
 import { createAgentRoute } from "@/lib/agent-factory";
+import { checkUrlForSsrf } from "@/lib/ssrf-guard";
 
 /**
  * URL CONTEXT ANALYZER — Gemini reads any URL directly.
@@ -17,6 +18,18 @@ export const POST = createAgentRoute({
   handler: async ({ input }) => {
     const url = input.url as string;
     const question = (input.question as string) || "Analyze this page. Extract the key information, purpose, target audience, and any notable strengths or weaknesses.";
+
+    // Round 22 — SSRF guard. Even though Gemini fetches the URL on
+    // Google's infra (not ours), the URL is still attacker-controlled
+    // and we should fail fast on private/metadata addresses rather
+    // than burn a Gemini call on garbage.
+    const guard = checkUrlForSsrf(url);
+    if (!guard.safe) {
+      return {
+        error: `URL rejected by SSRF guard: ${guard.reason}`,
+        category: guard.category,
+      };
+    }
 
     const geminiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY;
     if (!geminiKey) {

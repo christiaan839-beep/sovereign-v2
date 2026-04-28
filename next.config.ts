@@ -75,6 +75,18 @@ const nextConfig: NextConfig = {
             key: "Permissions-Policy",
             value: "camera=(), microphone=(), geolocation=(self)",
           },
+          // Round 22 — origin-isolation headers. COOP keeps cross-
+          // origin popups in a separate browsing-context group
+          // (Spectre / cross-origin-window-name mitigations). CORP
+          // tells browsers our same-site resources can't be cross-
+          // origin-embedded by attackers. Origin-Agent-Cluster opts
+          // the origin into the dedicated-agent-cluster security
+          // model. None of these break Vercel previews or third-
+          // party embeds we control (Stripe / Clerk are first-party
+          // by domain).
+          { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+          { key: "Cross-Origin-Resource-Policy", value: "same-site" },
+          { key: "Origin-Agent-Cluster", value: "?1" },
           {
             key: "Content-Security-Policy",
             value: [

@@ -172,6 +172,33 @@ customers using the platform in anger.
 
 ---
 
+## ✅ Closed in Round 22 (2026-04-28)
+
+**Critical Clerk middleware-bypass CVE** (CWE-863, auth bypass).
+`@clerk/nextjs` was on `^7.0.4`, the vulnerable range was `>=7.0.0
+<7.2.1`. Upgraded to `^7.2.7`. Closed 2 critical CVEs in one upgrade.
+
+**Critical Next.js HTTP request smuggling CVE** (CWE-444). `next` was
+on `16.1.6`, vulnerable range `>=16.0.0-beta.0 <16.1.7`. Upgraded
+to `16.2.3` which also closes a separate DoS via Server Components
+(CWE-400). One critical → zero critical, one high → zero high.
+
+**SSRF in URL-fetching agents** (OWASP API Top 10 #7). New library
+`src/lib/ssrf-guard.ts` blocks cloud metadata (169.254.169.254 + IPv6
+fd00:ec2::254 + GCP metadata.google.internal), all RFC 1918 ranges,
+loopback, link-local, IPv6 private ranges + IPv4-mapped IPv6 bypass
+(both dotted `::ffff:10.0.0.1` and Node's normalized hex form
+`::ffff:a00:1`). 37 tests covering OWASP's full SSRF cheatsheet.
+Wired into `competitive-radar` and `url-context` agents. Anti-drift
+gate ensures they can't be removed silently.
+
+**Origin-isolation headers**: Cross-Origin-Opener-Policy,
+Cross-Origin-Resource-Policy, Origin-Agent-Cluster. Closes Spectre
++ cross-origin-window-name attack vectors. Anti-drift gate ensures
+they stay set.
+
+---
+
 ## What this codebase is unusually good at
 
 In the spirit of honest framing — the things that are **actually

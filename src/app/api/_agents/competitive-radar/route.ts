@@ -1,5 +1,6 @@
 import { createAgentRoute } from "@/lib/agent-factory";
 import { nimChat } from "@/lib/nvidia";
+import { checkUrlForSsrf } from "@/lib/ssrf-guard";
 
 /**
  * COMPETITIVE INTELLIGENCE RADAR
@@ -20,12 +21,29 @@ export const POST = createAgentRoute({
   handler: async ({ input }) => {
     const url = input.url as string;
 
+    // Round 22 — SSRF guard. Without this, an attacker can submit
+    // http://169.254.169.254/ and our server happily fetches the
+    // cloud metadata endpoint, returning IAM tokens. Block private
+    // IPs, loopback, link-local, cloud metadata, and non-HTTP
+    // schemes BEFORE any network call.
+    const guard = checkUrlForSsrf(url);
+    if (!guard.safe) {
+      return {
+        success: false,
+        error: `URL rejected by SSRF guard: ${guard.reason}`,
+        category: guard.category,
+      };
+    }
+
     // Step 1: Fetch target site metadata
     let siteData = "";
     try {
       const res = await fetch(url, {
         headers: { "User-Agent": "Mozilla/5.0 (compatible; SovereignBot/1.0)" },
         signal: AbortSignal.timeout(8000),
+        // Don't follow redirects — they could escape the SSRF guard
+        // (URL passes initial check, redirects to private IP).
+        redirect: "manual",
       });
       const html = await res.text();
 
