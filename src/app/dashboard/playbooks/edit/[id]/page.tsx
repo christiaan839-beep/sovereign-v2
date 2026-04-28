@@ -8,6 +8,7 @@ import { PlaybookCanvas } from "@/components/playbook/PlaybookCanvas";
 import { NodePalette } from "@/components/playbook/NodePalette";
 import { MyDagsPanel } from "@/components/playbook/MyDagsPanel";
 import { DagStatsPanel } from "@/components/playbook/DagStatsPanel";
+import { VersionHistoryPanel } from "@/components/playbook/VersionHistoryPanel";
 import { ConfidenceBadge } from "@/components/agent/ConfidenceBadge";
 import { TokenBudgetMeter } from "@/components/agent/TokenBudgetMeter";
 import { extractConfidence, extractTokenBudget } from "@/lib/agent-meta";
@@ -97,6 +98,15 @@ export default function PlaybookEditorPage() {
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [runState, setRunState] = useState<"idle" | "running" | "done" | "error">("idle");
   const [runResult, setRunResult] = useState<RunResponse | null>(null);
+  // Round 24 — current version number, surfaced after every save.
+  // The VersionHistoryPanel watches this as its refresh signal so a
+  // fresh save / restore appears in the sidebar without polling.
+  const [dagVersion, setDagVersion] = useState<number | null>(null);
+  // Round 24 — bumped after a successful restore to force re-hydration
+  // even though urlId didn't change. The hydration effect's deps
+  // include this nonce so a restore appends a synthetic "URL change"
+  // and re-fetches the live shape.
+  const [hydrationNonce, setHydrationNonce] = useState(0);
 
   // Hydrate from /api/playbooks/dag/[id] when we have an id from the
   // URL. The DAG fetch is intentionally separate from the agents
@@ -123,11 +133,22 @@ export default function PlaybookEditorPage() {
           setLastLoadedUrl(urlId ?? null);
           return;
         }
-        const body = (await r.json()) as { dag: { id: string; name: string; dag: PlaybookDag } };
+        const body = (await r.json()) as {
+          dag: {
+            id: string;
+            name: string;
+            dag: PlaybookDag;
+            versionCount?: number;
+          };
+        };
         if (!alive) return;
         setDag(body.dag.dag);
         setSavedId(body.dag.id);
         setName(body.dag.name);
+        // Round 24 — capture the version count so the history panel
+        // knows how many saves exist. Falls back to null for pre-Round-24
+        // rows (where the column is 0 / missing).
+        setDagVersion(body.dag.versionCount ?? null);
         setHydrationError(null);
         setLastLoadedUrl(urlId ?? null);
       })
@@ -139,7 +160,10 @@ export default function PlaybookEditorPage() {
     return () => {
       alive = false;
     };
-  }, [isNew, urlId]);
+    // hydrationNonce is in the deps so a restore can re-trigger this
+    // effect without changing urlId. The state bump fires the same
+    // GET as a fresh page load — single source of hydration logic.
+  }, [isNew, urlId, hydrationNonce]);
 
   useEffect(() => {
     let alive = true;
@@ -234,9 +258,19 @@ export default function PlaybookEditorPage() {
         setSaveState("error");
         return;
       }
-      const body = (await res.json()) as { id: string; action: "create" | "update" };
+      const body = (await res.json()) as {
+        id: string;
+        action: "create" | "update";
+        // Round 24 — version after this save lands. null when DB is
+        // unavailable (persisted=false fallback path).
+        version: number | null;
+      };
       setSaveState("saved");
       setSavedId(body.id);
+      // Round 24 — surface the new version to the history panel.
+      // The panel watches this as a refresh signal, so the fresh
+      // save row appears in the sidebar without polling.
+      if (body.version !== null) setDagVersion(body.version);
       // After the first save of a fresh "new" playbook, replace the
       // URL with the real id so browser-back works and subsequent
       // saves correctly UPDATE rather than duplicate.
@@ -248,6 +282,13 @@ export default function PlaybookEditorPage() {
       setSaveState("error");
     }
   }, [dag, name, savedId, isNew, router]);
+
+  // Round 24 — bump the hydration nonce so the editor re-fetches the
+  // current (now-restored) shape. The version-history panel handles
+  // its own re-fetch internally; this callback handles the canvas.
+  const handleRestored = useCallback(() => {
+    setHydrationNonce((n) => n + 1);
+  }, []);
 
   // Clone the current playbook into a fresh draft. Useful for "I
   // want to try variations of this without losing the working version".
@@ -474,7 +515,20 @@ export default function PlaybookEditorPage() {
         <div className="flex-1">
           <PlaybookCanvas dag={dag} agents={agents} onChange={setDag} />
         </div>
-        <MyDagsPanel currentDagId={savedId} />
+        {/*
+          Right rail — two stacked sidebars. MyDagsPanel for cross-DAG
+          navigation, VersionHistoryPanel for in-DAG time travel. Both
+          self-hide when there's nothing to show, so a brand-new
+          playbook still gets a clean canvas.
+        */}
+        <div className="flex flex-col gap-4">
+          <MyDagsPanel currentDagId={savedId} />
+          <VersionHistoryPanel
+            dagId={savedId}
+            dagVersion={dagVersion}
+            onRestored={handleRestored}
+          />
+        </div>
       </div>
 
       {/*

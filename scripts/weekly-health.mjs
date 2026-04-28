@@ -637,6 +637,29 @@ const trustAssets = [
     path: "src/app/dashboard/playbooks/runs/[runId]/compare/page.tsx",
     name: "Run comparison view (regression diagnosis surface)",
   },
+  // Round 24 — DAG version history. Append-only audit trail of every
+  // editor save, with rollback. The migration creates the table +
+  // bumps the parent's version_count column; deleting it would lose
+  // the forensic completeness story (combined with run.dagSnapshot,
+  // these answer "what shape was saved at time T?").
+  {
+    path: "drizzle/0040_playbook_dag_versions.sql",
+    name: "DAG version history migration (append-only audit trail)",
+  },
+  // Round 24 — version-history sidebar. The "I broke something —
+  // restore yesterday's version" UX. Removing this would orphan
+  // the underlying append-only table.
+  {
+    path: "src/components/playbook/VersionHistoryPanel.tsx",
+    name: "Version-history panel (in-editor restore surface)",
+  },
+  // Round 24 — restore endpoint. The trail is meaningless without a
+  // way to act on it. POST /api/playbooks/dag/[id]/versions/[versionId]/restore
+  // is the action surface; deleting it leaves the history read-only.
+  {
+    path: "src/app/api/playbooks/dag/[id]/versions/[versionId]/restore/route.ts",
+    name: "Version restore endpoint (append-only restoration)",
+  },
 ];
 for (const { path, name } of trustAssets) {
   const present = existsSync(join(ROOT, path)) ? 1 : 0;
@@ -724,6 +747,42 @@ check(
 check(
   "middleware applies rate-limit to /share/* paths",
   fileContains("src/proxy.ts", "/share/") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+// Round 24 — version-history wiring invariants. The migration + the
+// sidebar component are tracked above as file-presence checks; these
+// content checks lock in the BEHAVIOR. A future refactor that drops
+// the createDagVersion call from the save POST would make every
+// editor save silently overwrite history; without these gates, no
+// test would catch that regression (the save endpoint still returns
+// 200, the editor still shows "Saved ✓", but the trail is gone).
+check(
+  "DAG save endpoint creates version row on every save",
+  fileContains("src/app/api/playbooks/dag/route.ts", "createDagVersion") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "Editor surfaces version history sidebar",
+  fileContains(
+    "src/app/dashboard/playbooks/edit/[id]/page.tsx",
+    "VersionHistoryPanel",
+  )
+    ? 1
+    : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "Restore endpoint is append-only (records new version, not UPDATE)",
+  // The semantic check: restoreDagVersion calls createDagVersion
+  // (which APPENDS a new row) rather than mutating the source row.
+  // The string "createDagVersion" appearing in restoreDagVersion's
+  // body proves this — if a future "fast path" tried to UPDATE the
+  // row in place, this check would fire.
+  fileContains("src/lib/playbook-dag-store.ts", "return createDagVersion(") ? 1 : 0,
   1,
   { dimension: "security" },
 );

@@ -920,11 +920,38 @@ export const playbookDags = pgTable("playbook_dags", {
   lastRunAt: timestamp("last_run_at"),
   lastRunStatus: text("last_run_status"), // completed | failed | NULL
   lastRunDurationMs: integer("last_run_duration_ms"),
+  // Round 24 — monotonic version counter. Bumped on every save so
+  // the editor can show "v12 of 12" without joining the versions
+  // table on every load. Matches the latest playbook_dag_versions
+  // row's version field.
+  versionCount: integer("version_count").notNull().default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => [
   index("idx_playbook_dags_user_updated").on(table.userId, table.updatedAt),
   index("idx_playbook_dags_user_status").on(table.userId, table.status),
+]);
+
+// Round 24 — append-only DAG version history. Every save creates a
+// new row; restores create a new row that points back to the
+// restored-from version. Forensic completeness for "what did this
+// DAG look like at time T?"
+export const playbookDagVersions = pgTable("playbook_dag_versions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  dagId: uuid("dag_id")
+    .references(() => playbookDags.id, { onDelete: "cascade" })
+    .notNull(),
+  userId: text("user_id").notNull(),
+  version: integer("version").notNull(),
+  dag: jsonb("dag")
+    .$type<import("@/lib/playbook-dag").PlaybookDag>()
+    .notNull(),
+  note: text("note"),
+  restoredFromVersion: integer("restored_from_version"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_playbook_dag_versions_dag_created").on(table.dagId, table.version),
+  index("idx_playbook_dag_versions_user_created").on(table.userId, table.createdAt),
 ]);
 
 export const playbookDagRuns = pgTable("playbook_dag_runs", {

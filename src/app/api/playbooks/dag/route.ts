@@ -21,7 +21,13 @@ import { requireAuth } from "@/lib/auth-guard";
 import { topoSort } from "@/lib/playbook-dag";
 import { auditLog } from "@/lib/audit-log";
 import { createLogger } from "@/lib/logger";
-import { insertDag, listDags, updateDag } from "@/lib/playbook-dag-store";
+import {
+  createDagVersion,
+  getDag,
+  insertDag,
+  listDags,
+  updateDag,
+} from "@/lib/playbook-dag-store";
 
 export const runtime = "nodejs";
 
@@ -47,6 +53,12 @@ const RequestSchema = z.object({
     nodes: z.array(NodeSchema).min(1).max(100),
     edges: z.array(EdgeSchema).max(200),
   }),
+  // Round 24 — optional human-readable label attached to this version
+  // ("Added n3 follow-up", "Pre-launch tuning"). Surfaces in the
+  // version-history sidebar to make rollbacks navigable. Optional —
+  // an empty save still creates a numbered version, just without
+  // narrative.
+  note: z.string().max(280).optional(),
 });
 
 /**
@@ -101,7 +113,7 @@ export async function POST(req: Request): Promise<Response> {
     );
   }
 
-  const { id, name, description, dag } = parsed.data;
+  const { id, name, description, dag, note } = parsed.data;
 
   // Validate node IDs are unique.
   const ids = new Set<string>();
@@ -159,30 +171,73 @@ export async function POST(req: Request): Promise<Response> {
   let storedId: string;
   let persisted: boolean;
   let action: "create" | "update";
+  // Round 24 — version_count after this save lands. The editor renders
+  // "v12 of 12" without an extra round-trip when we surface it here.
+  let versionAfterSave: number | null = null;
 
   if (id) {
     // UPDATE branch — existing DAG.
-    const result = await updateDag({
-      id,
-      userId,
-      name,
-      description,
-      dag: dag as unknown as import("@/lib/playbook-dag").PlaybookDag,
-    });
-    if (!result.updated) {
-      // Either the row doesn't exist, the user doesn't own it, or DB
-      // is offline. We don't distinguish — same response either way
-      // (no leak).
+    //
+    // Round 24 changes the write semantics: instead of UPDATE-in-place
+    // on the dag column (which destroys the prior shape), every save
+    // appends a new version. The parent's `dag` column still tracks
+    // "current"; the version table is the immutable trail.
+    //
+    // We verify ownership up-front via getDag so 404 surfaces cleanly
+    // before any write. The store helpers themselves fail-silent
+    // (return null on wrong-owner / unknown-id) but the route's job
+    // is to translate that into the right HTTP response.
+    const existing = await getDag({ id, userId });
+    if (!existing) {
       return NextResponse.json(
         { error: "DAG not found or could not be updated" },
         { status: 404 },
       );
     }
+
+    // Metadata-only patch (name / description) is a separate, cheap
+    // write — renames don't bump the version_count because the saved
+    // shape didn't change.
+    const metaChanged =
+      (name !== undefined && name !== existing.name) ||
+      (description !== undefined && description !== existing.description);
+    if (metaChanged) {
+      await updateDag({
+        id,
+        userId,
+        name,
+        description,
+      });
+    }
+
+    // Append a new version. createDagVersion is the ONLY write path
+    // for the dag column — it transactionally bumps version_count +
+    // mirrors the payload into the live column, so the editor and
+    // history table never disagree on "what's current".
+    const version = await createDagVersion({
+      dagId: id,
+      userId,
+      dag: dag as unknown as import("@/lib/playbook-dag").PlaybookDag,
+      note: note ?? null,
+    });
+    if (!version) {
+      // Tenant ownership was already verified above, so this lands
+      // here only on DB failure mid-transaction. 500 — not 404 — is
+      // the honest signal.
+      return NextResponse.json(
+        { error: "Could not save DAG version" },
+        { status: 500 },
+      );
+    }
     storedId = id;
     persisted = true;
     action = "update";
+    versionAfterSave = version.version;
   } else {
-    // INSERT branch — new DAG.
+    // INSERT branch — new DAG. insertDag creates the parent row at
+    // version_count=0; createDagVersion then records v1 and bumps
+    // the count. Two writes, but each is logically distinct: "create
+    // the playbook" vs. "record its first version".
     const result = await insertDag({
       userId,
       name: resolvedName,
@@ -192,9 +247,26 @@ export async function POST(req: Request): Promise<Response> {
     storedId = result.id;
     persisted = result.persisted;
     action = "create";
+
+    // Skip the version write when persistence is off (DATABASE_URL
+    // unset) — the fallback id has no parent row to attach versions
+    // to. The editor still shows "saved ✓" via the persisted=false
+    // signal, same as before Round 24.
+    if (persisted) {
+      const version = await createDagVersion({
+        dagId: storedId,
+        userId,
+        dag: dag as unknown as import("@/lib/playbook-dag").PlaybookDag,
+        note: note ?? null,
+      });
+      versionAfterSave = version?.version ?? 1;
+    }
   }
 
-  // Audit-log the save through the SHA-256 hash chain.
+  // Audit-log the save through the SHA-256 hash chain. Including
+  // `version` makes the audit trail individually addressable —
+  // "user X saved playbook Y at version 12 at time T" — which is
+  // what diligence teams ask about.
   await auditLog({
     userId,
     action: "settings.update",
@@ -207,6 +279,8 @@ export async function POST(req: Request): Promise<Response> {
       edgeCount: dag.edges.length,
       // Don't log the full DAG body — may contain user prompts.
       shape: `${dag.nodes.length}n_${dag.edges.length}e`,
+      version: versionAfterSave,
+      noteAttached: !!note,
     },
   });
 
@@ -216,6 +290,7 @@ export async function POST(req: Request): Promise<Response> {
     id: storedId,
     nodeCount: dag.nodes.length,
     edgeCount: dag.edges.length,
+    version: versionAfterSave,
   });
 
   return NextResponse.json({
@@ -224,5 +299,6 @@ export async function POST(req: Request): Promise<Response> {
     persisted,
     action,
     executionOrder: topo.order,
+    version: versionAfterSave,
   });
 }

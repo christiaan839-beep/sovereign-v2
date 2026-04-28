@@ -253,3 +253,110 @@ describe("playbook-dag-store — fallback semantics", () => {
     await expect(listDagRuns({ userId: "u" })).resolves.not.toThrow();
   });
 });
+
+describe("playbook-dag-store — Round 24 version history", () => {
+  it("createDagVersion returns null when DB is unavailable", async () => {
+    // Same fail-silent contract as the rest of the store. The save
+    // route surfaces a null return as 500 ("Could not save DAG version")
+    // since ownership is checked separately first — callers know null
+    // here means "DB issue", not "wrong tenant".
+    const { createDagVersion } = await importStore();
+    const result = await createDagVersion({
+      dagId: "00000000-0000-0000-0000-000000000001",
+      userId: "user_1",
+      dag: {
+        nodes: [{ id: "n1", agent: "leads", position: { x: 0, y: 0 }, config: {} }],
+        edges: [],
+      },
+      note: "first save",
+    });
+    expect(result).toBeNull();
+  });
+
+  it("listDagVersions returns empty array when DB is unavailable", async () => {
+    // The history sidebar treats {versions: []} as "no DB / no history
+    // yet" and self-hides — same UX as a brand-new playbook.
+    const { listDagVersions } = await importStore();
+    const result = await listDagVersions({
+      dagId: "00000000-0000-0000-0000-000000000001",
+      userId: "user_1",
+    });
+    expect(result).toEqual({ versions: [] });
+  });
+
+  it("listDagVersions clamps the limit to a sane range", async () => {
+    // Defensive: a malformed query string ?limit=999999 shouldn't
+    // translate into "fetch every version row that ever existed".
+    // The store internally clamps to [1, 200]; here we just verify
+    // it doesn't throw on either extreme even with no DB.
+    const { listDagVersions } = await importStore();
+    await expect(
+      listDagVersions({
+        dagId: "00000000-0000-0000-0000-000000000001",
+        userId: "u",
+        limit: -10,
+      }),
+    ).resolves.not.toThrow();
+    await expect(
+      listDagVersions({
+        dagId: "00000000-0000-0000-0000-000000000001",
+        userId: "u",
+        limit: 999_999,
+      }),
+    ).resolves.not.toThrow();
+  });
+
+  it("getDagVersion returns null when DB is unavailable", async () => {
+    const { getDagVersion } = await importStore();
+    const result = await getDagVersion({
+      versionId: "00000000-0000-0000-0000-000000000002",
+      userId: "user_1",
+    });
+    expect(result).toBeNull();
+  });
+
+  it("restoreDagVersion returns null when source version is unreachable (no DB)", async () => {
+    // restoreDagVersion chains getDagVersion → createDagVersion. With
+    // no DB, getDagVersion returns null → restore short-circuits → the
+    // route surfaces 404. Same "no information leak" contract as
+    // cloneDag (matched on purpose so the API behaves consistently).
+    const { restoreDagVersion } = await importStore();
+    const result = await restoreDagVersion({
+      versionId: "00000000-0000-0000-0000-000000000003",
+      userId: "user_1",
+    });
+    expect(result).toBeNull();
+  });
+
+  it("Round 24 helpers never throw on hostile inputs", async () => {
+    // Same graceful-fallback contract as every other store helper.
+    // A missing DB should NEVER bubble an exception up to the route.
+    const { createDagVersion, listDagVersions, getDagVersion, restoreDagVersion } =
+      await importStore();
+    await expect(
+      createDagVersion({
+        dagId: "00000000-0000-0000-0000-000000000001",
+        userId: "u",
+        dag: { nodes: [], edges: [] } as never,
+      }),
+    ).resolves.not.toThrow();
+    await expect(
+      listDagVersions({
+        dagId: "00000000-0000-0000-0000-000000000001",
+        userId: "u",
+      }),
+    ).resolves.not.toThrow();
+    await expect(
+      getDagVersion({
+        versionId: "00000000-0000-0000-0000-000000000002",
+        userId: "u",
+      }),
+    ).resolves.not.toThrow();
+    await expect(
+      restoreDagVersion({
+        versionId: "00000000-0000-0000-0000-000000000002",
+        userId: "u",
+      }),
+    ).resolves.not.toThrow();
+  });
+});

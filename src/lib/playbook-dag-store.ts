@@ -38,6 +38,11 @@ export interface SavedDag {
   lastRunAt: string | null;
   lastRunStatus: "completed" | "failed" | null;
   lastRunDurationMs: number | null;
+  /** Round 24 — monotonic counter of saves for this DAG. The latest
+   *  row in playbook_dag_versions has version === versionCount. The
+   *  editor renders "v12 of 12" without an extra query when this is
+   *  surfaced on the parent. */
+  versionCount: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -732,6 +737,226 @@ export async function getDagStats(input: {
   }
 }
 
+// ─── Round 24 — DAG version history ─────────────────────────────────
+
+/**
+ * Public shape of a saved DAG version row. Powers the version-history
+ * sidebar (newest-first listing) and the restore confirmation UI
+ * (preview of the target before the user commits).
+ *
+ * The shape mirrors SavedDag's `dag` field on purpose — restoring a
+ * version means "rehydrate the editor with this exact payload", and
+ * keeping the types aligned removes a class of accidental drift.
+ */
+export interface SavedDagVersion {
+  id: string;
+  dagId: string;
+  userId: string;
+  version: number;
+  dag: PlaybookDag;
+  note: string | null;
+  restoredFromVersion: number | null;
+  createdAt: string;
+}
+
+/**
+ * Round 24 — append a new version to the DAG's history.
+ *
+ * Atomic write: we read the parent's version_count under the
+ * transaction, insert the new row with version = count+1, and update
+ * the parent's version_count + live dag column in one go. The parent
+ * row is the source of truth for "what number is next"; if the writer
+ * crashed between INSERT and UPDATE, the next save would re-use the
+ * same number and we'd have two rows claiming version 7. The
+ * transaction wraps the read-then-write so concurrent saves serialise.
+ *
+ * Tenant scoping is enforced by the WHERE on the parent DAG. Even
+ * though the version table carries its own user_id column, we never
+ * trust the caller's claim — a hostile actor with someone else's
+ * dagId is a no-op, not a leak.
+ *
+ * Returns the new version row, or null on failure (DB unavailable,
+ * parent DAG missing, wrong owner).
+ */
+export async function createDagVersion(input: {
+  dagId: string;
+  userId: string;
+  dag: PlaybookDag;
+  note?: string | null;
+  restoredFromVersion?: number | null;
+}): Promise<SavedDagVersion | null> {
+  const db = await getDb();
+  if (!db) return null;
+
+  try {
+    const { playbookDags, playbookDagVersions } = await import("@/db/schema");
+    return await db.transaction(async (tx) => {
+      // Parent read under the transaction — gives us the next version
+      // number AND verifies tenant ownership in one round-trip.
+      const parentRows = await tx
+        .select({ versionCount: playbookDags.versionCount })
+        .from(playbookDags)
+        .where(
+          and(eq(playbookDags.id, input.dagId), eq(playbookDags.userId, input.userId)),
+        )
+        .limit(1);
+      const parent = parentRows[0];
+      if (!parent) return null;
+
+      const nextVersion = (parent.versionCount ?? 0) + 1;
+
+      // Append-only: this row never gets UPDATE'd outside admin tooling.
+      const inserted = await tx
+        .insert(playbookDagVersions)
+        .values({
+          dagId: input.dagId,
+          userId: input.userId,
+          version: nextVersion,
+          dag: input.dag,
+          note: input.note ?? null,
+          restoredFromVersion: input.restoredFromVersion ?? null,
+        })
+        .returning();
+      const newRow = inserted[0];
+      if (!newRow) return null;
+
+      // Sync the parent: bump version_count AND mirror the dag payload
+      // into the live column. The parent's `dag` IS the latest version;
+      // the history table is the immutable trail. Keeping these aligned
+      // is the contract — the editor reads the parent, the audit trail
+      // reads the history, and they MUST agree on "what's current".
+      await tx
+        .update(playbookDags)
+        .set({
+          versionCount: nextVersion,
+          dag: input.dag,
+          nodeCount: input.dag.nodes.length,
+          edgeCount: input.dag.edges.length,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(eq(playbookDags.id, input.dagId), eq(playbookDags.userId, input.userId)),
+        );
+
+      return rowToSavedDagVersion(newRow);
+    });
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Round 24 — list versions for a DAG, newest-first.
+ *
+ * Default limit 50, max 200. The editor sidebar fetches 30 by default
+ * (most users only ever look at "recent"); an admin / audit surface
+ * can request more.
+ *
+ * Tenant-scoped via userId on the version table directly — no JOIN
+ * needed since every version row carries its owner.
+ */
+export async function listDagVersions(input: {
+  dagId: string;
+  userId: string;
+  limit?: number;
+}): Promise<{ versions: SavedDagVersion[] }> {
+  const db = await getDb();
+  if (!db) return { versions: [] };
+
+  try {
+    const { playbookDagVersions } = await import("@/db/schema");
+    const limit = Math.min(Math.max(1, input.limit ?? 50), 200);
+    const rows = await db
+      .select()
+      .from(playbookDagVersions)
+      .where(
+        and(
+          eq(playbookDagVersions.dagId, input.dagId),
+          eq(playbookDagVersions.userId, input.userId),
+        ),
+      )
+      .orderBy(desc(playbookDagVersions.version))
+      .limit(limit);
+    return { versions: rows.map(rowToSavedDagVersion) };
+  } catch {
+    return { versions: [] };
+  }
+}
+
+/**
+ * Round 24 — fetch a single version by id, scoped to user.
+ *
+ * Returns null on miss (not found OR wrong owner — same response,
+ * no information leak via 404 vs 403). Used by the restore
+ * confirmation UI to preview the target before commit, and by
+ * restoreDagVersion to read the source payload.
+ */
+export async function getDagVersion(input: {
+  versionId: string;
+  userId: string;
+}): Promise<SavedDagVersion | null> {
+  const db = await getDb();
+  if (!db) return null;
+
+  try {
+    const { playbookDagVersions } = await import("@/db/schema");
+    const rows = await db
+      .select()
+      .from(playbookDagVersions)
+      .where(
+        and(
+          eq(playbookDagVersions.id, input.versionId),
+          eq(playbookDagVersions.userId, input.userId),
+        ),
+      )
+      .limit(1);
+    return rows[0] ? rowToSavedDagVersion(rows[0]) : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Round 24 — restore a prior version.
+ *
+ * Restoration is NOT an in-place mutation — that would break the
+ * append-only audit trail and leave the timeline lying about what
+ * happened. Instead, we APPEND a new version whose dag payload is
+ * a copy of the source, with `restored_from_version` pointing back
+ * at the source. The timeline reads:
+ *
+ *   v3: "Initial save"
+ *   v4: "Added n3 follow-up node"
+ *   ...
+ *   v8: "Restored from v3"
+ *
+ * The parent DAG's live `dag` column is updated to match the restored
+ * payload as a side-effect of createDagVersion's parent-sync — the
+ * editor will rehydrate from v3's shape on the next load.
+ *
+ * Returns the new version row, or null on miss (unknown id, wrong
+ * owner, DB unavailable).
+ */
+export async function restoreDagVersion(input: {
+  versionId: string;
+  userId: string;
+  /** Optional human-readable note. Defaults to "Restored from v<N>". */
+  note?: string | null;
+}): Promise<SavedDagVersion | null> {
+  const source = await getDagVersion({
+    versionId: input.versionId,
+    userId: input.userId,
+  });
+  if (!source) return null;
+  return createDagVersion({
+    dagId: source.dagId,
+    userId: input.userId,
+    dag: source.dag,
+    note: input.note ?? `Restored from v${source.version}`,
+    restoredFromVersion: source.version,
+  });
+}
+
 /**
  * Round 13 — orphan-detection cleanup.
  *
@@ -889,6 +1114,10 @@ function rowToSavedDag(row: {
   lastRunAt: Date | null;
   lastRunStatus: string | null;
   lastRunDurationMs: number | null;
+  // Pre-Round-24 rows don't have version_count yet. We treat the
+  // column as nullable here so the migration's `DEFAULT 0` and any
+  // legacy NULL coexist without a TS error at the boundary.
+  versionCount?: number | null;
   createdAt: Date;
   updatedAt: Date;
 }): SavedDag {
@@ -904,8 +1133,34 @@ function rowToSavedDag(row: {
     lastRunAt: row.lastRunAt?.toISOString() ?? null,
     lastRunStatus: (row.lastRunStatus as SavedDag["lastRunStatus"]) ?? null,
     lastRunDurationMs: row.lastRunDurationMs,
+    versionCount: row.versionCount ?? 0,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
+  };
+}
+
+function rowToSavedDagVersion(row: {
+  id: string;
+  dagId: string;
+  userId: string;
+  version: number;
+  dag: unknown;
+  note: string | null;
+  restoredFromVersion: number | null;
+  createdAt: Date;
+}): SavedDagVersion {
+  return {
+    id: row.id,
+    dagId: row.dagId,
+    userId: row.userId,
+    version: row.version,
+    // Schema's $type<>() annotation makes this safe at the call site,
+    // but the mapper signature uses `unknown` so a hand-rolled raw row
+    // (in tests) can't accidentally typecheck against PlaybookDag.
+    dag: row.dag as PlaybookDag,
+    note: row.note,
+    restoredFromVersion: row.restoredFromVersion,
+    createdAt: row.createdAt.toISOString(),
   };
 }
 
