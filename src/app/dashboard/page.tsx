@@ -15,6 +15,7 @@ import Link from "next/link";
 import { FirstRunPrompt } from "@/components/dashboard/FirstRunPrompt";
 import { CheckoutSuccessBanner } from "@/components/dashboard/CheckoutSuccessBanner";
 import { RecentDagRuns } from "@/components/dashboard/RecentDagRuns";
+import { TOTAL_AGENTS } from "@/lib/platform-stats";
 // Chat is available via the floating widget (SovereignAssistant) in layout.tsx and /chat page
 
 const ONBOARDING_KEY = "sovereign_onboarding";
@@ -23,41 +24,16 @@ const CHECKLIST_KEY = "sovereign_checklist";
 const CHECKLIST_DISMISSED_KEY = "sovereign_checklist_dismissed";
 const RECENT_AGENTS_KEY = "sovereign_recent_agents";
 
-/* ─── Live Status Rotator ─── */
-
-const LIVE_ACTIVITIES = [
-  { text: "Lead Gen agent ready", time: "now", color: "text-emerald-400" },
-  { text: "Content pipeline active", time: "now", color: "text-cyan-400" },
-  { text: "SEO tools online", time: "now", color: "text-violet-400" },
-  { text: "Voice agents standing by", time: "now", color: "text-amber-400" },
-  { text: "All systems operational", time: "now", color: "text-rose-400" },
-];
-
-function LiveStatusRotator() {
-  const [index, setIndex] = useState(0);
-  useEffect(() => {
-    const timer = setInterval(() => setIndex((i) => (i + 1) % LIVE_ACTIVITIES.length), 4000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const activity = LIVE_ACTIVITIES[index];
-  return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={index}
-        initial={{ opacity: 0, y: 5 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -5 }}
-        transition={{ duration: 0.3 }}
-        className="flex items-center gap-2 text-[10px]"
-      >
-        <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
-        <span className={activity.color}>{activity.text}</span>
-        <span className="text-neutral-500">{activity.time}</span>
-      </motion.div>
-    </AnimatePresence>
-  );
-}
+/* ─── Live Status Rotator ─── REMOVED Round 25.
+ *
+ * Used to render a 4s-rotating list of hard-coded "Lead Gen agent
+ * ready / Content pipeline active / SEO tools online" strings that
+ * pretended to be live activity. CLAUDE.md L153 explicitly says
+ * "no fake activity on a fresh deploy" — yet this component called
+ * itself "LiveStatusRotator" and rotated a static array. The slop
+ * audit (Round 25) flagged it as the dashboard's biggest honesty
+ * violation. RecentDagRuns (already imported) is the real-data
+ * replacement. */
 
 /* ─── Welcome Tour ─── */
 
@@ -378,11 +354,10 @@ function StatsPanel() {
             </div>
             <div className="flex items-center gap-1.5">
               <Cpu className="w-3 h-3 text-cyan-500" />
-              <span className="text-[10px] text-neutral-400">130+ Agents</span>
+              <span className="text-[10px] text-neutral-400">{TOTAL_AGENTS} Agents</span>
             </div>
-            <div className="hidden sm:block">
-              <LiveStatusRotator />
-            </div>
+            {/* LiveStatusRotator removed Round 25 — was fake activity.
+                Real activity now lives in RecentDagRuns below the fold. */}
           </div>
           <Link href="/dashboard/nim-arsenal" className="text-[10px] text-neutral-400 hover:text-white transition-colors">
             View Models →

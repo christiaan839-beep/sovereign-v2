@@ -6,13 +6,21 @@ import { subscriptions } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { createLogger } from "@/lib/logger";
 import { getBaseUrl } from "@/lib/base-url";
+import { requireSameOrigin } from "@/lib/auth-guard";
 const log = createLogger("billing-portal");
 
 /**
  * POST /api/billing/portal
  * Creates a Stripe Customer Portal session so users can manage their subscription.
+ *
+ * Round 25 — CSRF gate. Without it, a cross-site form-POST could
+ * mint a portal session URL for the victim and then redirect them
+ * into a phishing flow. Origin compare refuses non-app origins.
  */
-export async function POST() {
+export async function POST(req: Request) {
+  const csrfErr = requireSameOrigin(req);
+  if (csrfErr) return csrfErr;
+
   try {
     const { userId } = await auth();
     if (!userId) {

@@ -5,6 +5,7 @@ import { google } from '@ai-sdk/google';
 import { generateObject } from 'ai';
 import * as cheerio from 'cheerio';
 import { createLogger } from "@/lib/logger";
+import { safeFetch, SsrfBlockedError } from "@/lib/safe-fetch";
 const log = createLogger("audit-engine");
 
 export const POST = createAgentRoute({
@@ -17,21 +18,23 @@ export const POST = createAgentRoute({
       return ({ error: 'URL is required' });
     }
 
-    // 1. Physically scrape the target website
+    // 1. Physically scrape the target website.
+    //    Round 25 — through safeFetch so the SSRF guard runs on the
+    //    initial URL AND on every redirect hop. Without this, the
+    //    audit agent is an internal-network port scanner an attacker
+    //    can drive by submitting `targetUrl: "http://169.254.169.254/..."`.
     let scrapedText = '';
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000);
-      
-      const response = await fetch(targetUrl, {
+      const response = await safeFetch(targetUrl, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) SovereignMatrix/1.0'
         },
-        signal: controller.signal
+        timeoutMs: 8000,
+        // A redirect from the user's URL is fine; cap at 3 to refuse
+        // long redirect chains (cloudflare-turnstile-style loops).
+        maxRedirects: 3,
       });
-      
-      clearTimeout(timeoutId);
-      
+
       if (response.ok) {
         const html = await response.text();
         const $ = cheerio.load(html);
@@ -39,7 +42,17 @@ export const POST = createAgentRoute({
         $('script, style, nav, footer, iframe').remove();
         scrapedText = $('body').text().replace(/\s+/g, ' ').trim().slice(0, 15000);
       }
-    } catch {
+    } catch (err) {
+      if (err instanceof SsrfBlockedError) {
+        // Make this explicit in the response — caller submitted a URL
+        // we refuse to fetch (private IP, cloud metadata, etc). Don't
+        // silently fall back to "synthesize from domain"; that hides
+        // a real attempt to abuse the agent.
+        return NextResponse.json(
+          { error: 'targetUrl blocked by SSRF policy', detail: err.category },
+          { status: 400 },
+        );
+      }
       log.warn('Scraping firewall hit. Synthesizing based on domain heuristics.');
     }
 

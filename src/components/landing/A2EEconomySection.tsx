@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { A2EGraph } from "./A2EGraph";
+import { TOTAL_AGENTS } from "@/lib/platform-stats";
 
 /**
  * A2EEconomySection — The standout section for the A2E economy concept.
@@ -59,7 +60,7 @@ export function A2EEconomySection() {
             {/* Stat row */}
             <div className="flex flex-wrap gap-x-6 gap-y-2 mb-8">
               {[
-                { v: "137", l: "agents" },
+                { v: String(TOTAL_AGENTS), l: "agents" },
                 { v: "70%", l: "creator share" },
                 { v: "$0", l: "minimum" },
               ].map((s) => (

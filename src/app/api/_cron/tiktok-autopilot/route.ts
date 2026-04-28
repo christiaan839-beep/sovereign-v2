@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { createLogger } from "@/lib/logger";
+import { verifyCron } from "@/lib/cron-auth";
 const log = createLogger("tiktok-autopilot");
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const CRON_SECRET = process.env.CRON_SECRET;
 
 /**
  * TIKTOK AUTOPILOT — Generates short-form video scripts for TikTok/Reels.
@@ -13,10 +13,11 @@ const CRON_SECRET = process.env.CRON_SECRET;
  */
 
 export async function GET(req: Request) {
-  const authHeader = req.headers.get("authorization");
-  if (authHeader !== `Bearer ${CRON_SECRET}` && process.env.NODE_ENV === "production") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  // Round 25 — was fail-OPEN in non-production. Replaced with the
+  // canonical fail-closed verifyCron helper so preview deployments
+  // (NODE_ENV !== "production") on the public internet are protected.
+  const cronErr = verifyCron(req);
+  if (cronErr) return cronErr;
 
   try {
     const systemInstruction = `You are a short-form video content strategist for Sovereign Matrix, an AI automation platform.

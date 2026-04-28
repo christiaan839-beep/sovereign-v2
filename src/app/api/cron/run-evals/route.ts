@@ -6,6 +6,7 @@ import { and, eq, desc, lt } from "drizzle-orm";
 import { getBaseUrl } from "@/lib/base-url";
 import { createLogger } from "@/lib/logger";
 import { detectDrift, type EvalRunSummary, type EvalResultRow } from "@/lib/eval-drift";
+import { verifyCron } from "@/lib/cron-auth";
 
 const log = createLogger("run-evals-cron");
 
@@ -41,11 +42,10 @@ interface EvalExecResult {
 }
 
 export async function GET(req: Request) {
-  const auth = req.headers.get("authorization") ?? "";
-  const expected = `Bearer ${process.env.CRON_SECRET ?? ""}`;
-  if (!process.env.CRON_SECRET || auth !== expected) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  // Round 25 — was string-compare without timingSafeEqual. verifyCron
+  // is the canonical fail-closed helper.
+  const cronErr = verifyCron(req);
+  if (cronErr) return cronErr;
 
   // Lazy-import the golden set so the harness registration runs
   const { getAllEvals } = await import("@/lib/__tests__/agent-evals/harness");
@@ -89,7 +89,7 @@ export async function GET(req: Request) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-Sovereign-Internal-Secret": process.env.CRON_SECRET,
+          "X-Sovereign-Internal-Secret": process.env.CRON_SECRET ?? "",
           "X-Sovereign-User-Id": "eval_runner",
         },
         body: JSON.stringify({ ...(ev.input as object), confirmed: true }),

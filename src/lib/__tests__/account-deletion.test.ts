@@ -22,6 +22,14 @@ const { mockAuth, mockSelect, mockDelete, mockUpdate, mockFetch } = vi.hoisted((
 
 vi.mock("@clerk/nextjs/server", () => ({ auth: mockAuth }));
 
+// Round 25 — DELETE /api/account gained a CSRF gate via
+// requireSameOrigin. The test's bare Request objects don't carry
+// an Origin header so the gate would 403 every test. Mock as a no-op
+// (CSRF behavior has dedicated tests in auth-guard-csrf.test.ts).
+vi.mock("@/lib/auth-guard", () => ({
+  requireSameOrigin: () => null,
+}));
+
 vi.mock("@/db", () => ({
   db: {
     select: () => ({

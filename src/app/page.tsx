@@ -11,6 +11,7 @@ import { PrimaryCTA } from "@/components/landing/PrimaryCTA";
 import { StatusIndicator } from "@/components/landing/StatusIndicator";
 import { trackCtaClick } from "@/lib/cta-track";
 import { TiltCard } from "@/components/ui/EliteEffects";
+import { TOTAL_AGENTS } from "@/lib/platform-stats";
 
 // Above-the-fold — static-imported so they ship in the initial chunk.
 import { LiveProofStrip } from "@/components/landing/LiveProofStrip";
@@ -140,7 +141,7 @@ const FEATURED_PLAYBOOKS = getMarketingPlaybooks().map((pb) => {
 // Curated slice for the constellation preview — 40 agents across every
 // major category. Picked for visual diversity (palettes spread) + name
 // recognition (buyers scanning the landing see familiar capabilities).
-// Full /world page shows all 218.
+// Full /world page shows the entire registry (TOTAL_AGENTS).
 const CONSTELLATION_PREVIEW_AGENTS = [
   // Meta / brain
   { slug: "god-brain", displayName: "God Brain", category: "Meta" },
@@ -243,7 +244,7 @@ export default function LandingPage() {
         {/* 06c · Constellation preview — 40 live sigils → /world deep-link */}
         <ConstellationPreview
           agents={CONSTELLATION_PREVIEW_AGENTS}
-          totalCount={218}
+          totalCount={TOTAL_AGENTS}
         />
 
         {/* 07 · Featured Playbooks */}
@@ -407,7 +408,7 @@ function Nav({
           >
             {[
               { href: PLATFORM_HREF, label: "Platform" },
-              { href: "/agents", label: "Directory — 223 agents" },
+              { href: "/agents", label: `Directory — ${TOTAL_AGENTS} agents` },
               { href: "/marketplace", label: "Marketplace" },
               { href: "/compare", label: "Compare vs. others" },
               { href: "/trust", label: "Trust" },
@@ -508,7 +509,7 @@ function Hero() {
               <span className="absolute inline-flex h-full w-full rounded-full bg-[#B5532C] opacity-70 animate-ping" />
               <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#B5532C]" />
             </span>
-            <span>223 agents</span>
+            <span>{TOTAL_AGENTS} agents</span>
             <span className="text-neutral-700">·</span>
             <span>39 models</span>
             <span className="text-neutral-700">·</span>
@@ -536,7 +537,7 @@ function Hero() {
           transition={{ delay: 0.4, duration: 0.7 }}
           className="text-[15px] md:text-[17px] text-neutral-400 leading-[1.55] mb-10 max-w-2xl mx-auto"
         >
-          203 verified agents. 39 models. 5-layer safety pipeline. 70/30 creator earnings with SLA-triggered refunds.
+          {TOTAL_AGENTS} verified agents. 39 models. 5-layer safety pipeline. 70/30 creator earnings with SLA-triggered re-runs.
         </motion.p>
 
         {/* CTAs */}
@@ -883,7 +884,7 @@ function FinalCTA() {
 
         <p className="ed-body text-[15px] md:text-[16px] mb-12 leading-relaxed max-w-lg mx-auto"
            style={{ color: "var(--ed-ink-soft)" }}>
-          No credit card. 223 agents in 60 seconds. 50 runs reset every month.
+          No credit card. {TOTAL_AGENTS} agents in 60 seconds. 50 runs reset every month.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8">

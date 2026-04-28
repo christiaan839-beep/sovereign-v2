@@ -8,7 +8,7 @@
  */
 
 import { NextResponse } from "next/server";
-import { requireAuth } from "@/lib/auth-guard";
+import { requireAuth, requireSameOrigin } from "@/lib/auth-guard";
 import { requireAdmin } from "@/lib/admin-auth";
 import { getCreditBalance, addCredits, getCreditHistory } from "@/lib/a2e";
 import { auditLog } from "@/lib/audit-log";
@@ -77,6 +77,12 @@ const ADD_SCHEMA = z.object({
 });
 
 export async function POST(req: Request) {
+  // Round 25 — CSRF gate FIRST. Credits are spendable money in the
+  // platform; a cross-site form-POST that grants/spends credits is
+  // exactly the kind of vector Origin compare exists to block.
+  const csrfErr = requireSameOrigin(req);
+  if (csrfErr) return csrfErr;
+
   // First gate: caller must be authenticated. We pull userId for the
   // "purchase" branch + as the audit-log actor.
   const auth = await requireAuth();

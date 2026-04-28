@@ -162,7 +162,10 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     stripePriceEnvKey: "STRIPE_PRICE_ENTERPRISE",
     purchasable: true,
     marketing: true,
-    description: "10,000 runs/month. SAML SSO, SOC 2 evidence, direct Slack.",
+    // Round 25 — SAML SSO is on the Enterprise roadmap but not
+    // shipped yet. Pulling the unbacked claim. SOC 2 evidence (the
+    // FMTI artifact + SOC 2 mapping doc + audit chain) IS shipped.
+    description: "10,000 runs/month. SOC 2 evidence pack, dedicated review channel, custom contract terms.",
   },
   // PAY_PER_RUN: no monthly fee; users top up credits ad hoc via
   // one-time Stripe Payment Links. Runs deduct from balance.

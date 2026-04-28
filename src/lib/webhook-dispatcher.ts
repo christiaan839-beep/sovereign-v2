@@ -1,4 +1,6 @@
 import { createLogger } from "@/lib/logger";
+import { safeFetch, SsrfBlockedError } from "@/lib/safe-fetch";
+import { checkUrlForSsrf } from "@/lib/ssrf-guard";
 
 const log = createLogger("webhook-dispatcher");
 
@@ -10,6 +12,13 @@ const log = createLogger("webhook-dispatcher");
  *
  * Supports: Slack, Discord, Zapier, n8n, Make.com, custom URLs.
  * Every dispatch is logged for audit trail.
+ *
+ * Round 25 — every outbound HTTP call goes through `safeFetch`, which
+ * runs the SSRF guard on the initial URL AND on every redirect target.
+ * Without that, an attacker registers a webhook target pointing at
+ * 169.254.169.254 (AWS IMDS) and we leak IAM credentials on every
+ * event. Registration ALSO refuses unsafe URLs up-front so the bad
+ * target never lands in the registry.
  */
 
 export interface WebhookEvent {
@@ -33,11 +42,28 @@ const webhookHistory: Array<{ event: WebhookEvent; target: string; status: numbe
 const MAX_HISTORY = 500;
 
 /**
- * Register a webhook target
+ * Register a webhook target.
+ *
+ * Round 25 — refuses unsafe URLs at registration time. Without this
+ * gate, a hostile target lands in the registry and gets fetched on
+ * every matching event. The dispatch path also re-checks (defense
+ * in depth via safeFetch), but the cleanest defense is to reject
+ * before persistence. Returns false on rejection so callers can
+ * surface a 400 to the user.
  */
-export function registerWebhook(target: WebhookTarget): void {
+export function registerWebhook(target: WebhookTarget): boolean {
+  const check = checkUrlForSsrf(target.url);
+  if (!check.safe) {
+    log.warn("Webhook registration refused (SSRF)", {
+      url: target.url,
+      category: check.category,
+      reason: check.reason,
+    });
+    return false;
+  }
   webhookTargets.push(target);
   log.info(`Webhook registered: ${target.url} for events: ${target.events.join(", ")}`);
+  return true;
 }
 
 /**
@@ -83,29 +109,55 @@ export async function dispatchWebhook(event: WebhookEvent): Promise<void> {
           .join("");
       }
 
-      const res = await fetch(target.url, {
-        method: "POST",
-        headers,
-        body: payload,
-        signal: AbortSignal.timeout(10000),
-      });
+      // safeFetch enforces SSRF on the initial URL AND on every
+      // redirect hop. maxRedirects: 0 because a webhook target
+      // shouldn't be redirecting at all — if it does, we treat it
+      // as suspicious rather than chase it. timeoutMs: 10s.
+      let status = 0;
+      try {
+        const res = await safeFetch(target.url, {
+          method: "POST",
+          headers,
+          body: payload,
+          maxRedirects: 0,
+          timeoutMs: 10_000,
+        });
+        status = res.status;
+      } catch (err) {
+        // SSRF rejections become explicit log lines so a regression
+        // in the registry-time gate (a stale row created before R25)
+        // doesn't fail silently.
+        if (err instanceof SsrfBlockedError) {
+          log.error("Webhook dispatch blocked (SSRF)", {
+            url: target.url,
+            reason: err.message,
+          });
+          status = 0;
+        } else {
+          log.warn("Webhook dispatch failed", {
+            url: target.url,
+            error: err instanceof Error ? err.message : String(err),
+          });
+          status = 0;
+        }
+      }
 
       // Log dispatch
       webhookHistory.push({
         event,
         target: target.url,
-        status: res.status,
+        status,
         timestamp: Date.now(),
       });
       if (webhookHistory.length > MAX_HISTORY) {
         webhookHistory.splice(0, webhookHistory.length - MAX_HISTORY);
       }
 
-      if (!res.ok) {
-        log.warn(`Webhook failed: ${target.url} → ${res.status}`);
+      if (status === 0 || (status >= 400)) {
+        log.warn(`Webhook failed: ${target.url} → ${status}`);
       }
 
-      return { url: target.url, status: res.status };
+      return { url: target.url, status };
     })
   );
 

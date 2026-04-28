@@ -5,7 +5,7 @@ vi.mock("@/lib/credits", () => ({ sweepExpiredHolds: mockSweep }));
 
 beforeEach(() => {
   mockSweep.mockReset();
-  process.env.CRON_SECRET = "topsecret";
+  process.env.CRON_SECRET = "topsecret-must-be-at-least-16-chars";
 });
 
 describe("GET /api/cron/sweep-expired-holds", () => {
@@ -28,7 +28,7 @@ describe("GET /api/cron/sweep-expired-holds", () => {
     mockSweep.mockResolvedValue(7);
     const { GET } = await import("@/app/api/cron/sweep-expired-holds/route");
     const res = await GET(new Request("http://localhost/cron", {
-      headers: { Authorization: "Bearer topsecret" },
+      headers: { Authorization: "Bearer topsecret-must-be-at-least-16-chars" },
     }));
     const body = await res.json();
     expect(res.status).toBe(200);

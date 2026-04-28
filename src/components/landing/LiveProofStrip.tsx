@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { TOTAL_AGENTS } from "@/lib/platform-stats";
 
 interface StripStats {
   agents: number;
@@ -10,8 +11,12 @@ interface StripStats {
   uptime: string;
 }
 
+// Round 25 — fallback agent count comes from the single source of
+// truth (TOTAL_AGENTS, derived from agent-manifests.generated). Was
+// previously hardcoded to 137, which contradicted the hero's literal
+// of 223 on the same page.
 const STATIC_FALLBACK: StripStats = {
-  agents: 137,
+  agents: TOTAL_AGENTS,
   models: 39,
   memories: 847,
   industries: 14,

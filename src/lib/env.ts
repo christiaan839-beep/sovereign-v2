@@ -176,6 +176,11 @@ export function assertEnv(): void {
   try {
     const parsed = parse();
     logCapabilityBanner(parsed);
+    // Round 25 — additional production-only hard requirements
+    // (ENCRYPTION_KEY, CRON_SECRET, etc). See assertProductionRequiredEnv.
+    if (process.env.NODE_ENV === "production") {
+      assertProductionRequiredEnv();
+    }
   } catch (err) {
     if (err instanceof EnvValidationError) {
       // In dev, log the error but don't crash — let the dev fix it
@@ -188,6 +193,59 @@ export function assertEnv(): void {
       throw err;
     }
   }
+}
+
+/**
+ * Round 25 — production-only hard requirements.
+ *
+ * These envs are fail-OPEN if absent today: missing ENCRYPTION_KEY
+ * makes safeEncrypt return plaintext (silently broken security);
+ * missing CRON_SECRET means verifyCron rejects every cron tick.
+ * Hard-requiring them in prod turns silent failure into a boot-fail.
+ *
+ * NOT called in dev / test / preview — those environments tolerate
+ * missing values for iteration speed. Production is where this
+ * matters.
+ */
+export function assertProductionRequiredEnv(): void {
+  const required: Array<{ name: string; reason: string }> = [
+    {
+      name: "ENCRYPTION_KEY",
+      reason:
+        "AES-256-GCM key for OAuth tokens + BYOK secrets at rest. " +
+        "Without it, safeEncrypt returns plaintext silently — the " +
+        "data lands in the DB unencrypted and nobody knows.",
+    },
+    {
+      name: "CRON_SECRET",
+      reason:
+        "Bearer secret for cron-only routes (job-runner, schedulers, " +
+        "audit-chain verifier, eval runner). Without it, every cron " +
+        "tick 401s and the platform's automation goes silent.",
+    },
+    {
+      name: "DATABASE_URL",
+      reason: "Neon Postgres connection string — platform cannot run.",
+    },
+    {
+      name: "CLERK_SECRET_KEY",
+      reason: "Clerk server secret — auth path is broken without it.",
+    },
+    {
+      name: "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
+      reason: "Clerk frontend key — auth path is broken without it.",
+    },
+  ];
+
+  const missing = required.filter((r) => !process.env[r.name]);
+  if (missing.length === 0) return;
+
+  const lines = missing.map((r) => `  - ${r.name}: ${r.reason}`).join("\n");
+  throw new EnvValidationError(
+    `Production env validation failed — missing required envs:\n${lines}\n\n` +
+      `Set these in your hosting platform's environment settings.`,
+    [],
+  );
 }
 
 function logCapabilityBanner(e: Env): void {

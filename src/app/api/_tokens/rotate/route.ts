@@ -7,6 +7,7 @@ import { z } from "zod";
 import { randomBytes, createHash } from "node:crypto";
 import { createLogger } from "@/lib/logger";
 import { auditLog } from "@/lib/audit-log";
+import { requireSameOrigin } from "@/lib/auth-guard";
 
 // Force Node runtime — uses node:crypto for randomBytes (token mint)
 // and createHash (key fingerprint). Both are unavailable in Edge.
@@ -68,6 +69,12 @@ const rotateSchema = z.object({
 });
 
 export async function POST(req: Request) {
+  // Round 25 — CSRF gate. Token rotation is one of the highest-value
+  // mutating endpoints; without Origin compare, a cross-site form
+  // could rotate a victim's token, locking them out of their own API.
+  const csrfErr = requireSameOrigin(req);
+  if (csrfErr) return csrfErr;
+
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 

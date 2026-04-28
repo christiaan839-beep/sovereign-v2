@@ -188,7 +188,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     {
                       "@type": "Question",
                       name: "How much does Sovereign Matrix cost?",
-                      acceptedAnswer: { "@type": "Answer", text: `Sovereign Matrix offers ${pricingSentence}. The Free tier includes 50 runs/month with no credit card required. Growth includes 500 runs/month and every featured playbook. Enterprise includes 10,000 runs/month, SAML SSO, SOC 2 evidence, and a direct Slack line to the founder. Month-to-month, no contracts.` },
+                      acceptedAnswer: { "@type": "Answer", text: `Sovereign Matrix offers ${pricingSentence}. The Free tier includes 50 runs/month with no credit card required. Growth includes 500 runs/month and every featured playbook. Enterprise includes 10,000 runs/month, SOC 2 evidence pack, dedicated review channel, and custom contract terms. Month-to-month, no contracts.` },
                     },
                     {
                       "@type": "Question",

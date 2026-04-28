@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { listDueNow, markDispatched, markFailed } from "@/lib/scheduled-playbooks";
 import { getBaseUrl } from "@/lib/base-url";
 import { createLogger } from "@/lib/logger";
+import { verifyCron } from "@/lib/cron-auth";
 
 const log = createLogger("dispatch-scheduled-playbooks");
 
@@ -34,12 +35,10 @@ const log = createLogger("dispatch-scheduled-playbooks");
 const BATCH_SIZE = 100;
 
 export async function GET(req: Request) {
-  // Auth — same pattern as other cron endpoints
-  const authHeader = req.headers.get("authorization") ?? "";
-  const expected = `Bearer ${process.env.CRON_SECRET ?? ""}`;
-  if (!process.env.CRON_SECRET || authHeader !== expected) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  // Round 25 — was string-compare without timingSafeEqual. verifyCron
+  // is the canonical helper.
+  const cronErr = verifyCron(req);
+  if (cronErr) return cronErr;
 
   const due = await listDueNow(BATCH_SIZE);
   if (due.length === 0) {
@@ -61,7 +60,10 @@ export async function GET(req: Request) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-Sovereign-Internal-Secret": process.env.CRON_SECRET,
+          // verifyCron above ensures CRON_SECRET is set; the `?? ""`
+          // is a no-op at runtime but pleases the type system after
+          // we removed the local CRON_SECRET const.
+          "X-Sovereign-Internal-Secret": process.env.CRON_SECRET ?? "",
           "X-Sovereign-User-Id": schedule.userId,
         },
         body: JSON.stringify({

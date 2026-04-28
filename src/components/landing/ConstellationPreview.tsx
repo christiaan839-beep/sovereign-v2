@@ -8,7 +8,7 @@
  * the whole field. Click → /world (or click a specific sigil → that agent).
  *
  * Design goals:
- *   - Visual PROOF of the 218-agent catalog without being a cluttered grid
+ *   - Visual PROOF of the full agent catalog (TOTAL_AGENTS) without being a cluttered grid
  *   - Subtle ambient motion (not jarring); respects prefers-reduced-motion
  *   - Mobile: reduces to 18 sigils on a simplified spiral
  *
@@ -22,6 +22,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { agentSigilDataUrl, type SigilOptions } from "@/lib/agent-sigil";
 import { useReducedMotion } from "@/lib/hooks/use-reduced-motion";
+import { TOTAL_AGENTS } from "@/lib/platform-stats";
 
 interface PreviewAgent {
   slug: string;
@@ -36,7 +37,7 @@ interface Props {
   totalCount?: number;
 }
 
-export function ConstellationPreview({ agents, totalCount = 218 }: Props) {
+export function ConstellationPreview({ agents, totalCount = TOTAL_AGENTS }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [parallax, setParallax] = useState({ x: 0, y: 0 });
   const reducedMotion = useReducedMotion();
@@ -85,7 +86,7 @@ export function ConstellationPreview({ agents, totalCount = 218 }: Props) {
         <div className="grid md:grid-cols-12 gap-10 md:gap-14 items-center">
           <div className="md:col-span-5">
             <h2 className="ed-display text-3xl md:text-5xl leading-[1.02] mb-6">
-              223 agents.<br />
+              {totalCount} agents.<br />
               <span className="ed-display-italic text-[#B5532C]">One living map.</span>
             </h2>
             <p className="text-sm md:text-base text-neutral-400 leading-relaxed mb-6">

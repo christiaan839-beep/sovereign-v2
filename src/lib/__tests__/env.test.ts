@@ -37,12 +37,17 @@ async function freshEnv() {
   return import("@/lib/env");
 }
 
-/** Minimum required env to pass schema validation. */
+/** Minimum required env to pass schema validation.
+ *  Round 25 — added ENCRYPTION_KEY and CRON_SECRET to clear the new
+ *  assertProductionRequiredEnv gate. The existing schema-required set
+ *  is unchanged; the new prod-only set is additional. */
 const VALID_REQUIRED = {
   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_" + "x".repeat(30),
   CLERK_SECRET_KEY: "sk_test_" + "x".repeat(30),
   DATABASE_URL: "postgres://u:p@host:5432/db",
   NVIDIA_NIM_API_KEY: "nvapi-test",
+  ENCRYPTION_KEY: "a".repeat(64),
+  CRON_SECRET: "x".repeat(32),
 };
 
 beforeEach(() => {

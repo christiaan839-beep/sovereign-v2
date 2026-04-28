@@ -32,8 +32,13 @@ const SECTIONS = [
     icon: Key,
     title: "Authentication",
     color: "text-blue-400",
+    // Round 25 — SAML SSO is on the Enterprise roadmap (Clerk
+    // supports it via Enterprise Connections; needs the plan upgrade
+    // + IdP connector wiring). It's NOT shipped today, so claiming
+    // it here would be misrepresentation. Calling out OAuth providers
+    // that ARE wired (Google + Microsoft) and labeling SAML as roadmap.
     content:
-      "All authentication is handled by Clerk, providing enterprise-grade SSO with Google, Microsoft, and SAML providers. Two-factor authentication (2FA) is available for all accounts. Sessions are managed with short-lived JWTs and automatic rotation, with configurable session timeouts for enterprise customers.",
+      "All authentication is handled by Clerk, providing enterprise-grade SSO via Google and Microsoft OAuth (live today). SAML / SCIM provisioning is on the Enterprise roadmap. Two-factor authentication (2FA) is available for all accounts. Sessions are managed with short-lived JWTs and automatic rotation, with configurable session timeouts for enterprise customers.",
   },
   {
     icon: Lock,

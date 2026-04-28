@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { TOTAL_AGENTS } from "@/lib/platform-stats";
 
 /**
  * ProofStrip — consolidates 3 previously-separate sections into one.
  *
  * Replaces:
- *   - PlatformScale   (223 agents / 90+ integrations / 8 providers / 5 verif)
+ *   - PlatformScale   (TOTAL_AGENTS agents / 90+ integrations / 8 providers / 5 verif)
  *   - IndustrySection (8 industry cards)
  *   - StackKiller     (cost displacement — the strongest claim stayed in
  *                      ThreeMoatsGrid; this strip shows the proof numbers)
@@ -23,7 +24,7 @@ import Link from "next/link";
 
 const SCALE_METRICS = [
   {
-    n: "198",
+    n: String(TOTAL_AGENTS),
     label: "Agents",
     sub: "18 industries · 84 featured in the public catalog",
     href: "/platform",

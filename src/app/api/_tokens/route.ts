@@ -7,6 +7,7 @@ import { z } from "zod";
 import { randomBytes, createHash } from "node:crypto";
 import { createLogger } from "@/lib/logger";
 import { auditLog } from "@/lib/audit-log";
+import { requireSameOrigin } from "@/lib/auth-guard";
 
 // Force Node runtime — uses node:crypto for randomBytes (mint API
 // keys) and createHash (store the SHA-256 of the key, never the
@@ -116,6 +117,13 @@ const createSchema = z.object({
 });
 
 export async function POST(req: Request) {
+  // Round 25 — CSRF gate FIRST. A token-mint endpoint is the
+  // canonical example of why SameSite=Lax isn't enough: a top-level
+  // form-POST from evil.com would otherwise mint an API key in the
+  // user's name. Origin/Referer compare blocks that vector.
+  const csrfErr = requireSameOrigin(req);
+  if (csrfErr) return csrfErr;
+
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -218,6 +226,12 @@ export async function POST(req: Request) {
 
 // ─── DELETE: revoke (soft) ───────────────────────────────────────
 export async function DELETE(req: Request) {
+  // Round 25 — CSRF gate. Cross-site DELETE forms are a real (if
+  // unusual) vector in modern browsers via fetch(). Same Origin
+  // compare blocks them.
+  const csrfErr = requireSameOrigin(req);
+  if (csrfErr) return csrfErr;
+
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 

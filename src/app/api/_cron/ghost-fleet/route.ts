@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { createLogger } from "@/lib/logger";
+import { verifyCron } from "@/lib/cron-auth";
 const log = createLogger("ghost-fleet-cron");
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const X_API_KEY = process.env.X_API_KEY;
-const CRON_SECRET = process.env.CRON_SECRET;
 
 /**
  * GHOST FLEET — Automated social content generation for X/LinkedIn.
@@ -15,10 +15,12 @@ const CRON_SECRET = process.env.CRON_SECRET;
  */
 
 export async function GET(req: Request) {
-  const authHeader = req.headers.get("authorization");
-  if (authHeader !== `Bearer ${CRON_SECRET}` && process.env.NODE_ENV === "production") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  // Round 25 — was fail-OPEN in non-production. The historical
+  // "skip auth in dev" pattern is a real footgun; preview deploys
+  // run with NODE_ENV !== "production" but ARE on the public
+  // internet. verifyCron is fail-closed everywhere.
+  const cronErr = verifyCron(req);
+  if (cronErr) return cronErr;
 
   try {
     const systemInstruction = `You are a content strategist for Sovereign Matrix, an AI automation platform for agencies.

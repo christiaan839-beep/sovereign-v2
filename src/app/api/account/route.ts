@@ -28,12 +28,21 @@ import {
   deleteUserAccount,
   DELETION_CONFIRMATION_PHRASE,
 } from "@/lib/account-deletion";
+import { requireSameOrigin } from "@/lib/auth-guard";
 
 const BodySchema = z.object({
   confirmation: z.string(),
 });
 
 export async function DELETE(req: Request): Promise<Response> {
+  // Round 25 — CSRF gate. Account deletion is the most destructive
+  // endpoint on the platform. The DELETION_CONFIRMATION_PHRASE check
+  // below is great UX but does NOT defend against a cross-site POST
+  // that includes the phrase string. Origin compare blocks the
+  // browser-initiated CSRF vector before any auth resolves.
+  const csrfErr = requireSameOrigin(req);
+  if (csrfErr) return csrfErr;
+
   const { userId } = await auth();
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

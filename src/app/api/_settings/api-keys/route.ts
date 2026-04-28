@@ -6,6 +6,7 @@ import { eq } from "drizzle-orm";
 import { safeEncrypt, safeDecrypt } from "@/lib/crypto";
 import { auditLog } from "@/lib/audit-log";
 import { createLogger } from "@/lib/logger";
+import { requireSameOrigin } from "@/lib/auth-guard";
 const log = createLogger("settings-api-keys");
 
 export async function GET() {
@@ -57,6 +58,13 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  // Round 25 — CSRF gate. Settings POST stores BYOK secrets; without
+  // an Origin compare a cross-site form could overwrite them with
+  // attacker-controlled values, then quietly observe the platform's
+  // outbound calls.
+  const csrfErr = requireSameOrigin(req);
+  if (csrfErr) return csrfErr;
+
   const user = await currentUser();
   if (!user?.primaryEmailAddress?.emailAddress) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

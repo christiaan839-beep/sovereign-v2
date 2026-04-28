@@ -25,6 +25,7 @@ const {
   mockUpdateDag,
   mockArchiveDag,
   mockListDagRuns,
+  mockCreateDagVersion,
 } = vi.hoisted(() => ({
   mockRequireAuth: vi.fn(),
   mockAuditLog: vi.fn(),
@@ -34,6 +35,7 @@ const {
   mockUpdateDag: vi.fn(),
   mockArchiveDag: vi.fn(),
   mockListDagRuns: vi.fn(),
+  mockCreateDagVersion: vi.fn(),
 }));
 
 vi.mock("@/lib/auth-guard", () => ({ requireAuth: mockRequireAuth }));
@@ -41,6 +43,9 @@ vi.mock("@/lib/audit-log", () => ({ auditLog: mockAuditLog }));
 vi.mock("@/lib/logger", () => ({
   createLogger: () => ({ info: vi.fn(), warn: vi.fn(), error: vi.fn() }),
 }));
+// Round 24 added createDagVersion to the save POST flow.
+// The mock returns a synthetic version row so the route's
+// "if (!version) return 500" branch never fires in the happy path.
 vi.mock("@/lib/playbook-dag-store", () => ({
   listDags: mockListDags,
   getDag: mockGetDag,
@@ -48,6 +53,7 @@ vi.mock("@/lib/playbook-dag-store", () => ({
   updateDag: mockUpdateDag,
   archiveDag: mockArchiveDag,
   listDagRuns: mockListDagRuns,
+  createDagVersion: mockCreateDagVersion,
 }));
 
 import { GET as listGet, POST as savePost } from "@/app/api/playbooks/dag/route";
@@ -186,6 +192,17 @@ describe("POST /api/playbooks/dag (create / update)", () => {
   it("creates a new DAG when no id is given, returns the new id and action='create'", async () => {
     mockRequireAuth.mockResolvedValue({ userId: "user_1" });
     mockInsertDag.mockResolvedValue({ id: fakeUuid, persisted: true });
+    // Round 24 — save POST also calls createDagVersion to record v1.
+    mockCreateDagVersion.mockResolvedValue({
+      id: "ver_1",
+      dagId: fakeUuid,
+      userId: "user_1",
+      version: 1,
+      dag: validDag,
+      note: null,
+      restoredFromVersion: null,
+      createdAt: new Date().toISOString(),
+    });
 
     const res = await savePost(req({ dag: validDag, name: "fresh" }));
     expect(res.status).toBe(200);
@@ -195,6 +212,8 @@ describe("POST /api/playbooks/dag (create / update)", () => {
     expect(body.action).toBe("create");
     expect(body.persisted).toBe(true);
     expect(Array.isArray(body.executionOrder)).toBe(true);
+    // Round 24 — version surfaced in response.
+    expect(body.version).toBe(1);
 
     // Audit-log for create.
     expect(mockAuditLog).toHaveBeenCalledTimes(1);
@@ -203,13 +222,41 @@ describe("POST /api/playbooks/dag (create / update)", () => {
 
   it("updates when id is provided and the user owns it", async () => {
     mockRequireAuth.mockResolvedValue({ userId: "user_1" });
+    // Round 24 — UPDATE branch now reads via getDag first.
+    mockGetDag.mockResolvedValue({
+      id: fakeUuid,
+      userId: "user_1",
+      name: "old",
+      description: null,
+      dag: validDag,
+      status: "draft",
+      nodeCount: 2,
+      edgeCount: 1,
+      lastRunAt: null,
+      lastRunStatus: null,
+      lastRunDurationMs: null,
+      versionCount: 5,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
     mockUpdateDag.mockResolvedValue({ updated: true });
+    mockCreateDagVersion.mockResolvedValue({
+      id: "ver_6",
+      dagId: fakeUuid,
+      userId: "user_1",
+      version: 6,
+      dag: validDag,
+      note: null,
+      restoredFromVersion: null,
+      createdAt: new Date().toISOString(),
+    });
 
     const res = await savePost(req({ id: fakeUuid, dag: validDag, name: "renamed" }));
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.action).toBe("update");
     expect(body.id).toBe(fakeUuid);
+    expect(body.version).toBe(6);
 
     // Audit-log uses .update kind, not .create.
     expect(mockAuditLog.mock.calls[0][0].details.kind).toBe("playbook_dag.update");
@@ -220,7 +267,8 @@ describe("POST /api/playbooks/dag (create / update)", () => {
     // identical to "doesn't exist". No information leak via the
     // status code.
     mockRequireAuth.mockResolvedValue({ userId: "user_1" });
-    mockUpdateDag.mockResolvedValue({ updated: false });
+    // Round 24 — first gate is getDag returning null.
+    mockGetDag.mockResolvedValue(null);
 
     const res = await savePost(req({ id: fakeUuid, dag: validDag }));
     expect(res.status).toBe(404);

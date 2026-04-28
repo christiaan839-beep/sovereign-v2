@@ -3,21 +3,21 @@ import { db } from "@/db";
 import { scheduledContent } from "@/db/schema";
 import { eq, lte, and } from "drizzle-orm";
 import { createLogger } from "@/lib/logger";
+import { verifyCron } from "@/lib/cron-auth";
 const log = createLogger("content-publisher");
 
 /**
  * Cron Content Publisher
- * 
+ *
  * Called on a schedule (e.g., every 5 minutes via Vercel Cron).
  * Checks for content items with status "scheduled" and scheduledAt <= now.
  * Fires the Social Media Swarm for each due item and updates status.
+ *
+ * Round 25 — replaced fail-OPEN inline check with verifyCron.
  */
 export async function GET(req: Request) {
-  // Validate CRON_SECRET to prevent unauthorized access
-  const authHeader = req.headers.get("authorization") || "";
-  if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return new NextResponse("Unauthorized", { status: 401 });
-  }
+  const cronErr = verifyCron(req);
+  if (cronErr) return cronErr;
 
   try {
     const now = new Date();

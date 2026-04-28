@@ -787,6 +787,221 @@ check(
   { dimension: "security" },
 );
 
+// ─── Round 25 — critical-gap closure invariants ─────────────────────
+//
+// Each item below corresponds to a security/reliability primitive that
+// the audit (April 28 2026) flagged as missing. The gates lock in the
+// fix so a future refactor can't silently regress any of them.
+
+// R25-A — safeFetch is the single sanctioned outbound HTTP wrapper.
+// Without this gate, the file could be silently deleted and every
+// fetch caller would silently fall back to unguarded fetch.
+check(
+  "safeFetch library exists (universal SSRF wrapper)",
+  existsSync(join(ROOT, "src/lib/safe-fetch.ts")) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "webhook-dispatcher uses safeFetch (SSRF on every delivery)",
+  fileContains("src/lib/webhook-dispatcher.ts", "safeFetch") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+// R25-B — CSRF gate. requireSameOrigin must exist AND must be wired
+// into every high-value mutating endpoint. Both invariants are
+// independent — either can regress without the other catching.
+check(
+  "auth-guard exports requireSameOrigin",
+  fileContains("src/lib/auth-guard.ts", "export function requireSameOrigin") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "_tokens POST/DELETE has CSRF gate",
+  fileContains("src/app/api/_tokens/route.ts", "requireSameOrigin") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "_tokens/rotate POST has CSRF gate",
+  fileContains("src/app/api/_tokens/rotate/route.ts", "requireSameOrigin") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "_settings/api-keys POST has CSRF gate",
+  fileContains("src/app/api/_settings/api-keys/route.ts", "requireSameOrigin") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "credits POST has CSRF gate",
+  fileContains("src/app/api/credits/route.ts", "requireSameOrigin") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "account DELETE has CSRF gate",
+  fileContains("src/app/api/account/route.ts", "requireSameOrigin") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "_billing/portal POST has CSRF gate",
+  fileContains("src/app/api/_billing/portal/route.ts", "requireSameOrigin") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+// R25-C — verifyCron is the canonical fail-closed cron auth.
+// Pre-R25 several routes used inline `===` (timing-attack) or were
+// fail-OPEN if CRON_SECRET unset (`process.env.CRON_SECRET && ...`).
+// Lock the canonical helper into every cron route.
+function countCronRoutesMissingVerifyCron() {
+  const cronDirs = ["src/app/api/cron", "src/app/api/_cron"];
+  let missing = 0;
+  for (const dir of cronDirs) {
+    const fullDir = join(ROOT, dir);
+    if (!existsSync(fullDir)) continue;
+    const stack = [fullDir];
+    while (stack.length) {
+      const cur = stack.pop();
+      const entries = readdirSync(cur, { withFileTypes: true });
+      for (const e of entries) {
+        const full = join(cur, e.name);
+        if (e.isDirectory()) {
+          // Skip [...path] catch-all — it's a forwarder; the inner
+          // route enforces verifyCron.
+          if (e.name.startsWith("[...")) continue;
+          stack.push(full);
+        } else if (e.name === "route.ts") {
+          const content = readFileSync(full, "utf8");
+          // GET/POST handlers must reference verifyCron.
+          if (!content.includes("verifyCron")) {
+            // Skip catch-all forwarders (single line, no own auth).
+            if (content.length > 200) {
+              missing += 1;
+            }
+          }
+        }
+      }
+    }
+  }
+  return missing;
+}
+check(
+  "every /api/{cron,_cron} route uses verifyCron (fail-closed)",
+  countCronRoutesMissingVerifyCron(),
+  0,
+  { dimension: "security" },
+);
+
+// R25-D — crypto tamper detection. Pre-R25 safeDecrypt swallowed
+// auth-tag failures and returned the ciphertext as plaintext, hiding
+// real tamper attempts. Post-R25 it throws TamperDetectedError under
+// strict mode AND logs in lenient mode. Plus a 1-byte version prefix
+// for forward-compatibility, plus ENCRYPTION_KEY_PREVIOUS for
+// rotation. The grep is for the specific error class — its presence
+// proves the harder error path is wired.
+check(
+  "crypto exports TamperDetectedError (no silent tamper swallowing)",
+  fileContains("src/lib/crypto.ts", "export class TamperDetectedError") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "crypto supports key rotation via ENCRYPTION_KEY_PREVIOUS",
+  fileContains("src/lib/crypto.ts", "ENCRYPTION_KEY_PREVIOUS") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+// R25-E — boot-fail on missing prod envs. assertProductionRequiredEnv
+// must exist AND be called from assertEnv when NODE_ENV=production.
+check(
+  "env library exports assertProductionRequiredEnv (boot-fail gate)",
+  fileContains("src/lib/env.ts", "export function assertProductionRequiredEnv") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "assertEnv calls assertProductionRequiredEnv in production",
+  fileContains("src/lib/env.ts", "assertProductionRequiredEnv()") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+// R25-H — single source of truth for the agent count. The platform-stats
+// module exports TOTAL_AGENTS from the generated registry; the landing
+// imports it. Without this gate, the count drifts back to literals over
+// time (the audit found 137/198/203/218/223/130+ all on one page).
+check(
+  "platform-stats library exists (single source for marketing claims)",
+  existsSync(join(ROOT, "src/lib/platform-stats.ts")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "landing page imports TOTAL_AGENTS (no hardcoded count)",
+  fileContains("src/app/page.tsx", 'TOTAL_AGENTS') ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+function countHardcodedAgentLiterals() {
+  // Forbidden: bare `\b(137|198|203|218)\b` literals in landing copy
+  // adjacent to "agent" — the audit's 5-different-numbers footgun.
+  const files = [
+    "src/app/page.tsx",
+    "src/components/landing/LiveProofStrip.tsx",
+    "src/components/landing/A2EEconomySection.tsx",
+    "src/components/landing/ProofStrip.tsx",
+    "src/components/landing/IndustriesShowcase.tsx",
+    "src/components/landing/ConstellationPreview.tsx",
+  ];
+  let hits = 0;
+  for (const f of files) {
+    const full = join(ROOT, f);
+    if (!existsSync(full)) continue;
+    const content = readFileSync(full, "utf8");
+    // Look for "137 agent", "198 agent", etc. — a word boundary
+    // followed by one of the stale counts and the word "agent".
+    if (/\b(137|198|203|218)\b[^\n]*?\bagent/i.test(content)) {
+      hits += 1;
+    }
+  }
+  return hits;
+}
+check(
+  "no stale agent-count literals (137/198/203/218) in landing",
+  countHardcodedAgentLiterals(),
+  0,
+  { dimension: "trust-asset" },
+);
+
+// R25-J — LiveStatusRotator (fake activity) must NOT exist in dashboard.
+// The component rotated hard-coded strings while calling itself "Live",
+// directly violating CLAUDE.md L153 ("no fake activity on a fresh
+// deploy"). Removed Round 25; the gate prevents accidental restoration.
+check(
+  "dashboard does NOT render LiveStatusRotator (fake activity)",
+  fileContains("src/app/dashboard/page.tsx", "<LiveStatusRotator") ? 1 : 0,
+  0,
+  { dimension: "trust-asset" },
+);
+
+// R25-I — SAML SSO claim is on the roadmap, not shipped. Plans copy
+// must NOT claim SAML SSO as a delivered feature until the Clerk
+// connection + SCIM endpoint actually exist. Fail if either string
+// appears as a positive claim in the marketing surfaces.
+check(
+  "plans.ts Enterprise tier does NOT claim SAML SSO",
+  fileContains("src/lib/plans.ts", "SAML SSO,") ? 1 : 0,
+  0,
+  { dimension: "trust-asset" },
+);
+
 // Architecture invariant: there must be exactly ONE hook implementing
 // matchMedia('(prefers-reduced-motion: reduce)') so the rule "use the
 // shared useReducedMotion hook" can't decay into "everyone implements

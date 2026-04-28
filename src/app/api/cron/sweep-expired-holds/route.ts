@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { sweepExpiredHolds } from "@/lib/credits";
+import { verifyCron } from "@/lib/cron-auth";
 
 /**
  * GET /api/cron/sweep-expired-holds
@@ -16,11 +17,10 @@ import { sweepExpiredHolds } from "@/lib/credits";
  * already released them).
  */
 export async function GET(req: Request) {
-  const auth = req.headers.get("authorization") ?? "";
-  const expected = `Bearer ${process.env.CRON_SECRET ?? ""}`;
-  if (!process.env.CRON_SECRET || auth !== expected) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  // Round 25 — was string-compare `===` (timing-attack vector) AND
+  // missing the timing-safe pad. verifyCron handles both.
+  const cronErr = verifyCron(req);
+  if (cronErr) return cronErr;
 
   const swept = await sweepExpiredHolds();
   return NextResponse.json({

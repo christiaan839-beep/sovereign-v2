@@ -1,17 +1,20 @@
 import { NextResponse } from "next/server";
 import { persistRead } from "@/lib/persist";
+import { verifyCron } from "@/lib/cron-auth";
 
 /**
  * CRON WEEKLY REPORT — Triggered via Vercel Cron every Sunday at midnight.
  * Sends real performance telemetry to active clients via Resend.
+ *
+ * Round 25 — pre-fix this route was fail-OPEN if CRON_SECRET unset
+ * (the `process.env.CRON_SECRET && authHeader !== ...` shape only
+ * rejects when the secret is present). Replaced with the canonical
+ * fail-closed verifyCron helper.
  */
 
 export async function GET(req: Request) {
-  // Secure with Vercel cron secret
-  const authHeader = req.headers.get("authorization");
-  if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return new NextResponse("Unauthorized", { status: 401 });
-  }
+  const cronErr = verifyCron(req);
+  if (cronErr) return cronErr;
 
   try {
     // Pull real metrics from persistence layer

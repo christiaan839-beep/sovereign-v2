@@ -24,7 +24,15 @@ const {
   mockAuditLog: vi.fn(),
 }));
 
-vi.mock("@/lib/auth-guard", () => ({ requireAuth: mockRequireAuth }));
+vi.mock("@/lib/auth-guard", () => ({
+  requireAuth: mockRequireAuth,
+  // Round 25 — credits POST gained a CSRF gate via requireSameOrigin.
+  // The test's Request objects don't carry an Origin header so the
+  // gate would 403 every test. Mock as a no-op (tests assert auth +
+  // role logic, not CSRF — that has dedicated tests in
+  // auth-guard-csrf.test.ts).
+  requireSameOrigin: () => null,
+}));
 vi.mock("@/lib/admin-auth", () => ({ requireAdmin: mockRequireAdmin }));
 vi.mock("@/lib/a2e", () => ({
   addCredits: mockAddCredits,
