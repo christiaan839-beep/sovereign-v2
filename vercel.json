@@ -64,6 +64,14 @@
     {
       "path": "/api/cron/dag-orphan-cleanup",
       "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/drain-usage-outbox",
+      "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/cron/prune-hitl-approvals",
+      "schedule": "*/5 * * * *"
     }
   ],
   "headers": [

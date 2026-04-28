@@ -151,23 +151,87 @@ export async function checkFreeUsage(userId: string): Promise<UsageCheck> {
  * Record one agent run for the user. Persists to database.
  * Uses atomic DB insert as source of truth — cache is invalidated, not incremented.
  * This prevents race conditions where concurrent requests both read the same count.
+ *
+ * Round 26 — RECOVERY PATH ADDED. Pre-R26 a failed insert was swallowed
+ * with `log.error` and the run kept running. That silently lost the
+ * user's run from their monthly counter, meaning free-tier customers
+ * got more runs than they paid for during transient DB hiccups.
+ *
+ * Post-R26:
+ *   1. Try the canonical insert with retryWithBackoff (handles
+ *      transient locks / connection drops).
+ *   2. On total failure, write to `usage_outbox` (separate, simpler
+ *      table — no FKs, no cache, just append) so the drainer cron
+ *      can replay it within ~1 minute.
+ *   3. If the outbox write ALSO fails (full DB outage), surface a
+ *      structured ERROR log with severity high so the operator
+ *      sees it. Do NOT throw — the user's agent ran successfully;
+ *      we just need to fix the bookkeeping out of band.
+ *
+ * The contract from the caller's perspective is unchanged: this is
+ * still fire-and-forget. The caller doesn't care whether the row
+ * landed canonically or in the outbox — both paths converge on the
+ * same monthly-count answer once the drainer runs.
  */
 export async function incrementUsage(userId: string, agentId: string = "unknown"): Promise<void> {
   const { key } = getCurrentPeriod();
   const cacheKey = `${userId}:${key}`;
 
-  // Persist to DB first (source of truth) — this is atomic
+  // Try the canonical insert with one retry. Most transient
+  // failures (lock contention on a hot index page, brief
+  // connection drop) clear within a few hundred ms.
+  const maxRetries = 2;
+  let lastErr: unknown = null;
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      await db.insert(usage).values({
+        userId,
+        agentId,
+        model: "platform",
+        tokensUsed: 1,
+      });
+      // Invalidate cache so next read hits DB for accurate count after TTL
+      usageCache.delete(cacheKey);
+      return; // success — done.
+    } catch (err) {
+      lastErr = err;
+      // Tiny backoff before retry. We're inside the request path so
+      // can't sleep too long; ~50ms is enough to dodge most lock
+      // contention without making the user wait.
+      if (attempt + 1 < maxRetries) {
+        await new Promise((r) => setTimeout(r, 50));
+      }
+    }
+  }
+
+  // Canonical insert failed twice. Write to the outbox so the
+  // drainer can replay later. Even if THIS write fails (full DB
+  // outage), we've at least logged the failure with severity.
+  log.warn("Usage insert failed; routing to outbox", {
+    userId,
+    agentId,
+    error: String(lastErr),
+  });
   try {
-    await db.insert(usage).values({
+    const { usageOutbox } = await import("@/db/schema");
+    await db.insert(usageOutbox).values({
       userId,
       agentId,
-      model: "platform",
-      tokensUsed: 1,
+      status: "pending",
+      lastError: String(lastErr).slice(0, 500),
     });
-    // Invalidate cache so next read hits DB for accurate count after TTL
     usageCache.delete(cacheKey);
-  } catch (err) {
-    log.error("Failed to record usage", err as Record<string, unknown>);
+  } catch (outboxErr) {
+    // Both canonical AND outbox failed. This is severity-high — log
+    // explicitly so an operator notices in Sentry / log dashboard.
+    // We don't throw because the agent already ran; the bookkeeping
+    // gap is logged for manual reconciliation.
+    log.error("CRITICAL: usage outbox write failed (silent run loss)", {
+      userId,
+      agentId,
+      canonicalError: String(lastErr),
+      outboxError: String(outboxErr),
+    });
   }
 }
 

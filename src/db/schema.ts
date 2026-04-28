@@ -954,6 +954,88 @@ export const playbookDagVersions = pgTable("playbook_dag_versions", {
   index("idx_playbook_dag_versions_user_created").on(table.userId, table.createdAt),
 ]);
 
+// Round 26 — HITL approval queue, moved out of in-memory Map.
+// Pre-R26 the queue was a module-level Map<string, ApprovalRequest>
+// that vanished on every cold start. Now durable: a user can submit
+// an action, navigate away, come back tomorrow — the request is
+// still pending (or correctly timed-out via the prune cron).
+export const hitlApprovals = pgTable("hitl_approvals", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  agentName: text("agent_name").notNull(),
+  action: text("action").notNull(),
+  description: text("description").notNull(),
+  metadata: jsonb("metadata").$type<Record<string, unknown>>().notNull().default({}),
+  // Status: pending | approved | denied | timeout. Mutable from
+  // pending → terminal; immutable thereafter (forensic trail).
+  status: text("status").notNull().default("pending"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  decidedAt: timestamp("decided_at"),
+  decidedBy: text("decided_by"),
+}, (table) => [
+  index("idx_hitl_approvals_user_status").on(table.userId, table.status, table.createdAt),
+]);
+
+// Round 26 — execution audit log, moved out of in-memory ring buffer.
+// Pre-R26 the buffer held the most recent 10K entries in process
+// memory and lost them on every cold start. The /security page
+// surfaced these as "verified" while the data was actually amnesiac.
+// Now append-only on Postgres; pairs with audit_logs (the SHA-256
+// hash chain in 0033) for "what did this agent do at time T?"
+export const executionAuditLog = pgTable("execution_audit_log", {
+  id: text("id").primaryKey(),
+  tenantId: text("tenant_id").notNull(),
+  agentName: text("agent_name").notNull(),
+  modelUsed: text("model_used").notNull(),
+  inputTruncated: text("input_truncated").notNull(),
+  outputTruncated: text("output_truncated").notNull(),
+  safetyJailbreak: text("safety_jailbreak").notNull(),
+  safetyPii: text("safety_pii").notNull(),
+  safetyContent: text("safety_content").notNull(),
+  safetyQuality: integer("safety_quality").notNull(),
+  safetyCritic: text("safety_critic").notNull(),
+  trustLevel: integer("trust_level").notNull(),
+  approvalRequired: boolean("approval_required").notNull().default(false),
+  approvalStatus: text("approval_status").notNull(),
+  executionTimeMs: integer("execution_time_ms").notNull(),
+  chainDepth: integer("chain_depth").notNull().default(0),
+  externalApisAccessed: jsonb("external_apis_accessed")
+    .$type<string[]>()
+    .notNull()
+    .default([]),
+  dataExported: boolean("data_exported").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_execution_audit_tenant_created").on(table.tenantId, table.createdAt),
+]);
+
+// Round 26 — usage outbox. Captures usage-counter increments that
+// failed to land in `usage` (DB flake / lock contention / transient
+// constraint violation) so a cron drainer can replay them.
+//
+// Pre-R26 the increment was a single INSERT swallowed by try/catch
+// that logged but didn't recover. A DB hiccup silently lost the
+// user's run from their monthly counter — free-tier customers got
+// more runs than they paid for, and the operator never knew.
+//
+// Post-R26 the catch path writes here; a 1-min cron drains pending
+// rows back into `usage`. The drainer is idempotent (one outbox row
+// → at most one canonical row).
+export const usageOutbox = pgTable("usage_outbox", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull(),
+  agentId: text("agent_id").notNull(),
+  // 'pending' / 'processed' / 'failed' (after N drainer retries).
+  status: text("status").notNull().default("pending"),
+  attempts: integer("attempts").notNull().default(0),
+  lastError: text("last_error"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  processedAt: timestamp("processed_at"),
+}, (table) => [
+  index("idx_usage_outbox_pending").on(table.status, table.createdAt),
+]);
+
 export const playbookDagRuns = pgTable("playbook_dag_runs", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: text("user_id").notNull(),

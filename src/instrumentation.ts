@@ -44,9 +44,25 @@ export async function register() {
   }
 
   // ── Background loop — Railway only ──
-  // Only run the background loop on Railway (persistent server, not edge/serverless)
+  //
+  // Only run the background loop on Railway (persistent server, not
+  // edge/serverless). Vercel uses vercel.json crons which are
+  // already mutually exclusive at the platform level.
+  //
+  // Round 26 — every tick is wrapped in `withAdvisoryLock` so two
+  // Railway instances (rolling deploy, horizontal scale, warm-after-
+  // cold transition) don't BOTH fire the same cron. Without the
+  // lock, scheduled playbooks could fire twice and users see
+  // duplicate runs. With it: only the instance that wins the
+  // Postgres advisory lock pings; the others skip silently.
+  //
+  // The lock keys are stable strings derived per workload — same
+  // string hashes to the same int64 on every instance, so they
+  // contend on the same Postgres advisory-lock slot.
   if (process.env.NEXT_RUNTIME !== "nodejs" || process.env.VERCEL) return;
   if (!process.env.CRON_SECRET || !process.env.NEXT_PUBLIC_APP_URL) return;
+
+  const { withAdvisoryLock } = await import("@/lib/advisory-lock");
 
   const ping = async (path: string, timeout = 25_000) => {
     try {
@@ -59,14 +75,29 @@ export async function register() {
     }
   };
 
-  // Wait 10s for the server to fully boot before starting
+  // Wait 10s for the server to fully boot before starting.
   setTimeout(() => {
-    // Job queue: every 30s
-    ping("/api/cron/job-runner");
-    setInterval(() => ping("/api/cron/job-runner"), 30_000);
+    // Job queue: every 30s. Lock-gated so duplicate Railway
+    // instances don't double-fire. The job-runner endpoint also
+    // uses atomic UPDATE-WHERE-pending claim semantics, so even
+    // without the lock duplication is mostly OK there — but the
+    // lock cuts pre-flight work too.
+    void withAdvisoryLock("railway-job-runner-tick", () => ping("/api/cron/job-runner"));
+    setInterval(() => {
+      void withAdvisoryLock("railway-job-runner-tick", () => ping("/api/cron/job-runner"));
+    }, 30_000);
 
-    // Playbook scheduler: every 5 min
-    ping("/api/cron/playbook-scheduler", 15_000);
-    setInterval(() => ping("/api/cron/playbook-scheduler", 15_000), 5 * 60_000);
+    // Playbook scheduler: every 5 min. CRITICAL that this is
+    // lock-gated — the scheduler doesn't have an atomic claim like
+    // job-runner does, so duplicate ticks DO produce duplicate
+    // playbook runs without the lock.
+    void withAdvisoryLock("railway-playbook-scheduler-tick", () =>
+      ping("/api/cron/playbook-scheduler", 15_000),
+    );
+    setInterval(() => {
+      void withAdvisoryLock("railway-playbook-scheduler-tick", () =>
+        ping("/api/cron/playbook-scheduler", 15_000),
+      );
+    }, 5 * 60_000);
   }, 10_000);
 }

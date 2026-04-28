@@ -187,8 +187,14 @@ export async function verifyOutput(params: {
     ? "needs-approval"
     : "auto-approved";
 
-  // Log to audit trail
-  logExecution({
+  // Log to audit trail.
+  //
+  // Round 26 — logExecution is now async (DB insert). Fire-and-forget
+  // with .catch so the verifier doesn't block on the audit write
+  // AND the promise rejection doesn't crash the worker. The hash-
+  // chained audit_logs table is the safety net for events that MUST
+  // persist; this bulk-volume mirror is best-effort.
+  void logExecution({
     tenantId: params.tenantId,
     agentName: params.agentName,
     modelUsed: params.modelUsed,
@@ -202,6 +208,8 @@ export async function verifyOutput(params: {
     chainDepth: params.chainDepth || 0,
     externalApisAccessed: params.externalApis || [],
     dataExported: false,
+  }).catch(() => {
+    /* swallow — audit failures are logged inside logExecution */
   });
 
   // PII warning (don't block, but redact in output)

@@ -660,6 +660,41 @@ const trustAssets = [
     path: "src/app/api/playbooks/dag/[id]/versions/[versionId]/restore/route.ts",
     name: "Version restore endpoint (append-only restoration)",
   },
+  // Round 26 — durability migrations. HITL approvals + execution
+  // audit moved out of in-memory Maps. Without these, the platform's
+  // "every action has an immutable trail" claim is a lie at the
+  // serverless layer (cold-starts amnesia).
+  {
+    path: "drizzle/0041_hitl_and_execution_audit.sql",
+    name: "HITL + execution audit migration (durable on serverless)",
+  },
+  // Round 26 — usage outbox library. The recovery path for transient
+  // DB failures on the usage counter; without this, free-tier users
+  // got more runs than they paid for during DB hiccups.
+  {
+    path: "src/lib/usage-outbox.ts",
+    name: "Usage outbox drainer (txn-bound counter recovery)",
+  },
+  // Round 26 — outbox drain cron. Must exist or the outbox queue
+  // grows unbounded with no replay; the recovery is theoretical.
+  {
+    path: "src/app/api/cron/drain-usage-outbox/route.ts",
+    name: "Usage outbox drain cron (1min cadence)",
+  },
+  // Round 26 — HITL prune cron. Past-due pending approvals must be
+  // swept to 'timeout' so a request never appears "stuck pending"
+  // forever in the dashboard.
+  {
+    path: "src/app/api/cron/prune-hitl-approvals/route.ts",
+    name: "HITL approvals prune cron (5min cadence)",
+  },
+  // Round 26 — advisory-lock helper. Cluster-wide mutual exclusion
+  // for Railway-deployed background loops. Without it, two Railway
+  // instances both fire scheduled playbooks every tick.
+  {
+    path: "src/lib/advisory-lock.ts",
+    name: "Postgres advisory-lock helper (cluster-wide cron mutex)",
+  },
 ];
 for (const { path, name } of trustAssets) {
   const present = existsSync(join(ROOT, path)) ? 1 : 0;
@@ -1000,6 +1035,68 @@ check(
   fileContains("src/lib/plans.ts", "SAML SSO,") ? 1 : 0,
   0,
   { dimension: "trust-asset" },
+);
+
+// ─── Round 26 — durability invariants ────────────────────────────────
+//
+// The HITL + execution-audit + usage-counter trio were the audit's
+// reliability gaps that the platform's claims depended on. These
+// gates lock in the DB-backed implementations so a future "let's
+// cache it in memory for speed" refactor can't silently regress
+// the durability contract.
+
+// R26-A — HITL approval lib must use Drizzle (not module-level Map).
+// The presence of the schema import is the strongest signal that
+// the rewrite is in place; a refactor that goes back to in-memory
+// would drop the import.
+check(
+  "hitl-approval lib uses Drizzle (not in-memory Map)",
+  fileContains("src/lib/hitl-approval.ts", 'from "drizzle-orm"') ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+// Module-level Map<...> was the pre-R26 anti-pattern. Catch its
+// reintroduction.
+check(
+  "hitl-approval has NO module-level Map (durable, not amnesiac)",
+  fileContains("src/lib/hitl-approval.ts", "new Map<string, ApprovalRequest>") ? 1 : 0,
+  0,
+  { dimension: "security" },
+);
+
+// R26-B — execution-audit must use Drizzle, not the in-memory ring
+// buffer. Same anti-pattern catch as HITL.
+check(
+  "execution-audit lib uses Drizzle (not in-memory ring buffer)",
+  fileContains("src/lib/execution-audit.ts", 'from "drizzle-orm"') ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "execution-audit has NO in-memory auditLog array (durable)",
+  fileContains("src/lib/execution-audit.ts", "const auditLog: AuditEntry[]") ? 1 : 0,
+  0,
+  { dimension: "security" },
+);
+
+// R26-C — incrementUsage must route through the outbox on failure.
+// Pre-R26 a try/catch swallowed errors; the gate ensures the
+// recovery path is wired.
+check(
+  "incrementUsage routes failures to usage_outbox (recovery path)",
+  fileContains("src/lib/free-tier.ts", "usageOutbox") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+// R26-D — instrumentation.ts wraps cron-pings in withAdvisoryLock.
+// Without this, two Railway instances both fire scheduled playbooks
+// on every tick.
+check(
+  "instrumentation cron-pings are gated by withAdvisoryLock",
+  fileContains("src/instrumentation.ts", "withAdvisoryLock") ? 1 : 0,
+  1,
+  { dimension: "security" },
 );
 
 // Architecture invariant: there must be exactly ONE hook implementing
