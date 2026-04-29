@@ -3348,6 +3348,128 @@ check(
   { dimension: "trust-asset" },
 );
 
+// ─── Round 47 — Vertical Agent Packs (the products) ──────────────────
+// Generic infrastructure → specific industry products. Banking
+// Compliance Pack first; healthcare + legal follow.
+
+check(
+  "ADR-0011 (vertical agent packs) on disk",
+  existsSync(join(ROOT, "docs/adr/0011-vertical-agent-packs.md")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Vertical pack types module present",
+  existsSync(join(ROOT, "src/lib/vertical-packs/types.ts")) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "Banking Compliance Pack present (the first product)",
+  existsSync(join(ROOT, "src/lib/vertical-packs/banking-compliance.ts"))
+    ? 1
+    : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "Banking pack tests present (>=20 cases)",
+  fileContains(
+    "src/lib/__tests__/banking-compliance-pack.test.ts",
+    "BANKING_COMPLIANCE_PACK",
+  ) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "Banking pack: default ACT scope is read-only (max_cents: 0)",
+  fileContains("src/lib/vertical-packs/banking-compliance.ts", "max_cents: 0")
+    ? 1
+    : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "Banking pack: HITL rule cites BSA reporting (31 CFR 1020.320)",
+  fileContains(
+    "src/lib/vertical-packs/banking-compliance.ts",
+    "31 CFR 1020.320",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Banking pack: HITL rule cites OCC vendor risk (2013-29)",
+  fileContains(
+    "src/lib/vertical-packs/banking-compliance.ts",
+    "OCC Bulletin 2013-29",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "GET /api/vertical-packs/[packId] endpoint present",
+  existsSync(
+    join(ROOT, "src/app/api/vertical-packs/[packId]/route.ts"),
+  )
+    ? 1
+    : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+// ─── Round 48 — Circuit Breaker reliability primitive ────────────────
+
+check(
+  "Reliability circuit-breaker library present",
+  existsSync(join(ROOT, "src/lib/reliability/circuit-breaker.ts")) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "Reliability circuit-breaker tests present (>=15 cases)",
+  fileContains(
+    "src/lib/__tests__/reliability-circuit-breaker.test.ts",
+    "evaluateCircuitState",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "Circuit breaker has CLOSED/OPEN/HALF_OPEN state machine",
+  fileContains(
+    "src/lib/reliability/circuit-breaker.ts",
+    "HALF_OPEN",
+  ) && fileContains(
+    "src/lib/reliability/circuit-breaker.ts",
+    "evaluateCircuitState",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "Circuit breaker exposes typed errors (CircuitOpenError, UpstreamFailedError)",
+  fileContains(
+    "src/lib/reliability/circuit-breaker.ts",
+    "CircuitOpenError",
+  ) && fileContains(
+    "src/lib/reliability/circuit-breaker.ts",
+    "UpstreamFailedError",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
 // Public HITL policy (procurement audit artifact)
 check(
   "/api/health/hitl-policy endpoint present (public audit)",
