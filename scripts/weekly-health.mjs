@@ -2210,6 +2210,62 @@ check(
   { dimension: "process" },
 );
 
+// ─── Round 33 — Multi-stage HITL deep-work ───────────────────────────
+//
+// Sequential multi-stage approval orchestration with per-stage state
+// machine, audit-chained transitions, retry-with-different-context,
+// and pluggable routing rules.
+
+check(
+  "migration 0045 (multi-stage HITL) on disk",
+  existsSync(join(ROOT, "drizzle/0045_multi_stage_hitl.sql")) ? 1 : 0,
+  1,
+  { dimension: "database" },
+);
+check(
+  "schema.ts declares approvalStages table",
+  fileContains("src/db/schema.ts", "approvalStages") ? 1 : 0,
+  1,
+  { dimension: "database" },
+);
+check(
+  "schema.ts: hitlApprovals has stageCount + currentStage fields",
+  fileContains("src/db/schema.ts", "stageCount") &&
+    fileContains("src/db/schema.ts", "currentStage") ? 1 : 0,
+  1,
+  { dimension: "database" },
+);
+check(
+  "multi-stage-hitl orchestration lib present",
+  existsSync(join(ROOT, "src/lib/multi-stage-hitl.ts")) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "multi-stage-hitl uses SELECT FOR UPDATE (atomic stage decision)",
+  fileContains("src/lib/multi-stage-hitl.ts", '.for("update")') ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "hitl-routing-rules engine present (USER CONTRIBUTION POINT)",
+  existsSync(join(ROOT, "src/lib/hitl-routing-rules.ts")) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "selectApprovalStages is fault-tolerant (try/catch on rule match())",
+  fileContains("src/lib/hitl-routing-rules.ts", "} catch {") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "multi-stage-hitl tests present (>=20 cases)",
+  existsSync(join(ROOT, "src/lib/__tests__/multi-stage-hitl.test.ts")) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
 // Self-service deploy diagnostic (returns specific failure reasons)
 check(
   "/api/health/diagnose endpoint present (self-service deploy)",

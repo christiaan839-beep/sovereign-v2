@@ -973,8 +973,41 @@ export const hitlApprovals = pgTable("hitl_approvals", {
   expiresAt: timestamp("expires_at").notNull(),
   decidedAt: timestamp("decided_at"),
   decidedBy: text("decided_by"),
+  // Round 33 — multi-stage HITL fields. stageCount=1 means
+  // legacy single-stage flow; >1 means multi-stage with per-stage
+  // tracking in approval_stages. See drizzle/0045 for shape.
+  stageCount: integer("stage_count").notNull().default(1),
+  currentStage: integer("current_stage").notNull().default(0),
+  routingContext: jsonb("routing_context").$type<Record<string, unknown>>().notNull().default({}),
+  vetoAtStage: integer("veto_at_stage"),
+  vetoRole: text("veto_role"),
+  retryOf: text("retry_of"),
+  retryCount: integer("retry_count").notNull().default(0),
 }, (table) => [
   index("idx_hitl_approvals_user_status").on(table.userId, table.status, table.createdAt),
+]);
+
+// Round 33 — per-stage state for multi-stage HITL workflows.
+// One row per stage per request; engine derives parent status from
+// per-stage states. Free-form `role` text so tenants can configure
+// their own role taxonomy.
+export const approvalStages = pgTable("approval_stages", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  requestId: text("request_id").notNull(),
+  sequencePosition: integer("sequence_position").notNull(),
+  role: text("role").notNull(),
+  // 'pending' | 'approved' | 'rejected' | 'skipped' | 'expired'
+  status: text("status").notNull().default("pending"),
+  timeoutAt: timestamp("timeout_at"),
+  approver: text("approver"),
+  decidedAt: timestamp("decided_at"),
+  reason: text("reason"),
+  engineNotes: text("engine_notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_approval_stages_request_seq").on(table.requestId, table.sequencePosition),
+  index("idx_approval_stages_pending").on(table.status, table.timeoutAt),
+  index("idx_approval_stages_role_pending").on(table.role, table.status),
 ]);
 
 // Round 26 — execution audit log, moved out of in-memory ring buffer.
