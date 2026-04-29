@@ -3633,6 +3633,181 @@ check(
   { dimension: "security" },
 );
 
+// ─── Round 52 — Legal e-Discovery Pack (third product) ───────────────
+
+check(
+  "Legal e-Discovery Pack present (the third product)",
+  existsSync(join(ROOT, "src/lib/vertical-packs/legal-discovery.ts"))
+    ? 1
+    : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "Legal pack tests present",
+  fileContains(
+    "src/lib/__tests__/legal-discovery-pack.test.ts",
+    "LEGAL_DISCOVERY_PACK",
+  ) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "Legal pack: privilege HITL rule cites Zubulake (anti-slop guard)",
+  fileContains(
+    "src/lib/vertical-packs/legal-discovery.ts",
+    "Zubulake",
+  ) ? 1 : 0,
+  1,
+  { dimension: "honesty" },
+);
+
+check(
+  "Legal pack: cites FRCP 11 (court filing signature attaches sanctions)",
+  fileContains(
+    "src/lib/vertical-packs/legal-discovery.ts",
+    "FRCP 11",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Legal pack: cites FRCP 37(e) (litigation-hold spoliation defense)",
+  fileContains(
+    "src/lib/vertical-packs/legal-discovery.ts",
+    "FRCP 37(e)",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Legal pack: default ACT scope is read-only (max_cents 0)",
+  fileContains(
+    "src/lib/vertical-packs/legal-discovery.ts",
+    "max_cents: 0",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "Legal pack registered in /api/vertical-packs/[packId] router",
+  fileContains(
+    "src/app/api/vertical-packs/[packId]/route.ts",
+    "legal-discovery",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+// ─── Round 54 — KMS-abstracted Signer (production key mgmt) ──────────
+
+check(
+  "Signer abstraction library present",
+  existsSync(join(ROOT, "src/lib/keys/signer.ts")) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "Signer abstraction tests present",
+  fileContains(
+    "src/lib/__tests__/keys-signer.test.ts",
+    "selectSignerType",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "Signer interface defines getPublicKey + sign + describe",
+  fileContains("src/lib/keys/signer.ts", "interface Signer") &&
+    fileContains("src/lib/keys/signer.ts", "getPublicKey") &&
+    fileContains("src/lib/keys/signer.ts", "describe(): SignerDescription")
+    ? 1
+    : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "StubKmsSigner fails closed on sign() (misconfig defense)",
+  fileContains(
+    "src/lib/keys/signer.ts",
+    "structural placeholder",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "Signer selection supports aws-kms / gcp-kms / azure-kv",
+  fileContains("src/lib/keys/signer.ts", "aws-kms") &&
+    fileContains("src/lib/keys/signer.ts", "gcp-kms") &&
+    fileContains("src/lib/keys/signer.ts", "azure-kv")
+    ? 1
+    : 0,
+  1,
+  { dimension: "security" },
+);
+
+// ─── Round 57 — Real-time audit anomaly detection ────────────────────
+
+check(
+  "Audit anomaly detector library present",
+  existsSync(
+    join(ROOT, "src/lib/anomaly/audit-anomaly-detector.ts"),
+  )
+    ? 1
+    : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "Anomaly detector tests present (>=20 cases)",
+  fileContains(
+    "src/lib/__tests__/audit-anomaly-detector.test.ts",
+    "classifyOverallAnomalyState",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "Anomaly detector covers chain integrity break (always critical)",
+  fileContains(
+    "src/lib/anomaly/audit-anomaly-detector.ts",
+    "chain_integrity_break",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "Anomaly detector covers signature-failure spike (key compromise pattern)",
+  fileContains(
+    "src/lib/anomaly/audit-anomaly-detector.ts",
+    "signature_failure_spike",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "Anomaly detector exposes deriveAuditChainIntactFromFindings (R44 wiring)",
+  fileContains(
+    "src/lib/anomaly/audit-anomaly-detector.ts",
+    "deriveAuditChainIntactFromFindings",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
 // Public HITL policy (procurement audit artifact)
 check(
   "/api/health/hitl-policy endpoint present (public audit)",
