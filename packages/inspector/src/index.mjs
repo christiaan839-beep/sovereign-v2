@@ -8,3 +8,4 @@
 export * from "./verify.mjs";
 export * from "./fetch.mjs";
 export * from "./act.mjs";
+export * from "./identity.mjs";

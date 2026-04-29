@@ -2648,6 +2648,75 @@ check(
   { dimension: "trust-asset" },
 );
 
+// ─── Round 39 — Public KYA endpoints + browser ───────────────────────
+//
+// Wire R38 lib to actual HTTP endpoints + public registry page.
+// Turns the identity primitive into a usable network.
+
+check(
+  "POST /api/identity/manifests endpoint present",
+  existsSync(join(ROOT, "src/app/api/identity/manifests/route.ts")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "GET /api/identity/manifests/[agentId] endpoint present",
+  existsSync(
+    join(ROOT, "src/app/api/identity/manifests/[agentId]/route.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "GET /api/identity/registry endpoint present",
+  existsSync(join(ROOT, "src/app/api/identity/registry/route.ts")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "POST /api/identity/verify endpoint present (trustless)",
+  existsSync(join(ROOT, "src/app/api/identity/verify/route.ts")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "register endpoint enforces ownerPublicKey is registered (R34 binding)",
+  fileContains(
+    "src/app/api/identity/manifests/route.ts",
+    "userSigningKeys",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "register endpoint server-verifies signature (defense-in-depth)",
+  fileContains(
+    "src/app/api/identity/manifests/route.ts",
+    "verifyManifest",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "inspector identity.mjs port present",
+  existsSync(join(ROOT, "packages/inspector/src/identity.mjs")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "inspector CLI has agent-identity + registry commands",
+  fileContains("packages/inspector/src/cli.mjs", "cmdAgentIdentity") &&
+    fileContains("packages/inspector/src/cli.mjs", "cmdRegistry") ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "/agents/registry public page present",
+  existsSync(join(ROOT, "src/app/agents/registry/page.tsx")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
 // Public HITL policy (procurement audit artifact)
 check(
   "/api/health/hitl-policy endpoint present (public audit)",

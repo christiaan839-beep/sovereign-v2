@@ -58,6 +58,11 @@ import {
 } from "./verify.mjs";
 import { verifyTokenChain } from "./act.mjs";
 import {
+  verifyManifest as verifyManifestLocal,
+  fetchAgentManifest,
+  fetchRegistry,
+} from "./identity.mjs";
+import {
   fetchPermanence,
   fetchHitlPolicy,
   fetchDiagnose,
@@ -109,6 +114,8 @@ function printUsage() {
   console.log("  policy <url>            Show SHIPPED HITL routing rules");
   console.log("  diagnose <url>          Show deploy diagnostic");
   console.log("  trace <url> <traceId>   Show anonymized public trace");
+  console.log("  agent-identity <url> <id>  Fetch + verify a single agent's manifest");
+  console.log("  registry <url>          List all registered agent manifests");
   console.log("  delegation <url>        Verify delegation from stdin (no platform trust)");
   console.log("  audit-chain             Verify audit log array from stdin");
   console.log("  verify-token            Verify ACT chain from stdin (Macaroon attenuation)");
@@ -216,6 +223,71 @@ async function cmdDelegation(_url) {
   }
   bad(`Delegation INVALID — ${result.reason}`);
   return 1;
+}
+
+async function cmdAgentIdentity(url, agentId) {
+  header(`Agent identity — ${url}/api/identity/manifests/${agentId}`);
+  const data = await fetchAgentManifest(url, agentId);
+  if (!data.manifest) {
+    bad("No active manifest found");
+    return 1;
+  }
+  const m = data.manifest;
+  ok(`Agent: ${c.bold(m.name)} v${m.version}`);
+  console.log(`  ${c.gray("id:")} ${m.id}`);
+  console.log(`  ${c.gray("owner:")} ${m.owner}`);
+  console.log(`  ${c.gray("ownerPublicKey:")} ${m.ownerPublicKey.slice(0, 16)}...`);
+  console.log(`  ${c.gray("purpose:")} ${m.purpose}`);
+  console.log(`  ${c.gray("capabilities:")} ${m.capabilities.join(", ")}`);
+  if (m.modelProvenance) {
+    console.log(`  ${c.gray("models:")} ${m.modelProvenance.models.join(", ")}`);
+  }
+  if (m.codeProvenance?.commitHash) {
+    console.log(`  ${c.gray("commit:")} ${m.codeProvenance.commitHash.slice(0, 12)}...`);
+  }
+  console.log(`  ${c.gray("expires:")} ${m.expiresAt}`);
+  console.log("");
+
+  // VERIFY LOCALLY — this is the whole point of the CLI
+  const verification = verifyManifestLocal({
+    manifest: m,
+    expectedOwnerPublicKey: m.ownerPublicKey,
+  });
+  if (verification.valid) {
+    ok(`Cryptographically VALID${verification.revoked ? " (revoked)" : ""}`);
+    info("Verification ran on YOUR machine — Sovereign is not a required trust anchor");
+    return verification.revoked ? 1 : 0;
+  }
+  bad(`Manifest INVALID — ${verification.reason}`);
+  return 1;
+}
+
+async function cmdRegistry(url) {
+  header(`Public agent registry — ${url}/api/identity/registry`);
+  const data = await fetchRegistry(url, { limit: 50 });
+  if (!data.agents || data.agents.length === 0) {
+    info("Registry is empty (no manifests registered yet)");
+    return 0;
+  }
+  ok(`${data.agents.length} agent(s) registered`);
+  console.log("");
+  for (const agent of data.agents) {
+    console.log(
+      `  ${c.cyan(agent.name)} ${c.gray(`v${agent.version}`)} ${c.gray(`(${agent.agentId})`)}`,
+    );
+    console.log(`    ${c.gray("by")} ${agent.owner}`);
+    if (agent.purpose) {
+      console.log(`    ${c.gray(agent.purpose.slice(0, 80))}`);
+    }
+    if (agent.capabilities && agent.capabilities.length > 0) {
+      console.log(`    ${c.gray("capabilities:")} ${agent.capabilities.join(", ")}`);
+    }
+    console.log("");
+  }
+  if (data.pagination?.hasMore) {
+    info(`More results: --cursor ${data.pagination.nextCursor}`);
+  }
+  return 0;
 }
 
 async function cmdVerifyToken() {
@@ -420,6 +492,18 @@ async function main() {
       return cmdAuditChain();
     case "verify-token":
       return cmdVerifyToken();
+    case "agent-identity":
+      if (!argv[1] || !argv[2]) {
+        bad("usage: sovereign-inspect agent-identity <url> <agentId>");
+        return 2;
+      }
+      return cmdAgentIdentity(argv[1], argv[2]);
+    case "registry":
+      if (!argv[1]) {
+        bad("usage: sovereign-inspect registry <url>");
+        return 2;
+      }
+      return cmdRegistry(argv[1]);
     default:
       bad(`Unknown command: ${cmd}`);
       printUsage();
