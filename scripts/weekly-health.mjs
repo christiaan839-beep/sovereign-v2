@@ -5256,6 +5256,251 @@ check(
   { dimension: "trust-asset" },
 );
 
+// ─── R100 / R101 / R102 — Control Plane Pillar ─────────────────────
+// The 3 missing non-negotiables for an agentic-AI control plane:
+// policy guardrails (R100), agent discovery (R101), cost governance
+// (R102). Sister doc: docs/AGENTIC-CONTROL-PLANE-LEADERSHIP.md.
+
+check(
+  "R100 Sovereign Policy Engine present (composable predicate DSL)",
+  existsSync(join(ROOT, "src/lib/control-plane/policy-engine.ts")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R100 Policy Engine has unit tests",
+  existsSync(
+    join(ROOT, "src/lib/control-plane/__tests__/policy-engine.test.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "R100 Policy Engine has all 6 effects (allow / deny / hitl / acat / attest / break-glass)",
+  fileContains("src/lib/control-plane/policy-engine.ts", "\"allow\"") &&
+    fileContains("src/lib/control-plane/policy-engine.ts", "\"deny\"") &&
+    fileContains(
+      "src/lib/control-plane/policy-engine.ts",
+      "\"require-hitl\"",
+    ) &&
+    fileContains(
+      "src/lib/control-plane/policy-engine.ts",
+      "\"require-acat\"",
+    ) &&
+    fileContains(
+      "src/lib/control-plane/policy-engine.ts",
+      "\"require-attestation\"",
+    ) &&
+    fileContains(
+      "src/lib/control-plane/policy-engine.ts",
+      "\"require-break-glass\"",
+    ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R100 Policy Engine composes shipped primitives (R37 / R40 / R42 / R91)",
+  fileContains("src/lib/control-plane/policy-engine.ts", "act-present") &&
+    fileContains(
+      "src/lib/control-plane/policy-engine.ts",
+      "reputation-grade-min",
+    ) &&
+    fileContains(
+      "src/lib/control-plane/policy-engine.ts",
+      "credit-headroom-min-cents",
+    ) &&
+    fileContains("src/lib/control-plane/policy-engine.ts", "acat-present") ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R100 default-deny posture — no_matching_policy fallback present",
+  fileContains(
+    "src/lib/control-plane/policy-engine.ts",
+    "no_matching_policy",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "R100 break-glass requires reason ≥ 10 chars (admin override audit)",
+  fileContains(
+    "src/lib/control-plane/policy-engine.ts",
+    "reason_too_short",
+  ) &&
+    fileContains(
+      "src/lib/control-plane/policy-engine.ts",
+      "policy.break_glass",
+    ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "R101 Agent Registry / Crew Composer present",
+  existsSync(join(ROOT, "src/lib/control-plane/agent-registry.ts")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R101 Agent Registry has unit tests",
+  existsSync(
+    join(ROOT, "src/lib/control-plane/__tests__/agent-registry.test.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "R101 Crew Composer ranking algorithm: capability × trust × availability",
+  fileContains("src/lib/control-plane/agent-registry.ts", "capabilityScore") &&
+    fileContains("src/lib/control-plane/agent-registry.ts", "rankingScore") &&
+    fileContains("src/lib/control-plane/agent-registry.ts", "availability") ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R101 unmetCapabilities escalation set surfaces gaps for human routing",
+  fileContains(
+    "src/lib/control-plane/agent-registry.ts",
+    "unmetCapabilities",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R102 Cost Governance present (per-agent + per-team + per-tenant caps)",
+  existsSync(
+    join(ROOT, "src/lib/control-plane/cost-governance.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R102 Cost Governance has unit tests",
+  existsSync(
+    join(ROOT, "src/lib/control-plane/__tests__/cost-governance.test.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "R102 alert thresholds at 50 / 75 / 90 percent",
+  fileContains("src/lib/control-plane/cost-governance.ts", "warn-50") &&
+    fileContains("src/lib/control-plane/cost-governance.ts", "warn-75") &&
+    fileContains("src/lib/control-plane/cost-governance.ts", "warn-90") ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R102 free-tier providers bypass cost gate (Ollama / NIM / Cerebras)",
+  fileContains(
+    "src/lib/control-plane/cost-governance.ts",
+    "providerCostTier",
+  ) &&
+    fileContains("src/lib/control-plane/cost-governance.ts", "freeRun") ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R102 most-restrictive cap wins (tenant + team + agent)",
+  fileContains(
+    "src/lib/control-plane/cost-governance.ts",
+    "breachedScope",
+  ) &&
+    fileContains("src/lib/control-plane/cost-governance.ts", "\"tenant\"") &&
+    fileContains("src/lib/control-plane/cost-governance.ts", "\"team\"") &&
+    fileContains("src/lib/control-plane/cost-governance.ts", "\"agent\"") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "Control Plane public APIs present (policy + agents + budget)",
+  existsSync(
+    join(ROOT, "src/app/api/_control-plane/policy/evaluate/route.ts"),
+  ) &&
+    existsSync(join(ROOT, "src/app/api/_control-plane/agents/route.ts")) &&
+    existsSync(
+      join(ROOT, "src/app/api/_control-plane/budget/preview/route.ts"),
+    ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Control Plane public APIs have re-exports (procurement-readable URLs)",
+  existsSync(
+    join(ROOT, "src/app/api/control-plane/policy/evaluate/route.ts"),
+  ) &&
+    existsSync(join(ROOT, "src/app/api/control-plane/agents/route.ts")) &&
+    existsSync(
+      join(ROOT, "src/app/api/control-plane/budget/preview/route.ts"),
+    ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "/trust/control-plane page present (live policy evaluator)",
+  existsSync(join(ROOT, "src/app/trust/control-plane/page.tsx")) &&
+    existsSync(
+      join(ROOT, "src/app/trust/control-plane/LivePolicyEvaluator.tsx"),
+    ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "/trust/control-plane scoreboards 6 enterprise non-negotiables + maturity model",
+  fileContains(
+    "src/app/trust/control-plane/page.tsx",
+    "NON_NEGOTIABLES",
+  ) &&
+    fileContains(
+      "src/app/trust/control-plane/page.tsx",
+      "MATURITY_MODEL",
+    ) &&
+    fileContains(
+      "src/app/trust/control-plane/page.tsx",
+      "COMPETITIVE_POSITION",
+    ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Control Plane Leadership doc present (procurement positioning)",
+  existsSync(
+    join(ROOT, "docs/AGENTIC-CONTROL-PLANE-LEADERSHIP.md"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Leadership doc cites real competitors (Oracle / Microsoft / SAP / n8n / UiPath)",
+  fileContains("docs/AGENTIC-CONTROL-PLANE-LEADERSHIP.md", "Oracle") &&
+    fileContains("docs/AGENTIC-CONTROL-PLANE-LEADERSHIP.md", "Microsoft") &&
+    fileContains("docs/AGENTIC-CONTROL-PLANE-LEADERSHIP.md", "SAP") &&
+    fileContains("docs/AGENTIC-CONTROL-PLANE-LEADERSHIP.md", "n8n") &&
+    fileContains("docs/AGENTIC-CONTROL-PLANE-LEADERSHIP.md", "UiPath") ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
 // Public HITL policy (procurement audit artifact)
 check(
   "/api/health/hitl-policy endpoint present (public audit)",
