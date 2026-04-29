@@ -4792,6 +4792,168 @@ check(
   { dimension: "process" },
 );
 
+// ─── 14-day sprint plan tracking ────────────────────────────────────
+
+check(
+  "14-day sprint plan doc present (tracked execution calendar)",
+  existsSync(join(ROOT, "docs/14-DAY-SPRINT-PLAN.md")) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "Sprint plan tracks all 14 days + verification ritual",
+  fileContains("docs/14-DAY-SPRINT-PLAN.md", "Day 1") &&
+    fileContains("docs/14-DAY-SPRINT-PLAN.md", "Day 14") &&
+    fileContains(
+      "docs/14-DAY-SPRINT-PLAN.md",
+      "Daily verification ritual",
+    ) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+// ─── Day 1 — R85 Retail/E-commerce Pack ─────────────────────────────
+
+check(
+  "Retail/E-commerce Pack present (9th vertical product, R85)",
+  existsSync(join(ROOT, "src/lib/vertical-packs/retail-ecommerce.ts")) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "Retail pack: Klarna 2024 case citation (anti-slop guard for Klarna defense)",
+  fileContains(
+    "src/lib/vertical-packs/retail-ecommerce.ts",
+    "Klarna",
+  ) && fileContains(
+    "src/lib/__tests__/retail-ecommerce-pack.test.ts",
+    "Klarna",
+  ) ? 1 : 0,
+  1,
+  { dimension: "honesty" },
+);
+
+check(
+  "Retail pack: Robles v. Domino's ADA Title III citation",
+  fileContains(
+    "src/lib/vertical-packs/retail-ecommerce.ts",
+    "Robles v. Domino's",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Retail pack: PCI DSS 4.0 PAN-blocking rule with PII guard reference",
+  fileContains(
+    "src/lib/vertical-packs/retail-ecommerce.ts",
+    "PCI DSS 4.0",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Retail pack: COPPA HARD-BLOCK rule with FTC TikTok $245M citation",
+  fileContains(
+    "src/lib/vertical-packs/retail-ecommerce.ts",
+    "TikTok $245M 2025",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Retail pack registered in /api/vertical-packs/[packId] router",
+  fileContains(
+    "src/app/api/vertical-packs/[packId]/route.ts",
+    "retail-ecommerce",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Retail pack PASSES the R63 pack validator (regression-proof)",
+  fileContains(
+    "src/lib/__tests__/retail-ecommerce-pack.test.ts",
+    "PASSES the R63 pack validator",
+  ) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+// ─── Day 2 — R86 Education Pack (FERPA) ─────────────────────────────
+
+check(
+  "Education Pack present (10th vertical product, R86)",
+  existsSync(join(ROOT, "src/lib/vertical-packs/education.ts")) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "Education pack covers FERPA + Title VI + IDEA + Section 504 + Title IX",
+  fileContains("src/lib/vertical-packs/education.ts", "FERPA 20 USC §1232g") &&
+    fileContains("src/lib/vertical-packs/education.ts", "Title VI") &&
+    fileContains("src/lib/vertical-packs/education.ts", "IDEA 20 USC §1400") &&
+    fileContains("src/lib/vertical-packs/education.ts", "Title IX 20 USC §1681") ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Education pack: AI-in-admissions bias audit cites NYC LL144 + CO SB 24-205",
+  fileContains(
+    "src/lib/vertical-packs/education.ts",
+    "NYC LL144",
+  ) && fileContains(
+    "src/lib/vertical-packs/education.ts",
+    "Colorado SB 24-205",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Education pack: state student-data multi-state coverage (NY + CA + CO + IL)",
+  fileContains("src/lib/vertical-packs/education.ts", "NY Education Law §2-d") &&
+    fileContains("src/lib/vertical-packs/education.ts", "SOPIPA") &&
+    fileContains("src/lib/vertical-packs/education.ts", "Colorado HB 22-1244") &&
+    fileContains("src/lib/vertical-packs/education.ts", "Illinois SIPA") ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Education pack: 7-year retention for IEP + Title IX (matches IDEA + Title IX)",
+  fileContains("src/lib/vertical-packs/education.ts", "2555") ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Education pack registered in /api/vertical-packs/[packId] router",
+  fileContains(
+    "src/app/api/vertical-packs/[packId]/route.ts",
+    "\"education\":",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Education pack PASSES the R63 pack validator (regression-proof)",
+  fileContains(
+    "src/lib/__tests__/education-pack.test.ts",
+    "PASSES the R63 pack validator",
+  ) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
 // Public HITL policy (procurement audit artifact)
 check(
   "/api/health/hitl-policy endpoint present (public audit)",

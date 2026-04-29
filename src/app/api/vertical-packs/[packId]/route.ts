@@ -23,6 +23,8 @@ import { getFedrampGovernmentPack } from "@/lib/vertical-packs/fedramp-governmen
 import { getWorkforceTransformationPack } from "@/lib/vertical-packs/workforce-transformation";
 import { getManufacturingIndustrialPack } from "@/lib/vertical-packs/manufacturing-industrial";
 import { getItCybersecurityPack } from "@/lib/vertical-packs/it-cybersecurity";
+import { getRetailEcommercePack } from "@/lib/vertical-packs/retail-ecommerce";
+import { getEducationPack } from "@/lib/vertical-packs/education";
 import type { VerticalPack } from "@/lib/vertical-packs/types";
 
 export const runtime = "nodejs";
@@ -45,6 +47,10 @@ const PACKS: Record<string, () => VerticalPack> = {
   "manufacturing-industrial-v1": getManufacturingIndustrialPack,
   "it-cybersecurity": getItCybersecurityPack,
   "it-cybersecurity-v1": getItCybersecurityPack,
+  "retail-ecommerce": getRetailEcommercePack,
+  "retail-ecommerce-v1": getRetailEcommercePack,
+  "education": getEducationPack,
+  "education-v1": getEducationPack,
 };
 
 export async function GET(
