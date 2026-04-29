@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid, integer, index, boolean, uniqueIndex, jsonb, primaryKey, date } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, uuid, integer, index, boolean, uniqueIndex, jsonb, primaryKey, date, numeric } from "drizzle-orm/pg-core";
 
 export const tenants = pgTable("tenants", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -1043,6 +1043,29 @@ export const agentActionSignatures = pgTable("agent_action_signatures", {
 }, (table) => [
   index("idx_agent_action_sigs_delegation").on(table.delegationId, table.createdAt),
   index("idx_agent_action_sigs_chain").on(table.chainHash),
+]);
+
+// Round 40 — Public Agent Reputation Scores. Computed daily from
+// R26 audit + R30 reversals + R33 HITL rejections + R38 manifest age.
+// One row per agent_id; replaced atomically on each daily rollup.
+// Procurement-readable letter grade + auditable signal breakdown.
+// See drizzle/0049 + docs/adr/0007.
+export const agentReputationScores = pgTable("agent_reputation_scores", {
+  agentId: text("agent_id").primaryKey(),
+  letterGrade: text("letter_grade").notNull(),
+  numericScore: integer("numeric_score").notNull(),
+  reversalRatePct: numeric("reversal_rate_pct", { precision: 5, scale: 2 }).notNull().default("0"),
+  hitlRejectionPct: numeric("hitl_rejection_pct", { precision: 5, scale: 2 }).notNull().default("0"),
+  auditIntegrity: boolean("audit_integrity").notNull().default(true),
+  manifestAgeDays: integer("manifest_age_days").notNull().default(0),
+  usageCount30d: integer("usage_count_30d").notNull().default(0),
+  costEfficiencyScore: integer("cost_efficiency_score").notNull().default(5),
+  anomalyCount30d: integer("anomaly_count_30d").notNull().default(0),
+  signalsJson: jsonb("signals_json").$type<Record<string, unknown>>().notNull().default({}),
+  computedAt: timestamp("computed_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_reputation_score_desc").on(table.numericScore, table.computedAt),
+  index("idx_reputation_computed_at").on(table.computedAt),
 ]);
 
 // Round 38 — Agent Identity Manifests (KYA). Signed manifests

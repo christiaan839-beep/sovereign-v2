@@ -76,6 +76,10 @@
     {
       "path": "/api/cron/self-heal",
       "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/rollup-agent-reputation",
+      "schedule": "0 5 * * *"
     }
   ],
   "headers": [

@@ -62,6 +62,7 @@ import {
   fetchAgentManifest,
   fetchRegistry,
 } from "./identity.mjs";
+import { fetchReputation } from "./reputation.mjs";
 import {
   fetchPermanence,
   fetchHitlPolicy,
@@ -116,6 +117,7 @@ function printUsage() {
   console.log("  trace <url> <traceId>   Show anonymized public trace");
   console.log("  agent-identity <url> <id>  Fetch + verify a single agent's manifest");
   console.log("  registry <url>          List all registered agent manifests");
+  console.log("  reputation <url> <id>   Fetch + display reputation score with breakdown");
   console.log("  delegation <url>        Verify delegation from stdin (no platform trust)");
   console.log("  audit-chain             Verify audit log array from stdin");
   console.log("  verify-token            Verify ACT chain from stdin (Macaroon attenuation)");
@@ -287,6 +289,50 @@ async function cmdRegistry(url) {
   if (data.pagination?.hasMore) {
     info(`More results: --cursor ${data.pagination.nextCursor}`);
   }
+  return 0;
+}
+
+async function cmdReputation(url, agentId) {
+  header(`Agent reputation — ${url}/api/identity/reputation/${agentId}`);
+  const data = await fetchReputation(url, agentId);
+  if (!data.reputation) {
+    info(`Agent ${agentId} has no score yet (cron rolls up daily).`);
+    return 0;
+  }
+  const r = data.reputation;
+  const grade = r.letterGrade;
+  const gradeColor =
+    grade.startsWith("A") ? c.green :
+    grade.startsWith("B") ? c.cyan :
+    grade.startsWith("C") ? c.yellow :
+    c.red;
+  ok(`Grade: ${gradeColor(c.bold(grade))} (${r.numericScore}/100)`);
+  console.log("");
+  console.log(c.bold("Signals:"));
+  console.log(`  ${c.gray("reversal rate (30d):")} ${r.reversalRatePct}%`);
+  console.log(`  ${c.gray("HITL rejection (30d):")} ${r.hitlRejectionPct}%`);
+  console.log(`  ${c.gray("audit chain intact:")} ${r.auditIntegrity ? c.green("yes") : c.red("no")}`);
+  console.log(`  ${c.gray("manifest age:")} ${r.manifestAgeDays} days`);
+  console.log(`  ${c.gray("usage (30d):")} ${r.usageCount30d} runs`);
+  console.log(`  ${c.gray("cost efficiency:")} ${r.costEfficiencyScore}/10`);
+  console.log(`  ${c.gray("anomalies (30d):")} ${r.anomalyCount30d}`);
+  console.log("");
+  console.log(c.bold("Score breakdown:"));
+  const b = r.signalsBreakdown;
+  console.log(`  ${c.gray("base:")} ${b.base}`);
+  if (b.reversalPenalty) console.log(`  ${c.red("- reversal penalty:")} ${b.reversalPenalty}`);
+  if (b.hitlPenalty) console.log(`  ${c.red("- HITL penalty:")} ${b.hitlPenalty}`);
+  console.log(`  ${b.auditModifier >= 0 ? c.green("+ audit:") : c.red("- audit:")} ${b.auditModifier}`);
+  if (b.ageBonus) console.log(`  ${c.green("+ age bonus:")} ${b.ageBonus}`);
+  if (b.usageBonus) console.log(`  ${c.green("+ usage bonus:")} ${b.usageBonus}`);
+  if (b.costBonus) console.log(`  ${c.green("+ cost bonus:")} ${b.costBonus}`);
+  if (b.anomalyPenalty) console.log(`  ${c.red("- anomaly penalty:")} ${b.anomalyPenalty}`);
+  console.log(`  ${c.bold(`= final: ${b.finalClamped}`)}`);
+  console.log("");
+  info(
+    "This score was computed by a pure function. Recompute it locally with " +
+      "computeReputationScore() from @sovereign/inspector.",
+  );
   return 0;
 }
 
@@ -504,6 +550,12 @@ async function main() {
         return 2;
       }
       return cmdRegistry(argv[1]);
+    case "reputation":
+      if (!argv[1] || !argv[2]) {
+        bad("usage: sovereign-inspect reputation <url> <agentId>");
+        return 2;
+      }
+      return cmdReputation(argv[1], argv[2]);
     default:
       bad(`Unknown command: ${cmd}`);
       printUsage();

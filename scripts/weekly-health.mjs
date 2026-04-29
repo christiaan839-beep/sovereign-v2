@@ -2717,6 +2717,82 @@ check(
   { dimension: "trust-asset" },
 );
 
+// ─── Round 40 — Public Agent Reputation System ───────────────────────
+//
+// Network-effect substrate. Aggregates R26+R30+R33+R38 signals into
+// a procurement-readable score keyed by manifest ID.
+
+check(
+  "ADR-0007 (Public Agent Reputation) present",
+  existsSync(
+    join(ROOT, "docs/adr/0007-public-agent-reputation.md"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "migration 0049 (agent_reputation_scores) on disk",
+  existsSync(
+    join(ROOT, "drizzle/0049_agent_reputation_scores.sql"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "database" },
+);
+check(
+  "schema.ts declares agentReputationScores table",
+  fileContains("src/db/schema.ts", "agentReputationScores") ? 1 : 0,
+  1,
+  { dimension: "database" },
+);
+check(
+  "agent-reputation pure-function calculator present",
+  existsSync(join(ROOT, "src/lib/agent-reputation.ts")) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "agent-reputation tests present (>=12 cases)",
+  existsSync(
+    join(ROOT, "src/lib/__tests__/agent-reputation.test.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "GET /api/identity/reputation/[agentId] endpoint present",
+  existsSync(
+    join(ROOT, "src/app/api/identity/reputation/[agentId]/route.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "daily reputation rollup cron present",
+  existsSync(
+    join(ROOT, "src/app/api/cron/rollup-agent-reputation/route.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+check(
+  "reputation rollup cron registered in vercel.json",
+  fileContains("vercel.json", "/api/cron/rollup-agent-reputation") ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+check(
+  "Inspector reputation port present (reputation.mjs)",
+  existsSync(join(ROOT, "packages/inspector/src/reputation.mjs")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "Inspector CLI has reputation command",
+  fileContains("packages/inspector/src/cli.mjs", "cmdReputation") ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
 // Public HITL policy (procurement audit artifact)
 check(
   "/api/health/hitl-policy endpoint present (public audit)",
