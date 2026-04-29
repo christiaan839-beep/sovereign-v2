@@ -4455,6 +4455,175 @@ check(
   { dimension: "honesty" },
 );
 
+// ─── Round 73 — Multi-Turn Jailbreak Defender (Cisco-research-driven) ──
+
+check(
+  "Multi-turn jailbreak defender library present (R73)",
+  existsSync(join(ROOT, "src/lib/guardrails/multi-turn-jailbreak.ts")) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "Multi-turn defender covers crescendo + role-play priming + many-shot",
+  fileContains(
+    "src/lib/guardrails/multi-turn-jailbreak.ts",
+    "topic_drift_escalation",
+  ) && fileContains(
+    "src/lib/guardrails/multi-turn-jailbreak.ts",
+    "role_play_priming",
+  ) && fileContains(
+    "src/lib/guardrails/multi-turn-jailbreak.ts",
+    "many_shot_injection",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "Multi-turn defender tests cover Cisco-research patterns (28+ cases)",
+  fileContains(
+    "src/lib/__tests__/multi-turn-jailbreak.test.ts",
+    "DAN-mode",
+  ) && fileContains(
+    "src/lib/__tests__/multi-turn-jailbreak.test.ts",
+    "many-shot",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+// ─── Round 74 — Mixture-of-Agents Model Router ──────────────────────
+
+check(
+  "Mixture-of-Agents router library present (R74)",
+  existsSync(join(ROOT, "src/lib/model-routing/mixture-of-agents.ts")) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "MoA catalog includes DeepSeek + GLM + Qwen3 + Gemma + Llama 4 + Nomos",
+  fileContains(
+    "src/lib/model-routing/mixture-of-agents.ts",
+    "deepseek-v3.2",
+  ) && fileContains(
+    "src/lib/model-routing/mixture-of-agents.ts",
+    "glm-4.7",
+  ) && fileContains(
+    "src/lib/model-routing/mixture-of-agents.ts",
+    "qwen3-235b-a22b",
+  ) && fileContains(
+    "src/lib/model-routing/mixture-of-agents.ts",
+    "gemma-4-26b-moe",
+  ) && fileContains(
+    "src/lib/model-routing/mixture-of-agents.ts",
+    "llama-4-maverick",
+  ) && fileContains(
+    "src/lib/model-routing/mixture-of-agents.ts",
+    "nomos-1",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "MoA router exposes free-first cost classifier (flat-fee economics)",
+  fileContains(
+    "src/lib/model-routing/mixture-of-agents.ts",
+    "classifyCostProfile",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "MoA router tests cover task-specific routing + free-first ties",
+  fileContains(
+    "src/lib/__tests__/mixture-of-agents.test.ts",
+    "free-first ties",
+  ) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+// ─── Round 76 — Manufacturing & Industrial Pack ─────────────────────
+
+check(
+  "Manufacturing & Industrial Pack present (7th vertical product)",
+  existsSync(
+    join(ROOT, "src/lib/vertical-packs/manufacturing-industrial.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "Manufacturing pack: ITAR HARD-BLOCK with Empowered Official",
+  fileContains(
+    "src/lib/vertical-packs/manufacturing-industrial.ts",
+    "Empowered Official",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Manufacturing pack: ICS/SCADA rule references R73 multi-turn defense",
+  fileContains(
+    "src/lib/vertical-packs/manufacturing-industrial.ts",
+    "R73",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "Manufacturing pack: AS9100 + IATF + ISO 13485 framework citations",
+  fileContains(
+    "src/lib/vertical-packs/manufacturing-industrial.ts",
+    "AS9100",
+  ) && fileContains(
+    "src/lib/vertical-packs/manufacturing-industrial.ts",
+    "IATF 16949",
+  ) && fileContains(
+    "src/lib/vertical-packs/manufacturing-industrial.ts",
+    "ISO 13485",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Manufacturing pack: 6-year retention windows match ITAR + AS9100",
+  fileContains(
+    "src/lib/vertical-packs/manufacturing-industrial.ts",
+    "2190",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Manufacturing pack registered in /api/vertical-packs/[packId] router",
+  fileContains(
+    "src/app/api/vertical-packs/[packId]/route.ts",
+    "manufacturing-industrial",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Manufacturing pack PASSES the R63 pack validator (regression-proof)",
+  fileContains(
+    "src/lib/__tests__/manufacturing-industrial-pack.test.ts",
+    "PASSES the R63 pack validator",
+  ) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
 // Public HITL policy (procurement audit artifact)
 check(
   "/api/health/hitl-policy endpoint present (public audit)",
