@@ -4624,6 +4624,174 @@ check(
   { dimension: "process" },
 );
 
+// ─── AI Industrialization Maturity Model (AIMM) doc ─────────────────
+
+check(
+  "AI Industrialization Maturity Model doc present",
+  existsSync(join(ROOT, "docs/AI-INDUSTRIALIZATION-MATURITY-MODEL.md")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "AIMM doc declares 4 stages (Explorer / Pilot / Scaled / Autonomous)",
+  fileContains("docs/AI-INDUSTRIALIZATION-MATURITY-MODEL.md", "EXPLORER") &&
+    fileContains("docs/AI-INDUSTRIALIZATION-MATURITY-MODEL.md", "PILOT") &&
+    fileContains("docs/AI-INDUSTRIALIZATION-MATURITY-MODEL.md", "SCALED") &&
+    fileContains(
+      "docs/AI-INDUSTRIALIZATION-MATURITY-MODEL.md",
+      "AUTONOMOUS",
+    ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "AIMM doc maps stages to specific R-prefixed primitives",
+  fileContains(
+    "docs/AI-INDUSTRIALIZATION-MATURITY-MODEL.md",
+    "Stage-to-primitive matrix",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "AIMM doc published under CC-BY 4.0 (open framework)",
+  fileContains(
+    "docs/AI-INDUSTRIALIZATION-MATURITY-MODEL.md",
+    "CC-BY 4.0",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+// ─── Round 77 — Trust Certification Program ─────────────────────────
+
+check(
+  "Trust Certification library present (R77 — Bronze/Silver/Gold/Platinum)",
+  existsSync(join(ROOT, "src/lib/certification/trust-certification.ts")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Trust Certification declares all 4 tier requirement matrices",
+  fileContains(
+    "src/lib/certification/trust-certification.ts",
+    "BRONZE_REQUIREMENTS",
+  ) && fileContains(
+    "src/lib/certification/trust-certification.ts",
+    "SILVER_REQUIREMENTS",
+  ) && fileContains(
+    "src/lib/certification/trust-certification.ts",
+    "GOLD_REQUIREMENTS",
+  ) && fileContains(
+    "src/lib/certification/trust-certification.ts",
+    "PLATINUM_REQUIREMENTS",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Trust Certification enforces ascending strictness (anti-AI-washing)",
+  fileContains(
+    "src/lib/__tests__/trust-certification.test.ts",
+    "Tier ascending strictness",
+  ) ? 1 : 0,
+  1,
+  { dimension: "honesty" },
+);
+
+check(
+  "Trust Certification tests cover all 4 tiers + countPrimitivesToTier helper",
+  fileContains(
+    "src/lib/__tests__/trust-certification.test.ts",
+    "countPrimitivesToTier",
+  ) && fileContains(
+    "src/lib/__tests__/trust-certification.test.ts",
+    "certificationCompletionPct",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+// ─── Round 78 — IT/Software/Cybersecurity Pack ─────────────────────
+
+check(
+  "IT/Cybersecurity Pack present (8th vertical product)",
+  existsSync(join(ROOT, "src/lib/vertical-packs/it-cybersecurity.ts")) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "IT pack: code-deploy rule cites CrowdStrike post-outage best practices (anti-slop)",
+  fileContains(
+    "src/lib/vertical-packs/it-cybersecurity.ts",
+    "CrowdStrike",
+  ) ? 1 : 0,
+  1,
+  { dimension: "honesty" },
+);
+
+check(
+  "IT pack: IAM rule cites SolarWinds-class supply-chain defense pattern",
+  fileContains(
+    "src/lib/vertical-packs/it-cybersecurity.ts",
+    "SolarWinds",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "IT pack: SBOM rule cites EO 14028 + NIST SSDF + SLSA",
+  fileContains(
+    "src/lib/vertical-packs/it-cybersecurity.ts",
+    "Executive Order 14028",
+  ) && fileContains(
+    "src/lib/vertical-packs/it-cybersecurity.ts",
+    "NIST SSDF",
+  ) && fileContains(
+    "src/lib/vertical-packs/it-cybersecurity.ts",
+    "SLSA",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "IT pack: composes R73 multi-turn jailbreak defense for SIEM/EDR/IAM/IR",
+  fileContains(
+    "src/lib/vertical-packs/it-cybersecurity.ts",
+    "R73",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "IT pack registered in /api/vertical-packs/[packId] router",
+  fileContains(
+    "src/app/api/vertical-packs/[packId]/route.ts",
+    "it-cybersecurity",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "IT pack PASSES the R63 pack validator (regression-proof)",
+  fileContains(
+    "src/lib/__tests__/it-cybersecurity-pack.test.ts",
+    "PASSES the R63 pack validator",
+  ) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
 // Public HITL policy (procurement audit artifact)
 check(
   "/api/health/hitl-policy endpoint present (public audit)",
