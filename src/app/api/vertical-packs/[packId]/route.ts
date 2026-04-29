@@ -18,6 +18,8 @@ import { NextResponse } from "next/server";
 import { getBankingCompliancePack } from "@/lib/vertical-packs/banking-compliance";
 import { getHealthcareClaimsPack } from "@/lib/vertical-packs/healthcare-claims";
 import { getLegalDiscoveryPack } from "@/lib/vertical-packs/legal-discovery";
+import { getHrHiringCompliancePack } from "@/lib/vertical-packs/hr-hiring-compliance";
+import { getFedrampGovernmentPack } from "@/lib/vertical-packs/fedramp-government";
 import type { VerticalPack } from "@/lib/vertical-packs/types";
 
 export const runtime = "nodejs";
@@ -30,6 +32,10 @@ const PACKS: Record<string, () => VerticalPack> = {
   "healthcare-claims-v1": getHealthcareClaimsPack,
   "legal-discovery": getLegalDiscoveryPack,
   "legal-discovery-v1": getLegalDiscoveryPack,
+  "hr-hiring-compliance": getHrHiringCompliancePack,
+  "hr-hiring-compliance-v1": getHrHiringCompliancePack,
+  "fedramp-government": getFedrampGovernmentPack,
+  "fedramp-government-v1": getFedrampGovernmentPack,
 };
 
 export async function GET(

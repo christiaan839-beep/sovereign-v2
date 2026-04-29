@@ -3939,6 +3939,197 @@ check(
   { dimension: "trust-asset" },
 );
 
+// ─── Legal & Regulatory Compliance Framework ────────────────────────
+
+check(
+  "Legal-compliance framework doc present (procurement-grade)",
+  existsSync(join(ROOT, "docs/LEGAL-COMPLIANCE-FRAMEWORK.md")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Legal-compliance framework declares NOT a regulated insurer (R46 scoping)",
+  fileContains(
+    "docs/LEGAL-COMPLIANCE-FRAMEWORK.md",
+    "We are NOT a regulated insurer",
+  ) ? 1 : 0,
+  1,
+  { dimension: "honesty" },
+);
+
+check(
+  "Legal-compliance framework declares NOT practicing law (R52 scoping)",
+  fileContains(
+    "docs/LEGAL-COMPLIANCE-FRAMEWORK.md",
+    "We are NOT a law firm",
+  ) ? 1 : 0,
+  1,
+  { dimension: "honesty" },
+);
+
+check(
+  "Legal-compliance framework declares NOT practicing medicine (R49 scoping)",
+  fileContains(
+    "docs/LEGAL-COMPLIANCE-FRAMEWORK.md",
+    "We are NOT practicing medicine",
+  ) ? 1 : 0,
+  1,
+  { dimension: "honesty" },
+);
+
+check(
+  "Legal-compliance framework covers EU AI Act + GDPR + HIPAA + EEOC + LL144 + CO SB 24-205",
+  fileContains("docs/LEGAL-COMPLIANCE-FRAMEWORK.md", "EU AI Act") &&
+    fileContains("docs/LEGAL-COMPLIANCE-FRAMEWORK.md", "GDPR") &&
+    fileContains("docs/LEGAL-COMPLIANCE-FRAMEWORK.md", "HIPAA") &&
+    fileContains("docs/LEGAL-COMPLIANCE-FRAMEWORK.md", "EEOC") &&
+    fileContains("docs/LEGAL-COMPLIANCE-FRAMEWORK.md", "Local Law 144") &&
+    fileContains("docs/LEGAL-COMPLIANCE-FRAMEWORK.md", "Colorado") ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Legal-compliance framework documents export-control posture (EAR + ENC exception)",
+  fileContains(
+    "docs/LEGAL-COMPLIANCE-FRAMEWORK.md",
+    "License Exception ENC",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+// ─── Round 62 — HR / Hiring Compliance Pack ──────────────────────────
+
+check(
+  "HR Hiring Compliance Pack present (5th vertical product)",
+  existsSync(join(ROOT, "src/lib/vertical-packs/hr-hiring-compliance.ts")) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "HR pack tests + iTutorGroup citation (anti-slop guard for autonomous-rejection rule)",
+  fileContains(
+    "src/lib/__tests__/hr-hiring-compliance-pack.test.ts",
+    "iTutorGroup",
+  ) && fileContains(
+    "src/lib/vertical-packs/hr-hiring-compliance.ts",
+    "iTutorGroup",
+  ) ? 1 : 0,
+  1,
+  { dimension: "honesty" },
+);
+
+check(
+  "HR pack: NYC LL144 bias-audit data collection rule",
+  fileContains(
+    "src/lib/vertical-packs/hr-hiring-compliance.ts",
+    "NYC Local Law 144",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "HR pack: Colorado SB 24-205 impact-assessment rule",
+  fileContains(
+    "src/lib/vertical-packs/hr-hiring-compliance.ts",
+    "Colorado SB 24-205",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "HR pack: protected-class HARD-BLOCK rule (Title VII + ADEA + ADA + GINA)",
+  fileContains(
+    "src/lib/vertical-packs/hr-hiring-compliance.ts",
+    "GINA",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "HR pack: FCRA pre-adverse-action notice rule",
+  fileContains("src/lib/vertical-packs/hr-hiring-compliance.ts", "FCRA")
+    ? 1
+    : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "HR pack registered in /api/vertical-packs/[packId] router",
+  fileContains(
+    "src/app/api/vertical-packs/[packId]/route.ts",
+    "hr-hiring-compliance",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+// ─── Round 53 — FedRAMP / Government Compliance Pack ─────────────────
+
+check(
+  "FedRAMP Government Pack present (4th vertical product, $100K-$10M ACV)",
+  existsSync(join(ROOT, "src/lib/vertical-packs/fedramp-government.ts")) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "FedRAMP pack: classified-data HARD-BLOCK rule (EO 13526)",
+  fileContains(
+    "src/lib/vertical-packs/fedramp-government.ts",
+    "13526",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "FedRAMP pack: CMMC evidence rule cites False Claims Act (FCA defense)",
+  fileContains(
+    "src/lib/vertical-packs/fedramp-government.ts",
+    "False Claims Act",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "FedRAMP pack: Section 889 supply-chain dual-approval rule",
+  fileContains(
+    "src/lib/vertical-packs/fedramp-government.ts",
+    "Section 889",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "FedRAMP pack: incident-reporting rule cites FISMA + DFARS 7012",
+  fileContains(
+    "src/lib/vertical-packs/fedramp-government.ts",
+    "DFARS 252.204-7012",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "FedRAMP pack registered in /api/vertical-packs/[packId] router",
+  fileContains(
+    "src/app/api/vertical-packs/[packId]/route.ts",
+    "fedramp-government",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
 // Public HITL policy (procurement audit artifact)
 check(
   "/api/health/hitl-policy endpoint present (public audit)",
