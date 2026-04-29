@@ -1115,6 +1115,28 @@ export const agentCreditLines = pgTable("agent_credit_lines", {
   index("idx_credit_letter_grade").on(table.letterGrade),
 ]);
 
+// Round 67 — Anomaly findings emitted by the R57 detector. Wires
+// real-time anomaly detection into a persistent timeline that
+// signed reliability attestations (R44) can read. Findings are
+// immutable once written; old ones can be archived but never edited.
+// See drizzle/0052.
+export const anomalyFindings = pgTable("anomaly_findings", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  detectorRunId: uuid("detector_run_id").notNull(),
+  kind: text("kind").notNull(),
+  severity: text("severity").notNull(),
+  message: text("message").notNull(),
+  detailsJson: jsonb("details_json").$type<Record<string, unknown>>().notNull().default({}),
+  emittedAt: timestamp("emitted_at").defaultNow().notNull(),
+  remediatedAt: timestamp("remediated_at"),
+  remediatedBy: text("remediated_by"),
+}, (table) => [
+  index("idx_anomaly_findings_recent").on(table.emittedAt),
+  index("idx_anomaly_findings_severity").on(table.severity, table.emittedAt),
+  index("idx_anomaly_findings_run").on(table.detectorRunId, table.emittedAt),
+  index("idx_anomaly_findings_kind").on(table.kind, table.emittedAt),
+]);
+
 // Round 38 — Agent Identity Manifests (KYA). Signed manifests
 // declaring agent ownership + capabilities + provenance, verifiable
 // by any third party. See drizzle/0048 + docs/adr/0006.

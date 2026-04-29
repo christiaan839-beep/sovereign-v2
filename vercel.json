@@ -88,6 +88,10 @@
     {
       "path": "/api/cron/sign-reliability-attestation",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/detect-anomalies",
+      "schedule": "15 * * * *"
     }
   ],
   "headers": [

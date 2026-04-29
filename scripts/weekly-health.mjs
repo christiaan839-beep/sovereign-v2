@@ -3808,6 +3808,137 @@ check(
   { dimension: "security" },
 );
 
+// ─── Round 55 — Customer-Managed Encryption Keys (CMEK) ─────────────
+
+check(
+  "CMEK envelope-encryption library present (R55)",
+  existsSync(join(ROOT, "src/lib/encryption/cmek.ts")) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "CMEK tests cover roundtrip + tampering + provider selection",
+  fileContains(
+    "src/lib/__tests__/encryption-cmek.test.ts",
+    "tampered ciphertext",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "CMEK: StubCmekProvider fails closed on wrap/unwrap (anti-misconfig)",
+  fileContains(
+    "src/lib/encryption/cmek.ts",
+    "operators must implement",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+// ─── Round 56 — Federation auto-discovery crawler ────────────────────
+
+check(
+  "Federation auto-discovery library present (R56)",
+  existsSync(join(ROOT, "src/lib/federation/discovery.ts")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Federation discovery tests cover SSRF defense (IP literals + loopback)",
+  fileContains(
+    "src/lib/__tests__/federation-discovery.test.ts",
+    "ip_literal_host",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "Federation discovery handles cycles without infinite loop",
+  fileContains(
+    "src/lib/__tests__/federation-discovery.test.ts",
+    "no infinite loop",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+// ─── Round 58 — Webhook signing (outbound cryptographic perimeter) ──
+
+check(
+  "Webhook signing library present (R58)",
+  existsSync(join(ROOT, "src/lib/webhooks/signing.ts")) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "Webhook tests cover replay defense + clock-skew + tampering",
+  fileContains(
+    "src/lib/__tests__/webhooks-signing.test.ts",
+    "replay_detected",
+  ) && fileContains(
+    "src/lib/__tests__/webhooks-signing.test.ts",
+    "timestamp_in_future",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "Webhook canonical message includes bodyHash (bounded signature size)",
+  fileContains(
+    "src/lib/webhooks/signing.ts",
+    "bodyHash:",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+// ─── Round 67 — Anomaly detection cron (wires R57 into production) ──
+
+check(
+  "Migration 0052 (anomaly_findings) on disk",
+  existsSync(join(ROOT, "drizzle/0052_anomaly_findings.sql")) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "anomalyFindings table present in db schema",
+  fileContains("src/db/schema.ts", "anomalyFindings") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "Anomaly detection cron present (/api/cron/detect-anomalies)",
+  existsSync(
+    join(ROOT, "src/app/api/cron/detect-anomalies/route.ts"),
+  )
+    ? 1
+    : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "Anomaly cron registered in vercel.json (hourly)",
+  fileContains("vercel.json", "/api/cron/detect-anomalies") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "Public /api/health/anomalies endpoint present",
+  existsSync(join(ROOT, "src/app/api/health/anomalies/route.ts")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
 // Public HITL policy (procurement audit artifact)
 check(
   "/api/health/hitl-policy endpoint present (public audit)",
