@@ -2990,6 +2990,70 @@ check(
   { dimension: "security" },
 );
 
+// ─── Anti-slop honesty invariants ────────────────────────────────────
+// These guard against the regression of fabricated metrics returning
+// to user-facing landing components. If you measure a number, ship
+// it. If you don't, don't print it. (Constitution Principle 5.)
+
+// fileNotContains: invariant fails if the substring shows up.
+function fileNotContains(rel, substr) {
+  try {
+    const txt = readFileSync(join(ROOT, rel), "utf8");
+    return !txt.includes(substr);
+  } catch {
+    return true; // file missing = not slop, just absent
+  }
+}
+
+check(
+  "VerificationPipeline.tsx — no fabricated 99.x% pass rates",
+  fileNotContains(
+    "src/components/landing/VerificationPipeline.tsx",
+    "passRate: \"99.",
+  ) && fileNotContains(
+    "src/components/landing/VerificationPipeline.tsx",
+    "passRate: \"97.",
+  ) ? 1 : 0,
+  1,
+  { dimension: "honesty" },
+);
+
+check(
+  "VerificationPipeline.tsx — references real source files (audit-ready)",
+  fileContains(
+    "src/components/landing/VerificationPipeline.tsx",
+    "src/lib/pii-guard.ts",
+  ) && fileContains(
+    "src/components/landing/VerificationPipeline.tsx",
+    "src/lib/hitl-routing-rules.ts",
+  ) ? 1 : 0,
+  1,
+  { dimension: "honesty" },
+);
+
+check(
+  "LiveProofStrip.tsx — no hardcoded uptime % fallback",
+  fileNotContains(
+    "src/components/landing/LiveProofStrip.tsx",
+    "uptime: \"99.",
+  ) ? 1 : 0,
+  1,
+  { dimension: "honesty" },
+);
+
+check(
+  "ModelRouterSection.tsx — no fabricated uptime claim",
+  fileNotContains(
+    "src/components/landing/ModelRouterSection.tsx",
+    "v: \"99.9%\",  l: \"uptime\"",
+  ) && fileNotContains(
+    "src/components/landing/ModelRouterSection.tsx",
+    "v: \"99.9%\", l: \"uptime\"",
+  ) ? 1 : 0,
+  1,
+  { dimension: "honesty" },
+);
+
 // Public HITL policy (procurement audit artifact)
 check(
   "/api/health/hitl-policy endpoint present (public audit)",

@@ -3,36 +3,42 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
+// Honest claims only: each layer references a real source file you
+// can `grep` in the open-source codebase. We do NOT publish pass-rate
+// percentages because we don't measure them yet — the structural
+// claim ("classifier-based", "regex + Luhn", "dual-model consensus")
+// is the verifiable fact. Constitution Principle 5: "if it isn't
+// measured, don't print a number."
 const LAYERS = [
   {
     id: "jailbreak",
     title: "Jailbreak Guard",
-    passRate: "99.8%",
-    desc: "Blocks prompt injection, adversarial inputs, and role-play exploits before any model processes the request. Uses a dedicated classifier trained on red-team datasets — not just regex patterns.",
+    passRate: "Classifier + heuristic",
+    desc: "Blocks prompt injection, adversarial inputs, and role-play exploits before any model processes the request. Uses a dedicated classifier — not just regex patterns. Source: src/lib/output-verifier.ts.",
   },
   {
     id: "pii",
     title: "PII Redactor",
-    passRate: "99.9%",
-    desc: "Strips personal data — email addresses, phone numbers, SSNs, passport numbers, and financial identifiers — before any model sees the payload. Redacted data is never stored in memory.",
+    passRate: "Regex + Luhn + IBAN mod-97",
+    desc: "Strips personal data — email, phone, SSN, credit card (Luhn-validated), IBAN (mod-97-validated), and SWIFT/BIC — before any model sees the payload. Pure-function scanner you can audit. Source: src/lib/pii-guard.ts.",
   },
   {
     id: "content",
     title: "Content Policy",
-    passRate: "99.7%",
-    desc: "NSFW, harmful content, hate speech, and dangerous instructions are filtered at ingress. The policy is context-aware: medical agents and legal agents have calibrated thresholds for clinical language.",
+    passRate: "Context-calibrated",
+    desc: "NSFW, harmful content, hate speech, and dangerous instructions are filtered at ingress. The policy is context-aware: medical agents and legal agents have calibrated thresholds for clinical language. Source: src/lib/output-verifier.ts.",
   },
   {
     id: "quality",
     title: "Quality Critic",
-    passRate: "97.2%",
-    desc: "A second model reviews every output against the playbook guarantee. Outputs that fail the quality bar are automatically retried with adjusted parameters — up to 3 times before the run is voided.",
+    passRate: "Dual-model consensus",
+    desc: "A second model reviews every output against the playbook guarantee using the consensus engine (generate → critique → synthesize). Outputs that fail the quality bar are retried automatically. Source: src/lib/consensus.ts.",
   },
   {
     id: "hitl",
     title: "Human Override",
     passRate: "Always available",
-    desc: "Enterprise workflows can require human-in-the-loop approval before any destructive, financial, or irreversible action is taken. Approval requests surface in the Security Command Center dashboard.",
+    desc: "Enterprise workflows require human-in-the-loop approval before destructive, financial, or irreversible actions. Multi-stage routing rules SHIPPED in the codebase. Source: src/lib/hitl-routing-rules.ts (inspect via /api/health/hitl-policy).",
   },
 ];
 

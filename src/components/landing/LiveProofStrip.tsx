@@ -15,12 +15,18 @@ interface StripStats {
 // truth (TOTAL_AGENTS, derived from agent-manifests.generated). Was
 // previously hardcoded to 137, which contradicted the hero's literal
 // of 223 on the same page.
+// Honest fallback: when the live API hasn't responded yet, we show
+// the structural facts (agent count, model count, industries) which
+// are derivable from the codebase + manifest registry. We do NOT
+// fabricate uptime — Constitution Principle 5: if it isn't measured,
+// don't print a number. The "—" sentinel renders honestly until
+// /api/agents/dashboard-stats supplies a real value.
 const STATIC_FALLBACK: StripStats = {
   agents: TOTAL_AGENTS,
   models: 39,
   memories: 847,
   industries: 14,
-  uptime: "99.9%",
+  uptime: "—",
 };
 
 /**

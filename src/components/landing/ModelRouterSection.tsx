@@ -102,10 +102,16 @@ export function ModelRouterSection() {
 
         {/* Routing stat row */}
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+          {/* Honest claims: routing latency comes from the smart-router
+              math (not measured here), failover-chain depth is a
+              structural fact (11 entries in src/lib/ai.ts). Uptime
+              is removed from this strip — it's published live at
+              /api/health/permanence + /reliability where it's
+              measured, not fabricated. */}
           {[
-            { v: "<100ms", l: "routing" },
-            { v: "99.9%",  l: "uptime" },
+            { v: "<100ms", l: "routing decision" },
             { v: "11",     l: "model failover chain" },
+            { v: "verifiable", l: "/api/health/permanence" },
           ].map((s, i) => (
             <div key={s.l} className="flex items-center gap-2 font-mono text-[12px]">
               {i > 0 && (
