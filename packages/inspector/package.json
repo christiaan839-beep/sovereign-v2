@@ -1,7 +1,7 @@
 {
   "name": "@sovereign/inspector",
-  "version": "0.1.0",
-  "description": "Trustless third-party verifier for Sovereign Matrix audit chains, delegation chains, and HITL policies. Verify any deployment's compliance claims locally — no platform trust required.",
+  "version": "0.2.0",
+  "description": "Trustless third-party verifier for Sovereign Matrix audit chains, delegation chains, HITL policies, and agentic-commerce ACATs. Verify any deployment's compliance claims locally — no platform trust required.",
   "license": "MIT",
   "type": "module",
   "bin": {
@@ -14,7 +14,8 @@
     "./reputation": "./src/reputation.mjs",
     "./credit": "./src/credit.mjs",
     "./reliability": "./src/reliability.mjs",
-    "./audit-export": "./src/audit-export.mjs"
+    "./audit-export": "./src/audit-export.mjs",
+    "./acat": "./src/acat.mjs"
   },
   "files": [
     "src/",
@@ -33,7 +34,11 @@
     "ed25519",
     "trustless",
     "compliance",
-    "hash-chain"
+    "hash-chain",
+    "acat",
+    "agentic-commerce",
+    "stripe",
+    "chargeback-evidence"
   ],
   "homepage": "https://sovereignmatrix.agency",
   "repository": {

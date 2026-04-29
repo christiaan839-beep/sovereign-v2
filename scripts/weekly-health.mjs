@@ -5054,6 +5054,208 @@ check(
   { dimension: "trust-asset" },
 );
 
+// ─── R92 — Stripe Agentic Commerce Toolkit Adapter ─────────────────
+// First rails adapter for ACAT. Pure functions. Tests verify the
+// roundtrip + chunked metadata + chargeback evidence packet.
+
+check(
+  "R92 Stripe Agentic Commerce Toolkit adapter present",
+  existsSync(
+    join(ROOT, "src/lib/agentic-commerce/stripe-adapter.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R92 Stripe adapter has unit tests",
+  existsSync(join(ROOT, "src/lib/__tests__/stripe-adapter.test.ts")) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "R92 adapter is pure-function (no Stripe SDK runtime import)",
+  fileContains("src/lib/agentic-commerce/stripe-adapter.ts", "import {") &&
+    !fileContains(
+      "src/lib/agentic-commerce/stripe-adapter.ts",
+      "from \"stripe\"",
+    ) &&
+    !fileContains(
+      "src/lib/agentic-commerce/stripe-adapter.ts",
+      "from 'stripe'",
+    ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "R92 adapter chunks metadata respecting Stripe's 500-char limit",
+  fileContains(
+    "src/lib/agentic-commerce/stripe-adapter.ts",
+    "STRIPE_METADATA_VALUE_MAX",
+  ) &&
+    fileContains(
+      "src/lib/agentic-commerce/stripe-adapter.ts",
+      "chunkForStripeMetadata",
+    ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R92 chargeback evidence packet is self-contained + offline-verifiable",
+  fileContains(
+    "src/lib/agentic-commerce/stripe-adapter.ts",
+    "buildChargebackEvidence",
+  ) &&
+    fileContains(
+      "src/lib/agentic-commerce/stripe-adapter.ts",
+      "sovereign-chargeback-evidence-v1",
+    ) &&
+    fileContains(
+      "src/lib/agentic-commerce/stripe-adapter.ts",
+      "@sovereign/inspector",
+    ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R92 adapter caps chunked metadata reassembly to 99 parts (amplification defense)",
+  fileContains(
+    "src/lib/agentic-commerce/stripe-adapter.ts",
+    "partsCount > 99",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+// ─── @sovereign/inspector — ACAT verifier as npm package ───────────
+
+check(
+  "Inspector ACAT module present (npm-publishable offline verifier)",
+  existsSync(join(ROOT, "packages/inspector/src/acat.mjs")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Inspector ACAT module has unit tests (cross-implementation agreement)",
+  existsSync(join(ROOT, "packages/inspector/__tests__/acat.test.mjs")) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "Inspector exports ACAT module from index.mjs",
+  fileContains("packages/inspector/src/index.mjs", "./acat.mjs") ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "Inspector package.json exposes ./acat subpath export",
+  fileContains("packages/inspector/package.json", "\"./acat\":") &&
+    fileContains("packages/inspector/package.json", "\"./src/acat.mjs\"") ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "Inspector CLI exposes verify-acat + verify-evidence subcommands",
+  fileContains("packages/inspector/src/cli.mjs", "verify-acat") &&
+    fileContains("packages/inspector/src/cli.mjs", "verify-evidence") ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Inspector ACAT verifier has all 12 failure reasons (matches server impl)",
+  fileContains("packages/inspector/src/acat.mjs", "user_pubkey_mismatch") &&
+    fileContains("packages/inspector/src/acat.mjs", "message_mismatch") &&
+    fileContains("packages/inspector/src/acat.mjs", "signature_invalid") &&
+    fileContains("packages/inspector/src/acat.mjs", "chain_hash_mismatch") &&
+    fileContains("packages/inspector/src/acat.mjs", "not_yet_valid") &&
+    fileContains("packages/inspector/src/acat.mjs", "expired") &&
+    fileContains("packages/inspector/src/acat.mjs", "scope_violation") &&
+    fileContains("packages/inspector/src/acat.mjs", "amount_exceeds_scope") &&
+    fileContains("packages/inspector/src/acat.mjs", "category_excluded") &&
+    fileContains("packages/inspector/src/acat.mjs", "category_not_allowed") &&
+    fileContains("packages/inspector/src/acat.mjs", "merchant_not_allowed") &&
+    fileContains("packages/inspector/src/acat.mjs", "single_use_consumed") ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Inspector verifies Stripe chargeback evidence packets offline",
+  fileContains(
+    "packages/inspector/src/acat.mjs",
+    "verifyStripeChargebackEvidence",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Inspector README documents ACAT + chargeback evidence flows",
+  fileContains("packages/inspector/README.md", "verify-acat") &&
+    fileContains("packages/inspector/README.md", "verify-evidence") &&
+    fileContains("packages/inspector/README.md", "Macaroon-pattern") ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+// ─── /trust/agentic-commerce public live-verifier UI ───────────────
+
+check(
+  "Live ACAT verification API present (POST /api/_health/acat-verify)",
+  existsSync(
+    join(ROOT, "src/app/api/_health/acat-verify/route.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Live ACAT verification public re-export present",
+  existsSync(join(ROOT, "src/app/api/health/acat-verify/route.ts")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "/trust/agentic-commerce page present (procurement-grade live demo)",
+  existsSync(join(ROOT, "src/app/trust/agentic-commerce/page.tsx")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "/trust/agentic-commerce includes live verifier client component",
+  existsSync(
+    join(ROOT, "src/app/trust/agentic-commerce/AcatLiveVerifier.tsx"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "/trust/agentic-commerce documents the 7 trust questions + market timeline",
+  fileContains(
+    "src/app/trust/agentic-commerce/page.tsx",
+    "TRUST_QUESTIONS",
+  ) &&
+    fileContains("src/app/trust/agentic-commerce/page.tsx", "MARKET_EVENTS") &&
+    fileContains(
+      "src/app/trust/agentic-commerce/page.tsx",
+      "Visa Intelligent Commerce",
+    ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
 // Public HITL policy (procurement audit artifact)
 check(
   "/api/health/hitl-policy endpoint present (public audit)",

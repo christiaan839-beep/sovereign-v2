@@ -61,6 +61,24 @@ sovereign-inspect credit https://sovereignmatrix.agency travel-agent
 # Trustless: recompute the credit line locally + compare to the
 # platform's published claim. Catches fabricated credit lines (R42).
 sovereign-inspect credit-verify https://sovereignmatrix.agency travel-agent
+
+# ── Agentic Commerce ACAT (R91) ──
+# Verify an Agentic Commerce Authorization Token offline. The merchant
+# pulls the ACAT from `metadata.sovereign_acat` on a Stripe
+# PaymentIntent (or any rail's equivalent), then verifies it BEFORE
+# charging. No Sovereign network call required.
+cat acat.b64 | sovereign-inspect verify-acat \
+  --pubkey "<expectedUserPublicKey>" \
+  --amount 73420 \
+  --currency USD \
+  --merchant acme-shop \
+  --category marketplace_b2c
+
+# Verify a Stripe chargeback evidence packet — the artifact a merchant
+# uploads when an agent-initiated purchase is disputed. The packet is
+# self-contained: any auditor or court can re-run the verification.
+cat evidence.json | sovereign-inspect verify-evidence \
+  --pubkey "<expectedUserPublicKey>"
 ```
 
 Exit codes:
@@ -96,6 +114,54 @@ if (result.valid) {
 } else {
   console.error(`Invalid: ${result.reason}`);
 }
+```
+
+### Verify an ACAT (R91) inside your checkout pipeline
+
+```js
+import {
+  decodeACATFromHeader,
+  verifyACAT,
+} from "@sovereign/inspector/acat";
+
+// In your Stripe webhook handler, after the merchant has verified
+// the Stripe signature with `stripe.webhooks.constructEvent(...)`:
+const pi = event.data.object;
+const tokenB64 =
+  pi.metadata.sovereign_acat_chunked === "1"
+    // Reassemble chunked metadata if the token is split across keys.
+    ? Array.from({ length: Number(pi.metadata.sovereign_acat_parts) },
+        (_, i) => pi.metadata[`sovereign_acat_part_${i + 1}`]).join("")
+    : pi.metadata.sovereign_acat;
+
+const token = decodeACATFromHeader(tokenB64);
+const result = verifyACAT({
+  token,
+  expectedUserPublicKey: lookupUserPubkey(token.userId),
+  cart: {
+    amountCents: pi.amount,
+    currency: pi.currency.toUpperCase(),
+    merchantId: pi.transfer_data?.destination ?? "self",
+    category: "marketplace_b2c",
+  },
+});
+
+if (!result.valid) {
+  // 12 distinct reasons — log them, refund the agent, alert the user.
+  await refund(pi.id, `acat-invalid:${result.reason}`);
+}
+```
+
+### Verify a chargeback evidence packet (court-defensible)
+
+```js
+import { verifyStripeChargebackEvidence } from "@sovereign/inspector/acat";
+
+const result = verifyStripeChargebackEvidence({
+  evidence: JSON.parse(uploadedEvidenceJson),
+  expectedUserPublicKey,
+});
+// result.ok ⇒ packet untampered; result.reason ⇒ specific tamper site.
 ```
 
 ## What gets verified
@@ -136,6 +202,30 @@ if (result.valid) {
   locally from the published grade + base
 - Catches fabricated credit lines (platform claiming higher autonomy
   than the grade justifies, or vice versa)
+
+### Agentic Commerce Authorization Tokens — ACAT (R91)
+
+- Ed25519 signature over the canonical ACAT message (matches the
+  R34 user delegation pattern)
+- Chain hash binds attenuated tokens to their parent
+  (`sha256(parentChainHash || message || signature)`)
+- Macaroon-pattern attenuation invariant: a re-signed child token
+  may NEVER widen scope (max-amount, expiry, merchants, categories)
+- 12 distinct verification failure reasons (procurement-grade granularity):
+  `message_mismatch`, `signature_invalid`, `user_pubkey_mismatch`,
+  `expired`, `not_yet_valid`, `scope_violation`, `merchant_not_allowed`,
+  `category_excluded`, `category_not_allowed`, `single_use_consumed`,
+  `chain_hash_mismatch`, `amount_exceeds_scope`
+
+### Stripe chargeback evidence packets (R92)
+
+- Self-contained JSON artifact: ACAT + audit chain excerpt +
+  re-verification result at evidence-assembly time
+- Verifier re-signs the embedded ACAT, recomputes the chain hash,
+  and walks the audit chain `prevHash` links
+- Distinguishes ACAT tampering from audit-chain-break: if the merchant
+  doctored the evidence after the dispute landed, the inspector points
+  at the exact failure site
 
 ## Why this matters
 

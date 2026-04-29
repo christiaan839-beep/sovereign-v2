@@ -90,6 +90,12 @@ import {
   fetchTrustDiscovery,
   crawlFederation,
 } from "./fetch.mjs";
+import {
+  verifyACAT,
+  decodeACATFromHeader,
+  summarizeACATForReceipt,
+  verifyStripeChargebackEvidence,
+} from "./acat.mjs";
 import { readFileSync } from "node:fs";
 
 // ── Color output (no deps) ──────────────────────────────────────────
@@ -146,8 +152,12 @@ function printUsage() {
   console.log("  delegation <url>        Verify delegation from stdin (no platform trust)");
   console.log("  audit-chain             Verify audit log array from stdin");
   console.log("  verify-token            Verify ACT chain from stdin (Macaroon attenuation)");
+  console.log("  verify-acat             Verify an ACAT (R91) from stdin (base64url or JSON)");
+  console.log("                          + cart context flags: --pubkey --amount --currency --merchant --category");
+  console.log("  verify-evidence         Verify a Stripe chargeback evidence packet from stdin (JSON)");
+  console.log("                          + --pubkey <userPublicKey>");
   console.log("");
-  console.log("DOCS: https://sovereignmatrix.agency/agentic-commerce");
+  console.log("DOCS: https://sovereignmatrix.agency/trust/agentic-commerce");
 }
 
 // ── Commands ────────────────────────────────────────────────────────
@@ -447,6 +457,160 @@ async function cmdAuditExportVerify() {
   }
   console.log("");
   console.log(c.red("This audit export cannot be trusted as-is."));
+  return 1;
+}
+
+/**
+ * Verify an ACAT (R91) entirely offline.
+ *
+ * Input: stdin can be either:
+ *   - base64url-encoded canonical-JSON of a SignedACAT
+ *   - JSON object that is the SignedACAT directly
+ *
+ * Required flags:
+ *   --pubkey <expectedUserPublicKey>
+ *   --amount <amountCents>
+ *   --currency <ISO 4217>
+ *   --merchant <merchantId>
+ *   --category <CommerceCategory>
+ *
+ * Optional:
+ *   --now <ISO 8601>      override clock (testing)
+ */
+function parseFlags(argv) {
+  const flags = {};
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i].startsWith("--")) {
+      const key = argv[i].slice(2);
+      const val = argv[i + 1];
+      if (val === undefined || val.startsWith("--")) {
+        flags[key] = true;
+      } else {
+        flags[key] = val;
+        i++;
+      }
+    }
+  }
+  return flags;
+}
+
+async function cmdVerifyACAT(argv) {
+  header("ACAT TRUSTLESS verification (LOCAL, OFFLINE)");
+  const flags = parseFlags(argv);
+  const stdin = readFileSync(0, "utf8").trim();
+  if (!stdin) {
+    bad("No stdin input. Pipe an ACAT (base64url or JSON).");
+    return 2;
+  }
+
+  // Try base64url decode first, fall back to JSON.
+  let token = decodeACATFromHeader(stdin);
+  if (token === null) {
+    try {
+      token = JSON.parse(stdin);
+    } catch {
+      bad("stdin is neither valid base64url ACAT nor JSON.");
+      return 2;
+    }
+  }
+  if (!token || token.version !== "acat-v1") {
+    bad("Decoded payload is not an ACAT v1 token.");
+    return 2;
+  }
+
+  if (!flags.pubkey) {
+    bad("--pubkey <expectedUserPublicKey> required.");
+    return 2;
+  }
+  if (!flags.amount || !flags.currency || !flags.merchant || !flags.category) {
+    bad(
+      "Cart context required: --amount <cents> --currency <ISO> --merchant <id> --category <commerce-category>",
+    );
+    return 2;
+  }
+
+  console.log(c.bold("ACAT summary:"));
+  console.log(summarizeACATForReceipt(token));
+  console.log("");
+
+  const result = verifyACAT({
+    token,
+    expectedUserPublicKey: flags.pubkey,
+    cart: {
+      amountCents: Number.parseInt(flags.amount, 10),
+      currency: flags.currency,
+      merchantId: flags.merchant,
+      category: flags.category,
+    },
+    now: flags.now ? new Date(flags.now) : undefined,
+  });
+
+  if (result.valid) {
+    ok(c.bold(`✓ VALID — agent authorized for this cart`));
+    console.log(
+      c.gray(`  remaining authorized cents: ${result.remainingMaxCents}`),
+    );
+    if (result.reputation) {
+      console.log(
+        c.gray(
+          `  agent reputation at issuance: ${result.reputation.letterGrade} ` +
+            `(${result.reputation.numericScore}/100)`,
+        ),
+      );
+    }
+    return 0;
+  }
+  bad(c.bold(`✗ INVALID — reason: ${result.reason}`));
+  console.log("");
+  console.log(
+    c.red(
+      "Do NOT proceed with the charge. The agent is not authorized for this " +
+        "cart under the user's ACAT scope.",
+    ),
+  );
+  return 1;
+}
+
+async function cmdVerifyEvidence(argv) {
+  header("Stripe chargeback evidence TRUSTLESS verification (OFFLINE)");
+  const flags = parseFlags(argv);
+  const stdin = readFileSync(0, "utf8");
+  let evidence;
+  try {
+    const parsed = JSON.parse(stdin);
+    evidence = parsed.evidenceFileJson ?? parsed;
+  } catch (err) {
+    bad(`Failed to parse stdin as JSON: ${err.message}`);
+    return 1;
+  }
+  if (!flags.pubkey) {
+    bad("--pubkey <expectedUserPublicKey> required.");
+    return 2;
+  }
+
+  const result = verifyStripeChargebackEvidence({
+    evidence,
+    expectedUserPublicKey: flags.pubkey,
+  });
+
+  if (result.ok) {
+    ok(c.bold(`✓ VALID — evidence packet is intact and verifiable`));
+    console.log(c.gray(`  dispute id: ${result.disputeId}`));
+    console.log(c.gray(`  payment intent: ${result.paymentIntentId}`));
+    console.log(c.gray(`  acat chain hash: ${result.acatChainHash}`));
+    console.log(c.gray(`  audit chain entries: ${result.auditChainEntries}`));
+    console.log("");
+    info(result.summary);
+    return 0;
+  }
+  bad(c.bold(`✗ TAMPERED — reason: ${result.reason}`));
+  console.log("");
+  console.log(
+    c.red(
+      "This chargeback evidence packet has been altered or is malformed. " +
+        "Do NOT submit it as authoritative proof of authorization.",
+    ),
+  );
   return 1;
 }
 
@@ -862,6 +1026,10 @@ async function main() {
       return cmdReliabilityVerify(argv[1]);
     case "audit-export-verify":
       return cmdAuditExportVerify();
+    case "verify-acat":
+      return cmdVerifyACAT(argv.slice(1));
+    case "verify-evidence":
+      return cmdVerifyEvidence(argv.slice(1));
     default:
       bad(`Unknown command: ${cmd}`);
       printUsage();

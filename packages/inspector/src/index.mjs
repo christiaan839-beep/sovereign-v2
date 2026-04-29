@@ -13,3 +13,4 @@ export * from "./reputation.mjs";
 export * from "./credit.mjs";
 export * from "./reliability.mjs";
 export * from "./audit-export.mjs";
+export * from "./acat.mjs";
