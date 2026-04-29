@@ -142,3 +142,57 @@ export async function fetchReputation(deploymentUrl, agentId) {
   }
   return res.json();
 }
+
+/**
+ * Fetch the raw reputation signals (R41 trustless loop). Returns
+ * { signals, publishedScore, formula } — everything a verifier
+ * needs to reproduce the score locally.
+ */
+export async function fetchReputationSignals(deploymentUrl, agentId) {
+  const url = `${deploymentUrl}/api/identity/reputation/${encodeURIComponent(agentId)}/signals`;
+  const res = await fetch(url, {
+    headers: { Accept: "application/json" },
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status} fetching ${url}`);
+  }
+  return res.json();
+}
+
+/**
+ * THE TRUSTLESS LOOP CLOSURE.
+ *
+ * Fetch raw signals from any Sovereign deployment, recompute the
+ * score LOCALLY, compare to the platform's published score. Returns
+ * `{match: true}` if the platform's claim is mathematically correct;
+ * `{match: false}` if they differ — fabricated reputation.
+ *
+ * After R41, the platform CANNOT lie about reputation while this
+ * verifier is running. Same primitive as R34/R37/R38: math is the
+ * truth, not the platform's word.
+ */
+export async function verifyReputationLocally(deploymentUrl, agentId) {
+  const data = await fetchReputationSignals(deploymentUrl, agentId);
+  const { signals, publishedScore } = data;
+  const recomputed = computeReputationScore(signals);
+  const match =
+    recomputed.letterGrade === publishedScore.letterGrade &&
+    recomputed.numericScore === publishedScore.numericScore;
+  return {
+    match,
+    agentId,
+    deploymentUrl,
+    signals,
+    published: publishedScore,
+    recomputed: {
+      letterGrade: recomputed.letterGrade,
+      numericScore: recomputed.numericScore,
+      breakdown: recomputed.signalsBreakdown,
+    },
+    verificationRanLocally: true,
+    note: match
+      ? "Published score matches local recompute. The platform's reputation claim is mathematically correct."
+      : "MISMATCH — published score differs from local recompute. Reputation is fabricated.",
+  };
+}

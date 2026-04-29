@@ -18,9 +18,9 @@
  */
 
 import { NextResponse } from "next/server";
-import { sql } from "drizzle-orm";
 import { verifyCron } from "@/lib/cron-auth";
 import { computeReputationScore } from "@/lib/agent-reputation";
+import { gatherReputationSignals } from "@/lib/agent-reputation-signals";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("cron:rollup-reputation");
@@ -65,8 +65,12 @@ export async function GET(req: Request) {
     let agentsNoData = 0;
 
     for (const agent of agents) {
-      // For each agent, gather signals. SQL queries are scoped per agent.
-      const signals = await gatherSignals(db, agent.agentId, agent.createdAt);
+      // For each agent, gather signals via the shared lib (R41).
+      const signals = await gatherReputationSignals(
+        db,
+        agent.agentId,
+        agent.createdAt,
+      );
       const score = computeReputationScore(signals);
 
       if (score.letterGrade === "no_score_yet") {
@@ -138,119 +142,6 @@ export async function GET(req: Request) {
   }
 }
 
-/**
- * Gather raw signals for one agent. SQL-driven; reads from R26
- * audit_logs + R30 agent_spend_charges + R33 hitl_approvals.
- *
- * NEVER throws — failures yield zero/safe defaults so the rollup
- * keeps making progress on other agents.
- */
-async function gatherSignals(
-  db: unknown,
-  agentId: string,
-  manifestCreatedAt: Date,
-): Promise<{
-  reversalCount30d: number;
-  totalChargeCount30d: number;
-  hitlDeniedCount30d: number;
-  totalHitlCount30d: number;
-  auditChainIntact: boolean;
-  manifestAgeDays: number;
-  usageCount30d: number;
-  costVsMedianPct: number;
-  anomalyCount30d: number;
-}> {
-  const dbAny = db as {
-    execute: (q: ReturnType<typeof sql>) => Promise<{
-      rows?: Array<Record<string, number | string>>;
-    }>;
-  };
-  const manifestAgeDays = Math.floor(
-    (Date.now() - manifestCreatedAt.getTime()) / (1000 * 60 * 60 * 24),
-  );
-
-  // Aggregate via raw SQL — fast + simple.
-  let reversalCount30d = 0;
-  let totalChargeCount30d = 0;
-  try {
-    const r = await dbAny.execute(sql`
-      SELECT
-        COUNT(*) FILTER (WHERE status = 'reversed')::int AS reversed,
-        COUNT(*)::int AS total
-      FROM agent_spend_charges
-      WHERE agent_name = ${agentId}
-        AND created_at > NOW() - INTERVAL '30 days'
-    `);
-    const row = r.rows?.[0];
-    if (row) {
-      reversalCount30d = Number(row.reversed) || 0;
-      totalChargeCount30d = Number(row.total) || 0;
-    }
-  } catch {
-    /* signals fail-soft — keep zeros */
-  }
-
-  let hitlDeniedCount30d = 0;
-  let totalHitlCount30d = 0;
-  try {
-    const r = await dbAny.execute(sql`
-      SELECT
-        COUNT(*) FILTER (WHERE status = 'denied')::int AS denied,
-        COUNT(*)::int AS total
-      FROM hitl_approvals
-      WHERE agent_name = ${agentId}
-        AND created_at > NOW() - INTERVAL '30 days'
-    `);
-    const row = r.rows?.[0];
-    if (row) {
-      hitlDeniedCount30d = Number(row.denied) || 0;
-      totalHitlCount30d = Number(row.total) || 0;
-    }
-  } catch { /* fail-soft */ }
-
-  let usageCount30d = 0;
-  try {
-    const r = await dbAny.execute(sql`
-      SELECT COUNT(*)::int AS total
-      FROM audit_logs
-      WHERE resource = ${agentId}
-        AND action = 'agent.execute'
-        AND created_at > NOW() - INTERVAL '30 days'
-    `);
-    usageCount30d = Number(r.rows?.[0]?.total) || 0;
-  } catch { /* fail-soft */ }
-
-  let anomalyCount30d = 0;
-  try {
-    const r = await dbAny.execute(sql`
-      SELECT COUNT(*)::int AS total
-      FROM audit_logs
-      WHERE resource = ${agentId}
-        AND action LIKE 'anomaly.%'
-        AND created_at > NOW() - INTERVAL '30 days'
-    `);
-    anomalyCount30d = Number(r.rows?.[0]?.total) || 0;
-  } catch { /* fail-soft */ }
-
-  // Audit chain integrity: assume true (fast path). A separate cron
-  // (verify-audit-chain) sets this to false in audit_logs if there's
-  // a break. For now we use the optimistic default; future round can
-  // hook into the chain-verifier output more directly.
-  const auditChainIntact = true;
-
-  // Cost vs median: TODO when execution_audit_log carries reliable
-  // cost data per run. Default to 0 (at-median) for now.
-  const costVsMedianPct = 0;
-
-  return {
-    reversalCount30d,
-    totalChargeCount30d,
-    hitlDeniedCount30d,
-    totalHitlCount30d,
-    auditChainIntact,
-    manifestAgeDays,
-    usageCount30d,
-    costVsMedianPct,
-    anomalyCount30d,
-  };
-}
+// gatherReputationSignals moved to src/lib/agent-reputation-signals.ts
+// (R41) so the same logic is shared between the cron + the public
+// signals endpoint + @sovereign/inspector for offline recompute.

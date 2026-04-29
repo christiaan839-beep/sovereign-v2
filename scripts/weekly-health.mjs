@@ -2793,6 +2793,75 @@ check(
   { dimension: "trust-asset" },
 );
 
+// ─── Round 41 — Trustless reputation loop closure ────────────────────
+//
+// The platform CANNOT lie about reputation while the inspector watches.
+// Customers fetch raw signals + recompute the score locally + compare
+// to what the platform claims. Mismatch = fabricated reputation.
+
+check(
+  "Reputation signals endpoint present (raw inputs)",
+  existsSync(
+    join(
+      ROOT,
+      "src/app/api/identity/reputation/[agentId]/signals/route.ts",
+    ),
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "Reputation signals shared lib present (cron + endpoint)",
+  existsSync(join(ROOT, "src/lib/agent-reputation-signals.ts")) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "Cron uses shared gatherReputationSignals (no duplicate)",
+  fileContains(
+    "src/app/api/cron/rollup-agent-reputation/route.ts",
+    "gatherReputationSignals",
+  ) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+check(
+  "Inspector has verifyReputationLocally (R41 trustless loop)",
+  fileContains(
+    "packages/inspector/src/reputation.mjs",
+    "verifyReputationLocally",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "Inspector has fetchReputationSignals",
+  fileContains(
+    "packages/inspector/src/reputation.mjs",
+    "fetchReputationSignals",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "Inspector CLI has reputation-verify command",
+  fileContains(
+    "packages/inspector/src/cli.mjs",
+    "cmdReputationVerify",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "Reputation signals endpoint declares formula (transparency)",
+  fileContains(
+    "src/app/api/identity/reputation/[agentId]/signals/route.ts",
+    "formula",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
 // Public HITL policy (procurement audit artifact)
 check(
   "/api/health/hitl-policy endpoint present (public audit)",

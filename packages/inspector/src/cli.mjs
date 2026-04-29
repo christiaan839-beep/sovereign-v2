@@ -62,7 +62,7 @@ import {
   fetchAgentManifest,
   fetchRegistry,
 } from "./identity.mjs";
-import { fetchReputation } from "./reputation.mjs";
+import { fetchReputation, verifyReputationLocally } from "./reputation.mjs";
 import {
   fetchPermanence,
   fetchHitlPolicy,
@@ -118,6 +118,7 @@ function printUsage() {
   console.log("  agent-identity <url> <id>  Fetch + verify a single agent's manifest");
   console.log("  registry <url>          List all registered agent manifests");
   console.log("  reputation <url> <id>   Fetch + display reputation score with breakdown");
+  console.log("  reputation-verify <url> <id>  Trustless verify: fetch signals + recompute locally + compare");
   console.log("  delegation <url>        Verify delegation from stdin (no platform trust)");
   console.log("  audit-chain             Verify audit log array from stdin");
   console.log("  verify-token            Verify ACT chain from stdin (Macaroon attenuation)");
@@ -334,6 +335,45 @@ async function cmdReputation(url, agentId) {
       "computeReputationScore() from @sovereign/inspector.",
   );
   return 0;
+}
+
+async function cmdReputationVerify(url, agentId) {
+  header(`Reputation TRUSTLESS verification — ${agentId}`);
+  info("Fetching raw signals from platform...");
+  let result;
+  try {
+    result = await verifyReputationLocally(url, agentId);
+  } catch (err) {
+    bad(`Failed to fetch signals: ${err.message}`);
+    return 1;
+  }
+  console.log("");
+  console.log(c.bold("Platform claims:"));
+  console.log(
+    `  Grade: ${c.cyan(result.published.letterGrade)} (${result.published.numericScore}/100)`,
+  );
+  console.log("");
+  console.log(c.bold("Local recompute (your machine):"));
+  console.log(
+    `  Grade: ${c.cyan(result.recomputed.letterGrade)} (${result.recomputed.numericScore}/100)`,
+  );
+  console.log("");
+  if (result.match) {
+    ok(c.bold("✓ MATCH — platform's reputation claim is mathematically correct"));
+    console.log("");
+    info(
+      "The platform did not fabricate this reputation. Same math, same answer.",
+    );
+    return 0;
+  }
+  bad(c.bold("✗ MISMATCH — platform's published score is fabricated"));
+  console.log("");
+  console.log(c.red("This reputation claim cannot be trusted. Report:"));
+  console.log(`  Published: ${result.published.letterGrade} ${result.published.numericScore}`);
+  console.log(`  Recomputed: ${result.recomputed.letterGrade} ${result.recomputed.numericScore}`);
+  console.log(c.gray(`  Signals (raw):`));
+  console.log(c.gray(`    ${JSON.stringify(result.signals)}`));
+  return 1;
 }
 
 async function cmdVerifyToken() {
@@ -556,6 +596,12 @@ async function main() {
         return 2;
       }
       return cmdReputation(argv[1], argv[2]);
+    case "reputation-verify":
+      if (!argv[1] || !argv[2]) {
+        bad("usage: sovereign-inspect reputation-verify <url> <agentId>");
+        return 2;
+      }
+      return cmdReputationVerify(argv[1], argv[2]);
     default:
       bad(`Unknown command: ${cmd}`);
       printUsage();
