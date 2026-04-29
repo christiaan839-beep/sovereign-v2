@@ -2862,6 +2862,134 @@ check(
   { dimension: "trust-asset" },
 );
 
+// ─── Round 42 — Trust-as-Collateral (TaC) ────────────────────────────
+// Reputation grade modulates the daily spend cap. R42 publishes the
+// credit line as a SIGNAL; R43 will wire it into cost-runaway.ts.
+// The credit line is recomputable locally via @sovereign/inspector,
+// so the platform CANNOT lie about an agent's effective autonomy.
+
+check(
+  "ADR-0008 (Trust-as-Collateral) on disk",
+  existsSync(join(ROOT, "docs/adr/0008-trust-as-collateral.md")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "migration 0050 (agent_credit_lines) on disk",
+  existsSync(
+    join(ROOT, "drizzle/0050_agent_credit_lines.sql"),
+  )
+    ? 1
+    : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "agent-credit-line pure-function calculator present",
+  existsSync(join(ROOT, "src/lib/agent-credit-line.ts")) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "agent-credit-line tests present (>=20 cases)",
+  fileContains(
+    "src/lib/__tests__/agent-credit-line.test.ts",
+    "verifyCreditLineIntegrity",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "GET /api/identity/credit/[agentId] endpoint present",
+  existsSync(
+    join(ROOT, "src/app/api/identity/credit/[agentId]/route.ts"),
+  )
+    ? 1
+    : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "daily credit-rollup cron present",
+  existsSync(
+    join(ROOT, "src/app/api/cron/rollup-agent-credit/route.ts"),
+  )
+    ? 1
+    : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "credit-rollup cron registered in vercel.json",
+  fileContains("vercel.json", "/api/cron/rollup-agent-credit") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "agent_credit_lines schema entry present in db schema",
+  fileContains("src/db/schema.ts", "agentCreditLines") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "Inspector credit port present (credit.mjs)",
+  existsSync(join(ROOT, "packages/inspector/src/credit.mjs")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Inspector CLI has credit command",
+  fileContains("packages/inspector/src/cli.mjs", "case \"credit\":") ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Inspector CLI has credit-verify command (trustless loop)",
+  fileContains(
+    "packages/inspector/src/cli.mjs",
+    "case \"credit-verify\":",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Inspector exports credit module from package.json",
+  fileContains("packages/inspector/package.json", "./credit") ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "credit endpoint declares R42→R43 wire-status (procurement transparency)",
+  fileContains(
+    "src/app/api/identity/credit/[agentId]/route.ts",
+    "wireStatus",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "credit calculator surfaces verifyCreditLineIntegrity (trustless)",
+  fileContains(
+    "src/lib/agent-credit-line.ts",
+    "verifyCreditLineIntegrity",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
 // Public HITL policy (procurement audit artifact)
 check(
   "/api/health/hitl-policy endpoint present (public audit)",

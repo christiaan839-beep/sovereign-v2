@@ -1068,6 +1068,24 @@ export const agentReputationScores = pgTable("agent_reputation_scores", {
   index("idx_reputation_computed_at").on(table.computedAt),
 ]);
 
+// Round 42 — Trust-as-Collateral. Reputation grade modulates the
+// per-tenant daily spend cap. Composes R40 reputation × R30
+// cost-runaway into a self-regulating economic loop.
+// See drizzle/0050 + docs/adr/0008.
+export const agentCreditLines = pgTable("agent_credit_lines", {
+  agentId: text("agent_id").primaryKey(),
+  letterGrade: text("letter_grade").notNull(),
+  numericScore: integer("numeric_score").notNull(),
+  multiplier: numeric("multiplier", { precision: 4, scale: 2 }).notNull(),
+  baseDailyLimitCents: integer("base_daily_limit_cents").notNull(),
+  effectiveDailyLimitCents: integer("effective_daily_limit_cents").notNull(),
+  computedAt: timestamp("computed_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_credit_effective_limit_desc").on(table.effectiveDailyLimitCents, table.computedAt),
+  index("idx_credit_computed_at").on(table.computedAt),
+  index("idx_credit_letter_grade").on(table.letterGrade),
+]);
+
 // Round 38 — Agent Identity Manifests (KYA). Signed manifests
 // declaring agent ownership + capabilities + provenance, verifiable
 // by any third party. See drizzle/0048 + docs/adr/0006.

@@ -10,7 +10,9 @@
   "main": "./src/index.mjs",
   "exports": {
     ".": "./src/index.mjs",
-    "./verify": "./src/verify.mjs"
+    "./verify": "./src/verify.mjs",
+    "./reputation": "./src/reputation.mjs",
+    "./credit": "./src/credit.mjs"
   },
   "files": [
     "src/",

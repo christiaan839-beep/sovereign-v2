@@ -33,6 +33,22 @@
  *     Read JSON from stdin: an array of audit log rows.
  *     Verify the SHA-256 chain locally.
  *
+ *   reputation <url> <agentId>
+ *     Fetch + display the agent's reputation score with full
+ *     signal breakdown (R40).
+ *
+ *   reputation-verify <url> <agentId>
+ *     Fetch raw signals + recompute the score locally; compare to
+ *     the platform's published claim. Catches fabricated reputation (R41).
+ *
+ *   credit <url> <agentId>
+ *     Fetch + display the agent's Trust-as-Collateral credit line
+ *     (multiplier × base = effective daily limit) (R42).
+ *
+ *   credit-verify <url> <agentId>
+ *     Fetch the credit line + recompute locally from the published
+ *     grade; compare. Catches fabricated credit lines (R42).
+ *
  *   full <url>
  *     Run permanence + policy + diagnose against a deployment;
  *     return overall green/yellow/red status.
@@ -63,6 +79,7 @@ import {
   fetchRegistry,
 } from "./identity.mjs";
 import { fetchReputation, verifyReputationLocally } from "./reputation.mjs";
+import { fetchCreditLine, verifyCreditLineLocally } from "./credit.mjs";
 import {
   fetchPermanence,
   fetchHitlPolicy,
@@ -119,6 +136,8 @@ function printUsage() {
   console.log("  registry <url>          List all registered agent manifests");
   console.log("  reputation <url> <id>   Fetch + display reputation score with breakdown");
   console.log("  reputation-verify <url> <id>  Trustless verify: fetch signals + recompute locally + compare");
+  console.log("  credit <url> <id>       Show Trust-as-Collateral credit line (multiplier × base)");
+  console.log("  credit-verify <url> <id>  Trustless verify: recompute the credit line locally + compare");
   console.log("  delegation <url>        Verify delegation from stdin (no platform trust)");
   console.log("  audit-chain             Verify audit log array from stdin");
   console.log("  verify-token            Verify ACT chain from stdin (Macaroon attenuation)");
@@ -376,6 +395,89 @@ async function cmdReputationVerify(url, agentId) {
   return 1;
 }
 
+async function cmdCredit(url, agentId) {
+  header(`Agent credit line — ${url}/api/identity/credit/${agentId}`);
+  const data = await fetchCreditLine(url, agentId);
+  if (!data.creditLine) {
+    info(`Agent ${agentId} has no credit line yet (cron rolls up daily after reputation is established).`);
+    return 0;
+  }
+  const cl = data.creditLine;
+  const grade = cl.letterGrade;
+  const gradeColor =
+    grade.startsWith("A") ? c.green :
+    grade.startsWith("B") ? c.cyan :
+    grade.startsWith("C") ? c.yellow :
+    c.red;
+  ok(`Grade: ${gradeColor(c.bold(grade))} (${cl.numericScore}/100)`);
+  console.log("");
+  console.log(c.bold("Credit line:"));
+  console.log(`  ${c.gray("multiplier:")} ${gradeColor(c.bold(`${cl.multiplier}×`))}`);
+  console.log(`  ${c.gray("base daily limit:")} $${(cl.baseDailyLimitCents / 100).toFixed(2)}`);
+  console.log(`  ${c.gray("effective daily limit:")} ${gradeColor(c.bold(`$${(cl.effectiveDailyLimitCents / 100).toFixed(2)}`))}`);
+  console.log(`  ${c.gray("framing:")} ${cl.framing}`);
+  console.log(`  ${c.gray("computed at:")} ${cl.computedAt}`);
+  console.log("");
+  console.log(c.bold("Trust-as-Collateral wire status:"));
+  console.log(`  ${c.gray(data.wireStatus || "R42 publishes the credit line as a SIGNAL.")}`);
+  console.log("");
+  info(
+    "Recompute locally with computeCreditLine() from @sovereign/inspector " +
+      "or run `sovereign-inspect credit-verify <url> <agentId>` to verify the math.",
+  );
+  return 0;
+}
+
+async function cmdCreditVerify(url, agentId) {
+  header(`Credit line TRUSTLESS verification — ${agentId}`);
+  info("Fetching published credit line from platform...");
+  let result;
+  try {
+    result = await verifyCreditLineLocally(url, agentId);
+  } catch (err) {
+    bad(`Failed to fetch credit line: ${err.message}`);
+    return 1;
+  }
+  if (result.match === null) {
+    info(result.note || "No credit line published yet.");
+    return 0;
+  }
+  console.log("");
+  console.log(c.bold("Platform claims:"));
+  console.log(
+    `  Grade: ${c.cyan(result.published.letterGrade)} (${result.published.numericScore}/100)`,
+  );
+  console.log(
+    `  Multiplier: ${c.cyan(`${result.published.multiplier}×`)}`,
+  );
+  console.log(
+    `  Effective daily limit: ${c.cyan(`$${(result.published.effectiveDailyLimitCents / 100).toFixed(2)}`)}`,
+  );
+  console.log("");
+  console.log(c.bold("Local recompute (your machine):"));
+  console.log(
+    `  Multiplier: ${c.cyan(`${result.recomputed.multiplier}×`)}`,
+  );
+  console.log(
+    `  Effective daily limit: ${c.cyan(`$${(result.recomputed.effectiveDailyLimitCents / 100).toFixed(2)}`)}`,
+  );
+  console.log("");
+  if (result.match) {
+    ok(c.bold("✓ MATCH — platform's credit line is mathematically correct"));
+    console.log("");
+    info(
+      "The platform did not fabricate this credit line. Same math, same answer.",
+    );
+    return 0;
+  }
+  bad(c.bold("✗ MISMATCH — platform's published credit line is fabricated"));
+  console.log("");
+  console.log(c.red("This credit line cannot be trusted. Report:"));
+  console.log(`  Published effective: $${(result.published.effectiveDailyLimitCents / 100).toFixed(2)}`);
+  console.log(`  Recomputed effective: $${(result.recomputed.effectiveDailyLimitCents / 100).toFixed(2)}`);
+  return 1;
+}
+
 async function cmdVerifyToken() {
   header("ACT chain verification (LOCAL — Macaroon-pattern attenuation)");
   const stdin = readFileSync(0, "utf8");
@@ -602,6 +704,18 @@ async function main() {
         return 2;
       }
       return cmdReputationVerify(argv[1], argv[2]);
+    case "credit":
+      if (!argv[1] || !argv[2]) {
+        bad("usage: sovereign-inspect credit <url> <agentId>");
+        return 2;
+      }
+      return cmdCredit(argv[1], argv[2]);
+    case "credit-verify":
+      if (!argv[1] || !argv[2]) {
+        bad("usage: sovereign-inspect credit-verify <url> <agentId>");
+        return 2;
+      }
+      return cmdCreditVerify(argv[1], argv[2]);
     default:
       bad(`Unknown command: ${cmd}`);
       printUsage();

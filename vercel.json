@@ -80,6 +80,10 @@
     {
       "path": "/api/cron/rollup-agent-reputation",
       "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/cron/rollup-agent-credit",
+      "schedule": "30 5 * * *"
     }
   ],
   "headers": [

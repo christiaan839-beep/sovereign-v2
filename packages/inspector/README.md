@@ -48,6 +48,19 @@ echo '{"userPublicKey":"...", "delegation":{...}}' | \
 
 # Verify an audit log array (paste from /api/admin/audit/...)
 sovereign-inspect audit-chain < audit.json
+
+# Show an agent's reputation score with full signal breakdown (R40)
+sovereign-inspect reputation https://sovereignmatrix.agency travel-agent
+
+# Trustless: fetch raw signals + recompute the score locally + compare (R41)
+sovereign-inspect reputation-verify https://sovereignmatrix.agency travel-agent
+
+# Show an agent's Trust-as-Collateral credit line (R42)
+sovereign-inspect credit https://sovereignmatrix.agency travel-agent
+
+# Trustless: recompute the credit line locally + compare to the
+# platform's published claim. Catches fabricated credit lines (R42).
+sovereign-inspect credit-verify https://sovereignmatrix.agency travel-agent
 ```
 
 Exit codes:
@@ -104,6 +117,25 @@ if (result.valid) {
 
 - Each row's `row_hash = sha256(prev_hash || userId || action || resource || details_canonical || createdAt_iso)`
 - Walks the entire chain forward; reports the FIRST broken row
+
+### Public agent reputation (R40 + R41 trustless loop)
+
+- Fetches raw on-chain signals (reversal rate, HITL denials, audit
+  integrity, manifest age, anomaly events) from
+  `/api/identity/reputation/<agentId>/signals`
+- Recomputes the letter grade + numeric score with the same pure
+  function the platform uses
+- Compares to the platform's published score; mismatch = fabricated
+  reputation
+
+### Trust-as-Collateral credit lines (R42)
+
+- Reputation grade modulates the daily spend cap via a canonical
+  multiplier table: A+ → 5×, A → 3×, B → 1×, F → 0.25×
+- Inspector recomputes `effectiveDailyLimitCents = round(base × multiplier)`
+  locally from the published grade + base
+- Catches fabricated credit lines (platform claiming higher autonomy
+  than the grade justifies, or vice versa)
 
 ## Why this matters
 

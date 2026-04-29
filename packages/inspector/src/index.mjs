@@ -10,3 +10,4 @@ export * from "./fetch.mjs";
 export * from "./act.mjs";
 export * from "./identity.mjs";
 export * from "./reputation.mjs";
+export * from "./credit.mjs";
