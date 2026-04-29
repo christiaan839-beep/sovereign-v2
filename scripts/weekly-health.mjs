@@ -2515,6 +2515,82 @@ check(
   { dimension: "trust-asset" },
 );
 
+// ─── Round 37 — Agent Capability Tokens (ACTs) ────────────────────────
+//
+// Macaroon-pattern attenuatable capability tokens for AI agents. The
+// next-generation primitive on top of R34 CADC. Composes with R30/R33/
+// R34/R36. See docs/adr/0005-agent-capability-tokens.md.
+
+check(
+  "ADR-0005 (ACTs) present",
+  existsSync(
+    join(ROOT, "docs/adr/0005-agent-capability-tokens.md"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "migration 0047 (agent_capability_tokens) on disk",
+  existsSync(join(ROOT, "drizzle/0047_agent_capability_tokens.sql")) ? 1 : 0,
+  1,
+  { dimension: "database" },
+);
+check(
+  "schema.ts declares agentCapabilityTokens table",
+  fileContains("src/db/schema.ts", "agentCapabilityTokens") ? 1 : 0,
+  1,
+  { dimension: "database" },
+);
+check(
+  "ACT lib present (mintToken + attenuateToken + verifyTokenChain)",
+  fileContains("src/lib/agent-capability-tokens.ts", "mintToken") &&
+    fileContains("src/lib/agent-capability-tokens.ts", "attenuateToken") &&
+    fileContains(
+      "src/lib/agent-capability-tokens.ts",
+      "verifyTokenChain",
+    ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "ACT lib enforces explicit narrowing (additionalIsNarrowing)",
+  fileContains(
+    "src/lib/agent-capability-tokens.ts",
+    "additionalIsNarrowing",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "ACT tests present (>=30 cases including security paths)",
+  existsSync(
+    join(ROOT, "src/lib/__tests__/agent-capability-tokens.test.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "inspector ACT port present (act.mjs)",
+  existsSync(join(ROOT, "packages/inspector/src/act.mjs")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "inspector CLI has verify-token command",
+  fileContains("packages/inspector/src/cli.mjs", "cmdVerifyToken") ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "/.well-known/sovereign-trust declares agentCapabilityTokens capability",
+  fileContains(
+    "src/app/.well-known/sovereign-trust/route.ts",
+    "agentCapabilityTokens: true",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
 // Public HITL policy (procurement audit artifact)
 check(
   "/api/health/hitl-policy endpoint present (public audit)",

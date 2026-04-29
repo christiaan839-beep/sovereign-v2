@@ -56,6 +56,7 @@ import {
   verifyDelegation,
   verifyAuditChain,
 } from "./verify.mjs";
+import { verifyTokenChain } from "./act.mjs";
 import {
   fetchPermanence,
   fetchHitlPolicy,
@@ -110,6 +111,7 @@ function printUsage() {
   console.log("  trace <url> <traceId>   Show anonymized public trace");
   console.log("  delegation <url>        Verify delegation from stdin (no platform trust)");
   console.log("  audit-chain             Verify audit log array from stdin");
+  console.log("  verify-token            Verify ACT chain from stdin (Macaroon attenuation)");
   console.log("");
   console.log("DOCS: https://sovereignmatrix.agency/agentic-commerce");
 }
@@ -213,6 +215,35 @@ async function cmdDelegation(_url) {
     return 0;
   }
   bad(`Delegation INVALID — ${result.reason}`);
+  return 1;
+}
+
+async function cmdVerifyToken() {
+  header("ACT chain verification (LOCAL — Macaroon-pattern attenuation)");
+  const stdin = readFileSync(0, "utf8");
+  let body;
+  try {
+    body = JSON.parse(stdin);
+  } catch (err) {
+    bad(`Invalid JSON on stdin: ${err.message}`);
+    return 2;
+  }
+  if (!body.rootIssuerPublicKey || !body.chain || !body.action) {
+    bad("stdin must be: { rootIssuerPublicKey, chain: [...], action: {...} }");
+    return 2;
+  }
+  const result = verifyTokenChain({
+    rootIssuerPublicKey: body.rootIssuerPublicKey,
+    chain: body.chain,
+    action: body.action,
+  });
+  if (result.valid) {
+    ok(`ACT chain VALID — ${body.chain.length} token(s) verified`);
+    info("Verification ran on YOUR machine — no Sovereign server involved");
+    info(`Effective caveats: ${JSON.stringify(result.effectiveCaveats)}`);
+    return 0;
+  }
+  bad(`ACT chain INVALID — ${result.reason} at token #${result.tokenIndex}`);
   return 1;
 }
 
@@ -387,6 +418,8 @@ async function main() {
       return cmdDelegation(argv[1]);
     case "audit-chain":
       return cmdAuditChain();
+    case "verify-token":
+      return cmdVerifyToken();
     default:
       bad(`Unknown command: ${cmd}`);
       printUsage();

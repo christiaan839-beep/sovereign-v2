@@ -1045,6 +1045,40 @@ export const agentActionSignatures = pgTable("agent_action_signatures", {
   index("idx_agent_action_sigs_chain").on(table.chainHash),
 ]);
 
+// Round 37 — Agent Capability Tokens (ACTs). Macaroon-pattern
+// attenuatable capability tokens. Each row is one token in a chain;
+// follow parent_id back to root for full provenance. See
+// drizzle/0047 for shape rationale, docs/adr/0005 for design.
+export const agentCapabilityTokens = pgTable("agent_capability_tokens", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  rootId: uuid("root_id"),
+  parentId: uuid("parent_id"),
+  issuerPublicKey: text("issuer_public_key").notNull(),
+  subjectPublicKey: text("subject_public_key").notNull(),
+  caveats: jsonb("caveats").$type<{
+    max_cents?: number;
+    expires_at?: string;
+    allowed_merchants?: string[];
+    allowed_actions?: string[];
+    merchant_categories?: string[];
+    [key: string]: unknown;
+  }>().notNull().default({}),
+  tokenMessage: text("token_message").notNull(),
+  signature: text("signature").notNull(),
+  chainHash: text("chain_hash").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  revokedAt: timestamp("revoked_at"),
+  revocationSignature: text("revocation_signature"),
+  auditLogId: text("audit_log_id"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_act_root").on(table.rootId, table.createdAt),
+  index("idx_act_parent").on(table.parentId),
+  uniqueIndex("idx_act_chain_hash").on(table.chainHash),
+  index("idx_act_subject_active").on(table.subjectPublicKey, table.expiresAt),
+  index("idx_act_expiry").on(table.expiresAt),
+]);
+
 // Round 33 — per-stage state for multi-stage HITL workflows.
 // One row per stage per request; engine derives parent status from
 // per-stage states. Free-form `role` text so tenants can configure
