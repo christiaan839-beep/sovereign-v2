@@ -12,6 +12,7 @@ export default defineConfig({
       "src/**/*.test.ts",
       "src/**/*.test.tsx",
       "packages/*/src/**/*.test.ts",
+      "packages/*/__tests__/**/*.test.{ts,mjs}",
     ],
     exclude: ["node_modules", ".next", "packages/*/dist"],
     coverage: {

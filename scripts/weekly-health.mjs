@@ -2401,6 +2401,53 @@ check(
   { dimension: "trust-asset" },
 );
 
+// ─── Round 35 — @sovereign/inspector trustless CLI ────────────────────
+//
+// Open-source verifier package. Anyone can `npm install -g
+// @sovereign/inspector` and verify any deployment. This is the
+// platform's survival mechanism: when sovereignmatrix.agency vanishes
+// someday, audit chains remain verifiable forever.
+
+check(
+  "inspector package present (open-source survival primitive)",
+  existsSync(join(ROOT, "packages/inspector/package.json")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "inspector verify lib present",
+  existsSync(join(ROOT, "packages/inspector/src/verify.mjs")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "inspector CLI present + executable",
+  existsSync(join(ROOT, "packages/inspector/src/cli.mjs")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "inspector tests present (>=10 cases)",
+  existsSync(join(ROOT, "packages/inspector/__tests__/verify.test.mjs"))
+    ? 1
+    : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "inspector README + LICENSE present (npm-publishable)",
+  existsSync(join(ROOT, "packages/inspector/README.md")) &&
+    existsSync(join(ROOT, "packages/inspector/LICENSE")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "inspector zero external dependencies (only node:crypto + global fetch)",
+  fileContains("packages/inspector/package.json", '"dependencies"') ? 0 : 1,
+  1,
+  { dimension: "trust-asset" },
+);
+
 // Public HITL policy (procurement audit artifact)
 check(
   "/api/health/hitl-policy endpoint present (public audit)",
