@@ -16,6 +16,7 @@
 
 import { NextResponse } from "next/server";
 import { getBankingCompliancePack } from "@/lib/vertical-packs/banking-compliance";
+import { getHealthcareClaimsPack } from "@/lib/vertical-packs/healthcare-claims";
 import type { VerticalPack } from "@/lib/vertical-packs/types";
 
 export const runtime = "nodejs";
@@ -24,6 +25,8 @@ export const revalidate = 3600;
 const PACKS: Record<string, () => VerticalPack> = {
   "banking-compliance": getBankingCompliancePack,
   "banking-compliance-v1": getBankingCompliancePack,
+  "healthcare-claims": getHealthcareClaimsPack,
+  "healthcare-claims-v1": getHealthcareClaimsPack,
 };
 
 export async function GET(

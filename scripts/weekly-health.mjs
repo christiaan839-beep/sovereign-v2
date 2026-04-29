@@ -3470,6 +3470,169 @@ check(
   { dimension: "security" },
 );
 
+// ─── Round 49 — Healthcare Compliance Pack (second product) ──────────
+
+check(
+  "Healthcare Claims Pack present (the second product)",
+  existsSync(join(ROOT, "src/lib/vertical-packs/healthcare-claims.ts"))
+    ? 1
+    : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "Healthcare pack tests present",
+  fileContains(
+    "src/lib/__tests__/healthcare-claims-pack.test.ts",
+    "HEALTHCARE_CLAIMS_PACK",
+  ) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "Healthcare pack: prior-auth denial rule cites UnitedHealthcare class action (R49 anti-drift)",
+  fileContains(
+    "src/lib/vertical-packs/healthcare-claims.ts",
+    "UnitedHealthcare",
+  ) ? 1 : 0,
+  1,
+  { dimension: "honesty" },
+);
+
+check(
+  "Healthcare pack: BAA enforcement HITL rule present (HIPAA §164.308(b))",
+  fileContains(
+    "src/lib/vertical-packs/healthcare-claims.ts",
+    "164.308(b)",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Healthcare pack: FDA 21 CFR Part 11 HITL rule present",
+  fileContains(
+    "src/lib/vertical-packs/healthcare-claims.ts",
+    "21 CFR Part 11",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Healthcare pack: default ACT scope is read-only (max_cents 0)",
+  fileContains(
+    "src/lib/vertical-packs/healthcare-claims.ts",
+    "max_cents: 0",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "Healthcare pack registered in /api/vertical-packs/[packId] router",
+  fileContains(
+    "src/app/api/vertical-packs/[packId]/route.ts",
+    "healthcare-claims",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+// ─── Round 50 — Federation v2 (cross-instance reputation) ────────────
+
+check(
+  "Federation cross-instance reputation library present",
+  existsSync(
+    join(ROOT, "src/lib/federation/cross-instance-reputation.ts"),
+  )
+    ? 1
+    : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Federation aggregator + verifier tests present",
+  fileContains(
+    "src/lib/__tests__/federation-cross-instance-reputation.test.ts",
+    "verifyFederatedReputation",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Federation aggregator uses worst-of-across-instances (conservative semantic)",
+  fileContains(
+    "src/lib/federation/cross-instance-reputation.ts",
+    "worst-of",
+  ) || fileContains(
+    "src/lib/federation/cross-instance-reputation.ts",
+    "WORST",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "GET /api/identity/reputation/[agentId]/federated endpoint present",
+  existsSync(
+    join(
+      ROOT,
+      "src/app/api/identity/reputation/[agentId]/federated/route.ts",
+    ),
+  )
+    ? 1
+    : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Federation endpoint declares peer config via env var (operator-controllable)",
+  fileContains(
+    "src/app/api/identity/reputation/[agentId]/federated/route.ts",
+    "SOVEREIGN_FEDERATION_PEERS",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+// ─── Round 51 — Request Hedging (speed primitive) ────────────────────
+
+check(
+  "Request-hedging speed primitive present",
+  existsSync(join(ROOT, "src/lib/reliability/request-hedging.ts")) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "Request-hedging tests present (>=10 cases)",
+  fileContains(
+    "src/lib/__tests__/reliability-request-hedging.test.ts",
+    "HedgeTimeoutError",
+  ) && fileContains(
+    "src/lib/__tests__/reliability-request-hedging.test.ts",
+    "HedgeAllFailedError",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "Hedging policy: smart mode declines hedge when primary is already fast (cost discipline)",
+  fileContains(
+    "src/lib/reliability/request-hedging.ts",
+    "primary_already_fast",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
 // Public HITL policy (procurement audit artifact)
 check(
   "/api/health/hitl-policy endpoint present (public audit)",
