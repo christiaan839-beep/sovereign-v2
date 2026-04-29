@@ -2331,6 +2331,76 @@ check(
   { dimension: "security" },
 );
 
+// ─── Round 34 — Cryptographic Agent Delegation Chain (CADC) ──────────
+//
+// The trust primitive nobody else has shipped. Ed25519-signed
+// delegations + per-action signatures + chain hashing, verifiable
+// by any third party WITHOUT trusting Sovereign servers.
+
+check(
+  "migration 0046 (agent delegations) on disk",
+  existsSync(join(ROOT, "drizzle/0046_agent_delegations.sql")) ? 1 : 0,
+  1,
+  { dimension: "database" },
+);
+check(
+  "schema.ts declares userSigningKeys + agentDelegations + agentActionSignatures",
+  fileContains("src/db/schema.ts", "userSigningKeys") &&
+    fileContains("src/db/schema.ts", "agentDelegations") &&
+    fileContains("src/db/schema.ts", "agentActionSignatures") ? 1 : 0,
+  1,
+  { dimension: "database" },
+);
+check(
+  "agent-delegation crypto lib present",
+  existsSync(join(ROOT, "src/lib/agent-delegation.ts")) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "agent-delegation uses Ed25519 (node:crypto)",
+  fileContains("src/lib/agent-delegation.ts", '"ed25519"') ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "agent-delegation uses canonical JSON for hashing (key-order safety)",
+  fileContains("src/lib/agent-delegation.ts", "canonicalJsonStringify") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "agent-delegation tests present (>=25 cases)",
+  existsSync(join(ROOT, "src/lib/__tests__/agent-delegation.test.ts")) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "/api/health/verify-delegation public endpoint present (third-party verifier)",
+  existsSync(
+    join(ROOT, "src/app/api/_health/verify-delegation/route.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "/api/health/verify-delegation public re-export present",
+  existsSync(
+    join(ROOT, "src/app/api/health/verify-delegation/route.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "verify-delegation endpoint claims 'not a required trust anchor' (positioning)",
+  fileContains(
+    "src/app/api/_health/verify-delegation/route.ts",
+    "not a required trust anchor",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
 // Public HITL policy (procurement audit artifact)
 check(
   "/api/health/hitl-policy endpoint present (public audit)",

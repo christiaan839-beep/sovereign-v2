@@ -987,6 +987,64 @@ export const hitlApprovals = pgTable("hitl_approvals", {
   index("idx_hitl_approvals_user_status").on(table.userId, table.status, table.createdAt),
 ]);
 
+// Round 34 — Cryptographic Agent Delegation Chain (CADC). User's
+// Ed25519 public keys, registered for signing agent delegations.
+export const userSigningKeys = pgTable("user_signing_keys", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull(),
+  publicKey: text("public_key").notNull(),
+  label: text("label"),
+  isPrimary: boolean("is_primary").notNull().default(false),
+  retiredAt: timestamp("retired_at"),
+  retireReason: text("retire_reason"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_user_signing_keys_user").on(table.userId, table.retiredAt),
+  uniqueIndex("idx_user_signing_keys_pubkey").on(table.publicKey),
+]);
+
+// Round 34 — A user grants an agent the right to act on their behalf,
+// scoped by JSON, expiring at a date. Signed by user; verifiable by
+// any third party. Kill-switch: revocation is itself a signed message.
+export const agentDelegations = pgTable("agent_delegations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull(),
+  agentName: text("agent_name").notNull(),
+  signingKeyId: uuid("signing_key_id").notNull(),
+  agentPublicKey: text("agent_public_key").notNull(),
+  scope: jsonb("scope").$type<Record<string, unknown>>().notNull().default({}),
+  delegationMessage: text("delegation_message").notNull(),
+  userSignature: text("user_signature").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  revokedAt: timestamp("revoked_at"),
+  revocationMessage: text("revocation_message"),
+  revocationSignature: text("revocation_signature"),
+  auditLogId: text("audit_log_id"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_agent_delegations_user").on(table.userId, table.expiresAt),
+  index("idx_agent_delegations_agent_active").on(table.agentName, table.expiresAt),
+  index("idx_agent_delegations_pubkey").on(table.agentPublicKey),
+]);
+
+// Round 34 — Per-action signatures. Each agent action is hash-chained
+// with sha256(prev_hash || action_digest || agent_signature), creating
+// an immutable proof-of-action trail that verifies independently of
+// the platform's word.
+export const agentActionSignatures = pgTable("agent_action_signatures", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  delegationId: uuid("delegation_id").notNull(),
+  actionDigest: text("action_digest").notNull(),
+  agentSignature: text("agent_signature").notNull(),
+  chainHash: text("chain_hash").notNull(),
+  auditLogId: text("audit_log_id"),
+  executionAuditId: text("execution_audit_id"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_agent_action_sigs_delegation").on(table.delegationId, table.createdAt),
+  index("idx_agent_action_sigs_chain").on(table.chainHash),
+]);
+
 // Round 33 — per-stage state for multi-stage HITL workflows.
 // One row per stage per request; engine derives parent status from
 // per-stage states. Free-form `role` text so tenants can configure
