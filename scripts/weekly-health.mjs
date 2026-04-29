@@ -2448,6 +2448,73 @@ check(
   { dimension: "trust-asset" },
 );
 
+// ─── Round 36 — Federation primitive (the next-level move) ───────────
+//
+// /.well-known/sovereign-trust is the discovery seed for federated
+// agent trust. Other instances can publish their own; the inspector
+// crawls them; we become the network, not just a node.
+
+check(
+  "/.well-known/sovereign-trust discovery file present",
+  existsSync(
+    join(ROOT, "src/app/.well-known/sovereign-trust/route.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "discovery file declares capabilities (auditChain, delegationChain, multiStageHitl)",
+  fileContains(
+    "src/app/.well-known/sovereign-trust/route.ts",
+    "auditChain: true",
+  ) &&
+    fileContains(
+      "src/app/.well-known/sovereign-trust/route.ts",
+      "delegationChain: true",
+    ) &&
+    fileContains(
+      "src/app/.well-known/sovereign-trust/route.ts",
+      "multiStageHitl: true",
+    )
+    ? 1
+    : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "discovery file links to @sovereign/inspector npm package",
+  fileContains(
+    "src/app/.well-known/sovereign-trust/route.ts",
+    "@sovereign/inspector",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "inspector fetcher has fetchTrustDiscovery + crawlFederation",
+  fileContains(
+    "packages/inspector/src/fetch.mjs",
+    "fetchTrustDiscovery",
+  ) &&
+    fileContains(
+      "packages/inspector/src/fetch.mjs",
+      "crawlFederation",
+    )
+    ? 1
+    : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "inspector CLI has identify + federation commands",
+  fileContains("packages/inspector/src/cli.mjs", "cmdIdentify") &&
+    fileContains("packages/inspector/src/cli.mjs", "cmdFederation")
+    ? 1
+    : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
 // Public HITL policy (procurement audit artifact)
 check(
   "/api/health/hitl-policy endpoint present (public audit)",

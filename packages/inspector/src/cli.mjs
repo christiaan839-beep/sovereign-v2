@@ -61,6 +61,8 @@ import {
   fetchHitlPolicy,
   fetchDiagnose,
   fetchTrace,
+  fetchTrustDiscovery,
+  crawlFederation,
 } from "./fetch.mjs";
 import { readFileSync } from "node:fs";
 
@@ -100,6 +102,8 @@ function printUsage() {
   console.log("");
   console.log("COMMANDS:");
   console.log("  full <url>              Run all checks against a deployment");
+  console.log("  identify <url>          Fetch /.well-known/sovereign-trust");
+  console.log("  federation <url>        Crawl federation graph from a seed");
   console.log("  permanence <url>        Show permanence snapshot");
   console.log("  policy <url>            Show SHIPPED HITL routing rules");
   console.log("  diagnose <url>          Show deploy diagnostic");
@@ -238,6 +242,59 @@ async function cmdAuditChain() {
   return 1;
 }
 
+async function cmdIdentify(url) {
+  header(`Trust discovery — ${url}/.well-known/sovereign-trust`);
+  const doc = await fetchTrustDiscovery(url);
+  ok(`Instance: ${doc.identity.name}`);
+  console.log(`  ${c.gray(doc.identity.canonicalUrl)}`);
+  console.log(`  ${c.gray(doc.identity.description.slice(0, 100))}…`);
+  ok(`Spec version: ${doc.$schema?.split("/").pop() ?? "unknown"}`);
+  if (doc.identity.keyFingerprint) {
+    ok(`Key fingerprint: ${doc.identity.keyFingerprint}`);
+  } else {
+    info("No platform-level signing key fingerprint (R34 keys are per-user)");
+  }
+  console.log("");
+  console.log(c.bold("Capabilities:"));
+  for (const [cap, supported] of Object.entries(doc.capabilities ?? {})) {
+    (supported ? ok : bad)(`  ${cap}`);
+  }
+  console.log("");
+  console.log(c.bold("Verifier:"));
+  ok(`  npm: ${doc.verifier.npmPackage}`);
+  console.log(`  ${c.gray(doc.verifier.install)}`);
+  console.log(`  ${c.gray("source: " + doc.verifier.source)}`);
+  console.log("");
+  console.log(c.bold("Federation peers:"));
+  if (!doc.federation.peers || doc.federation.peers.length === 0) {
+    info("  (none yet — single-instance trust root)");
+  } else {
+    for (const peer of doc.federation.peers) console.log(`  ${peer}`);
+  }
+  console.log("");
+  console.log(c.bold("Stats:"));
+  console.log(`  ${doc.stats.agents} agents · ${doc.stats.models} models`);
+  return 0;
+}
+
+async function cmdFederation(url) {
+  header(`Federation crawl — starting at ${url}`);
+  const graph = await crawlFederation(url, { maxDepth: 3, maxNodes: 32 });
+  const nodes = Object.entries(graph);
+  ok(`Discovered ${nodes.length} instance(s) in the federation graph`);
+  for (const [canonicalUrl, doc] of nodes) {
+    if (doc.error) {
+      bad(`  ${canonicalUrl} — ${doc.error}`);
+      continue;
+    }
+    const peers = doc?.federation?.peers ?? [];
+    console.log(
+      `  ${c.cyan(canonicalUrl)} ${c.gray(`(${peers.length} peer${peers.length === 1 ? "" : "s"})`)}`,
+    );
+  }
+  return 0;
+}
+
 async function cmdFull(url) {
   let exit = 0;
   try {
@@ -290,6 +347,18 @@ async function main() {
         return 2;
       }
       return cmdFull(argv[1]);
+    case "identify":
+      if (!argv[1]) {
+        bad("usage: sovereign-inspect identify <url>");
+        return 2;
+      }
+      return cmdIdentify(argv[1]);
+    case "federation":
+      if (!argv[1]) {
+        bad("usage: sovereign-inspect federation <url>");
+        return 2;
+      }
+      return cmdFederation(argv[1]);
     case "permanence":
       if (!argv[1]) {
         bad("usage: sovereign-inspect permanence <url>");
