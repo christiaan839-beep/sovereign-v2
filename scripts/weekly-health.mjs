@@ -4268,6 +4268,193 @@ check(
   { dimension: "trust-asset" },
 );
 
+// ─── Round 71 — Guardrails Adapter Framework ────────────────────────
+
+check(
+  "Guardrails adapter framework present (R71 — BYO open-source security)",
+  existsSync(join(ROOT, "src/lib/guardrails/guardrails-adapter.ts")) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "Guardrails framework exposes composeVerdicts pure function (any-block semantics)",
+  fileContains(
+    "src/lib/guardrails/guardrails-adapter.ts",
+    "composeVerdicts",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "Guardrails framework ships NeMo + OpenGuardrails + LlamaFirewall skeletons",
+  fileContains(
+    "src/lib/guardrails/guardrails-adapter.ts",
+    "NEMO_GUARDRAILS_SKELETON",
+  ) && fileContains(
+    "src/lib/guardrails/guardrails-adapter.ts",
+    "OPENGUARDRAILS_SKELETON",
+  ) && fileContains(
+    "src/lib/guardrails/guardrails-adapter.ts",
+    "LLAMA_FIREWALL_SKELETON",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Guardrails framework: StubGuardrailsAdapter fails closed (anti-misconfig)",
+  fileContains(
+    "src/lib/guardrails/guardrails-adapter.ts",
+    "operators must implement",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "Guardrails framework tests cover composite verdict + classifyGuardrailHealth",
+  fileContains(
+    "src/lib/__tests__/guardrails-adapter.test.ts",
+    "composeVerdicts",
+  ) && fileContains(
+    "src/lib/__tests__/guardrails-adapter.test.ts",
+    "classifyGuardrailHealth",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+// ─── Round 72 — Workforce Transformation Audit Pack ─────────────────
+
+check(
+  "Workforce Transformation Pack present (6th vertical product)",
+  existsSync(
+    join(ROOT, "src/lib/vertical-packs/workforce-transformation.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "Workforce pack: 3-signature requirement on elimination decisions",
+  fileContains(
+    "src/lib/vertical-packs/workforce-transformation.ts",
+    "requiredApprovers: 3",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Workforce pack: Forrester anti-AI-washing citation (anti-slop guard)",
+  fileContains(
+    "src/lib/vertical-packs/workforce-transformation.ts",
+    "Forrester",
+  ) && fileContains(
+    "src/lib/__tests__/workforce-transformation-pack.test.ts",
+    "Forrester",
+  ) ? 1 : 0,
+  1,
+  { dimension: "honesty" },
+);
+
+check(
+  "Workforce pack: ADEA + Title VII case-law citations (Smith v. Jackson, Wards Cove)",
+  fileContains(
+    "src/lib/vertical-packs/workforce-transformation.ts",
+    "Smith v. City of Jackson",
+  ) && fileContains(
+    "src/lib/vertical-packs/workforce-transformation.ts",
+    "Wards Cove",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Workforce pack: WARN Act federal + state mini-WARN citations",
+  fileContains(
+    "src/lib/vertical-packs/workforce-transformation.ts",
+    "WARN Act 29 USC 2101",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Workforce pack: NLRA §8(a)(5) + First National Maintenance citations",
+  fileContains(
+    "src/lib/vertical-packs/workforce-transformation.ts",
+    "First National Maintenance",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Workforce pack registered in /api/vertical-packs/[packId] router",
+  fileContains(
+    "src/app/api/vertical-packs/[packId]/route.ts",
+    "workforce-transformation",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Workforce pack PASSES the R63 pack validator (regression-proof)",
+  fileContains(
+    "src/lib/__tests__/workforce-transformation-pack.test.ts",
+    "PASSES the R63 pack validator",
+  ) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+// ─── CSA Agentic Trust Framework Mapping doc ─────────────────────────
+
+check(
+  "CSA-ATF mapping doc present (procurement standards-alignment)",
+  existsSync(
+    join(ROOT, "docs/CSA-AGENTIC-TRUST-FRAMEWORK-MAPPING.md"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "CSA-ATF doc covers all 8 control families",
+  fileContains("docs/CSA-AGENTIC-TRUST-FRAMEWORK-MAPPING.md", "Family 1:") &&
+    fileContains(
+      "docs/CSA-AGENTIC-TRUST-FRAMEWORK-MAPPING.md",
+      "Family 8:",
+    ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "CSA-ATF doc includes inspector verification commands per family",
+  fileContains(
+    "docs/CSA-AGENTIC-TRUST-FRAMEWORK-MAPPING.md",
+    "@sovereign/inspector",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "CSA-ATF doc includes honest 'what's PARTIAL' disclosure",
+  fileContains(
+    "docs/CSA-AGENTIC-TRUST-FRAMEWORK-MAPPING.md",
+    "What's PARTIAL",
+  ) ? 1 : 0,
+  1,
+  { dimension: "honesty" },
+);
+
 // Public HITL policy (procurement audit artifact)
 check(
   "/api/health/hitl-policy endpoint present (public audit)",
