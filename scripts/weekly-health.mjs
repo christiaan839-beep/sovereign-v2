@@ -4954,6 +4954,106 @@ check(
   { dimension: "process" },
 );
 
+// ─── R91 — Agentic Commerce Authorization Token (ACAT) ─────────────
+// The cryptographic substrate that lets Stripe, Visa, Mastercard,
+// Shopify, Amazon, etc. verify agent authorization OFFLINE without
+// trusting Sovereign. Sister doc: docs/AGENTIC-COMMERCE-LEADERSHIP.md.
+
+check(
+  "ACAT primitive present (R91 — Agentic Commerce Authorization Token)",
+  existsSync(join(ROOT, "src/lib/agentic-commerce/acat.ts")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "ACAT primitive has unit tests (R91)",
+  existsSync(join(ROOT, "src/lib/__tests__/acat.test.ts")) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "ACAT enforces Macaroon-pattern narrowing-only attenuation",
+  fileContains(
+    "src/lib/agentic-commerce/acat.ts",
+    "additionalCaveatIsNarrowing",
+  ) &&
+    fileContains(
+      "src/lib/agentic-commerce/acat.ts",
+      "would_widen",
+    ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "ACAT verifyACAT exposes all 12 distinct failure reasons (procurement)",
+  fileContains("src/lib/agentic-commerce/acat.ts", "message_mismatch") &&
+    fileContains("src/lib/agentic-commerce/acat.ts", "signature_invalid") &&
+    fileContains("src/lib/agentic-commerce/acat.ts", "user_pubkey_mismatch") &&
+    fileContains("src/lib/agentic-commerce/acat.ts", "scope_violation") &&
+    fileContains("src/lib/agentic-commerce/acat.ts", "merchant_not_allowed") &&
+    fileContains("src/lib/agentic-commerce/acat.ts", "category_excluded") &&
+    fileContains("src/lib/agentic-commerce/acat.ts", "category_not_allowed") &&
+    fileContains("src/lib/agentic-commerce/acat.ts", "single_use_consumed") &&
+    fileContains("src/lib/agentic-commerce/acat.ts", "chain_hash_mismatch") &&
+    fileContains("src/lib/agentic-commerce/acat.ts", "amount_exceeds_scope") &&
+    fileContains("src/lib/agentic-commerce/acat.ts", "not_yet_valid") &&
+    fileContains("src/lib/agentic-commerce/acat.ts", "expired") ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "ACAT chain hash uses GENESIS sentinel + sha256 (matches R26 / R37 pattern)",
+  fileContains("src/lib/agentic-commerce/acat.ts", "GENESIS") &&
+    fileContains("src/lib/agentic-commerce/acat.ts", "computeACATChainHash") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "ACAT HTTP transport helpers present (encode + decode for header transit)",
+  fileContains(
+    "src/lib/agentic-commerce/acat.ts",
+    "encodeACATForHeader",
+  ) &&
+    fileContains(
+      "src/lib/agentic-commerce/acat.ts",
+      "decodeACATFromHeader",
+    ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "ACAT receipt summary present (procurement-readable for R45 export)",
+  fileContains(
+    "src/lib/agentic-commerce/acat.ts",
+    "summarizeACATForReceipt",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Agentic Commerce Leadership doc present (procurement positioning)",
+  existsSync(join(ROOT, "docs/AGENTIC-COMMERCE-LEADERSHIP.md")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Leadership doc cites real market events (Stripe, Visa, Mastercard launches)",
+  fileContains("docs/AGENTIC-COMMERCE-LEADERSHIP.md", "Stripe") &&
+    fileContains("docs/AGENTIC-COMMERCE-LEADERSHIP.md", "Visa Intelligent Commerce") &&
+    fileContains("docs/AGENTIC-COMMERCE-LEADERSHIP.md", "Mastercard") &&
+    fileContains("docs/AGENTIC-COMMERCE-LEADERSHIP.md", "Macaroon") ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
 // Public HITL policy (procurement audit artifact)
 check(
   "/api/health/hitl-policy endpoint present (public audit)",
