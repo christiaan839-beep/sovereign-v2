@@ -4130,6 +4130,144 @@ check(
   { dimension: "trust-asset" },
 );
 
+// ─── Round 70 — Crew Orchestration Protocol ──────────────────────────
+
+check(
+  "Crew orchestration protocol library present (R70)",
+  existsSync(join(ROOT, "src/lib/orchestration/crew-protocol.ts")) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "Crew protocol tests cover handoff legality + stakes classification",
+  fileContains(
+    "src/lib/__tests__/crew-protocol.test.ts",
+    "validateHandoff",
+  ) && fileContains(
+    "src/lib/__tests__/crew-protocol.test.ts",
+    "classifyCrewStakes",
+  ) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "Crew protocol enforces hitlOnEveryHandoff for regulated stakes (R33 composition)",
+  fileContains(
+    "src/lib/orchestration/crew-protocol.ts",
+    "hitlOnEveryHandoff",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "Crew protocol records configHash on every step (replay-safety)",
+  fileContains(
+    "src/lib/orchestration/crew-protocol.ts",
+    "crewConfigHash",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+// ─── Round 63 — Pack Authoring SDK + Validator ──────────────────────
+
+check(
+  "Pack authoring SDK / validator present (R63)",
+  existsSync(join(ROOT, "src/lib/vertical-packs/pack-validator.ts")) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "Pack validator declares PACK_SAFETY_INVARIANTS",
+  fileContains(
+    "src/lib/vertical-packs/pack-validator.ts",
+    "PACK_SAFETY_INVARIANTS",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "Pack validator enforces read-only-by-default ACT scope (the killer invariant)",
+  fileContains(
+    "src/lib/vertical-packs/pack-validator.ts",
+    "READ_ONLY_DEFAULT_ACT_SCOPE",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "Pack validator regression-tests all in-source packs",
+  fileContains(
+    "src/lib/__tests__/pack-validator.test.ts",
+    "all 5 in-source packs pass the validator",
+  ) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "Pack validator: banned-agent keyword check (jailbreak/exploit/deepfake/etc.)",
+  fileContains(
+    "src/lib/vertical-packs/pack-validator.ts",
+    "BANNED_AGENT_KEYWORDS",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "Pack validator: HITL rule citation requirement (anti-slop)",
+  fileContains(
+    "src/lib/vertical-packs/pack-validator.ts",
+    "HITL_RULES_HAVE_CITATIONS",
+  ) ? 1 : 0,
+  1,
+  { dimension: "honesty" },
+);
+
+// ─── Agent Development Lifecycle (ADLC) framework doc ────────────────
+
+check(
+  "Sovereign ADLC framework doc present (thought leadership)",
+  existsSync(join(ROOT, "docs/AGENT-DEVELOPMENT-LIFECYCLE.md")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "ADLC declares 7 lifecycle stages",
+  fileContains("docs/AGENT-DEVELOPMENT-LIFECYCLE.md", "Stage 1") &&
+    fileContains("docs/AGENT-DEVELOPMENT-LIFECYCLE.md", "Stage 7") ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "ADLC maps each stage to reference primitives (file paths)",
+  fileContains(
+    "docs/AGENT-DEVELOPMENT-LIFECYCLE.md",
+    "stage-to-primitive mapping",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "ADLC published under CC-BY 4.0 (open framework)",
+  fileContains(
+    "docs/AGENT-DEVELOPMENT-LIFECYCLE.md",
+    "CC-BY 4.0",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
 // Public HITL policy (procurement audit artifact)
 check(
   "/api/health/hitl-policy endpoint present (public audit)",
