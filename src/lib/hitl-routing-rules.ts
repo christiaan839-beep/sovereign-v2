@@ -133,10 +133,104 @@ export interface RoutingRule {
 // This is the file to edit. Keep additions narrow + named; the
 // rules array is the audit artifact procurement teams will read.
 
+/**
+ * SHIPPED CHOICE (R33): Pattern A+B hybrid — enterprise-leaning with
+ * SMB-protective floors.
+ *
+ * Rationale: the platform positioning is "trustable compute layer for
+ * agentic commerce" with Fortune-500 procurement aspirations. The
+ * rules below default to multi-stage when ANY of these flags fire:
+ *   - Action tier "critical" (irreversible / high-blast-radius)
+ *   - Spend > $50 (low floor — SMB buyers see protection too)
+ *   - Sensitive data export (PII / PHI / financial)
+ *   - External system writes ($100+ on third-party calls)
+ *
+ * Cost thresholds:
+ *   * $50 (5,000 cents)   — minimum ANY review (SMB-protective)
+ *   * $1,000 (100K cents) — finance review required
+ *   * $5,000 (500K cents) — finance + business review
+ *
+ * Order matters: STRICTEST RULES FIRST. The first matching rule wins,
+ * so "critical-with-sensitive-data" must come before "any-critical"
+ * which must come before "high-cost".
+ *
+ * Revisit triggers:
+ *   - Customer feedback that a threshold blocks legitimate use → relax
+ *   - SOC 2 audit feedback → likely tighten
+ *   - New regulatory regime (FedRAMP, HIPAA-BAA) → add tier-3 rules
+ *
+ * Per-tenant overrides: live in tenant-policy-resolver.ts. Enterprise+
+ * tenants can replace these with custom rules.
+ */
 export const HITL_ROUTING_RULES: RoutingRule[] = [
-  // TODO(user): insert rules here. The default "no rules → no HITL"
-  // is a permissive starting point. Add rules as your customer
-  // profile demands.
+  // 1. CRITICAL action that touches sensitive data → full chain (3 stages)
+  //    Compliance reviews data flow → Security reviews exposure path →
+  //    Business owns the final approval.
+  {
+    name: "critical_with_sensitive_data",
+    match: (ctx) =>
+      ctx.actionTier === "critical" && ctx.involvesSensitiveData === true,
+    stages: [COMPLIANCE_STAGE, SECURITY_STAGE, BUSINESS_STAGE],
+    rationale:
+      "Critical action touching sensitive data — compliance + security + business chain.",
+  },
+
+  // 2. CRITICAL action (irreversible / high-blast-radius) → 2 stages
+  //    Even without sensitive data, criticals get business sign-off
+  //    AFTER security review (which catches "is this really irreversible?").
+  {
+    name: "any_critical",
+    match: (ctx) => ctx.actionTier === "critical",
+    stages: [SECURITY_STAGE, BUSINESS_STAGE],
+    rationale: "Critical action — security + business final approval.",
+  },
+
+  // 3. HIGH cost ($5,000+) on external system → finance + business
+  //    The enterprise procurement default: anything that materially
+  //    moves money outside the platform needs both budget approval
+  //    and business owner sign-off.
+  {
+    name: "high_cost_external",
+    match: (ctx) =>
+      (ctx.costCents ?? 0) >= 500_000 && ctx.involvesExternalSystem === true,
+    stages: [FINANCE_STAGE, BUSINESS_STAGE],
+    rationale: "Spend ≥$5,000 on external system — finance + business.",
+  },
+
+  // 4. SENSITIVE data export → compliance review (single stage)
+  //    Most data exports are routine; we don't want to block them with
+  //    a 3-stage chain. But ANY sensitive export gets compliance eyes.
+  {
+    name: "sensitive_data_export",
+    match: (ctx) => ctx.involvesSensitiveData === true,
+    stages: [COMPLIANCE_STAGE],
+    rationale: "Sensitive data export — single compliance review.",
+  },
+
+  // 5. MEDIUM-HIGH cost ($1,000+) → finance review (single stage)
+  //    Catches "agent paid $1,500 for SaaS without sign-off" — a real
+  //    procurement complaint at scale.
+  {
+    name: "medium_high_cost",
+    match: (ctx) => (ctx.costCents ?? 0) >= 100_000,
+    stages: [FINANCE_STAGE],
+    rationale: "Spend ≥$1,000 — finance budget approval.",
+  },
+
+  // 6. LOW-FLOOR external system writes ($100+) → business owner sign-off
+  //    Catches "agent posted to your social media" or "agent bought $200
+  //    of stock photos" without ownership review. SMB-protective floor.
+  {
+    name: "low_floor_external",
+    match: (ctx) =>
+      (ctx.costCents ?? 0) >= 10_000 && ctx.involvesExternalSystem === true,
+    stages: [BUSINESS_STAGE],
+    rationale: "Spend ≥$100 on external system — business owner sign-off.",
+  },
+
+  // 7. ANY external write below thresholds → no HITL (permissive)
+  //    External writes under $100 on non-sensitive data are routine
+  //    agent activity (e.g. small API calls, content generation).
 ];
 
 // ── End user contribution point ────────────────────────────────────

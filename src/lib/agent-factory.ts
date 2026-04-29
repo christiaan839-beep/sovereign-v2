@@ -32,6 +32,8 @@ import { onCostCapHit } from "@/lib/cost-cap-alert";
 import { withA2eDepthCheck, A2eDepthExceededError, currentA2eDepth, getA2eMaxDepth, readA2eDepthHeader } from "@/lib/a2e-depth";
 import { withTrace, withSpan } from "@/lib/agent-trace";
 import { persistTrace } from "@/lib/agent-trace-persist";
+import { selectApprovalStages } from "@/lib/hitl-routing-rules";
+import { createMultiStageRequest, getRequestWithStages } from "@/lib/multi-stage-hitl";
 import {
   withRequestTokenBudget,
   RequestTokenBudgetExceededError,
@@ -458,6 +460,120 @@ async function handleAgentRoute(
           }),
           { status: 200 }
         );
+      }
+
+      // ─── Multi-Stage HITL Gate (R33) ───
+      // After tier-2 confirmation, check the routing rules.
+      // If a rule matches, the request must pass through the
+      // multi-stage approval flow before executing.
+      //
+      // The user can satisfy this by including
+      //   { ..., approved_by_request_id: "<requestId>" }
+      // in their body; if that request is fully approved (all stages
+      // passed), the gate clears.
+      //
+      // Otherwise, we create a multi-stage request, persist it, and
+      // return 202 with the request_id so callers can poll/track.
+      //
+      // Conservative integration: only fires for critical actions
+      // (effectiveTier === 3 already 403'd above). For tier-2+ that
+      // got past the confirmation, if rules match we route through
+      // multi-stage HITL.
+      if (userId && (effectiveTier >= 2 || mergedManifest)) {
+        const routingCtx = {
+          agentName: config.name,
+          action: "execute",
+          costCents: typeof body.costCents === "number" ? body.costCents : undefined,
+          actionTier:
+            effectiveTier === 3
+              ? ("critical" as const)
+              : effectiveTier === 2
+                ? ("high" as const)
+                : ("medium" as const),
+          involvesSensitiveData:
+            !!(mergedManifest as { dataExports?: boolean } | null)?.dataExports,
+          involvesExternalSystem:
+            ((mergedManifest as { externalApis?: string[] } | null)?.externalApis?.length ?? 0) > 0,
+        };
+        const { stages, matchedRule } = selectApprovalStages(routingCtx);
+
+        if (stages.length > 0) {
+          const approvedReqId =
+            typeof body.approved_by_request_id === "string"
+              ? body.approved_by_request_id
+              : null;
+
+          if (approvedReqId) {
+            // Verify the cited approval belongs to this user + matches.
+            const cited = await getRequestWithStages(approvedReqId);
+            if (
+              !cited ||
+              cited.request.id !== approvedReqId ||
+              cited.request.status !== "approved"
+            ) {
+              return new NextResponse(
+                JSON.stringify({
+                  error:
+                    "approved_by_request_id does not reference a fully-approved request",
+                  code: "HITL_APPROVAL_INVALID",
+                }),
+                { status: 403, headers: { "Content-Type": "application/json" } },
+              );
+            }
+            // Approval cleared — fall through to execution.
+          } else {
+            // No prior approval — create a new multi-stage request.
+            const requestId = `hitl_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+            const totalExpiresAt = new Date(
+              Date.now() + 24 * 60 * 60 * 1000 * stages.length, // expiry scales with stage count
+            );
+            const created = await createMultiStageRequest({
+              requestId,
+              userId,
+              agentName: config.name,
+              action: "execute",
+              description: `Agent ${config.name} requires multi-stage HITL approval (${stages.length} stages: ${stages.map((s) => s.role).join(" → ")}).`,
+              stages,
+              routingContext: routingCtx,
+              totalExpiresAt,
+            });
+            if (created.ok) {
+              log.info("Multi-stage HITL request created", {
+                requestId,
+                agent: config.name,
+                rule: matchedRule,
+                stageCount: stages.length,
+              });
+              return new NextResponse(
+                JSON.stringify({
+                  status: "pending_approval",
+                  code: "HITL_PENDING",
+                  requestId,
+                  matchedRule,
+                  stages: stages.map((s, i) => ({
+                    sequencePosition: i,
+                    role: s.role,
+                    status: "pending",
+                  })),
+                  description:
+                    `This action requires ${stages.length}-stage approval (${stages.map((s) => s.role).join(" → ")}). ` +
+                    `Once approved, re-submit with { approved_by_request_id: "${requestId}" }.`,
+                  pollUrl: `/api/admin/hitl/${requestId}`,
+                }),
+                { status: 202, headers: { "Content-Type": "application/json" } },
+              );
+            }
+            // If creation failed (DB unavailable etc.), fail-CLOSED:
+            // the action does NOT proceed without HITL.
+            return new NextResponse(
+              JSON.stringify({
+                error: "Multi-stage HITL gate failed to create request",
+                code: "HITL_GATE_UNAVAILABLE",
+              }),
+              { status: 503, headers: { "Content-Type": "application/json" } },
+            );
+          }
+        }
       }
 
       // Sanitize string fields

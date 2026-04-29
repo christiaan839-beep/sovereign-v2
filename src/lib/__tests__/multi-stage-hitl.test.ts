@@ -249,3 +249,99 @@ describe("hitl-routing-rules — selectApprovalStages", () => {
     expect(r.matchedRule).toBeNull();
   });
 });
+
+// ─── R33 SHIPPED RULES — per-rule regression tests ─────────────────
+//
+// One test per rule. If ANY rule's behavior changes (or the rules are
+// reordered, breaking strictest-first), CI fails. The test names match
+// the rule names so a failure points directly at the violated rule.
+
+describe("hitl-routing-rules — SHIPPED rules behavior", () => {
+  function ctx(p: Partial<RoutingContext> = {}): RoutingContext {
+    return {
+      agentName: "test-agent",
+      action: "test-action",
+      ...p,
+    };
+  }
+
+  it("rule[critical_with_sensitive_data]: 3-stage chain", () => {
+    const r = selectApprovalStages(
+      ctx({ actionTier: "critical", involvesSensitiveData: true }),
+    );
+    expect(r.matchedRule).toBe("critical_with_sensitive_data");
+    expect(r.stages).toHaveLength(3);
+    expect(r.stages.map((s) => s.role)).toEqual([
+      "compliance",
+      "security",
+      "business",
+    ]);
+  });
+
+  it("rule[any_critical]: 2-stage chain (no sensitive data)", () => {
+    const r = selectApprovalStages(
+      ctx({ actionTier: "critical", involvesSensitiveData: false }),
+    );
+    expect(r.matchedRule).toBe("any_critical");
+    expect(r.stages.map((s) => s.role)).toEqual(["security", "business"]);
+  });
+
+  it("rule[high_cost_external]: finance + business at $5,000+ external", () => {
+    const r = selectApprovalStages(
+      ctx({ costCents: 500_000, involvesExternalSystem: true }),
+    );
+    expect(r.matchedRule).toBe("high_cost_external");
+    expect(r.stages.map((s) => s.role)).toEqual(["finance", "business"]);
+  });
+
+  it("rule[sensitive_data_export]: single compliance stage", () => {
+    const r = selectApprovalStages(
+      ctx({ involvesSensitiveData: true, costCents: 0 }),
+    );
+    expect(r.matchedRule).toBe("sensitive_data_export");
+    expect(r.stages.map((s) => s.role)).toEqual(["compliance"]);
+  });
+
+  it("rule[medium_high_cost]: single finance stage at $1,000+", () => {
+    const r = selectApprovalStages(
+      ctx({ costCents: 100_000, involvesExternalSystem: false }),
+    );
+    expect(r.matchedRule).toBe("medium_high_cost");
+    expect(r.stages.map((s) => s.role)).toEqual(["finance"]);
+  });
+
+  it("rule[low_floor_external]: business owner at $100+ external", () => {
+    const r = selectApprovalStages(
+      ctx({ costCents: 10_000, involvesExternalSystem: true }),
+    );
+    expect(r.matchedRule).toBe("low_floor_external");
+    expect(r.stages.map((s) => s.role)).toEqual(["business"]);
+  });
+
+  it("permissive default: low-cost non-sensitive non-external → no HITL", () => {
+    const r = selectApprovalStages(
+      ctx({ costCents: 5_000, involvesExternalSystem: false }),
+    );
+    expect(r.matchedRule).toBeNull();
+    expect(r.stages).toEqual([]);
+  });
+
+  it("STRICTEST FIRST invariant: critical+sensitive matches 3-stage, NOT any_critical", () => {
+    // If rule order broke, this would match `any_critical` (2 stages)
+    // before `critical_with_sensitive_data` (3 stages). CI catches that
+    // regression here.
+    const r = selectApprovalStages(
+      ctx({ actionTier: "critical", involvesSensitiveData: true }),
+    );
+    expect(r.matchedRule).toBe("critical_with_sensitive_data");
+    expect(r.stages).toHaveLength(3);
+  });
+
+  it("STRICTEST FIRST invariant: high-cost-external matches before medium-cost-finance", () => {
+    const r = selectApprovalStages(
+      ctx({ costCents: 500_000, involvesExternalSystem: true }),
+    );
+    expect(r.matchedRule).toBe("high_cost_external");
+    expect(r.stages.map((s) => s.role)).toEqual(["finance", "business"]);
+  });
+});

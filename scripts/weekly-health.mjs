@@ -2266,6 +2266,85 @@ check(
   { dimension: "security" },
 );
 
+// HITL routing rules are SHIPPED with non-empty default policy.
+// An empty rules array means no actions ever route to HITL — almost
+// certainly a regression of the R33 deep-work decision.
+check(
+  "hitl-routing-rules has non-empty SHIPPED default policy",
+  fileContains(
+    "src/lib/hitl-routing-rules.ts",
+    "critical_with_sensitive_data",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "agent-factory wires multi-stage HITL gate (selectApprovalStages)",
+  fileContains(
+    "src/lib/agent-factory.ts",
+    "selectApprovalStages",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "agent-factory creates multi-stage requests (createMultiStageRequest)",
+  fileContains(
+    "src/lib/agent-factory.ts",
+    "createMultiStageRequest",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "agent-factory fail-CLOSED on HITL gate failure",
+  fileContains(
+    "src/lib/agent-factory.ts",
+    "HITL_GATE_UNAVAILABLE",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+// Admin approval review endpoints
+check(
+  "admin HITL approval API present",
+  existsSync(join(ROOT, "src/app/api/admin/hitl/[requestId]/route.ts")) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "admin approval review UI present",
+  existsSync(
+    join(ROOT, "src/app/dashboard/admin/approvals/[requestId]/page.tsx"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "admin HITL API uses requireAdmin gate",
+  fileContains(
+    "src/app/api/admin/hitl/[requestId]/route.ts",
+    "requireAdmin",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+// Public HITL policy (procurement audit artifact)
+check(
+  "/api/health/hitl-policy endpoint present (public audit)",
+  existsSync(join(ROOT, "src/app/api/_health/hitl-policy/route.ts")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "/api/health/hitl-policy public re-export present",
+  existsSync(join(ROOT, "src/app/api/health/hitl-policy/route.ts")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
 // Self-service deploy diagnostic (returns specific failure reasons)
 check(
   "/api/health/diagnose endpoint present (self-service deploy)",
