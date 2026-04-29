@@ -84,6 +84,10 @@
     {
       "path": "/api/cron/rollup-agent-credit",
       "schedule": "30 5 * * *"
+    },
+    {
+      "path": "/api/cron/sign-reliability-attestation",
+      "schedule": "0 6 * * *"
     }
   ],
   "headers": [

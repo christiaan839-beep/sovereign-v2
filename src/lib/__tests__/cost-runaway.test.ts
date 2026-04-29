@@ -171,6 +171,147 @@ describe("cost-cap-alert — nextUtcMidnight", () => {
   });
 });
 
+describe("R43 — resolveEffectiveCap (Trust-as-Collateral live wire)", () => {
+  it("falls back to base cap when no agentId is provided", async () => {
+    const { resolveEffectiveCap } = await importCostRunaway();
+    const r = resolveEffectiveCap({ baseCapCents: 5000 });
+    expect(r.capCents).toBe(5000);
+    expect(r.creditLineApplied).toBeUndefined();
+    expect(r.fellBackReason).toBe("no_agent_id");
+  });
+
+  it("falls back to base cap when no credit line row exists", async () => {
+    const { resolveEffectiveCap } = await importCostRunaway();
+    const r = resolveEffectiveCap({
+      baseCapCents: 5000,
+      agentId: "unscored-agent",
+      creditLineRow: null,
+    });
+    expect(r.capCents).toBe(5000);
+    expect(r.fellBackReason).toBe("no_credit_line");
+  });
+
+  it("applies an A+ credit line — widens cap from $50 to $250 (5x)", async () => {
+    const { resolveEffectiveCap } = await importCostRunaway();
+    const now = new Date("2026-04-29T12:00:00.000Z");
+    const r = resolveEffectiveCap({
+      baseCapCents: 5000, // $50 base (free tier)
+      agentId: "trusted-agent",
+      creditLineRow: {
+        letterGrade: "A+",
+        multiplier: "5.00",
+        baseDailyLimitCents: 5000,
+        effectiveDailyLimitCents: 25000, // $250
+        computedAt: new Date("2026-04-29T05:30:00.000Z"), // ~6.5h old
+      },
+      now,
+    });
+    expect(r.capCents).toBe(25000);
+    expect(r.fellBackReason).toBeUndefined();
+    expect(r.creditLineApplied?.letterGrade).toBe("A+");
+    expect(r.creditLineApplied?.multiplier).toBe(5.0);
+    expect(r.creditLineApplied?.effectiveCapCents).toBe(25000);
+  });
+
+  it("applies an F credit line — narrows cap from $50 to $12.50 (0.25x)", async () => {
+    const { resolveEffectiveCap } = await importCostRunaway();
+    const now = new Date("2026-04-29T12:00:00.000Z");
+    const r = resolveEffectiveCap({
+      baseCapCents: 5000,
+      agentId: "untrusted-agent",
+      creditLineRow: {
+        letterGrade: "F",
+        multiplier: "0.25",
+        baseDailyLimitCents: 5000,
+        effectiveDailyLimitCents: 1250, // $12.50
+        computedAt: new Date("2026-04-29T05:30:00.000Z"),
+      },
+      now,
+    });
+    expect(r.capCents).toBe(1250);
+    expect(r.creditLineApplied?.letterGrade).toBe("F");
+    expect(r.creditLineApplied?.multiplier).toBe(0.25);
+  });
+
+  it("falls back to base cap when credit line is stale (>36h old)", async () => {
+    const { resolveEffectiveCap } = await importCostRunaway();
+    const now = new Date("2026-04-29T12:00:00.000Z");
+    // Last computed 40 hours ago — past staleness threshold.
+    const stale = new Date("2026-04-27T20:00:00.000Z");
+    const r = resolveEffectiveCap({
+      baseCapCents: 5000,
+      agentId: "stale-agent",
+      creditLineRow: {
+        letterGrade: "A+",
+        multiplier: "5.00",
+        baseDailyLimitCents: 5000,
+        effectiveDailyLimitCents: 25000, // would have been $250
+        computedAt: stale,
+      },
+      now,
+    });
+    // Even though the credit line says 5x, we fall back to base.
+    expect(r.capCents).toBe(5000);
+    expect(r.creditLineApplied).toBeUndefined();
+    expect(r.fellBackReason).toBe("stale_credit_line");
+  });
+
+  it("accepts credit line at the exact 36h boundary as fresh", async () => {
+    const { resolveEffectiveCap, CREDIT_LINE_STALENESS_THRESHOLD_HOURS } =
+      await importCostRunaway();
+    expect(CREDIT_LINE_STALENESS_THRESHOLD_HOURS).toBe(36);
+
+    const now = new Date("2026-04-29T12:00:00.000Z");
+    // Exactly 36h old — boundary case, should still apply.
+    const exact36h = new Date(now.getTime() - 36 * 60 * 60 * 1000);
+    const r = resolveEffectiveCap({
+      baseCapCents: 5000,
+      agentId: "boundary-agent",
+      creditLineRow: {
+        letterGrade: "A",
+        multiplier: "3.00",
+        baseDailyLimitCents: 5000,
+        effectiveDailyLimitCents: 15000,
+        computedAt: exact36h,
+      },
+      now,
+    });
+    expect(r.capCents).toBe(15000);
+  });
+
+  it("coerces multiplier from string (Drizzle numeric) to number", async () => {
+    const { resolveEffectiveCap } = await importCostRunaway();
+    const now = new Date("2026-04-29T12:00:00.000Z");
+    const r = resolveEffectiveCap({
+      baseCapCents: 5000,
+      agentId: "any",
+      creditLineRow: {
+        letterGrade: "B+",
+        multiplier: "1.50", // string from drizzle numeric
+        baseDailyLimitCents: 5000,
+        effectiveDailyLimitCents: 7500,
+        computedAt: new Date("2026-04-29T05:30:00.000Z"),
+      },
+      now,
+    });
+    expect(typeof r.creditLineApplied?.multiplier).toBe("number");
+    expect(r.creditLineApplied?.multiplier).toBe(1.5);
+  });
+
+  it("checkTenantCostCap accepts the optional agentId param without breaking back-compat", async () => {
+    const { checkTenantCostCap } = await importCostRunaway();
+    // No DB → fail-open, but the new param shape must be accepted.
+    const r = await checkTenantCostCap({
+      userId: "user_x",
+      planId: "free",
+      agentId: "some-agent",
+    });
+    expect(r.allowed).toBe(true);
+    expect(r.capCents).toBe(5000);
+    expect(r.creditLineApplied).toBeUndefined();
+  });
+});
+
 describe("cost-cap-alert — onCostCapHit", () => {
   it("never throws when audit log is unavailable (fail-open)", async () => {
     const { onCostCapHit } = await importCostCapAlert();

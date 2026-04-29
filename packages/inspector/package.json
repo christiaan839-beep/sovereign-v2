@@ -12,7 +12,9 @@
     ".": "./src/index.mjs",
     "./verify": "./src/verify.mjs",
     "./reputation": "./src/reputation.mjs",
-    "./credit": "./src/credit.mjs"
+    "./credit": "./src/credit.mjs",
+    "./reliability": "./src/reliability.mjs",
+    "./audit-export": "./src/audit-export.mjs"
   },
   "files": [
     "src/",

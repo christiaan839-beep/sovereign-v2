@@ -89,6 +89,96 @@ export interface CostCheckResult {
   capCents: number;
   /** Human-readable reason when blocked. */
   reason?: string;
+  /**
+   * R43: when an agent's published credit line modulated the cap,
+   * surface the multiplier + grade so audit logs + observability
+   * tools can see why a particular run was capped at $X instead of
+   * the plan default. Absent when no credit line was applied.
+   */
+  creditLineApplied?: {
+    agentId: string;
+    letterGrade: string;
+    multiplier: number;
+    baseCapCents: number;
+    effectiveCapCents: number;
+  };
+}
+
+/**
+ * R43: Trust-as-Collateral live wire — staleness threshold.
+ *
+ * Credit lines are recomputed daily by the rollup-agent-credit cron.
+ * If the cron has been broken for >36h we assume the credit signal
+ * is unreliable and fall back to the plan-based cap (fail-safe).
+ *
+ * 36h = 1.5x the daily compute interval. Tighter than 48h so a
+ * once-failed cron only loses 1 grace cycle, not 2.
+ */
+export const CREDIT_LINE_STALENESS_THRESHOLD_HOURS = 36;
+
+/**
+ * Shape of an `agent_credit_lines` row used by `resolveEffectiveCap`.
+ *
+ * The pure resolver is decoupled from the schema type so tests can
+ * supply a row without spinning up Drizzle / the DB type system.
+ */
+export interface CreditLineRow {
+  letterGrade: string;
+  /** Drizzle returns numeric as string; resolver coerces to number. */
+  multiplier: number | string;
+  baseDailyLimitCents: number;
+  effectiveDailyLimitCents: number;
+  computedAt: Date;
+}
+
+/**
+ * R43 PURE RESOLVER. Given a base cap (from plan) + an optional
+ * credit-line row, return the effective cap and metadata.
+ *
+ * Fail-safe rules (in order):
+ *   1. No agentId → base cap.
+ *   2. No credit line row → base cap (most agents are unscored).
+ *   3. Stale credit line (> CREDIT_LINE_STALENESS_THRESHOLD_HOURS)
+ *      → base cap (cron may be broken).
+ *   4. Otherwise → credit-line's effectiveDailyLimitCents.
+ *
+ * Pure function: same inputs → same outputs. Easy to test in isolation.
+ * Used both server-side (in checkTenantCostCap) and could port to the
+ * inspector for offline credit-line consequence verification.
+ */
+export function resolveEffectiveCap(input: {
+  baseCapCents: number;
+  agentId?: string;
+  creditLineRow?: CreditLineRow | null;
+  now?: Date;
+}): {
+  capCents: number;
+  creditLineApplied?: CostCheckResult["creditLineApplied"];
+  fellBackReason?: "no_agent_id" | "no_credit_line" | "stale_credit_line";
+} {
+  if (!input.agentId) {
+    return { capCents: input.baseCapCents, fellBackReason: "no_agent_id" };
+  }
+  if (!input.creditLineRow) {
+    return { capCents: input.baseCapCents, fellBackReason: "no_credit_line" };
+  }
+  const now = input.now ?? new Date();
+  const ageMs = now.getTime() - input.creditLineRow.computedAt.getTime();
+  const ageHours = ageMs / (1000 * 60 * 60);
+  if (ageHours > CREDIT_LINE_STALENESS_THRESHOLD_HOURS) {
+    return { capCents: input.baseCapCents, fellBackReason: "stale_credit_line" };
+  }
+  const multiplierNum = Number(input.creditLineRow.multiplier);
+  return {
+    capCents: input.creditLineRow.effectiveDailyLimitCents,
+    creditLineApplied: {
+      agentId: input.agentId,
+      letterGrade: input.creditLineRow.letterGrade,
+      multiplier: multiplierNum,
+      baseCapCents: input.baseCapCents,
+      effectiveCapCents: input.creditLineRow.effectiveDailyLimitCents,
+    },
+  };
 }
 
 /**
@@ -105,12 +195,64 @@ export interface CostCheckResult {
 export async function checkTenantCostCap(input: {
   userId: string;
   planId: string | null;
+  /**
+   * R43: optional agent ID. When present and a fresh credit line
+   * exists for this agent, the cap is the credit-line's
+   * effectiveDailyLimitCents instead of the plan default.
+   *
+   * Fail-safe: any anomaly (no row, stale row, query error) falls
+   * back to the plan cap. The credit line never WIDENS the cap
+   * unsafely — staleness threshold protects against a stuck cron.
+   */
+  agentId?: string;
 }): Promise<CostCheckResult> {
-  const capCents = getDailyCapCents(input.planId);
+  const baseCapCents = getDailyCapCents(input.planId);
 
   const db = await getDb();
   if (!db) {
-    return { allowed: true, spentCents: 0, capCents };
+    return { allowed: true, spentCents: 0, capCents: baseCapCents };
+  }
+
+  // R43: resolve effective cap via the pure resolver. The DB lookup
+  // is the only impure step; the math is testable in isolation.
+  let creditLineRow: CreditLineRow | null = null;
+  if (input.agentId) {
+    try {
+      const { agentCreditLines } = await import("@/db/schema");
+      const creditRows = await db
+        .select({
+          letterGrade: agentCreditLines.letterGrade,
+          multiplier: agentCreditLines.multiplier,
+          baseDailyLimitCents: agentCreditLines.baseDailyLimitCents,
+          effectiveDailyLimitCents: agentCreditLines.effectiveDailyLimitCents,
+          computedAt: agentCreditLines.computedAt,
+        })
+        .from(agentCreditLines)
+        .where(eq(agentCreditLines.agentId, input.agentId))
+        .limit(1);
+      creditLineRow = creditRows[0] ?? null;
+    } catch (err) {
+      log.warn("Credit-line lookup failed; using plan cap", {
+        agentId: input.agentId,
+        error: String(err),
+      });
+      // creditLineRow stays null → resolver falls back to base cap.
+    }
+  }
+
+  const resolved = resolveEffectiveCap({
+    baseCapCents,
+    agentId: input.agentId,
+    creditLineRow,
+  });
+  const capCents = resolved.capCents;
+  const creditLineApplied = resolved.creditLineApplied;
+  if (resolved.fellBackReason === "stale_credit_line" && creditLineRow) {
+    log.warn("Stale credit line, falling back to plan cap", {
+      agentId: input.agentId,
+      computedAt: creditLineRow.computedAt.toISOString(),
+      threshold: CREDIT_LINE_STALENESS_THRESHOLD_HOURS,
+    });
   }
 
   try {
@@ -130,7 +272,7 @@ export async function checkTenantCostCap(input: {
 
     const row = rows[0];
     if (!row) {
-      return { allowed: true, spentCents: 0, capCents };
+      return { allowed: true, spentCents: 0, capCents, creditLineApplied };
     }
 
     // If the ledger row says paused_at is set today, refuse.
@@ -141,24 +283,29 @@ export async function checkTenantCostCap(input: {
         allowed: false,
         spentCents: row.costCents,
         capCents,
+        creditLineApplied,
         reason: row.pauseReason ?? "Daily cost cap reached",
       };
     }
 
     if (row.costCents >= capCents) {
+      const reasonSuffix = creditLineApplied
+        ? ` (credit-line cap: agent ${input.agentId} grade ${creditLineApplied.letterGrade} × ${creditLineApplied.multiplier})`
+        : "";
       return {
         allowed: false,
         spentCents: row.costCents,
         capCents,
-        reason: `Daily cap of $${(capCents / 100).toFixed(0)} reached (spent $${(row.costCents / 100).toFixed(2)})`,
+        creditLineApplied,
+        reason: `Daily cap of $${(capCents / 100).toFixed(0)} reached (spent $${(row.costCents / 100).toFixed(2)})${reasonSuffix}`,
       };
     }
 
-    return { allowed: true, spentCents: row.costCents, capCents };
+    return { allowed: true, spentCents: row.costCents, capCents, creditLineApplied };
   } catch (err) {
     log.error("Cost cap check failed", { userId: input.userId, error: String(err) });
     // Fail-OPEN as designed — see top-of-file comment.
-    return { allowed: true, spentCents: 0, capCents };
+    return { allowed: true, spentCents: 0, capCents, creditLineApplied };
   }
 }
 

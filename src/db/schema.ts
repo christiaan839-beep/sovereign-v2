@@ -1068,6 +1068,35 @@ export const agentReputationScores = pgTable("agent_reputation_scores", {
   index("idx_reputation_computed_at").on(table.computedAt),
 ]);
 
+// Round 44 — Cryptographically-signed reliability attestations.
+// Daily-signed commitments to the platform's own uptime + chain
+// integrity claims. Customers verify offline with the inspector.
+// See drizzle/0051 + docs/adr/0009.
+export const reliabilityAttestations = pgTable("reliability_attestations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  windowStart: timestamp("window_start").notNull(),
+  windowEnd: timestamp("window_end").notNull(),
+  totalHealthSnapshots: integer("total_health_snapshots").notNull().default(0),
+  passingHealthSnapshots: integer("passing_health_snapshots").notNull().default(0),
+  failingHealthSnapshots: integer("failing_health_snapshots").notNull().default(0),
+  auditChainIntact: boolean("audit_chain_intact"),
+  auditChainTotalRows: integer("audit_chain_total_rows"),
+  auditChainFirstBrokenId: text("audit_chain_first_broken_id"),
+  uptimePct: numeric("uptime_pct", { precision: 5, scale: 2 }).notNull(),
+  metCommitment: boolean("met_commitment").notNull(),
+  commitmentThresholdPct: numeric("commitment_threshold_pct", { precision: 5, scale: 2 }).notNull().default("99.90"),
+  attestationMessage: text("attestation_message").notNull(),
+  attestationSignature: text("attestation_signature").notNull(),
+  platformPublicKey: text("platform_public_key").notNull(),
+  previousChainHash: text("previous_chain_hash"),
+  chainHash: text("chain_hash").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_reliability_attestations_recent").on(table.createdAt),
+  index("idx_reliability_attestations_window").on(table.windowEnd, table.windowStart),
+  index("idx_reliability_attestations_chain").on(table.chainHash),
+]);
+
 // Round 42 — Trust-as-Collateral. Reputation grade modulates the
 // per-tenant daily spend cap. Composes R40 reputation × R30
 // cost-runaway into a self-regulating economic loop.

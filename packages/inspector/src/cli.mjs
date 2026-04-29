@@ -80,6 +80,8 @@ import {
 } from "./identity.mjs";
 import { fetchReputation, verifyReputationLocally } from "./reputation.mjs";
 import { fetchCreditLine, verifyCreditLineLocally } from "./credit.mjs";
+import { fetchReliability, verifyReliabilityLocally } from "./reliability.mjs";
+import { verifyAuditBatch as verifyAuditBatchLocal } from "./audit-export.mjs";
 import {
   fetchPermanence,
   fetchHitlPolicy,
@@ -138,6 +140,9 @@ function printUsage() {
   console.log("  reputation-verify <url> <id>  Trustless verify: fetch signals + recompute locally + compare");
   console.log("  credit <url> <id>       Show Trust-as-Collateral credit line (multiplier × base)");
   console.log("  credit-verify <url> <id>  Trustless verify: recompute the credit line locally + compare");
+  console.log("  reliability <url>       Show platform's signed reliability attestation");
+  console.log("  reliability-verify <url>  Trustless verify: check the attestation signature locally");
+  console.log("  audit-export-verify     Verify a saved customer audit export (stdin JSON)");
   console.log("  delegation <url>        Verify delegation from stdin (no platform trust)");
   console.log("  audit-chain             Verify audit log array from stdin");
   console.log("  verify-token            Verify ACT chain from stdin (Macaroon attenuation)");
@@ -392,6 +397,133 @@ async function cmdReputationVerify(url, agentId) {
   console.log(`  Recomputed: ${result.recomputed.letterGrade} ${result.recomputed.numericScore}`);
   console.log(c.gray(`  Signals (raw):`));
   console.log(c.gray(`    ${JSON.stringify(result.signals)}`));
+  return 1;
+}
+
+async function cmdAuditExportVerify() {
+  header("Audit-export TRUSTLESS verification (LOCAL)");
+  const stdin = readFileSync(0, "utf8");
+  let body;
+  try {
+    body = JSON.parse(stdin);
+  } catch (err) {
+    bad(`Failed to parse stdin as JSON: ${err.message}`);
+    return 1;
+  }
+  // Tolerate two shapes: { export: {...} } (server response) or
+  // a SignedAuditExport object directly (customer's saved file).
+  const signedExport = body.export ?? body;
+  if (!signedExport.batchSignature || !signedExport.batchRoot) {
+    bad(
+      "Input does not look like a SignedAuditExport. " +
+        "Pipe the JSON returned by POST /api/admin/audit/export, " +
+        "or the customer-saved JSON file containing the signed export.",
+    );
+    return 1;
+  }
+  const result = verifyAuditBatchLocal({ signedExport });
+  console.log("");
+  console.log(c.bold("Export claim:"));
+  console.log(`  ${c.gray("user:")} ${signedExport.userId}`);
+  console.log(`  ${c.gray("window:")} ${signedExport.windowStart ?? "all"} → ${signedExport.windowEnd ?? "all"}`);
+  console.log(`  ${c.gray("rows:")} ${signedExport.rowCount}`);
+  console.log(`  ${c.gray("exportedAt:")} ${signedExport.exportedAt}`);
+  console.log(`  ${c.gray("batch root:")} ${signedExport.batchRoot.slice(0, 16)}...`);
+  console.log(`  ${c.gray("platform pubkey:")} ${signedExport.platformPublicKey.slice(0, 16)}...`);
+  console.log("");
+  if (result.valid) {
+    ok(c.bold(`✓ MATCH — export is intact (${result.rowsVerified} rows verified)`));
+    console.log("");
+    info(
+      "Batch root matches recompute, Ed25519 signature is valid, " +
+        "row hash chain is intact. The platform did not fabricate or tamper " +
+        "with this export. You can store this audit record forever.",
+    );
+    return 0;
+  }
+  bad(c.bold(`✗ TAMPERED — verification failed (${result.reason})`));
+  if (result.rowIndex !== undefined) {
+    console.log(c.red(`  First broken row index: ${result.rowIndex}`));
+  }
+  console.log("");
+  console.log(c.red("This audit export cannot be trusted as-is."));
+  return 1;
+}
+
+async function cmdReliability(url) {
+  header(`Reliability attestation — ${url}/api/health/reliability/attestation`);
+  const data = await fetchReliability(url);
+  if (!data.attestation) {
+    info("No reliability attestation signed yet for this deployment.");
+    return 0;
+  }
+  const a = data.attestation;
+  const okSym = a.metCommitment ? c.green("✓") : c.red("✗");
+  ok(`Window: ${a.windowStart} → ${a.windowEnd}`);
+  console.log("");
+  console.log(c.bold("Reliability:"));
+  console.log(`  ${c.gray("uptime:")} ${(a.uptimePct >= a.commitmentThresholdPct ? c.green : c.red)(`${a.uptimePct}%`)}`);
+  console.log(`  ${c.gray("commitment:")} ≥${a.commitmentThresholdPct}%`);
+  console.log(`  ${c.gray("met commitment:")} ${okSym}`);
+  console.log(`  ${c.gray("snapshots:")} ${a.passingHealthSnapshots}/${a.totalHealthSnapshots} passing (${a.failingHealthSnapshots} failing)`);
+  if (a.auditChainIntact === false) {
+    console.log(`  ${c.gray("audit chain:")} ${c.red("BROKEN")} — first broken row: ${a.auditChainFirstBrokenId}`);
+  } else if (a.auditChainIntact === true) {
+    console.log(`  ${c.gray("audit chain:")} ${c.green("intact")} (${a.auditChainTotalRows} rows)`);
+  } else {
+    console.log(`  ${c.gray("audit chain:")} ${c.yellow("unknown")}`);
+  }
+  console.log("");
+  console.log(c.bold("Cryptographic state:"));
+  console.log(`  ${c.gray("platform public key:")} ${a.platformPublicKey.slice(0, 16)}...`);
+  console.log(`  ${c.gray("chain hash:")} ${a.chainHash.slice(0, 16)}...`);
+  console.log(`  ${c.gray("previous chain hash:")} ${a.previousChainHash ? a.previousChainHash.slice(0, 16) + "..." : c.gray("(genesis)")}`);
+  console.log("");
+  info(
+    "Verify the signature locally with `sovereign-inspect reliability-verify <url>`. " +
+      "Sovereign cannot fabricate this — math is the truth.",
+  );
+  return 0;
+}
+
+async function cmdReliabilityVerify(url) {
+  header(`Reliability TRUSTLESS verification — ${url}`);
+  info("Fetching signed attestation...");
+  let result;
+  try {
+    result = await verifyReliabilityLocally(url);
+  } catch (err) {
+    bad(`Failed to fetch attestation: ${err.message}`);
+    return 1;
+  }
+  if (result.match === null) {
+    info(result.note || "No attestation published yet.");
+    return 0;
+  }
+  console.log("");
+  console.log(c.bold("Platform claims:"));
+  console.log(
+    `  Window: ${result.attestation.windowStart} → ${result.attestation.windowEnd}`,
+  );
+  console.log(
+    `  Uptime: ${result.attestation.uptimePct}% (commitment ≥${result.attestation.commitmentThresholdPct}%)`,
+  );
+  console.log(`  Met commitment: ${result.attestation.metCommitment ? c.green("yes") : c.red("no")}`);
+  console.log("");
+  console.log(c.bold("Local verification (your machine):"));
+  if (result.match) {
+    ok(c.bold("✓ Signature valid + chain hash matches recompute"));
+    console.log("");
+    info(
+      "The platform did not fabricate this reliability claim. " +
+        "Same math, same answer. Trust is math, not marketing.",
+    );
+    return 0;
+  }
+  bad(c.bold("✗ MISMATCH — published reliability claim is fabricated"));
+  console.log("");
+  console.log(c.red(`Reason: ${result.reason}`));
+  console.log(c.red("This reliability claim cannot be trusted."));
   return 1;
 }
 
@@ -716,6 +848,20 @@ async function main() {
         return 2;
       }
       return cmdCreditVerify(argv[1], argv[2]);
+    case "reliability":
+      if (!argv[1]) {
+        bad("usage: sovereign-inspect reliability <url>");
+        return 2;
+      }
+      return cmdReliability(argv[1]);
+    case "reliability-verify":
+      if (!argv[1]) {
+        bad("usage: sovereign-inspect reliability-verify <url>");
+        return 2;
+      }
+      return cmdReliabilityVerify(argv[1]);
+    case "audit-export-verify":
+      return cmdAuditExportVerify();
     default:
       bad(`Unknown command: ${cmd}`);
       printUsage();

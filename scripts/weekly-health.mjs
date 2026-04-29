@@ -3054,6 +3054,201 @@ check(
   { dimension: "honesty" },
 );
 
+// ─── Round 43 — Trust-as-Collateral live wire ────────────────────────
+// Composes R42 credit lines with R30 cost-runaway. The live spend
+// cap is now multiplier-modulated by the agent's reputation grade.
+
+check(
+  "cost-runaway.ts surfaces resolveEffectiveCap (pure resolver)",
+  fileContains("src/lib/cost-runaway.ts", "resolveEffectiveCap") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "cost-runaway.ts staleness threshold for credit lines (R43 fail-safe)",
+  fileContains(
+    "src/lib/cost-runaway.ts",
+    "CREDIT_LINE_STALENESS_THRESHOLD_HOURS",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "cost-runaway.ts checkTenantCostCap accepts agentId (R43 wire)",
+  fileContains("src/lib/cost-runaway.ts", "agentId?: string") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "cost-runaway.test.ts has R43 boundary tests",
+  fileContains(
+    "src/lib/__tests__/cost-runaway.test.ts",
+    "Trust-as-Collateral live wire",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+// ─── Round 44 — Signed Reliability Attestations ──────────────────────
+// Cryptographically-signed daily commitments to platform uptime
+// claims. Customers verify the math offline.
+
+check(
+  "ADR-0009 (signed reliability attestations) on disk",
+  existsSync(join(ROOT, "docs/adr/0009-signed-reliability-attestations.md"))
+    ? 1
+    : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "migration 0051 (reliability_attestations) on disk",
+  existsSync(join(ROOT, "drizzle/0051_reliability_attestations.sql")) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "reliability-attestation pure-function library present",
+  existsSync(join(ROOT, "src/lib/reliability-attestation.ts")) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "reliability-attestation tests present (>=20 cases)",
+  fileContains(
+    "src/lib/__tests__/reliability-attestation.test.ts",
+    "verifyAttestationChain",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "GET /api/health/reliability/attestation endpoint present",
+  existsSync(
+    join(ROOT, "src/app/api/health/reliability/attestation/route.ts"),
+  )
+    ? 1
+    : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "daily reliability-attestation cron present",
+  existsSync(
+    join(ROOT, "src/app/api/cron/sign-reliability-attestation/route.ts"),
+  )
+    ? 1
+    : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "reliability-attestation cron registered in vercel.json",
+  fileContains("vercel.json", "/api/cron/sign-reliability-attestation")
+    ? 1
+    : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "reliability_attestations schema entry present",
+  fileContains("src/db/schema.ts", "reliabilityAttestations") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "Inspector reliability port present (reliability.mjs)",
+  existsSync(join(ROOT, "packages/inspector/src/reliability.mjs")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Inspector CLI has reliability-verify command",
+  fileContains(
+    "packages/inspector/src/cli.mjs",
+    "case \"reliability-verify\":",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "platform signing key fallback documented (env var path)",
+  fileContains(
+    "src/lib/reliability-attestation.ts",
+    "SOVEREIGN_PLATFORM_PRIVATE_KEY",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+// ─── Round 45 — Customer-managed audit-log export ────────────────────
+// Tenant-scoped, Ed25519-signed audit batches. Customers store in
+// their own S3/GCS, verify offline, prove integrity forever.
+
+check(
+  "audit-export pure-function library present",
+  existsSync(join(ROOT, "src/lib/audit-export.ts")) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "audit-export tests present (>=12 cases including chain walk)",
+  fileContains(
+    "src/lib/__tests__/audit-export.test.ts",
+    "row chain walk",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "POST /api/admin/audit/export endpoint present",
+  existsSync(join(ROOT, "src/app/api/admin/audit/export/route.ts")) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "audit-export endpoint enforces tenant scope (defense-in-depth)",
+  fileContains(
+    "src/app/api/admin/audit/export/route.ts",
+    "isOwnedByTenant",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "Inspector audit-export port present",
+  existsSync(join(ROOT, "packages/inspector/src/audit-export.mjs")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Inspector CLI has audit-export-verify command (stdin trustless)",
+  fileContains(
+    "packages/inspector/src/cli.mjs",
+    "case \"audit-export-verify\":",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
 // Public HITL policy (procurement audit artifact)
 check(
   "/api/health/hitl-policy endpoint present (public audit)",
