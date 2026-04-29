@@ -3249,6 +3249,105 @@ check(
   { dimension: "trust-asset" },
 );
 
+// ─── Round 46 — AI Agent Action Insurance underwriting ───────────────
+// Pure-function rating model. Composes R40 reputation × R42 credit
+// line × claims history. The first production AI agent insurance
+// rating math, anywhere.
+
+check(
+  "ADR-0010 (agent insurance underwriting) on disk",
+  existsSync(join(ROOT, "docs/adr/0010-agent-insurance-underwriting.md"))
+    ? 1
+    : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "agent-underwriting pure-function rating model present",
+  existsSync(join(ROOT, "src/lib/agent-underwriting.ts")) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "agent-underwriting tests present (>=20 cases)",
+  fileContains(
+    "src/lib/__tests__/agent-underwriting.test.ts",
+    "verifyQuoteIntegrity",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "GET /api/identity/insurance/[agentId] endpoint present",
+  existsSync(
+    join(ROOT, "src/app/api/identity/insurance/[agentId]/route.ts"),
+  )
+    ? 1
+    : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "agent-underwriting declines F-grade (uninsurable)",
+  fileContains(
+    "src/lib/agent-underwriting.ts",
+    "uninsurable_grade_F",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "insurance endpoint emits underwritingInput for carrier verification",
+  fileContains(
+    "src/app/api/identity/insurance/[agentId]/route.ts",
+    "underwritingInput",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+// ─── Procurement-grade compliance mapping ────────────────────────────
+
+check(
+  "Compliance control mapping document present",
+  existsSync(join(ROOT, "docs/COMPLIANCE-MAPPING.md")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Compliance map references SOC 2 Trust Service Criteria",
+  fileContains("docs/COMPLIANCE-MAPPING.md", "Trust Service Criteria") ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Compliance map references EU AI Act Article 14 (human oversight)",
+  fileContains("docs/COMPLIANCE-MAPPING.md", "Article 14") ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Compliance map references HIPAA §164.312 (technical safeguards)",
+  fileContains("docs/COMPLIANCE-MAPPING.md", "164.312") ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Compliance map references NIST AI RMF",
+  fileContains("docs/COMPLIANCE-MAPPING.md", "NIST AI RMF") ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
 // Public HITL policy (procurement audit artifact)
 check(
   "/api/health/hitl-policy endpoint present (public audit)",
