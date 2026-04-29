@@ -1045,6 +1045,33 @@ export const agentActionSignatures = pgTable("agent_action_signatures", {
   index("idx_agent_action_sigs_chain").on(table.chainHash),
 ]);
 
+// Round 38 — Agent Identity Manifests (KYA). Signed manifests
+// declaring agent ownership + capabilities + provenance, verifiable
+// by any third party. See drizzle/0048 + docs/adr/0006.
+export const agentIdentityManifests = pgTable("agent_identity_manifests", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  agentId: text("agent_id").notNull(),
+  version: text("version").notNull(),
+  ownerUserId: text("owner_user_id").notNull(),
+  ownerPublicKey: text("owner_public_key").notNull(),
+  manifestJson: jsonb("manifest_json").$type<Record<string, unknown>>().notNull(),
+  manifestMessage: text("manifest_message").notNull(),
+  manifestSignature: text("manifest_signature").notNull(),
+  chainHash: text("chain_hash").notNull(),
+  previousManifestHash: text("previous_manifest_hash"),
+  expiresAt: timestamp("expires_at").notNull(),
+  revokedAt: timestamp("revoked_at"),
+  revocationMessage: text("revocation_message"),
+  revocationSignature: text("revocation_signature"),
+  auditLogId: text("audit_log_id"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_agent_identity_agent_versions").on(table.agentId, table.createdAt),
+  index("idx_agent_identity_active").on(table.agentId, table.expiresAt),
+  index("idx_agent_identity_owner").on(table.ownerUserId, table.createdAt),
+  uniqueIndex("idx_agent_identity_chain_hash").on(table.chainHash),
+]);
+
 // Round 37 — Agent Capability Tokens (ACTs). Macaroon-pattern
 // attenuatable capability tokens. Each row is one token in a chain;
 // follow parent_id back to root for full provenance. See

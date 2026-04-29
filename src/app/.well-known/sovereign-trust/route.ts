@@ -68,6 +68,8 @@ interface SovereignTrustDocument {
     selfDiagnose: boolean;
     /** R37 — Macaroon-pattern attenuatable capability tokens. */
     agentCapabilityTokens: boolean;
+    /** R38 — Know-Your-Agent identity manifest registry. */
+    agentIdentityRegistry: boolean;
   };
   /** Where to fetch each verifiable artifact. Relative to canonicalUrl. */
   endpoints: {
@@ -143,7 +145,8 @@ export async function GET(req: Request) {
       publicReliability: true, // R27 + Elite
       publicHitlPolicy: true, // R33
       selfDiagnose: true, // R32
-      agentCapabilityTokens: true, // R37 — NEW
+      agentCapabilityTokens: true, // R37
+      agentIdentityRegistry: true, // R38 — NEW
     },
     endpoints: {
       permanence: `${canonicalUrl}/api/health/permanence`,

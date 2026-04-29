@@ -2591,6 +2591,63 @@ check(
   { dimension: "trust-asset" },
 );
 
+// ─── Round 38 — Agent Identity Manifests (KYA Registry) ──────────────
+//
+// The missing primitive nobody has shipped. Closes the last major gap
+// in cryptographic agent trust. Composes with R26+R34+R36+R37.
+
+check(
+  "ADR-0006 (Agent Identity Manifests) present",
+  existsSync(
+    join(ROOT, "docs/adr/0006-agent-identity-manifests.md"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "migration 0048 (agent_identity_manifests) on disk",
+  existsSync(
+    join(ROOT, "drizzle/0048_agent_identity_manifests.sql"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "database" },
+);
+check(
+  "schema.ts declares agentIdentityManifests table",
+  fileContains("src/db/schema.ts", "agentIdentityManifests") ? 1 : 0,
+  1,
+  { dimension: "database" },
+);
+check(
+  "agent-identity lib has signManifest + verifyManifest + verifyManifestChain",
+  fileContains("src/lib/agent-identity.ts", "signManifest") &&
+    fileContains("src/lib/agent-identity.ts", "verifyManifest") &&
+    fileContains("src/lib/agent-identity.ts", "verifyManifestChain") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "agent-identity uses canonical JSON for hashing",
+  fileContains("src/lib/agent-identity.ts", "canonicalJsonStringify") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "agent-identity tests present (>=15 cases)",
+  existsSync(join(ROOT, "src/lib/__tests__/agent-identity.test.ts")) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "/.well-known/sovereign-trust declares agentIdentityRegistry capability",
+  fileContains(
+    "src/app/.well-known/sovereign-trust/route.ts",
+    "agentIdentityRegistry: true",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
 // Public HITL policy (procurement audit artifact)
 check(
   "/api/health/hitl-policy endpoint present (public audit)",
