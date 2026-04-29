@@ -5501,6 +5501,210 @@ check(
   { dimension: "trust-asset" },
 );
 
+// ─── R110 / R111 — Multimodal Perception Mesh ─────────────────────
+// Sovereign's NVIDIA Nemotron 3 Nano Omni integration as a SUBSTRATE
+// — five specialized perception node kinds + cross-modal correlation,
+// turning ONE model into a PRODUCT CATEGORY. Sister doc:
+// docs/MULTIMODAL-PERCEPTION-MESH.md.
+
+check(
+  "R110 Nemotron Omni client present (pure-function HTTP client)",
+  existsSync(
+    join(ROOT, "src/lib/perception/nemotron-omni-client.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R110 Omni client has unit tests",
+  existsSync(
+    join(ROOT, "src/lib/perception/__tests__/nemotron-omni-client.test.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "R110 Omni client supports all 4 modalities (text + image + audio + video)",
+  fileContains(
+    "src/lib/perception/nemotron-omni-client.ts",
+    "image_url",
+  ) &&
+    fileContains(
+      "src/lib/perception/nemotron-omni-client.ts",
+      "audio_url",
+    ) &&
+    fileContains(
+      "src/lib/perception/nemotron-omni-client.ts",
+      "video_url",
+    ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R110 model slug is env-configurable (provider-agnostic — NIM / OpenRouter / vLLM / llama.cpp)",
+  fileContains(
+    "src/lib/perception/nemotron-omni-client.ts",
+    "NEMOTRON_OMNI_MODEL_SLUG",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R110 defensive validation surfaces 7 typed reasons (procurement-grade)",
+  fileContains(
+    "src/lib/perception/nemotron-omni-client.ts",
+    "no_parts",
+  ) &&
+    fileContains(
+      "src/lib/perception/nemotron-omni-client.ts",
+      "system_prompt_required",
+    ) &&
+    fileContains(
+      "src/lib/perception/nemotron-omni-client.ts",
+      "image_data_url_too_large",
+    ) &&
+    fileContains(
+      "src/lib/perception/nemotron-omni-client.ts",
+      "audio_data_url_too_large",
+    ) &&
+    fileContains(
+      "src/lib/perception/nemotron-omni-client.ts",
+      "unsupported_image_mime",
+    ) &&
+    fileContains(
+      "src/lib/perception/nemotron-omni-client.ts",
+      "unsupported_audio_mime",
+    ) &&
+    fileContains(
+      "src/lib/perception/nemotron-omni-client.ts",
+      "max_tokens_out_of_range",
+    ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "R111 Multimodal Perception Mesh present",
+  existsSync(join(ROOT, "src/lib/perception/mesh.ts")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R111 Mesh has unit tests",
+  existsSync(
+    join(ROOT, "src/lib/perception/__tests__/mesh.test.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "R111 Mesh defines all 5 node kinds (video / audio / screenshot / document / freeform)",
+  fileContains("src/lib/perception/mesh.ts", "video-monitor") &&
+    fileContains("src/lib/perception/mesh.ts", "audio-transcriber") &&
+    fileContains("src/lib/perception/mesh.ts", "screenshot-analyzer") &&
+    fileContains("src/lib/perception/mesh.ts", "document-extractor") &&
+    fileContains("src/lib/perception/mesh.ts", "freeform-synthesizer") ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R111 Mesh defines all 4 cross-modal correlation rule kinds",
+  fileContains("src/lib/perception/mesh.ts", "keyword-overlap") &&
+    fileContains("src/lib/perception/mesh.ts", "entity-overlap") &&
+    fileContains("src/lib/perception/mesh.ts", "time-proximity") &&
+    fileContains("src/lib/perception/mesh.ts", "json-field-match") ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R111 plan composition is deterministic (sort by nodeId)",
+  fileContains("src/lib/perception/mesh.ts", "localeCompare") ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R111 BOARDROOM_WATCH_MESH pre-built mesh + compliance rules",
+  fileContains("src/lib/perception/mesh.ts", "BOARDROOM_WATCH_MESH") &&
+    fileContains(
+      "src/lib/perception/mesh.ts",
+      "BOARDROOM_COMPLIANCE_RULES",
+    ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Perception public APIs present (plan + correlate)",
+  existsSync(join(ROOT, "src/app/api/_perception/plan/route.ts")) &&
+    existsSync(join(ROOT, "src/app/api/_perception/correlate/route.ts")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Perception public APIs have re-exports",
+  existsSync(join(ROOT, "src/app/api/perception/plan/route.ts")) &&
+    existsSync(join(ROOT, "src/app/api/perception/correlate/route.ts")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "/trust/perception page present (live mesh planner UI)",
+  existsSync(join(ROOT, "src/app/trust/perception/page.tsx")) &&
+    existsSync(
+      join(ROOT, "src/app/trust/perception/LivePerceptionPlanner.tsx"),
+    ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "/trust/perception scoreboards architecture comparison + 5 node kinds + correlation rules",
+  fileContains("src/app/trust/perception/page.tsx", "ARCHITECTURE_VS") &&
+    fileContains("src/app/trust/perception/page.tsx", "NODE_KINDS") &&
+    fileContains(
+      "src/app/trust/perception/page.tsx",
+      "CORRELATION_KINDS",
+    ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Perception Leadership doc present (procurement positioning)",
+  existsSync(join(ROOT, "docs/MULTIMODAL-PERCEPTION-MESH.md")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Perception doc cites Nemotron Omni + competitive positioning",
+  fileContains(
+    "docs/MULTIMODAL-PERCEPTION-MESH.md",
+    "Nemotron 3 Nano Omni",
+  ) &&
+    fileContains(
+      "docs/MULTIMODAL-PERCEPTION-MESH.md",
+      "Operator",
+    ) &&
+    fileContains(
+      "docs/MULTIMODAL-PERCEPTION-MESH.md",
+      "Computer Use",
+    ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
 // Public HITL policy (procurement audit artifact)
 check(
   "/api/health/hitl-policy endpoint present (public audit)",
