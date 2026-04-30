@@ -41,12 +41,32 @@ const log = createLogger("well-known-trust");
 export const runtime = "nodejs";
 export const revalidate = 300;
 
+// v0.3.0 (Move 14) — adds public verifier endpoint surface
+// (/api/v1/verify/{surface}) so any auditor can replay our trust
+// claims with curl. Each surface routes to a pure-function verifier
+// in the platform; the @sovereign/inspector CLI mirrors the same
+// logic for offline use. Procurement-grade trust surface complete.
+//
 // v0.2.0 (Move 13) — extended with R100, R140-R145, R150, R155,
 // R160-R162 capabilities; added agentCard discovery endpoint;
 // added platformCapabilities[] mirror list sourced from
 // platform-card.ts so this manifest cannot drift from the A2A
 // Agent Card published at /.well-known/agent.json.
-const SPEC_VERSION = "0.2.0";
+const SPEC_VERSION = "0.3.0";
+
+/**
+ * The 6 verifier surfaces published at /api/v1/verify/{surface}.
+ * Mirrored from src/app/api/v1/verify/[surface]/route.ts. An auditor
+ * can POST evidence to any of these and get an offline-replay verdict.
+ */
+const VERIFIER_SURFACES = [
+  "audit-chain",
+  "agent-card",
+  "aibom",
+  "scope-evaluation",
+  "bridge-authorization",
+  "memory-payload",
+] as const;
 
 interface SovereignTrustDocument {
   /** Spec version. */
@@ -98,6 +118,13 @@ interface SovereignTrustDocument {
     mcpToolGateway: boolean;
     /** R162 — Cross-protocol privilege alignment (least-privilege bridge). */
     crossProtocolBridge: boolean;
+    /**
+     * Move 14 — public verifier endpoint at /api/v1/verify/{surface}.
+     * Every trust claim above can be replayed against pure-function
+     * verifiers exposed over HTTP. Verifiable offline via the
+     * @sovereign/inspector CLI; verifiable online via curl.
+     */
+    publicVerifierEndpoint: boolean;
   };
   /**
    * Mirror of the platform Agent Card capability list. SAME constant
@@ -119,7 +146,22 @@ interface SovereignTrustDocument {
     publicTrace: string;
     /** R160 Move 13 — public Agent Card per Google A2A v1.0. */
     agentCard: string;
+    /**
+     * Move 14 — public verifier dispatcher. Replace `{surface}` with
+     * one of: audit-chain, agent-card, aibom, scope-evaluation,
+     * bridge-authorization, memory-payload. POST evidence as JSON,
+     * receive an offline-replay verdict.
+     */
+    verifier: string;
+    /** Move 14 — index endpoint listing all available verifier surfaces. */
+    verifierIndex: string;
   };
+  /**
+   * Move 14 — explicit list of verifier surfaces. Mirror of
+   * VERIFIER_SURFACES at the top of this route. Auditors can iterate
+   * this list to discover every verifiable claim.
+   */
+  verifierSurfaces: ReadonlyArray<string>;
   /**
    * The verifier package customers use to check our claims locally.
    * This is the "you don't need to trust us" link.
@@ -195,6 +237,7 @@ export async function GET(req: Request) {
       agentCardA2A: true, // R160 — Move 13 (this commit)
       mcpToolGateway: true, // R161 — Move 11
       crossProtocolBridge: true, // R162 — Move 12
+      publicVerifierEndpoint: true, // Move 14 — this commit
     },
     platformCapabilities: SOVEREIGN_PLATFORM_CAPABILITIES,
     endpoints: {
@@ -208,7 +251,10 @@ export async function GET(req: Request) {
       verifyDelegation: `${canonicalUrl}/api/health/verify-delegation`,
       publicTrace: `${canonicalUrl}/api/health/trace/{traceId}`,
       agentCard: `${canonicalUrl}/.well-known/agent.json`,
+      verifier: `${canonicalUrl}/api/v1/verify/{surface}`,
+      verifierIndex: `${canonicalUrl}/api/v1/verify/index`,
     },
+    verifierSurfaces: VERIFIER_SURFACES,
     verifier: {
       npmPackage: "@sovereign/inspector",
       install: "npm install -g @sovereign/inspector",

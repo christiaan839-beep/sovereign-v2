@@ -2725,6 +2725,129 @@ check(
   { dimension: "trust-asset" },
 );
 
+// ─── Move 14 — Public verifier endpoint /api/v1/verify/{surface} ─────
+//
+// The standard-setting move. Turns every inspector subcommand into a
+// curl-able HTTP route so any auditor can replay our trust claims
+// without our cooperation. Six surfaces: audit-chain, agent-card,
+// aibom, scope-evaluation, bridge-authorization, memory-payload.
+// Procurement-grade trust surface complete.
+
+check(
+  "/api/v1/verify/[surface] public verifier route present",
+  existsSync(
+    join(ROOT, "src/app/api/v1/verify/[surface]/route.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "verifier route declares all 6 standard surfaces",
+  fileContains(
+    "src/app/api/v1/verify/[surface]/route.ts",
+    `"audit-chain"`,
+  ) &&
+    fileContains(
+      "src/app/api/v1/verify/[surface]/route.ts",
+      `"agent-card"`,
+    ) &&
+    fileContains(
+      "src/app/api/v1/verify/[surface]/route.ts",
+      `"aibom"`,
+    ) &&
+    fileContains(
+      "src/app/api/v1/verify/[surface]/route.ts",
+      `"scope-evaluation"`,
+    ) &&
+    fileContains(
+      "src/app/api/v1/verify/[surface]/route.ts",
+      `"bridge-authorization"`,
+    ) &&
+    fileContains(
+      "src/app/api/v1/verify/[surface]/route.ts",
+      `"memory-payload"`,
+    )
+    ? 1
+    : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "verifier route enforces 1MB body cap (DoS defense)",
+  fileContains(
+    "src/app/api/v1/verify/[surface]/route.ts",
+    "MAX_BODY_BYTES = 1_000_000",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "verifier route opens CORS for public auditing",
+  fileContains(
+    "src/app/api/v1/verify/[surface]/route.ts",
+    `"Access-Control-Allow-Origin": "*"`,
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "audit-log.ts exports pure-function verifyAuditChainRows (used by verifier endpoint)",
+  fileContains(
+    "src/lib/audit-log.ts",
+    "export function verifyAuditChainRows",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "sovereign-trust manifest declares publicVerifierEndpoint capability",
+  fileContains(
+    "src/app/.well-known/sovereign-trust/route.ts",
+    "publicVerifierEndpoint: true",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "sovereign-trust manifest exposes verifier + verifierIndex endpoints",
+  fileContains(
+    "src/app/.well-known/sovereign-trust/route.ts",
+    "verifier: `${canonicalUrl}/api/v1/verify/{surface}`",
+  ) &&
+    fileContains(
+      "src/app/.well-known/sovereign-trust/route.ts",
+      "verifierIndex: `${canonicalUrl}/api/v1/verify/index`",
+    )
+    ? 1
+    : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "sovereign-trust manifest version bumped to 0.3.0",
+  fileContains(
+    "src/app/.well-known/sovereign-trust/route.ts",
+    `SPEC_VERSION = "0.3.0"`,
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "inspector fetcher exposes postPublicVerify + fetchVerifierIndex helpers",
+  fileContains(
+    "packages/inspector/src/fetch.mjs",
+    "postPublicVerify",
+  ) &&
+    fileContains(
+      "packages/inspector/src/fetch.mjs",
+      "fetchVerifierIndex",
+    )
+    ? 1
+    : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
 // ─── Round 38 — Agent Identity Manifests (KYA Registry) ──────────────
 //
 // The missing primitive nobody has shipped. Closes the last major gap

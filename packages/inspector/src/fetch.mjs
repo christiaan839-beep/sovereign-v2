@@ -127,6 +127,45 @@ export async function fetchAgentCard(deploymentUrl) {
 }
 
 /**
+ * POST evidence to a deployment's public verifier endpoint.
+ *
+ * Move 14. Convenience wrapper around the /api/v1/verify/{surface}
+ * route. Pass the surface name + request body; the deployment runs
+ * its pure-function verifier against the body and returns a verdict.
+ *
+ * NOTE: this is the OPTIONAL online path. The same verification can
+ * be done OFFLINE using the local inspector verifiers (validateAgentCard,
+ * verifyAuditChainRows-style helpers, etc.) — Sovereign is never a
+ * required trust anchor.
+ *
+ * Example:
+ *   const r = await postPublicVerify(
+ *     "https://sovereignmatrix.agency",
+ *     "agent-card",
+ *     { card },
+ *   );
+ *   if (!r.ok) console.error(r.reason);
+ */
+export async function postPublicVerify(deploymentUrl, surface, body) {
+  return fetchJson(`${deploymentUrl}/api/v1/verify/${encodeURIComponent(surface)}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+}
+
+/**
+ * Fetch the public verifier surface index. Returns the list of
+ * surfaces a deployment exposes. Useful for compatibility checks.
+ */
+export async function fetchVerifierIndex(deploymentUrl) {
+  return fetchJson(`${deploymentUrl}/api/v1/verify/index`);
+}
+
+/**
  * Crawl a federation graph starting from one instance.
  *
  * Recursively fetches /.well-known/sovereign-trust from each peer,

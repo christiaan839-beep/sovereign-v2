@@ -168,6 +168,81 @@ export async function auditLog(entry: AuditEntry): Promise<void> {
 }
 
 /**
+ * Audit-log row shape for offline chain verification. Camel-case
+ * because this is the pure-function entry point — DB-side verifyAuditChain
+ * maps snake-case DB columns into this shape before calling.
+ *
+ * Public so the /api/v1/verify/audit-chain endpoint can accept
+ * caller-provided rows in the request body.
+ */
+export interface AuditChainRow {
+  id: string;
+  userId: string;
+  action: string;
+  resource: string | null;
+  detailsJson: string | null;
+  createdAt: string | Date;
+  prevHash: string | null;
+  rowHash: string | null;
+}
+
+/**
+ * Pure: verify a hash chain over a row array. Returns the first
+ * broken position if any, or null if the chain is intact.
+ *
+ * Reused by:
+ *   - DB-bound verifyAuditChain (cron + admin endpoint)
+ *   - /api/v1/verify/audit-chain public verifier endpoint
+ *   - tests + the inspector port mirror
+ *
+ * Pre-migration rows (rowHash null) are skipped — the chain anchors
+ * at the first row with a non-null rowHash, matching the migration's
+ * intended boundary.
+ */
+export function verifyAuditChainRows(rows: AuditChainRow[]): {
+  valid: boolean;
+  checked: number;
+  brokenAt: string | null;
+  expectedPrev: string | null;
+  foundPrev: string | null;
+} {
+  let lastHash = "GENESIS";
+  let checked = 0;
+  for (const r of rows) {
+    if (r.rowHash === null) continue; // skip pre-migration anchor row
+    const resource = r.resource ?? "";
+    const detailsJson = r.detailsJson ?? "{}";
+    const createdAtIso = new Date(r.createdAt).toISOString();
+    const expected = hashRow({
+      prevHash: lastHash,
+      userId: r.userId,
+      action: r.action,
+      resource,
+      detailsJson,
+      createdAtIso,
+    });
+    if (r.prevHash !== lastHash || r.rowHash !== expected) {
+      return {
+        valid: false,
+        checked,
+        brokenAt: r.id,
+        expectedPrev: lastHash,
+        foundPrev: r.prevHash,
+      };
+    }
+    lastHash = r.rowHash;
+    checked++;
+  }
+  return {
+    valid: true,
+    checked,
+    brokenAt: null,
+    expectedPrev: null,
+    foundPrev: null,
+  };
+}
+
+/**
  * Verify the hash chain from the oldest hashed row forward. Returns the
  * first broken position if any, or null if the chain is intact. Used by
  * /api/admin/audit/verify-chain (admin-only) + can run as a cron check.
@@ -175,6 +250,8 @@ export async function auditLog(entry: AuditEntry): Promise<void> {
  * Pre-migration rows (NULL row_hash) are skipped — the chain anchors at
  * the first row with a row_hash, which is the migration's intended
  * boundary.
+ *
+ * Now thin: fetches rows from DB and delegates to verifyAuditChainRows.
  */
 export async function verifyAuditChain(opts: { limit?: number } = {}): Promise<{
   valid: boolean;
@@ -202,37 +279,16 @@ export async function verifyAuditChain(opts: { limit?: number } = {}): Promise<{
   );
 
   const list = Array.isArray(rows) ? rows : [];
-  let lastHash = "GENESIS";
-  let checked = 0;
-  for (const r of list) {
-    const resource = r.resource ?? "";
-    const detailsJson = r.details ?? "{}";
-    const createdAtIso = new Date(r.created_at).toISOString();
-    const expected = hashRow({
-      prevHash: lastHash,
+  return verifyAuditChainRows(
+    list.map((r) => ({
+      id: r.id,
       userId: r.user_id,
       action: r.action,
-      resource,
-      detailsJson,
-      createdAtIso,
-    });
-    if (r.prev_hash !== lastHash || r.row_hash !== expected) {
-      return {
-        valid: false,
-        checked,
-        brokenAt: r.id,
-        expectedPrev: lastHash,
-        foundPrev: r.prev_hash,
-      };
-    }
-    lastHash = r.row_hash ?? lastHash;
-    checked++;
-  }
-  return {
-    valid: true,
-    checked,
-    brokenAt: null,
-    expectedPrev: null,
-    foundPrev: null,
-  };
+      resource: r.resource,
+      detailsJson: r.details,
+      createdAt: r.created_at,
+      prevHash: r.prev_hash,
+      rowHash: r.row_hash,
+    })),
+  );
 }
