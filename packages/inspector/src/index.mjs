@@ -21,3 +21,4 @@ export * from "./governance.mjs";
 export * from "./memory-guard.mjs";
 export * from "./aibom.mjs";
 export * from "./hitl-routing.mjs";
+export * from "./a2a.mjs";

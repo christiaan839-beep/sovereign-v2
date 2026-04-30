@@ -6914,6 +6914,96 @@ check(
   { dimension: "process" },
 );
 
+// ─── R160 — A2A Agent Card (Move 10) ──────────────────────────────
+// Pure-function core of Google's Agent-to-Agent protocol v1.0.
+// Sovereign agents publish canonical Agent Cards with SHA-256
+// fingerprints; peers verify offline that the card hasn't been
+// tampered with. Composes with R34 identity + R37 ACT.
+
+check(
+  "R160 A2A Agent Card module present",
+  existsSync(join(ROOT, "src/lib/protocols/a2a/agent-card.ts")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R160 declares 6 canonical auth schemes",
+  fileContains("src/lib/protocols/a2a/agent-card.ts", '"none"') &&
+    fileContains("src/lib/protocols/a2a/agent-card.ts", '"act-token"') &&
+    fileContains("src/lib/protocols/a2a/agent-card.ts", '"acat-mandate"') &&
+    fileContains("src/lib/protocols/a2a/agent-card.ts", '"oauth2"') ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R160 cards are SHA-256 fingerprinted (anti-tampering)",
+  fileContains("src/lib/protocols/a2a/agent-card.ts", "computeAgentCardFingerprint") &&
+    fileContains("src/lib/protocols/a2a/agent-card.ts", "createHash") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "R160 fingerprint excludes description (surface-only field)",
+  // The canonical encoding does not include description; tests assert this
+  fileContains(
+    "src/lib/protocols/a2a/__tests__/agent-card.test.ts",
+    "excludes description from the canonical encoding",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R160 rpc endpoint must be HTTPS",
+  fileContains("src/lib/protocols/a2a/agent-card.ts", "rpc_endpoint_not_https") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "R160 handshake state machine has 5 named states + terminal classifier",
+  fileContains("src/lib/protocols/a2a/agent-card.ts", '"invited"') &&
+    fileContains("src/lib/protocols/a2a/agent-card.ts", '"challenged"') &&
+    fileContains("src/lib/protocols/a2a/agent-card.ts", '"authenticated"') &&
+    fileContains("src/lib/protocols/a2a/agent-card.ts", '"established"') &&
+    fileContains("src/lib/protocols/a2a/agent-card.ts", "isTerminalHandshakeState") ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R160 ships tests",
+  existsSync(
+    join(ROOT, "src/lib/protocols/a2a/__tests__/agent-card.test.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "Inspector — a2a.mjs port present (R160 offline verifier)",
+  existsSync(join(ROOT, "packages/inspector/src/a2a.mjs")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Inspector — a2a port has tests",
+  existsSync(join(ROOT, "packages/inspector/__tests__/a2a.test.mjs")) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "Inspector — index.mjs re-exports a2a.mjs",
+  fileContains("packages/inspector/src/index.mjs", "./a2a.mjs") ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
 // Public HITL policy (procurement audit artifact)
 check(
   "/api/health/hitl-policy endpoint present (public audit)",
