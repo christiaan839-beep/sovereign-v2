@@ -5705,6 +5705,159 @@ check(
   { dimension: "trust-asset" },
 );
 
+// ─── R120 — Edge Node Framework ────────────────────────────────────
+// The formal boundary between Sovereign and the open-source agentic
+// ecosystem. Stub-first, fail-closed adapter contract that wraps
+// every external dispatch with R100/R102/R26/R37/R91. Sister doc:
+// docs/EDGE-NODE-FRAMEWORK.md. Specific integrations follow as
+// R121-R130 (Trae / AgentFlow / Werkstatt / Kimi K2.6 / Cognee /
+// Qualixar / CUA / UI-TARS / Understudy / frontier models).
+
+check(
+  "R120 Edge Node Framework present (types + registry + dispatcher)",
+  existsSync(join(ROOT, "src/lib/edge-nodes/types.ts")) &&
+    existsSync(join(ROOT, "src/lib/edge-nodes/registry.ts")) &&
+    existsSync(join(ROOT, "src/lib/edge-nodes/dispatcher.ts")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R120 framework has unit tests",
+  existsSync(
+    join(ROOT, "src/lib/edge-nodes/__tests__/edge-nodes.test.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "R120 StubEdgeNode is fail-closed (matches R71/R54/R55 pattern)",
+  fileContains("src/lib/edge-nodes/stub-edge-node.ts", "edge_node_not_configured") &&
+    fileContains("src/lib/edge-nodes/stub-edge-node.ts", "isStub: true") &&
+    fileContains("src/lib/edge-nodes/stub-edge-node.ts", "not-configured") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "R120 dispatcher composes with R100 / R102 / R37 / R91 (preflight order)",
+  fileContains("src/lib/edge-nodes/dispatcher.ts", "policy_denied") &&
+    fileContains("src/lib/edge-nodes/dispatcher.ts", "act_required") &&
+    fileContains("src/lib/edge-nodes/dispatcher.ts", "acat_required") &&
+    fileContains("src/lib/edge-nodes/dispatcher.ts", "budget_exhausted") ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R120 routing decision distinguishes route / no-match / all-stub",
+  fileContains("src/lib/edge-nodes/dispatcher.ts", "no_node_supports_capability") &&
+    fileContains("src/lib/edge-nodes/dispatcher.ts", "only_stubs_available") ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R120 capability ranking applies stub-penalty (real > stub)",
+  fileContains("src/lib/edge-nodes/registry.ts", "stub-penalty") &&
+    fileContains("src/lib/edge-nodes/registry.ts", "stub = m.isStub ? 0.5 : 1.0") ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R120 three persona stubs present (software-engineer / analyst / operator)",
+  existsSync(
+    join(ROOT, "src/lib/edge-nodes/personas/software-engineer.ts"),
+  ) &&
+    existsSync(join(ROOT, "src/lib/edge-nodes/personas/analyst.ts")) &&
+    existsSync(join(ROOT, "src/lib/edge-nodes/personas/operator.ts")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R120 personas name procurement-readable upstreams (Trae / Cognee / CUA / Kimi / UI-TARS)",
+  fileContains(
+    "src/lib/edge-nodes/personas/software-engineer.ts",
+    "Trae Agent",
+  ) &&
+    fileContains("src/lib/edge-nodes/personas/analyst.ts", "Cognee") &&
+    fileContains("src/lib/edge-nodes/personas/analyst.ts", "Kimi K2.6") &&
+    fileContains(
+      "src/lib/edge-nodes/personas/operator.ts",
+      "UI-TARS-desktop",
+    ) &&
+    fileContains("src/lib/edge-nodes/personas/operator.ts", "CUA") ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R120 default registry registers all three persona stubs",
+  fileContains("src/lib/edge-nodes/index.ts", "createDefaultEdgeNodeRegistry") &&
+    fileContains("src/lib/edge-nodes/index.ts", "createSoftwareEngineerStub") &&
+    fileContains("src/lib/edge-nodes/index.ts", "createAnalystStub") &&
+    fileContains("src/lib/edge-nodes/index.ts", "createOperatorStub") ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Edge Node public APIs present (list + dispatch + re-exports)",
+  existsSync(join(ROOT, "src/app/api/_edge-nodes/route.ts")) &&
+    existsSync(
+      join(ROOT, "src/app/api/_edge-nodes/dispatch/route.ts"),
+    ) &&
+    existsSync(join(ROOT, "src/app/api/edge-nodes/route.ts")) &&
+    existsSync(
+      join(ROOT, "src/app/api/edge-nodes/dispatch/route.ts"),
+    ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "/trust/edge-nodes page present (live dispatcher preview UI)",
+  existsSync(join(ROOT, "src/app/trust/edge-nodes/page.tsx")) &&
+    existsSync(
+      join(ROOT, "src/app/trust/edge-nodes/LiveEdgeDispatcher.tsx"),
+    ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "/trust/edge-nodes scoreboards 3 personas + architecture comparison + composition layers",
+  fileContains("src/app/trust/edge-nodes/page.tsx", "PERSONAS") &&
+    fileContains("src/app/trust/edge-nodes/page.tsx", "ARCHITECTURE_VS") &&
+    fileContains(
+      "src/app/trust/edge-nodes/page.tsx",
+      "COMPOSITION_LAYERS",
+    ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Edge Node Framework Leadership doc present (procurement positioning)",
+  existsSync(join(ROOT, "docs/EDGE-NODE-FRAMEWORK.md")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Edge Node doc names integration roadmap (R121-R130) + composition story",
+  fileContains("docs/EDGE-NODE-FRAMEWORK.md", "R121") &&
+    fileContains("docs/EDGE-NODE-FRAMEWORK.md", "R130") &&
+    fileContains("docs/EDGE-NODE-FRAMEWORK.md", "Trae Agent") &&
+    fileContains("docs/EDGE-NODE-FRAMEWORK.md", "Cognee") &&
+    fileContains("docs/EDGE-NODE-FRAMEWORK.md", "UI-TARS-desktop") ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
 // Public HITL policy (procurement audit artifact)
 check(
   "/api/health/hitl-policy endpoint present (public audit)",
