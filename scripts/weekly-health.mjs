@@ -5858,6 +5858,198 @@ check(
   { dimension: "trust-asset" },
 );
 
+// ─── R130 — Performance Observatory ───────────────────────────────
+// Anti-AI-washing benchmark registry. Closes evaluation gaps E4
+// (contamination), E6 (CuP-as-standard), E8 (auto-auditing), E9
+// (infrastructure noise) from the April 2026 strategic gap inventory.
+// Sister doc: docs/PERFORMANCE-OBSERVATORY.md.
+
+check(
+  "R130 Performance Observatory framework present (4 pure-function files)",
+  existsSync(join(ROOT, "src/lib/performance/targets.ts")) &&
+    existsSync(join(ROOT, "src/lib/performance/benchmark-results.ts")) &&
+    existsSync(join(ROOT, "src/lib/performance/gap-analysis.ts")) &&
+    existsSync(join(ROOT, "src/lib/performance/attestation.ts")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R130 framework has unit tests (54+ tests)",
+  existsSync(
+    join(ROOT, "src/lib/performance/__tests__/performance.test.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "R130 targets registry ships 7 prebuilt 2026 SOTA targets",
+  fileContains("src/lib/performance/targets.ts", "swe-bench-verified") &&
+    fileContains("src/lib/performance/targets.ts", "swe-bench-pro") &&
+    fileContains("src/lib/performance/targets.ts", "gaia-level-3") &&
+    fileContains("src/lib/performance/targets.ts", "long-mem-eval") &&
+    fileContains(
+      "src/lib/performance/targets.ts",
+      "gateway-throughput-rps",
+    ) &&
+    fileContains("src/lib/performance/targets.ts", "gateway-overhead-ms") &&
+    fileContains(
+      "src/lib/performance/targets.ts",
+      "broker-throughput-msgs-per-s",
+    ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R130 every target carries a verificationKind (anti-AI-washing structural rule)",
+  fileContains("src/lib/performance/targets.ts", "independent-replayable") &&
+    fileContains("src/lib/performance/targets.ts", "internal-only") &&
+    fileContains("src/lib/performance/targets.ts", "claimed-only") &&
+    fileContains("src/lib/performance/targets.ts", "verificationKind") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "R130 result validation refuses scores without runHash + measuredAt + source fields",
+  fileContains(
+    "src/lib/performance/benchmark-results.ts",
+    "missing_run_hash",
+  ) &&
+    fileContains(
+      "src/lib/performance/benchmark-results.ts",
+      "missing_measured_at",
+    ) &&
+    fileContains(
+      "src/lib/performance/benchmark-results.ts",
+      "missing_source_fields",
+    ) &&
+    fileContains(
+      "src/lib/performance/benchmark-results.ts",
+      "verification_too_weak",
+    ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "R130 status classifier surfaces 'not-measured' explicitly (no silent claims)",
+  fileContains(
+    "src/lib/performance/benchmark-results.ts",
+    "\"not-measured\"",
+  ) &&
+    fileContains(
+      "src/lib/performance/benchmark-results.ts",
+      "No measurement recorded",
+    ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R130 gap analysis uses linear extrapolation (transparent + replayable, NOT opaque ML)",
+  fileContains("src/lib/performance/gap-analysis.ts", "leastSquaresFit") &&
+    fileContains(
+      "src/lib/performance/gap-analysis.ts",
+      "estimateTimeToTarget",
+    ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R130 attestation composes with R44 chain hash pattern (GENESIS + sha256)",
+  fileContains("src/lib/performance/attestation.ts", "GENESIS") &&
+    fileContains(
+      "src/lib/performance/attestation.ts",
+      "computeAttestationChainHash",
+    ) &&
+    fileContains(
+      "src/lib/performance/attestation.ts",
+      "buildBenchmarkAttestationMessage",
+    ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "R130 public APIs present (targets + results/verify + gap-analysis + re-exports)",
+  existsSync(join(ROOT, "src/app/api/_performance/targets/route.ts")) &&
+    existsSync(
+      join(ROOT, "src/app/api/_performance/results/verify/route.ts"),
+    ) &&
+    existsSync(
+      join(ROOT, "src/app/api/_performance/gap-analysis/route.ts"),
+    ) &&
+    existsSync(join(ROOT, "src/app/api/performance/targets/route.ts")) &&
+    existsSync(
+      join(ROOT, "src/app/api/performance/results/verify/route.ts"),
+    ) &&
+    existsSync(
+      join(ROOT, "src/app/api/performance/gap-analysis/route.ts"),
+    ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "/trust/performance-observatory page present (live benchmark board)",
+  existsSync(
+    join(ROOT, "src/app/trust/performance-observatory/page.tsx"),
+  ) &&
+    existsSync(
+      join(
+        ROOT,
+        "src/app/trust/performance-observatory/LiveBenchmarkBoard.tsx",
+      ),
+    ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "/trust/performance-observatory documents 5 anti-AI-washing rules + roadmap",
+  fileContains(
+    "src/app/trust/performance-observatory/page.tsx",
+    "ANTI_AI_WASHING_RULES",
+  ) &&
+    fileContains(
+      "src/app/trust/performance-observatory/page.tsx",
+      "ARCHITECTURE_VS",
+    ) &&
+    fileContains(
+      "src/app/trust/performance-observatory/page.tsx",
+      "PHASES",
+    ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Performance Observatory leadership doc present",
+  existsSync(join(ROOT, "docs/PERFORMANCE-OBSERVATORY.md")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Leadership doc cites real evaluation crisis (Berkeley, OpenAI Verified deprecation, BenchGuard)",
+  fileContains("docs/PERFORMANCE-OBSERVATORY.md", "UC Berkeley") &&
+    fileContains(
+      "docs/PERFORMANCE-OBSERVATORY.md",
+      "OpenAI",
+    ) &&
+    fileContains("docs/PERFORMANCE-OBSERVATORY.md", "BenchGuard") &&
+    fileContains(
+      "docs/PERFORMANCE-OBSERVATORY.md",
+      "Completion Under Policy",
+    ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
 // Public HITL policy (procurement audit artifact)
 check(
   "/api/health/hitl-policy endpoint present (public audit)",
