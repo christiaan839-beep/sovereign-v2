@@ -41,18 +41,17 @@ const log = createLogger("well-known-trust");
 export const runtime = "nodejs";
 export const revalidate = 300;
 
-// v0.3.0 (Move 14) — adds public verifier endpoint surface
-// (/api/v1/verify/{surface}) so any auditor can replay our trust
-// claims with curl. Each surface routes to a pure-function verifier
-// in the platform; the @sovereign/inspector CLI mirrors the same
-// logic for offline use. Procurement-grade trust surface complete.
+// v1.0.0 (Move 15) — open-spec milestone. The manifest schema is
+// now published as Working Draft 1.0 at:
+//   docs/SOVEREIGN_TRUST_MANIFEST_SPEC.md
+//   public/.well-known/sovereign-trust.schema.json
+// Conformance test at src/app/api/__tests__/sovereign-trust-conformance.test.ts
+// keeps the route in sync with the published spec.
 //
+// v0.3.0 (Move 14) — adds public verifier endpoint surface.
 // v0.2.0 (Move 13) — extended with R100, R140-R145, R150, R155,
-// R160-R162 capabilities; added agentCard discovery endpoint;
-// added platformCapabilities[] mirror list sourced from
-// platform-card.ts so this manifest cannot drift from the A2A
-// Agent Card published at /.well-known/agent.json.
-const SPEC_VERSION = "0.3.0";
+// R160-R162 capabilities; added agentCard discovery endpoint.
+const SPEC_VERSION = "1.0.0";
 
 /**
  * The 6 verifier surfaces published at /api/v1/verify/{surface}.
@@ -69,8 +68,12 @@ const VERIFIER_SURFACES = [
 ] as const;
 
 interface SovereignTrustDocument {
-  /** Spec version. */
+  /** Spec version-pinned URL — see Sovereign Trust Manifest 1.0 §8. */
   $schema: string;
+  /** Human-readable URL for the published spec text. */
+  spec: string;
+  /** Schema URL clients can fetch to validate this document. */
+  schemaUrl: string;
   /** When this document was generated. */
   generatedAt: string;
   /** Self-identification. */
@@ -201,6 +204,8 @@ export async function GET(req: Request) {
 
   const doc: SovereignTrustDocument = {
     $schema: `https://sovereignmatrix.agency/.well-known/sovereign-trust/v${SPEC_VERSION}`,
+    spec: `${canonicalUrl}/docs/SOVEREIGN_TRUST_MANIFEST_SPEC.md`,
+    schemaUrl: `${canonicalUrl}/.well-known/sovereign-trust.schema.json`,
     generatedAt: new Date().toISOString(),
     identity: {
       name: "Sovereign Matrix",

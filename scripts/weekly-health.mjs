@@ -2848,6 +2848,121 @@ check(
   { dimension: "trust-asset" },
 );
 
+// ─── Move 15 — Sovereign Trust Manifest 1.0 open spec ────────────────
+//
+// The standard-setting milestone. The /.well-known/sovereign-trust
+// endpoint now publishes a version-pinned $schema URL; the schema
+// itself is checked into public/.well-known/sovereign-trust.schema.json;
+// the normative spec text is at docs/SOVEREIGN_TRUST_MANIFEST_SPEC.md.
+// Conformance tests verify the live route never drifts from the spec.
+
+check(
+  "Sovereign Trust Manifest spec doc present",
+  existsSync(
+    join(ROOT, "docs/SOVEREIGN_TRUST_MANIFEST_SPEC.md"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "Sovereign Trust Manifest JSON Schema present",
+  existsSync(
+    join(ROOT, "public/.well-known/sovereign-trust.schema.json"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "manifest version bumped to 1.0.0 (open-spec milestone)",
+  fileContains(
+    "src/app/.well-known/sovereign-trust/route.ts",
+    `SPEC_VERSION = "1.0.0"`,
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "manifest exposes spec + schemaUrl fields (self-describing)",
+  fileContains(
+    "src/app/.well-known/sovereign-trust/route.ts",
+    "spec: `${canonicalUrl}/docs/SOVEREIGN_TRUST_MANIFEST_SPEC.md`",
+  ) &&
+    fileContains(
+      "src/app/.well-known/sovereign-trust/route.ts",
+      "schemaUrl: `${canonicalUrl}/.well-known/sovereign-trust.schema.json`",
+    )
+    ? 1
+    : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "spec doc declares all 6 standard verifier surfaces",
+  fileContains(
+    "docs/SOVEREIGN_TRUST_MANIFEST_SPEC.md",
+    "audit-chain",
+  ) &&
+    fileContains(
+      "docs/SOVEREIGN_TRUST_MANIFEST_SPEC.md",
+      "agent-card",
+    ) &&
+    fileContains(
+      "docs/SOVEREIGN_TRUST_MANIFEST_SPEC.md",
+      "aibom",
+    ) &&
+    fileContains(
+      "docs/SOVEREIGN_TRUST_MANIFEST_SPEC.md",
+      "scope-evaluation",
+    ) &&
+    fileContains(
+      "docs/SOVEREIGN_TRUST_MANIFEST_SPEC.md",
+      "bridge-authorization",
+    ) &&
+    fileContains(
+      "docs/SOVEREIGN_TRUST_MANIFEST_SPEC.md",
+      "memory-payload",
+    )
+    ? 1
+    : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "spec doc declares load-bearing rule (instance MUST NOT be required trust anchor)",
+  fileContains(
+    "docs/SOVEREIGN_TRUST_MANIFEST_SPEC.md",
+    "MUST NOT be a required trust anchor",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "spec doc cites RFC 8615 (Well-Known URIs) and security.txt antecedents",
+  fileContains(
+    "docs/SOVEREIGN_TRUST_MANIFEST_SPEC.md",
+    "RFC 8615",
+  ) &&
+    fileContains(
+      "docs/SOVEREIGN_TRUST_MANIFEST_SPEC.md",
+      "RFC 9116",
+    )
+    ? 1
+    : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "conformance test present (keeps route + spec in sync)",
+  existsSync(
+    join(
+      ROOT,
+      "src/app/api/__tests__/sovereign-trust-conformance.test.ts",
+    ),
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
 // ─── Round 38 — Agent Identity Manifests (KYA Registry) ──────────────
 //
 // The missing primitive nobody has shipped. Closes the last major gap
