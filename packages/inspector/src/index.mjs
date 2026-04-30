@@ -17,3 +17,4 @@ export * from "./acat.mjs";
 export * from "./perception.mjs";
 export * from "./edge-nodes.mjs";
 export * from "./performance.mjs";
+export * from "./governance.mjs";

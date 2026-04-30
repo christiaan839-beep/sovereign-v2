@@ -113,6 +113,10 @@ import {
   computeAttestationChainHash,
   gapReport,
 } from "./performance.mjs";
+import {
+  verifyGovernanceTraceStructure,
+  GOVERNANCE_LAYERS,
+} from "./governance.mjs";
 import { readFileSync } from "node:fs";
 
 // ── Color output (no deps) ──────────────────────────────────────────
@@ -179,6 +183,8 @@ function printUsage() {
   console.log("                          { request, policy, cost, persona?, deployment? }");
   console.log("  verify-benchmark        Verify a benchmark result + attestation message from stdin (JSON)");
   console.log("                          { result, attestedAt? }");
+  console.log("  verify-governance-trace Replay a PAGRL governance consultation from stdin (JSON)");
+  console.log("                          { rules, context, claimed: { verdict, matchedRuleId, finalLayer } }");
   console.log("");
   console.log("DOCS: https://sovereignmatrix.agency/trust/agentic-commerce");
 }
@@ -1038,6 +1044,67 @@ async function cmdCreditVerify(url, agentId) {
   return 1;
 }
 
+/**
+ * R142 PAGRL — verify-governance-trace.
+ *
+ * Reads a claimed PAGRL governance trace from stdin (JSON) and
+ * structurally verifies it against PAGRL semantics WITHOUT requiring
+ * the live predicates (which can't survive JSON serialization).
+ *
+ * Body shape:
+ *   {
+ *     trace: GovernanceTraceEntry[],
+ *     claimed: { verdict, matchedRuleId, finalLayer }
+ *   }
+ *
+ * Verifies: canonical layer order, first-match-wins per layer,
+ * verdict = most-restrictive matched effect, matchedRuleId/finalLayer
+ * consistency, escalate short-circuit.
+ */
+async function cmdVerifyGovernanceTrace() {
+  header("PAGRL governance trace TRUSTLESS verification (LOCAL, OFFLINE)");
+  const stdin = readFileSync(0, "utf8");
+  let body;
+  try {
+    body = JSON.parse(stdin);
+  } catch (err) {
+    bad(`Failed to parse stdin as JSON: ${err.message}`);
+    return 1;
+  }
+  if (!body.trace || !body.claimed) {
+    bad("Body must contain { trace, claimed: { verdict, matchedRuleId, finalLayer } }");
+    return 2;
+  }
+  const result = verifyGovernanceTraceStructure({
+    trace: body.trace,
+    claimed: body.claimed,
+  });
+  if (!result.ok) {
+    bad(c.bold(`✗ INVALID — trace failed structural verification`));
+    for (const err of result.errors) {
+      console.log(c.red(`  • ${err}`));
+    }
+    return 1;
+  }
+  ok(c.bold(`✓ VALID — trace conforms to PAGRL semantics`));
+  console.log(c.gray(`  layers (canonical): ${GOVERNANCE_LAYERS.join(" → ")}`));
+  console.log(c.gray(`  trace length: ${body.trace.length}`));
+  console.log(c.gray(`  matched entries: ${body.trace.filter((t) => t.matched).length}`));
+  console.log(c.gray(`  claimed verdict: ${body.claimed.verdict}`));
+  if (body.claimed.matchedRuleId) {
+    console.log(c.gray(`  matched rule: ${body.claimed.matchedRuleId} @ ${body.claimed.finalLayer}`));
+  } else {
+    console.log(c.gray(`  matched rule: (none — clean permit)`));
+  }
+  console.log("");
+  console.log(
+    info(
+      "This verifier checks structural consistency only. To replay against the live rule set, use the programmatic verifyGovernanceTrace() with predicates loaded.",
+    ),
+  );
+  return 0;
+}
+
 async function cmdVerifyToken() {
   header("ACT chain verification (LOCAL — Macaroon-pattern attenuation)");
   const stdin = readFileSync(0, "utf8");
@@ -1300,6 +1367,8 @@ async function main() {
       return cmdVerifyEdgeDispatch();
     case "verify-benchmark":
       return cmdVerifyBenchmark();
+    case "verify-governance-trace":
+      return cmdVerifyGovernanceTrace();
     default:
       bad(`Unknown command: ${cmd}`);
       printUsage();

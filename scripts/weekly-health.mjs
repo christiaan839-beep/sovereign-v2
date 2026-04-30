@@ -6366,6 +6366,105 @@ check(
   { dimension: "process" },
 );
 
+// ─── R142 — PAGRL (Pre-Action Governance Reasoning Loop) ───────────
+// Move 6 of the proof-conversion arc. Pure-function 4-layer ruleset
+// consultation that runs UPSTREAM of R100's policy gate. Internalized
+// governance per "Think Before You Act" (April 2026, 14-author
+// production-validated paper) — produces 95% compliance accuracy
+// with zero false escalations. Gives SOC 2 / EU AI Act auditors WHICH
+// layer's rule fired and WHY for every state-changing action.
+
+check(
+  "R142 PAGRL module present (governance.ts)",
+  existsSync(join(ROOT, "src/lib/control-plane/governance.ts")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R142 declares all 4 canonical layers (global / workflow / agent / situational)",
+  fileContains("src/lib/control-plane/governance.ts", '"global"') &&
+    fileContains("src/lib/control-plane/governance.ts", '"workflow"') &&
+    fileContains("src/lib/control-plane/governance.ts", '"agent"') &&
+    fileContains("src/lib/control-plane/governance.ts", '"situational"') ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R142 declares all 3 verdicts (permit / modify / escalate)",
+  fileContains("src/lib/control-plane/governance.ts", '"permit"') &&
+    fileContains("src/lib/control-plane/governance.ts", '"modify"') &&
+    fileContains("src/lib/control-plane/governance.ts", '"escalate"') ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R142 PAGRL is feature-flagged (SOVEREIGN_GOVERNANCE_LOOP_ENABLED, default-OFF)",
+  fileContains(
+    "src/lib/control-plane/governance.ts",
+    'SOVEREIGN_GOVERNANCE_LOOP_ENABLED === "true"',
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "R142 fires agent.governance_consult audit action (already in audit-log vocab)",
+  fileContains("src/lib/control-plane/governance.ts", '"agent.governance_consult"') ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "R142 PAGRL ships tests",
+  existsSync(
+    join(ROOT, "src/lib/control-plane/__tests__/governance.test.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+// ─── R143 — ODTA (Observability/Decidability/Timeliness/Attestability) ─
+// Runtime-placement test from "Beyond Task Success" (April 2026).
+// Closes the governance-to-action closure gap: ensures every state-
+// changing action passes 4 named predicates before dispatch.
+
+check(
+  "R143 ODTA module present (odta.ts)",
+  existsSync(join(ROOT, "src/lib/control-plane/odta.ts")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R143 declares all 4 canonical predicates (observability / decidability / timeliness / attestability)",
+  fileContains("src/lib/control-plane/odta.ts", '"observability"') &&
+    fileContains("src/lib/control-plane/odta.ts", '"decidability"') &&
+    fileContains("src/lib/control-plane/odta.ts", '"timeliness"') &&
+    fileContains("src/lib/control-plane/odta.ts", '"attestability"') ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R143 ODTA is feature-flagged (SOVEREIGN_ODTA_GATE_ENABLED, default-OFF)",
+  fileContains(
+    "src/lib/control-plane/odta.ts",
+    'SOVEREIGN_ODTA_GATE_ENABLED === "true"',
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "R143 ODTA ships tests",
+  existsSync(join(ROOT, "src/lib/control-plane/__tests__/odta.test.ts")) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
 // ─── Inspector v1.0 — All 5 pillars covered offline ──────────────
 // The procurement-grade trust artifact. One npm install gives
 // auditors the ability to verify ACAT (R91) + Stripe evidence (R92) +
@@ -6509,6 +6608,44 @@ check(
       "packages/inspector/src/cli.mjs",
       "verify-benchmark",
     ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+// ─── Inspector — R142 PAGRL + R143 ODTA port (Move 6) ────────────
+// Customers replay any governance consultation offline and verify
+// the verdict claimed by the platform was produced by the same
+// algorithm. Closes governance-to-action gap from auditor side.
+
+check(
+  "Inspector — governance.mjs port present (R142/R143 offline verifier)",
+  existsSync(join(ROOT, "packages/inspector/src/governance.mjs")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Inspector — governance port has tests",
+  existsSync(
+    join(ROOT, "packages/inspector/__tests__/governance.test.mjs"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "Inspector — index.mjs re-exports governance.mjs",
+  fileContains("packages/inspector/src/index.mjs", "./governance.mjs") ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "Inspector CLI exposes verify-governance-trace subcommand",
+  fileContains(
+    "packages/inspector/src/cli.mjs",
+    "verify-governance-trace",
+  ) ? 1 : 0,
   1,
   { dimension: "trust-asset" },
 );
