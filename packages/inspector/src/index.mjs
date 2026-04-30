@@ -19,3 +19,4 @@ export * from "./edge-nodes.mjs";
 export * from "./performance.mjs";
 export * from "./governance.mjs";
 export * from "./memory-guard.mjs";
+export * from "./aibom.mjs";

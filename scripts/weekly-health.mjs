@@ -6743,6 +6743,103 @@ check(
   { dimension: "trust-asset" },
 );
 
+// ─── R150 — Agentic AI Bill of Materials (Move 8) ─────────────────
+// Pure-function generator that emits SPDX 3.1-compatible AIBOM
+// documents with hash-anchored components + document hash. Closes
+// OWASP ASI04 (Agentic Supply Chain Vulnerabilities) attestation
+// gap.
+
+check(
+  "R150 AIBOM module present (aibom.ts)",
+  existsSync(join(ROOT, "src/lib/supply-chain/aibom.ts")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R150 declares 5 component kinds + 6 relationship kinds",
+  fileContains("src/lib/supply-chain/aibom.ts", '"model"') &&
+    fileContains("src/lib/supply-chain/aibom.ts", '"tool"') &&
+    fileContains("src/lib/supply-chain/aibom.ts", '"data-source"') &&
+    fileContains("src/lib/supply-chain/aibom.ts", '"agent"') &&
+    fileContains("src/lib/supply-chain/aibom.ts", '"dependency"') &&
+    fileContains("src/lib/supply-chain/aibom.ts", '"DEPENDS_ON"') &&
+    fileContains("src/lib/supply-chain/aibom.ts", '"INVOKES"') &&
+    fileContains("src/lib/supply-chain/aibom.ts", '"TRAINED_ON"') ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R150 components are SHA-256 fingerprinted (anti-tampering anchor)",
+  fileContains("src/lib/supply-chain/aibom.ts", "computeComponentFingerprint") &&
+    fileContains("src/lib/supply-chain/aibom.ts", "createHash") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "R150 documents are hash-anchored (computeDocumentHash with sorted canonical encoding)",
+  fileContains("src/lib/supply-chain/aibom.ts", "computeDocumentHash") &&
+    fileContains("src/lib/supply-chain/aibom.ts", "documentHash") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "R150 vulnerability blocklist primitive present",
+  fileContains("src/lib/supply-chain/aibom.ts", "checkVulnerabilityBlocklist") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "R150 fires agent.sbom_generated audit action",
+  fileContains("src/lib/audit-log.ts", '"agent.sbom_generated"') &&
+    fileContains("src/lib/supply-chain/aibom.ts", "agent.sbom_generated") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "R150 ships tests",
+  existsSync(
+    join(ROOT, "src/lib/supply-chain/__tests__/aibom.test.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "Inspector — aibom.mjs port present (R150 offline verifier)",
+  existsSync(join(ROOT, "packages/inspector/src/aibom.mjs")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Inspector — aibom port has tests",
+  existsSync(
+    join(ROOT, "packages/inspector/__tests__/aibom.test.mjs"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "Inspector — index.mjs re-exports aibom.mjs",
+  fileContains("packages/inspector/src/index.mjs", "./aibom.mjs") ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "Inspector CLI exposes verify-aibom subcommand",
+  fileContains("packages/inspector/src/cli.mjs", "verify-aibom") ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
 // Public HITL policy (procurement audit artifact)
 check(
   "/api/health/hitl-policy endpoint present (public audit)",

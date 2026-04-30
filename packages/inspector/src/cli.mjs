@@ -121,6 +121,10 @@ import {
   verifyMemoryPayloadBlock,
   PAYLOAD_DETECTORS,
 } from "./memory-guard.mjs";
+import {
+  validateAIBOMDocument,
+  checkVulnerabilityBlocklist,
+} from "./aibom.mjs";
 import { readFileSync } from "node:fs";
 
 // ── Color output (no deps) ──────────────────────────────────────────
@@ -191,6 +195,8 @@ function printUsage() {
   console.log("                          { rules, context, claimed: { verdict, matchedRuleId, finalLayer } }");
   console.log("  verify-memory-payload   Verify a R145 memory_payload_blocked audit entry from stdin (JSON)");
   console.log("                          { content, agentName, claimed }");
+  console.log("  verify-aibom            Validate a R150 AIBOM document from stdin (JSON)");
+  console.log("                          + optional --blocklist=CVE-1,CVE-2 to check known vulnerabilities");
   console.log("");
   console.log("DOCS: https://sovereignmatrix.agency/trust/agentic-commerce");
 }
@@ -1167,6 +1173,58 @@ async function cmdVerifyMemoryPayload() {
   return 0;
 }
 
+/**
+ * R150 AIBOM — verify-aibom.
+ *
+ * Validates an AIBOM document for structural + cryptographic
+ * consistency. Optionally checks against a CVE/AVE blocklist.
+ *
+ * Usage:
+ *   cat doc.json | sovereign-inspect verify-aibom
+ *   cat doc.json | sovereign-inspect verify-aibom --blocklist=CVE-2026-25253,AVE-001
+ */
+async function cmdVerifyAIBOM(args) {
+  header("AIBOM document TRUSTLESS verification (LOCAL, OFFLINE)");
+  const stdin = readFileSync(0, "utf8");
+  let doc;
+  try {
+    doc = JSON.parse(stdin);
+  } catch (err) {
+    bad(`Failed to parse stdin as JSON: ${err.message}`);
+    return 1;
+  }
+  const v = validateAIBOMDocument(doc);
+  if (!v.ok) {
+    bad(c.bold(`✗ INVALID — reason: ${v.reason}`));
+    if (v.details) console.log(c.gray(`  ${v.details}`));
+    return 1;
+  }
+  ok(c.bold(`✓ VALID — AIBOM passes all structural + crypto checks`));
+  console.log(c.gray(`  scope: ${doc.scope}`));
+  console.log(c.gray(`  generatedAt: ${doc.generatedAt}`));
+  console.log(c.gray(`  components: ${doc.components.length}`));
+  console.log(c.gray(`  relationships: ${doc.relationships.length}`));
+  console.log(c.gray(`  documentHash: ${doc.documentHash}`));
+
+  // Optional blocklist check
+  const blockArg = (args ?? []).find((a) => a.startsWith("--blocklist="));
+  if (blockArg) {
+    const blocklist = blockArg.replace("--blocklist=", "").split(",").filter(Boolean);
+    console.log("");
+    const r = checkVulnerabilityBlocklist({ doc, blocklist });
+    if (r.ok) {
+      ok(c.bold(`✓ Blocklist clean — no component carries any of: ${blocklist.join(", ")}`));
+    } else {
+      bad(c.bold(`✗ Blocklist matches found:`));
+      for (const m of r.matched) {
+        console.log(c.red(`  • component=${m.componentId} vulnerability=${m.vulnerability}`));
+      }
+      return 1;
+    }
+  }
+  return 0;
+}
+
 async function cmdVerifyToken() {
   header("ACT chain verification (LOCAL — Macaroon-pattern attenuation)");
   const stdin = readFileSync(0, "utf8");
@@ -1433,6 +1491,8 @@ async function main() {
       return cmdVerifyGovernanceTrace();
     case "verify-memory-payload":
       return cmdVerifyMemoryPayload();
+    case "verify-aibom":
+      return cmdVerifyAIBOM(argv.slice(1));
     default:
       bad(`Unknown command: ${cmd}`);
       printUsage();

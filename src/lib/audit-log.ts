@@ -78,8 +78,16 @@ export type AuditAction =
   // (zombie-memory / cross-agent contagion vector). The blocked
   // payload's content hash is recorded so SOC reviewers can
   // correlate refused writes across agents.
-  // VOCABULARY-ONLY today; the firing module ships in Move 9.
-  | "agent.memory_payload_blocked";
+  // FIRING MODULE: src/lib/memory/payload-guard.ts (Move 7).
+  | "agent.memory_payload_blocked"
+  // R150 Agentic Bill of Materials. Fired when an AIBOM is generated
+  // for a deployment scope (platform-wide, tenant, or release).
+  // Records the document hash + component count so SOC reviewers
+  // can attest to which model/tool/dependency snapshot was active
+  // at the moment of generation. OWASP ASI04 (Agentic Supply Chain
+  // Vulnerabilities) — closes the supply-chain attestation gap.
+  // FIRING MODULE: src/lib/supply-chain/aibom.ts (Move 8).
+  | "agent.sbom_generated";
 
 interface AuditEntry {
   userId: string;
