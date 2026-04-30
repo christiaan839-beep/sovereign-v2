@@ -7097,6 +7097,106 @@ check(
   { dimension: "process" },
 );
 
+// ─── R162 — Cross-Protocol Privilege Alignment (Move 12) ──────────
+// Pure-function bridge between R160 A2A peer auth and R161 MCP scope
+// auth. Defaults to LEAST-PRIVILEGE: a peer claim must be explicitly
+// mapped before it grants any MCP scope. Fires R144
+// agent.cross_protocol_block on every refusal. Closes Gap 50 + Gap
+// A7 (cross-protocol privilege escalation) from arXiv:2602.11327
+// threat model.
+
+check(
+  "R162 cross-protocol bridge module present",
+  existsSync(join(ROOT, "src/lib/protocols/cross-protocol-bridge.ts")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R162 declares 4 typed failure reasons",
+  fileContains("src/lib/protocols/cross-protocol-bridge.ts", '"no_mapping"') &&
+    fileContains("src/lib/protocols/cross-protocol-bridge.ts", '"scope_missing"') &&
+    fileContains("src/lib/protocols/cross-protocol-bridge.ts", '"claim_unverified"') &&
+    fileContains("src/lib/protocols/cross-protocol-bridge.ts", '"mismatched_scheme"') ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R162 default behavior is least-privilege (REFUSE_ALL_POLICY exported)",
+  fileContains(
+    "src/lib/protocols/cross-protocol-bridge.ts",
+    "REFUSE_ALL_POLICY",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "R162 fires agent.cross_protocol_block (R144 audit action)",
+  fileContains(
+    "src/lib/protocols/cross-protocol-bridge.ts",
+    '"agent.cross_protocol_block"',
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "R162 composes with R161 evaluateToolScope (single source of scope-grammar truth)",
+  fileContains(
+    "src/lib/protocols/cross-protocol-bridge.ts",
+    "evaluateToolScope",
+  ) &&
+    fileContains(
+      "src/lib/protocols/cross-protocol-bridge.ts",
+      "from \"@/lib/protocols/mcp/tool-descriptor\"",
+    ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "R162 ships tests including the privilege-escalation defense scenario",
+  existsSync(
+    join(ROOT, "src/lib/protocols/__tests__/cross-protocol-bridge.test.ts"),
+  ) &&
+    fileContains(
+      "src/lib/protocols/__tests__/cross-protocol-bridge.test.ts",
+      "privilege-escalation defense",
+    ) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "Inspector — cross-protocol-bridge.mjs port present (R162 offline verifier)",
+  existsSync(
+    join(ROOT, "packages/inspector/src/cross-protocol-bridge.mjs"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Inspector — cross-protocol-bridge port has tests",
+  existsSync(
+    join(ROOT, "packages/inspector/__tests__/cross-protocol-bridge.test.mjs"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "Inspector — index.mjs re-exports cross-protocol-bridge.mjs",
+  fileContains(
+    "packages/inspector/src/index.mjs",
+    "./cross-protocol-bridge.mjs",
+  ) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
 // Public HITL policy (procurement audit artifact)
 check(
   "/api/health/hitl-policy endpoint present (public audit)",
