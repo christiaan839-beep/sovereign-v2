@@ -6650,6 +6650,99 @@ check(
   { dimension: "trust-asset" },
 );
 
+// ─── R145 — Memory Payload Guard (Move 7) ─────────────────────────
+// Pure-function scanner that detects embedded-instruction patterns in
+// content being written to a memory store. Fires the
+// agent.memory_payload_blocked audit action that's been in the
+// audit-log vocabulary on disk since 6d0511c7. Closes the zombie-
+// memory + cross-agent contagion attack class from the Mnemonic
+// Sovereignty survey (April 2026).
+
+check(
+  "R145 memory-guard module present (payload-guard.ts)",
+  existsSync(join(ROOT, "src/lib/memory/payload-guard.ts")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R145 declares all 5 canonical detectors",
+  fileContains("src/lib/memory/payload-guard.ts", '"role-marker-injection"') &&
+    fileContains("src/lib/memory/payload-guard.ts", '"direct-instruction"') &&
+    fileContains("src/lib/memory/payload-guard.ts", '"tool-call-hijack"') &&
+    fileContains("src/lib/memory/payload-guard.ts", '"propagation-marker"') &&
+    fileContains("src/lib/memory/payload-guard.ts", '"encoded-payload"') ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "R145 fires agent.memory_payload_blocked audit action (already in vocab)",
+  fileContains("src/lib/memory/payload-guard.ts", '"agent.memory_payload_blocked"') ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "R145 is feature-flagged (SOVEREIGN_MEMORY_PAYLOAD_GUARD_ENABLED, default-OFF)",
+  fileContains(
+    "src/lib/memory/payload-guard.ts",
+    'SOVEREIGN_MEMORY_PAYLOAD_GUARD_ENABLED === "true"',
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "R145 anchors blocked content with SHA-256 hash (cross-agent correlation)",
+  fileContains("src/lib/memory/payload-guard.ts", "createHash") &&
+    fileContains("src/lib/memory/payload-guard.ts", '"sha256"') ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "R145 ships tests",
+  existsSync(join(ROOT, "src/lib/memory/__tests__/payload-guard.test.ts")) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+// ─── Inspector — R145 memory-guard port (Move 7) ─────────────────
+
+check(
+  "Inspector — memory-guard.mjs port present (R145 offline verifier)",
+  existsSync(join(ROOT, "packages/inspector/src/memory-guard.mjs")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Inspector — memory-guard port has tests",
+  existsSync(
+    join(ROOT, "packages/inspector/__tests__/memory-guard.test.mjs"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "Inspector — index.mjs re-exports memory-guard.mjs",
+  fileContains("packages/inspector/src/index.mjs", "./memory-guard.mjs") ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "Inspector CLI exposes verify-memory-payload subcommand",
+  fileContains(
+    "packages/inspector/src/cli.mjs",
+    "verify-memory-payload",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
 // Public HITL policy (procurement audit artifact)
 check(
   "/api/health/hitl-policy endpoint present (public audit)",

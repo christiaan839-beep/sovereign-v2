@@ -117,6 +117,10 @@ import {
   verifyGovernanceTraceStructure,
   GOVERNANCE_LAYERS,
 } from "./governance.mjs";
+import {
+  verifyMemoryPayloadBlock,
+  PAYLOAD_DETECTORS,
+} from "./memory-guard.mjs";
 import { readFileSync } from "node:fs";
 
 // ── Color output (no deps) ──────────────────────────────────────────
@@ -185,6 +189,8 @@ function printUsage() {
   console.log("                          { result, attestedAt? }");
   console.log("  verify-governance-trace Replay a PAGRL governance consultation from stdin (JSON)");
   console.log("                          { rules, context, claimed: { verdict, matchedRuleId, finalLayer } }");
+  console.log("  verify-memory-payload   Verify a R145 memory_payload_blocked audit entry from stdin (JSON)");
+  console.log("                          { content, agentName, claimed }");
   console.log("");
   console.log("DOCS: https://sovereignmatrix.agency/trust/agentic-commerce");
 }
@@ -1105,6 +1111,62 @@ async function cmdVerifyGovernanceTrace() {
   return 0;
 }
 
+/**
+ * R145 Memory Payload Guard — verify-memory-payload.
+ *
+ * Reads { content, agentName, claimed } from stdin where:
+ *   - content: the original UTF-8 string the agent tried to write
+ *   - agentName: the agent id (matches the claimed audit entry's
+ *                resource field — agent:<agentName>)
+ *   - claimed: the R26 audit entry as published by the platform
+ *              (action: agent.memory_payload_blocked)
+ *
+ * Verifies offline:
+ *   1. Re-scanning the content blocks (matches platform's claim)
+ *   2. SHA-256 contentHash matches (no swap / tampering)
+ *   3. Detector set matches (no missing or fabricated findings)
+ */
+async function cmdVerifyMemoryPayload() {
+  header("Memory payload audit-entry TRUSTLESS verification (LOCAL, OFFLINE)");
+  const stdin = readFileSync(0, "utf8");
+  let body;
+  try {
+    body = JSON.parse(stdin);
+  } catch (err) {
+    bad(`Failed to parse stdin as JSON: ${err.message}`);
+    return 1;
+  }
+  if (typeof body.content !== "string" || !body.agentName || !body.claimed) {
+    bad("Body must contain { content: string, agentName: string, claimed: AuditEntry }");
+    return 2;
+  }
+  const result = verifyMemoryPayloadBlock({
+    content: body.content,
+    agentName: body.agentName,
+    claimed: body.claimed,
+  });
+  if (!result.ok) {
+    bad(c.bold(`✗ INVALID — claimed audit entry does not match replay scan`));
+    for (const err of result.errors) {
+      console.log(c.red(`  • ${err}`));
+    }
+    return 1;
+  }
+  ok(c.bold(`✓ VALID — claimed audit entry matches replay scan`));
+  if (!result.replay.ok) {
+    console.log(c.gray(`  detectors fired: ${[...new Set(result.replay.result.findings.map((f) => f.detector))].join(", ")}`));
+    console.log(c.gray(`  contentHash: ${result.replay.contentHash}`));
+    console.log(c.gray(`  detector taxonomy: ${PAYLOAD_DETECTORS.join(" · ")}`));
+  }
+  console.log("");
+  console.log(
+    info(
+      "This verifier replays the platform's scanner against the original content and confirms every claim in the audit entry is reproducible.",
+    ),
+  );
+  return 0;
+}
+
 async function cmdVerifyToken() {
   header("ACT chain verification (LOCAL — Macaroon-pattern attenuation)");
   const stdin = readFileSync(0, "utf8");
@@ -1369,6 +1431,8 @@ async function main() {
       return cmdVerifyBenchmark();
     case "verify-governance-trace":
       return cmdVerifyGovernanceTrace();
+    case "verify-memory-payload":
+      return cmdVerifyMemoryPayload();
     default:
       bad(`Unknown command: ${cmd}`);
       printUsage();
