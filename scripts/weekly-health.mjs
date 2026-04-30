@@ -2591,6 +2591,140 @@ check(
   { dimension: "trust-asset" },
 );
 
+// ─── Move 13 — Public Agent Card (R160 Google A2A v1.0) ────────────────
+//
+// /.well-known/agent.json publishes the Sovereign Matrix platform-level
+// Agent Card so any A2A peer can discover the platform's capabilities,
+// auth schemes, and RPC endpoint without prior knowledge. The card
+// carries a SHA-256 fingerprint over canonical-encoded identity fields
+// so peers can pin against MITM-swap attempts. The capability list is
+// sourced from src/lib/protocols/a2a/platform-card.ts which is ALSO
+// imported by /.well-known/sovereign-trust — drift between the two
+// manifests is structurally impossible.
+
+check(
+  "/.well-known/agent.json public Agent Card route present",
+  existsSync(
+    join(ROOT, "src/app/.well-known/agent.json/route.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "platform-card single-source-of-truth library present",
+  existsSync(
+    join(ROOT, "src/lib/protocols/a2a/platform-card.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "platform-card exports SOVEREIGN_PLATFORM_CAPABILITIES + buildSovereignPlatformAgentCard",
+  fileContains(
+    "src/lib/protocols/a2a/platform-card.ts",
+    "SOVEREIGN_PLATFORM_CAPABILITIES",
+  ) &&
+    fileContains(
+      "src/lib/protocols/a2a/platform-card.ts",
+      "buildSovereignPlatformAgentCard",
+    )
+    ? 1
+    : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "Agent Card route imports buildSovereignPlatformAgentCard (no inlined card)",
+  fileContains(
+    "src/app/.well-known/agent.json/route.ts",
+    "buildSovereignPlatformAgentCard",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "Agent Card route emits X-Sovereign-Card-Fingerprint header (anti-MITM pinning)",
+  fileContains(
+    "src/app/.well-known/agent.json/route.ts",
+    "X-Sovereign-Card-Fingerprint",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "sovereign-trust manifest imports platform-card capabilities (anti-drift)",
+  fileContains(
+    "src/app/.well-known/sovereign-trust/route.ts",
+    "SOVEREIGN_PLATFORM_CAPABILITIES",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "sovereign-trust manifest declares R140-R162 capability flags",
+  fileContains(
+    "src/app/.well-known/sovereign-trust/route.ts",
+    "governanceLoop: true",
+  ) &&
+    fileContains(
+      "src/app/.well-known/sovereign-trust/route.ts",
+      "memoryPayloadGuard: true",
+    ) &&
+    fileContains(
+      "src/app/.well-known/sovereign-trust/route.ts",
+      "aibom: true",
+    ) &&
+    fileContains(
+      "src/app/.well-known/sovereign-trust/route.ts",
+      "agentCardA2A: true",
+    ) &&
+    fileContains(
+      "src/app/.well-known/sovereign-trust/route.ts",
+      "mcpToolGateway: true",
+    ) &&
+    fileContains(
+      "src/app/.well-known/sovereign-trust/route.ts",
+      "crossProtocolBridge: true",
+    )
+    ? 1
+    : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "sovereign-trust manifest exposes agentCard endpoint URL",
+  fileContains(
+    "src/app/.well-known/sovereign-trust/route.ts",
+    "agentCard: `${canonicalUrl}/.well-known/agent.json`",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "inspector fetcher exposes fetchAgentCard helper",
+  fileContains(
+    "packages/inspector/src/fetch.mjs",
+    "fetchAgentCard",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "inspector CLI exposes verify-agent-card subcommand",
+  fileContains(
+    "packages/inspector/src/cli.mjs",
+    "cmdVerifyAgentCard",
+  ) &&
+    fileContains(
+      "packages/inspector/src/cli.mjs",
+      "verify-agent-card",
+    )
+    ? 1
+    : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
 // ─── Round 38 — Agent Identity Manifests (KYA Registry) ──────────────
 //
 // The missing primitive nobody has shipped. Closes the last major gap

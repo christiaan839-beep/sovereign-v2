@@ -125,6 +125,8 @@ import {
   validateAIBOMDocument,
   checkVulnerabilityBlocklist,
 } from "./aibom.mjs";
+import { validateAgentCard } from "./a2a.mjs";
+import { fetchAgentCard } from "./fetch.mjs";
 import { readFileSync } from "node:fs";
 
 // ── Color output (no deps) ──────────────────────────────────────────
@@ -197,6 +199,7 @@ function printUsage() {
   console.log("                          { content, agentName, claimed }");
   console.log("  verify-aibom            Validate a R150 AIBOM document from stdin (JSON)");
   console.log("                          + optional --blocklist=CVE-1,CVE-2 to check known vulnerabilities");
+  console.log("  verify-agent-card <url> Fetch /.well-known/agent.json from <url> and validate offline (R160)");
   console.log("");
   console.log("DOCS: https://sovereignmatrix.agency/trust/agentic-commerce");
 }
@@ -1225,6 +1228,57 @@ async function cmdVerifyAIBOM(args) {
   return 0;
 }
 
+/**
+ * R160 — verify-agent-card <url>
+ *
+ * Fetch /.well-known/agent.json from a Sovereign deployment (or any
+ * A2A-compatible peer) and validate it OFFLINE. The fingerprint is
+ * recomputed locally; the platform never sees this verification.
+ *
+ * Exit 0 = card structurally + cryptographically valid (no MITM).
+ * Exit 1 = validation failed (reason printed).
+ *
+ * Usage:
+ *   sovereign-inspect verify-agent-card https://sovereignmatrix.agency
+ */
+async function cmdVerifyAgentCard(url) {
+  if (!url) {
+    bad("verify-agent-card requires a deployment URL");
+    return 2;
+  }
+  header(`A2A Agent Card TRUSTLESS verification — ${url}`);
+  let card;
+  try {
+    card = await fetchAgentCard(url);
+  } catch (err) {
+    bad(`Failed to fetch /.well-known/agent.json: ${err.message}`);
+    return 1;
+  }
+  const v = validateAgentCard(card);
+  if (!v.ok) {
+    bad(c.bold(`✗ INVALID — reason: ${v.reason}`));
+    if (v.details) console.log(c.gray(`  ${v.details}`));
+    return 1;
+  }
+  ok(c.bold(`✓ VALID — Agent Card passes all structural + crypto checks`));
+  console.log(c.gray(`  id: ${card.id}`));
+  console.log(c.gray(`  protocolVersion: ${card.protocolVersion}`));
+  console.log(c.gray(`  supplier: ${card.supplier}`));
+  console.log(c.gray(`  capabilities: ${card.capabilities.length}`));
+  console.log(c.gray(`  authSchemes: ${card.authSchemes.join(", ")}`));
+  console.log(c.gray(`  rpc: ${card.endpoints.rpc}`));
+  console.log(c.gray(`  publishedAt: ${card.publishedAt}`));
+  console.log(c.gray(`  fingerprint: ${card.fingerprint}`));
+  console.log("");
+  console.log(
+    info(
+      "The fingerprint was recomputed locally from the card's identity-shaped fields. " +
+      "If a man-in-the-middle had swapped the card, this verification would have failed.",
+    ),
+  );
+  return 0;
+}
+
 async function cmdVerifyToken() {
   header("ACT chain verification (LOCAL — Macaroon-pattern attenuation)");
   const stdin = readFileSync(0, "utf8");
@@ -1493,6 +1547,8 @@ async function main() {
       return cmdVerifyMemoryPayload();
     case "verify-aibom":
       return cmdVerifyAIBOM(argv.slice(1));
+    case "verify-agent-card":
+      return cmdVerifyAgentCard(argv[1]);
     default:
       bad(`Unknown command: ${cmd}`);
       printUsage();

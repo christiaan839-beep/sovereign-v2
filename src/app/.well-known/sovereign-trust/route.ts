@@ -34,13 +34,19 @@
 import { NextResponse } from "next/server";
 import { TOTAL_AGENTS, TOTAL_MODELS } from "@/lib/platform-stats";
 import { createLogger } from "@/lib/logger";
+import { SOVEREIGN_PLATFORM_CAPABILITIES } from "@/lib/protocols/a2a/platform-card";
 
 const log = createLogger("well-known-trust");
 
 export const runtime = "nodejs";
 export const revalidate = 300;
 
-const SPEC_VERSION = "0.1.0";
+// v0.2.0 (Move 13) — extended with R100, R140-R145, R150, R155,
+// R160-R162 capabilities; added agentCard discovery endpoint;
+// added platformCapabilities[] mirror list sourced from
+// platform-card.ts so this manifest cannot drift from the A2A
+// Agent Card published at /.well-known/agent.json.
+const SPEC_VERSION = "0.2.0";
 
 interface SovereignTrustDocument {
   /** Spec version. */
@@ -70,7 +76,36 @@ interface SovereignTrustDocument {
     agentCapabilityTokens: boolean;
     /** R38 — Know-Your-Agent identity manifest registry. */
     agentIdentityRegistry: boolean;
+    /** R100 — declared-policy gate (procurement-grade rule enforcement). */
+    policyGate: boolean;
+    /** R140 — Behavioral Invariant Layer (drift detection above policy). */
+    behavioralInvariantIml: boolean;
+    /** R141 — Continuous Viability Index VI(t) ∈ [-1, +1]. */
+    viabilityRiskgate: boolean;
+    /** R142 — Pre-Action Governance Reasoning Loop (4-layer ruleset). */
+    governanceLoop: boolean;
+    /** R143 — Observability/Decidability/Timeliness/Attestability gate. */
+    odtaRuntimeGate: boolean;
+    /** R145 — embedded-payload guard for memory writes. */
+    memoryPayloadGuard: boolean;
+    /** R150 — Agentic Bill of Materials (supply-chain attestation). */
+    aibom: boolean;
+    /** R155 — Confidence-calibrated HITL routing. */
+    hitlConfidenceRouting: boolean;
+    /** R160 — Google A2A Agent Card published at /.well-known/agent.json. */
+    agentCardA2A: boolean;
+    /** R161 — MCP Tool Gateway with scope grammar. */
+    mcpToolGateway: boolean;
+    /** R162 — Cross-protocol privilege alignment (least-privilege bridge). */
+    crossProtocolBridge: boolean;
   };
+  /**
+   * Mirror of the platform Agent Card capability list. SAME constant
+   * imported by /.well-known/agent.json — drift impossible.
+   * Auditors can compare this array against the kebab-case capabilities
+   * field of the A2A Agent Card and confirm both manifests agree.
+   */
+  platformCapabilities: ReadonlyArray<string>;
   /** Where to fetch each verifiable artifact. Relative to canonicalUrl. */
   endpoints: {
     permanence: string;
@@ -82,6 +117,8 @@ interface SovereignTrustDocument {
     hitlPolicy: string;
     verifyDelegation: string;
     publicTrace: string;
+    /** R160 Move 13 — public Agent Card per Google A2A v1.0. */
+    agentCard: string;
   };
   /**
    * The verifier package customers use to check our claims locally.
@@ -146,8 +183,20 @@ export async function GET(req: Request) {
       publicHitlPolicy: true, // R33
       selfDiagnose: true, // R32
       agentCapabilityTokens: true, // R37
-      agentIdentityRegistry: true, // R38 — NEW
+      agentIdentityRegistry: true, // R38
+      policyGate: true, // R100  — Move 2
+      behavioralInvariantIml: true, // R140 — Move 5
+      viabilityRiskgate: true, // R141 — Move 5
+      governanceLoop: true, // R142 — Move 6
+      odtaRuntimeGate: true, // R143 — Move 6
+      memoryPayloadGuard: true, // R145 — Move 7
+      aibom: true, // R150 — Move 8
+      hitlConfidenceRouting: true, // R155 — Move 9
+      agentCardA2A: true, // R160 — Move 13 (this commit)
+      mcpToolGateway: true, // R161 — Move 11
+      crossProtocolBridge: true, // R162 — Move 12
     },
+    platformCapabilities: SOVEREIGN_PLATFORM_CAPABILITIES,
     endpoints: {
       permanence: `${canonicalUrl}/api/health/permanence`,
       incidents: `${canonicalUrl}/api/health/incidents`,
@@ -158,6 +207,7 @@ export async function GET(req: Request) {
       hitlPolicy: `${canonicalUrl}/api/health/hitl-policy`,
       verifyDelegation: `${canonicalUrl}/api/health/verify-delegation`,
       publicTrace: `${canonicalUrl}/api/health/trace/{traceId}`,
+      agentCard: `${canonicalUrl}/.well-known/agent.json`,
     },
     verifier: {
       npmPackage: "@sovereign/inspector",

@@ -105,6 +105,28 @@ export async function fetchTrustDiscovery(deploymentUrl) {
 }
 
 /**
+ * Fetch the platform's A2A Agent Card at /.well-known/agent.json.
+ *
+ * R160 Move 13. Per Google's A2A v1.0 spec, this URL publishes the
+ * platform's identity, capabilities, auth schemes, and endpoints —
+ * along with a SHA-256 fingerprint over the canonical-encoded
+ * identity-shaped fields. A peer can pin against the fingerprint
+ * and refuse subsequent connections that present a different card.
+ *
+ * Pair with `validateAgentCard` from `./a2a.mjs` to verify the
+ * fetched card structurally + cryptographically:
+ *
+ *   import { fetchAgentCard } from "@sovereign/inspector/fetch";
+ *   import { validateAgentCard } from "@sovereign/inspector/a2a";
+ *   const card = await fetchAgentCard("https://sovereignmatrix.agency");
+ *   const r = validateAgentCard(card);
+ *   if (!r.ok) throw new Error(`bad card: ${r.reason}`);
+ */
+export async function fetchAgentCard(deploymentUrl) {
+  return fetchJson(`${deploymentUrl}/.well-known/agent.json`);
+}
+
+/**
  * Crawl a federation graph starting from one instance.
  *
  * Recursively fetches /.well-known/sovereign-trust from each peer,
