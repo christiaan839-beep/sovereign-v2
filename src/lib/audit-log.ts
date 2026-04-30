@@ -32,7 +32,54 @@ export type AuditAction =
   | "commerce.authorize"
   | "commerce.charge"
   | "commerce.reverse"
-  | "commerce.revoke";
+  | "commerce.revoke"
+  // R100 Policy Gate (Move 2). Fired when an agent execution is
+  // blocked by a declared policy. Procurement / SOC 2 / EU AI Act
+  // auditors filter on this action to see proof of policy enforcement.
+  | "agent.policy_gate.deny"
+  // R140 Behavioral Invariant Layer (IML). Fired when an agent's
+  // observed behavior diverges from its admission-time profile A₀
+  // beyond a tunable threshold (KL divergence / segment-vs-rest
+  // z-test / sequential pattern-match). The IML operates ABOVE the
+  // policy gate so it can catch drift earned through individually-
+  // legitimate actions. EU AI Act Art. 3(23) auditors filter on
+  // this to see substantial-modification proof.
+  // VOCABULARY-ONLY today; the firing module ships in Move 5.
+  | "agent.drift_detected"
+  // R141 Viability Index (RiskGate). Fired when VI(t) ∈ [-1, +1]
+  // crosses a configured warning or block threshold. Continuous
+  // trustworthiness score; predictive (drops BEFORE violation),
+  // not reactive. Pairs with agent.drift_detected so reviewers see
+  // both the divergence and its impact on the score.
+  // VOCABULARY-ONLY today; the firing module ships in Move 5.
+  | "agent.viability_threshold"
+  // R142 Pre-Action Governance Reasoning Loop (PAGRL). Fired when
+  // an agent consults its declared governance ruleset (global /
+  // workflow / agent / situational) before a state-changing action.
+  // Records WHICH ruleset matched and WHAT decision was returned
+  // (permitted / modified / escalated).
+  // VOCABULARY-ONLY today; the firing module ships in Move 6.
+  | "agent.governance_consult"
+  // R143 Infrastructure Kill Switch. Fired when the kernel-level
+  // (eBPF) kill switch terminates an agent's execution sandbox,
+  // revokes credentials, and snapshots working state. Written
+  // BEFORE credential revocation completes so the chain captures
+  // the trigger even if the agent's last action was the trigger.
+  // VOCABULARY-ONLY today; the firing module ships in Move 7.
+  | "agent.kill_switch"
+  // R144 Cross-Protocol Privilege Block. Fired when the gateway
+  // refuses an A2A→MCP scope-elevation attempt. Distinct from
+  // agent.policy_gate.deny because the refusal is structural
+  // (protocol-level), not policy-driven.
+  // VOCABULARY-ONLY today; the firing module ships in Move 8.
+  | "agent.cross_protocol_block"
+  // R145 Memory Payload Block. Fired when a memory write is refused
+  // because the payload contains an embedded instruction pattern
+  // (zombie-memory / cross-agent contagion vector). The blocked
+  // payload's content hash is recorded so SOC reviewers can
+  // correlate refused writes across agents.
+  // VOCABULARY-ONLY today; the firing module ships in Move 9.
+  | "agent.memory_payload_blocked";
 
 interface AuditEntry {
   userId: string;

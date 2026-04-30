@@ -41,6 +41,8 @@ import {
 import { scoreOutput, type QualityScore } from "@/lib/quality-scorer";
 import { createLogger } from "@/lib/logger";
 import { auditLog } from "@/lib/audit-log";
+import { evaluatePolicyGate } from "@/lib/agent-factory-policy-gate";
+import type { PolicyRule } from "@/lib/control-plane/policy-engine";
 import { getAntiSlopRules } from "@/lib/system-prompts";
 import { trackAgentExecution } from "@/lib/analytics";
 import { getMemoryContext, saveMemory } from "@/lib/tenant-memory";
@@ -168,6 +170,24 @@ export interface AgentConfig {
 
   /** Action tier override (1=autonomous, 2=confirm, 3=restricted). Auto-detected if omitted. */
   actionTier?: ActionTier;
+
+  /**
+   * R100 Policy Engine gate (Move 2 of the proof-conversion arc).
+   *
+   * When provided AND the SOVEREIGN_POLICY_GATE_ENABLED env var is set
+   * to "true", these policies are evaluated BEFORE the handler runs.
+   * Default-deny semantics — if no policy matches, the request is
+   * blocked and audit-logged.
+   *
+   * The gate is per-agent opt-in: 222 existing agents that don't
+   * declare policies see no behavior change. Agents that DO declare
+   * policies must also have the env flag enabled.
+   *
+   * The decision composes with R37 ACT presence, R40 reputation,
+   * R42 credit headroom, R91 ACAT scope, agent tier, time windows,
+   * and resource tags. See src/lib/control-plane/policy-engine.ts.
+   */
+  policies?: PolicyRule[];
 
   /** Enable/disable Critic Agent QA gate (default: true for all agents) */
   useCritic?: boolean;
@@ -927,6 +947,53 @@ async function handleAgentRoute(
       // R32 — wrap in withRequestTokenBudget: bounds the single-
       // request token blast radius (complements R27 day-cap + R28
       // depth-cap). Model-call sites consume budget via consumeTokens().
+
+      // R100 Policy Gate (Move 2). Pure-function evaluation BEFORE
+      // any heavy context wrappers — fail fast, zero token budget
+      // consumed on policy denial. No-op unless:
+      //   1. SOVEREIGN_POLICY_GATE_ENABLED=true is set, AND
+      //   2. config.policies is a non-empty array.
+      // The 222 existing agents that don't declare policies are
+      // transparent here regardless of the flag.
+      if (config.policies && config.policies.length > 0) {
+        const gateVerdict = evaluatePolicyGate({
+          agentName: config.name,
+          policies: config.policies,
+          userId: userId || "anonymous",
+          tenantId,
+          orgId,
+          // Tier 1 default if not specified — least-privilege posture.
+          // Agents that perform writes / external actions should set
+          // actionTier explicitly in their AgentConfig.
+          agentTier: (config.actionTier ?? 1) as 1 | 2 | 3,
+          // Resource tags optionally surface from the request body —
+          // agents needing tag-based gating include them in the
+          // sanitized input under a `_resourceTags` field by convention.
+          resourceTags:
+            (sanitized as { _resourceTags?: Record<string, string> })
+              ._resourceTags,
+        });
+        if (!gateVerdict.proceed) {
+          // R26 audit chain entry. Fire-and-forget; we don't block
+          // the response on the audit-log write succeeding (defense
+          // in depth — the policy gate is the security boundary, the
+          // audit log is the evidence trail).
+          auditLog({
+            userId: userId || "anonymous",
+            action: gateVerdict.auditEntry.action,
+            resource: gateVerdict.auditEntry.resource,
+            details: gateVerdict.auditEntry.details,
+          }).catch(() => {});
+          return new NextResponse(
+            JSON.stringify(gateVerdict.response),
+            {
+              status: 403,
+              headers: { "Content-Type": "application/json" },
+            },
+          );
+        }
+      }
+
       let budgetExceeded = false;
       const traceOutcome = await withTrace(config.name, async () =>
         withRequestTokenBudget(config.name, () =>

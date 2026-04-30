@@ -6050,6 +6050,322 @@ check(
   { dimension: "trust-asset" },
 );
 
+// ─── R121 — Aider Software Engineer Edge Node (Move 3) ─────────────
+// First REAL (non-stub) Edge Node. Wraps Aider (Apache-2.0) under
+// the full Sovereign trust substrate. Feature-flagged via
+// SOVEREIGN_AIDER_ENABLED so the 222 existing agents see no behavior
+// change. Closes the "all Edge Nodes are stubs" gap from the proof-
+// conversion arc.
+
+check(
+  "R121 Aider Edge Node real adapter present",
+  existsSync(
+    join(ROOT, "src/lib/edge-nodes/personas/aider-software-engineer.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "edge-nodes" },
+);
+
+check(
+  "R121 Aider subprocess runner isolated in own file (only spawn import)",
+  existsSync(join(ROOT, "src/lib/edge-nodes/personas/aider-runner.ts")) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "R121 Aider feature-flag default-OFF preserved (SOVEREIGN_AIDER_ENABLED)",
+  fileContains(
+    "src/lib/edge-nodes/personas/aider-software-engineer.ts",
+    'SOVEREIGN_AIDER_ENABLED !== "true"',
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "R121 Aider path-traversal defense present (no ..' / no NUL / abs repoPath)",
+  fileContains(
+    "src/lib/edge-nodes/personas/aider-software-engineer.ts",
+    "repo_path_traversal",
+  ) &&
+    fileContains(
+      "src/lib/edge-nodes/personas/aider-software-engineer.ts",
+      "files_path_traversal",
+    ) &&
+    fileContains(
+      "src/lib/edge-nodes/personas/aider-software-engineer.ts",
+      "files_contain_nul",
+    ) &&
+    fileContains(
+      "src/lib/edge-nodes/personas/aider-software-engineer.ts",
+      "repo_path_must_be_absolute",
+    ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "R121 Aider runner uses spawn with shell:false (no shell metacharacter vector)",
+  fileContains("src/lib/edge-nodes/personas/aider-runner.ts", "shell: false") &&
+    fileContains(
+      "src/lib/edge-nodes/personas/aider-runner.ts",
+      "SIGTERM",
+    ) &&
+    fileContains(
+      "src/lib/edge-nodes/personas/aider-runner.ts",
+      "SIGKILL",
+    ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "R121 Aider tests present",
+  existsSync(
+    join(ROOT, "src/lib/edge-nodes/__tests__/aider-software-engineer.test.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "R121 Aider registered in default Edge Node registry",
+  fileContains(
+    "src/lib/edge-nodes/index.ts",
+    "createAiderSoftwareEngineerNode",
+  ) &&
+    fileContains("src/lib/edge-nodes/index.ts", "defaultAiderRunner") ? 1 : 0,
+  1,
+  { dimension: "edge-nodes" },
+);
+
+// ─── R131 — SWE-bench Verified Harness (Move 4) ────────────────────
+// Operator-runnable harness that produces R130-valid BenchmarkResults
+// for SWE-bench Verified. Closes the "no harness, only hand-crafted
+// numbers" gap.
+
+check(
+  "R131 SWE-bench Verified harness present",
+  existsSync(
+    join(ROOT, "src/lib/performance/harnesses/swe-bench-verified.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "performance" },
+);
+
+check(
+  "R131 harness emits R130-valid BenchmarkResult (summaryToBenchmarkResult)",
+  fileContains(
+    "src/lib/performance/harnesses/swe-bench-verified.ts",
+    "summaryToBenchmarkResult",
+  ) &&
+    fileContains(
+      "src/lib/performance/harnesses/swe-bench-verified.ts",
+      'opts.verification ?? "internal-only"',
+    ) ? 1 : 0,
+  1,
+  { dimension: "performance" },
+);
+
+check(
+  "R131 harness has SHA-256 runHash anchor (anti-AI-washing)",
+  fileContains(
+    "src/lib/performance/harnesses/swe-bench-verified.ts",
+    "computeRunHash",
+  ) &&
+    fileContains(
+      "src/lib/performance/harnesses/swe-bench-verified.ts",
+      "createHash",
+    ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "R131 harness has tests",
+  existsSync(
+    join(
+      ROOT,
+      "src/lib/performance/harnesses/__tests__/swe-bench-verified.test.ts",
+    ),
+  ) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "R131 harness Edge Node bridge composes with R121 dispatch interface",
+  fileContains(
+    "src/lib/performance/harnesses/swe-bench-verified.ts",
+    "makeEdgeNodeBackedRunner",
+  ) &&
+    fileContains(
+      "src/lib/performance/harnesses/swe-bench-verified.ts",
+      'capability: "fix-github-issue"',
+    ) ? 1 : 0,
+  1,
+  { dimension: "performance" },
+);
+
+// ─── R140 / R141 — Behavioral Invariant Layer + RiskGate (Move 5) ──
+// Pure-function drift-detection + Viability Index VI(t) ∈ [-1, +1]
+// composed UPSTREAM of R100's policy gate. Catches drift earned
+// through individually-legitimate actions that R100 cannot see.
+// Maps to EU AI Act Art. 3(23) "substantial modification" boundary.
+
+check(
+  "R140/R141 Viability gate present (IML + RiskGate in single module)",
+  existsSync(join(ROOT, "src/lib/control-plane/viability.ts")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R140 IML uses 3 statistical primitives (KL + segment-vs-rest z + n-gram novelty)",
+  fileContains(
+    "src/lib/control-plane/viability.ts",
+    "klDivergenceClass",
+  ) &&
+    fileContains(
+      "src/lib/control-plane/viability.ts",
+      "segmentVsRestZ",
+    ) &&
+    fileContains(
+      "src/lib/control-plane/viability.ts",
+      "detectSequentialNovelty",
+    ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R141 RiskGate emits VI(t) ∈ [-1, +1] with transparent linear penalties",
+  fileContains("src/lib/control-plane/viability.ts", "computeViability") &&
+    fileContains(
+      "src/lib/control-plane/viability.ts",
+      "DEFAULT_ALLOW_THRESHOLD",
+    ) &&
+    fileContains(
+      "src/lib/control-plane/viability.ts",
+      "DEFAULT_ESCALATE_THRESHOLD",
+    ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R140/R141 viability gate is feature-flagged (SOVEREIGN_VIABILITY_GATE_ENABLED, default-OFF)",
+  fileContains(
+    "src/lib/control-plane/viability.ts",
+    'SOVEREIGN_VIABILITY_GATE_ENABLED === "true"',
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "R140 admission profile is hash-anchored (anti-tampering with R26 chain)",
+  fileContains(
+    "src/lib/control-plane/viability.ts",
+    "hashAdmissionProfile",
+  ) &&
+    fileContains(
+      "src/lib/control-plane/viability.ts",
+      "profileHash",
+    ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "R140/R141 viability gate has tests",
+  existsSync(
+    join(ROOT, "src/lib/control-plane/__tests__/viability.test.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "R140/R141 viability gate emits R140 + R141 audit entries when blocking",
+  fileContains(
+    "src/lib/control-plane/viability.ts",
+    '"agent.drift_detected"',
+  ) &&
+    fileContains(
+      "src/lib/control-plane/viability.ts",
+      '"agent.viability_threshold"',
+    ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+// ─── R140-R145 audit-vocabulary extension ──────────────────────────
+// New typed AuditAction variants for future modules (drift / VI(t) /
+// PAGRL / kill-switch / cross-protocol / memory-payload).
+
+check(
+  "Audit-log declares R140-R145 vocabulary (forward-compatible with future modules)",
+  fileContains("src/lib/audit-log.ts", '"agent.drift_detected"') &&
+    fileContains("src/lib/audit-log.ts", '"agent.viability_threshold"') &&
+    fileContains("src/lib/audit-log.ts", '"agent.governance_consult"') &&
+    fileContains("src/lib/audit-log.ts", '"agent.kill_switch"') &&
+    fileContains("src/lib/audit-log.ts", '"agent.cross_protocol_block"') &&
+    fileContains("src/lib/audit-log.ts", '"agent.memory_payload_blocked"') ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+// ─── Move 2: R100 Policy Gate wired to agent factory ───────────────
+
+check(
+  "Move 2: agent-factory-policy-gate.ts pure-function wrapper present",
+  existsSync(join(ROOT, "src/lib/agent-factory-policy-gate.ts")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Move 2: agent-factory imports the policy gate (wired into request path)",
+  fileContains(
+    "src/lib/agent-factory.ts",
+    "evaluatePolicyGate",
+  ) &&
+    fileContains(
+      "src/lib/agent-factory.ts",
+      'from "@/lib/agent-factory-policy-gate"',
+    ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "Move 2: gate is feature-flagged (SOVEREIGN_POLICY_GATE_ENABLED, default-OFF)",
+  fileContains(
+    "src/lib/agent-factory-policy-gate.ts",
+    'SOVEREIGN_POLICY_GATE_ENABLED === "true"',
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "Move 2: agent.policy_gate.deny audit action declared",
+  fileContains("src/lib/audit-log.ts", '"agent.policy_gate.deny"') ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "Move 2: gate has tests (16 unit tests covering all verdict paths)",
+  existsSync(
+    join(ROOT, "src/lib/__tests__/agent-factory-policy-gate.test.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
 // ─── Inspector v1.0 — All 5 pillars covered offline ──────────────
 // The procurement-grade trust artifact. One npm install gives
 // auditors the ability to verify ACAT (R91) + Stripe evidence (R92) +

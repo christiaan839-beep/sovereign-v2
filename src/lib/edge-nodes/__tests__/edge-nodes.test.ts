@@ -175,18 +175,22 @@ describe("createEdgeNodeRegistry", () => {
 describe("listEdgeNodes — filtering + sorting", () => {
   const r = createDefaultEdgeNodeRegistry();
 
+  // Default registry now contains 4 nodes (3 persona stubs + Aider, R121).
+  // Aider behaves as a stub unless SOVEREIGN_AIDER_ENABLED=true; tests
+  // run with the flag unset so all 4 manifests report isStub: true.
   it("returns all manifests sorted by id when no filter", () => {
     const list = listEdgeNodes(r);
-    expect(list.length).toBe(3);
+    expect(list.length).toBe(4);
     const ids = list.map((m) => m.id);
     expect(ids).toEqual([...ids].sort());
   });
 
   it("filters by persona", () => {
     expect(listEdgeNodes(r, { persona: "operator" }).length).toBe(1);
-    expect(
-      listEdgeNodes(r, { persona: "software-engineer" })[0].id,
-    ).toBe(SOFTWARE_ENGINEER_EDGE_NODE_ID);
+    // Two software-engineer nodes now: the default stub + Aider (R121).
+    const seNodes = listEdgeNodes(r, { persona: "software-engineer" });
+    expect(seNodes.length).toBe(2);
+    expect(seNodes.map((m) => m.id)).toContain(SOFTWARE_ENGINEER_EDGE_NODE_ID);
   });
 
   it("filters by capability", () => {
@@ -199,7 +203,7 @@ describe("listEdgeNodes — filtering + sorting", () => {
 
   it("filters by deployment", () => {
     const list = listEdgeNodes(r, { deployment: "customer-cloud" });
-    expect(list.length).toBe(3);
+    expect(list.length).toBe(4);
   });
 
   it("excludeStubs hides stubs", () => {
@@ -469,10 +473,12 @@ describe("buildPreflightFailure", () => {
 
 describe("snapshotEdgeNodeHealth", () => {
   it("captures every node's status + worstStatus rollup", async () => {
+    // Default registry: 3 persona stubs + Aider (also stub when
+    // SOVEREIGN_AIDER_ENABLED is unset). All report not-configured.
     const r = createDefaultEdgeNodeRegistry();
     const snap = await snapshotEdgeNodeHealth(r);
-    expect(snap.entries.length).toBe(3);
-    expect(snap.byStatus["not-configured"]).toBe(3);
+    expect(snap.entries.length).toBe(4);
+    expect(snap.byStatus["not-configured"]).toBe(4);
     expect(snap.worstStatus).toBe("not-configured");
   });
 
@@ -505,12 +511,14 @@ describe("edgeNodeRegistryStats", () => {
   it("totals match input + persona/deployment categories", () => {
     const r = createDefaultEdgeNodeRegistry();
     const stats = edgeNodeRegistryStats(r);
-    expect(stats.total).toBe(3);
-    expect(stats.byPersona["software-engineer"]).toBe(1);
+    // Default registry: 3 persona stubs + Aider (R121). Aider acts as
+    // a stub when SOVEREIGN_AIDER_ENABLED is unset (test default).
+    expect(stats.total).toBe(4);
+    expect(stats.byPersona["software-engineer"]).toBe(2);
     expect(stats.byPersona.analyst).toBe(1);
     expect(stats.byPersona.operator).toBe(1);
-    expect(stats.byDeployment["customer-cloud"]).toBe(3);
-    expect(stats.stubCount).toBe(3);
+    expect(stats.byDeployment["customer-cloud"]).toBe(4);
+    expect(stats.stubCount).toBe(4);
     expect(stats.configuredCount).toBe(0);
   });
 });
