@@ -22,3 +22,4 @@ export * from "./memory-guard.mjs";
 export * from "./aibom.mjs";
 export * from "./hitl-routing.mjs";
 export * from "./a2a.mjs";
+export * from "./mcp.mjs";

@@ -7004,6 +7004,99 @@ check(
   { dimension: "process" },
 );
 
+// ─── R161 — MCP Tool Gateway descriptor (Move 11) ─────────────────
+// Pure-function core for Anthropic's Model Context Protocol with
+// scope-based authorization grammar (resource:action[:qualifier]).
+// Composes with R37 ACT, R100 policy, R155 HITL routing.
+
+check(
+  "R161 MCP tool descriptor module present",
+  existsSync(
+    join(ROOT, "src/lib/protocols/mcp/tool-descriptor.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R161 declares scope grammar (resource:action[:qualifier]) + parseScope helper",
+  fileContains("src/lib/protocols/mcp/tool-descriptor.ts", "isValidScope") &&
+    fileContains("src/lib/protocols/mcp/tool-descriptor.ts", "parseScope") &&
+    fileContains("src/lib/protocols/mcp/tool-descriptor.ts", "SCOPE_RE") ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R161 evaluateToolScope implements broader-implies-narrower semantics",
+  fileContains(
+    "src/lib/protocols/mcp/tool-descriptor.ts",
+    "evaluateToolScope",
+  ) &&
+    fileContains(
+      "src/lib/protocols/mcp/tool-descriptor.ts",
+      "missing_required_scope",
+    ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "R161 tool descriptors are SHA-256 fingerprinted",
+  fileContains("src/lib/protocols/mcp/tool-descriptor.ts", "computeToolFingerprint") &&
+    fileContains("src/lib/protocols/mcp/tool-descriptor.ts", "createHash") ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "R161 declares 5 audit classes (internal/external × read/write + tool_call)",
+  fileContains("src/lib/protocols/mcp/tool-descriptor.ts", '"internal_read"') &&
+    fileContains("src/lib/protocols/mcp/tool-descriptor.ts", '"internal_write"') &&
+    fileContains("src/lib/protocols/mcp/tool-descriptor.ts", '"external_read"') &&
+    fileContains("src/lib/protocols/mcp/tool-descriptor.ts", '"external_write"') &&
+    fileContains("src/lib/protocols/mcp/tool-descriptor.ts", '"tool_call"') ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R161 reuses agent.governance_consult audit action with phase=mcp-tool",
+  fileContains("src/lib/protocols/mcp/tool-descriptor.ts", '"mcp-tool"') ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "R161 ships tests",
+  existsSync(
+    join(ROOT, "src/lib/protocols/mcp/__tests__/tool-descriptor.test.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "Inspector — mcp.mjs port present (R161 offline verifier)",
+  existsSync(join(ROOT, "packages/inspector/src/mcp.mjs")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Inspector — mcp port has tests",
+  existsSync(join(ROOT, "packages/inspector/__tests__/mcp.test.mjs")) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "Inspector — index.mjs re-exports mcp.mjs",
+  fileContains("packages/inspector/src/index.mjs", "./mcp.mjs") ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
 // Public HITL policy (procurement audit artifact)
 check(
   "/api/health/hitl-policy endpoint present (public audit)",
