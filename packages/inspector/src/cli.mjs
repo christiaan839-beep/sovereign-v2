@@ -96,6 +96,23 @@ import {
   summarizeACATForReceipt,
   verifyStripeChargebackEvidence,
 } from "./acat.mjs";
+import {
+  composePerceptionMesh,
+  correlateAcrossNodes,
+} from "./perception.mjs";
+import {
+  resolveRouting,
+  preflightDispatch,
+  buildPreflightFailure,
+  createDefaultEdgeNodeRegistry,
+} from "./edge-nodes.mjs";
+import {
+  validateBenchmarkResult,
+  findTargetById,
+  buildBenchmarkAttestationMessage,
+  computeAttestationChainHash,
+  gapReport,
+} from "./performance.mjs";
 import { readFileSync } from "node:fs";
 
 // ── Color output (no deps) ──────────────────────────────────────────
@@ -156,6 +173,12 @@ function printUsage() {
   console.log("                          + cart context flags: --pubkey --amount --currency --merchant --category");
   console.log("  verify-evidence         Verify a Stripe chargeback evidence packet from stdin (JSON)");
   console.log("                          + --pubkey <userPublicKey>");
+  console.log("  verify-perception-plan  Verify a perception-mesh plan from stdin (JSON)");
+  console.log("                          { spec, inputs }");
+  console.log("  verify-edge-dispatch    Verify an edge-node dispatch decision from stdin (JSON)");
+  console.log("                          { request, policy, cost, persona?, deployment? }");
+  console.log("  verify-benchmark        Verify a benchmark result + attestation message from stdin (JSON)");
+  console.log("                          { result, attestedAt? }");
   console.log("");
   console.log("DOCS: https://sovereignmatrix.agency/trust/agentic-commerce");
 }
@@ -614,6 +637,247 @@ async function cmdVerifyEvidence(argv) {
   return 1;
 }
 
+/**
+ * Verify a perception-mesh plan from stdin (JSON: {spec, inputs}).
+ * Recomputes the deterministic plan and prints it back. If the
+ * customer compares to what the platform's audit chain says was
+ * planned, they should match exactly.
+ */
+async function cmdVerifyPerceptionPlan() {
+  header("Perception-mesh plan TRUSTLESS verification (LOCAL, OFFLINE)");
+  const stdin = readFileSync(0, "utf8");
+  let body;
+  try {
+    body = JSON.parse(stdin);
+  } catch (err) {
+    bad(`Failed to parse stdin as JSON: ${err.message}`);
+    return 1;
+  }
+  if (!body.spec || !body.inputs) {
+    bad("Body must contain { spec, inputs }");
+    return 2;
+  }
+  let plan;
+  try {
+    plan = composePerceptionMesh(body.spec, body.inputs);
+  } catch (err) {
+    bad(`Plan composition failed: ${err.message}`);
+    return 1;
+  }
+  ok(c.bold(`✓ Plan composed (${plan.nodePlans.length} nodes)`));
+  console.log(c.gray(`  estimated max-tokens: ${plan.estimatedMaxTokens}`));
+  console.log("");
+  for (const np of plan.nodePlans) {
+    console.log(`  ${c.gray("•")} ${np.nodeId} (${np.kind})`);
+    console.log(c.gray(`      parts: ${np.partKindsRouted.join(", ") || "—"}`));
+  }
+  console.log("");
+  console.log(c.gray(plan.rationale));
+
+  // Optional: if the request also passed `outputs` + `rules`, run correlation.
+  if (Array.isArray(body.outputs) && Array.isArray(body.rules)) {
+    const sigs = correlateAcrossNodes(body.outputs, body.rules);
+    console.log("");
+    console.log(c.bold(`Correlation signals: ${sigs.length}`));
+    for (const s of sigs) {
+      console.log(`  ${c.gray(s.severity)} · ${s.ruleName} — ${s.reason}`);
+    }
+  }
+  return 0;
+}
+
+/**
+ * Verify an edge-node dispatch decision from stdin (JSON: {request,
+ * policy, cost, persona?, deployment?}). Recomputes routing +
+ * preflight. Customer compares to platform's audit chain entry.
+ */
+async function cmdVerifyEdgeDispatch() {
+  header("Edge-node dispatch TRUSTLESS verification (LOCAL, OFFLINE)");
+  const stdin = readFileSync(0, "utf8");
+  let body;
+  try {
+    body = JSON.parse(stdin);
+  } catch (err) {
+    bad(`Failed to parse stdin as JSON: ${err.message}`);
+    return 1;
+  }
+  if (!body.request || !body.request.userId || !body.request.capability) {
+    bad("Body.request must include userId + capability");
+    return 2;
+  }
+  const policy = body.policy ?? { decision: "allow" };
+  const cost = body.cost ?? { decision: "proceed" };
+  const registry = createDefaultEdgeNodeRegistry();
+  const decision = resolveRouting(registry, {
+    capability: body.request.capability,
+    deployment: body.deployment,
+    persona: body.persona,
+  });
+  const preflight = preflightDispatch({ policy, cost, request: body.request });
+
+  console.log(c.bold("Routing decision:"));
+  console.log(`  kind: ${decision.kind}`);
+  if (decision.kind === "route") {
+    console.log(`  target: ${decision.target.id}`);
+    console.log(c.gray(`  rationale: ${decision.rationale}`));
+  }
+  if (decision.kind === "all-stub") {
+    console.log(`  best stub: ${decision.best.id} (${decision.reason})`);
+  }
+  if (decision.kind === "no-match") {
+    console.log(`  reason: ${decision.reason}`);
+  }
+  console.log("");
+
+  console.log(c.bold("Preflight verdict:"));
+  if (preflight.ok) {
+    console.log(c.green("  ✓ ok"));
+  } else {
+    console.log(c.red(`  ✗ refused — ${preflight.reason}`));
+    if (preflight.details) console.log(c.gray(`  ${preflight.details}`));
+  }
+  console.log("");
+
+  // Materialize the projected DispatchResult (preview only — no upstream invoked).
+  let projected;
+  if (decision.kind === "no-match") {
+    projected = {
+      ok: false,
+      edgeNodeId: "<none>",
+      capability: body.request.capability,
+      reason: "edge_node_not_found",
+      receiptLine: `[edge-node-dispatch] no node supports ${body.request.capability}`,
+    };
+  } else if (!preflight.ok) {
+    const targetId =
+      decision.kind === "route"
+        ? decision.target.id
+        : decision.kind === "all-stub"
+          ? decision.best.id
+          : "<none>";
+    projected = buildPreflightFailure({
+      edgeNodeId: targetId,
+      request: body.request,
+      preflight,
+    });
+  } else if (decision.kind === "all-stub") {
+    projected = {
+      ok: false,
+      edgeNodeId: decision.best.id,
+      capability: body.request.capability,
+      reason: "edge_node_not_configured",
+      details: `only stubs available for capability '${body.request.capability}'`,
+    };
+  } else {
+    projected = {
+      ok: true,
+      edgeNodeId: decision.target.id,
+      capability: body.request.capability,
+      receiptLine: `[edge-node-dispatch] preview ok via ${decision.target.id}`,
+    };
+  }
+  console.log(c.bold("Projected result:"));
+  console.log(`  ${projected.ok ? c.green("✓ ok") : c.red("✗ refused")}`);
+  console.log(c.gray(`  ${JSON.stringify(projected, null, 2)}`));
+  return 0;
+}
+
+/**
+ * Verify a benchmark result + return attestation message from stdin
+ * (JSON: {result, attestedAt?}). Customer signs locally with the
+ * platform's published Ed25519 key OR compares the message against
+ * the signed attestation in the audit chain.
+ */
+async function cmdVerifyBenchmark() {
+  header("Benchmark result TRUSTLESS verification (LOCAL, OFFLINE)");
+  const stdin = readFileSync(0, "utf8");
+  let body;
+  try {
+    body = JSON.parse(stdin);
+  } catch (err) {
+    bad(`Failed to parse stdin as JSON: ${err.message}`);
+    return 1;
+  }
+  if (!body.result || !body.result.targetId) {
+    bad("Body must contain { result: BenchmarkResult }");
+    return 2;
+  }
+  const target = findTargetById(body.result.targetId);
+  const validation = validateBenchmarkResult({
+    result: body.result,
+    target,
+  });
+  if (!validation.ok) {
+    bad(c.bold(`✗ INVALID — reason: ${validation.reason}`));
+    if (validation.details) console.log(c.gray(`  ${validation.details}`));
+    return 1;
+  }
+  ok(c.bold(`✓ VALID — result satisfies all structural rules`));
+  console.log(c.gray(`  target: ${target.name} (${target.id})`));
+  console.log(
+    c.gray(
+      `  measured: ${body.result.measuredValue}${target.unit} (target ${target.targetValue}${target.unit})`,
+    ),
+  );
+  console.log(c.gray(`  verification: ${body.result.verification}`));
+
+  const attestedAt = body.attestedAt ?? new Date().toISOString();
+  const message = buildBenchmarkAttestationMessage({
+    target,
+    result: body.result,
+    attestedAt,
+  });
+  console.log("");
+  console.log(c.bold("Canonical attestation message (sign this):"));
+  console.log(c.gray("  ─".repeat(40)));
+  for (const line of message.split("\n")) {
+    console.log(c.gray(`  ${line}`));
+  }
+  console.log(c.gray("  ─".repeat(40)));
+  console.log("");
+  console.log(
+    info(
+      `Sign with: signMessage(platformPrivateKey, "<message-above>") → use Ed25519 (R44 reliability-attestation pattern).`,
+    ),
+  );
+
+  // Optional: if the body has history, run gap analysis.
+  if (Array.isArray(body.history) && body.history.length > 0) {
+    const report = gapReport({
+      target,
+      history: body.history,
+      asOf: body.asOf ? new Date(body.asOf) : undefined,
+    });
+    console.log("");
+    console.log(c.bold("Gap report:"));
+    console.log(c.gray(`  ${report.headline}`));
+    console.log(
+      c.gray(`  measurements: ${report.measurementCount}`),
+    );
+    if (report.timeToTarget.estimatedDays !== null) {
+      console.log(
+        c.gray(
+          `  ETA: ${report.timeToTarget.estimatedDays.toFixed(0)} days at current trend`,
+        ),
+      );
+    }
+  }
+
+  // Show the chain hash anchor for parent=null (GENESIS).
+  const chainHashGenesis = computeAttestationChainHash({
+    parentChainHash: null,
+    message,
+    signature: "<your-signature-here>",
+  });
+  console.log("");
+  console.log(
+    c.gray(
+      `  GENESIS chain-hash anchor (with placeholder signature): ${chainHashGenesis.slice(0, 16)}...`,
+    ),
+  );
+  return 0;
+}
+
 async function cmdReliability(url) {
   header(`Reliability attestation — ${url}/api/health/reliability/attestation`);
   const data = await fetchReliability(url);
@@ -1030,6 +1294,12 @@ async function main() {
       return cmdVerifyACAT(argv.slice(1));
     case "verify-evidence":
       return cmdVerifyEvidence(argv.slice(1));
+    case "verify-perception-plan":
+      return cmdVerifyPerceptionPlan();
+    case "verify-edge-dispatch":
+      return cmdVerifyEdgeDispatch();
+    case "verify-benchmark":
+      return cmdVerifyBenchmark();
     default:
       bad(`Unknown command: ${cmd}`);
       printUsage();

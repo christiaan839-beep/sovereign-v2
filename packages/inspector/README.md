@@ -79,6 +79,27 @@ cat acat.b64 | sovereign-inspect verify-acat \
 # self-contained: any auditor or court can re-run the verification.
 cat evidence.json | sovereign-inspect verify-evidence \
   --pubkey "<expectedUserPublicKey>"
+
+# ── Multimodal Perception Mesh (R110 + R111) ──
+# Verify a perception-mesh plan — confirms the platform would build
+# the same deterministic plan from the same spec + inputs. Optionally
+# include `outputs` + `rules` to also run cross-modal correlation.
+cat perception-plan.json | sovereign-inspect verify-perception-plan
+# JSON shape: { "spec": MeshSpec, "inputs": MeshInputs }
+
+# ── Edge Node Framework (R120) ──
+# Verify an edge-node dispatch decision — confirms the platform would
+# have routed this dispatch the way the audit chain says it did.
+# Includes routing decision + preflight verdict + projected result.
+cat edge-dispatch.json | sovereign-inspect verify-edge-dispatch
+# JSON shape: { "request": DispatchRequest, "policy": ..., "cost": ... }
+
+# ── Performance Observatory (R130) ──
+# Verify a benchmark result + return canonical attestation message.
+# Customer signs locally OR compares against the platform's signed
+# attestation in the audit chain.
+cat benchmark-result.json | sovereign-inspect verify-benchmark
+# JSON shape: { "result": BenchmarkResult, "attestedAt"?, "history"? }
 ```
 
 Exit codes:
@@ -226,6 +247,62 @@ const result = verifyStripeChargebackEvidence({
 - Distinguishes ACAT tampering from audit-chain-break: if the merchant
   doctored the evidence after the dispute landed, the inspector points
   at the exact failure site
+
+### Multimodal Perception Mesh (R110 + R111)
+
+- Pure-function deterministic plan composition: same spec + same
+  inputs always produce the same plan
+- 5 node kinds (video-monitor / audio-transcriber / screenshot-analyzer
+  / document-extractor / freeform-synthesizer), each with default
+  system prompts that the inspector reproduces verbatim
+- 4 cross-modal correlation rule kinds: keyword-overlap, entity-overlap,
+  time-proximity, json-field-match
+- Severity-ordered output: alert > warn > info
+- 7 typed validation failure reasons: `system_prompt_required`,
+  `no_parts`, `unsupported_image_mime`, `unsupported_audio_mime`,
+  `image_data_url_too_large`, `audio_data_url_too_large`,
+  `max_tokens_out_of_range`
+- 3 typed response-parse failure reasons: `malformed_response`,
+  `no_choices`, `no_message`
+
+### Edge Node Framework (R120)
+
+- Stub-first registry: every Edge Node ships fail-closed by default;
+  the inspector reproduces the same `isStub: true` posture and the
+  same procurement-readable refusal reasons
+- 17 capability kinds spanning software-engineering, analyst, and
+  operator personas
+- Capability ranking: `base × deployment × stub-penalty` ensures
+  configured nodes always outrank stubs at the same capability score
+- 3 routing decision kinds: `route` / `no-match` / `all-stub`
+- Preflight gate ordering enforces R100 → R37 → R91 → R102: policy
+  denial short-circuits before cost evaluation, ACT/ACAT requirements
+  fail fast, budget exhaustion is the last check
+- Default registry contains 3 persona stubs (software-engineer / analyst
+  / operator) with named upstreams (Trae Agent / Cognee / Kimi K2.6 /
+  UI-TARS-desktop / etc.) — operators replace stubs as they wire up
+  real integrations
+
+### Performance Observatory benchmark attestations (R130)
+
+- 7 prebuilt 2026 SOTA targets: SWE-bench Verified, SWE-bench Pro,
+  GAIA Level 3, LongMemEval, gateway throughput, gateway overhead,
+  broker throughput. Each carries a `verificationKind` enum
+  (`independent-replayable` / `internal-only` / `claimed-only`).
+- 7 typed validation failure reasons (anti-AI-washing): `target_not_found`,
+  `missing_run_hash`, `missing_measured_at`, `missing_source_fields`,
+  `verification_too_weak`, `measured_value_not_finite`
+- Verification monotonicity: a result cannot claim less rigor than
+  the target requires (e.g., `internal-only` cannot satisfy a target
+  marked `independent-replayable`)
+- 4 status classifications: `achieved` / `on-track` (>= -10%) /
+  `at-risk` (-10% to -25%) / `behind` (> -25%) / `not-measured`
+- Linear extrapolation for time-to-target via least-squares fit on
+  `(days-since-epoch, measured-value)` pairs — transparent and
+  replayable, deliberately not opaque ML
+- Canonical attestation message format matches R44 reliability-attestation:
+  same line-separated structure, same Ed25519 signing primitives, same
+  `GENESIS` chain-hash sentinel pattern
 
 ## Why this matters
 

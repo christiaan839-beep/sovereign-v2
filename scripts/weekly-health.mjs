@@ -6050,6 +6050,153 @@ check(
   { dimension: "trust-asset" },
 );
 
+// ─── Inspector v1.0 — All 5 pillars covered offline ──────────────
+// The procurement-grade trust artifact. One npm install gives
+// auditors the ability to verify ACAT (R91) + Stripe evidence (R92) +
+// perception-mesh plans (R110/R111) + edge-node dispatch (R120) +
+// benchmark attestations (R130) entirely offline.
+
+check(
+  "Inspector v1.0 — perception module port present (R110/R111 offline verifier)",
+  existsSync(join(ROOT, "packages/inspector/src/perception.mjs")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Inspector v1.0 — edge-nodes module port present (R120 offline verifier)",
+  existsSync(join(ROOT, "packages/inspector/src/edge-nodes.mjs")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Inspector v1.0 — performance module port present (R130 offline verifier)",
+  existsSync(join(ROOT, "packages/inspector/src/performance.mjs")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Inspector v1.0 — perception module has 4 cross-modal correlation kinds",
+  fileContains(
+    "packages/inspector/src/perception.mjs",
+    "keyword-overlap",
+  ) &&
+    fileContains(
+      "packages/inspector/src/perception.mjs",
+      "entity-overlap",
+    ) &&
+    fileContains(
+      "packages/inspector/src/perception.mjs",
+      "time-proximity",
+    ) &&
+    fileContains(
+      "packages/inspector/src/perception.mjs",
+      "json-field-match",
+    ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Inspector v1.0 — edge-nodes module enforces preflight gate ordering (R100→R37→R91→R102)",
+  fileContains(
+    "packages/inspector/src/edge-nodes.mjs",
+    "policy_denied",
+  ) &&
+    fileContains("packages/inspector/src/edge-nodes.mjs", "act_required") &&
+    fileContains(
+      "packages/inspector/src/edge-nodes.mjs",
+      "acat_required",
+    ) &&
+    fileContains(
+      "packages/inspector/src/edge-nodes.mjs",
+      "budget_exhausted",
+    ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "Inspector v1.0 — performance module preserves anti-AI-washing rules (7 typed reasons)",
+  fileContains(
+    "packages/inspector/src/performance.mjs",
+    "missing_run_hash",
+  ) &&
+    fileContains(
+      "packages/inspector/src/performance.mjs",
+      "missing_measured_at",
+    ) &&
+    fileContains(
+      "packages/inspector/src/performance.mjs",
+      "verification_too_weak",
+    ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "Inspector v1.0 — has unit tests for all 3 new modules",
+  existsSync(
+    join(ROOT, "packages/inspector/__tests__/perception.test.mjs"),
+  ) &&
+    existsSync(
+      join(ROOT, "packages/inspector/__tests__/edge-nodes.test.mjs"),
+    ) &&
+    existsSync(
+      join(ROOT, "packages/inspector/__tests__/performance.test.mjs"),
+    ) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "Inspector v1.0 — package.json declares v1.0+ and 9 export subpaths",
+  fileContains("packages/inspector/package.json", "\"version\": \"1.") &&
+    fileContains("packages/inspector/package.json", "\"./perception\"") &&
+    fileContains("packages/inspector/package.json", "\"./edge-nodes\"") &&
+    fileContains("packages/inspector/package.json", "\"./performance\"") ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "Inspector v1.0 — index.mjs re-exports all 3 new modules",
+  fileContains(
+    "packages/inspector/src/index.mjs",
+    "./perception.mjs",
+  ) &&
+    fileContains(
+      "packages/inspector/src/index.mjs",
+      "./edge-nodes.mjs",
+    ) &&
+    fileContains(
+      "packages/inspector/src/index.mjs",
+      "./performance.mjs",
+    ) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "Inspector v1.0 — CLI exposes 3 new verify-* subcommands",
+  fileContains(
+    "packages/inspector/src/cli.mjs",
+    "verify-perception-plan",
+  ) &&
+    fileContains(
+      "packages/inspector/src/cli.mjs",
+      "verify-edge-dispatch",
+    ) &&
+    fileContains(
+      "packages/inspector/src/cli.mjs",
+      "verify-benchmark",
+    ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
 // Public HITL policy (procurement audit artifact)
 check(
   "/api/health/hitl-policy endpoint present (public audit)",

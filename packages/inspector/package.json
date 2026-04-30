@@ -1,7 +1,7 @@
 {
   "name": "@sovereign/inspector",
-  "version": "0.2.0",
-  "description": "Trustless third-party verifier for Sovereign Matrix audit chains, delegation chains, HITL policies, and agentic-commerce ACATs. Verify any deployment's compliance claims locally — no platform trust required.",
+  "version": "1.0.0",
+  "description": "Trustless third-party verifier for Sovereign Matrix. Offline-verify ACATs (R91), edge-node dispatch decisions (R120), perception-mesh plans (R110/R111), benchmark attestations (R130), reliability attestations (R44), agent capability tokens (R37), audit chains (R26), reputation, credit lines, and identity manifests. Zero Sovereign network calls required.",
   "license": "MIT",
   "type": "module",
   "bin": {
@@ -15,7 +15,10 @@
     "./credit": "./src/credit.mjs",
     "./reliability": "./src/reliability.mjs",
     "./audit-export": "./src/audit-export.mjs",
-    "./acat": "./src/acat.mjs"
+    "./acat": "./src/acat.mjs",
+    "./perception": "./src/perception.mjs",
+    "./edge-nodes": "./src/edge-nodes.mjs",
+    "./performance": "./src/performance.mjs"
   },
   "files": [
     "src/",
@@ -38,7 +41,14 @@
     "acat",
     "agentic-commerce",
     "stripe",
-    "chargeback-evidence"
+    "chargeback-evidence",
+    "perception-mesh",
+    "edge-nodes",
+    "benchmark-attestation",
+    "anti-ai-washing",
+    "policy-engine",
+    "agent-registry",
+    "cost-governance"
   ],
   "homepage": "https://sovereignmatrix.agency",
   "repository": {
