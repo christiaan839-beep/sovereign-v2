@@ -158,6 +158,12 @@ interface SovereignTrustDocument {
     verifier: string;
     /** Move 14 — index endpoint listing all available verifier surfaces. */
     verifierIndex: string;
+    /**
+     * Move 16 — public audit-chain head. Returns the SHA-256 hash of
+     * the most recent row, the chain row count, and the head timestamp.
+     * Pinable anchor for tamper-evidence checks across time.
+     */
+    auditHead: string;
   };
   /**
    * Move 14 — explicit list of verifier surfaces. Mirror of
@@ -258,6 +264,7 @@ export async function GET(req: Request) {
       agentCard: `${canonicalUrl}/.well-known/agent.json`,
       verifier: `${canonicalUrl}/api/v1/verify/{surface}`,
       verifierIndex: `${canonicalUrl}/api/v1/verify/index`,
+      auditHead: `${canonicalUrl}/api/v1/audit/head`,
     },
     verifierSurfaces: VERIFIER_SURFACES,
     verifier: {

@@ -2963,6 +2963,67 @@ check(
   { dimension: "trust-asset" },
 );
 
+// ─── Move 16 — Public audit-chain head endpoint ──────────────────────
+//
+// /api/v1/audit/head returns the most recent row's SHA-256 hash,
+// the chain row count, and the commit timestamp. Pinable anchor
+// for tamper-evidence checks across time. Reveals nothing secret;
+// CORS-open; cached 1 min.
+
+check(
+  "/api/v1/audit/head endpoint present",
+  existsSync(
+    join(ROOT, "src/app/api/v1/audit/head/route.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "audit-log.ts exports readAuditChainHead (pure-function head fetcher)",
+  fileContains(
+    "src/lib/audit-log.ts",
+    "export async function readAuditChainHead",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "audit-head route exposes X-Audit-Chain-Head header (mirrored body)",
+  fileContains(
+    "src/app/api/v1/audit/head/route.ts",
+    "X-Audit-Chain-Head",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "audit-head route fails safe on DB error (503 with safe shape, no stack)",
+  fileContains(
+    "src/app/api/v1/audit/head/route.ts",
+    "audit_head_unavailable",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "sovereign-trust manifest exposes auditHead endpoint",
+  fileContains(
+    "src/app/.well-known/sovereign-trust/route.ts",
+    "auditHead: `${canonicalUrl}/api/v1/audit/head`",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "inspector fetcher exposes fetchAuditHead helper",
+  fileContains(
+    "packages/inspector/src/fetch.mjs",
+    "fetchAuditHead",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
 // ─── Round 38 — Agent Identity Manifests (KYA Registry) ──────────────
 //
 // The missing primitive nobody has shipped. Closes the last major gap

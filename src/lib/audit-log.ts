@@ -243,6 +243,61 @@ export function verifyAuditChainRows(rows: AuditChainRow[]): {
 }
 
 /**
+ * Read the public head of the audit chain — the most recent row's
+ * SHA-256 hash + a row count + the timestamp it was committed.
+ *
+ * This is the pinable tamper-evidence anchor (Move 16):
+ *
+ *   1. Auditor fetches /api/v1/audit/head, saves rowHash + rowN.
+ *   2. Time passes.
+ *   3. Auditor fetches /api/v1/audit/head again. The new rowHash will
+ *      DIFFER because more rows were added — that's expected. But if
+ *      the auditor refetches a SPECIFIC HISTORICAL row's hash and it
+ *      no longer matches what they saved, the chain was tampered with.
+ *
+ * Returns null when the table is empty or pre-migration (no hashed
+ * rows yet). Callers should treat null as "chain not yet established",
+ * not "chain broken."
+ *
+ * Public — no PII; reveals the row count + the head's hash. Both are
+ * intended to be public.
+ */
+export async function readAuditChainHead(): Promise<{
+  rowHash: string;
+  prevHash: string;
+  rowN: number;
+  signedAt: string;
+} | null> {
+  const headRows = await db.execute<{
+    row_hash: string | null;
+    prev_hash: string | null;
+    created_at: string;
+  }>(
+    sql`SELECT row_hash, prev_hash, created_at
+        FROM audit_logs
+        WHERE row_hash IS NOT NULL
+        ORDER BY created_at DESC
+        LIMIT 1`,
+  );
+  const list = Array.isArray(headRows) ? headRows : [];
+  if (list.length === 0 || !list[0].row_hash) return null;
+
+  const countRows = await db.execute<{ n: string | number }>(
+    sql`SELECT COUNT(*) AS n FROM audit_logs WHERE row_hash IS NOT NULL`,
+  );
+  const countList = Array.isArray(countRows) ? countRows : [];
+  const rowN =
+    countList.length > 0 ? Number(countList[0].n) : 0;
+
+  return {
+    rowHash: list[0].row_hash,
+    prevHash: list[0].prev_hash ?? "GENESIS",
+    rowN,
+    signedAt: new Date(list[0].created_at).toISOString(),
+  };
+}
+
+/**
  * Verify the hash chain from the oldest hashed row forward. Returns the
  * first broken position if any, or null if the chain is intact. Used by
  * /api/admin/audit/verify-chain (admin-only) + can run as a cron check.

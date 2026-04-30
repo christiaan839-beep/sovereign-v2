@@ -166,6 +166,21 @@ export async function fetchVerifierIndex(deploymentUrl) {
 }
 
 /**
+ * Fetch the public audit-chain head. Returns:
+ *
+ *   { chainEstablished: true, rowHash, prevHash, rowN, signedAt, verify: {...} }
+ *   | { chainEstablished: false, rowHash: null, rowN: 0, signedAt: null, ... }
+ *
+ * The pinable anchor for tamper-evidence checks across time. Save
+ * (rowHash, rowN) at time T1; refetch the historical row at position
+ * rowN at time T2; if the row's hash matches what you saved, the
+ * chain was not retroactively rewritten.
+ */
+export async function fetchAuditHead(deploymentUrl) {
+  return fetchJson(`${deploymentUrl}/api/v1/audit/head`);
+}
+
+/**
  * Crawl a federation graph starting from one instance.
  *
  * Recursively fetches /.well-known/sovereign-trust from each peer,
