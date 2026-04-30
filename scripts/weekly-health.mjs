@@ -6840,6 +6840,80 @@ check(
   { dimension: "trust-asset" },
 );
 
+// ─── R155 — Confidence-Calibrated HITL Routing (Move 9) ───────────
+// Pure-function decision logic that consumes upstream gate verdicts
+// (R100 policy, R140-R141 viability, R143 ODTA) and decides
+// auto_proceed / silent_approval / hitl_required / hard_deny. Closes
+// approval-fatigue gap (Gap 41) + OWASP ASI09 trust exploitation
+// (Gap 9) by routing only meaningful uncertainty to humans.
+
+check(
+  "R155 HITL routing module present",
+  existsSync(join(ROOT, "src/lib/control-plane/hitl-routing.ts")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R155 declares all 4 routing kinds (auto_proceed/silent_approval/hitl_required/hard_deny)",
+  fileContains("src/lib/control-plane/hitl-routing.ts", '"auto_proceed"') &&
+    fileContains("src/lib/control-plane/hitl-routing.ts", '"silent_approval"') &&
+    fileContains("src/lib/control-plane/hitl-routing.ts", '"hitl_required"') &&
+    fileContains("src/lib/control-plane/hitl-routing.ts", '"hard_deny"') ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "R155 is feature-flagged (SOVEREIGN_HITL_ROUTING_ENABLED, default-OFF means conservative-route-everything)",
+  fileContains(
+    "src/lib/control-plane/hitl-routing.ts",
+    'SOVEREIGN_HITL_ROUTING_ENABLED === "true"',
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "R155 reuses agent.governance_consult audit action with phase=hitl-routing discriminator",
+  fileContains("src/lib/control-plane/hitl-routing.ts", '"hitl-routing"') &&
+    fileContains("src/lib/control-plane/hitl-routing.ts", '"agent.governance_consult"') ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+
+check(
+  "R155 ships tests",
+  existsSync(
+    join(ROOT, "src/lib/control-plane/__tests__/hitl-routing.test.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "Inspector — hitl-routing.mjs port present (R155 offline verifier)",
+  existsSync(join(ROOT, "packages/inspector/src/hitl-routing.mjs")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+check(
+  "Inspector — hitl-routing port has tests",
+  existsSync(
+    join(ROOT, "packages/inspector/__tests__/hitl-routing.test.mjs"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
+check(
+  "Inspector — index.mjs re-exports hitl-routing.mjs",
+  fileContains("packages/inspector/src/index.mjs", "./hitl-routing.mjs") ? 1 : 0,
+  1,
+  { dimension: "process" },
+);
+
 // Public HITL policy (procurement audit artifact)
 check(
   "/api/health/hitl-policy endpoint present (public audit)",
