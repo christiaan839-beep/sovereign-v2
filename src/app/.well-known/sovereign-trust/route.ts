@@ -164,6 +164,12 @@ interface SovereignTrustDocument {
      * Pinable anchor for tamper-evidence checks across time.
      */
     auditHead: string;
+    /**
+     * Move 20 — public Sovereign Matrix platform AIBOM (R150).
+     * Lists every model, tool, and agent the platform composes
+     * with SHA-256 fingerprints + SPDX-style relationships.
+     */
+    aibom: string;
   };
   /**
    * Move 14 — explicit list of verifier surfaces. Mirror of
@@ -265,6 +271,7 @@ export async function GET(req: Request) {
       verifier: `${canonicalUrl}/api/v1/verify/{surface}`,
       verifierIndex: `${canonicalUrl}/api/v1/verify/index`,
       auditHead: `${canonicalUrl}/api/v1/audit/head`,
+      aibom: `${canonicalUrl}/.well-known/aibom.json`,
     },
     verifierSurfaces: VERIFIER_SURFACES,
     verifier: {

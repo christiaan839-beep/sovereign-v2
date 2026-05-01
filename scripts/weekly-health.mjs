@@ -3239,6 +3239,83 @@ check(
   { dimension: "trust-asset" },
 );
 
+// ─── Move 20 — R150 AIBOM auto-generation + publication ─────────────
+//
+// /.well-known/aibom.json publishes the platform-level Agentic Bill
+// of Materials. Auto-generated from AGENT_MANIFESTS + curated model
+// + tool registries. Every component carries a SHA-256 fingerprint;
+// the document itself carries a hash anchor. Every fresh per-deploy
+// invocation fires agent.sbom_generated on the audit chain.
+
+check(
+  "/.well-known/aibom.json route present (Move 20)",
+  existsSync(
+    join(ROOT, "src/app/.well-known/aibom.json/route.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "AIBOM builder library present (single-source-of-truth composer)",
+  existsSync(join(ROOT, "src/lib/aibom-builder.ts")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "AIBOM builder exports buildPlatformAIBOM + model + tool registries",
+  fileContains(
+    "src/lib/aibom-builder.ts",
+    "export function buildPlatformAIBOM",
+  ) &&
+    fileContains(
+      "src/lib/aibom-builder.ts",
+      "PLATFORM_MODEL_COMPONENTS",
+    ) &&
+    fileContains(
+      "src/lib/aibom-builder.ts",
+      "PLATFORM_TOOL_COMPONENTS",
+    )
+    ? 1
+    : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "AIBOM route fires agent.sbom_generated audit per deploy version",
+  fileContains(
+    "src/app/.well-known/aibom.json/route.ts",
+    "buildAIBOMAuditEntry",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "AIBOM route emits X-Sovereign-AIBOM-Hash header (anti-tampering anchor)",
+  fileContains(
+    "src/app/.well-known/aibom.json/route.ts",
+    "X-Sovereign-AIBOM-Hash",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "sovereign-trust manifest exposes aibom endpoint URL",
+  fileContains(
+    "src/app/.well-known/sovereign-trust/route.ts",
+    "aibom: `${canonicalUrl}/.well-known/aibom.json`",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "AIBOM route tests present",
+  existsSync(
+    join(ROOT, "src/app/api/__tests__/well-known-aibom.test.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
 // ─── Round 38 — Agent Identity Manifests (KYA Registry) ──────────────
 //
 // The missing primitive nobody has shipped. Closes the last major gap
