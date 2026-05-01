@@ -216,6 +216,11 @@ export async function GET(req: Request) {
 
   const doc: SovereignTrustDocument = {
     $schema: `https://sovereignmatrix.agency/.well-known/sovereign-trust/v${SPEC_VERSION}`,
+    // The canonical spec is published under CC BY 4.0 in the
+    // /spec/ directory of the source repo. Vendor-neutral. Ready
+    // for extraction to a standalone repo when 3+ implementors
+    // are live (see spec/GOVERNANCE.md). The Sovereign-Matrix-
+    // specific copy at /docs/ is kept as a back-compat URL.
     spec: `${canonicalUrl}/docs/SOVEREIGN_TRUST_MANIFEST_SPEC.md`,
     schemaUrl: `${canonicalUrl}/.well-known/sovereign-trust.schema.json`,
     generatedAt: new Date().toISOString(),

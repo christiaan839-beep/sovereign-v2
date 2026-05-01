@@ -1,0 +1,94 @@
+{
+  "$schema": "https://sovereignmatrix.agency/.well-known/sovereign-trust/v1.0.0",
+  "spec": "https://sovereignmatrix.agency/docs/SOVEREIGN_TRUST_MANIFEST_SPEC.md",
+  "schemaUrl": "https://sovereignmatrix.agency/.well-known/sovereign-trust.schema.json",
+  "generatedAt": "2026-04-30T12:00:00.000Z",
+  "identity": {
+    "name": "Sovereign Matrix",
+    "canonicalUrl": "https://sovereignmatrix.agency",
+    "description": "The cryptographically-trustable compute layer for agentic commerce. Every agent action is hash-chained, scope-bounded, cost-capped, schema-validated, depth-limited, tenant-isolated, traced end-to-end, budget-bounded, and reversible by default.",
+    "keyFingerprint": null
+  },
+  "capabilities": {
+    "auditChain": true,
+    "delegationChain": true,
+    "multiStageHitl": true,
+    "spendAuthorizations": true,
+    "publicTrace": true,
+    "publicReliability": true,
+    "publicHitlPolicy": true,
+    "selfDiagnose": true,
+    "agentCapabilityTokens": true,
+    "agentIdentityRegistry": true,
+    "policyGate": true,
+    "behavioralInvariantIml": true,
+    "viabilityRiskgate": true,
+    "governanceLoop": true,
+    "odtaRuntimeGate": true,
+    "memoryPayloadGuard": true,
+    "aibom": true,
+    "hitlConfidenceRouting": true,
+    "agentCardA2A": true,
+    "mcpToolGateway": true,
+    "crossProtocolBridge": true,
+    "publicVerifierEndpoint": true
+  },
+  "platformCapabilities": [
+    "audit-chain-r26",
+    "spend-authorizations-r30",
+    "multi-stage-hitl-r33",
+    "delegation-chain-r34",
+    "agent-capability-tokens-r37",
+    "agent-identity-registry-r38",
+    "policy-gate-r100",
+    "behavioral-invariant-iml-r140",
+    "viability-riskgate-r141",
+    "governance-loop-r142",
+    "odta-runtime-gate-r143",
+    "memory-payload-guard-r145",
+    "aibom-r150",
+    "hitl-confidence-routing-r155",
+    "agent-card-a2a-r160",
+    "mcp-tool-gateway-r161",
+    "cross-protocol-bridge-r162",
+    "inspector-verifiable"
+  ],
+  "endpoints": {
+    "permanence": "https://sovereignmatrix.agency/api/health/permanence",
+    "incidents": "https://sovereignmatrix.agency/api/health/incidents",
+    "customers": "https://sovereignmatrix.agency/api/health/customers",
+    "providers": "https://sovereignmatrix.agency/api/health/providers",
+    "agentSlo": "https://sovereignmatrix.agency/api/health/agent-slo",
+    "diagnose": "https://sovereignmatrix.agency/api/health/diagnose",
+    "hitlPolicy": "https://sovereignmatrix.agency/api/health/hitl-policy",
+    "verifyDelegation": "https://sovereignmatrix.agency/api/health/verify-delegation",
+    "publicTrace": "https://sovereignmatrix.agency/api/health/trace/{traceId}",
+    "agentCard": "https://sovereignmatrix.agency/.well-known/agent.json",
+    "verifier": "https://sovereignmatrix.agency/api/v1/verify/{surface}",
+    "verifierIndex": "https://sovereignmatrix.agency/api/v1/verify/index",
+    "auditHead": "https://sovereignmatrix.agency/api/v1/audit/head",
+    "aibom": "https://sovereignmatrix.agency/.well-known/aibom.json"
+  },
+  "verifierSurfaces": [
+    "audit-chain",
+    "agent-card",
+    "aibom",
+    "scope-evaluation",
+    "bridge-authorization",
+    "memory-payload"
+  ],
+  "verifier": {
+    "npmPackage": "@sovereign/inspector",
+    "install": "npm install -g @sovereign/inspector",
+    "source": "https://github.com/christiaan839-beep/sovereign-v2/tree/main/packages/inspector"
+  },
+  "federation": {
+    "peers": [],
+    "lastSync": null
+  },
+  "stats": {
+    "agents": 223,
+    "models": 39
+  },
+  "note": "Sovereign is not a required trust anchor. Run sovereign-inspect on any endpoint above to verify our claims locally — the math runs on YOUR machine, not ours. This file is the discovery seed for federated agentic-trust."
+}

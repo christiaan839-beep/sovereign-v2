@@ -3506,6 +3506,90 @@ check(
   { dimension: "trust-asset" },
 );
 
+// ─── Move 24 — Open-source spec restructure ────────────────────────
+//
+// The /spec/ directory is the candidate-for-extraction artifact:
+// vendor-neutral spec text + JSON Schema + reference manifest +
+// governance + contributing docs. Ready to `git subtree split` to
+// github.com/sovereign-trust-manifest/spec when the working group
+// transition trigger fires (3+ peer implementors).
+
+check(
+  "spec/ directory present (Move 24)",
+  existsSync(join(ROOT, "spec")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "spec/SPEC.md present (canonical spec text)",
+  existsSync(join(ROOT, "spec/SPEC.md")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "spec/README.md present (vendor-neutral landing page)",
+  existsSync(join(ROOT, "spec/README.md")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "spec/LICENSE present (CC BY 4.0 + MIT dual-license)",
+  existsSync(join(ROOT, "spec/LICENSE")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "spec/LICENSE declares CC BY 4.0 + MIT split",
+  fileContains("spec/LICENSE", "CC BY 4.0") &&
+    fileContains("spec/LICENSE", "MIT License")
+    ? 1
+    : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "spec/GOVERNANCE.md declares 3-implementor working-group transition",
+  fileContains("spec/GOVERNANCE.md", "3 independent implementors") ||
+    fileContains("spec/GOVERNANCE.md", "3+ independent implementors")
+    ? 1
+    : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "spec/GOVERNANCE.md declares founder cedes authority on trigger",
+  fileContains("spec/GOVERNANCE.md", "Cede authority") ||
+    fileContains("spec/GOVERNANCE.md", "cede authority")
+    ? 1
+    : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "spec/CONTRIBUTING.md present",
+  existsSync(join(ROOT, "spec/CONTRIBUTING.md")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "spec/CHANGELOG.md present",
+  existsSync(join(ROOT, "spec/CHANGELOG.md")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "spec/schema/sovereign-trust.schema.json present (mirrors public/.well-known/)",
+  existsSync(join(ROOT, "spec/schema/sovereign-trust.schema.json")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "spec/examples/reference-manifest.json present (Sovereign Matrix as reference impl)",
+  existsSync(join(ROOT, "spec/examples/reference-manifest.json")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
 // ─── Round 38 — Agent Identity Manifests (KYA Registry) ──────────────
 //
 // The missing primitive nobody has shipped. Closes the last major gap

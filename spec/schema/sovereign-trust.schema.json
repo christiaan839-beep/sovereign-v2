@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sovereignmatrix.agency/.well-known/sovereign-trust.schema.json",
+  "title": "Sovereign Trust Manifest",
+  "description": "Open spec for /.well-known/sovereign-trust v1.0.0. See docs/SOVEREIGN_TRUST_MANIFEST_SPEC.md for normative text.",
+  "type": "object",
+  "required": [
+    "$schema",
+    "generatedAt",
+    "identity",
+    "capabilities",
+    "endpoints",
+    "verifier"
+  ],
+  "additionalProperties": true,
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https?://.+/v\\d+\\.\\d+\\.\\d+$"
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "identity": {
+      "type": "object",
+      "required": ["name", "canonicalUrl", "description"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "canonicalUrl": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https?://"
+        },
+        "description": { "type": "string", "minLength": 1 },
+        "keyFingerprint": {
+          "anyOf": [
+            { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "capabilities": {
+      "type": "object",
+      "patternProperties": {
+        "^[a-zA-Z][a-zA-Z0-9]*$": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "platformCapabilities": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9-]*(-r\\d+)?$"
+      },
+      "uniqueItems": true
+    },
+    "endpoints": {
+      "type": "object",
+      "patternProperties": {
+        "^[a-zA-Z][a-zA-Z0-9]*$": {
+          "type": "string",
+          "pattern": "^https?://"
+        }
+      },
+      "additionalProperties": false
+    },
+    "verifierSurfaces": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9-]*$"
+      },
+      "uniqueItems": true
+    },
+    "verifier": {
+      "type": "object",
+      "required": ["npmPackage", "install", "source"],
+      "properties": {
+        "npmPackage": { "type": "string", "minLength": 1 },
+        "install": { "type": "string", "minLength": 1 },
+        "source": { "type": "string", "format": "uri" }
+      }
+    },
+    "federation": {
+      "type": "object",
+      "required": ["peers"],
+      "properties": {
+        "peers": {
+          "type": "array",
+          "items": { "type": "string", "format": "uri" },
+          "uniqueItems": true
+        },
+        "lastSync": {
+          "anyOf": [
+            { "type": "string", "format": "date-time" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "stats": {
+      "type": "object",
+      "additionalProperties": { "type": "number" }
+    },
+    "note": { "type": "string" }
+  }
+}
