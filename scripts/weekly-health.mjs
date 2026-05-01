@@ -3441,6 +3441,71 @@ check(
   { dimension: "trust-asset" },
 );
 
+// ─── Move 23 — /trust/wiring-status transparency artifact ────────────
+//
+// Public, auto-generated table mapping every R-numbered primitive to
+// its source file, audit action, test count, and wiring status. The
+// procurement-grade trust artifact no peer publishes.
+
+check(
+  "trust-status registry library present (Move 23)",
+  existsSync(join(ROOT, "src/lib/trust-status.ts")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "/trust/wiring-status page present",
+  existsSync(
+    join(ROOT, "src/app/trust/wiring-status/page.tsx"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "wiring-status page reads from trust-status registry (single source of truth)",
+  fileContains(
+    "src/app/trust/wiring-status/page.tsx",
+    "TRUST_REGISTRY",
+  ) &&
+    fileContains(
+      "src/app/trust/wiring-status/page.tsx",
+      "from \"@/lib/trust-status\"",
+    )
+    ? 1
+    : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "trust-status conformance test present (drift gate)",
+  existsSync(
+    join(ROOT, "src/lib/__tests__/trust-status-conformance.test.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "trust-status registry covers all 5 Tier 1 wired primitives (R142, R145, R150, R155, R162)",
+  fileContains("src/lib/trust-status.ts", "R142") &&
+    fileContains("src/lib/trust-status.ts", "R145") &&
+    fileContains("src/lib/trust-status.ts", "R150") &&
+    fileContains("src/lib/trust-status.ts", "R155") &&
+    fileContains("src/lib/trust-status.ts", "R162")
+    ? 1
+    : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "trust-status registry honestly declares library + roadmap entries",
+  fileContains("src/lib/trust-status.ts", `status: "library"`) &&
+    fileContains("src/lib/trust-status.ts", `status: "roadmap"`)
+    ? 1
+    : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
 // ─── Round 38 — Agent Identity Manifests (KYA Registry) ──────────────
 //
 // The missing primitive nobody has shipped. Closes the last major gap
