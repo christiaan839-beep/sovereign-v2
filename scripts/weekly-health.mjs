@@ -2824,10 +2824,10 @@ check(
   { dimension: "trust-asset" },
 );
 check(
-  "sovereign-trust manifest version bumped to 0.3.0",
+  "sovereign-trust manifest version bumped to 1.0.0 (open-spec milestone)",
   fileContains(
     "src/app/.well-known/sovereign-trust/route.ts",
-    `SPEC_VERSION = "0.3.0"`,
+    `SPEC_VERSION = "1.0.0"`,
   ) ? 1 : 0,
   1,
   { dimension: "trust-asset" },
@@ -3586,6 +3586,68 @@ check(
 check(
   "spec/examples/reference-manifest.json present (Sovereign Matrix as reference impl)",
   existsSync(join(ROOT, "spec/examples/reference-manifest.json")) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
+// ─── Move 25 — Inspector npm publish prep ───────────────────────────
+//
+// The @sovereign/inspector package is npm-publish-ready: package.json
+// version 1.1.0+, exports map covers all R140-R162 primitive ports,
+// README documents the new verify-* subcommands, LICENSE is MIT,
+// dependencies = none (only node:crypto + global fetch).
+
+check(
+  "inspector package.json declares version >= 1.1.0 (Move 25)",
+  (() => {
+    const pkg = JSON.parse(
+      readFileSync(join(ROOT, "packages/inspector/package.json"), "utf8"),
+    );
+    const [major, minor] = pkg.version.split(".").map(Number);
+    return major > 1 || (major === 1 && minor >= 1) ? 1 : 0;
+  })(),
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "inspector exports map includes all R140-R162 ports",
+  fileContains(
+    "packages/inspector/package.json",
+    `"./governance": "./src/governance.mjs"`,
+  ) &&
+    fileContains(
+      "packages/inspector/package.json",
+      `"./aibom": "./src/aibom.mjs"`,
+    ) &&
+    fileContains(
+      "packages/inspector/package.json",
+      `"./a2a": "./src/a2a.mjs"`,
+    ) &&
+    fileContains(
+      "packages/inspector/package.json",
+      `"./mcp": "./src/mcp.mjs"`,
+    ) &&
+    fileContains(
+      "packages/inspector/package.json",
+      `"./cross-protocol-bridge": "./src/cross-protocol-bridge.mjs"`,
+    )
+    ? 1
+    : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "inspector README documents verify-agent-card + verify-aibom (Move 25)",
+  fileContains(
+    "packages/inspector/README.md",
+    "verify-agent-card",
+  ) &&
+    fileContains(
+      "packages/inspector/README.md",
+      "verify-aibom",
+    )
+    ? 1
+    : 0,
   1,
   { dimension: "trust-asset" },
 );

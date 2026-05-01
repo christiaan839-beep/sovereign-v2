@@ -30,6 +30,30 @@ npm install -g @sovereign/inspector
 
 Requires Node 20+.
 
+## What's new in 1.1.0 (May 2026)
+
+Adds verifier subcommands for the Sovereign Trust Manifest 1.0 spec:
+
+```bash
+# R160 — verify a published Agent Card from /.well-known/agent.json
+sovereign-inspect verify-agent-card https://sovereignmatrix.agency
+
+# R150 — validate an AIBOM document (with optional CVE blocklist)
+cat aibom.json | sovereign-inspect verify-aibom
+cat aibom.json | sovereign-inspect verify-aibom --blocklist=CVE-2026-1,AVE-001
+
+# R142 — replay a governance trace structure
+echo '{"trace":[...], "claimed":{...}}' | sovereign-inspect verify-governance-trace
+
+# R145 — verify a memory_payload_blocked audit entry
+echo '{"content":"...", "agentName":"x", "claimed":{...}}' | \
+  sovereign-inspect verify-memory-payload
+```
+
+These compose with the existing audit-chain / delegation / ACAT
+verifiers. Together they cover every primitive declared in the
+Sovereign Trust Manifest 1.0 spec.
+
 ## CLI usage
 
 ```bash
