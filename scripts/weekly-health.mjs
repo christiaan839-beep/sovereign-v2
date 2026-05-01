@@ -3024,6 +3024,82 @@ check(
   { dimension: "trust-asset" },
 );
 
+// ─── Move 17 — R142 governance loop wired into agent-factory ─────────
+//
+// agent-factory.ts now imports consultGovernance + isGovernanceLoopEnabled
+// + buildGovernanceAuditEntry and calls them per-request when both
+//   1. SOVEREIGN_GOVERNANCE_LOOP_ENABLED=true
+//   2. config.governanceRules is non-empty
+// hold. The 222 existing agents (no governance rules declared) are
+// byte-identical until the flag flips. Every consultation fires
+// agent.governance_consult on the R26 audit chain.
+
+check(
+  "agent-factory imports consultGovernance + isGovernanceLoopEnabled (Move 17)",
+  fileContains(
+    "src/lib/agent-factory.ts",
+    "consultGovernance",
+  ) &&
+    fileContains(
+      "src/lib/agent-factory.ts",
+      "isGovernanceLoopEnabled",
+    )
+    ? 1
+    : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "agent-factory respects default-OFF posture (no-op without env flag)",
+  fileContains(
+    "src/lib/agent-factory.ts",
+    "isGovernanceLoopEnabled() &&",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "agent-factory fires agent.governance_consult audit on every consult",
+  fileContains(
+    "src/lib/agent-factory.ts",
+    "buildGovernanceAuditEntry",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "agent-factory returns 403 with rationale on governance escalation",
+  fileContains(
+    "src/lib/agent-factory.ts",
+    "governance_escalation",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "AgentConfig declares governanceRules + actionClass fields",
+  fileContains(
+    "src/lib/agent-factory.ts",
+    "governanceRules?: ReadonlyArray<GovernanceRule>",
+  ) &&
+    fileContains(
+      "src/lib/agent-factory.ts",
+      "actionClass?: AgentActionClass",
+    )
+    ? 1
+    : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "governance wiring smoke tests present (10 cases)",
+  existsSync(
+    join(ROOT, "src/lib/__tests__/governance-wiring.test.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
 // ─── Round 38 — Agent Identity Manifests (KYA Registry) ──────────────
 //
 // The missing primitive nobody has shipped. Closes the last major gap

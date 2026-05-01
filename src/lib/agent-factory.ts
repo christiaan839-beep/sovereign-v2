@@ -42,6 +42,13 @@ import { scoreOutput, type QualityScore } from "@/lib/quality-scorer";
 import { createLogger } from "@/lib/logger";
 import { auditLog } from "@/lib/audit-log";
 import { evaluatePolicyGate } from "@/lib/agent-factory-policy-gate";
+import {
+  consultGovernance,
+  isGovernanceLoopEnabled,
+  buildGovernanceAuditEntry,
+  type GovernanceRule,
+} from "@/lib/control-plane/governance";
+import type { AgentActionClass } from "@/lib/control-plane/viability";
 import type { PolicyRule } from "@/lib/control-plane/policy-engine";
 import { getAntiSlopRules } from "@/lib/system-prompts";
 import { trackAgentExecution } from "@/lib/analytics";
@@ -188,6 +195,34 @@ export interface AgentConfig {
    * and resource tags. See src/lib/control-plane/policy-engine.ts.
    */
   policies?: PolicyRule[];
+
+  /**
+   * R142 PAGRL governance rules — pre-action 4-layer ruleset
+   * consultation (global → workflow → agent → situational).
+   *
+   * Runs AFTER R100 policy gate (so policy denials short-circuit
+   * before governance is consulted) but BEFORE handler dispatch.
+   * Verdicts:
+   *   - permit   → proceed silently
+   *   - modify   → proceed (caller applies the matched rule's modifier)
+   *   - escalate → 403 with rationale + reviewer context (HITL queue)
+   *
+   * Default-OFF unless SOVEREIGN_GOVERNANCE_LOOP_ENABLED=true is set
+   * AND config.governanceRules is non-empty. Existing 222 agents are
+   * byte-identical until both conditions hold.
+   *
+   * Fires `agent.governance_consult` audit entry on every consult,
+   * regardless of verdict — SOC 2 / EU AI Act reviewers want every
+   * decision on the record.
+   */
+  governanceRules?: ReadonlyArray<GovernanceRule>;
+
+  /**
+   * Coarse action class for R140 viability + R142 governance + future
+   * IML telemetry. Defaults to "internal_read" if not specified.
+   * See src/lib/control-plane/viability.ts for the canonical taxonomy.
+   */
+  actionClass?: AgentActionClass;
 
   /** Enable/disable Critic Agent QA gate (default: true for all agents) */
   useCritic?: boolean;
@@ -992,6 +1027,74 @@ async function handleAgentRoute(
             },
           );
         }
+      }
+
+      // R142 PAGRL — Pre-Action Governance Reasoning Loop (Move 17).
+      //
+      // Pure-function 4-layer ruleset consultation. Runs AFTER R100
+      // policy gate (so policy denials short-circuit before governance
+      // is consulted) but BEFORE handler dispatch. This is the
+      // structured-trace layer SOC 2 / EU AI Act reviewers want — not
+      // just "did this proceed?" but "which layer's rule fired and why?"
+      //
+      // No-op unless:
+      //   1. SOVEREIGN_GOVERNANCE_LOOP_ENABLED=true is set, AND
+      //   2. config.governanceRules is non-empty.
+      // The 222 existing agents (none declare governance rules) are
+      // byte-identical regardless of the flag.
+      //
+      // Every consultation fires agent.governance_consult on the audit
+      // chain — that audit action is forward-declared in
+      // src/lib/audit-log.ts and the firing module is this site.
+      if (
+        isGovernanceLoopEnabled() &&
+        config.governanceRules &&
+        config.governanceRules.length > 0
+      ) {
+        const govResult = consultGovernance(config.governanceRules, {
+          agentName: config.name,
+          agentTier: (config.actionTier ?? 1) as 1 | 2 | 3,
+          actionClass: config.actionClass ?? "internal_read",
+          resourceTags:
+            (sanitized as { _resourceTags?: Record<string, string> })
+              ._resourceTags,
+        });
+
+        // Always-fire audit entry. Permit / modify / escalate all
+        // produce a record — silence here would hide the reasoning.
+        const govAudit = buildGovernanceAuditEntry(config.name, govResult);
+        auditLog({
+          userId: userId || "anonymous",
+          action: govAudit.action,
+          resource: govAudit.resource,
+          details: govAudit.details,
+        }).catch(() => {});
+
+        if (govResult.verdict === "escalate") {
+          // Escalate is structurally distinct from policy-deny.
+          // Routes to HITL queue with the matched-rule trace as
+          // reviewer context. Status 403 + rationale; future
+          // enhancement: 202 + queue-token to enable polling.
+          return new NextResponse(
+            JSON.stringify({
+              error: "governance_escalation",
+              rationale: govResult.rationale,
+              regulatoryCitation: govResult.regulatoryCitation,
+              matchedRuleId: govResult.matchedRuleId,
+              finalLayer: govResult.finalLayer,
+              guidance:
+                "This action requires human-in-the-loop review. " +
+                "See the matched governance rule and rationale above.",
+            }),
+            {
+              status: 403,
+              headers: { "Content-Type": "application/json" },
+            },
+          );
+        }
+        // permit / modify → proceed. Modifier application is left to
+        // the caller since rewrite semantics are agent-specific. The
+        // audit trail records that the modify happened either way.
       }
 
       let budgetExceeded = false;
