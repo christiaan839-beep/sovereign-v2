@@ -3100,6 +3100,70 @@ check(
   { dimension: "trust-asset" },
 );
 
+// ─── Move 18 — R145 memory payload guard wired into memory.ts ───────
+//
+// All 3 memory write surfaces (ingestContextualDocument, remember,
+// memorize) now invoke gateMemoryWrite → scanMemoryWrite before
+// upserting. Default-OFF env flag preserves byte-identical behavior
+// for the 222 existing agents. Fail-OPEN on scanner exceptions.
+
+check(
+  "memory.ts imports scanMemoryWrite + auditLog (Move 18)",
+  fileContains(
+    "src/lib/memory.ts",
+    "scanMemoryWrite",
+  ) &&
+    fileContains(
+      "src/lib/memory.ts",
+      "auditLog",
+    )
+    ? 1
+    : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "memory.ts gateMemoryWrite helper present (single-source-of-truth gate)",
+  fileContains(
+    "src/lib/memory.ts",
+    "async function gateMemoryWrite",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "memory.ts gate fails OPEN on scanner exception (defense-in-depth posture)",
+  fileContains(
+    "src/lib/memory.ts",
+    "failing OPEN",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "all 3 memory write surfaces (ingest/remember/memorize) call gate",
+  fileContains(
+    "src/lib/memory.ts",
+    "gateMemoryWrite(agentName, fullDocumentText",
+  ) &&
+    fileContains(
+      "src/lib/memory.ts",
+      "gateMemoryWrite(agentName, textToEmbed",
+    )
+    ? 1
+    : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "memory payload guard wiring tests present",
+  existsSync(
+    join(ROOT, "src/lib/__tests__/memory-payload-guard-wiring.test.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
 // ─── Round 38 — Agent Identity Manifests (KYA Registry) ──────────────
 //
 // The missing primitive nobody has shipped. Closes the last major gap

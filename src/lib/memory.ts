@@ -1,8 +1,55 @@
 import { Pinecone } from "@pinecone-database/pinecone";
 import { embed, ai } from "./ai";
 import { createLogger } from "@/lib/logger";
+import { scanMemoryWrite } from "@/lib/memory/payload-guard";
+import { auditLog } from "@/lib/audit-log";
 
 const log = createLogger("memory");
+
+/**
+ * Move 18 — R145 memory payload guard gate.
+ *
+ * Each memory-write surface (ingestContextualDocument, remember,
+ * memorize) calls this helper BEFORE embedding + upserting. If the
+ * scanner detects an embedded-instruction payload, the write is
+ * refused, the R26 audit chain receives `agent.memory_payload_blocked`,
+ * and the caller gets `false` so it can fail-soft.
+ *
+ * Default-OFF posture: when SOVEREIGN_MEMORY_PAYLOAD_GUARD_ENABLED is
+ * not set to "true", scanMemoryWrite returns ok:true with reason
+ * "guard_disabled" — every legacy caller is byte-identical.
+ *
+ * Fail-OPEN on scanner exceptions: a bug in the scanner MUST NOT
+ * block legitimate memory writes (defense-in-depth, not the primary
+ * defense).
+ */
+async function gateMemoryWrite(
+  agentName: string,
+  content: string,
+  storeId?: string,
+): Promise<boolean> {
+  try {
+    const verdict = scanMemoryWrite({ agentName, content, storeId });
+    if (verdict.ok) return true;
+    // Blocked. Audit + log + refuse the write.
+    auditLog({
+      userId: "system-memory",
+      action: verdict.auditEntry.action,
+      resource: verdict.auditEntry.resource,
+      details: verdict.auditEntry.details,
+    }).catch(() => {});
+    log.warn("memory write refused by R145 payload guard", {
+      contentHash: verdict.contentHash,
+      summary: verdict.result.summary,
+    });
+    return false;
+  } catch (err) {
+    // Fail-OPEN on scanner exception. Never block on the scanner's
+    // own failure. The audit chain captures the gap.
+    log.error("memory payload-guard scanner threw; failing OPEN", err as Record<string, unknown>);
+    return true;
+  }
+}
 
 export async function getPineconeClient(apiKey?: string, indexName?: string) {
   const key = apiKey || process.env.PINECONE_API_KEY;
@@ -19,12 +66,21 @@ export async function getPineconeClient(apiKey?: string, indexName?: string) {
  * to the chunk before embedding, completely obliterating vector hallucinations.
  */
 export async function ingestContextualDocument(
-  documentTitle: string, 
+  documentTitle: string,
   fullDocumentText: string,
   pineconeKey?: string,
-  pineconeIndex?: string
-): Promise<{ success: boolean; chunksProcessed: number }> {
+  pineconeIndex?: string,
+  agentName: string = "anonymous-memory-write",
+): Promise<{ success: boolean; chunksProcessed: number; refused?: boolean }> {
   try {
+    // R145 payload guard at ingest. Scan the full document BEFORE
+    // chunking + embedding — a single embedded-instruction payload
+    // anywhere in the doc would propagate across every chunk.
+    const allowed = await gateMemoryWrite(agentName, fullDocumentText, pineconeIndex);
+    if (!allowed) {
+      return { success: false, chunksProcessed: 0, refused: true };
+    }
+
     const pc = await getPineconeClient(pineconeKey, pineconeIndex);
     if (!pc) throw new Error("Pinecone credentials missing.");
 
@@ -80,13 +136,23 @@ Generate a concise 2-sentence context summary explaining exactly what this chunk
 /**
  * Legacy Fallback or Direct Key-Value Memory
  */
-export async function remember(key: string, value?: string, pineconeKey?: string): Promise<void> {
+export async function remember(
+  key: string,
+  value?: string,
+  pineconeKey?: string,
+  agentName: string = "anonymous-memory-write",
+): Promise<void> {
   const pc = await getPineconeClient(pineconeKey);
   if (!pc) return; // No-op if not configured
-  
+
   const textToEmbed = `${key}: ${value || "triggered"}`;
+
+  // R145 payload guard. If blocked, fire audit + skip the upsert.
+  const allowed = await gateMemoryWrite(agentName, textToEmbed);
+  if (!allowed) return;
+
   const vector = await embed(textToEmbed);
-  
+
   await pc.client.index(pc.index).upsert({ records: [{
     id: `mem-${Date.now()}`,
     values: vector,
@@ -100,8 +166,13 @@ export async function remember(key: string, value?: string, pineconeKey?: string
 /**
  * Alias for remember() — used by MCP tool bridge.
  */
-export async function memorize(text: string, namespace?: string): Promise<void> {
-  return remember(text, namespace);
+export async function memorize(
+  text: string,
+  namespace?: string,
+  agentName: string = "anonymous-memory-write",
+): Promise<void> {
+  // remember() applies R145 gate; memorize is just an alias.
+  return remember(text, namespace, undefined, agentName);
 }
 
 /**
