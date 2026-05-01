@@ -17,6 +17,7 @@ import {
   GitCommit,
 } from "lucide-react";
 import { PrintButton } from "@/components/ui/PrintButton";
+import { ANTI_DRIFT_INVARIANTS } from "@/lib/platform-stats";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -199,7 +200,132 @@ export default function SecurityPage() {
             </div>
           </div>
           <p className="text-[10px] text-neutral-600 mt-4">
-            Continuous integrity check: <span className="font-mono">/api/cron/verify-audit-chain</span> runs every 6 hours and pages on a hash mismatch. weekly-health.mjs runs 28 invariants on every commit.
+            Continuous integrity check: <span className="font-mono">/api/cron/verify-audit-chain</span> runs every 6 hours and pages on a hash mismatch. <span className="font-mono">weekly-health.mjs</span> runs {ANTI_DRIFT_INVARIANTS}+ invariants on every commit.
+          </p>
+        </motion.div>
+
+        {/* Tier-1-wiring Trust Surface — every primitive cites the file
+            you can grep + the audit action it fires + status. The
+            full status table lives at /trust/wiring-status. */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35, duration: 0.5 }}
+          className="mb-12 rounded-2xl border border-cyan-500/15 bg-cyan-500/[0.03] p-6"
+        >
+          <div className="flex items-center gap-2 mb-3">
+            <Shield className="w-4 h-4 text-cyan-400" />
+            <h2 className="text-sm font-semibold text-white">Trust Surface — R-numbered substrate (May 2026)</h2>
+          </div>
+          <p className="text-xs text-neutral-400 leading-relaxed mb-4">
+            Each primitive below is a runtime gate that fires a specific
+            audit action on the R26 hash chain. Every claim cites a
+            source file and a unit-test count. Full wiring-status table
+            with live freshness:{" "}
+            <Link href="/trust/wiring-status" className="text-cyan-400 hover:underline">
+              /trust/wiring-status
+            </Link>.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-[11px]">
+            <div className="rounded-lg border border-emerald-500/15 bg-emerald-500/[0.03] p-3">
+              <div className="font-semibold text-white mb-1">R142 — Pre-Action Governance Loop ✓ wired</div>
+              <div className="text-neutral-500 font-mono leading-snug">
+                src/lib/control-plane/governance.ts<br />
+                fires: agent.governance_consult<br />
+                tests: 25 + 10 wiring smoke
+              </div>
+            </div>
+            <div className="rounded-lg border border-emerald-500/15 bg-emerald-500/[0.03] p-3">
+              <div className="font-semibold text-white mb-1">R145 — Memory Payload Guard ✓ wired</div>
+              <div className="text-neutral-500 font-mono leading-snug">
+                src/lib/memory/payload-guard.ts<br />
+                fires: agent.memory_payload_blocked<br />
+                tests: 33 + 9 wiring smoke
+              </div>
+            </div>
+            <div className="rounded-lg border border-emerald-500/15 bg-emerald-500/[0.03] p-3">
+              <div className="font-semibold text-white mb-1">R150 — AIBOM ✓ wired</div>
+              <div className="text-neutral-500 font-mono leading-snug">
+                src/lib/supply-chain/aibom.ts<br />
+                fires: agent.sbom_generated<br />
+                published: /.well-known/aibom.json
+              </div>
+            </div>
+            <div className="rounded-lg border border-emerald-500/15 bg-emerald-500/[0.03] p-3">
+              <div className="font-semibold text-white mb-1">R155 — HITL Confidence Routing ✓ wired</div>
+              <div className="text-neutral-500 font-mono leading-snug">
+                src/lib/control-plane/hitl-routing.ts<br />
+                fires: agent.governance_consult (phase=hitl-routing)<br />
+                tests: 16 + 6 wiring smoke
+              </div>
+            </div>
+            <div className="rounded-lg border border-emerald-500/15 bg-emerald-500/[0.03] p-3">
+              <div className="font-semibold text-white mb-1">R162 — Cross-Protocol Bridge ✓ wired</div>
+              <div className="text-neutral-500 font-mono leading-snug">
+                src/lib/protocols/cross-protocol-bridge.ts<br />
+                fires: agent.cross_protocol_block<br />
+                exposed: /api/v1/a2a/[peer]
+              </div>
+            </div>
+            <div className="rounded-lg border border-emerald-500/15 bg-emerald-500/[0.03] p-3">
+              <div className="font-semibold text-white mb-1">R160 — A2A Agent Card ✓ live</div>
+              <div className="text-neutral-500 font-mono leading-snug">
+                src/lib/protocols/a2a/agent-card.ts<br />
+                published: /.well-known/agent.json<br />
+                fingerprint header for MITM defense
+              </div>
+            </div>
+            <div className="rounded-lg border border-emerald-500/15 bg-emerald-500/[0.03] p-3">
+              <div className="font-semibold text-white mb-1">Public verifier endpoint ✓ live</div>
+              <div className="text-neutral-500 font-mono leading-snug">
+                /api/v1/verify/{`{surface}`}<br />
+                6 surfaces: audit-chain, agent-card, aibom,<br />
+                scope-evaluation, bridge-authorization, memory-payload
+              </div>
+            </div>
+            <div className="rounded-lg border border-emerald-500/15 bg-emerald-500/[0.03] p-3">
+              <div className="font-semibold text-white mb-1">Audit chain head (pinable anchor) ✓ live</div>
+              <div className="text-neutral-500 font-mono leading-snug">
+                /api/v1/audit/head<br />
+                returns: rowHash + rowN + signedAt<br />
+                X-Audit-Chain-Head header
+              </div>
+            </div>
+            <div className="rounded-lg border border-yellow-500/15 bg-yellow-500/[0.03] p-3">
+              <div className="font-semibold text-white mb-1">R140 — IML drift detection 🟡 library</div>
+              <div className="text-neutral-500 font-mono leading-snug">
+                src/lib/control-plane/iml.ts<br />
+                runtime stream not yet feeding gate<br />
+                wiring scheduled
+              </div>
+            </div>
+            <div className="rounded-lg border border-yellow-500/15 bg-yellow-500/[0.03] p-3">
+              <div className="font-semibold text-white mb-1">R141 — Viability Index 🟡 library</div>
+              <div className="text-neutral-500 font-mono leading-snug">
+                src/lib/control-plane/viability.ts<br />
+                score not yet consumed by gates<br />
+                wiring scheduled
+              </div>
+            </div>
+            <div className="rounded-lg border border-yellow-500/15 bg-yellow-500/[0.03] p-3">
+              <div className="font-semibold text-white mb-1">R161 — MCP HTTP transport 🟡 descriptor</div>
+              <div className="text-neutral-500 font-mono leading-snug">
+                src/lib/protocols/mcp/tool-descriptor.ts<br />
+                streamable-HTTP transport pending<br />
+                pin to stable spec
+              </div>
+            </div>
+            <div className="rounded-lg border border-violet-500/15 bg-violet-500/[0.03] p-3">
+              <div className="font-semibold text-white mb-1">Sovereign Trust Manifest 1.0 ✓ open spec</div>
+              <div className="text-neutral-500 font-mono leading-snug">
+                docs/SOVEREIGN_TRUST_MANIFEST_SPEC.md<br />
+                CC BY 4.0 · /.well-known/sovereign-trust<br />
+                schema: /.well-known/sovereign-trust.schema.json
+              </div>
+            </div>
+          </div>
+          <p className="text-[10px] text-neutral-600 mt-4">
+            Status legend: <span className="text-emerald-400">✓ wired</span> = runtime gate fires per request; <span className="text-yellow-400">🟡 library</span> = pure-function code with tests, no runtime call site yet; <span className="text-violet-400">✓ open spec</span> = published as standard. Drift between this page and the codebase breaks the anti-drift CI gate.
           </p>
         </motion.div>
 

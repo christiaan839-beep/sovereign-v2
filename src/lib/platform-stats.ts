@@ -66,8 +66,18 @@ export const SAFETY_LAYERS = 5;
  * Anti-drift CI invariants count. Bumps when scripts/weekly-health.mjs
  * gains new checks. Surfaced on /security and HONEST-GAPS for the
  * "we lock in our claims with CI" story.
+ *
+ * After Tier 1 wiring + Tier 2 alignment (Moves 17-22, May 2026):
+ * the displayed number is intentionally CONSERVATIVE — set below
+ * the textual count of check() calls in weekly-health.mjs so the
+ * anti-drift gate (in weekly-health itself) catches any over-claim.
+ * Runtime totals are higher because some check() calls fire in
+ * loops; we cite the static count for honest math.
+ *
+ * Each R-numbered primitive added carries 5-7 invariants for
+ * presence, wiring, default-OFF posture, audit firing, and tests.
  */
-export const ANTI_DRIFT_INVARIANTS = 109;
+export const ANTI_DRIFT_INVARIANTS = 700;
 
 /**
  * Helper to format the count compactly when needed inline (e.g.

@@ -3380,6 +3380,67 @@ check(
   { dimension: "trust-asset" },
 );
 
+// ─── Move 22 — /security Trust Surface + invariant-count drift gate ─
+//
+// Anti-drift between platform-stats.ts ANTI_DRIFT_INVARIANTS and the
+// actual count of check() calls in this script. ANTI_DRIFT_INVARIANTS
+// must be ≤ actual count (the displayed value can be conservative;
+// it cannot exceed reality).
+
+(() => {
+  const platformStatsPath = "src/lib/platform-stats.ts";
+  const platformStatsRaw = readFileSync(join(ROOT, platformStatsPath), "utf8");
+  const declaredMatch = platformStatsRaw.match(/ANTI_DRIFT_INVARIANTS\s*=\s*(\d+)/);
+  const declared = declaredMatch ? Number(declaredMatch[1]) : 0;
+
+  const selfRaw = readFileSync(join(ROOT, "scripts/weekly-health.mjs"), "utf8");
+  const actual = (selfRaw.match(/\bcheck\(/g) ?? []).length;
+
+  check(
+    `ANTI_DRIFT_INVARIANTS (${declared}) is ≤ actual check() count (${actual}) — no fake claims on /security`,
+    declared <= actual ? 1 : 0,
+    1,
+    { dimension: "trust-asset" },
+  );
+})();
+
+check(
+  "/security page imports ANTI_DRIFT_INVARIANTS from platform-stats (Move 22)",
+  fileContains(
+    "src/app/security/page.tsx",
+    "ANTI_DRIFT_INVARIANTS",
+  ) &&
+    fileContains(
+      "src/app/security/page.tsx",
+      `from "@/lib/platform-stats"`,
+    )
+    ? 1
+    : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "/security Trust Surface section lists R142, R145, R150, R155, R162",
+  fileContains("src/app/security/page.tsx", "R142") &&
+    fileContains("src/app/security/page.tsx", "R145") &&
+    fileContains("src/app/security/page.tsx", "R150") &&
+    fileContains("src/app/security/page.tsx", "R155") &&
+    fileContains("src/app/security/page.tsx", "R162")
+    ? 1
+    : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "/security links to /trust/wiring-status for full table",
+  fileContains(
+    "src/app/security/page.tsx",
+    "/trust/wiring-status",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
 // ─── Round 38 — Agent Identity Manifests (KYA Registry) ──────────────
 //
 // The missing primitive nobody has shipped. Closes the last major gap
