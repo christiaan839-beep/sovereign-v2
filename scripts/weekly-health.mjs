@@ -3164,6 +3164,81 @@ check(
   { dimension: "trust-asset" },
 );
 
+// ─── Move 19 — A2A request handler with R162 cross-protocol bridge ──
+//
+// New route at /api/v1/a2a/[peer] accepts cross-vendor agent requests.
+// Every request is gated by bridgeAuthorization with the active scope-
+// translation policy (default REFUSE_ALL = least privilege). Refusals
+// fire agent.cross_protocol_block on the R26 audit chain.
+
+check(
+  "/api/v1/a2a/[peer] route present (Move 19)",
+  existsSync(
+    join(ROOT, "src/app/api/v1/a2a/[peer]/route.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "A2A route imports bridgeAuthorization + REFUSE_ALL_POLICY",
+  fileContains(
+    "src/app/api/v1/a2a/[peer]/route.ts",
+    "bridgeAuthorization",
+  ) &&
+    fileContains(
+      "src/app/api/v1/a2a/[peer]/route.ts",
+      "REFUSE_ALL_POLICY",
+    )
+    ? 1
+    : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "A2A route fires agent.cross_protocol_block audit on refusal",
+  fileContains(
+    "src/app/api/v1/a2a/[peer]/route.ts",
+    "decision.auditEntry.action",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "A2A route enforces 1MB body cap (DoS defense)",
+  fileContains(
+    "src/app/api/v1/a2a/[peer]/route.ts",
+    "MAX_BODY_BYTES = 1_000_000",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "A2A route opens CORS for public discovery",
+  fileContains(
+    "src/app/api/v1/a2a/[peer]/route.ts",
+    `"Access-Control-Allow-Origin": "*"`,
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "A2A route default policy is REFUSE_ALL (least privilege)",
+  fileContains(
+    "src/app/api/v1/a2a/[peer]/route.ts",
+    "return REFUSE_ALL_POLICY",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "A2A route tests present",
+  existsSync(
+    join(ROOT, "src/app/api/__tests__/v1-a2a.test.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
 // ─── Round 38 — Agent Identity Manifests (KYA Registry) ──────────────
 //
 // The missing primitive nobody has shipped. Closes the last major gap
