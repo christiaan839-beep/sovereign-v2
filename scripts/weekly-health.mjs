@@ -3652,6 +3652,66 @@ check(
   { dimension: "trust-asset" },
 );
 
+// ─── Move 26-27 — Outreach drafts (Anthropic + OWASP ASI) ───────────
+//
+// Pre-drafted application + submission narratives ready for operator
+// to send. Both reference the open-spec restructure (Move 24) and
+// inspector publish-ready posture (Move 25) as evidence.
+
+check(
+  "Anthropic partnership application narrative drafted (Move 26)",
+  existsSync(
+    join(ROOT, "docs/ANTHROPIC_PARTNERSHIP_APPLICATION.md"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "Anthropic application leads with safety/trust angle, not capability",
+  fileContains(
+    "docs/ANTHROPIC_PARTNERSHIP_APPLICATION.md",
+    "verifiable trust substrate",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "Anthropic application includes 10-minute verification flow",
+  fileContains(
+    "docs/ANTHROPIC_PARTNERSHIP_APPLICATION.md",
+    "10-minute verification",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "OWASP ASI submission narrative drafted (Move 27)",
+  existsSync(
+    join(ROOT, "docs/OWASP_ASI_SUBMISSION.md"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "OWASP submission maps R150 → ASI04 + R162 → ASI03 + R145 → ASI06",
+  fileContains(
+    "docs/OWASP_ASI_SUBMISSION.md",
+    "ASI04",
+  ) &&
+    fileContains(
+      "docs/OWASP_ASI_SUBMISSION.md",
+      "ASI03",
+    ) &&
+    fileContains(
+      "docs/OWASP_ASI_SUBMISSION.md",
+      "ASI06",
+    )
+    ? 1
+    : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
 // ─── Round 38 — Agent Identity Manifests (KYA Registry) ──────────────
 //
 // The missing primitive nobody has shipped. Closes the last major gap
