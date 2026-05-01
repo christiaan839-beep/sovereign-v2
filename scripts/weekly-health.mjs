@@ -3316,6 +3316,70 @@ check(
   { dimension: "trust-asset" },
 );
 
+// ─── Move 21 — R155 HITL routing wired into agent-factory ──────────
+//
+// Final P1a wiring move. agent-factory.ts now calls routeToHITL after
+// the R142 governance gate. Decision kinds: auto_proceed |
+// silent_approval | hitl_required | hard_deny. Default-OFF env flag
+// preserves byte-identical behavior for existing 222 agents.
+
+check(
+  "agent-factory imports routeToHITL + isHITLRoutingEnabled (Move 21)",
+  fileContains(
+    "src/lib/agent-factory.ts",
+    "routeToHITL",
+  ) &&
+    fileContains(
+      "src/lib/agent-factory.ts",
+      "isHITLRoutingEnabled",
+    )
+    ? 1
+    : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "agent-factory respects HITL routing default-OFF posture",
+  fileContains(
+    "src/lib/agent-factory.ts",
+    "if (isHITLRoutingEnabled())",
+  ) ? 1 : 0,
+  1,
+  { dimension: "security" },
+);
+check(
+  "agent-factory returns 403 on hard_deny + hitl_required",
+  fileContains(
+    "src/lib/agent-factory.ts",
+    "hitl_routing_hard_deny",
+  ) &&
+    fileContains(
+      "src/lib/agent-factory.ts",
+      "hitl_routing_required",
+    )
+    ? 1
+    : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "agent-factory fires HITL-routing audit (phase=hitl-routing)",
+  fileContains(
+    "src/lib/agent-factory.ts",
+    "buildHITLRoutingAuditEntry",
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+check(
+  "HITL routing wiring tests present",
+  existsSync(
+    join(ROOT, "src/lib/__tests__/hitl-routing-wiring.test.ts"),
+  ) ? 1 : 0,
+  1,
+  { dimension: "trust-asset" },
+);
+
 // ─── Round 38 — Agent Identity Manifests (KYA Registry) ──────────────
 //
 // The missing primitive nobody has shipped. Closes the last major gap

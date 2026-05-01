@@ -48,6 +48,11 @@ import {
   buildGovernanceAuditEntry,
   type GovernanceRule,
 } from "@/lib/control-plane/governance";
+import {
+  routeToHITL,
+  isHITLRoutingEnabled,
+  buildHITLRoutingAuditEntry,
+} from "@/lib/control-plane/hitl-routing";
 import type { AgentActionClass } from "@/lib/control-plane/viability";
 import type { PolicyRule } from "@/lib/control-plane/policy-engine";
 import { getAntiSlopRules } from "@/lib/system-prompts";
@@ -1095,6 +1100,71 @@ async function handleAgentRoute(
         // permit / modify → proceed. Modifier application is left to
         // the caller since rewrite semantics are agent-specific. The
         // audit trail records that the modify happened either way.
+      }
+
+      // R155 HITL Confidence Routing (Move 21).
+      //
+      // Final trust-gate before handler dispatch. Composes signals
+      // from R100 (policy decision), R140-R141 (viability), R143
+      // (ODTA), and the always-HITL action-class procurement floor
+      // into a calibrated routing decision: auto_proceed |
+      // silent_approval | hitl_required | hard_deny.
+      //
+      // Default-OFF unless SOVEREIGN_HITL_ROUTING_ENABLED=true. When
+      // disabled the gate is skipped entirely (existing fleet stays
+      // byte-identical). When enabled but no upstream signals are
+      // present, routeToHITL evaluates only the action-class floor
+      // and produces auto_proceed for routine actions.
+      //
+      // Fires agent.governance_consult with phase=hitl-routing on
+      // every routing decision — distinct from the R142 PAGRL
+      // consultation by the phase discriminator in audit details.
+      if (isHITLRoutingEnabled()) {
+        const hitlDecision = routeToHITL({
+          agentName: config.name,
+          actionClass: config.actionClass ?? "internal_read",
+          // Future: pass policyDecision, viabilityScore, odtaResult
+          // when those upstream gates produce structured results.
+        });
+
+        const hitlAudit = buildHITLRoutingAuditEntry(
+          config.name,
+          hitlDecision,
+        );
+        auditLog({
+          userId: userId || "anonymous",
+          action: hitlAudit.action,
+          resource: hitlAudit.resource,
+          details: hitlAudit.details,
+        }).catch(() => {});
+
+        if (
+          hitlDecision.kind === "hard_deny" ||
+          hitlDecision.kind === "hitl_required"
+        ) {
+          return new NextResponse(
+            JSON.stringify({
+              error:
+                hitlDecision.kind === "hard_deny"
+                  ? "hitl_routing_hard_deny"
+                  : "hitl_routing_required",
+              kind: hitlDecision.kind,
+              reason: hitlDecision.reason,
+              rationale: hitlDecision.rationale,
+              regulatoryCitation: hitlDecision.regulatoryCitation,
+              guidance:
+                hitlDecision.kind === "hard_deny"
+                  ? "This action is structurally refused; no human override available."
+                  : "This action requires human-in-the-loop review before proceeding.",
+            }),
+            {
+              status: 403,
+              headers: { "Content-Type": "application/json" },
+            },
+          );
+        }
+        // silent_approval / auto_proceed → continue; trace already
+        // recorded in the audit entry above.
       }
 
       let budgetExceeded = false;
