@@ -7,7 +7,7 @@
  */
 
 import { db } from "@/db";
-import { sql } from "drizzle-orm";
+import { usage } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("cost-ledger");
@@ -25,18 +25,16 @@ export interface LedgerEntry {
 export async function recordLedgerEntry(entry: LedgerEntry): Promise<void> {
   const inputTokens = entry.inputTokens ?? 0;
   const outputTokens = entry.outputTokens ?? 0;
-  const totalTokens = inputTokens + outputTokens;
 
   try {
-    await db.execute(sql`
-      INSERT INTO usage (user_email, agent, tokens, created_at)
-      VALUES (
-        ${entry.userId ?? "system"},
-        ${entry.agent ?? entry.modelId},
-        ${totalTokens},
-        NOW()
-      )
-    `);
+    await db.insert(usage).values({
+      userId: entry.userId ?? "system",
+      agentId: entry.agent ?? entry.modelId,
+      model: entry.modelId,
+      tokensUsed: inputTokens + outputTokens,
+      inputTokens: entry.inputTokens ?? null,
+      outputTokens: entry.outputTokens ?? null,
+    });
   } catch (err) {
     // Usage table missing or schema drift — never block on telemetry.
     log.info("recordLedgerEntry skipped", { error: String(err) });
