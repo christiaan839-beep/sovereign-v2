@@ -10,6 +10,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "typecheck": "tsc --noEmit",
     "ws": "ts-node server/ws.ts",
     "test": "vitest run"
   },
@@ -44,6 +45,7 @@
     "lenis": "^1.3.21",
     "lucide-react": "^0.577.0",
     "next": "16.1.6",
+    "nodemailer": "^6.9.16",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-markdown": "^10.1.0",
@@ -60,6 +62,7 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/node": "^20",
+    "@types/nodemailer": "^6.4.17",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/ws": "^8.18.1",

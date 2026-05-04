@@ -27,9 +27,13 @@ jobs:
       - name: Run ESLint
         run: npm run lint
 
-      # TypeScript strict check intentionally omitted — next.config.ts sets
-      # ignoreBuildErrors: true for dynamic icon components. Type safety is
-      # validated end-to-end via the Build job below.
+      # Informational type-check: next.config.ts still has
+      # `ignoreBuildErrors: true` to keep deploys unblocked while we drive
+      # the legacy agent-route error count to zero. continue-on-error keeps
+      # the gap visible without breaking merges.
+      - name: Type check (informational)
+        run: npm run typecheck
+        continue-on-error: true
 
   build:
     name: Build

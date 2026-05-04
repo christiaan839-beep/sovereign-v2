@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { rateLimit } from "@/lib/rate-limit";
 import { requireAuth } from "@/lib/auth-guard";
+import { isAdmin } from "@/lib/admin-auth";
 import { createLogger } from "@/lib/logger";
 const log = createLogger("email-send");
 
@@ -8,12 +9,12 @@ export const maxDuration = 30;
 
 /**
  * Universal Email Sender API
- * 
+ *
  * Supports multiple providers with automatic fallback:
  * 1. Resend (primary — free tier: 100 emails/day)
  * 2. Nodemailer/Gmail (fallback)
  * 3. Console logging (development mode)
- * 
+ *
  * Set RESEND_API_KEY in .env.local to activate Resend.
  * Set GMAIL_USER + GMAIL_APP_PASSWORD for Gmail fallback.
  */
@@ -27,7 +28,9 @@ interface EmailPayload {
   replyTo?: string;
 }
 
-async function sendViaResend(payload: EmailPayload): Promise<{ success: boolean; id?: string; error?: string }> {
+async function sendViaResend(
+  payload: EmailPayload,
+): Promise<{ success: boolean; id?: string; error?: string }> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) throw new Error("RESEND_API_KEY not configured");
 
@@ -38,7 +41,10 @@ async function sendViaResend(payload: EmailPayload): Promise<{ success: boolean;
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: payload.from || process.env.RESEND_FROM_EMAIL || "SOVEREIGN <noreply@umbra.ai>",
+      from:
+        payload.from ||
+        process.env.RESEND_FROM_EMAIL ||
+        "SOVEREIGN <noreply@umbra.ai>",
       to: [payload.to],
       subject: payload.subject,
       html: payload.html || undefined,
@@ -48,23 +54,68 @@ async function sendViaResend(payload: EmailPayload): Promise<{ success: boolean;
   });
 
   const data = await res.json();
-  if (!res.ok) return { success: false, error: data.message || `HTTP ${res.status}` };
+  if (!res.ok)
+    return { success: false, error: data.message || `HTTP ${res.status}` };
   return { success: true, id: data.id };
 }
 
-async function sendViaGmail(_payload: EmailPayload): Promise<{ success: boolean; id?: string; error?: string }> {
+async function sendViaGmail(
+  payload: EmailPayload,
+): Promise<{ success: boolean; id?: string; error?: string }> {
   const user = process.env.GMAIL_USER;
   const pass = process.env.GMAIL_APP_PASSWORD;
   if (!user || !pass) throw new Error("Gmail credentials not configured");
 
-  // Gmail sending not yet implemented — stub for fallback
-  return { success: true, id: `gmail_${Date.now()}` };
+  let nodemailer: typeof import("nodemailer");
+  try {
+    // Lazy require so the build doesn't fail when nodemailer isn't installed.
+    // Mirrors the pattern used in src/lib/stripe.ts.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    nodemailer = require("nodemailer");
+  } catch {
+    return {
+      success: false,
+      error:
+        "nodemailer is not installed — run `npm install nodemailer` to enable Gmail fallback",
+    };
+  }
+
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: { user, pass },
+  });
+
+  try {
+    const info = await transporter.sendMail({
+      from: payload.from || `SOVEREIGN <${user}>`,
+      to: payload.to,
+      subject: payload.subject,
+      html: payload.html,
+      text: payload.text,
+      replyTo: payload.replyTo,
+    });
+    return { success: true, id: info.messageId };
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : String(err),
+    };
+  }
 }
 
 const emailLimiter = rateLimit({ interval: 60, limit: 10 }); // 10 emails per minute
 
 export async function POST(req: Request) {
-  const auth = await requireAuth(); if (auth.error) return auth.error;
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
+  // Admin-only: anyone with a Sovereign account would otherwise be able to
+  // send arbitrary HTML email through our domain identity (phishing-from-our-
+  // domain at 10/min). Server-side senders use src/lib/email.ts directly and
+  // bypass this gate; this route exists for ops + admin tools only.
+  if (!isAdmin(auth.userId)) {
+    log.warn("Non-admin attempted /api/_email/send", { userId: auth.userId });
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
   try {
     const limited = await emailLimiter.check(req);
     if (limited) return limited;
@@ -73,7 +124,10 @@ export async function POST(req: Request) {
     const { to, subject, html, text, from, replyTo, template, data } = body;
 
     if (!to || !subject) {
-      return NextResponse.json({ error: "Missing required fields: to, subject" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Missing required fields: to, subject" },
+        { status: 400 },
+      );
     }
 
     // If a template is specified, render it
@@ -84,13 +138,22 @@ export async function POST(req: Request) {
       emailHtml = renderTemplate(template, data || {});
     }
 
-    const payload: EmailPayload = { to, subject, html: emailHtml, text: emailText, from, replyTo };
+    const payload: EmailPayload = {
+      to,
+      subject,
+      html: emailHtml,
+      text: emailText,
+      from,
+      replyTo,
+    };
 
     // Try Resend first, then Gmail, then log
     let result;
-    const provider = process.env.RESEND_API_KEY ? "resend"
-      : process.env.GMAIL_USER ? "gmail"
-      : "console";
+    const provider = process.env.RESEND_API_KEY
+      ? "resend"
+      : process.env.GMAIL_USER
+        ? "gmail"
+        : "console";
 
     switch (provider) {
       case "resend":
@@ -103,16 +166,29 @@ export async function POST(req: Request) {
         result = { success: true, id: `console_${Date.now()}` };
     }
 
+    // Don't echo provider error messages back — Gmail / SMTP errors can
+    // include the SMTP user, host, or response headers. Log details
+    // server-side and return a generic message to the caller.
+    if (!result.success && result.error) {
+      log.error("Email sender provider error", {
+        provider,
+        error: result.error,
+      });
+    }
+
     return NextResponse.json({
       success: result.success,
       provider,
       messageId: result.id || null,
-      error: result.error || null,
+      error: result.success ? null : "Email delivery failed",
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown error";
     log.error("Email sender error", { message });
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json(
+      { error: "Email delivery failed" },
+      { status: 500 },
+    );
   }
 }
 
@@ -120,13 +196,20 @@ export async function POST(req: Request) {
  * Escape HTML special characters to prevent XSS in email templates.
  */
 function escapeHtml(str: string): string {
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 /**
  * Built-in branded SOVEREIGN email templates
  */
-function renderTemplate(template: string, data: Record<string, string>): string {
+function renderTemplate(
+  template: string,
+  data: Record<string, string>,
+): string {
   // Sanitize all data values before injecting into HTML
   const safe: Record<string, string> = {};
   for (const [key, value] of Object.entries(data)) {
@@ -173,6 +256,7 @@ function renderTemplate(template: string, data: Record<string, string>): string 
       </table>`,
   };
 
-  const content = templates[template] || `<p>${safe.message || "No content available."}</p>`;
+  const content =
+    templates[template] || `<p>${safe.message || "No content available."}</p>`;
   return baseStyle.replace("{{CONTENT}}", content);
 }

@@ -15,7 +15,10 @@ export type AuditAction =
   | "webhook.received"
   | "data.export"
   | "data.delete"
-  | "admin.provision";
+  | "admin.provision"
+  | "credits.add"
+  | "credits.purchase"
+  | "credits.grant";
 
 interface AuditEntry {
   userId: string;
@@ -29,7 +32,7 @@ export async function auditLog(entry: AuditEntry): Promise<void> {
   try {
     await db.execute(
       sql`INSERT INTO audit_logs (user_id, action, resource, details, ip_address, created_at)
-          VALUES (${entry.userId}, ${entry.action}, ${entry.resource || null}, ${JSON.stringify(entry.details || {})}, ${entry.ipAddress || null}, NOW())`
+          VALUES (${entry.userId}, ${entry.action}, ${entry.resource || null}, ${JSON.stringify(entry.details || {})}, ${entry.ipAddress || null}, NOW())`,
     );
   } catch (err) {
     // Audit logging should never break the app

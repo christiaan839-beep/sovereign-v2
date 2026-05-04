@@ -13,7 +13,13 @@
 
 // ── Plan IDs ──
 
-export type PlanId = "free" | "starter" | "founder" | "array" | "node" | "enterprise";
+export type PlanId =
+  | "free"
+  | "starter"
+  | "founder"
+  | "array"
+  | "node"
+  | "enterprise";
 
 /** Legacy plan names that may exist in the database or older code paths */
 type LegacyPlanId = "pro" | "sniper" | "basic";
@@ -187,7 +193,9 @@ export function getPlanMrrUsd(planId: string | null | undefined): number {
 }
 
 /** Get the Stripe price ID from env for a plan. Returns null if not purchasable. */
-export function getStripePriceId(planId: string | null | undefined): string | null {
+export function getStripePriceId(
+  planId: string | null | undefined,
+): string | null {
   const plan = getPlan(planId);
   if (!plan.stripePriceEnvKey) return null;
   return process.env[plan.stripePriceEnvKey] ?? null;
@@ -200,7 +208,9 @@ export function isUnlimited(planId: string | null | undefined): boolean {
 }
 
 /** Get the next plan in the upgrade path, or null if at max. */
-export function getNextPlan(planId: string | null | undefined): PlanDefinition | null {
+export function getNextPlan(
+  planId: string | null | undefined,
+): PlanDefinition | null {
   const id = normalizePlanId(planId);
   const nextId = UPGRADE_PATH[id];
   return nextId ? PLANS[nextId] : null;
@@ -211,5 +221,18 @@ export function getNextPlan(planId: string | null | undefined): PlanDefinition |
  * Prefer using getPlanLimit() directly in new code.
  */
 export const PLAN_LIMITS: Record<string, number> = Object.fromEntries(
-  Object.entries(PLANS).map(([id, plan]) => [id, plan.runsPerMonth])
+  Object.entries(PLANS).map(([id, plan]) => [id, plan.runsPerMonth]),
 );
+
+/**
+ * Returns the public-facing plans for marketing surfaces (landing page,
+ * SEO JSON-LD, FAQ blurbs). Excludes archived or invite-only tiers so
+ * promotional copy can never advertise a plan that's not currently
+ * purchasable. Order matches user-facing display.
+ */
+export function getMarketingPlans(): PlanDefinition[] {
+  const order: PlanId[] = ["free", "starter", "array", "node", "enterprise"];
+  return order
+    .filter((id) => PLANS[id]?.purchasable || PLANS[id]?.priceUsdCents === 0)
+    .map((id) => PLANS[id]);
+}

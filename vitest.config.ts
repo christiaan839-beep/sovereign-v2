@@ -11,7 +11,12 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text", "json-summary"],
-      include: ["src/lib/**/*.ts"],
+      include: ["src/lib/**/*.ts", "src/app/api/**/route.ts"],
+      exclude: [
+        "src/**/*.test.ts",
+        "src/**/__tests__/**",
+        "src/app/api/agents/registry.ts", // auto-generated
+      ],
     },
   },
   resolve: {

@@ -5,7 +5,11 @@ const nextConfig: NextConfig = {
   // so this activates only for self-hosted deployments.
   output: process.env.VERCEL ? undefined : "standalone",
 
-  // Allow build to proceed despite strict TS on dynamic icon components
+  // Allow build to proceed despite pre-existing strict-TS errors in legacy
+  // agent routes under src/app/api/_agents/*. The CI workflow runs
+  // `npm run typecheck` as an informational step so the residual error
+  // count stays visible. Target: drive count to zero, then flip to false.
+  // Run `npm run typecheck` locally to see the current error list.
   typescript: { ignoreBuildErrors: true },
 
   // Keep Node.js-only packages out of client/edge bundles
@@ -14,6 +18,7 @@ const nextConfig: NextConfig = {
     "twilio",
     "drizzle-orm",
     "@neondatabase/serverless",
+    "nodemailer",
   ],
 
   // Performance: compress responses
