@@ -15,7 +15,9 @@
     "test": "vitest run",
     "smoke": "playwright test e2e/smoke.spec.ts",
     "check:migrations": "node scripts/check-migrations.mjs",
-    "check:migrations:soft": "node scripts/check-migrations.mjs --soft"
+    "check:migrations:soft": "node scripts/check-migrations.mjs --soft",
+    "hooks:install": "git config core.hooksPath scripts/git-hooks && chmod +x scripts/git-hooks/pre-push && echo 'hooks installed: pre-push will run lint + tests + migration check'",
+    "hooks:uninstall": "git config --unset core.hooksPath && echo 'hooks uninstalled'"
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.43",

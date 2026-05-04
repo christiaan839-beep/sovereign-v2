@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
   // Standalone output for Docker/Railway — Vercel injects VERCEL=1 automatically
@@ -113,4 +114,44 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+/**
+ * Sentry — wrap the Next config to enable source map upload + release
+ * tagging on every build. The plugin is a no-op when SENTRY_AUTH_TOKEN,
+ * SENTRY_ORG, or SENTRY_PROJECT aren't set, so local + CI builds without
+ * Sentry credentials still work.
+ *
+ * Required env vars (set in Vercel for the plugin to upload source maps):
+ *   - SENTRY_AUTH_TOKEN  (Sentry → Settings → Auth Tokens)
+ *   - SENTRY_ORG         (your Sentry org slug)
+ *   - SENTRY_PROJECT     (e.g. "sovereign-matrix")
+ *
+ * Vercel injects VERCEL_GIT_COMMIT_SHA automatically — that becomes the
+ * release name (matched by sentry.client/server/edge.config.ts).
+ */
+const sentryEnabled = !!(
+  process.env.SENTRY_AUTH_TOKEN &&
+  process.env.SENTRY_ORG &&
+  process.env.SENTRY_PROJECT
+);
+
+export default sentryEnabled
+  ? withSentryConfig(nextConfig, {
+      org: process.env.SENTRY_ORG,
+      project: process.env.SENTRY_PROJECT,
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+      // Suppress build-time noise; route through Vercel/CI logs instead.
+      silent: true,
+      // Upload source maps but don't expose them publicly — only Sentry
+      // gets them, the bundle ships with `//# sourceMappingURL` stripped.
+      hideSourceMaps: true,
+      // Tunnel client-side errors through a local route to bypass ad blockers.
+      tunnelRoute: "/monitoring",
+      // Use the Vercel commit SHA as the release name (sentry.config.ts
+      // files read the same env var so they line up).
+      release: {
+        name: process.env.SENTRY_RELEASE ?? process.env.VERCEL_GIT_COMMIT_SHA,
+      },
+      // Don't widen the build envelope with telemetry uploads.
+      widenClientFileUpload: false,
+    })
+  : nextConfig;
