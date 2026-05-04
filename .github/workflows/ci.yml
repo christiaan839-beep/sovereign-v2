@@ -93,6 +93,64 @@ jobs:
         run: npm audit --audit-level=high
         continue-on-error: true
 
+  migration-parity:
+    name: Migration Parity
+    runs-on: ubuntu-latest
+    needs: lint-and-typecheck
+    # Only run when DATABASE_URL_READONLY is configured. Use a *read-only*
+    # Neon role here — never the same credential the app deploys with.
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify schema vs Neon (soft until baseline established)
+        run: npm run check:migrations:soft
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_READONLY }}
+
+  smoke:
+    name: Smoke Tests
+    runs-on: ubuntu-latest
+    needs: build
+    # Smoke tests run against the deployed preview/prod URL. Skip when
+    # E2E_BASE_URL isn't configured (eg. fork PRs without secrets).
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run golden-path smoke tests
+        run: npm run smoke
+        env:
+          E2E_BASE_URL: ${{ secrets.E2E_PREVIEW_URL || 'https://sovereignmatrix.agency' }}
+          E2E_REQUIRE_READY: ${{ vars.E2E_REQUIRE_READY || 'false' }}
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
   docker:
     name: Docker Build
     runs-on: ubuntu-latest

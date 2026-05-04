@@ -12,7 +12,10 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "ws": "ts-node server/ws.ts",
-    "test": "vitest run"
+    "test": "vitest run",
+    "smoke": "playwright test e2e/smoke.spec.ts",
+    "check:migrations": "node scripts/check-migrations.mjs",
+    "check:migrations:soft": "node scripts/check-migrations.mjs --soft"
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.43",
