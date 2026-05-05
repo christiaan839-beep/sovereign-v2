@@ -34,6 +34,10 @@
       "schedule": "0 3 * * 0"
     },
     {
+      "path": "/api/cron/standards-check",
+      "schedule": "0 12 * * 0"
+    },
+    {
       "path": "/api/health/ping",
       "schedule": "*/4 * * * *"
     }
