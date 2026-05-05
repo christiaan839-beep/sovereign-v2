@@ -35,6 +35,12 @@ export interface PlanDefinition {
   apiRatePerDay: number;
   /** Daily demo/anonymous rate limit */
   demoRatePerDay: number;
+  /** Hard daily AI-spend cap in USD cents. Once a user hits this in a
+   *  single calendar day across all paid models, agent execution is
+   *  blocked until midnight UTC. Free models (NIM, local Ollama,
+   *  Cerebras) cost 0 and never count against this budget. Set to
+   *  Infinity for unlimited spend. */
+  dailyBudgetCents: number;
   /** Monthly price in USD cents (for MRR calculations) */
   priceUsdCents: number;
   /** Monthly price in ZAR cents (for PayFast/Yoco) */
@@ -59,6 +65,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     runsPerMonth: 50,
     apiRatePerDay: 100,
     demoRatePerDay: 5,
+    dailyBudgetCents: 50, // $0.50/day — should only ever hit free models
     priceUsdCents: 0,
     priceZarCents: 0,
     priceDisplayUsd: "$0/mo",
@@ -72,6 +79,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     runsPerMonth: 200,
     apiRatePerDay: 1_000,
     demoRatePerDay: 5,
+    dailyBudgetCents: 200, // $2/day — covers ~200 cheap calls
     priceUsdCents: 1_900,
     priceZarCents: 34_900,
     priceDisplayUsd: "$19/mo",
@@ -85,6 +93,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     runsPerMonth: 10_000,
     apiRatePerDay: Infinity,
     demoRatePerDay: 5,
+    dailyBudgetCents: 5_000, // $50/day for founders — generous cap
     priceUsdCents: 0,
     priceZarCents: 0,
     priceDisplayUsd: "Free",
@@ -98,6 +107,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     runsPerMonth: 500,
     apiRatePerDay: 5_000,
     demoRatePerDay: 5,
+    dailyBudgetCents: 1_000, // $10/day
     priceUsdCents: 4_900,
     priceZarCents: 499_700,
     priceDisplayUsd: "$49/mo",
@@ -111,6 +121,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     runsPerMonth: 2_000,
     apiRatePerDay: 10_000,
     demoRatePerDay: 5,
+    dailyBudgetCents: 5_000, // $50/day
     priceUsdCents: 19_900,
     priceZarCents: 999_700,
     priceDisplayUsd: "$199/mo",
@@ -124,6 +135,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     runsPerMonth: 10_000,
     apiRatePerDay: Infinity,
     demoRatePerDay: 5,
+    dailyBudgetCents: 25_000, // $250/day
     priceUsdCents: 49_900,
     priceZarCents: 4_999_700,
     priceDisplayUsd: "$499/mo",

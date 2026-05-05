@@ -417,16 +417,22 @@ export function createAgentRoute(config: AgentConfig) {
         }
       }
 
-      // Budget: blocks if spend limits exceeded
+      // Budget: blocks if today's AI spend has hit the user's plan cap.
+      // Reads from the Postgres `usage` table — survives cold starts.
       if (userId) {
         try {
-          const budgetResult = checkBudget(userId);
+          const { getUserTier } = await import("@/lib/free-tier");
+          const tier = await getUserTier(userId);
+          const budgetResult = await checkBudget(userId, tier);
           if (!budgetResult.allowed) {
             return NextResponse.json(
               {
-                error: budgetResult.reason || "Budget limit exceeded",
+                error: budgetResult.reason || "Daily budget exceeded",
+                spendCents: budgetResult.dailyCents,
+                limitCents: budgetResult.dailyLimitCents,
                 dailyPercent: budgetResult.dailyPercent,
-                monthlyPercent: budgetResult.monthlyPercent,
+                plan: budgetResult.plan,
+                resetsAt: "00:00 UTC",
               },
               { status: 429 },
             );
@@ -610,8 +616,12 @@ export function createAgentRoute(config: AgentConfig) {
       // ─── Track Usage, Audit Log & Return Response ───
       if (userId) {
         await incrementUsage(userId, config.name);
-        // Track spend for budget controls (estimates token cost by model)
-        recordSpend(userId, "nim-default", 500); // ~500 tokens per agent call average
+        // Track spend for budget controls. Most agents route to free
+        // models (NIM / Cerebras / Ollama) so this is a no-op cost-wise,
+        // but we still record the row so the analytics dashboards can
+        // count calls. Real per-model costs flow in via cost-ledger
+        // from src/lib/ai.ts when paid providers fire.
+        recordSpend(userId, "nim-default", 500, 0, config.name).catch(() => {});
         // Audit every agent execution (SOC 2 compliance)
         auditLog({
           userId,

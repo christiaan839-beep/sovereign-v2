@@ -1,167 +1,302 @@
 /**
- * SOVEREIGN MATRIX — Budget & Cost Controls
+ * SOVEREIGN MATRIX — Budget & Cost Controls (Postgres-backed)
  *
- * Tracks and enforces spend limits per agent, user, and workspace.
- * Prevents runaway API costs when agents go wild.
+ * Hard cap on AI inference spend, per user, per day.
  *
- * Features:
- * - Per-user daily/monthly budget caps
- * - Alert webhooks at 50%, 80%, 100% thresholds
- * - Hard stop enforcement with admin override
- * - Token cost estimation per model
+ * The previous implementation stored spend in an in-memory Map. In a
+ * serverless deployment that resets on every cold start, which means the
+ * "hard cap" never actually fired in practice. This version reads spend
+ * from the `usage` table (single source of truth, populated by
+ * cost-ledger.recordLedgerEntry) and computes daily/monthly aggregates
+ * via a single SQL query. Cold starts no longer reset the counter.
+ *
+ * Plan-based defaults come from src/lib/plans.ts (PlanDefinition.dailyBudgetCents).
+ * No per-user overrides for v1 — keep config in plans.ts so it's audit-able
+ * and revertable in code review.
+ *
+ * Free models (Cerebras, NIM, Ollama-local, Groq dev) cost 0 and never
+ * consume budget. See model-prices.ts for the canonical price table.
  */
 
+import { db } from "@/db";
+import { usage } from "@/db/schema";
+import { eq, gte, and, sql } from "drizzle-orm";
+import { PLANS, type PlanId, normalizePlanId } from "@/lib/plans";
+import { getModelPrice, calculateCostCents } from "@/lib/model-prices";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("budget-controls");
 
-// ── Types ──
+// ── Types ────────────────────────────────────────────────────────────────
 
-export interface BudgetConfig {
-  userId: string;
-  dailyLimitCents: number;  // e.g., 500 = $5/day
-  monthlyLimitCents: number; // e.g., 5000 = $50/month
-  alertWebhookUrl?: string;
-  alertedAt50?: boolean;
-  alertedAt80?: boolean;
-  alertedAt100?: boolean;
+export interface BudgetCheck {
+  allowed: boolean;
+  reason?: string;
+  dailyCents: number;
+  dailyLimitCents: number;
+  dailyPercent: number;
+  monthlyCents: number;
+  plan: PlanId;
 }
 
-interface SpendRecord {
+export interface SpendBreakdown {
   totalCents: number;
-  lastUpdated: number;
-  resetAt: number;
+  byModel: Array<{ model: string; cents: number; calls: number }>;
 }
 
-// ── Model Cost Estimates (per 1K tokens, in cents) ──
+// ── Tiny in-process cache (cuts DB hits during a request burst) ────────
 
-const MODEL_COSTS: Record<string, number> = {
-  // NIM models (free tier)
-  "nvidia/llama-3.1-nemotron-ultra-253b-v1": 0,
-  "deepseek-ai/deepseek-v3.2": 0,
-  "google/gemma-4-31b-it": 0,
-  // Paid models (estimate)
-  "claude-sonnet-4-6": 3, // $3/M input → 0.3c/1K
-  "gemini-2.0-pro": 2.5,
-  "gpt-4o": 5,
-  // Default for unknown models
-  default: 1,
-};
+interface CachedSpend {
+  dailyCents: number;
+  monthlyCents: number;
+  cachedAt: number;
+}
+const SPEND_CACHE = new Map<string, CachedSpend>();
+const SPEND_CACHE_TTL_MS = 5_000; // 5s — small enough to be safe, large enough to absorb bursts
 
-// ── In-Memory Spend Tracking ──
-
-const dailySpend = new Map<string, SpendRecord>();
-const monthlySpend = new Map<string, SpendRecord>();
-const budgetConfigs = new Map<string, BudgetConfig>();
-
-// ── Helpers ──
-
-function getOrCreateSpend(map: Map<string, SpendRecord>, key: string, windowMs: number): SpendRecord {
-  const now = Date.now();
-  const existing = map.get(key);
-  if (existing && existing.resetAt > now) return existing;
-
-  const record: SpendRecord = { totalCents: 0, lastUpdated: now, resetAt: now + windowMs };
-  map.set(key, record);
-  return record;
+function cacheKey(userId: string): string {
+  return userId;
 }
 
-function estimateCostCents(model: string, tokensUsed: number): number {
-  const costPer1K = MODEL_COSTS[model] ?? MODEL_COSTS.default;
-  return Math.ceil((tokensUsed / 1000) * costPer1K);
+function readCache(userId: string): CachedSpend | null {
+  const entry = SPEND_CACHE.get(cacheKey(userId));
+  if (!entry) return null;
+  if (Date.now() - entry.cachedAt > SPEND_CACHE_TTL_MS) {
+    SPEND_CACHE.delete(cacheKey(userId));
+    return null;
+  }
+  return entry;
 }
 
-// ── Public API ──
-
-/**
- * Set budget configuration for a user.
- */
-export function setBudget(config: BudgetConfig): void {
-  budgetConfigs.set(config.userId, config);
-  log.info("Budget set", { userId: config.userId, daily: config.dailyLimitCents, monthly: config.monthlyLimitCents });
+function writeCache(userId: string, dailyCents: number, monthlyCents: number) {
+  SPEND_CACHE.set(cacheKey(userId), {
+    dailyCents,
+    monthlyCents,
+    cachedAt: Date.now(),
+  });
 }
 
-/**
- * Check if a user can execute (pre-action check).
- * Returns { allowed, reason, spendPercent }.
- */
-export function checkBudget(userId: string): { allowed: boolean; reason: string; dailyPercent: number; monthlyPercent: number } {
-  const config = budgetConfigs.get(userId);
-  if (!config) return { allowed: true, reason: "", dailyPercent: 0, monthlyPercent: 0 };
+/** Test-only: clear the cache so each test starts fresh. */
+export function _resetBudgetCacheForTests(): void {
+  SPEND_CACHE.clear();
+}
 
-  const daily = getOrCreateSpend(dailySpend, userId, 24 * 60 * 60 * 1000);
-  const monthly = getOrCreateSpend(monthlySpend, userId, 30 * 24 * 60 * 60 * 1000);
+// ── DB reads ─────────────────────────────────────────────────────────────
 
-  const dailyPercent = config.dailyLimitCents > 0 ? Math.round((daily.totalCents / config.dailyLimitCents) * 100) : 0;
-  const monthlyPercent = config.monthlyLimitCents > 0 ? Math.round((monthly.totalCents / config.monthlyLimitCents) * 100) : 0;
-
-  // Check alerts
-  if (monthlyPercent >= 50 && !config.alertedAt50) {
-    config.alertedAt50 = true;
-    fireAlert(config, 50, monthly.totalCents);
+/** Sum cost_cents from the usage table for a given user since `since`. */
+async function sumSpend(userId: string, since: Date): Promise<number> {
+  try {
+    const [row] = await db
+      .select({
+        cents: sql<number>`COALESCE(SUM(${usage.costCents}), 0)::int`,
+      })
+      .from(usage)
+      .where(and(eq(usage.userId, userId), gte(usage.createdAt, since)));
+    return Number(row?.cents ?? 0);
+  } catch (err: unknown) {
+    const pgCode = (err as { code?: string })?.code;
+    const msg = err instanceof Error ? err.message : String(err);
+    if (pgCode === "42P01" || msg.includes("does not exist")) {
+      // Table missing in dev — fail open.
+      return 0;
+    }
+    log.error("sumSpend failed — failing open to avoid blocking users", {
+      error: msg,
+      userId,
+    });
+    return 0;
   }
-  if (monthlyPercent >= 80 && !config.alertedAt80) {
-    config.alertedAt80 = true;
-    fireAlert(config, 80, monthly.totalCents);
-  }
-
-  // Hard stop
-  if (daily.totalCents >= config.dailyLimitCents) {
-    return { allowed: false, reason: `Daily budget exceeded ($${(config.dailyLimitCents / 100).toFixed(2)}/day)`, dailyPercent, monthlyPercent };
-  }
-  if (monthly.totalCents >= config.monthlyLimitCents) {
-    return { allowed: false, reason: `Monthly budget exceeded ($${(config.monthlyLimitCents / 100).toFixed(2)}/month)`, dailyPercent, monthlyPercent };
-  }
-
-  return { allowed: true, reason: "", dailyPercent, monthlyPercent };
 }
 
 /**
- * Record spend after an agent execution.
+ * Get the day boundary for "today" in UTC. We use UTC explicitly so a user
+ * traveling between time zones can't reset their budget by toggling local
+ * clock — and so different Vercel regions agree on the rollover instant.
  */
-export function recordSpend(userId: string, model: string, tokensUsed: number): void {
-  const costCents = estimateCostCents(model, tokensUsed);
-  if (costCents === 0) return; // Free model
-
-  const daily = getOrCreateSpend(dailySpend, userId, 24 * 60 * 60 * 1000);
-  const monthly = getOrCreateSpend(monthlySpend, userId, 30 * 24 * 60 * 60 * 1000);
-
-  daily.totalCents += costCents;
-  daily.lastUpdated = Date.now();
-  monthly.totalCents += costCents;
-  monthly.lastUpdated = Date.now();
+function dayStartUtc(): Date {
+  const now = new Date();
+  return new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+  );
 }
 
+function monthStartUtc(): Date {
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+}
+
+// ── Public API ───────────────────────────────────────────────────────────
+
 /**
- * Get current spend for a user.
+ * Check whether `userId` may incur additional AI spend this request.
+ *
+ * Reads the current day's spend from `usage`, compares against the user's
+ * plan's `dailyBudgetCents`, and returns a structured result. Always returns
+ * synchronously through Promise — never throws (errors fail open with
+ * structured logs so the platform can't accidentally lock everyone out
+ * from a transient DB blip).
  */
-export function getSpend(userId: string): { dailyCents: number; monthlyCents: number } {
+export async function checkBudget(
+  userId: string,
+  planId?: string | null,
+): Promise<BudgetCheck> {
+  const plan = PLANS[normalizePlanId(planId ?? "free")];
+  const dailyLimitCents = plan.dailyBudgetCents;
+
+  // Fast path: cache hit.
+  let dailyCents: number;
+  let monthlyCents: number;
+  const cached = readCache(userId);
+  if (cached) {
+    dailyCents = cached.dailyCents;
+    monthlyCents = cached.monthlyCents;
+  } else {
+    [dailyCents, monthlyCents] = await Promise.all([
+      sumSpend(userId, dayStartUtc()),
+      sumSpend(userId, monthStartUtc()),
+    ]);
+    writeCache(userId, dailyCents, monthlyCents);
+  }
+
+  const dailyPercent =
+    dailyLimitCents > 0 && dailyLimitCents !== Infinity
+      ? Math.round((dailyCents / dailyLimitCents) * 100)
+      : 0;
+
+  // Hard cap. Equality is intentional — exactly at the cap = blocked.
+  if (dailyLimitCents !== Infinity && dailyCents >= dailyLimitCents) {
+    return {
+      allowed: false,
+      reason: `Daily budget exceeded ($${(dailyLimitCents / 100).toFixed(2)}/day on ${plan.name}). Resets at 00:00 UTC.`,
+      dailyCents,
+      dailyLimitCents,
+      dailyPercent,
+      monthlyCents,
+      plan: normalizePlanId(planId ?? "free"),
+    };
+  }
+
   return {
-    dailyCents: dailySpend.get(userId)?.totalCents || 0,
-    monthlyCents: monthlySpend.get(userId)?.totalCents || 0,
+    allowed: true,
+    dailyCents,
+    dailyLimitCents,
+    dailyPercent,
+    monthlyCents,
+    plan: normalizePlanId(planId ?? "free"),
   };
 }
 
-// ── Alert Webhook ──
-
-async function fireAlert(config: BudgetConfig, threshold: number, currentCents: number): Promise<void> {
-  if (!config.alertWebhookUrl) return;
+/**
+ * Record AI spend after an inference call. Writes to the `usage` table
+ * with cost_cents derived from model-prices.ts.
+ *
+ * Fire-and-forget: callers should NOT await this on the hot path. Failures
+ * are logged but never thrown — telemetry must never break the user's
+ * actual request.
+ *
+ * If a model is free (provider returns price.free=true), the row is still
+ * written for analytics but cost_cents is 0 — that way "how many free vs
+ * paid calls did this user make" is queryable.
+ */
+export async function recordSpend(
+  userId: string,
+  modelId: string,
+  inputTokens: number,
+  outputTokens = 0,
+  agentId = "agent",
+): Promise<void> {
+  const costCents = calculateCostCents(modelId, inputTokens, outputTokens);
+  const price = getModelPrice(modelId);
 
   try {
-    await fetch(config.alertWebhookUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        type: "budget_alert",
-        userId: config.userId,
-        threshold,
-        currentSpendCents: currentCents,
-        limitCents: config.monthlyLimitCents,
-        message: `Budget ${threshold}% reached: $${(currentCents / 100).toFixed(2)} of $${(config.monthlyLimitCents / 100).toFixed(2)}`,
-      }),
-      signal: AbortSignal.timeout(5000),
+    await db.insert(usage).values({
+      userId,
+      agentId,
+      model: modelId,
+      tokensUsed: inputTokens + outputTokens,
+      inputTokens,
+      outputTokens,
+      costCents,
+      provider: price.provider,
     });
+    // Invalidate cache so the next checkBudget reads fresh.
+    SPEND_CACHE.delete(cacheKey(userId));
   } catch (err) {
-    log.warn("Budget alert webhook failed", { error: String(err) });
+    log.warn("recordSpend write failed", {
+      error: err instanceof Error ? err.message : String(err),
+      userId,
+      modelId,
+    });
+  }
+}
+
+/**
+ * Get a user's current spend totals, with a per-model breakdown for today.
+ * Used by the admin spend dashboard.
+ */
+export async function getSpend(userId: string): Promise<SpendBreakdown> {
+  try {
+    const rows = await db
+      .select({
+        model: usage.model,
+        cents: sql<number>`COALESCE(SUM(${usage.costCents}), 0)::int`,
+        calls: sql<number>`COUNT(*)::int`,
+      })
+      .from(usage)
+      .where(and(eq(usage.userId, userId), gte(usage.createdAt, dayStartUtc())))
+      .groupBy(usage.model);
+
+    let totalCents = 0;
+    const byModel = rows.map((r) => {
+      const cents = Number(r.cents ?? 0);
+      totalCents += cents;
+      return {
+        model: String(r.model),
+        cents,
+        calls: Number(r.calls ?? 0),
+      };
+    });
+    byModel.sort((a, b) => b.cents - a.cents);
+
+    return { totalCents, byModel };
+  } catch (err) {
+    log.warn("getSpend failed", {
+      error: err instanceof Error ? err.message : String(err),
+      userId,
+    });
+    return { totalCents: 0, byModel: [] };
+  }
+}
+
+/**
+ * Top spenders for the current day. Powers the admin dashboard so the
+ * operator can see who's burning budget in real time.
+ */
+export async function getTopSpenders(
+  limit = 25,
+): Promise<Array<{ userId: string; cents: number; calls: number }>> {
+  try {
+    const rows = await db
+      .select({
+        userId: usage.userId,
+        cents: sql<number>`COALESCE(SUM(${usage.costCents}), 0)::int`,
+        calls: sql<number>`COUNT(*)::int`,
+      })
+      .from(usage)
+      .where(gte(usage.createdAt, dayStartUtc()))
+      .groupBy(usage.userId)
+      .orderBy(sql`SUM(${usage.costCents}) DESC NULLS LAST`)
+      .limit(limit);
+
+    return rows.map((r) => ({
+      userId: String(r.userId),
+      cents: Number(r.cents ?? 0),
+      calls: Number(r.calls ?? 0),
+    }));
+  } catch (err) {
+    log.warn("getTopSpenders failed", {
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return [];
   }
 }

@@ -1,21 +1,24 @@
 /**
- * Cost Ledger — best-effort per-call cost accounting.
+ * Cost Ledger — thin wrapper around budget-controls.recordSpend.
  *
- * Logs token / character usage for each AI invocation. Persistence is
- * optional: if the `usage` table isn't migrated yet, entries are dropped
- * silently. Callers should never await for ledger writes — fire and forget.
+ * Kept for backwards compatibility with call sites that already use this
+ * shape (eg. src/lib/nvidia.ts). New code should import recordSpend from
+ * budget-controls directly to avoid the indirection.
+ *
+ * Single write path = single source of truth for AI spend. The `usage`
+ * table is populated only by recordSpend; this file just adapts the
+ * legacy interface.
  */
 
-import { db } from "@/db";
-import { usage } from "@/db/schema";
-import { createLogger } from "@/lib/logger";
-
-const log = createLogger("cost-ledger");
+import { recordSpend } from "@/lib/budget-controls";
 
 export interface LedgerEntry {
   modelId: string;
   inputTokens?: number;
   outputTokens?: number;
+  /** Kept for legacy callers that pass character counts instead of tokens.
+   *  Ignored by the cost calculation — only token counts price out
+   *  correctly. Provide tokens whenever possible. */
   inputChars?: number;
   outputChars?: number;
   userId?: string;
@@ -23,20 +26,11 @@ export interface LedgerEntry {
 }
 
 export async function recordLedgerEntry(entry: LedgerEntry): Promise<void> {
-  const inputTokens = entry.inputTokens ?? 0;
-  const outputTokens = entry.outputTokens ?? 0;
-
-  try {
-    await db.insert(usage).values({
-      userId: entry.userId ?? "system",
-      agentId: entry.agent ?? entry.modelId,
-      model: entry.modelId,
-      tokensUsed: inputTokens + outputTokens,
-      inputTokens: entry.inputTokens ?? null,
-      outputTokens: entry.outputTokens ?? null,
-    });
-  } catch (err) {
-    // Usage table missing or schema drift — never block on telemetry.
-    log.info("recordLedgerEntry skipped", { error: String(err) });
-  }
+  await recordSpend(
+    entry.userId ?? "system",
+    entry.modelId,
+    entry.inputTokens ?? 0,
+    entry.outputTokens ?? 0,
+    entry.agent ?? entry.modelId,
+  );
 }
