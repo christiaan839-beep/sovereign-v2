@@ -18,22 +18,40 @@ export async function POST(req: Request) {
     // Verify webhook signature — REJECT if secret is not configured
     const secret = process.env.PAYSTACK_SECRET_KEY;
     if (!secret) {
-      return NextResponse.json({ error: "Payment webhook not configured" }, { status: 501 });
+      return NextResponse.json(
+        { error: "Payment webhook not configured" },
+        { status: 501 },
+      );
     }
     const hash = crypto.createHmac("sha512", secret).update(body).digest("hex");
-    if (hash !== signature) {
+    // FIX (audit P0): constant-time compare. Previously `hash !== signature`
+    // short-circuited on first byte mismatch and leaked the signature byte by
+    // byte over a few thousand probes. timingSafeEqual rejects in equal time.
+    let signatureValid = false;
+    try {
+      const a = Buffer.from(hash);
+      const b = Buffer.from(signature);
+      signatureValid = a.length === b.length && crypto.timingSafeEqual(a, b);
+    } catch {
+      signatureValid = false;
+    }
+    if (!signatureValid) {
       return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
     }
 
     const event = JSON.parse(body);
 
     // Log every event for audit
-    persistAppend("paystack-events", {
-      event: event.event,
-      email: event.data?.customer?.email || "",
-      amount: event.data?.amount || 0,
-      timestamp: new Date().toISOString(),
-    }, 500);
+    persistAppend(
+      "paystack-events",
+      {
+        event: event.event,
+        email: event.data?.customer?.email || "",
+        amount: event.data?.amount || 0,
+        timestamp: new Date().toISOString(),
+      },
+      500,
+    );
 
     const baseUrl = getBaseUrl();
 
@@ -43,12 +61,16 @@ export async function POST(req: Request) {
         const plan = event.data?.metadata?.plan || "node";
         const amount = event.data?.amount || 0;
 
-        persistAppend("paystack-payments", {
-          email,
-          plan,
-          amount: (amount / 100).toFixed(2),
-          timestamp: new Date().toISOString(),
-        }, 1000);
+        persistAppend(
+          "paystack-payments",
+          {
+            email,
+            plan,
+            amount: (amount / 100).toFixed(2),
+            timestamp: new Date().toISOString(),
+          },
+          1000,
+        );
 
         // Trigger auto-onboard
         if (email) {
@@ -70,26 +92,39 @@ export async function POST(req: Request) {
       }
 
       case "subscription.create": {
-        persistAppend("paystack-subscriptions", {
-          email: event.data?.customer?.email || "",
-          plan_code: event.data?.plan?.plan_code || "",
-          timestamp: new Date().toISOString(),
-        }, 500);
+        persistAppend(
+          "paystack-subscriptions",
+          {
+            email: event.data?.customer?.email || "",
+            plan_code: event.data?.plan?.plan_code || "",
+            timestamp: new Date().toISOString(),
+          },
+          500,
+        );
         break;
       }
 
       case "subscription.disable": {
-        persistAppend("paystack-cancellations", {
-          email: event.data?.customer?.email || "",
-          timestamp: new Date().toISOString(),
-        }, 500);
+        persistAppend(
+          "paystack-cancellations",
+          {
+            email: event.data?.customer?.email || "",
+            timestamp: new Date().toISOString(),
+          },
+          500,
+        );
         break;
       }
     }
 
     return NextResponse.json({ received: true });
   } catch (err) {
-    log.error("Paystack webhook processing failed", { error: (err as Error).message });
-    return NextResponse.json({ error: "Webhook processing failed" }, { status: 500 });
+    log.error("Paystack webhook processing failed", {
+      error: (err as Error).message,
+    });
+    return NextResponse.json(
+      { error: "Webhook processing failed" },
+      { status: 500 },
+    );
   }
 }

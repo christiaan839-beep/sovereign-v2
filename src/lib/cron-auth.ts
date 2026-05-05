@@ -30,6 +30,7 @@
  * ```
  */
 import { NextResponse } from "next/server";
+import { timingSafeEqual } from "crypto";
 
 export function requireCronAuth(req: Request): NextResponse | null {
   const secret = process.env.CRON_SECRET;
@@ -46,7 +47,20 @@ export function requireCronAuth(req: Request): NextResponse | null {
   }
 
   const authHeader = req.headers.get("authorization") || "";
-  if (authHeader !== `Bearer ${secret}`) {
+  const expected = `Bearer ${secret}`;
+
+  // Constant-time compare. Previously `authHeader !== expected` leaked the
+  // secret one byte at a time over a few thousand probes.
+  let valid = false;
+  try {
+    const a = Buffer.from(authHeader);
+    const b = Buffer.from(expected);
+    valid = a.length === b.length && timingSafeEqual(a, b);
+  } catch {
+    valid = false;
+  }
+
+  if (!valid) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

@@ -4,6 +4,7 @@ import { settings } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { requireAuth } from "@/lib/auth-guard";
 import { createLogger } from "@/lib/logger";
+import { safeEncrypt, safeDecrypt } from "@/lib/crypto";
 
 const log = createLogger("settings-byok");
 
@@ -71,7 +72,7 @@ export async function POST(req: Request) {
   if (auth.error) return auth.error;
 
   try {
-    const body = await req.json() as { key?: string; value?: string };
+    const body = (await req.json()) as { key?: string; value?: string };
     const { key, value } = body;
 
     if (!key || typeof key !== "string" || !BYOK_ALLOWED_KEYS.has(key)) {
@@ -82,7 +83,10 @@ export async function POST(req: Request) {
     }
     // Sanity check: value shouldn't look like a template or placeholder
     if (value.includes("YOUR_") || value === "undefined" || value === "null") {
-      return NextResponse.json({ error: "Value looks like a placeholder" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Value looks like a placeholder" },
+        { status: 400 },
+      );
     }
 
     const userEmail = auth.email || "";
@@ -91,15 +95,24 @@ export async function POST(req: Request) {
     }
 
     // Load existing settings
-    const existing = await db.select().from(settings).where(eq(settings.userEmail, userEmail));
-    const oldApiKeys: Record<string, string> = existing.length > 0 && existing[0].apiKeys
-      ? JSON.parse(existing[0].apiKeys)
-      : {};
+    const existing = await db
+      .select()
+      .from(settings)
+      .where(eq(settings.userEmail, userEmail));
+    const oldApiKeys: Record<string, string> =
+      existing.length > 0 && existing[0].apiKeys
+        ? JSON.parse(existing[0].apiKeys)
+        : {};
 
-    const merged = { ...oldApiKeys, [key]: value };
+    // FIX (audit P0): encrypt BYOK values at rest. Previously stored plaintext
+    // in settings.apiKeys — first DB breach would leak every customer's
+    // Stripe/Twilio/Hunter/Apollo/etc keys. safeEncrypt is a no-op when
+    // ENCRYPTION_KEY is unset (dev), AES-256-GCM when set (prod).
+    const merged = { ...oldApiKeys, [key]: safeEncrypt(value) };
 
     if (existing.length > 0) {
-      await db.update(settings)
+      await db
+        .update(settings)
         .set({ apiKeys: JSON.stringify(merged) })
         .where(eq(settings.userEmail, userEmail));
     } else {
@@ -126,10 +139,14 @@ export async function GET() {
 
   try {
     const userEmail = auth.email || "";
-    const existing = await db.select().from(settings).where(eq(settings.userEmail, userEmail));
-    const savedKeys: Record<string, string> = existing.length > 0 && existing[0].apiKeys
-      ? JSON.parse(existing[0].apiKeys)
-      : {};
+    const existing = await db
+      .select()
+      .from(settings)
+      .where(eq(settings.userEmail, userEmail));
+    const savedKeys: Record<string, string> =
+      existing.length > 0 && existing[0].apiKeys
+        ? JSON.parse(existing[0].apiKeys)
+        : {};
 
     // Return configured status — never the raw values
     const status: Record<string, boolean> = {};

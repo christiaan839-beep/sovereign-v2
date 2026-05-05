@@ -19,6 +19,7 @@
 
 import { nimChat } from "@/lib/nvidia";
 import { createLogger } from "@/lib/logger";
+import { cacheGet, cacheSet } from "@/lib/cache";
 
 const log = createLogger("quality-scorer");
 
@@ -33,6 +34,9 @@ export interface QualityScore {
 }
 
 const DEFAULT_THRESHOLD = 0.6;
+/** Quality scores on identical (prompt, response) pairs are deterministic.
+ *  Cache for 1 hour to absorb retry storms and quality-regeneration loops. */
+const QUALITY_CACHE_TTL_S = 3600;
 
 /**
  * Score an AI-generated response for quality.
@@ -41,7 +45,7 @@ const DEFAULT_THRESHOLD = 0.6;
 export async function scoreOutput(
   prompt: string,
   response: string,
-  threshold = DEFAULT_THRESHOLD
+  threshold = DEFAULT_THRESHOLD,
 ): Promise<QualityScore> {
   // Skip scoring for very short responses (likely errors or simple confirmations)
   if (response.length < 20) {
@@ -55,6 +59,20 @@ export async function scoreOutput(
       reason: "Short response — scoring skipped",
     };
   }
+
+  // Cache lookup — identical (prompt, response, threshold) tuples short-circuit
+  // at <1ms, eliminating a ~500-token NIM call. Threshold is part of the key
+  // because the `passed` boolean depends on it.
+  const cacheKey = {
+    p: prompt.slice(0, 500),
+    r: response.slice(0, 1500),
+    t: threshold,
+  };
+  const cached = (await cacheGet(
+    "quality-score",
+    cacheKey,
+  )) as QualityScore | null;
+  if (cached) return cached;
 
   try {
     const scoringPrompt = `You are a strict AI output quality evaluator. Score the following AI response to the given prompt.
@@ -75,11 +93,14 @@ Respond with ONLY valid JSON, no explanation:
     const result = await nimChat(
       "nvidia/llama-3.1-nemotron-ultra-253b-v1",
       [{ role: "user", content: scoringPrompt }],
-      { maxTokens: 150, temperature: 0.1 }
+      { maxTokens: 150, temperature: 0.1 },
     );
 
     // Parse the JSON response
-    const cleaned = result.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
+    const cleaned = result
+      .replace(/```json?\n?/g, "")
+      .replace(/```/g, "")
+      .trim();
     const scores = JSON.parse(cleaned);
 
     const helpfulness = clamp(Number(scores.helpfulness) || 0.5);
@@ -88,24 +109,41 @@ Respond with ONLY valid JSON, no explanation:
     const verbosity = clamp(Number(scores.verbosity) || 0.5);
 
     // Weighted average: correctness matters most
-    const overall = correctness * 0.35 + helpfulness * 0.30 + coherence * 0.20 + verbosity * 0.15;
+    const overall =
+      correctness * 0.35 +
+      helpfulness * 0.3 +
+      coherence * 0.2 +
+      verbosity * 0.15;
     const passed = overall >= threshold;
 
     if (!passed) {
-      log.warn("Quality check failed", { overall, threshold, helpfulness, coherence, correctness, verbosity });
+      log.warn("Quality check failed", {
+        overall,
+        threshold,
+        helpfulness,
+        coherence,
+        correctness,
+        verbosity,
+      });
     }
 
-    return {
+    const verdict: QualityScore = {
       overall: round(overall),
       helpfulness: round(helpfulness),
       coherence: round(coherence),
       correctness: round(correctness),
       verbosity: round(verbosity),
       passed,
-      reason: passed ? "Quality check passed" : `Below threshold (${round(overall)} < ${threshold})`,
+      reason: passed
+        ? "Quality check passed"
+        : `Below threshold (${round(overall)} < ${threshold})`,
     };
+    void cacheSet("quality-score", cacheKey, verdict, QUALITY_CACHE_TTL_S);
+    return verdict;
   } catch (error) {
-    log.warn("Quality scoring failed, allowing output", { error: String(error) });
+    log.warn("Quality scoring failed, allowing output", {
+      error: String(error),
+    });
     return {
       overall: 0.7,
       helpfulness: 0.7,

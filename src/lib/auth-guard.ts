@@ -16,9 +16,10 @@ import { checkRateLimit } from "@/lib/api-guard";
  *   const email = auth.email;
  */
 export async function requireAuth(
-  opts: { rateLimit?: boolean } = {}
+  opts: { rateLimit?: boolean } = {},
 ): Promise<
-  { email: string; userId: string; error?: never } | { error: NextResponse; email?: never; userId?: never }
+  | { email: string; userId: string; error?: never }
+  | { error: NextResponse; email?: never; userId?: never }
 > {
   const { rateLimit = true } = opts;
   try {
@@ -28,18 +29,27 @@ export async function requireAuth(
       return {
         error: NextResponse.json(
           { error: "Unauthorized. Please sign in." },
-          { status: 401 }
+          { status: 401 },
         ),
       };
     }
 
     if (rateLimit) {
-      const check = checkRateLimit(user.id);
+      const check = await checkRateLimit(user.id);
       if (!check.allowed) {
         return {
           error: NextResponse.json(
-            { error: "Rate limit exceeded", code: "RATE_LIMITED", resetIn: check.resetIn },
-            { status: 429, headers: { "Retry-After": String(Math.ceil(check.resetIn / 1000)) } }
+            {
+              error: "Rate limit exceeded",
+              code: "RATE_LIMITED",
+              resetIn: check.resetIn,
+            },
+            {
+              status: 429,
+              headers: {
+                "Retry-After": String(Math.ceil(check.resetIn / 1000)),
+              },
+            },
           ),
         };
       }
@@ -50,7 +60,7 @@ export async function requireAuth(
     return {
       error: NextResponse.json(
         { error: "Authentication failed." },
-        { status: 401 }
+        { status: 401 },
       ),
     };
   }

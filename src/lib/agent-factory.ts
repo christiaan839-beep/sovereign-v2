@@ -598,6 +598,77 @@ export function createAgentRoute(config: AgentConfig) {
         }
       }
 
+      // ─── 5-Layer Output Verification (LlamaGuard + PII + content policy + quality + trust gate) ───
+      // Previously this was dead code — built in lib/output-verifier.ts but
+      // never imported. Now every agent output passes through the harness:
+      // unsafe outputs are blocked, PII is redacted, audit trail is recorded,
+      // and the response carries a "verified" badge users can show their
+      // customers. This is what turns a $99 tool into a $2,660 platform.
+      let verifyMeta:
+        | {
+            trustDecision: string;
+            safetyResult: unknown;
+            blockReason?: string;
+            executionTimeMs: number;
+          }
+        | undefined;
+      const outputForVerify =
+        typeof finalResult.output === "string"
+          ? finalResult.output
+          : getFirstStringValue(finalResult);
+      const promptForVerify =
+        typeof body.prompt === "string"
+          ? body.prompt
+          : getFirstStringValue(sanitized);
+      if (
+        outputForVerify &&
+        promptForVerify &&
+        outputForVerify.length >= 50 &&
+        !config.skipPiiScan
+      ) {
+        try {
+          const { verifyOutput } = await import("@/lib/output-verifier");
+          const verification = await verifyOutput({
+            agentName: config.name,
+            modelUsed: "auto",
+            tenantId: tenantId || userId || "anon",
+            prompt: promptForVerify,
+            output: outputForVerify,
+          });
+
+          // If blocked, replace the output with the block notice
+          if (verification.trustDecision === "blocked") {
+            finalResult.output = verification.output;
+            (finalResult as Record<string, unknown>)._blocked = true;
+            (finalResult as Record<string, unknown>)._blockReason =
+              verification.blockReason;
+          } else if (
+            typeof finalResult.output === "string" &&
+            verification.output !== outputForVerify
+          ) {
+            // PII was redacted — use the cleaned output
+            finalResult.output = verification.output;
+          }
+
+          verifyMeta = {
+            trustDecision: verification.trustDecision,
+            safetyResult: verification.safetyResult,
+            blockReason: verification.blockReason,
+            executionTimeMs: verification.executionTimeMs,
+          };
+        } catch (verifyErr) {
+          // Verifier failure must NEVER block a real response — log and continue.
+          // Other safety layers (jailbreak-detect, content-safety pre-flight) already ran.
+          log.warn(
+            "Output verifier unavailable — relying on pre-flight checks",
+            {
+              agent: config.name,
+              error: String(verifyErr),
+            },
+          );
+        }
+      }
+
       // ─── Save to Tenant Memory ───
       if (userId) {
         const inputText = getFirstStringValue(sanitized);
@@ -714,6 +785,21 @@ export function createAgentRoute(config: AgentConfig) {
             ? {
                 qualityScore: qualityScore.overall,
                 qualityPassed: qualityScore.passed,
+              }
+            : {}),
+          // 5-layer verification — surfaces "Verified ✓" badge on responses
+          // when LlamaGuard + PII + content policy + quality + trust gate all pass.
+          ...(verifyMeta
+            ? {
+                verified: verifyMeta.trustDecision === "auto-approved",
+                verification: {
+                  decision: verifyMeta.trustDecision,
+                  ...(verifyMeta.blockReason
+                    ? { blockReason: verifyMeta.blockReason }
+                    : {}),
+                  safety: verifyMeta.safetyResult,
+                  durationMs: verifyMeta.executionTimeMs,
+                },
               }
             : {}),
         },

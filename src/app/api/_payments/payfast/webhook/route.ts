@@ -15,7 +15,11 @@ const log = createLogger("payfast-webhook");
  *  - 41.74.179.192/27   (41.74.179.192 – 41.74.179.223)
  */
 function ipToLong(ip: string): number {
-  return ip.split(".").reduce((acc, octet) => (acc << 8) + parseInt(octet, 10), 0) >>> 0;
+  return (
+    ip
+      .split(".")
+      .reduce((acc, octet) => (acc << 8) + parseInt(octet, 10), 0) >>> 0
+  );
 }
 
 function isInCIDR(ip: string, cidr: string): boolean {
@@ -38,12 +42,17 @@ function isPayFastIP(ip: string): boolean {
  * 4. If PAYFAST_PASSPHRASE is set, append &passphrase=<value>
  * 5. MD5 hash the result and compare to the submitted signature
  */
-function verifySignature(data: Record<string, string>, signature: string): boolean {
+function verifySignature(
+  data: Record<string, string>,
+  signature: string,
+): boolean {
   // Build param string from all fields except signature, sorted alphabetically
   const paramString = Object.keys(data)
     .filter((key) => key !== "signature")
     .sort()
-    .map((key) => `${key}=${encodeURIComponent(data[key]).replace(/%20/g, "+")}`)
+    .map(
+      (key) => `${key}=${encodeURIComponent(data[key]).replace(/%20/g, "+")}`,
+    )
     .join("&");
 
   const passphrase = process.env.PAYFAST_PASSPHRASE;
@@ -101,19 +110,25 @@ export async function POST(req: Request) {
     const planName = (data.item_name || "node").toLowerCase();
 
     // Normalize plan name from PayFast item_name
-    const plan = planName.includes("enterprise") ? "enterprise"
-      : planName.includes("array") ? "array"
-      : "node";
+    const plan = planName.includes("enterprise")
+      ? "enterprise"
+      : planName.includes("array")
+        ? "array"
+        : "node";
 
     // Log every ITN for audit
-    persistAppend("payfast-itn-log", {
-      id: data.m_payment_id || `pf-${Date.now()}`,
-      status,
-      amount,
-      email,
-      plan,
-      timestamp: new Date().toISOString(),
-    }, 500);
+    persistAppend(
+      "payfast-itn-log",
+      {
+        id: data.m_payment_id || `pf-${Date.now()}`,
+        status,
+        amount,
+        email,
+        plan,
+        timestamp: new Date().toISOString(),
+      },
+      500,
+    );
 
     if (status === "COMPLETE") {
       // 1. Record payment in database
@@ -131,21 +146,50 @@ export async function POST(req: Request) {
         log.error("DB insert failed", dbErr as Record<string, unknown>);
       }
 
-      // 2. Update tenant plan if they exist
-      try {
-        const existingTenants = await db.select().from(tenants).where(eq(tenants.plan, "free")).limit(100);
-        // Find by matching clerk user (best effort — email matching isn't ideal but works pre-RBAC)
-        // Future: store clerkUserId in PayFast custom_str1 field
-        for (const tenant of existingTenants) {
-          // We can't match by email easily with Clerk, so this upgrades the most recent free tenant
-          // In production, pass clerkUserId via PayFast custom fields
-          await db.update(tenants)
+      // 2. Update tenant plan — match by clerkUserId from PayFast custom_str1.
+      // FIX (audit P0): previously this loop upgraded the FIRST free tenant in
+      // the table, meaning every paid checkout silently promoted a random
+      // unrelated tenant while the actual buyer got nothing. The PayFast
+      // checkout link must now include `custom_str1=<clerkUserId>` and we
+      // refuse to upgrade if it's missing.
+      const buyerClerkId = (data.custom_str1 || "").trim();
+      if (!buyerClerkId) {
+        log.error(
+          "PayFast ITN missing custom_str1 (clerkUserId) — refusing to upgrade",
+          {
+            paymentId: data.m_payment_id,
+            email,
+            plan,
+          },
+        );
+      } else {
+        try {
+          const result = await db
+            .update(tenants)
             .set({ plan })
-            .where(eq(tenants.id, tenant.id));
-          break;
+            .where(eq(tenants.clerkUserId, buyerClerkId))
+            .returning({ id: tenants.id });
+          if (result.length === 0) {
+            log.warn(
+              "PayFast: no tenant found for clerkUserId — buyer needs to sign up first",
+              {
+                clerkUserId: buyerClerkId,
+                email,
+                plan,
+              },
+            );
+          } else {
+            log.info("PayFast tenant upgraded", {
+              clerkUserId: buyerClerkId,
+              plan,
+            });
+          }
+        } catch (err) {
+          log.error("Plan upgrade failed", {
+            error: (err as Error).message,
+            clerkUserId: buyerClerkId,
+          });
         }
-      } catch (err) {
-        log.warn("Plan upgrade failed — may need manual intervention", { error: (err as Error).message, email });
       }
 
       // 3. Trigger auto-onboard (best effort)
@@ -155,20 +199,28 @@ export async function POST(req: Request) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            clientName: `${data.name_first || ""} ${data.name_last || ""}`.trim() || "New Client",
+            clientName:
+              `${data.name_first || ""} ${data.name_last || ""}`.trim() ||
+              "New Client",
             email,
             plan,
           }),
         });
-      } catch { /* auto-onboard is best-effort */ }
+      } catch {
+        /* auto-onboard is best-effort */
+      }
 
-      persistAppend("payfast-payments", {
-        id: data.m_payment_id || `pf-${Date.now()}`,
-        plan,
-        amount,
-        email,
-        timestamp: new Date().toISOString(),
-      }, 1000);
+      persistAppend(
+        "payfast-payments",
+        {
+          id: data.m_payment_id || `pf-${Date.now()}`,
+          plan,
+          amount,
+          email,
+          timestamp: new Date().toISOString(),
+        },
+        1000,
+      );
     }
 
     return new NextResponse("OK", { status: 200 });

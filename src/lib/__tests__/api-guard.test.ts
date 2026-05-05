@@ -105,7 +105,11 @@ describe("sanitizeArray", () => {
   });
 
   it("coerces non-string elements to empty (filtered out)", () => {
-    expect(sanitizeArray(["a", 42, null, "b", undefined, {}, "c"])).toEqual(["a", "b", "c"]);
+    expect(sanitizeArray(["a", 42, null, "b", undefined, {}, "c"])).toEqual([
+      "a",
+      "b",
+      "c",
+    ]);
   });
 
   it("defaults maxItems to 20", () => {
@@ -116,17 +120,27 @@ describe("sanitizeArray", () => {
 
 describe("validateRequired", () => {
   it("returns null when all fields are present and non-empty", () => {
-    expect(validateRequired({ name: "Alice", email: "a@b.com" }, ["name", "email"])).toBeNull();
+    expect(
+      validateRequired({ name: "Alice", email: "a@b.com" }, ["name", "email"]),
+    ).toBeNull();
   });
 
   it("returns error message for missing field", () => {
-    expect(validateRequired({ name: "Alice" }, ["name", "email"])).toBe("Missing required field: email");
+    expect(validateRequired({ name: "Alice" }, ["name", "email"])).toBe(
+      "Missing required field: email",
+    );
   });
 
   it("treats undefined, null, and empty string as missing", () => {
-    expect(validateRequired({ x: undefined }, ["x"])).toBe("Missing required field: x");
-    expect(validateRequired({ x: null }, ["x"])).toBe("Missing required field: x");
-    expect(validateRequired({ x: "" }, ["x"])).toBe("Missing required field: x");
+    expect(validateRequired({ x: undefined }, ["x"])).toBe(
+      "Missing required field: x",
+    );
+    expect(validateRequired({ x: null }, ["x"])).toBe(
+      "Missing required field: x",
+    );
+    expect(validateRequired({ x: "" }, ["x"])).toBe(
+      "Missing required field: x",
+    );
   });
 
   it("treats 0 and false as present (only empty string/null/undefined are missing)", () => {
@@ -135,7 +149,9 @@ describe("validateRequired", () => {
   });
 
   it("returns the FIRST missing field, not all of them", () => {
-    expect(validateRequired({}, ["a", "b", "c"])).toBe("Missing required field: a");
+    expect(validateRequired({}, ["a", "b", "c"])).toBe(
+      "Missing required field: a",
+    );
   });
 
   it("handles empty required list", () => {
@@ -145,66 +161,61 @@ describe("validateRequired", () => {
 
 describe("checkRateLimit", () => {
   // checkRateLimit keeps a module-level in-memory store, so tests use unique
-  // userIds to avoid cross-test pollution.
+  // userIds to avoid cross-test pollution. The function is async because it
+  // optionally calls Upstash; tests run the in-memory fallback path (no
+  // UPSTASH_REDIS_REST_URL configured).
   beforeEach(() => {
     vi.useRealTimers();
   });
 
-  it("allows the first request and returns remaining=59 (60-1)", () => {
-    const result = checkRateLimit(`user-first-${Math.random()}`);
+  it("allows the first request and returns remaining=59 (60-1)", async () => {
+    const result = await checkRateLimit(`user-first-${Math.random()}`);
     expect(result.allowed).toBe(true);
     expect(result.remaining).toBe(59);
     expect(result.resetIn).toBeGreaterThan(0);
   });
 
-  it("decrements remaining count across calls", () => {
+  it("decrements remaining count across calls", async () => {
     const userId = `user-decrement-${Math.random()}`;
-    const r1 = checkRateLimit(userId);
-    const r2 = checkRateLimit(userId);
-    const r3 = checkRateLimit(userId);
+    const r1 = await checkRateLimit(userId);
+    const r2 = await checkRateLimit(userId);
+    const r3 = await checkRateLimit(userId);
     expect(r1.remaining).toBe(59);
     expect(r2.remaining).toBe(58);
     expect(r3.remaining).toBe(57);
     expect(r3.allowed).toBe(true);
   });
 
-  it("blocks after 60 requests in a 60s window", () => {
+  it("blocks after 60 requests in a 60s window", async () => {
     const userId = `user-blocked-${Math.random()}`;
-    // Make 60 requests (all should be allowed)
     for (let i = 0; i < 60; i++) {
-      const result = checkRateLimit(userId);
+      const result = await checkRateLimit(userId);
       expect(result.allowed).toBe(true);
     }
-    // 61st should be blocked
-    const blocked = checkRateLimit(userId);
+    const blocked = await checkRateLimit(userId);
     expect(blocked.allowed).toBe(false);
     expect(blocked.remaining).toBe(0);
   });
 
-  it("isolates state per userId", () => {
+  it("isolates state per userId", async () => {
     const userA = `user-iso-a-${Math.random()}`;
     const userB = `user-iso-b-${Math.random()}`;
-    // Exhaust userA
-    for (let i = 0; i < 60; i++) checkRateLimit(userA);
-    // userA blocked
-    expect(checkRateLimit(userA).allowed).toBe(false);
-    // userB still fresh
-    const b = checkRateLimit(userB);
+    for (let i = 0; i < 60; i++) await checkRateLimit(userA);
+    expect((await checkRateLimit(userA)).allowed).toBe(false);
+    const b = await checkRateLimit(userB);
     expect(b.allowed).toBe(true);
     expect(b.remaining).toBe(59);
   });
 
-  it("resets count after the window expires", () => {
+  it("resets count after the window expires", async () => {
     vi.useFakeTimers();
     const userId = `user-reset-${Math.random()}`;
-    // Exhaust the bucket
-    for (let i = 0; i < 60; i++) checkRateLimit(userId);
-    expect(checkRateLimit(userId).allowed).toBe(false);
+    for (let i = 0; i < 60; i++) await checkRateLimit(userId);
+    expect((await checkRateLimit(userId)).allowed).toBe(false);
 
-    // Advance past the 60-second window
     vi.advanceTimersByTime(61_000);
 
-    const fresh = checkRateLimit(userId);
+    const fresh = await checkRateLimit(userId);
     expect(fresh.allowed).toBe(true);
     expect(fresh.remaining).toBe(59);
     vi.useRealTimers();
