@@ -49,7 +49,7 @@ const TIERS = [
     cta: "Run a Free Playbook",
     features: [
       { name: "All 137 agents", included: true },
-      { name: "25 playbook workflows", included: true },
+      { name: "30+ playbook workflows", included: true },
       { name: "5-layer safety pipeline", included: true },
       { name: "50 runs/month", included: true },
       { name: "BYOK (Bring Your Own Key)", included: true },
@@ -63,14 +63,14 @@ const TIERS = [
     period: "/mo",
     plan: "starter",
     featured: false,
-    tagline: "200 runs/month. Perfect for solo operators testing AI workflows.",
+    tagline: "200 runs/month. For solo operators running real workflows.",
     cta: "Start for $19",
     features: [
       { name: "Everything in Free", included: true },
       { name: "200 runs/month", included: true },
       { name: "1,000 API calls/day", included: true },
       { name: "Email support", included: true },
-      { name: "All 39+ models", included: true },
+      { name: "Smart-router across 8 providers", included: true },
       { name: "A2E credits: 50/mo", included: true },
       { name: "White-label", included: false },
     ],
@@ -81,7 +81,7 @@ const TIERS = [
     period: "/mo",
     plan: "array",
     featured: true,
-    tagline: "500 runs/month. For agencies and teams scaling AI workflows.",
+    tagline: "500 runs/month. For agencies and teams.",
     cta: "Scale with Growth",
     features: [
       { name: "Everything in Starter", included: true },
@@ -99,13 +99,14 @@ const TIERS = [
     period: "/mo",
     plan: "node",
     featured: false,
-    tagline: "2,000 runs/month + NemoClaw local execution. Replace your SDR.",
+    tagline:
+      "2,000 runs/month. Bring-your-own Ollama for $0-marginal-cost runs.",
     cta: "Deploy Node",
     features: [
       { name: "Everything in Growth", included: true },
       { name: "2,000 runs/month", included: true },
-      { name: "NemoClaw Local Execution", included: true },
-      { name: "Apollo Ghost Fleet Targeting", included: true },
+      { name: "Local Ollama execution (BYOK)", included: true },
+      { name: "Ghost Fleet outreach playbooks (beta)", included: true },
       { name: "10,000 API calls/day", included: true },
       { name: "A2E credits: 1,000/mo", included: true },
       { name: "White-label", included: false },
@@ -117,16 +118,16 @@ const TIERS = [
     period: "/mo",
     plan: "enterprise",
     featured: false,
-    tagline: "10,000 runs/month. White-label. SLA. Dedicated onboarding.",
+    tagline: "10,000 runs/month. White-label. Dedicated onboarding.",
     cta: "Contact Sales",
     features: [
       { name: "Everything in Node", included: true },
       { name: "10,000 runs/month", included: true },
       { name: "Unlimited API calls", included: true },
-      { name: "White-label Dashboard", included: true },
+      { name: "White-label dashboard", included: true },
       { name: "A2E credits: Unlimited", included: true },
-      { name: "Dedicated setup + SLA", included: true },
-      { name: "Enterprise sub-licenses (5)", included: true },
+      { name: "Dedicated setup + email SLA", included: true },
+      { name: "Sub-tenant accounts (5)", included: true },
     ],
   },
 ];
@@ -134,15 +135,15 @@ const TIERS = [
 const FAQS = [
   {
     q: "What AI tools are included?",
-    a: "137 autonomous agents across lead generation, content creation, SEO, competitor intelligence, voice calls, and code review. Every agent routes to the best of 39+ models (Claude Sonnet 4.6 for reasoning, Nemotron Ultra for throughput, Gemini 3.1 Pro for grounded search, and more) via our smart-router.",
+    a: "137 autonomous agents across lead generation, content creation, SEO, competitor intelligence, code review, and outreach. Voice calls (Twilio + ElevenLabs) are wired but currently in beta — you can opt in from Settings. Every agent routes to the best model from a smart-router across 8 providers (Anthropic Claude, NVIDIA NIM, Google Gemini, Groq, Cerebras, Mistral, OpenAI, and local Ollama).",
   },
   {
     q: "Do I need technical skills?",
-    a: "No. The dashboard is designed for founders and operators. Pick a playbook, fill in the inputs, and the agents execute. For engineers, there's also a REST + streaming API and an SDK.",
+    a: "No. The dashboard is designed for founders and operators. Pick a playbook, fill in the inputs, and the agents execute. For engineers, there's also a REST API and an SDK.",
   },
   {
     q: "Do I have to build the agents myself?",
-    a: "No. Sovereign Matrix ships 137 production agents and 25 multi-agent playbooks out of the box. Pick one, give it inputs, run. You can also compose custom playbooks via the workflow builder when you want something bespoke.",
+    a: "No. Sovereign Matrix ships 137 production agents and 30+ multi-agent playbooks out of the box. Pick one, give it inputs, run. You can also compose custom playbooks via the workflow builder when you want something bespoke.",
   },
   {
     q: "What counts as a 'run'?",
@@ -150,15 +151,15 @@ const FAQS = [
   },
   {
     q: "What is BYOK (Bring Your Own Key)?",
-    a: "You can plug in your own API keys for Claude, Gemini, NVIDIA NIM, Groq, or Tavily. BYOK runs against your own quota, so you have full control over costs and model access.",
+    a: "You can plug in your own API keys for Claude, Gemini, NVIDIA NIM, Groq, or Tavily. BYOK runs against your own quota, so you have full control over costs and model access. Local Ollama is also supported on the Node tier — point us at your Ollama URL and runs cost you $0 in inference.",
   },
   {
     q: "Can I cancel anytime?",
-    a: "Yes. No contracts, no cancellation fees. Monthly billing via Stripe — cancel whenever you want from Settings → Billing.",
+    a: "Yes. No contracts, no cancellation fees. Monthly billing via PayPal (or Yoco for South African customers) — cancel whenever you want from Settings → Billing.",
   },
   {
     q: "What payment methods do you accept?",
-    a: "Credit and debit cards via Stripe. All prices shown in USD. Enterprise invoicing available on request.",
+    a: "PayPal (cards + PayPal balance, global) and Yoco (cards + EFT, South Africa). All prices in USD. Enterprise invoicing available on request.",
   },
 ];
 
@@ -501,7 +502,7 @@ export default function PricingPage() {
             </p>
             <div className="flex items-center justify-center gap-4 mt-4">
               <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-bold uppercase tracking-wider">
-                <Shield className="w-3 h-3" /> Stripe Secured
+                <Shield className="w-3 h-3" /> PayPal Secured
               </span>
               <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-bold uppercase tracking-wider">
                 <Shield className="w-3 h-3" /> Cancel Anytime

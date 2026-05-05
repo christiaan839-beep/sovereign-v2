@@ -3,32 +3,43 @@ import { NextResponse } from "next/server";
 import { createLogger } from "@/lib/logger";
 const log = createLogger("ghost-fleet-agent");
 
+/**
+ * GHOST FLEET — Synthetic competitor-complaint persona generator (BETA).
+ *
+ * IMPORTANT honest framing: this agent does NOT scrape G2, Twitter, or
+ * any real review site. It uses NVIDIA Nemotron to *simulate* a
+ * plausible-sounding complaint and matching B2B persona. The output is
+ * useful as ICP-shaped inspiration for outbound, but every persona is
+ * invented and must not be presented to a buyer as a real customer
+ * complaint. Real scraping (Firecrawl / Apollo) is a separate
+ * implementation tracked in the roadmap.
+ *
+ * The response carries `synthetic: true` and a human-readable
+ * `disclaimer` so downstream UIs can clearly mark the output. Callers
+ * that ignore those flags are responsible for any misrepresentation.
+ */
 export const POST = createAgentRoute({
   name: "ghost-fleet",
-  handler: async ({ input, email, userId }) => {
-
+  handler: async ({ input }) => {
     const { competitorName } = input as Record<string, unknown>;
 
     if (!competitorName) {
-      return ({ error: "Missing competitor target." });
+      return { error: "Missing competitor target." };
     }
 
     const nimKey = process.env.NVIDIA_NIM_API_KEY;
     if (!nimKey) {
-      return ({ error: "NVIDIA_NIM_API_KEY is not configured." });
+      return { error: "NVIDIA_NIM_API_KEY is not configured." };
     }
 
-    // Phase 1: Simulate/Execute Tavily Search for Complaints
-    // Since scraping G2/Twitter in real-time takes complex custom scrapers, we will simulate
-    // the "insight" gathering using Nemotron to generate realistic complaint data for the demo,
-    // assuming this would be replaced by a real Firecrawl/Tavily actor in production.
-    const prompt = `You are a B2B Sales Development Representative (SDR). 
-I am targeting unhappy customers of: ${competitorName}.
-Create ONE highly realistic, specific complaint from a frustrated user.
-Then, invent a realistic B2B buyer persona for this user (Name, Title, Company).
-Finally, write a 3-sentence, hyper-personalized LinkedIn connection request acknowledging their frustration and softly pitching an alternative. DO NOT BE SALESY. Be conversational.
+    // The prompt explicitly tells the model the persona is fictional so
+    // the output never claims sourcing it doesn't have. A real-scraping
+    // mode would replace this with a Firecrawl + dedup + verify chain.
+    const prompt = `You are an SDR research assistant generating a SYNTHETIC ICP for outbound research against ${competitorName}.
 
-Respond ONLY in strict JSON format:
+The persona, complaint, and message you generate are FICTIONAL but should be plausible — useful as a concept for outbound campaigns, never to be presented as a real customer.
+
+Respond ONLY in strict JSON, with these exact keys:
 {
   "lead": {
     "name": "First Last",
@@ -37,26 +48,29 @@ Respond ONLY in strict JSON format:
     "linkedIn": "linkedin.com/in/firstlast"
   },
   "complaint": {
-    "source": "G2 Review",
-    "text": "The actual complaint text..."
+    "source": "synthetic",
+    "text": "A plausible complaint a frustrated user might write (do not claim a real source)"
   },
-  "draftMessage": "The 3 sentence message..."
+  "draftMessage": "A 3-sentence LinkedIn connection note that acknowledges the frustration without being salesy."
 }`;
 
-    const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${nimKey}`,
+    const res = await fetch(
+      "https://integrate.api.nvidia.com/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${nimKey}`,
+        },
+        body: JSON.stringify({
+          model: "nvidia/nemotron-4-340b-instruct",
+          messages: [{ role: "user", content: prompt }],
+          temperature: 0.7,
+          max_tokens: 800,
+          response_format: { type: "json_object" },
+        }),
       },
-      body: JSON.stringify({
-        model: "nvidia/nemotron-4-340b-instruct",
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.7,
-        max_tokens: 800,
-        response_format: { type: "json_object" }
-      }),
-    });
+    );
 
     if (!res.ok) {
       throw new Error(`NIM API error: ${res.status}`);
@@ -65,21 +79,33 @@ Respond ONLY in strict JSON format:
     const data = await res.json();
     let resultJson;
     try {
-        resultJson = JSON.parse(data.choices[0].message.content);
+      resultJson = JSON.parse(data.choices[0].message.content);
     } catch {
-        // Fallback if the model failed to return pure JSON
-        const rawContent = data.choices[0].message.content;
-        const match = rawContent.match(/\{[\s\S]*\}/);
-        if (match) {
-            resultJson = JSON.parse(match[0]);
-        } else {
-            throw new Error("Failed to parse AI JSON response.");
-        }
+      const rawContent = data.choices[0].message.content;
+      const match = rawContent.match(/\{[\s\S]*\}/);
+      if (match) {
+        resultJson = JSON.parse(match[0]);
+      } else {
+        log.error("Ghost-fleet: model returned non-JSON", {
+          contentPreview: rawContent.slice(0, 200),
+        });
+        throw new Error("Failed to parse AI JSON response.");
+      }
     }
 
-    return NextResponse.json(resultJson);
+    // Force-stamp the synthetic flag and disclaimer onto the response so
+    // callers can't accidentally render this as real scraped data.
+    if (resultJson?.complaint && typeof resultJson.complaint === "object") {
+      resultJson.complaint.source = "synthetic";
+    }
 
-  
+    return NextResponse.json({
+      ok: true,
+      mode: "simulated",
+      synthetic: true,
+      ...resultJson,
+      disclaimer:
+        "Persona, complaint, and message are AI-generated for ICP research. Do not present as a real customer. Real scraping is on the roadmap.",
+    });
   },
 });
-
