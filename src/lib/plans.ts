@@ -13,7 +13,13 @@
 
 // ── Plan IDs ──
 
-export type PlanId = "free" | "starter" | "founder" | "array" | "node" | "enterprise";
+export type PlanId =
+  | "free"
+  | "starter"
+  | "founder"
+  | "array"
+  | "node"
+  | "enterprise";
 
 /** Legacy plan names that may exist in the database or older code paths */
 type LegacyPlanId = "pro" | "sniper" | "basic";
@@ -39,8 +45,12 @@ export interface PlanDefinition {
   priceDisplayZar: string;
   /** Stripe price env var key (null if not purchasable via Stripe) */
   stripePriceEnvKey: string | null;
+  /** PayPal Billing Plan env var key (null if not purchasable via PayPal) */
+  paypalPlanEnvKey: string | null;
   /** Whether this plan can be purchased by users */
   purchasable: boolean;
+  /** Whether this plan appears on /pricing and in JSON-LD offers */
+  marketing: boolean;
   /** Short description */
   description: string;
 }
@@ -58,7 +68,9 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     priceDisplayUsd: "$0/mo",
     priceDisplayZar: "R0/mo",
     stripePriceEnvKey: null,
+    paypalPlanEnvKey: null,
     purchasable: false,
+    marketing: true,
     description: "3 agents, 50 runs/month",
   },
   starter: {
@@ -71,7 +83,9 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     priceDisplayUsd: "$19/mo",
     priceDisplayZar: "R349/mo",
     stripePriceEnvKey: "STRIPE_PRICE_STARTER",
+    paypalPlanEnvKey: "PAYPAL_PLAN_STARTER",
     purchasable: true,
+    marketing: true,
     description: "5 agents, 200 runs/month, email support",
   },
   founder: {
@@ -84,7 +98,9 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     priceDisplayUsd: "Free",
     priceDisplayZar: "Free",
     stripePriceEnvKey: null,
+    paypalPlanEnvKey: null,
     purchasable: false,
+    marketing: false,
     description: "Enterprise-level access for first 10 users",
   },
   array: {
@@ -97,7 +113,9 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     priceDisplayUsd: "$49/mo",
     priceDisplayZar: "R4,997/mo",
     stripePriceEnvKey: "STRIPE_PRICE_ARRAY",
+    paypalPlanEnvKey: "PAYPAL_PLAN_ARRAY",
     purchasable: true,
+    marketing: true,
     description: "10 agents, 500 runs/month",
   },
   node: {
@@ -110,7 +128,9 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     priceDisplayUsd: "$199/mo",
     priceDisplayZar: "R9,997/mo",
     stripePriceEnvKey: "STRIPE_PRICE_NODE",
+    paypalPlanEnvKey: "PAYPAL_PLAN_NODE",
     purchasable: true,
+    marketing: true,
     description: "Unlimited agents, 2,000 runs/month, local execution",
   },
   enterprise: {
@@ -123,7 +143,9 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     priceDisplayUsd: "$499/mo",
     priceDisplayZar: "R49,997/mo",
     stripePriceEnvKey: "STRIPE_PRICE_ENTERPRISE",
+    paypalPlanEnvKey: "PAYPAL_PLAN_ENTERPRISE",
     purchasable: true,
+    marketing: true,
     description: "White-label, voice agents, video generation",
   },
 };
@@ -187,7 +209,9 @@ export function getPlanMrrUsd(planId: string | null | undefined): number {
 }
 
 /** Get the Stripe price ID from env for a plan. Returns null if not purchasable. */
-export function getStripePriceId(planId: string | null | undefined): string | null {
+export function getStripePriceId(
+  planId: string | null | undefined,
+): string | null {
   const plan = getPlan(planId);
   if (!plan.stripePriceEnvKey) return null;
   return process.env[plan.stripePriceEnvKey] ?? null;
@@ -200,7 +224,9 @@ export function isUnlimited(planId: string | null | undefined): boolean {
 }
 
 /** Get the next plan in the upgrade path, or null if at max. */
-export function getNextPlan(planId: string | null | undefined): PlanDefinition | null {
+export function getNextPlan(
+  planId: string | null | undefined,
+): PlanDefinition | null {
   const id = normalizePlanId(planId);
   const nextId = UPGRADE_PATH[id];
   return nextId ? PLANS[nextId] : null;
@@ -211,5 +237,62 @@ export function getNextPlan(planId: string | null | undefined): PlanDefinition |
  * Prefer using getPlanLimit() directly in new code.
  */
 export const PLAN_LIMITS: Record<string, number> = Object.fromEntries(
-  Object.entries(PLANS).map(([id, plan]) => [id, plan.runsPerMonth])
+  Object.entries(PLANS).map(([id, plan]) => [id, plan.runsPerMonth]),
 );
+
+// ── Marketing surface helpers ──
+
+export interface MarketingPlan {
+  id: PlanId;
+  name: string;
+  priceUsdCents: number;
+}
+
+const MARKETING_ORDER: PlanId[] = [
+  "free",
+  "starter",
+  "array",
+  "node",
+  "enterprise",
+];
+
+/**
+ * Plans that should appear in marketing surfaces (the /pricing page,
+ * JSON-LD Offer arrays in layout.tsx). Returned in display order.
+ * Internal-only plans like `founder` are excluded.
+ */
+export function getMarketingPlans(): MarketingPlan[] {
+  return MARKETING_ORDER.filter((id) => PLANS[id].marketing).map((id) => ({
+    id,
+    name: PLANS[id].name,
+    priceUsdCents: PLANS[id].priceUsdCents,
+  }));
+}
+
+/**
+ * Get the PayPal Billing Plan ID from env for a plan.
+ * Returns null if the plan is not purchasable via PayPal.
+ */
+export function getPaypalPlanId(
+  planId: string | null | undefined,
+): string | null {
+  const plan = getPlan(planId);
+  if (!plan.paypalPlanEnvKey) return null;
+  return process.env[plan.paypalPlanEnvKey] ?? null;
+}
+
+/**
+ * Reverse lookup: given a PayPal Billing Plan ID, infer the local PlanId.
+ * Used by the PayPal webhook to map subscription events back to our plan tiers.
+ * Returns null if no env-mapped plan matches.
+ */
+export function planIdFromPaypalPlanId(
+  paypalPlanId: string | null | undefined,
+): PlanId | null {
+  if (!paypalPlanId) return null;
+  for (const id of Object.keys(PLANS) as PlanId[]) {
+    const envKey = PLANS[id].paypalPlanEnvKey;
+    if (envKey && process.env[envKey] === paypalPlanId) return id;
+  }
+  return null;
+}
