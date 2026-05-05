@@ -9,6 +9,7 @@
 --     drizzle/0003_playbook_runs.sql
 --     drizzle/0004_remaining_tables.sql
 --     drizzle/0018_voice_consent.sql        (compliance-critical)
+--     drizzle/0019_welcome_columns.sql      (Loom-driven onboarding)
 -- ═══════════════════════════════════════════════════════════════════
 
 
@@ -220,6 +221,18 @@ CREATE INDEX IF NOT EXISTS "idx_voice_consent_phone"
   ON "voice_consent" USING btree ("phone_number");
 CREATE INDEX IF NOT EXISTS "idx_voice_consent_recorded"
   ON "voice_consent" USING btree ("recorded_at" DESC);
+
+
+-- ═══ 0019 — Welcome columns on tenants ═════════════════════════════
+-- Powers /welcome/[tenant_id] — Loom-driven onboarding page surfaced
+-- to a customer the moment their setup payment lands.
+
+ALTER TABLE "tenants" ADD COLUMN IF NOT EXISTS "welcome_first_name"     text;
+ALTER TABLE "tenants" ADD COLUMN IF NOT EXISTS "welcome_loom_url"       text;
+ALTER TABLE "tenants" ADD COLUMN IF NOT EXISTS "welcome_kickoff_url"    text;
+ALTER TABLE "tenants" ADD COLUMN IF NOT EXISTS "welcome_slack_url"      text;
+ALTER TABLE "tenants" ADD COLUMN IF NOT EXISTS "welcome_doc_url"        text;
+ALTER TABLE "tenants" ADD COLUMN IF NOT EXISTS "welcome_first_delivery" date;
 
 
 -- ═══ Verification ══════════════════════════════════════════════════

@@ -8,6 +8,7 @@ import {
   boolean,
   uniqueIndex,
   primaryKey,
+  date,
 } from "drizzle-orm/pg-core";
 
 export const tenants = pgTable("tenants", {
@@ -15,7 +16,16 @@ export const tenants = pgTable("tenants", {
   clerkUserId: text("clerk_user_id").notNull().unique(),
   nodeId: text("node_id").notNull().unique(), // e.g., UMB-NX-77492
   createdAt: timestamp("created_at").defaultNow(),
-  plan: text("plan").notNull().default("black-card"), // Future-proofing for tiering
+  plan: text("plan").notNull().default("black-card"),
+  // Welcome page (drizzle/0019_welcome_columns.sql) — populated by the
+  // operator the moment a customer's setup payment lands. Powers
+  // /welcome/[id], the first-60-seconds-of-trust kickoff page.
+  welcomeFirstName: text("welcome_first_name"),
+  welcomeLoomUrl: text("welcome_loom_url"),
+  welcomeKickoffUrl: text("welcome_kickoff_url"),
+  welcomeSlackUrl: text("welcome_slack_url"),
+  welcomeDocUrl: text("welcome_doc_url"),
+  welcomeFirstDelivery: date("welcome_first_delivery"),
 });
 
 export const activeSwarms = pgTable(
