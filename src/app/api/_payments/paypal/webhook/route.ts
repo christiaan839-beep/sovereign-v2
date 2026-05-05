@@ -106,29 +106,36 @@ export async function POST(req: Request) {
           });
           break;
         }
-        await db
-          .insert(subscriptions)
-          .values({
-            userId,
-            plan: planId,
-            status: "active",
-            // Reuse the stripeSubscriptionId column for the PayPal subscription
-            // ID. PayPal IDs start with "I-" (e.g. I-BW452GLLEP1G), Stripe IDs
-            // start with "sub_" — no collision. Adds a new column would require
-            // a migration; we explicitly avoided that for this ship.
-            stripeSubscriptionId: subId,
-            currentPeriodEnd: nextBilling ? new Date(nextBilling) : null,
-          })
-          .onConflictDoUpdate({
-            target: subscriptions.userId,
-            set: {
+        // subscriptions.userId is indexed but NOT unique (only
+        // stripeSubscriptionId is), so we can't use onConflictDoUpdate on
+        // userId without a migration. Manual check-then-write instead.
+        // We reuse the stripeSubscriptionId column for the PayPal subscription
+        // ID — PayPal IDs start with "I-", Stripe with "sub_", no collision.
+        const existing = await db
+          .select({ id: subscriptions.id })
+          .from(subscriptions)
+          .where(eq(subscriptions.userId, userId))
+          .limit(1);
+        if (existing.length > 0) {
+          await db
+            .update(subscriptions)
+            .set({
               plan: planId,
               status: "active",
               stripeSubscriptionId: subId,
               currentPeriodEnd: nextBilling ? new Date(nextBilling) : null,
               updatedAt: new Date(),
-            },
+            })
+            .where(eq(subscriptions.userId, userId));
+        } else {
+          await db.insert(subscriptions).values({
+            userId,
+            plan: planId,
+            status: "active",
+            stripeSubscriptionId: subId,
+            currentPeriodEnd: nextBilling ? new Date(nextBilling) : null,
           });
+        }
         log.info("PayPal subscription activated", { userId, plan: planId });
         break;
       }
@@ -181,14 +188,32 @@ export async function POST(req: Request) {
         });
         break;
       }
+
+      default: {
+        // Surface unrecognised event types so dashboard misconfiguration is
+        // visible in logs. Returning 200 below is correct — PayPal should
+        // not retry events we've explicitly chosen not to handle.
+        log.warn("PayPal unhandled event type", {
+          eventType: event.event_type,
+          eventId: event.id,
+        });
+        break;
+      }
     }
   } catch (err) {
     log.error("PayPal webhook handler error", {
       eventType: event.event_type,
+      eventId: event.id,
       error: (err as Error).message,
     });
-    // Always 200 — let PayPal stop retrying. We've already deduped on event.id
-    // so a retry on transient DB failure isn't going to help.
+    // Returning 200 here is intentional even though the handler failed:
+    // alreadyProcessed() above already wrote the dedup marker, so a 500
+    // (which would trigger a PayPal retry) would re-enter the dedup branch
+    // and be silently skipped — the worst of both worlds. The proper fix
+    // is the two-state `stripe_events` table documented in
+    // src/db/schema.ts:367 (claim → process → complete). Until that
+    // pattern is wired up here, log loudly so DB failures surface via the
+    // structured-log alerting pipeline.
     return NextResponse.json({ received: true, handled: false });
   }
 
