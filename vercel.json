@@ -26,6 +26,10 @@
       "schedule": "0 7 * * *"
     },
     {
+      "path": "/api/cron/upgrade-nudge",
+      "schedule": "0 14 * * *"
+    },
+    {
       "path": "/api/cron/cleanup",
       "schedule": "0 3 * * 0"
     },

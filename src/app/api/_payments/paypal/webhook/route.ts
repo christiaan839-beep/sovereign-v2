@@ -5,7 +5,8 @@ import { eq } from "drizzle-orm";
 import { createLogger } from "@/lib/logger";
 import { alreadyProcessed } from "@/lib/idempotency";
 import { verifyWebhook, type PaypalWebhookEvent } from "@/lib/paypal";
-import { planIdFromPaypalPlanId } from "@/lib/plans";
+import { getPlan, planIdFromPaypalPlanId } from "@/lib/plans";
+import { sendOpsAlert, planToAmount } from "@/lib/ops-alert";
 
 const log = createLogger("paypal-webhook");
 
@@ -137,6 +138,17 @@ export async function POST(req: Request) {
           });
         }
         log.info("PayPal subscription activated", { userId, plan: planId });
+        // Fire-and-forget Slack alert. Don't await on the hot path.
+        void sendOpsAlert({
+          level: "info",
+          title: "💰 New PayPal subscription",
+          amountUsd: planToAmount(getPlan(planId).priceUsdCents),
+          fields: {
+            plan: planId,
+            userId,
+            paypalSubId: subId,
+          },
+        });
         break;
       }
 
@@ -176,6 +188,14 @@ export async function POST(req: Request) {
           .where(eq(subscriptions.stripeSubscriptionId, subId));
         log.info("PayPal subscription cancelled — downgraded to free", {
           subId,
+        });
+        void sendOpsAlert({
+          level: "warn",
+          title: "PayPal subscription cancelled",
+          fields: {
+            paypalSubId: subId,
+            event: event.event_type,
+          },
         });
         break;
       }

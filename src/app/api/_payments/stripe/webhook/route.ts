@@ -5,6 +5,8 @@ import { subscriptions } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { createLogger } from "@/lib/logger";
 import { alreadyProcessed } from "@/lib/idempotency";
+import { getPlan } from "@/lib/plans";
+import { sendOpsAlert, planToAmount } from "@/lib/ops-alert";
 
 const log = createLogger("stripe-webhook");
 
@@ -116,6 +118,17 @@ export async function POST(req: Request) {
             });
           }
           log.info("Subscription activated", { userId, plan });
+          void sendOpsAlert({
+            level: "info",
+            title: "💰 New Stripe subscription",
+            amountUsd: planToAmount(getPlan(plan).priceUsdCents),
+            fields: {
+              plan,
+              userId,
+              stripeCustomerId: customerId,
+              stripeSubId: subscriptionId,
+            },
+          });
         }
         break;
       }
@@ -159,6 +172,11 @@ export async function POST(req: Request) {
           log.info("Subscription cancelled — downgraded to free", {
             stripeCustomerId,
           });
+          void sendOpsAlert({
+            level: "warn",
+            title: "Stripe subscription cancelled",
+            fields: { stripeCustomerId },
+          });
         }
         break;
       }
@@ -177,6 +195,11 @@ export async function POST(req: Request) {
           log.error("Payment failed", {
             stripeCustomerId,
             invoiceId: invoice.id,
+          });
+          void sendOpsAlert({
+            level: "error",
+            title: "Stripe payment failed",
+            fields: { stripeCustomerId, invoiceId: invoice.id },
           });
         }
         break;
