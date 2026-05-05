@@ -18,6 +18,11 @@ const eslintConfig = defineConfig([
       // React 19 compiler purity rule — downgrade to warn for animation components
       // that intentionally use Math.random() during render for particle effects, delays, etc.
       "react-hooks/purity": "warn",
+      // Downgraded for data-fetch effects: `setState` after `await fetch()`
+      // inside `useEffect` is the canonical pattern recommended by React 19
+      // docs before `use()` adoption. The rule's preferred refactor (server
+      // components + Suspense) is staged behind a separate dashboard rewrite.
+      "react-hooks/set-state-in-effect": "warn",
     },
   },
   // Override default ignores of eslint-config-next.
