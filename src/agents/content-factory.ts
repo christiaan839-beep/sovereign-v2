@@ -18,7 +18,7 @@ import type { AgentResult } from "@/types";
 export async function generateBlogPost(
   topic: string,
   keywords: string[],
-  tone: string = "authoritative"
+  tone: string = "authoritative",
 ): Promise<AgentResult> {
   const keywordList = keywords.join(", ");
 
@@ -49,7 +49,7 @@ Write the FULL article, not an outline. Every word must be publication-ready.`,
 ${ANTI_SLOP_RULES}
 
 ${PLATFORM_RULES.blog}`,
-    
+
     criticSystem: `You are a senior content editor and SEO specialist. Your job is to KILL AI SLOP. Check:
 - Does any sentence start with "In today's" or "In the ever-evolving"? DELETE IT.
 - Is the keyword placement natural? Does the headline pass the "would I click this?" test?
@@ -59,9 +59,11 @@ ${PLATFORM_RULES.blog}`,
 - Are there specific numbers, examples, and data points — or just vague claims?
 
 ${ANTI_SLOP_RULES}`,
-    
+
     maxRounds: 3,
-    model: "claude",
+    // Free OSS via NIM (Nemotron Ultra 253B). Previously paid Claude Sonnet
+    // ran 3 rounds × 2 (creator + critic) = 6 paid calls per blog post.
+    model: "nim",
   });
 
   await remember(`Blog post: ${topic} | Keywords: ${keywordList}`);
@@ -78,7 +80,7 @@ ${ANTI_SLOP_RULES}`,
 export async function generateEmailSequence(
   product: string,
   audience: string,
-  steps: number = 5
+  steps: number = 5,
 ): Promise<AgentResult> {
   const output = await ai(
     `Create a ${steps}-step email drip sequence.
@@ -105,14 +107,14 @@ Sequence Arc:
 
 Every email must stand alone (reader may open any one) but also build narrative momentum.`,
     {
-      model: "claude",
+      taskType: "content",
       system: `You are an email marketing strategist who has written sequences generating $10M+ in revenue. You know that subject lines are 80% of the battle. Your emails feel personal, never corporate. You use psychological triggers ethically and effectively.
 
 ${ANTI_SLOP_RULES}
 
 ${PLATFORM_RULES.newsletter}`,
       maxTokens: 3500,
-    }
+    },
   );
 
   await remember(`Email sequence for ${product}: ${output.slice(0, 300)}`);
@@ -128,7 +130,7 @@ ${PLATFORM_RULES.newsletter}`,
 /** Generate a multi-platform social media content pack */
 export async function generateSocialPack(
   topic: string,
-  platforms: string[] = ["instagram", "linkedin", "twitter", "tiktok"]
+  platforms: string[] = ["instagram", "linkedin", "twitter", "tiktok"],
 ): Promise<AgentResult> {
   const platformList = platforms.join(", ");
 
@@ -163,7 +165,7 @@ TIKTOK:
 
 Each post should feel native to its platform — no copy-paste across channels.`,
     {
-      model: "claude",
+      taskType: "content",
       system: `You are a social media strategist who has grown accounts from 0 to 1M followers. Each platform has its own language: Instagram rewards storytelling, LinkedIn rewards authority, Twitter rewards wit, TikTok rewards authenticity. You never sound like an AI.
 
 ${ANTI_SLOP_RULES}
@@ -173,7 +175,7 @@ ${platforms.includes("linkedin") ? PLATFORM_RULES.linkedin : ""}
 ${platforms.includes("twitter") ? PLATFORM_RULES.twitter : ""}
 ${platforms.includes("tiktok") ? PLATFORM_RULES.tiktok : ""}`,
       maxTokens: 3500,
-    }
+    },
   );
 
   await remember(`Social pack for ${topic}: ${output.slice(0, 300)}`);
@@ -190,7 +192,7 @@ ${platforms.includes("tiktok") ? PLATFORM_RULES.tiktok : ""}`,
 export async function generateVideoScript(
   topic: string,
   duration: string = "60 seconds",
-  style: string = "educational"
+  style: string = "educational",
 ): Promise<AgentResult> {
   const output = await ai(
     `Create a professional video script.
@@ -230,14 +232,14 @@ Format as a timestamped production script:
 
 Make the hook so compelling that viewers CANNOT scroll past.`,
     {
-      model: "claude",
+      taskType: "content",
       system: `You are a video director and scriptwriter who has produced content with 100M+ cumulative views. You know that the first 3 seconds determine everything. Your scripts are visual — you think in shots, not just words. Every second of dead air is a viewer lost.
 
 ${ANTI_SLOP_RULES}
 
 ${PLATFORM_RULES.youtube}`,
       maxTokens: 3000,
-    }
+    },
   );
 
   await remember(`Video script: ${topic} (${duration})`);

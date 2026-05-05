@@ -4,7 +4,7 @@ import type { AgentResult } from "@/types";
 
 // ============================================================
 // SEO Domination Agent
-// 
+//
 // Replaces an entire SEO team:
 // - Competitor X-Ray analysis
 // - Content gap identification
@@ -39,7 +39,7 @@ export interface SchemaFix {
 /** Competitor X-Ray — Deep analysis of competitor websites using live web research */
 export async function competitorXRay(
   urls: string[],
-  yourBusiness: string
+  yourBusiness: string,
 ): Promise<AgentResult> {
   const analyses: string[] = [];
 
@@ -62,16 +62,18 @@ Provide a detailed SEO X-Ray including:
 
 Return as structured analysis with clear headings.`,
       {
-        model: "claude",
+        taskType: "analysis",
         system: `You are a SEO intelligence analyst. You find the exact weak points in competitor strategies that can be exploited for rapid ranking gains. Be specific — generic advice is useless. Every recommendation should be actionable this week.`,
         maxTokens: 2500,
-      }
+      },
     );
     analyses.push(`\n=== X-RAY: ${url} ===\n${result}`);
   }
 
   const output = analyses.join("\n\n");
-  await remember(`SEO X-Ray analysis for ${yourBusiness}: ${output.slice(0, 300)}`);
+  await remember(
+    `SEO X-Ray analysis for ${yourBusiness}: ${output.slice(0, 300)}`,
+  );
 
   return {
     success: true,
@@ -85,7 +87,7 @@ Return as structured analysis with clear headings.`,
 export async function contentGapKiller(
   domain: string,
   competitors: string[],
-  niche: string
+  niche: string,
 ): Promise<AgentResult> {
   const competitorList = competitors.slice(0, 3).join(", ");
 
@@ -110,10 +112,10 @@ For each gap provide:
 
 Sort by priority (critical first).`,
     {
-      model: "claude",
+      taskType: "analysis",
       system: `You are a content strategy mastermind who has grown sites from 0 to 1M organic visitors. You know that targeting low-competition, high-intent keywords with comprehensive, well-structured content is the fastest way to rank. Every content brief you write should be specific enough that a writer can start immediately.`,
       maxTokens: 3000,
-    }
+    },
   );
 
   await remember(`Content gaps for ${domain}: ${output.slice(0, 300)}`);
@@ -129,7 +131,7 @@ Sort by priority (critical first).`,
 /** Schema Audit — Inspects missing JSON-LD schema and generates the fix */
 export async function schemaAudit(
   url: string,
-  businessType: string
+  businessType: string,
 ): Promise<AgentResult> {
   const output = await research_ai(
     `${url} schema markup structured data audit`,
@@ -153,10 +155,10 @@ Prioritize schemas that directly impact:
 
 Generate AT LEAST 5 schema recommendations with full JSON-LD code.`,
     {
-      model: "claude",
+      taskType: "analysis",
       system: `You are a technical SEO engineer specializing in structured data. You know the exact Schema.org types that Google actively uses for rich results. Every JSON-LD block you generate must be valid and production-ready. Include realistic placeholder data that the user can customize.`,
       maxTokens: 3000,
-    }
+    },
   );
 
   await remember(`Schema audit for ${url}: ${output.slice(0, 300)}`);
@@ -173,7 +175,7 @@ Generate AT LEAST 5 schema recommendations with full JSON-LD code.`,
 export async function gbpOptimize(
   business: string,
   location: string,
-  services: string
+  services: string,
 ): Promise<AgentResult> {
   const output = await research_ai(
     `${services} ${location} local SEO buyer intent keywords near me`,
@@ -198,13 +200,15 @@ SEO Rules:
 - Vary the post types across the 10 posts
 - Make posts sound human, not spammy`,
     {
-      model: "claude",
+      taskType: "content",
       system: `You are a local SEO specialist who has helped 200+ businesses dominate their local pack. You know that GBP posts are the most underutilized ranking signal in local SEO. Every post you write sounds authentic and drives real engagement.`,
       maxTokens: 3000,
-    }
+    },
   );
 
-  await remember(`GBP posts for ${business} in ${location}: ${output.slice(0, 300)}`);
+  await remember(
+    `GBP posts for ${business} in ${location}: ${output.slice(0, 300)}`,
+  );
 
   return {
     success: true,

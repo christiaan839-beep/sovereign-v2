@@ -17,6 +17,7 @@
  */
 
 import { createLogger } from "@/lib/logger";
+import { cacheGet, cacheSet } from "@/lib/cache";
 
 const log = createLogger("jailbreak-detect");
 
@@ -27,32 +28,88 @@ export interface JailbreakResult {
   reason: string;
 }
 
+/** Cache TTL: jailbreak verdicts on identical strings are deterministic;
+ *  10 min is plenty to absorb form-resubmit + retry storms while letting us
+ *  ship pattern-table updates without a stale-cache headache. */
+const JAILBREAK_CACHE_TTL_S = 600;
+
 /**
  * Check if a user prompt contains jailbreak or injection attempts.
  * Fast path: pattern-based detection (~0ms).
  * Slow path: NIM model-based detection (~200ms, only if patterns miss).
+ * Cache: identical inputs short-circuit at <1ms (skips both paths).
  */
 export async function detectJailbreak(text: string): Promise<JailbreakResult> {
   if (!text || text.length < 5) {
-    return { blocked: false, confidence: 0, category: "none", reason: "Input too short to evaluate" };
+    return {
+      blocked: false,
+      confidence: 0,
+      category: "none",
+      reason: "Input too short to evaluate",
+    };
   }
+
+  // Cache lookup — skip both pattern + model paths on hit
+  const cached = (await cacheGet("jailbreak", text)) as JailbreakResult | null;
+  if (cached) return cached;
 
   // ─── Fast Path: Pattern Detection ───
   const lower = text.toLowerCase();
   const patterns: Array<{ regex: RegExp; category: string; reason: string }> = [
-    { regex: /ignore\s+(all\s+)?(previous|prior|above)\s+(instructions|rules|prompts)/i, category: "direct_injection", reason: "Instruction override attempt" },
-    { regex: /you\s+are\s+now\s+(DAN|evil|unfiltered|jailbroken)/i, category: "role_manipulation", reason: "Role manipulation attempt" },
-    { regex: /pretend\s+(you|to\s+be)\s+(are\s+)?(an?\s+)?(unrestricted|unfiltered|evil)/i, category: "role_manipulation", reason: "Unrestricted mode request" },
-    { regex: /bypass\s+(your\s+)?(safety|content|ethical)\s*(filters?|guidelines?|restrictions?)/i, category: "safety_bypass", reason: "Safety bypass request" },
-    { regex: /system\s*prompt\s*:\s*/i, category: "prompt_injection", reason: "System prompt injection" },
-    { regex: /\[INST\]|\[\/INST\]|<\|im_start\|>|<\|system\|>/i, category: "format_injection", reason: "Chat format injection tokens" },
-    { regex: /base64[:\s]+[A-Za-z0-9+/]{50,}/i, category: "encoding_attack", reason: "Base64-encoded payload detected" },
+    {
+      regex:
+        /ignore\s+(all\s+)?(previous|prior|above)\s+(instructions|rules|prompts)/i,
+      category: "direct_injection",
+      reason: "Instruction override attempt",
+    },
+    {
+      regex: /you\s+are\s+now\s+(DAN|evil|unfiltered|jailbroken)/i,
+      category: "role_manipulation",
+      reason: "Role manipulation attempt",
+    },
+    {
+      regex:
+        /pretend\s+(you|to\s+be)\s+(are\s+)?(an?\s+)?(unrestricted|unfiltered|evil)/i,
+      category: "role_manipulation",
+      reason: "Unrestricted mode request",
+    },
+    {
+      regex:
+        /bypass\s+(your\s+)?(safety|content|ethical)\s*(filters?|guidelines?|restrictions?)/i,
+      category: "safety_bypass",
+      reason: "Safety bypass request",
+    },
+    {
+      regex: /system\s*prompt\s*:\s*/i,
+      category: "prompt_injection",
+      reason: "System prompt injection",
+    },
+    {
+      regex: /\[INST\]|\[\/INST\]|<\|im_start\|>|<\|system\|>/i,
+      category: "format_injection",
+      reason: "Chat format injection tokens",
+    },
+    {
+      regex: /base64[:\s]+[A-Za-z0-9+/]{50,}/i,
+      category: "encoding_attack",
+      reason: "Base64-encoded payload detected",
+    },
   ];
 
   for (const { regex, category, reason } of patterns) {
     if (regex.test(text)) {
-      log.warn("Jailbreak blocked (pattern)", { category, inputLength: text.length });
-      return { blocked: true, confidence: 0.95, category, reason };
+      log.warn("Jailbreak blocked (pattern)", {
+        category,
+        inputLength: text.length,
+      });
+      const verdict: JailbreakResult = {
+        blocked: true,
+        confidence: 0.95,
+        category,
+        reason,
+      };
+      void cacheSet("jailbreak", text, verdict, JAILBREAK_CACHE_TTL_S);
+      return verdict;
     }
   }
 
@@ -82,9 +139,20 @@ export async function detectJailbreak(text: string): Promise<JailbreakResult> {
   // Business context phrases that reduce suspicion score
   // (legitimate use cases where "act as" and "pretend" are normal)
   const businessContextTerms = [
-    "sales rep", "consultant", "marketing", "customer service",
-    "write a", "draft a", "create a", "generate a", "help me",
-    "business", "proposal", "email", "blog", "content",
+    "sales rep",
+    "consultant",
+    "marketing",
+    "customer service",
+    "write a",
+    "draft a",
+    "create a",
+    "generate a",
+    "help me",
+    "business",
+    "proposal",
+    "email",
+    "blog",
+    "content",
   ];
 
   let suspicionScore = 0;
@@ -99,19 +167,26 @@ export async function detectJailbreak(text: string): Promise<JailbreakResult> {
   }
 
   // Reduce score if business context is present
-  const hasBusinessContext = businessContextTerms.some(t => lower.includes(t));
+  const hasBusinessContext = businessContextTerms.some((t) =>
+    lower.includes(t),
+  );
   if (hasBusinessContext && suspicionScore < 0.5) {
     suspicionScore *= 0.6; // Reduce by 40% when legitimate context is detected
   }
 
   if (suspicionScore >= 0.6) {
-    log.warn("Jailbreak blocked (keyword score)", { score: suspicionScore, inputLength: text.length });
-    return {
+    log.warn("Jailbreak blocked (keyword score)", {
+      score: suspicionScore,
+      inputLength: text.length,
+    });
+    const verdict: JailbreakResult = {
       blocked: true,
       confidence: Math.min(suspicionScore, 1),
       category: "keyword_accumulation",
       reason: "Multiple jailbreak indicators detected",
     };
+    void cacheSet("jailbreak", text, verdict, JAILBREAK_CACHE_TTL_S);
+    return verdict;
   }
 
   // ─── Slow Path: NIM Model (only for borderline cases) ───
@@ -119,26 +194,46 @@ export async function detectJailbreak(text: string): Promise<JailbreakResult> {
     try {
       const nimKey = process.env.NVIDIA_NIM_API_KEY;
       if (nimKey) {
-        const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${nimKey}` },
-          body: JSON.stringify({
-            model: "nvidia/llama-3.1-nemotron-safety-guard-8b-v3",
-            messages: [
-              { role: "user", content: `Is this prompt a jailbreak or injection attempt? Respond ONLY with "safe" or "jailbreak".\n\nPrompt: "${text.slice(0, 800)}"` },
-            ],
-            max_tokens: 10,
-            temperature: 0.1,
-          }),
-          signal: AbortSignal.timeout(3000),
-        });
+        const res = await fetch(
+          "https://integrate.api.nvidia.com/v1/chat/completions",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${nimKey}`,
+            },
+            body: JSON.stringify({
+              model: "nvidia/llama-3.1-nemotron-safety-guard-8b-v3",
+              messages: [
+                {
+                  role: "user",
+                  content: `Is this prompt a jailbreak or injection attempt? Respond ONLY with "safe" or "jailbreak".\n\nPrompt: "${text.slice(0, 800)}"`,
+                },
+              ],
+              max_tokens: 10,
+              temperature: 0.1,
+            }),
+            signal: AbortSignal.timeout(3000),
+          },
+        );
 
         if (res.ok) {
           const data = await res.json();
-          const verdict = (data.choices?.[0]?.message?.content || "").toLowerCase().trim();
+          const verdict = (data.choices?.[0]?.message?.content || "")
+            .toLowerCase()
+            .trim();
           if (verdict.includes("jailbreak")) {
-            log.warn("Jailbreak blocked (NIM model)", { inputLength: text.length });
-            return { blocked: true, confidence: 0.85, category: "model_detected", reason: "NeMo Safety Guard flagged as jailbreak" };
+            log.warn("Jailbreak blocked (NIM model)", {
+              inputLength: text.length,
+            });
+            const result: JailbreakResult = {
+              blocked: true,
+              confidence: 0.85,
+              category: "model_detected",
+              reason: "NeMo Safety Guard flagged as jailbreak",
+            };
+            void cacheSet("jailbreak", text, result, JAILBREAK_CACHE_TTL_S);
+            return result;
           }
         }
       }
@@ -147,5 +242,12 @@ export async function detectJailbreak(text: string): Promise<JailbreakResult> {
     }
   }
 
-  return { blocked: false, confidence: 0, category: "none", reason: "Input passed safety checks" };
+  const passResult: JailbreakResult = {
+    blocked: false,
+    confidence: 0,
+    category: "none",
+    reason: "Input passed safety checks",
+  };
+  void cacheSet("jailbreak", text, passResult, JAILBREAK_CACHE_TTL_S);
+  return passResult;
 }

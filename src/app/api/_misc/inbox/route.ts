@@ -2,10 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { agentActivity } from "@/db/schema";
 import { eq, and, desc } from "drizzle-orm";
+import { requireAuth } from "@/lib/auth-guard";
 
-// GET — Get agent activity feed (Smart Inbox)
+// GET — Get agent activity feed (Smart Inbox) for the authenticated user
 export async function GET(req: NextRequest) {
-  const userId = req.headers.get("x-user-id") || "anonymous";
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
+  const userId = auth.userId;
+
   const { searchParams } = new URL(req.url);
   const limit = parseInt(searchParams.get("limit") || "50");
   const unreadOnly = searchParams.get("unread") === "true";
@@ -35,17 +39,20 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST — Log a new agent activity
+// POST — Log a new agent activity for the authenticated user
 export async function POST(req: NextRequest) {
-  const userId = req.headers.get("x-user-id") || "anonymous";
-  const body = await req.json();
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
+  const userId = auth.userId;
 
-  const { agentName, agentType, action, summary, result, projectId, metadata } = body;
+  const body = await req.json();
+  const { agentName, agentType, action, summary, result, projectId, metadata } =
+    body;
 
   if (!agentName || !action || !summary) {
     return NextResponse.json(
       { error: "Missing required fields: agentName, action, summary" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -67,15 +74,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ activity, success: true });
   } catch (err) {
     return NextResponse.json(
-      { error: `Failed to log activity: ${err instanceof Error ? err.message : "Unknown"}` },
-      { status: 500 }
+      {
+        error: `Failed to log activity: ${err instanceof Error ? err.message : "Unknown"}`,
+      },
+      { status: 500 },
     );
   }
 }
 
-// PUT — Mark activities as read
+// PUT — Mark activities as read (scoped to authenticated user)
 export async function PUT(req: NextRequest) {
-  const userId = req.headers.get("x-user-id") || "anonymous";
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
+  const userId = auth.userId;
+
   const body = await req.json();
   const { ids, markAll } = body;
 
@@ -84,21 +96,30 @@ export async function PUT(req: NextRequest) {
       await db
         .update(agentActivity)
         .set({ isRead: true })
-        .where(and(eq(agentActivity.userId, userId), eq(agentActivity.isRead, false)));
+        .where(
+          and(
+            eq(agentActivity.userId, userId),
+            eq(agentActivity.isRead, false),
+          ),
+        );
     } else if (ids?.length) {
       for (const id of ids) {
         await db
           .update(agentActivity)
           .set({ isRead: true })
-          .where(and(eq(agentActivity.id, id), eq(agentActivity.userId, userId)));
+          .where(
+            and(eq(agentActivity.id, id), eq(agentActivity.userId, userId)),
+          );
       }
     }
 
     return NextResponse.json({ success: true });
   } catch (err) {
     return NextResponse.json(
-      { error: `Failed to update: ${err instanceof Error ? err.message : "Unknown"}` },
-      { status: 500 }
+      {
+        error: `Failed to update: ${err instanceof Error ? err.message : "Unknown"}`,
+      },
+      { status: 500 },
     );
   }
 }

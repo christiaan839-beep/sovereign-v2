@@ -16,7 +16,7 @@ import type { AgentResult } from "@/types";
 export async function generateLandingPageBrief(
   product: string,
   audience: string,
-  goal: string = "conversions"
+  goal: string = "conversions",
 ): Promise<AgentResult> {
   const result = await runSwarm({
     goal: `Create a complete landing page wireframe brief for:
@@ -72,14 +72,18 @@ Provide a detailed, section-by-section wireframe specification including:
    - Animation notes (scroll reveals, hover effects, parallax)`,
 
     creatorSystem: `You are a world-class landing page designer who has built pages that convert at 15%+. You think in visual hierarchy: the eye must flow naturally from headline → social proof → CTA. Every word earns its place.`,
-    
+
     criticSystem: `You are a conversion rate optimization (CRO) expert. Ruthlessly evaluate: Does every section reduce friction? Is the value proposition crystal clear in 3 seconds? Are the CTAs positioned at moments of peak persuasion? Does the design system feel premium, not corporate?`,
-    
+
     maxRounds: 3,
-    model: "claude",
+    // Free OSS via NIM (Nemotron Ultra 253B). 3-round swarm × Claude Sonnet
+    // was the most expensive single agent on the platform.
+    model: "nim",
   });
 
-  await remember(`Landing page brief for ${product}: ${result.finalOutput.slice(0, 300)}`);
+  await remember(
+    `Landing page brief for ${product}: ${result.finalOutput.slice(0, 300)}`,
+  );
 
   return {
     success: true,
@@ -94,7 +98,7 @@ export async function generateBrandIdentity(
   businessName: string,
   industry: string,
   personality: string,
-  targetAudience: string = ""
+  targetAudience: string = "",
 ): Promise<AgentResult> {
   const result = await runSwarm({
     goal: `Create a complete brand identity system for:
@@ -151,14 +155,16 @@ Deliver a comprehensive brand identity document:
    - Card style (flat, elevated, glassmorphic)`,
 
     creatorSystem: `You are a brand strategist and visual designer who has created identities for $100M+ brands. Your designs feel alive — they have personality, not just aesthetics. Every color choice has a psychological reason. Every font pairing creates a specific emotional response.`,
-    
+
     criticSystem: `You are a brand consistency auditor. Check: Does every element reinforce the same personality? Would this identity stand out in a crowded market? Is it versatile enough for web, mobile, print, and social? Does the color palette have enough contrast for accessibility?`,
-    
+
     maxRounds: 3,
-    model: "claude",
+    model: "nim",
   });
 
-  await remember(`Brand identity for ${businessName}: ${result.finalOutput.slice(0, 300)}`);
+  await remember(
+    `Brand identity for ${businessName}: ${result.finalOutput.slice(0, 300)}`,
+  );
 
   return {
     success: true,
@@ -172,7 +178,7 @@ Deliver a comprehensive brand identity document:
 export async function generateUISpec(
   appDescription: string,
   screens: string[],
-  style: string = "dark glassmorphic"
+  style: string = "dark glassmorphic",
 ): Promise<AgentResult> {
   const screenList = screens.map((s, i) => `${i + 1}. ${s}`).join("\n");
 
@@ -207,10 +213,10 @@ For EACH screen provide:
 
 Make every specification specific enough that a developer can build the screen without asking any follow-up questions.`,
     {
-      model: "claude",
+      taskType: "creative",
       system: `You are a senior UI/UX designer and front-end architect. You think in component hierarchies, interaction patterns, and user psychology. Your specs are so detailed that junior developers can build pixel-perfect implementations from them alone. You favor ${style} design patterns.`,
       maxTokens: 3500,
-    }
+    },
   );
 
   await remember(`UI/UX spec for ${appDescription}: ${output.slice(0, 300)}`);

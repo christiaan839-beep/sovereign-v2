@@ -2,10 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { clientProjects } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
+import { requireAuth } from "@/lib/auth-guard";
 
-// GET — List all client projects
-export async function GET(req: NextRequest) {
-  const userId = req.headers.get("x-user-id") || "anonymous";
+// GET — List all client projects for the authenticated user
+export async function GET() {
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
+  const userId = auth.userId;
 
   try {
     const projects = await db
@@ -22,15 +25,17 @@ export async function GET(req: NextRequest) {
 
 // POST — Create a new client project
 export async function POST(req: NextRequest) {
-  const userId = req.headers.get("x-user-id") || "anonymous";
-  const body = await req.json();
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
+  const userId = auth.userId;
 
+  const body = await req.json();
   const { name, clientName, industry, website, color, notes } = body;
 
   if (!name || !clientName) {
     return NextResponse.json(
       { error: "Missing required fields: name, clientName" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -51,15 +56,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ project, success: true });
   } catch (err) {
     return NextResponse.json(
-      { error: `Failed to create project: ${err instanceof Error ? err.message : "Unknown"}` },
-      { status: 500 }
+      {
+        error: `Failed to create project: ${err instanceof Error ? err.message : "Unknown"}`,
+      },
+      { status: 500 },
     );
   }
 }
 
-// PUT — Update a project
+// PUT — Update a project (scoped to authenticated user)
 export async function PUT(req: NextRequest) {
-  const userId = req.headers.get("x-user-id") || "anonymous";
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
+  const userId = auth.userId;
+
   const body = await req.json();
   const { id, ...updates } = body;
 
@@ -77,15 +87,20 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ project: updated, success: true });
   } catch (err) {
     return NextResponse.json(
-      { error: `Failed to update: ${err instanceof Error ? err.message : "Unknown"}` },
-      { status: 500 }
+      {
+        error: `Failed to update: ${err instanceof Error ? err.message : "Unknown"}`,
+      },
+      { status: 500 },
     );
   }
 }
 
-// DELETE — Remove a project
+// DELETE — Remove a project (scoped to authenticated user)
 export async function DELETE(req: NextRequest) {
-  const userId = req.headers.get("x-user-id") || "anonymous";
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
+  const userId = auth.userId;
+
   const { searchParams } = new URL(req.url);
   const id = searchParams.get("id");
 
@@ -101,8 +116,10 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (err) {
     return NextResponse.json(
-      { error: `Failed to delete: ${err instanceof Error ? err.message : "Unknown"}` },
-      { status: 500 }
+      {
+        error: `Failed to delete: ${err instanceof Error ? err.message : "Unknown"}`,
+      },
+      { status: 500 },
     );
   }
 }
