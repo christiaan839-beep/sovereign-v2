@@ -41,8 +41,40 @@ const log = createLogger("transcribe-call-agent");
  * downstream output-verifier on whoever displays the transcript.
  */
 
+/**
+ * Allowlist of Twilio hosts the route is permitted to call. Any
+ * other host is rejected before the Authorization header is even
+ * constructed — this prevents SSRF (172.16.0.0/12, 169.254.169.254
+ * cloud metadata, file://, gopher://, etc.) and stops a confused-
+ * deputy attack where the attacker tricks the route into sending
+ * Twilio basic-auth credentials to an arbitrary endpoint they
+ * control. `redirect: "manual"` further prevents the auth header
+ * from being replayed on a redirect chain — a Twilio CDN URL that
+ * 302s to attacker.com would otherwise still leak the header on
+ * the second hop in some fetch implementations.
+ */
+const TWILIO_HOST_ALLOWLIST = new Set([
+  "api.twilio.com",
+  "media.twiliocdn.com",
+]);
+
+function isAllowedTwilioUrl(value: string): boolean {
+  try {
+    const u = new URL(value);
+    return u.protocol === "https:" && TWILIO_HOST_ALLOWLIST.has(u.host);
+  } catch {
+    return false;
+  }
+}
+
 const schema = z.object({
-  recordingUrl: z.string().url(),
+  recordingUrl: z
+    .string()
+    .url()
+    .refine(
+      isAllowedTwilioUrl,
+      "recordingUrl must be on api.twilio.com or media.twiliocdn.com",
+    ),
   callSid: z.string().optional(),
   language: z.string().optional(),
 });
@@ -57,6 +89,12 @@ function getTwilioAuth(): { sid: string; token: string } | null {
 async function fetchTwilioRecording(
   recordingUrl: string,
 ): Promise<{ bytes: Uint8Array; contentType: string } | { error: string }> {
+  // Defence-in-depth: schema validation already enforces this, but
+  // re-check inside the fetch helper so any future internal caller
+  // can't accidentally pass an arbitrary URL.
+  if (!isAllowedTwilioUrl(recordingUrl)) {
+    return { error: "recordingUrl not on the Twilio host allowlist" };
+  }
   const auth = getTwilioAuth();
   if (!auth) {
     return { error: "TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN not configured" };
@@ -65,6 +103,10 @@ async function fetchTwilioRecording(
   try {
     const res = await fetchWithTimeout(recordingUrl, {
       headers: { Authorization: `Basic ${basic}` },
+      // Never auto-follow redirects — would replay the
+      // Authorization header on the redirect target, leaking
+      // Twilio creds to whoever Twilio redirected to.
+      redirect: "manual",
       timeoutMs: 30_000,
       label: "twilio-recording-fetch",
     });

@@ -34,7 +34,17 @@ const log = createLogger("admin-record-delivery");
 
 const recordSchema = z.object({
   tenantId: z.string().uuid(),
-  deliveryDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD"),
+  deliveryDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD")
+    // Same rationale as publish-letter: the regex permits impossible
+    // dates like 2026-13-45. Reject them at the schema boundary
+    // rather than letting them pass through as NaN to the
+    // Monday-check, which would surface a misleading error.
+    .refine(
+      (d) => !Number.isNaN(new Date(d + "T00:00:00Z").getTime()),
+      "Date is not a valid calendar date",
+    ),
   leadCount: z.number().int().min(1).max(500),
   handReviewedBy: z.string().min(1).max(120),
   slackMessageUrl: z.string().url().optional().or(z.literal("")),

@@ -85,9 +85,26 @@ async function loadWelcome(id: string): Promise<WelcomeData | null> {
   }
 }
 
-function loomEmbedUrl(shareUrl: string): string {
-  // loom.com/share/<id> → loom.com/embed/<id>
-  return shareUrl.replace("/share/", "/embed/");
+/**
+ * Convert a Loom share URL to its embed equivalent. Pinned to the
+ * `loom.com` host so an operator can't drop in an arbitrary
+ * attacker-controlled URL via the `welcome_loom_url` column and
+ * frame it on this page (clickjacking / phishing-as-a-tenant). On
+ * any malformed input or non-Loom host, returns `null` and the
+ * caller hides the iframe entirely.
+ */
+const LOOM_EMBED_HOSTS = new Set(["loom.com", "www.loom.com"]);
+function loomEmbedUrl(shareUrl: string): string | null {
+  try {
+    const u = new URL(shareUrl);
+    if (u.protocol !== "https:") return null;
+    if (!LOOM_EMBED_HOSTS.has(u.host)) return null;
+    if (!u.pathname.startsWith("/share/")) return null;
+    u.pathname = u.pathname.replace("/share/", "/embed/");
+    return u.toString();
+  } catch {
+    return null;
+  }
 }
 
 function formatDeliveryDate(yyyymmdd: string): string {
@@ -109,6 +126,10 @@ export default async function WelcomePage(props: {
 
   const firstName = data.firstName ?? "there";
   const loomEmbed = loomEmbedUrl(data.loomUrl!);
+  // If the stored URL is anything other than a https://loom.com/share/...
+  // link, refuse to render the iframe — the page degrades to the rest
+  // of the welcome content rather than embedding an arbitrary frame.
+  if (!loomEmbed) notFound();
 
   return (
     <main className="min-h-screen bg-[#030303] text-neutral-100">
@@ -141,6 +162,13 @@ export default async function WelcomePage(props: {
           <iframe
             src={loomEmbed}
             allow="autoplay; fullscreen"
+            // Sandbox keeps the embedded Loom frame from navigating
+            // the parent window, opening popups, or running plugin
+            // content. `allow-scripts` + `allow-same-origin` are
+            // required for Loom's player to function;
+            // `allow-presentation` enables fullscreen casting.
+            sandbox="allow-scripts allow-same-origin allow-presentation"
+            referrerPolicy="no-referrer"
             className="absolute inset-0 h-full w-full"
             title={`Personal welcome for ${firstName}`}
           />

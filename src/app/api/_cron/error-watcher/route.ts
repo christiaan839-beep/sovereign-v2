@@ -35,6 +35,14 @@ const log = createLogger("error-watcher");
 
 const WINDOW_MINUTES = 10;
 const HEARTBEAT_EVERY_N_RUNS = 6;
+// Heartbeat counter is per-Lambda-instance, not global. On Vercel
+// each cold start resets the counter to 0, so the actual "every 6
+// runs" cadence is best-effort: a Lambda kept warm fires the
+// heartbeat hourly; a fleet of cold Lambdas may delay it. That's
+// acceptable for a green-light signal — silence over multiple hours
+// still indicates the watcher itself is broken, which is the only
+// failure mode this signal exists to catch. Don't migrate this to
+// Redis: a missed heartbeat is fine, a phantom one would be worse.
 let runsSinceHeartbeat = 0;
 
 interface ErrorBucket {

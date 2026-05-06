@@ -44,7 +44,18 @@ const publishSchema = z.object({
       /^[a-z0-9-]+$/,
       "Use kebab-case: lowercase letters, digits, hyphens",
     ),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD"),
+  date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD")
+    // Regex alone permits impossible dates like 2026-13-45 — they
+    // pass syntactically but `new Date(...)` returns NaN downstream
+    // and the Friday-check fails with a misleading "must be a
+    // Friday" error. Refining catches the bad input at the schema
+    // boundary so the operator gets a clear validation message.
+    .refine(
+      (d) => !Number.isNaN(new Date(d + "T00:00:00Z").getTime()),
+      "Date is not a valid calendar date",
+    ),
   title: z.string().min(1).max(200),
   preview: z.string().min(1).max(500),
   body: z.string().min(50).max(50_000),

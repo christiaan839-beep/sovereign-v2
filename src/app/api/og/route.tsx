@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { rateLimit } from "@/lib/rate-limit";
 
 /**
  * /api/og?title=...&subtitle=...
@@ -18,16 +19,27 @@ import { ImageResponse } from "next/og";
  *   /api/og
  *   /api/og?title=Sovereign+Lead+Engine&subtitle=50+leads+in+30+days
  *   /api/og?title=Letter+%231&subtitle=The+Monday+kind
+ *
+ * Rate-limited to 60 requests / minute / IP. Each unique
+ * `?title=`/`?subtitle=` combination is a distinct CDN cache key
+ * + a Satori CPU-bound render — without rate limiting an attacker
+ * could spam random params and exhaust per-region cache budget.
+ * Legitimate share traffic for unique URLs sits well under 60/min.
  */
 
 export const runtime = "edge";
+
+const ogLimiter = rateLimit({ interval: 60, limit: 60 });
 
 const SIZE = { width: 1200, height: 630 } as const;
 
 const DEFAULT_TITLE = "Sovereign Matrix";
 const DEFAULT_SUBTITLE = "The trust + memory + outcome layer for autonomous AI";
 
-export function GET(req: Request) {
+export async function GET(req: Request) {
+  const limited = await ogLimiter.check(req);
+  if (limited) return limited;
+
   const { searchParams } = new URL(req.url);
   const title = (searchParams.get("title") ?? DEFAULT_TITLE).slice(0, 120);
   const subtitle = (searchParams.get("subtitle") ?? DEFAULT_SUBTITLE).slice(
