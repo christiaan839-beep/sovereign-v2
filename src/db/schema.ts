@@ -31,6 +31,18 @@ export const tenants = pgTable("tenants", {
   welcomeSlackUrl: text("welcome_slack_url"),
   welcomeDocUrl: text("welcome_doc_url"),
   welcomeFirstDelivery: date("welcome_first_delivery"),
+  // Sovereign deployment profile (drizzle/0023_deployment_profile.sql).
+  //
+  //   "cloud"      — default. NIM API + Portkey + paid fallbacks.
+  //   "byo-gpu"    — point inference at NIM_LOCAL_BASE_URL (vLLM /
+  //                  SGLang on the customer's own GPU). External
+  //                  paid providers refuse to fire.
+  //   "air-gapped" — Ollama-only. Any non-local provider call is
+  //                  rejected at `src/lib/ai.ts` before it leaves
+  //                  the process.
+  //
+  // Read by `getDeploymentProfile()` in src/lib/deployment-profile.ts.
+  deploymentProfile: text("deployment_profile").notNull().default("cloud"),
 });
 
 export const activeSwarms = pgTable(
@@ -270,6 +282,13 @@ export const usage = pgTable(
     costCents: integer("cost_cents"),
     provider: text("provider"), // matches model-attribution.ts buckets: anthropic/nvidia-nim/...
     requestId: text("request_id"), // links to the request-context requestId for cross-log correlation
+    // Workspace attribution (drizzle/0023_deployment_profile.sql).
+    // Multi-seat tenants need workspace-level cost roll-ups, not
+    // per-seat. Nullable for legacy rows; new ledger writes always
+    // populate it when the agent route has tenant context.
+    tenantId: uuid("tenant_id").references(() => tenants.id, {
+      onDelete: "cascade",
+    }),
     createdAt: timestamp("created_at").defaultNow(),
   },
   (table) => [
@@ -277,6 +296,7 @@ export const usage = pgTable(
     index("usage_created_at_idx").on(table.createdAt),
     index("usage_provider_idx").on(table.provider),
     index("usage_request_id_idx").on(table.requestId),
+    index("usage_tenant_id_idx").on(table.tenantId),
   ],
 );
 

@@ -25,6 +25,7 @@ import { usage } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
 import { inferProvider, getLastProvider } from "@/lib/model-attribution";
 import { NIM_MODELS } from "@/lib/nim-registry";
+import { getCurrentTenantId } from "@/lib/request-tenant";
 
 const log = createLogger("cost-ledger");
 
@@ -113,6 +114,13 @@ export async function recordLedgerEntry(entry: LedgerEntry): Promise<void> {
       costCents,
       provider,
       requestId: entry.requestId ?? null,
+      // Workspace-level attribution. Null is fine for legacy/public
+      // surfaces — the admin dashboard buckets nulls under
+      // "unattributed" instead of dropping them. Falls back to the
+      // request-scoped tenant when the call site didn't pass one
+      // explicitly (the typical case — agent-factory sets it once,
+      // every downstream provider call inherits).
+      tenantId: entry.tenantId ?? getCurrentTenantId() ?? null,
     });
   } catch (err) {
     // The whole point of fire-and-forget — never block the user.

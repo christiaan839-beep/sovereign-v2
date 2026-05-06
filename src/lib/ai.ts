@@ -21,6 +21,13 @@ import {
 import { withRetry } from "@/lib/retry";
 import { traceAi } from "@/lib/phoenix-tracer";
 import { isPortkeyConfigured, routeViaPortkey } from "@/lib/portkey-gateway";
+import {
+  getDeploymentProfile,
+  isProviderAllowed,
+  type DeploymentProfile,
+  type ProviderBucket,
+} from "@/lib/deployment-profile";
+import { getCurrentTenantId } from "@/lib/request-tenant";
 
 const log = createLogger("ai");
 
@@ -86,10 +93,40 @@ export async function ai(
     thinking,
     useOpus,
     useGeminiPro,
+    tenantId: explicitTenantId,
   } = options;
 
   // Lazy-load model-attribution to avoid circular import risk.
   const { recordModel } = await import("@/lib/model-attribution");
+
+  // Deployment-profile gate. If this request is scoped to a tenant
+  // (either explicitly via options.tenantId or inherited from
+  // `withTenant()` in agent-factory), refuse providers the tenant's
+  // profile doesn't permit. Cloud profile permits everything; the
+  // gate is effectively a no-op for the public surface area.
+  const tenantId = explicitTenantId ?? getCurrentTenantId();
+  const profile = await getDeploymentProfile(tenantId);
+
+  /**
+   * Refuse a provider that the tenant's profile doesn't permit.
+   * Throws so the caller's try/catch hits the same path it would
+   * for a circuit-break or transient failure — the operator gets a
+   * clean error in the agent envelope and the platform doesn't
+   * silently leak data to a provider it shouldn't.
+   */
+  const assertAllowed = (provider: ProviderBucket): void => {
+    if (!isProviderAllowed(provider, profile)) {
+      throw new Error(
+        `[deployment-profile] tenant profile "${profile}" does not permit provider "${provider}". ` +
+          `Adjust tenants.deployment_profile or pick a permitted provider.`,
+      );
+    }
+  };
+  // Acknowledge captured-but-unused state. The DeploymentProfile
+  // type import keeps the cascade self-documenting; the underscore
+  // var silences any "unused" lint rule on tightly-typed imports.
+  const _profileType: DeploymentProfile = profile;
+  void _profileType;
 
   const userKeys = await getUserKeys();
 
@@ -98,8 +135,10 @@ export async function ai(
   // prompt and let the tracer truncate.
   const sample = { prompt };
 
-  // 1. Local execution (cost: $0)
+  // 1. Local execution (cost: $0). Always permitted in every profile —
+  // Ollama is the air-gapped fallback by design.
   if (userKeys.ollama) {
+    assertAllowed("ollama");
     recordModel("ollama-local");
     return traceAi(
       { provider: "ollama", model: "ollama-local", operation: "ai" },
@@ -108,8 +147,10 @@ export async function ai(
     );
   }
 
-  // 2. Cerebras — ultra-fast inference (2000+ tok/s). Use for classification and routing.
+  // 2. Cerebras — ultra-fast inference (2000+ tok/s). External cloud,
+  // refused under byo-gpu and air-gapped.
   if (model === "cerebras") {
+    assertAllowed("cerebras");
     recordModel("cerebras");
     return traceAi(
       { provider: "cerebras", model: "cerebras-fast", operation: "ai" },
@@ -118,11 +159,15 @@ export async function ai(
     );
   }
 
-  // 3. NVIDIA NIM open-source models (cost: $0)
+  // 3. NVIDIA NIM open-source models (cost: $0). Permitted in cloud
+  // and byo-gpu. Refused under air-gapped — air-gapped tenants must
+  // use a self-hosted NIM container that nimText routes to via
+  // NIM_LOCAL_BASE_URL (handled inside nvidia.ts).
   if (
     model === "nim" ||
     (userKeys.nvidia && model !== "claude" && model !== "gemini")
   ) {
+    assertAllowed("nvidia-nim");
     recordModel("nvidia-nim-default");
     return traceAi(
       { provider: "nvidia-nim", model: "nemotron-default", operation: "ai" },
@@ -131,11 +176,13 @@ export async function ai(
     );
   }
 
-  // 4. Claude (BYOK only) - Opus or Sonnet
+  // 4. Claude (BYOK only) - external cloud. Refused under byo-gpu and
+  // air-gapped.
   if (
     model === "claude" ||
     (userKeys.anthropic && !userKeys.gemini && !userKeys.groq)
   ) {
+    assertAllowed("anthropic");
     const claudeModel = useOpus ? "claude-opus-4-7" : "claude-sonnet-4-6";
     recordModel(claudeModel);
     return traceAi(
@@ -145,8 +192,11 @@ export async function ai(
     );
   }
 
-  // 5. Mistral Large 2 (EU Compliance / Open Weights via NIM)
+  // 5. Mistral Large 2 (EU compliance / Open Weights via NIM).
+  // Treated as an NIM call for profile purposes — the wire route is
+  // build.nvidia.com or the local NIM container.
   if (model === "mistral") {
+    assertAllowed("nvidia-nim");
     recordModel("mistral-large");
     return traceAi(
       { provider: "nvidia-nim", model: "mistral-large", operation: "ai" },
@@ -155,13 +205,15 @@ export async function ai(
     );
   }
 
-  // 6. Groq (DeepSeek-R1, Qwen 2.5 Coder, Llama 3.1)
+  // 6. Groq (DeepSeek-R1, Qwen 2.5 Coder, Llama 3.1) — external cloud.
+  // Refused under byo-gpu and air-gapped.
   if (
     model === "groq" ||
     model === "deepseek" ||
     model === "qwen" ||
     (userKeys.groq && !userKeys.gemini)
   ) {
+    assertAllowed("groq");
     recordModel(`groq-${model}`);
     return traceAi(
       { provider: "groq", model: `groq-${model}`, operation: "ai" },
@@ -173,8 +225,27 @@ export async function ai(
   // 7. Gemini (default) → Portkey-fallback → NIM → Groq.
   // Portkey gateway only activates when PORTKEY_API_KEY is set;
   // otherwise the cascade is identical to before.
+  //
+  // Deployment-profile gate inside the cascade: each external
+  // provider is checked before its branch runs. Disallowed branches
+  // are SKIPPED (not thrown) so the cascade naturally lands on the
+  // first permitted provider — typically NIM under byo-gpu and
+  // air-gapped, since those are the only branches both profiles
+  // permit. Hard-throwing here would defeat the whole point of a
+  // graceful fallback.
   const geminiModel = useGeminiPro ? "gemini-2.0-pro" : "gemini-2.0-flash";
+  const geminiAllowed = isProviderAllowed("gemini", profile);
+  const portkeyAllowed = isProviderAllowed("portkey", profile);
+  const groqAllowed = isProviderAllowed("groq", profile);
+  if (!geminiAllowed) {
+    log.info("Skipping Gemini default (deployment profile)", { profile });
+  }
   try {
+    if (!geminiAllowed) {
+      // Synthetic skip — throws into the catch block so the existing
+      // NIM/Groq fallback cascade runs without a code-path duplicate.
+      throw new Error("[deployment-profile] gemini disabled for this tenant");
+    }
     recordModel(geminiModel);
     return await traceAi(
       { provider: "gemini", model: geminiModel, operation: "ai" },
@@ -186,9 +257,11 @@ export async function ai(
       error: (geminiErr as Error).message,
     });
 
-    // 7a. Portkey fallback (only if configured) — gives us multi-
-    // provider retries + caching + load-balancing in one hop.
-    if (isPortkeyConfigured()) {
+    // 7a. Portkey fallback (only if configured + profile permits) —
+    // gives us multi-provider retries + caching + load-balancing in
+    // one hop. Gated under air-gapped because Portkey is an
+    // outbound proxy.
+    if (isPortkeyConfigured() && portkeyAllowed) {
       try {
         const result = await traceAi(
           { provider: "portkey", model: "auto", operation: "ai-fallback" },
@@ -226,6 +299,18 @@ export async function ai(
       log.warn("NIM failed, falling back to Groq", {
         error: (nimErr as Error).message,
       });
+      if (!groqAllowed) {
+        // Stricter profile — Groq is external cloud. Surface the NIM
+        // error to the caller; the operator gets a clean failure
+        // instead of a silent route to a refused provider.
+        log.error("All permitted providers failed under deployment profile", {
+          profile,
+          nim: (nimErr as Error).message,
+        });
+        throw new Error(
+          `All AI models permitted by deployment profile "${profile}" are temporarily unavailable. Please try again in a few seconds.`,
+        );
+      }
       try {
         return await traceAi(
           {

@@ -130,7 +130,7 @@ export interface AgentContext {
    * the static contract here would otherwise force every agent to
    * cast on every property access.
    */
-   
+
   input: Record<string, any>;
   /** Raw request object */
   request: Request;
@@ -448,15 +448,23 @@ export function createAgentRoute(config: AgentConfig) {
       }
 
       // ─── Execute Agent Handler ───
+      // Wrap the handler in `withTenant` so the deployment-profile
+      // gate inside `src/lib/ai.ts` and the cost-ledger fallback
+      // inside `src/lib/cost-ledger.ts` can read the tenant id from
+      // AsyncLocalStorage instead of needing every signature on the
+      // way down to thread it as a parameter.
       replay?.addStep("handler_start", { agent: config.name });
-      const rawResult = await config.handler({
-        input: sanitized,
-        request: req,
-        email,
-        userId,
-        tenantId,
-        orgId,
-      });
+      const { withTenant } = await import("@/lib/request-tenant");
+      const rawResult = await withTenant(tenantId ?? null, () =>
+        config.handler({
+          input: sanitized,
+          request: req,
+          email,
+          userId,
+          tenantId,
+          orgId,
+        }),
+      );
       // The handler return is typed `unknown` to keep the 100+ legacy
       // routes flexible; for internal processing we normalize to an
       // object shape. Non-object returns (string/number/etc) get
@@ -531,14 +539,19 @@ export function createAgentRoute(config: AgentConfig) {
                     `Be more precise, accurate, and concise.`,
                 };
 
-                const rawRetry = await config.handler({
-                  input: refinedInput,
-                  request: req,
-                  email,
-                  userId,
-                  tenantId,
-                  orgId,
-                });
+                // Same withTenant wrap as the primary handler call —
+                // refinement retries must inherit the tenant context
+                // so deployment-profile + cost-ledger stay consistent.
+                const rawRetry = await withTenant(tenantId ?? null, () =>
+                  config.handler({
+                    input: refinedInput,
+                    request: req,
+                    email,
+                    userId,
+                    tenantId,
+                    orgId,
+                  }),
+                );
                 const retryResult: Record<string, unknown> =
                   rawRetry && typeof rawRetry === "object"
                     ? (rawRetry as Record<string, unknown>)

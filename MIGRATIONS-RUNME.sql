@@ -311,6 +311,44 @@ CREATE INDEX IF NOT EXISTS "idx_friday_letters_status"
   ON "friday_letters" USING btree ("status");
 
 
+-- ═══ 0023 — Sovereign deployment profiles + tenant cost attribution
+-- Two changes:
+--   1. tenants.deployment_profile  enum ('cloud','byo-gpu','air-gapped')
+--      Read by src/lib/deployment-profile.ts on every AI call. Gates
+--      which providers may serve a tenant's request — the moat for
+--      enterprise procurement.
+--   2. usage.tenant_id  uuid REFERENCES tenants(id)
+--      Workspace-level cost roll-ups instead of seat-only. Legacy
+--      rows keep tenant_id NULL and surface as "unattributed" in
+--      the admin dashboard.
+
+ALTER TABLE "tenants"
+  ADD COLUMN IF NOT EXISTS "deployment_profile" text NOT NULL DEFAULT 'cloud';
+
+ALTER TABLE "tenants"
+  DROP CONSTRAINT IF EXISTS "tenants_deployment_profile_check";
+
+ALTER TABLE "tenants"
+  ADD CONSTRAINT "tenants_deployment_profile_check"
+  CHECK ("deployment_profile" IN ('cloud', 'byo-gpu', 'air-gapped'));
+
+ALTER TABLE "usage"
+  ADD COLUMN IF NOT EXISTS "tenant_id" uuid;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'usage_tenant_id_fk'
+  ) THEN
+    ALTER TABLE "usage"
+      ADD CONSTRAINT "usage_tenant_id_fk"
+      FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE CASCADE;
+  END IF;
+END $$;
+
+CREATE INDEX IF NOT EXISTS "usage_tenant_id_idx" ON "usage" ("tenant_id");
+
+
 -- ═══ Verification ══════════════════════════════════════════════════
 -- After running, this query should return 16 rows: the 15 tables
 -- created by migrations 0002–0022 plus `tenants` (created in 0000,
@@ -323,9 +361,19 @@ SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename IN (
   'friday_letters','tenants'
 ) ORDER BY tablename;
 
--- Optionally verify the welcome_* columns landed on tenants
--- (migration 0019). Should return 6 rows.
+-- Verify the welcome_* columns landed on tenants (migration 0019).
+-- Should return 6 rows.
 SELECT column_name FROM information_schema.columns
  WHERE table_schema='public' AND table_name='tenants'
    AND column_name LIKE 'welcome_%'
  ORDER BY column_name;
+
+-- Verify deployment_profile landed (migration 0023). Should return 1 row.
+SELECT column_name FROM information_schema.columns
+ WHERE table_schema='public' AND table_name='tenants'
+   AND column_name = 'deployment_profile';
+
+-- Verify usage.tenant_id landed (migration 0023). Should return 1 row.
+SELECT column_name FROM information_schema.columns
+ WHERE table_schema='public' AND table_name='usage'
+   AND column_name = 'tenant_id';
