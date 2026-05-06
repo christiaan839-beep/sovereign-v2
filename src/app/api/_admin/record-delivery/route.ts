@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/admin-auth";
 import { db } from "@/db";
 import { customerDeliveries, tenants } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("admin-record-delivery");
@@ -109,6 +110,19 @@ export async function POST(req: Request) {
         notes: data.notes || null,
       })
       .returning({ id: customerDeliveries.id });
+
+    // Bust the public proof caches so the homepage delivery-receipt
+    // strip and /proof reflect the new delivery within seconds, not
+    // the full 5-minute revalidate window. revalidatePath fails
+    // silently in some test environments — wrap in try/catch so a
+    // missing context never fails the operator's POST.
+    try {
+      revalidatePath("/");
+      revalidatePath("/proof");
+      revalidatePath("/api/proof/stats");
+    } catch {
+      /* revalidate isn't always available; never block the write */
+    }
 
     log.info("Delivery recorded", {
       deliveryId: inserted.id,

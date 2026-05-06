@@ -1,0 +1,30 @@
+Contact: mailto:security@sovereignmatrix.agency
+Expires: 2027-12-31T23:59:59Z
+Preferred-Languages: en
+Canonical: https://sovereignmatrix.agency/.well-known/security.txt
+Policy: https://sovereignmatrix.agency/security
+Acknowledgments: https://sovereignmatrix.agency/security#acknowledgments
+
+# Sovereign Matrix Security Disclosure
+#
+# We welcome reports of security vulnerabilities. Please email
+# security@sovereignmatrix.agency with:
+#   - the affected URL or component
+#   - reproduction steps
+#   - your assessment of severity
+#   - your preferred public credit name (or "anonymous")
+#
+# We commit to:
+#   - Acknowledge receipt within 24 hours
+#   - Provide an initial triage within 72 hours
+#   - Credit responsible reporters publicly (with consent)
+#   - Avoid legal action against good-faith research that
+#     respects user privacy and our scope
+#
+# Out of scope:
+#   - DoS / volumetric attacks
+#   - Social engineering against staff or customers
+#   - Physical attacks
+#   - Third-party services (Stripe, Clerk, Neon — report directly)
+#
+# This file follows RFC 9116.

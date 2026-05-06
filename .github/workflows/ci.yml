@@ -2,9 +2,16 @@ name: Sovereign Matrix CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, develop, "claude/**"]
   pull_request:
-    branches: [main]
+    branches: [main, develop]
+
+# Cancel in-progress runs on the same ref when a new push lands —
+# saves CI minutes and surfaces the latest result on PRs that get
+# rapid-fire commits during a sprint.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   NODE_VERSION: '22'
@@ -70,6 +77,38 @@ jobs:
 
       - name: Run tests
         run: npm test
+
+  # Focused security-regression gate. Runs the subset of tests that
+  # was authored specifically to catch the 6 critical vulns from
+  # the original audit (signature forgery, idempotency replay, Twilio
+  # XML escape, deployment-profile leakage, tenant suspension cache,
+  # etc.). Fast (~7s) and the most likely to break loudly when a
+  # protective primitive gets accidentally reverted. Runs in parallel
+  # with the broader test job — green here means "no regression" even
+  # if the wider suite is flaky.
+  security-regression:
+    name: Security Regression
+    runs-on: ubuntu-latest
+    needs: lint-and-typecheck
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Security regression suite
+        run: |
+          npx vitest run \
+            src/lib/__tests__/idempotency.test.ts \
+            src/lib/__tests__/deployment-profile.test.ts \
+            src/lib/__tests__/tenant-suspension.test.ts \
+            src/app/api/_webhooks/__tests__/twilio-security.test.ts \
+            src/app/api/_webhooks/__tests__/signature-verification.test.ts
 
   security-audit:
     name: Security Audit
