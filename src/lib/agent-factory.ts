@@ -344,6 +344,35 @@ export function createAgentRoute(config: AgentConfig) {
         tenantId = await resolveTenantId(userId);
       }
 
+      // ─── Tenant Kill-Switch ───
+      //
+      // Suspended tenants get 423 Locked with the operator's
+      // suspension reason. Reversible — flip is_suspended back to
+      // false in the admin and the next request runs as normal.
+      // Database missing the column (migration 0024 not applied)
+      // fails open: the check returns null and execution proceeds.
+      if (tenantId) {
+        const { isTenantSuspended } = await import("@/lib/tenant-suspension");
+        const suspension = await isTenantSuspended(tenantId);
+        if (suspension) {
+          log.warn("Refusing execution — tenant suspended", {
+            agent: config.name,
+            tenantId,
+            reason: suspension.reason,
+          });
+          return NextResponse.json(
+            {
+              error:
+                "This workspace is currently paused. " +
+                (suspension.reason ?? "Contact support if this is unexpected."),
+              code: "TENANT_SUSPENDED",
+              suspendedAt: suspension.suspendedAt,
+            },
+            { status: 423 },
+          );
+        }
+      }
+
       // Extract orgId from request body if provided (for org-scoped operations)
       const orgId =
         typeof sanitized.orgId === "string" ? sanitized.orgId : undefined;

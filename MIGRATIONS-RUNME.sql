@@ -349,6 +349,27 @@ END $$;
 CREATE INDEX IF NOT EXISTS "usage_tenant_id_idx" ON "usage" ("tenant_id");
 
 
+-- ═══ 0024 — Tenant kill-switch ═════════════════════════════════════
+-- Single column the operator flips to deny a tenant any further
+-- agent execution without deleting data, refunding manually, or
+-- paging the on-call. When is_suspended=true, agent-factory returns
+-- 423 Locked with `suspension_reason` in the response.
+-- Reversible: flip back to false → execution resumes immediately.
+
+ALTER TABLE "tenants"
+  ADD COLUMN IF NOT EXISTS "is_suspended" boolean NOT NULL DEFAULT false;
+
+ALTER TABLE "tenants"
+  ADD COLUMN IF NOT EXISTS "suspension_reason" text;
+
+ALTER TABLE "tenants"
+  ADD COLUMN IF NOT EXISTS "suspended_at" timestamp;
+
+CREATE INDEX IF NOT EXISTS "tenants_is_suspended_idx"
+  ON "tenants" ("is_suspended")
+  WHERE "is_suspended" = true;
+
+
 -- ═══ Verification ══════════════════════════════════════════════════
 -- After running, this query should return 16 rows: the 15 tables
 -- created by migrations 0002–0022 plus `tenants` (created in 0000,
@@ -377,3 +398,9 @@ SELECT column_name FROM information_schema.columns
 SELECT column_name FROM information_schema.columns
  WHERE table_schema='public' AND table_name='usage'
    AND column_name = 'tenant_id';
+
+-- Verify kill-switch columns landed (migration 0024). Should return 3 rows.
+SELECT column_name FROM information_schema.columns
+ WHERE table_schema='public' AND table_name='tenants'
+   AND column_name IN ('is_suspended', 'suspension_reason', 'suspended_at')
+ ORDER BY column_name;

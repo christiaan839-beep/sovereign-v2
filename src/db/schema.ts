@@ -43,6 +43,12 @@ export const tenants = pgTable("tenants", {
   //
   // Read by `getDeploymentProfile()` in src/lib/deployment-profile.ts.
   deploymentProfile: text("deployment_profile").notNull().default("cloud"),
+  // Tenant kill-switch (drizzle/0024_tenant_kill_switch.sql). When
+  // is_suspended=true, agent-factory refuses execution with a 423
+  // Locked response. Reversible — no other state is mutated.
+  isSuspended: boolean("is_suspended").notNull().default(false),
+  suspensionReason: text("suspension_reason"),
+  suspendedAt: timestamp("suspended_at"),
 });
 
 export const activeSwarms = pgTable(
