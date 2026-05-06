@@ -952,3 +952,40 @@ export const voiceConsent = pgTable(
     index("idx_voice_consent_recorded").on(table.recordedAt),
   ],
 );
+
+/**
+ * Per-customer weekly deliveries — the system of record that proves
+ * STANDARDS.md §03 ("Monday 9am delivery is sacred") was hit.
+ *
+ * One row per (tenant, delivery_date) pair. `delivery_date` is the
+ * Monday the batch is FOR — not the timestamp it was created.
+ * `lead_count` and `hand_reviewed_by` are required so a row can't be
+ * inserted without proving the §01 hand-review standard was met.
+ *
+ * The Monday-watchdog cron reads from this table to decide which
+ * tenants are missing a delivery for the current week.
+ *
+ * Migration: drizzle/0020_customer_deliveries.sql.
+ */
+export const customerDeliveries = pgTable(
+  "customer_deliveries",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "cascade" }),
+    deliveryDate: date("delivery_date").notNull(),
+    leadCount: integer("lead_count").notNull(),
+    handReviewedBy: text("hand_reviewed_by").notNull(),
+    slackMessageUrl: text("slack_message_url"),
+    notes: text("notes"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("idx_deliveries_tenant_date").on(
+      table.tenantId,
+      table.deliveryDate,
+    ),
+    index("idx_deliveries_date").on(table.deliveryDate),
+  ],
+);

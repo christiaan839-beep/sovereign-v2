@@ -38,6 +38,10 @@
       "schedule": "0 12 * * 0"
     },
     {
+      "path": "/api/cron/delivery-watchdog",
+      "schedule": "30 8 * * 1"
+    },
+    {
       "path": "/api/health/ping",
       "schedule": "*/4 * * * *"
     }

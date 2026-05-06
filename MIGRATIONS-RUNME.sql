@@ -10,6 +10,7 @@
 --     drizzle/0004_remaining_tables.sql
 --     drizzle/0018_voice_consent.sql        (compliance-critical)
 --     drizzle/0019_welcome_columns.sql      (Loom-driven onboarding)
+--     drizzle/0020_customer_deliveries.sql  (Monday delivery system of record)
 -- ═══════════════════════════════════════════════════════════════════
 
 
@@ -235,11 +236,34 @@ ALTER TABLE "tenants" ADD COLUMN IF NOT EXISTS "welcome_doc_url"        text;
 ALTER TABLE "tenants" ADD COLUMN IF NOT EXISTS "welcome_first_delivery" date;
 
 
+-- ═══ 0020 — Customer deliveries (Monday delivery system of record) ═
+-- One row per (tenant, delivery_date). delivery_date is the Monday
+-- the batch is FOR. Required by the Monday-watchdog cron in
+-- /api/_cron/delivery-watchdog.
+
+CREATE TABLE IF NOT EXISTS "customer_deliveries" (
+  "id"                 uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+  "tenant_id"          uuid NOT NULL REFERENCES "tenants"("id") ON DELETE CASCADE,
+  "delivery_date"      date NOT NULL,
+  "lead_count"         integer NOT NULL,
+  "hand_reviewed_by"   text NOT NULL,
+  "slack_message_url"  text,
+  "notes"              text,
+  "created_at"         timestamp NOT NULL DEFAULT now()
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS "idx_deliveries_tenant_date"
+  ON "customer_deliveries" USING btree ("tenant_id", "delivery_date");
+
+CREATE INDEX IF NOT EXISTS "idx_deliveries_date"
+  ON "customer_deliveries" USING btree ("delivery_date");
+
+
 -- ═══ Verification ══════════════════════════════════════════════════
 -- After running, this query should return 13 rows:
 
 SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename IN (
   'jobs','playbook_runs','playbook_run_steps','graph_nodes','graph_edges',
   'affiliates','referrals','audit_logs','error_logs','workflows',
-  'tenant_memories','voice_consent','tenants'
+  'tenant_memories','voice_consent','customer_deliveries','tenants'
 ) ORDER BY tablename;
