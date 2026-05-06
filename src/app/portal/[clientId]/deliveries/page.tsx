@@ -123,9 +123,9 @@ function formatDate(yyyymmdd: string): string {
 }
 
 export default async function CustomerDeliveriesPage(props: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ clientId: string }>;
 }) {
-  const { id } = await props.params;
+  const { clientId: id } = await props.params;
   const data = await loadPortalData(id);
   if (!data) notFound();
 

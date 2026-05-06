@@ -54,3 +54,8 @@ next-env.d.ts
 # IDE
 .idea/
 .vscode/
+
+# Playwright dev-session artifacts (this-machine only)
+.playwright-mcp/
+# Dev preview screenshots taken during local Playwright runs
+/*.png
