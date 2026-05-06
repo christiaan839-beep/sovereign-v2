@@ -41,6 +41,14 @@ interface Customer {
   thisWeekShipped: boolean;
   status: "green" | "amber" | "red" | "grey";
   totalDeliveries: number;
+  last12Weeks: SloCell[];
+  onTimeRatePct: number;
+}
+
+interface SloCell {
+  date: string;
+  status: "green" | "red" | "grey";
+  leadCount: number | null;
 }
 
 interface CustomersResponse {
@@ -348,26 +356,30 @@ function CustomerRow({ c, onRecord }: { c: Customer; onRecord: () => void }) {
             <span className="font-mono text-[11px] text-neutral-600">
               {c.nodeId}
             </span>
+            <SloRate pct={c.onTimeRatePct} />
           </div>
-          <div className="mt-1 text-xs text-neutral-500 flex flex-wrap gap-x-4 gap-y-1">
-            <span>
-              Last delivery:{" "}
-              <span className="font-mono text-neutral-400">
-                {c.lastDeliveryDate ?? "—"}
-              </span>
-            </span>
-            <span>
-              Total:{" "}
-              <span className="text-neutral-400">{c.totalDeliveries}</span>
-            </span>
-            {c.firstDelivery && (
+          <div className="mt-2 flex items-center gap-3 flex-wrap">
+            <SloSparkline cells={c.last12Weeks} />
+            <div className="text-[11px] text-neutral-500 flex flex-wrap gap-x-4 gap-y-0.5">
               <span>
-                First scheduled:{" "}
+                Last:{" "}
                 <span className="font-mono text-neutral-400">
-                  {c.firstDelivery}
+                  {c.lastDeliveryDate ?? "—"}
                 </span>
               </span>
-            )}
+              <span>
+                Total:{" "}
+                <span className="text-neutral-400">{c.totalDeliveries}</span>
+              </span>
+              {c.firstDelivery && (
+                <span>
+                  First:{" "}
+                  <span className="font-mono text-neutral-400">
+                    {c.firstDelivery}
+                  </span>
+                </span>
+              )}
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
@@ -589,5 +601,61 @@ function RecordDeliveryModal({
         </button>
       </motion.form>
     </motion.div>
+  );
+}
+
+/**
+ * 12-cell SLO sparkline. One cell per Monday over the last 12 weeks
+ * (oldest left → newest right, last cell = this week). Hover for the
+ * delivery date + lead count. Designed to make a slipping customer
+ * visually obvious before churn — a row of greens turning amber on
+ * the right edge is unmissable.
+ */
+function SloSparkline({ cells }: { cells: SloCell[] }) {
+  return (
+    <div className="flex items-center gap-[3px]">
+      {cells.map((cell) => (
+        <SloCellMarker key={cell.date} cell={cell} />
+      ))}
+    </div>
+  );
+}
+
+function SloCellMarker({ cell }: { cell: SloCell }) {
+  const colour =
+    cell.status === "green"
+      ? "bg-emerald-400"
+      : cell.status === "red"
+        ? "bg-red-500"
+        : "bg-white/10";
+  const tooltip =
+    cell.status === "green"
+      ? `${cell.date}: ${cell.leadCount ?? "?"} leads`
+      : cell.status === "red"
+        ? `${cell.date}: missed`
+        : `${cell.date}: pre-onboarding`;
+  return (
+    <span
+      title={tooltip}
+      aria-label={tooltip}
+      className={`inline-block h-3 w-1.5 rounded-sm ${colour}`}
+    />
+  );
+}
+
+function SloRate({ pct }: { pct: number }) {
+  const tint =
+    pct === 100
+      ? "border-emerald-500/30 bg-emerald-500/[0.06] text-emerald-300"
+      : pct >= 90
+        ? "border-amber-500/30 bg-amber-500/[0.06] text-amber-300"
+        : "border-red-500/30 bg-red-500/[0.06] text-red-300";
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-mono ${tint}`}
+      title="On-time rate, last 12 weeks"
+    >
+      {pct}% on-time
+    </span>
   );
 }

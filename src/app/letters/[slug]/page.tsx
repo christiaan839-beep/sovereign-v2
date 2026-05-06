@@ -4,19 +4,27 @@ import { SovereignLogo } from "@/components/ui/SovereignLogo";
 import {
   getLetterBySlug,
   getLettersNewestFirst,
+  getSeedLettersSync,
   parseLetterBody,
 } from "@/lib/letters";
 import { ArrowLeft } from "lucide-react";
 
+export const revalidate = 300;
+// Allow on-demand rendering for slugs that are added to the DB after
+// the build (operator publishes a new letter via /admin/letters/new).
+export const dynamicParams = true;
+
 export async function generateStaticParams() {
-  return getLettersNewestFirst().map((l) => ({ slug: l.slug }));
+  // Build-time pre-render: seed-only (DB isn't reachable during build).
+  // DB-published letters render on first request and ISR-cache.
+  return getSeedLettersSync().map((l) => ({ slug: l.slug }));
 }
 
 export async function generateMetadata(props: {
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await props.params;
-  const letter = getLetterBySlug(slug);
+  const letter = await getLetterBySlug(slug);
   if (!letter) return { title: "Letter not found" };
   return {
     title: `${letter.title} — Sovereign Matrix`,
@@ -28,11 +36,11 @@ export default async function LetterPage(props: {
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await props.params;
-  const letter = getLetterBySlug(slug);
+  const letter = await getLetterBySlug(slug);
   if (!letter) notFound();
 
   const blocks = parseLetterBody(letter.body);
-  const all = getLettersNewestFirst();
+  const all = await getLettersNewestFirst();
   const idx = all.findIndex((l) => l.slug === slug);
   const prev = idx > -1 ? all[idx + 1] : null;
   const next = idx > 0 ? all[idx - 1] : null;

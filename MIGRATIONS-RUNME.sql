@@ -12,6 +12,7 @@
 --     drizzle/0019_welcome_columns.sql      (Loom-driven onboarding)
 --     drizzle/0020_customer_deliveries.sql  (Monday delivery system of record)
 --     drizzle/0021_webhook_events.sql       (webhook idempotency)
+--     drizzle/0022_friday_letters.sql       (DB-backed Friday Letters)
 -- ═══════════════════════════════════════════════════════════════════
 
 
@@ -282,15 +283,44 @@ CREATE INDEX IF NOT EXISTS "idx_webhook_events_received"
   ON "webhook_events" USING btree ("received_at" DESC);
 
 
+-- ═══ 0022 — Friday Letters (DB-backed cadence) ═════════════════════
+-- Operator-authored weekly notes published at /letters and
+-- /letters/[slug]. Lifts letters from a static src/lib/letters.ts
+-- array into the DB so /admin/letters/new can publish without a
+-- Vercel deploy. Slug uniqueness enforced at DB level.
+
+CREATE TABLE IF NOT EXISTS "friday_letters" (
+  "id"              uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+  "slug"            text NOT NULL UNIQUE,
+  "date"            date NOT NULL,
+  "title"           text NOT NULL,
+  "preview"         text NOT NULL,
+  "body"            text NOT NULL,
+  "status"          text NOT NULL DEFAULT 'draft',
+  "author_user_id"  text,
+  "published_at"    timestamp,
+  "created_at"      timestamp NOT NULL DEFAULT now(),
+  "updated_at"      timestamp NOT NULL DEFAULT now()
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS "idx_friday_letters_slug"
+  ON "friday_letters" USING btree ("slug");
+CREATE INDEX IF NOT EXISTS "idx_friday_letters_date"
+  ON "friday_letters" USING btree ("date" DESC);
+CREATE INDEX IF NOT EXISTS "idx_friday_letters_status"
+  ON "friday_letters" USING btree ("status");
+
+
 -- ═══ Verification ══════════════════════════════════════════════════
--- After running, this query should return 15 rows: the 14 tables
--- created by migrations 0002–0021 plus `tenants` (created in 0000,
+-- After running, this query should return 16 rows: the 15 tables
+-- created by migrations 0002–0022 plus `tenants` (created in 0000,
 -- listed here as a sanity check that the schema is reachable).
 
 SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename IN (
   'jobs','playbook_runs','playbook_run_steps','graph_nodes','graph_edges',
   'affiliates','referrals','audit_logs','error_logs','workflows',
-  'tenant_memories','voice_consent','customer_deliveries','webhook_events','tenants'
+  'tenant_memories','voice_consent','customer_deliveries','webhook_events',
+  'friday_letters','tenants'
 ) ORDER BY tablename;
 
 -- Optionally verify the welcome_* columns landed on tenants

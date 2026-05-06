@@ -1033,3 +1033,50 @@ export const webhookEvents = pgTable(
     index("idx_webhook_events_received").on(table.receivedAt),
   ],
 );
+
+/**
+ * Friday Letters — operator-authored weekly notes published to
+ * /letters and /letters/[slug]. Originally lived as a static array
+ * in src/lib/letters.ts, which required a Vercel deploy for every
+ * new entry. STANDARDS.md §06 mandates a Friday-every-Friday cadence;
+ * having a deploy as the publish mechanism is friction that kills
+ * the discipline by week three.
+ *
+ * Moving letters to the DB lets the operator publish from anywhere
+ * (including from a phone over a cellular hotspot on a Friday they
+ * almost forgot). The lib/letters.ts file still seeds Letter #1 as
+ * a fallback so the historical archive renders even before the
+ * migration is applied.
+ *
+ * Slug uniqueness is enforced at the DB level so a typo can't
+ * shadow a published URL. Status="draft"|"published" so the writer
+ * UI can save in-progress drafts without showing them publicly.
+ *
+ * Migration: drizzle/0022_friday_letters.sql.
+ */
+export const fridayLetters = pgTable(
+  "friday_letters",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    slug: text("slug").notNull().unique(),
+    /** ISO YYYY-MM-DD — the Friday this letter ships. */
+    date: date("date").notNull(),
+    title: text("title").notNull(),
+    /** 2-3 sentence preview shown in the index list. */
+    preview: text("preview").notNull(),
+    /** Full body. Paragraphs separated by `\n\n`. `## ` prefix = heading. */
+    body: text("body").notNull(),
+    /** "draft" | "published" — only published letters surface publicly. */
+    status: text("status").notNull().default("draft"),
+    /** Clerk user id of the operator who authored the letter. */
+    authorUserId: text("author_user_id"),
+    publishedAt: timestamp("published_at"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("idx_friday_letters_slug").on(table.slug),
+    index("idx_friday_letters_date").on(table.date),
+    index("idx_friday_letters_status").on(table.status),
+  ],
+);

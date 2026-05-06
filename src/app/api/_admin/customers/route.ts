@@ -3,7 +3,7 @@ import { requireAdmin } from "@/lib/admin-auth";
 import { db } from "@/db";
 import { tenants, customerDeliveries } from "@/db/schema";
 import { isNotNull, desc, eq } from "drizzle-orm";
-import { mondayOfWeek } from "@/lib/delivery-week";
+import { mondayOfWeek, mondayWeeksAgo } from "@/lib/delivery-week";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("admin-customers");
@@ -31,6 +31,22 @@ const log = createLogger("admin-customers");
  * the data model so the UI just renders status colours.
  */
 
+/**
+ * Per-week status cell for the 12-week SLO sparkline. The `date` is
+ * the Monday the cell represents — never a real-time timestamp.
+ *
+ *   green → a delivery row exists for that Monday
+ *   red   → the Monday has passed AND was on/after first_delivery
+ *           AND no delivery row exists
+ *   grey  → the Monday is before the customer's first_delivery date
+ *           (they hadn't been onboarded yet)
+ */
+export interface SloCell {
+  date: string;
+  status: "green" | "red" | "grey";
+  leadCount: number | null;
+}
+
 interface CustomerHealth {
   tenantId: string;
   firstName: string;
@@ -41,6 +57,10 @@ interface CustomerHealth {
   thisWeekShipped: boolean;
   status: "green" | "amber" | "red" | "grey";
   totalDeliveries: number;
+  /** 12 cells, oldest → newest. Last cell is this week's Monday. */
+  last12Weeks: SloCell[];
+  /** % of green cells out of all non-grey cells. 100 = perfect. */
+  onTimeRatePct: number;
 }
 
 export async function GET() {
@@ -63,22 +83,56 @@ export async function GET() {
       .from(tenants)
       .where(isNotNull(tenants.welcomeFirstName));
 
+    // Pre-compute the last 12 Mondays once (oldest → newest).
+    const mondays = Array.from({ length: 12 }, (_, i) =>
+      mondayWeeksAgo(11 - i),
+    );
+
     const result: CustomerHealth[] = [];
 
     for (const c of customers) {
       const allDeliveries = await db
         .select({
           deliveryDate: customerDeliveries.deliveryDate,
+          leadCount: customerDeliveries.leadCount,
         })
         .from(customerDeliveries)
         .where(eq(customerDeliveries.tenantId, c.id))
         .orderBy(desc(customerDeliveries.deliveryDate));
 
+      const deliveryByDate = new Map<string, number>();
+      for (const d of allDeliveries) {
+        deliveryByDate.set(d.deliveryDate, d.leadCount);
+      }
+
       const lastDeliveryDate = allDeliveries[0]?.deliveryDate ?? null;
-      const thisWeekShipped = allDeliveries.some(
-        (d) => d.deliveryDate === thisMonday,
-      );
+      const thisWeekShipped = deliveryByDate.has(thisMonday);
       const totalDeliveries = allDeliveries.length;
+
+      // Build the 12-cell sparkline.
+      const last12Weeks: SloCell[] = mondays.map((monday) => {
+        const leadCount = deliveryByDate.get(monday);
+        if (leadCount !== undefined) {
+          return { date: monday, status: "green", leadCount };
+        }
+        // No delivery for this Monday. If the customer wasn't yet
+        // onboarded, that's a grey cell (not a miss). Otherwise red.
+        if (c.firstDelivery && monday < c.firstDelivery) {
+          return { date: monday, status: "grey", leadCount: null };
+        }
+        // Future Mondays (e.g. this week before delivery is recorded
+        // would be `red` — but this loop only includes the most-recent
+        // Monday as `monday <= thisMonday`, so future cells never appear
+        // here; the `red` here means a real miss against §03.
+        return { date: monday, status: "red", leadCount: null };
+      });
+
+      const nonGrey = last12Weeks.filter((cell) => cell.status !== "grey");
+      const greens = nonGrey.filter((cell) => cell.status === "green").length;
+      const onTimeRatePct =
+        nonGrey.length === 0
+          ? 100
+          : Math.round((greens / nonGrey.length) * 100);
 
       let status: CustomerHealth["status"];
       if (thisWeekShipped) {
@@ -101,6 +155,8 @@ export async function GET() {
         thisWeekShipped,
         status,
         totalDeliveries,
+        last12Weeks,
+        onTimeRatePct,
       });
     }
 

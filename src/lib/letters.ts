@@ -11,17 +11,28 @@
  *   3. One customer's story (with permission, anonymised if needed)
  *   4. One lesson learned
  *
- * The letter has three goals:
- *   - Customers feel they hired a person, not a vendor.
- *   - The platform builds a public voice over time.
- *   - The founder is forced to actually look back at the week.
+ * Storage: published letters live in the `friday_letters` Postgres
+ * table (migration 0022) so the operator can publish from anywhere
+ * without a Vercel deploy. The static SEED_LETTERS array below is
+ * the historical fallback — it renders even when migrations
+ * haven't applied yet, and any letter slug is uniquely either in
+ * the DB or in the seed (never both).
  *
- * Adding a new letter: append a new entry below. The slug is the
- * URL path. Date format is ISO. The body is a single string with
- * `\n\n` between paragraphs — rendered as <p> blocks. Headings
- * use lines that start with `## `. No markdown parser; if you need
- * heavier formatting later, swap in `marked` or `remark`.
+ * Adding a new letter (preferred path): use /admin/letters/new in
+ * the operator UI. The form posts to /api/_admin/publish-letter
+ * which inserts into `friday_letters` with status="published".
+ *
+ * Adding a new letter (legacy path): append to SEED_LETTERS below
+ * and ship a deploy. Used only when the DB is unavailable or for
+ * the founding archive entries that pre-date migration 0022.
  */
+
+import { db } from "@/db";
+import { fridayLetters } from "@/db/schema";
+import { eq, desc } from "drizzle-orm";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("letters");
 
 export interface Letter {
   /** URL slug — keep short, kebab-case, never change after publish. */
@@ -36,7 +47,7 @@ export interface Letter {
   body: string;
 }
 
-export const LETTERS: readonly Letter[] = [
+export const SEED_LETTERS: readonly Letter[] = [
   {
     slug: "letter-001-the-monday-kind",
     date: "2026-05-08",
@@ -85,12 +96,63 @@ Talk Friday.
   },
 ];
 
-export function getLetterBySlug(slug: string): Letter | null {
-  return LETTERS.find((l) => l.slug === slug) ?? null;
+/**
+ * Pulled from DB on every server-render. The /letters and
+ * /letters/[slug] pages set `revalidate = 300` so this is at most
+ * one query per 5 minutes per page; cheap.
+ */
+async function loadDbLetters(): Promise<Letter[]> {
+  if (!process.env.DATABASE_URL) return [];
+  try {
+    const rows = await db
+      .select({
+        slug: fridayLetters.slug,
+        date: fridayLetters.date,
+        title: fridayLetters.title,
+        preview: fridayLetters.preview,
+        body: fridayLetters.body,
+      })
+      .from(fridayLetters)
+      .where(eq(fridayLetters.status, "published"))
+      .orderBy(desc(fridayLetters.date));
+    return rows;
+  } catch (err) {
+    const pgCode = (err as { code?: string })?.code;
+    if (pgCode === "42P01" || pgCode === "42703") return []; // migration not applied
+    log.warn("Friday letters DB load failed — using seed only", {
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return [];
+  }
 }
 
-export function getLettersNewestFirst(): Letter[] {
-  return [...LETTERS].sort((a, b) => (a.date < b.date ? 1 : -1));
+/**
+ * Merge DB-published letters with the historical seed. DB wins on
+ * slug collision so an operator-edited letter overrides its seed.
+ */
+function merge(dbLetters: Letter[]): Letter[] {
+  const seenSlugs = new Set(dbLetters.map((l) => l.slug));
+  const seedRest = SEED_LETTERS.filter((l) => !seenSlugs.has(l.slug));
+  return [...dbLetters, ...seedRest].sort((a, b) => (a.date < b.date ? 1 : -1));
+}
+
+export async function getLettersNewestFirst(): Promise<Letter[]> {
+  const dbLetters = await loadDbLetters();
+  return merge(dbLetters);
+}
+
+export async function getLetterBySlug(slug: string): Promise<Letter | null> {
+  const all = await getLettersNewestFirst();
+  return all.find((l) => l.slug === slug) ?? null;
+}
+
+/**
+ * Synchronous variant — seed-only. Used by `generateStaticParams`
+ * at build time when the DB is not reachable. The DB-published
+ * letters render via the async path on first request and ISR cache.
+ */
+export function getSeedLettersSync(): Letter[] {
+  return [...SEED_LETTERS].sort((a, b) => (a.date < b.date ? 1 : -1));
 }
 
 /**

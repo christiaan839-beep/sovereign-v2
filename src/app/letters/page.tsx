@@ -9,8 +9,10 @@ export const metadata = {
     "One page, every Friday at 5pm. What shipped, what didn't, a customer story, a lesson. Sent to every active customer; archived publicly here.",
 };
 
-export default function LettersIndexPage() {
-  const letters = getLettersNewestFirst();
+export const revalidate = 300;
+
+export default async function LettersIndexPage() {
+  const letters = await getLettersNewestFirst();
 
   return (
     <main className="min-h-screen bg-[#030303] text-neutral-100">

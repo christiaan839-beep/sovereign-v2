@@ -173,7 +173,7 @@ async function checkLetterFreshness(): Promise<{
   daysOld: number;
   newestSlug: string | null;
 }> {
-  const letters = getLettersNewestFirst();
+  const letters = await getLettersNewestFirst();
   if (letters.length === 0) {
     return { ok: false, daysOld: Infinity, newestSlug: null };
   }
