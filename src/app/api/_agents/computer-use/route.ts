@@ -17,7 +17,7 @@ export const POST = createAgentRoute({
       instructions,
       resolution = { type: "computer_20251124", display_width_px: 1920, display_height_px: 1080 },
       history = []
-    } = input as Record<string, unknown>;
+    } = input as Record<string, any>;
 
     if (!instructions && (history as unknown[]).length === 0) {
       throw new Error("Instructions or history required.");

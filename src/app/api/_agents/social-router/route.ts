@@ -15,7 +15,7 @@ const log = createLogger("social-router");
 export const POST = createAgentRoute({
   name: "social-router",
   handler: async ({ input }) => {
-    const { topic, platforms, brandVoice, targetAudience } = input as Record<string, unknown>;
+    const { topic, platforms, brandVoice, targetAudience } = input as Record<string, any>;
 
     const selectedPlatforms = platforms || ["instagram", "linkedin", "twitter"];
 

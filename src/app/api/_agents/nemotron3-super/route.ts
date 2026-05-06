@@ -17,9 +17,9 @@ import { nimChat } from "@/lib/nvidia";
 
 export const POST = createAgentRoute({
   name: "nemotron3-super",
-  handler: async ({ input, email, userId }) => {
+  handler: async ({ input }) => {
 
-    const { prompt, mode = "reason", max_tokens = 2048 } = input as Record<string, unknown>;
+    const { prompt, mode = "reason", max_tokens = 2048 } = input as Record<string, any>;
 
     if (!prompt) {
       return ({ error: "prompt is required." });

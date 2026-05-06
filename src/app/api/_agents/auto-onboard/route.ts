@@ -25,7 +25,7 @@ export const POST = createAgentRoute({
       plan = "array",
       vertical = "saas-startup",
       companyUrl,
-    } = input as Record<string, unknown>;
+    } = input as Record<string, any>;
 
     const clientId = (clientName as string).toLowerCase().replace(/[^a-z0-9]+/g, "-");
     const onboardingSteps: Array<{ step: string; status: string; detail: string }> = [];

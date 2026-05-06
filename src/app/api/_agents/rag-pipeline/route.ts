@@ -8,9 +8,9 @@ import { NextResponse } from "next/server";
  */
 export const POST = createAgentRoute({
   name: "rag-pipeline",
-  handler: async ({ input, email, userId }) => {
+  handler: async ({ input }) => {
 
-    const { query, documents = [], topK = 3 } = input as Record<string, unknown>;
+    const { query, documents = [], topK = 3 } = input as Record<string, any>;
     if (!query) return ({ error: "Missing `query`." });
 
     const nimKey = process.env.NVIDIA_NIM_API_KEY;

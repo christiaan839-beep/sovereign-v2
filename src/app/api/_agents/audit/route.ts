@@ -9,9 +9,9 @@ const log = createLogger("audit-engine");
 
 export const POST = createAgentRoute({
   name: "audit",
-  handler: async ({ input, email, userId }) => {
+  handler: async ({ input }) => {
 
-    const { targetUrl } = input as Record<string, unknown>;
+    const { targetUrl } = input as Record<string, any>;
 
     if (!targetUrl) {
       return ({ error: 'URL is required' });

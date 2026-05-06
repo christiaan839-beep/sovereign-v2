@@ -74,7 +74,7 @@ export const POST = createAgentRoute({
       duration = "60s",
       targetAudience = "B2B Executives",
       aspectRatio = "16:9",
-    } = input as Record<string, unknown>;
+    } = input as Record<string, any>;
 
     const systemInstruction = `You are Nova, the Sovereign Filmmaker Agent utilizing Google AI Ultra (Veo 3.1, Imagen, and Music Gen).
 Your objective is to generate a senior, hyper-cinematic production brief and prompt sequence for a video about "${topic}".

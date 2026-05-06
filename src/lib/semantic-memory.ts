@@ -38,11 +38,11 @@ export interface SemanticMemoryEntry {
   input: string;
   output: string;
   memoryType: MemoryType;
-  importanceScore: number;   // 0.0 – 1.0
+  importanceScore: number; // 0.0 – 1.0
   tags: string[];
   sessionId?: string;
   timestamp: number;
-  similarity?: number;       // populated during semantic search
+  similarity?: number; // populated during semantic search
 }
 
 export interface SaveMemoryOptions {
@@ -56,7 +56,7 @@ export interface SaveMemoryOptions {
 
 const EMBEDDING_MODEL = "nvidia/nv-embedqa-e5-v5";
 const NVIDIA_BASE_URL = "https://integrate.api.nvidia.com/v1";
-const INPUT_MAX_CHARS  = 300;
+const INPUT_MAX_CHARS = 300;
 const OUTPUT_MAX_CHARS = 600;
 const MAX_MEMORIES_PER_USER = 500;
 
@@ -64,7 +64,7 @@ const MAX_MEMORIES_PER_USER = 500;
 // In-memory store: userId → entries (fast reads, survives restarts via DB hydration)
 // Embedding store: memoryId → Float32Array vector (loaded lazily from DB JSON)
 
-const memoryStore    = new Map<string, SemanticMemoryEntry[]>();
+const memoryStore = new Map<string, SemanticMemoryEntry[]>();
 const embeddingStore = new Map<string, Float32Array>();
 
 // ── NVIDIA NIM Embedding ───────────────────────────────────────────────────
@@ -79,7 +79,7 @@ function getNimKey(): string {
  */
 async function embedText(
   text: string,
-  inputType: "query" | "passage" = "passage"
+  inputType: "query" | "passage" = "passage",
 ): Promise<Float32Array | null> {
   const key = getNimKey();
   if (!key) return null;
@@ -105,13 +105,15 @@ async function embedText(
       return null;
     }
 
-    const data = await res.json() as { data: Array<{ embedding: number[] }> };
+    const data = (await res.json()) as { data: Array<{ embedding: number[] }> };
     const raw = data.data?.[0]?.embedding;
     if (!raw?.length) return null;
 
     return new Float32Array(raw);
   } catch (err) {
-    log.info("Embedding request failed, using keyword fallback", { error: String(err) });
+    log.info("Embedding request failed, using keyword fallback", {
+      error: String(err),
+    });
     return null;
   }
 }
@@ -121,11 +123,13 @@ async function embedText(
 /** Cosine similarity: 1.0 = identical direction, 0.0 = orthogonal, -1.0 = opposite. */
 function cosineSim(a: Float32Array, b: Float32Array): number {
   if (a.length !== b.length) return 0;
-  let dot = 0, na = 0, nb = 0;
+  let dot = 0,
+    na = 0,
+    nb = 0;
   for (let i = 0; i < a.length; i++) {
     dot += a[i] * b[i];
-    na  += a[i] * a[i];
-    nb  += b[i] * b[i];
+    na += a[i] * a[i];
+    nb += b[i] * b[i];
   }
   const denom = Math.sqrt(na) * Math.sqrt(nb);
   return denom < 1e-9 ? 0 : dot / denom;
@@ -136,11 +140,28 @@ function cosineSim(a: Float32Array, b: Float32Array): number {
  * Simple token overlap — not BM25, but effective for short memories.
  */
 function keywordScore(query: string, mem: SemanticMemoryEntry): number {
-  const stop = new Set(["the", "a", "an", "is", "are", "to", "of", "and", "in", "for", "on", "with"]);
-  const keywords = query.toLowerCase().split(/\s+/).filter(w => w.length > 2 && !stop.has(w));
+  const stop = new Set([
+    "the",
+    "a",
+    "an",
+    "is",
+    "are",
+    "to",
+    "of",
+    "and",
+    "in",
+    "for",
+    "on",
+    "with",
+  ]);
+  const keywords = query
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((w) => w.length > 2 && !stop.has(w));
   if (!keywords.length) return 0;
-  const haystack = `${mem.agentName} ${mem.input} ${mem.output} ${mem.tags.join(" ")}`.toLowerCase();
-  const hits = keywords.filter(kw => haystack.includes(kw)).length;
+  const haystack =
+    `${mem.agentName} ${mem.input} ${mem.output} ${mem.tags.join(" ")}`.toLowerCase();
+  const hits = keywords.filter((kw) => haystack.includes(kw)).length;
   return hits / keywords.length;
 }
 
@@ -158,7 +179,7 @@ async function hydrateFromDb(userId: string): Promise<void> {
       .where(eq(tenantMemories.userId, userId))
       .orderBy(desc(tenantMemories.createdAt));
 
-    const entries: SemanticMemoryEntry[] = rows.map(row => {
+    const entries: SemanticMemoryEntry[] = rows.map((row) => {
       const ext = row as typeof row & {
         embedding_json?: string | null;
         importance_score?: number | null;
@@ -169,21 +190,28 @@ async function hydrateFromDb(userId: string): Promise<void> {
       // Restore embedding from JSON column
       if (ext.embedding_json) {
         try {
-          embeddingStore.set(row.id, new Float32Array(JSON.parse(ext.embedding_json) as number[]));
-        } catch { /* malformed — skip */ }
+          embeddingStore.set(
+            row.id,
+            new Float32Array(JSON.parse(ext.embedding_json) as number[]),
+          );
+        } catch {
+          /* malformed — skip */
+        }
       }
 
       return {
         id: row.id,
         userId: row.userId,
         agentName: row.agentName,
-        input:  row.inputSummary  ?? "",
+        input: row.inputSummary ?? "",
         output: row.outputSummary ?? "",
-        memoryType:     (ext.memory_type ?? "execution") as MemoryType,
+        memoryType: (ext.memory_type ?? "execution") as MemoryType,
         importanceScore: ext.importance_score ?? 0.5,
         tags: row.tags ? row.tags.split(",").filter(Boolean) : [],
         sessionId: ext.session_id ?? undefined,
-        timestamp: row.createdAt ? new Date(row.createdAt).getTime() : Date.now(),
+        timestamp: row.createdAt
+          ? new Date(row.createdAt).getTime()
+          : Date.now(),
       };
     });
 
@@ -198,7 +226,7 @@ async function hydrateFromDb(userId: string): Promise<void> {
 async function writeToDB(
   mem: SemanticMemoryEntry,
   vec: Float32Array | null,
-  metadata?: Record<string, unknown>
+  metadata?: Record<string, unknown>,
 ): Promise<void> {
   try {
     const insertData: Record<string, unknown> = {
@@ -214,11 +242,19 @@ async function writeToDB(
     // Only include new columns if migration 0017 has been applied
     if (vec) insertData.embedding_json = JSON.stringify(Array.from(vec));
     insertData.importance_score = mem.importanceScore;
-    insertData.memory_type      = mem.memoryType;
-    insertData.source_agent     = mem.agentName;
+    insertData.memory_type = mem.memoryType;
+    insertData.source_agent = mem.agentName;
     if (mem.sessionId) insertData.session_id = mem.sessionId;
 
-    await (db.insert(tenantMemories) as { values: (v: Record<string, unknown>) => Promise<void> }).values(insertData);
+    // The insertData carries dynamically-added columns (embedding_json,
+    // importance_score, etc.) that only exist post-migration 0017.
+    // Drizzle's typed builder rejects them at compile time, so we
+    // route the call through a permissive shape via `unknown`.
+    await (
+      db.insert(tenantMemories) as unknown as {
+        values: (v: Record<string, unknown>) => Promise<void>;
+      }
+    ).values(insertData);
   } catch (err) {
     // Likely the new columns don't exist yet (migration not run). Write without them.
     try {
@@ -232,7 +268,9 @@ async function writeToDB(
         metadata: metadata ? JSON.stringify(metadata) : null,
       });
     } catch (fallbackErr) {
-      log.info("DB write failed (cache still live)", { error: String(fallbackErr) });
+      log.info("DB write failed (cache still live)", {
+        error: String(fallbackErr),
+      });
     }
   }
 }
@@ -249,15 +287,15 @@ export async function rememberExecution(
   input: string,
   output: string,
   options: SaveMemoryOptions = {},
-  metadata?: Record<string, unknown>
+  metadata?: Record<string, unknown>,
 ): Promise<SemanticMemoryEntry> {
   const mem: SemanticMemoryEntry = {
     id: `sm_${crypto.randomUUID()}`,
     userId,
     agentName,
-    input:  truncate(input, INPUT_MAX_CHARS),
+    input: truncate(input, INPUT_MAX_CHARS),
     output: truncate(output, OUTPUT_MAX_CHARS),
-    memoryType:      options.memoryType      ?? "execution",
+    memoryType: options.memoryType ?? "execution",
     importanceScore: options.importanceScore ?? 0.5,
     tags: [...new Set([agentName, ...(options.tags ?? [])])],
     sessionId: options.sessionId,
@@ -267,7 +305,8 @@ export async function rememberExecution(
   // Write to cache immediately
   const entries = memoryStore.get(userId) ?? [];
   entries.push(mem);
-  if (entries.length > MAX_MEMORIES_PER_USER) entries.splice(0, entries.length - MAX_MEMORIES_PER_USER);
+  if (entries.length > MAX_MEMORIES_PER_USER)
+    entries.splice(0, entries.length - MAX_MEMORIES_PER_USER);
   memoryStore.set(userId, entries);
 
   // Embed + persist asynchronously (non-blocking)
@@ -289,7 +328,7 @@ export async function recallRelevant(
   userId: string,
   query: string,
   limit = 8,
-  minScore = 0.20
+  minScore = 0.2,
 ): Promise<SemanticMemoryEntry[]> {
   // Hydrate cache on first access
   if (!memoryStore.has(userId)) {
@@ -302,16 +341,15 @@ export async function recallRelevant(
   // Embed the query (or fall back to keyword scoring)
   const queryVec = await embedText(query, "query");
 
-  const scored = entries.map(mem => {
+  const scored = entries.map((mem) => {
     const vec = embeddingStore.get(mem.id);
-    const score = queryVec && vec
-      ? cosineSim(queryVec, vec)
-      : keywordScore(query, mem);
+    const score =
+      queryVec && vec ? cosineSim(queryVec, vec) : keywordScore(query, mem);
     return { ...mem, similarity: score };
   });
 
   return scored
-    .filter(m => (m.similarity ?? 0) >= minScore)
+    .filter((m) => (m.similarity ?? 0) >= minScore)
     .sort((a, b) => {
       const simDiff = (b.similarity ?? 0) - (a.similarity ?? 0);
       if (Math.abs(simDiff) > 0.04) return simDiff;
@@ -329,19 +367,24 @@ export async function recallRelevant(
 export async function buildMemoryContext(
   userId: string,
   agentName: string,
-  taskDescription: string
+  taskDescription: string,
 ): Promise<string> {
   const query = `${agentName}: ${taskDescription}`.slice(0, 500);
   const memories = await recallRelevant(userId, query, 6, 0.18);
   if (!memories.length) return "";
 
-  const lines = memories.map(m => {
+  const lines = memories.map((m) => {
     const ageMs = Date.now() - m.timestamp;
     const age =
-      ageMs < 3_600_000  ? `${Math.round(ageMs / 60_000)}m ago`
-      : ageMs < 86_400_000 ? `${Math.round(ageMs / 3_600_000)}h ago`
-      : `${Math.round(ageMs / 86_400_000)}d ago`;
-    const conf = m.similarity !== undefined ? ` [${Math.round(m.similarity * 100)}% relevant]` : "";
+      ageMs < 3_600_000
+        ? `${Math.round(ageMs / 60_000)}m ago`
+        : ageMs < 86_400_000
+          ? `${Math.round(ageMs / 3_600_000)}h ago`
+          : `${Math.round(ageMs / 86_400_000)}d ago`;
+    const conf =
+      m.similarity !== undefined
+        ? ` [${Math.round(m.similarity * 100)}% relevant]`
+        : "";
     return `[${age}${conf}] ${m.agentName}: "${m.input}" → ${m.output.slice(0, 200)}`;
   });
 
@@ -367,11 +410,12 @@ export async function getSemanticMemoryStats(userId: string): Promise<{
   const entries = memoryStore.get(userId) ?? [];
 
   const agentCounts: Record<string, number> = {};
-  for (const m of entries) agentCounts[m.agentName] = (agentCounts[m.agentName] ?? 0) + 1;
+  for (const m of entries)
+    agentCounts[m.agentName] = (agentCounts[m.agentName] ?? 0) + 1;
 
   return {
     totalMemories: entries.length,
-    semanticMemories: entries.filter(m => embeddingStore.has(m.id)).length,
+    semanticMemories: entries.filter((m) => embeddingStore.has(m.id)).length,
     topAgents: Object.entries(agentCounts)
       .sort(([, a], [, b]) => b - a)
       .slice(0, 10)

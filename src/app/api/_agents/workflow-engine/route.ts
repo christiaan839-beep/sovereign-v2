@@ -108,7 +108,7 @@ export const POST = createAgentRoute({
             const refOutput = results[refNodeId]?.output;
             if (refOutput && typeof refOutput === "object") {
               const fieldPath = fieldParts.join(".");
-              resolvedParams[key] = getNestedValue(refOutput as Record<string, unknown>, fieldPath) || value;
+              resolvedParams[key] = getNestedValue(refOutput as Record<string, any>, fieldPath) || value;
             } else if (typeof refOutput === "string") {
               resolvedParams[key] = refOutput;
             } else {
@@ -160,8 +160,8 @@ function getNestedValue(obj: Record<string, unknown>, path: string): string {
   const parts = path.split(".");
   let current: unknown = obj;
   for (const part of parts) {
-    if (current && typeof current === "object" && part in (current as Record<string, unknown>)) {
-      current = (current as Record<string, unknown>)[part];
+    if (current && typeof current === "object" && part in (current as Record<string, any>)) {
+      current = (current as Record<string, any>)[part];
     } else {
       return "";
     }

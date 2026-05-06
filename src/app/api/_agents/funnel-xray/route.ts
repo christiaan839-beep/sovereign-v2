@@ -27,7 +27,7 @@ When analyzing a competitor landing page, extract:
 const schema = z.object({
   action: z.enum(["analyze", "synthesize"]),
   url: z.string().max(500).optional(),
-  analysis: z.record(z.unknown()).optional(),
+  analysis: z.record(z.string(), z.unknown()).optional(),
   prompt: z.string().max(5000).optional(),
 }).refine(
   (d) => (d.action === "analyze" && d.url) || (d.action === "synthesize" && d.analysis) || d.prompt,

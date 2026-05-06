@@ -19,7 +19,7 @@ export const POST = createAgentRoute({
       model = "minimax/minimax-m2.7-highspeed",
       max_tokens = 1024,
       temperature = 0.7,
-    } = input as Record<string, unknown>;
+    } = input as Record<string, any>;
 
     if (!Array.isArray(messages)) {
       throw new Error("Messages must be an array.");

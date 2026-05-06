@@ -24,7 +24,7 @@ export const POST = createAgentRoute({
   name: "reputation",
   requiredFields: ["action"],
   handler: async ({ input }) => {
-    const { action, reviewerName, rating, reviewText, businessName, businessType, reviews, customerName, platform } = input as Record<string, unknown>;
+    const { action, reviewerName, rating, reviewText, businessName, businessType, reviews, customerName, platform } = input as Record<string, any>;
 
     if (action === "respond") {
       const prompt = `Generate a professional response to this review:

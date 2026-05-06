@@ -15,10 +15,10 @@ const log = createLogger("code-sandbox");
  */
 export const POST = createAgentRoute({
   name: "code-sandbox",
-  handler: async ({ input, email, userId }) => {
+  handler: async ({ input }) => {
 
 
-    const { action = "execute", code, task, data, libraries } = input as Record<string, unknown>;
+    const { action = "execute", code, task, data, libraries } = input as Record<string, any>;
 
     if (action === "execute") {
       if (!code) return ({ error: "Missing 'code' parameter" });

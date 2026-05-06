@@ -12,9 +12,9 @@ import { NextResponse } from "next/server";
 
 export const POST = createAgentRoute({
   name: "gliner-pii",
-  handler: async ({ input, email, userId }) => {
+  handler: async ({ input }) => {
 
-    const { text, entities = ["PERSON", "EMAIL", "PHONE", "ADDRESS", "SSN", "CREDIT_CARD", "PASSPORT", "IP_ADDRESS"] } = input as Record<string, unknown>;
+    const { text, entities = ["PERSON", "EMAIL", "PHONE", "ADDRESS", "SSN", "CREDIT_CARD", "PASSPORT", "IP_ADDRESS"] } = input as Record<string, any>;
 
     if (!text) {
       return ({ error: "text is required." });

@@ -33,7 +33,7 @@ export const POST = createAgentRoute({
   name: "agentic-planner",
   requiredFields: ["goal"],
   handler: async ({ input }) => {
-    const { goal, auto_execute = false } = input as Record<string, unknown>;
+    const { goal, auto_execute = false } = input as Record<string, any>;
 
     // Step 1: GLM-5 creates the execution plan
     const toolList = AVAILABLE_TOOLS.map(t => `- ${t.name}: ${t.description} (params: ${t.params})`).join("\n");

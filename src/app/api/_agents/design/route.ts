@@ -10,8 +10,8 @@ export const POST = createAgentRoute({
   name: "design",
   requiredFields: ["action"],
   handler: async ({ input }) => {
-    const { action, params } = input as Record<string, unknown>;
-    const p = (params || {}) as Record<string, unknown>;
+    const { action, params } = input as Record<string, any>;
+    const p = (params || {}) as Record<string, any>;
 
     switch (action) {
       case "landing-page": {

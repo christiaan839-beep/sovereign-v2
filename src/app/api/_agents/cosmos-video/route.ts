@@ -11,9 +11,9 @@ import { NextResponse } from "next/server";
 
 export const POST = createAgentRoute({
   name: "cosmos-video",
-  handler: async ({ input, email, userId }) => {
+  handler: async ({ input }) => {
 
-    const { prompt, mode = "predict" } = input as Record<string, unknown>;
+    const { prompt, mode = "predict" } = input as Record<string, any>;
 
     if (!prompt) {
       return ({ error: "Prompt is required." });

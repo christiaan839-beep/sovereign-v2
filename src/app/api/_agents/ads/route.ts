@@ -1,4 +1,5 @@
 import { createAgentRoute } from "@/lib/agent-factory";
+import { currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { adCreatives } from "@/db/schema";
@@ -70,7 +71,7 @@ export async function GET() {
     });
     return NextResponse.json({ creatives });
   } catch (err) {
-    log.error("GET /api/agents/ads error", err as Record<string, unknown>);
+    log.error("GET /api/agents/ads error", err as Record<string, any>);
     return NextResponse.json({ error: "Server Error" }, { status: 500 });
   }
 }
@@ -82,7 +83,7 @@ async function _postHandler(request: Request) {
   }
 
   try {
-    const { businessDescription, targetAudience, platform, tone } = await req.json();
+    const { businessDescription, targetAudience, platform, tone } = await request.json();
 
     const prompt = `Generate 5 high-converting ${platform || "Meta"} ad creatives for this business:
 
@@ -127,7 +128,7 @@ Generate the creatives now.`;
 
     return NextResponse.json({ success: true, ...parsed });
   } catch (err) {
-    log.error("POST /api/agents/ads error", err as Record<string, unknown>);
+    log.error("POST /api/agents/ads error", err as Record<string, any>);
     return NextResponse.json({ error: "Server Error" }, { status: 500 });
   }
 }

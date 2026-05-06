@@ -19,7 +19,11 @@ const log = createLogger("budget-controls");
 
 export interface BudgetConfig {
   userId: string;
-  dailyLimitCents: number;  // e.g., 500 = $5/day
+  /** Optional email used by the alert webhook — included in the
+   * payload when set so the operator knows which account to look at
+   * without an extra DB lookup. */
+  email?: string;
+  dailyLimitCents: number; // e.g., 500 = $5/day
   monthlyLimitCents: number; // e.g., 5000 = $50/month
   alertWebhookUrl?: string;
   alertedAt50?: boolean;
@@ -56,12 +60,20 @@ const budgetConfigs = new Map<string, BudgetConfig>();
 
 // ── Helpers ──
 
-function getOrCreateSpend(map: Map<string, SpendRecord>, key: string, windowMs: number): SpendRecord {
+function getOrCreateSpend(
+  map: Map<string, SpendRecord>,
+  key: string,
+  windowMs: number,
+): SpendRecord {
   const now = Date.now();
   const existing = map.get(key);
   if (existing && existing.resetAt > now) return existing;
 
-  const record: SpendRecord = { totalCents: 0, lastUpdated: now, resetAt: now + windowMs };
+  const record: SpendRecord = {
+    totalCents: 0,
+    lastUpdated: now,
+    resetAt: now + windowMs,
+  };
   map.set(key, record);
   return record;
 }
@@ -78,22 +90,42 @@ function estimateCostCents(model: string, tokensUsed: number): number {
  */
 export function setBudget(config: BudgetConfig): void {
   budgetConfigs.set(config.userId, config);
-  log.info("Budget set", { userId: config.userId, daily: config.dailyLimitCents, monthly: config.monthlyLimitCents });
+  log.info("Budget set", {
+    userId: config.userId,
+    daily: config.dailyLimitCents,
+    monthly: config.monthlyLimitCents,
+  });
 }
 
 /**
  * Check if a user can execute (pre-action check).
  * Returns { allowed, reason, spendPercent }.
  */
-export function checkBudget(userId: string): { allowed: boolean; reason: string; dailyPercent: number; monthlyPercent: number } {
+export function checkBudget(userId: string): {
+  allowed: boolean;
+  reason: string;
+  dailyPercent: number;
+  monthlyPercent: number;
+} {
   const config = budgetConfigs.get(userId);
-  if (!config) return { allowed: true, reason: "", dailyPercent: 0, monthlyPercent: 0 };
+  if (!config)
+    return { allowed: true, reason: "", dailyPercent: 0, monthlyPercent: 0 };
 
   const daily = getOrCreateSpend(dailySpend, userId, 24 * 60 * 60 * 1000);
-  const monthly = getOrCreateSpend(monthlySpend, userId, 30 * 24 * 60 * 60 * 1000);
+  const monthly = getOrCreateSpend(
+    monthlySpend,
+    userId,
+    30 * 24 * 60 * 60 * 1000,
+  );
 
-  const dailyPercent = config.dailyLimitCents > 0 ? Math.round((daily.totalCents / config.dailyLimitCents) * 100) : 0;
-  const monthlyPercent = config.monthlyLimitCents > 0 ? Math.round((monthly.totalCents / config.monthlyLimitCents) * 100) : 0;
+  const dailyPercent =
+    config.dailyLimitCents > 0
+      ? Math.round((daily.totalCents / config.dailyLimitCents) * 100)
+      : 0;
+  const monthlyPercent =
+    config.monthlyLimitCents > 0
+      ? Math.round((monthly.totalCents / config.monthlyLimitCents) * 100)
+      : 0;
 
   // Check alerts
   if (monthlyPercent >= 50 && !config.alertedAt50) {
@@ -107,10 +139,20 @@ export function checkBudget(userId: string): { allowed: boolean; reason: string;
 
   // Hard stop
   if (daily.totalCents >= config.dailyLimitCents) {
-    return { allowed: false, reason: `Daily budget exceeded ($${(config.dailyLimitCents / 100).toFixed(2)}/day)`, dailyPercent, monthlyPercent };
+    return {
+      allowed: false,
+      reason: `Daily budget exceeded ($${(config.dailyLimitCents / 100).toFixed(2)}/day)`,
+      dailyPercent,
+      monthlyPercent,
+    };
   }
   if (monthly.totalCents >= config.monthlyLimitCents) {
-    return { allowed: false, reason: `Monthly budget exceeded ($${(config.monthlyLimitCents / 100).toFixed(2)}/month)`, dailyPercent, monthlyPercent };
+    return {
+      allowed: false,
+      reason: `Monthly budget exceeded ($${(config.monthlyLimitCents / 100).toFixed(2)}/month)`,
+      dailyPercent,
+      monthlyPercent,
+    };
   }
 
   return { allowed: true, reason: "", dailyPercent, monthlyPercent };
@@ -119,12 +161,20 @@ export function checkBudget(userId: string): { allowed: boolean; reason: string;
 /**
  * Record spend after an agent execution.
  */
-export function recordSpend(userId: string, model: string, tokensUsed: number): void {
+export function recordSpend(
+  userId: string,
+  model: string,
+  tokensUsed: number,
+): void {
   const costCents = estimateCostCents(model, tokensUsed);
   if (costCents === 0) return; // Free model
 
   const daily = getOrCreateSpend(dailySpend, userId, 24 * 60 * 60 * 1000);
-  const monthly = getOrCreateSpend(monthlySpend, userId, 30 * 24 * 60 * 60 * 1000);
+  const monthly = getOrCreateSpend(
+    monthlySpend,
+    userId,
+    30 * 24 * 60 * 60 * 1000,
+  );
 
   daily.totalCents += costCents;
   daily.lastUpdated = Date.now();
@@ -135,7 +185,10 @@ export function recordSpend(userId: string, model: string, tokensUsed: number): 
 /**
  * Get current spend for a user.
  */
-export function getSpend(userId: string): { dailyCents: number; monthlyCents: number } {
+export function getSpend(userId: string): {
+  dailyCents: number;
+  monthlyCents: number;
+} {
   return {
     dailyCents: dailySpend.get(userId)?.totalCents || 0,
     monthlyCents: monthlySpend.get(userId)?.totalCents || 0,
@@ -144,7 +197,11 @@ export function getSpend(userId: string): { dailyCents: number; monthlyCents: nu
 
 // ── Alert Webhook ──
 
-async function fireAlert(config: BudgetConfig, threshold: number, currentCents: number): Promise<void> {
+async function fireAlert(
+  config: BudgetConfig,
+  threshold: number,
+  currentCents: number,
+): Promise<void> {
   if (!config.alertWebhookUrl) return;
 
   try {

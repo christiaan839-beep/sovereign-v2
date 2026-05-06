@@ -7,9 +7,9 @@ import { NextResponse } from "next/server";
  */
 export const POST = createAgentRoute({
   name: "ocr",
-  handler: async ({ input, email, userId }) => {
+  handler: async ({ input }) => {
 
-    const { imageBase64, imageUrl } = input as Record<string, unknown>;
+    const { imageBase64, imageUrl } = input as Record<string, any>;
     if (!imageBase64 && !imageUrl) {
       return ({ error: "Provide either `imageBase64` or `imageUrl`." });
     }

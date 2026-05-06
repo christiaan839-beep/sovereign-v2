@@ -54,7 +54,8 @@ interface WelcomeData {
   kickoffUrl: string | null;
   slackUrl: string | null;
   docUrl: string | null;
-  firstDelivery: Date | null;
+  /** Drizzle returns DATE columns as YYYY-MM-DD strings, not Date. */
+  firstDelivery: string | null;
 }
 
 async function loadWelcome(id: string): Promise<WelcomeData | null> {
@@ -89,11 +90,13 @@ function loomEmbedUrl(shareUrl: string): string {
   return shareUrl.replace("/share/", "/embed/");
 }
 
-function formatDeliveryDate(d: Date): string {
+function formatDeliveryDate(yyyymmdd: string): string {
+  const d = new Date(yyyymmdd + "T00:00:00Z");
   return d.toLocaleDateString("en-US", {
     weekday: "long",
     month: "long",
     day: "numeric",
+    timeZone: "UTC",
   });
 }
 

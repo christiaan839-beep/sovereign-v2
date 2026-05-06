@@ -22,7 +22,7 @@ async function _postHandler(request: Request) {
   if (auth.error) return auth.error;
 
   try {
-    const body = await req.json();
+    const body = await request.json();
     const errorMsg = body?.error ?? "Unknown error";
     const context = body?.context ?? undefined;
 

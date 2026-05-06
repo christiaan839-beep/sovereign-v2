@@ -180,7 +180,7 @@ export default function PricingPage() {
       (id) => !tierPlanIds.includes(id),
     );
     if (onlyInTiers.length > 0 || onlyInMarketing.length > 0) {
-      // eslint-disable-next-line no-console
+       
       console.warn("[pricing] TIERS ⇄ PLANS drift detected:", {
         onlyInTiers,
         onlyInMarketing,
@@ -190,7 +190,7 @@ export default function PricingPage() {
     // Also validate each TIER's plan actually exists in PLANS
     for (const t of TIERS) {
       if (!PLANS[t.plan as PlanId]) {
-        // eslint-disable-next-line no-console
+         
         console.error(`[pricing] Unknown plan id in TIERS: "${t.plan}"`);
       }
     }

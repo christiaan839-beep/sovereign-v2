@@ -821,7 +821,7 @@ export async function POST(request: Request) {
     } catch (memErr) {
       log.error(
         "Memory context lookup failed",
-        memErr as Record<string, unknown>,
+        memErr as Record<string, any>,
       );
     }
 

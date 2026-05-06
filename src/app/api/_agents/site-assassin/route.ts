@@ -11,9 +11,9 @@ import { research_ai } from "@/lib/ai";
 
 export const POST = createAgentRoute({
   name: "site-assassin",
-  handler: async ({ input, email, userId }) => {
+  handler: async ({ input }) => {
 
-    const { url, mode = "analyze" } = input as Record<string, unknown>;
+    const { url, mode = "analyze" } = input as Record<string, any>;
 
     if (!url) {
       return ({ error: "url is required." });

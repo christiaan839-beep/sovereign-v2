@@ -9,9 +9,9 @@ import { NextResponse } from "next/server";
 
 export const POST = createAgentRoute({
   name: "florence-ocr",
-  handler: async ({ input, email, userId }) => {
+  handler: async ({ input }) => {
 
-    const { action = "caption", image_url, question } = input as Record<string, unknown>;
+    const { action = "caption", image_url, question } = input as Record<string, any>;
 
     if (!image_url) {
       return ({ error: "image_url is required." });

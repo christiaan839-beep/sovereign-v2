@@ -8,9 +8,9 @@ import { NextResponse } from "next/server";
  */
 export const POST = createAgentRoute({
   name: "content-safety",
-  handler: async ({ input, email, userId }) => {
+  handler: async ({ input }) => {
 
-    const { text } = input as Record<string, unknown>;
+    const { text } = input as Record<string, any>;
     if (!text) return ({ error: "Missing text." });
 
     const nimKey = process.env.NVIDIA_NIM_API_KEY;

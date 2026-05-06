@@ -14,7 +14,7 @@ export const POST = createAgentRoute({
   name: "support-bot",
   requiredFields: ["question"],
   handler: async ({ input }) => {
-    const { question, context, history: rawHistory } = input as Record<string, unknown>;
+    const { question, context, history: rawHistory } = input as Record<string, any>;
     const questionStr = question as string;
     const contextStr = (context as string) || "";
 

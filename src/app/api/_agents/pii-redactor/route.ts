@@ -10,9 +10,9 @@ import { nimChat } from "@/lib/nvidia";
 
 export const POST = createAgentRoute({
   name: "pii-redactor",
-  handler: async ({ input, email, userId }) => {
+  handler: async ({ input }) => {
 
-    const { text, redact = true } = input as Record<string, unknown>;
+    const { text, redact = true } = input as Record<string, any>;
 
     if (!text) {
       return ({ error: "Text is required." });

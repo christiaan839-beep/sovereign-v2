@@ -13,7 +13,7 @@ export const POST = createAgentRoute({
   name: "god-brain",
   requiredFields: ["input"],
   handler: async ({ input: body }) => {
-    const { input, depth = "standard" } = body as Record<string, unknown>;
+    const { input, depth = "standard" } = body as Record<string, any>;
 
     const nimKey = process.env.NVIDIA_NIM_API_KEY;
     if (!nimKey) throw new Error("NVIDIA_NIM_API_KEY not configured.");

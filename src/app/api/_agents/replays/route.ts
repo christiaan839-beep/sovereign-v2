@@ -44,9 +44,7 @@ export async function GET(request: Request) {
 
   const allReplays = getReplayStore();
   // Filter by userId so users only see their own executions.
-  const replays = allReplays.filter(
-    (r: { userId?: string }) => !r.userId || r.userId === userId,
-  );
+  const replays = allReplays.filter((r) => !r.userId || r.userId === userId);
 
   const stats = {
     total: replays.length,

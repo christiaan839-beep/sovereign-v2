@@ -75,7 +75,7 @@ export const POST = createAgentRoute({
   name: "email-onboard",
   requiredFields: ["email"],
   handler: async ({ input }) => {
-    const { email, clientName = "there", plan = "Node", action = "send-welcome" } = input as Record<string, unknown>;
+    const { email, clientName = "there", plan = "Node", action = "send-welcome" } = input as Record<string, any>;
 
     const resendKey = process.env.RESEND_API_KEY;
     const fromEmail = process.env.RESEND_FROM_EMAIL || "onboarding@sovereignmatrix.agency";

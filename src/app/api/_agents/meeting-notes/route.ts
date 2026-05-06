@@ -13,12 +13,11 @@ import { nimChat } from "@/lib/nvidia";
  */
 export const POST = createAgentRoute({
   name: "meeting-notes",
-  handler: async ({ input, email, userId }) => {
-
+  handler: async ({ input }) => {
     const guard = await guardRoute();
     if (!guard.authorized) return guard.response;
 
-    const body = await req.json();
+    const body = input;
     const transcript = sanitizeString(body.transcript, 50000);
     const meetingTitle = sanitizeString(body.title, 200) || "Untitled Meeting";
 
@@ -55,16 +54,14 @@ Be concise and factual. Do not add information not in the transcript.`,
           content: `Meeting: "${meetingTitle}"\n\nTranscript:\n${transcript}`,
         },
       ],
-      { maxTokens: 2000, temperature: 0.2 }
+      { maxTokens: 2000, temperature: 0.2 },
     );
 
-    return ({
+    return {
       title: meetingTitle,
       summary: result,
       wordCount: typeof result === "string" ? result.split(/\s+/).length : 0,
       model: "nemotron-ultra-253b",
-    });
-  
+    };
   },
 });
-

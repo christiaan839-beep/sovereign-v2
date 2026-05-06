@@ -65,7 +65,7 @@ async () => {
     // SECURITY NOTE: new Function() is used intentionally here for the Tool Factory feature.
     // It executes AI-generated pure computation code (math, data transforms, string ops).
     // All dangerous patterns (I/O, network, filesystem, process) are blocked above.
-    // eslint-disable-next-line no-new-func
+     
     const execute = new Function(`return (${generatedCode})();`);
     const result = await execute();
 

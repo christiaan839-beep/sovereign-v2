@@ -7,9 +7,9 @@ import { NextResponse } from "next/server";
  */
 export const POST = createAgentRoute({
   name: "rerank",
-  handler: async ({ input, email, userId }) => {
+  handler: async ({ input }) => {
 
-    const { query, documents } = input as Record<string, unknown>;
+    const { query, documents } = input as Record<string, any>;
     if (!query || !documents || !Array.isArray(documents)) {
       return ({ error: "Missing `query` (string) and `documents` (string[])." });
     }

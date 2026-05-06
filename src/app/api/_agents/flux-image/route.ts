@@ -7,9 +7,9 @@ import { NextResponse } from "next/server";
  */
 export const POST = createAgentRoute({
   name: "flux-image",
-  handler: async ({ input, email, userId }) => {
+  handler: async ({ input }) => {
 
-    const { prompt, width = 1024, height = 1024 } = input as Record<string, unknown>;
+    const { prompt, width = 1024, height = 1024 } = input as Record<string, any>;
     if (!prompt) return ({ error: "Missing `prompt`." });
 
     const nimKey = process.env.NVIDIA_NIM_API_KEY;

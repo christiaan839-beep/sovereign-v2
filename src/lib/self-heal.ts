@@ -31,10 +31,32 @@ const log = createLogger("self-heal");
 export interface SelfHealOptions {
   /** Total tries before giving up. Default 3 (= 1 initial + 2 retries). */
   maxAttempts?: number;
+  /**
+   * Legacy alias for `maxAttempts`. Several pre-existing agent
+   * routes pass `maxRetries` instead of `maxAttempts`. When both
+   * are set, `maxAttempts` wins.
+   */
+  maxRetries?: number;
   /** Base delay between attempts in ms; doubles each retry. */
   baseDelayMs?: number;
   /** Optional label for `error_logs.agent_id` so you can filter by agent. */
   label?: string;
+  /**
+   * Pre-existing legacy options that several agent routes pass
+   * through but which this implementation does not (yet) act on:
+   *   - `inputSchema`: a Zod schema used by an older self-heal
+   *     variant for input validation. Per-route Zod validation now
+   *     lives inside the route's own handler, so we accept and
+   *     silently ignore the option to keep the call sites happy.
+   *   - `inputSchemaName`: the human-readable name used by the
+   *     same older variant.
+   *   - `[key: string]: unknown` — open the door for any new option
+   *     a caller adds in the future without forcing a new release
+   *     of this module.
+   */
+  inputSchema?: unknown;
+  inputSchemaName?: string;
+  [extra: string]: unknown;
 }
 
 export type AgentHandler<TArgs extends unknown[], TResult> = (
@@ -89,7 +111,10 @@ export function withSelfHeal<TArgs extends unknown[], TResult>(
   handler: AgentHandler<TArgs, TResult>,
   options: SelfHealOptions = {},
 ): AgentHandler<TArgs, TResult> {
-  const maxAttempts = Math.max(1, options.maxAttempts ?? 3);
+  const maxAttempts = Math.max(
+    1,
+    options.maxAttempts ?? options.maxRetries ?? 3,
+  );
   const baseDelayMs = options.baseDelayMs ?? 250;
   const label = options.label ?? "agent";
 

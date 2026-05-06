@@ -23,7 +23,7 @@ export const POST = createAgentRoute({
   name: "feedback",
   requiredFields: ["action"],
   handler: async ({ input }) => {
-    const { action, agent, rating, comment = "", prompt_used = "" } = input as Record<string, unknown>;
+    const { action, agent, rating, comment = "", prompt_used = "" } = input as Record<string, any>;
 
     if (action === "rate") {
       if (!agent || !rating || (rating as number) < 1 || (rating as number) > 5) {

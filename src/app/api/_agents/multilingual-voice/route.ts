@@ -14,9 +14,9 @@ import { getBaseUrl } from "@/lib/base-url";
 
 export const POST = createAgentRoute({
   name: "multilingual-voice",
-  handler: async ({ input, email, userId }) => {
+  handler: async ({ input }) => {
 
-    const { text, source_lang = "en", target_lang, voice = "en-US-1" } = input as Record<string, unknown>;
+    const { text, source_lang = "en", target_lang, voice = "en-US-1" } = input as Record<string, any>;
 
     if (!text || !target_lang) {
       return ({ error: "text and target_lang required." });

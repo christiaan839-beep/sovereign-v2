@@ -21,7 +21,7 @@ const log = createLogger("ghost-fleet-agent");
 export const POST = createAgentRoute({
   name: "ghost-fleet",
   handler: async ({ input }) => {
-    const { competitorName } = input as Record<string, unknown>;
+    const { competitorName } = input as Record<string, any>;
 
     if (!competitorName) {
       return { error: "Missing competitor target." };

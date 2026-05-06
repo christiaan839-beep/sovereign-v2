@@ -28,7 +28,7 @@ export const POST = createAgentRoute({
   name: "programmatic-seo",
   requiredFields: ["action"],
   handler: async ({ input }) => {
-    const { action, niche, difficulty, keyword, contentAngle } = input as Record<string, unknown>;
+    const { action, niche, difficulty, keyword, contentAngle } = input as Record<string, any>;
 
     if (action === "discover") {
       const discoveryPrompt = `You are a keyword research expert. Discover 8 high-intent, low-competition keyword opportunities for the niche: "${niche || "AI marketing automation"}".

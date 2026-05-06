@@ -7,9 +7,9 @@ import { NextResponse } from "next/server";
  */
 export const POST = createAgentRoute({
   name: "embed",
-  handler: async ({ input, email, userId }) => {
+  handler: async ({ input }) => {
 
-    const { texts } = input as Record<string, unknown>;
+    const { texts } = input as Record<string, any>;
     if (!texts || !Array.isArray(texts) || texts.length === 0) {
       return ({ error: "Missing `texts` array." });
     }

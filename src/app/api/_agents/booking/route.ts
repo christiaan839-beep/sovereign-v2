@@ -1,4 +1,5 @@
 import { createAgentRoute } from "@/lib/agent-factory";
+import { currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { bookings } from "@/db/schema";
@@ -56,7 +57,7 @@ export async function GET() {
     });
     return NextResponse.json({ bookings: userBookings });
   } catch (err) {
-    log.error("GET /api/agents/booking error", err as Record<string, unknown>);
+    log.error("GET /api/agents/booking error", err as Record<string, any>);
     return NextResponse.json({ error: "Server Error" }, { status: 500 });
   }
 }
@@ -69,7 +70,7 @@ async function _postHandler(request: Request) {
   }
 
   try {
-    const body = await req.json();
+    const body = await request.json();
     const { action } = body;
 
     if (action === "qualify") {
@@ -126,7 +127,7 @@ Qualify this lead and generate the appropriate response.`;
 
     return NextResponse.json({ error: "Invalid action" }, { status: 400 });
   } catch (err) {
-    log.error("POST /api/agents/booking error", err as Record<string, unknown>);
+    log.error("POST /api/agents/booking error", err as Record<string, any>);
     return NextResponse.json({ error: "Server Error" }, { status: 500 });
   }
 }

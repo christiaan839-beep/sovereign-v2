@@ -12,7 +12,7 @@ export const POST = createAgentRoute({
   name: "page-builder",
   requiredFields: ["prompt"],
   handler: async ({ input }) => {
-    const { prompt, projectId } = input as Record<string, unknown>;
+    const { prompt, projectId } = input as Record<string, any>;
 
     const stitchKey = process.env.STITCH_API_KEY;
 

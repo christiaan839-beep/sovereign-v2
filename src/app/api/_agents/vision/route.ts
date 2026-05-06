@@ -22,7 +22,7 @@ export const POST = createAgentRoute({
       image_url,
       question = "Describe this image in detail.",
       mode = "analyze",
-    } = input as Record<string, unknown>;
+    } = input as Record<string, any>;
 
     const modePrompts: Record<string, string> = {
       analyze: `Analyze this image thoroughly. Describe what you see, identify key elements, and provide insights. Then answer: ${question}`,

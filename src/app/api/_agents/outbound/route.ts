@@ -23,7 +23,7 @@ export const POST = createAgentRoute({
     prompt: z.string().optional(),
   }),
   handler: async ({ input }) => {
-    const { prospectName, prospectCompany, prospectIndustry, yourOffer, yourProof, channels, sequenceLength } = input as Record<string, unknown>;
+    const { prospectName, prospectCompany, prospectIndustry, yourOffer, yourProof, channels, sequenceLength } = input as Record<string, any>;
 
     const result = await ai(
       `Generate a ${sequenceLength || 5}-step cold outreach sequence. PROSPECT: ${prospectName || "Decision Maker"} at ${prospectCompany || "Target Company"}. INDUSTRY: ${prospectIndustry || "B2B"}. OFFER: ${yourOffer || "AI marketing automation"}. PROOF: ${yourProof || "50+ businesses, 300% more leads"}. CHANNELS: ${(channels as string[] || ["email"]).join(", ")}. Respond in JSON: {"sequence": [{"step": 1, "channel": "email", "dayNumber": 1, "subject": "...", "message": "...", "followUpTrigger": "..."}], "overallStrategy": "..."}`,

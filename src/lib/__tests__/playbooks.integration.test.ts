@@ -2,7 +2,11 @@
  * Integration tests for playbook execution flow
  */
 import { describe, it, expect } from "vitest";
-import { PLAYBOOKS, PLAYBOOK_CATEGORIES, resolvePlaybookSteps } from "@/lib/playbooks";
+import {
+  PLAYBOOKS,
+  PLAYBOOK_CATEGORIES,
+  resolvePlaybookSteps,
+} from "@/lib/playbooks";
 
 describe("playbooks.ts — Integration Tests", () => {
   // ── Registry ──
@@ -22,12 +26,31 @@ describe("playbooks.ts — Integration Tests", () => {
 
   it("every playbook step references a valid agent", () => {
     const knownAgents = new Set([
-      "leads", "email-sequence", "seo-dominator", "blog-gen", "competitor-scan",
-      "brand-voice", "brand-audit", "proposal-generator", "client-report",
-      "organic-content", "funnel-xray", "ad-report", "creative-director",
-      "smart-router", "contract-analyzer", "case-study", "site-assassin",
-      "page-builder", "doc-intel", "translate", "meeting-notes",
-      "calendar", "social-router", "outbound", "abm-artillery",
+      "leads",
+      "email-sequence",
+      "seo-dominator",
+      "blog-gen",
+      "competitor-scan",
+      "brand-voice",
+      "brand-audit",
+      "proposal-generator",
+      "client-report",
+      "organic-content",
+      "funnel-xray",
+      "ad-report",
+      "creative-director",
+      "smart-router",
+      "contract-analyzer",
+      "case-study",
+      "site-assassin",
+      "page-builder",
+      "doc-intel",
+      "translate",
+      "meeting-notes",
+      "calendar",
+      "social-router",
+      "outbound",
+      "abm-artillery",
     ]);
 
     for (const [id, pb] of Object.entries(PLAYBOOKS)) {
@@ -46,7 +69,9 @@ describe("playbooks.ts — Integration Tests", () => {
   });
 
   it("categories cover all playbooks", () => {
-    const allCategories = new Set(Object.values(PLAYBOOKS).map(pb => pb.category));
+    const allCategories = new Set(
+      Object.values(PLAYBOOKS).map((pb) => pb.category),
+    );
     expect(allCategories.size).toBeGreaterThanOrEqual(3);
   });
 
@@ -57,7 +82,7 @@ describe("playbooks.ts — Integration Tests", () => {
   // ── Step Resolution ──
 
   it("resolves playbook steps with user inputs", () => {
-    const pb = PLAYBOOKS["lead-blitz"];
+    const pb = PLAYBOOKS.find((p) => p.id === "lead-blitz");
     if (!pb) return; // Skip if playbook doesn't exist
 
     const resolved = resolvePlaybookSteps(pb, {
@@ -73,7 +98,7 @@ describe("playbooks.ts — Integration Tests", () => {
   });
 
   it("resolves template references between steps", () => {
-    const pb = PLAYBOOKS["lead-blitz"];
+    const pb = PLAYBOOKS.find((p) => p.id === "lead-blitz");
     if (!pb || pb.steps.length < 2) return;
 
     const resolved = resolvePlaybookSteps(pb, { niche: "Dental" });
@@ -81,7 +106,9 @@ describe("playbooks.ts — Integration Tests", () => {
     // Step 2 should reference step 1 output template
     const step2Params = JSON.stringify(resolved[1].params);
     // Template should be present ({{step_1}} or similar)
-    expect(step2Params.includes("{{step_1}}") || step2Params.includes("Dental")).toBe(true);
+    expect(
+      step2Params.includes("{{step_1}}") || step2Params.includes("Dental"),
+    ).toBe(true);
   });
 
   // ── Guarantee Checks ──
@@ -90,10 +117,16 @@ describe("playbooks.ts — Integration Tests", () => {
     for (const [id, pb] of Object.entries(PLAYBOOKS)) {
       if (pb.guaranteeCheck) {
         if (pb.guaranteeCheck.minResultCount !== undefined) {
-          expect(pb.guaranteeCheck.minResultCount, `${id} minResultCount`).toBeGreaterThan(0);
+          expect(
+            pb.guaranteeCheck.minResultCount,
+            `${id} minResultCount`,
+          ).toBeGreaterThan(0);
         }
         if (pb.guaranteeCheck.minWordCount !== undefined) {
-          expect(pb.guaranteeCheck.minWordCount, `${id} minWordCount`).toBeGreaterThan(0);
+          expect(
+            pb.guaranteeCheck.minWordCount,
+            `${id} minWordCount`,
+          ).toBeGreaterThan(0);
         }
       }
     }

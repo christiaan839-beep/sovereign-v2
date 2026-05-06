@@ -17,6 +17,11 @@ export const tenants = pgTable("tenants", {
   nodeId: text("node_id").notNull().unique(), // e.g., UMB-NX-77492
   createdAt: timestamp("created_at").defaultNow(),
   plan: text("plan").notNull().default("black-card"),
+  // Onboarding columns (drizzle/0004_remaining_tables.sql) — captured
+  // during the post-signup wizard. Optional; null until completed.
+  onboardingGoal: text("onboarding_goal"),
+  onboardingIndustry: text("onboarding_industry"),
+  companyUrl: text("company_url"),
   // Welcome page (drizzle/0019_welcome_columns.sql) — populated by the
   // operator the moment a customer's setup payment lands. Powers
   // /welcome/[id], the first-60-seconds-of-trust kickoff page.

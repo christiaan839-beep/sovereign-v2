@@ -10,9 +10,9 @@ import { nimChat } from "@/lib/nvidia";
 
 export const POST = createAgentRoute({
   name: "code-reviewer",
-  handler: async ({ input, email, userId }) => {
+  handler: async ({ input }) => {
 
-    const { code, language = "auto-detect", focus = "full" } = input as Record<string, unknown>;
+    const { code, language = "auto-detect", focus = "full" } = input as Record<string, any>;
 
     if (!code) {
       return ({ error: "code is required." });

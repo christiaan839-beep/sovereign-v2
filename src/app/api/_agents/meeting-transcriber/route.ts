@@ -10,9 +10,9 @@ import { nimChat } from "@/lib/nvidia";
 
 export const POST = createAgentRoute({
   name: "meeting-transcriber",
-  handler: async ({ input, email, userId }) => {
+  handler: async ({ input }) => {
 
-    const { transcript, meeting_type = "general", attendees } = input as Record<string, unknown>;
+    const { transcript, meeting_type = "general", attendees } = input as Record<string, any>;
 
     if (!transcript) {
       return ({ error: "transcript text is required." });
