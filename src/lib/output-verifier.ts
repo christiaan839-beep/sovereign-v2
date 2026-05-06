@@ -1,19 +1,33 @@
 import { createLogger } from "@/lib/logger";
 import { logExecution, type AuditEntry } from "@/lib/execution-audit";
-import { needsApproval, classifyAction, DEFAULT_TRUST_LEVEL, type TrustLevel } from "@/lib/trust-levels";
+import {
+  needsApproval,
+  classifyAction,
+  DEFAULT_TRUST_LEVEL,
+  type TrustLevel,
+} from "@/lib/trust-levels";
+import {
+  check as llamaFirewallCheck,
+  isLlamaFirewallConfigured,
+} from "@/lib/llama-firewall";
 
 const log = createLogger("output-verifier");
 
 /**
  * OUTPUT VERIFICATION PIPELINE — Mythos-ready safety for agent outputs.
  *
- * Every agent output passes through 5 independent checks before delivery:
+ * Every agent output passes through 6 independent checks before delivery:
  *
  * 1. LlamaGuard Classification — Is the output safe? (NIM free tier)
  * 2. PII Scanner — Does output contain personal data? (regex-based)
  * 3. Content Policy — Does output violate content guidelines?
  * 4. Quality Score — Is the output relevant and coherent? (0-100)
  * 5. Trust Gate — Does this action need human approval?
+ * 6. LlamaFirewall — Meta's open prompt-injection + alignment +
+ *    code-shield (only when LLAMA_FIREWALL_URL is set; otherwise
+ *    skipped without affecting the pipeline). Acts on the input
+ *    prompt as a pre-flight check; complementary to LlamaGuard
+ *    which acts on the output.
  *
  * If any check fails, the output is blocked and logged.
  * If trust level requires approval, output is held in queue.
@@ -34,9 +48,18 @@ export interface VerificationResult {
 // ─── PII Detection (regex-based, zero API cost) ─────────────
 const PII_PATTERNS = [
   { name: "SSN", pattern: /\b\d{3}-\d{2}-\d{4}\b/g },
-  { name: "Credit Card", pattern: /\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g },
-  { name: "Phone", pattern: /\b(?:\+1[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}\b/g },
-  { name: "Email (exposed)", pattern: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g },
+  {
+    name: "Credit Card",
+    pattern: /\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g,
+  },
+  {
+    name: "Phone",
+    pattern: /\b(?:\+1[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}\b/g,
+  },
+  {
+    name: "Email (exposed)",
+    pattern: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g,
+  },
 ];
 
 function scanPII(text: string): { hasPII: boolean; types: string[] } {
@@ -56,10 +79,16 @@ const BLOCKED_PATTERNS = [
   /bypass (security|authentication|firewall)/i,
 ];
 
-function checkContentPolicy(text: string): { passes: boolean; violation?: string } {
+function checkContentPolicy(text: string): {
+  passes: boolean;
+  violation?: string;
+} {
   for (const pattern of BLOCKED_PATTERNS) {
     if (pattern.test(text)) {
-      return { passes: false, violation: `Content policy violation: ${pattern.source.slice(0, 50)}` };
+      return {
+        passes: false,
+        violation: `Content policy violation: ${pattern.source.slice(0, 50)}`,
+      };
     }
   }
   return { passes: true };
@@ -79,49 +108,61 @@ function scoreQuality(output: string, prompt: string): number {
   if (/\d+/.test(output)) score += 5;
 
   // Relevance: does output reference terms from prompt?
-  const promptWords = prompt.toLowerCase().split(/\s+/).filter(w => w.length > 4);
+  const promptWords = prompt
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((w) => w.length > 4);
   const outputLower = output.toLowerCase();
-  const relevantWords = promptWords.filter(w => outputLower.includes(w));
+  const relevantWords = promptWords.filter((w) => outputLower.includes(w));
   score += Math.min(15, relevantWords.length * 3);
 
   // Penalize repetition
-  const sentences = output.split(/[.!?]+/).filter(s => s.trim().length > 10);
-  const uniqueSentences = new Set(sentences.map(s => s.trim().toLowerCase()));
-  if (sentences.length > 3 && uniqueSentences.size < sentences.length * 0.7) score -= 15;
+  const sentences = output.split(/[.!?]+/).filter((s) => s.trim().length > 10);
+  const uniqueSentences = new Set(sentences.map((s) => s.trim().toLowerCase()));
+  if (sentences.length > 3 && uniqueSentences.size < sentences.length * 0.7)
+    score -= 15;
 
   return Math.max(0, Math.min(100, score));
 }
 
 // ─── LlamaGuard Output Check ────────────────────────────────
-async function llamaGuardOutput(text: string): Promise<{ safe: boolean; category?: string }> {
+async function llamaGuardOutput(
+  text: string,
+): Promise<{ safe: boolean; category?: string }> {
   const nimKey = process.env.NVIDIA_NIM_API_KEY;
   if (!nimKey) return { safe: true };
 
   try {
-    const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${nimKey}`,
+    const res = await fetch(
+      "https://integrate.api.nvidia.com/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${nimKey}`,
+        },
+        body: JSON.stringify({
+          model: "meta/llama-guard-3-8b",
+          messages: [{ role: "assistant", content: text }],
+          max_tokens: 100,
+          temperature: 0,
+        }),
+        signal: AbortSignal.timeout(5000),
       },
-      body: JSON.stringify({
-        model: "meta/llama-guard-3-8b",
-        messages: [{ role: "assistant", content: text }],
-        max_tokens: 100,
-        temperature: 0,
-      }),
-      signal: AbortSignal.timeout(5000),
-    });
+    );
 
     if (res.ok) {
       const data = await res.json();
-      const verdict = data.choices?.[0]?.message?.content?.trim().toLowerCase() || "";
+      const verdict =
+        data.choices?.[0]?.message?.content?.trim().toLowerCase() || "";
       return verdict.startsWith("safe") || verdict === "safe"
         ? { safe: true }
         : { safe: false, category: verdict };
     }
   } catch {
-    log.warn("LlamaGuard output check failed — allowing through (other layers active)");
+    log.warn(
+      "LlamaGuard output check failed — allowing through (other layers active)",
+    );
   }
   return { safe: true };
 }
@@ -140,19 +181,36 @@ export async function verifyOutput(params: {
   const start = Date.now();
   const trustLevel = params.trustLevel || DEFAULT_TRUST_LEVEL;
 
-  // Run all checks in parallel for speed
-  const [llamaResult, piiResult, contentResult] = await Promise.all([
-    llamaGuardOutput(params.output),
-    Promise.resolve(scanPII(params.output)),
-    Promise.resolve(checkContentPolicy(params.output)),
-  ]);
+  // Run all checks in parallel for speed. LlamaFirewall is opt-in
+  // via env (`LLAMA_FIREWALL_URL`) — when unset, `llamaFirewallCheck`
+  // returns `{ allow: true, skipped: ... }` in <1ms and is a no-op.
+  // The Layer-6 check inspects the user-supplied prompt for prompt
+  // injection / alignment violations BEFORE the model runs (output
+  // verification still happens via LlamaGuard on layer 1).
+  const [llamaResult, piiResult, contentResult, firewallResult] =
+    await Promise.all([
+      llamaGuardOutput(params.output),
+      Promise.resolve(scanPII(params.output)),
+      Promise.resolve(checkContentPolicy(params.output)),
+      isLlamaFirewallConfigured()
+        ? llamaFirewallCheck({
+            content: params.prompt,
+            scans: ["prompt-guard"],
+          })
+        : Promise.resolve({ allow: true, skipped: "not configured" } as Awaited<
+            ReturnType<typeof llamaFirewallCheck>
+          >),
+    ]);
 
   const qualityScore = scoreQuality(params.output, params.prompt);
   const executionTimeMs = Date.now() - start;
 
-  // Build safety result
+  // Build safety result. `jailbreak` aggregates LlamaGuard (output
+  // side) and LlamaFirewall (input side) — failure on either flips
+  // the pass.
+  const jailbreakBlocked = !llamaResult.safe || !firewallResult.allow;
   const safetyResult: AuditEntry["safetyResult"] = {
-    jailbreak: llamaResult.safe ? "pass" : "fail",
+    jailbreak: jailbreakBlocked ? "fail" : "pass",
     pii: piiResult.hasPII ? "fail" : "pass",
     content: contentResult.passes ? "pass" : "fail",
     quality: qualityScore,
@@ -160,12 +218,14 @@ export async function verifyOutput(params: {
   };
 
   // Determine if blocked
-  const isBlocked = !llamaResult.safe || !contentResult.passes;
+  const isBlocked = jailbreakBlocked || !contentResult.passes;
   const blockReason = !llamaResult.safe
     ? `LlamaGuard blocked: ${llamaResult.category}`
-    : !contentResult.passes
-    ? contentResult.violation
-    : undefined;
+    : !firewallResult.allow
+      ? `LlamaFirewall blocked: ${firewallResult.reason ?? firewallResult.blockedBy ?? "prompt-injection"}`
+      : !contentResult.passes
+        ? contentResult.violation
+        : undefined;
 
   // Classify action for trust gate
   const actionClass = classifyAction({
@@ -174,18 +234,20 @@ export async function verifyOutput(params: {
     chainDepth: params.chainDepth,
   });
 
-  const requiresApproval = !isBlocked && needsApproval(trustLevel, {
-    isAnomalous: actionClass.isAnomalous,
-    isCritical: actionClass.isCritical,
-    chainDepth: params.chainDepth,
-  });
+  const requiresApproval =
+    !isBlocked &&
+    needsApproval(trustLevel, {
+      isAnomalous: actionClass.isAnomalous,
+      isCritical: actionClass.isCritical,
+      chainDepth: params.chainDepth,
+    });
 
   // Determine trust decision
   const trustDecision: VerificationResult["trustDecision"] = isBlocked
     ? "blocked"
     : requiresApproval
-    ? "needs-approval"
-    : "auto-approved";
+      ? "needs-approval"
+      : "auto-approved";
 
   // Log to audit trail
   logExecution({
@@ -197,7 +259,11 @@ export async function verifyOutput(params: {
     safetyResult,
     trustLevel,
     approvalRequired: requiresApproval,
-    approvalStatus: isBlocked ? "denied" : requiresApproval ? "pending" : "auto",
+    approvalStatus: isBlocked
+      ? "denied"
+      : requiresApproval
+        ? "pending"
+        : "auto",
     executionTimeMs,
     chainDepth: params.chainDepth || 0,
     externalApisAccessed: params.externalApis || [],
@@ -207,7 +273,9 @@ export async function verifyOutput(params: {
   // PII warning (don't block, but redact in output)
   let finalOutput = params.output;
   if (piiResult.hasPII) {
-    log.warn(`PII detected in output: ${piiResult.types.join(", ")} — agent=${params.agentName}`);
+    log.warn(
+      `PII detected in output: ${piiResult.types.join(", ")} — agent=${params.agentName}`,
+    );
     // Redact PII from output
     for (const { pattern } of PII_PATTERNS) {
       finalOutput = finalOutput.replace(pattern, "[REDACTED]");

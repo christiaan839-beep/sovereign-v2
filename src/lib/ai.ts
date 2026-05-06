@@ -19,6 +19,8 @@ import {
   groqBreaker,
 } from "@/lib/circuit-breaker";
 import { withRetry } from "@/lib/retry";
+import { traceAi } from "@/lib/phoenix-tracer";
+import { isPortkeyConfigured, routeViaPortkey } from "@/lib/portkey-gateway";
 
 const log = createLogger("ai");
 
@@ -91,16 +93,29 @@ export async function ai(
 
   const userKeys = await getUserKeys();
 
+  // Sample fragment captured by every Phoenix span for debugging.
+  // Trimmed to 1024 chars in `phoenix-tracer.ts` — we pass the full
+  // prompt and let the tracer truncate.
+  const sample = { prompt };
+
   // 1. Local execution (cost: $0)
   if (userKeys.ollama) {
     recordModel("ollama-local");
-    return ollamaText(prompt, system, userKeys.ollama);
+    return traceAi(
+      { provider: "ollama", model: "ollama-local", operation: "ai" },
+      () => ollamaText(prompt, system, userKeys.ollama),
+      { sample },
+    );
   }
 
   // 2. Cerebras — ultra-fast inference (2000+ tok/s). Use for classification and routing.
   if (model === "cerebras") {
     recordModel("cerebras");
-    return cerebrasText(prompt, system, maxTokens);
+    return traceAi(
+      { provider: "cerebras", model: "cerebras-fast", operation: "ai" },
+      () => cerebrasText(prompt, system, maxTokens),
+      { sample },
+    );
   }
 
   // 3. NVIDIA NIM open-source models (cost: $0)
@@ -109,7 +124,11 @@ export async function ai(
     (userKeys.nvidia && model !== "claude" && model !== "gemini")
   ) {
     recordModel("nvidia-nim-default");
-    return nimText(prompt, system, maxTokens);
+    return traceAi(
+      { provider: "nvidia-nim", model: "nemotron-default", operation: "ai" },
+      () => nimText(prompt, system, maxTokens),
+      { sample },
+    );
   }
 
   // 4. Claude (BYOK only) - Opus or Sonnet
@@ -117,14 +136,23 @@ export async function ai(
     model === "claude" ||
     (userKeys.anthropic && !userKeys.gemini && !userKeys.groq)
   ) {
-    recordModel(useOpus ? "claude-opus" : "claude-sonnet");
-    return claudeText(prompt, system, maxTokens, userKeys, thinking, useOpus);
+    const claudeModel = useOpus ? "claude-opus-4-7" : "claude-sonnet-4-6";
+    recordModel(claudeModel);
+    return traceAi(
+      { provider: "anthropic", model: claudeModel, operation: "ai" },
+      () => claudeText(prompt, system, maxTokens, userKeys, thinking, useOpus),
+      { sample },
+    );
   }
 
   // 5. Mistral Large 2 (EU Compliance / Open Weights via NIM)
   if (model === "mistral") {
     recordModel("mistral-large");
-    return mistralText(prompt, system, maxTokens);
+    return traceAi(
+      { provider: "nvidia-nim", model: "mistral-large", operation: "ai" },
+      () => mistralText(prompt, system, maxTokens),
+      { sample },
+    );
   }
 
   // 6. Groq (DeepSeek-R1, Qwen 2.5 Coder, Llama 3.1)
@@ -135,26 +163,79 @@ export async function ai(
     (userKeys.groq && !userKeys.gemini)
   ) {
     recordModel(`groq-${model}`);
-    return groqText(prompt, system, maxTokens, userKeys, model);
+    return traceAi(
+      { provider: "groq", model: `groq-${model}`, operation: "ai" },
+      () => groqText(prompt, system, maxTokens, userKeys, model),
+      { sample },
+    );
   }
 
-  // 7. Gemini (default) → fallback to NIM → fallback to Groq
+  // 7. Gemini (default) → Portkey-fallback → NIM → Groq.
+  // Portkey gateway only activates when PORTKEY_API_KEY is set;
+  // otherwise the cascade is identical to before.
+  const geminiModel = useGeminiPro ? "gemini-2.0-pro" : "gemini-2.0-flash";
   try {
-    recordModel(useGeminiPro ? "gemini-pro" : "gemini-flash");
-    return await geminiText(prompt, system, maxTokens, userKeys, useGeminiPro);
+    recordModel(geminiModel);
+    return await traceAi(
+      { provider: "gemini", model: geminiModel, operation: "ai" },
+      () => geminiText(prompt, system, maxTokens, userKeys, useGeminiPro),
+      { sample },
+    );
   } catch (geminiErr) {
-    log.warn("Gemini failed, falling back to NIM", {
+    log.warn("Gemini failed, attempting fallback chain", {
       error: (geminiErr as Error).message,
     });
+
+    // 7a. Portkey fallback (only if configured) — gives us multi-
+    // provider retries + caching + load-balancing in one hop.
+    if (isPortkeyConfigured()) {
+      try {
+        const result = await traceAi(
+          { provider: "portkey", model: "auto", operation: "ai-fallback" },
+          () =>
+            routeViaPortkey({
+              prompt,
+              system,
+              model: "claude",
+              maxTokens,
+            }),
+          { sample },
+        );
+        if (result.ok) return result.text;
+        log.warn("Portkey fallback returned not-ok", { reason: result.reason });
+      } catch (portkeyErr) {
+        log.warn("Portkey fallback threw, continuing cascade", {
+          error: (portkeyErr as Error).message,
+        });
+      }
+    }
+
+    // 7b. NIM fallback
     try {
       recordModel("nvidia-nim-fallback");
-      return await nimText(prompt, system, maxTokens);
+      return await traceAi(
+        {
+          provider: "nvidia-nim",
+          model: "nemotron-fallback",
+          operation: "ai-fallback",
+        },
+        () => nimText(prompt, system, maxTokens),
+        { sample },
+      );
     } catch (nimErr) {
       log.warn("NIM failed, falling back to Groq", {
         error: (nimErr as Error).message,
       });
       try {
-        return await groqText(prompt, system, maxTokens, userKeys, "groq");
+        return await traceAi(
+          {
+            provider: "groq",
+            model: "groq-fallback",
+            operation: "ai-fallback",
+          },
+          () => groqText(prompt, system, maxTokens, userKeys, "groq"),
+          { sample },
+        );
       } catch (groqErr) {
         log.error("All AI providers failed", {
           gemini: (geminiErr as Error).message,
@@ -409,7 +490,7 @@ async function claudeText(
   });
 
   // Inject ephemeral caching on the system prompt to slash token costs by 90%
-   
+
   const systemParam: any = system
     ? [{ type: "text", text: system, cache_control: { type: "ephemeral" } }]
     : undefined;
@@ -417,7 +498,7 @@ async function claudeText(
   // Extended thinking and max_tokens are incompatible — use one or the other
   // Opus 4.6: strongest reasoning, 1M context, 128K output — use for God Brain, deep analysis
   // Sonnet 4.6: best balance of speed/quality — default for all other agents
-   
+
   const requestParams: any = {
     model: useOpus ? "claude-opus-4-6" : "claude-sonnet-4-6",
     ...(systemParam ? { system: systemParam } : {}),
@@ -482,7 +563,6 @@ async function claudeWithCitations(
     citations: { enabled: true },
   }));
 
-   
   const response = await (client.messages.create as any)({
     model: "claude-sonnet-4-6",
     max_tokens: maxTokens,
@@ -695,7 +775,7 @@ export async function claudeToolUse(
   const client = new Anthropic({ apiKey });
 
   const MAX_ITERATIONS = 10;
-   
+
   const messages: any[] = [{ role: "user", content: prompt }];
   const allToolCalls: Array<{ name: string; input: Record<string, unknown> }> =
     [];
@@ -705,7 +785,7 @@ export async function claudeToolUse(
       model: "claude-sonnet-4-6",
       max_tokens: maxTokens,
       ...(system ? { system } : {}),
-       
+
       tools: tools as any,
       messages,
     });
@@ -744,7 +824,7 @@ export async function claudeToolUse(
     messages.push({ role: "assistant", content: response.content });
 
     // Execute each tool call and feed results back
-     
+
     const toolResults: any[] = [];
     for (const tc of iterToolCalls) {
       let result: string;

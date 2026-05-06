@@ -24,6 +24,7 @@ import { db } from "@/db";
 import { usage } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
 import { inferProvider, getLastProvider } from "@/lib/model-attribution";
+import { NIM_MODELS } from "@/lib/nim-registry";
 
 const log = createLogger("cost-ledger");
 
@@ -42,16 +43,15 @@ export interface LedgerEntry {
 const CHARS_PER_TOKEN = 4;
 
 /**
- * USD-cents per 1K tokens, normalised input+output. Single number per
- * model keeps the table simple; we'll split into separate input/output
- * pricing if MRR ever justifies the precision.
+ * Paid-provider pricing (USD cents per 1K tokens, input+output
+ * combined). NIM-served model prices are read from the canonical
+ * `nim-registry.ts` — that's the single source of truth so adding
+ * a new NIM model in one place automatically wires its cost here.
+ *
+ * If MRR ever justifies the precision, split into separate input
+ * vs output rates per model. Today a flat rate is honest enough.
  */
-const COST_PER_1K_CENTS: Record<string, number> = {
-  "nvidia/llama-3.1-nemotron-ultra-253b-v1": 0,
-  "nvidia/llama-3.3-nemotron-super-49b-v1": 0,
-  "deepseek-ai/deepseek-v3.2": 0,
-  "google/gemma-4-31b-it": 0,
-  "mistralai/mistral-large-2-instruct": 0,
+const PAID_COST_PER_1K_CENTS: Record<string, number> = {
   "claude-opus-4-7": 15,
   "claude-sonnet-4-6": 3,
   "claude-haiku-4-5-20251001": 0.5,
@@ -60,6 +60,19 @@ const COST_PER_1K_CENTS: Record<string, number> = {
   "gpt-4o": 5,
 };
 const DEFAULT_PER_1K_CENTS = 1;
+
+/**
+ * Look up cost-per-1K-tokens for any model id we route through.
+ * Order: paid-provider table → NIM registry → fallback default.
+ */
+function costPer1KCents(modelId: string): number {
+  if (modelId in PAID_COST_PER_1K_CENTS) {
+    return PAID_COST_PER_1K_CENTS[modelId];
+  }
+  const nimModel = NIM_MODELS.find((m) => m.id === modelId);
+  if (nimModel) return nimModel.costPer1KCents;
+  return DEFAULT_PER_1K_CENTS;
+}
 
 export function estimateCostCents(args: {
   modelId: string;
@@ -71,7 +84,7 @@ export function estimateCostCents(args: {
   const tokens =
     (args.inputTokens ?? Math.ceil((args.inputChars ?? 0) / CHARS_PER_TOKEN)) +
     (args.outputTokens ?? Math.ceil((args.outputChars ?? 0) / CHARS_PER_TOKEN));
-  const ratePer1K = COST_PER_1K_CENTS[args.modelId] ?? DEFAULT_PER_1K_CENTS;
+  const ratePer1K = costPer1KCents(args.modelId);
   return Math.round((tokens / 1000) * ratePer1K);
 }
 
