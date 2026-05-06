@@ -190,6 +190,55 @@ the platform is healthy.
    appears legitimately in a comment about migration history).
 5. Update STANDARDS.md §07 if the rule needs refinement.
 
+### "Customer complains: every API call returns 423 Locked"
+
+1. **Look up the tenant** in `/admin/tenants` (or query
+   `SELECT id, node_id, is_suspended, suspension_reason FROM
+tenants WHERE clerk_user_id = '<from-Sentry>';`).
+2. **If `is_suspended = true`**, the kill-switch is on. Check
+   `audit_logs` for the last `action='tenant.suspend'` row to see
+   who flipped it and why. The reason is also surfaced to the
+   customer in the 423 response body — they should be able to
+   tell you what it said.
+3. **If the suspension was deliberate** (refund, abuse,
+   compliance hold) and the customer is contesting, walk through
+   the reason face-to-face before lifting. Document the resolution
+   in the customer's Slack channel.
+4. **If the suspension was accidental** or the cause is resolved,
+   click "Resume" in `/admin/tenants` (or POST `/api/_admin/suspend-
+tenant` with `suspend: false`). The next request runs within the
+   30-second cache TTL.
+5. **Apologise specifically.** Don't generic-apologise. "I
+   suspended your workspace at 4:12pm on Tuesday for X reason and
+   that turned out to be wrong — your time is back now and your
+   month is on me as a credit."
+
+### "Customer on byo-gpu / air-gapped profile says AI calls fail"
+
+1. **Confirm the deployment profile** in `/admin/tenants` —
+   the page shows the active pill. Cloud / byo-gpu / air-gapped.
+2. **If byo-gpu**, the customer's local NIM container at
+   `NIM_LOCAL_BASE_URL` (their env var, not ours) needs to be
+   reachable from our Vercel functions. Common causes:
+   - VPN / private network not bridged → ask their infra to
+     expose the NIM endpoint at a publicly-resolvable URL with
+     IP allowlisting.
+   - Wrong model id → confirm their NIM container serves the
+     same `nvidia/llama-3.1-nemotron-ultra-253b-v1` (or whatever
+     model id `src/lib/nim-registry.ts` currently routes to).
+3. **If air-gapped**, the only permitted providers are Ollama
+   on the customer's machine and the on-prem NIM container.
+   `src/lib/ai.ts` will throw "deployment profile does not
+   permit provider X" — that error message is the correct
+   answer to surface in the 503 to the customer.
+4. **Temporary unblock**: flip them to `cloud` in
+   `/admin/tenants`, run the failing call, flip back. Record
+   the deviation in `audit_logs` so a future review knows the
+   air-gapped guarantee was bridged for that timestamp range.
+5. **Real fix**: their local NIM/Ollama setup needs the right
+   model loaded. Send them the deployment guide
+   (`docs/DEPLOYMENT-PROFILES.md` — TODO when 3rd customer asks).
+
 ### "Friday Letter overdue"
 
 1. Open `/admin/letters/new` and write the next letter.

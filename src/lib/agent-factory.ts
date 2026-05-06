@@ -55,6 +55,7 @@ import { evaluatePolicy } from "@/lib/policy-engine";
 import { checkBudget, recordSpend } from "@/lib/budget-controls";
 import { startReplay, type ReplayBuilder } from "@/lib/agent-replay";
 import { checkAgentAccess } from "@/lib/paywall";
+import { addBreadcrumb } from "@/lib/sentry";
 import type { ZodObject, ZodRawShape } from "zod";
 
 const log = createLogger("agent-factory");
@@ -377,6 +378,12 @@ export function createAgentRoute(config: AgentConfig) {
       const orgId =
         typeof sanitized.orgId === "string" ? sanitized.orgId : undefined;
 
+      addBreadcrumb({
+        category: "agent",
+        message: `${config.name}: pre-flight checks passed`,
+        data: { tenantId: tenantId ?? null },
+      });
+
       // ─── Circuit Breaker Check ───
       if (!isAgentAvailable(config.name)) {
         log.warn(`Agent circuit open: ${config.name} — temporarily disabled`);
@@ -483,6 +490,21 @@ export function createAgentRoute(config: AgentConfig) {
       // AsyncLocalStorage instead of needing every signature on the
       // way down to thread it as a parameter.
       replay?.addStep("handler_start", { agent: config.name });
+      // Sentry breadcrumb so any exception thrown inside the handler
+      // arrives with the lifecycle trail attached. Cheap when
+      // SENTRY_DSN is unset (no-op); high leverage when an error
+      // page lands and we need to know which middleware step it
+      // got past.
+      addBreadcrumb({
+        category: "agent",
+        message: `${config.name}: handler_start`,
+        data: {
+          agent: config.name,
+          userId: userId || "anonymous",
+          tenantId: tenantId ?? null,
+          inputKeys: Object.keys(sanitized),
+        },
+      });
       const { withTenant } = await import("@/lib/request-tenant");
       const rawResult = await withTenant(tenantId ?? null, () =>
         config.handler({

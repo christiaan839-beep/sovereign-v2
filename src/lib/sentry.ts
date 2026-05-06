@@ -134,3 +134,49 @@ export function captureMessage(message: string, context: ErrorContext): void {
 export function isSentryConfigured(): boolean {
   return dsnConfigured;
 }
+
+/**
+ * Add a breadcrumb — a trail of "what happened just before this
+ * exception" data that Sentry attaches to the next captureException
+ * within the same async context.
+ *
+ * Use sparingly inside the agent factory to record the lifecycle
+ * milestones that turn an "unexpected error" into a "I can see
+ * exactly which middleware step broke" investigation:
+ *
+ *   - rate-limit hit
+ *   - auth gate passed
+ *   - paywall blocked
+ *   - circuit-breaker open
+ *   - handler entered
+ *   - handler completed
+ *   - quality retry triggered
+ *
+ * Breadcrumbs are kept in a per-request ring buffer; only the last
+ * ~100 are attached to a given exception. Worst-case overhead is a
+ * function call — Sentry handles the buffer internally.
+ *
+ * No-op when `SENTRY_DSN` is unset.
+ */
+export function addBreadcrumb(args: {
+  /** Same module taxonomy as captureException. */
+  category: string;
+  /** Human-readable one-liner. */
+  message: string;
+  /** Optional structured extras. */
+  data?: Record<string, unknown>;
+  /** "info" (default) | "warning" | "error". */
+  level?: "info" | "warning" | "error";
+}): void {
+  if (!dsnConfigured) return;
+  try {
+    Sentry.addBreadcrumb({
+      category: args.category,
+      message: args.message,
+      level: args.level ?? "info",
+      data: args.data,
+    });
+  } catch {
+    // Never let breadcrumb failure mask the underlying flow.
+  }
+}
