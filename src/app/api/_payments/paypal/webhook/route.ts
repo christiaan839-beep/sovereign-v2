@@ -226,6 +226,18 @@ export async function POST(req: Request) {
       eventId: event.id,
       error: (err as Error).message,
     });
+    // Page Sentry — payment-flow failures are the highest-blast-radius
+    // class of bug we can ship. Always-on, even before customer #1.
+    const { captureException } = await import("@/lib/sentry");
+    captureException(err, {
+      module: "paypal-webhook",
+      action: event.event_type,
+      extra: {
+        eventId: event.id,
+        resourceId: (event.resource as { id?: string } | undefined)?.id ?? null,
+      },
+      severity: "error",
+    });
     // Returning 200 here is intentional even though the handler failed:
     // alreadyProcessed() above already wrote the dedup marker, so a 500
     // (which would trigger a PayPal retry) would re-enter the dedup branch

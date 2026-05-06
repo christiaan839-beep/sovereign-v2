@@ -39,6 +39,10 @@ interface FormState {
   slackUrl: string;
   docUrl: string;
   firstDelivery: string;
+  /** Optional — when set, kickoff welcome email fires via Resend. */
+  customerEmail: string;
+  /** Optional — From name used in the welcome email envelope. */
+  fromName: string;
 }
 
 const blank: FormState = {
@@ -49,6 +53,8 @@ const blank: FormState = {
   slackUrl: "",
   docUrl: "",
   firstDelivery: "",
+  customerEmail: "",
+  fromName: "",
 };
 
 type SubmitState =
@@ -305,6 +311,34 @@ export default function AdminOnboardPage() {
               required
               value={form.firstDelivery}
               onChange={(e) => update("firstDelivery", e.target.value)}
+              className="w-full rounded-lg bg-black/40 border border-white/10 px-4 py-2.5 text-sm text-neutral-200 outline-none focus:border-emerald-500/60"
+            />
+          </Field>
+
+          <Field
+            label="Customer email (optional)"
+            hint="When set, the welcome email fires via Resend immediately on submit. Leave blank if you'll share the URL via Slack."
+          >
+            <input
+              type="email"
+              maxLength={200}
+              value={form.customerEmail}
+              onChange={(e) => update("customerEmail", e.target.value)}
+              placeholder="sarah@acme.com"
+              className="w-full rounded-lg bg-black/40 border border-white/10 px-4 py-2.5 text-sm text-neutral-200 outline-none focus:border-emerald-500/60"
+            />
+          </Field>
+
+          <Field
+            label="From name (optional)"
+            hint="Operator's first name. Defaults to 'Sovereign Matrix'. Personal feels human."
+          >
+            <input
+              type="text"
+              maxLength={80}
+              value={form.fromName}
+              onChange={(e) => update("fromName", e.target.value)}
+              placeholder="C."
               className="w-full rounded-lg bg-black/40 border border-white/10 px-4 py-2.5 text-sm text-neutral-200 outline-none focus:border-emerald-500/60"
             />
           </Field>

@@ -34,6 +34,18 @@ const onboardSchema = z.object({
   firstDelivery: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD format"),
+  /**
+   * Optional. When provided, an immediate welcome email is sent via
+   * Resend to this address. When omitted, the operator is expected
+   * to share the welcome URL via another channel (Slack/SMS/etc).
+   */
+  customerEmail: z.string().email().optional().or(z.literal("")),
+  /**
+   * Optional. From-name used in the welcome email envelope. Defaults
+   * to "Sovereign Matrix" — set to the operator's first name for the
+   * personal touch the welcome page commits to.
+   */
+  fromName: z.string().min(1).max(80).optional().or(z.literal("")),
 });
 
 export async function POST(req: Request) {
@@ -92,10 +104,34 @@ export async function POST(req: Request) {
       firstDelivery: data.firstDelivery,
     });
 
+    // Optional welcome email — if the operator pasted an email
+    // address into the form, send the kickoff template via Resend
+    // immediately. Failure here never blocks provisioning; the
+    // operator can resend via a manual flow later.
+    let emailResult:
+      | { sent: true; id?: string }
+      | { sent: false; reason: string }
+      | undefined;
+    if (data.customerEmail) {
+      const { sendWelcomeEmail } = await import("@/lib/welcome-email");
+      const result = await sendWelcomeEmail({
+        to: data.customerEmail,
+        firstName: data.firstName,
+        welcomeUrl,
+        kickoffUrl: data.kickoffUrl,
+        firstDelivery: data.firstDelivery,
+        fromName: data.fromName || undefined,
+      });
+      emailResult = result.ok
+        ? { sent: true, id: result.id }
+        : { sent: false, reason: result.reason ?? "unknown" };
+    }
+
     return NextResponse.json({
       ok: true,
       welcomeUrl,
       tenantId: updated.id,
+      email: emailResult,
     });
   } catch (err) {
     const pgCode = (err as { code?: string })?.code;

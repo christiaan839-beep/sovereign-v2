@@ -749,6 +749,19 @@ export function createAgentRoute(config: AgentConfig) {
       });
       replay?.fail(message);
 
+      // Page Sentry — STANDARDS-relevant failure that should not be
+      // discovered from a customer Slack message hours later.
+      const { captureException } = await import("@/lib/sentry");
+      captureException(error, {
+        module: "agent-factory",
+        action: config.name,
+        userId,
+        // `tenantId` is resolved inside the try block — not available
+        // here in the catch's scope. The agent name + userId are
+        // enough to triage; the tenant link is one DB lookup away.
+        extra: { durationMs: failDurationMs },
+      });
+
       // ─── Persist failure to agentActivity table ───
       if (userId) {
         persistAgentActivity({
