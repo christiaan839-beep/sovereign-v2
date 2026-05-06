@@ -1,0 +1,35 @@
+# Phoenix observability — local self-hosted compose.
+#
+# Run:
+#   docker compose -f docker-compose.phoenix.yml up -d
+#
+# Then set in `.env.local`:
+#   PHOENIX_OTLP_ENDPOINT=http://localhost:6006/v1/traces
+#   PHOENIX_PROJECT_NAME=local-dev
+#
+# UI:        http://localhost:6006
+# OTLP/HTTP: http://localhost:6006/v1/traces  (same port — Phoenix multiplexes)
+#
+# Storage: SQLite by default (the volume below). Switch to Postgres
+# by setting PHOENIX_SQL_DATABASE_URL=postgres://... — useful when
+# you outgrow ~1GB of traces.
+
+services:
+  phoenix:
+    image: arizephoenix/phoenix:latest
+    container_name: sovereign-phoenix
+    restart: unless-stopped
+    ports:
+      - "6006:6006"
+    environment:
+      # Bind on all interfaces (default is localhost-only inside the container)
+      PHOENIX_HOST: 0.0.0.0
+      PHOENIX_PORT: 6006
+      # Persist traces to the host volume below
+      PHOENIX_WORKING_DIR: /phoenix/data
+    volumes:
+      - phoenix-data:/phoenix/data
+
+volumes:
+  phoenix-data:
+    driver: local
