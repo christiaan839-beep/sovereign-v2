@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Shield, Sparkles, AlertTriangle } from "lucide-react";
 import { SovereignLogo } from "@/components/ui/SovereignLogo";
+import { getProofStats, type ProofStats } from "@/lib/proof-stats";
 
 /**
  * /proof — public, server-rendered, ISR-cached.
@@ -16,34 +17,12 @@ import { SovereignLogo } from "@/components/ui/SovereignLogo";
  *   - When customers eventually opt in to public showcases at
  *     /customers/[slug], links land here too.
  *
- * Server-side fetch with `next: { revalidate: 300 }` so we use the
- * same cache as the API route — single source of truth for the
- * "how fresh are these numbers" question.
+ * Calls `getProofStats()` directly — no HTTP self-fetch. Revalidates
+ * every 5 minutes; the same lib function backs `/api/proof/stats`
+ * for external callers.
  */
 
-interface ProofStats {
-  activeCustomers: number;
-  totalDeliveriesShipped: number;
-  leadsDelivered: number;
-  thisWeekShipped: number;
-  last4WeeksOnTimeRate: number;
-  migrationsApplied: boolean;
-  generatedAt: string;
-}
-
-async function loadStats(): Promise<ProofStats | null> {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_APP_URL ?? "https://sovereignmatrix.agency";
-  try {
-    const res = await fetch(`${baseUrl}/api/proof/stats`, {
-      next: { revalidate: 300 },
-    });
-    if (!res.ok) return null;
-    return (await res.json()) as ProofStats;
-  } catch {
-    return null;
-  }
-}
+export const revalidate = 300;
 
 export const metadata = {
   title: "Proof — Sovereign Matrix",
@@ -52,7 +31,7 @@ export const metadata = {
 };
 
 export default async function ProofPage() {
-  const stats = await loadStats();
+  const stats = await getProofStats();
 
   return (
     <main className="min-h-screen bg-[#030303] text-neutral-100">
@@ -88,9 +67,7 @@ export default async function ProofPage() {
           </p>
         </header>
 
-        {!stats ? (
-          <UnavailableCard />
-        ) : !stats.migrationsApplied ? (
+        {!stats.migrationsApplied ? (
           <SettingUpCard />
         ) : (
           <StatsGrid stats={stats} />
@@ -178,7 +155,7 @@ export default async function ProofPage() {
           </div>
         </section>
 
-        {stats && (
+        {stats.migrationsApplied && (
           <p className="mt-12 text-center text-xs text-neutral-600">
             Last refreshed{" "}
             <time dateTime={stats.generatedAt}>
@@ -293,24 +270,6 @@ function SettingUpCard() {
           </code>
           ) and welcomes the first customer. Check back once the platform is
           live.
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function UnavailableCard() {
-  return (
-    <div className="mt-12 rounded-2xl border border-red-500/20 bg-red-500/[0.04] p-8 flex gap-4">
-      <AlertTriangle className="h-5 w-5 text-red-400 flex-shrink-0 mt-1" />
-      <div>
-        <h3 className="text-base font-semibold text-white">
-          Numbers temporarily unavailable
-        </h3>
-        <p className="mt-2 text-sm text-neutral-400 leading-relaxed">
-          The proof endpoint is unreachable from the page server. The underlying
-          customer data is intact; refresh in a minute and the numbers should
-          return.
         </p>
       </div>
     </div>

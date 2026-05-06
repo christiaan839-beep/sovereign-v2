@@ -1,6 +1,6 @@
-import { neon, NeonQueryFunction } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-http';
-import * as schema from './schema';
+import { neon, NeonQueryFunction } from "@neondatabase/serverless";
+import { drizzle } from "drizzle-orm/neon-http";
+import * as schema from "./schema";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("database");
@@ -23,13 +23,25 @@ const log = createLogger("database");
 
 const connectionString = process.env.DATABASE_URL;
 
-if (!connectionString && typeof window === "undefined" && process.env.NODE_ENV === "production") {
+// Surface a clear error at runtime in production when DATABASE_URL is
+// missing — but skip during the Next.js build phase, where this module
+// is imported by every page bundle and the spam (one emission per
+// import) drowns the build log without telling us anything new.
+if (
+  !connectionString &&
+  typeof window === "undefined" &&
+  process.env.NODE_ENV === "production" &&
+  process.env.NEXT_PHASE !== "phase-production-build"
+) {
   log.error("DATABASE_URL is not configured. Database operations will fail.");
 }
 
-const sql: NeonQueryFunction<boolean, boolean> = neon(connectionString || "postgresql://user:pass@localhost/sovereign", {
-  fetchOptions: { cache: "no-store" },
-});
+const sql: NeonQueryFunction<boolean, boolean> = neon(
+  connectionString || "postgresql://user:pass@localhost/sovereign",
+  {
+    fetchOptions: { cache: "no-store" },
+  },
+);
 
 /**
  * ─── Connection Pooling Notes (for scale beyond 10K+ DAU) ───
@@ -57,13 +69,18 @@ const sql: NeonQueryFunction<boolean, boolean> = neon(connectionString || "postg
 export const db = drizzle(sql, { schema });
 
 /** Test DB connectivity. Handles Neon cold starts (3-5s). */
-export async function testConnection(): Promise<{ connected: boolean; latencyMs: number }> {
+export async function testConnection(): Promise<{
+  connected: boolean;
+  latencyMs: number;
+}> {
   const t0 = performance.now();
   try {
     await sql`SELECT 1`;
     return { connected: true, latencyMs: Math.round(performance.now() - t0) };
   } catch (err) {
-    log.error("Database connection test failed", { error: (err as Error).message });
+    log.error("Database connection test failed", {
+      error: (err as Error).message,
+    });
     return { connected: false, latencyMs: Math.round(performance.now() - t0) };
   }
 }
