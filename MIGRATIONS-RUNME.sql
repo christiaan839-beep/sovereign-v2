@@ -11,6 +11,7 @@
 --     drizzle/0018_voice_consent.sql        (compliance-critical)
 --     drizzle/0019_welcome_columns.sql      (Loom-driven onboarding)
 --     drizzle/0020_customer_deliveries.sql  (Monday delivery system of record)
+--     drizzle/0021_webhook_events.sql       (webhook idempotency)
 -- ═══════════════════════════════════════════════════════════════════
 
 
@@ -259,15 +260,37 @@ CREATE INDEX IF NOT EXISTS "idx_deliveries_date"
   ON "customer_deliveries" USING btree ("delivery_date");
 
 
+-- ═══ 0021 — Webhook event idempotency ══════════════════════════════
+-- Every inbound webhook (PayPal, Stripe, Clerk, Yoco) is fingerprinted
+-- by (provider, event_id) and inserted BEFORE its side effects run.
+-- Composite primary key is the dedupe lock — a duplicate event hits
+-- 23505 and the handler short-circuits with 200 OK so the provider
+-- stops retrying.
+
+CREATE TABLE IF NOT EXISTS "webhook_events" (
+  "provider"     text NOT NULL,
+  "event_id"     text NOT NULL,
+  "event_type"   text,
+  "status"       text NOT NULL DEFAULT 'processing',
+  "processed_at" timestamp,
+  "error"        text,
+  "received_at"  timestamp NOT NULL DEFAULT now(),
+  CONSTRAINT "webhook_events_pkey" PRIMARY KEY ("provider", "event_id")
+);
+
+CREATE INDEX IF NOT EXISTS "idx_webhook_events_received"
+  ON "webhook_events" USING btree ("received_at" DESC);
+
+
 -- ═══ Verification ══════════════════════════════════════════════════
--- After running, this query should return 14 rows: the 13 tables
--- created by migrations 0002–0020 plus `tenants` (created in 0000,
+-- After running, this query should return 15 rows: the 14 tables
+-- created by migrations 0002–0021 plus `tenants` (created in 0000,
 -- listed here as a sanity check that the schema is reachable).
 
 SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename IN (
   'jobs','playbook_runs','playbook_run_steps','graph_nodes','graph_edges',
   'affiliates','referrals','audit_logs','error_logs','workflows',
-  'tenant_memories','voice_consent','customer_deliveries','tenants'
+  'tenant_memories','voice_consent','customer_deliveries','webhook_events','tenants'
 ) ORDER BY tablename;
 
 -- Optionally verify the welcome_* columns landed on tenants

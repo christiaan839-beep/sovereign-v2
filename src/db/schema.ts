@@ -994,3 +994,42 @@ export const customerDeliveries = pgTable(
     index("idx_deliveries_date").on(table.deliveryDate),
   ],
 );
+
+/**
+ * Webhook event idempotency log. Every inbound webhook (PayPal,
+ * Stripe, Clerk, Yoco — any provider that retries on transient
+ * errors) is fingerprinted by `(provider, event_id)` and inserted
+ * into this table BEFORE being processed. The composite primary key
+ * is the dedupe lock: a duplicate event hits 23505 and the handler
+ * short-circuits, returning a 200 OK without re-running side effects.
+ *
+ * Why a dedicated table (instead of an in-memory cache):
+ *   - Lambda cold-starts blow away in-memory state every few
+ *     minutes; PayPal can retry an event hours later.
+ *   - The DB is the single source of truth across all replicas;
+ *     even if Vercel scales to N invocations, only one inserts the
+ *     row first.
+ *   - The row also doubles as an audit trail (status, processed_at,
+ *     error) so missed webhooks are debuggable after the fact.
+ *
+ * Cleanup: older than 90 days is deleted by the existing weekly
+ * cleanup cron — webhook providers don't retry past that window.
+ *
+ * Migration: drizzle/0021_webhook_events.sql.
+ */
+export const webhookEvents = pgTable(
+  "webhook_events",
+  {
+    provider: text("provider").notNull(),
+    eventId: text("event_id").notNull(),
+    eventType: text("event_type"),
+    status: text("status").notNull().default("processing"),
+    processedAt: timestamp("processed_at"),
+    error: text("error"),
+    receivedAt: timestamp("received_at").notNull().defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.provider, table.eventId] }),
+    index("idx_webhook_events_received").on(table.receivedAt),
+  ],
+);
