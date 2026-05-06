@@ -39,7 +39,7 @@ interface RecentActivity {
   createdAt: string;
 }
 
-interface DashboardStats {
+interface _DashboardStats {
   stats: {
     agentExecutions: number;
     totalTokens: number;

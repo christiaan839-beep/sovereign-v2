@@ -60,7 +60,7 @@ export async function POST(req: Request) {
     // Build the page payload — parent can be a page or database
     const isDatabase = parentId.length === 32 || parentId.includes("-");
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const pagePayload: Record<string, any> = {
       parent: isDatabase
         ? { database_id: parentId }
@@ -166,7 +166,7 @@ export async function GET(req: NextRequest) {
         id: r.id,
         object: r.object,
         url: r.url,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         title: extractTitle(r as any),
         lastEdited: r.last_edited_time,
       })),
@@ -189,7 +189,7 @@ function splitIntoChunks(text: string, maxLen: number): string[] {
   return chunks.length > 0 ? chunks : [""];
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 function extractTitle(page: any): string {
   try {
     const props = page.properties ?? {};

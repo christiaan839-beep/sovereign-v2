@@ -20,7 +20,6 @@
  */
 
 import { nimChat } from "@/lib/nvidia";
-import { ai } from "@/lib/ai";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("adversarial-synthesis");

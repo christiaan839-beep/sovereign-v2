@@ -1,8 +1,5 @@
 import { createLogger } from "@/lib/logger";
-import {
-  getRelevantLearnings,
-  emitLearningSignal,
-} from "@/lib/competitive-moat";
+import { emitLearningSignal } from "@/lib/competitive-moat";
 import { getModelRecommendation } from "@/lib/agent-performance";
 
 const log = createLogger("evolution-engine");

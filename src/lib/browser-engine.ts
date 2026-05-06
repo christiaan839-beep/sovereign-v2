@@ -18,9 +18,6 @@
  */
 
 import { ai } from "@/lib/ai";
-import { createLogger } from "@/lib/logger";
-
-const log = createLogger("browser-engine");
 
 // ── Types ──
 
@@ -42,14 +39,19 @@ export interface BrowserResult {
 
 // ── Scrape Page Content ──
 
-async function scrapePage(url: string): Promise<{ content: string; title: string; links: string[] }> {
+async function scrapePage(
+  url: string,
+): Promise<{ content: string; title: string; links: string[] }> {
   // Try Firecrawl first (best quality — renders JS)
   const firecrawlKey = process.env.FIRECRAWL_API_KEY;
   if (firecrawlKey) {
     try {
       const res = await fetch("https://api.firecrawl.dev/v1/scrape", {
         method: "POST",
-        headers: { Authorization: `Bearer ${firecrawlKey}`, "Content-Type": "application/json" },
+        headers: {
+          Authorization: `Bearer ${firecrawlKey}`,
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({ url, formats: ["markdown"] }),
         signal: AbortSignal.timeout(15000),
       });
@@ -61,13 +63,18 @@ async function scrapePage(url: string): Promise<{ content: string; title: string
           links: data.data?.links || [],
         };
       }
-    } catch { /* fallback to fetch */ }
+    } catch {
+      /* fallback to fetch */
+    }
   }
 
   // Fallback: raw fetch + cheerio-style extraction
   try {
     const res = await fetch(url, {
-      headers: { "User-Agent": "SovereignMatrix/2.0 (bot; +https://sovereignmatrix.agency)" },
+      headers: {
+        "User-Agent":
+          "SovereignMatrix/2.0 (bot; +https://sovereignmatrix.agency)",
+      },
       signal: AbortSignal.timeout(10000),
     });
     const html = await res.text();
@@ -87,17 +94,20 @@ async function scrapePage(url: string): Promise<{ content: string; title: string
 
     // Extract links
     const linkMatches = html.matchAll(/href="(https?:\/\/[^"]+)"/gi);
-    const links = [...linkMatches].map(m => m[1]).slice(0, 50);
+    const links = [...linkMatches].map((m) => m[1]).slice(0, 50);
 
     return { content, title, links };
-  } catch (err) {
+  } catch {
     return { content: "", title: "", links: [] };
   }
 }
 
 // ── Search the Web ──
 
-async function webSearch(query: string, maxResults: number = 5): Promise<Array<{ url: string; title: string; snippet: string }>> {
+async function webSearch(
+  query: string,
+  maxResults: number = 5,
+): Promise<Array<{ url: string; title: string; snippet: string }>> {
   const tavilyKey = process.env.TAVILY_API_KEY;
   if (!tavilyKey) return [];
 
@@ -115,11 +125,13 @@ async function webSearch(query: string, maxResults: number = 5): Promise<Array<{
     });
 
     const data = await res.json();
-    return (data.results || []).map((r: { url: string; title: string; content: string }) => ({
-      url: r.url,
-      title: r.title || "",
-      snippet: r.content?.slice(0, 200) || "",
-    }));
+    return (data.results || []).map(
+      (r: { url: string; title: string; content: string }) => ({
+        url: r.url,
+        title: r.title || "",
+        snippet: r.content?.slice(0, 200) || "",
+      }),
+    );
   } catch {
     return [];
   }
@@ -130,7 +142,9 @@ async function webSearch(query: string, maxResults: number = 5): Promise<Array<{
 /**
  * Execute a browser action.
  */
-export async function executeBrowserAction(action: BrowserAction): Promise<BrowserResult> {
+export async function executeBrowserAction(
+  action: BrowserAction,
+): Promise<BrowserResult> {
   const start = Date.now();
 
   try {
@@ -138,37 +152,72 @@ export async function executeBrowserAction(action: BrowserAction): Promise<Brows
       case "scrape": {
         if (!action.url) throw new Error("URL required for scrape");
         const result = await scrapePage(action.url);
-        return { action: "scrape", success: true, data: result, url: action.url, durationMs: Date.now() - start };
+        return {
+          action: "scrape",
+          success: true,
+          data: result,
+          url: action.url,
+          durationMs: Date.now() - start,
+        };
       }
 
       case "extract_links": {
         if (!action.url) throw new Error("URL required for extract_links");
         const { links, title } = await scrapePage(action.url);
-        return { action: "extract_links", success: true, data: { title, links, count: links.length }, url: action.url, durationMs: Date.now() - start };
+        return {
+          action: "extract_links",
+          success: true,
+          data: { title, links, count: links.length },
+          url: action.url,
+          durationMs: Date.now() - start,
+        };
       }
 
       case "search": {
         if (!action.query) throw new Error("Query required for search");
         const results = await webSearch(action.query);
-        return { action: "search", success: true, data: { results, count: results.length, query: action.query }, durationMs: Date.now() - start };
+        return {
+          action: "search",
+          success: true,
+          data: { results, count: results.length, query: action.query },
+          durationMs: Date.now() - start,
+        };
       }
 
       case "fill_form": {
-        if (!action.url || !action.formData) throw new Error("URL and formData required for fill_form");
+        if (!action.url || !action.formData)
+          throw new Error("URL and formData required for fill_form");
         const res = await fetch(action.url, {
           method: "POST",
           headers: { "Content-Type": "application/x-www-form-urlencoded" },
           body: new URLSearchParams(action.formData).toString(),
           signal: AbortSignal.timeout(10000),
         });
-        return { action: "fill_form", success: res.ok, data: { status: res.status, redirected: res.redirected }, url: action.url, durationMs: Date.now() - start };
+        return {
+          action: "fill_form",
+          success: res.ok,
+          data: { status: res.status, redirected: res.redirected },
+          url: action.url,
+          durationMs: Date.now() - start,
+        };
       }
 
       default:
-        return { action: action.type, success: false, data: { error: "Unknown action type" }, durationMs: Date.now() - start };
+        return {
+          action: action.type,
+          success: false,
+          data: { error: "Unknown action type" },
+          durationMs: Date.now() - start,
+        };
     }
   } catch (err) {
-    return { action: action.type, success: false, data: { error: String(err) }, url: action.url, durationMs: Date.now() - start };
+    return {
+      action: action.type,
+      success: false,
+      data: { error: String(err) },
+      url: action.url,
+      durationMs: Date.now() - start,
+    };
   }
 }
 
@@ -176,7 +225,10 @@ export async function executeBrowserAction(action: BrowserAction): Promise<Brows
  * Multi-step browser task — agent plans and executes a sequence of browser actions.
  * Uses the PEER loop pattern: plan → execute → evaluate → refine.
  */
-export async function autonomousBrowse(goal: string, maxSteps: number = 5): Promise<{
+export async function autonomousBrowse(
+  goal: string,
+  maxSteps: number = 5,
+): Promise<{
   goal: string;
   steps: BrowserResult[];
   summary: string;
@@ -194,12 +246,21 @@ Available actions:
 
 Return JSON array of actions (max ${maxSteps}):
 [{"type": "search", "query": "..."}, {"type": "scrape", "url": "..."}]`,
-    { system: "You are a browser automation planner. Output ONLY valid JSON array.", maxTokens: 500 }
+    {
+      system:
+        "You are a browser automation planner. Output ONLY valid JSON array.",
+      maxTokens: 500,
+    },
   );
 
   let plan: BrowserAction[] = [];
   try {
-    plan = JSON.parse(planRaw.replace(/```json?\n?/g, "").replace(/```/g, "").trim());
+    plan = JSON.parse(
+      planRaw
+        .replace(/```json?\n?/g, "")
+        .replace(/```/g, "")
+        .trim(),
+    );
   } catch {
     // If planning fails, do a simple search
     plan = [{ type: "search", query: goal }];
@@ -213,8 +274,14 @@ Return JSON array of actions (max ${maxSteps}):
     // If search returned results, scrape the first one
     if (action.type === "search" && result.success) {
       const searchData = result.data as { results: Array<{ url: string }> };
-      if (searchData.results?.[0]?.url && !plan.some(a => a.type === "scrape")) {
-        const scrapeResult = await executeBrowserAction({ type: "scrape", url: searchData.results[0].url });
+      if (
+        searchData.results?.[0]?.url &&
+        !plan.some((a) => a.type === "scrape")
+      ) {
+        const scrapeResult = await executeBrowserAction({
+          type: "scrape",
+          url: searchData.results[0].url,
+        });
         steps.push(scrapeResult);
       }
     }
@@ -222,13 +289,16 @@ Return JSON array of actions (max ${maxSteps}):
 
   // Summarize findings
   const allContent = steps
-    .filter(s => s.success)
-    .map(s => JSON.stringify(s.data).slice(0, 500))
+    .filter((s) => s.success)
+    .map((s) => JSON.stringify(s.data).slice(0, 500))
     .join("\n---\n");
 
   const summary = await ai(
     `Summarize these browser findings for the goal: "${goal}"\n\n${allContent}`,
-    { system: "Summarize concisely. Include key facts and URLs.", maxTokens: 500 }
+    {
+      system: "Summarize concisely. Include key facts and URLs.",
+      maxTokens: 500,
+    },
   );
 
   return { goal, steps, summary };

@@ -1,6 +1,5 @@
 import { createAgentRoute } from "@/lib/agent-factory";
 import { getNimKey } from "@/lib/nvidia";
-import { NextResponse } from "next/server";
 
 /**
  * GLiNER PII DETECTOR — Specialized PII entity detection using

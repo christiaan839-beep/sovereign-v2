@@ -1,6 +1,4 @@
-import { createLogger } from "@/lib/logger";
 
-const log = createLogger("output-transparency");
 
 /**
  * OUTPUT TRANSPARENCY — Show users exactly why they should trust the output.

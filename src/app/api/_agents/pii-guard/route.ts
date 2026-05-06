@@ -1,5 +1,4 @@
 import { createAgentRoute } from "@/lib/agent-factory";
-import { NextResponse } from "next/server";
 
 /**
  * PII GUARDRAILS — Uses GLiNER PII detection to scrub sensitive data.

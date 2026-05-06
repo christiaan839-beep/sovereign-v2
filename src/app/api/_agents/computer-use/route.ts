@@ -70,8 +70,8 @@ export const POST = createAgentRoute({
           type: "bash_20250124",
           name: "bash"
         }
-      ] as any, // eslint-disable-line @typescript-eslint/no-explicit-any
-      messages: messages as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+      ] as any,  
+      messages: messages as any,  
     });
 
     // 4. Extract tool calls and text

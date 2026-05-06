@@ -11,7 +11,6 @@
  *   // connector = { name, actions: ["list-users", "create-user", ...], execute: fn }
  */
 
-import { ai } from "@/lib/ai";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("connector-factory");

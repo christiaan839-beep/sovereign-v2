@@ -26,13 +26,15 @@ export interface AuthResult {
 const USAGE_TRACKER = new Map<string, { count: number; reset: number }>();
 let lastTrackerCleanup = Date.now();
 
-import { getPlan, normalizePlanId } from "@/lib/plans";
+import { getPlan } from "@/lib/plans";
 
 // Daily rate limits for agent calls (derived from plan's demoRatePerDay / apiRatePerDay)
 function getDailyLimit(planId: string): number {
   const plan = getPlan(planId);
   // Demo/free uses demoRatePerDay; paid plans use apiRatePerDay (capped for agent calls)
-  return planId === "free" ? plan.demoRatePerDay : Math.min(plan.apiRatePerDay, 10_000);
+  return planId === "free"
+    ? plan.demoRatePerDay
+    : Math.min(plan.apiRatePerDay, 10_000);
 }
 
 // Purge expired entries every 10 minutes (prevents unbounded growth)
@@ -47,7 +49,7 @@ function cleanupTracker() {
 
 export async function authorizeAgent(
   request: Request,
-  options?: { allowAnonymous?: boolean; agentName?: string }
+  options?: { allowAnonymous?: boolean; agentName?: string },
 ): Promise<AuthResult> {
   cleanupTracker();
 
@@ -73,7 +75,11 @@ export async function authorizeAgent(
 
     logUsage("anonymous", ip, options.agentName || "unknown");
 
-    return { authorized: true, plan: "free", remaining: getDailyLimit("free") - (USAGE_TRACKER.get(key)?.count || 0) };
+    return {
+      authorized: true,
+      plan: "free",
+      remaining: getDailyLimit("free") - (USAGE_TRACKER.get(key)?.count || 0),
+    };
   }
 
   // Clerk auth check
@@ -81,7 +87,10 @@ export async function authorizeAgent(
     const { userId } = await auth();
 
     if (!userId) {
-      return { authorized: false, error: "Authentication required. Please sign in." };
+      return {
+        authorized: false,
+        error: "Authentication required. Please sign in.",
+      };
     }
 
     // Determine plan from metadata (simplified — production: check Stripe subscription)
@@ -150,7 +159,12 @@ function logUsage(userId: string, plan: string, agent: string) {
   if (logCount < LOG_CAPACITY) logCount++;
 }
 
-export function logAgentExecution(userId: string, agent: string, duration_ms: number, status: string) {
+export function logAgentExecution(
+  userId: string,
+  agent: string,
+  duration_ms: number,
+  status: string,
+) {
   USAGE_LOGS[logHead] = {
     timestamp: new Date().toISOString(),
     userId,
@@ -177,8 +191,12 @@ export function getUsageLogs(): UsageLog[] {
 export function getUsageStats() {
   const logs = getLogsSnapshot();
   const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-  const todayLogs = logs.filter(l => l.timestamp >= today);
+  const today = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+  ).toISOString();
+  const todayLogs = logs.filter((l) => l.timestamp >= today);
 
   const agentCounts: Record<string, number> = {};
   const userCounts: Record<string, number> = {};
@@ -193,17 +211,26 @@ export function getUsageStats() {
     total_calls_all_time: logCount,
     calls_by_agent: agentCounts,
     unique_users_today: Object.keys(userCounts).length,
-    top_agents: Object.entries(agentCounts).sort((a, b) => b[1] - a[1]).slice(0, 5),
+    top_agents: Object.entries(agentCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5),
   };
 }
 
 /**
  * Helper: Quick auth check that returns a NextResponse error if unauthorized.
  */
-export async function quickAuth(request: Request, agentName: string, allowAnonymous = false): Promise<NextResponse | null> {
+export async function quickAuth(
+  request: Request,
+  agentName: string,
+  allowAnonymous = false,
+): Promise<NextResponse | null> {
   const result = await authorizeAgent(request, { agentName, allowAnonymous });
   if (!result.authorized) {
-    return NextResponse.json({ error: result.error, plan: result.plan, remaining: result.remaining }, { status: 403 });
+    return NextResponse.json(
+      { error: result.error, plan: result.plan, remaining: result.remaining },
+      { status: 403 },
+    );
   }
   return null;
 }

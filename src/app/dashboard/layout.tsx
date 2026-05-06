@@ -6,35 +6,54 @@ import Image from "next/image";
 import { NotificationBell } from "@/components/dashboard/NotificationBell";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  LayoutDashboard, Settings, Target,
-  Search, ChevronDown, ChevronRight, Sparkles,
-  X, Menu,
-  PanelLeftOpen, PanelLeftClose, Plug, Cpu,
-  BarChart3, Eye, Shield, Wrench,
-  Wand2, Workflow, MessageSquare, Zap, Rocket,
-  Bot, ClipboardList, Store, Code2, Mail, FileText, Bell,
-  CreditCard, Users,
+  LayoutDashboard,
+  Settings,
+  Target,
+  Search,
+  ChevronDown,
+  ChevronRight,
+  Sparkles,
+  X,
+  Menu,
+  PanelLeftOpen,
+  PanelLeftClose,
+  Plug,
+  Cpu,
+  BarChart3,
+  Shield,
+  Wrench,
+  Wand2,
+  Workflow,
+  MessageSquare,
+  Zap,
+  Rocket,
+  Bot,
+  ClipboardList,
+  Store,
+  Code2,
+  Mail,
+  FileText,
+  CreditCard,
+  Users,
 } from "lucide-react";
 import { useKeyboardShortcuts } from "@/lib/keyboard-shortcuts";
 import { motion, AnimatePresence } from "framer-motion";
 import { UserButton } from "@clerk/nextjs";
 import { useSafeUser } from "@/lib/safe-clerk";
-import { TelemetryProvider } from '@/components/providers/TelemetryProvider';
-import { JarvisSocket } from '@/components/JarvisSocket';
-import { ToastProvider } from '@/components/ui/ToastProvider';
-import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
-import { CinematicOnboarding } from '@/components/dashboard/CinematicOnboarding';
-import { LiveActivityConsole } from '@/components/dashboard/LiveActivityConsole';
-import { CommandPalette } from '@/components/ui/CommandPalette';
-import { SovereignAssistant } from '@/components/dashboard/SovereignAssistant';
-import { NotificationCenter } from '@/components/dashboard/NotificationCenter';
-import { KeyboardShortcutsModal } from '@/components/ui/KeyboardShortcutsModal';
+import { TelemetryProvider } from "@/components/providers/TelemetryProvider";
+import { JarvisSocket } from "@/components/JarvisSocket";
+import { ToastProvider } from "@/components/ui/ToastProvider";
+import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
+import { CinematicOnboarding } from "@/components/dashboard/CinematicOnboarding";
+import { LiveActivityConsole } from "@/components/dashboard/LiveActivityConsole";
+import { CommandPalette } from "@/components/ui/CommandPalette";
+import { SovereignAssistant } from "@/components/dashboard/SovereignAssistant";
+import { NotificationCenter } from "@/components/dashboard/NotificationCenter";
+import { KeyboardShortcutsModal } from "@/components/ui/KeyboardShortcutsModal";
 
 /* ─── "NEW" Badge Helpers ─── */
 
-const NEW_BADGE_ITEMS = new Set([
-  "/dashboard/autopilot",
-]);
+const NEW_BADGE_ITEMS = new Set(["/dashboard/autopilot"]);
 
 const NEW_BADGE_STORAGE_PREFIX = "sovereign_new_dismissed_";
 
@@ -71,11 +90,36 @@ interface NavGroup {
 
 // ── Primary: The 5 things users actually do every day ──
 const PRIMARY_NAV: NavItem[] = [
-  { href: "/dashboard", label: "Home", icon: LayoutDashboard, tooltip: "Dashboard overview" },
-  { href: "/dashboard/mission-control", label: "Mission Control", icon: Rocket, tooltip: "One goal → watch agents execute" },
-  { href: "/dashboard/playbooks", label: "Playbooks", icon: Zap, tooltip: "25 multi-agent workflows + autopilot" },
-  { href: "/dashboard/leads", label: "Leads", icon: Target, tooltip: "Find and qualify prospects" },
-  { href: "/chat", label: "Chat", icon: MessageSquare, tooltip: "Ask anything — AI routes to the right agent" },
+  {
+    href: "/dashboard",
+    label: "Home",
+    icon: LayoutDashboard,
+    tooltip: "Dashboard overview",
+  },
+  {
+    href: "/dashboard/mission-control",
+    label: "Mission Control",
+    icon: Rocket,
+    tooltip: "One goal → watch agents execute",
+  },
+  {
+    href: "/dashboard/playbooks",
+    label: "Playbooks",
+    icon: Zap,
+    tooltip: "25 multi-agent workflows + autopilot",
+  },
+  {
+    href: "/dashboard/leads",
+    label: "Leads",
+    icon: Target,
+    tooltip: "Find and qualify prospects",
+  },
+  {
+    href: "/chat",
+    label: "Chat",
+    icon: MessageSquare,
+    tooltip: "Ask anything — AI routes to the right agent",
+  },
 ];
 
 // ── Grouped: Power tools + monitoring (collapsed by default) ──
@@ -85,39 +129,124 @@ const NAV_GROUPS: NavGroup[] = [
     icon: Wrench,
     defaultOpen: false,
     items: [
-      { href: "/dashboard/content-factory", label: "Content", icon: Sparkles, tooltip: "Blog posts, emails, social media" },
-      { href: "/dashboard/email-builder", label: "Email Builder", icon: Mail, tooltip: "AI-generated email sequences" },
-      { href: "/dashboard/seo-dominator", label: "SEO", icon: Search, tooltip: "Keyword research and site audits" },
-      { href: "/dashboard/competitor", label: "Market Intel", icon: Shield, tooltip: "Competitor analysis" },
-      { href: "/dashboard/build", label: "Page Builder", icon: Wand2, tooltip: "Build landing pages with AI" },
-      { href: "/dashboard/workflow-builder", label: "Workflows", icon: Workflow, tooltip: "Visual multi-step automations" },
+      {
+        href: "/dashboard/content-factory",
+        label: "Content",
+        icon: Sparkles,
+        tooltip: "Blog posts, emails, social media",
+      },
+      {
+        href: "/dashboard/email-builder",
+        label: "Email Builder",
+        icon: Mail,
+        tooltip: "AI-generated email sequences",
+      },
+      {
+        href: "/dashboard/seo-dominator",
+        label: "SEO",
+        icon: Search,
+        tooltip: "Keyword research and site audits",
+      },
+      {
+        href: "/dashboard/competitor",
+        label: "Market Intel",
+        icon: Shield,
+        tooltip: "Competitor analysis",
+      },
+      {
+        href: "/dashboard/build",
+        label: "Page Builder",
+        icon: Wand2,
+        tooltip: "Build landing pages with AI",
+      },
+      {
+        href: "/dashboard/workflow-builder",
+        label: "Workflows",
+        icon: Workflow,
+        tooltip: "Visual multi-step automations",
+      },
     ],
   },
   {
     label: "Monitor",
     icon: Cpu,
     items: [
-      { href: "/dashboard/autopilot", label: "Autopilot", icon: Bot, tooltip: "Live playbook runs — step by step" },
-      { href: "/dashboard/jobs", label: "Job Queue", icon: ClipboardList, tooltip: "Async fire-and-forget tasks" },
-      { href: "/dashboard/nemo-claw", label: "Security", icon: Shield, tooltip: "5-layer safety pipeline + HITL approvals" },
-      { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3, tooltip: "Platform metrics + playbook stats" },
-      { href: "/dashboard/reports", label: "Reports", icon: FileText, tooltip: "AI-generated business reports" },
+      {
+        href: "/dashboard/autopilot",
+        label: "Autopilot",
+        icon: Bot,
+        tooltip: "Live playbook runs — step by step",
+      },
+      {
+        href: "/dashboard/jobs",
+        label: "Job Queue",
+        icon: ClipboardList,
+        tooltip: "Async fire-and-forget tasks",
+      },
+      {
+        href: "/dashboard/nemo-claw",
+        label: "Security",
+        icon: Shield,
+        tooltip: "5-layer safety pipeline + HITL approvals",
+      },
+      {
+        href: "/dashboard/analytics",
+        label: "Analytics",
+        icon: BarChart3,
+        tooltip: "Platform metrics + playbook stats",
+      },
+      {
+        href: "/dashboard/reports",
+        label: "Reports",
+        icon: FileText,
+        tooltip: "AI-generated business reports",
+      },
     ],
   },
 ];
 
 // ── Ecosystem: Marketplace + Developer tools ──
 const ECOSYSTEM_NAV: NavItem[] = [
-  { href: "/marketplace", label: "Marketplace", icon: Store, tooltip: "Browse and install 130+ agents" },
-  { href: "/developers", label: "Developer SDK", icon: Code2, tooltip: "Build agents, earn 80% revenue" },
+  {
+    href: "/marketplace",
+    label: "Marketplace",
+    icon: Store,
+    tooltip: "Browse and install 130+ agents",
+  },
+  {
+    href: "/developers",
+    label: "Developer SDK",
+    icon: Code2,
+    tooltip: "Build agents, earn 80% revenue",
+  },
 ];
 
 // ── Bottom: Account-level items ──
 const BOTTOM_NAV: NavItem[] = [
-  { href: "/dashboard/billing", label: "Billing", icon: CreditCard, tooltip: "Plan, usage, payment history" },
-  { href: "/dashboard/referrals", label: "Referrals", icon: Users, tooltip: "Earn up to 40% commission" },
-  { href: "/dashboard/integrations", label: "Integrations", icon: Plug, tooltip: "Connect apps and services" },
-  { href: "/dashboard/settings", label: "Settings", icon: Settings, tooltip: "Account, team, API keys" },
+  {
+    href: "/dashboard/billing",
+    label: "Billing",
+    icon: CreditCard,
+    tooltip: "Plan, usage, payment history",
+  },
+  {
+    href: "/dashboard/referrals",
+    label: "Referrals",
+    icon: Users,
+    tooltip: "Earn up to 40% commission",
+  },
+  {
+    href: "/dashboard/integrations",
+    label: "Integrations",
+    icon: Plug,
+    tooltip: "Connect apps and services",
+  },
+  {
+    href: "/dashboard/settings",
+    label: "Settings",
+    icon: Settings,
+    tooltip: "Account, team, API keys",
+  },
 ];
 
 /* Page label lookup for breadcrumbs */
@@ -131,7 +260,7 @@ const ALL_NAV_ITEMS: NavItem[] = [
 function getPageLabel(pathname: string): string | null {
   if (pathname === "/dashboard") return null;
   const match = ALL_NAV_ITEMS.find(
-    (item) => item.href !== "/dashboard" && pathname.startsWith(item.href)
+    (item) => item.href !== "/dashboard" && pathname.startsWith(item.href),
   );
   if (match) return match.label;
   // Fallback: derive from pathname
@@ -145,7 +274,11 @@ function getPageLabel(pathname: string): string | null {
 
 /* ─── Layout Component ─── */
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const { user } = useSafeUser();
@@ -193,21 +326,45 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       const RECENT_KEY = "sovereign_recent_agents";
       const PAGE_MAP: Record<string, { name: string; iconName: string }> = {
         "/dashboard/leads": { name: "Lead Gen", iconName: "Target" },
-        "/dashboard/content-factory": { name: "Content Factory", iconName: "Sparkles" },
+        "/dashboard/content-factory": {
+          name: "Content Factory",
+          iconName: "Sparkles",
+        },
         "/dashboard/war-room": { name: "War Room", iconName: "Swords" },
-        "/dashboard/seo-dominator": { name: "SEO Dominator", iconName: "Search" },
+        "/dashboard/seo-dominator": {
+          name: "SEO Dominator",
+          iconName: "Search",
+        },
         "/dashboard/voice-assistant": { name: "Voice Agent", iconName: "Mic" },
         "/dashboard/nemo-claw": { name: "Security", iconName: "Shield" },
-        "/dashboard/templates": { name: "Templates", iconName: "LayoutTemplate" },
-        "/dashboard/workflow-builder": { name: "Workflows", iconName: "Workflow" },
+        "/dashboard/templates": {
+          name: "Templates",
+          iconName: "LayoutTemplate",
+        },
+        "/dashboard/workflow-builder": {
+          name: "Workflows",
+          iconName: "Workflow",
+        },
         "/dashboard/integrations": { name: "Integrations", iconName: "Plug" },
         "/dashboard/automations": { name: "Automations", iconName: "Clock" },
-        "/dashboard/analytics/roi": { name: "Analytics", iconName: "BarChart3" },
+        "/dashboard/analytics/roi": {
+          name: "Analytics",
+          iconName: "BarChart3",
+        },
         "/dashboard/god-eye": { name: "Agent Monitor", iconName: "Eye" },
-        "/dashboard/competitor": { name: "Competitor Intel", iconName: "Shield" },
+        "/dashboard/competitor": {
+          name: "Competitor Intel",
+          iconName: "Shield",
+        },
         "/dashboard/build": { name: "Page Builder", iconName: "Sparkles" },
-        "/dashboard/settings/team": { name: "Team Settings", iconName: "Users" },
-        "/dashboard/ghost-protocol": { name: "Ghost Protocol", iconName: "Shield" },
+        "/dashboard/settings/team": {
+          name: "Team Settings",
+          iconName: "Users",
+        },
+        "/dashboard/ghost-protocol": {
+          name: "Ghost Protocol",
+          iconName: "Shield",
+        },
         "/dashboard/arsenal": { name: "Arsenal", iconName: "Zap" },
         "/dashboard/nim-arsenal": { name: "NIM Models", iconName: "Cpu" },
         "/dashboard/canvas": { name: "Canvas", iconName: "Palette" },
@@ -221,12 +378,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       const pageInfo = PAGE_MAP[pathname];
       if (!pageInfo) return;
       const raw = localStorage.getItem(RECENT_KEY);
-      let recent: { id: string; name: string; href: string; iconName: string; visitedAt: number }[] = raw ? JSON.parse(raw) : [];
+      let recent: {
+        id: string;
+        name: string;
+        href: string;
+        iconName: string;
+        visitedAt: number;
+      }[] = raw ? JSON.parse(raw) : [];
       recent = recent.filter((r) => r.href !== pathname);
-      recent.unshift({ id: pathname, name: pageInfo.name, href: pathname, iconName: pageInfo.iconName, visitedAt: Date.now() });
+      recent.unshift({
+        id: pathname,
+        name: pageInfo.name,
+        href: pathname,
+        iconName: pageInfo.iconName,
+        visitedAt: Date.now(),
+      });
       recent = recent.slice(0, 10);
       localStorage.setItem(RECENT_KEY, JSON.stringify(recent));
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }, [pathname]);
 
   // Health check
@@ -238,7 +409,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         const elapsed = Math.round(performance.now() - start);
         setIsConnected(res.ok);
         setPing(elapsed);
-      } catch { setIsConnected(false); }
+      } catch {
+        setIsConnected(false);
+      }
     };
     checkHealth();
     const interval = setInterval(checkHealth, 120_000);
@@ -253,15 +426,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   // Keyboard shortcuts
   useKeyboardShortcuts([
-    { key: "/", meta: true, handler: () => setSidebarExpanded((v) => !v), label: "Toggle sidebar" },
-    { key: "escape", handler: () => setMobileMenuOpen(false), label: "Close panel" },
+    {
+      key: "/",
+      meta: true,
+      handler: () => setSidebarExpanded((v) => !v),
+      label: "Toggle sidebar",
+    },
+    {
+      key: "escape",
+      handler: () => setMobileMenuOpen(false),
+      label: "Close panel",
+    },
     // Cmd+\ to focus chat input
     {
       key: "\\",
       meta: true,
       handler: () => {
-        const chatInput = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(
-          '[data-chat-input="true"], .chat-input, textarea[placeholder*="message"], input[placeholder*="message"]'
+        const chatInput = document.querySelector<
+          HTMLInputElement | HTMLTextAreaElement
+        >(
+          '[data-chat-input="true"], .chat-input, textarea[placeholder*="message"], input[placeholder*="message"]',
         );
         if (chatInput) chatInput.focus();
       },
@@ -279,7 +463,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             form.requestSubmit();
           } else {
             // Try to find a nearby submit button
-            const btn = document.querySelector<HTMLButtonElement>('button[type="submit"], button.submit-btn');
+            const btn = document.querySelector<HTMLButtonElement>(
+              'button[type="submit"], button.submit-btn',
+            );
             if (btn) btn.click();
           }
         }
@@ -299,7 +485,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const isActive = useCallback(
     (href: string) =>
       pathname === href || (href !== "/dashboard" && pathname.startsWith(href)),
-    [pathname]
+    [pathname],
   );
 
   /* ── Nav link component ── */
@@ -313,7 +499,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       collapsed?: boolean;
       onNavigate?: () => void;
     }) => {
-      const active = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
+      const active =
+        pathname === item.href ||
+        (item.href !== "/dashboard" && pathname.startsWith(item.href));
       const { showNew, dismissNew } = useNewBadge(item.href);
 
       const handleClick = () => {
@@ -352,7 +540,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               : "text-neutral-400 hover:text-white hover:bg-white/[0.04]"
           }`}
         >
-          <item.icon className={`w-4 h-4 shrink-0 ${active ? "animate-pulse" : ""}`} />
+          <item.icon
+            className={`w-4 h-4 shrink-0 ${active ? "animate-pulse" : ""}`}
+          />
           <span className="flex-1">{item.label}</span>
           {showNew && (
             <span className="px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
@@ -419,7 +609,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     >
                       <div className="pt-1 pb-1 space-y-0.5">
                         {group.items.map((item) => (
-                          <NavLink key={item.href} item={item} onNavigate={onNavigate} />
+                          <NavLink
+                            key={item.href}
+                            item={item}
+                            onNavigate={onNavigate}
+                          />
                         ))}
                       </div>
                     </motion.div>
@@ -435,7 +629,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Ecosystem: Marketplace + Developers */}
         <div className="mx-4 border-b border-white/[0.04]" />
         <div className="px-3 pt-2 pb-1">
-          <span className="px-3 text-[9px] font-semibold text-emerald-500/60 uppercase tracking-widest">Ecosystem</span>
+          <span className="px-3 text-[9px] font-semibold text-emerald-500/60 uppercase tracking-widest">
+            Ecosystem
+          </span>
         </div>
         <div className="px-3 pb-2 space-y-0.5">
           {ECOSYSTEM_NAV.map((item) => (
@@ -482,7 +678,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <TelemetryProvider>
       <title>{`Sovereign Matrix${titleSuffix}`}</title>
       <div className="flex h-screen bg-[#000000] text-white overflow-hidden font-sans">
-
         {/* === DESKTOP SIDEBAR === */}
         <aside
           role="navigation"
@@ -494,7 +689,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {/* Logo Header */}
           <div
             className={`border-b border-white/5 z-10 flex items-center ${
-              sidebarExpanded ? "px-5 py-4 justify-between" : "p-4 justify-center"
+              sidebarExpanded
+                ? "px-5 py-4 justify-between"
+                : "p-4 justify-center"
             }`}
           >
             <Link href="/dashboard" className="flex items-center gap-2.5">
@@ -578,7 +775,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </aside>
 
         {/* === MAIN CONTENT === */}
-        <main role="main" className="flex-1 overflow-y-auto bg-[#000000] relative z-10 custom-scrollbar">
+        <main
+          role="main"
+          className="flex-1 overflow-y-auto bg-[#000000] relative z-10 custom-scrollbar"
+        >
           <div className="relative z-10 w-full min-h-full max-w-[1600px] mx-auto">
             {/* Breadcrumb Bar + Notification Bell */}
             <div className="px-6 lg:px-8 pt-3 pb-1 flex items-center justify-between">
@@ -607,7 +807,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     key={pathname}
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
+                    transition={{
+                      duration: 0.3,
+                      ease: [0.25, 0.46, 0.45, 0.94],
+                    }}
                   >
                     {children}
                   </motion.div>

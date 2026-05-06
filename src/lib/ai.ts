@@ -409,7 +409,7 @@ async function claudeText(
   });
 
   // Inject ephemeral caching on the system prompt to slash token costs by 90%
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const systemParam: any = system
     ? [{ type: "text", text: system, cache_control: { type: "ephemeral" } }]
     : undefined;
@@ -417,7 +417,7 @@ async function claudeText(
   // Extended thinking and max_tokens are incompatible — use one or the other
   // Opus 4.6: strongest reasoning, 1M context, 128K output — use for God Brain, deep analysis
   // Sonnet 4.6: best balance of speed/quality — default for all other agents
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const requestParams: any = {
     model: useOpus ? "claude-opus-4-6" : "claude-sonnet-4-6",
     ...(systemParam ? { system: systemParam } : {}),
@@ -482,7 +482,7 @@ async function claudeWithCitations(
     citations: { enabled: true },
   }));
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const response = await (client.messages.create as any)({
     model: "claude-sonnet-4-6",
     max_tokens: maxTokens,
@@ -695,7 +695,7 @@ export async function claudeToolUse(
   const client = new Anthropic({ apiKey });
 
   const MAX_ITERATIONS = 10;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const messages: any[] = [{ role: "user", content: prompt }];
   const allToolCalls: Array<{ name: string; input: Record<string, unknown> }> =
     [];
@@ -705,7 +705,7 @@ export async function claudeToolUse(
       model: "claude-sonnet-4-6",
       max_tokens: maxTokens,
       ...(system ? { system } : {}),
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       tools: tools as any,
       messages,
     });
@@ -744,7 +744,7 @@ export async function claudeToolUse(
     messages.push({ role: "assistant", content: response.content });
 
     // Execute each tool call and feed results back
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const toolResults: any[] = [];
     for (const tc of iterToolCalls) {
       let result: string;

@@ -1,6 +1,6 @@
 "use client";
 "use no memo"; // Animation component uses Math.random() intentionally for visual effects
-/* eslint-disable react-hooks/purity -- Intentional impure render for particle animation */
+ 
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";

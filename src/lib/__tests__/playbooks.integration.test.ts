@@ -25,7 +25,7 @@ describe("playbooks.ts — Integration Tests", () => {
   });
 
   it("every playbook step references a valid agent", () => {
-    const knownAgents = new Set([
+    const _knownAgents = new Set([
       "leads",
       "email-sequence",
       "seo-dominator",

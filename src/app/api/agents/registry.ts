@@ -15,7 +15,7 @@
  */
 import "server-only";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 type RouteModule = Record<string, any>;
 
 export const AGENT_REGISTRY: Record<string, () => Promise<RouteModule>> = {

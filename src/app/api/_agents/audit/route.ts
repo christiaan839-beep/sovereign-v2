@@ -1,5 +1,4 @@
 import { createAgentRoute } from "@/lib/agent-factory";
-import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { google } from '@ai-sdk/google';
 import { generateObject } from 'ai';

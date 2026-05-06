@@ -1,5 +1,5 @@
 import { createAgentRoute } from "@/lib/agent-factory";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
 function getNimKey(): string {
   return process.env.NVIDIA_NIM_API_KEY || process.env.NVIDIA_API_KEY || "";

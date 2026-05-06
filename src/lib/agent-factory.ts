@@ -130,7 +130,7 @@ export interface AgentContext {
    * the static contract here would otherwise force every agent to
    * cast on every property access.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   input: Record<string, any>;
   /** Raw request object */
   request: Request;

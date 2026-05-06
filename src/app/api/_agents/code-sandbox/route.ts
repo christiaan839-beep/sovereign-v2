@@ -1,9 +1,6 @@
 import { createAgentRoute } from "@/lib/agent-factory";
-import { NextResponse } from "next/server";
 import { executeCode, analyzeData } from "@/lib/colab-mcp";
-import { createLogger } from "@/lib/logger";
 
-const log = createLogger("code-sandbox");
 
 /**
  * CODE SANDBOX AGENT — Execute Python code in a cloud sandbox.

@@ -168,7 +168,7 @@ export function LandingAgent() {
   const sendMessage = async (text: string) => {
     if (!text.trim() || isThinking) return;
 
-    const now = Date.now(); // eslint-disable-line react-hooks/purity -- called from event handler, not during render
+    const now = Date.now();  
     const userMessage: Message = { role: "user", content: text.trim(), timestamp: now };
     setMessages((prev) => [...prev, userMessage]);
     setInput("");

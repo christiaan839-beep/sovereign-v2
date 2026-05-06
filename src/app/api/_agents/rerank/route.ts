@@ -1,5 +1,4 @@
 import { createAgentRoute } from "@/lib/agent-factory";
-import { NextResponse } from "next/server";
 
 /**
  * RERANK — Uses llama-nemotron-rerank-1b-v2 to re-score search results.

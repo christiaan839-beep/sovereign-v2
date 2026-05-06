@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { db } from "@/db";
-import { marketplaceAgents, customSkills } from "@/db/schema";
+import { marketplaceAgents } from "@/db/schema";
 import { eq, desc, sql, and, ilike } from "drizzle-orm";
 import { createLogger } from "@/lib/logger";
 

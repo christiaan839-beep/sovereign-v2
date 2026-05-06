@@ -1,6 +1,4 @@
-import { createLogger } from "@/lib/logger";
 
-const log = createLogger("agent-performance");
 
 /**
  * AGENT PERFORMANCE TRACKER — Learn which agents and models perform best.

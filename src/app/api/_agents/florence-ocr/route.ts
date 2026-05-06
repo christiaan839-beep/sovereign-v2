@@ -1,6 +1,5 @@
 import { createAgentRoute } from "@/lib/agent-factory";
 import { getNimKey } from "@/lib/nvidia";
-import { NextResponse } from "next/server";
 
 /**
  * FLORENCE OCR & VISUAL GROUNDING — Uses NVIDIA Florence V2 for

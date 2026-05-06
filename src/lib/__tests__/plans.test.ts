@@ -15,7 +15,6 @@ import {
   getPlanMrrUsd,
   isUnlimited,
   getNextPlan,
-  getStripePriceId,
   type PlanId,
 } from "@/lib/plans";
 
@@ -23,7 +22,14 @@ describe("plans.ts — Single Source of Truth", () => {
   // ── Plan Registry ──
 
   it("defines all 6 plan tiers", () => {
-    const ids: PlanId[] = ["free", "starter", "founder", "array", "node", "enterprise"];
+    const ids: PlanId[] = [
+      "free",
+      "starter",
+      "founder",
+      "array",
+      "node",
+      "enterprise",
+    ];
     for (const id of ids) {
       expect(PLANS[id]).toBeDefined();
       expect(PLANS[id].name).toBeTruthy();
@@ -34,14 +40,18 @@ describe("plans.ts — Single Source of Truth", () => {
   it("pricing is consistent (starter < array < node < enterprise)", () => {
     expect(PLANS.starter.priceUsdCents).toBeLessThan(PLANS.array.priceUsdCents);
     expect(PLANS.array.priceUsdCents).toBeLessThan(PLANS.node.priceUsdCents);
-    expect(PLANS.node.priceUsdCents).toBeLessThan(PLANS.enterprise.priceUsdCents);
+    expect(PLANS.node.priceUsdCents).toBeLessThan(
+      PLANS.enterprise.priceUsdCents,
+    );
   });
 
   it("run limits are consistent (free < starter < array < node <= enterprise)", () => {
     expect(PLANS.free.runsPerMonth).toBeLessThan(PLANS.starter.runsPerMonth);
     expect(PLANS.starter.runsPerMonth).toBeLessThan(PLANS.array.runsPerMonth);
     expect(PLANS.array.runsPerMonth).toBeLessThan(PLANS.node.runsPerMonth);
-    expect(PLANS.node.runsPerMonth).toBeLessThanOrEqual(PLANS.enterprise.runsPerMonth);
+    expect(PLANS.node.runsPerMonth).toBeLessThanOrEqual(
+      PLANS.enterprise.runsPerMonth,
+    );
   });
 
   it("starter tier is $19/mo", () => {

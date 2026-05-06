@@ -5,7 +5,6 @@ import {
   CheckCircle2,
   X as XIcon,
   Zap,
-  Crown,
   Server,
   ArrowRight,
   Shield,

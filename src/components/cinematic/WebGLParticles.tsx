@@ -353,7 +353,7 @@ export function WebGLParticles({
             "targetPosition",
           ) as THREE.BufferAttribute;
           for (let i = 0; i < count; i++) {
-            const i3 = i * 3;
+            const _i3 = i * 3;
             posAttr.setXYZ(
               i,
               currentShape[i][0],

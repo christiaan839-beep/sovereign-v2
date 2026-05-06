@@ -42,7 +42,7 @@ const EMERALD: ArcColor = [0.063, 0.725, 0.506, 0.8];
 const CYAN: ArcColor = [0.086, 0.827, 0.878, 0.7];
 const VIOLET: ArcColor = [0.651, 0.545, 0.984, 0.7];
 
-const ARCS = [
+const _ARCS = [
   // Transatlantic — high volume
   {
     startLat: 37.7749,
@@ -275,7 +275,7 @@ export function AgentGlobe() {
     (typeof import("cobe"))["default"]
   > | null>(null);
   const phiRef = useRef(0);
-  const [isMobile, setIsMobile] = useState(false);
+  const [_isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     setIsMobile(window.innerWidth < 768);

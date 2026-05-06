@@ -120,7 +120,7 @@ export function CommandEgg() {
         "%c" + CONSOLE_SHOUTOUT,
         "font-family: 'JetBrains Mono', monospace; color: #B5532C; line-height: 1.5;",
       );
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot "have we logged yet" flag
+       
       setHasLoggedOnce(true);
     }
   }, [open, hasLoggedOnce]);
@@ -137,7 +137,7 @@ export function CommandEgg() {
   // Reset the highlighted row when the filter changes — selection is
   // derived from the list, so when the list shrinks we must clamp.
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- clamp derived selection on dependency change
+     
     setSelectedIndex(0);
   }, [query]);
 

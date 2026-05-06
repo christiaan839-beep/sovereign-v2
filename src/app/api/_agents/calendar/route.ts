@@ -1,9 +1,6 @@
 import { createAgentRoute } from "@/lib/agent-factory";
-import { NextResponse } from "next/server";
 import { ai } from "@/lib/ai";
 import { ANTI_SLOP_RULES } from "@/lib/content-engine";
-import { createLogger } from "@/lib/logger";
-const log = createLogger("calendar-agent");
 
 /**
  * Content Calendar API
