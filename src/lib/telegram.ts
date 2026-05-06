@@ -3,15 +3,21 @@
  * Used by the async job runner to push results directly to your Telegram.
  */
 
-export async function sendTelegram(chatId: string, text: string): Promise<boolean> {
+export async function sendTelegram(
+  chatId: string,
+  text: string,
+): Promise<boolean> {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   if (!token || !chatId) return false;
   try {
-    const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chat_id: chatId, text, parse_mode: "Markdown" }),
-    });
+    const res = await fetch(
+      `https://api.telegram.org/bot${token}/sendMessage`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: chatId, text, parse_mode: "Markdown" }),
+      },
+    );
     return res.ok;
   } catch {
     return false;
@@ -19,12 +25,12 @@ export async function sendTelegram(chatId: string, text: string): Promise<boolea
 }
 
 // ─── Message Formatters ──────────────────────────────────────────────────────
-// TODO: Implement these to match your brand voice.
-// These control exactly what Telegram messages look like when jobs complete.
+// Default brand voice. Override per-deploy by editing the message
+// bodies — these strings are what Telegram users see when async
+// jobs change state.
 
 export function formatJobStarted(goal: string, jobId: string): string {
-  // TODO: implement — called when a job begins processing
-  // jobId is a UUID — show the last 8 chars for readability
+  // jobId is a UUID — show the last 8 chars for readability.
   const shortId = jobId.slice(-8);
   return [
     `⚡ *Job queued* \`${shortId}\``,
@@ -35,9 +41,15 @@ export function formatJobStarted(goal: string, jobId: string): string {
   ].join("\n");
 }
 
-export function formatJobDone(goal: string, jobId: string, durationMs: number, agentsUsed: string[]): string {
-  // TODO: implement — called when a job completes successfully
-  // Hint: include the job result summary, duration, and which agents ran
+export function formatJobDone(
+  goal: string,
+  jobId: string,
+  durationMs: number,
+  agentsUsed: string[],
+): string {
+  // Includes the job result summary, duration, and which agents
+  // contributed. The dashboard URL gives the operator a one-tap
+  // path back to the full result transcript.
   const shortId = jobId.slice(-8);
   const seconds = (durationMs / 1000).toFixed(1);
   const agentList = agentsUsed.length ? agentsUsed.join(", ") : "auto";
@@ -52,8 +64,13 @@ export function formatJobDone(goal: string, jobId: string, durationMs: number, a
   ].join("\n");
 }
 
-export function formatJobFailed(goal: string, jobId: string, error: string): string {
-  // TODO: implement — called when a job fails
+export function formatJobFailed(
+  goal: string,
+  jobId: string,
+  error: string,
+): string {
+  // Surfaces the error verbatim. Truncate at the call site if the
+  // upstream error message is unbounded.
   const shortId = jobId.slice(-8);
   return [
     `❌ *Job failed* \`${shortId}\``,

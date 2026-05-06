@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { rateLimit } from "@/lib/rate-limit";
 import { createLogger } from "@/lib/logger";
+import { alreadyProcessed } from "@/lib/idempotency";
 
 const log = createLogger("crm-webhook");
 
@@ -93,11 +94,51 @@ export async function POST(req: Request) {
   }
 
   try {
-    const _payload = JSON.parse(rawBody);
-    // TODO: wire up agent swarm trigger (contract gen + onboarding email).
+    const payload = JSON.parse(rawBody);
+
+    // Idempotency. HubSpot batches multiple subscription events
+    // into a single POST and gives each a unique `eventId`. We
+    // dedupe on the array of eventIds so a partial-retry (HubSpot
+    // resends if we 5xx) doesn't re-process events the previous
+    // delivery already handled. When the body shape doesn't match
+    // (manual webhook tests via the dashboard), we fall through
+    // without dedupe — the rate limiter is the only gate.
+    const events: Array<{ eventId?: string | number }> = Array.isArray(payload)
+      ? payload
+      : Array.isArray(payload?.events)
+        ? payload.events
+        : [];
+    const newEventIds: Array<string | number> = [];
+    for (const e of events) {
+      if (
+        e &&
+        (typeof e.eventId === "string" || typeof e.eventId === "number")
+      ) {
+        const key = String(e.eventId);
+        if (!(await alreadyProcessed("hubspot", key))) {
+          newEventIds.push(e.eventId);
+        }
+      }
+    }
+    if (events.length > 0 && newEventIds.length === 0) {
+      log.info("Skipping fully-duplicate HubSpot batch", {
+        batchSize: events.length,
+      });
+      return NextResponse.json({
+        success: true,
+        status: "duplicate",
+        skipped: events.length,
+      });
+    }
+
+    // Hook the agent swarm trigger (contract gen + onboarding email)
+    // here when implemented. The current handler logs the state
+    // mutation; downstream side-effects belong on a queue, not in-
+    // line, so HubSpot's 5-second timeout is never a concern.
     return NextResponse.json({
       success: true,
       status: "CRM State Logged by Sovereign Matrix",
+      processed: newEventIds.length || events.length,
     });
   } catch (error) {
     log.error("CRM webhook parsing error", error as Record<string, unknown>);

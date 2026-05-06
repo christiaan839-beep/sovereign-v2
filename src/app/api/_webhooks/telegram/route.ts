@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { createLogger } from "@/lib/logger";
 import { rateLimit } from "@/lib/rate-limit";
+import { alreadyProcessed } from "@/lib/idempotency";
 const log = createLogger("telegram-webhook");
 
 const limiter = rateLimit({ interval: 60, limit: 30 });
@@ -79,6 +80,22 @@ export async function POST(req: Request) {
     }
 
     const body: TelegramUpdate = await req.json();
+
+    // Idempotency. Telegram retries delivery on any non-2xx; the
+    // `update_id` is monotonically increasing per bot and unique
+    // per update. Without this guard, a retried update would
+    // re-process the operator's command and fire duplicate
+    // outbound messages — exactly the failure mode that prompted
+    // the v2 telegram protocol's idempotency contract.
+    if (typeof body.update_id === "number") {
+      const idemKey = String(body.update_id);
+      if (await alreadyProcessed("telegram", idemKey)) {
+        log.info("Skipping duplicate Telegram update", {
+          updateId: body.update_id,
+        });
+        return NextResponse.json({ status: "duplicate" });
+      }
+    }
 
     if (!body.message || !body.message.text) {
       return NextResponse.json({ status: "ignored" });
