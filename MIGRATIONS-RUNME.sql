@@ -260,10 +260,19 @@ CREATE INDEX IF NOT EXISTS "idx_deliveries_date"
 
 
 -- ═══ Verification ══════════════════════════════════════════════════
--- After running, this query should return 13 rows:
+-- After running, this query should return 14 rows: the 13 tables
+-- created by migrations 0002–0020 plus `tenants` (created in 0000,
+-- listed here as a sanity check that the schema is reachable).
 
 SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename IN (
   'jobs','playbook_runs','playbook_run_steps','graph_nodes','graph_edges',
   'affiliates','referrals','audit_logs','error_logs','workflows',
   'tenant_memories','voice_consent','customer_deliveries','tenants'
 ) ORDER BY tablename;
+
+-- Optionally verify the welcome_* columns landed on tenants
+-- (migration 0019). Should return 6 rows.
+SELECT column_name FROM information_schema.columns
+ WHERE table_schema='public' AND table_name='tenants'
+   AND column_name LIKE 'welcome_%'
+ ORDER BY column_name;
