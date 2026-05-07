@@ -12,7 +12,11 @@ import { CommandEgg } from "@/components/landing/CommandEgg";
 import { PrimaryCTA } from "@/components/landing/PrimaryCTA";
 import { StatusIndicator } from "@/components/landing/StatusIndicator";
 import { trackCtaClick } from "@/lib/cta-track";
-import { useHideyNav, FloatingParticles, TiltCard } from "@/components/ui/EliteEffects";
+import {
+  useHideyNav,
+  FloatingParticles,
+  TiltCard,
+} from "@/components/ui/EliteEffects";
 
 // New components
 import { A2EGraph } from "@/components/landing/A2EGraph";
@@ -38,15 +42,18 @@ const PLATFORM_HREF = "/platform";
 
 const PLAYBOOK_COPY: Record<string, { outcome: string; time: string }> = {
   "lead-blitz": {
-    outcome: "5+ companies with contact angles guaranteed, or the run doesn't count.",
+    outcome:
+      "5+ companies with contact angles guaranteed, or the run doesn't count.",
     time: "~3 min",
   },
   "competitor-takedown": {
-    outcome: "Full report: weaknesses, market gaps, pricing arbitrage, counter-positioning.",
+    outcome:
+      "Full report: weaknesses, market gaps, pricing arbitrage, counter-positioning.",
     time: "~4 min",
   },
   "content-machine": {
-    outcome: "1,500+ word post, meta + keywords, plus platform-ready social snippets.",
+    outcome:
+      "1,500+ word post, meta + keywords, plus platform-ready social snippets.",
     time: "~2 min",
   },
   "seo-domination": {
@@ -54,7 +61,8 @@ const PLAYBOOK_COPY: Record<string, { outcome: string; time: string }> = {
     time: "~4 min",
   },
   "weekly-report": {
-    outcome: "Executive-ready summary: wins, blockers, next steps. Scheduled every Monday.",
+    outcome:
+      "Executive-ready summary: wins, blockers, next steps. Scheduled every Monday.",
     time: "~2 min",
   },
 };
@@ -134,9 +142,13 @@ export default function LandingPage() {
 function SectionHead({ n, label }: { n: string; label: string }) {
   return (
     <div className="mb-8 flex items-center gap-4 flex-wrap">
-      <span className="font-mono text-[10px] text-neutral-600 tracking-[0.2em]">{n} / 10</span>
+      <span className="font-mono text-[10px] text-neutral-600 tracking-[0.2em]">
+        {n} / 10
+      </span>
       <span aria-hidden="true" className="h-px w-6 bg-white/[0.12]" />
-      <p className="font-serif italic text-[13px] text-neutral-500 tracking-[-0.01em]">{label}</p>
+      <p className="font-serif italic text-[13px] text-neutral-500 tracking-[-0.01em]">
+        {label}
+      </p>
     </div>
   );
 }
@@ -181,13 +193,18 @@ function Nav({
         <div
           className={`absolute inset-x-0 bottom-0 h-px transition-opacity duration-500 pointer-events-none ${scrolled ? "opacity-100" : "opacity-0"}`}
           style={{
-            background: "linear-gradient(to right, transparent 0%, rgba(181,83,44,0.45) 50%, transparent 100%)",
+            background:
+              "linear-gradient(to right, transparent 0%, rgba(181,83,44,0.45) 50%, transparent 100%)",
           }}
           aria-hidden="true"
         />
 
         <div className="max-w-7xl mx-auto px-6 md:px-10 h-[60px] flex items-center justify-between">
-          <Link href="/" className="group flex items-center gap-2.5 flex-shrink-0" aria-label="Sovereign Matrix — Home">
+          <Link
+            href="/"
+            className="group flex items-center gap-2.5 flex-shrink-0"
+            aria-label="Sovereign Matrix — Home"
+          >
             <SovereignLogo size="sm" />
             <span className="hidden sm:block font-serif text-[17px] tracking-tight text-white group-hover:text-[#E8DDD0] transition-colors">
               Sovereign Matrix
@@ -203,7 +220,10 @@ function Nav({
               <NavLink href="/developers/docs">Docs</NavLink>
             </div>
 
-            <span aria-hidden="true" className="h-4 w-px bg-white/[0.07] mr-6" />
+            <span
+              aria-hidden="true"
+              className="h-4 w-px bg-white/[0.07] mr-6"
+            />
 
             <div
               className="group hidden xl:flex items-center gap-1.5 text-neutral-700 hover:text-neutral-500 text-[11px] font-mono select-none cursor-default transition-colors mr-6"
@@ -227,10 +247,18 @@ function Nav({
               <span
                 aria-hidden="true"
                 className="pointer-events-none absolute inset-0 rounded-[3px] opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                style={{ boxShadow: "0 0 0 1px rgba(181,83,44,0.6), 0 0 16px rgba(181,83,44,0.3)" }}
+                style={{
+                  boxShadow:
+                    "0 0 0 1px rgba(181,83,44,0.6), 0 0 16px rgba(181,83,44,0.3)",
+                }}
               />
               Run Free Agent
-              <span aria-hidden="true" className="transition-transform group-hover:translate-x-0.5">→</span>
+              <span
+                aria-hidden="true"
+                className="transition-transform group-hover:translate-x-0.5"
+              >
+                →
+              </span>
             </Link>
           </div>
 
@@ -242,9 +270,15 @@ function Nav({
               aria-expanded={mobileNavOpen}
             >
               <div className="space-y-1.5">
-                <span className={`block w-5 h-[1.5px] bg-current transition-transform ${mobileNavOpen ? "rotate-45 translate-y-[7px]" : ""}`} />
-                <span className={`block w-5 h-[1.5px] bg-current transition-opacity ${mobileNavOpen ? "opacity-0" : ""}`} />
-                <span className={`block w-5 h-[1.5px] bg-current transition-transform ${mobileNavOpen ? "-rotate-45 -translate-y-[7px]" : ""}`} />
+                <span
+                  className={`block w-5 h-[1.5px] bg-current transition-transform ${mobileNavOpen ? "rotate-45 translate-y-[7px]" : ""}`}
+                />
+                <span
+                  className={`block w-5 h-[1.5px] bg-current transition-opacity ${mobileNavOpen ? "opacity-0" : ""}`}
+                />
+                <span
+                  className={`block w-5 h-[1.5px] bg-current transition-transform ${mobileNavOpen ? "-rotate-45 -translate-y-[7px]" : ""}`}
+                />
               </div>
             </button>
           </div>
@@ -291,7 +325,13 @@ function Nav({
   );
 }
 
-function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
+function NavLink({
+  href,
+  children,
+}: {
+  href: string;
+  children: React.ReactNode;
+}) {
   return (
     <Link
       href={href}
@@ -312,7 +352,11 @@ function Hero() {
   return (
     <section className="relative min-h-screen flex items-center justify-center px-6 pt-20 pb-16 overflow-hidden">
       {/* A2EGraph background at low opacity */}
-      <div className="absolute inset-0 pointer-events-none" aria-hidden="true" style={{ opacity: 0.3 }}>
+      <div
+        className="absolute inset-0 pointer-events-none"
+        aria-hidden="true"
+        style={{ opacity: 0.3 }}
+      >
         <A2EGraph className="w-full h-full" />
       </div>
 
@@ -320,7 +364,8 @@ function Hero() {
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: "radial-gradient(ellipse 70% 60% at 50% 40%, rgba(181,83,44,0.04) 0%, transparent 65%)",
+          background:
+            "radial-gradient(ellipse 70% 60% at 50% 40%, rgba(181,83,44,0.04) 0%, transparent 65%)",
         }}
         aria-hidden="true"
       />
@@ -340,7 +385,10 @@ function Hero() {
       {/* Bottom fade for smooth section transition */}
       <div
         className="absolute bottom-0 inset-x-0 h-32 pointer-events-none"
-        style={{ background: "linear-gradient(to bottom, transparent 0%, #030303 100%)" }}
+        style={{
+          background:
+            "linear-gradient(to bottom, transparent 0%, #030303 100%)",
+        }}
         aria-hidden="true"
       />
 
@@ -352,7 +400,9 @@ function Hero() {
           transition={{ delay: 0.1, duration: 0.7 }}
           className="flex items-center justify-center gap-3 mb-8 flex-wrap"
         >
-          <span className="font-mono text-[10px] text-neutral-600 tracking-[0.2em]">01 / 10</span>
+          <span className="font-mono text-[10px] text-neutral-600 tracking-[0.2em]">
+            01 / 10
+          </span>
           <span aria-hidden="true" className="h-px w-6 bg-white/[0.12]" />
           <div className="flex items-center gap-2 font-mono text-[11px] text-neutral-500">
             <span className="relative inline-flex h-1.5 w-1.5">
@@ -374,9 +424,13 @@ function Hero() {
           transition={{ delay: 0.2, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           className="font-serif text-5xl sm:text-7xl md:text-8xl lg:text-9xl leading-[1.02] tracking-[-0.02em] mb-6"
         >
-          <span className="block text-white">The Agent</span>
-          <span className="block" style={{ color: "#B5532C" }}>Infrastructure</span>
-          <span className="block" style={{ color: "#B5532C" }}>Stack</span>
+          <span className="block text-white">Your AI</span>
+          <span className="block" style={{ color: "#B5532C" }}>
+            marketing team.
+          </span>
+          <span className="block text-white text-3xl sm:text-5xl md:text-6xl lg:text-7xl mt-3">
+            Without the agency invoice.
+          </span>
         </motion.h1>
 
         {/* Sub-headline */}
@@ -386,7 +440,8 @@ function Hero() {
           transition={{ delay: 0.4, duration: 0.7 }}
           className="text-[17px] md:text-[19px] text-neutral-400 leading-[1.55] mb-4 max-w-2xl mx-auto"
         >
-          137 specialized agents. 39+ models. An economy where agents hire agents.
+          137 specialised agents that research, draft, qualify, call, and book —
+          on a multi-provider router that runs most calls for free.
         </motion.p>
         <motion.p
           initial={{ opacity: 0, y: 10 }}
@@ -394,7 +449,8 @@ function Hero() {
           transition={{ delay: 0.5, duration: 0.6 }}
           className="text-[15px] md:text-[16px] text-neutral-500 leading-[1.55] mb-10 max-w-xl mx-auto"
         >
-          Built for enterprises that can&apos;t afford to get AI wrong.
+          From R349/mo (≈ $19). No per-seat fees. ZAR + USD billing. Built for
+          the teams every US-first AI tool ignores.
         </motion.p>
 
         {/* CTAs */}
@@ -412,7 +468,12 @@ function Hero() {
             className="group inline-flex items-center gap-1.5 px-6 py-3.5 border border-white/[0.12] text-neutral-400 hover:text-white hover:border-white/25 font-mono text-[13px] tracking-tight transition-colors rounded-[3px]"
           >
             Explore the Marketplace
-            <span aria-hidden="true" className="transition-transform group-hover:translate-x-0.5">→</span>
+            <span
+              aria-hidden="true"
+              className="transition-transform group-hover:translate-x-0.5"
+            >
+              →
+            </span>
           </Link>
         </motion.div>
 
@@ -421,11 +482,50 @@ function Hero() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8, duration: 0.5 }}
-          className="text-[11px] font-mono text-neutral-600 tracking-wide mb-12"
+          className="text-[11px] font-mono text-neutral-600 tracking-wide mb-6"
         >
-          Free · $49/mo · $499/mo ·{" "}
-          <Link href="/pricing" className="hover:text-neutral-400 transition-colors underline decoration-white/10 hover:decoration-white/30">
-            no card on free tier
+          R0 · R349/mo · R9,997/mo · $0 · $19/mo · $499/mo ·{" "}
+          <Link
+            href="/pricing"
+            className="hover:text-neutral-400 transition-colors underline decoration-white/10 hover:decoration-white/30"
+          >
+            full pricing
+          </Link>
+        </motion.p>
+
+        {/* Trust line — links to real wins + competitor comparisons */}
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.95, duration: 0.5 }}
+          className="text-[11px] font-mono text-neutral-700 tracking-wide mb-12"
+        >
+          <Link
+            href="/case-studies"
+            className="hover:text-[#B5532C] transition-colors"
+          >
+            Real customer wins →
+          </Link>
+          <span className="text-neutral-800 mx-1">·</span>
+          <Link
+            href="/vs/lindy"
+            className="hover:text-neutral-400 transition-colors"
+          >
+            vs Lindy
+          </Link>
+          <span className="text-neutral-800 mx-1">·</span>
+          <Link
+            href="/vs/apollo"
+            className="hover:text-neutral-400 transition-colors"
+          >
+            vs Apollo
+          </Link>
+          <span className="text-neutral-800 mx-1">·</span>
+          <Link
+            href="/vs/jasper"
+            className="hover:text-neutral-400 transition-colors"
+          >
+            vs Jasper
           </Link>
         </motion.p>
 
@@ -441,8 +541,20 @@ function Hero() {
             transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
             aria-hidden="true"
           >
-            <svg width="14" height="20" viewBox="0 0 14 20" fill="none" className="text-neutral-700">
-              <path d="M7 2v10M3.5 8.5L7 12l3.5-3.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+            <svg
+              width="14"
+              height="20"
+              viewBox="0 0 14 20"
+              fill="none"
+              className="text-neutral-700"
+            >
+              <path
+                d="M7 2v10M3.5 8.5L7 12l3.5-3.5"
+                stroke="currentColor"
+                strokeWidth="1.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </motion.div>
         </motion.div>
@@ -478,7 +590,10 @@ function MemoryMoat() {
     <section className="relative px-6 py-28 md:py-40 bg-[#040303] overflow-hidden">
       <div
         className="absolute right-0 top-1/2 -translate-y-1/2 h-[600px] w-[500px] opacity-[0.07] blur-[140px] pointer-events-none"
-        style={{ background: "radial-gradient(circle, rgba(181,83,44,1) 0%, transparent 70%)" }}
+        style={{
+          background:
+            "radial-gradient(circle, rgba(181,83,44,1) 0%, transparent 70%)",
+        }}
         aria-hidden="true"
       />
 
@@ -494,9 +609,9 @@ function MemoryMoat() {
             </h2>
             <p className="text-[16px] text-neutral-400 leading-[1.65] mb-6 max-w-md">
               Every execution is embedded in semantic memory — 1024-dimensional
-              vectors that capture what you worked on, what worked, and
-              what your business is about. Future agents retrieve relevant
-              context automatically. No re-briefing. No lost context.
+              vectors that capture what you worked on, what worked, and what
+              your business is about. Future agents retrieve relevant context
+              automatically. No re-briefing. No lost context.
             </p>
             <p className="text-[14px] text-neutral-500 leading-[1.7] max-w-md mb-8 font-serif italic">
               After six months of use, your Sovereign agents know your niche,
@@ -515,7 +630,10 @@ function MemoryMoat() {
           <div className="relative">
             <div
               className="absolute left-5 top-6 bottom-6 w-px -translate-x-1/2"
-              style={{ background: "linear-gradient(to bottom, rgba(181,83,44,0.25) 0%, rgba(181,83,44,0.9) 100%)" }}
+              style={{
+                background:
+                  "linear-gradient(to bottom, rgba(181,83,44,0.25) 0%, rgba(181,83,44,0.9) 100%)",
+              }}
               aria-hidden="true"
             />
 
@@ -526,7 +644,11 @@ function MemoryMoat() {
                   initial={{ opacity: 0, x: 16 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true, margin: "-40px" }}
-                  transition={{ delay: i * 0.12, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+                  transition={{
+                    delay: i * 0.12,
+                    duration: 0.55,
+                    ease: [0.16, 1, 0.3, 1],
+                  }}
                   className="relative flex gap-5"
                 >
                   <div
@@ -544,19 +666,24 @@ function MemoryMoat() {
                   <div className="pt-1.5">
                     <p
                       className="font-mono text-[10px] tracking-[0.18em] uppercase mb-1.5"
-                      style={{ color: `rgba(181,83,44,${0.6 + nodeOpacity[i] * 0.4})` }}
+                      style={{
+                        color: `rgba(181,83,44,${0.6 + nodeOpacity[i] * 0.4})`,
+                      }}
                     >
                       {item.label}
                     </p>
-                    <p className="text-[14px] text-neutral-300 leading-[1.6]">{item.desc}</p>
+                    <p className="text-[14px] text-neutral-300 leading-[1.6]">
+                      {item.desc}
+                    </p>
                   </div>
                 </motion.div>
               ))}
             </div>
 
             <p className="mt-10 text-[10px] font-mono text-neutral-700 leading-relaxed pl-[60px]">
-              Powered by NVIDIA NIM embeddings (nvidia/nv-embedqa-e5-v5, 1024-dim) ·
-              Stored in your private tenant namespace · Never shared across users
+              Powered by NVIDIA NIM embeddings (nvidia/nv-embedqa-e5-v5,
+              1024-dim) · Stored in your private tenant namespace · Never shared
+              across users
             </p>
           </div>
         </div>
@@ -574,7 +701,9 @@ function FeaturedPlaybooksSection() {
         <h2 className="font-serif text-4xl md:text-6xl lg:text-[68px] leading-[1.05] mb-5 max-w-3xl tracking-[-0.02em]">
           Each one guarantees an output
           <br />
-          <em className="not-italic text-[#B5532C]">or the run doesn&apos;t count.</em>
+          <em className="not-italic text-[#B5532C]">
+            or the run doesn&apos;t count.
+          </em>
         </h2>
         <p className="text-neutral-400 max-w-xl leading-relaxed mb-16 text-[15px]">
           Twenty more live inside the dashboard. These five are where most
@@ -588,13 +717,17 @@ function FeaturedPlaybooksSection() {
                 href={`/dashboard/playbooks?auto=${pb.slug}`}
                 onClick={() => trackCtaClick("playbook-card")}
                 className="group relative block h-full p-6 rounded-[6px] border border-white/[0.06] bg-white/[0.025] hover:border-[#B5532C]/35 hover:bg-[#B5532C]/[0.04] transition-all duration-300 overflow-hidden"
-                style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08), 0 1px 0 rgba(0,0,0,0.5)" }}
+                style={{
+                  boxShadow:
+                    "inset 0 1px 0 rgba(255,255,255,0.08), 0 1px 0 rgba(0,0,0,0.5)",
+                }}
               >
                 <span
                   aria-hidden="true"
                   className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
                   style={{
-                    background: "radial-gradient(circle at 30% 0%, rgba(181,83,44,0.18) 0%, transparent 45%)",
+                    background:
+                      "radial-gradient(circle at 30% 0%, rgba(181,83,44,0.18) 0%, transparent 45%)",
                   }}
                 />
                 <p className="relative text-[10px] font-mono uppercase tracking-[0.18em] text-neutral-500 mb-3">
@@ -603,7 +736,9 @@ function FeaturedPlaybooksSection() {
                 <h3 className="relative font-serif text-2xl text-white mb-2 leading-tight tracking-tight">
                   {pb.name}
                 </h3>
-                <p className="relative text-sm text-neutral-400 leading-relaxed mb-4">{pb.tagline}</p>
+                <p className="relative text-sm text-neutral-400 leading-relaxed mb-4">
+                  {pb.tagline}
+                </p>
                 <p className="relative text-[11px] text-neutral-500 font-mono italic mb-4 leading-relaxed">
                   {pb.outcome}
                 </p>
@@ -626,7 +761,8 @@ function FeaturedPlaybooksSection() {
                 View all playbooks
               </h3>
               <p className="text-sm text-neutral-600 leading-relaxed">
-                Lead gen, content, research, competitive intel, reporting, and more — all with the same 5-layer guarantee.
+                Lead gen, content, research, competitive intel, reporting, and
+                more — all with the same 5-layer guarantee.
               </p>
             </div>
             <span className="mt-6 text-[11px] font-mono tracking-wide text-neutral-600 group-hover:text-[#B5532C] transition-colors">
@@ -642,14 +778,54 @@ function FeaturedPlaybooksSection() {
 /* ─── 08 · Industry Section ─────────────────────────────────────── */
 function IndustrySection() {
   const industries = [
-    { code: "HC", label: "Healthcare",    desc: "Clinical documentation, prior authorization review, and ICD-10 coding — every run checked by Claude before reaching your EHR.", href: "/for-healthcare" },
-    { code: "LG", label: "Legal",         desc: "Contract review in minutes, not billable hours. Compliance monitoring with a cryptographic audit trail on every opinion.",        href: "/for-legal" },
-    { code: "AG", label: "Agriculture",   desc: "Crop intelligence, pest-risk modelling, and yield forecasting tuned to the specific cultivar and region you operate in.",          href: "/for-agriculture" },
-    { code: "MF", label: "Manufacturing", desc: "Predictive maintenance signals and supply-chain disruption alerts read straight off your sensor and ERP streams.",                 href: "/for-manufacturing" },
-    { code: "CS", label: "Cybersecurity", desc: "Threat hunting, CVE triage, and SOC automation with a human-in-the-loop approval layer on anything destructive.",                  href: "/for-cybersecurity" },
-    { code: "FI", label: "Fintech",       desc: "Fraud pattern detection, KYC / AML flagging, and regulator-ready reporting that holds up under an audit.",                        href: "/for-fintech" },
-    { code: "RE", label: "Real Estate",   desc: "Listing generation, lease abstraction, and broker-grade valuation memos produced from the document bundle you already hold.",     href: "/for-realestate" },
-    { code: "GV", label: "Government",    desc: "Permit processing, benefits eligibility, and FOIA response drafting — every step logged to an immutable ledger.",                  href: "/for-government" },
+    {
+      code: "HC",
+      label: "Healthcare",
+      desc: "Clinical documentation, prior authorization review, and ICD-10 coding — every run checked by Claude before reaching your EHR.",
+      href: "/for-healthcare",
+    },
+    {
+      code: "LG",
+      label: "Legal",
+      desc: "Contract review in minutes, not billable hours. Compliance monitoring with a cryptographic audit trail on every opinion.",
+      href: "/for-legal",
+    },
+    {
+      code: "AG",
+      label: "Agriculture",
+      desc: "Crop intelligence, pest-risk modelling, and yield forecasting tuned to the specific cultivar and region you operate in.",
+      href: "/for-agriculture",
+    },
+    {
+      code: "MF",
+      label: "Manufacturing",
+      desc: "Predictive maintenance signals and supply-chain disruption alerts read straight off your sensor and ERP streams.",
+      href: "/for-manufacturing",
+    },
+    {
+      code: "CS",
+      label: "Cybersecurity",
+      desc: "Threat hunting, CVE triage, and SOC automation with a human-in-the-loop approval layer on anything destructive.",
+      href: "/for-cybersecurity",
+    },
+    {
+      code: "FI",
+      label: "Fintech",
+      desc: "Fraud pattern detection, KYC / AML flagging, and regulator-ready reporting that holds up under an audit.",
+      href: "/for-fintech",
+    },
+    {
+      code: "RE",
+      label: "Real Estate",
+      desc: "Listing generation, lease abstraction, and broker-grade valuation memos produced from the document bundle you already hold.",
+      href: "/for-realestate",
+    },
+    {
+      code: "GV",
+      label: "Government",
+      desc: "Permit processing, benefits eligibility, and FOIA response drafting — every step logged to an immutable ledger.",
+      href: "/for-government",
+    },
   ];
 
   return (
@@ -676,18 +852,26 @@ function IndustrySection() {
               initial={{ opacity: 0, y: 14 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-40px" }}
-              transition={{ delay: i * 0.05, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              transition={{
+                delay: i * 0.05,
+                duration: 0.5,
+                ease: [0.16, 1, 0.3, 1],
+              }}
             >
               <Link
                 href={ind.href}
                 className="group relative block h-full p-5 rounded-[6px] border border-white/[0.06] bg-white/[0.025] hover:border-[#B5532C]/35 hover:bg-[#B5532C]/[0.03] transition-all duration-300 overflow-hidden"
-                style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08), 0 1px 0 rgba(0,0,0,0.5)" }}
+                style={{
+                  boxShadow:
+                    "inset 0 1px 0 rgba(255,255,255,0.08), 0 1px 0 rgba(0,0,0,0.5)",
+                }}
               >
                 <span
                   aria-hidden="true"
                   className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
                   style={{
-                    background: "radial-gradient(circle at 20% 0%, rgba(181,83,44,0.18) 0%, transparent 45%)",
+                    background:
+                      "radial-gradient(circle at 20% 0%, rgba(181,83,44,0.18) 0%, transparent 45%)",
                   }}
                 />
                 <span className="relative inline-flex items-center justify-center h-6 w-6 rounded-full border border-white/[0.12] text-neutral-500 font-mono text-[10px] mb-4 tracking-wide group-hover:border-[#B5532C]/40 group-hover:text-[#B5532C] transition-colors">
@@ -696,7 +880,9 @@ function IndustrySection() {
                 <p className="relative text-[14px] font-semibold text-white mb-1.5 tracking-tight">
                   {ind.label}
                 </p>
-                <p className="relative text-[11.5px] text-neutral-500 leading-[1.55]">{ind.desc}</p>
+                <p className="relative text-[11.5px] text-neutral-500 leading-[1.55]">
+                  {ind.desc}
+                </p>
                 <span
                   aria-hidden="true"
                   className="absolute bottom-4 right-4 text-[10px] font-mono text-neutral-700 group-hover:text-[#B5532C] transition-colors"
@@ -758,8 +944,12 @@ function PlatformScale() {
               <div className="font-serif text-[52px] md:text-[64px] text-white leading-none tracking-[-0.02em] mb-3 group-hover:text-[#E8DDD0] transition-colors">
                 {m.n}
               </div>
-              <div className="text-[13px] font-medium text-neutral-300 mb-2 tracking-tight">{m.label}</div>
-              <div className="text-[11px] font-mono text-neutral-600 leading-[1.65] max-w-[200px]">{m.sub}</div>
+              <div className="text-[13px] font-medium text-neutral-300 mb-2 tracking-tight">
+                {m.label}
+              </div>
+              <div className="text-[11px] font-mono text-neutral-600 leading-[1.65] max-w-[200px]">
+                {m.sub}
+              </div>
             </motion.a>
           ))}
         </div>
@@ -767,9 +957,19 @@ function PlatformScale() {
         <div className="py-5 flex items-center justify-between">
           <p className="text-[11px] font-mono text-neutral-700 tracking-wide">
             137 agents · 8 industries · 90+ integrations · full surface at{" "}
-            <Link href="/platform" className="text-neutral-500 hover:text-white transition-colors">/platform</Link>
-            {" "}and{" "}
-            <Link href="/developers/docs" className="text-neutral-500 hover:text-white transition-colors">/developers/docs</Link>
+            <Link
+              href="/platform"
+              className="text-neutral-500 hover:text-white transition-colors"
+            >
+              /platform
+            </Link>{" "}
+            and{" "}
+            <Link
+              href="/developers/docs"
+              className="text-neutral-500 hover:text-white transition-colors"
+            >
+              /developers/docs
+            </Link>
           </p>
           <Link
             href="/dashboard"
@@ -786,10 +986,10 @@ function PlatformScale() {
 /* ─── 10 · Pricing Strip ────────────────────────────────────────── */
 function PricingStrip() {
   const tiers = [
-    { name: "Free",       price: null,   popular: false },
-    { name: "Starter",    price: "$19",  popular: false },
-    { name: "Growth",     price: "$49",  popular: true  },
-    { name: "Node",       price: "$199", popular: false },
+    { name: "Free", price: null, popular: false },
+    { name: "Starter", price: "$19", popular: false },
+    { name: "Growth", price: "$49", popular: true },
+    { name: "Node", price: "$199", popular: false },
     { name: "Enterprise", price: "$499", popular: false },
   ];
 
@@ -801,7 +1001,9 @@ function PricingStrip() {
         <h2 className="font-serif text-3xl md:text-5xl leading-[1.08] mb-4 tracking-[-0.02em] max-w-2xl">
           Simple, Transparent Pricing.
           <br />
-          <em className="not-italic text-[#B5532C]">Start free. Scale when it clicks.</em>
+          <em className="not-italic text-[#B5532C]">
+            Start free. Scale when it clicks.
+          </em>
         </h2>
         <p className="text-neutral-400 text-[14px] mb-10 max-w-lg leading-relaxed">
           No credit card on free tier. No annual contracts. Cancel anytime.
@@ -817,13 +1019,21 @@ function PricingStrip() {
                 key={tier.name}
                 className="relative flex items-center gap-2 px-4 py-2 rounded-[4px] border"
                 style={{
-                  borderColor: tier.popular ? "rgba(181,83,44,0.55)" : "rgba(255,255,255,0.07)",
-                  background: tier.popular ? "rgba(181,83,44,0.08)" : "rgba(255,255,255,0.02)",
+                  borderColor: tier.popular
+                    ? "rgba(181,83,44,0.55)"
+                    : "rgba(255,255,255,0.07)",
+                  background: tier.popular
+                    ? "rgba(181,83,44,0.08)"
+                    : "rgba(255,255,255,0.02)",
                 }}
               >
-                <span className="font-mono text-[12px] text-white">{tier.name}</span>
+                <span className="font-mono text-[12px] text-white">
+                  {tier.name}
+                </span>
                 {tier.price && (
-                  <span className="font-mono text-[12px] text-[#B5532C]">{tier.price}/mo</span>
+                  <span className="font-mono text-[12px] text-[#B5532C]">
+                    {tier.price}/mo
+                  </span>
                 )}
                 {tier.popular && (
                   <span className="absolute -top-2 -right-1 font-mono text-[8px] text-[#B5532C] bg-[#B5532C]/10 border border-[#B5532C]/35 px-1.5 py-0.5 rounded-full tracking-wide">
@@ -836,14 +1046,17 @@ function PricingStrip() {
 
           <div className="flex items-center justify-between flex-wrap gap-4">
             <p className="text-[12px] font-mono text-neutral-500">
-              Free tier: 50 agent runs/month · No card required · Upgrade when it&apos;s obvious
+              Free tier: 50 agent runs/month · No card required · Upgrade when
+              it&apos;s obvious
             </p>
             <Link
               href="/pricing"
               className="group inline-flex items-center gap-1.5 text-[12px] font-mono text-[#B5532C] hover:text-white transition-colors tracking-tight"
             >
               See full pricing
-              <span className="transition-transform group-hover:translate-x-0.5">→</span>
+              <span className="transition-transform group-hover:translate-x-0.5">
+                →
+              </span>
             </Link>
           </div>
         </div>
@@ -855,19 +1068,25 @@ function PricingStrip() {
 /* ─── Final CTA ─────────────────────────────────────────────────── */
 function FinalCTA() {
   return (
-    <section className="px-6 py-24 md:py-32 mx-6 mb-12 md:mx-12 lg:mx-20 rounded-[10px] border border-[#B5532C]/20 overflow-hidden relative"
+    <section
+      className="px-6 py-24 md:py-32 mx-6 mb-12 md:mx-12 lg:mx-20 rounded-[10px] border border-[#B5532C]/20 overflow-hidden relative"
       style={{ background: "rgba(181,83,44,0.06)" }}
     >
       {/* Glow */}
       <div
         className="absolute inset-0 pointer-events-none"
-        style={{ background: "radial-gradient(ellipse 60% 70% at 50% 50%, rgba(181,83,44,0.06) 0%, transparent 70%)" }}
+        style={{
+          background:
+            "radial-gradient(ellipse 60% 70% at 50% 50%, rgba(181,83,44,0.06) 0%, transparent 70%)",
+        }}
         aria-hidden="true"
       />
 
       <div className="relative max-w-2xl mx-auto text-center">
         <div className="mb-8 flex items-center justify-center gap-4 flex-wrap">
-          <span className="font-mono text-[10px] text-neutral-600 tracking-[0.2em]">10 / 10</span>
+          <span className="font-mono text-[10px] text-neutral-600 tracking-[0.2em]">
+            10 / 10
+          </span>
           <span aria-hidden="true" className="h-px w-6 bg-white/[0.12]" />
           <p className="font-serif italic text-[13px] text-neutral-500 tracking-[-0.01em]">
             your move
@@ -881,8 +1100,8 @@ function FinalCTA() {
         </h2>
 
         <p className="text-[15px] md:text-[17px] text-neutral-400 mb-10 leading-[1.6] max-w-lg mx-auto">
-          No credit card required. 137 agents ready in 60 seconds.
-          50 runs reset every month — free forever.
+          No credit card required. 137 agents ready in 60 seconds. 50 runs reset
+          every month — free forever.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8">
@@ -894,10 +1113,18 @@ function FinalCTA() {
             <span
               aria-hidden="true"
               className="pointer-events-none absolute inset-0 rounded-[4px] opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-              style={{ boxShadow: "0 0 0 1px rgba(181,83,44,0.5), 0 0 24px rgba(181,83,44,0.2)" }}
+              style={{
+                boxShadow:
+                  "0 0 0 1px rgba(181,83,44,0.5), 0 0 24px rgba(181,83,44,0.2)",
+              }}
             />
             Run Your First Agent Free
-            <span aria-hidden="true" className="text-[#B5532C] transition-transform group-hover:translate-x-0.5">→</span>
+            <span
+              aria-hidden="true"
+              className="text-[#B5532C] transition-transform group-hover:translate-x-0.5"
+            >
+              →
+            </span>
           </Link>
           <a
             href="mailto:christiaan@sovereignmatrix.agency"
@@ -909,7 +1136,11 @@ function FinalCTA() {
         </div>
 
         <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[11px] font-mono text-neutral-600">
-          {["Claude critic on every run", "Full audit trail", "Cancel anytime"].map((t) => (
+          {[
+            "Claude critic on every run",
+            "Full audit trail",
+            "Cancel anytime",
+          ].map((t) => (
             <span key={t} className="flex items-center gap-1.5">
               <span className="text-[#B5532C]/60">✓</span> {t}
             </span>
@@ -927,17 +1158,19 @@ function Footer() {
       <div className="max-w-6xl mx-auto">
         <div className="grid md:grid-cols-[1fr_auto] gap-x-16 gap-y-8 items-end mb-20 pb-16 border-b border-white/[0.04]">
           <div className="max-w-2xl">
-            <p className="text-[10px] font-mono tracking-[0.22em] uppercase text-[#B5532C] mb-5">Colophon</p>
+            <p className="text-[10px] font-mono tracking-[0.22em] uppercase text-[#B5532C] mb-5">
+              Colophon
+            </p>
             <p className="font-serif text-[22px] md:text-[28px] leading-[1.35] text-white tracking-tight">
-              Sovereign Matrix is an independent studio building
-              agent infrastructure for operators — one playbook,{" "}
-              <em className="not-italic text-[#B5532C]">one guarantee</em>,
-              one audit trail at a time.
+              Sovereign Matrix is an independent studio building agent
+              infrastructure for operators — one playbook,{" "}
+              <em className="not-italic text-[#B5532C]">one guarantee</em>, one
+              audit trail at a time.
             </p>
             <p className="mt-6 text-[14px] text-neutral-400 leading-relaxed max-w-xl">
-              Hand-written in Cape Town. Claude is the critic on every
-              run. We&apos;re not Anthropic — we just build on their
-              model and publish the receipts.
+              Hand-written in Cape Town. Claude is the critic on every run.
+              We&apos;re not Anthropic — we just build on their model and
+              publish the receipts.
             </p>
           </div>
 
@@ -945,7 +1178,9 @@ function Footer() {
             href={HERO_CTA}
             className="group inline-flex items-center gap-3 text-[13px] font-mono tracking-tight text-neutral-400 hover:text-white transition-colors whitespace-nowrap"
           >
-            <span className="font-serif italic text-lg text-[#B5532C] not-italic">→</span>
+            <span className="font-serif italic text-lg text-[#B5532C] not-italic">
+              →
+            </span>
             <span className="border-b border-white/[0.1] group-hover:border-[#B5532C] pb-0.5 transition-colors">
               Run your first playbook
             </span>
@@ -979,7 +1214,11 @@ function Footer() {
             links={[
               { href: "/developers/docs", label: "API Docs" },
               { href: "/integrations", label: "Integrations" },
-              { href: "https://www.npmjs.com/package/@sovereignmatrix/mcp", label: "MCP Server", external: true },
+              {
+                href: "https://www.npmjs.com/package/@sovereignmatrix/mcp",
+                label: "MCP Server",
+                external: true,
+              },
               { href: "/changelog", label: "Changelog" },
             ]}
           />
@@ -1000,9 +1239,12 @@ function Footer() {
           <div className="flex items-center gap-3">
             <SovereignLogo size="sm" />
             <div className="flex flex-col md:flex-row md:items-baseline gap-x-3 gap-y-0.5">
-              <span className="font-serif text-[15px] text-white">Sovereign Matrix</span>
+              <span className="font-serif text-[15px] text-white">
+                Sovereign Matrix
+              </span>
               <span className="text-[10px] font-mono text-neutral-600 tracking-tight">
-                © 2026 · Operates independently · Not formally affiliated with Anthropic
+                © 2026 · Operates independently · Not formally affiliated with
+                Anthropic
               </span>
             </div>
           </div>
@@ -1012,7 +1254,9 @@ function Footer() {
               href="/built-with-claude"
               className="inline-flex items-center gap-1.5 text-[10px] font-mono text-neutral-600 hover:text-[#B5532C] transition-colors tracking-tight group"
             >
-              <span className="text-[#B5532C]/50 group-hover:text-[#B5532C] transition-colors">◆</span>
+              <span className="text-[#B5532C]/50 group-hover:text-[#B5532C] transition-colors">
+                ◆
+              </span>
               Built with Claude
             </Link>
 
@@ -1023,9 +1267,18 @@ function Footer() {
             <span aria-hidden="true" className="h-4 w-px bg-white/[0.06]" />
 
             <div className="flex items-center gap-3 text-[11px] font-mono tracking-tight">
-              <Link href="/" className="text-[#B5532C]">Operators</Link>
-              <span aria-hidden="true" className="text-neutral-800">·</span>
-              <Link href={PLATFORM_HREF} className="text-neutral-500 hover:text-white transition-colors">Developers</Link>
+              <Link href="/" className="text-[#B5532C]">
+                Operators
+              </Link>
+              <span aria-hidden="true" className="text-neutral-800">
+                ·
+              </span>
+              <Link
+                href={PLATFORM_HREF}
+                className="text-neutral-500 hover:text-white transition-colors"
+              >
+                Developers
+              </Link>
             </div>
           </div>
         </div>
@@ -1043,7 +1296,9 @@ function FooterCol({
 }) {
   return (
     <div>
-      <p className="text-[10px] font-mono uppercase tracking-[0.18em] text-neutral-500 mb-5">{title}</p>
+      <p className="text-[10px] font-mono uppercase tracking-[0.18em] text-neutral-500 mb-5">
+        {title}
+      </p>
       <ul className="space-y-3">
         {links.map((link) => (
           <li key={link.href}>
