@@ -1,15 +1,32 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { CheckCircle2, X as XIcon, ArrowRight, Shield, HelpCircle, Crown, Zap } from "lucide-react";
+import {
+  CheckCircle2,
+  X as XIcon,
+  ArrowRight,
+  Shield,
+  HelpCircle,
+  Crown,
+  Zap,
+} from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AnimatePresence } from "framer-motion";
 import { SovereignLogo } from "@/components/ui/SovereignLogo";
-import { RevealText, GlowDivider, MagneticButton } from "@/components/ui/ScrollAnimations";
+import {
+  RevealText,
+  GlowDivider,
+  MagneticButton,
+} from "@/components/ui/ScrollAnimations";
 import { getMarketingPlans, PLANS, type PlanId } from "@/lib/plans";
 
-const fadeIn = (d: number) => ({ initial: { opacity: 0, y: 20 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true }, transition: { delay: d, duration: 0.6 } });
+const fadeIn = (d: number) => ({
+  initial: { opacity: 0, y: 20 },
+  whileInView: { opacity: 1, y: 0 },
+  viewport: { once: true },
+  transition: { delay: d, duration: 0.6 },
+});
 
 /* ─── Tier Data ───
  * TIERS below carry marketing copy (feature lists, CTAs, taglines) —
@@ -23,7 +40,12 @@ const fadeIn = (d: number) => ({ initial: { opacity: 0, y: 20 }, whileInView: { 
  */
 const TIERS = [
   {
-    name: "Founder Access", price: "Free", period: "forever", plan: "free", featured: false,
+    name: "Founder Access",
+    price: "Free",
+    priceZar: "Free",
+    period: "forever",
+    plan: "free",
+    featured: false,
     tagline: "Full platform access. 50 runs/month. No credit card.",
     cta: "Run a Free Playbook",
     features: [
@@ -37,7 +59,12 @@ const TIERS = [
     ],
   },
   {
-    name: "Starter", price: "$19", period: "/mo", plan: "starter", featured: false,
+    name: "Starter",
+    price: "R349",
+    priceUsd: "$19",
+    period: "/mo",
+    plan: "starter",
+    featured: false,
     tagline: "200 runs/month. Perfect for solo operators testing AI workflows.",
     cta: "Start for $19",
     features: [
@@ -51,7 +78,12 @@ const TIERS = [
     ],
   },
   {
-    name: "Growth", price: "$49", period: "/mo", plan: "array", featured: true,
+    name: "Growth",
+    price: "R997",
+    priceUsd: "$49",
+    period: "/mo",
+    plan: "array",
+    featured: true,
     tagline: "500 runs/month. For agencies and teams scaling AI workflows.",
     cta: "Scale with Growth",
     features: [
@@ -65,7 +97,12 @@ const TIERS = [
     ],
   },
   {
-    name: "Sovereign Node", price: "$199", period: "/mo", plan: "node", featured: false,
+    name: "Sovereign Node",
+    price: "R3,997",
+    priceUsd: "$199",
+    period: "/mo",
+    plan: "node",
+    featured: false,
     tagline: "2,000 runs/month + NemoClaw local execution. Replace your SDR.",
     cta: "Deploy Node",
     features: [
@@ -79,7 +116,12 @@ const TIERS = [
     ],
   },
   {
-    name: "Enterprise", price: "$499", period: "/mo", plan: "enterprise", featured: false,
+    name: "Enterprise",
+    price: "R9,997",
+    priceUsd: "$499",
+    period: "/mo",
+    plan: "enterprise",
+    featured: false,
     tagline: "10,000 runs/month. White-label. SLA. Dedicated onboarding.",
     cta: "Contact Sales",
     features: [
@@ -95,13 +137,34 @@ const TIERS = [
 ];
 
 const FAQS = [
-  { q: "What AI tools are included?", a: "137 autonomous agents across lead generation, content creation, SEO, competitor intelligence, voice calls, and code review. Every agent routes to the best of 39+ models (Claude Sonnet 4.6 for reasoning, Nemotron Ultra for throughput, Gemini 3.1 Pro for grounded search, and more) via our smart-router." },
-  { q: "Do I need technical skills?", a: "No. The dashboard is designed for founders and operators. Pick a playbook, fill in the inputs, and the agents execute. For engineers, there's also a REST + streaming API and an SDK." },
-  { q: "Do I have to build the agents myself?", a: "No. Sovereign Matrix ships 137 production agents and 25 multi-agent playbooks out of the box. Pick one, give it inputs, run. You can also compose custom playbooks via the workflow builder when you want something bespoke." },
-  { q: "What counts as a 'run'?", a: "One playbook execution = one run. A playbook can chain multiple agents internally (a lead-blitz playbook might run 5 agents), but we count it as one run. Free tier: 50 runs/mo. Starter $19: 200/mo. Growth $49: 500/mo. Node $199: 2,000/mo. Enterprise $499: 10,000/mo." },
-  { q: "What is BYOK (Bring Your Own Key)?", a: "You can plug in your own API keys for Claude, Gemini, NVIDIA NIM, Groq, or Tavily. BYOK runs against your own quota, so you have full control over costs and model access." },
-  { q: "Can I cancel anytime?", a: "Yes. No contracts, no cancellation fees. Monthly billing via Stripe — cancel whenever you want from Settings → Billing." },
-  { q: "What payment methods do you accept?", a: "Credit and debit cards via Stripe. All prices shown in USD. Enterprise invoicing available on request." },
+  {
+    q: "What AI tools are included?",
+    a: "137 autonomous agents across lead generation, content creation, SEO, competitor intelligence, voice calls, and code review. Every agent routes to the best of 39+ models (Claude Sonnet 4.6 for reasoning, Nemotron Ultra for throughput, Gemini 3.1 Pro for grounded search, and more) via our smart-router.",
+  },
+  {
+    q: "Do I need technical skills?",
+    a: "No. The dashboard is designed for founders and operators. Pick a playbook, fill in the inputs, and the agents execute. For engineers, there's also a REST + streaming API and an SDK.",
+  },
+  {
+    q: "Do I have to build the agents myself?",
+    a: "No. Sovereign Matrix ships 137 production agents and 25 multi-agent playbooks out of the box. Pick one, give it inputs, run. You can also compose custom playbooks via the workflow builder when you want something bespoke.",
+  },
+  {
+    q: "What counts as a 'run'?",
+    a: "One playbook execution = one run. A playbook can chain multiple agents internally (a lead-blitz playbook might run 5 agents), but we count it as one run. Free tier: 50 runs/mo. Starter $19: 200/mo. Growth $49: 500/mo. Node $199: 2,000/mo. Enterprise $499: 10,000/mo.",
+  },
+  {
+    q: "What is BYOK (Bring Your Own Key)?",
+    a: "You can plug in your own API keys for Claude, Gemini, NVIDIA NIM, Groq, or Tavily. BYOK runs against your own quota, so you have full control over costs and model access.",
+  },
+  {
+    q: "Can I cancel anytime?",
+    a: "Yes. No contracts, no cancellation fees. Monthly billing via Stripe — cancel whenever you want from Settings → Billing.",
+  },
+  {
+    q: "What payment methods do you accept?",
+    a: "Credit and debit cards via Stripe. All prices shown in USD. Enterprise invoicing available on request.",
+  },
 ];
 
 export default function PricingPage() {
@@ -114,14 +177,19 @@ export default function PricingPage() {
     if (process.env.NODE_ENV !== "development") return;
     const marketingPlanIds = getMarketingPlans().map((p) => p.id as string);
     const tierPlanIds = TIERS.map((t) => t.plan);
-    const onlyInTiers = tierPlanIds.filter((id) => !marketingPlanIds.includes(id));
-    const onlyInMarketing = marketingPlanIds.filter((id) => !tierPlanIds.includes(id));
+    const onlyInTiers = tierPlanIds.filter(
+      (id) => !marketingPlanIds.includes(id),
+    );
+    const onlyInMarketing = marketingPlanIds.filter(
+      (id) => !tierPlanIds.includes(id),
+    );
     if (onlyInTiers.length > 0 || onlyInMarketing.length > 0) {
       // eslint-disable-next-line no-console
-      console.warn(
-        "[pricing] TIERS ⇄ PLANS drift detected:",
-        { onlyInTiers, onlyInMarketing, hint: "Sync src/lib/plans.ts marketing flag with pricing page TIERS." },
-      );
+      console.warn("[pricing] TIERS ⇄ PLANS drift detected:", {
+        onlyInTiers,
+        onlyInMarketing,
+        hint: "Sync src/lib/plans.ts marketing flag with pricing page TIERS.",
+      });
     }
     // Also validate each TIER's plan actually exists in PLANS
     for (const t of TIERS) {
@@ -138,7 +206,9 @@ export default function PricingPage() {
       return;
     }
     if (plan === "enterprise") {
-      window.location.assign("mailto:hello@sovereignmatrix.agency?subject=Enterprise%20Inquiry");
+      window.location.assign(
+        "mailto:hello@sovereignmatrix.agency?subject=Enterprise%20Inquiry",
+      );
       return;
     }
 
@@ -172,7 +242,10 @@ export default function PricingPage() {
             className="fixed top-6 right-6 z-[200] px-4 py-3 rounded-xl border border-rose-500/30 bg-rose-500/10 backdrop-blur-xl shadow-lg flex items-center gap-3"
           >
             <span className="text-xs font-medium text-white">{error}</span>
-            <button onClick={() => setError(null)} className="text-neutral-500 hover:text-white">
+            <button
+              onClick={() => setError(null)}
+              className="text-neutral-500 hover:text-white"
+            >
               <XIcon className="w-3 h-3" />
             </button>
           </motion.div>
@@ -195,10 +268,16 @@ export default function PricingPage() {
             </span>
           </Link>
           <div className="flex items-center gap-4">
-            <Link href="/" className="hidden md:block text-xs text-neutral-400 hover:text-white transition-colors">
+            <Link
+              href="/"
+              className="hidden md:block text-xs text-neutral-400 hover:text-white transition-colors"
+            >
               Home
             </Link>
-            <Link href="/for-agencies" className="hidden md:block text-xs text-neutral-400 hover:text-white transition-colors">
+            <Link
+              href="/for-agencies"
+              className="hidden md:block text-xs text-neutral-400 hover:text-white transition-colors"
+            >
               Agencies
             </Link>
             <Link
@@ -212,180 +291,284 @@ export default function PricingPage() {
       </nav>
 
       <main id="main-content">
-
-      {/* ─── Comparison Hero ─── */}
-      <section className="relative pt-40 pb-16 px-6 overflow-hidden">
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="relative z-10 max-w-5xl mx-auto text-center"
-        >
-          <p
-            className="mb-8"
-            style={{
-              fontFamily: '"JetBrains Mono", monospace',
-              fontSize: "11px",
-              letterSpacing: "0.2em",
-              textTransform: "uppercase",
-              color: "#8F8576",
-            }}
+        {/* ─── Comparison Hero ─── */}
+        <section className="relative pt-40 pb-16 px-6 overflow-hidden">
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            className="relative z-10 max-w-5xl mx-auto text-center"
           >
-            Five tiers · Flat pricing · No per-token fees
-          </p>
-
-          <h1
-            style={{
-              fontFamily: '"Instrument Serif", Georgia, serif',
-              fontSize: "clamp(3rem, 9vw, 7rem)",
-              lineHeight: 0.9,
-              letterSpacing: "-0.025em",
-              fontWeight: 400,
-              color: "#fff",
-              marginBottom: "2rem",
-            }}
-          >
-            Pick one price.{" "}
-            <em style={{ fontStyle: "italic", color: "#B5532C" }}>Keep it.</em>
-          </h1>
-
-          <p
-            className="max-w-2xl mx-auto text-neutral-400"
-            style={{
-              fontFamily: '"Inter Tight", system-ui, sans-serif',
-              fontSize: "19px",
-              lineHeight: 1.55,
-              letterSpacing: "-0.011em",
-            }}
-          >
-            No credit-based pricing. No per-token surprises. No vendor lock-in.
-            One monthly number, every agent, every model — including{" "}
-            <em
-              style={{ fontFamily: '"Instrument Serif", serif', fontStyle: "italic", color: "#fff" }}
+            <p
+              className="mb-8"
+              style={{
+                fontFamily: '"JetBrains Mono", monospace',
+                fontSize: "11px",
+                letterSpacing: "0.2em",
+                textTransform: "uppercase",
+                color: "#8F8576",
+              }}
             >
-              Claude
-            </em>{" "}
-            and 38 others.
-          </p>
-        </motion.div>
-      </section>
+              Five tiers · Flat pricing · No per-token fees
+            </p>
 
-      <GlowDivider />
+            <h1
+              style={{
+                fontFamily: '"Instrument Serif", Georgia, serif',
+                fontSize: "clamp(3rem, 9vw, 7rem)",
+                lineHeight: 0.9,
+                letterSpacing: "-0.025em",
+                fontWeight: 400,
+                color: "#fff",
+                marginBottom: "2rem",
+              }}
+            >
+              Pick one price.{" "}
+              <em style={{ fontStyle: "italic", color: "#B5532C" }}>
+                Keep it.
+              </em>
+            </h1>
 
-      {/* ─── Pricing Cards ─── */}
-      <section className="relative z-10 px-8 py-20 max-w-5xl mx-auto">
-        <RevealText as="h2" className="text-3xl md:text-4xl font-bold text-center mb-4 font-serif">
-          Scale Your Autonomous Swarm
-        </RevealText>
-        <RevealText as="p" className="text-neutral-500 text-center max-w-xl mx-auto mb-16" delay={0.1}>
-          Deploy enterprise-grade NVIDIA execution pipelines. Replaces entire agency overheads.
-        </RevealText>
+            <p
+              className="max-w-2xl mx-auto text-neutral-400"
+              style={{
+                fontFamily: '"Inter Tight", system-ui, sans-serif',
+                fontSize: "19px",
+                lineHeight: 1.55,
+                letterSpacing: "-0.011em",
+              }}
+            >
+              No credit-based pricing. No per-token surprises. No vendor
+              lock-in. One monthly number, every agent, every model — including{" "}
+              <em
+                style={{
+                  fontFamily: '"Instrument Serif", serif',
+                  fontStyle: "italic",
+                  color: "#fff",
+                }}
+              >
+                Claude
+              </em>{" "}
+              and 38 others.
+            </p>
+          </motion.div>
+        </section>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-          {TIERS.map((t, i) => (
-            <motion.div key={i} {...fadeIn(i * 0.1)}
-              className={`rounded-2xl bg-white/[0.02] backdrop-blur-xl border p-7 flex flex-col ${t.featured ? "border-emerald-500/40 relative overflow-hidden scale-[1.02] shadow-[0_0_40px_rgba(16,185,129,0.1)]" : t.plan === "free" ? "border-cyan-500/30 relative overflow-hidden" : "border-white/[0.06]"}`}>
-              {t.featured && <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-500" />}
-              {t.plan === "free" && <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-500 to-blue-500" />}
-              {t.featured && <span className="inline-flex self-start items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase mb-3"><Crown className="w-2.5 h-2.5" /> Most Popular</span>}
-              {t.plan === "free" && <span className="inline-flex self-start items-center gap-1 px-2 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-[10px] font-bold uppercase mb-3"><Zap className="w-2.5 h-2.5" /> No Credit Card</span>}
-              <p className="text-sm font-bold uppercase tracking-widest text-neutral-400 mb-1">{t.name}</p>
-              <p className="text-4xl font-bold text-white mb-1">
-                {t.price}
-                {t.period !== "forever" && <span className="text-base text-neutral-500 font-normal">{t.period}</span>}
-              </p>
-              <p className="text-xs text-neutral-400 mb-6">{t.tagline}</p>
-              <ul className="space-y-2 mb-6 flex-1">
-                {t.features.map((f, j) => (
-                  <li key={j} className={`flex items-center gap-2 text-sm ${f.included ? "text-neutral-300" : "text-neutral-500"}`}>
-                    {f.included ? <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" aria-hidden="true" /> : <XIcon className="w-4 h-4 text-neutral-500 shrink-0" aria-hidden="true" />}
-                    {f.name}
-                  </li>
-                ))}
-              </ul>
-              <button onClick={() => checkout(t.plan)}
-                className={`w-full py-3 font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${
-                  t.featured
-                    ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:opacity-90 shadow-[0_0_20px_rgba(16,185,129,0.2)]"
-                    : t.plan === "free"
-                    ? "bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:opacity-90"
-                    : t.plan === "node"
-                    ? "bg-white/5 border border-white/10 text-white hover:bg-white/10"
-                    : "border border-white/[0.06] text-white hover:bg-white/5"
-                }`}>
-                {t.cta} <ArrowRight className="w-4 h-4" />
-              </button>
-            </motion.div>
-          ))}
-        </div>
-      </section>
+        <GlowDivider />
 
-      <GlowDivider />
+        {/* ─── Pricing Cards ─── */}
+        <section className="relative z-10 px-8 py-20 max-w-5xl mx-auto">
+          <RevealText
+            as="h2"
+            className="text-3xl md:text-4xl font-bold text-center mb-4 font-serif"
+          >
+            Scale Your Autonomous Swarm
+          </RevealText>
+          <RevealText
+            as="p"
+            className="text-neutral-500 text-center max-w-xl mx-auto mb-16"
+            delay={0.1}
+          >
+            Deploy enterprise-grade NVIDIA execution pipelines. Replaces entire
+            agency overheads.
+          </RevealText>
 
-      {/* Guarantee */}
-      <section className="relative z-10 px-8 pb-16 pt-20 text-center max-w-lg mx-auto">
-        <motion.div {...fadeIn(0)} className="rounded-2xl bg-white/[0.02] border border-white/[0.06] backdrop-blur-xl p-8">
-          <h3 className="text-lg font-bold mb-2">14-Day Unconditional Refund</h3>
-          <p className="text-sm text-neutral-400 leading-relaxed">
-            If Sovereign Matrix isn&apos;t working for you within 14 days of your first paid invoice,
-            email <a href="mailto:refunds@sovereignmatrix.agency" className="text-emerald-400 underline">refunds@sovereignmatrix.agency</a>.
-            One email, full refund, no outcome conditions. See <a href="/terms" className="text-emerald-400 underline">terms</a> for the fine print.
-          </p>
-          <div className="flex items-center justify-center gap-4 mt-4">
-            <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-bold uppercase tracking-wider"><Shield className="w-3 h-3" /> Stripe Secured</span>
-            <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-bold uppercase tracking-wider"><Shield className="w-3 h-3" /> Cancel Anytime</span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+            {TIERS.map((t, i) => (
+              <motion.div
+                key={i}
+                {...fadeIn(i * 0.1)}
+                className={`rounded-2xl bg-white/[0.02] backdrop-blur-xl border p-7 flex flex-col ${t.featured ? "border-emerald-500/40 relative overflow-hidden scale-[1.02] shadow-[0_0_40px_rgba(16,185,129,0.1)]" : t.plan === "free" ? "border-cyan-500/30 relative overflow-hidden" : "border-white/[0.06]"}`}
+              >
+                {t.featured && (
+                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-500" />
+                )}
+                {t.plan === "free" && (
+                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-500 to-blue-500" />
+                )}
+                {t.featured && (
+                  <span className="inline-flex self-start items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase mb-3">
+                    <Crown className="w-2.5 h-2.5" /> Most Popular
+                  </span>
+                )}
+                {t.plan === "free" && (
+                  <span className="inline-flex self-start items-center gap-1 px-2 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-[10px] font-bold uppercase mb-3">
+                    <Zap className="w-2.5 h-2.5" /> No Credit Card
+                  </span>
+                )}
+                <p className="text-sm font-bold uppercase tracking-widest text-neutral-400 mb-1">
+                  {t.name}
+                </p>
+                <p className="text-4xl font-bold text-white mb-1">
+                  {t.price}
+                  {t.period !== "forever" && (
+                    <span className="text-base text-neutral-500 font-normal">
+                      {t.period}
+                    </span>
+                  )}
+                </p>
+                {"priceUsd" in t && t.priceUsd ? (
+                  <p className="text-[11px] font-mono text-neutral-500 mb-3">
+                    ≈ {t.priceUsd}
+                    {t.period}
+                  </p>
+                ) : (
+                  <div className="mb-3" />
+                )}
+                <p className="text-xs text-neutral-400 mb-6">{t.tagline}</p>
+                <ul className="space-y-2 mb-6 flex-1">
+                  {t.features.map((f, j) => (
+                    <li
+                      key={j}
+                      className={`flex items-center gap-2 text-sm ${f.included ? "text-neutral-300" : "text-neutral-500"}`}
+                    >
+                      {f.included ? (
+                        <CheckCircle2
+                          className="w-4 h-4 text-emerald-400 shrink-0"
+                          aria-hidden="true"
+                        />
+                      ) : (
+                        <XIcon
+                          className="w-4 h-4 text-neutral-500 shrink-0"
+                          aria-hidden="true"
+                        />
+                      )}
+                      {f.name}
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  onClick={() => checkout(t.plan)}
+                  className={`w-full py-3 font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${
+                    t.featured
+                      ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:opacity-90 shadow-[0_0_20px_rgba(16,185,129,0.2)]"
+                      : t.plan === "free"
+                        ? "bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:opacity-90"
+                        : t.plan === "node"
+                          ? "bg-white/5 border border-white/10 text-white hover:bg-white/10"
+                          : "border border-white/[0.06] text-white hover:bg-white/5"
+                  }`}
+                >
+                  {t.cta} <ArrowRight className="w-4 h-4" />
+                </button>
+              </motion.div>
+            ))}
           </div>
-        </motion.div>
-      </section>
+        </section>
 
-      {/* FAQ */}
-      <section className="relative z-10 px-8 pb-20 max-w-2xl mx-auto">
-        <motion.div {...fadeIn(0)} className="text-center mb-10">
-          <h2 className="text-2xl font-bold mb-2 font-serif">Frequently Asked Questions</h2>
-          <p className="text-sm text-neutral-400">Everything you need to know.</p>
-        </motion.div>
-        <div className="space-y-3">
-          {FAQS.map((faq, i) => (
-            <motion.div key={i} {...fadeIn(i * 0.05)} className="rounded-xl bg-white/[0.02] border border-white/[0.06] overflow-hidden">
-              <button onClick={() => setOpenFaq(openFaq === i ? null : i)} className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-white/[0.02] transition-colors">
-                <span className="text-sm font-medium text-white flex items-center gap-2">
-                  <HelpCircle className="w-4 h-4 text-neutral-500 shrink-0" />
-                  {faq.q}
-                </span>
-                <span className={`text-neutral-500 transition-transform ${openFaq === i ? "rotate-45" : ""}`}>+</span>
-              </button>
-              {openFaq === i && (
-                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} className="px-6 pb-4">
-                  <p className="text-sm text-neutral-400 leading-relaxed pl-6">{faq.a}</p>
-                </motion.div>
-              )}
-            </motion.div>
-          ))}
-        </div>
-      </section>
+        <GlowDivider />
 
-      <GlowDivider />
+        {/* Guarantee */}
+        <section className="relative z-10 px-8 pb-16 pt-20 text-center max-w-lg mx-auto">
+          <motion.div
+            {...fadeIn(0)}
+            className="rounded-2xl bg-white/[0.02] border border-white/[0.06] backdrop-blur-xl p-8"
+          >
+            <h3 className="text-lg font-bold mb-2">
+              14-Day Unconditional Refund
+            </h3>
+            <p className="text-sm text-neutral-400 leading-relaxed">
+              If Sovereign Matrix isn&apos;t working for you within 14 days of
+              your first paid invoice, email{" "}
+              <a
+                href="mailto:refunds@sovereignmatrix.agency"
+                className="text-emerald-400 underline"
+              >
+                refunds@sovereignmatrix.agency
+              </a>
+              . One email, full refund, no outcome conditions. See{" "}
+              <a href="/terms" className="text-emerald-400 underline">
+                terms
+              </a>{" "}
+              for the fine print.
+            </p>
+            <div className="flex items-center justify-center gap-4 mt-4">
+              <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-bold uppercase tracking-wider">
+                <Shield className="w-3 h-3" /> Stripe Secured
+              </span>
+              <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-bold uppercase tracking-wider">
+                <Shield className="w-3 h-3" /> Cancel Anytime
+              </span>
+            </div>
+          </motion.div>
+        </section>
 
-      {/* ─── Final CTA ─── */}
-      <section className="relative z-10 py-24 px-6">
-        <div className="max-w-3xl mx-auto text-center">
-          <RevealText as="h2" className="text-3xl md:text-5xl font-bold mb-6 font-serif">
-            Start Free — No Credit Card
-          </RevealText>
-          <RevealText as="p" className="text-neutral-500 mb-10 max-w-xl mx-auto" delay={0.1}>
-            50 free runs. 137 agents. Zero commitment. See what autonomous AI can do for your business.
-          </RevealText>
-          <MagneticButton>
-            <Link
-              href="/dashboard"
-              className="inline-flex items-center gap-2 px-10 py-4 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-sm font-bold uppercase tracking-widest hover:from-emerald-600 hover:to-teal-600 transition-all shadow-[0_0_30px_rgba(16,185,129,0.3)]"
+        {/* FAQ */}
+        <section className="relative z-10 px-8 pb-20 max-w-2xl mx-auto">
+          <motion.div {...fadeIn(0)} className="text-center mb-10">
+            <h2 className="text-2xl font-bold mb-2 font-serif">
+              Frequently Asked Questions
+            </h2>
+            <p className="text-sm text-neutral-400">
+              Everything you need to know.
+            </p>
+          </motion.div>
+          <div className="space-y-3">
+            {FAQS.map((faq, i) => (
+              <motion.div
+                key={i}
+                {...fadeIn(i * 0.05)}
+                className="rounded-xl bg-white/[0.02] border border-white/[0.06] overflow-hidden"
+              >
+                <button
+                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-white/[0.02] transition-colors"
+                >
+                  <span className="text-sm font-medium text-white flex items-center gap-2">
+                    <HelpCircle className="w-4 h-4 text-neutral-500 shrink-0" />
+                    {faq.q}
+                  </span>
+                  <span
+                    className={`text-neutral-500 transition-transform ${openFaq === i ? "rotate-45" : ""}`}
+                  >
+                    +
+                  </span>
+                </button>
+                {openFaq === i && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    className="px-6 pb-4"
+                  >
+                    <p className="text-sm text-neutral-400 leading-relaxed pl-6">
+                      {faq.a}
+                    </p>
+                  </motion.div>
+                )}
+              </motion.div>
+            ))}
+          </div>
+        </section>
+
+        <GlowDivider />
+
+        {/* ─── Final CTA ─── */}
+        <section className="relative z-10 py-24 px-6">
+          <div className="max-w-3xl mx-auto text-center">
+            <RevealText
+              as="h2"
+              className="text-3xl md:text-5xl font-bold mb-6 font-serif"
             >
-              Start Free <ArrowRight className="w-4 h-4" />
-            </Link>
-          </MagneticButton>
-        </div>
-      </section>
-
+              Start Free — No Credit Card
+            </RevealText>
+            <RevealText
+              as="p"
+              className="text-neutral-500 mb-10 max-w-xl mx-auto"
+              delay={0.1}
+            >
+              50 free runs. 137 agents. Zero commitment. See what autonomous AI
+              can do for your business.
+            </RevealText>
+            <MagneticButton>
+              <Link
+                href="/dashboard"
+                className="inline-flex items-center gap-2 px-10 py-4 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-sm font-bold uppercase tracking-widest hover:from-emerald-600 hover:to-teal-600 transition-all shadow-[0_0_30px_rgba(16,185,129,0.3)]"
+              >
+                Start Free <ArrowRight className="w-4 h-4" />
+              </Link>
+            </MagneticButton>
+          </div>
+        </section>
       </main>
 
       {/* ─── Footer ─── */}
@@ -398,9 +581,21 @@ export default function PricingPage() {
             </span>
           </div>
           <div className="flex items-center gap-6 text-xs text-neutral-500">
-            <Link href="/" className="hover:text-white transition-colors">Home</Link>
-            <Link href="/for-agencies" className="hover:text-white transition-colors">Agencies</Link>
-            <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>
+            <Link href="/" className="hover:text-white transition-colors">
+              Home
+            </Link>
+            <Link
+              href="/for-agencies"
+              className="hover:text-white transition-colors"
+            >
+              Agencies
+            </Link>
+            <Link
+              href="/privacy"
+              className="hover:text-white transition-colors"
+            >
+              Privacy
+            </Link>
           </div>
         </div>
       </footer>
