@@ -213,13 +213,13 @@ export async function POST(req: Request) {
             }),
           });
         } catch (dbErr) {
-          log.error("DB save error", dbErr as Record<string, unknown>);
+          log.error("DB save error", dbErr as Record<string, any>);
         }
 
         emit("progress", { step: 8, message: "Page Generation Complete." });
         emit("complete", { code: cleanCode });
       } catch (err: unknown) {
-        log.error("Streaming error", err as Record<string, unknown>);
+        log.error("Streaming error", err as Record<string, any>);
         const errorMessage =
           err instanceof Error
             ? err.message

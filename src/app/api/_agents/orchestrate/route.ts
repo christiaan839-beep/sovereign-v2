@@ -1,5 +1,5 @@
 import { createAgentRoute } from "@/lib/agent-factory";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getAvailablePipelines, runPipeline } from "@/agents/orchestrator";
 import { fireUserWebhook } from "@/lib/webhooks";
 import { requireAuth } from "@/lib/auth-guard";
@@ -15,7 +15,7 @@ export async function GET() {
 async function _postHandler(request: Request) {
   const auth = await requireAuth(); if (auth.error) return auth.error;
   try {
-    const body = await req.json();
+    const body = await request.json();
     const { pipelineId, params } = body;
 
     if (!pipelineId) {
@@ -37,7 +37,7 @@ async function _postHandler(request: Request) {
     await fireUserWebhook("Orchestrator", `Pipeline: ${pipelineId}`, result);
     return NextResponse.json(result);
   } catch (error) {
-    log.error("Orchestrator error", error as Record<string, unknown>);
+    log.error("Orchestrator error", error as Record<string, any>);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Internal error" },
       { status: 500 }

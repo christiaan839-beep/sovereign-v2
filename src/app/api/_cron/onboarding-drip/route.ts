@@ -4,7 +4,7 @@ import { users } from "@/db/schema";
 import { sql } from "drizzle-orm";
 import { createLogger } from "@/lib/logger";
 import { DRIP_SEQUENCE, sendOnboardingEmail } from "@/lib/onboarding-emails";
-import { verifyCron } from "@/lib/cron-auth";
+import { requireCronAuth } from "@/lib/cron-auth";
 
 const log = createLogger("onboarding-drip");
 
@@ -19,7 +19,7 @@ const log = createLogger("onboarding-drip");
  */
 export async function GET(request: Request) {
   // ── Auth — fails CLOSED: rejects when CRON_SECRET is unset ──
-  const denied = verifyCron(request);
+  const denied = requireCronAuth(request);
   if (denied) return denied;
 
   const now = new Date();
@@ -79,9 +79,6 @@ export async function GET(request: Request) {
     log.error("Onboarding drip cron failed", {
       error: err instanceof Error ? err.message : String(err),
     });
-    return NextResponse.json(
-      { error: "Internal error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }

@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { createLogger } from "@/lib/logger";
 import { getPublicUrl } from "@/lib/base-url";
 import { rateLimit } from "@/lib/rate-limit";
+import { alreadyProcessed } from "@/lib/idempotency";
 
 const log = createLogger("booking-webhook");
 
@@ -93,6 +94,21 @@ export async function POST(req: Request) {
     const name = attendee.name || "Unknown";
     const email = attendee.email || "";
     const startTime = booking.startTime || new Date().toISOString();
+
+    // Idempotency. Cal.com retries on 5xx and a manual operator
+    // re-fire from the dashboard. The booking `uid` is unique per
+    // booking and stable across reschedules (a reschedule keeps the
+    // same uid, fires BOOKING_RESCHEDULED). We composite the event
+    // type with the uid so a CANCELLED+RESCHEDULED of the same
+    // booking process correctly while still dropping pure dupes.
+    const bookingUid = typeof booking.uid === "string" ? booking.uid : null;
+    if (bookingUid) {
+      const idemKey = `${event}:${bookingUid}`;
+      if (await alreadyProcessed("calcom", idemKey)) {
+        log.info("Skipping duplicate Cal.com webhook", { event, bookingUid });
+        return NextResponse.json({ received: true, duplicate: true });
+      }
+    }
 
     // Auto-trigger welcome email
     if (event === "BOOKING_CREATED" && email) {

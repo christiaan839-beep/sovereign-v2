@@ -18,7 +18,7 @@ export const POST = createAgentRoute({
   name: "reasoning-chain",
   requiredFields: ["question"],
   handler: async ({ input }) => {
-    const { question, depth = 3, domain = "general" } = input as Record<string, unknown>;
+    const { question, depth = 3, domain = "general" } = input as Record<string, any>;
 
     const steps: Array<{ step: string; content: string; model: string; duration_ms: number }> = [];
     const startTime = Date.now();

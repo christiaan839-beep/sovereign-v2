@@ -127,10 +127,60 @@ _You are operating as a Sovereign Node. Execute all tasks defensively and accura
 - **Hooks** (`.claude/settings.json`): PreToolUse blocks `.env*` edits (exit 2), PostToolUse auto-formats `.ts/.tsx/.js/.jsx/.json/.md/.css` via Prettier — do NOT override or duplicate these
 - **Env config** in `.env.local` (30+ keys: AI providers, Stripe, Clerk, Twilio, ElevenLabs, Sentry, etc.)
 
-### Pending Manual Steps
+### Sovereign deployment surface (added in 0023 + 0024)
 
-- Run DB migrations 0002-0004 in Neon Console → SQL Editor
-- Set up Stripe webhook endpoint in Stripe Dashboard → `/api/payments/stripe/webhook`
-- Add Stripe price IDs: STRIPE_PRICE_STARTER, STRIPE_PRICE_ARRAY, STRIPE_PRICE_NODE, STRIPE_PRICE_ENTERPRISE
-- Set up Clerk webhook endpoint → `/api/webhooks/clerk` (for welcome emails + tenant creation)
-- Add CLERK_WEBHOOK_SECRET env var from Clerk Dashboard → Webhooks
+- `tenants.deployment_profile` — `cloud` | `byo-gpu` | `air-gapped`. Read by
+  `src/lib/deployment-profile.ts`; enforced inside `src/lib/ai.ts` per provider.
+  cloud permits everything; byo-gpu blocks external paid (Claude/Gemini/etc.)
+  but keeps ollama + nim + nim-local + portkey; air-gapped permits ollama +
+  nim-local only.
+- `tenants.is_suspended` — kill-switch. agent-factory returns 423 Locked with
+  the operator's reason in the body. `src/lib/tenant-suspension.ts` reads it
+  with a 30s in-process cache; `invalidateSuspensionCache()` flushes after the
+  admin endpoint flips state.
+- `usage.tenant_id` — workspace-level cost roll-ups. Powered by AsyncLocalStorage
+  (`src/lib/request-tenant.ts`) — `withTenant(tenantId, ...)` wraps every
+  authenticated handler in agent-factory; cost-ledger reads via
+  `getCurrentTenantId()` so individual provider clients don't have to thread
+  the parameter.
+
+### Operator console
+
+- `/admin/preflight` — single green-light dashboard. 30+ checks across DB
+  migrations, env vars, inference, payments, observability. Returns one of
+  `go` / `go-with-warnings` / `block`. The first thing to open after every
+  deploy.
+- `/admin/tenants` — flip deployment profile + kill-switch from a UI.
+- `/admin/health` — live `/api/health` traffic-light grid.
+- `/admin/customers` — Monday delivery dashboard.
+- `/admin/letters/new` — Friday Letter publisher.
+- `/admin/onboard` — operator-driven customer onboarding form.
+
+### Webhook idempotency (10/11 wired — see `src/lib/idempotency.ts`)
+
+- Clerk: `svix-id`
+- Stripe: `event.id`
+- PayPal: `paypal-transmission-id`
+- Yoco: `webhook-id` (Standard Webhooks)
+- Paystack: `event.data.id` → fallback `event.data.reference`
+- PayFast: `pf_payment_id` → fallback `m_payment_id`
+- Cal.com booking: `{event}:{payload.uid}`
+- Twilio: `MessageSid`
+- Telegram: `update_id`
+- HubSpot CRM: per-event `eventId` across the batch
+- Zapier: `Idempotency-Key` header → fallback SHA-256 of `userId:rawBody`
+
+The `webhook_events` Postgres table is the durable tier (Redis is the fast
+tier when configured). Rows are auto-cleaned after 90 days by the
+`/api/_cron/webhook-events-cleanup` cron (Sundays 6:00 UTC).
+
+### Pending Manual Steps (run **once** after merge to `main`)
+
+- Apply `MIGRATIONS-RUNME.sql` in Neon Console → SQL Editor (idempotent;
+  bundles 0002 through 0024)
+- Set new env vars in Vercel → Settings → Environment Variables:
+  `MCP_API_KEY`, `RESEND_FROM_DOMAIN`, `ADMIN_USER_IDS`, `CRON_SECRET`,
+  `CLERK_WEBHOOK_SECRET` (if not already set)
+- Configure provider webhooks (see `docs/DEPLOYMENT.md` Step 4)
+- Hit `/admin/preflight` — verdict should be `go` or `go-with-warnings`
+- Smoke test: run `bash scripts/go-live.sh smoke`

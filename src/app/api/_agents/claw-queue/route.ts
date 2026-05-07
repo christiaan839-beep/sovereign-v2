@@ -1,4 +1,5 @@
 import { createAgentRoute } from "@/lib/agent-factory";
+import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { createLogger } from "@/lib/logger";
 const log = createLogger("claw-queue");
@@ -145,14 +146,14 @@ async function _postHandler(request: Request) {
   try {
     const { userId } = await auth();
     if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const body = await req.json();
+    const body = await request.json();
 
     // Trigger processing
     if (body.action === "process") {
       if (!process.env.NEMOCLAW_URL) {
         return NextResponse.json({ error: "NemoClaw is not configured. Set NEMOCLAW_URL in environment variables." }, { status: 503 });
       }
-      processQueue().catch((err) => log.error("Queue processing failed", err as Record<string, unknown>));
+      processQueue().catch((err) => log.error("Queue processing failed", err as Record<string, any>));
       return NextResponse.json({ message: "Queue processing started.", queueSize: taskQueue.filter(t => t.status === "queued").length });
     }
 

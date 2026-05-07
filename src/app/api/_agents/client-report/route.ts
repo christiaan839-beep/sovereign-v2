@@ -18,7 +18,7 @@ const schema = z.object({
   clientName: z.string().max(200).optional(),
   businessType: z.string().max(200).optional(),
   reportPeriod: z.string().max(100).optional(),
-  metrics: z.record(z.unknown()).optional(),
+  metrics: z.record(z.string(), z.unknown()).optional(),
   focus: z.string().max(500).optional(),
   prompt: z.string().max(5000).optional(),
   context: z.string().max(5000).optional(),
@@ -31,7 +31,7 @@ export const POST = createAgentRoute({
     const clientName = (input.clientName as string) || "Client";
     const businessType = (input.businessType as string) || "Local Business";
     const reportPeriod = (input.reportPeriod as string) || "March 2026";
-    const metrics = input.metrics as Record<string, unknown> | undefined;
+    const metrics = input.metrics as Record<string, any> | undefined;
     const focus = (input.focus as string) || "SEO, Content Marketing, Lead Generation";
     const context = (input.context as string) || "";
 

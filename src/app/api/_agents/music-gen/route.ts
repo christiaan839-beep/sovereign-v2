@@ -1,5 +1,4 @@
 import { createAgentRoute } from "@/lib/agent-factory";
-import { NextResponse } from "next/server";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("music-gen");
@@ -12,10 +11,10 @@ const log = createLogger("music-gen");
  */
 export const POST = createAgentRoute({
   name: "music-gen",
-  handler: async ({ input, email, userId }) => {
+  handler: async ({ input }) => {
 
 
-    const { prompt, duration = 30, style, instruments } = input as Record<string, unknown>;
+    const { prompt, duration = 30, style, instruments } = input as Record<string, any>;
     if (!prompt) return ({ error: "Missing music prompt" });
 
     const apiKey = process.env.GEMINI_API_KEY;

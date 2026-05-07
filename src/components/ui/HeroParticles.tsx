@@ -1,6 +1,6 @@
 "use client";
 "use no memo";
-/* eslint-disable react-hooks/purity -- Intentional impure render for 3D particle positions */
+ 
 
 import { useRef, useMemo, useEffect } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";

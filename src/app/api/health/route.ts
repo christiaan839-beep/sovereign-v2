@@ -47,7 +47,44 @@ export async function GET() {
     }
 
     // ── Email (Resend) ──
-    services.email = process.env.RESEND_API_KEY ? "ok" : "unconfigured";
+    // Two-tier check:
+    //   1. RESEND_API_KEY presence ("ok" or "unconfigured")
+    //   2. When RESEND_FROM_DOMAIN is set, verify the domain is
+    //      "verified" via Resend's /domains endpoint. Catches the
+    //      single biggest welcome-email failure mode: a key is set
+    //      but the sender domain hasn't passed SPF/DKIM/DMARC, so
+    //      every welcome email lands in spam silently.
+    if (!process.env.RESEND_API_KEY) {
+      services.email = "unconfigured";
+    } else {
+      const fromDomain = process.env.RESEND_FROM_DOMAIN?.trim();
+      if (!fromDomain) {
+        // Key present but no domain to verify — best we can do.
+        services.email = "ok";
+      } else {
+        try {
+          const res = await fetch("https://api.resend.com/domains", {
+            headers: {
+              Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+            },
+            signal: AbortSignal.timeout(2500),
+          });
+          if (!res.ok) {
+            services.email = "error";
+          } else {
+            const body = (await res.json()) as {
+              data?: Array<{ name: string; status: string }>;
+            };
+            const match = body.data?.find((d) => d.name === fromDomain);
+            services.email = match?.status === "verified" ? "ok" : "warn";
+          }
+        } catch {
+          // Resend timeout / network — don't fail the whole health
+          // endpoint over an email deliverability check.
+          services.email = "unreachable";
+        }
+      }
+    }
 
     // ── Auth (Clerk) ──
     services.auth = process.env.CLERK_SECRET_KEY ? "ok" : "unconfigured";
@@ -57,7 +94,9 @@ export async function GET() {
     try {
       const { getCircuitStatus } = await import("@/lib/circuit-breaker");
       circuits = getCircuitStatus();
-    } catch { /* skip */ }
+    } catch {
+      /* skip */
+    }
 
     // ── Model registry ──
     let modelSummary = { totalModels: 65 };
@@ -65,14 +104,18 @@ export async function GET() {
       const { getModelRegistry } = await import("@/lib/nvidia");
       const registry = getModelRegistry();
       modelSummary = { totalModels: registry.totalModels };
-    } catch { /* skip */ }
+    } catch {
+      /* skip */
+    }
 
     // ── Agent registry ──
     let agentSummary = { totalAgents: 129 };
     try {
       const { AGENT_REGISTRY } = await import("@/app/api/agents/registry");
       agentSummary = { totalAgents: Object.keys(AGENT_REGISTRY).length };
-    } catch { /* skip */ }
+    } catch {
+      /* skip */
+    }
 
     // ── Uptime ──
     const uptimeSeconds = Math.floor((Date.now() - startedAt) / 1000);

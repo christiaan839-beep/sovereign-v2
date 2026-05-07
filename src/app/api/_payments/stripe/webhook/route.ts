@@ -5,6 +5,8 @@ import { subscriptions } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { createLogger } from "@/lib/logger";
 import { alreadyProcessed } from "@/lib/idempotency";
+import { getPlan } from "@/lib/plans";
+import { sendOpsAlert, planToAmount } from "@/lib/ops-alert";
 
 const log = createLogger("stripe-webhook");
 
@@ -86,26 +88,47 @@ export async function POST(req: Request) {
         const customerId = stripeId(session.customer);
         const subscriptionId = stripeId(session.subscription);
         if (userId) {
-          await db
-            .insert(subscriptions)
-            .values({
-              userId,
-              plan,
-              status: "active",
-              stripeCustomerId: customerId,
-              stripeSubscriptionId: subscriptionId,
-            })
-            .onConflictDoUpdate({
-              target: subscriptions.userId,
-              set: {
+          // subscriptions.userId is indexed but NOT unique (only
+          // stripeSubscriptionId is). onConflictDoUpdate on userId would
+          // throw "no unique constraint matching". Manual check-then-write
+          // gives us upsert semantics without a schema migration.
+          const existing = await db
+            .select({ id: subscriptions.id })
+            .from(subscriptions)
+            .where(eq(subscriptions.userId, userId))
+            .limit(1);
+          if (existing.length > 0) {
+            await db
+              .update(subscriptions)
+              .set({
                 plan,
                 status: "active",
                 stripeCustomerId: customerId,
                 stripeSubscriptionId: subscriptionId,
                 updatedAt: new Date(),
-              },
+              })
+              .where(eq(subscriptions.userId, userId));
+          } else {
+            await db.insert(subscriptions).values({
+              userId,
+              plan,
+              status: "active",
+              stripeCustomerId: customerId,
+              stripeSubscriptionId: subscriptionId,
             });
+          }
           log.info("Subscription activated", { userId, plan });
+          void sendOpsAlert({
+            level: "info",
+            title: "💰 New Stripe subscription",
+            amountUsd: planToAmount(getPlan(plan).priceUsdCents),
+            fields: {
+              plan,
+              userId,
+              stripeCustomerId: customerId,
+              stripeSubId: subscriptionId,
+            },
+          });
         }
         break;
       }
@@ -149,6 +172,11 @@ export async function POST(req: Request) {
           log.info("Subscription cancelled — downgraded to free", {
             stripeCustomerId,
           });
+          void sendOpsAlert({
+            level: "warn",
+            title: "Stripe subscription cancelled",
+            fields: { stripeCustomerId },
+          });
         }
         break;
       }
@@ -167,6 +195,11 @@ export async function POST(req: Request) {
           log.error("Payment failed", {
             stripeCustomerId,
             invoiceId: invoice.id,
+          });
+          void sendOpsAlert({
+            level: "error",
+            title: "Stripe payment failed",
+            fields: { stripeCustomerId, invoiceId: invoice.id },
           });
         }
         break;

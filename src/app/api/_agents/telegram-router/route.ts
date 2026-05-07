@@ -67,13 +67,13 @@ const AGENT_ROUTES: Record<string, { endpoint: string; buildBody: (args: string)
 export const POST = createAgentRoute({
   name: "telegram-router",
   handler: async ({ input }) => {
-    const message = (input as Record<string, unknown>)?.message as Record<string, unknown> | undefined;
+    const message = (input as Record<string, any>)?.message as Record<string, any> | undefined;
 
     if (!message?.text) {
       return { ok: true };
     }
 
-    const chatId = (message.chat as Record<string, unknown>).id;
+    const chatId = (message.chat as Record<string, any>).id;
     const text = (message.text as string).trim();
     const botToken = process.env.TELEGRAM_BOT_TOKEN;
 

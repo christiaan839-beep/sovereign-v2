@@ -1,4 +1,5 @@
 import { createAgentRoute } from "@/lib/agent-factory";
+import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { getBaseUrl } from "@/lib/base-url";
 
@@ -36,8 +37,8 @@ const PIPELINES: Pipeline[] = [
       { name: "Generate Blog", agent: "blog-gen", transform: (input) => ({ topic: input.topic || input.text, keywords: input.keywords }) },
       { name: "Generate Image", agent: "image-gen", transform: (input) => ({ prompt: `Professional blog header image for article about: ${input.topic || input.text}`, width: 1024, height: 512 }) },
       { name: "Narrate Summary", agent: "voice-synth", transform: (input, prev) => {
-        const blogResult = prev[0] as Record<string, unknown>;
-        const content = (blogResult as Record<string, unknown>)?.html || (blogResult as Record<string, unknown>)?.content || String(input.topic);
+        const blogResult = prev[0] as Record<string, any>;
+        const content = (blogResult as Record<string, any>)?.html || (blogResult as Record<string, any>)?.content || String(input.topic);
         return { text: `Here's a summary of our latest article about ${input.topic}. ${String(content).substring(0, 300)}` };
       }},
     ],

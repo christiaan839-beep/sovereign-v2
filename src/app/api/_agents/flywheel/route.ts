@@ -26,7 +26,7 @@ export const POST = createAgentRoute({
   name: "flywheel",
   requiredFields: ["action"],
   handler: async ({ input }) => {
-    const { action, agent, prompt = "", output = "", rating = 0 } = input as Record<string, unknown>;
+    const { action, agent, prompt = "", output = "", rating = 0 } = input as Record<string, any>;
 
     if (action === "ingest") {
       if (!agent || !prompt) {

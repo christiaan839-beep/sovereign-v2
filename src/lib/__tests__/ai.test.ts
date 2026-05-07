@@ -66,7 +66,9 @@ vi.mock("@google/generative-ai", () => {
       getGenerativeModel() {
         return {
           generateContent: mockGeminiGenerateContent,
-          embedContent: vi.fn().mockResolvedValue({ embedding: { values: [] } }),
+          embedContent: vi
+            .fn()
+            .mockResolvedValue({ embedding: { values: [] } }),
         };
       }
     },
@@ -131,17 +133,20 @@ describe("ai() — Unified Router", () => {
     });
   });
 
-  // ─── Default Route → Gemini ───
+  // ─── Default Route → NIM ───
+  // The router defaults to NIM (NVIDIA, $0) — Gemini moved to fallback.
+  // See `src/lib/ai.ts:60-85`.
 
-  it("default route goes to Gemini", async () => {
+  it("default route goes to NIM", async () => {
     const result = await ai("test prompt");
-    expect(result).toBe("gemini-response");
-    expect(mockGeminiGenerateContent).toHaveBeenCalledWith("test prompt");
+    expect(result).toBe("nim-response");
+    expect(mockNimChat).toHaveBeenCalled();
+    expect(mockGeminiGenerateContent).not.toHaveBeenCalled();
   });
 
-  it("default route passes system instruction to Gemini", async () => {
+  it("default route passes system instruction to NIM", async () => {
     await ai("test", { system: "You are helpful" });
-    expect(mockGeminiGenerateContent).toHaveBeenCalled();
+    expect(mockNimChat).toHaveBeenCalled();
   });
 
   // ─── model="nim" → NIM ───
@@ -166,20 +171,26 @@ describe("ai() — Unified Router", () => {
   // ─── Gemini Failure Falls Back to NIM ───
 
   it("Gemini failure falls back to NIM", async () => {
-    mockGeminiGenerateContent.mockRejectedValue(new Error("Gemini quota exceeded"));
+    mockGeminiGenerateContent.mockRejectedValue(
+      new Error("Gemini quota exceeded"),
+    );
 
-    const result = await ai("fallback prompt");
+    // Force the Gemini cascade by selecting it explicitly. The unguarded
+    // default route goes straight to NIM and would not exercise this path.
+    const result = await ai("fallback prompt", { model: "gemini" });
     expect(result).toBe("nim-response");
     expect(mockNimChat).toHaveBeenCalled();
   });
 
   // ─── NIM Failure Falls Back to Groq ───
+  // When Gemini is explicitly selected and fails, the cascade is
+  // Gemini → NIM → Groq. The default-NIM path doesn't exercise this.
 
   it("Gemini + NIM failure falls back to Groq", async () => {
     mockGeminiGenerateContent.mockRejectedValue(new Error("Gemini down"));
     mockNimChat.mockRejectedValue(new Error("NIM down"));
 
-    const result = await ai("double fallback");
+    const result = await ai("double fallback", { model: "gemini" });
     expect(result).toBe("groq-response");
     expect(mockGroqCreate).toHaveBeenCalled();
   });
@@ -191,8 +202,9 @@ describe("ai() — Unified Router", () => {
     mockNimChat.mockRejectedValue(new Error("NIM down"));
     mockGroqCreate.mockRejectedValue(new Error("Groq down"));
 
-    await expect(ai("doomed prompt")).rejects.toThrow(
-      "All AI models are temporarily unavailable"
+    // model: "gemini" triggers the full Gemini → NIM → Groq cascade.
+    await expect(ai("doomed prompt", { model: "gemini" })).rejects.toThrow(
+      "All AI models are temporarily unavailable",
     );
   });
 

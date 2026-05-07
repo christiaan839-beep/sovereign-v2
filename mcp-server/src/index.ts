@@ -21,7 +21,8 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 
-const BASE_URL = process.env.SOVEREIGN_BASE_URL || "https://sovereignmatrix.agency";
+const BASE_URL =
+  process.env.SOVEREIGN_BASE_URL || "https://sovereignmatrix.agency";
 const API_KEY = process.env.SOVEREIGN_API_KEY || "";
 
 // ─── HTTP Helper ─────────────────────────────────────────────────────────────
@@ -29,7 +30,7 @@ const API_KEY = process.env.SOVEREIGN_API_KEY || "";
 async function apiCall(
   path: string,
   method: "GET" | "POST" = "GET",
-  body?: Record<string, unknown>
+  body?: Record<string, unknown>,
 ): Promise<{ ok: boolean; status: number; data: unknown }> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -80,7 +81,7 @@ server.tool(
         },
       ],
     };
-  }
+  },
 );
 
 // ─── Tool 2: List Playbooks ─────────────────────────────────────────────────
@@ -101,7 +102,9 @@ server.tool(
       category: p.category,
       agents: p.agentChain,
       time: p.estimatedTime,
-      fields: (p.fields as Array<Record<string, unknown>>)?.map((f) => `${f.key} (${f.required ? "required" : "optional"})`),
+      fields: (p.fields as Array<Record<string, unknown>>)?.map(
+        (f) => `${f.key} (${f.required ? "required" : "optional"})`,
+      ),
     }));
 
     return {
@@ -112,7 +115,7 @@ server.tool(
         },
       ],
     };
-  }
+  },
 );
 
 // ─── Tool 3: Run Playbook ───────────────────────────────────────────────────
@@ -121,9 +124,22 @@ server.tool(
   "sovereign_run_playbook",
   "Execute a Sovereign Matrix playbook. Provide the playbook ID and input values for its required fields.",
   {
-    playbook_id: z.string().describe("Playbook ID (e.g., 'lead-blitz', 'competitor-takedown', 'content-machine')"),
-    inputs: z.record(z.string(), z.string()).describe("Key-value pairs for the playbook fields (e.g., { niche: 'SaaS', location: 'Texas' })"),
-    auto_execute: z.boolean().default(true).describe("Whether to execute immediately (true) or just generate the plan (false)"),
+    playbook_id: z
+      .string()
+      .describe(
+        "Playbook ID (e.g., 'lead-blitz', 'competitor-takedown', 'content-machine')",
+      ),
+    inputs: z
+      .record(z.string(), z.string())
+      .describe(
+        "Key-value pairs for the playbook fields (e.g., { niche: 'SaaS', location: 'Texas' })",
+      ),
+    auto_execute: z
+      .boolean()
+      .default(true)
+      .describe(
+        "Whether to execute immediately (true) or just generate the plan (false)",
+      ),
   },
   async ({ playbook_id, inputs }) => {
     // Use the canonical playbook engine — not the old /agents/coordinator path.
@@ -133,29 +149,43 @@ server.tool(
       inputs,
     });
 
-    if (!runResult.data?.runId) {
+    const runData = runResult.data as { runId?: string } | undefined;
+    if (!runData?.runId) {
       return {
-        content: [{ type: "text" as const, text: JSON.stringify(runResult.data, null, 2) }],
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(runResult.data, null, 2),
+          },
+        ],
       };
     }
 
-    const runId = runResult.data.runId;
+    const runId = runData.runId;
 
     // Poll until done (max 90s, 3s intervals)
     for (let i = 0; i < 30; i++) {
       await new Promise((r) => setTimeout(r, 3000));
       const poll = await apiCall(`/api/playbooks/runs/${runId}`, "GET");
-      if (poll.data?.done) {
+      const pollData = poll.data as { done?: boolean } | undefined;
+      if (pollData?.done) {
         return {
-          content: [{ type: "text" as const, text: JSON.stringify(poll.data, null, 2) }],
+          content: [
+            { type: "text" as const, text: JSON.stringify(poll.data, null, 2) },
+          ],
         };
       }
     }
 
     return {
-      content: [{ type: "text" as const, text: `Run ${runId} still in progress. Poll /api/playbooks/runs/${runId} for results.` }],
+      content: [
+        {
+          type: "text" as const,
+          text: `Run ${runId} still in progress. Poll /api/playbooks/runs/${runId} for results.`,
+        },
+      ],
     };
-  }
+  },
 );
 
 // ─── Tool 4: Run Single Agent ───────────────────────────────────────────────
@@ -164,9 +194,18 @@ server.tool(
   "sovereign_run_agent",
   "Execute a single Sovereign Matrix agent with a prompt. Use for quick tasks that don't need a full playbook.",
   {
-    agent: z.string().describe("Agent name (e.g., 'smart-router', 'leads', 'blog-gen', 'seo-dominator', 'omni-search')"),
+    agent: z
+      .string()
+      .describe(
+        "Agent name (e.g., 'smart-router', 'leads', 'blog-gen', 'seo-dominator', 'omni-search')",
+      ),
     prompt: z.string().describe("The task or question for the agent"),
-    params: z.record(z.string(), z.string()).optional().describe("Additional parameters (e.g., { niche: 'fintech', location: 'London' })"),
+    params: z
+      .record(z.string(), z.string())
+      .optional()
+      .describe(
+        "Additional parameters (e.g., { niche: 'fintech', location: 'London' })",
+      ),
   },
   async ({ agent, prompt, params }) => {
     const body: Record<string, unknown> = {
@@ -185,7 +224,7 @@ server.tool(
         },
       ],
     };
-  }
+  },
 );
 
 // ─── Tool 5: Usage Metrics ──────────────────────────────────────────────────
@@ -216,7 +255,7 @@ server.tool(
         },
       ],
     };
-  }
+  },
 );
 
 // ─── Tool 6: API Catalog ────────────────────────────────────────────────────
@@ -236,7 +275,7 @@ server.tool(
         },
       ],
     };
-  }
+  },
 );
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -268,13 +307,14 @@ server.tool(
       content: [
         {
           type: "text" as const,
-          text: typeof result.data === "string"
-            ? result.data
-            : JSON.stringify(result.data, null, 2),
+          text:
+            typeof result.data === "string"
+              ? result.data
+              : JSON.stringify(result.data, null, 2),
         },
       ],
     };
-  }
+  },
 );
 
 // ─── Tool 8: Partnership Metrics ─────────────────────────────────────────────
@@ -286,9 +326,11 @@ server.tool(
   async () => {
     const result = await apiCall("/api/_misc/partnership-metrics");
     return {
-      content: [{ type: "text" as const, text: JSON.stringify(result.data, null, 2) }],
+      content: [
+        { type: "text" as const, text: JSON.stringify(result.data, null, 2) },
+      ],
     };
-  }
+  },
 );
 
 // ─── Tool 9: Safety-Diff Metrics ─────────────────────────────────────────────
@@ -300,9 +342,11 @@ server.tool(
   async () => {
     const result = await apiCall("/api/_misc/safety-diff");
     return {
-      content: [{ type: "text" as const, text: JSON.stringify(result.data, null, 2) }],
+      content: [
+        { type: "text" as const, text: JSON.stringify(result.data, null, 2) },
+      ],
     };
-  }
+  },
 );
 
 // ─── Tool 10: Snapshot Verify ───────────────────────────────────────────────
@@ -313,7 +357,9 @@ server.tool(
   {
     snapshot: z
       .string()
-      .describe("Full snapshot JSON (stringified) from /api/_replay/[id]/snapshot"),
+      .describe(
+        "Full snapshot JSON (stringified) from /api/_replay/[id]/snapshot",
+      ),
   },
   async ({ snapshot }) => {
     let parsed: unknown;
@@ -321,14 +367,25 @@ server.tool(
       parsed = JSON.parse(snapshot);
     } catch {
       return {
-        content: [{ type: "text" as const, text: JSON.stringify({ valid: false, reason: "invalid_json" }) }],
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify({ valid: false, reason: "invalid_json" }),
+          },
+        ],
       };
     }
-    const result = await apiCall("/api/_replay/verify", "POST", parsed as Record<string, unknown>);
+    const result = await apiCall(
+      "/api/_replay/verify",
+      "POST",
+      parsed as Record<string, unknown>,
+    );
     return {
-      content: [{ type: "text" as const, text: JSON.stringify(result.data, null, 2) }],
+      content: [
+        { type: "text" as const, text: JSON.stringify(result.data, null, 2) },
+      ],
     };
-  }
+  },
 );
 
 // ─── Tool 11: Run Leads Agent (shortcut) ────────────────────────────────────
@@ -339,14 +396,19 @@ server.tool(
   {
     niche: z.string().describe("Target industry (e.g. 'B2B SaaS analytics')"),
     location: z.string().default("worldwide").describe("Geographic filter"),
-    product: z.string().optional().describe("Product being sold — tailors outreach angle"),
+    product: z
+      .string()
+      .optional()
+      .describe("Product being sold — tailors outreach angle"),
   },
   async (params) => {
     const result = await apiCall("/api/agents/leads", "POST", params);
     return {
-      content: [{ type: "text" as const, text: JSON.stringify(result.data, null, 2) }],
+      content: [
+        { type: "text" as const, text: JSON.stringify(result.data, null, 2) },
+      ],
     };
-  }
+  },
 );
 
 // ─── Tool 12: Generate Blog Post ────────────────────────────────────────────
@@ -356,17 +418,28 @@ server.tool(
   "Generate a SEO-optimized blog post on a given topic. Uses Tavily for research + NIM for generation. Returns HTML + meta description + keywords.",
   {
     topic: z.string().min(3).describe("Topic or target keyword"),
-    keywords: z.array(z.string()).optional().describe("Additional target keywords"),
+    keywords: z
+      .array(z.string())
+      .optional()
+      .describe("Additional target keywords"),
     tone: z
-      .enum(["professional", "casual", "academic", "conversational", "technical"])
+      .enum([
+        "professional",
+        "casual",
+        "academic",
+        "conversational",
+        "technical",
+      ])
       .default("professional"),
   },
   async (params) => {
     const result = await apiCall("/api/agents/blog-gen", "POST", params);
     return {
-      content: [{ type: "text" as const, text: JSON.stringify(result.data, null, 2) }],
+      content: [
+        { type: "text" as const, text: JSON.stringify(result.data, null, 2) },
+      ],
     };
-  }
+  },
 );
 
 // ─── Tool 13: SEO Audit ─────────────────────────────────────────────────────
@@ -376,15 +449,20 @@ server.tool(
   "Run an SEO audit on a domain — keyword gaps, content velocity, technical issues, content strategy. Returns JSON intel grounded in live SERP data when available.",
   {
     domain: z.string().describe("Domain like 'example.com'"),
-    keywords: z.array(z.string()).optional().describe("Specific keywords to analyze"),
+    keywords: z
+      .array(z.string())
+      .optional()
+      .describe("Specific keywords to analyze"),
     mode: z.enum(["audit", "content-plan"]).default("audit"),
   },
   async (params) => {
     const result = await apiCall("/api/agents/seo-dominator", "POST", params);
     return {
-      content: [{ type: "text" as const, text: JSON.stringify(result.data, null, 2) }],
+      content: [
+        { type: "text" as const, text: JSON.stringify(result.data, null, 2) },
+      ],
     };
-  }
+  },
 );
 
 // ─── Tool 14: Competitor Intelligence ──────────────────────────────────────
@@ -401,9 +479,11 @@ server.tool(
   async (params) => {
     const result = await apiCall("/api/agents/competitor", "POST", params);
     return {
-      content: [{ type: "text" as const, text: JSON.stringify(result.data, null, 2) }],
+      content: [
+        { type: "text" as const, text: JSON.stringify(result.data, null, 2) },
+      ],
     };
-  }
+  },
 );
 
 // ─── Tool 15: Grounded Search ──────────────────────────────────────────────
@@ -418,9 +498,11 @@ server.tool(
   async (params) => {
     const result = await apiCall("/api/agents/grounded-search", "POST", params);
     return {
-      content: [{ type: "text" as const, text: JSON.stringify(result.data, null, 2) }],
+      content: [
+        { type: "text" as const, text: JSON.stringify(result.data, null, 2) },
+      ],
     };
-  }
+  },
 );
 
 // ─── Tool 16: Generate Ad Creatives ────────────────────────────────────────
@@ -437,9 +519,11 @@ server.tool(
   async (params) => {
     const result = await apiCall("/api/agents/ads", "POST", params);
     return {
-      content: [{ type: "text" as const, text: JSON.stringify(result.data, null, 2) }],
+      content: [
+        { type: "text" as const, text: JSON.stringify(result.data, null, 2) },
+      ],
     };
-  }
+  },
 );
 
 // ─── Tool 17: Consensus AI ─────────────────────────────────────────────────
@@ -454,9 +538,11 @@ server.tool(
   async (params) => {
     const result = await apiCall("/api/agents/consensus", "POST", params);
     return {
-      content: [{ type: "text" as const, text: JSON.stringify(result.data, null, 2) }],
+      content: [
+        { type: "text" as const, text: JSON.stringify(result.data, null, 2) },
+      ],
     };
-  }
+  },
 );
 
 // ─── Tool 18: Translate ────────────────────────────────────────────────────
@@ -466,15 +552,22 @@ server.tool(
   "Translate text between languages with context preservation. Supports 140+ languages.",
   {
     text: z.string().min(1),
-    target_lang: z.string().describe("Target language (e.g. 'Spanish', 'fr-CA', 'ja')"),
-    source_lang: z.string().optional().describe("Source language (auto-detect if omitted)"),
+    target_lang: z
+      .string()
+      .describe("Target language (e.g. 'Spanish', 'fr-CA', 'ja')"),
+    source_lang: z
+      .string()
+      .optional()
+      .describe("Source language (auto-detect if omitted)"),
   },
   async (params) => {
     const result = await apiCall("/api/agents/translate", "POST", params);
     return {
-      content: [{ type: "text" as const, text: JSON.stringify(result.data, null, 2) }],
+      content: [
+        { type: "text" as const, text: JSON.stringify(result.data, null, 2) },
+      ],
     };
-  }
+  },
 );
 
 // ─── Tool 19: Meeting Notes ────────────────────────────────────────────────
@@ -489,9 +582,11 @@ server.tool(
   async (params) => {
     const result = await apiCall("/api/agents/meeting-notes", "POST", params);
     return {
-      content: [{ type: "text" as const, text: JSON.stringify(result.data, null, 2) }],
+      content: [
+        { type: "text" as const, text: JSON.stringify(result.data, null, 2) },
+      ],
     };
-  }
+  },
 );
 
 // ─── Tool 20: Code Review ──────────────────────────────────────────────────
@@ -501,15 +596,20 @@ server.tool(
   "AI-powered code review — finds bugs, security issues, performance problems, style deviations. Returns prioritized feedback with line-level specificity.",
   {
     code: z.string().min(1).describe("Code to review"),
-    language: z.string().optional().describe("Language hint (e.g. 'typescript')"),
+    language: z
+      .string()
+      .optional()
+      .describe("Language hint (e.g. 'typescript')"),
     context: z.string().optional().describe("What this code does / intent"),
   },
   async (params) => {
     const result = await apiCall("/api/agents/code-reviewer", "POST", params);
     return {
-      content: [{ type: "text" as const, text: JSON.stringify(result.data, null, 2) }],
+      content: [
+        { type: "text" as const, text: JSON.stringify(result.data, null, 2) },
+      ],
     };
-  }
+  },
 );
 
 // ─── Start Server ────────────────────────────────────────────────────────────
@@ -517,7 +617,9 @@ server.tool(
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("Sovereign Matrix MCP server running on stdio — 20 tools available");
+  console.error(
+    "Sovereign Matrix MCP server running on stdio — 20 tools available",
+  );
 }
 
 main().catch((err) => {

@@ -1,6 +1,5 @@
 import { createAgentRoute } from "@/lib/agent-factory";
 import { getNimKey } from "@/lib/nvidia";
-import { NextResponse } from "next/server";
 
 /**
  * AI AGENT BENCHMARKING — Runs the same prompt through multiple
@@ -10,9 +9,9 @@ import { NextResponse } from "next/server";
 
 export const POST = createAgentRoute({
   name: "benchmark",
-  handler: async ({ input, email, userId }) => {
+  handler: async ({ input }) => {
 
-    const { prompt = "Write a 100-word analysis of how AI will impact marketing in 2026." } = input as Record<string, unknown>;
+    const { prompt = "Write a 100-word analysis of how AI will impact marketing in 2026." } = input as Record<string, any>;
     
 
     const models = [

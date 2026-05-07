@@ -1,7 +1,7 @@
 /**
  * Tests for src/lib/model-tracker.ts — Model Performance Tracker
  */
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect } from "vitest";
 import {
   recordModelExecution,
   getModelPerformance,

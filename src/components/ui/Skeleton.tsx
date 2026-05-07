@@ -10,12 +10,22 @@
 
 interface SkeletonProps {
   className?: string;
-  variant?: "line" | "card" | "stat";
+  variant?: "line" | "card" | "stat" | "circle";
   count?: number;
 }
 
+function SkeletonCircle({ className = "h-10 w-10" }: { className?: string }) {
+  return (
+    <div
+      className={`bg-white/[0.04] rounded-full animate-pulse ${className}`}
+    />
+  );
+}
+
 function SkeletonLine({ className = "h-4 w-full" }: { className?: string }) {
-  return <div className={`bg-white/[0.04] rounded animate-pulse ${className}`} />;
+  return (
+    <div className={`bg-white/[0.04] rounded animate-pulse ${className}`} />
+  );
 }
 
 function SkeletonCard() {
@@ -38,20 +48,31 @@ function SkeletonStat() {
   );
 }
 
-export function Skeleton({ className, variant = "line", count = 1 }: SkeletonProps) {
+export function Skeleton({
+  className,
+  variant = "line",
+  count = 1,
+}: SkeletonProps) {
   if (variant === "card") {
     return (
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {Array.from({ length: count }).map((_, i) => <SkeletonCard key={i} />)}
+        {Array.from({ length: count }).map((_, i) => (
+          <SkeletonCard key={i} />
+        ))}
       </div>
     );
   }
   if (variant === "stat") {
     return (
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {Array.from({ length: count }).map((_, i) => <SkeletonStat key={i} />)}
+        {Array.from({ length: count }).map((_, i) => (
+          <SkeletonStat key={i} />
+        ))}
       </div>
     );
+  }
+  if (variant === "circle") {
+    return <SkeletonCircle className={className} />;
   }
   return <SkeletonLine className={className} />;
 }

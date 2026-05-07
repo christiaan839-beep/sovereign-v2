@@ -1,4 +1,5 @@
 import { createAgentRoute } from "@/lib/agent-factory";
+import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { nimChat } from "@/lib/nvidia";
 

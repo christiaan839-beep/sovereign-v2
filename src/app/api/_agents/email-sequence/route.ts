@@ -44,7 +44,7 @@ export async function GET() {
     });
     return NextResponse.json({ sequences });
   } catch (err) {
-    log.error("GET /api/agents/email-sequence error", err as Record<string, unknown>);
+    log.error("GET /api/agents/email-sequence error", err as Record<string, any>);
     return NextResponse.json({ error: "Server Error" }, { status: 500 });
   }
 }

@@ -1,4 +1,5 @@
 import { createAgentRoute } from "@/lib/agent-factory";
+import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { getBaseUrl } from "@/lib/base-url";
 
@@ -38,7 +39,7 @@ const CHAINS: Record<string, { name: string; description: string; steps: ChainSt
         endpoint: "/api/_agents/doc-intel",
         transform: (prev) => ({
           action: "embed",
-          text: typeof prev === "object" ? (prev as Record<string, unknown>).redacted_text || JSON.stringify(prev) : String(prev),
+          text: typeof prev === "object" ? (prev as Record<string, any>).redacted_text || JSON.stringify(prev) : String(prev),
         }),
       },
     ],
@@ -56,7 +57,7 @@ const CHAINS: Record<string, { name: string; description: string; steps: ChainSt
         agent: "Page Builder (Blog Post)",
         endpoint: "/api/_agents/page-builder",
         transform: (prev) => {
-          const intel = (prev as Record<string, unknown>).intelligence || "AI marketing automation";
+          const intel = (prev as Record<string, any>).intelligence || "AI marketing automation";
           return { prompt: `Write a 1500-word SEO blog post about: ${intel}. Include headers, bullet points, and a strong CTA.` };
         },
       },
@@ -83,7 +84,7 @@ const CHAINS: Record<string, { name: string; description: string; steps: ChainSt
           model: "content-safety",
           messages: [
             { role: "system", content: "Analyze this text for content safety violations. Return a JSON report with: safety_score (0-100), violations_found (array), recommendation." },
-            { role: "user", content: typeof prev === "object" ? (prev as Record<string, unknown>).redacted_text || "" : String(prev) },
+            { role: "user", content: typeof prev === "object" ? (prev as Record<string, any>).redacted_text || "" : String(prev) },
           ],
         }),
       },

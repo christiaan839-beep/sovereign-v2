@@ -149,7 +149,7 @@ async function apolloEnrich(
 ): Promise<ApolloEnrichResult | null> {
   try {
     // Apollo organization enrichment by domain
-    const res = await fetch("https://api.apollo.io/v1/organizations/enrich", {
+    const _res = await fetch("https://api.apollo.io/v1/organizations/enrich", {
       method: "GET",
       signal: AbortSignal.timeout(8_000),
       headers: {

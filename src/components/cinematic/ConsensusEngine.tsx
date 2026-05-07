@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence, useInView } from "framer-motion";
-import { CheckCircle2, Zap, Shield, Network, Cpu } from "lucide-react";
+import { CheckCircle2, Shield, Network, Cpu } from "lucide-react";
 
 // ─── Model registry ─────────────────────────────────────────────────────────
 const MODELS = [

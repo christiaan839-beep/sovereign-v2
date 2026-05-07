@@ -1,5 +1,5 @@
 import { createLogger } from "@/lib/logger";
-import { getRelevantLearnings, emitLearningSignal } from "@/lib/competitive-moat";
+import { emitLearningSignal } from "@/lib/competitive-moat";
 import { getModelRecommendation } from "@/lib/agent-performance";
 
 const log = createLogger("evolution-engine");
@@ -51,27 +51,35 @@ export function evolvePrompt(params: {
 
   // Get or create variant list
   if (!promptVariants.has(key)) {
-    promptVariants.set(key, [{
-      id: "v0",
-      agentName,
-      prompt: currentPrompt,
-      avgQuality: qualityScore,
-      usageCount: 1,
-      createdAt: Date.now(),
-      parentId: null,
-    }]);
+    promptVariants.set(key, [
+      {
+        id: "v0",
+        agentName,
+        prompt: currentPrompt,
+        avgQuality: qualityScore,
+        usageCount: 1,
+        createdAt: Date.now(),
+        parentId: null,
+      },
+    ]);
   }
 
   const variants = promptVariants.get(key)!;
   const current = variants[variants.length - 1];
 
   // Update running average
-  current.avgQuality = (current.avgQuality * current.usageCount + qualityScore) / (current.usageCount + 1);
+  current.avgQuality =
+    (current.avgQuality * current.usageCount + qualityScore) /
+    (current.usageCount + 1);
   current.usageCount++;
 
   // Evolve if quality is consistently below threshold
   if (current.usageCount >= 5 && current.avgQuality < 60) {
-    const evolvedPrompt = appendEvolutionHint(currentPrompt, qualityScore, feedback);
+    const evolvedPrompt = appendEvolutionHint(
+      currentPrompt,
+      qualityScore,
+      feedback,
+    );
     const newVariant: PromptVariant = {
       id: `v${variants.length}`,
       agentName,
@@ -82,24 +90,36 @@ export function evolvePrompt(params: {
       parentId: current.id,
     };
     variants.push(newVariant);
-    log.info(`Prompt evolved: ${agentName} (${taskType}) → variant ${newVariant.id}`);
+    log.info(
+      `Prompt evolved: ${agentName} (${taskType}) → variant ${newVariant.id}`,
+    );
     return evolvedPrompt;
   }
 
   return current.prompt;
 }
 
-function appendEvolutionHint(prompt: string, quality: number, feedback?: string): string {
+function appendEvolutionHint(
+  prompt: string,
+  quality: number,
+  feedback?: string,
+): string {
   const hints: string[] = [];
 
   if (quality < 40) {
-    hints.push("IMPORTANT: Recent outputs scored below 40/100. Be more specific, use real data, avoid generic statements.");
+    hints.push(
+      "IMPORTANT: Recent outputs scored below 40/100. Be more specific, use real data, avoid generic statements.",
+    );
   } else if (quality < 60) {
-    hints.push("NOTE: Recent outputs averaged below 60/100. Increase specificity, add concrete examples, structure with clear headers.");
+    hints.push(
+      "NOTE: Recent outputs averaged below 60/100. Increase specificity, add concrete examples, structure with clear headers.",
+    );
   }
 
   if (feedback) {
-    hints.push(`USER FEEDBACK: "${feedback}" — incorporate this into future responses.`);
+    hints.push(
+      `USER FEEDBACK: "${feedback}" — incorporate this into future responses.`,
+    );
   }
 
   return `${prompt}\n\n${hints.join("\n")}`;
@@ -168,11 +188,26 @@ const strategyPatterns = new Map<string, StrategyPattern[]>();
 
 export function recordStrategyOutcome(params: {
   goalType: string;
-  agentChain: string[];
+  /** Multi-step chain, when the caller has one. */
+  agentChain?: string[];
+  /** Single-agent shorthand — used by `createAgentRoute` when there
+   * is no chain, only the agent itself. Becomes `[strategy]`. */
+  strategy?: string;
   success: boolean;
-  durationMs: number;
+  durationMs?: number;
+  /** Optional 0–100 quality score. */
+  score?: number;
+  /** Optional free-form metadata (kept for telemetry). */
+  context?: Record<string, unknown>;
 }): void {
-  const { goalType, agentChain, success, durationMs } = params;
+  const { goalType, success } = params;
+  const agentChain =
+    params.agentChain ?? (params.strategy ? [params.strategy] : [goalType]);
+  const durationMs =
+    params.durationMs ??
+    (typeof params.context?.durationMs === "number"
+      ? (params.context.durationMs as number)
+      : 0);
   const chainKey = agentChain.join("→");
 
   if (!strategyPatterns.has(goalType)) {
@@ -180,7 +215,7 @@ export function recordStrategyOutcome(params: {
   }
 
   const patterns = strategyPatterns.get(goalType)!;
-  let pattern = patterns.find(p => p.chain.join("→") === chainKey);
+  let pattern = patterns.find((p) => p.chain.join("→") === chainKey);
 
   if (!pattern) {
     pattern = {
@@ -195,8 +230,10 @@ export function recordStrategyOutcome(params: {
 
   // Update running stats
   const newSize = pattern.sampleSize + 1;
-  pattern.successRate = ((pattern.successRate * pattern.sampleSize) + (success ? 100 : 0)) / newSize;
-  pattern.avgDurationMs = ((pattern.avgDurationMs * pattern.sampleSize) + durationMs) / newSize;
+  pattern.successRate =
+    (pattern.successRate * pattern.sampleSize + (success ? 100 : 0)) / newSize;
+  pattern.avgDurationMs =
+    (pattern.avgDurationMs * pattern.sampleSize + durationMs) / newSize;
   pattern.sampleSize = newSize;
 
   // Emit learning signal if this pattern is significantly better
@@ -216,7 +253,7 @@ export function getBestStrategy(goalType: string): StrategyPattern | null {
   if (!patterns || patterns.length === 0) return null;
 
   // Need minimum sample size
-  const viable = patterns.filter(p => p.sampleSize >= 3);
+  const viable = patterns.filter((p) => p.sampleSize >= 3);
   if (viable.length === 0) return null;
 
   // Sort by success rate, then by speed
@@ -245,17 +282,20 @@ export function getEvolutionReport(): {
 
   let strategyDiscoveries = 0;
   for (const patterns of strategyPatterns.values()) {
-    strategyDiscoveries += patterns.filter(p => p.sampleSize >= 5 && p.successRate > 80).length;
+    strategyDiscoveries += patterns.filter(
+      (p) => p.sampleSize >= 5 && p.successRate > 80,
+    ).length;
   }
 
   return {
     promptEvolutions,
     routingImprovements: 0, // Counted from agent-performance.ts
     strategyDiscoveries,
-    topImprovement: promptEvolutions > 0
-      ? `${promptEvolutions} agent prompts evolved based on quality feedback`
-      : strategyDiscoveries > 0
-      ? `${strategyDiscoveries} high-performing agent chains discovered`
-      : null,
+    topImprovement:
+      promptEvolutions > 0
+        ? `${promptEvolutions} agent prompts evolved based on quality feedback`
+        : strategyDiscoveries > 0
+          ? `${strategyDiscoveries} high-performing agent chains discovered`
+          : null,
   };
 }

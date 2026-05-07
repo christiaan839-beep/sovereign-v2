@@ -2,7 +2,7 @@
  * Comprehensive plan & pricing tests — covers edge cases
  */
 import { describe, it, expect } from "vitest";
-import { PLANS, normalizePlanId, getPlan, getPlanLimit, getApiRateLimit, getPlanMrrUsd, isUnlimited, getNextPlan, UPGRADE_PATH, PLAN_LIMITS } from "@/lib/plans";
+import { PLANS, normalizePlanId, getPlanLimit, getApiRateLimit, getPlanMrrUsd, UPGRADE_PATH, PLAN_LIMITS } from "@/lib/plans";
 
 describe("plans.ts — Comprehensive Edge Cases", () => {
   // ── Pricing Integrity ──

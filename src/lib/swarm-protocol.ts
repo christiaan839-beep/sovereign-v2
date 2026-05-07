@@ -66,20 +66,30 @@ interface SwarmOptions {
 
 // ── Execute Single Agent ──
 
-async function runAgent(agent: SwarmAgent, goal: string, baseUrl: string): Promise<AgentOutput> {
+async function runAgent(
+  agent: SwarmAgent,
+  goal: string,
+  baseUrl: string,
+): Promise<AgentOutput> {
   const start = Date.now();
   try {
     const res = await fetch(`${baseUrl}/api/agents/${agent.name}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "X-Sovereign-Internal": "swarm-protocol" },
+      headers: {
+        "Content-Type": "application/json",
+        "X-Sovereign-Internal": "swarm-protocol",
+      },
       body: JSON.stringify({ prompt: goal, confirmed: true, ...agent.params }),
       signal: AbortSignal.timeout(45000),
     });
 
     const data = await res.json();
-    const output = typeof data.output === "string" ? data.output
-      : typeof data.result === "string" ? data.result
-      : JSON.stringify(data).slice(0, 3000);
+    const output =
+      typeof data.output === "string"
+        ? data.output
+        : typeof data.result === "string"
+          ? data.result
+          : JSON.stringify(data).slice(0, 3000);
 
     return {
       agent: agent.name,
@@ -103,15 +113,23 @@ async function runAgent(agent: SwarmAgent, goal: string, baseUrl: string): Promi
 
 // ── Consensus Functions ──
 
-async function consensusBest(outputs: AgentOutput[]): Promise<{ output: string; confidence: number }> {
+async function consensusBest(
+  outputs: AgentOutput[],
+): Promise<{ output: string; confidence: number }> {
   const best = outputs.sort((a, b) => b.quality - a.quality)[0];
   return { output: best.output, confidence: best.quality };
 }
 
-async function consensusMerge(goal: string, outputs: AgentOutput[]): Promise<{ output: string; confidence: number }> {
-  const combined = outputs.map((o, i) =>
-    `--- Agent ${i + 1}: ${o.agent} (quality: ${o.quality.toFixed(2)}) ---\n${o.output.slice(0, 1500)}`
-  ).join("\n\n");
+async function consensusMerge(
+  goal: string,
+  outputs: AgentOutput[],
+): Promise<{ output: string; confidence: number }> {
+  const combined = outputs
+    .map(
+      (o, i) =>
+        `--- Agent ${i + 1}: ${o.agent} (quality: ${o.quality.toFixed(2)}) ---\n${o.output.slice(0, 1500)}`,
+    )
+    .join("\n\n");
 
   const merged = await ai(
     `Multiple AI agents worked on the same goal in parallel. Merge their outputs into ONE comprehensive result that keeps the best insights from each.
@@ -122,17 +140,25 @@ AGENT OUTPUTS:
 ${combined}
 
 Produce a single, unified response. Resolve any contradictions by favoring higher-quality sources. Include everything that's unique and valuable.`,
-    { system: "You are a synthesis specialist. Merge parallel outputs without losing information.", maxTokens: 3000 }
+    {
+      system:
+        "You are a synthesis specialist. Merge parallel outputs without losing information.",
+      maxTokens: 3000,
+    },
   );
 
-  const avgQuality = outputs.reduce((sum, o) => sum + o.quality, 0) / outputs.length;
+  const avgQuality =
+    outputs.reduce((sum, o) => sum + o.quality, 0) / outputs.length;
   return { output: merged, confidence: Math.min(1, avgQuality + 0.1) }; // Merge bonus
 }
 
-async function consensusVote(goal: string, outputs: AgentOutput[]): Promise<{ output: string; confidence: number }> {
-  const votePrompt = outputs.map((o, i) =>
-    `Option ${i + 1} (${o.agent}): ${o.output.slice(0, 800)}`
-  ).join("\n\n");
+async function consensusVote(
+  goal: string,
+  outputs: AgentOutput[],
+): Promise<{ output: string; confidence: number }> {
+  const votePrompt = outputs
+    .map((o, i) => `Option ${i + 1} (${o.agent}): ${o.output.slice(0, 800)}`)
+    .join("\n\n");
 
   const vote = await ai(
     `Multiple agents produced different answers to: "${goal}"
@@ -142,12 +168,24 @@ ${votePrompt}
 Identify the key FACTS that appear in 2+ outputs (majority agreement). List them clearly. Then produce a final answer using ONLY majority-agreed facts.
 
 Respond: {"agreedFacts": ["fact1", "fact2"], "finalAnswer": "...", "agreement": 0.85}`,
-    { system: "You are a fact-checker. Only include claims that multiple sources agree on.", maxTokens: 2000 }
+    {
+      system:
+        "You are a fact-checker. Only include claims that multiple sources agree on.",
+      maxTokens: 2000,
+    },
   );
 
   try {
-    const parsed = JSON.parse(vote.replace(/```json?\n?/g, "").replace(/```/g, "").trim());
-    return { output: parsed.finalAnswer || vote, confidence: parsed.agreement || 0.7 };
+    const parsed = JSON.parse(
+      vote
+        .replace(/```json?\n?/g, "")
+        .replace(/```/g, "")
+        .trim(),
+    );
+    return {
+      output: parsed.finalAnswer || vote,
+      confidence: parsed.agreement || 0.7,
+    };
   } catch {
     return { output: vote, confidence: 0.7 };
   }
@@ -155,34 +193,40 @@ Respond: {"agreedFacts": ["fact1", "fact2"], "finalAnswer": "...", "agreement": 
 
 // ── Main Swarm Execution ──
 
-export async function executeSwarm(options: SwarmOptions): Promise<SwarmResult> {
+export async function executeSwarm(
+  options: SwarmOptions,
+): Promise<SwarmResult> {
   const {
     goal,
     agents: rawAgents,
     consensus = "merge",
-    timeoutMs = 60000,
+    timeoutMs: _timeoutMs = 60000,
     minAgentsRequired = 1,
   } = options;
 
   const startTime = Date.now();
 
   // Normalize agent list
-  const agents: SwarmAgent[] = rawAgents.map(a =>
-    typeof a === "string" ? { name: a } : a
+  const agents: SwarmAgent[] = rawAgents.map((a) =>
+    typeof a === "string" ? { name: a } : a,
   );
 
-  log.info("Swarm started", { goal: goal.slice(0, 100), agents: agents.map(a => a.name), consensus });
+  log.info("Swarm started", {
+    goal: goal.slice(0, 100),
+    agents: agents.map((a) => a.name),
+    consensus,
+  });
 
   // Determine base URL
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
   // Execute all agents in parallel
   const results = await Promise.all(
-    agents.map(agent => runAgent(agent, goal, baseUrl))
+    agents.map((agent) => runAgent(agent, goal, baseUrl)),
   );
 
-  const succeeded = results.filter(r => r.success);
-  const failed = results.filter(r => !r.success);
+  const succeeded = results.filter((r) => r.success);
+  const failed = results.filter((r) => !r.success);
 
   if (succeeded.length < minAgentsRequired) {
     return {
@@ -206,15 +250,25 @@ export async function executeSwarm(options: SwarmOptions): Promise<SwarmResult> 
       ({ output: finalOutput, confidence } = await consensusBest(succeeded));
       break;
     case "merge":
-      ({ output: finalOutput, confidence } = await consensusMerge(goal, succeeded));
+      ({ output: finalOutput, confidence } = await consensusMerge(
+        goal,
+        succeeded,
+      ));
       break;
     case "vote":
-      ({ output: finalOutput, confidence } = await consensusVote(goal, succeeded));
+      ({ output: finalOutput, confidence } = await consensusVote(
+        goal,
+        succeeded,
+      ));
       break;
     case "debate": {
       // Use the adversarial synthesis engine
-      const { adversarialSynthesis } = await import("@/lib/adversarial-synthesis");
-      const debate = await adversarialSynthesis({ task: goal, context: succeeded.map(o => o.output).join("\n---\n") });
+      const { adversarialSynthesis } =
+        await import("@/lib/adversarial-synthesis");
+      const debate = await adversarialSynthesis({
+        task: goal,
+        context: succeeded.map((o) => o.output).join("\n---\n"),
+      });
       finalOutput = debate.output;
       confidence = debate.confidence;
       break;

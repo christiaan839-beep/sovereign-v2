@@ -32,7 +32,8 @@ export interface DiscoveredModel {
 const knownModels = new Set<string>();
 
 // Discovery results cache
-let lastDiscovery: { models: DiscoveredModel[]; timestamp: number } | null = null;
+let lastDiscovery: { models: DiscoveredModel[]; timestamp: number } | null =
+  null;
 const DISCOVERY_CACHE_TTL = 3600000; // 1 hour
 
 /**
@@ -52,17 +53,21 @@ async function discoverNIMModels(): Promise<DiscoveredModel[]> {
     const data = await res.json();
     const models = data.data || [];
 
-    return models.map((m: { id: string; owned_by?: string; context_window?: number }) => ({
-      id: m.id,
-      name: formatModelName(m.id),
-      provider: "NVIDIA NIM",
-      contextWindow: m.context_window,
-      isNew: !knownModels.has(m.id),
-      discoveredAt: Date.now(),
-      capabilities: inferCapabilities(m.id),
-    }));
+    return models.map(
+      (m: { id: string; owned_by?: string; context_window?: number }) => ({
+        id: m.id,
+        name: formatModelName(m.id),
+        provider: "NVIDIA NIM",
+        contextWindow: m.context_window,
+        isNew: !knownModels.has(m.id),
+        discoveredAt: Date.now(),
+        capabilities: inferCapabilities(m.id),
+      }),
+    );
   } catch (err) {
-    log.warn("NIM model discovery failed", err);
+    log.warn("NIM model discovery failed", {
+      error: err instanceof Error ? err.message : String(err),
+    });
     return [];
   }
 }
@@ -84,15 +89,17 @@ async function discoverGroqModels(): Promise<DiscoveredModel[]> {
     const data = await res.json();
     const models = data.data || [];
 
-    return models.map((m: { id: string; owned_by?: string; context_window?: number }) => ({
-      id: m.id,
-      name: formatModelName(m.id),
-      provider: "Groq",
-      contextWindow: m.context_window,
-      isNew: !knownModels.has(`groq:${m.id}`),
-      discoveredAt: Date.now(),
-      capabilities: ["fast", "inference"],
-    }));
+    return models.map(
+      (m: { id: string; owned_by?: string; context_window?: number }) => ({
+        id: m.id,
+        name: formatModelName(m.id),
+        provider: "Groq",
+        contextWindow: m.context_window,
+        isNew: !knownModels.has(`groq:${m.id}`),
+        discoveredAt: Date.now(),
+        capabilities: ["fast", "inference"],
+      }),
+    );
   } catch {
     return [];
   }
@@ -136,10 +143,13 @@ export async function discoverAllModels(): Promise<{
   models: DiscoveredModel[];
 }> {
   // Check cache
-  if (lastDiscovery && Date.now() - lastDiscovery.timestamp < DISCOVERY_CACHE_TTL) {
+  if (
+    lastDiscovery &&
+    Date.now() - lastDiscovery.timestamp < DISCOVERY_CACHE_TTL
+  ) {
     return {
       total: lastDiscovery.models.length,
-      newModels: lastDiscovery.models.filter(m => m.isNew).length,
+      newModels: lastDiscovery.models.filter((m) => m.isNew).length,
       providers: countByProvider(lastDiscovery.models),
       models: lastDiscovery.models,
     };
@@ -155,7 +165,7 @@ export async function discoverAllModels(): Promise<{
   ]);
 
   const allModels = [...nimModels, ...groqModels, ...ollamaModels];
-  const newModels = allModels.filter(m => m.isNew);
+  const newModels = allModels.filter((m) => m.isNew);
 
   // Update known models set
   for (const m of allModels) {
@@ -166,7 +176,9 @@ export async function discoverAllModels(): Promise<{
   lastDiscovery = { models: allModels, timestamp: Date.now() };
 
   if (newModels.length > 0) {
-    log.info(`Discovery complete: ${allModels.length} total, ${newModels.length} NEW models found`);
+    log.info(
+      `Discovery complete: ${allModels.length} total, ${newModels.length} NEW models found`,
+    );
     for (const m of newModels) {
       log.info(`  NEW: ${m.name} (${m.provider})`);
     }
@@ -185,7 +197,7 @@ export async function discoverAllModels(): Promise<{
  */
 export function getNewModels(): DiscoveredModel[] {
   if (!lastDiscovery) return [];
-  return lastDiscovery.models.filter(m => m.isNew);
+  return lastDiscovery.models.filter((m) => m.isNew);
 }
 
 // ─── Helpers ────────────────────────────────────────────────
@@ -194,18 +206,34 @@ function formatModelName(id: string): string {
   return id
     .replace(/^(nvidia|meta|google|deepseek-ai|qwen|mistralai)\//i, "")
     .replace(/-/g, " ")
-    .replace(/\b\w/g, c => c.toUpperCase());
+    .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 function inferCapabilities(modelId: string): string[] {
   const caps: string[] = [];
   const lower = modelId.toLowerCase();
 
-  if (lower.includes("llama") || lower.includes("nemotron")) caps.push("reasoning");
-  if (lower.includes("code") || lower.includes("devstral") || lower.includes("starcoder")) caps.push("code");
-  if (lower.includes("vision") || lower.includes("vlm") || lower.includes("multimodal")) caps.push("vision");
+  if (lower.includes("llama") || lower.includes("nemotron"))
+    caps.push("reasoning");
+  if (
+    lower.includes("code") ||
+    lower.includes("devstral") ||
+    lower.includes("starcoder")
+  )
+    caps.push("code");
+  if (
+    lower.includes("vision") ||
+    lower.includes("vlm") ||
+    lower.includes("multimodal")
+  )
+    caps.push("vision");
   if (lower.includes("guard") || lower.includes("safety")) caps.push("safety");
-  if (lower.includes("tts") || lower.includes("speech") || lower.includes("riva")) caps.push("voice");
+  if (
+    lower.includes("tts") ||
+    lower.includes("speech") ||
+    lower.includes("riva")
+  )
+    caps.push("voice");
   if (lower.includes("embed")) caps.push("embeddings");
   if (lower.includes("rerank")) caps.push("reranking");
   if (lower.includes("flux") || lower.includes("image")) caps.push("image");

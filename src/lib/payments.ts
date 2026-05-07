@@ -9,7 +9,7 @@ import crypto from "crypto";
 
 // ─── Pricing (from canonical plans.ts — single source of truth) ──
 
-import { PLANS as CANONICAL_PLANS, type PlanId as CanonicalPlanId } from "@/lib/plans";
+import { PLANS as CANONICAL_PLANS } from "@/lib/plans";
 
 // Re-export for backward compatibility with existing payment routes
 export type PlanId = "starter" | "array" | "node" | "enterprise";

@@ -1,6 +1,11 @@
 "use client";
 
 import { useRef, useEffect, useState } from "react";
+// Type-only import — the value `THREE` is dynamically imported below
+// so the runtime bundle stays small. Importing the namespace as a
+// type lets us write `THREE.BufferAttribute` casts without forcing
+// the value bundle.
+import type * as THREE from "three";
 
 /**
  * WebGLParticles — GPU-rendered particle system using Three.js.
@@ -93,7 +98,7 @@ export function WebGLParticles({
       }
       function makeSphere(n: number) {
         return Array.from({ length: n }, (_, i) => {
-          const phi = Math.acos(1 - 2 * (i + 0.5) / n);
+          const phi = Math.acos(1 - (2 * (i + 0.5)) / n);
           const theta = Math.PI * (1 + Math.sqrt(5)) * i;
           const r = 22 + Math.random() * 3;
           return [
@@ -175,14 +180,24 @@ export function WebGLParticles({
 
         const isOrb = Math.random() < 0.08;
         const isMed = Math.random() < 0.25;
-        sizes[i] = isOrb ? Math.random() * 4 + 3 : isMed ? Math.random() * 2 + 1 : Math.random() * 0.8 + 0.3;
+        sizes[i] = isOrb
+          ? Math.random() * 4 + 3
+          : isMed
+            ? Math.random() * 2 + 1
+            : Math.random() * 0.8 + 0.3;
         phases[i] = Math.random() * Math.PI * 2;
         speeds[i] = Math.random() * 0.5 + 0.2;
       }
 
       const geometry = new THREE.BufferGeometry();
-      geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-      geometry.setAttribute("targetPosition", new THREE.BufferAttribute(targetPositions, 3));
+      geometry.setAttribute(
+        "position",
+        new THREE.BufferAttribute(positions, 3),
+      );
+      geometry.setAttribute(
+        "targetPosition",
+        new THREE.BufferAttribute(targetPositions, 3),
+      );
       geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
       geometry.setAttribute("size", new THREE.BufferAttribute(sizes, 1));
       geometry.setAttribute("phase", new THREE.BufferAttribute(phases, 1));
@@ -291,7 +306,9 @@ export function WebGLParticles({
         mouse.x = (e.clientX - rect.left) / rect.width;
         mouse.y = 1.0 - (e.clientY - rect.top) / rect.height; // flip Y
       };
-      const handleLeave = () => { mouse.set(-999, -999); };
+      const handleLeave = () => {
+        mouse.set(-999, -999);
+      };
       container.addEventListener("mousemove", handleMouse);
       container.addEventListener("mouseleave", handleLeave);
 
@@ -329,12 +346,26 @@ export function WebGLParticles({
           nextShape = shapes[nextIdx](count);
 
           // Update buffer attributes
-          const posAttr = geometry.getAttribute("position") as THREE.BufferAttribute;
-          const tgtAttr = geometry.getAttribute("targetPosition") as THREE.BufferAttribute;
+          const posAttr = geometry.getAttribute(
+            "position",
+          ) as THREE.BufferAttribute;
+          const tgtAttr = geometry.getAttribute(
+            "targetPosition",
+          ) as THREE.BufferAttribute;
           for (let i = 0; i < count; i++) {
-            const i3 = i * 3;
-            posAttr.setXYZ(i, currentShape[i][0], currentShape[i][1], currentShape[i][2]);
-            tgtAttr.setXYZ(i, nextShape[i][0], nextShape[i][1], nextShape[i][2]);
+            const _i3 = i * 3;
+            posAttr.setXYZ(
+              i,
+              currentShape[i][0],
+              currentShape[i][1],
+              currentShape[i][2],
+            );
+            tgtAttr.setXYZ(
+              i,
+              nextShape[i][0],
+              nextShape[i][1],
+              nextShape[i][2],
+            );
           }
           posAttr.needsUpdate = true;
           tgtAttr.needsUpdate = true;
@@ -343,22 +374,36 @@ export function WebGLParticles({
 
         // Animate morph progress
         if (morphDirection === 1) {
-          morphProgress += (1 / 60) / MORPH_DURATION; // assumes 60fps
+          morphProgress += 1 / 60 / MORPH_DURATION; // assumes 60fps
           if (morphProgress >= 1) {
             morphProgress = 1;
             morphDirection = 0;
             // Swap: next shape becomes current
-            const posAttr = geometry.getAttribute("position") as THREE.BufferAttribute;
-            const tgtAttr = geometry.getAttribute("targetPosition") as THREE.BufferAttribute;
+            const posAttr = geometry.getAttribute(
+              "position",
+            ) as THREE.BufferAttribute;
+            const tgtAttr = geometry.getAttribute(
+              "targetPosition",
+            ) as THREE.BufferAttribute;
             for (let i = 0; i < count; i++) {
-              posAttr.setXYZ(i, nextShape[i][0], nextShape[i][1], nextShape[i][2]);
+              posAttr.setXYZ(
+                i,
+                nextShape[i][0],
+                nextShape[i][1],
+                nextShape[i][2],
+              );
             }
             posAttr.needsUpdate = true;
             // Pre-generate next target
             const futureIdx = (currentShapeIdx + 2) % shapes.length;
             const futureShape = shapes[futureIdx](count);
             for (let i = 0; i < count; i++) {
-              tgtAttr.setXYZ(i, futureShape[i][0], futureShape[i][1], futureShape[i][2]);
+              tgtAttr.setXYZ(
+                i,
+                futureShape[i][0],
+                futureShape[i][1],
+                futureShape[i][2],
+              );
             }
             tgtAttr.needsUpdate = true;
             morphProgress = 0;
@@ -398,7 +443,7 @@ export function WebGLParticles({
 
     return () => {
       destroyed = true;
-      cleanup?.then(fn => fn?.());
+      cleanup?.then((fn) => fn?.());
     };
   }, [count, isMobile]);
 

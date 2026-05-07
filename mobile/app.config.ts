@@ -5,7 +5,7 @@
  * Copy this into the generated Expo project.
  */
 
-export default {
+const expoConfig = {
   expo: {
     name: "Sovereign Matrix",
     slug: "sovereign-matrix",
@@ -52,3 +52,5 @@ export default {
     },
   },
 };
+
+export default expoConfig;

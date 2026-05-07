@@ -1,9 +1,14 @@
 import { NextResponse } from "next/server";
-import { verifyYocoWebhook, getYocoPayment, getYocoCheckout } from "@/lib/payments";
+import {
+  verifyYocoWebhook,
+  getYocoPayment,
+  getYocoCheckout,
+} from "@/lib/payments";
 import { db } from "@/db";
 import { subscriptions } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
 import { auditLog } from "@/lib/audit-log";
+import { alreadyProcessed } from "@/lib/idempotency";
 
 const log = createLogger("yoco-webhook");
 
@@ -21,7 +26,10 @@ const log = createLogger("yoco-webhook");
  */
 export async function POST(req: Request) {
   if (!process.env.YOCO_WEBHOOK_SECRET) {
-    return NextResponse.json({ error: "Yoco webhook not configured" }, { status: 503 });
+    return NextResponse.json(
+      { error: "Yoco webhook not configured" },
+      { status: 503 },
+    );
   }
 
   const body = await req.text();
@@ -32,6 +40,19 @@ export async function POST(req: Request) {
   if (!verifyYocoWebhook(body, { id, timestamp, signature })) {
     log.error("Yoco webhook signature verification failed", { id, timestamp });
     return NextResponse.json({ error: "Invalid signature" }, { status: 403 });
+  }
+
+  // Idempotency. Yoco follows Standard Webhooks
+  // (https://www.standardwebhooks.com/) and `webhook-id` is the
+  // canonical unique event identifier. Without this guard a duplicate
+  // delivery (Yoco retries on any non-2xx for up to 24h) would
+  // re-upsert the subscription row and re-fire the audit log entry.
+  // The DB upsert is technically idempotent, but the audit row isn't,
+  // and a duplicate "subscription.change" entry is a real legibility
+  // problem when reading the audit trail post-incident.
+  if (id && (await alreadyProcessed("yoco", id))) {
+    log.info("Skipping duplicate Yoco webhook", { id });
+    return NextResponse.json({ received: true, duplicate: true });
   }
 
   try {
@@ -50,7 +71,8 @@ export async function POST(req: Request) {
 
     // Normalize event type between legacy (`type`) and new (`event_type`).
     const eventType = event.event_type || event.type || "";
-    const isSuccess = eventType === "payment.succeeded" || eventType === "payment.created";
+    const isSuccess =
+      eventType === "payment.succeeded" || eventType === "payment.created";
 
     if (!isSuccess) {
       log.info("Yoco webhook received (ignored)", { eventType });
@@ -78,7 +100,10 @@ export async function POST(req: Request) {
         orderId: event.order_id,
       });
       // Return 200 so Yoco doesn't retry — this is a config issue, not transient.
-      return NextResponse.json({ received: true, warning: "No email in metadata" });
+      return NextResponse.json({
+        received: true,
+        warning: "No email in metadata",
+      });
     }
 
     await db
@@ -105,10 +130,17 @@ export async function POST(req: Request) {
       },
     });
 
-    log.info("Yoco payment succeeded", { email, plan, paymentId: event.payment_id });
+    log.info("Yoco payment succeeded", {
+      email,
+      plan,
+      paymentId: event.payment_id,
+    });
     return NextResponse.json({ received: true });
   } catch (err) {
     log.error("Yoco webhook processing failed", err as Record<string, unknown>);
-    return NextResponse.json({ error: "Webhook processing failed" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Webhook processing failed" },
+      { status: 500 },
+    );
   }
 }

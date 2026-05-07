@@ -13,7 +13,7 @@ export const POST = createAgentRoute({
   name: "swarm",
   requiredFields: ["task"],
   handler: async ({ input }) => {
-    const { task, agents, jury = true } = input as Record<string, unknown>;
+    const { task, agents, jury = true } = input as Record<string, any>;
 
     // Default swarm: 3 different models attack the same problem
     const swarmAgents = (agents as Array<{ model: string; name: string }>) || [

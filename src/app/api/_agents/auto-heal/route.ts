@@ -23,7 +23,7 @@ export const POST = createAgentRoute({
   name: "auto-heal",
   requiredFields: ["action"],
   handler: async ({ input }) => {
-    const { action, agent, error_message, original_payload } = input as Record<string, unknown>;
+    const { action, agent, error_message, original_payload } = input as Record<string, any>;
 
     if (action === "heal") {
       if (!agent || !error_message) {
@@ -69,7 +69,7 @@ Only output valid JSON, nothing else.`,
 
       if (original_payload) {
         try {
-          const adjustedPayload = { ...(original_payload as Record<string, unknown>) };
+          const adjustedPayload = { ...(original_payload as Record<string, any>) };
           if (diagnosis.recommended_temperature) {
             adjustedPayload.temperature = diagnosis.recommended_temperature;
           }

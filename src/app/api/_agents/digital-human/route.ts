@@ -1,5 +1,4 @@
 import { createAgentRoute } from "@/lib/agent-factory";
-import { NextResponse } from "next/server";
 
 /**
  * DIGITAL HUMANS BLUEPRINT — Combines Nemotron VoiceChat + FLUX image gen
@@ -8,9 +7,9 @@ import { NextResponse } from "next/server";
  */
 export const POST = createAgentRoute({
   name: "digital-human",
-  handler: async ({ input, email, userId }) => {
+  handler: async ({ input }) => {
 
-    const { name, script, gender = "female", style = "corporate" } = input as Record<string, unknown>;
+    const { name, script, gender = "female", style = "corporate" } = input as Record<string, any>;
     if (!script) return ({ error: "Missing `script`." });
 
     const nimKey = process.env.NVIDIA_NIM_API_KEY;

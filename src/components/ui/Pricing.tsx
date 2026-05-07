@@ -1,21 +1,38 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { CheckCircle2, X as XIcon, Zap, Crown, Server, ArrowRight, Shield, ShieldAlert, Loader2, Phone } from "lucide-react";
+import {
+  CheckCircle2,
+  X as XIcon,
+  Zap,
+  Server,
+  ArrowRight,
+  Shield,
+  ShieldAlert,
+  Loader2,
+  Phone,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SovereignLogo } from "@/components/ui/SovereignLogo";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
 
 export function Pricing() {
-  const [notification, setNotification] = useState<{ message: string; type: "error" | "success" } | null>(null);
-  const showNotification = (message: string, type: "error" | "success" = "error") => {
+  const [notification, setNotification] = useState<{
+    message: string;
+    type: "error" | "success";
+  } | null>(null);
+  const showNotification = (
+    message: string,
+    type: "error" | "success" = "error",
+  ) => {
     setNotification({ message, type });
     setTimeout(() => setNotification(null), 4000);
   };
   const tiers = [
     {
       name: "Free",
-      description: "Try Sovereign Matrix with 3 agents and 50 tasks. No credit card required.",
+      description:
+        "Try Sovereign Matrix with 3 agents and 50 tasks. No credit card required.",
       price: "Free",
       priceUSD: "",
       period: "Free forever",
@@ -35,11 +52,13 @@ export function Pricing() {
       ],
       planId: "free",
       buttonText: "Start Free",
-      buttonStyle: "bg-white/5 hover:bg-white/10 text-white border border-white/10",
+      buttonStyle:
+        "bg-white/5 hover:bg-white/10 text-white border border-white/10",
     },
     {
       name: "Starter",
-      description: "5 core agents with 200 tasks/month. Perfect for trying AI automation.",
+      description:
+        "5 core agents with 200 tasks/month. Perfect for trying AI automation.",
       price: "$19",
       priceUSD: "$19",
       period: "/mo",
@@ -49,7 +68,10 @@ export function Pricing() {
       border: "border-emerald-500/40",
       isPopular: true,
       features: [
-        { name: "5 core agents (Content, SEO, Leads, Email, Research)", included: true },
+        {
+          name: "5 core agents (Content, SEO, Leads, Email, Research)",
+          included: true,
+        },
         { name: "200 tasks per month", included: true },
         { name: "Smart Router (auto model selection)", included: true },
         { name: "STRIKE competitor analysis", included: true },
@@ -60,11 +82,13 @@ export function Pricing() {
       ],
       planId: "starter",
       buttonText: "Start for $19/mo",
-      buttonStyle: "bg-emerald-400 hover:bg-emerald-300 text-black shadow-[0_0_20px_rgba(52,211,153,0.3)]",
+      buttonStyle:
+        "bg-emerald-400 hover:bg-emerald-300 text-black shadow-[0_0_20px_rgba(52,211,153,0.3)]",
     },
     {
       name: "Growth",
-      description: "10 agents with 500 tasks/month. For growing teams ready to scale.",
+      description:
+        "10 agents with 500 tasks/month. For growing teams ready to scale.",
       price: "$49",
       priceUSD: "$49",
       period: "/mo",
@@ -84,11 +108,13 @@ export function Pricing() {
       ],
       planId: "array",
       buttonText: "Subscribe",
-      buttonStyle: "bg-white/5 hover:bg-white/10 text-white border border-white/10",
+      buttonStyle:
+        "bg-white/5 hover:bg-white/10 text-white border border-white/10",
     },
     {
       name: "Sovereign Node",
-      description: "All 130+ agents with 2,000 tasks. Local execution via NemoClaw OS.",
+      description:
+        "All 130+ agents with 2,000 tasks. Local execution via NemoClaw OS.",
       price: "$199",
       priceUSD: "$199",
       period: "/mo",
@@ -109,11 +135,13 @@ export function Pricing() {
       ],
       planId: "node",
       buttonText: "Subscribe",
-      buttonStyle: "bg-white/5 hover:bg-white/10 text-white border border-white/10",
+      buttonStyle:
+        "bg-white/5 hover:bg-white/10 text-white border border-white/10",
     },
     {
       name: "Enterprise License",
-      description: "White-label the platform with your branding. Resell to clients with custom portals.",
+      description:
+        "White-label the platform with your branding. Resell to clients with custom portals.",
       price: "$499",
       priceUSD: "$499",
       period: "/mo",
@@ -134,7 +162,8 @@ export function Pricing() {
       ],
       planId: "enterprise",
       buttonText: "Subscribe",
-      buttonStyle: "bg-white/5 hover:bg-white/10 text-white border border-white/10",
+      buttonStyle:
+        "bg-white/5 hover:bg-white/10 text-white border border-white/10",
     },
   ];
 
@@ -144,7 +173,9 @@ export function Pricing() {
   // Close modal on Escape
   useEffect(() => {
     if (!showModal) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setShowModal(false); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setShowModal(false);
+    };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [showModal]);
@@ -162,36 +193,39 @@ export function Pricing() {
       return;
     }
 
-    // Try Stripe first (USD international), fall back to Yoco (ZAR)
+    // Try PayPal first (USD international), fall back to Yoco (ZAR)
     setCheckoutLoading(planId);
 
     const checkoutTimeout = setTimeout(() => {
       setCheckoutLoading(null);
-      showNotification("Checkout is taking too long. Please try again.", "error");
+      showNotification(
+        "Checkout is taking too long. Please try again.",
+        "error",
+      );
     }, 30000);
 
     try {
-      // Try Stripe (USD) first
-      const stripeRes = await fetch("/api/payments/stripe/checkout", {
+      // Try PayPal (USD) first
+      const paypalRes = await fetch("/api/payments/paypal/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plan: planId }),
       });
-      const stripeData = await stripeRes.json();
+      const paypalData = await paypalRes.json().catch(() => ({}));
 
-      if (stripeRes.ok && (stripeData.url || stripeData.redirectUrl)) {
+      if (paypalRes.ok && (paypalData.url || paypalData.redirectUrl)) {
         clearTimeout(checkoutTimeout);
-        window.location.assign(stripeData.url || stripeData.redirectUrl);
+        window.location.assign(paypalData.url || paypalData.redirectUrl);
         return;
       }
 
-      // Stripe not configured — try Yoco
+      // PayPal not configured — try Yoco
       const yocoRes = await fetch("/api/payments/yoco/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plan: planId }),
       });
-      const yocoData = await yocoRes.json();
+      const yocoData = await yocoRes.json().catch(() => ({}));
 
       clearTimeout(checkoutTimeout);
 
@@ -201,16 +235,27 @@ export function Pricing() {
       }
 
       // Neither configured — direct to signup
-      if (stripeRes.status === 503 && yocoRes.status === 503) {
-        showNotification("Payments are being configured. Signing you up for the free tier.", "error");
+      if (paypalRes.status === 503 && yocoRes.status === 503) {
+        showNotification(
+          "Payments are being configured. Signing you up for the free tier.",
+          "error",
+        );
         window.location.assign("/onboarding");
         return;
       }
 
-      showNotification(yocoData.error || stripeData.error || "Checkout failed. Please try again.", "error");
+      showNotification(
+        yocoData.error ||
+          paypalData.error ||
+          "Checkout failed. Please try again.",
+        "error",
+      );
     } catch {
       clearTimeout(checkoutTimeout);
-      showNotification("Connection error. Please check your internet and try again.", "error");
+      showNotification(
+        "Connection error. Please check your internet and try again.",
+        "error",
+      );
     } finally {
       setCheckoutLoading(null);
     }
@@ -226,7 +271,11 @@ export function Pricing() {
       await fetch("/api/leads/capture", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: leadName, phone: leadPhone, planId: selectedPlan }),
+        body: JSON.stringify({
+          name: leadName,
+          phone: leadPhone,
+          planId: selectedPlan,
+        }),
       });
 
       // Step 2: Initialize Yoco Execution
@@ -241,21 +290,26 @@ export function Pricing() {
         window.location.assign(data.redirectUrl);
         return;
       }
-      
+
       if (res.status === 503) {
-        showNotification("Payments are being set up. Please try again shortly.", "error");
+        showNotification(
+          "Payments are being set up. Please try again shortly.",
+          "error",
+        );
         return;
       }
 
-      showNotification(data.error || "Payment setup incomplete. Please configure Yoco API keys.", "error");
+      showNotification(
+        data.error ||
+          "Payment setup incomplete. Please configure Yoco API keys.",
+        "error",
+      );
     } catch {
       showNotification("Connection failed. Please try again.");
     } finally {
       setIsProcessing(false);
     }
   };
-
-
 
   return (
     <div className="w-full max-w-7xl mx-auto py-24 px-6 relative z-10">
@@ -267,11 +321,18 @@ export function Pricing() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             className={`fixed top-6 right-6 z-[200] px-4 py-3 rounded-xl border backdrop-blur-xl shadow-lg flex items-center gap-3 ${
-              notification.type === "error" ? "border-rose-500/30 bg-rose-500/10" : "border-emerald-500/30 bg-emerald-500/10"
+              notification.type === "error"
+                ? "border-rose-500/30 bg-rose-500/10"
+                : "border-emerald-500/30 bg-emerald-500/10"
             }`}
           >
-            <span className="text-xs font-medium text-white">{notification.message}</span>
-            <button onClick={() => setNotification(null)} className="text-neutral-500 hover:text-white">
+            <span className="text-xs font-medium text-white">
+              {notification.message}
+            </span>
+            <button
+              onClick={() => setNotification(null)}
+              className="text-neutral-500 hover:text-white"
+            >
               <XIcon className="w-3 h-3" />
             </button>
           </motion.div>
@@ -280,9 +341,11 @@ export function Pricing() {
 
       <div className="text-center mb-16 flex flex-col items-center">
         <div className="mb-6 animate-[pulse_4s_ease-in-out_infinite]">
-           <SovereignLogo size="lg" />
+          <SovereignLogo size="lg" />
         </div>
-        <h2 className="text-4xl md:text-5xl font-bold text-white serif-text mb-6">Simple, Transparent Pricing.</h2>
+        <h2 className="text-4xl md:text-5xl font-bold text-white serif-text mb-6">
+          Simple, Transparent Pricing.
+        </h2>
         <p className="text-neutral-400 max-w-2xl mx-auto">
           Start free, scale when you see results. No contracts, cancel anytime.
         </p>
@@ -301,13 +364,19 @@ export function Pricing() {
             )}
 
             <div className="flex items-center gap-3 mb-4">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center bg-black/40 border ${tier.border}`}>
+              <div
+                className={`w-10 h-10 rounded-xl flex items-center justify-center bg-black/40 border ${tier.border}`}
+              >
                 <tier.icon className={`w-5 h-5 ${tier.color}`} />
               </div>
-              <h3 className="text-xl font-bold text-white uppercase tracking-widest">{tier.name}</h3>
+              <h3 className="text-xl font-bold text-white uppercase tracking-widest">
+                {tier.name}
+              </h3>
             </div>
 
-            <p className="text-sm text-neutral-400 mb-6 h-10">{tier.description}</p>
+            <p className="text-sm text-neutral-400 mb-6 h-10">
+              {tier.description}
+            </p>
 
             <div className="mb-8">
               <div className="flex items-end gap-2 mb-1">
@@ -315,13 +384,19 @@ export function Pricing() {
                   {tier.price}
                 </span>
                 {tier.period === "Free forever" ? (
-                  <span className="text-neutral-500 font-bold tracking-widest uppercase text-xs mb-2">forever</span>
+                  <span className="text-neutral-500 font-bold tracking-widest uppercase text-xs mb-2">
+                    forever
+                  </span>
                 ) : (
-                  <span className="text-neutral-500 font-bold tracking-widest uppercase text-xs mb-2">{tier.period}</span>
+                  <span className="text-neutral-500 font-bold tracking-widest uppercase text-xs mb-2">
+                    {tier.period}
+                  </span>
                 )}
               </div>
               {tier.priceUSD && (
-                <span className="text-[10px] text-neutral-500">{tier.priceUSD} USD</span>
+                <span className="text-[10px] text-neutral-500">
+                  {tier.priceUSD} USD
+                </span>
               )}
             </div>
 
@@ -332,21 +407,34 @@ export function Pricing() {
               className={`w-full py-4 rounded-xl font-bold uppercase tracking-widest text-sm transition-gpu mb-8 flex items-center justify-center gap-2 disabled:opacity-50 ${tier.buttonStyle}`}
             >
               {checkoutLoading === tier.planId ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> Processing...</>
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" /> Processing...
+                </>
               ) : (
-                <><ArrowRight className="w-4 h-4" /> {tier.buttonText}</>
+                <>
+                  <ArrowRight className="w-4 h-4" /> {tier.buttonText}
+                </>
               )}
             </button>
 
             <ul className="space-y-3">
               {tier.features.map((feature, i) => (
-                <li key={i} className={`flex items-start gap-3 ${feature.included ? "" : "opacity-40"}`}>
+                <li
+                  key={i}
+                  className={`flex items-start gap-3 ${feature.included ? "" : "opacity-40"}`}
+                >
                   {feature.included ? (
-                    <CheckCircle2 className={`w-4 h-4 shrink-0 mt-0.5 ${tier.color}`} />
+                    <CheckCircle2
+                      className={`w-4 h-4 shrink-0 mt-0.5 ${tier.color}`}
+                    />
                   ) : (
                     <XIcon className="w-4 h-4 shrink-0 mt-0.5 text-neutral-600" />
                   )}
-                  <span className={`text-sm ${feature.included ? "text-neutral-300 font-medium" : "text-neutral-600"}`}>{feature.name}</span>
+                  <span
+                    className={`text-sm ${feature.included ? "text-neutral-300 font-medium" : "text-neutral-600"}`}
+                  >
+                    {feature.name}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -356,16 +444,22 @@ export function Pricing() {
 
       {/* Payment Methods */}
       <div className="mt-12 text-center flex items-center justify-center gap-6">
-        <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-bold uppercase tracking-wider"><Shield className="w-3 h-3" /> SSL Secured</span>
-        <span className="text-xs text-neutral-500 uppercase tracking-widest">Secure payments via Yoco (Cards, Apple Pay, Google Pay)</span>
+        <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-bold uppercase tracking-wider">
+          <Shield className="w-3 h-3" /> SSL Secured
+        </span>
+        <span className="text-xs text-neutral-500 uppercase tracking-widest">
+          Secure payments via Yoco (Cards, Apple Pay, Google Pay)
+        </span>
       </div>
 
       {/* Secure Uplink Modal */}
       <AnimatePresence>
         {showModal && (
-          <motion.div 
+          <motion.div
             className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
           >
             <motion.div
               ref={modalRef}
@@ -373,9 +467,15 @@ export function Pricing() {
               aria-modal="true"
               aria-labelledby="secure-uplink-title"
               className="bg-[#0A0A0A] border border-white/10 p-8 rounded-3xl w-full max-w-md relative shadow-[0_0_100px_rgba(0,183,255,0.1)]"
-              initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }}
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
             >
-              <button onClick={() => setShowModal(false)} aria-label="Close dialog" className="absolute top-6 right-6 text-neutral-500 hover:text-white transition-colors">
+              <button
+                onClick={() => setShowModal(false)}
+                aria-label="Close dialog"
+                className="absolute top-6 right-6 text-neutral-500 hover:text-white transition-colors"
+              >
                 <XIcon className="w-5 h-5" />
               </button>
 
@@ -384,20 +484,31 @@ export function Pricing() {
                   <ShieldAlert className="w-6 h-6 text-[#00B7FF]" />
                 </div>
                 <div>
-                  <h3 id="secure-uplink-title" className="text-xl font-bold text-white uppercase tracking-widest">Secure Uplink</h3>
-                  <p className="text-xs text-[#00B7FF] uppercase tracking-widest">Hardware Binding Protocol</p>
+                  <h3
+                    id="secure-uplink-title"
+                    className="text-xl font-bold text-white uppercase tracking-widest"
+                  >
+                    Secure Uplink
+                  </h3>
+                  <p className="text-xs text-[#00B7FF] uppercase tracking-widest">
+                    Hardware Binding Protocol
+                  </p>
                 </div>
               </div>
 
               <p className="text-sm text-neutral-400 mb-6">
-                To authorize your deployment, the Sovereign Matrix requires a direct WhatsApp line. A verification packet will be sent to this number bounding your Enterprise license to you physically.
+                To authorize your deployment, the Sovereign Matrix requires a
+                direct WhatsApp line. A verification packet will be sent to this
+                number bounding your Enterprise license to you physically.
               </p>
 
               <form onSubmit={processSecureUplink} className="space-y-4">
                 <div>
-                  <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-[0.2em] mb-2">Commander Name</label>
-                  <input 
-                    type="text" 
+                  <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-[0.2em] mb-2">
+                    Commander Name
+                  </label>
+                  <input
+                    type="text"
                     required
                     value={leadName}
                     onChange={(e) => setLeadName(e.target.value)}
@@ -406,11 +517,13 @@ export function Pricing() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-[0.2em] mb-2">WhatsApp Number</label>
+                  <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-[0.2em] mb-2">
+                    WhatsApp Number
+                  </label>
                   <div className="relative">
                     <Phone className="w-4 h-4 text-neutral-500 absolute left-4 top-1/2 -translate-y-1/2" />
-                    <input 
-                      type="tel" 
+                    <input
+                      type="tel"
                       required
                       value={leadPhone}
                       onChange={(e) => setLeadPhone(e.target.value)}
@@ -420,12 +533,19 @@ export function Pricing() {
                   </div>
                 </div>
 
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   disabled={isProcessing || !leadPhone}
                   className="w-full mt-4 py-4 rounded-xl bg-white text-black font-bold uppercase tracking-widest text-sm hover:bg-neutral-200 transition-gpu flex items-center justify-center gap-2 disabled:opacity-50"
                 >
-                  {isProcessing ? <><Loader2 className="w-4 h-4 animate-spin" /> Authorizing...</> : "Initiate Handshake"}
+                  {isProcessing ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />{" "}
+                      Authorizing...
+                    </>
+                  ) : (
+                    "Initiate Handshake"
+                  )}
                 </button>
               </form>
             </motion.div>

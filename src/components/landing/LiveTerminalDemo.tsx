@@ -113,7 +113,7 @@ export function LiveTerminalDemo() {
     // post-mount setState is intentional.
     const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (prefersReduced) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- mount-time sync required (see above)
+       
       setVisibleLines(SEQUENCE.map((line) => ({ line, typed: line.text })));
       setIsPlaying(false);
       return;

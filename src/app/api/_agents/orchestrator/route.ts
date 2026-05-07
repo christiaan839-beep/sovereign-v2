@@ -27,7 +27,7 @@ export const POST = createAgentRoute({
   name: "orchestrator",
   requiredFields: ["target"],
   handler: async ({ input }) => {
-    const { target, chain_type = "full-audit", custom_instructions } = input as Record<string, unknown>;
+    const { target, chain_type = "full-audit", custom_instructions } = input as Record<string, any>;
 
     const globalStart = Date.now();
     const steps: OrchestratorStep[] = [];

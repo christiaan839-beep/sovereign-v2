@@ -1,5 +1,4 @@
 import { createAgentRoute } from "@/lib/agent-factory";
-import { NextResponse } from "next/server";
 
 /**
  * ASR (Automatic Speech Recognition) — Uses NVIDIA Nemotron ASR Streaming
@@ -7,9 +6,9 @@ import { NextResponse } from "next/server";
  */
 export const POST = createAgentRoute({
   name: "asr",
-  handler: async ({ input, email, userId }) => {
+  handler: async ({ input }) => {
 
-    const { audioBase64, language = "en" } = input as Record<string, unknown>;
+    const { audioBase64, language = "en" } = input as Record<string, any>;
     if (!audioBase64) return ({ error: "Missing audioBase64 payload." });
 
     const nimKey = process.env.NVIDIA_NIM_API_KEY;

@@ -1,5 +1,4 @@
 import { createAgentRoute } from "@/lib/agent-factory";
-import { NextResponse } from "next/server";
 
 /**
  * PII GUARDRAILS — Uses GLiNER PII detection to scrub sensitive data.
@@ -8,9 +7,9 @@ import { NextResponse } from "next/server";
  */
 export const POST = createAgentRoute({
   name: "pii-guard",
-  handler: async ({ input, email, userId }) => {
+  handler: async ({ input }) => {
 
-    const { text, action = "detect" } = input as Record<string, unknown>;
+    const { text, action = "detect" } = input as Record<string, any>;
     if (!text) return ({ error: "Missing `text`." });
 
     const nimKey = process.env.NVIDIA_NIM_API_KEY;

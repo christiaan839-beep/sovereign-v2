@@ -1,6 +1,6 @@
 "use client";
 "use no memo";
-/* eslint-disable react-hooks/purity -- Intentional impure render for cinematic effects */
+ 
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";

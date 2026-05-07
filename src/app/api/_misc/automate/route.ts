@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { scheduledRuns } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("automate");
@@ -80,7 +80,7 @@ export async function POST(req: Request) {
   }
 }
 
-export async function GET(req: Request) {
+export async function GET(_req: Request) {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: "Auth required" }, { status: 401 });
 

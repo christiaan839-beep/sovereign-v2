@@ -1,9 +1,6 @@
 import { createAgentRoute } from "@/lib/agent-factory";
-import { NextResponse } from "next/server";
 import { ai } from "@/lib/ai";
 import { ANTI_SLOP_RULES } from "@/lib/content-engine";
-import { createLogger } from "@/lib/logger";
-const log = createLogger("calendar-agent");
 
 /**
  * Content Calendar API
@@ -13,7 +10,7 @@ const log = createLogger("calendar-agent");
 export const POST = createAgentRoute({
   name: "calendar",
   handler: async ({ input }) => {
-    const { niche, platforms, weeks, contentGoal } = input as Record<string, unknown>;
+    const { niche, platforms, weeks, contentGoal } = input as Record<string, any>;
 
     const prompt = `Generate a ${weeks || 4}-week content calendar for:
 

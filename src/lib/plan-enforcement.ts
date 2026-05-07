@@ -44,8 +44,8 @@ async function getUserPlan(userId: string): Promise<PlanId> {
       .where(
         and(
           eq(subscriptions.userId, userId),
-          eq(subscriptions.status, "active")
-        )
+          eq(subscriptions.status, "active"),
+        ),
       )
       .limit(1);
 
@@ -64,7 +64,13 @@ async function getUserPlan(userId: string): Promise<PlanId> {
 
   // 2. Check for founder status (first 10 users)
   try {
-    const { founders } = await import("@/app/api/_misc/founders/route");
+    // The founders route module may export a `founders` Set in some
+    // builds; the dynamic-import shape isn't statically typed so we
+    // narrow at runtime.
+    const mod = (await import("@/app/api/_misc/founders/route")) as {
+      founders?: { has?: (id: string) => boolean };
+    };
+    const founders = mod.founders;
     if (typeof founders?.has === "function" && founders.has(userId)) {
       return "founder";
     }
@@ -89,8 +95,8 @@ async function getMonthlyUsage(userId: string): Promise<number> {
       .where(
         and(
           eq(playbookRuns.userId, userId),
-          gte(playbookRuns.createdAt, monthStart)
-        )
+          gte(playbookRuns.createdAt, monthStart),
+        ),
       );
 
     return Number(result?.count ?? 0);
@@ -159,7 +165,8 @@ export async function incrementUsage(userId: string): Promise<void> {
     const planId = await getUserPlan(userId);
     const plan = PLANS[planId];
     const used = await getMonthlyUsage(userId);
-    const pct = plan.runsPerMonth === Infinity ? 0 : (used / plan.runsPerMonth) * 100;
+    const pct =
+      plan.runsPerMonth === Infinity ? 0 : (used / plan.runsPerMonth) * 100;
 
     if (pct >= 90) {
       log.warn("user approaching plan limit", {

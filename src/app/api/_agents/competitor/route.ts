@@ -23,7 +23,7 @@ Use Porter's Five Forces + Blue Ocean Strategy to identify:
 export const POST = createAgentRoute({
   name: "competitor",
   handler: async ({ input }) => {
-    const { competitorUrl, competitorName, yourBusiness, industry } = input as Record<string, unknown>;
+    const { competitorUrl, competitorName, yourBusiness, industry } = input as Record<string, any>;
 
     const prompt = `Conduct a deep competitive intelligence analysis:
 

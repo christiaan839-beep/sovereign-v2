@@ -1,7 +1,16 @@
 /** Shared types for the SOVEREIGN platform */
 
 // ─── AI ──────────────────────────────────────────────
-export type AIModel = "gemini" | "claude" | "nim" | "ollama" | "groq" | "deepseek" | "mistral" | "qwen";
+export type AIModel =
+  | "gemini"
+  | "claude"
+  | "nim"
+  | "ollama"
+  | "groq"
+  | "deepseek"
+  | "mistral"
+  | "qwen"
+  | "cerebras";
 export type TaskType = "content" | "analysis" | "code" | "sales";
 
 export interface AIOptions {
@@ -15,6 +24,13 @@ export interface AIOptions {
   useOpus?: boolean;
   /** Use Gemini 2.5 Pro instead of Flash (available on Google AI Ultra plan) */
   useGeminiPro?: boolean;
+  /**
+   * Tenant id for deployment-profile + cost-attribution. Optional —
+   * legacy public surfaces (lead form generation, marketing copy)
+   * don't carry tenant context. When set, the router refuses any
+   * provider not permitted by `tenants.deployment_profile`.
+   */
+  tenantId?: string;
 }
 
 // ─── Agents ──────────────────────────────────────────

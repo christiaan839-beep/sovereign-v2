@@ -3,6 +3,7 @@ import { persistAppend } from "@/lib/persist";
 import crypto from "crypto";
 import { createLogger } from "@/lib/logger";
 import { getBaseUrl } from "@/lib/base-url";
+import { alreadyProcessed } from "@/lib/idempotency";
 
 const log = createLogger("paystack-webhook");
 
@@ -18,7 +19,10 @@ export async function POST(req: Request) {
     // Verify webhook signature — REJECT if secret is not configured
     const secret = process.env.PAYSTACK_SECRET_KEY;
     if (!secret) {
-      return NextResponse.json({ error: "Payment webhook not configured" }, { status: 501 });
+      return NextResponse.json(
+        { error: "Payment webhook not configured" },
+        { status: 501 },
+      );
     }
     const hash = crypto.createHmac("sha512", secret).update(body).digest("hex");
     if (hash !== signature) {
@@ -27,13 +31,40 @@ export async function POST(req: Request) {
 
     const event = JSON.parse(body);
 
+    // Idempotency. Paystack delivers each event with a unique
+    // `event.data.id` (numeric transaction id) and a per-customer
+    // `event.data.reference`. We dedupe on `data.id` because it's
+    // present on every event type we care about (charge.success,
+    // subscription.create, subscription.disable). Falling through
+    // to `data.reference` for events that don't carry an id is a
+    // safe fallback. Without this, a Paystack retry on a slow
+    // response would call the auto-onboard agent twice for the same
+    // payment, double-creating the tenant onboarding flow.
+    const idemKey =
+      typeof event?.data?.id === "number"
+        ? String(event.data.id)
+        : typeof event?.data?.reference === "string"
+          ? event.data.reference
+          : null;
+    if (idemKey && (await alreadyProcessed("paystack", idemKey))) {
+      log.info("Skipping duplicate Paystack webhook", {
+        idemKey,
+        event: event.event,
+      });
+      return NextResponse.json({ received: true, duplicate: true });
+    }
+
     // Log every event for audit
-    persistAppend("paystack-events", {
-      event: event.event,
-      email: event.data?.customer?.email || "",
-      amount: event.data?.amount || 0,
-      timestamp: new Date().toISOString(),
-    }, 500);
+    persistAppend(
+      "paystack-events",
+      {
+        event: event.event,
+        email: event.data?.customer?.email || "",
+        amount: event.data?.amount || 0,
+        timestamp: new Date().toISOString(),
+      },
+      500,
+    );
 
     const baseUrl = getBaseUrl();
 
@@ -43,12 +74,16 @@ export async function POST(req: Request) {
         const plan = event.data?.metadata?.plan || "node";
         const amount = event.data?.amount || 0;
 
-        persistAppend("paystack-payments", {
-          email,
-          plan,
-          amount: (amount / 100).toFixed(2),
-          timestamp: new Date().toISOString(),
-        }, 1000);
+        persistAppend(
+          "paystack-payments",
+          {
+            email,
+            plan,
+            amount: (amount / 100).toFixed(2),
+            timestamp: new Date().toISOString(),
+          },
+          1000,
+        );
 
         // Trigger auto-onboard
         if (email) {
@@ -70,26 +105,39 @@ export async function POST(req: Request) {
       }
 
       case "subscription.create": {
-        persistAppend("paystack-subscriptions", {
-          email: event.data?.customer?.email || "",
-          plan_code: event.data?.plan?.plan_code || "",
-          timestamp: new Date().toISOString(),
-        }, 500);
+        persistAppend(
+          "paystack-subscriptions",
+          {
+            email: event.data?.customer?.email || "",
+            plan_code: event.data?.plan?.plan_code || "",
+            timestamp: new Date().toISOString(),
+          },
+          500,
+        );
         break;
       }
 
       case "subscription.disable": {
-        persistAppend("paystack-cancellations", {
-          email: event.data?.customer?.email || "",
-          timestamp: new Date().toISOString(),
-        }, 500);
+        persistAppend(
+          "paystack-cancellations",
+          {
+            email: event.data?.customer?.email || "",
+            timestamp: new Date().toISOString(),
+          },
+          500,
+        );
         break;
       }
     }
 
     return NextResponse.json({ received: true });
   } catch (err) {
-    log.error("Paystack webhook processing failed", { error: (err as Error).message });
-    return NextResponse.json({ error: "Webhook processing failed" }, { status: 500 });
+    log.error("Paystack webhook processing failed", {
+      error: (err as Error).message,
+    });
+    return NextResponse.json(
+      { error: "Webhook processing failed" },
+      { status: 500 },
+    );
   }
 }

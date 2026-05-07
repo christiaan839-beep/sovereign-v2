@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { enhanceWithSkills } from "@/lib/skill-engine";
 import { getSystemPrompt } from "@/lib/system-prompts";
 import { createLogger } from "@/lib/logger";
-import { getModelPerformance, recordModelExecution } from "@/lib/model-tracker";
+import { getModelPerformance } from "@/lib/model-tracker";
 const log = createLogger("smart-router");
 
 /**
@@ -821,7 +821,7 @@ export async function POST(request: Request) {
     } catch (memErr) {
       log.error(
         "Memory context lookup failed",
-        memErr as Record<string, unknown>,
+        memErr as Record<string, any>,
       );
     }
 

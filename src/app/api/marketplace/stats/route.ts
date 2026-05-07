@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { marketplaceAgents } from "@/db/schema";
-import { eq, sum, count, desc, gte } from "drizzle-orm";
+import { eq, sum, count, desc } from "drizzle-orm";
 import { requireAuth } from "@/lib/auth-guard";
 import { createLogger } from "@/lib/logger";
 
@@ -25,7 +25,7 @@ export async function GET() {
 
   try {
     // Run all queries in parallel
-    const ago30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1_000);
+    const _ago30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1_000);
 
     const [agents, totals, recent] = await Promise.all([
       // All agents owned by this creator

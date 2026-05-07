@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 import { createLogger } from "@/lib/logger";
 const log = createLogger("stripe");
 

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { rateLimit } from "@/lib/rate-limit";
 
 /**
  * SOVEREIGN MATRIX MCP SERVER — Model Context Protocol endpoint.
@@ -8,7 +9,52 @@ import { NextRequest, NextResponse } from "next/server";
  *
  * Protocol: MCP JSON-RPC 2.0 over HTTP POST
  * Spec: https://modelcontextprotocol.io
+ *
+ * Auth model:
+ *
+ *   - Rate-limited to 30 requests/min/IP. Tool calls are
+ *     CPU-bound and a public unrate-limited JSON-RPC endpoint is
+ *     an obvious abuse vector even if the underlying agent calls
+ *     fail downstream (which they do today — `callAgent` does NOT
+ *     forward the request's auth header to /api/agents/<slug>, so
+ *     `tools/call` 401s on every agent that uses createAgentRoute).
+ *   - When `MCP_API_KEY` is set, the route requires
+ *     `Authorization: Bearer <key>` on every request. This is how
+ *     we whitelist Claude Desktop / Code instances to enumerate
+ *     and call tools without exposing the JSON-RPC surface to the
+ *     open internet.
+ *   - When `MCP_API_KEY` is unset, the rate-limited public
+ *     surface is still safe (downstream auth catches actual tool
+ *     calls), but the operator should still set it before any
+ *     production push that includes public DNS.
  */
+
+const mcpLimiter = rateLimit({ interval: 60, limit: 30 });
+
+function isMcpAuthorised(req: NextRequest): boolean {
+  const expected = process.env.MCP_API_KEY?.trim();
+  // Open-mode: if the operator hasn't set a key, skip the check.
+  // The rate limiter is the only gate — appropriate for local dev
+  // and dev/staging deploys; production should set the key.
+  if (!expected) return true;
+  const header = req.headers.get("authorization") || "";
+  // Accept "Bearer <token>" and bare token forms — Claude Desktop
+  // sends the bearer prefix; some MCP clients send just the token.
+  const token = header.startsWith("Bearer ")
+    ? header.slice(7).trim()
+    : header.trim();
+  if (!token) return false;
+  // Constant-time compare, length-checked. timingSafeEqual throws
+  // on mismatched buffers — width-pad to the longer length first.
+  const a = Buffer.from(token);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length) return false;
+  // crypto is heavy in this file scope — lazy require keeps cold
+  // start cheap.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const crypto = require("node:crypto") as typeof import("node:crypto");
+  return crypto.timingSafeEqual(a, b);
+}
 
 // ── Tool Definitions ──
 
@@ -38,7 +84,10 @@ const TOOLS: MCPTool[] = [
     inputSchema: {
       type: "object",
       properties: {
-        url: { type: "string", description: "The target website URL to analyze" },
+        url: {
+          type: "string",
+          description: "The target website URL to analyze",
+        },
         mode: {
           type: "string",
           description: "Analysis mode",
@@ -56,16 +105,36 @@ const TOOLS: MCPTool[] = [
     inputSchema: {
       type: "object",
       properties: {
-        prompt: { type: "string", description: "The prompt to route and execute" },
+        prompt: {
+          type: "string",
+          description: "The prompt to route and execute",
+        },
         task_type: {
           type: "string",
-          description: "Explicit task type (auto-detected from prompt if omitted)",
+          description:
+            "Explicit task type (auto-detected from prompt if omitted)",
           enum: [
-            "translation", "code-generation", "content-writing", "analysis",
-            "email", "safety", "voice", "legal", "debate", "summarization",
-            "deep-reasoning", "vision", "agentic", "long-context",
-            "software-engineering", "architecture", "ocr", "transcription",
-            "fast-chat", "math", "video-understanding",
+            "translation",
+            "code-generation",
+            "content-writing",
+            "analysis",
+            "email",
+            "safety",
+            "voice",
+            "legal",
+            "debate",
+            "summarization",
+            "deep-reasoning",
+            "vision",
+            "agentic",
+            "long-context",
+            "software-engineering",
+            "architecture",
+            "ocr",
+            "transcription",
+            "fast-chat",
+            "math",
+            "video-understanding",
           ],
         },
         priority: {
@@ -85,8 +154,16 @@ const TOOLS: MCPTool[] = [
     inputSchema: {
       type: "object",
       properties: {
-        niche: { type: "string", description: "Business niche or industry (e.g., 'roofing contractors', 'dental clinics')" },
-        location: { type: "string", description: "Target geographic location (e.g., 'Austin, TX', 'London, UK')" },
+        niche: {
+          type: "string",
+          description:
+            "Business niche or industry (e.g., 'roofing contractors', 'dental clinics')",
+        },
+        location: {
+          type: "string",
+          description:
+            "Target geographic location (e.g., 'Austin, TX', 'London, UK')",
+        },
       },
       required: ["niche", "location"],
     },
@@ -103,12 +180,32 @@ const TOOLS: MCPTool[] = [
           description: "Type of content to generate",
           enum: ["blog", "email", "social", "video"],
         },
-        topic: { type: "string", description: "Topic or subject for blog posts and video scripts" },
-        keywords: { type: "string", description: "Comma-separated SEO keywords (for blog action)" },
-        tone: { type: "string", description: "Writing tone (e.g., 'professional', 'casual', 'aggressive')" },
-        product: { type: "string", description: "Product name (for email sequences)" },
-        audience: { type: "string", description: "Target audience (for email and social)" },
-        platforms: { type: "string", description: "Comma-separated platforms (for social action, e.g., 'twitter,linkedin,instagram')" },
+        topic: {
+          type: "string",
+          description: "Topic or subject for blog posts and video scripts",
+        },
+        keywords: {
+          type: "string",
+          description: "Comma-separated SEO keywords (for blog action)",
+        },
+        tone: {
+          type: "string",
+          description:
+            "Writing tone (e.g., 'professional', 'casual', 'aggressive')",
+        },
+        product: {
+          type: "string",
+          description: "Product name (for email sequences)",
+        },
+        audience: {
+          type: "string",
+          description: "Target audience (for email and social)",
+        },
+        platforms: {
+          type: "string",
+          description:
+            "Comma-separated platforms (for social action, e.g., 'twitter,linkedin,instagram')",
+        },
       },
       required: ["action"],
     },
@@ -120,10 +217,22 @@ const TOOLS: MCPTool[] = [
     inputSchema: {
       type: "object",
       properties: {
-        competitorUrl: { type: "string", description: "Competitor website URL" },
-        competitorName: { type: "string", description: "Competitor business name" },
-        yourBusiness: { type: "string", description: "Your business name or description" },
-        industry: { type: "string", description: "Industry vertical (e.g., 'Marketing technology')" },
+        competitorUrl: {
+          type: "string",
+          description: "Competitor website URL",
+        },
+        competitorName: {
+          type: "string",
+          description: "Competitor business name",
+        },
+        yourBusiness: {
+          type: "string",
+          description: "Your business name or description",
+        },
+        industry: {
+          type: "string",
+          description: "Industry vertical (e.g., 'Marketing technology')",
+        },
       },
       required: [],
     },
@@ -140,15 +249,39 @@ const TOOLS: MCPTool[] = [
           description: "SEO action to perform",
           enum: ["xray", "gap", "schema", "gbp"],
         },
-        url: { type: "string", description: "Target URL (for xray and schema actions)" },
-        urls: { type: "string", description: "Comma-separated competitor URLs (for xray action)" },
-        business: { type: "string", description: "Business name (for xray and gbp actions)" },
+        url: {
+          type: "string",
+          description: "Target URL (for xray and schema actions)",
+        },
+        urls: {
+          type: "string",
+          description: "Comma-separated competitor URLs (for xray action)",
+        },
+        business: {
+          type: "string",
+          description: "Business name (for xray and gbp actions)",
+        },
         domain: { type: "string", description: "Your domain (for gap action)" },
-        competitors: { type: "string", description: "Comma-separated competitor domains (for gap action)" },
-        niche: { type: "string", description: "Business niche (for gap action)" },
-        businessType: { type: "string", description: "Type of business (for schema action)" },
-        location: { type: "string", description: "Business location (for gbp action)" },
-        services: { type: "string", description: "Comma-separated services offered (for gbp action)" },
+        competitors: {
+          type: "string",
+          description: "Comma-separated competitor domains (for gap action)",
+        },
+        niche: {
+          type: "string",
+          description: "Business niche (for gap action)",
+        },
+        businessType: {
+          type: "string",
+          description: "Type of business (for schema action)",
+        },
+        location: {
+          type: "string",
+          description: "Business location (for gbp action)",
+        },
+        services: {
+          type: "string",
+          description: "Comma-separated services offered (for gbp action)",
+        },
       },
       required: ["action"],
     },
@@ -167,7 +300,10 @@ const TOOLS: MCPTool[] = [
           enum: ["flow", "zeroshot"],
           default: "flow",
         },
-        speed: { type: "string", description: "Speech speed multiplier (e.g., '1.0', '1.5')" },
+        speed: {
+          type: "string",
+          description: "Speech speed multiplier (e.g., '1.0', '1.5')",
+        },
         provider: {
           type: "string",
           description: "TTS provider",
@@ -180,24 +316,37 @@ const TOOLS: MCPTool[] = [
   },
   {
     name: "code-execute",
-    description: "Execute Python code in a secure cloud sandbox. Returns stdout output and any generated visualizations.",
+    description:
+      "Execute Python code in a secure cloud sandbox. Returns stdout output and any generated visualizations.",
     inputSchema: {
       type: "object",
       properties: {
         code: { type: "string", description: "Python code to execute" },
-        libraries: { type: "array", items: { type: "string" }, description: "Python packages to install before execution" },
+        libraries: {
+          type: "array",
+          items: { type: "string" },
+          description: "Python packages to install before execution",
+        },
       },
       required: ["code"],
     },
   },
   {
     name: "data-analyze",
-    description: "Analyze data by describing the task in plain English. Generates and executes Python code automatically.",
+    description:
+      "Analyze data by describing the task in plain English. Generates and executes Python code automatically.",
     inputSchema: {
       type: "object",
       properties: {
-        task: { type: "string", description: "Natural language description of the analysis to perform" },
-        data: { type: "string", description: "CSV or JSON data to analyze (optional)" },
+        task: {
+          type: "string",
+          description:
+            "Natural language description of the analysis to perform",
+        },
+        data: {
+          type: "string",
+          description: "CSV or JSON data to analyze (optional)",
+        },
       },
       required: ["task"],
     },
@@ -225,7 +374,7 @@ interface JSONRPCResponse {
 async function callAgent(
   agentSlug: string,
   body: Record<string, unknown>,
-  baseUrl: string
+  baseUrl: string,
 ): Promise<Record<string, unknown>> {
   const url = `${baseUrl}/api/agents/${agentSlug}`;
   const res = await fetch(url, {
@@ -255,7 +404,7 @@ async function callAgent(
 
 function buildAgentPayload(
   toolName: string,
-  args: Record<string, unknown>
+  args: Record<string, unknown>,
 ): { slug: string; body: Record<string, unknown> } {
   switch (toolName) {
     case "site-assassin":
@@ -289,8 +438,14 @@ function buildAgentPayload(
       if (args.tone) params.tone = args.tone;
       if (args.product) params.product = args.product;
       if (args.audience) params.audience = args.audience;
-      if (args.keywords) params.keywords = String(args.keywords).split(",").map(k => k.trim());
-      if (args.platforms) params.platforms = String(args.platforms).split(",").map(p => p.trim());
+      if (args.keywords)
+        params.keywords = String(args.keywords)
+          .split(",")
+          .map((k) => k.trim());
+      if (args.platforms)
+        params.platforms = String(args.platforms)
+          .split(",")
+          .map((p) => p.trim());
       return {
         slug: "content",
         body: { action: args.action, params },
@@ -316,9 +471,18 @@ function buildAgentPayload(
       if (args.domain) seoParams.domain = args.domain;
       if (args.niche) seoParams.niche = args.niche;
       if (args.location) seoParams.location = args.location;
-      if (args.urls) seoParams.urls = String(args.urls).split(",").map(u => u.trim());
-      if (args.competitors) seoParams.competitors = String(args.competitors).split(",").map(c => c.trim());
-      if (args.services) seoParams.services = String(args.services).split(",").map(s => s.trim());
+      if (args.urls)
+        seoParams.urls = String(args.urls)
+          .split(",")
+          .map((u) => u.trim());
+      if (args.competitors)
+        seoParams.competitors = String(args.competitors)
+          .split(",")
+          .map((c) => c.trim());
+      if (args.services)
+        seoParams.services = String(args.services)
+          .split(",")
+          .map((s) => s.trim());
       return {
         slug: "seo",
         body: { action: args.action, params: seoParams },
@@ -389,7 +553,7 @@ function handleToolsList(id: string | number): JSONRPCResponse {
 async function handleToolsCall(
   params: Record<string, unknown>,
   baseUrl: string,
-  id: string | number
+  id: string | number,
 ): Promise<JSONRPCResponse> {
   const toolName = params.name as string;
   const args = (params.arguments as Record<string, unknown>) || {};
@@ -402,14 +566,14 @@ async function handleToolsCall(
     };
   }
 
-  const toolExists = TOOLS.find(t => t.name === toolName);
+  const toolExists = TOOLS.find((t) => t.name === toolName);
   if (!toolExists) {
     return {
       jsonrpc: "2.0",
       error: {
         code: -32602,
         message: `Unknown tool: "${toolName}"`,
-        data: { available: TOOLS.map(t => t.name) },
+        data: { available: TOOLS.map((t) => t.name) },
       },
       id,
     };
@@ -446,6 +610,30 @@ async function handleToolsCall(
 // ── HTTP Handler ──
 
 export async function POST(req: NextRequest) {
+  // Rate limit before any work — the JSON parse below is cheap but
+  // allocations + agent enumeration accumulate on a hot endpoint.
+  const limited = await mcpLimiter.check(req);
+  if (limited) return limited;
+
+  // Optional API-key gate. When `MCP_API_KEY` is unset, this is a
+  // no-op and the rate-limit alone gates the endpoint — fine for
+  // dev. In production set the key + distribute to Claude Desktop
+  // / Code instances via their MCP config.
+  if (!isMcpAuthorised(req)) {
+    return NextResponse.json(
+      {
+        jsonrpc: "2.0",
+        error: {
+          code: -32001,
+          message:
+            "Unauthorized. This MCP endpoint requires an API key in the Authorization header.",
+        },
+        id: null,
+      },
+      { status: 401 },
+    );
+  }
+
   try {
     const body: JSONRPCRequest = await req.json();
 
@@ -454,10 +642,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           jsonrpc: "2.0",
-          error: { code: -32600, message: "Invalid JSON-RPC request. Required: jsonrpc='2.0' and method." },
+          error: {
+            code: -32600,
+            message:
+              "Invalid JSON-RPC request. Required: jsonrpc='2.0' and method.",
+          },
           id: body?.id ?? null,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -510,7 +702,7 @@ export async function POST(req: NextRequest) {
         },
         id: null,
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
 }
@@ -521,7 +713,7 @@ export async function GET() {
     version: "1.0.0",
     protocol: "MCP JSON-RPC 2.0",
     description: "Sovereign Matrix agent capabilities exposed as MCP tools",
-    tools: TOOLS.map(t => ({ name: t.name, description: t.description })),
+    tools: TOOLS.map((t) => ({ name: t.name, description: t.description })),
     usage: {
       endpoint: "POST /api/mcp",
       format: '{ "jsonrpc": "2.0", "method": "tools/list", "id": 1 }',

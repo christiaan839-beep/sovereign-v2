@@ -4,17 +4,28 @@
  * Wraps voice calling capabilities with:
  * - Twilio API integration (with graceful fallback)
  * - Call status tracking
- * - Recording consent management
+ * - Recording consent management (DB-backed via `voice_consent` table)
  * - Kokoro TTS voice synthesis integration
  */
 
+import { db } from "@/db";
+import { voiceConsent } from "@/db/schema";
+import { and, eq, sql } from "drizzle-orm";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("voice-service");
 
 // ── Types ──
 
-export type CallStatus = "initiated" | "ringing" | "answered" | "completed" | "failed" | "busy" | "no-answer" | "canceled";
+export type CallStatus =
+  | "initiated"
+  | "ringing"
+  | "answered"
+  | "completed"
+  | "failed"
+  | "busy"
+  | "no-answer"
+  | "canceled";
 
 export interface CallConfig {
   /** Phone number to call (E.164 format, e.g. +14155551234) */
@@ -67,7 +78,11 @@ const callStatusMap: Map<string, CallStatusUpdate[]> = new Map();
 
 // ── Configuration ──
 
-function getTwilioConfig(): { accountSid: string; authToken: string; phoneNumber: string } | null {
+function getTwilioConfig(): {
+  accountSid: string;
+  authToken: string;
+  phoneNumber: string;
+} | null {
   const accountSid = process.env.TWILIO_ACCOUNT_SID;
   const authToken = process.env.TWILIO_AUTH_TOKEN;
   const phoneNumber = process.env.TWILIO_PHONE_NUMBER;
@@ -84,24 +99,126 @@ function getKokoroConfig(): { apiUrl: string; apiKey: string } | null {
 }
 
 // ── Recording Consent ──
+// Backed by the `voice_consent` table (drizzle/0018_voice_consent.sql).
+// All writes are awaited and surfaced as errors so callers don't
+// proceed to record a call when persistence failed.
 
-const consentLog: Map<string, { consented: boolean; timestamp: string }> = new Map();
-
-export function recordConsent(phoneNumber: string, consented: boolean): void {
-  consentLog.set(phoneNumber, {
-    consented,
-    timestamp: new Date().toISOString(),
-  });
-  log.info("Recording consent updated", { phone: phoneNumber.slice(0, 4) + "***", consented });
+export interface ConsentMetadata {
+  /** Where the consent came from. "manual" | "webhook" | "api". */
+  source?: string;
+  /** Operator's email — distinguishes consent recorded by different users. */
+  userEmail?: string;
+  /** Optional auto-revoke timestamp. */
+  expiresAt?: Date;
+  /** IP address that captured the consent (for audit trail). */
+  ipAddress?: string;
+  /** User-agent string from the browser that captured the consent. */
+  userAgent?: string;
 }
 
-export function hasRecordingConsent(phoneNumber: string): boolean {
-  return consentLog.get(phoneNumber)?.consented ?? false;
+export async function recordConsent(
+  phoneNumber: string,
+  consented: boolean,
+  meta: ConsentMetadata = {},
+): Promise<void> {
+  const userEmail = meta.userEmail ?? "";
+  try {
+    await db
+      .insert(voiceConsent)
+      .values({
+        phoneNumber,
+        userEmail,
+        consented,
+        source: meta.source ?? "manual",
+        ipAddress: meta.ipAddress ?? null,
+        userAgent: meta.userAgent ?? null,
+        expiresAt: meta.expiresAt ?? null,
+      })
+      .onConflictDoUpdate({
+        target: [voiceConsent.phoneNumber, voiceConsent.userEmail],
+        set: {
+          consented,
+          source: meta.source ?? "manual",
+          ipAddress: meta.ipAddress ?? null,
+          userAgent: meta.userAgent ?? null,
+          expiresAt: meta.expiresAt ?? null,
+          recordedAt: sql`now()`,
+        },
+      });
+    log.info("Recording consent updated", {
+      phone: phoneNumber.slice(0, 4) + "***",
+      consented,
+      source: meta.source,
+    });
+  } catch (err) {
+    log.error("Failed to persist recording consent", {
+      phone: phoneNumber.slice(0, 4) + "***",
+      error: err instanceof Error ? err.message : String(err),
+    });
+    throw err;
+  }
 }
+
+export async function hasRecordingConsent(
+  phoneNumber: string,
+  userEmail = "",
+): Promise<boolean> {
+  try {
+    const now = new Date();
+    const [row] = await db
+      .select({
+        consented: voiceConsent.consented,
+        expiresAt: voiceConsent.expiresAt,
+      })
+      .from(voiceConsent)
+      .where(
+        and(
+          eq(voiceConsent.phoneNumber, phoneNumber),
+          eq(voiceConsent.userEmail, userEmail),
+        ),
+      )
+      .limit(1);
+    if (!row || !row.consented) return false;
+    // Honour optional auto-revoke; if not set, consent stands.
+    if (row.expiresAt && row.expiresAt < now) return false;
+    return true;
+  } catch (err) {
+    const pgCode = (err as { code?: string })?.code;
+    if (pgCode === "42P01") {
+      // voice_consent migration not yet applied — fail closed.
+      log.warn("voice_consent table missing — denying record (fail closed)");
+      return false;
+    }
+    log.error("Consent lookup failed — denying record", {
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return false;
+  }
+}
+
+/** Used by the diagnostics endpoint to surface coverage. */
+async function countConsents(): Promise<number> {
+  try {
+    const [row] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(voiceConsent)
+      .where(eq(voiceConsent.consented, true));
+    return Number(row?.count ?? 0);
+  } catch {
+    return 0;
+  }
+}
+
+/** Used internally by `getVoiceServiceStatus`. */
+const _consentCounter = { count: countConsents };
 
 // ── Call Status Tracking ──
 
-export function trackCallStatus(callSid: string, status: CallStatus, duration?: number): void {
+export function trackCallStatus(
+  callSid: string,
+  status: CallStatus,
+  duration?: number,
+): void {
   const update: CallStatusUpdate = {
     callSid,
     status,
@@ -158,10 +275,18 @@ function escapeXml(str: string): string {
 
 // ── Core Call Function ──
 
-export async function makeCall(to: string, script: string, options: Partial<CallConfig> = {}): Promise<CallResult> {
+export async function makeCall(
+  to: string,
+  script: string,
+  options: Partial<CallConfig> = {},
+): Promise<CallResult> {
   const twilio = getTwilioConfig();
   if (!twilio) {
-    return { success: false, status: "failed", reason: "Twilio not configured" };
+    return {
+      success: false,
+      status: "failed",
+      reason: "Twilio not configured",
+    };
   }
 
   const config: CallConfig = {
@@ -178,20 +303,32 @@ export async function makeCall(to: string, script: string, options: Partial<Call
 
   // Validate E.164 format
   if (!/^\+[1-9]\d{1,14}$/.test(config.to)) {
-    return { success: false, status: "failed", reason: "Invalid phone number. Use E.164 format (e.g., +14155551234)" };
-  }
-
-  if (!config.from) {
-    return { success: false, status: "failed", reason: "No from number configured. Set TWILIO_PHONE_NUMBER." };
-  }
-
-  // Recording consent check
-  if (config.record && !config.recordingConsent && !hasRecordingConsent(config.to)) {
     return {
       success: false,
       status: "failed",
-      reason: "Call recording requires explicit consent. Set recordingConsent: true or call recordConsent() first.",
+      reason: "Invalid phone number. Use E.164 format (e.g., +14155551234)",
     };
+  }
+
+  if (!config.from) {
+    return {
+      success: false,
+      status: "failed",
+      reason: "No from number configured. Set TWILIO_PHONE_NUMBER.",
+    };
+  }
+
+  // Recording consent check (DB-backed; awaits explicit affirmative consent).
+  if (config.record && !config.recordingConsent) {
+    const consented = await hasRecordingConsent(config.to);
+    if (!consented) {
+      return {
+        success: false,
+        status: "failed",
+        reason:
+          "Call recording requires explicit consent. Set recordingConsent: true or call recordConsent() first.",
+      };
+    }
   }
 
   // Build TwiML
@@ -199,7 +336,9 @@ export async function makeCall(to: string, script: string, options: Partial<Call
 
   // Make the call via Twilio REST API
   try {
-    const authString = Buffer.from(`${twilio.accountSid}:${twilio.authToken}`).toString("base64");
+    const authString = Buffer.from(
+      `${twilio.accountSid}:${twilio.authToken}`,
+    ).toString("base64");
 
     const params = new URLSearchParams({
       To: config.to,
@@ -226,13 +365,20 @@ export async function makeCall(to: string, script: string, options: Partial<Call
           "Content-Type": "application/x-www-form-urlencoded",
         },
         body: params.toString(),
-      }
+      },
     );
 
     if (!response.ok) {
       const errorBody = await response.text();
-      log.error("Twilio API error", { status: response.status, body: errorBody });
-      return { success: false, status: "failed", reason: `Twilio returned ${response.status}` };
+      log.error("Twilio API error", {
+        status: response.status,
+        body: errorBody,
+      });
+      return {
+        success: false,
+        status: "failed",
+        reason: `Twilio returned ${response.status}`,
+      };
     }
 
     const data = (await response.json()) as { sid?: string; status?: string };
@@ -259,11 +405,14 @@ export async function makeCall(to: string, script: string, options: Partial<Call
 
 export async function synthesizeVoice(
   text: string,
-  voice?: string
+  voice?: string,
 ): Promise<VoiceSynthResult> {
   const kokoro = getKokoroConfig();
   if (!kokoro) {
-    return { success: false, reason: "Kokoro TTS not configured. Set KOKORO_API_URL." };
+    return {
+      success: false,
+      reason: "Kokoro TTS not configured. Set KOKORO_API_URL.",
+    };
   }
 
   try {
@@ -282,11 +431,20 @@ export async function synthesizeVoice(
 
     if (!response.ok) {
       const errorBody = await response.text();
-      log.error("Kokoro TTS error", { status: response.status, body: errorBody });
-      return { success: false, reason: `Kokoro TTS returned ${response.status}` };
+      log.error("Kokoro TTS error", {
+        status: response.status,
+        body: errorBody,
+      });
+      return {
+        success: false,
+        reason: `Kokoro TTS returned ${response.status}`,
+      };
     }
 
-    const data = (await response.json()) as { audio_url?: string; duration_ms?: number };
+    const data = (await response.json()) as {
+      audio_url?: string;
+      duration_ms?: number;
+    };
 
     return {
       success: true,
@@ -302,23 +460,26 @@ export async function synthesizeVoice(
 
 // ── Diagnostics ──
 
-export function getVoiceServiceStatus(): {
+export async function getVoiceServiceStatus(): Promise<{
   twilioConfigured: boolean;
   kokoroConfigured: boolean;
   activeCalls: number;
   totalCallsTracked: number;
   consentsRecorded: number;
-} {
+}> {
   return {
     twilioConfigured: getTwilioConfig() !== null,
     kokoroConfigured: getKokoroConfig() !== null,
-    activeCalls: Array.from(callStatusMap.values()).filter(
-      (history) => {
-        const last = history[history.length - 1];
-        return last && !["completed", "failed", "busy", "no-answer", "canceled"].includes(last.status);
-      }
-    ).length,
+    activeCalls: Array.from(callStatusMap.values()).filter((history) => {
+      const last = history[history.length - 1];
+      return (
+        last &&
+        !["completed", "failed", "busy", "no-answer", "canceled"].includes(
+          last.status,
+        )
+      );
+    }).length,
     totalCallsTracked: callStatusMap.size,
-    consentsRecorded: consentLog.size,
+    consentsRecorded: await _consentCounter.count(),
   };
 }

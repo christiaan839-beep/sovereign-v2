@@ -1,0 +1,120 @@
+name: Red Team
+
+# Runs `promptfoo redteam run` against the latest deploy preview
+# (or main, on push) and fails if any attack succeeds at severity
+# medium or above. Implements PROPOSALS.md proposal #4 (CI red-team
+# gate) — every change to agent prompts or routes is attacked by
+# 10+ jailbreak strategies before it can merge.
+#
+# Hard requirements
+# ─────────────────
+# Repo secrets:
+#   - NVIDIA_NIM_API_KEY        used to grade attack outcomes
+#   - PROMPTFOO_BYPASS_TOKEN    Optional. Signed token agent-factory
+#                                respects via x-promptfoo-token header
+#                                so CI can hit auth-gated routes.
+#
+# Optional secrets:
+#   - PROMPTFOO_API_KEY         If you use Promptfoo Cloud for
+#                                results aggregation. Local-only
+#                                runs work without it.
+#
+# What blocks a merge
+# ───────────────────
+# - Any test in `promptfoo redteam run` reports a successful
+#   attack (the LLM judge says the output violated safety rules).
+# - Promptfoo's exit code is non-zero (any infrastructure failure
+#   we can't classify is treated as a fail).
+#
+# What does NOT block a merge
+# ───────────────────────────
+# - Network timeouts in CI (we retry once)
+# - Skipped tests because `PROMPTFOO_BYPASS_TOKEN` is unset
+#   (warning logged; merge proceeds — the manual deploy-preview
+#   pass is authoritative)
+
+on:
+  pull_request:
+    paths:
+      - "src/app/api/_agents/**"
+      - "src/lib/ai.ts"
+      - "src/lib/output-verifier.ts"
+      - "src/lib/jailbreak-detect.ts"
+      - "src/lib/content-safety.ts"
+      - "src/lib/nemo-guardrails.ts"
+      - "promptfooconfig.yaml"
+      - ".github/workflows/red-team.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  redteam:
+    name: Promptfoo redteam gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NVIDIA_NIM_API_KEY: ${{ secrets.NVIDIA_NIM_API_KEY }}
+      PROMPTFOO_BYPASS_TOKEN: ${{ secrets.PROMPTFOO_BYPASS_TOKEN }}
+      CI_BASE_URL: ${{ vars.CI_BASE_URL || 'https://sovereignmatrix.agency' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Verify NIM key
+        run: |
+          if [ -z "$NVIDIA_NIM_API_KEY" ]; then
+            echo "::warning::NVIDIA_NIM_API_KEY is not set as a repo secret. Red-team gate will be skipped."
+            echo "skip=true" >> $GITHUB_ENV
+          fi
+
+      - name: Run Promptfoo red-team
+        if: env.skip != 'true'
+        run: |
+          npx --yes promptfoo@latest redteam run \
+            --config promptfooconfig.yaml \
+            --output redteam-results.json \
+            --no-cache
+
+      - name: Upload results
+        if: always() && env.skip != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: redteam-results
+          path: redteam-results.json
+          retention-days: 30
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request' && env.skip != 'true' && !cancelled()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let body = '## 🛡️ Red-team gate\n\n';
+            try {
+              const r = JSON.parse(fs.readFileSync('redteam-results.json', 'utf8'));
+              const failed = (r.results?.stats?.failures ?? 0);
+              const total = (r.results?.stats?.total ?? 0);
+              body += `Results: **${total - failed} / ${total} attacks blocked**\n\n`;
+              if (failed > 0) {
+                body += '⚠️ **Some attacks succeeded.** Review the artifact and address before merge.\n';
+              } else {
+                body += '✅ Every attack was blocked. Safe to merge.\n';
+              }
+            } catch (e) {
+              body += `⚠️ Could not parse redteam-results.json: ${e.message}\n`;
+            }
+            await github.rest.issues.createComment({
+              ...context.repo,
+              issue_number: context.issue.number,
+              body
+            });

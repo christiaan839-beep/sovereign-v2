@@ -1,10 +1,7 @@
 import { createAgentRoute } from "@/lib/agent-factory";
-import { NextResponse } from "next/server";
 import { ai } from "@/lib/ai";
 import { ANTI_SLOP_RULES, PLATFORM_RULES } from "@/lib/content-engine";
 import { fireUserWebhook } from "@/lib/webhooks";
-import { createLogger } from "@/lib/logger";
-const log = createLogger("social-router");
 
 /**
  * Social Router API
@@ -15,7 +12,7 @@ const log = createLogger("social-router");
 export const POST = createAgentRoute({
   name: "social-router",
   handler: async ({ input }) => {
-    const { topic, platforms, brandVoice, targetAudience } = input as Record<string, unknown>;
+    const { topic, platforms, brandVoice, targetAudience } = input as Record<string, any>;
 
     const selectedPlatforms = platforms || ["instagram", "linkedin", "twitter"];
 

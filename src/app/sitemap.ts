@@ -1,9 +1,13 @@
-import { MetadataRoute } from 'next';
+import { MetadataRoute } from "next";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = "https://sovereignmatrix.agency";
 
-  const pages: Array<{ path: string; priority: number; changeFreq: "daily" | "weekly" | "monthly" }> = [
+  const pages: Array<{
+    path: string;
+    priority: number;
+    changeFreq: "daily" | "weekly" | "monthly";
+  }> = [
     // Core pages (highest priority)
     { path: "", priority: 1.0, changeFreq: "daily" },
     { path: "/pricing", priority: 0.9, changeFreq: "weekly" },
@@ -79,6 +83,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
     // Trust & transparency
     { path: "/security", priority: 0.7, changeFreq: "monthly" },
+    { path: "/standards", priority: 0.9, changeFreq: "monthly" },
+    { path: "/proof", priority: 0.9, changeFreq: "daily" },
+    { path: "/letters", priority: 0.8, changeFreq: "weekly" },
     { path: "/sla", priority: 0.6, changeFreq: "monthly" },
     { path: "/status", priority: 0.6, changeFreq: "daily" },
     { path: "/changelog", priority: 0.6, changeFreq: "weekly" },

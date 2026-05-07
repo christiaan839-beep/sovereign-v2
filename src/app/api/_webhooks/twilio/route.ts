@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { rateLimit } from "@/lib/rate-limit";
 import { createLogger } from "@/lib/logger";
+import { alreadyProcessed } from "@/lib/idempotency";
 
 const log = createLogger("twilio-webhook");
 
@@ -91,6 +92,21 @@ export async function POST(request: NextRequest) {
       log.error("Invalid Twilio signature", { from });
       return new NextResponse(EMPTY_TWIML, {
         status: 403,
+        headers: XML_HEADERS,
+      });
+    }
+
+    // Idempotency. Twilio retries delivery on any non-2xx response
+    // (or response taking >15 s). MessageSid is the canonical
+    // unique id for the inbound message. Without this guard, a
+    // slow Nemotron response would resurface the user's text and
+    // we'd reply twice — bad UX, and potentially toll-fraud
+    // adjacent if the user keeps the conversation going.
+    const messageSid = params.MessageSid || "";
+    if (messageSid && (await alreadyProcessed("twilio-msg", messageSid))) {
+      log.info("Skipping duplicate Twilio inbound", { messageSid, from });
+      return new NextResponse(EMPTY_TWIML, {
+        status: 200,
         headers: XML_HEADERS,
       });
     }

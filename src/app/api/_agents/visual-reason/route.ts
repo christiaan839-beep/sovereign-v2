@@ -1,5 +1,4 @@
 import { createAgentRoute } from "@/lib/agent-factory";
-import { NextResponse } from "next/server";
 
 /**
  * VISUAL REASONING — Uses cosmos-reason2-8b for deep visual analysis.
@@ -7,9 +6,9 @@ import { NextResponse } from "next/server";
  */
 export const POST = createAgentRoute({
   name: "visual-reason",
-  handler: async ({ input, email, userId }) => {
+  handler: async ({ input }) => {
 
-    const { imageUrl, question = "Analyze this image and provide detailed insights." } = input as Record<string, unknown>;
+    const { imageUrl, question = "Analyze this image and provide detailed insights." } = input as Record<string, any>;
     if (!imageUrl) return ({ error: "Missing `imageUrl`." });
 
     const nimKey = process.env.NVIDIA_NIM_API_KEY;

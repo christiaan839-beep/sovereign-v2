@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { tenants, affiliates, referrals } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { createLogger } from "@/lib/logger";
+import { alreadyProcessed } from "@/lib/idempotency";
 
 const log = createLogger("clerk-webhook");
 
@@ -44,7 +45,9 @@ function getPrimaryEmail(data: ClerkUserCreatedEvent["data"]): string | null {
   const primary = data.email_addresses.find(
     (e) => e.id === data.primary_email_address_id,
   );
-  return primary?.email_address ?? data.email_addresses[0]?.email_address ?? null;
+  return (
+    primary?.email_address ?? data.email_addresses[0]?.email_address ?? null
+  );
 }
 
 // ── Welcome Email ──
@@ -133,7 +136,10 @@ async function ensureTenant(clerkUserId: string) {
       .limit(1);
 
     if (existing.length > 0) {
-      log.info("Tenant already exists", { clerkUserId, tenantId: existing[0].id });
+      log.info("Tenant already exists", {
+        clerkUserId,
+        tenantId: existing[0].id,
+      });
       return existing[0];
     }
 
@@ -150,7 +156,9 @@ async function ensureTenant(clerkUserId: string) {
     return inserted[0];
   } catch (err) {
     if (isTableMissing(err)) {
-      log.warn("tenants table does not exist — skipping tenant creation", { clerkUserId });
+      log.warn("tenants table does not exist — skipping tenant creation", {
+        clerkUserId,
+      });
       return null;
     }
     throw err;
@@ -159,7 +167,11 @@ async function ensureTenant(clerkUserId: string) {
 
 // ── Referral Tracking ──
 
-async function processReferral(clerkUserId: string, email: string, referralCode: string) {
+async function processReferral(
+  clerkUserId: string,
+  email: string,
+  referralCode: string,
+) {
   try {
     // Find the affiliate by referral code
     const rows = await db
@@ -203,7 +215,9 @@ async function processReferral(clerkUserId: string, email: string, referralCode:
     });
   } catch (err) {
     if (isTableMissing(err)) {
-      log.warn("affiliates/referrals tables do not exist — skipping referral tracking");
+      log.warn(
+        "affiliates/referrals tables do not exist — skipping referral tracking",
+      );
       return;
     }
     log.error("Failed to process referral", {
@@ -266,6 +280,31 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // ── Idempotency ──
+  // Clerk delivers via svix with at-least-once semantics, so a 5xx
+  // from us OR a network blip on Clerk's side can resurface the same
+  // event minutes later. Without this guard, a duplicate user.created
+  // would attempt a second tenant insert (caught by the unique
+  // constraint on clerk_user_id, but still a wasted welcome email
+  // and a misleading log line).
+  //
+  // svix-id is the canonical unique event identifier and is the
+  // documented input for at-least-once dedupe — see
+  // https://docs.svix.com/receiving/idempotency.
+  //
+  // Failure mode: if Redis + DB are both down, the lib falls through
+  // to in-memory dedupe (per-Lambda, lossy). That's acceptable here:
+  // the worst case is one duplicate welcome email after a cold start,
+  // which the tenant unique-constraint still prevents from creating
+  // duplicate tenants.
+  if (await alreadyProcessed("clerk", svixId)) {
+    log.info("Skipping duplicate Clerk webhook", {
+      svixId,
+      type: event.type,
+    });
+    return NextResponse.json({ received: true, duplicate: true });
+  }
+
   // ── Handle event ──
   if (event.type !== "user.created") {
     // Acknowledge unhandled event types gracefully
@@ -305,7 +344,10 @@ export async function POST(req: NextRequest) {
   for (const result of results) {
     if (result.status === "rejected") {
       log.error("Webhook side-effect failed", {
-        reason: result.reason instanceof Error ? result.reason.message : String(result.reason),
+        reason:
+          result.reason instanceof Error
+            ? result.reason.message
+            : String(result.reason),
       });
     }
   }

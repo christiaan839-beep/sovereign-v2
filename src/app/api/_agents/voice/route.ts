@@ -6,7 +6,7 @@ export const POST = createAgentRoute({
   name: "voice",
   requiredFields: ["target_number"],
   handler: async ({ input }) => {
-    const { target_number, lead_name } = input as Record<string, unknown>;
+    const { target_number, lead_name } = input as Record<string, any>;
 
     // TCPA/AI Disclosure: Agents must identify as AI at the start of every call
     const AI_DISCLOSURE = `CRITICAL LEGAL REQUIREMENT: You MUST begin every call by saying: "Hi, this is an AI assistant calling on behalf of Sovereign Matrix. This call may be recorded for quality purposes. Is now a good time to speak?"`;
