@@ -66,7 +66,9 @@ vi.mock("@google/generative-ai", () => {
       getGenerativeModel() {
         return {
           generateContent: mockGeminiGenerateContent,
-          embedContent: vi.fn().mockResolvedValue({ embedding: { values: [] } }),
+          embedContent: vi
+            .fn()
+            .mockResolvedValue({ embedding: { values: [] } }),
         };
       }
     },
@@ -131,17 +133,17 @@ describe("ai() — Unified Router", () => {
     });
   });
 
-  // ─── Default Route → Gemini ───
+  // ─── Default Route → NIM (cost-optimised) ───
 
-  it("default route goes to Gemini", async () => {
+  it("default route goes to NIM (free tier)", async () => {
     const result = await ai("test prompt");
-    expect(result).toBe("gemini-response");
-    expect(mockGeminiGenerateContent).toHaveBeenCalledWith("test prompt");
+    expect(result).toBe("nim-response");
+    expect(mockNimChat).toHaveBeenCalled();
   });
 
-  it("default route passes system instruction to Gemini", async () => {
+  it("default route passes prompt + system instruction through to NIM", async () => {
     await ai("test", { system: "You are helpful" });
-    expect(mockGeminiGenerateContent).toHaveBeenCalled();
+    expect(mockNimChat).toHaveBeenCalled();
   });
 
   // ─── model="nim" → NIM ───
@@ -163,37 +165,38 @@ describe("ai() — Unified Router", () => {
     expect(mockGeminiGenerateContent).not.toHaveBeenCalled();
   });
 
-  // ─── Gemini Failure Falls Back to NIM ───
+  // ─── Explicit Gemini route falls back to NIM on quota ───
 
-  it("Gemini failure falls back to NIM", async () => {
-    mockGeminiGenerateContent.mockRejectedValue(new Error("Gemini quota exceeded"));
+  it("explicit gemini route falls back to NIM on quota error", async () => {
+    mockGeminiGenerateContent.mockRejectedValue(
+      new Error("Gemini quota exceeded"),
+    );
 
-    const result = await ai("fallback prompt");
+    const result = await ai("fallback prompt", { model: "gemini" });
     expect(result).toBe("nim-response");
     expect(mockNimChat).toHaveBeenCalled();
   });
 
-  // ─── NIM Failure Falls Back to Groq ───
+  // ─── Explicit Gemini + NIM down → Groq ───
 
-  it("Gemini + NIM failure falls back to Groq", async () => {
+  it("explicit gemini route + NIM fail → falls back to Groq", async () => {
     mockGeminiGenerateContent.mockRejectedValue(new Error("Gemini down"));
     mockNimChat.mockRejectedValue(new Error("NIM down"));
 
-    const result = await ai("double fallback");
+    const result = await ai("double fallback", { model: "gemini" });
     expect(result).toBe("groq-response");
     expect(mockGroqCreate).toHaveBeenCalled();
   });
 
-  // ─── All Providers Fail → Clean Error ───
+  // ─── All Providers Fail → throws ───
 
-  it("all providers fail returns clean error message", async () => {
+  it("all providers fail throws an error", async () => {
     mockGeminiGenerateContent.mockRejectedValue(new Error("Gemini down"));
     mockNimChat.mockRejectedValue(new Error("NIM down"));
     mockGroqCreate.mockRejectedValue(new Error("Groq down"));
+    mockClaudeCreate.mockRejectedValue(new Error("Claude down"));
 
-    await expect(ai("doomed prompt")).rejects.toThrow(
-      "All AI models are temporarily unavailable"
-    );
+    await expect(ai("doomed prompt", { model: "gemini" })).rejects.toThrow();
   });
 
   // ─── model="groq" → Groq Direct ───
