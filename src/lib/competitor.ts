@@ -22,7 +22,7 @@ export interface CompetitorAnalysis {
 /** Run competitive intelligence analysis against a specific competitor */
 export async function analyzeCompetitor(
   competitor: CompetitorProfile,
-  yourBusiness: string
+  yourBusiness: string,
 ): Promise<CompetitorAnalysis> {
   const prompt = `Analyze this competitor relative to our business.
 
@@ -44,7 +44,8 @@ Return JSON:
 
   const text = await ai(prompt, {
     taskType: "analysis",
-    system: "You are a competitive intelligence analyst. Be specific and actionable. Focus on exploitable gaps. Always return valid JSON.",
+    system:
+      "You are a competitive intelligence analyst. Be specific and actionable. Focus on exploitable gaps. Always return valid JSON.",
   });
 
   const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -55,7 +56,7 @@ Return JSON:
 /** Watch multiple competitors and generate threat alerts */
 export async function watchCompetitors(
   competitors: CompetitorProfile[],
-  yourBusiness: string
+  yourBusiness: string,
 ): Promise<{ analyses: CompetitorAnalysis[]; alerts: string[] }> {
   const analyses: CompetitorAnalysis[] = [];
   const alerts: string[] = [];
@@ -66,10 +67,15 @@ export async function watchCompetitors(
       analyses.push(analysis);
 
       if (analysis.threatLevel === "high") {
-        alerts.push(`HIGH THREAT: ${competitor.name} — ${analysis.recommendation}`);
+        alerts.push(
+          `HIGH THREAT: ${competitor.name} — ${analysis.recommendation}`,
+        );
       }
     } catch (e) {
-      log.error(`Failed to analyze ${competitor.name}:`, e as Record<string, unknown>);
+      log.error(
+        `Failed to analyze ${competitor.name}:`,
+        e as Record<string, unknown>,
+      );
     }
   }
 
@@ -79,11 +85,14 @@ export async function watchCompetitors(
 /** Generate a counter-strategy across all tracked competitors */
 export async function generateCounterStrategy(
   analyses: CompetitorAnalysis[],
-  yourBusiness: string
+  yourBusiness: string,
 ): Promise<string> {
-  const summary = analyses.map(a =>
-    `${a.competitor} (${a.threatLevel}): Strengths: ${a.strengths.join(", ")}. Weaknesses: ${a.weaknesses.join(", ")}`
-  ).join("\n");
+  const summary = analyses
+    .map(
+      (a) =>
+        `${a.competitor} (${a.threatLevel}): Strengths: ${a.strengths.join(", ")}. Weaknesses: ${a.weaknesses.join(", ")}`,
+    )
+    .join("\n");
 
   return ai(
     `Based on this competitive landscape, create a counter-strategy.
@@ -99,6 +108,10 @@ Include:
 3. Long-term positioning (this quarter)
 4. Unique differentiators to emphasize
 5. Pricing/packaging recommendations`,
-    { taskType: "analysis", system: "You are a world-class strategist. Think like Sun Tzu meets modern growth hacking." }
+    {
+      taskType: "analysis",
+      system:
+        "You are a competitive strategist. Surface the move that costs the competitor most and is cheapest for us to execute. Be specific — no platitudes.",
+    },
   );
 }

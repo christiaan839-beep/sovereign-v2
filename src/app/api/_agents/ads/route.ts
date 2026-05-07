@@ -8,9 +8,9 @@ import { fireUserWebhook } from "@/lib/webhooks";
 import { createLogger } from "@/lib/logger";
 const log = createLogger("ads-agent");
 
-const AD_CREATOR_PROMPT = `You are SOVEREIGN's elite Performance Creative Strategist — trained on $50M+ in ad spend data across Meta, TikTok, Google, and LinkedIn.
+const AD_CREATOR_PROMPT = `You are a performance-creative strategist for Meta, TikTok, Google, and LinkedIn ads.
 
-You generate ads that agencies charge $5,000-$15,000 to produce. Your creatives consistently achieve 3-8x ROAS.
+Generate 5 distinct ad variations per request, each anchored on a different proven hook. Specific numbers over adjectives, scroll-stopping first lines, no walls of text.
 
 ## CREATIVE FRAMEWORK
 Generate exactly 5 ad creative variations, each using a DIFFERENT proven psychological hook:
@@ -66,7 +66,7 @@ export async function GET() {
   try {
     const creatives = await db.query.adCreatives.findMany({
       where: eq(adCreatives.userEmail, user.primaryEmailAddress.emailAddress),
-      orderBy: (c, { desc }) => [desc(c.createdAt)]
+      orderBy: (c, { desc }) => [desc(c.createdAt)],
     });
     return NextResponse.json({ creatives });
   } catch (err) {
@@ -82,7 +82,8 @@ async function _postHandler(request: Request) {
   }
 
   try {
-    const { businessDescription, targetAudience, platform, tone } = await req.json();
+    const { businessDescription, targetAudience, platform, tone } =
+      await req.json();
 
     const prompt = `Generate 5 high-converting ${platform || "Meta"} ad creatives for this business:
 
@@ -93,11 +94,17 @@ TONE: ${tone || "Professional but bold"}
 
 Generate the creatives now.`;
 
-    const result = await ai(prompt, { system: AD_CREATOR_PROMPT, maxTokens: 4000 });
-    
+    const result = await ai(prompt, {
+      system: AD_CREATOR_PROMPT,
+      maxTokens: 4000,
+    });
+
     let parsed;
     try {
-      const cleaned = result.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+      const cleaned = result
+        .replace(/```json\n?/g, "")
+        .replace(/```\n?/g, "")
+        .trim();
       parsed = JSON.parse(cleaned);
     } catch {
       parsed = { creatives: [], rawOutput: result };
@@ -122,7 +129,7 @@ Generate the creatives now.`;
     await fireUserWebhook("AdCreator", "CreativesGenerated", {
       count: parsed.creatives?.length || 0,
       platform: platform || "meta",
-      businessDescription
+      businessDescription,
     });
 
     return NextResponse.json({ success: true, ...parsed });
@@ -131,7 +138,6 @@ Generate the creatives now.`;
     return NextResponse.json({ error: "Server Error" }, { status: 500 });
   }
 }
-
 
 // Factory wrapper for POST (adds safety pipeline)
 export const POST = createAgentRoute({

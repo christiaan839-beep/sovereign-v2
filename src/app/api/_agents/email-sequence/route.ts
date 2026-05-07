@@ -10,7 +10,7 @@ import { fireUserWebhook } from "@/lib/webhooks";
 import { createLogger } from "@/lib/logger";
 const log = createLogger("email-sequence");
 
-const SEQUENCE_PROMPT = `You are an expert email marketing strategist who builds automated drip sequences.
+const SEQUENCE_PROMPT = `You build automated email drip sequences.
 
 ## EMAIL RULES
 - Subject lines: 6-10 words, curiosity-driven, NO spam trigger words
@@ -39,12 +39,18 @@ export async function GET() {
 
   try {
     const sequences = await db.query.emailSequences.findMany({
-      where: eq(emailSequences.userEmail, user.primaryEmailAddress.emailAddress),
-      orderBy: (s, { desc }) => [desc(s.createdAt)]
+      where: eq(
+        emailSequences.userEmail,
+        user.primaryEmailAddress.emailAddress,
+      ),
+      orderBy: (s, { desc }) => [desc(s.createdAt)],
     });
     return NextResponse.json({ sequences });
   } catch (err) {
-    log.error("GET /api/agents/email-sequence error", err as Record<string, unknown>);
+    log.error(
+      "GET /api/agents/email-sequence error",
+      err as Record<string, unknown>,
+    );
     return NextResponse.json({ error: "Server Error" }, { status: 500 });
   }
 }
@@ -71,8 +77,12 @@ export const POST = createAgentRoute({
     const action = (input.action as string) || "generate";
 
     if (action === "generate") {
-      const product = (input.product || input.businessDescription || "Business") as string;
-      const audience = (input.audience || input.targetAudience || "Decision-makers") as string;
+      const product = (input.product ||
+        input.businessDescription ||
+        "Business") as string;
+      const audience = (input.audience ||
+        input.targetAudience ||
+        "Decision-makers") as string;
       const tone = (input.tone || "Professional") as string;
       const context = (input.context || "") as string;
       const sequenceType = (input.sequenceType || "Lead Nurture") as string;
@@ -88,25 +98,40 @@ ${context ? `\nADDITIONAL CONTEXT:\n${context.slice(0, 2000)}` : ""}
 
 Make each email specific to the product and audience. Reference real pain points.`;
 
-      const result = await ai(prompt, { system: SEQUENCE_PROMPT, maxTokens: 4000 });
+      const result = await ai(prompt, {
+        system: SEQUENCE_PROMPT,
+        maxTokens: 4000,
+      });
 
       let parsed;
       try {
-        parsed = JSON.parse(result.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim());
+        parsed = JSON.parse(
+          result
+            .replace(/```json\n?/g, "")
+            .replace(/```\n?/g, "")
+            .trim(),
+        );
       } catch {
-        parsed = { sequenceName: "Generated Sequence", steps: [], raw: result.slice(0, 500) };
+        parsed = {
+          sequenceName: "Generated Sequence",
+          steps: [],
+          raw: result.slice(0, 500),
+        };
       }
 
       // Save sequence to DB
       if (parsed.steps?.length > 0 && email) {
         try {
-          const [newSequence] = await db.insert(emailSequences).values({
-            userEmail: email,
-            name: parsed.sequenceName,
-            trigger: "manual",
-            status: "draft",
-            totalSteps: String(parsed.steps.length),
-          }).returning();
+          const [newSequence] = await db
+            .insert(emailSequences)
+            .values({
+              userEmail: email,
+              name: parsed.sequenceName,
+              trigger: "manual",
+              status: "draft",
+              totalSteps: String(parsed.steps.length),
+            })
+            .returning();
 
           for (const step of parsed.steps) {
             await db.insert(sequenceSteps).values({
@@ -125,7 +150,9 @@ Make each email specific to the product and audience. Reference real pain points
 
           return { success: true, sequence: newSequence, ...parsed };
         } catch (dbErr) {
-          log.warn("DB save failed, returning generated sequence", { error: String(dbErr) });
+          log.warn("DB save failed, returning generated sequence", {
+            error: String(dbErr),
+          });
           return { success: true, ...parsed };
         }
       }
@@ -136,7 +163,8 @@ Make each email specific to the product and audience. Reference real pain points
     // Get steps for a specific sequence
     if (action === "getSteps") {
       const sequenceId = input.sequenceId as string;
-      if (!sequenceId) throw new Error("sequenceId required for getSteps action");
+      if (!sequenceId)
+        throw new Error("sequenceId required for getSteps action");
 
       const steps = await db.query.sequenceSteps.findMany({
         where: eq(sequenceSteps.sequenceId, sequenceId),

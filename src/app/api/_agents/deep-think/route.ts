@@ -30,7 +30,7 @@ export const POST = createAgentRoute({
 
     // ── Verified AI path — generate + critique + revise for max reliability ──
     if (useConsensus) {
-      const systemPrompt = `You are an expert analyst. Think deeply about the problem. Consider multiple angles, pitfalls, and second-order effects. Structure as:
+      const systemPrompt = `You are an analyst. Think through the problem before answering. Consider multiple angles, pitfalls, and second-order effects. Structure as:
 
 1. ANALYSIS — Break down the core problem
 2. APPROACH — Recommended strategy with rationale
@@ -40,7 +40,9 @@ export const POST = createAgentRoute({
 
 Be specific. Use numbers. No generic advice.`;
 
-      const fullPrompt = context ? `Context:\n${context}\n\nProblem:\n${taskText}` : taskText;
+      const fullPrompt = context
+        ? `Context:\n${context}\n\nProblem:\n${taskText}`
+        : taskText;
 
       const result = await verifiedAi(fullPrompt, {
         system: systemPrompt,
@@ -59,11 +61,15 @@ Be specific. Use numbers. No generic advice.`;
     }
 
     // Claude Extended Thinking path — use when explicitly requested or Gemini key unavailable
-    const geminiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY;
+    const geminiKey =
+      process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY;
     if (useClaude || !geminiKey) {
       const anthropicKey = process.env.ANTHROPIC_API_KEY;
       if (!anthropicKey && !geminiKey) {
-        return { error: "No AI API key configured. Add GOOGLE_GENERATIVE_AI_API_KEY or ANTHROPIC_API_KEY." };
+        return {
+          error:
+            "No AI API key configured. Add GOOGLE_GENERATIVE_AI_API_KEY or ANTHROPIC_API_KEY.",
+        };
       }
       if (anthropicKey && (useClaude || !geminiKey)) {
         const prompt = context
@@ -73,7 +79,7 @@ Be specific. Use numbers. No generic advice.`;
         const solution = await ai(prompt, {
           model: "claude",
           thinking: true,
-          system: `You are an expert analyst and strategist. Think deeply about the problem before responding. Consider multiple angles, potential pitfalls, and second-order effects. Structure your response as:
+          system: `You are an analyst and strategist. Think through the problem before responding. Consider multiple angles, potential pitfalls, and second-order effects. Structure your response as:
 
 1. ANALYSIS — Break down the core problem
 2. APPROACH — Your recommended strategy with rationale
@@ -113,7 +119,7 @@ Be specific. Use numbers. No generic advice.`,
           systemInstruction: {
             parts: [
               {
-                text: `You are an expert analyst and strategist. Think deeply about the problem before responding. Consider multiple angles, potential pitfalls, and second-order effects. Structure your response as:
+                text: `You are an analyst and strategist. Think through the problem before responding. Consider multiple angles, potential pitfalls, and second-order effects. Structure your response as:
 
 1. ANALYSIS — Break down the core problem
 2. APPROACH — Your recommended strategy with rationale
@@ -133,7 +139,7 @@ Be specific. Use numbers. No generic advice.`,
             },
           },
         }),
-      }
+      },
     );
 
     if (!res.ok) {
