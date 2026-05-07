@@ -2,6 +2,7 @@
 
 import { useEffect, useState, use } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2 } from "lucide-react";
 
@@ -83,10 +84,7 @@ export default function PortalLayout({
           animate={{ opacity: 1 }}
           className="flex flex-col items-center gap-4"
         >
-          <Loader2
-            className="w-8 h-8 animate-spin"
-            style={{ color: accent }}
-          />
+          <Loader2 className="w-8 h-8 animate-spin" style={{ color: accent }} />
           <p className="text-sm text-neutral-500">Loading portal...</p>
         </motion.div>
       </div>
@@ -110,16 +108,16 @@ export default function PortalLayout({
           </h1>
           <p className="text-sm text-neutral-500 mb-6 leading-relaxed">
             No white-label portal is configured for{" "}
-            <span className="font-mono text-neutral-400">{domain}</span>. If
-            you are an agency administrator, set up your custom domain in the
+            <span className="font-mono text-neutral-400">{domain}</span>. If you
+            are an agency administrator, set up your custom domain in the
             dashboard settings.
           </p>
-          <a
+          <Link
             href="/"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white/5 border border-white/[0.06] text-sm text-neutral-300 hover:bg-white/10 transition-colors"
           >
             Go to homepage
-          </a>
+          </Link>
         </motion.div>
       </div>
     );
