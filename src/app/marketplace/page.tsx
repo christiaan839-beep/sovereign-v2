@@ -7,6 +7,7 @@ import { useState, useMemo, useEffect } from "react";
 import { SovereignLogo } from "@/components/ui/SovereignLogo";
 import { useHideyNav } from "@/components/ui/EliteEffects";
 import { AGENT_SLUGS } from "@/lib/agent-slugs";
+import { DeliverablesSection } from "./DeliverablesSection";
 
 /**
  * /marketplace — The Agent Marketplace
@@ -168,6 +169,7 @@ export default function MarketplacePage() {
       <MarketplaceNav />
       <main>
         <MarketplaceHero />
+        <DeliverablesSection />
         <AgentGridSection />
         <CreatorCTA />
       </main>
