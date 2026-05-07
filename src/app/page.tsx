@@ -409,7 +409,7 @@ function Hero() {
               <span className="absolute inline-flex h-full w-full rounded-full bg-[#B5532C] opacity-70 animate-ping" />
               <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#B5532C]" />
             </span>
-            <span>137 agents</span>
+            <span>30 featured agents</span>
             <span className="text-neutral-700">·</span>
             <span>39+ models</span>
             <span className="text-neutral-700">·</span>
@@ -440,8 +440,8 @@ function Hero() {
           transition={{ delay: 0.4, duration: 0.7 }}
           className="text-[17px] md:text-[19px] text-neutral-400 leading-[1.55] mb-4 max-w-2xl mx-auto"
         >
-          137 specialised agents that research, draft, qualify, call, and book —
-          on a multi-provider router that runs most calls for free.
+          30 featured agents that research, draft, qualify, call, and book — on
+          a multi-provider router that runs most calls for free.
         </motion.p>
         <motion.p
           initial={{ opacity: 0, y: 10 }}
