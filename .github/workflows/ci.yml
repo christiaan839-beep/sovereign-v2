@@ -105,6 +105,7 @@ jobs:
         run: |
           npx vitest run \
             src/lib/__tests__/idempotency.test.ts \
+            src/lib/__tests__/zapier-idempotency.test.ts \
             src/lib/__tests__/deployment-profile.test.ts \
             src/lib/__tests__/tenant-suspension.test.ts \
             src/app/api/_webhooks/__tests__/twilio-security.test.ts \

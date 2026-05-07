@@ -6,6 +6,8 @@ import crypto from "crypto";
 import { createLogger } from "@/lib/logger";
 import { rateLimit } from "@/lib/rate-limit";
 import { getPublicUrl } from "@/lib/base-url";
+import { alreadyProcessed } from "@/lib/idempotency";
+import { computeZapierIdemKey } from "@/lib/zapier-idempotency";
 
 const log = createLogger("zapier-webhook");
 
@@ -85,6 +87,12 @@ export async function GET(req: Request) {
   });
 }
 
+// Idempotency-key derivation lives in src/lib/zapier-idempotency.ts
+// so the two-tier (Idempotency-Key header → userId:rawBody hash)
+// logic is unit-testable without spinning up a real Request. The
+// route just calls computeZapierIdemKey(...) and feeds the result
+// into alreadyProcessed("zapier", ...).
+
 // POST: Execute an action or register a webhook
 export async function POST(req: Request) {
   const limited = await limiter.check(req);
@@ -95,9 +103,58 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid API key" }, { status: 401 });
   }
 
+  // Read the raw body once. We need it for both JSON parsing and
+  // the body-hash fallback in computeZapierIdemKey. Reading req.json()
+  // would consume the stream and prevent hashing.
+  let rawBody: string;
   try {
-    const body = await req.json();
+    rawBody = await req.text();
+  } catch {
+    return NextResponse.json({ error: "Invalid body" }, { status: 400 });
+  }
+
+  let body: {
+    action?: string;
+    agent?: string;
+    params?: Record<string, unknown>;
+    playbook_id?: string;
+    hook_url?: string;
+  };
+  try {
+    body = JSON.parse(rawBody);
+  } catch {
+    return NextResponse.json(
+      { error: "Body must be valid JSON" },
+      { status: 400 },
+    );
+  }
+
+  try {
     const { action, agent, params, playbook_id, hook_url } = body;
+
+    // Idempotency: only on the expensive paths. Subscribe/unsubscribe
+    // are setup operations and a duplicate is a no-op.
+    const isExpensive = !!agent || !!playbook_id;
+    if (isExpensive) {
+      const idemKey = computeZapierIdemKey({
+        getHeader: (name) => req.headers.get(name),
+        rawBody,
+        userId: auth.userId,
+      });
+      if (idemKey && (await alreadyProcessed("zapier", idemKey))) {
+        log.info("Skipping duplicate Zapier execution", {
+          userId: auth.userId,
+          agent,
+          playbookId: playbook_id,
+        });
+        return NextResponse.json({
+          status: "duplicate",
+          message:
+            "Identical request already processed within the dedup window. " +
+            "Pass a unique Idempotency-Key header for explicit retries.",
+        });
+      }
+    }
 
     // Webhook subscription (Zapier trigger)
     if (action === "subscribe" && hook_url) {

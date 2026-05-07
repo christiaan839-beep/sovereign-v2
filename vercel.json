@@ -46,6 +46,10 @@
       "schedule": "*/10 * * * *"
     },
     {
+      "path": "/api/cron/webhook-events-cleanup",
+      "schedule": "0 6 * * 0"
+    },
+    {
       "path": "/api/health/ping",
       "schedule": "*/4 * * * *"
     }
