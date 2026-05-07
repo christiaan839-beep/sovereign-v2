@@ -1,0 +1,54 @@
+{
+  "name": "@sovereign/ai-router",
+  "version": "0.1.0",
+  "description": "Multi-provider AI inference router with cost-aware fallback and per-user budget caps. Route across Anthropic, OpenAI, Google, Cerebras, NVIDIA NIM, Groq, DeepSeek, and local Ollama with one call.",
+  "keywords": [
+    "ai",
+    "llm",
+    "router",
+    "multi-provider",
+    "anthropic",
+    "claude",
+    "openai",
+    "gpt",
+    "gemini",
+    "cerebras",
+    "nim",
+    "nvidia",
+    "ollama",
+    "cost-routing",
+    "budget"
+  ],
+  "license": "MIT",
+  "author": "Christiaan de Wet <christiaan@sovereignmatrix.agency>",
+  "homepage": "https://github.com/christiaan839-beep/sovereign-v2/tree/main/packages/ai-router",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/christiaan839-beep/sovereign-v2.git",
+    "directory": "packages/ai-router"
+  },
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./prices": "./src/model-prices.ts"
+  },
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "vitest run --config ./vitest.config.ts"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.0",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
