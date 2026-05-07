@@ -1,5 +1,6 @@
 import { createAgentRoute } from "@/lib/agent-factory";
 import { NextResponse } from "next/server";
+import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { bookings } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -67,7 +68,7 @@ async function _postHandler(request: Request) {
   }
 
   try {
-    const body = await req.json();
+    const body = await request.json();
     const { action } = body;
 
     if (action === "qualify") {

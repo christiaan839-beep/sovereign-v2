@@ -1,5 +1,6 @@
 import { createAgentRoute } from "@/lib/agent-factory";
 import { NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import { createLogger } from "@/lib/logger";
 const log = createLogger("claw-queue");
 
@@ -12,7 +13,12 @@ const log = createLogger("claw-queue");
 
 interface QueuedTask {
   id: string;
-  type: "competitor-audit" | "social-post" | "lead-scrape" | "form-fill" | "screenshot";
+  type:
+    | "competitor-audit"
+    | "social-post"
+    | "lead-scrape"
+    | "form-fill"
+    | "screenshot";
   payload: Record<string, unknown>;
   status: "queued" | "running" | "complete" | "failed";
   result?: unknown;
@@ -36,11 +42,14 @@ async function processQueue() {
       const clawUrl = process.env.NEMOCLAW_URL || null;
       if (!clawUrl) {
         task.status = "failed";
-        task.result = { error: "NemoClaw is not configured. Set NEMOCLAW_URL in environment variables." };
+        task.result = {
+          error:
+            "NemoClaw is not configured. Set NEMOCLAW_URL in environment variables.",
+        };
         task.completedAt = new Date().toISOString();
         continue;
       }
-      
+
       switch (task.type) {
         case "competitor-audit": {
           const res = await fetch(`${clawUrl}/execute`, {
@@ -53,7 +62,9 @@ async function processQueue() {
               screenshot: true,
             }),
           });
-          task.result = res.ok ? await res.json() : { error: "NemoClaw offline" };
+          task.result = res.ok
+            ? await res.json()
+            : { error: "NemoClaw offline" };
           break;
         }
         case "screenshot": {
@@ -62,7 +73,9 @@ async function processQueue() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ url: task.payload.url, fullPage: true }),
           });
-          task.result = res.ok ? await res.json() : { error: "Screenshot failed" };
+          task.result = res.ok
+            ? await res.json()
+            : { error: "Screenshot failed" };
           break;
         }
         case "lead-scrape": {
@@ -104,7 +117,9 @@ async function processQueue() {
               submit: task.payload.submit !== false,
             }),
           });
-          task.result = res.ok ? await res.json() : { error: "Form fill failed" };
+          task.result = res.ok
+            ? await res.json()
+            : { error: "Form fill failed" };
           break;
         }
       }
@@ -127,10 +142,10 @@ export async function GET() {
     queue: taskQueue,
     stats: {
       total: taskQueue.length,
-      queued: taskQueue.filter(t => t.status === "queued").length,
-      running: taskQueue.filter(t => t.status === "running").length,
-      complete: taskQueue.filter(t => t.status === "complete").length,
-      failed: taskQueue.filter(t => t.status === "failed").length,
+      queued: taskQueue.filter((t) => t.status === "queued").length,
+      running: taskQueue.filter((t) => t.status === "running").length,
+      complete: taskQueue.filter((t) => t.status === "complete").length,
+      failed: taskQueue.filter((t) => t.status === "failed").length,
     },
     isProcessing,
     clawUrl: process.env.NEMOCLAW_URL || null,
@@ -144,36 +159,69 @@ export async function GET() {
 async function _postHandler(request: Request) {
   try {
     const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const body = await req.json();
+    if (!userId)
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401 },
+      );
+    const body = await request.json();
 
     // Trigger processing
     if (body.action === "process") {
       if (!process.env.NEMOCLAW_URL) {
-        return NextResponse.json({ error: "NemoClaw is not configured. Set NEMOCLAW_URL in environment variables." }, { status: 503 });
+        return NextResponse.json(
+          {
+            error:
+              "NemoClaw is not configured. Set NEMOCLAW_URL in environment variables.",
+          },
+          { status: 503 },
+        );
       }
-      processQueue().catch((err) => log.error("Queue processing failed", err as Record<string, unknown>));
-      return NextResponse.json({ message: "Queue processing started.", queueSize: taskQueue.filter(t => t.status === "queued").length });
+      processQueue().catch((err) =>
+        log.error("Queue processing failed", err as Record<string, unknown>),
+      );
+      return NextResponse.json({
+        message: "Queue processing started.",
+        queueSize: taskQueue.filter((t) => t.status === "queued").length,
+      });
     }
 
     // Clear completed
     if (body.action === "clear") {
-      const removed = taskQueue.filter(t => t.status === "complete" || t.status === "failed").length;
-      taskQueue.splice(0, taskQueue.length, ...taskQueue.filter(t => t.status === "queued" || t.status === "running"));
-      return NextResponse.json({ message: `Cleared ${removed} completed tasks.` });
+      const removed = taskQueue.filter(
+        (t) => t.status === "complete" || t.status === "failed",
+      ).length;
+      taskQueue.splice(
+        0,
+        taskQueue.length,
+        ...taskQueue.filter(
+          (t) => t.status === "queued" || t.status === "running",
+        ),
+      );
+      return NextResponse.json({
+        message: `Cleared ${removed} completed tasks.`,
+      });
     }
 
     // Add batch
     if (body.action === "batch" && Array.isArray(body.tasks)) {
-      const newTasks: QueuedTask[] = body.tasks.map((t: { type: QueuedTask["type"]; payload?: Record<string, unknown> }, i: number) => ({
-        id: `batch-${Date.now()}-${i}`,
-        type: t.type,
-        payload: t.payload || {},
-        status: "queued" as const,
-        createdAt: new Date().toISOString(),
-      }));
+      const newTasks: QueuedTask[] = body.tasks.map(
+        (
+          t: { type: QueuedTask["type"]; payload?: Record<string, unknown> },
+          i: number,
+        ) => ({
+          id: `batch-${Date.now()}-${i}`,
+          type: t.type,
+          payload: t.payload || {},
+          status: "queued" as const,
+          createdAt: new Date().toISOString(),
+        }),
+      );
       taskQueue.push(...newTasks);
-      return NextResponse.json({ queued: newTasks.length, totalQueue: taskQueue.length });
+      return NextResponse.json({
+        queued: newTasks.length,
+        totalQueue: taskQueue.length,
+      });
     }
 
     // Add single task
@@ -186,12 +234,18 @@ async function _postHandler(request: Request) {
     };
     taskQueue.push(task);
 
-    return NextResponse.json({ queued: true, taskId: task.id, queuePosition: taskQueue.filter(t => t.status === "queued").length });
+    return NextResponse.json({
+      queued: true,
+      taskId: task.id,
+      queuePosition: taskQueue.filter((t) => t.status === "queued").length,
+    });
   } catch (error: unknown) {
-    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
+    return NextResponse.json(
+      { error: (error as Error).message },
+      { status: 500 },
+    );
   }
 }
-
 
 // Factory wrapper for POST (adds safety pipeline)
 export const POST = createAgentRoute({

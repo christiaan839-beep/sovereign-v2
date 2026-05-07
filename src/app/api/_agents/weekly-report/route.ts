@@ -1,5 +1,6 @@
 import { createAgentRoute } from "@/lib/agent-factory";
 import { NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import { persistAppend, persistRead } from "@/lib/persist";
 import { ai } from "@/lib/ai";
 
@@ -39,7 +40,7 @@ async function _postHandler(request: Request) {
   try {
     const { userId } = await auth();
     if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const { clientEmail, clientName, period } = await req.json().catch(() => ({}));
+    const { clientEmail, clientName, period } = await request.json().catch(() => ({}));
     const reportPeriod = period || `${new Date().toLocaleDateString("en-ZA")} Weekly Report`;
 
     // Pull real metrics from persistence layer

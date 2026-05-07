@@ -1,11 +1,12 @@
 import { createAgentRoute } from "@/lib/agent-factory";
 import { NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import { getBaseUrl } from "@/lib/base-url";
 
 /**
- * AGENT-TO-AGENT COMMUNICATION BUS — Allows deployed agents to 
+ * AGENT-TO-AGENT COMMUNICATION BUS — Allows deployed agents to
  * pass messages and results to other agents autonomously.
- * 
+ *
  * This is the nervous system that connects NemoClaw agents into a true swarm.
  */
 
@@ -26,14 +27,16 @@ export async function GET(request: Request) {
   const agentId = url.searchParams.get("agent");
 
   if (agentId) {
-    const messages = MESSAGE_BUS.filter(m => m.to === agentId && !m.processed);
+    const messages = MESSAGE_BUS.filter(
+      (m) => m.to === agentId && !m.processed,
+    );
     return NextResponse.json({ messages, pending: messages.length });
   }
 
   return NextResponse.json({
     status: "Agent Communication Bus — Active",
     total_messages: MESSAGE_BUS.length,
-    pending: MESSAGE_BUS.filter(m => !m.processed).length,
+    pending: MESSAGE_BUS.filter((m) => !m.processed).length,
     recent: MESSAGE_BUS.slice(-20).reverse(),
   });
 }
@@ -41,11 +44,24 @@ export async function GET(request: Request) {
 async function _postHandler(request: Request) {
   try {
     const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const { from, to, type = "task", payload, autoExecute = false } = await request.json();
+    if (!userId)
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401 },
+      );
+    const {
+      from,
+      to,
+      type = "task",
+      payload,
+      autoExecute = false,
+    } = await request.json();
 
     if (!from || !to) {
-      return NextResponse.json({ error: "from and to agent IDs are required." }, { status: 400 });
+      return NextResponse.json(
+        { error: "from and to agent IDs are required." },
+        { status: 400 },
+      );
     }
 
     const message: AgentMessage = {
@@ -66,13 +82,13 @@ async function _postHandler(request: Request) {
       const agentEndpoints: Record<string, string> = {
         "abm-artillery": "/api/_agents/abm-artillery",
         "pii-redactor": "/api/_agents/pii-redactor",
-        "translate": "/api/_agents/translate",
+        translate: "/api/_agents/translate",
         "page-builder": "/api/_agents/page-builder",
         "image-gen": "/api/_agents/image-gen",
         "blog-gen": "/api/_agents/blog-gen",
         "case-study": "/api/_agents/case-study",
         "doc-intel": "/api/_agents/doc-intel",
-        "swarm": "/api/_agents/swarm",
+        swarm: "/api/_agents/swarm",
       };
 
       const endpoint = agentEndpoints[to];
@@ -100,10 +116,12 @@ async function _postHandler(request: Request) {
       executionResult,
     });
   } catch (error) {
-    return NextResponse.json({ error: "Bus error", details: String(error) }, { status: 500 });
+    return NextResponse.json(
+      { error: "Bus error", details: String(error) },
+      { status: 500 },
+    );
   }
 }
-
 
 // Factory wrapper for POST (adds safety pipeline)
 export const POST = createAgentRoute({

@@ -1,5 +1,6 @@
 import { createAgentRoute } from "@/lib/agent-factory";
 import { NextResponse } from "next/server";
+import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { adCreatives } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -83,7 +84,7 @@ async function _postHandler(request: Request) {
 
   try {
     const { businessDescription, targetAudience, platform, tone } =
-      await req.json();
+      await request.json();
 
     const prompt = `Generate 5 high-converting ${platform || "Meta"} ad creatives for this business:
 

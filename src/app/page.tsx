@@ -11,6 +11,7 @@ import { FounderSeats } from "@/components/landing/FounderSeats";
 import { CommandEgg } from "@/components/landing/CommandEgg";
 import { PrimaryCTA } from "@/components/landing/PrimaryCTA";
 import { StatusIndicator } from "@/components/landing/StatusIndicator";
+import { TryItDemo } from "@/components/landing/TryItDemo";
 import { trackCtaClick } from "@/lib/cta-track";
 import {
   useHideyNav,
@@ -91,6 +92,9 @@ export default function LandingPage() {
       <main id="main-content">
         {/* 01 · Hero */}
         <Hero />
+
+        {/* Try-it demo — embedded competitor scan, no signup */}
+        <TryItDemo />
 
         {/* Live stats strip */}
         <LiveProofStrip />

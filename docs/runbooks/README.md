@@ -9,13 +9,14 @@ who already knows the system.
 
 ## Index
 
-| Symptom                                                           | Runbook                                              |
-| ----------------------------------------------------------------- | ---------------------------------------------------- |
-| `/api/health/ready` returns 503, customers can't sign in          | [`db-down.md`](./db-down.md)                         |
-| Webhook deliveries failing, agent runs error with `42P01`         | [`migration-drift.md`](./migration-drift.md)         |
-| Sign-in stuck on "Loading…", `/api/health/ready` shows clerk:down | [`clerk-jwks-failing.md`](./clerk-jwks-failing.md)   |
-| Checkout button errors, `/api/payments/stripe/checkout` 500s      | [`stripe-keys-rotated.md`](./stripe-keys-rotated.md) |
-| CI smoke job red, preview URL shows the wrong content             | [`smoke-failing.md`](./smoke-failing.md)             |
+| Symptom                                                            | Runbook                                              |
+| ------------------------------------------------------------------ | ---------------------------------------------------- |
+| `/api/health/ready` returns 503, customers can't sign in           | [`db-down.md`](./db-down.md)                         |
+| Webhook deliveries failing, agent runs error with `42P01`          | [`migration-drift.md`](./migration-drift.md)         |
+| Sign-in stuck on "Loading…", `/api/health/ready` shows clerk:down  | [`clerk-jwks-failing.md`](./clerk-jwks-failing.md)   |
+| Checkout button errors, `/api/payments/stripe/checkout` 500s       | [`stripe-keys-rotated.md`](./stripe-keys-rotated.md) |
+| CI smoke job red, preview URL shows the wrong content              | [`smoke-failing.md`](./smoke-failing.md)             |
+| Multi-tenant isolation: ready to flip RLS from permissive → strict | [`rls-enforcement.md`](./rls-enforcement.md)         |
 
 ## Conventions
 

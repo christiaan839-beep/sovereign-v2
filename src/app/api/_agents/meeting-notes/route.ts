@@ -18,7 +18,7 @@ export const POST = createAgentRoute({
     const guard = await guardRoute();
     if (!guard.authorized) return guard.response;
 
-    const body = await req.json();
+    const body = await request.json();
     const transcript = sanitizeString(body.transcript, 50000);
     const meetingTitle = sanitizeString(body.title, 200) || "Untitled Meeting";
 
