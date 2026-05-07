@@ -3,9 +3,18 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Bot, CheckCircle2, XCircle, Loader2, Clock,
-  ChevronDown, ChevronUp, Play, RefreshCw, Zap,
-  BarChart3, Activity,
+  Bot,
+  CheckCircle2,
+  XCircle,
+  Loader2,
+  Clock,
+  ChevronDown,
+  ChevronUp,
+  Play,
+  RefreshCw,
+  Zap,
+  BarChart3,
+  Activity,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -60,17 +69,21 @@ function formatDuration(ms: number | null): string {
 }
 
 const STEP_STATUS = {
-  pending:  { icon: Clock,        color: "text-neutral-500",  bg: "bg-neutral-500/10" },
-  running:  { icon: Loader2,      color: "text-blue-400",     bg: "bg-blue-400/10"    },
-  done:     { icon: CheckCircle2, color: "text-emerald-400",  bg: "bg-emerald-400/10" },
-  failed:   { icon: XCircle,      color: "text-rose-400",     bg: "bg-rose-400/10"    },
-  skipped:  { icon: Clock,        color: "text-neutral-600",  bg: "bg-neutral-600/10" },
+  pending: { icon: Clock, color: "text-neutral-500", bg: "bg-neutral-500/10" },
+  running: { icon: Loader2, color: "text-blue-400", bg: "bg-blue-400/10" },
+  done: {
+    icon: CheckCircle2,
+    color: "text-emerald-400",
+    bg: "bg-emerald-400/10",
+  },
+  failed: { icon: XCircle, color: "text-rose-400", bg: "bg-rose-400/10" },
+  skipped: { icon: Clock, color: "text-neutral-600", bg: "bg-neutral-600/10" },
 } as const;
 
 const RUN_STATUS = {
-  running: { color: "text-blue-400",    bg: "bg-blue-400/10",    label: "Running"  },
-  done:    { color: "text-emerald-400", bg: "bg-emerald-400/10", label: "Done"     },
-  failed:  { color: "text-rose-400",    bg: "bg-rose-400/10",    label: "Failed"   },
+  running: { color: "text-blue-400", bg: "bg-blue-400/10", label: "Running" },
+  done: { color: "text-emerald-400", bg: "bg-emerald-400/10", label: "Done" },
+  failed: { color: "text-rose-400", bg: "bg-rose-400/10", label: "Failed" },
 } as const;
 
 /* ─── Step Row ─── */
@@ -83,28 +96,41 @@ function StepRow({ step }: { step: RunStep }) {
   return (
     <div className="rounded-lg border border-white/5 bg-white/2">
       <button
-        onClick={() => step.result || step.error ? setOpen(v => !v) : undefined}
+        onClick={() =>
+          step.result || step.error ? setOpen((v) => !v) : undefined
+        }
         className="flex w-full items-center gap-3 px-3 py-2.5 text-left"
       >
-        <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md ${cfg.bg}`}>
+        <div
+          className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md ${cfg.bg}`}
+        >
           <Icon
             size={11}
             className={`${cfg.color} ${step.status === "running" ? "animate-spin" : ""}`}
           />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-xs font-medium text-neutral-300">{step.agentName}</p>
+          <p className="truncate text-xs font-medium text-neutral-300">
+            {step.agentName}
+          </p>
           {step.reason && (
-            <p className="truncate text-[11px] text-neutral-600">{step.reason}</p>
+            <p className="truncate text-[11px] text-neutral-600">
+              {step.reason}
+            </p>
           )}
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {step.durationMs && (
-            <span className="text-[11px] text-neutral-600">{formatDuration(step.durationMs)}</span>
+            <span className="text-[11px] text-neutral-600">
+              {formatDuration(step.durationMs)}
+            </span>
           )}
-          {(step.result || step.error) && (
-            open ? <ChevronUp size={11} className="text-neutral-600" /> : <ChevronDown size={11} className="text-neutral-600" />
-          )}
+          {(step.result || step.error) &&
+            (open ? (
+              <ChevronUp size={11} className="text-neutral-600" />
+            ) : (
+              <ChevronDown size={11} className="text-neutral-600" />
+            ))}
         </div>
       </button>
 
@@ -118,7 +144,9 @@ function StepRow({ step }: { step: RunStep }) {
           >
             <div className="border-t border-white/5 px-3 pb-3 pt-2">
               {step.error ? (
-                <p className="font-mono text-[11px] text-rose-400">{step.error}</p>
+                <p className="font-mono text-[11px] text-rose-400">
+                  {step.error}
+                </p>
               ) : (
                 <pre className="max-h-48 overflow-y-auto whitespace-pre-wrap font-mono text-[11px] leading-relaxed text-neutral-400">
                   {step.result}
@@ -154,18 +182,23 @@ function RunCard({ run: initialRun }: { run: PlaybookRun }) {
             pollRef.current = null;
           }
         }
-      } catch { /* silent */ }
+      } catch {
+        /* silent */
+      }
     };
 
     pollRef.current = setInterval(poll, 2000);
-    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
   }, [run.id, run.status]);
 
   const cfg = RUN_STATUS[run.status];
-  const completedSteps = run.steps.filter(s => s.status === "done").length;
-  const progress = run.stepCount > 0
-    ? Math.round((completedSteps / run.stepCount) * 100)
-    : (run.progress ?? 0);
+  const completedSteps = run.steps.filter((s) => s.status === "done").length;
+  const progress =
+    run.stepCount > 0
+      ? Math.round((completedSteps / run.stepCount) * 100)
+      : (run.progress ?? 0);
 
   return (
     <motion.div
@@ -176,10 +209,12 @@ function RunCard({ run: initialRun }: { run: PlaybookRun }) {
     >
       {/* Header */}
       <button
-        onClick={() => setExpanded(v => !v)}
+        onClick={() => setExpanded((v) => !v)}
         className="flex w-full items-start gap-3 p-4 text-left"
       >
-        <div className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${cfg.bg}`}>
+        <div
+          className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${cfg.bg}`}
+        >
           {run.status === "running" ? (
             <Loader2 size={13} className={`${cfg.color} animate-spin`} />
           ) : run.status === "done" ? (
@@ -190,12 +225,16 @@ function RunCard({ run: initialRun }: { run: PlaybookRun }) {
         </div>
 
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-neutral-100">{run.playbookName}</p>
+          <p className="text-sm font-medium text-neutral-100">
+            {run.playbookName}
+          </p>
           <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-neutral-500">
             <span className={`font-medium ${cfg.color}`}>{cfg.label}</span>
             <span>{timeAgo(run.createdAt)}</span>
             {run.durationMs && <span>{formatDuration(run.durationMs)}</span>}
-            <span>{run.stepsSucceeded}/{run.stepCount} steps</span>
+            <span>
+              {run.stepsSucceeded}/{run.stepCount} steps
+            </span>
           </div>
 
           {run.status === "running" && (
@@ -224,7 +263,7 @@ function RunCard({ run: initialRun }: { run: PlaybookRun }) {
             transition={{ duration: 0.2 }}
           >
             <div className="border-t border-white/6 px-4 pb-4 pt-3 space-y-1.5">
-              {run.steps.map(step => (
+              {run.steps.map((step) => (
                 <StepRow key={step.id} step={step} />
               ))}
             </div>
@@ -240,7 +279,9 @@ function RunCard({ run: initialRun }: { run: PlaybookRun }) {
 export default function AutopilotPage() {
   const [runs, setRuns] = useState<PlaybookRun[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState<"all" | "running" | "done" | "failed">("all");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "running" | "done" | "failed"
+  >("all");
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchRuns = useCallback(async (silent = false) => {
@@ -251,36 +292,41 @@ export default function AutopilotPage() {
         const data = await res.json();
         setRuns(data.runs || []);
       }
-    } catch { /* silent */ }
+    } catch {
+      /* silent */
+    }
     if (!silent) setLoading(false);
   }, []);
 
+  // Initial fetch on mount. setLoading(true) is the intended spinner UX.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchRuns();
   }, [fetchRuns]);
 
   // Background list refresh (less frequent — individual cards do fast polling)
   useEffect(() => {
-    const hasLive = runs.some(r => r.status === "running");
+    const hasLive = runs.some((r) => r.status === "running");
     if (hasLive && !pollRef.current) {
       pollRef.current = setInterval(() => fetchRuns(true), 10_000);
     } else if (!hasLive && pollRef.current) {
       clearInterval(pollRef.current);
       pollRef.current = null;
     }
-    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
   }, [runs, fetchRuns]);
 
   const counts = {
-    running: runs.filter(r => r.status === "running").length,
-    done:    runs.filter(r => r.status === "done").length,
-    failed:  runs.filter(r => r.status === "failed").length,
+    running: runs.filter((r) => r.status === "running").length,
+    done: runs.filter((r) => r.status === "done").length,
+    failed: runs.filter((r) => r.status === "failed").length,
   };
 
   return (
     <div className="min-h-screen bg-[#030303] px-4 py-8 text-neutral-200">
       <div className="mx-auto max-w-3xl space-y-8">
-
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -288,8 +334,12 @@ export default function AutopilotPage() {
               <Bot size={18} className="text-violet-400" />
             </div>
             <div>
-              <h1 className="text-lg font-semibold text-neutral-100">Autopilot</h1>
-              <p className="text-xs text-neutral-500">Agentic playbooks running your business 24/7</p>
+              <h1 className="text-lg font-semibold text-neutral-100">
+                Autopilot
+              </h1>
+              <p className="text-xs text-neutral-500">
+                Agentic playbooks running your business 24/7
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -322,7 +372,8 @@ export default function AutopilotPage() {
               <span className="relative inline-flex h-2 w-2 rounded-full bg-blue-400" />
             </div>
             <p className="text-sm text-blue-300">
-              {counts.running} playbook{counts.running > 1 ? "s" : ""} running now
+              {counts.running} playbook{counts.running > 1 ? "s" : ""} running
+              now
             </p>
             <Activity size={14} className="ml-auto text-blue-400/60" />
           </motion.div>
@@ -331,11 +382,31 @@ export default function AutopilotPage() {
         {/* Stats + Filter */}
         <div className="grid grid-cols-4 gap-3">
           {[
-            { label: "All",      value: runs.length,    color: "text-neutral-300", filter: "all" as const },
-            { label: "Running",  value: counts.running, color: "text-blue-400",    filter: "running" as const },
-            { label: "Done",     value: counts.done,    color: "text-emerald-400", filter: "done" as const },
-            { label: "Failed",   value: counts.failed,  color: "text-rose-400",    filter: "failed" as const },
-          ].map(s => (
+            {
+              label: "All",
+              value: runs.length,
+              color: "text-neutral-300",
+              filter: "all" as const,
+            },
+            {
+              label: "Running",
+              value: counts.running,
+              color: "text-blue-400",
+              filter: "running" as const,
+            },
+            {
+              label: "Done",
+              value: counts.done,
+              color: "text-emerald-400",
+              filter: "done" as const,
+            },
+            {
+              label: "Failed",
+              value: counts.failed,
+              color: "text-rose-400",
+              filter: "failed" as const,
+            },
+          ].map((s) => (
             <button
               key={s.label}
               onClick={() => setStatusFilter(s.filter)}
@@ -360,10 +431,15 @@ export default function AutopilotPage() {
         ) : runs.length === 0 ? (
           <div className="py-16 text-center">
             <BarChart3 size={32} className="mx-auto mb-3 text-neutral-700" />
-            <p className="mb-1 text-sm text-neutral-500">No playbook runs yet.</p>
+            <p className="mb-1 text-sm text-neutral-500">
+              No playbook runs yet.
+            </p>
             <p className="text-xs text-neutral-600">
               Go to{" "}
-              <Link href="/dashboard/playbooks" className="text-violet-400 hover:underline">
+              <Link
+                href="/dashboard/playbooks"
+                className="text-violet-400 hover:underline"
+              >
                 Playbooks
               </Link>{" "}
               to run your first one.
@@ -373,16 +449,19 @@ export default function AutopilotPage() {
           <div className="space-y-3">
             <AnimatePresence mode="popLayout">
               {runs
-                .filter(r => statusFilter === "all" || r.status === statusFilter)
-                .map(run => (
+                .filter(
+                  (r) => statusFilter === "all" || r.status === statusFilter,
+                )
+                .map((run) => (
                   <RunCard key={run.id} run={run} />
                 ))}
             </AnimatePresence>
-            {statusFilter !== "all" && runs.filter(r => r.status === statusFilter).length === 0 && (
-              <p className="py-8 text-center text-sm text-neutral-600">
-                No {statusFilter} runs
-              </p>
-            )}
+            {statusFilter !== "all" &&
+              runs.filter((r) => r.status === statusFilter).length === 0 && (
+                <p className="py-8 text-center text-sm text-neutral-600">
+                  No {statusFilter} runs
+                </p>
+              )}
           </div>
         )}
       </div>

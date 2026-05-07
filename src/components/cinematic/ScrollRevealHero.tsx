@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
+import { useIsMobile } from "@/lib/hooks/use-is-mobile";
 
 /**
  * ScrollRevealHero — Scroll-driven parallax effects for the hero section.
@@ -74,11 +75,7 @@ export function ScrollFadeSection({
  */
 export function FloatingOrbs() {
   const { scrollY } = useScroll();
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    setIsMobile(window.innerWidth < 768);
-  }, []);
+  const isMobile = useIsMobile();
 
   // Hooks must be called at the top level — pre-compute one transform per
   // orb instead of calling useTransform inside the map() callback. The

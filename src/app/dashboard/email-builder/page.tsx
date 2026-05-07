@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Mail,
@@ -64,7 +64,13 @@ const SEQUENCE_TYPES: SequenceConfig[] = [
     label: "Nurture",
     description: "Build trust and educate over time",
     emailCount: 5,
-    stages: ["Hook & Relate", "Educate", "Social Proof", "Deep Value", "Soft Ask"],
+    stages: [
+      "Hook & Relate",
+      "Educate",
+      "Social Proof",
+      "Deep Value",
+      "Soft Ask",
+    ],
     color: "text-cyan-400",
     bg: "bg-cyan-500/10",
     border: "border-cyan-500/20",
@@ -74,7 +80,12 @@ const SEQUENCE_TYPES: SequenceConfig[] = [
     label: "Sales",
     description: "Drive conversions with urgency and proof",
     emailCount: 4,
-    stages: ["Pain Point", "Solution Reveal", "Testimonials & Proof", "Urgency Close"],
+    stages: [
+      "Pain Point",
+      "Solution Reveal",
+      "Testimonials & Proof",
+      "Urgency Close",
+    ],
     color: "text-amber-400",
     bg: "bg-amber-500/10",
     border: "border-amber-500/20",
@@ -122,7 +133,11 @@ function createEmptyEmails(config: SequenceConfig): EmailDraft[] {
 // ─── Component ───────────────────────────────────────────────────────
 export default function EmailBuilderPage() {
   const [sequenceType, setSequenceType] = useState<SequenceType>("welcome");
-  const [emails, setEmails] = useState<EmailDraft[]>([]);
+  const activeConfig = SEQUENCE_TYPES.find((s) => s.id === sequenceType)!;
+
+  const [emails, setEmails] = useState<EmailDraft[]>(() =>
+    createEmptyEmails(activeConfig),
+  );
   const [expandedEmail, setExpandedEmail] = useState<number | null>(0);
   const [previewIdx, setPreviewIdx] = useState<number | null>(null);
   const [globalError, setGlobalError] = useState<string | null>(null);
@@ -134,29 +149,34 @@ export default function EmailBuilderPage() {
   const [audience, setAudience] = useState("");
   const [productDescription, setProductDescription] = useState("");
 
-  const activeConfig = SEQUENCE_TYPES.find((s) => s.id === sequenceType)!;
-
-  // Initialize emails when sequence type changes
-  useEffect(() => {
-    const config = SEQUENCE_TYPES.find((s) => s.id === sequenceType)!;
-    setEmails(createEmptyEmails(config));
+  // Reset email drafts when the sequence type changes — React 19 pattern:
+  // detect the prop/state change during render rather than in an effect.
+  // https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes
+  const [prevSequenceType, setPrevSequenceType] = useState(sequenceType);
+  if (prevSequenceType !== sequenceType) {
+    setPrevSequenceType(sequenceType);
+    setEmails(createEmptyEmails(activeConfig));
     setExpandedEmail(0);
     setPreviewIdx(null);
     setGlobalError(null);
-  }, [sequenceType]);
+  }
 
   const updateEmail = useCallback(
     (index: number, updates: Partial<EmailDraft>) => {
-      setEmails((prev) => prev.map((e, i) => (i === index ? { ...e, ...updates } : e)));
+      setEmails((prev) =>
+        prev.map((e, i) => (i === index ? { ...e, ...updates } : e)),
+      );
     },
-    []
+    [],
   );
 
   // ─── Generate single email via smart-router ────────────────────────
   const generateSingleEmail = useCallback(
     async (index: number) => {
       if (!brandName.trim()) {
-        setGlobalError("Please enter a brand or company name to generate emails.");
+        setGlobalError(
+          "Please enter a brand or company name to generate emails.",
+        );
         return;
       }
 
@@ -200,7 +220,9 @@ Requirements:
 
         if (!res.ok || data.error) {
           updateEmail(index, { isGenerating: false });
-          setGlobalError(data.error || data.details || `Generation failed (${res.status})`);
+          setGlobalError(
+            data.error || data.details || `Generation failed (${res.status})`,
+          );
           return;
         }
 
@@ -216,7 +238,9 @@ Requirements:
         const subjectMatch = output.match(/^Subject:\s*(.+)$/im);
         if (subjectMatch) {
           subject = subjectMatch[1].trim();
-          body = output.substring(subjectMatch.index! + subjectMatch[0].length).trim();
+          body = output
+            .substring(subjectMatch.index! + subjectMatch[0].length)
+            .trim();
         }
 
         updateEmail(index, {
@@ -234,13 +258,15 @@ Requirements:
         setGlobalError(`Connection failed: ${msg}`);
       }
     },
-    [sequenceType, brandName, audience, productDescription, updateEmail]
+    [sequenceType, brandName, audience, productDescription, updateEmail],
   );
 
   // ─── Generate full sequence ────────────────────────────────────────
   const generateFullSequence = useCallback(async () => {
     if (!brandName.trim()) {
-      setGlobalError("Please enter a brand or company name to generate emails.");
+      setGlobalError(
+        "Please enter a brand or company name to generate emails.",
+      );
       return;
     }
 
@@ -267,7 +293,7 @@ Requirements:
         setTimeout(() => setCopiedIdx(null), 2000);
       });
     },
-    [emails]
+    [emails],
   );
 
   // ─── Compute timeline days ─────────────────────────────────────────
@@ -504,14 +530,14 @@ Requirements:
               exit={{ opacity: 0, y: -10 }}
               transition={{ delay: idx * 0.05 }}
               className={`bg-black/60 backdrop-blur-3xl border rounded-2xl overflow-hidden transition-colors ${
-                email.isGenerated
-                  ? "border-emerald-500/20"
-                  : "border-white/5"
+                email.isGenerated ? "border-emerald-500/20" : "border-white/5"
               }`}
             >
               {/* Email Header — always visible */}
               <button
-                onClick={() => setExpandedEmail(expandedEmail === idx ? null : idx)}
+                onClick={() =>
+                  setExpandedEmail(expandedEmail === idx ? null : idx)
+                }
                 className="w-full flex items-center justify-between p-5 text-left hover:bg-white/[0.02] transition-colors"
                 aria-expanded={expandedEmail === idx}
                 aria-controls={`email-panel-${idx}`}
@@ -694,7 +720,9 @@ Requirements:
                               {copiedIdx === idx ? (
                                 <>
                                   <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                                  <span className="text-emerald-400">Copied</span>
+                                  <span className="text-emerald-400">
+                                    Copied
+                                  </span>
                                 </>
                               ) : (
                                 <>
@@ -721,12 +749,14 @@ Requirements:
                           )}
                           {email.qualityScore && (
                             <span className="text-[9px] uppercase tracking-wider text-emerald-400/70 font-mono flex items-center gap-1">
-                              <CheckCircle2 className="w-2.5 h-2.5" /> Quality: {email.qualityScore}/10
+                              <CheckCircle2 className="w-2.5 h-2.5" /> Quality:{" "}
+                              {email.qualityScore}/10
                             </span>
                           )}
                           {email.durationMs && (
                             <span className="text-[9px] uppercase tracking-wider text-neutral-500 font-mono flex items-center gap-1">
-                              <Clock className="w-2.5 h-2.5" /> {(email.durationMs / 1000).toFixed(1)}s
+                              <Clock className="w-2.5 h-2.5" />{" "}
+                              {(email.durationMs / 1000).toFixed(1)}s
                             </span>
                           )}
                         </motion.div>
@@ -780,19 +810,29 @@ Requirements:
                   <div className="bg-neutral-100 px-6 py-4 border-b border-neutral-200">
                     <div className="space-y-2">
                       <div className="flex items-baseline gap-2">
-                        <span className="text-xs font-bold text-neutral-500 uppercase w-12">From</span>
+                        <span className="text-xs font-bold text-neutral-500 uppercase w-12">
+                          From
+                        </span>
                         <span className="text-sm text-neutral-800">
-                          {brandName || "Your Brand"} &lt;hello@{brandName ? brandName.toLowerCase().replace(/\s+/g, "") : "yourbrand"}.com&gt;
+                          {brandName || "Your Brand"} &lt;hello@
+                          {brandName
+                            ? brandName.toLowerCase().replace(/\s+/g, "")
+                            : "yourbrand"}
+                          .com&gt;
                         </span>
                       </div>
                       <div className="flex items-baseline gap-2">
-                        <span className="text-xs font-bold text-neutral-500 uppercase w-12">To</span>
+                        <span className="text-xs font-bold text-neutral-500 uppercase w-12">
+                          To
+                        </span>
                         <span className="text-sm text-neutral-800">
                           {"{{first_name}}"} &lt;subscriber@email.com&gt;
                         </span>
                       </div>
                       <div className="flex items-baseline gap-2">
-                        <span className="text-xs font-bold text-neutral-500 uppercase w-12">Subj</span>
+                        <span className="text-xs font-bold text-neutral-500 uppercase w-12">
+                          Subj
+                        </span>
                         <span className="text-sm font-semibold text-neutral-900">
                           {emails[previewIdx].subject || "(No subject)"}
                         </span>
@@ -897,10 +937,8 @@ Requirements:
                   const scored = emails.filter((e) => e.qualityScore);
                   if (scored.length === 0) return "--";
                   const avg =
-                    scored.reduce(
-                      (sum, e) => sum + (e.qualityScore ?? 0),
-                      0
-                    ) / scored.length;
+                    scored.reduce((sum, e) => sum + (e.qualityScore ?? 0), 0) /
+                    scored.length;
                   return avg.toFixed(1);
                 })()}
                 <span className="text-neutral-500 text-sm">/10</span>
@@ -910,7 +948,9 @@ Requirements:
               <p className="text-[9px] uppercase tracking-widest text-neutral-500 mb-1">
                 Sequence Type
               </p>
-              <p className={`text-lg font-light font-mono uppercase tracking-wider ${activeConfig.color}`}>
+              <p
+                className={`text-lg font-light font-mono uppercase tracking-wider ${activeConfig.color}`}
+              >
                 {activeConfig.label}
               </p>
             </div>
@@ -919,20 +959,18 @@ Requirements:
       )}
 
       {/* ─── Empty State ─── */}
-      {!emails.some((e) => e.isGenerated) &&
-        !anyGenerating &&
-        !globalError && (
-          <div className="text-center py-16 rounded-2xl border border-white/5 bg-white/[0.01]">
-            <Mail className="w-8 h-8 text-neutral-500 mx-auto mb-3" />
-            <p className="text-sm text-neutral-300">
-              Fill in your brand details and generate your email sequence
-            </p>
-            <p className="text-xs text-neutral-500 mt-1">
-              Each email is written by AI using the{" "}
-              {activeConfig.label.toLowerCase()} sequence framework
-            </p>
-          </div>
-        )}
+      {!emails.some((e) => e.isGenerated) && !anyGenerating && !globalError && (
+        <div className="text-center py-16 rounded-2xl border border-white/5 bg-white/[0.01]">
+          <Mail className="w-8 h-8 text-neutral-500 mx-auto mb-3" />
+          <p className="text-sm text-neutral-300">
+            Fill in your brand details and generate your email sequence
+          </p>
+          <p className="text-xs text-neutral-500 mt-1">
+            Each email is written by AI using the{" "}
+            {activeConfig.label.toLowerCase()} sequence framework
+          </p>
+        </div>
+      )}
     </div>
   );
 }

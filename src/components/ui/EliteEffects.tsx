@@ -2,31 +2,8 @@
 
 import React, { useRef, useEffect, useState, useCallback } from "react";
 import { motion, useMotionValue, useSpring } from "framer-motion";
-
-/* ── Shared: detect mobile + reduced motion ── */
-
-function useIsMobile() {
-  const [mobile, setMobile] = useState(false);
-  useEffect(() => {
-    const check = () => setMobile(window.innerWidth < 768 || "ontouchstart" in window);
-    check();
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
-  }, []);
-  return mobile;
-}
-
-function usePrefersReducedMotion() {
-  const [reduced, setReduced] = useState(false);
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReduced(mq.matches);
-    const handler = (e: MediaQueryListEvent) => setReduced(e.matches);
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, []);
-  return reduced;
-}
+import { useIsMobile } from "@/lib/hooks/use-is-mobile";
+import { useReducedMotion as usePrefersReducedMotion } from "@/lib/hooks/use-reduced-motion";
 
 /**
  * FloatingParticles — Antigravity-level particle system.
@@ -58,11 +35,21 @@ export function FloatingParticles({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const mouseRef = useRef({ x: -999, y: -999 });
   const scrollSpeedRef = useRef(0);
-  const particlesRef = useRef<Array<{
-    x: number; y: number; vx: number; vy: number;
-    size: number; opacity: number; drift: number; colorIdx: number;
-    layer: number; glowSize: number; pulsePhase: number;
-  }>>([]);
+  const particlesRef = useRef<
+    Array<{
+      x: number;
+      y: number;
+      vx: number;
+      vy: number;
+      size: number;
+      opacity: number;
+      drift: number;
+      colorIdx: number;
+      layer: number;
+      glowSize: number;
+      pulsePhase: number;
+    }>
+  >([]);
   const isMobile = useIsMobile();
   const reducedMotion = usePrefersReducedMotion();
 
@@ -96,7 +83,7 @@ export function FloatingParticles({
     const h = canvas.offsetHeight;
     const palette = colors || [color];
 
-    const rgbPalette = palette.map(c => {
+    const rgbPalette = palette.map((c) => {
       const m = c.match(/(\d+),\s*(\d+),\s*(\d+)/);
       return m ? { r: +m[1], g: +m[2], b: +m[3] } : { r: 16, g: 185, b: 129 };
     });
@@ -107,13 +94,16 @@ export function FloatingParticles({
     const orbCount = Math.max(6, Math.floor(count * 0.1));
     for (let i = 0; i < orbCount; i++) {
       particles.push({
-        x: Math.random() * w, y: Math.random() * h,
-        vx: (Math.random() - 0.5) * 0.2, vy: (Math.random() - 0.5) * 0.2,
+        x: Math.random() * w,
+        y: Math.random() * h,
+        vx: (Math.random() - 0.5) * 0.2,
+        vy: (Math.random() - 0.5) * 0.2,
         size: Math.random() * 20 + 12,
         opacity: Math.random() * 0.2 + 0.1,
         drift: Math.random() * Math.PI * 2,
         colorIdx: Math.floor(Math.random() * palette.length),
-        layer: 1, glowSize: Math.random() * 80 + 50,
+        layer: 1,
+        glowSize: Math.random() * 80 + 50,
         pulsePhase: Math.random() * Math.PI * 2,
       });
     }
@@ -122,13 +112,16 @@ export function FloatingParticles({
     const medCount = Math.floor(count * 0.25);
     for (let i = 0; i < medCount; i++) {
       particles.push({
-        x: Math.random() * w, y: Math.random() * h,
-        vx: (Math.random() - 0.5) * 0.4, vy: (Math.random() - 0.5) * 0.4,
+        x: Math.random() * w,
+        y: Math.random() * h,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4,
         size: Math.random() * 6 + 3,
         opacity: Math.random() * 0.5 + 0.2,
         drift: Math.random() * Math.PI * 2,
         colorIdx: Math.floor(Math.random() * palette.length),
-        layer: 2, glowSize: Math.random() * 25 + 12,
+        layer: 2,
+        glowSize: Math.random() * 25 + 12,
         pulsePhase: Math.random() * Math.PI * 2,
       });
     }
@@ -137,13 +130,16 @@ export function FloatingParticles({
     const starCount = count - orbCount - medCount;
     for (let i = 0; i < starCount; i++) {
       particles.push({
-        x: Math.random() * w, y: Math.random() * h,
-        vx: (Math.random() - 0.5) * 0.6, vy: (Math.random() - 0.5) * 0.6,
+        x: Math.random() * w,
+        y: Math.random() * h,
+        vx: (Math.random() - 0.5) * 0.6,
+        vy: (Math.random() - 0.5) * 0.6,
         size: Math.random() * maxSize + 0.8,
         opacity: Math.random() * 0.7 + 0.3,
         drift: Math.random() * Math.PI * 2,
         colorIdx: Math.floor(Math.random() * palette.length),
-        layer: 3, glowSize: 0,
+        layer: 3,
+        glowSize: 0,
         pulsePhase: Math.random() * Math.PI * 2,
       });
     }
@@ -154,7 +150,9 @@ export function FloatingParticles({
       const rect = canvas.getBoundingClientRect();
       mouseRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
     };
-    const handleMouseLeave = () => { mouseRef.current = { x: -999, y: -999 }; };
+    const handleMouseLeave = () => {
+      mouseRef.current = { x: -999, y: -999 };
+    };
     canvas.addEventListener("mousemove", handleMouse);
     canvas.addEventListener("mouseleave", handleMouseLeave);
 
@@ -190,7 +188,8 @@ export function FloatingParticles({
       const all = particlesRef.current;
 
       for (const p of all) {
-        const driftSpeed = (p.layer === 1 ? 0.004 : p.layer === 2 ? 0.01 : 0.018) * scrollBoost;
+        const driftSpeed =
+          (p.layer === 1 ? 0.004 : p.layer === 2 ? 0.01 : 0.018) * scrollBoost;
         p.drift += driftSpeed;
         p.vx += Math.sin(p.drift) * (driftSpeed * 0.6);
         p.vy += Math.cos(p.drift * 0.7) * (driftSpeed * 0.4);
@@ -221,9 +220,13 @@ export function FloatingParticles({
         p.vx *= damp;
         p.vy *= damp;
 
-        const maxSpd = (p.layer === 1 ? 1 : p.layer === 2 ? 2 : 3) * scrollBoost;
+        const maxSpd =
+          (p.layer === 1 ? 1 : p.layer === 2 ? 2 : 3) * scrollBoost;
         const spd = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
-        if (spd > maxSpd) { p.vx = (p.vx / spd) * maxSpd; p.vy = (p.vy / spd) * maxSpd; }
+        if (spd > maxSpd) {
+          p.vx = (p.vx / spd) * maxSpd;
+          p.vy = (p.vy / spd) * maxSpd;
+        }
 
         p.x += p.vx;
         p.y += p.vy;
@@ -234,25 +237,55 @@ export function FloatingParticles({
         if (p.y < -pad) p.y = ch + pad;
         if (p.y > ch + pad) p.y = -pad;
 
-        const pulse = p.layer <= 2 ? Math.sin(time * 0.6 + p.pulsePhase) * 0.04 : 0;
+        const pulse =
+          p.layer <= 2 ? Math.sin(time * 0.6 + p.pulsePhase) * 0.04 : 0;
         const op = Math.max(0.03, p.opacity + pulse);
         const rgb = rgbPalette[p.colorIdx] || rgbPalette[0];
 
         if (p.layer === 1) {
           // Large orbs: multi-stop radial glow with bright core
-          const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.glowSize);
-          grad.addColorStop(0, `rgba(${Math.min(255, rgb.r + 100)}, ${Math.min(255, rgb.g + 100)}, ${Math.min(255, rgb.b + 100)}, ${op * 0.8})`);
-          grad.addColorStop(0.15, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${op * 0.5})`);
-          grad.addColorStop(0.5, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${op * 0.12})`);
+          const grad = ctx.createRadialGradient(
+            p.x,
+            p.y,
+            0,
+            p.x,
+            p.y,
+            p.glowSize,
+          );
+          grad.addColorStop(
+            0,
+            `rgba(${Math.min(255, rgb.r + 100)}, ${Math.min(255, rgb.g + 100)}, ${Math.min(255, rgb.b + 100)}, ${op * 0.8})`,
+          );
+          grad.addColorStop(
+            0.15,
+            `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${op * 0.5})`,
+          );
+          grad.addColorStop(
+            0.5,
+            `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${op * 0.12})`,
+          );
           grad.addColorStop(1, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0)`);
           ctx.beginPath();
           ctx.arc(p.x, p.y, p.glowSize, 0, Math.PI * 2);
           ctx.fillStyle = grad;
           ctx.fill();
         } else if (p.layer === 2) {
-          const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.glowSize);
-          grad.addColorStop(0, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${op * 0.7})`);
-          grad.addColorStop(0.4, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${op * 0.2})`);
+          const grad = ctx.createRadialGradient(
+            p.x,
+            p.y,
+            0,
+            p.x,
+            p.y,
+            p.glowSize,
+          );
+          grad.addColorStop(
+            0,
+            `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${op * 0.7})`,
+          );
+          grad.addColorStop(
+            0.4,
+            `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${op * 0.2})`,
+          );
           grad.addColorStop(1, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0)`);
           ctx.beginPath();
           ctx.arc(p.x, p.y, p.glowSize, 0, Math.PI * 2);
@@ -260,9 +293,22 @@ export function FloatingParticles({
           ctx.fill();
         } else {
           // Stars: tiny bright dots with micro-glow
-          const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 3);
-          grad.addColorStop(0, `rgba(${Math.min(255, rgb.r + 60)}, ${Math.min(255, rgb.g + 60)}, ${Math.min(255, rgb.b + 60)}, ${op})`);
-          grad.addColorStop(0.5, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${op * 0.2})`);
+          const grad = ctx.createRadialGradient(
+            p.x,
+            p.y,
+            0,
+            p.x,
+            p.y,
+            p.size * 3,
+          );
+          grad.addColorStop(
+            0,
+            `rgba(${Math.min(255, rgb.r + 60)}, ${Math.min(255, rgb.g + 60)}, ${Math.min(255, rgb.b + 60)}, ${op})`,
+          );
+          grad.addColorStop(
+            0.5,
+            `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${op * 0.2})`,
+          );
           grad.addColorStop(1, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0)`);
           ctx.beginPath();
           ctx.arc(p.x, p.y, p.size * 3, 0, Math.PI * 2);
@@ -276,7 +322,8 @@ export function FloatingParticles({
         if (all[i].layer === 3) continue;
         for (let j = i + 1; j < all.length; j++) {
           if (all[j].layer === 3) continue;
-          const a = all[i], b = all[j];
+          const a = all[i],
+            b = all[j];
           const d = Math.hypot(a.x - b.x, a.y - b.y);
           if (d < 220) {
             const alpha = 0.04 * (1 - d / 220);
@@ -293,7 +340,8 @@ export function FloatingParticles({
 
       // Mouse light cone
       if (mouseRef.current.x > 0) {
-        const mx = mouseRef.current.x, my = mouseRef.current.y;
+        const mx = mouseRef.current.x,
+          my = mouseRef.current.y;
         const mg = ctx.createRadialGradient(mx, my, 0, mx, my, 200);
         mg.addColorStop(0, "rgba(16, 185, 129, 0.06)");
         mg.addColorStop(0.3, "rgba(6, 182, 212, 0.03)");
@@ -307,7 +355,6 @@ export function FloatingParticles({
 
       // Reset composite for next frame
       ctx.globalCompositeOperation = "source-over";
-
     };
     frame = requestAnimationFrame(animate);
 
@@ -331,7 +378,7 @@ export function FloatingParticles({
       canvas.removeEventListener("mousemove", handleMouse);
       canvas.removeEventListener("mouseleave", handleMouseLeave);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [count, color, maxSize, isMobile, reducedMotion]);
 
   if (isMobile || reducedMotion) return null;
@@ -365,14 +412,17 @@ export function TiltCard({
   const smoothRotateY = useSpring(rotateY, { stiffness: 200, damping: 20 });
   const isMobile = useIsMobile();
 
-  const handleMouse = useCallback((e: React.MouseEvent) => {
-    if (isMobile || !ref.current) return;
-    const rect = ref.current.getBoundingClientRect();
-    const pctX = (e.clientX - rect.left - rect.width / 2) / (rect.width / 2);
-    const pctY = (e.clientY - rect.top - rect.height / 2) / (rect.height / 2);
-    rotateX.set(-pctY * tiltStrength);
-    rotateY.set(pctX * tiltStrength);
-  }, [rotateX, rotateY, tiltStrength, isMobile]);
+  const handleMouse = useCallback(
+    (e: React.MouseEvent) => {
+      if (isMobile || !ref.current) return;
+      const rect = ref.current.getBoundingClientRect();
+      const pctX = (e.clientX - rect.left - rect.width / 2) / (rect.width / 2);
+      const pctY = (e.clientY - rect.top - rect.height / 2) / (rect.height / 2);
+      rotateX.set(-pctY * tiltStrength);
+      rotateY.set(pctX * tiltStrength);
+    },
+    [rotateX, rotateY, tiltStrength, isMobile],
+  );
 
   const handleLeave = useCallback(() => {
     rotateX.set(0);
@@ -444,7 +494,8 @@ export function TextShimmer({
     <span
       className={`bg-clip-text text-transparent ${className}`}
       style={{
-        backgroundImage: "linear-gradient(90deg, #fff 0%, #10b981 25%, #06b6d4 50%, #8b5cf6 75%, #fff 100%)",
+        backgroundImage:
+          "linear-gradient(90deg, #fff 0%, #10b981 25%, #06b6d4 50%, #8b5cf6 75%, #fff 100%)",
         backgroundSize: "200% auto",
         animation: "shimmer 4s ease-in-out infinite",
       }}
@@ -503,14 +554,13 @@ export function GradientBorder({
       <div
         className="absolute -inset-[1px] rounded-[inherit] opacity-0 group-hover:opacity-100 transition-opacity duration-500"
         style={{
-          background: "conic-gradient(from 0deg, transparent, rgba(16,185,129,0.3), transparent, rgba(6,182,212,0.3), transparent)",
+          background:
+            "conic-gradient(from 0deg, transparent, rgba(16,185,129,0.3), transparent, rgba(6,182,212,0.3), transparent)",
           animation: "spin 4s linear infinite",
           filter: "blur(1px)",
         }}
       />
-      <div className="relative rounded-[inherit] bg-[#0A0A0A]">
-        {children}
-      </div>
+      <div className="relative rounded-[inherit] bg-[#0A0A0A]">{children}</div>
     </div>
   );
 }
