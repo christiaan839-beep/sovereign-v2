@@ -51,6 +51,7 @@ export const AGENT_REGISTRY: Record<string, () => Promise<RouteModule>> = {
     import("@/app/api/_agents/competitive-radar/route"),
   competitor: () => import("@/app/api/_agents/competitor/route"),
   "competitor-scan": () => import("@/app/api/_agents/competitor-scan/route"),
+  "competitor-rip": () => import("@/app/api/_agents/competitor-rip/route"),
   "computer-use": () => import("@/app/api/_agents/computer-use/route"),
   content: () => import("@/app/api/_agents/content/route"),
   "content-safety": () => import("@/app/api/_agents/content-safety/route"),

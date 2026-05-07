@@ -1,9 +1,14 @@
-import { MetadataRoute } from 'next';
+import { MetadataRoute } from "next";
+import { COMPETITORS, HAND_CODED_VS_SLUGS } from "@/lib/competitor-registry";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = "https://sovereignmatrix.agency";
 
-  const pages: Array<{ path: string; priority: number; changeFreq: "daily" | "weekly" | "monthly" }> = [
+  const pages: Array<{
+    path: string;
+    priority: number;
+    changeFreq: "daily" | "weekly" | "monthly";
+  }> = [
     // Core pages (highest priority)
     { path: "", priority: 1.0, changeFreq: "daily" },
     { path: "/pricing", priority: 0.9, changeFreq: "weekly" },
@@ -93,6 +98,17 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/login", priority: 0.4, changeFreq: "monthly" },
     { path: "/signup", priority: 0.5, changeFreq: "monthly" },
   ];
+
+  // Registry-driven /vs/<slug> pages — auto-included so adding a
+  // competitor to competitor-registry.ts also updates the sitemap.
+  for (const c of COMPETITORS) {
+    if (HAND_CODED_VS_SLUGS.has(c.slug)) continue; // already listed above
+    pages.push({
+      path: `/vs/${c.slug}`,
+      priority: 0.85,
+      changeFreq: "weekly",
+    });
+  }
 
   return pages.map(({ path, priority, changeFreq }) => ({
     url: `${baseUrl}${path}`,

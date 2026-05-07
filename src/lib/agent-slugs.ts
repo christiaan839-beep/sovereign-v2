@@ -47,6 +47,7 @@ export const AGENT_SLUGS: ReadonlyArray<string> = Object.freeze([
   "comms",
   "competitive-radar",
   "competitor",
+  "competitor-rip",
   "competitor-scan",
   "compliance-monitor",
   "computer-use",
