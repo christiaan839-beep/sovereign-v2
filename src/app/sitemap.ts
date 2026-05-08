@@ -26,6 +26,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.95,
       changeFreq: "weekly",
     },
+    {
+      path: "/playbooks/recruiting-sourcing-sprint",
+      priority: 0.95,
+      changeFreq: "weekly",
+    },
     { path: "/playground", priority: 0.8, changeFreq: "monthly" },
     { path: "/developer", priority: 0.8, changeFreq: "weekly" },
     { path: "/whitepaper", priority: 0.8, changeFreq: "monthly" },

@@ -140,6 +140,100 @@ export const PLAYBOOKS: Playbook[] = [
     guaranteeCheck: { minWordCount: 1500, minScore: 0.7 },
   },
   {
+    id: "recruiting-sourcing-sprint",
+    name: "Recruiting Sourcing Sprint",
+    tagline:
+      "One role brief → ICP + boolean strings + outreach pack + objection plays",
+    description:
+      "The weekly deliverable for boutique recruiting agencies. Drop a role brief and must-have skills — get a structured ICP, three platform-specific boolean searches, three outreach variants (LinkedIn DM, cold email, voicemail), five non-LinkedIn sourcing channels, and a 4-objection playbook.",
+    icon: "Users",
+    color: "cyan",
+    category: "growth",
+    fields: [
+      {
+        key: "roleTitle",
+        label: "Role title",
+        type: "text",
+        placeholder: "Senior Backend Engineer",
+        required: true,
+      },
+      {
+        key: "companyName",
+        label: "Hiring company",
+        type: "text",
+        placeholder: "Acme Corp",
+        required: true,
+      },
+      {
+        key: "companyDescription",
+        label: "What does the company do?",
+        type: "textarea",
+        placeholder:
+          "Two sentences — what they build, who they serve, one differentiator that matters to candidates.",
+        required: true,
+      },
+      {
+        key: "mustHaveSkills",
+        label: "Must-have skills (comma-separated)",
+        type: "text",
+        placeholder: "Go, distributed systems, Postgres",
+        required: true,
+      },
+      {
+        key: "seniorityLevel",
+        label: "Seniority",
+        type: "select",
+        placeholder: "Pick one",
+        required: true,
+        options: ["junior", "mid", "senior", "staff", "principal"],
+      },
+      {
+        key: "urgency",
+        label: "Sourcing posture",
+        type: "select",
+        placeholder: "Pick one",
+        required: true,
+        options: ["fast-hire", "perfect-fit", "passive-talent"],
+      },
+      {
+        key: "locationPreferences",
+        label: "Location (optional)",
+        type: "text",
+        placeholder: "Remote (US) or London hybrid",
+        required: false,
+      },
+      {
+        key: "compensationRange",
+        label: "Comp range (optional)",
+        type: "text",
+        placeholder: "$140K–$180K + equity",
+        required: false,
+      },
+    ],
+    steps: [
+      {
+        agent: "sourcing-sprint",
+        params: {
+          roleTitle: "{{roleTitle}}",
+          companyName: "{{companyName}}",
+          companyDescription: "{{companyDescription}}",
+          mustHaveSkills: "{{mustHaveSkills}}",
+          seniorityLevel: "{{seniorityLevel}}",
+          urgency: "{{urgency}}",
+          locationPreferences: "{{locationPreferences}}",
+          compensationRange: "{{compensationRange}}",
+        },
+        reason:
+          "Fan out to ICP + booleans + outreach + channels + objections in parallel; assemble the sprint.",
+      },
+    ],
+    estimatedTime: "60–90 sec",
+    agentCount: 1,
+    guarantee:
+      "Structured ICP + 3 boolean strings + 3 outreach drafts + 5 channels + 4 objection plays, or re-run free.",
+    guaranteeCheck: { minResultCount: 5, minScore: 0.7 },
+  },
+  {
     id: "lead-blitz",
     name: "Lead Blitz",
     tagline: "50 qualified leads + outreach in minutes",

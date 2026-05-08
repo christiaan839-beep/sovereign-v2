@@ -34,6 +34,7 @@ const KNOWN_AGENTS = [
   "contract-analyzer",
   "ad-report",
   "agency-packet",
+  "sourcing-sprint",
 ];
 
 // ── PLAYBOOKS Array Validation ──
