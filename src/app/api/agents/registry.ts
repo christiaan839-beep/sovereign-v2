@@ -23,6 +23,7 @@ export const AGENT_REGISTRY: Record<string, () => Promise<RouteModule>> = {
   "agentic-planner": () => import("@/app/api/_agents/agentic-planner/route"),
   "agency-packet": () => import("@/app/api/_agents/agency-packet/route"),
   "ai-gateway": () => import("@/app/api/_agents/ai-gateway/route"),
+  "growth-pulse": () => import("@/app/api/_agents/growth-pulse/route"),
   analytics: () => import("@/app/api/_agents/analytics/route"),
   asr: () => import("@/app/api/_agents/asr/route"),
   audit: () => import("@/app/api/_agents/audit/route"),
