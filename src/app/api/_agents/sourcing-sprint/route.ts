@@ -30,6 +30,7 @@
 import { createAgentRoute } from "@/lib/agent-factory";
 import { ai } from "@/lib/ai";
 import { createLogger } from "@/lib/logger";
+import { savePacket } from "@/lib/packet-store";
 import { z } from "zod";
 
 const log = createLogger("sourcing-sprint");
@@ -377,9 +378,22 @@ export const POST = createAgentRoute({
   name: "sourcing-sprint",
   schema: sourcingSprintSchema,
   useCritic: false,
-  handler: async ({ input }) => {
+  handler: async ({ input, userId }) => {
     const parsed = sourcingSprintSchema.parse(input);
     const sprint = await buildSourcingSprint(parsed);
-    return sprint as unknown as Record<string, unknown>;
+
+    const packetId = await savePacket({
+      userId,
+      kind: "recruiting-sourcing-sprint",
+      input: parsed,
+      output: sprint as unknown as Record<string, unknown>,
+      errorCount: sprint.errors.length,
+      durationMs: sprint.durationMs,
+    });
+
+    return {
+      ...(sprint as unknown as Record<string, unknown>),
+      packetId,
+    };
   },
 });

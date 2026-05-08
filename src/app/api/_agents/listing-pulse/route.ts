@@ -26,6 +26,7 @@
 import { createAgentRoute } from "@/lib/agent-factory";
 import { ai } from "@/lib/ai";
 import { createLogger } from "@/lib/logger";
+import { savePacket } from "@/lib/packet-store";
 import { z } from "zod";
 
 const log = createLogger("realestate-pulse");
@@ -390,9 +391,22 @@ export const POST = createAgentRoute({
   name: "listing-pulse",
   schema: listingPulseSchema,
   useCritic: false,
-  handler: async ({ input }) => {
+  handler: async ({ input, userId }) => {
     const parsed = listingPulseSchema.parse(input);
     const pulse = await buildListingPulse(parsed);
-    return pulse as unknown as Record<string, unknown>;
+
+    const packetId = await savePacket({
+      userId,
+      kind: "listing-pulse",
+      input: parsed,
+      output: pulse as unknown as Record<string, unknown>,
+      errorCount: pulse.errors.length,
+      durationMs: pulse.durationMs,
+    });
+
+    return {
+      ...(pulse as unknown as Record<string, unknown>),
+      packetId,
+    };
   },
 });

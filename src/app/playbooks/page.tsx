@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, ArrowLeft, Sparkles } from "lucide-react";
+import { JsonLd, breadcrumbSchema } from "@/components/seo/JsonLd";
 
 /**
  * /playbooks — public index of every cornerstone deliverable.
@@ -124,8 +125,29 @@ const TONE_CLASSES: Record<VerticalPlaybook["badgeTone"], string> = {
 };
 
 export default function PlaybooksIndexPage() {
+  const itemListSchema = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: "Sovereign Matrix vertical playbooks",
+    description:
+      "Cornerstone weekly deliverables for B2B agencies, recruiting agencies, real estate agents, and African SMBs.",
+    itemListElement: VERTICALS.map((p, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      url: `https://sovereignmatrix.agency${p.href}`,
+      name: p.tagline,
+      description: p.description,
+    })),
+  };
+  const breadcrumbs = breadcrumbSchema([
+    { name: "Sovereign Matrix", url: "https://sovereignmatrix.agency/" },
+    { name: "Playbooks", url: "https://sovereignmatrix.agency/playbooks" },
+  ]);
+
   return (
     <main className="min-h-screen bg-[#030303] text-white">
+      <JsonLd data={itemListSchema} />
+      <JsonLd data={breadcrumbs} />
       <nav className="px-6 md:px-10 h-16 flex items-center justify-between max-w-6xl mx-auto">
         <Link href="/" className="text-sm font-semibold text-white">
           Sovereign Matrix

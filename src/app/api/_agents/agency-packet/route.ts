@@ -33,6 +33,7 @@
 import { createAgentRoute } from "@/lib/agent-factory";
 import { ai, research_ai } from "@/lib/ai";
 import { createLogger } from "@/lib/logger";
+import { savePacket } from "@/lib/packet-store";
 import { z } from "zod";
 
 const log = createLogger("agency-packet");
@@ -434,9 +435,23 @@ export const POST = createAgentRoute({
   // The packet IS the deliverable — no critic gate (would mangle JSON
   // sub-assets and double the LLM bill).
   useCritic: false,
-  handler: async ({ input }) => {
+  handler: async ({ input, userId }) => {
     const parsed = agencyPacketSchema.parse(input);
     const packet = await buildAgencyPacket(parsed);
-    return packet as unknown as Record<string, unknown>;
+
+    // Best-effort persistence — never blocks the response.
+    const packetId = await savePacket({
+      userId,
+      kind: "agency-content-packet",
+      input: parsed,
+      output: packet as unknown as Record<string, unknown>,
+      errorCount: packet.errors.length,
+      durationMs: packet.durationMs,
+    });
+
+    return {
+      ...(packet as unknown as Record<string, unknown>),
+      packetId,
+    };
   },
 });
