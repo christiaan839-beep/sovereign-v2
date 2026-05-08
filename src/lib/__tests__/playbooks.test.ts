@@ -33,6 +33,7 @@ const KNOWN_AGENTS = [
   "client-report",
   "contract-analyzer",
   "ad-report",
+  "agency-packet",
 ];
 
 // ── PLAYBOOKS Array Validation ──
@@ -71,7 +72,7 @@ describe("PLAYBOOKS array validation", () => {
         expect(typeof playbook.color).toBe("string");
 
         expect(["growth", "content", "intelligence", "operations"]).toContain(
-          playbook.category
+          playbook.category,
         );
 
         expect(Array.isArray(playbook.fields)).toBe(true);
@@ -129,7 +130,7 @@ describe("PLAYBOOKS array validation", () => {
           }
         }
       });
-    }
+    },
   );
 });
 
@@ -227,9 +228,7 @@ describe("resolvePlaybookSteps", () => {
 
   it("does not mutate the original playbook steps", () => {
     const playbook = getPlaybook("lead-blitz")!;
-    const originalParams = JSON.parse(
-      JSON.stringify(playbook.steps[0].params)
-    );
+    const originalParams = JSON.parse(JSON.stringify(playbook.steps[0].params));
 
     resolvePlaybookSteps(playbook, {
       niche: "Dentists",
@@ -325,7 +324,7 @@ describe("getPlaybooksByCategory", () => {
 
   it("returns empty array for an invalid category", () => {
     const results = getPlaybooksByCategory(
-      "nonexistent" as Playbook["category"]
+      "nonexistent" as Playbook["category"],
     );
     expect(results).toEqual([]);
   });
@@ -339,7 +338,7 @@ describe("getPlaybooksByCategory", () => {
     ];
     const total = categories.reduce(
       (sum, cat) => sum + getPlaybooksByCategory(cat).length,
-      0
+      0,
     );
     expect(total).toBe(PLAYBOOKS.length);
   });

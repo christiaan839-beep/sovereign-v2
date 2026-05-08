@@ -56,6 +56,90 @@ export interface Playbook {
 
 export const PLAYBOOKS: Playbook[] = [
   {
+    id: "agency-content-packet",
+    name: "Agency Content Packet",
+    tagline: "One client → blog + email sequence + ads + competitor intel",
+    description:
+      "The weekly deliverable for B2B agencies. Drop in one of your client's domains and brand voice — get a 1,500-word SEO post, a 3-email welcome sequence, three platform-specific ads, and a competitor weakness teaser. Whitelabel-ready.",
+    icon: "Briefcase",
+    color: "amber",
+    category: "content",
+    fields: [
+      {
+        key: "clientName",
+        label: "Client name",
+        type: "text",
+        placeholder: "e.g. Acme Corp",
+        required: true,
+      },
+      {
+        key: "clientDomain",
+        label: "Client domain",
+        type: "text",
+        placeholder: "acmecorp.com",
+        required: true,
+      },
+      {
+        key: "clientDescription",
+        label: "What does the client do?",
+        type: "textarea",
+        placeholder:
+          "Two sentences. Who they are, who they serve, and one differentiator.",
+        required: true,
+      },
+      {
+        key: "audience",
+        label: "Target audience",
+        type: "text",
+        placeholder: "Mid-market HR leaders at 100–500 person SaaS companies",
+        required: true,
+      },
+      {
+        key: "brandVoice",
+        label: "Brand voice",
+        type: "select",
+        placeholder: "Pick a voice",
+        required: true,
+        options: ["professional", "casual", "technical", "friendly", "bold"],
+      },
+      {
+        key: "primaryKeywords",
+        label: "Primary keywords (comma-separated)",
+        type: "text",
+        placeholder: "applicant tracking, hiring funnel, recruiting ops",
+        required: false,
+      },
+      {
+        key: "competitorUrl",
+        label: "Competitor URL (optional)",
+        type: "url",
+        placeholder: "https://competitor.com",
+        required: false,
+      },
+    ],
+    steps: [
+      {
+        agent: "agency-packet",
+        params: {
+          clientName: "{{clientName}}",
+          clientDomain: "{{clientDomain}}",
+          clientDescription: "{{clientDescription}}",
+          audience: "{{audience}}",
+          brandVoice: "{{brandVoice}}",
+          primaryKeywords: "{{primaryKeywords}}",
+          competitorUrl: "{{competitorUrl}}",
+        },
+        reason:
+          "Fan out to blog-gen + email-sequence + ads + competitor scan in parallel; assemble the packet.",
+      },
+    ],
+    estimatedTime: "60–90 sec",
+    agentCount: 1,
+    guarantee:
+      "1,500+ word SEO post + 3 emails + 3 ads + 1 competitor teaser, or re-run free.",
+    guaranteeCheck: { minWordCount: 1500, minScore: 0.7 },
+  },
+  {
     id: "lead-blitz",
     name: "Lead Blitz",
     tagline: "50 qualified leads + outreach in minutes",

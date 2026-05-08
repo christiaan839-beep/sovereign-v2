@@ -2,8 +2,15 @@
 
 import { motion } from "framer-motion";
 import {
-  ArrowRight, Search, FileText, BarChart3,
-  Mail, Eye, Zap, Settings, Rocket,
+  ArrowRight,
+  Search,
+  FileText,
+  BarChart3,
+  Mail,
+  Eye,
+  Zap,
+  Settings,
+  Rocket,
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -18,7 +25,11 @@ import {
 /* ─── Animation Variants ─── */
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] },
+  },
 } as const;
 
 /* ─── Timeline Data ─── */
@@ -111,8 +122,7 @@ function ROICalculator() {
   const savings = currentCost - sovereignCost;
   const savingsPercent = Math.round((savings / currentCost) * 100);
 
-  const formatUsd = (n: number) =>
-    "$" + n.toLocaleString("en-US");
+  const formatUsd = (n: number) => "$" + n.toLocaleString("en-US");
 
   return (
     <motion.div
@@ -273,239 +283,313 @@ export default function ForAgenciesPage() {
       </nav>
 
       <main id="main-content">
+        {/* ─── Hero ─── */}
+        <section className="relative pt-40 pb-24 px-6 overflow-hidden">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[700px] bg-emerald-500/[0.04] rounded-full blur-[250px]" />
+          <div className="absolute top-20 right-1/4 w-[400px] h-[400px] bg-purple-500/[0.03] rounded-full blur-[200px]" />
 
-      {/* ─── Hero ─── */}
-      <section className="relative pt-40 pb-24 px-6 overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[700px] bg-emerald-500/[0.04] rounded-full blur-[250px]" />
-        <div className="absolute top-20 right-1/4 w-[400px] h-[400px] bg-purple-500/[0.03] rounded-full blur-[200px]" />
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            className="relative z-10 max-w-5xl mx-auto text-center"
+          >
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold uppercase tracking-[0.2em] mb-8">
+              <Zap className="w-3 h-3" /> For B2B agencies
+            </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="relative z-10 max-w-5xl mx-auto text-center"
-        >
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold uppercase tracking-[0.2em] mb-8">
-            <Zap className="w-3 h-3" /> For Agencies
-          </div>
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white leading-[1.1] mb-6 font-serif">
+              One client →{" "}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400">
+                a full week of deliverables
+              </span>{" "}
+              in 90 seconds
+            </h1>
 
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white leading-[1.1] mb-6 font-serif">
-            Replace 6 employees
-            <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400">
-              with AI agents
-            </span>
-          </h1>
+            <p className="text-lg md:text-xl text-neutral-400 max-w-3xl mx-auto mb-12 leading-relaxed">
+              Drop a client&apos;s domain. Get a 1,500-word SEO post, a 3-email
+              welcome sequence, three platform-specific ads, and a competitor
+              weakness teaser. Whitelabel-ready, recurring weekly. Replaces the
+              $2K/mo stack of single-purpose AI tools.
+            </p>
 
-          <p className="text-lg md:text-xl text-neutral-400 max-w-3xl mx-auto mb-12 leading-relaxed">
-            Lead gen, content, SEO, outreach, design, and reporting — running 24/7.
-          </p>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <MagneticButton>
-              <Link
-                href="/signup"
-                className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-emerald-500 text-black text-sm font-bold uppercase tracking-widest hover:bg-emerald-400 transition-all shadow-[0_0_30px_rgba(16,185,129,0.3)]"
-              >
-                Start your free trial <ArrowRight className="w-4 h-4" />
-              </Link>
-            </MagneticButton>
-            <Link
-              href="#calculator"
-              className="inline-flex items-center gap-2 px-8 py-4 rounded-full border border-white/10 text-neutral-300 text-sm font-bold uppercase tracking-widest hover:border-white/20 hover:text-white transition-all"
-            >
-              See the math
-            </Link>
-          </div>
-        </motion.div>
-      </section>
-
-      <GlowDivider />
-
-      {/* ─── ROI Calculator ─── */}
-      <section id="calculator" className="py-24 px-6">
-        <div className="max-w-5xl mx-auto">
-          <RevealText as="h2" className="text-3xl md:text-4xl font-bold text-center mb-6 font-serif">
-            The Math Speaks for Itself
-          </RevealText>
-          <RevealText as="p" className="text-neutral-500 text-center max-w-2xl mx-auto mb-16" delay={0.1}>
-            Drag the sliders. See what you save.
-          </RevealText>
-
-          <ROICalculator />
-        </div>
-      </section>
-
-      <GlowDivider />
-
-      {/* ─── Day-in-the-Life Timeline ─── */}
-      <section className="py-24 px-6">
-        <div className="max-w-4xl mx-auto">
-          <RevealText as="h2" className="text-3xl md:text-4xl font-bold text-center mb-6 font-serif">
-            A Day in the Life of Your AI Team
-          </RevealText>
-          <RevealText as="p" className="text-neutral-500 text-center max-w-2xl mx-auto mb-16" delay={0.1}>
-            While you sleep, pitch, or take calls — your agents are working.
-          </RevealText>
-
-          <div className="relative">
-            {/* Vertical line */}
-            <div className="absolute left-6 md:left-8 top-0 bottom-0 w-px bg-gradient-to-b from-emerald-500/30 via-white/10 to-transparent" />
-
-            <StaggerChildren className="space-y-6">
-              {TIMELINE.map((item) => (
-                <motion.div
-                  key={item.time}
-                  variants={fadeUp}
-                  className="relative flex gap-6 md:gap-8 group"
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <MagneticButton>
+                <Link
+                  href="/playbooks/agency-content-packet"
+                  className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-emerald-500 text-black text-sm font-bold uppercase tracking-widest hover:bg-emerald-400 transition-all shadow-[0_0_30px_rgba(16,185,129,0.3)]"
                 >
-                  {/* Time dot */}
-                  <div className="relative z-10 flex-shrink-0 w-12 md:w-16 flex flex-col items-center">
-                    <div className={`w-3 h-3 rounded-full ${item.bg} border ${item.border} shadow-[0_0_12px_rgba(16,185,129,0.2)] mt-1.5`} />
-                  </div>
+                  Try the agency packet <ArrowRight className="w-4 h-4" />
+                </Link>
+              </MagneticButton>
+              <Link
+                href="#calculator"
+                className="inline-flex items-center gap-2 px-8 py-4 rounded-full border border-white/10 text-neutral-300 text-sm font-bold uppercase tracking-widest hover:border-white/20 hover:text-white transition-all"
+              >
+                See the math
+              </Link>
+            </div>
+          </motion.div>
+        </section>
 
-                  {/* Card */}
-                  <div className="flex-1 p-6 rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl group-hover:border-emerald-500/20 transition-all duration-500 mb-2">
-                    <div className="flex items-start gap-4">
-                      <div className={`w-10 h-10 rounded-xl ${item.bg} border ${item.border} flex items-center justify-center flex-shrink-0`}>
-                        <item.icon className={`w-5 h-5 ${item.color}`} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-3 mb-1">
-                          <span className={`text-xs font-mono font-bold ${item.color}`}>
-                            {item.time}
-                          </span>
+        <GlowDivider />
+
+        {/* ─── ROI Calculator ─── */}
+        <section id="calculator" className="py-24 px-6">
+          <div className="max-w-5xl mx-auto">
+            <RevealText
+              as="h2"
+              className="text-3xl md:text-4xl font-bold text-center mb-6 font-serif"
+            >
+              The Math Speaks for Itself
+            </RevealText>
+            <RevealText
+              as="p"
+              className="text-neutral-500 text-center max-w-2xl mx-auto mb-16"
+              delay={0.1}
+            >
+              Drag the sliders. See what you save.
+            </RevealText>
+
+            <ROICalculator />
+          </div>
+        </section>
+
+        <GlowDivider />
+
+        {/* ─── Day-in-the-Life Timeline ─── */}
+        <section className="py-24 px-6">
+          <div className="max-w-4xl mx-auto">
+            <RevealText
+              as="h2"
+              className="text-3xl md:text-4xl font-bold text-center mb-6 font-serif"
+            >
+              A Day in the Life of Your AI Team
+            </RevealText>
+            <RevealText
+              as="p"
+              className="text-neutral-500 text-center max-w-2xl mx-auto mb-16"
+              delay={0.1}
+            >
+              While you sleep, pitch, or take calls — your agents are working.
+            </RevealText>
+
+            <div className="relative">
+              {/* Vertical line */}
+              <div className="absolute left-6 md:left-8 top-0 bottom-0 w-px bg-gradient-to-b from-emerald-500/30 via-white/10 to-transparent" />
+
+              <StaggerChildren className="space-y-6">
+                {TIMELINE.map((item) => (
+                  <motion.div
+                    key={item.time}
+                    variants={fadeUp}
+                    className="relative flex gap-6 md:gap-8 group"
+                  >
+                    {/* Time dot */}
+                    <div className="relative z-10 flex-shrink-0 w-12 md:w-16 flex flex-col items-center">
+                      <div
+                        className={`w-3 h-3 rounded-full ${item.bg} border ${item.border} shadow-[0_0_12px_rgba(16,185,129,0.2)] mt-1.5`}
+                      />
+                    </div>
+
+                    {/* Card */}
+                    <div className="flex-1 p-6 rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl group-hover:border-emerald-500/20 transition-all duration-500 mb-2">
+                      <div className="flex items-start gap-4">
+                        <div
+                          className={`w-10 h-10 rounded-xl ${item.bg} border ${item.border} flex items-center justify-center flex-shrink-0`}
+                        >
+                          <item.icon className={`w-5 h-5 ${item.color}`} />
                         </div>
-                        <h3 className="text-sm md:text-base font-semibold text-white mb-1">
-                          {item.title}
-                        </h3>
-                        <p className="text-xs text-neutral-400">
-                          {item.result}
-                        </p>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-3 mb-1">
+                            <span
+                              className={`text-xs font-mono font-bold ${item.color}`}
+                            >
+                              {item.time}
+                            </span>
+                          </div>
+                          <h3 className="text-sm md:text-base font-semibold text-white mb-1">
+                            {item.title}
+                          </h3>
+                          <p className="text-xs text-neutral-400">
+                            {item.result}
+                          </p>
+                        </div>
                       </div>
                     </div>
+                  </motion.div>
+                ))}
+              </StaggerChildren>
+            </div>
+          </div>
+        </section>
+
+        <GlowDivider />
+
+        {/* ─── 3-Step Process ─── */}
+        <section className="py-24 px-6">
+          <div className="max-w-5xl mx-auto">
+            <RevealText
+              as="h2"
+              className="text-3xl md:text-4xl font-bold text-center mb-6 font-serif"
+            >
+              Live in 3 Steps
+            </RevealText>
+            <RevealText
+              as="p"
+              className="text-neutral-500 text-center max-w-2xl mx-auto mb-16"
+              delay={0.1}
+            >
+              No code. No training. No onboarding calls required.
+            </RevealText>
+
+            <StaggerChildren className="grid md:grid-cols-3 gap-6">
+              {STEPS.map((s) => (
+                <motion.div
+                  key={s.step}
+                  variants={fadeUp}
+                  className="group relative p-8 rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl hover:border-emerald-500/20 transition-all duration-500 overflow-hidden text-center"
+                >
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 bg-gradient-to-br from-emerald-500/[0.04] to-transparent" />
+
+                  <div className="relative z-10">
+                    <span className="text-4xl font-bold text-white/[0.06] font-mono block mb-4">
+                      {s.step}
+                    </span>
+                    <div className="w-12 h-12 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center mx-auto mb-6 group-hover:border-emerald-500/20 transition-colors">
+                      <s.icon className="w-6 h-6 text-neutral-400 group-hover:text-emerald-400 transition-colors" />
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-3">
+                      {s.title}
+                    </h3>
+                    <p className="text-sm text-neutral-400 leading-relaxed">
+                      {s.desc}
+                    </p>
                   </div>
                 </motion.div>
               ))}
             </StaggerChildren>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <GlowDivider />
+        <GlowDivider />
 
-      {/* ─── 3-Step Process ─── */}
-      <section className="py-24 px-6">
-        <div className="max-w-5xl mx-auto">
-          <RevealText as="h2" className="text-3xl md:text-4xl font-bold text-center mb-6 font-serif">
-            Live in 3 Steps
-          </RevealText>
-          <RevealText as="p" className="text-neutral-500 text-center max-w-2xl mx-auto mb-16" delay={0.1}>
-            No code. No training. No onboarding calls required.
-          </RevealText>
-
-          <StaggerChildren className="grid md:grid-cols-3 gap-6">
-            {STEPS.map((s) => (
-              <motion.div
-                key={s.step}
-                variants={fadeUp}
-                className="group relative p-8 rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl hover:border-emerald-500/20 transition-all duration-500 overflow-hidden text-center"
+        {/* ─── White-Label Revenue Math ─── */}
+        <section className="py-24 px-6">
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-12">
+              <RevealText
+                as="p"
+                className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4"
               >
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 bg-gradient-to-br from-emerald-500/[0.04] to-transparent" />
-
-                <div className="relative z-10">
-                  <span className="text-4xl font-bold text-white/[0.06] font-mono block mb-4">
-                    {s.step}
-                  </span>
-                  <div className="w-12 h-12 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center mx-auto mb-6 group-hover:border-emerald-500/20 transition-colors">
-                    <s.icon className="w-6 h-6 text-neutral-400 group-hover:text-emerald-400 transition-colors" />
-                  </div>
-                  <h3 className="text-xl font-bold text-white mb-3">{s.title}</h3>
-                  <p className="text-sm text-neutral-400 leading-relaxed">{s.desc}</p>
-                </div>
-              </motion.div>
-            ))}
-          </StaggerChildren>
-        </div>
-      </section>
-
-      <GlowDivider />
-
-      {/* ─── White-Label Revenue Math ─── */}
-      <section className="py-24 px-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-12">
-            <RevealText as="p" className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">White-Label Revenue</RevealText>
-            <RevealText as="h2" delay={0.1} className="text-3xl md:text-5xl font-bold text-white tracking-tight mb-4 font-serif">
-              Your brand. Your clients. Your revenue.
-            </RevealText>
-            <RevealText as="p" delay={0.2} className="text-neutral-400 max-w-lg mx-auto">
-              The Enterprise plan ($499/mo) gives you a fully white-labeled AI platform.
-              Resell to your clients under your own brand. Here&apos;s the math:
-            </RevealText>
-          </div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="grid md:grid-cols-4 gap-4"
-          >
-            <div className="p-6 rounded-2xl border border-white/[0.06] bg-[#080808] text-center">
-              <p className="text-[10px] text-neutral-600 uppercase tracking-widest mb-2">Your cost</p>
-              <p className="text-2xl font-black text-white font-mono">$499<span className="text-sm text-neutral-500">/mo</span></p>
+                White-Label Revenue
+              </RevealText>
+              <RevealText
+                as="h2"
+                delay={0.1}
+                className="text-3xl md:text-5xl font-bold text-white tracking-tight mb-4 font-serif"
+              >
+                Your brand. Your clients. Your revenue.
+              </RevealText>
+              <RevealText
+                as="p"
+                delay={0.2}
+                className="text-neutral-400 max-w-lg mx-auto"
+              >
+                The Enterprise plan ($499/mo) gives you a fully white-labeled AI
+                platform. Resell to your clients under your own brand.
+                Here&apos;s the math:
+              </RevealText>
             </div>
-            <div className="p-6 rounded-2xl border border-white/[0.06] bg-[#080808] text-center">
-              <p className="text-[10px] text-neutral-600 uppercase tracking-widest mb-2">You charge per client</p>
-              <p className="text-2xl font-black text-white font-mono">$99<span className="text-sm text-neutral-500">/mo</span></p>
-              <p className="text-[9px] text-neutral-700 mt-1">Conservative estimate</p>
-            </div>
-            <div className="p-6 rounded-2xl border border-white/[0.06] bg-[#080808] text-center">
-              <p className="text-[10px] text-neutral-600 uppercase tracking-widest mb-2">At 10 clients</p>
-              <p className="text-2xl font-black text-emerald-400 font-mono">$990<span className="text-sm text-emerald-500/50">/mo</span></p>
-              <p className="text-[9px] text-emerald-500/50 mt-1">Revenue</p>
-            </div>
-            <div className="p-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.04] text-center">
-              <p className="text-[10px] text-emerald-500/60 uppercase tracking-widest mb-2">Net profit</p>
-              <p className="text-2xl font-black text-emerald-400 font-mono">$491<span className="text-sm text-emerald-500/50">/mo</span></p>
-              <p className="text-[9px] text-emerald-500/50 mt-1">From one subscription</p>
-            </div>
-          </motion.div>
 
-          <motion.p
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            className="text-center text-xs text-neutral-600 mt-6"
-          >
-            At 20 clients &times; $99 = $1,980/mo revenue. At 50 clients &times; $99 = $4,950/mo.
-            Your cost stays $499. The margin gets better every month.
-          </motion.p>
-        </div>
-      </section>
-
-      <GlowDivider />
-
-      {/* ─── Final CTA ─── */}
-      <section className="py-24 px-6">
-        <div className="max-w-3xl mx-auto text-center">
-          <RevealText as="h2" className="text-3xl md:text-5xl font-bold mb-6 font-serif">
-            Start Your Free Trial
-          </RevealText>
-          <RevealText as="p" className="text-neutral-500 mb-10 max-w-xl mx-auto" delay={0.1}>
-            100 free runs. No credit card. Cancel anytime.
-          </RevealText>
-          <MagneticButton>
-            <Link
-              href="/signup"
-              className="inline-flex items-center gap-2 px-10 py-4 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-sm font-bold uppercase tracking-widest hover:from-emerald-600 hover:to-teal-600 transition-all shadow-[0_0_30px_rgba(16,185,129,0.3)]"
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="grid md:grid-cols-4 gap-4"
             >
-              Start your free trial <ArrowRight className="w-4 h-4" />
-            </Link>
-          </MagneticButton>
-        </div>
-      </section>
+              <div className="p-6 rounded-2xl border border-white/[0.06] bg-[#080808] text-center">
+                <p className="text-[10px] text-neutral-600 uppercase tracking-widest mb-2">
+                  Your cost
+                </p>
+                <p className="text-2xl font-black text-white font-mono">
+                  $499<span className="text-sm text-neutral-500">/mo</span>
+                </p>
+              </div>
+              <div className="p-6 rounded-2xl border border-white/[0.06] bg-[#080808] text-center">
+                <p className="text-[10px] text-neutral-600 uppercase tracking-widest mb-2">
+                  You charge per client
+                </p>
+                <p className="text-2xl font-black text-white font-mono">
+                  $99<span className="text-sm text-neutral-500">/mo</span>
+                </p>
+                <p className="text-[9px] text-neutral-700 mt-1">
+                  Conservative estimate
+                </p>
+              </div>
+              <div className="p-6 rounded-2xl border border-white/[0.06] bg-[#080808] text-center">
+                <p className="text-[10px] text-neutral-600 uppercase tracking-widest mb-2">
+                  At 10 clients
+                </p>
+                <p className="text-2xl font-black text-emerald-400 font-mono">
+                  $990<span className="text-sm text-emerald-500/50">/mo</span>
+                </p>
+                <p className="text-[9px] text-emerald-500/50 mt-1">Revenue</p>
+              </div>
+              <div className="p-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.04] text-center">
+                <p className="text-[10px] text-emerald-500/60 uppercase tracking-widest mb-2">
+                  Net profit
+                </p>
+                <p className="text-2xl font-black text-emerald-400 font-mono">
+                  $491<span className="text-sm text-emerald-500/50">/mo</span>
+                </p>
+                <p className="text-[9px] text-emerald-500/50 mt-1">
+                  From one subscription
+                </p>
+              </div>
+            </motion.div>
 
+            <motion.p
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              className="text-center text-xs text-neutral-600 mt-6"
+            >
+              At 20 clients &times; $99 = $1,980/mo revenue. At 50 clients
+              &times; $99 = $4,950/mo. Your cost stays $499. The margin gets
+              better every month.
+            </motion.p>
+          </div>
+        </section>
+
+        <GlowDivider />
+
+        {/* ─── Final CTA ─── */}
+        <section className="py-24 px-6">
+          <div className="max-w-3xl mx-auto text-center">
+            <RevealText
+              as="h2"
+              className="text-3xl md:text-5xl font-bold mb-6 font-serif"
+            >
+              Start Your Free Trial
+            </RevealText>
+            <RevealText
+              as="p"
+              className="text-neutral-500 mb-10 max-w-xl mx-auto"
+              delay={0.1}
+            >
+              100 free runs. No credit card. Cancel anytime.
+            </RevealText>
+            <MagneticButton>
+              <Link
+                href="/signup"
+                className="inline-flex items-center gap-2 px-10 py-4 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-sm font-bold uppercase tracking-widest hover:from-emerald-600 hover:to-teal-600 transition-all shadow-[0_0_30px_rgba(16,185,129,0.3)]"
+              >
+                Start your free trial <ArrowRight className="w-4 h-4" />
+              </Link>
+            </MagneticButton>
+          </div>
+        </section>
       </main>
 
       {/* ─── Footer ─── */}
@@ -521,10 +605,16 @@ export default function ForAgenciesPage() {
             <Link href="/" className="hover:text-white transition-colors">
               Home
             </Link>
-            <Link href="/pricing" className="hover:text-white transition-colors">
+            <Link
+              href="/pricing"
+              className="hover:text-white transition-colors"
+            >
               Pricing
             </Link>
-            <Link href="/privacy" className="hover:text-white transition-colors">
+            <Link
+              href="/privacy"
+              className="hover:text-white transition-colors"
+            >
               Privacy
             </Link>
           </div>
