@@ -42,6 +42,26 @@ const HERO_CTA = "/signup";
 const PLATFORM_HREF = "/platform";
 
 const PLAYBOOK_COPY: Record<string, { outcome: string; time: string }> = {
+  "agency-content-packet": {
+    outcome:
+      "1,500-word SEO blog + 3-email sequence + 3 ad creatives + competitor teaser. One client, every week.",
+    time: "~90 sec",
+  },
+  "recruiting-sourcing-sprint": {
+    outcome:
+      "Structured ICP + boolean searches + outreach pack + 5 channels + 4-objection playbook. One role, every week.",
+    time: "~90 sec",
+  },
+  "growth-pulse": {
+    outcome:
+      "Local SEO + 4 social posts + re-engagement email + WhatsApp template + offer card in your currency. Monthly.",
+    time: "~90 sec",
+  },
+  "realestate-listing-pulse": {
+    outcome:
+      "MLS-grade copy + open-house posts + buyer email + 3-comp analysis + suburb market update. One listing.",
+    time: "~90 sec",
+  },
   "lead-blitz": {
     outcome:
       "5+ companies with contact angles guaranteed, or the run doesn't count.",
@@ -697,28 +717,45 @@ function MemoryMoat() {
 }
 
 /* ─── 07 · Featured Playbooks ───────────────────────────────────── */
+
+// Slugs that have a dedicated public marketing + intake page under
+// /playbooks/<slug>. All others default to the auth-gated dashboard runner.
+const PUBLIC_PLAYBOOK_PAGES = new Set([
+  "agency-content-packet",
+  "recruiting-sourcing-sprint",
+  "growth-pulse",
+  "realestate-listing-pulse",
+]);
+
+function playbookHref(slug: string): string {
+  return PUBLIC_PLAYBOOK_PAGES.has(slug)
+    ? `/playbooks/${slug}`
+    : `/dashboard/playbooks?auto=${slug}`;
+}
+
 function FeaturedPlaybooksSection() {
   return (
     <section className="px-6 py-28 md:py-36 bg-[#040303]">
       <div className="max-w-6xl mx-auto">
-        <SectionHead n="07" label="five playbooks" />
+        <SectionHead n="07" label="cornerstone playbooks" />
         <h2 className="font-serif text-4xl md:text-6xl lg:text-[68px] leading-[1.05] mb-5 max-w-3xl tracking-[-0.02em]">
-          Each one guarantees an output
+          Pick your vertical.
           <br />
           <em className="not-italic text-[#B5532C]">
-            or the run doesn&apos;t count.
+            One brief → a full week of deliverables.
           </em>
         </h2>
         <p className="text-neutral-400 max-w-xl leading-relaxed mb-16 text-[15px]">
-          Twenty more live inside the dashboard. These five are where most
-          customers ship their first measurable win.
+          Four vertical-specific packets that do the buyer&apos;s actual weekly
+          work — not generic AI assistants. Every output structured, every asset
+          whitelabel-ready, every run guaranteed or it doesn&apos;t count.
         </p>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {FEATURED_PLAYBOOKS.map((pb) => (
             <TiltCard key={pb.slug} tiltStrength={6} className="h-full">
               <Link
-                href={`/dashboard/playbooks?auto=${pb.slug}`}
+                href={playbookHref(pb.slug)}
                 onClick={() => trackCtaClick("playbook-card")}
                 className="group relative block h-full p-6 rounded-[6px] border border-white/[0.06] bg-white/[0.025] hover:border-[#B5532C]/35 hover:bg-[#B5532C]/[0.04] transition-all duration-300 overflow-hidden"
                 style={{
@@ -754,23 +791,24 @@ function FeaturedPlaybooksSection() {
           ))}
 
           <Link
-            href="/dashboard/playbooks"
+            href="/playbooks"
             className="group relative flex flex-col justify-between h-full p-6 rounded-[6px] border border-dashed border-white/[0.07] hover:border-[#B5532C]/30 transition-all duration-300"
           >
             <div>
               <p className="text-[10px] font-mono uppercase tracking-[0.18em] text-neutral-600 mb-3">
-                25+ playbooks
+                4 verticals · 25+ playbooks
               </p>
               <h3 className="font-serif text-2xl text-neutral-500 group-hover:text-white transition-colors leading-tight tracking-tight mb-2">
-                View all playbooks
+                See every playbook
               </h3>
               <p className="text-sm text-neutral-600 leading-relaxed">
-                Lead gen, content, research, competitive intel, reporting, and
-                more — all with the same 5-layer guarantee.
+                B2B agencies, recruiting agencies, real estate, African SMBs —
+                plus the full library of lead gen, content, and
+                competitive-intel playbooks.
               </p>
             </div>
             <span className="mt-6 text-[11px] font-mono tracking-wide text-neutral-600 group-hover:text-[#B5532C] transition-colors">
-              Browse library →
+              Browse all →
             </span>
           </Link>
         </div>

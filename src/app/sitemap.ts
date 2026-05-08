@@ -21,6 +21,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
     // Product pages
     { path: "/showcase", priority: 0.8, changeFreq: "weekly" },
+    { path: "/playbooks", priority: 0.95, changeFreq: "weekly" },
     {
       path: "/playbooks/agency-content-packet",
       priority: 0.95,
@@ -33,6 +34,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     {
       path: "/playbooks/growth-pulse",
+      priority: 0.95,
+      changeFreq: "weekly",
+    },
+    {
+      path: "/playbooks/realestate-listing-pulse",
       priority: 0.95,
       changeFreq: "weekly",
     },

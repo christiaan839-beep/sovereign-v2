@@ -332,6 +332,107 @@ export const PLAYBOOKS: Playbook[] = [
     guaranteeCheck: { minResultCount: 4, minScore: 0.7 },
   },
   {
+    id: "realestate-listing-pulse",
+    name: "Listing Pulse",
+    tagline:
+      "One property → MLS copy + open-house posts + buyer email + comps + market update",
+    description:
+      "The weekly deliverable for residential real-estate agents. Drop a property's address and key features — get an MLS-grade listing description, open-house Instagram / Facebook / WhatsApp posts, a buyer-list email, three-comp analysis, and a one-page market update for the suburb.",
+    icon: "Home",
+    color: "amber",
+    category: "content",
+    fields: [
+      {
+        key: "propertyAddress",
+        label: "Property address",
+        type: "text",
+        placeholder: "12 Beach Road, Sea Point",
+        required: true,
+      },
+      {
+        key: "suburb",
+        label: "Suburb / neighborhood",
+        type: "text",
+        placeholder: "Sea Point",
+        required: true,
+      },
+      {
+        key: "priceLabel",
+        label: "Listing price (label)",
+        type: "text",
+        placeholder: "R3 950 000",
+        required: true,
+      },
+      {
+        key: "currency",
+        label: "Currency",
+        type: "select",
+        placeholder: "Pick currency",
+        required: true,
+        options: ["ZAR", "USD", "GBP", "EUR", "AUD"],
+      },
+      {
+        key: "propertyType",
+        label: "Property type",
+        type: "select",
+        placeholder: "Pick type",
+        required: true,
+        options: [
+          "house",
+          "apartment",
+          "townhouse",
+          "estate",
+          "smallholding",
+          "commercial",
+        ],
+      },
+      {
+        key: "keyFeatures",
+        label: "Key features (comma-separated, 1–8)",
+        type: "text",
+        placeholder: "north-facing, sea-view balcony, oak parquet, gas hob",
+        required: true,
+      },
+      {
+        key: "agentName",
+        label: "Agent name (you)",
+        type: "text",
+        placeholder: "Your name (appears in CTAs)",
+        required: true,
+      },
+      {
+        key: "brandVoice",
+        label: "Voice",
+        type: "select",
+        placeholder: "Pick a voice",
+        required: true,
+        options: ["luxury", "warm", "professional", "casual", "punchy"],
+      },
+    ],
+    steps: [
+      {
+        agent: "listing-pulse",
+        params: {
+          propertyAddress: "{{propertyAddress}}",
+          suburb: "{{suburb}}",
+          priceLabel: "{{priceLabel}}",
+          currency: "{{currency}}",
+          propertyType: "{{propertyType}}",
+          keyFeatures: "{{keyFeatures}}",
+          agentName: "{{agentName}}",
+          brandVoice: "{{brandVoice}}",
+        },
+        reason:
+          "Fan out to listing description + open-house social + buyer email + comp analysis + suburb market update in parallel.",
+      },
+    ],
+    estimatedTime: "60–90 sec",
+    agentCount: 1,
+    guarantee:
+      "MLS-grade description + IG/FB/WhatsApp open-house posts + buyer email + 3-comp analysis + market update, or re-run free.",
+    guaranteeCheck: { minResultCount: 5, minScore: 0.7 },
+  },
+  {
     id: "lead-blitz",
     name: "Lead Blitz",
     tagline: "50 qualified leads + outreach in minutes",
@@ -1872,6 +1973,10 @@ export const PLAYBOOK_CATEGORIES = [
  * the fold. Order is preserved in the rendered grid.
  */
 const MARKETING_PLAYBOOK_IDS: readonly string[] = [
+  "agency-content-packet",
+  "recruiting-sourcing-sprint",
+  "growth-pulse",
+  "realestate-listing-pulse",
   "lead-blitz",
   "content-machine",
   "competitor-takedown",
