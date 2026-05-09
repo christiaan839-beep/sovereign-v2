@@ -1,3 +1,5 @@
+// STATUS: ahead-of-consumers — see docs/audits/codebase-audit.md (Tier B).
+// citation tracking on every claim; not wired into research agents.
 // ─── Citation Engine ─────────────────────────────────────────────────────────
 // Pure string-manipulation utility that converts raw URLs in text into numbered
 // inline citations and produces a formatted "Sources:" footer.

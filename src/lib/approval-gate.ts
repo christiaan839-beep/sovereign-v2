@@ -1,3 +1,5 @@
+// STATUS: ahead-of-consumers — see docs/audits/codebase-audit.md (Tier B).
+// action-tier approval gate; superseded by actionTier in agent-factory.
 import { createLogger } from "./logger";
 import { addNotification } from "./notifications";
 

@@ -1,3 +1,5 @@
+// STATUS: ahead-of-consumers — see docs/audits/codebase-audit.md (Tier B).
+// output polishing pipeline; not wired into agent-factory.
 /**
  * SOVEREIGN MATRIX — Anti-AI-Slop Output Refiner
  *

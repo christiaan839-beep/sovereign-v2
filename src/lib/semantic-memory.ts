@@ -1,3 +1,5 @@
+// STATUS: ahead-of-consumers — see docs/audits/codebase-audit.md (Tier B).
+// cross-session semantic memory; only test imports.
 /**
  * SOVEREIGN MATRIX — Semantic Memory Engine
  *

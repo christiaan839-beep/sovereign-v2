@@ -1,3 +1,5 @@
+// STATUS: ahead-of-consumers — see docs/audits/codebase-audit.md (Tier B).
+// vLLM local-model config; not wired.
 /**
  * SOVEREIGN MATRIX — vLLM Production Configuration
  *

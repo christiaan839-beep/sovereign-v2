@@ -1,3 +1,5 @@
+// STATUS: ahead-of-consumers — see docs/audits/codebase-audit.md (Tier B).
+// Slack notifier; superseded by SLACK_WEBHOOK_URL inline use.
 /**
  * SOVEREIGN MATRIX — Slack Integration
  *

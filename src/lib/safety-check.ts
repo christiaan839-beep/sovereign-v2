@@ -1,3 +1,5 @@
+// STATUS: ahead-of-consumers — see docs/audits/codebase-audit.md (Tier B).
+// multi-stage safety pipeline; not wired.
 /**
  * SOVEREIGN MATRIX — Local Content Safety Check
  *

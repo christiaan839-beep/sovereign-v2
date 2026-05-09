@@ -1,3 +1,5 @@
+// STATUS: ahead-of-consumers — see docs/audits/codebase-audit.md (Tier B).
+// per-tenant cost tracking; not wired.
 /**
  * Cost Ledger — thin wrapper around budget-controls.recordSpend.
  *

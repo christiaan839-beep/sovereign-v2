@@ -1,3 +1,5 @@
+// STATUS: ahead-of-consumers — see docs/audits/codebase-audit.md (Tier B).
+// generic error recovery; superseded by retry.ts + circuit-breaker.ts.
 /**
  * SOVEREIGN MATRIX — Error Prevention & Auto-Recovery System
  *

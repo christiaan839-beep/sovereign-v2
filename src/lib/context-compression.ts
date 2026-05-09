@@ -1,3 +1,5 @@
+// STATUS: ahead-of-consumers — see docs/audits/codebase-audit.md (Tier B).
+// long-conversation compression; not wired.
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("context-compression");

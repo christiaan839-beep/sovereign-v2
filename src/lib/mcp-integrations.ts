@@ -1,3 +1,5 @@
+// STATUS: ahead-of-consumers — see docs/audits/codebase-audit.md (Tier B).
+// MCP tool ecosystem registry; not wired.
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("mcp-integrations");

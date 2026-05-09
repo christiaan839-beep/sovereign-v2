@@ -1,3 +1,5 @@
+// STATUS: ahead-of-consumers — see docs/audits/codebase-audit.md (Tier B).
+// pre-typed agent schemas; agents use Zod inline.
 /**
  * SOVEREIGN MATRIX — Reusable Agent Input Schemas
  *

@@ -1,3 +1,5 @@
+// STATUS: ahead-of-consumers — see docs/audits/codebase-audit.md (Tier B).
+// generic Zod-pre input sanitization; agents use Zod inline.
 /**
  * SOVEREIGN MATRIX — Input Sanitizer
  *

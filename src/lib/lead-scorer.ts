@@ -1,3 +1,5 @@
+// STATUS: ahead-of-consumers — see docs/audits/codebase-audit.md (Tier B).
+// "lead intent scoring" claim; not wired.
 // ─── Types ──────────────────────────────────────────────────
 
 export interface LeadInput {
