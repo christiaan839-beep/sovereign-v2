@@ -41,30 +41,32 @@ const log = createLogger("agency-packet");
 
 // ─── Input schema ──────────────────────────────────────────────────────────
 
-export const agencyPacketSchema = z.object({
-  /** Domain of the agency's CLIENT (the SMB end-customer). */
-  clientDomain: z
-    .string()
-    .min(3)
-    .max(120)
-    .regex(/^[a-z0-9.-]+\.[a-z]{2,}$/i, "Enter a domain like acmecorp.com"),
-  /** Display name for the client (shown in deliverable headers). */
-  clientName: z.string().min(2).max(80),
-  /** One paragraph: what the client does + their differentiator. */
-  clientDescription: z.string().min(20).max(2000),
-  /** Who the client sells to. One sentence. */
-  audience: z.string().min(5).max(400),
-  /** The brand voice the deliverables should match. */
-  brandVoice: z
-    .enum(["professional", "casual", "technical", "friendly", "bold"])
-    .default("professional"),
-  /** 1–5 keywords / topics to anchor the SEO blog post. */
-  primaryKeywords: z.array(z.string().min(2).max(80)).max(5).default([]),
-  /** Optional competitor URL for the competitive-intel section. */
-  competitorUrl: publicHttpUrlSchema
-    .optional()
-    .or(z.literal("").transform(() => undefined)),
-});
+export const agencyPacketSchema = z
+  .object({
+    /** Domain of the agency's CLIENT (the SMB end-customer). */
+    clientDomain: z
+      .string()
+      .min(3)
+      .max(120)
+      .regex(/^[a-z0-9.-]+\.[a-z]{2,}$/i, "Enter a domain like acmecorp.com"),
+    /** Display name for the client (shown in deliverable headers). */
+    clientName: z.string().min(2).max(80),
+    /** One paragraph: what the client does + their differentiator. */
+    clientDescription: z.string().min(20).max(2000),
+    /** Who the client sells to. One sentence. */
+    audience: z.string().min(5).max(400),
+    /** The brand voice the deliverables should match. */
+    brandVoice: z
+      .enum(["professional", "casual", "technical", "friendly", "bold"])
+      .default("professional"),
+    /** 1–5 keywords / topics to anchor the SEO blog post. */
+    primaryKeywords: z.array(z.string().min(2).max(80)).max(5).default([]),
+    /** Optional competitor URL for the competitive-intel section. */
+    competitorUrl: publicHttpUrlSchema
+      .optional()
+      .or(z.literal("").transform(() => undefined)),
+  })
+  .strict();
 
 export type AgencyPacketInput = z.infer<typeof agencyPacketSchema>;
 

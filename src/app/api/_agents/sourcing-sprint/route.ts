@@ -37,20 +37,22 @@ const log = createLogger("sourcing-sprint");
 
 // ─── Input schema ──────────────────────────────────────────────────────────
 
-export const sourcingSprintSchema = z.object({
-  roleTitle: z.string().min(2).max(120),
-  companyName: z.string().min(2).max(80),
-  companyDescription: z.string().min(20).max(2000),
-  mustHaveSkills: z.array(z.string().min(1).max(60)).min(1).max(10),
-  seniorityLevel: z
-    .enum(["junior", "mid", "senior", "staff", "principal"])
-    .default("senior"),
-  locationPreferences: z.string().max(200).optional(),
-  compensationRange: z.string().max(120).optional(),
-  urgency: z
-    .enum(["fast-hire", "perfect-fit", "passive-talent"])
-    .default("perfect-fit"),
-});
+export const sourcingSprintSchema = z
+  .object({
+    roleTitle: z.string().min(2).max(120),
+    companyName: z.string().min(2).max(80),
+    companyDescription: z.string().min(20).max(2000),
+    mustHaveSkills: z.array(z.string().min(1).max(60)).min(1).max(10),
+    seniorityLevel: z
+      .enum(["junior", "mid", "senior", "staff", "principal"])
+      .default("senior"),
+    locationPreferences: z.string().max(200).optional(),
+    compensationRange: z.string().max(120).optional(),
+    urgency: z
+      .enum(["fast-hire", "perfect-fit", "passive-talent"])
+      .default("perfect-fit"),
+  })
+  .strict();
 
 export type SourcingSprintInput = z.infer<typeof sourcingSprintSchema>;
 

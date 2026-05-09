@@ -11,11 +11,18 @@ import { nimChat } from "@/lib/nvidia";
 export const POST = createAgentRoute({
   name: "meeting-transcriber",
   handler: async ({ input, email, userId }) => {
-
-    const { transcript, meeting_type = "general", attendees } = input as Record<string, unknown>;
+    const {
+      transcript = "",
+      meeting_type = "general",
+      attendees,
+    } = input as {
+      transcript?: string;
+      meeting_type?: string;
+      attendees?: string[];
+    };
 
     if (!transcript) {
-      return ({ error: "transcript text is required." });
+      return { error: "transcript text is required." };
     }
 
     const start = Date.now();
@@ -51,29 +58,34 @@ Output JSON:
 Output ONLY valid JSON.`,
         },
       ],
-      { maxTokens: 3000, temperature: 0.2 }
+      { maxTokens: 3000, temperature: 0.2 },
     );
 
     let parsed;
     try {
-      parsed = JSON.parse(analysis.replace(/```json?\n?/g, "").replace(/```/g, "").trim());
+      parsed = JSON.parse(
+        analysis
+          .replace(/```json?\n?/g, "")
+          .replace(/```/g, "")
+          .trim(),
+      );
     } catch {
       parsed = { raw: analysis };
     }
 
-    return ({
+    return {
       success: true,
       agent: "nemoclaw-meeting-transcriber",
       meeting_type,
       transcript_stats: {
         characters: transcript.length,
         words: transcript.split(/\s+/).length,
-        estimated_duration_minutes: Math.ceil(transcript.split(/\s+/).length / 150),
+        estimated_duration_minutes: Math.ceil(
+          transcript.split(/\s+/).length / 150,
+        ),
       },
       intelligence: parsed,
       duration_ms: Date.now() - start,
-    });
-  
+    };
   },
 });
-

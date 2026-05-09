@@ -42,39 +42,41 @@ const log = createLogger("growth-pulse");
 
 // ─── Input schema ──────────────────────────────────────────────────────────
 
-export const growthPulseSchema = z.object({
-  businessName: z.string().min(2).max(80),
-  businessDescription: z.string().min(20).max(2000),
-  industry: z.string().min(2).max(80),
-  /** Where the business operates — informs SEO, currency, channel mix. */
-  locale: z
-    .enum([
-      "ZA",
-      "NG",
-      "KE",
-      "EG",
-      "GH",
-      "ZM",
-      "ZW",
-      "BW",
-      "MA",
-      "TN",
-      "global-emerging",
-    ])
-    .default("ZA"),
-  /** Currency to bill the offer card in. Auto-derived from locale if absent. */
-  currency: z.enum(["ZAR", "NGN", "KES", "EGP", "GHS", "USD"]).optional(),
-  /** Brand voice the social posts should match. */
-  brandVoice: z
-    .enum(["warm", "professional", "casual", "playful", "direct"])
-    .default("warm"),
-  /** Top 1–3 services the business sells (anchors the offer card). */
-  topServices: z.array(z.string().min(2).max(80)).min(1).max(3),
-  /** Optional URL — sharpens the local-SEO checklist. */
-  websiteUrl: publicHttpUrlSchema
-    .optional()
-    .or(z.literal("").transform(() => undefined)),
-});
+export const growthPulseSchema = z
+  .object({
+    businessName: z.string().min(2).max(80),
+    businessDescription: z.string().min(20).max(2000),
+    industry: z.string().min(2).max(80),
+    /** Where the business operates — informs SEO, currency, channel mix. */
+    locale: z
+      .enum([
+        "ZA",
+        "NG",
+        "KE",
+        "EG",
+        "GH",
+        "ZM",
+        "ZW",
+        "BW",
+        "MA",
+        "TN",
+        "global-emerging",
+      ])
+      .default("ZA"),
+    /** Currency to bill the offer card in. Auto-derived from locale if absent. */
+    currency: z.enum(["ZAR", "NGN", "KES", "EGP", "GHS", "USD"]).optional(),
+    /** Brand voice the social posts should match. */
+    brandVoice: z
+      .enum(["warm", "professional", "casual", "playful", "direct"])
+      .default("warm"),
+    /** Top 1–3 services the business sells (anchors the offer card). */
+    topServices: z.array(z.string().min(2).max(80)).min(1).max(3),
+    /** Optional URL — sharpens the local-SEO checklist. */
+    websiteUrl: publicHttpUrlSchema
+      .optional()
+      .or(z.literal("").transform(() => undefined)),
+  })
+  .strict();
 
 export type GrowthPulseInput = z.infer<typeof growthPulseSchema>;
 

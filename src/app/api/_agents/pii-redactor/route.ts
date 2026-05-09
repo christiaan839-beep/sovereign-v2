@@ -11,11 +11,13 @@ import { nimChat } from "@/lib/nvidia";
 export const POST = createAgentRoute({
   name: "pii-redactor",
   handler: async ({ input, email, userId }) => {
-
-    const { text, redact = true } = input as Record<string, unknown>;
+    const { text = "", redact = true } = input as {
+      text?: string;
+      redact?: boolean;
+    };
 
     if (!text) {
-      return ({ error: "Text is required." });
+      return { error: "Text is required." };
     }
 
     // Step 1: Use NeMo Content Safety model to detect PII entities (BYOK-aware)
@@ -46,7 +48,7 @@ Output ONLY valid JSON. No explanation.`,
         },
         { role: "user", content: text },
       ],
-      { maxTokens: 2048, temperature: 0.1 }
+      { maxTokens: 2048, temperature: 0.1 },
     );
 
     let parsed;
@@ -56,17 +58,15 @@ Output ONLY valid JSON. No explanation.`,
       parsed = { entities: [], risk_level: "UNKNOWN", redacted_text: text };
     }
 
-    return ({
+    return {
       success: true,
       model: "nemotron-content-safety-reasoning-4b",
       original_length: text.length,
       entities_found: parsed.entities?.length || 0,
       risk_level: parsed.risk_level || "UNKNOWN",
       entities: parsed.entities || [],
-      redacted_text: redact ? (parsed.redacted_text || text) : undefined,
+      redacted_text: redact ? parsed.redacted_text || text : undefined,
       compliance: ["POPIA", "GDPR", "CCPA"],
-    });
-  
+    };
   },
 });
-

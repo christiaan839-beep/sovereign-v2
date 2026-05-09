@@ -12,11 +12,10 @@ import { eq } from "drizzle-orm";
 export const POST = createAgentRoute({
   name: "firecrawl",
   handler: async ({ input, email, userId }) => {
-
     const { url, formats = ["markdown"] } = input as Record<string, unknown>;
 
     if (!url) {
-      return ({ error: "Target URL is required." });
+      return { error: "Target URL is required." };
     }
 
     // Attempt to pull user's Firecrawl key if available
@@ -24,17 +23,19 @@ export const POST = createAgentRoute({
     if (email) {
       try {
         const userSettings = await db.query.settings.findFirst({
-          where: eq(settings.userEmail, email)
+          where: eq(settings.userEmail, email),
         });
         if (userSettings?.apiKeys) {
           const keys = JSON.parse(userSettings.apiKeys);
           if (keys.firecrawl) apiKey = keys.firecrawl;
         }
-      } catch { /* BYOK lookup failed */ }
+      } catch {
+        /* BYOK lookup failed */
+      }
     }
 
     if (!apiKey) {
-      return ({ error: "Firecrawl API key required." });
+      return { error: "Firecrawl API key required." };
     }
 
     // Call Firecrawl Scrape API
@@ -42,30 +43,33 @@ export const POST = createAgentRoute({
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`
+        Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
         url,
-        formats
-      })
+        formats,
+      }),
     });
 
     if (!response.ok) {
-        const errorText = await response.text();
-        return ({ error: `Firecrawl request failed: ${response.status}`, details: errorText }, { status: response.status });
+      const errorText = await response.text();
+      return NextResponse.json(
+        {
+          error: `Firecrawl request failed: ${response.status}`,
+          details: errorText,
+        },
+        { status: response.status },
+      );
     }
 
     const data = await response.json();
 
-    return ({
+    return {
       success: true,
       url: data.data?.metadata?.sourceURL || url,
       markdown: data.data?.markdown || "",
       title: data.data?.metadata?.title || "Unknown Page",
-      status: "Extracted via Open-Source Node"
-    });
-
-  
+      status: "Extracted via Open-Source Node",
+    };
   },
 });
-

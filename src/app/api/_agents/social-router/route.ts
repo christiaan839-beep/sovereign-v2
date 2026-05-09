@@ -15,7 +15,12 @@ const log = createLogger("social-router");
 export const POST = createAgentRoute({
   name: "social-router",
   handler: async ({ input }) => {
-    const { topic, platforms, brandVoice, targetAudience } = input as Record<string, unknown>;
+    const { topic, platforms, brandVoice, targetAudience } = input as {
+      topic?: string;
+      platforms?: string[];
+      brandVoice?: string;
+      targetAudience?: string;
+    };
 
     const selectedPlatforms = platforms || ["instagram", "linkedin", "twitter"];
 
@@ -51,16 +56,20 @@ Respond in JSON:
 
     let parsed;
     try {
-      const cleaned = result.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+      const cleaned = result
+        .replace(/```json\n?/g, "")
+        .replace(/```\n?/g, "")
+        .trim();
       parsed = JSON.parse(cleaned);
     } catch {
       parsed = { posts: [], rawOutput: result };
     }
 
-    await fireUserWebhook("SocialRouter", "PostsGenerated", { topic, platforms: selectedPlatforms });
+    await fireUserWebhook("SocialRouter", "PostsGenerated", {
+      topic,
+      platforms: selectedPlatforms,
+    });
 
-    return ({ success: true, ...parsed });
-  
+    return { success: true, ...parsed };
   },
 });
-

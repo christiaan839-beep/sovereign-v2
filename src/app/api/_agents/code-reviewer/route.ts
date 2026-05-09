@@ -11,20 +11,26 @@ import { nimChat } from "@/lib/nvidia";
 export const POST = createAgentRoute({
   name: "code-reviewer",
   handler: async ({ input, email, userId }) => {
-
-    const { code, language = "auto-detect", focus = "full" } = input as Record<string, unknown>;
+    const {
+      code = "",
+      language = "auto-detect",
+      focus = "full",
+    } = input as { code?: string; language?: string; focus?: string };
 
     if (!code) {
-      return ({ error: "code is required." });
+      return { error: "code is required." };
     }
 
     const start = Date.now();
 
     const focusPrompts: Record<string, string> = {
       full: "Perform a COMPLETE code review covering security, performance, maintainability, and best practices.",
-      security: "Focus ONLY on security vulnerabilities: injection risks, auth bypasses, data exposure, OWASP Top 10.",
-      performance: "Focus ONLY on performance: time complexity, memory leaks, N+1 queries, unnecessary re-renders, caching opportunities.",
-      refactor: "Focus ONLY on code quality: DRY violations, function length, naming conventions, TypeScript best practices, design patterns.",
+      security:
+        "Focus ONLY on security vulnerabilities: injection risks, auth bypasses, data exposure, OWASP Top 10.",
+      performance:
+        "Focus ONLY on performance: time complexity, memory leaks, N+1 queries, unnecessary re-renders, caching opportunities.",
+      refactor:
+        "Focus ONLY on code quality: DRY violations, function length, naming conventions, TypeScript best practices, design patterns.",
     };
 
     const review = await nimChat(
@@ -51,17 +57,22 @@ export const POST = createAgentRoute({
 Output ONLY valid JSON.`,
         },
       ],
-      { maxTokens: 4000, temperature: 0.2 }
+      { maxTokens: 4000, temperature: 0.2 },
     );
 
     let parsed;
     try {
-      parsed = JSON.parse(review.replace(/```json?\n?/g, "").replace(/```/g, "").trim());
+      parsed = JSON.parse(
+        review
+          .replace(/```json?\n?/g, "")
+          .replace(/```/g, "")
+          .trim(),
+      );
     } catch {
       parsed = { raw: review };
     }
 
-    return ({
+    return {
       success: true,
       agent: "nemoclaw-code-reviewer",
       language,
@@ -72,8 +83,6 @@ Output ONLY valid JSON.`,
       },
       review: parsed,
       duration_ms: Date.now() - start,
-    });
-  
+    };
   },
 });
-

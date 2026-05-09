@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { redirect, notFound } from "next/navigation";
 import { ArrowLeft, ArrowRight, AlertTriangle, Printer } from "lucide-react";
 import { getPacketById, type PacketKind } from "@/lib/packet-store";
+import { RetryAssetButton } from "@/components/dashboard/RetryAssetButton";
 
 /**
  * /dashboard/packets/[id] — saved packet detail.
@@ -157,10 +158,42 @@ export default async function PacketDetailPage({
             <p className="mt-3 inline-flex items-center gap-2 text-[12px] text-amber-300">
               <AlertTriangle className="w-3.5 h-3.5" />
               {packet.errorCount} sub-asset{packet.errorCount === 1 ? "" : "s"}{" "}
-              failed during this run.
+              failed during this run. Retry each below.
             </p>
           ) : null}
         </header>
+
+        {packet.errorCount > 0 ? (
+          <div className="mb-8 rounded-2xl border border-amber-500/15 bg-amber-500/[0.04] p-5">
+            <p className="text-[10px] font-mono uppercase tracking-wider text-amber-300/80 mb-3">
+              Failed sub-assets · retry to re-run only the failure
+            </p>
+            <ul className="space-y-2">
+              {(getArr(packet.output, "errors") ?? []).map((e) => {
+                const asset = getStr(e, "asset") ?? "unknown";
+                const message = getStr(e, "message") ?? "";
+                return (
+                  <li
+                    key={asset}
+                    className="flex items-start justify-between gap-3 rounded-xl border border-white/[0.06] bg-black/20 p-3"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] text-white font-medium">
+                        <span className="font-mono text-amber-200/80">
+                          {asset}
+                        </span>
+                      </p>
+                      <p className="text-[12px] text-neutral-400 leading-relaxed mt-0.5 break-words">
+                        {message}
+                      </p>
+                    </div>
+                    <RetryAssetButton packetId={packet.id} asset={asset} />
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ) : null}
 
         {/* Inputs (always rendered — auditable record of what produced the packet) */}
         <div className="mb-8">

@@ -33,41 +33,43 @@ const log = createLogger("realestate-pulse");
 
 // ─── Input schema ──────────────────────────────────────────────────────────
 
-export const listingPulseSchema = z.object({
-  /** Address or property identifier — used as the listing anchor. */
-  propertyAddress: z.string().min(5).max(200),
-  /** Suburb / neighborhood — drives the local-market section. */
-  suburb: z.string().min(2).max(80),
-  /** Price label as it should appear ("R3 950 000", "$895,000"). */
-  priceLabel: z.string().min(2).max(40),
-  /** Currency for the comp analysis + offer-card style numbers. */
-  currency: z.enum(["ZAR", "USD", "GBP", "EUR", "AUD"]).default("ZAR"),
-  /** Property type — drives the description voice. */
-  propertyType: z
-    .enum([
-      "house",
-      "apartment",
-      "townhouse",
-      "estate",
-      "smallholding",
-      "commercial",
-    ])
-    .default("house"),
-  bedrooms: z.number().int().min(0).max(20).default(3),
-  bathrooms: z.number().int().min(0).max(20).default(2),
-  /** Floor area in square meters (or square feet — agent's choice). */
-  areaLabel: z.string().max(40).optional(),
-  /** Bullet list of highlights (1–8). The agent's "why this is special". */
-  keyFeatures: z.array(z.string().min(2).max(120)).min(1).max(8),
-  /** Optional ICP for the listing — e.g. "young families", "downsizers". */
-  targetBuyer: z.string().max(200).optional(),
-  /** Agent's name — appears in CTAs. */
-  agentName: z.string().min(2).max(80),
-  /** Brand voice for the listing description. */
-  brandVoice: z
-    .enum(["luxury", "warm", "professional", "casual", "punchy"])
-    .default("warm"),
-});
+export const listingPulseSchema = z
+  .object({
+    /** Address or property identifier — used as the listing anchor. */
+    propertyAddress: z.string().min(5).max(200),
+    /** Suburb / neighborhood — drives the local-market section. */
+    suburb: z.string().min(2).max(80),
+    /** Price label as it should appear ("R3 950 000", "$895,000"). */
+    priceLabel: z.string().min(2).max(40),
+    /** Currency for the comp analysis + offer-card style numbers. */
+    currency: z.enum(["ZAR", "USD", "GBP", "EUR", "AUD"]).default("ZAR"),
+    /** Property type — drives the description voice. */
+    propertyType: z
+      .enum([
+        "house",
+        "apartment",
+        "townhouse",
+        "estate",
+        "smallholding",
+        "commercial",
+      ])
+      .default("house"),
+    bedrooms: z.number().int().min(0).max(20).default(3),
+    bathrooms: z.number().int().min(0).max(20).default(2),
+    /** Floor area in square meters (or square feet — agent's choice). */
+    areaLabel: z.string().max(40).optional(),
+    /** Bullet list of highlights (1–8). The agent's "why this is special". */
+    keyFeatures: z.array(z.string().min(2).max(120)).min(1).max(8),
+    /** Optional ICP for the listing — e.g. "young families", "downsizers". */
+    targetBuyer: z.string().max(200).optional(),
+    /** Agent's name — appears in CTAs. */
+    agentName: z.string().min(2).max(80),
+    /** Brand voice for the listing description. */
+    brandVoice: z
+      .enum(["luxury", "warm", "professional", "casual", "punchy"])
+      .default("warm"),
+  })
+  .strict();
 
 export type ListingPulseInput = z.infer<typeof listingPulseSchema>;
 

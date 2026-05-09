@@ -14,11 +14,14 @@ import { ai } from "@/lib/ai";
 export const POST = createAgentRoute({
   name: "video-gen",
   handler: async ({ input, email, userId }) => {
-
-    const { prompt, provider = "luma", enhance = true } = input as Record<string, unknown>;
+    const {
+      prompt,
+      provider = "luma",
+      enhance = true,
+    } = input as Record<string, unknown>;
 
     if (!prompt) {
-      return ({ error: "Cinematic prompt required." });
+      return { error: "Cinematic prompt required." };
     }
 
     // Use AI to enhance the raw prompt into a cinematic video directive
@@ -37,9 +40,10 @@ Return ONLY the enhanced prompt (no explanations). The enhanced prompt should:
 - Keep it under 200 words
 - Be a single paragraph, no bullet points`,
         {
-          system: "You are a Hollywood cinematographer and visual director. You translate simple ideas into breathtaking cinematic visions. Output ONLY the enhanced prompt text.",
+          system:
+            "You are a Hollywood cinematographer and visual director. You translate simple ideas into breathtaking cinematic visions. Output ONLY the enhanced prompt text.",
           maxTokens: 300,
-        }
+        },
       );
     }
 
@@ -48,53 +52,60 @@ Return ONLY the enhanced prompt (no explanations). The enhanced prompt should:
     if (email) {
       try {
         const userSettings = await db.query.settings.findFirst({
-          where: eq(settings.userEmail, email)
+          where: eq(settings.userEmail, email),
         });
         if (userSettings?.apiKeys) {
           const keys = JSON.parse(userSettings.apiKeys);
           if (keys.luma && provider === "luma") apiKey = keys.luma;
           if (keys.runway && provider === "runway") apiKey = keys.runway;
         }
-      } catch { /* BYOK lookup failed — use default */ }
+      } catch {
+        /* BYOK lookup failed — use default */
+      }
     }
 
     if (!apiKey) {
-      return ({ error: `API Key required for ${provider} Video Generative Engine.` });
+      return {
+        error: `API Key required for ${provider} Video Generative Engine.`,
+      };
     }
 
     if (provider === "luma") {
-      const response = await fetch('https://api.lumalabs.ai/dream-machine/v1/generations', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json'
+      const response = await fetch(
+        "https://api.lumalabs.ai/dream-machine/v1/generations",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            prompt: cinematicPrompt,
+            aspect_ratio: "16:9",
+          }),
         },
-        body: JSON.stringify({
-          prompt: cinematicPrompt,
-          aspect_ratio: "16:9"
-        })
-      });
+      );
 
       if (!response.ok) {
         const errDump = await response.text();
-        return ({ error: "Luma API Error", details: errDump }, { status: response.status });
+        return NextResponse.json(
+          { error: "Luma API Error", details: errDump },
+          { status: response.status },
+        );
       }
 
       const lumaData = await response.json();
 
-      return ({
+      return {
         success: true,
         task_id: lumaData.id,
         status: "GENERATING",
         original_prompt: prompt,
         enhanced_prompt: cinematicPrompt,
-        message: "Luma Cinematic Engine Engaged. Awaiting render."
-      });
+        message: "Luma Cinematic Engine Engaged. Awaiting render.",
+      };
     }
 
-    return ({ error: "Unsupported Video Provider." });
-
-  
+    return { error: "Unsupported Video Provider." };
   },
 });
-

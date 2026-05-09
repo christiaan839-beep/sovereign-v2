@@ -115,6 +115,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/privacy", priority: 0.5, changeFreq: "monthly" },
     { path: "/terms", priority: 0.5, changeFreq: "monthly" },
     { path: "/dpa", priority: 0.5, changeFreq: "monthly" },
+    { path: "/sub-processors", priority: 0.6, changeFreq: "monthly" },
     { path: "/unsubscribe", priority: 0.3, changeFreq: "monthly" },
 
     // Auth
