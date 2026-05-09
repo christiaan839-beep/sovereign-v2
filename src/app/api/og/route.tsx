@@ -63,11 +63,29 @@ const VERTICAL_CONFIGS: Record<
   },
 };
 
+// Allowlist for ?slug=<vertical> — anything else falls through to default.
+// Hardened post security-review-2026-05: bounded inputs + cache headers.
+const ALLOWED_SLUGS = new Set([
+  "agency-content-packet",
+  "recruiting-sourcing-sprint",
+  "growth-pulse",
+  "realestate-listing-pulse",
+  "default",
+]);
+
+const TITLE_MAX = 120;
+const SUBTITLE_MAX = 240;
+
 export async function GET(req: Request) {
   const url = new URL(req.url);
-  const slug = url.searchParams.get("slug") || "default";
-  const titleOverride = url.searchParams.get("title");
-  const subtitleOverride = url.searchParams.get("subtitle");
+  const rawSlug = url.searchParams.get("slug") || "default";
+  const slug = ALLOWED_SLUGS.has(rawSlug) ? rawSlug : "default";
+  // Cap overrides to bound rendering work — Satori renders text per-pixel,
+  // so an unbounded title can burn edge CPU.
+  const titleOverride = url.searchParams.get("title")?.slice(0, TITLE_MAX);
+  const subtitleOverride = url.searchParams
+    .get("subtitle")
+    ?.slice(0, SUBTITLE_MAX);
 
   const cfg = VERTICAL_CONFIGS[slug] ?? VERTICAL_CONFIGS.default;
   const title = titleOverride || cfg.title;
@@ -209,6 +227,12 @@ export async function GET(req: Request) {
     {
       width: 1200,
       height: 630,
+      headers: {
+        // Aggressive edge-caching — the same (slug, title, subtitle) tuple
+        // always renders identically. 24h browser + 7d CDN.
+        "Cache-Control":
+          "public, max-age=86400, s-maxage=604800, stale-while-revalidate=604800, immutable",
+      },
     },
   );
 }

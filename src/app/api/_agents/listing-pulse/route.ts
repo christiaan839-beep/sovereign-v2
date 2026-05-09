@@ -149,7 +149,8 @@ function parseJsonOrThrow<T>(raw: string, asset: string): T {
     .replace(/\s*```\s*$/u, "")
     .trim();
   try {
-    return JSON.parse(cleaned) as T;
+    const parsed = JSON.parse(cleaned);
+    return stripUnderscoreKeys(parsed) as T;
   } catch (err) {
     log.warn("listing-pulse asset returned non-JSON", {
       asset,
@@ -159,6 +160,28 @@ function parseJsonOrThrow<T>(raw: string, asset: string): T {
       `${asset}: model returned non-JSON (${(err as Error).message})`,
     );
   }
+}
+
+/**
+ * Defense vs LLM-injected envelope keys (security-review-2026-05).
+ * The LLM emits the JSON we asked for, but a prompt-injection attack
+ * could try to set `_meta` / `_proto` / `_criticFeedback` / etc. We
+ * strip every top-level underscore-prefixed key on the parsed output
+ * before it flows into the orchestrator and gets persisted.
+ */
+function stripUnderscoreKeys<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value.map((v) => stripUnderscoreKeys(v)) as unknown as T;
+  }
+  if (value && typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      if (k.startsWith("_")) continue;
+      out[k] = v;
+    }
+    return out as T;
+  }
+  return value;
 }
 
 // ─── Asset generators ──────────────────────────────────────────────────────

@@ -34,6 +34,7 @@ import { createAgentRoute } from "@/lib/agent-factory";
 import { ai, research_ai } from "@/lib/ai";
 import { createLogger } from "@/lib/logger";
 import { savePacket } from "@/lib/packet-store";
+import { publicHttpUrlSchema } from "@/lib/safe-url";
 import { z } from "zod";
 
 const log = createLogger("agency-packet");
@@ -60,9 +61,7 @@ export const agencyPacketSchema = z.object({
   /** 1–5 keywords / topics to anchor the SEO blog post. */
   primaryKeywords: z.array(z.string().min(2).max(80)).max(5).default([]),
   /** Optional competitor URL for the competitive-intel section. */
-  competitorUrl: z
-    .string()
-    .url()
+  competitorUrl: publicHttpUrlSchema
     .optional()
     .or(z.literal("").transform(() => undefined)),
 });
@@ -120,6 +119,24 @@ export interface AgencyPacket {
 }
 
 // ─── Asset generators (pure functions — testable, reusable) ─────────────────
+
+/** Defense vs LLM-injected envelope keys (security-review-2026-05).
+ * Strip every top-level (and nested) underscore-prefixed key from the
+ * parsed model output before it flows into the orchestrator. */
+function stripUnderscoreKeys<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value.map((v) => stripUnderscoreKeys(v)) as unknown as T;
+  }
+  if (value && typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      if (k.startsWith("_")) continue;
+      out[k] = v;
+    }
+    return out as T;
+  }
+  return value;
+}
 
 const VOICE_GUIDE: Record<AgencyPacketInput["brandVoice"], string> = {
   professional:
@@ -267,7 +284,7 @@ Email 3 — soft pitch with one concrete next action.`;
     .replace(/\s*```\s*$/u, "")
     .trim();
 
-  const parsed = JSON.parse(cleaned) as EmailAsset;
+  const parsed = stripUnderscoreKeys(JSON.parse(cleaned)) as EmailAsset;
   if (!Array.isArray(parsed.emails) || parsed.emails.length < 3) {
     throw new Error("Email-sequence model returned fewer than 3 emails.");
   }
@@ -313,7 +330,7 @@ Return ONLY the JSON array. No prose, no fence.`;
     .replace(/\s*```\s*$/u, "")
     .trim();
 
-  const parsed = JSON.parse(cleaned) as AdAsset[];
+  const parsed = stripUnderscoreKeys(JSON.parse(cleaned)) as AdAsset[];
   if (!Array.isArray(parsed) || parsed.length < 3) {
     throw new Error("Ads model returned fewer than 3 ads.");
   }
@@ -382,7 +399,7 @@ Return ONLY the JSON. No prose, no fence.`;
     .replace(/\s*```\s*$/u, "")
     .trim();
 
-  return JSON.parse(cleaned) as CompetitorAsset;
+  return stripUnderscoreKeys(JSON.parse(cleaned)) as CompetitorAsset;
 }
 
 // ─── Orchestrator ──────────────────────────────────────────────────────────

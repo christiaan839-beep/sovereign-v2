@@ -35,6 +35,7 @@ import { createAgentRoute } from "@/lib/agent-factory";
 import { ai } from "@/lib/ai";
 import { createLogger } from "@/lib/logger";
 import { savePacket } from "@/lib/packet-store";
+import { publicHttpUrlSchema } from "@/lib/safe-url";
 import { z } from "zod";
 
 const log = createLogger("growth-pulse");
@@ -70,9 +71,7 @@ export const growthPulseSchema = z.object({
   /** Top 1–3 services the business sells (anchors the offer card). */
   topServices: z.array(z.string().min(2).max(80)).min(1).max(3),
   /** Optional URL — sharpens the local-SEO checklist. */
-  websiteUrl: z
-    .string()
-    .url()
+  websiteUrl: publicHttpUrlSchema
     .optional()
     .or(z.literal("").transform(() => undefined)),
 });
@@ -190,7 +189,8 @@ function parseJsonOrThrow<T>(raw: string, asset: string): T {
     .replace(/\s*```\s*$/u, "")
     .trim();
   try {
-    return JSON.parse(cleaned) as T;
+    const parsed = JSON.parse(cleaned);
+    return stripUnderscoreKeys(parsed) as T;
   } catch (err) {
     log.warn("growth-pulse asset returned non-JSON", {
       asset,
@@ -200,6 +200,22 @@ function parseJsonOrThrow<T>(raw: string, asset: string): T {
       `${asset}: model returned non-JSON (${(err as Error).message})`,
     );
   }
+}
+
+/** Defense vs LLM-injected envelope keys (security-review-2026-05). */
+function stripUnderscoreKeys<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value.map((v) => stripUnderscoreKeys(v)) as unknown as T;
+  }
+  if (value && typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      if (k.startsWith("_")) continue;
+      out[k] = v;
+    }
+    return out as T;
+  }
+  return value;
 }
 
 export function resolveCurrency(
