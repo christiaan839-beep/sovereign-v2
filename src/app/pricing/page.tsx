@@ -356,6 +356,11 @@ export default function PricingPage() {
 
         <GlowDivider />
 
+        {/* ─── Vertical matcher — "find your tier in 5 seconds" ─── */}
+        <VerticalMatcher />
+
+        <GlowDivider />
+
         {/* ─── Pricing Cards ─── */}
         <section className="relative z-10 px-8 py-20 max-w-5xl mx-auto">
           <RevealText
@@ -600,5 +605,141 @@ export default function PricingPage() {
         </div>
       </footer>
     </div>
+  );
+}
+
+/* ─── Vertical matcher ──────────────────────────────────────────────────
+ * Buyer lands on /pricing → sees their vertical → 1 click to the
+ * playbook page where they can run their first packet, OR sign up for
+ * the matched tier. This is the most-used path on a B2B SaaS pricing
+ * page and was missing from the original generic-tier layout.
+ */
+
+interface VerticalMatch {
+  vertical: string;
+  buyerLine: string;
+  deliverable: string;
+  pricing: string;
+  recommendedTier: string;
+  playbookHref: string;
+  accent: string;
+}
+
+const VERTICAL_MATCHES: VerticalMatch[] = [
+  {
+    vertical: "B2B agencies",
+    buyerLine:
+      "Owner-operator of a 5–30 person SEO / content / ad agency, 5–50 SMB clients",
+    deliverable:
+      "Weekly content packet per client: SEO blog + email sequence + ad creatives + competitor teaser",
+    pricing: "$499–$1,999 / mo (Array or Node tier)",
+    recommendedTier: "Array",
+    playbookHref: "/playbooks/agency-content-packet",
+    accent: "amber",
+  },
+  {
+    vertical: "Recruiting agencies",
+    buyerLine:
+      "Boutique tech / finance / sales recruiter, 5–10 hires per month",
+    deliverable:
+      "Weekly sourcing sprint per role: ICP + boolean strings + outreach pack + channels + objections",
+    pricing: "$499–$1,499 / mo (Array tier)",
+    recommendedTier: "Array",
+    playbookHref: "/playbooks/recruiting-sourcing-sprint",
+    accent: "cyan",
+  },
+  {
+    vertical: "Real estate agents",
+    buyerLine: "Residential agent listing 3–15 properties per quarter",
+    deliverable:
+      "Weekly listing pulse per property: MLS copy + open-house posts + buyer email + comps + market update",
+    pricing: "$299–$799 / mo (Starter or Array tier)",
+    recommendedTier: "Starter",
+    playbookHref: "/playbooks/realestate-listing-pulse",
+    accent: "violet",
+  },
+  {
+    vertical: "African SMBs",
+    buyerLine: "Solopreneur or 1–20 person SMB in ZA / NG / KE / EG / GH",
+    deliverable:
+      "Monthly growth pulse: local SEO + 4 social posts + email + WhatsApp + offer in your currency",
+    pricing: "R349 / month (≈ $19, Starter tier)",
+    recommendedTier: "Starter",
+    playbookHref: "/playbooks/growth-pulse",
+    accent: "emerald",
+  },
+];
+
+const VERTICAL_TONE: Record<VerticalMatch["accent"], string> = {
+  amber: "border-amber-500/20 bg-amber-500/[0.04] text-amber-300",
+  cyan: "border-cyan-500/20 bg-cyan-500/[0.04] text-cyan-300",
+  violet: "border-violet-500/20 bg-violet-500/[0.04] text-violet-300",
+  emerald: "border-emerald-500/20 bg-emerald-500/[0.04] text-emerald-300",
+};
+
+function VerticalMatcher() {
+  return (
+    <section
+      aria-label="Find your tier by vertical"
+      className="relative z-10 px-6 md:px-8 py-16 max-w-6xl mx-auto"
+    >
+      <div className="text-center mb-10">
+        <p className="text-[11px] font-mono uppercase tracking-[0.3em] text-[#B5532C] mb-3">
+          Find your tier in 5 seconds
+        </p>
+        <h2
+          className="text-3xl md:text-4xl font-bold mb-3 font-serif"
+          style={{ letterSpacing: "-0.01em" }}
+        >
+          Pick your vertical.
+        </h2>
+        <p className="text-[14px] text-neutral-400 max-w-xl mx-auto leading-relaxed">
+          Each vertical maps to a specific weekly deliverable and a recommended
+          tier. Skip the comparison table.
+        </p>
+      </div>
+
+      <ul className="grid md:grid-cols-2 gap-4">
+        {VERTICAL_MATCHES.map((m) => (
+          <li
+            key={m.vertical}
+            className="rounded-2xl border border-white/[0.07] bg-white/[0.025] p-6 hover:border-white/[0.15] transition-colors"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <span
+                className={`inline-flex text-[10px] font-mono uppercase tracking-[0.2em] px-2.5 py-1 rounded-full border ${VERTICAL_TONE[m.accent]}`}
+              >
+                {m.vertical}
+              </span>
+              <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-500">
+                {m.recommendedTier} tier
+              </span>
+            </div>
+            <p className="text-[12px] font-mono uppercase tracking-wider text-neutral-600 mb-2">
+              You are
+            </p>
+            <p className="text-[14px] text-neutral-200 mb-4 leading-relaxed">
+              {m.buyerLine}
+            </p>
+            <p className="text-[12px] font-mono uppercase tracking-wider text-neutral-600 mb-2">
+              You ship
+            </p>
+            <p className="text-[14px] text-white font-medium mb-4 leading-snug">
+              {m.deliverable}
+            </p>
+            <p className="text-[13px] text-neutral-400 mb-5 font-mono">
+              {m.pricing}
+            </p>
+            <Link
+              href={m.playbookHref}
+              className="inline-flex items-center justify-between w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-[13px] font-semibold text-white hover:bg-[#B5532C] hover:text-black hover:border-[#B5532C] transition-colors"
+            >
+              Try the {m.vertical.toLowerCase()} playbook
+              <span aria-hidden="true">→</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
