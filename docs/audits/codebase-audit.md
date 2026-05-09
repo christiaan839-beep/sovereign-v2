@@ -89,47 +89,61 @@ These are working, well-written modules that the platform claims to
 use but **nothing actually imports them today**. Either wire them in
 (real engineering) or stop claiming the feature on landing.
 
-| Module                                                           | Marketing claim it backs                       | Actually wired?                                                         |
-| ---------------------------------------------------------------- | ---------------------------------------------- | ----------------------------------------------------------------------- |
-| `output-verifier.ts`                                             | "5-layer output verifier" all over the landing | **NO** — never imported                                                 |
-| `output-refiner.ts`                                              | Output polishing pipeline                      | **NO**                                                                  |
-| `output-transparency.ts`                                         | "Cite every claim"                             | **NO**                                                                  |
-| `peer-loop.ts`                                                   | "PEER loop — peers review each other"          | **NO**                                                                  |
-| `adversarial-synthesis.ts`                                       | "Adversarial multi-agent synthesis"            | **NO**                                                                  |
-| `citation-engine.ts`                                             | "Citation tracking on every claim"             | **NO**                                                                  |
-| `swarm-protocol.ts`                                              | "Agent-to-agent economy"                       | **NO**                                                                  |
-| `context-weaver.ts`                                              | "Knowledge graph context"                      | **NO**                                                                  |
-| `context-compression.ts`                                         | "Compressed context for long convos"           | **NO**                                                                  |
-| `semantic-memory.ts`                                             | "Cross-session semantic memory"                | **NO**                                                                  |
-| `vector-memory.ts`                                               | RAG pipeline                                   | **YES** — dynamic import in smart-router only                           |
-| `evolution-engine.ts`                                            | "Self-improving agents"                        | **NO**                                                                  |
-| `self-improve.ts`                                                | "Self-improvement loop"                        | **NO**                                                                  |
-| `dream.ts`                                                       | "Dream-state planning"                         | **NO**                                                                  |
-| `model-attribution.ts`                                           | "Show which model wrote this"                  | **YES** — dynamic in `ai.ts`                                            |
-| `cost-ledger.ts`                                                 | "Per-tenant cost tracking"                     | **NO**                                                                  |
-| `critic.ts`                                                      | Critic gate in agent factory                   | **YES** — `useCritic` opt-in                                            |
-| `safety-check.ts`                                                | "Multi-stage safety pipeline"                  | **NO**                                                                  |
-| `mcp-integrations.ts`, `mcp-tool-generator.ts`                   | "MCP tool ecosystem"                           | **NO**                                                                  |
-| `solution-templates.ts`                                          | Pre-built playbook templates                   | **NO**                                                                  |
-| `whatsapp-agent.ts`, `voice-service.ts`, `webhook-dispatcher.ts` | Communication channels                         | **NO**                                                                  |
-| `factory.ts` (vs `agent-factory.ts`)                             | Older agent factory?                           | **NO** — likely superseded                                              |
-| `email-sequences.ts`                                             | Email drip backend                             | **NO** — possibly superseded by route-level logic                       |
-| `crm.ts`                                                         | CRM sync                                       | **NO** — superseded by `_webhooks/crm/route.ts`                         |
-| `lead-scorer.ts`                                                 | "Lead intent scoring"                          | **NO**                                                                  |
-| `brand-voice.ts` (lib, not agent)                                | Brand-voice memory                             | **NO** — agent route exists                                             |
-| `competitor.ts` (lib)                                            | Competitor analysis helpers                    | **NO** — agent route exists                                             |
-| `slack.ts`                                                       | Slack notifier                                 | **NO**                                                                  |
-| `pinecone.ts`                                                    | Pinecone vector store                          | **NO** — `vector-memory.ts` may use Pinecone, but this lib isn't loaded |
-| `vllm-config.ts`                                                 | vLLM local model config                        | **NO**                                                                  |
-| `scheduled-tasks.ts`, `scheduler.ts` (lib, not agent)            | Cron internals                                 | **NO** — superseded by `_cron/` routes                                  |
-| `browser-engine.ts`                                              | Browser-use engine                             | **NO** — superseded by `computer-use` agent                             |
-| `validation.ts`                                                  | Generic input validation                       | **NO** — Zod used inline now                                            |
-| `agent-schemas.ts`                                               | Pre-typed agent schemas                        | **NO**                                                                  |
-| `tenant-scope.ts`                                                | Tenant isolation helper                        | **NO** — superseded by `tenant-resolver.ts`                             |
-| `error-recovery.ts`                                              | Generic error recovery                         | **NO**                                                                  |
-| `approval-gate.ts`                                               | Action-tier approval gate                      | **NO** — superseded by `actionTier` in agent-factory                    |
-| `input-sanitizer.ts`                                             | Input sanitization                             | **NO** — only test imports it; agents use Zod                           |
-| `budget.ts` (vs `budget-controls.ts`)                            | Older budget enforcement                       | **NO** — superseded                                                     |
+**Important correction (post-initial audit):** the **5-layer safety
+pipeline** claim _is_ shipped — it's wired directly inside
+`src/lib/agent-factory.ts` (jailbreak detection at line ~265, content
+safety at ~307, PII scan at ~465, quality scoring + retry at ~483,
+optional critic via `useCritic` config). Earlier rows in this table
+attributed the 5-layer claim to `output-verifier.ts` — that's wrong;
+`output-verifier.ts` is a separate "mythos-ready output safety" module
+that's genuinely unwired but it does NOT back the 5-layer claim.
+
+**Genuinely unwired marketing claims** (verified post-correction):
+PEER Loop · Adversarial Synthesis · Citation Tracking · Knowledge
+Graph context · Evolution Engine · Cross-session semantic memory ·
+Agent-to-agent economy / swarm protocol · Cost ledger.
+
+| Module                                                           | Marketing claim it backs                                       | Actually wired?                                                                           |
+| ---------------------------------------------------------------- | -------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `output-verifier.ts`                                             | "Mythos-ready output safety" (separate from the 5-layer claim) | **NO** — never imported (the 5-layer claim is wired in agent-factory.ts itself, not here) |
+| `output-refiner.ts`                                              | Output polishing pipeline                                      | **NO**                                                                                    |
+| `output-transparency.ts`                                         | "Cite every claim"                                             | **NO**                                                                                    |
+| `peer-loop.ts`                                                   | "PEER loop — peers review each other"                          | **NO**                                                                                    |
+| `adversarial-synthesis.ts`                                       | "Adversarial multi-agent synthesis"                            | **NO**                                                                                    |
+| `citation-engine.ts`                                             | "Citation tracking on every claim"                             | **NO**                                                                                    |
+| `swarm-protocol.ts`                                              | "Agent-to-agent economy"                                       | **NO**                                                                                    |
+| `context-weaver.ts`                                              | "Knowledge graph context"                                      | **NO**                                                                                    |
+| `context-compression.ts`                                         | "Compressed context for long convos"                           | **NO**                                                                                    |
+| `semantic-memory.ts`                                             | "Cross-session semantic memory"                                | **NO**                                                                                    |
+| `vector-memory.ts`                                               | RAG pipeline                                                   | **YES** — dynamic import in smart-router only                                             |
+| `evolution-engine.ts`                                            | "Self-improving agents"                                        | **NO**                                                                                    |
+| `self-improve.ts`                                                | "Self-improvement loop"                                        | **NO**                                                                                    |
+| `dream.ts`                                                       | "Dream-state planning"                                         | **NO**                                                                                    |
+| `model-attribution.ts`                                           | "Show which model wrote this"                                  | **YES** — dynamic in `ai.ts`                                                              |
+| `cost-ledger.ts`                                                 | "Per-tenant cost tracking"                                     | **NO**                                                                                    |
+| `critic.ts`                                                      | Critic gate in agent factory                                   | **YES** — `useCritic` opt-in                                                              |
+| `safety-check.ts`                                                | "Multi-stage safety pipeline"                                  | **NO**                                                                                    |
+| `mcp-integrations.ts`, `mcp-tool-generator.ts`                   | "MCP tool ecosystem"                                           | **NO**                                                                                    |
+| `solution-templates.ts`                                          | Pre-built playbook templates                                   | **NO**                                                                                    |
+| `whatsapp-agent.ts`, `voice-service.ts`, `webhook-dispatcher.ts` | Communication channels                                         | **NO**                                                                                    |
+| `factory.ts` (vs `agent-factory.ts`)                             | Older agent factory?                                           | **NO** — likely superseded                                                                |
+| `email-sequences.ts`                                             | Email drip backend                                             | **NO** — possibly superseded by route-level logic                                         |
+| `crm.ts`                                                         | CRM sync                                                       | **NO** — superseded by `_webhooks/crm/route.ts`                                           |
+| `lead-scorer.ts`                                                 | "Lead intent scoring"                                          | **NO**                                                                                    |
+| `brand-voice.ts` (lib, not agent)                                | Brand-voice memory                                             | **NO** — agent route exists                                                               |
+| `competitor.ts` (lib)                                            | Competitor analysis helpers                                    | **NO** — agent route exists                                                               |
+| `slack.ts`                                                       | Slack notifier                                                 | **NO**                                                                                    |
+| `pinecone.ts`                                                    | Pinecone vector store                                          | **NO** — `vector-memory.ts` may use Pinecone, but this lib isn't loaded                   |
+| `vllm-config.ts`                                                 | vLLM local model config                                        | **NO**                                                                                    |
+| `scheduled-tasks.ts`, `scheduler.ts` (lib, not agent)            | Cron internals                                                 | **NO** — superseded by `_cron/` routes                                                    |
+| `browser-engine.ts`                                              | Browser-use engine                                             | **NO** — superseded by `computer-use` agent                                               |
+| `validation.ts`                                                  | Generic input validation                                       | **NO** — Zod used inline now                                                              |
+| `agent-schemas.ts`                                               | Pre-typed agent schemas                                        | **NO**                                                                                    |
+| `tenant-scope.ts`                                                | Tenant isolation helper                                        | **NO** — superseded by `tenant-resolver.ts`                                               |
+| `error-recovery.ts`                                              | Generic error recovery                                         | **NO**                                                                                    |
+| `approval-gate.ts`                                               | Action-tier approval gate                                      | **NO** — superseded by `actionTier` in agent-factory                                      |
+| `input-sanitizer.ts`                                             | Input sanitization                                             | **NO** — only test imports it; agents use Zod                                             |
+| `budget.ts` (vs `budget-controls.ts`)                            | Older budget enforcement                                       | **NO** — superseded                                                                       |
 
 **Action — three paths:**
 
