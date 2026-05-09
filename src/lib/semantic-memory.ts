@@ -249,7 +249,7 @@ async function writeToDB(
     if (mem.sessionId) insertData.session_id = mem.sessionId;
 
     await (
-      db.insert(tenantMemories) as {
+      db.insert(tenantMemories) as unknown as {
         values: (v: Record<string, unknown>) => Promise<void>;
       }
     ).values(insertData);

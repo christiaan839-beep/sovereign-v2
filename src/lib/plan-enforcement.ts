@@ -64,7 +64,10 @@ async function getUserPlan(userId: string): Promise<PlanId> {
 
   // 2. Check for founder status (first 10 users)
   try {
-    const { founders } = await import("@/app/api/_misc/founders/route");
+    const mod = (await import("@/app/api/_misc/founders/route")) as unknown as {
+      founders?: { has?: (id: string) => boolean };
+    };
+    const founders = mod.founders;
     if (typeof founders?.has === "function" && founders.has(userId)) {
       return "founder";
     }

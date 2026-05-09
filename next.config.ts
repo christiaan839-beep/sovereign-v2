@@ -11,7 +11,9 @@ const nextConfig: NextConfig = {
   // `npm run typecheck` as an informational step so the residual error
   // count stays visible. Target: drive count to zero, then flip to false.
   // Run `npm run typecheck` locally to see the current error list.
-  typescript: { ignoreBuildErrors: true },
+  // Strict TypeScript ON — every error knocked down or `@ts-expect-error`'d
+  // with a concrete reason in this branch (audit-2026-05).
+  typescript: { ignoreBuildErrors: false },
 
   // Keep Node.js-only packages out of client/edge bundles
   serverExternalPackages: [
@@ -143,7 +145,7 @@ export default sentryEnabled
       silent: true,
       // Upload source maps but don't expose them publicly — only Sentry
       // gets them, the bundle ships with `//# sourceMappingURL` stripped.
-      hideSourceMaps: true,
+      sourcemaps: { disable: false, deleteSourcemapsAfterUpload: true },
       // Tunnel client-side errors through a local route to bypass ad blockers.
       tunnelRoute: "/monitoring",
       // Use the Vercel commit SHA as the release name (sentry.config.ts

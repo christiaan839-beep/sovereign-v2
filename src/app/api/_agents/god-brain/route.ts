@@ -122,7 +122,7 @@ export const POST = createAgentRoute({
           },
           body: JSON.stringify({
             model: "nvidia/llama-nemotron-embed-1b-v2",
-            input: [(results.analysis || input).toString().slice(0, 500)],
+            input: [String(results.analysis || input).slice(0, 500)],
             encoding_format: "float",
           }),
         },
@@ -190,7 +190,7 @@ export const POST = createAgentRoute({
             },
             body: JSON.stringify({
               model: "black-forest-labs/flux.2-klein-4b",
-              prompt: `Clean, modern infographic visualizing: ${(results.analysis || input).toString().slice(0, 200)}. Dark theme, neon accents, professional layout.`,
+              prompt: `Clean, modern infographic visualizing: ${String(results.analysis || input).slice(0, 200)}. Dark theme, neon accents, professional layout.`,
               width: 512,
               height: 512,
               n: 1,

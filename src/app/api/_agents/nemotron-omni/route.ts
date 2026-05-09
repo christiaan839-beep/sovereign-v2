@@ -1,5 +1,4 @@
 import { createAgentRoute } from "@/lib/agent-factory";
-import { NextRequest, NextResponse } from "next/server";
 
 function getNimKey(): string {
   return process.env.NVIDIA_NIM_API_KEY || process.env.NVIDIA_API_KEY || "";
@@ -7,13 +6,18 @@ function getNimKey(): string {
 
 export const POST = createAgentRoute({
   name: "nemotron-omni",
-  handler: async ({ input, email, userId }) => {
+  handler: async ({ input }) => {
     const {
-      prompt,
+      prompt = "",
       mode = "text",
       imageUrl,
       audioContext,
-    } = input as Record<string, unknown>;
+    } = input as {
+      prompt?: string;
+      mode?: string;
+      imageUrl?: string;
+      audioContext?: string;
+    };
     if (!prompt) return { error: "prompt required" };
 
     const key = getNimKey();
@@ -78,10 +82,7 @@ export const POST = createAgentRoute({
 
     if (!res.ok) {
       const err = await res.text();
-      return NextResponse.json(
-        { error: `NIM error: ${err}` },
-        { status: res.status },
-      );
+      return { error: `NIM error: ${err}`, status: res.status };
     }
 
     const data = await res.json();

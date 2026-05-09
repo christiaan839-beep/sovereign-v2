@@ -18,7 +18,17 @@ type Handler<TIn, TOut> = (ctx: TIn) => Promise<TOut>;
 
 export function withSelfHeal<TIn, TOut>(
   handler: Handler<TIn, TOut>,
-  opts: { maxRetries?: number } = {},
+  opts: {
+    maxRetries?: number;
+    /** Human-readable label for log messages (optional). */
+    label?: string;
+    /**
+     * Optional Zod schema for the input — if provided, callers can rely
+     * on the surrounding factory to surface validation errors upstream
+     * (we don't run it here; this is just a type-friendly accept point).
+     */
+    inputSchema?: unknown;
+  } = {},
 ): Handler<TIn, TOut> {
   const maxRetries = opts.maxRetries ?? 1;
   return async (ctx: TIn): Promise<TOut> => {

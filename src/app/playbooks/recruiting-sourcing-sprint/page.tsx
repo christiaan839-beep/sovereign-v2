@@ -716,7 +716,7 @@ function SprintResult({
                   <CopyButton text={sprint.booleans![k]} />
                 </div>
                 <pre className="text-[12.5px] font-mono text-neutral-200 whitespace-pre-wrap break-words leading-relaxed">
-                  {sprint.booleans[k]}
+                  {sprint.booleans?.[k]}
                 </pre>
               </li>
             ))}

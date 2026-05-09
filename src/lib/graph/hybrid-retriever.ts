@@ -54,7 +54,9 @@ interface QueryOptions {
 
 // ── Hybrid Query ──
 
-export async function hybridQuery(options: QueryOptions): Promise<RetrievalResult> {
+export async function hybridQuery(
+  options: QueryOptions,
+): Promise<RetrievalResult> {
   const {
     userId,
     query,
@@ -69,7 +71,10 @@ export async function hybridQuery(options: QueryOptions): Promise<RetrievalResul
 
   try {
     // ── Step 1: Text-based node search (label + properties matching) ──
-    const queryTerms = query.toLowerCase().split(/\s+/).filter(t => t.length > 2);
+    const queryTerms = query
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((t) => t.length > 2);
     const textConditions = [
       eq(graphNodes.userId, userId),
       gte(graphNodes.createdAt, cutoffDate),
@@ -87,13 +92,16 @@ export async function hybridQuery(options: QueryOptions): Promise<RetrievalResul
       .limit(topK * 3); // Over-fetch for ranking
 
     // Score by text relevance + recency
-    const scoredNodes = textResults.map(node => {
+    const scoredNodes = textResults.map((node) => {
       const label = node.label.toLowerCase();
       const props = node.properties.toLowerCase();
 
       // Text relevance (how many query terms appear in label/properties)
-      const termHits = queryTerms.filter(t => label.includes(t) || props.includes(t)).length;
-      const textScore = queryTerms.length > 0 ? termHits / queryTerms.length : 0.5;
+      const termHits = queryTerms.filter(
+        (t) => label.includes(t) || props.includes(t),
+      ).length;
+      const textScore =
+        queryTerms.length > 0 ? termHits / queryTerms.length : 0.5;
 
       // Recency score (exponential decay)
       const ageMs = Date.now() - new Date(node.createdAt!).getTime();
@@ -101,7 +109,8 @@ export async function hybridQuery(options: QueryOptions): Promise<RetrievalResul
       const recencyScore = Math.exp(-ageDays / 30); // Half-life of 30 days
 
       // Combined score
-      const combinedScore = textScore * (1 - recencyWeight) + recencyScore * recencyWeight;
+      const combinedScore =
+        textScore * (1 - recencyWeight) + recencyScore * recencyWeight;
 
       return {
         id: node.id,
@@ -109,7 +118,7 @@ export async function hybridQuery(options: QueryOptions): Promise<RetrievalResul
         label: node.label,
         properties: JSON.parse(node.properties || "{}"),
         score: Math.round(combinedScore * 100) / 100,
-        source: "vector" as const,
+        source: "vector" as "vector" | "graph" | "both",
         confidence: node.confidence || 100,
       };
     });
@@ -119,13 +128,16 @@ export async function hybridQuery(options: QueryOptions): Promise<RetrievalResul
     const topNodes = scoredNodes.slice(0, topK);
 
     // ── Step 2: Graph traversal — follow edges from top nodes ──
-    const topNodeIds = topNodes.map(n => n.id);
-    let paths: Array<{ from: string; edge: string; to: string; weight: number }> = [];
+    const topNodeIds = topNodes.map((n) => n.id);
+    let paths: Array<{
+      from: string;
+      edge: string;
+      to: string;
+      weight: number;
+    }> = [];
 
     if (topNodeIds.length > 0) {
-      const edgeConditions = [
-        eq(graphEdges.userId, userId),
-      ];
+      const edgeConditions = [eq(graphEdges.userId, userId)];
 
       if (edgeTypes && edgeTypes.length > 0) {
         edgeConditions.push(sql`${graphEdges.edgeType} = ANY(${edgeTypes})`);
@@ -140,10 +152,11 @@ export async function hybridQuery(options: QueryOptions): Promise<RetrievalResul
 
       // Filter to edges connected to our top nodes
       const relevantEdges = edges.filter(
-        e => topNodeIds.includes(e.sourceId) || topNodeIds.includes(e.targetId)
+        (e) =>
+          topNodeIds.includes(e.sourceId) || topNodeIds.includes(e.targetId),
       );
 
-      paths = relevantEdges.map(e => ({
+      paths = relevantEdges.map((e) => ({
         from: e.sourceId,
         edge: e.edgeType,
         to: e.targetId,
@@ -152,8 +165,10 @@ export async function hybridQuery(options: QueryOptions): Promise<RetrievalResul
 
       // Boost nodes that appear in graph paths
       for (const edge of relevantEdges) {
-        const connectedId = topNodeIds.includes(edge.sourceId) ? edge.targetId : edge.sourceId;
-        const existing = topNodes.find(n => n.id === connectedId);
+        const connectedId = topNodeIds.includes(edge.sourceId)
+          ? edge.targetId
+          : edge.sourceId;
+        const existing = topNodes.find((n) => n.id === connectedId);
         if (existing) {
           existing.score = Math.min(1, existing.score + 0.1); // Graph bonus
           existing.source = "both";
@@ -179,10 +194,19 @@ export async function hybridQuery(options: QueryOptions): Promise<RetrievalResul
  * Get the full causal path for a specific task/node.
  * Follows LEADS_TO, CAUSED, PRECEDED edges to build the complete trace.
  */
-export async function getTaskTrace(userId: string, nodeId: string, maxDepth: number = 5): Promise<{
+export async function getTaskTrace(
+  userId: string,
+  nodeId: string,
+  maxDepth: number = 5,
+): Promise<{
   chain: Array<{ nodeId: string; label: string; type: string; edge: string }>;
 }> {
-  const chain: Array<{ nodeId: string; label: string; type: string; edge: string }> = [];
+  const chain: Array<{
+    nodeId: string;
+    label: string;
+    type: string;
+    edge: string;
+  }> = [];
   const visited = new Set<string>();
   let currentId = nodeId;
 
@@ -191,18 +215,21 @@ export async function getTaskTrace(userId: string, nodeId: string, maxDepth: num
     visited.add(currentId);
 
     // Get current node
-    const nodes = await db.select().from(graphNodes)
+    const nodes = await db
+      .select()
+      .from(graphNodes)
       .where(and(eq(graphNodes.id, currentId), eq(graphNodes.userId, userId)))
       .limit(1);
 
     if (nodes.length === 0) break;
 
     // Get outgoing edges (LEADS_TO, CAUSED, PRECEDED)
-    const edges = await db.select().from(graphEdges)
-      .where(and(
-        eq(graphEdges.sourceId, currentId),
-        eq(graphEdges.userId, userId),
-      ))
+    const edges = await db
+      .select()
+      .from(graphEdges)
+      .where(
+        and(eq(graphEdges.sourceId, currentId), eq(graphEdges.userId, userId)),
+      )
       .orderBy(desc(graphEdges.weight))
       .limit(1);
 

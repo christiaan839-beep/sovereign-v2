@@ -39,50 +39,241 @@ const AGENT_HUBS = [
 // Emerald = data flows, Cyan = AI inference, Violet = agent handoffs
 type ArcColor = [number, number, number, number];
 const EMERALD: ArcColor = [0.063, 0.725, 0.506, 0.8];
-const CYAN: ArcColor    = [0.086, 0.827, 0.878, 0.7];
-const VIOLET: ArcColor  = [0.651, 0.545, 0.984, 0.7];
+const CYAN: ArcColor = [0.086, 0.827, 0.878, 0.7];
+const VIOLET: ArcColor = [0.651, 0.545, 0.984, 0.7];
 
 const ARCS = [
   // Transatlantic — high volume
-  { startLat: 37.7749, startLng: -122.4194, endLat: 51.5074, endLng: -0.1278, arcAlt: 0.35, color: EMERALD },
-  { startLat: 40.7128, startLng: -74.006, endLat: 48.8566, endLng: 2.3522, arcAlt: 0.28, color: CYAN },
-  { startLat: 40.7128, startLng: -74.006, endLat: 51.5074, endLng: -0.1278, arcAlt: 0.22, color: VIOLET },
+  {
+    startLat: 37.7749,
+    startLng: -122.4194,
+    endLat: 51.5074,
+    endLng: -0.1278,
+    arcAlt: 0.35,
+    color: EMERALD,
+  },
+  {
+    startLat: 40.7128,
+    startLng: -74.006,
+    endLat: 48.8566,
+    endLng: 2.3522,
+    arcAlt: 0.28,
+    color: CYAN,
+  },
+  {
+    startLat: 40.7128,
+    startLng: -74.006,
+    endLat: 51.5074,
+    endLng: -0.1278,
+    arcAlt: 0.22,
+    color: VIOLET,
+  },
   // Asia-Pacific
-  { startLat: 1.3521, startLng: 103.8198, endLat: 35.6762, endLng: 139.6503, arcAlt: 0.2, color: CYAN },
-  { startLat: 37.5665, startLng: 126.978, endLat: 31.2304, endLng: 121.4737, arcAlt: 0.12, color: EMERALD },
-  { startLat: -33.8688, startLng: 151.2093, endLat: 1.3521, endLng: 103.8198, arcAlt: 0.28, color: VIOLET },
+  {
+    startLat: 1.3521,
+    startLng: 103.8198,
+    endLat: 35.6762,
+    endLng: 139.6503,
+    arcAlt: 0.2,
+    color: CYAN,
+  },
+  {
+    startLat: 37.5665,
+    startLng: 126.978,
+    endLat: 31.2304,
+    endLng: 121.4737,
+    arcAlt: 0.12,
+    color: EMERALD,
+  },
+  {
+    startLat: -33.8688,
+    startLng: 151.2093,
+    endLat: 1.3521,
+    endLng: 103.8198,
+    arcAlt: 0.28,
+    color: VIOLET,
+  },
   // Europe
-  { startLat: 51.5074, startLng: -0.1278, endLat: 52.52, endLng: 13.405, arcAlt: 0.1, color: EMERALD },
-  { startLat: 48.8566, startLng: 2.3522, endLat: 55.7558, endLng: 37.6173, arcAlt: 0.18, color: CYAN },
+  {
+    startLat: 51.5074,
+    startLng: -0.1278,
+    endLat: 52.52,
+    endLng: 13.405,
+    arcAlt: 0.1,
+    color: EMERALD,
+  },
+  {
+    startLat: 48.8566,
+    startLng: 2.3522,
+    endLat: 55.7558,
+    endLng: 37.6173,
+    arcAlt: 0.18,
+    color: CYAN,
+  },
   // Intercontinental long-haul
-  { startLat: 37.7749, startLng: -122.4194, endLat: 1.3521, endLng: 103.8198, arcAlt: 0.55, color: EMERALD },
-  { startLat: 40.7128, startLng: -74.006, endLat: -23.5505, endLng: -46.6333, arcAlt: 0.38, color: CYAN },
-  { startLat: 37.7749, startLng: -122.4194, endLat: 43.6532, endLng: -79.3832, arcAlt: 0.15, color: VIOLET },
+  {
+    startLat: 37.7749,
+    startLng: -122.4194,
+    endLat: 1.3521,
+    endLng: 103.8198,
+    arcAlt: 0.55,
+    color: EMERALD,
+  },
+  {
+    startLat: 40.7128,
+    startLng: -74.006,
+    endLat: -23.5505,
+    endLng: -46.6333,
+    arcAlt: 0.38,
+    color: CYAN,
+  },
+  {
+    startLat: 37.7749,
+    startLng: -122.4194,
+    endLat: 43.6532,
+    endLng: -79.3832,
+    arcAlt: 0.15,
+    color: VIOLET,
+  },
   // Middle East ↔ Asia
-  { startLat: 25.2048, startLng: 55.2708, endLat: 19.076, endLng: 72.8777, arcAlt: 0.15, color: EMERALD },
-  { startLat: 25.2048, startLng: 55.2708, endLat: 1.3521, endLng: 103.8198, arcAlt: 0.3, color: VIOLET },
+  {
+    startLat: 25.2048,
+    startLng: 55.2708,
+    endLat: 19.076,
+    endLng: 72.8777,
+    arcAlt: 0.15,
+    color: EMERALD,
+  },
+  {
+    startLat: 25.2048,
+    startLng: 55.2708,
+    endLat: 1.3521,
+    endLng: 103.8198,
+    arcAlt: 0.3,
+    color: VIOLET,
+  },
   // Americas
-  { startLat: 43.6532, startLng: -79.3832, endLat: -23.5505, endLng: -46.6333, arcAlt: 0.4, color: CYAN },
-  { startLat: 37.7749, startLng: -122.4194, endLat: 19.076, endLng: 72.8777, arcAlt: 0.6, color: EMERALD },
+  {
+    startLat: 43.6532,
+    startLng: -79.3832,
+    endLat: -23.5505,
+    endLng: -46.6333,
+    arcAlt: 0.4,
+    color: CYAN,
+  },
+  {
+    startLat: 37.7749,
+    startLng: -122.4194,
+    endLat: 19.076,
+    endLng: 72.8777,
+    arcAlt: 0.6,
+    color: EMERALD,
+  },
   // Pacific diagonal
-  { startLat: 35.6762, startLng: 139.6503, endLat: -33.8688, endLng: 151.2093, arcAlt: 0.2, color: VIOLET },
+  {
+    startLat: 35.6762,
+    startLng: 139.6503,
+    endLat: -33.8688,
+    endLng: 151.2093,
+    arcAlt: 0.2,
+    color: VIOLET,
+  },
   // New routes — denser network
-  { startLat: 34.0522, startLng: -118.2437, endLat: 35.6762, endLng: 139.6503, arcAlt: 0.5, color: CYAN },
-  { startLat: 51.5074, startLng: -0.1278, endLat: 25.2048, endLng: 55.2708, arcAlt: 0.25, color: EMERALD },
-  { startLat: 22.3193, startLng: 114.1694, endLat: -33.8688, endLng: 151.2093, arcAlt: 0.22, color: VIOLET },
-  { startLat: 59.3293, startLng: 18.0686, endLat: 40.7128, endLng: -74.006, arcAlt: 0.32, color: CYAN },
-  { startLat: -33.9249, startLng: 18.4241, endLat: 51.5074, endLng: -0.1278, arcAlt: 0.45, color: EMERALD },
-  { startLat: 6.5244, startLng: 3.3792, endLat: 48.8566, endLng: 2.3522, arcAlt: 0.3, color: VIOLET },
-  { startLat: 28.6139, startLng: 77.209, endLat: 37.5665, endLng: 126.978, arcAlt: 0.2, color: CYAN },
-  { startLat: -1.2921, startLng: 36.8219, endLat: 25.2048, endLng: 55.2708, arcAlt: 0.18, color: EMERALD },
-  { startLat: 19.4326, startLng: -99.1332, endLat: -23.5505, endLng: -46.6333, arcAlt: 0.28, color: VIOLET },
-  { startLat: 13.7563, startLng: 100.5018, endLat: 35.6762, endLng: 139.6503, arcAlt: 0.15, color: CYAN },
-  { startLat: 41.9028, startLng: 12.4964, endLat: 28.6139, endLng: 77.209, arcAlt: 0.25, color: EMERALD },
+  {
+    startLat: 34.0522,
+    startLng: -118.2437,
+    endLat: 35.6762,
+    endLng: 139.6503,
+    arcAlt: 0.5,
+    color: CYAN,
+  },
+  {
+    startLat: 51.5074,
+    startLng: -0.1278,
+    endLat: 25.2048,
+    endLng: 55.2708,
+    arcAlt: 0.25,
+    color: EMERALD,
+  },
+  {
+    startLat: 22.3193,
+    startLng: 114.1694,
+    endLat: -33.8688,
+    endLng: 151.2093,
+    arcAlt: 0.22,
+    color: VIOLET,
+  },
+  {
+    startLat: 59.3293,
+    startLng: 18.0686,
+    endLat: 40.7128,
+    endLng: -74.006,
+    arcAlt: 0.32,
+    color: CYAN,
+  },
+  {
+    startLat: -33.9249,
+    startLng: 18.4241,
+    endLat: 51.5074,
+    endLng: -0.1278,
+    arcAlt: 0.45,
+    color: EMERALD,
+  },
+  {
+    startLat: 6.5244,
+    startLng: 3.3792,
+    endLat: 48.8566,
+    endLng: 2.3522,
+    arcAlt: 0.3,
+    color: VIOLET,
+  },
+  {
+    startLat: 28.6139,
+    startLng: 77.209,
+    endLat: 37.5665,
+    endLng: 126.978,
+    arcAlt: 0.2,
+    color: CYAN,
+  },
+  {
+    startLat: -1.2921,
+    startLng: 36.8219,
+    endLat: 25.2048,
+    endLng: 55.2708,
+    arcAlt: 0.18,
+    color: EMERALD,
+  },
+  {
+    startLat: 19.4326,
+    startLng: -99.1332,
+    endLat: -23.5505,
+    endLng: -46.6333,
+    arcAlt: 0.28,
+    color: VIOLET,
+  },
+  {
+    startLat: 13.7563,
+    startLng: 100.5018,
+    endLat: 35.6762,
+    endLng: 139.6503,
+    arcAlt: 0.15,
+    color: CYAN,
+  },
+  {
+    startLat: 41.9028,
+    startLng: 12.4964,
+    endLat: 28.6139,
+    endLng: 77.209,
+    arcAlt: 0.25,
+    color: EMERALD,
+  },
 ];
 
 export function AgentGlobe() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const globeRef = useRef<ReturnType<typeof import("cobe")["default"]> | null>(null);
+  const globeRef = useRef<ReturnType<
+    (typeof import("cobe"))["default"]
+  > | null>(null);
   const phiRef = useRef(0);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -116,6 +307,7 @@ export function AgentGlobe() {
           location: [hub.lat, hub.lng],
           size: 0.06,
         })),
+        // @ts-expect-error — `arcs` is a runtime-supported COBE option not in @types
         arcs: ARCS.map((arc) => ({
           startLat: arc.startLat,
           startLng: arc.startLng,
@@ -149,7 +341,6 @@ export function AgentGlobe() {
 
       <div className="max-w-6xl mx-auto">
         <div className="grid md:grid-cols-2 gap-16 items-center">
-
           {/* Left — text */}
           <motion.div
             initial={{ opacity: 0, x: -40 }}
@@ -157,14 +348,18 @@ export function AgentGlobe() {
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           >
-            <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">Agent Network</p>
+            <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-emerald-500/60 mb-4">
+              Agent Network
+            </p>
             <h2 className="text-3xl md:text-5xl font-black text-white tracking-tight leading-[1.1] mb-6">
-              Your agents.<br />
+              Your agents.
+              <br />
               <span className="text-emerald-400">Operating everywhere.</span>
             </h2>
             <p className="text-neutral-400 text-sm leading-relaxed mb-8 max-w-sm">
-              130 agents deployed across 25 global hubs on 6 continents.
-              27 active data routes. Zero latency regardless of where your leads are.
+              130 agents deployed across 25 global hubs on 6 continents. 27
+              active data routes. Zero latency regardless of where your leads
+              are.
             </p>
 
             {/* Live stat pills */}
@@ -175,9 +370,18 @@ export function AgentGlobe() {
                 { label: "Uptime", value: "99.9%", accent: "emerald" },
                 { label: "Avg latency", value: "<180ms", accent: "violet" },
               ].map((stat) => (
-                <div key={stat.label} className="p-3 rounded-xl border border-white/[0.06] bg-white/[0.02]">
-                  <div className={`text-lg font-black text-${stat.accent}-400 mb-0.5`}>{stat.value}</div>
-                  <div className="text-[10px] text-neutral-500">{stat.label}</div>
+                <div
+                  key={stat.label}
+                  className="p-3 rounded-xl border border-white/[0.06] bg-white/[0.02]"
+                >
+                  <div
+                    className={`text-lg font-black text-${stat.accent}-400 mb-0.5`}
+                  >
+                    {stat.value}
+                  </div>
+                  <div className="text-[10px] text-neutral-500">
+                    {stat.label}
+                  </div>
                 </div>
               ))}
             </div>
@@ -189,7 +393,10 @@ export function AgentGlobe() {
                 <span className="relative rounded-full h-2 w-2 bg-emerald-400" />
               </div>
               <span className="text-xs text-neutral-500">
-                <span className="text-emerald-400 font-semibold">Agents active now</span> — processing 24/7
+                <span className="text-emerald-400 font-semibold">
+                  Agents active now
+                </span>{" "}
+                — processing 24/7
               </span>
             </div>
           </motion.div>
@@ -235,12 +442,23 @@ export function AgentGlobe() {
               <motion.div
                 key={city.label}
                 className="absolute flex items-center gap-1 pointer-events-none"
-                style={{ top: city.top, left: city.left, right: (city as { right?: string }).right, bottom: (city as { bottom?: string }).bottom }}
+                style={{
+                  top: city.top,
+                  left: city.left,
+                  right: (city as { right?: string }).right,
+                  bottom: (city as { bottom?: string }).bottom,
+                }}
                 animate={{ opacity: [0.4, 1, 0.4] }}
-                transition={{ duration: 2.5, repeat: Infinity, delay: city.delay }}
+                transition={{
+                  duration: 2.5,
+                  repeat: Infinity,
+                  delay: city.delay,
+                }}
               >
                 <span className="w-1 h-1 rounded-full bg-emerald-400 block" />
-                <span className="text-[9px] font-mono text-emerald-400/70">{city.label}</span>
+                <span className="text-[9px] font-mono text-emerald-400/70">
+                  {city.label}
+                </span>
               </motion.div>
             ))}
           </motion.div>

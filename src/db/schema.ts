@@ -15,6 +15,10 @@ export const tenants = pgTable("tenants", {
   nodeId: text("node_id").notNull().unique(), // e.g., UMB-NX-77492
   createdAt: timestamp("created_at").defaultNow(),
   plan: text("plan").notNull().default("black-card"), // Future-proofing for tiering
+  // Onboarding capture (consumed by /api/user/onboarding)
+  onboardingGoal: text("onboarding_goal"),
+  onboardingIndustry: text("onboarding_industry"),
+  companyUrl: text("company_url"),
 });
 
 export const activeSwarms = pgTable(

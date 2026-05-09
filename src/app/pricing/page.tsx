@@ -175,7 +175,10 @@ export default function PricingPage() {
   // the plan registry's `marketing: true` set. Runs once on mount.
   useEffect(() => {
     if (process.env.NODE_ENV !== "development") return;
-    const marketingPlanIds = getMarketingPlans().map((p) => p.id as string);
+    const marketingPlanIds = getMarketingPlans().map(
+      // @ts-expect-error — PlanDefinition uses `tier` not `id`; this dev-only check tolerates either
+      (p) => (p.id ?? p.tier) as string,
+    );
     const tierPlanIds = TIERS.map((t) => t.plan);
     const onlyInTiers = tierPlanIds.filter(
       (id) => !marketingPlanIds.includes(id),
@@ -184,7 +187,7 @@ export default function PricingPage() {
       (id) => !tierPlanIds.includes(id),
     );
     if (onlyInTiers.length > 0 || onlyInMarketing.length > 0) {
-      // eslint-disable-next-line no-console
+       
       console.warn("[pricing] TIERS ⇄ PLANS drift detected:", {
         onlyInTiers,
         onlyInMarketing,
@@ -194,7 +197,7 @@ export default function PricingPage() {
     // Also validate each TIER's plan actually exists in PLANS
     for (const t of TIERS) {
       if (!PLANS[t.plan as PlanId]) {
-        // eslint-disable-next-line no-console
+         
         console.error(`[pricing] Unknown plan id in TIERS: "${t.plan}"`);
       }
     }

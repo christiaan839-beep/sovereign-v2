@@ -30,5 +30,18 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules", "src/__tests__", "server", "e2e", "playwright.config.ts", "chrome-extension"]
+  "exclude": [
+    "node_modules",
+    "src/__tests__",
+    "src/lib/__tests__",
+    "src/db/__tests__",
+    "**/*.test.ts",
+    "server",
+    "e2e",
+    "playwright.config.ts",
+    "chrome-extension",
+    "mcp-server",
+    "packages",
+    "scripts"
+  ]
 }

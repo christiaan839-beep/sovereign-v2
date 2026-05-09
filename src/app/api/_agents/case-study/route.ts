@@ -22,7 +22,7 @@ const schema = z
   .object({
     clientName: z.string().max(200).optional(),
     industry: z.string().max(100).optional(),
-    metrics: z.record(z.string()).optional(),
+    metrics: z.record(z.string(), z.string()).optional(),
     metric: z.string().max(80).optional(),
     outcome: z.string().max(280).optional(),
     playbook: z.string().max(80).optional(),

@@ -25,7 +25,8 @@ export type CtaName =
   | "primary-final"
   | "seat-claim"
   | "playbook-card"
-  | "email-founder";
+  | "email-founder"
+  | "final-cta";
 
 /**
  * Return (creating if missing) a 36-char UUID unique to this browser.

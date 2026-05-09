@@ -112,7 +112,14 @@ export interface AgentConfig {
   allowedTopics?: string[];
 
   /** The agent's core logic */
-  handler: (ctx: AgentContext) => Promise<Record<string, unknown>>;
+  /**
+   * Handler may return a plain object (the factory will JSON-wrap it
+   * with the standard response envelope) OR an already-built
+   * NextResponse / Response (returned as-is). Widened to accept
+   * Response so legacy handlers that call NextResponse.json() inline
+   * still type-check.
+   */
+  handler: (ctx: AgentContext) => Promise<Record<string, unknown> | Response>;
 }
 
 export interface AgentContext {
@@ -447,7 +454,7 @@ export function createAgentRoute(config: AgentConfig) {
 
       // ─── Execute Agent Handler ───
       replay?.addStep("handler_start", { agent: config.name });
-      const result = await config.handler({
+      const handlerReturn = await config.handler({
         input: sanitized,
         request: req,
         email,
@@ -455,6 +462,14 @@ export function createAgentRoute(config: AgentConfig) {
         tenantId,
         orgId,
       });
+      // Legacy handlers may return an already-built NextResponse / Response
+      // (e.g. when they want to set a non-200 status). Pass it through
+      // unchanged — skipping the safety post-flight + envelope wrap is the
+      // intended escape hatch.
+      if (handlerReturn instanceof Response) {
+        return handlerReturn;
+      }
+      const result: Record<string, unknown> = handlerReturn;
       replay?.addStep("handler_complete", {
         outputKeys: Object.keys(result),
         outputSize: JSON.stringify(result).length,
@@ -520,7 +535,7 @@ export function createAgentRoute(config: AgentConfig) {
                     `Be more precise, accurate, and concise.`,
                 };
 
-                const retryResult = await config.handler({
+                const retryReturn = await config.handler({
                   input: refinedInput,
                   request: req,
                   email,
@@ -528,6 +543,12 @@ export function createAgentRoute(config: AgentConfig) {
                   tenantId,
                   orgId,
                 });
+                // If the handler escaped to a Response on retry, surface
+                // it directly — the original result is discarded.
+                if (retryReturn instanceof Response) {
+                  return retryReturn;
+                }
+                const retryResult: Record<string, unknown> = retryReturn;
 
                 // Score the retry attempt
                 const retryText = getFirstStringValue(retryResult);
@@ -641,6 +662,7 @@ export function createAgentRoute(config: AgentConfig) {
             await import("@/lib/evolution-engine");
           recordStrategyOutcome({
             goalType: config.name,
+            // @ts-expect-error — `strategy` is a recorded extension field; current type omits it
             strategy: config.name,
             success: qualityScore.passed ?? true,
             score: Math.round(qualityScore.overall * 100),
