@@ -433,9 +433,9 @@ function Hero() {
               <span className="absolute inline-flex h-full w-full rounded-full bg-[#B5532C] opacity-70 animate-ping" />
               <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#B5532C]" />
             </span>
-            <span>30 featured agents</span>
+            <span>HMAC-signed receipts</span>
             <span className="text-neutral-700">·</span>
-            <span>39+ models</span>
+            <span>POPIA + SOC2 native</span>
             <span className="text-neutral-700">·</span>
             <span className="text-[#B5532C]">LIVE</span>
           </div>
@@ -448,12 +448,12 @@ function Hero() {
           transition={{ delay: 0.2, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           className="font-serif text-5xl sm:text-7xl md:text-8xl lg:text-9xl leading-[1.02] tracking-[-0.02em] mb-6"
         >
-          <span className="block text-white">Your AI</span>
+          <span className="block text-white">Audit-grade</span>
           <span className="block" style={{ color: "#B5532C" }}>
-            marketing team.
+            AI agents.
           </span>
           <span className="block text-white text-3xl sm:text-5xl md:text-6xl lg:text-7xl mt-3">
-            Without the agency invoice.
+            Every output, cryptographically signed.
           </span>
         </motion.h1>
 
@@ -464,8 +464,10 @@ function Hero() {
           transition={{ delay: 0.4, duration: 0.7 }}
           className="text-[17px] md:text-[19px] text-neutral-400 leading-[1.55] mb-4 max-w-2xl mx-auto"
         >
-          30 featured agents that research, draft, qualify, call, and book — on
-          a multi-provider router that runs most calls for free.
+          30 production agents that research, draft, qualify, and call — and
+          ship a verifiable HMAC-signed receipt every time. Built for teams that
+          need AI <em className="not-italic text-neutral-300">and</em> a paper
+          trail.
         </motion.p>
         <motion.p
           initial={{ opacity: 0, y: 10 }}
@@ -473,8 +475,8 @@ function Hero() {
           transition={{ delay: 0.5, duration: 0.6 }}
           className="text-[15px] md:text-[16px] text-neutral-500 leading-[1.55] mb-10 max-w-xl mx-auto"
         >
-          From R349/mo (≈ $19). No per-seat fees. ZAR + USD billing. Built for
-          the teams every US-first AI tool ignores.
+          From R349/mo (≈ $19). No per-seat fees. ZAR + USD billing.
+          POPIA-native, SOC2-mapped, audit-ready on day one.
         </motion.p>
 
         {/* CTAs */}
