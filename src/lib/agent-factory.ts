@@ -102,13 +102,24 @@ export interface AgentConfig {
   /**
    * Run the post-flight `verifyOutput()` pipeline (LlamaGuard +
    * regex-PII + content-policy + quality + critic) on the handler's
-   * stringified output. Default: false (preserves existing behavior).
-   * When true and the verifier blocks, the route returns 403 with
-   * the block reason in the body.
+   * stringified output.
    *
-   * Trade-off: adds ~150–400ms p50 (LlamaGuard is the slowest layer).
-   * Enable on customer-facing packet routes; skip on internal /
-   * dev / safety-meta routes.
+   * Default: **true** — every customer-facing agent ships with the
+   * full safety pipeline by default. Routes that ARE the safety
+   * pipeline (jailbreak/PII/content-policy meta-agents) are
+   * automatically skipped via `skipPiiScan` / `skipQualityCheck`,
+   * which already mark a route as "I AM the safety layer."
+   *
+   * Set to `false` only for internal/system endpoints where the
+   * latency cost (~150–400ms p50, dominated by LlamaGuard) outweighs
+   * the safety benefit. The verifier is fail-open: missing
+   * NVIDIA_NIM_API_KEY or transient errors fall through to the
+   * other layers (regex PII, content policy, heuristic quality)
+   * which have zero external dependencies.
+   *
+   * When the verifier blocks, the route returns 403 with the block
+   * reason, the user is NOT charged for the run, and the response
+   * carries `code: "VERIFIER_BLOCKED"`.
    */
   useVerifier?: boolean;
 
@@ -631,14 +642,22 @@ export function createAgentRoute(config: AgentConfig) {
         }
       }
 
-      // ─── Output Verification Pipeline (opt-in via useVerifier) ───
-      // The "5-layer mythos" claim — LlamaGuard + regex-PII + content-policy
-      // + quality + critic, run as one cohesive post-flight gate. Skipped
-      // for safety-meta agents and any route that explicitly opts out via
-      // skipPiiScan / skipQualityCheck (those signal "I AM the safety
-      // layer" — running the verifier on them would be circular).
+      // ─── Output Verification Pipeline (default ON) ───
+      // The "5-layer mythos" — LlamaGuard + regex-PII + content-policy
+      // + quality + critic, run as one cohesive post-flight gate.
+      //
+      // Default: ON for every route. Skipped automatically for:
+      //   - safety-meta agents that set skipPiiScan / skipQualityCheck
+      //     (those routes ARE the safety layer — running the verifier
+      //     on them would be circular)
+      //   - routes that explicitly opt out with `useVerifier: false`
+      //     (escape hatch for dev / system / internal endpoints)
+      //
+      // Fail-open by design: a missing NVIDIA_NIM_API_KEY or any
+      // transient error in the verifier falls through to the other
+      // layers — never 500s the response.
       if (
-        config.useVerifier &&
+        config.useVerifier !== false &&
         !config.skipPiiScan &&
         !config.skipQualityCheck
       ) {
@@ -689,6 +708,46 @@ export function createAgentRoute(config: AgentConfig) {
             });
           }
         }
+      }
+
+      // ─── Persist verifiable run receipt ───
+      // Every agent execution gets a signed, persistent row in agent_runs.
+      // The user can later publish the run via /api/agent-runs/[id]/publish
+      // and share the receipt at /r/[id]. The insert is awaited so the
+      // receipt URL is guaranteed in the response — typical cost is <50ms,
+      // negligible against the AI call. recordRun() catches all errors
+      // internally and returns null, so a DB outage NEVER blocks the
+      // agent response.
+      try {
+        const verifierMeta = (finalResult as Record<string, unknown>)
+          ._verifier as { safetyResult?: Record<string, unknown> } | undefined;
+        const safetyResult =
+          (verifierMeta?.safetyResult as Record<string, unknown>) ?? {};
+        const { recordRun } = await import("@/lib/agent-runs");
+        const receiptRow = await recordRun({
+          userId: userId || null,
+          tenantId: tenantId ?? null,
+          agentName: config.name,
+          modelUsed:
+            typeof (finalResult as Record<string, unknown>)._model === "string"
+              ? ((finalResult as Record<string, unknown>)._model as string)
+              : "agent-factory",
+          input: sanitized,
+          output: finalResult,
+          safetyResult,
+          durationMs: Date.now() - startTime,
+          chainDepth: 0,
+          trustDecision: "auto-approved",
+        });
+        if (receiptRow) {
+          (finalResult as Record<string, unknown>)._receipt = {
+            id: receiptRow.id,
+            signature: receiptRow.signature,
+            url: `/r/${receiptRow.id}`,
+          };
+        }
+      } catch {
+        /* run persistence is best-effort and must never block */
       }
 
       // ─── Save to Tenant Memory ───

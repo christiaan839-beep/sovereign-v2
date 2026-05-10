@@ -955,3 +955,47 @@ export const packets = pgTable(
     index("idx_packets_created").on(table.createdAt),
   ],
 );
+
+/**
+ * agent_runs — persistent, signed receipts of every agent execution.
+ *
+ * Powers the public verifiable receipt URL (/r/[id]) — the differentiator
+ * that lets users prove what an agent did, with which models, against
+ * which safety checks. Every row is HMAC-signed at write time using
+ * AGENT_RUN_SIGNING_SECRET so tampering is detectable.
+ *
+ * Privacy gate: rows default to private (visibility="private"). Users
+ * opt to publish individual receipts via /api/agent-runs/[id]/publish,
+ * which flips visibility to "public" and unlocks the unauthenticated
+ * read path. Private rows always require Clerk auth.
+ *
+ * Retention: bounded only by user demand. Add a pruning job once we
+ * have enough volume to justify it.
+ */
+export const agentRuns = pgTable(
+  "agent_runs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id"), // nullable — public/anonymous runs allowed for demos
+    tenantId: uuid("tenant_id").references(() => tenants.id, {
+      onDelete: "set null",
+    }),
+    agentName: text("agent_name").notNull(),
+    modelUsed: text("model_used").notNull().default("unknown"),
+    inputJson: text("input_json").notNull().default("{}"),
+    outputJson: text("output_json").notNull().default("{}"),
+    safetyResult: text("safety_result").notNull().default("{}"), // serialized verifyOutput result
+    durationMs: integer("duration_ms").notNull().default(0),
+    chainDepth: integer("chain_depth").notNull().default(0),
+    trustDecision: text("trust_decision").notNull().default("auto-approved"), // auto-approved | needs-approval | blocked
+    visibility: text("visibility").notNull().default("private"), // private | public | unlisted
+    signature: text("signature").notNull(), // HMAC-SHA256 over canonical run data
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_agent_runs_user").on(table.userId),
+    index("idx_agent_runs_agent").on(table.agentName),
+    index("idx_agent_runs_created").on(table.createdAt),
+    index("idx_agent_runs_visibility").on(table.visibility),
+  ],
+);
