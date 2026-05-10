@@ -110,6 +110,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/sla", priority: 0.6, changeFreq: "monthly" },
     { path: "/status", priority: 0.6, changeFreq: "daily" },
     { path: "/changelog", priority: 0.6, changeFreq: "weekly" },
+    { path: "/verified", priority: 0.9, changeFreq: "weekly" }, // verifiable-receipt live demo — SEO-priority for the audit-grade positioning
 
     // Legal
     { path: "/privacy", priority: 0.5, changeFreq: "monthly" },

@@ -32,6 +32,48 @@ interface RunPageProps {
 
 export const dynamic = "force-dynamic";
 
+/**
+ * Per-receipt metadata so /r/[id] gets a proper card preview on
+ * Twitter / LinkedIn / Slack / iMessage. Falls back to a generic
+ * title when the receipt is private or missing so we don't leak
+ * data on a 404 share.
+ */
+export async function generateMetadata({ params }: RunPageProps) {
+  const { id } = await params;
+  const safeId = /^[0-9a-f-]{32,40}$/i.test(id) ? id : null;
+
+  let title = "Sovereign Matrix — Verifiable Receipt";
+  let description =
+    "Every Sovereign agent run produces a cryptographically signed, verifiable receipt.";
+
+  if (safeId) {
+    const run = await getRun(safeId).catch(() => null);
+    if (run && run.visibility !== "private") {
+      title = `${run.agentName} — Verifiable Receipt | Sovereign Matrix`;
+      description = `HMAC-SHA256 signed receipt for ${run.agentName} (${run.modelUsed}). Verify the signature without our help at /api/verify.`;
+    }
+  }
+
+  const ogImage = safeId ? `/api/og/receipt/${safeId}` : "/og-default.png";
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: "article",
+      images: [{ url: ogImage, width: 1200, height: 630 }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [ogImage],
+    },
+  };
+}
+
 function formatBytes(json: string): string {
   if (json.length < 1024) return `${json.length} B`;
   return `${(json.length / 1024).toFixed(1)} KB`;
