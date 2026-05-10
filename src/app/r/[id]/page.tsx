@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { getRun, canonicalizeRun } from "@/lib/agent-runs";
 import { auth } from "@clerk/nextjs/server";
+import PrintReceiptButton from "./PrintReceiptButton";
 
 interface RunPageProps {
   params: Promise<{ id: string }>;
@@ -100,15 +101,35 @@ export default async function ReceiptPage({ params }: RunPageProps) {
   const publicUrl = host ? `${proto}://${host}/r/${run.id}` : `/r/${run.id}`;
 
   return (
-    <div className="min-h-screen bg-[#030303] text-neutral-200">
+    <div className="min-h-screen bg-[#030303] text-neutral-200 receipt-page">
+      {/* Print stylesheet — when the user does Cmd+P or hits the
+          "Save as PDF" button, this fires and renders a clean
+          monochrome document with all signature evidence intact. */}
+      <style>{`
+        @media print {
+          .receipt-page { background: #fff !important; color: #000 !important; }
+          .receipt-page * { color: #000 !important; background: transparent !important;
+            border-color: #ccc !important; }
+          .no-print { display: none !important; }
+          .receipt-page pre { white-space: pre-wrap !important; word-break: break-all !important;
+            max-height: none !important; overflow: visible !important;
+            font-size: 9pt !important; }
+          .receipt-page section { break-inside: avoid; page-break-inside: avoid; }
+          .receipt-page a { text-decoration: none !important; }
+        }
+      `}</style>
+
       <div className="mx-auto max-w-4xl px-6 py-12">
-        <Link
-          href="/"
-          className="mb-8 inline-flex items-center gap-2 text-sm text-neutral-500 transition hover:text-neutral-200"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Sovereign Matrix
-        </Link>
+        <div className="mb-8 flex items-center justify-between">
+          <Link
+            href="/"
+            className="no-print inline-flex items-center gap-2 text-sm text-neutral-500 transition hover:text-neutral-200"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Sovereign Matrix
+          </Link>
+          <PrintReceiptButton />
+        </div>
 
         {/* Header */}
         <div className="mb-8 flex items-start justify-between">
