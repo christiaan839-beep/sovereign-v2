@@ -3,7 +3,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { SovereignLogo } from "@/components/ui/SovereignLogo";
 import { useHideyNav } from "@/components/ui/EliteEffects";
@@ -174,7 +174,21 @@ export default function MarketplacePage() {
       <main>
         <MarketplaceHero />
         <DeliverablesSection />
-        <AgentGridSection />
+        {/* AgentGridSection calls useSearchParams() to honour ?experimental=1.
+            Wrapping in Suspense prevents the whole tree from being forced
+            into CSR (which would race framer-motion fade-ins against
+            smoke tests). The fallback matches the grid section's height
+            so layout doesn't shift on hydration. */}
+        <Suspense
+          fallback={
+            <div
+              className="px-6 pb-32 bg-[#030303]"
+              style={{ minHeight: "60vh" }}
+            />
+          }
+        >
+          <AgentGridSection />
+        </Suspense>
         <CreatorCTA />
       </main>
       <MarketplaceFooter />

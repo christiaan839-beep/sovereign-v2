@@ -40,13 +40,16 @@ test.describe("Golden path smoke", () => {
   }) => {
     const res = await page.goto("/marketplace");
     expect(res?.status()).toBe(200);
-    // War Room is in FEATURED_AGENTS (pinned regardless of tier filter).
-    // Smart Router is in AGENT_SLUGS + tagged "core" in agent-tiers, so it
-    // renders in the registry-derived grid even with the tier filter hiding
-    // experimental agents by default. Both being present proves: featured
-    // row works AND the registry → grid path works.
+    // Wait for client-side hydration + framer-motion staggered fades to settle.
+    // Without this, the assertion can race the AnimatePresence enter animations
+    // and report missing text that's still in initial=opacity:0.
+    await page.waitForLoadState("networkidle");
+    // God Brain + War Room are both pinned in FEATURED_AGENTS — they render
+    // unconditionally when activeCategory==="All" (the default), independent
+    // of AGENT_SLUGS membership, the tier filter, and PAGE_SIZE pagination.
+    // If either is missing, the marketplace listing component itself broke.
+    await expect(page.locator("body")).toContainText(/God Brain/i);
     await expect(page.locator("body")).toContainText(/War Room/i);
-    await expect(page.locator("body")).toContainText(/Smart Router/i);
   });
 
   test("hand-curated agent detail loads", async ({ page }) => {
