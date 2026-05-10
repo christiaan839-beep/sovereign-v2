@@ -454,6 +454,11 @@ export const POST = createAgentRoute({
   // The packet IS the deliverable — no critic gate (would mangle JSON
   // sub-assets and double the LLM bill).
   useCritic: false,
+  // Run the post-flight verifier (LlamaGuard + PII + content-policy +
+  // quality + critic) on the assembled packet. The packet is what the
+  // agency hands their client — safety bar must be high. ~+200ms p50
+  // worth paying.
+  useVerifier: true,
   handler: async ({ input, userId }) => {
     const parsed = agencyPacketSchema.parse(input);
     const packet = await buildAgencyPacket(parsed);

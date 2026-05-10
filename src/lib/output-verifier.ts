@@ -1,9 +1,7 @@
-// STATUS: ahead-of-consumers — see docs/audits/codebase-audit.md (Tier B).
-// This module backs the "5-layer output verifier" claim on the landing page,
-// but is not wired into createAgentRoute today. Integration target:
-// src/lib/agent-factory.ts handler() — add `useVerifier?: boolean` flag and
-// invoke verifyOutput() between handler() and return. Test on the four
-// vertical packets first; latency budget: +400ms p50.
+// STATUS: WIRED. createAgentRoute calls verifyOutput() when a route opts in
+// via `useVerifier: true` (see src/lib/agent-factory.ts). Currently active
+// on /api/_agents/agency-packet; expand to other customer-facing routes as
+// the latency budget allows (~+200-400ms p50).
 import { createLogger } from "@/lib/logger";
 import { logExecution, type AuditEntry } from "@/lib/execution-audit";
 import {

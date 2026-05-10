@@ -99,6 +99,19 @@ export interface AgentConfig {
   /** Skip quality scoring on output (for scoring/safety agents themselves) */
   skipQualityCheck?: boolean;
 
+  /**
+   * Run the post-flight `verifyOutput()` pipeline (LlamaGuard +
+   * regex-PII + content-policy + quality + critic) on the handler's
+   * stringified output. Default: false (preserves existing behavior).
+   * When true and the verifier blocks, the route returns 403 with
+   * the block reason in the body.
+   *
+   * Trade-off: adds ~150–400ms p50 (LlamaGuard is the slowest layer).
+   * Enable on customer-facing packet routes; skip on internal /
+   * dev / safety-meta routes.
+   */
+  useVerifier?: boolean;
+
   /** Action tier override (1=autonomous, 2=confirm, 3=restricted). Auto-detected if omitted. */
   actionTier?: ActionTier;
 
@@ -615,6 +628,66 @@ export function createAgentRoute(config: AgentConfig) {
             agent: config.name,
             error: String(criticErr),
           });
+        }
+      }
+
+      // ─── Output Verification Pipeline (opt-in via useVerifier) ───
+      // The "5-layer mythos" claim — LlamaGuard + regex-PII + content-policy
+      // + quality + critic, run as one cohesive post-flight gate. Skipped
+      // for safety-meta agents and any route that explicitly opts out via
+      // skipPiiScan / skipQualityCheck (those signal "I AM the safety
+      // layer" — running the verifier on them would be circular).
+      if (
+        config.useVerifier &&
+        !config.skipPiiScan &&
+        !config.skipQualityCheck
+      ) {
+        const verifierInput = getFirstStringValue(sanitized) ?? config.name;
+        const verifierOutput = getFirstStringValue(finalResult) ?? "";
+        if (verifierOutput.length > 20) {
+          try {
+            const { verifyOutput } = await import("@/lib/output-verifier");
+            const verdict = await verifyOutput({
+              agentName: config.name,
+              modelUsed: "agent-factory",
+              tenantId: tenantId ?? userId ?? "anonymous",
+              prompt: verifierInput.slice(0, 2000),
+              output: verifierOutput.slice(0, 8000),
+            });
+            if (!verdict.approved) {
+              log.warn("verifyOutput blocked response", {
+                agent: config.name,
+                trustDecision: verdict.trustDecision,
+                blockReason: verdict.blockReason,
+              });
+              // Do NOT increment usage — the user gets their credit back
+              // because we refused to deliver the output.
+              return NextResponse.json(
+                {
+                  error: "Output blocked by safety verifier",
+                  reason: verdict.blockReason ?? "Failed safety verification",
+                  trustDecision: verdict.trustDecision,
+                  verifierResult: verdict.safetyResult,
+                  code: "VERIFIER_BLOCKED",
+                },
+                { status: 403 },
+              );
+            }
+            // Stamp the verdict onto the response so callers can audit
+            // which checks ran without re-running them.
+            (finalResult as Record<string, unknown>)._verifier = {
+              trustDecision: verdict.trustDecision,
+              executionTimeMs: verdict.executionTimeMs,
+              safetyResult: verdict.safetyResult,
+            };
+          } catch (verErr) {
+            // Fail-open: if the verifier itself errors, log + continue.
+            // Better to ship a possibly-imperfect response than to 500.
+            log.warn("verifyOutput failed (allowing through)", {
+              agent: config.name,
+              error: String(verErr),
+            });
+          }
         }
       }
 
