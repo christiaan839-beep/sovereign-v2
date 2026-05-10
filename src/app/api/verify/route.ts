@@ -26,6 +26,16 @@ const MAX_CANONICAL_BYTES = 32_000;
 
 const limiter = rateLimit({ interval: 60_000, limit: 60 });
 
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Accept",
+};
+
+export async function OPTIONS() {
+  return new Response(null, { status: 204, headers: CORS_HEADERS });
+}
+
 export async function POST(req: Request) {
   // Rate limit by IP — prevents the verifier itself becoming a DoS surface
   const limited = await limiter.check(req);
@@ -35,7 +45,10 @@ export async function POST(req: Request) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "Body must be JSON" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Body must be JSON" },
+      { status: 400, headers: CORS_HEADERS },
+    );
   }
 
   const { canonical, signature } = (body ?? {}) as {
@@ -46,7 +59,7 @@ export async function POST(req: Request) {
   if (typeof canonical !== "string" || typeof signature !== "string") {
     return NextResponse.json(
       { error: "Both `canonical` and `signature` must be strings" },
-      { status: 400 },
+      { status: 400, headers: CORS_HEADERS },
     );
   }
 
@@ -55,7 +68,7 @@ export async function POST(req: Request) {
       {
         error: `canonical length must be in (0, ${MAX_CANONICAL_BYTES}]`,
       },
-      { status: 400 },
+      { status: 400, headers: CORS_HEADERS },
     );
   }
 
@@ -75,12 +88,15 @@ export async function POST(req: Request) {
     // Non-JSON canonical is acceptable — verify still works on raw strings.
   }
 
-  return NextResponse.json({
-    valid,
-    id,
-    agentName,
-    createdAt,
-    algorithm: "HMAC-SHA256",
-    canonicalVersion: 1,
-  });
+  return NextResponse.json(
+    {
+      valid,
+      id,
+      agentName,
+      createdAt,
+      algorithm: "HMAC-SHA256",
+      canonicalVersion: 1,
+    },
+    { headers: CORS_HEADERS },
+  );
 }
