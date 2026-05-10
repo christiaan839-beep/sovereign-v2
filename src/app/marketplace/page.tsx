@@ -4,9 +4,11 @@
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useState, useMemo, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { SovereignLogo } from "@/components/ui/SovereignLogo";
 import { useHideyNav } from "@/components/ui/EliteEffects";
 import { AGENT_SLUGS } from "@/lib/agent-slugs";
+import { getAgentTier } from "@/lib/agent-tiers";
 import { DeliverablesSection } from "./DeliverablesSection";
 
 /**
@@ -118,11 +120,13 @@ const CATEGORIES: Category[] = [
 
 const PAGE_SIZE = 24;
 
-// Build agent list from registry
+// Build agent list from registry, annotated with tier so the UI can
+// gate experimental items behind the `?experimental=1` query flag.
 const ALL_AGENTS = AGENT_SLUGS.map((slug) => ({
   slug,
   name: slugToName(slug),
   category: inferCategory(slug),
+  tier: getAgentTier(slug),
 }));
 
 // Featured agents — pinned top row
@@ -368,14 +372,24 @@ function AgentGridSection() {
   const [activeCategory, setActiveCategory] = useState<Category>("All");
   const [page, setPage] = useState(1);
 
+  // Show experimental agents only when the user opts in via
+  // ?experimental=1. Default surface stays focused on the curated
+  // core lineup. Deprecated agents are always hidden in the grid
+  // (the detail page still resolves them so deep-links don't break).
+  const searchParams = useSearchParams();
+  const initialExperimental = searchParams?.get("experimental") === "1";
+  const [showExperimental, setShowExperimental] = useState(initialExperimental);
+
   // Filter main grid (excluding featured on "All")
   const gridAgents = useMemo(() => {
     return ALL_AGENTS.filter((a) => {
+      if (a.tier === "deprecated") return false;
+      if (a.tier === "experimental" && !showExperimental) return false;
       if (activeCategory === "All" && FEATURED_SLUGS.has(a.slug)) return false;
       if (activeCategory === "All") return true;
       return a.category === activeCategory;
     });
-  }, [activeCategory]);
+  }, [activeCategory, showExperimental]);
 
   const visibleAgents = gridAgents.slice(0, page * PAGE_SIZE);
   const hasMore = visibleAgents.length < gridAgents.length;
@@ -405,6 +419,21 @@ function AgentGridSection() {
                   {cat}
                 </button>
               ))}
+              <span className="ml-2 h-4 w-px bg-white/10" aria-hidden="true" />
+              <button
+                onClick={() => {
+                  setShowExperimental((s) => !s);
+                  setPage(1);
+                }}
+                className={`px-3 py-1.5 rounded-full text-[12px] font-mono tracking-wide transition-all duration-200 whitespace-nowrap ${
+                  showExperimental
+                    ? "border border-cyan-500/40 bg-cyan-500/[0.08] text-cyan-200"
+                    : "border border-white/[0.12] text-neutral-500 hover:border-white/[0.25] hover:text-neutral-300"
+                }`}
+                title="Reveal long-tail agents that haven't been promoted to core."
+              >
+                {showExperimental ? "Experimental ✓" : "+ Experimental"}
+              </button>
             </div>
           </div>
         </div>
