@@ -27,13 +27,10 @@ jobs:
       - name: Run ESLint
         run: npm run lint
 
-      # Informational type-check: next.config.ts still has
-      # `ignoreBuildErrors: true` to keep deploys unblocked while we drive
-      # the legacy agent-route error count to zero. continue-on-error keeps
-      # the gap visible without breaking merges.
-      - name: Type check (informational)
+      # Strict type-check: next.config.ts has `ignoreBuildErrors: false`,
+      # so type errors break the build. CI catches them earlier here.
+      - name: Type check
         run: npm run typecheck
-        continue-on-error: true
 
   build:
     name: Build
