@@ -40,10 +40,13 @@ test.describe("Golden path smoke", () => {
   }) => {
     const res = await page.goto("/marketplace");
     expect(res?.status()).toBe(200);
-    // Slug list is hand-maintained next to the registry; any of the
-    // flagship agents being missing means the listing component broke.
-    await expect(page.locator("body")).toContainText(/Lead Blitz/i);
+    // War Room is in FEATURED_AGENTS (pinned regardless of tier filter).
+    // Smart Router is in AGENT_SLUGS + tagged "core" in agent-tiers, so it
+    // renders in the registry-derived grid even with the tier filter hiding
+    // experimental agents by default. Both being present proves: featured
+    // row works AND the registry → grid path works.
     await expect(page.locator("body")).toContainText(/War Room/i);
+    await expect(page.locator("body")).toContainText(/Smart Router/i);
   });
 
   test("hand-curated agent detail loads", async ({ page }) => {
