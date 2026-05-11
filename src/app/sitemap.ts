@@ -111,6 +111,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/status", priority: 0.6, changeFreq: "daily" },
     { path: "/changelog", priority: 0.6, changeFreq: "weekly" },
     { path: "/verified", priority: 0.9, changeFreq: "weekly" }, // verifiable-receipt live demo — SEO-priority for the audit-grade positioning
+    { path: "/spec", priority: 0.95, changeFreq: "monthly" }, // VAOS 1.0 open standard — top SEO target for "verifiable AI receipts" / "AI agent audit standard"
 
     // Legal
     { path: "/privacy", priority: 0.5, changeFreq: "monthly" },
