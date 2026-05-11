@@ -115,6 +115,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/explorer", priority: 0.85, changeFreq: "daily" }, // public live feed of signed receipts — proof the platform is alive
     { path: "/badge", priority: 0.85, changeFreq: "monthly" }, // verification-badge builder — distribution surface for the embed snippet
     { path: "/stats", priority: 0.8, changeFreq: "daily" }, // aggregate platform metrics — social proof for compliance buyers
+    { path: "/affiliate", priority: 0.75, changeFreq: "monthly" }, // affiliate program landing — recurring revenue lever
     { path: "/spec", priority: 0.95, changeFreq: "monthly" }, // VAOS 1.0 open standard — top SEO target for "verifiable AI receipts" / "AI agent audit standard"
 
     // Legal

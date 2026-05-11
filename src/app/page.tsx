@@ -28,6 +28,7 @@ import { ModelRouterSection } from "@/components/landing/ModelRouterSection";
 import { VerificationPipeline } from "@/components/landing/VerificationPipeline";
 import { SectionDivider } from "@/components/landing/SectionDivider";
 import { FilmGrain } from "@/components/landing/FilmGrain";
+import { NewsletterSignup } from "@/components/landing/NewsletterSignup";
 
 // Below-the-fold sections — dynamic-imported with skeleton placeholders
 // so the visitor's initial JS bundle is smaller, LCP is faster, and
@@ -1262,6 +1263,16 @@ function Footer() {
               Run your first playbook
             </span>
           </Link>
+        </div>
+
+        {/* Newsletter capture — release notes + security advisories,
+            ~2 emails / month. Cyan-themed (audit/infrastructure
+            surface) per the dual-accent brand rule. */}
+        <div className="mb-12 max-w-md">
+          <p className="mb-3 text-[11px] font-mono uppercase tracking-widest text-neutral-500">
+            Release notes + security advisories
+          </p>
+          <NewsletterSignup source="landing-footer" />
         </div>
 
         {/* Link grid */}
