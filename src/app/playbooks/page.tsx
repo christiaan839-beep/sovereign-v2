@@ -102,7 +102,7 @@ const VERTICALS: VerticalPlaybook[] = [
     href: "/playbooks/growth-pulse",
     vertical: "African SMBs",
     buyer: "Solopreneurs and 1–20 person SMBs in ZA / NG / KE / EG / GH",
-    pricing: "R349 / mo (≈ $19)",
+    pricing: "R997 / mo (≈ $49, Pro tier)",
     tagline: "Built for African SMBs. Billed in Rands.",
     description:
       "The monthly deliverable for African SMBs. Locale-aware (ZAR / NGN / KES / EGP / GHS), WhatsApp-first, designed for the businesses USD-only AI tools price out. Local-SEO checklist, four social posts, re-engagement email, WhatsApp broadcast template, and a limited-time offer card in your local currency.",

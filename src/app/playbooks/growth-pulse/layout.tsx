@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Growth Pulse — built for African SMBs, billed in Rands",
     description:
-      "The AI tool USD-only competitors can't replicate. Locale-aware checklist + posts + email + WhatsApp + offer in your currency, every month, R349 / month.",
+      "The AI tool USD-only competitors can't replicate. Locale-aware checklist + posts + email + WhatsApp + offer in your currency, every month, R997 / month.",
     url: URL,
     type: "website",
     images: [

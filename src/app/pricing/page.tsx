@@ -131,7 +131,7 @@ const FAQS = [
   },
   {
     q: "What counts as a 'run'?",
-    a: "One playbook execution = one run. A playbook can chain multiple agents internally (a lead-blitz playbook might run 5 agents), but we count it as one run. Free tier: 50 runs/mo. Starter $19: 200/mo. Growth $49: 500/mo. Node $199: 2,000/mo. Enterprise $499: 10,000/mo.",
+    a: "One playbook execution = one run. A playbook can chain multiple agents internally (a lead-blitz playbook might run 5 agents), but we count it as one run. Free: 50 runs/mo. Pro $49: 500/mo. Team $199: 2,000/mo. Enterprise: 10,000+/mo (custom).",
   },
   {
     q: "What is BYOK (Bring Your Own Key)?",
@@ -699,8 +699,8 @@ const VERTICAL_MATCHES: VerticalMatch[] = [
     buyerLine: "Solopreneur or 1–20 person SMB in ZA / NG / KE / EG / GH",
     deliverable:
       "Monthly growth pulse: local SEO + 4 social posts + email + WhatsApp + offer in your currency",
-    pricing: "R349 / month (≈ $19, Starter tier)",
-    recommendedTier: "Starter",
+    pricing: "R997 / month (≈ $49, Pro tier)",
+    recommendedTier: "Pro",
     playbookHref: "/playbooks/growth-pulse",
     accent: "emerald",
   },
