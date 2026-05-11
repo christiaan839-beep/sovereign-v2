@@ -1,0 +1,30 @@
+{
+  "name": "@sovereignmatrix/cli",
+  "version": "1.0.0",
+  "description": "CLI for verifying Sovereign Matrix agent-run receipts from your terminal.",
+  "type": "module",
+  "bin": {
+    "sovereign-verify": "src/index.mjs"
+  },
+  "files": [
+    "src/",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/christiaan839-beep/sovereign-v2",
+    "directory": "packages/cli"
+  },
+  "keywords": [
+    "sovereign-matrix",
+    "ai-receipts",
+    "verification",
+    "audit",
+    "vaos",
+    "cli"
+  ]
+}
