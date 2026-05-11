@@ -1,0 +1,48 @@
+name: "Verify AI Receipts"
+description: "Verify Sovereign Matrix agent-run receipts referenced in a PR or commit. Fail the build if any signature is invalid. Catches tampered, expired, or fake receipts before they're merged."
+author: "Sovereign Matrix"
+branding:
+  icon: "shield-check"
+  color: "blue"
+
+inputs:
+  receipt-ids:
+    description: "Comma-separated receipt IDs to verify (32-40 hex chars, optional dashes). Mutually exclusive with `text` and `urls`."
+    required: false
+    default: ""
+  receipt-urls:
+    description: "Comma-separated receipt URLs (e.g. https://sovereignmatrix.agency/r/abc...). The action extracts the ID from each."
+    required: false
+    default: ""
+  text:
+    description: "Free-form text to scan for receipt URLs / IDs. Pass ${{ github.event.pull_request.body }} to verify every receipt referenced in a PR description."
+    required: false
+    default: ""
+  verifier-host:
+    description: "Override the verifier host. Defaults to https://sovereignmatrix.agency. White-label customers point this at their own domain."
+    required: false
+    default: "https://sovereignmatrix.agency"
+  fail-on-invalid:
+    description: "If true (default), the step fails when any receipt is invalid. Set to false for warning-only mode."
+    required: false
+    default: "true"
+  fail-on-zero:
+    description: "If true, the step fails when no receipt IDs were found in the inputs. Default false (treats empty input as a no-op success)."
+    required: false
+    default: "false"
+
+outputs:
+  total:
+    description: "Total receipts attempted"
+  verified:
+    description: "Count of receipts whose signature verified successfully"
+  invalid:
+    description: "Count of receipts whose signature failed verification"
+  unreachable:
+    description: "Count of receipts that couldn't be fetched (4xx/5xx/network)"
+  receipt-ids-found:
+    description: "Comma-separated list of unique receipt IDs the action attempted"
+
+runs:
+  using: "node20"
+  main: "dist/index.js"
