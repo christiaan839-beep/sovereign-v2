@@ -23,6 +23,13 @@ node_modules
 # misc
 .DS_Store
 *.pem
+# Next.js App Router lets route paths contain dots — the public
+# verification-key endpoint lives under .well-known/sovereign-receipts/
+# ed25519.pem/route.ts and is CODE, not a key. Allow source files
+# under src/app even if their containing directory matches *.pem.
+!src/app/**/.well-known/**
+!src/app/**/route.ts
+!src/app/**/route.tsx
 
 # debug
 npm-debug.log*
