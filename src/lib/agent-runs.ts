@@ -17,7 +17,15 @@
  * today. The infrastructure cost is one row per agent run — already
  * within the existing audit-log retention budget.
  */
-import { createHmac, timingSafeEqual } from "crypto";
+import {
+  createHmac,
+  timingSafeEqual,
+  createPrivateKey,
+  createPublicKey,
+  sign as nodeCryptoSign,
+  verify as nodeCryptoVerify,
+  type KeyObject,
+} from "crypto";
 import { db } from "@/db";
 import { agentRuns } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -123,11 +131,69 @@ function getSecret(): string | null {
 }
 
 /**
- * Sign the canonical projection with HMAC-SHA256.
- * Returns "v1=<hex>" so the version prefix is part of the wire format
- * and we can rotate the algorithm later without breaking old receipts.
+ * VAOS 2.0 — Ed25519 asymmetric signing.
+ *
+ * The private key is loaded from AGENT_RUN_ED25519_PRIVATE_KEY in PEM
+ * format (PKCS#8). The corresponding public key is exposed at
+ * /.well-known/sovereign-receipts/ed25519.pem so any third party can
+ * verify a v2 signature without holding any secret. This is the
+ * non-repudiation property HMAC can't provide (a colluding insider
+ * with the HMAC secret could forge v1 signatures; nobody outside the
+ * private-key holder can forge v2).
+ *
+ * Receipts are signed under whichever scheme is configured:
+ *   • Ed25519 key present → "v2=<base64-sig>"
+ *   • Otherwise            → "v1=<hex-hmac>"
+ *   • Neither              → "unsigned" (verification still rejects)
+ *
+ * Verification dual-mode: accepts both v1 and v2 transparently so
+ * historical v1-signed receipts keep verifying after a key rotation.
+ */
+let cachedPrivateKey: KeyObject | null = null;
+let cachedPublicKey: KeyObject | null = null;
+let cachedKeyPem: string | null = null;
+
+function getEd25519PrivateKey(): KeyObject | null {
+  const pem = process.env.AGENT_RUN_ED25519_PRIVATE_KEY;
+  if (!pem) return null;
+  if (cachedKeyPem === pem && cachedPrivateKey) return cachedPrivateKey;
+  try {
+    cachedPrivateKey = createPrivateKey({ key: pem, format: "pem" });
+    cachedPublicKey = createPublicKey(cachedPrivateKey);
+    cachedKeyPem = pem;
+    return cachedPrivateKey;
+  } catch {
+    cachedPrivateKey = null;
+    cachedPublicKey = null;
+    return null;
+  }
+}
+
+/**
+ * Return the Ed25519 public key in SPKI/PEM form for third-party
+ * verifiers. Cached after first load. Null if no private key is set
+ * or the configured PEM is malformed.
+ */
+export function getEd25519PublicKeyPem(): string | null {
+  if (!getEd25519PrivateKey()) return null;
+  return cachedPublicKey?.export({ type: "spki", format: "pem" }) as string;
+}
+
+/**
+ * Sign the canonical projection. Prefers Ed25519 (v2) when the
+ * private key is configured; falls back to HMAC-SHA256 (v1) otherwise.
+ *
+ * Both algorithms produce wire-stable signatures with a version prefix
+ * so a verifier presented with a mixed stream of v1 and v2 receipts
+ * can dispatch to the correct check without out-of-band metadata.
  */
 export function signRun(canonical: string): string {
+  // Prefer Ed25519 when configured (non-repudiation > shared-secret).
+  const privKey = getEd25519PrivateKey();
+  if (privKey) {
+    const sig = nodeCryptoSign(null, Buffer.from(canonical, "utf8"), privKey);
+    return `v2=${sig.toString("base64")}`;
+  }
   const secret = getSecret();
   if (!secret) {
     return "unsigned";
@@ -137,21 +203,55 @@ export function signRun(canonical: string): string {
 }
 
 /**
- * Constant-time signature verification. Returns true iff `signature`
- * matches the canonical projection under the current secret.
+ * Constant-time signature verification supporting both v1 (HMAC) and
+ * v2 (Ed25519) wire formats. Returns true iff `signature` matches the
+ * canonical projection under the configured keys.
+ *
+ * v1 → HMAC-SHA256 recompute + constant-time hex compare
+ * v2 → Ed25519 verify (the underlying primitive is constant-time)
  */
 export function verifySignature(canonical: string, signature: string): boolean {
   if (!signature || signature === "unsigned") return false;
-  const expected = signRun(canonical);
-  if (expected.length !== signature.length) return false;
-  try {
-    return timingSafeEqual(
-      Buffer.from(expected, "utf8"),
-      Buffer.from(signature, "utf8"),
-    );
-  } catch {
-    return false;
+
+  if (signature.startsWith("v2=")) {
+    if (!cachedPublicKey) getEd25519PrivateKey();
+    if (!cachedPublicKey) return false;
+    let sigBytes: Buffer;
+    try {
+      sigBytes = Buffer.from(signature.slice(3), "base64");
+    } catch {
+      return false;
+    }
+    try {
+      return nodeCryptoVerify(
+        null,
+        Buffer.from(canonical, "utf8"),
+        cachedPublicKey,
+        sigBytes,
+      );
+    } catch {
+      return false;
+    }
   }
+
+  if (signature.startsWith("v1=")) {
+    const secret = getSecret();
+    if (!secret) return false;
+    const expected = `v1=${createHmac("sha256", secret).update(canonical).digest("hex")}`;
+    if (expected.length !== signature.length) return false;
+    try {
+      return timingSafeEqual(
+        Buffer.from(expected, "utf8"),
+        Buffer.from(signature, "utf8"),
+      );
+    } catch {
+      return false;
+    }
+  }
+
+  // Unknown algorithm prefix — reject (forward-compat: v3, v4, ...
+  // will require explicit support).
+  return false;
 }
 
 function clip(value: unknown, maxBytes: number): unknown {
