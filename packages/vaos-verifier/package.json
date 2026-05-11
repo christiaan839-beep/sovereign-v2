@@ -1,0 +1,40 @@
+{
+  "name": "@sovereign-matrix/vaos-verifier",
+  "version": "1.0.0",
+  "description": "Reference implementation of the Verifiable Agent Output Specification (VAOS) 1.0 — verify that an AI agent run produced a specific output, with specific safety checks, signed by its issuer. Zero dependencies, Node + browser + edge.",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts"
+    }
+  },
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "ai",
+    "agent",
+    "audit",
+    "compliance",
+    "hmac",
+    "verifiable",
+    "vaos",
+    "popia",
+    "gdpr",
+    "soc2"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "homepage": "https://sovereignmatrix.agency/spec",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/christiaan839-beep/sovereign-v2.git",
+    "directory": "packages/vaos-verifier"
+  },
+  "bugs": "https://github.com/christiaan839-beep/sovereign-v2/issues"
+}

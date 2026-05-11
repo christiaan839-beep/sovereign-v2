@@ -1,13 +1,20 @@
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
+
+const MOBILE_BREAKPOINT = 768;
+
+function subscribe(callback: () => void) {
+  window.addEventListener("resize", callback);
+  return () => window.removeEventListener("resize", callback);
+}
+
+function getSnapshot() {
+  return window.innerWidth < MOBILE_BREAKPOINT || "ontouchstart" in window;
+}
+
+function getServerSnapshot() {
+  return false;
+}
 
 export function useIsMobile() {
-  const [mobile, setMobile] = useState(false);
-  useEffect(() => {
-    const check = () =>
-      setMobile(window.innerWidth < 768 || "ontouchstart" in window);
-    check();
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
-  }, []);
-  return mobile;
+  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }

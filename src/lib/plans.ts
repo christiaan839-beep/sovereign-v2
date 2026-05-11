@@ -13,7 +13,13 @@
 
 // ── Plan IDs ──
 
-export type PlanId = "free" | "starter" | "founder" | "array" | "node" | "enterprise";
+export type PlanId =
+  | "free"
+  | "starter"
+  | "founder"
+  | "array"
+  | "node"
+  | "enterprise";
 
 /** Legacy plan names that may exist in the database or older code paths */
 type LegacyPlanId = "pro" | "sniper" | "basic";
@@ -29,6 +35,12 @@ export interface PlanDefinition {
   apiRatePerDay: number;
   /** Daily demo/anonymous rate limit */
   demoRatePerDay: number;
+  /** Hard daily AI-spend cap in USD cents. Once a user hits this in a
+   *  single calendar day across all paid models, agent execution is
+   *  blocked until midnight UTC. Free models (NIM, local Ollama,
+   *  Cerebras) cost 0 and never count against this budget. Set to
+   *  Infinity for unlimited spend. */
+  dailyBudgetCents: number;
   /** Monthly price in USD cents (for MRR calculations) */
   priceUsdCents: number;
   /** Monthly price in ZAR cents (for PayFast/Yoco) */
@@ -53,6 +65,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     runsPerMonth: 50,
     apiRatePerDay: 100,
     demoRatePerDay: 5,
+    dailyBudgetCents: 50, // $0.50/day — should only ever hit free models
     priceUsdCents: 0,
     priceZarCents: 0,
     priceDisplayUsd: "$0/mo",
@@ -66,6 +79,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     runsPerMonth: 200,
     apiRatePerDay: 1_000,
     demoRatePerDay: 5,
+    dailyBudgetCents: 200, // $2/day — covers ~200 cheap calls
     priceUsdCents: 1_900,
     priceZarCents: 34_900,
     priceDisplayUsd: "$19/mo",
@@ -79,6 +93,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     runsPerMonth: 10_000,
     apiRatePerDay: Infinity,
     demoRatePerDay: 5,
+    dailyBudgetCents: 5_000, // $50/day for founders — generous cap
     priceUsdCents: 0,
     priceZarCents: 0,
     priceDisplayUsd: "Free",
@@ -92,6 +107,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     runsPerMonth: 500,
     apiRatePerDay: 5_000,
     demoRatePerDay: 5,
+    dailyBudgetCents: 1_000, // $10/day
     priceUsdCents: 4_900,
     priceZarCents: 499_700,
     priceDisplayUsd: "$49/mo",
@@ -105,6 +121,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     runsPerMonth: 2_000,
     apiRatePerDay: 10_000,
     demoRatePerDay: 5,
+    dailyBudgetCents: 5_000, // $50/day
     priceUsdCents: 19_900,
     priceZarCents: 999_700,
     priceDisplayUsd: "$199/mo",
@@ -118,6 +135,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     runsPerMonth: 10_000,
     apiRatePerDay: Infinity,
     demoRatePerDay: 5,
+    dailyBudgetCents: 25_000, // $250/day
     priceUsdCents: 49_900,
     priceZarCents: 4_999_700,
     priceDisplayUsd: "$499/mo",
@@ -187,7 +205,9 @@ export function getPlanMrrUsd(planId: string | null | undefined): number {
 }
 
 /** Get the Stripe price ID from env for a plan. Returns null if not purchasable. */
-export function getStripePriceId(planId: string | null | undefined): string | null {
+export function getStripePriceId(
+  planId: string | null | undefined,
+): string | null {
   const plan = getPlan(planId);
   if (!plan.stripePriceEnvKey) return null;
   return process.env[plan.stripePriceEnvKey] ?? null;
@@ -200,7 +220,9 @@ export function isUnlimited(planId: string | null | undefined): boolean {
 }
 
 /** Get the next plan in the upgrade path, or null if at max. */
-export function getNextPlan(planId: string | null | undefined): PlanDefinition | null {
+export function getNextPlan(
+  planId: string | null | undefined,
+): PlanDefinition | null {
   const id = normalizePlanId(planId);
   const nextId = UPGRADE_PATH[id];
   return nextId ? PLANS[nextId] : null;
@@ -211,5 +233,18 @@ export function getNextPlan(planId: string | null | undefined): PlanDefinition |
  * Prefer using getPlanLimit() directly in new code.
  */
 export const PLAN_LIMITS: Record<string, number> = Object.fromEntries(
-  Object.entries(PLANS).map(([id, plan]) => [id, plan.runsPerMonth])
+  Object.entries(PLANS).map(([id, plan]) => [id, plan.runsPerMonth]),
 );
+
+/**
+ * Returns the public-facing plans for marketing surfaces (landing page,
+ * SEO JSON-LD, FAQ blurbs). Excludes archived or invite-only tiers so
+ * promotional copy can never advertise a plan that's not currently
+ * purchasable. Order matches user-facing display.
+ */
+export function getMarketingPlans(): PlanDefinition[] {
+  const order: PlanId[] = ["free", "starter", "array", "node", "enterprise"];
+  return order
+    .filter((id) => PLANS[id]?.purchasable || PLANS[id]?.priceUsdCents === 0)
+    .map((id) => PLANS[id]);
+}

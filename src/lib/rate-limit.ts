@@ -19,7 +19,7 @@ import crypto from "crypto";
 
 interface RateLimitConfig {
   interval: number; // seconds
-  limit: number;    // max requests per interval
+  limit: number; // max requests per interval
 }
 
 // ─── In-Memory Store (fallback) ───
@@ -30,15 +30,40 @@ function getClientId(req: Request): string {
   if (apiKey) {
     // Use a hash of the key as the rate-limit identifier, not the raw key
     // (raw prefixes could leak into Redis logs or memory dumps)
-    const hash = crypto.createHash("sha256").update(apiKey).digest("hex").slice(0, 12);
+    const hash = crypto
+      .createHash("sha256")
+      .update(apiKey)
+      .digest("hex")
+      .slice(0, 12);
     return `key:${hash}`;
   }
+  // IP source: a client controls X-Forwarded-For *as sent to our edge*
+  // and Vercel APPENDS the real client IP — so the LEFT-most XFF entry
+  // is attacker-controlled. Vercel's own header `x-real-ip` (and the
+  // RIGHT-most XFF entry) carry the trusted client IP. Prefer x-real-ip
+  // (always set on Vercel), then the rightmost XFF, then fall back to
+  // the leftmost only when nothing else is available (local dev).
+  const realIp = req.headers.get("x-real-ip");
+  if (realIp) return `ip:${realIp.trim()}`;
+
   const forwarded = req.headers.get("x-forwarded-for");
-  return `ip:${forwarded?.split(",")[0]?.trim() || "unknown"}`;
+  if (forwarded) {
+    const parts = forwarded
+      .split(",")
+      .map((p) => p.trim())
+      .filter(Boolean);
+    const trustedIp = parts.at(-1) ?? parts[0];
+    if (trustedIp) return `ip:${trustedIp}`;
+  }
+  return "ip:unknown";
 }
 
 // ─── Redis-Backed Rate Limiter ───
-async function checkRedis(clientId: string, interval: number, limit: number): Promise<{ allowed: boolean; remaining: number; resetIn: number }> {
+async function checkRedis(
+  clientId: string,
+  interval: number,
+  limit: number,
+): Promise<{ allowed: boolean; remaining: number; resetIn: number }> {
   const url = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
   if (!url || !token) throw new Error("Redis not configured");
@@ -47,7 +72,10 @@ async function checkRedis(clientId: string, interval: number, limit: number): Pr
 
   const res = await fetch(`${url}/pipeline`, {
     method: "POST",
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
     body: JSON.stringify([
       ["INCR", key],
       ["EXPIRE", key, interval],
@@ -63,14 +91,18 @@ async function checkRedis(clientId: string, interval: number, limit: number): Pr
 }
 
 // ─── In-Memory Fallback ───
-function checkMemory(clientId: string, interval: number, limit: number): { allowed: boolean; remaining: number; resetIn: number } {
+function checkMemory(
+  clientId: string,
+  interval: number,
+  limit: number,
+): { allowed: boolean; remaining: number; resetIn: number } {
   const storeKey = `${interval}-${limit}`;
   if (!stores.has(storeKey)) stores.set(storeKey, new Map());
   const store = stores.get(storeKey)!;
 
   const now = Date.now();
   const cutoff = now - interval * 1000;
-  const timestamps = (store.get(clientId) || []).filter(t => t > cutoff);
+  const timestamps = (store.get(clientId) || []).filter((t) => t > cutoff);
 
   if (timestamps.length >= limit) {
     const retryAfter = Math.ceil(interval - (now - timestamps[0]) / 1000);
@@ -83,16 +115,22 @@ function checkMemory(clientId: string, interval: number, limit: number): { allow
   // Clean up old entries periodically
   if (store.size > 1000) {
     for (const [key, ts] of store.entries()) {
-      if (ts.every(t => t <= cutoff)) store.delete(key);
+      if (ts.every((t) => t <= cutoff)) store.delete(key);
     }
   }
 
-  return { allowed: true, remaining: limit - timestamps.length, resetIn: interval };
+  return {
+    allowed: true,
+    remaining: limit - timestamps.length,
+    resetIn: interval,
+  };
 }
 
 export function rateLimit(config: RateLimitConfig) {
   const { interval, limit } = config;
-  const useRedis = !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN);
+  const useRedis = !!(
+    process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
+  );
 
   return {
     async check(req: Request): Promise<NextResponse | null> {
@@ -113,8 +151,11 @@ export function rateLimit(config: RateLimitConfig) {
 
       if (!result.allowed) {
         return NextResponse.json(
-          { error: "Rate limit exceeded. Please slow down.", retryAfter: result.resetIn },
-          { status: 429, headers: { "Retry-After": String(result.resetIn) } }
+          {
+            error: "Rate limit exceeded. Please slow down.",
+            retryAfter: result.resetIn,
+          },
+          { status: 429, headers: { "Retry-After": String(result.resetIn) } },
         );
       }
 

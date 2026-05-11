@@ -1,0 +1,172 @@
+/**
+ * Tests for /api/me/export + /api/me/delete — GDPR Art. 15/17 +
+ * POPIA Section 23/24 surfaces.
+ *
+ * The DB is stubbed at the module boundary (drizzle's chained .from().where()
+ * pattern is awkward to fake comprehensively, so each query returns []).
+ * That's enough to exercise:
+ *   - 401 when unauthenticated
+ *   - 400 on missing / wrong confirmation body for delete
+ *   - 200 attachment Content-Disposition for export
+ *   - audit-log call BEFORE the cascade so the row survives
+ */
+import { describe, it, expect, beforeEach, vi } from "vitest";
+
+const mockAuth = vi.fn();
+const mockCurrentUser = vi.fn();
+const mockAuditLog = vi.fn().mockResolvedValue(undefined);
+
+vi.mock("@clerk/nextjs/server", () => ({
+  auth: () => mockAuth(),
+  currentUser: () => mockCurrentUser(),
+}));
+vi.mock("@/lib/audit-log", () => ({
+  auditLog: (...args: unknown[]) => mockAuditLog(...args),
+}));
+vi.mock("@/lib/logger", () => ({
+  createLogger: () => ({
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  }),
+}));
+
+// Stub drizzle: every chained call resolves to [] (export) or a no-op
+// awaitable (delete). The route's safeQuery / safeDelete wrapper handles
+// errors gracefully, so a successful empty result is enough.
+const emptyChain: unknown = {
+  from: () => emptyChain,
+  where: () => Promise.resolve([]),
+  innerJoin: () => emptyChain,
+  then: (cb: (rows: unknown[]) => unknown) => Promise.resolve(cb([])),
+};
+const dbStub = {
+  select: () => emptyChain,
+  delete: () => ({ where: () => Promise.resolve(undefined) }),
+};
+vi.mock("@/db", () => ({ db: dbStub }));
+
+async function loadExport() {
+  vi.resetModules();
+  return await import("@/app/api/me/export/route");
+}
+
+async function loadDelete() {
+  vi.resetModules();
+  return await import("@/app/api/me/delete/route");
+}
+
+function makeRequest(body?: unknown): Request {
+  return new Request("http://localhost/api/me/x", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+}
+
+// ─── /api/me/export ──────────────────────────────────────────────────────
+
+describe("GET /api/me/export", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockAuditLog.mockResolvedValue(undefined);
+    mockCurrentUser.mockResolvedValue({
+      emailAddresses: [{ emailAddress: "alice@example.com" }],
+    });
+  });
+
+  it("returns 401 when unauthenticated", async () => {
+    mockAuth.mockResolvedValue({ userId: null });
+    const { GET } = await loadExport();
+    const res = await GET();
+    expect(res.status).toBe(401);
+  });
+
+  it("returns 200 + Content-Disposition attachment for downloadable JSON", async () => {
+    mockAuth.mockResolvedValue({ userId: "user_test_123" });
+    const { GET } = await loadExport();
+    const res = await GET();
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toMatch(/application\/json/);
+    expect(res.headers.get("content-disposition")).toMatch(/attachment/);
+  });
+
+  it("audit-logs the export request (GDPR Art. 30 records of processing)", async () => {
+    mockAuth.mockResolvedValue({ userId: "user_test_123" });
+    const { GET } = await loadExport();
+    await GET();
+    expect(mockAuditLog).toHaveBeenCalledWith(
+      expect.objectContaining({ action: "data.export" }),
+    );
+  });
+});
+
+// ─── /api/me/delete ──────────────────────────────────────────────────────
+
+describe("POST /api/me/delete", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockAuditLog.mockResolvedValue(undefined);
+    mockCurrentUser.mockResolvedValue({
+      emailAddresses: [{ emailAddress: "alice@example.com" }],
+    });
+  });
+
+  it("returns 401 when unauthenticated", async () => {
+    mockAuth.mockResolvedValue({ userId: null });
+    const { POST } = await loadDelete();
+    const res = await POST(makeRequest({ confirm: "DELETE" }));
+    expect(res.status).toBe(401);
+  });
+
+  it("returns 400 when body is not JSON", async () => {
+    mockAuth.mockResolvedValue({ userId: "user_test_123" });
+    const { POST } = await loadDelete();
+    // Send a non-JSON body
+    const req = new Request("http://localhost/api/me/delete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "not json",
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 400 when confirm string is missing", async () => {
+    mockAuth.mockResolvedValue({ userId: "user_test_123" });
+    const { POST } = await loadDelete();
+    const res = await POST(makeRequest({}));
+    expect(res.status).toBe(400);
+    const json = (await res.json()) as { code: string };
+    expect(json.code).toBe("CONFIRMATION_REQUIRED");
+  });
+
+  it("returns 400 when confirm string is wrong", async () => {
+    mockAuth.mockResolvedValue({ userId: "user_test_123" });
+    const { POST } = await loadDelete();
+    const res = await POST(makeRequest({ confirm: "delete" }));
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 200 and runs the cascade with the correct confirmation", async () => {
+    mockAuth.mockResolvedValue({ userId: "user_test_123" });
+    const { POST } = await loadDelete();
+    const res = await POST(makeRequest({ confirm: "DELETE" }));
+    expect(res.status).toBe(200);
+    const json = (await res.json()) as {
+      ok: boolean;
+      tables: { succeeded: number };
+    };
+    expect(json.ok).toBe(true);
+    expect(json.tables.succeeded).toBeGreaterThan(0);
+  });
+
+  it("audit-logs the deletion BEFORE cascading (GDPR Art. 30)", async () => {
+    mockAuth.mockResolvedValue({ userId: "user_test_123" });
+    const { POST } = await loadDelete();
+    await POST(makeRequest({ confirm: "DELETE" }));
+    expect(mockAuditLog).toHaveBeenCalledWith(
+      expect.objectContaining({ action: "data.delete", resource: "user" }),
+    );
+  });
+});

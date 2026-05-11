@@ -1,8 +1,24 @@
 /** Shared types for the SOVEREIGN platform */
 
 // ─── AI ──────────────────────────────────────────────
-export type AIModel = "gemini" | "claude" | "nim" | "ollama" | "groq" | "deepseek" | "mistral" | "qwen";
-export type TaskType = "content" | "analysis" | "code" | "sales";
+export type AIModel =
+  | "gemini"
+  | "claude"
+  | "nim"
+  | "ollama"
+  | "groq"
+  | "deepseek"
+  | "mistral"
+  | "qwen"
+  | "cerebras";
+export type TaskType =
+  | "content"
+  | "analysis"
+  | "code"
+  | "sales"
+  | "creative"
+  | "reasoning"
+  | "general";
 
 export interface AIOptions {
   model?: AIModel;
@@ -24,6 +40,10 @@ export interface AgentResult {
   output: string;
   metadata?: Record<string, unknown>;
   timestamp: string;
+  // Index signature so AgentResult is assignable to the
+  // factory's handler return type (Record<string, unknown> | Response).
+  // Concrete fields above shadow the index for type-narrow access.
+  [key: string]: unknown;
 }
 
 // ─── Memory ──────────────────────────────────────────

@@ -1,9 +1,14 @@
-import { MetadataRoute } from 'next';
+import { MetadataRoute } from "next";
+import { COMPETITORS, HAND_CODED_VS_SLUGS } from "@/lib/competitor-registry";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = "https://sovereignmatrix.agency";
 
-  const pages: Array<{ path: string; priority: number; changeFreq: "daily" | "weekly" | "monthly" }> = [
+  const pages: Array<{
+    path: string;
+    priority: number;
+    changeFreq: "daily" | "weekly" | "monthly";
+  }> = [
     // Core pages (highest priority)
     { path: "", priority: 1.0, changeFreq: "daily" },
     { path: "/pricing", priority: 0.9, changeFreq: "weekly" },
@@ -11,9 +16,32 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/docs", priority: 0.9, changeFreq: "weekly" },
     { path: "/enterprise", priority: 0.9, changeFreq: "weekly" },
     { path: "/for-agencies", priority: 0.9, changeFreq: "weekly" },
+    { path: "/anthropic", priority: 0.9, changeFreq: "monthly" },
+    { path: "/now", priority: 0.7, changeFreq: "weekly" },
 
     // Product pages
     { path: "/showcase", priority: 0.8, changeFreq: "weekly" },
+    { path: "/playbooks", priority: 0.95, changeFreq: "weekly" },
+    {
+      path: "/playbooks/agency-content-packet",
+      priority: 0.95,
+      changeFreq: "weekly",
+    },
+    {
+      path: "/playbooks/recruiting-sourcing-sprint",
+      priority: 0.95,
+      changeFreq: "weekly",
+    },
+    {
+      path: "/playbooks/growth-pulse",
+      priority: 0.95,
+      changeFreq: "weekly",
+    },
+    {
+      path: "/playbooks/realestate-listing-pulse",
+      priority: 0.95,
+      changeFreq: "weekly",
+    },
     { path: "/playground", priority: 0.8, changeFreq: "monthly" },
     { path: "/developer", priority: 0.8, changeFreq: "weekly" },
     { path: "/whitepaper", priority: 0.8, changeFreq: "monthly" },
@@ -82,17 +110,31 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/sla", priority: 0.6, changeFreq: "monthly" },
     { path: "/status", priority: 0.6, changeFreq: "daily" },
     { path: "/changelog", priority: 0.6, changeFreq: "weekly" },
+    { path: "/verified", priority: 0.9, changeFreq: "weekly" }, // verifiable-receipt live demo — SEO-priority for the audit-grade positioning
+    { path: "/spec", priority: 0.95, changeFreq: "monthly" }, // VAOS 1.0 open standard — top SEO target for "verifiable AI receipts" / "AI agent audit standard"
 
     // Legal
     { path: "/privacy", priority: 0.5, changeFreq: "monthly" },
     { path: "/terms", priority: 0.5, changeFreq: "monthly" },
     { path: "/dpa", priority: 0.5, changeFreq: "monthly" },
+    { path: "/sub-processors", priority: 0.6, changeFreq: "monthly" },
     { path: "/unsubscribe", priority: 0.3, changeFreq: "monthly" },
 
     // Auth
     { path: "/login", priority: 0.4, changeFreq: "monthly" },
     { path: "/signup", priority: 0.5, changeFreq: "monthly" },
   ];
+
+  // Registry-driven /vs/<slug> pages — auto-included so adding a
+  // competitor to competitor-registry.ts also updates the sitemap.
+  for (const c of COMPETITORS) {
+    if (HAND_CODED_VS_SLUGS.has(c.slug)) continue; // already listed above
+    pages.push({
+      path: `/vs/${c.slug}`,
+      priority: 0.85,
+      changeFreq: "weekly",
+    });
+  }
 
   return pages.map(({ path, priority, changeFreq }) => ({
     url: `${baseUrl}${path}`,

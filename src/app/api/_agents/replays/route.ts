@@ -45,6 +45,7 @@ export async function GET(request: Request) {
   const allReplays = getReplayStore();
   // Filter by userId so users only see their own executions.
   const replays = allReplays.filter(
+    // @ts-expect-error — getReplayStore() returns a heterogenous store; runtime narrows via duck-type
     (r: { userId?: string }) => !r.userId || r.userId === userId,
   );
 

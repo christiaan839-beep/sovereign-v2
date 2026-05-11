@@ -4,11 +4,35 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Sparkles, Target, Globe2, Search, ArrowRight,
-  Mic, Cpu, Swords, LayoutTemplate, BarChart3, Clock,
-  Activity, Shield, Zap, TrendingUp, CheckCircle2, Eye,
-  Crosshair, PenTool, Radar, Workflow, X, Plug, Users,
-  ChevronDown, ChevronUp, PartyPopper, Check, MessageSquare,
+  Sparkles,
+  Target,
+  Globe2,
+  Search,
+  ArrowRight,
+  Mic,
+  Cpu,
+  Swords,
+  LayoutTemplate,
+  BarChart3,
+  Clock,
+  Activity,
+  Shield,
+  Zap,
+  TrendingUp,
+  CheckCircle2,
+  Eye,
+  Crosshair,
+  PenTool,
+  Radar,
+  Workflow,
+  X,
+  Plug,
+  Users,
+  ChevronDown,
+  ChevronUp,
+  PartyPopper,
+  Check,
+  MessageSquare,
   Bot,
 } from "lucide-react";
 import Link from "next/link";
@@ -36,7 +60,10 @@ const LIVE_ACTIVITIES = [
 function LiveStatusRotator() {
   const [index, setIndex] = useState(0);
   useEffect(() => {
-    const timer = setInterval(() => setIndex((i) => (i + 1) % LIVE_ACTIVITIES.length), 4000);
+    const timer = setInterval(
+      () => setIndex((i) => (i + 1) % LIVE_ACTIVITIES.length),
+      4000,
+    );
     return () => clearInterval(timer);
   }, []);
 
@@ -149,7 +176,8 @@ function WelcomeTourModal({ onDismiss }: { onDismiss: () => void }) {
             Welcome to your command center
           </h2>
           <p className="text-sm text-neutral-400 mt-2 max-w-md mx-auto">
-            Pick a starting point based on what you want to accomplish. You can always explore more later.
+            Pick a starting point based on what you want to accomplish. You can
+            always explore more later.
           </p>
         </div>
 
@@ -173,7 +201,9 @@ function WelcomeTourModal({ onDismiss }: { onDismiss: () => void }) {
                   {card.section}
                 </span>
               </div>
-              <div className="text-sm font-semibold text-white">{card.title}</div>
+              <div className="text-sm font-semibold text-white">
+                {card.title}
+              </div>
               <div className="text-[11px] text-neutral-400 mt-1 leading-relaxed line-clamp-2">
                 {card.description}
               </div>
@@ -316,10 +346,34 @@ function StatsPanel() {
   }, [fetchStats]);
 
   const statCards = [
-    { label: "Agent Runs", value: stats?.agentExecutions ?? 0, icon: Activity, color: "emerald", href: "/dashboard/god-eye" },
-    { label: "Leads Found", value: stats?.leadsGenerated ?? 0, icon: Target, color: "cyan", href: "/dashboard/leads" },
-    { label: "Content Made", value: stats?.contentGenerated ?? 0, icon: Sparkles, color: "violet", href: "/dashboard/content-factory" },
-    { label: "Meetings", value: stats?.bookings ?? 0, icon: CheckCircle2, color: "amber", href: "/dashboard/scheduled" },
+    {
+      label: "Agent Runs",
+      value: stats?.agentExecutions ?? 0,
+      icon: Activity,
+      color: "emerald",
+      href: "/dashboard/god-eye",
+    },
+    {
+      label: "Leads Found",
+      value: stats?.leadsGenerated ?? 0,
+      icon: Target,
+      color: "cyan",
+      href: "/dashboard/leads",
+    },
+    {
+      label: "Content Made",
+      value: stats?.contentGenerated ?? 0,
+      icon: Sparkles,
+      color: "violet",
+      href: "/dashboard/content-factory",
+    },
+    {
+      label: "Meetings",
+      value: stats?.bookings ?? 0,
+      icon: CheckCircle2,
+      color: "amber",
+      href: "/dashboard/scheduled",
+    },
   ];
 
   return (
@@ -328,7 +382,13 @@ function StatsPanel() {
         {/* Error Banner */}
         {error && !stats && (
           <div className="text-center py-3 text-xs text-amber-400/70 bg-amber-500/5 border border-amber-500/10 rounded-xl mb-3">
-            Unable to load live stats. <button onClick={fetchStats} className="underline hover:text-amber-300">Retry</button>
+            Unable to load live stats.{" "}
+            <button
+              onClick={fetchStats}
+              className="underline hover:text-amber-300"
+            >
+              Retry
+            </button>
           </div>
         )}
 
@@ -339,9 +399,14 @@ function StatsPanel() {
               <span className="animate-ping absolute h-full w-full rounded-full bg-emerald-400 opacity-30" />
               <span className="relative rounded-full h-2 w-2 bg-emerald-400" />
             </span>
-            <span className="text-xs font-semibold uppercase tracking-[0.15em] text-neutral-400">Command Center</span>
+            <span className="text-xs font-semibold uppercase tracking-[0.15em] text-neutral-400">
+              Command Center
+            </span>
           </div>
-          <Link href="/dashboard/god-eye" className="text-[10px] text-neutral-400 hover:text-emerald-400 transition-colors flex items-center gap-1">
+          <Link
+            href="/dashboard/god-eye"
+            className="text-[10px] text-neutral-400 hover:text-emerald-400 transition-colors flex items-center gap-1"
+          >
             <Eye className="w-3 h-3" /> Agent Monitor
           </Link>
         </div>
@@ -361,9 +426,15 @@ function StatsPanel() {
                   <TrendingUp className="w-3 h-3 text-neutral-500 group-hover:text-emerald-500/40 transition-colors" />
                 </div>
                 <div className="text-lg font-bold text-white">
-                  {loading ? <span className="inline-block w-8 h-5 rounded bg-white/[0.04] animate-pulse" /> : stat.value.toLocaleString()}
+                  {loading ? (
+                    <span className="inline-block w-8 h-5 rounded bg-white/[0.04] animate-pulse" />
+                  ) : (
+                    stat.value.toLocaleString()
+                  )}
                 </div>
-                <div className="text-[10px] text-neutral-400 uppercase tracking-widest">{stat.label}</div>
+                <div className="text-[10px] text-neutral-400 uppercase tracking-widest">
+                  {stat.label}
+                </div>
               </motion.div>
             </Link>
           ))}
@@ -374,7 +445,9 @@ function StatsPanel() {
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1.5">
               <Shield className="w-3 h-3 text-emerald-500" />
-              <span className="text-[10px] text-neutral-400">5-Layer Safety</span>
+              <span className="text-[10px] text-neutral-400">
+                5-Layer Safety
+              </span>
             </div>
             <div className="flex items-center gap-1.5">
               <Cpu className="w-3 h-3 text-cyan-500" />
@@ -384,7 +457,10 @@ function StatsPanel() {
               <LiveStatusRotator />
             </div>
           </div>
-          <Link href="/dashboard/nim-arsenal" className="text-[10px] text-neutral-400 hover:text-white transition-colors">
+          <Link
+            href="/dashboard/nim-arsenal"
+            className="text-[10px] text-neutral-400 hover:text-white transition-colors"
+          >
             View Models →
           </Link>
         </div>
@@ -431,8 +507,12 @@ function DiscoverSection() {
                 <card.icon className="w-4 h-4 text-white/70" />
                 <ArrowRight className="w-3 h-3 text-neutral-500 group-hover:text-neutral-300 transition-colors" />
               </div>
-              <div className="text-[13px] font-medium text-white">{card.title}</div>
-              <div className="text-[11px] text-neutral-400 mt-0.5">{card.description}</div>
+              <div className="text-[13px] font-medium text-white">
+                {card.title}
+              </div>
+              <div className="text-[11px] text-neutral-400 mt-0.5">
+                {card.description}
+              </div>
             </motion.button>
           ))}
         </div>
@@ -443,11 +523,30 @@ function DiscoverSection() {
 
 /* ─── Quick-Run Banner — First playbook suggestion ─── */
 
-const GOAL_TO_PLAYBOOK: Record<string, { name: string; href: string; desc: string }> = {
-  leads: { name: "Lead Blitz", href: "/dashboard/playbooks?auto=lead-blitz", desc: "Find 50 qualified leads in your industry" },
-  content: { name: "Content Machine", href: "/dashboard/playbooks?auto=content-machine", desc: "Generate a week of blog posts + social content" },
-  compete: { name: "Competitor Takedown", href: "/dashboard/playbooks?auto=competitor-takedown", desc: "Full competitive intelligence report on any URL" },
-  automate: { name: "Agency Autopilot", href: "/dashboard/playbooks", desc: "Set up automated workflows for your clients" },
+const GOAL_TO_PLAYBOOK: Record<
+  string,
+  { name: string; href: string; desc: string }
+> = {
+  leads: {
+    name: "Lead Blitz",
+    href: "/dashboard/playbooks?auto=lead-blitz",
+    desc: "Find 50 qualified leads in your industry",
+  },
+  content: {
+    name: "Content Machine",
+    href: "/dashboard/playbooks?auto=content-machine",
+    desc: "Generate a week of blog posts + social content",
+  },
+  compete: {
+    name: "Competitor Takedown",
+    href: "/dashboard/playbooks?auto=competitor-takedown",
+    desc: "Full competitive intelligence report on any URL",
+  },
+  automate: {
+    name: "Agency Autopilot",
+    href: "/dashboard/playbooks",
+    desc: "Set up automated workflows for your clients",
+  },
 };
 
 function QuickRunBanner() {
@@ -457,17 +556,17 @@ function QuickRunBanner() {
     return !!localStorage.getItem("sovereign_quickrun_dismissed");
   });
 
-  const [goal, setGoal] = useState<string | null>(null);
-
-  useEffect(() => {
+  const [goal] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
     try {
       const onboarding = localStorage.getItem("sovereign_onboarding_data");
-      if (onboarding) {
-        const data = JSON.parse(onboarding);
-        if (data.goal) setGoal(data.goal);
-      }
-    } catch { /* no onboarding data */ }
-  }, []);
+      if (!onboarding) return null;
+      const data = JSON.parse(onboarding);
+      return typeof data?.goal === "string" ? data.goal : null;
+    } catch {
+      return null;
+    }
+  });
 
   if (dismissed) return null;
 
@@ -486,7 +585,9 @@ function QuickRunBanner() {
             <Zap className="w-4 h-4 text-emerald-400" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-white">Run your first playbook</p>
+            <p className="text-sm font-semibold text-white">
+              Run your first playbook
+            </p>
             <p className="text-[10px] text-neutral-400">
               {playbook.name}: {playbook.desc}
             </p>
@@ -500,7 +601,10 @@ function QuickRunBanner() {
             Run Now
           </button>
           <button
-            onClick={() => { setDismissed(true); localStorage.setItem("sovereign_quickrun_dismissed", "1"); }}
+            onClick={() => {
+              setDismissed(true);
+              localStorage.setItem("sovereign_quickrun_dismissed", "1");
+            }}
             className="px-3 py-2 rounded-lg text-xs text-neutral-500 hover:text-white transition-colors"
           >
             Later
@@ -514,11 +618,41 @@ function QuickRunBanner() {
 /* ─── Getting Started Checklist ─── */
 
 const CHECKLIST_ITEMS = [
-  { id: "first_playbook", label: "Run a Playbook", description: "1-click multi-agent workflows", href: "/dashboard/playbooks", icon: Zap },
-  { id: "first_agent", label: "Run your first agent", description: "Try Lead Gen, Content, or SEO", href: "/dashboard/leads", icon: Target },
-  { id: "first_workflow", label: "Build a workflow", description: "Chain agents together", href: "/dashboard/workflow-builder", icon: Workflow },
-  { id: "add_integration", label: "Connect an integration", description: "Slack, Sheets, Notion", href: "/dashboard/integrations", icon: Plug },
-  { id: "invite_team", label: "Invite a team member", description: "Collaborate with your team", href: "/dashboard/settings/team", icon: Users },
+  {
+    id: "first_playbook",
+    label: "Run a Playbook",
+    description: "1-click multi-agent workflows",
+    href: "/dashboard/playbooks",
+    icon: Zap,
+  },
+  {
+    id: "first_agent",
+    label: "Run your first agent",
+    description: "Try Lead Gen, Content, or SEO",
+    href: "/dashboard/leads",
+    icon: Target,
+  },
+  {
+    id: "first_workflow",
+    label: "Build a workflow",
+    description: "Chain agents together",
+    href: "/dashboard/workflow-builder",
+    icon: Workflow,
+  },
+  {
+    id: "add_integration",
+    label: "Connect an integration",
+    description: "Slack, Sheets, Notion",
+    href: "/dashboard/integrations",
+    icon: Plug,
+  },
+  {
+    id: "invite_team",
+    label: "Invite a team member",
+    description: "Collaborate with your team",
+    href: "/dashboard/settings/team",
+    icon: Users,
+  },
 ];
 
 function GettingStartedChecklist() {
@@ -544,7 +678,9 @@ function GettingStartedChecklist() {
         }
       }
       return base;
-    } catch { return []; }
+    } catch {
+      return [];
+    }
   });
   const [collapsed, setCollapsed] = useState(false);
   const [dismissed, setDismissed] = useState(() => {
@@ -557,7 +693,9 @@ function GettingStartedChecklist() {
 
   const toggleItem = (id: string) => {
     setCompleted((prev) => {
-      const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
+      const next = prev.includes(id)
+        ? prev.filter((x) => x !== id)
+        : [...prev, id];
       localStorage.setItem(CHECKLIST_KEY, JSON.stringify(next));
       return next;
     });
@@ -579,7 +717,7 @@ function GettingStartedChecklist() {
       const timer = setTimeout(() => dismiss(), 8000);
       return () => clearTimeout(timer);
     }
-  }, [allDone]);  
+  }, [allDone]);
 
   if (dismissed) return null;
 
@@ -648,9 +786,12 @@ function GettingStartedChecklist() {
                     className="px-4 py-6 text-center"
                   >
                     <PartyPopper className="w-8 h-8 text-amber-400 mx-auto mb-2" />
-                    <p className="text-sm font-semibold text-white">You&apos;re all set!</p>
+                    <p className="text-sm font-semibold text-white">
+                      You&apos;re all set!
+                    </p>
                     <p className="text-xs text-neutral-400 mt-1">
-                      You&apos;ve completed the getting started checklist. Time to build something great.
+                      You&apos;ve completed the getting started checklist. Time
+                      to build something great.
                     </p>
                   </motion.div>
                 ) : (
@@ -672,7 +813,11 @@ function GettingStartedChecklist() {
                                 ? "bg-emerald-500/20 border-emerald-500/40"
                                 : "border-white/10 hover:border-emerald-500/30 bg-white/[0.02]"
                             }`}
-                            aria-label={done ? `Mark "${item.label}" incomplete` : `Mark "${item.label}" complete`}
+                            aria-label={
+                              done
+                                ? `Mark "${item.label}" incomplete`
+                                : `Mark "${item.label}" complete`
+                            }
                           >
                             <AnimatePresence>
                               {done && (
@@ -680,7 +825,11 @@ function GettingStartedChecklist() {
                                   initial={{ scale: 0, opacity: 0 }}
                                   animate={{ scale: 1, opacity: 1 }}
                                   exit={{ scale: 0, opacity: 0 }}
-                                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                  transition={{
+                                    type: "spring",
+                                    stiffness: 500,
+                                    damping: 30,
+                                  }}
                                 >
                                   <Check className="w-3 h-3 text-emerald-400" />
                                 </motion.div>
@@ -695,10 +844,14 @@ function GettingStartedChecklist() {
                           >
                             <item.icon className="w-3.5 h-3.5 text-neutral-400 flex-shrink-0" />
                             <div className="min-w-0">
-                              <div className={`text-xs font-medium ${done ? "text-neutral-500 line-through" : "text-neutral-200"}`}>
+                              <div
+                                className={`text-xs font-medium ${done ? "text-neutral-500 line-through" : "text-neutral-200"}`}
+                              >
                                 {item.label}
                               </div>
-                              <div className="text-[10px] text-neutral-500">{item.description}</div>
+                              <div className="text-[10px] text-neutral-500">
+                                {item.description}
+                              </div>
                             </div>
                             <ArrowRight className="w-3 h-3 text-neutral-500 group-hover:text-neutral-400 transition-colors ml-auto flex-shrink-0" />
                           </Link>
@@ -726,37 +879,57 @@ interface RecentAgent {
   visitedAt: number;
 }
 
-const _DASHBOARD_PAGE_MAP: Record<string, { name: string; iconName: string }> = {
-  "/dashboard/leads": { name: "Lead Gen", iconName: "Target" },
-  "/dashboard/content-factory": { name: "Content Factory", iconName: "Sparkles" },
-  "/dashboard/war-room": { name: "War Room", iconName: "Swords" },
-  "/dashboard/seo-dominator": { name: "SEO Dominator", iconName: "Search" },
-  "/dashboard/voice-assistant": { name: "Voice Agent", iconName: "Mic" },
-  "/dashboard/nemo-claw": { name: "NemoClaw", iconName: "Cpu" },
-  "/dashboard/templates": { name: "Templates", iconName: "LayoutTemplate" },
-  "/dashboard/workflow-builder": { name: "Workflows", iconName: "Workflow" },
-  "/dashboard/integrations": { name: "Integrations", iconName: "Plug" },
-  "/dashboard/automations": { name: "Automations", iconName: "Clock" },
-  "/dashboard/analytics/roi": { name: "Analytics", iconName: "BarChart3" },
-  "/dashboard/god-eye": { name: "Agent Monitor", iconName: "Eye" },
-  "/dashboard/competitor": { name: "Competitor Intel", iconName: "Radar" },
-  "/dashboard/build": { name: "Page Builder", iconName: "Globe2" },
-  "/dashboard/settings/team": { name: "Team Settings", iconName: "Users" },
-  "/dashboard/ghost-protocol": { name: "Ghost Protocol", iconName: "Shield" },
-  "/dashboard/arsenal": { name: "Arsenal", iconName: "Zap" },
-  "/dashboard/nim-arsenal": { name: "NIM Models", iconName: "Cpu" },
-  "/dashboard/canvas": { name: "Canvas", iconName: "PenTool" },
-  "/dashboard/designer": { name: "Designer", iconName: "PenTool" },
-  "/dashboard/flywheel": { name: "Flywheel", iconName: "Activity" },
-  "/dashboard/omni-search": { name: "Omni Search", iconName: "Search" },
-  "/dashboard/podcast": { name: "Podcast", iconName: "Mic" },
-  "/dashboard/billing": { name: "Billing", iconName: "BarChart3" },
-};
+const _DASHBOARD_PAGE_MAP: Record<string, { name: string; iconName: string }> =
+  {
+    "/dashboard/leads": { name: "Lead Gen", iconName: "Target" },
+    "/dashboard/content-factory": {
+      name: "Content Factory",
+      iconName: "Sparkles",
+    },
+    "/dashboard/war-room": { name: "War Room", iconName: "Swords" },
+    "/dashboard/seo-dominator": { name: "SEO Dominator", iconName: "Search" },
+    "/dashboard/voice-assistant": { name: "Voice Agent", iconName: "Mic" },
+    "/dashboard/nemo-claw": { name: "NemoClaw", iconName: "Cpu" },
+    "/dashboard/templates": { name: "Templates", iconName: "LayoutTemplate" },
+    "/dashboard/workflow-builder": { name: "Workflows", iconName: "Workflow" },
+    "/dashboard/integrations": { name: "Integrations", iconName: "Plug" },
+    "/dashboard/automations": { name: "Automations", iconName: "Clock" },
+    "/dashboard/analytics/roi": { name: "Analytics", iconName: "BarChart3" },
+    "/dashboard/god-eye": { name: "Agent Monitor", iconName: "Eye" },
+    "/dashboard/competitor": { name: "Competitor Intel", iconName: "Radar" },
+    "/dashboard/build": { name: "Page Builder", iconName: "Globe2" },
+    "/dashboard/settings/team": { name: "Team Settings", iconName: "Users" },
+    "/dashboard/ghost-protocol": { name: "Ghost Protocol", iconName: "Shield" },
+    "/dashboard/arsenal": { name: "Arsenal", iconName: "Zap" },
+    "/dashboard/nim-arsenal": { name: "NIM Models", iconName: "Cpu" },
+    "/dashboard/canvas": { name: "Canvas", iconName: "PenTool" },
+    "/dashboard/designer": { name: "Designer", iconName: "PenTool" },
+    "/dashboard/flywheel": { name: "Flywheel", iconName: "Activity" },
+    "/dashboard/omni-search": { name: "Omni Search", iconName: "Search" },
+    "/dashboard/podcast": { name: "Podcast", iconName: "Mic" },
+    "/dashboard/billing": { name: "Billing", iconName: "BarChart3" },
+  };
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
-  Target, Sparkles, Swords, Search, Mic, Cpu, LayoutTemplate, Workflow,
-  Plug, Clock, BarChart3, Eye, Radar, Globe2, Users, Shield, Zap,
-  PenTool, Activity,
+  Target,
+  Sparkles,
+  Swords,
+  Search,
+  Mic,
+  Cpu,
+  LayoutTemplate,
+  Workflow,
+  Plug,
+  Clock,
+  BarChart3,
+  Eye,
+  Radar,
+  Globe2,
+  Users,
+  Shield,
+  Zap,
+  PenTool,
+  Activity,
 };
 
 function QuickAccessRow() {
@@ -768,7 +941,9 @@ function QuickAccessRow() {
         const parsed: RecentAgent[] = JSON.parse(raw);
         return parsed.slice(0, 6);
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     return [];
   });
 
@@ -814,7 +989,11 @@ interface PlaybookRunSummary {
   stepsFailed: number;
   durationMs: number | null;
   createdAt: string;
-  steps: Array<{ agentName: string; status: string; durationMs: number | null }>;
+  steps: Array<{
+    agentName: string;
+    status: string;
+    durationMs: number | null;
+  }>;
 }
 
 function RecentRunsFeed() {
@@ -823,8 +1002,11 @@ function RecentRunsFeed() {
 
   useEffect(() => {
     fetch("/api/playbooks/runs")
-      .then(r => r.json())
-      .then(data => { setRuns((data.runs || []).slice(0, 5)); setLoaded(true); })
+      .then((r) => r.json())
+      .then((data) => {
+        setRuns((data.runs || []).slice(0, 5));
+        setLoaded(true);
+      })
       .catch(() => setLoaded(true));
   }, []);
 
@@ -843,7 +1025,10 @@ function RecentRunsFeed() {
             Recent Runs
           </h2>
           {runs.length > 0 && (
-            <Link href="/dashboard/autopilot" className="text-[10px] text-emerald-500/60 hover:text-emerald-400 transition-colors">
+            <Link
+              href="/dashboard/autopilot"
+              className="text-[10px] text-emerald-500/60 hover:text-emerald-400 transition-colors"
+            >
               View all →
             </Link>
           )}
@@ -853,7 +1038,10 @@ function RecentRunsFeed() {
           <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-6 text-center">
             <Zap className="w-6 h-6 text-neutral-600 mx-auto mb-2" />
             <p className="text-sm text-neutral-500">No playbook runs yet</p>
-            <Link href="/dashboard/playbooks" className="text-xs text-emerald-500/60 hover:text-emerald-400 mt-1 inline-block transition-colors">
+            <Link
+              href="/dashboard/playbooks"
+              className="text-xs text-emerald-500/60 hover:text-emerald-400 mt-1 inline-block transition-colors"
+            >
               Run your first playbook →
             </Link>
           </div>
@@ -863,8 +1051,13 @@ function RecentRunsFeed() {
               const isRunning = run.status === "running";
               const isDone = run.status === "done";
               const isFailed = run.status === "failed";
-              const progress = run.stepCount > 0 ? Math.round((run.stepsSucceeded / run.stepCount) * 100) : 0;
-              const duration = run.durationMs ? `${(run.durationMs / 1000).toFixed(1)}s` : "—";
+              const progress =
+                run.stepCount > 0
+                  ? Math.round((run.stepsSucceeded / run.stepCount) * 100)
+                  : 0;
+              const duration = run.durationMs
+                ? `${(run.durationMs / 1000).toFixed(1)}s`
+                : "—";
               const timeAgo = (() => {
                 const ms = Date.now() - new Date(run.createdAt).getTime();
                 if (ms < 60000) return "just now";
@@ -875,20 +1068,32 @@ function RecentRunsFeed() {
 
               return (
                 <Link key={run.id} href="/dashboard/autopilot">
-                  <div className={`rounded-xl border p-3.5 transition-all hover:border-white/15 cursor-pointer ${
-                    isRunning ? "bg-cyan-500/5 border-cyan-500/15" :
-                    isDone ? "bg-white/[0.02] border-white/[0.06]" :
-                    "bg-red-500/5 border-red-500/15"
-                  }`}>
+                  <div
+                    className={`rounded-xl border p-3.5 transition-all hover:border-white/15 cursor-pointer ${
+                      isRunning
+                        ? "bg-cyan-500/5 border-cyan-500/15"
+                        : isDone
+                          ? "bg-white/[0.02] border-white/[0.06]"
+                          : "bg-red-500/5 border-red-500/15"
+                    }`}
+                  >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2.5">
-                        <div className={`w-2 h-2 rounded-full shrink-0 ${
-                          isRunning ? "bg-cyan-400 animate-pulse" :
-                          isDone ? "bg-emerald-400" :
-                          "bg-red-400"
-                        }`} />
-                        <span className="text-sm font-medium text-white">{run.playbookName}</span>
-                        <span className="text-[10px] text-neutral-600 font-mono">{timeAgo}</span>
+                        <div
+                          className={`w-2 h-2 rounded-full shrink-0 ${
+                            isRunning
+                              ? "bg-cyan-400 animate-pulse"
+                              : isDone
+                                ? "bg-emerald-400"
+                                : "bg-red-400"
+                          }`}
+                        />
+                        <span className="text-sm font-medium text-white">
+                          {run.playbookName}
+                        </span>
+                        <span className="text-[10px] text-neutral-600 font-mono">
+                          {timeAgo}
+                        </span>
                       </div>
                       <div className="flex items-center gap-3">
                         {isRunning && (
@@ -910,7 +1115,11 @@ function RecentRunsFeed() {
                         <div className="w-12 h-1 rounded-full bg-white/5 overflow-hidden">
                           <div
                             className={`h-full rounded-full transition-all ${
-                              isRunning ? "bg-cyan-400" : isDone ? "bg-emerald-400" : "bg-red-400"
+                              isRunning
+                                ? "bg-cyan-400"
+                                : isDone
+                                  ? "bg-emerald-400"
+                                  : "bg-red-400"
                             }`}
                             style={{ width: `${progress}%` }}
                           />
@@ -965,19 +1174,26 @@ export default function DashboardHome() {
       dismissWelcome();
       // Dispatch a custom event that the chat can listen for
       window.dispatchEvent(
-        new CustomEvent("sovereign:prompt", { detail: action.value })
+        new CustomEvent("sovereign:prompt", { detail: action.value }),
       );
     }
   };
 
   if (!loaded) {
     return (
-      <div className="flex flex-col h-full p-6" aria-busy="true" aria-label="Loading dashboard">
+      <div
+        className="flex flex-col h-full p-6"
+        aria-busy="true"
+        aria-label="Loading dashboard"
+      >
         <div className="max-w-3xl mx-auto w-full space-y-6 pt-6">
           {/* Stats skeleton */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="p-3.5 rounded-xl border border-white/[0.06] bg-white/[0.02] animate-pulse">
+              <div
+                key={i}
+                className="p-3.5 rounded-xl border border-white/[0.06] bg-white/[0.02] animate-pulse"
+              >
                 <div className="h-3 w-8 bg-white/[0.04] rounded mb-3" />
                 <div className="h-6 w-12 bg-white/[0.04] rounded mb-2" />
                 <div className="h-2 w-16 bg-white/[0.04] rounded" />
@@ -987,7 +1203,10 @@ export default function DashboardHome() {
           {/* Discover skeleton */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="p-3.5 rounded-xl border border-white/[0.06] bg-white/[0.02] animate-pulse h-24" />
+              <div
+                key={i}
+                className="p-3.5 rounded-xl border border-white/[0.06] bg-white/[0.02] animate-pulse h-24"
+              />
             ))}
           </div>
         </div>
@@ -996,7 +1215,11 @@ export default function DashboardHome() {
   }
 
   return (
-    <div className="flex flex-col h-full" role="region" aria-label="Dashboard home">
+    <div
+      className="flex flex-col h-full"
+      role="region"
+      aria-label="Dashboard home"
+    >
       {/* Checkout success modal — shows after returning from Stripe */}
       <Suspense fallback={null}>
         <CheckoutSuccess />
@@ -1090,17 +1313,56 @@ export default function DashboardHome() {
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {[
-                { id: "lead-pipeline", name: "Lead Pipeline", desc: "Find leads + draft outreach", icon: "🎯", color: "emerald", href: "/dashboard/leads" },
-                { id: "content-engine", name: "Content Engine", desc: "Blog + social + newsletter", icon: "📝", color: "cyan", href: "/dashboard/blog-gen" },
-                { id: "competitor-monitor", name: "Competitor Intel", desc: "Deep-scan any competitor", icon: "🛡️", color: "violet", href: "/dashboard/competitor-scan" },
-                { id: "client-onboard", name: "Client Onboard", desc: "Proposal + audit + plan", icon: "💼", color: "blue", href: "/dashboard/proposal-generator" },
-                { id: "seo-autopilot", name: "SEO Autopilot", desc: "Audit + gaps + content", icon: "📊", color: "amber", href: "/dashboard/seo-dominator" },
+                {
+                  id: "lead-pipeline",
+                  name: "Lead Pipeline",
+                  desc: "Find leads + draft outreach",
+                  icon: "🎯",
+                  color: "emerald",
+                  href: "/dashboard/leads",
+                },
+                {
+                  id: "content-engine",
+                  name: "Content Engine",
+                  desc: "Blog + social + newsletter",
+                  icon: "📝",
+                  color: "cyan",
+                  href: "/dashboard/blog-gen",
+                },
+                {
+                  id: "competitor-monitor",
+                  name: "Competitor Intel",
+                  desc: "Deep-scan any competitor",
+                  icon: "🛡️",
+                  color: "violet",
+                  href: "/dashboard/competitor-scan",
+                },
+                {
+                  id: "client-onboard",
+                  name: "Client Onboard",
+                  desc: "Proposal + audit + plan",
+                  icon: "💼",
+                  color: "blue",
+                  href: "/dashboard/proposal-generator",
+                },
+                {
+                  id: "seo-autopilot",
+                  name: "SEO Autopilot",
+                  desc: "Audit + gaps + content",
+                  icon: "📊",
+                  color: "amber",
+                  href: "/dashboard/seo-dominator",
+                },
               ].map((sol) => (
                 <Link key={sol.id} href={sol.href}>
-                  <div className={`p-4 rounded-xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04] hover:border-${sol.color}-500/20 transition-all cursor-pointer group`}>
+                  <div
+                    className={`p-4 rounded-xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04] hover:border-${sol.color}-500/20 transition-all cursor-pointer group`}
+                  >
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-lg">{sol.icon}</span>
-                      <span className="text-sm font-semibold text-white group-hover:text-emerald-400 transition-colors">{sol.name}</span>
+                      <span className="text-sm font-semibold text-white group-hover:text-emerald-400 transition-colors">
+                        {sol.name}
+                      </span>
                     </div>
                     <p className="text-[11px] text-neutral-500">{sol.desc}</p>
                   </div>

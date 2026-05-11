@@ -1,3 +1,5 @@
+// STATUS: ahead-of-consumers — see docs/audits/codebase-audit.md (Tier B).
+// cron internals; superseded by /api/_cron + /api/cron.
 /**
  * SOVEREIGN MATRIX — Automation Scheduler
  *

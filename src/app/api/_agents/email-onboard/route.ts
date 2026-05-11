@@ -47,7 +47,11 @@ function buildSequence(clientName: string, plan: string): EmailStep[] {
   ];
 }
 
-async function generateAIEmailBody(clientName: string, plan: string, emailStep: EmailStep): Promise<string> {
+async function generateAIEmailBody(
+  clientName: string,
+  plan: string,
+  emailStep: EmailStep,
+): Promise<string> {
   try {
     const body = await ai(
       `Write a personalized onboarding email for a SaaS AI marketing platform called Sovereign Matrix.
@@ -61,9 +65,10 @@ ${emailStep.body}
 
 Write the email body only. Make it warm, professional, and actionable. Use markdown-style formatting (**bold** for emphasis). Keep it under 300 words. Sign off as "— The Sovereign Matrix Team".`,
       {
-        system: "You are an expert SaaS onboarding copywriter. Your emails feel personal, not automated. Every email has a clear next action. You write with energy but never hype. Output ONLY the email body text.",
+        system:
+          "You are a SaaS onboarding copywriter. Emails feel personal, not automated. One clear next action per email. Energy without hype. Output ONLY the email body text.",
         maxTokens: 500,
-      }
+      },
     );
     return body;
   } catch {
@@ -75,20 +80,33 @@ export const POST = createAgentRoute({
   name: "email-onboard",
   requiredFields: ["email"],
   handler: async ({ input }) => {
-    const { email, clientName = "there", plan = "Node", action = "send-welcome" } = input as Record<string, unknown>;
+    const {
+      email,
+      clientName = "there",
+      plan = "Node",
+      action = "send-welcome",
+    } = input as Record<string, unknown>;
 
     const resendKey = process.env.RESEND_API_KEY;
-    const fromEmail = process.env.RESEND_FROM_EMAIL || "onboarding@sovereignmatrix.agency";
+    const fromEmail =
+      process.env.RESEND_FROM_EMAIL || "onboarding@sovereignmatrix.agency";
     const sequence = buildSequence(clientName as string, plan as string);
 
     if (action === "send-welcome") {
       const welcomeEmail = sequence[0];
-      welcomeEmail.body = await generateAIEmailBody(clientName as string, plan as string, welcomeEmail);
+      welcomeEmail.body = await generateAIEmailBody(
+        clientName as string,
+        plan as string,
+        welcomeEmail,
+      );
 
       if (resendKey) {
         const res = await fetch("https://api.resend.com/emails", {
           method: "POST",
-          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${resendKey}` },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${resendKey}`,
+          },
           body: JSON.stringify({
             from: fromEmail,
             to: [email],
@@ -99,13 +117,17 @@ export const POST = createAgentRoute({
 
         const data = await res.json();
 
-        persistAppend("email-log", {
-          email,
-          subject: welcomeEmail.subject,
-          status: res.ok ? "sent" : "failed",
-          resend_id: data?.id || null,
-          timestamp: new Date().toISOString(),
-        }, 500);
+        persistAppend(
+          "email-log",
+          {
+            email,
+            subject: welcomeEmail.subject,
+            status: res.ok ? "sent" : "failed",
+            resend_id: data?.id || null,
+            timestamp: new Date().toISOString(),
+          },
+          500,
+        );
 
         return {
           success: true,
@@ -117,18 +139,26 @@ export const POST = createAgentRoute({
       }
 
       // Demo mode — log but don't send
-      persistAppend("email-log", {
-        email,
-        subject: welcomeEmail.subject,
-        status: "demo",
-        timestamp: new Date().toISOString(),
-      }, 500);
+      persistAppend(
+        "email-log",
+        {
+          email,
+          subject: welcomeEmail.subject,
+          status: "demo",
+          timestamp: new Date().toISOString(),
+        },
+        500,
+      );
 
       return {
         success: true,
         mode: "demo",
         message: "RESEND_API_KEY not set. Email logged but not sent.",
-        would_send: { to: email, subject: welcomeEmail.subject, preview: welcomeEmail.body.substring(0, 200) },
+        would_send: {
+          to: email,
+          subject: welcomeEmail.subject,
+          preview: welcomeEmail.body.substring(0, 200),
+        },
       };
     }
 
@@ -137,7 +167,11 @@ export const POST = createAgentRoute({
         success: true,
         email,
         plan,
-        sequence: sequence.map(s => ({ day: s.day, subject: s.subject, preview: s.body.substring(0, 150) })),
+        sequence: sequence.map((s) => ({
+          day: s.day,
+          subject: s.subject,
+          preview: s.body.substring(0, 150),
+        })),
       };
     }
 

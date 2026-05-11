@@ -27,7 +27,11 @@ export const POST = createAgentRoute({
   name: "orchestrator",
   requiredFields: ["target"],
   handler: async ({ input }) => {
-    const { target, chain_type = "full-audit", custom_instructions } = input as Record<string, unknown>;
+    const {
+      target,
+      chain_type = "full-audit",
+      custom_instructions,
+    } = input as Record<string, unknown>;
 
     const globalStart = Date.now();
     const steps: OrchestratorStep[] = [];
@@ -38,7 +42,7 @@ export const POST = createAgentRoute({
     try {
       reconIntel = await research_ai(
         `${target} website analysis business model marketing`,
-        `Deep recon on target: ${target}. Analyze their entire business: pricing model, tech stack, marketing approach, team size indicators, funding status, customer reviews, social media presence, traffic estimates, and competitive positioning. Be exhaustive.${custom_instructions ? `\n\nAdditional focus: ${custom_instructions}` : ""}`
+        `Deep recon on target: ${target}. Analyze their entire business: pricing model, tech stack, marketing approach, team size indicators, funding status, customer reviews, social media presence, traffic estimates, and competitive positioning. Be exhaustive.${custom_instructions ? `\n\nAdditional focus: ${custom_instructions}` : ""}`,
       );
     } catch {
       reconIntel = `Target: ${target}. Unable to perform live recon — proceeding with domain analysis.`;
@@ -57,8 +61,14 @@ export const POST = createAgentRoute({
     const audit = await nimChat(
       "nvidia/llama-3.1-nemotron-ultra-253b-v1",
       [
-        { role: "system", content: "You are a business intelligence analyst. Produce structured JSON audits with scoring." },
-        { role: "user", content: `Based on this recon data, produce a comprehensive multi-vector audit of ${target}.
+        {
+          role: "system",
+          content:
+            "You are a business intelligence analyst. Produce structured JSON audits with scoring.",
+        },
+        {
+          role: "user",
+          content: `Based on this recon data, produce a comprehensive multi-vector audit of ${target}.
 
 RECON DATA:
 ${reconIntel}
@@ -74,14 +84,20 @@ Score each dimension 0-100 and provide specific findings. Output JSON:
   "vulnerabilities": [{"vector": "name", "severity": "CRITICAL|HIGH|MEDIUM", "detail": "specific exploit"}],
   "strengths": ["what they do well"],
   "market_position": "brief assessment"
-}` },
+}`,
+        },
       ],
-      { maxTokens: 2000, temperature: 0.3 }
+      { maxTokens: 2000, temperature: 0.3 },
     );
 
     let auditParsed;
     try {
-      auditParsed = JSON.parse(audit.replace(/```json?\n?/g, "").replace(/```/g, "").trim());
+      auditParsed = JSON.parse(
+        audit
+          .replace(/```json?\n?/g, "")
+          .replace(/```/g, "")
+          .trim(),
+      );
     } catch {
       auditParsed = { raw: audit };
     }
@@ -99,8 +115,14 @@ Score each dimension 0-100 and provide specific findings. Output JSON:
     const strategy = await nimChat(
       "deepseek-ai/deepseek-v3.2",
       [
-        { role: "system", content: "You are a strategic growth strategist. Create battle plans that exploit every competitor weakness." },
-        { role: "user", content: `Create a counter-strike strategy based on this audit.
+        {
+          role: "system",
+          content:
+            "You are a strategic growth strategist. Create battle plans that exploit every competitor weakness.",
+        },
+        {
+          role: "user",
+          content: `Create a counter-strike strategy based on this audit.
 
 AUDIT RESULTS:
 ${JSON.stringify(auditParsed)}
@@ -112,9 +134,10 @@ Generate a battle plan with:
 4. Recommended content angles to steal their audience
 5. Ad copy that directly exploits their weaknesses
 
-Be specific, actionable, and strategic.` },
+Be specific, actionable, and strategic.`,
+        },
       ],
-      { maxTokens: 2000, temperature: 0.5 }
+      { maxTokens: 2000, temperature: 0.5 },
     );
     steps.push({
       phase: "STRATEGY",
@@ -132,8 +155,14 @@ Be specific, actionable, and strategic.` },
       const asset = await nimChat(
         "nvidia/devstral-2-123b-instruct-2512",
         [
-          { role: "system", content: "You are a world-class web developer. Generate production-ready HTML/CSS that is visually superior to the competitor. Use modern design: dark theme, glassmorphism, smooth animations, premium typography." },
-          { role: "user", content: `Generate a SUPERIOR landing page that exploits every weakness found in the competitor.
+          {
+            role: "system",
+            content:
+              "You are a senior frontend engineer. Generate production-ready HTML/CSS. Match conventions of the dark-mode design system: bg-[#030303], glassmorphism (backdrop-blur-xl, bg-white/5), Tailwind utility classes, no inline styles unless dynamic, semantic HTML, accessible markup, no unnecessary divs.",
+          },
+          {
+            role: "user",
+            content: `Generate a SUPERIOR landing page that exploits every weakness found in the competitor.
 
 TARGET: ${target}
 VULNERABILITIES: ${JSON.stringify(auditParsed?.vulnerabilities || [])}
@@ -147,9 +176,10 @@ Requirements:
 - Speed comparison section
 - Clear pricing CTA
 - Animations using CSS only (no JS framework)
-Return ONLY complete valid HTML with inline CSS.` },
+Return ONLY complete valid HTML with inline CSS.`,
+          },
         ],
-        { maxTokens: 4000, temperature: 0.4 }
+        { maxTokens: 4000, temperature: 0.4 },
       );
       generatedAsset = asset;
       steps.push({
@@ -167,16 +197,23 @@ Return ONLY complete valid HTML with inline CSS.` },
     const brief = await nimChat(
       "mistralai/mistral-nemotron",
       [
-        { role: "system", content: "You are an executive presenting battle intelligence to a C-suite. Be concise, data-driven, and decisive." },
-        { role: "user", content: `Synthesize this into a 1-page executive brief:
+        {
+          role: "system",
+          content:
+            "You are an executive presenting battle intelligence to a C-suite. Be concise, data-driven, and decisive.",
+        },
+        {
+          role: "user",
+          content: `Synthesize this into a 1-page executive brief:
 
 TARGET: ${target}
 AUDIT: ${JSON.stringify(auditParsed)}
 STRATEGY: ${strategy.substring(0, 1500)}
 
-Format as a clean brief with: Executive Summary, Threat Assessment, Recommended Actions, Expected ROI.` },
+Format as a clean brief with: Executive Summary, Threat Assessment, Recommended Actions, Expected ROI.`,
+        },
       ],
-      { maxTokens: 1500, temperature: 0.3 }
+      { maxTokens: 1500, temperature: 0.3 },
     );
     steps.push({
       phase: "BRIEF",

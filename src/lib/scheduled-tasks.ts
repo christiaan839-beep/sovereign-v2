@@ -1,3 +1,5 @@
+// STATUS: ahead-of-consumers — see docs/audits/codebase-audit.md (Tier B).
+// task scheduling helpers; superseded by /api/cron/playbook-scheduler.
 /**
  * SOVEREIGN MATRIX — Scheduled Task Registry
  *

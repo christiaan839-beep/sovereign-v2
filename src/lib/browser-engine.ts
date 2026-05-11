@@ -1,3 +1,5 @@
+// STATUS: ahead-of-consumers — see docs/audits/codebase-audit.md (Tier B).
+// browser-use engine; superseded by /api/_agents/computer-use.
 /**
  * SOVEREIGN MATRIX — Browser Automation Engine
  *

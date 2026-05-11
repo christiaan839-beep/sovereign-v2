@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
+import { useIsMobile } from "@/lib/hooks/use-is-mobile";
 
 /**
  * ScrollRevealHero — Scroll-driven parallax effects for the hero section.
@@ -16,7 +17,11 @@ import { motion, useScroll, useTransform } from "framer-motion";
  * No scroll hijacking — just responds to natural scroll position.
  */
 
-export function HeroParallaxLayer({ children, speed = 0.5, className = "" }: {
+export function HeroParallaxLayer({
+  children,
+  speed = 0.5,
+  className = "",
+}: {
   children: React.ReactNode;
   speed?: number;
   className?: string;
@@ -31,17 +36,16 @@ export function HeroParallaxLayer({ children, speed = 0.5, className = "" }: {
   const opacity = useTransform(scrollYProgress, [0, 0.5, 1], [1, 0.8, 0]);
 
   return (
-    <motion.div
-      ref={ref}
-      style={{ y, opacity }}
-      className={className}
-    >
+    <motion.div ref={ref} style={{ y, opacity }} className={className}>
       {children}
     </motion.div>
   );
 }
 
-export function ScrollFadeSection({ children, className = "" }: {
+export function ScrollFadeSection({
+  children,
+  className = "",
+}: {
   children: React.ReactNode;
   className?: string;
 }) {
@@ -52,14 +56,14 @@ export function ScrollFadeSection({ children, className = "" }: {
   });
 
   const opacity = useTransform(scrollYProgress, [0, 0.3, 0.7, 1], [0, 1, 1, 0]);
-  const scale = useTransform(scrollYProgress, [0, 0.3, 0.7, 1], [0.95, 1, 1, 0.95]);
+  const scale = useTransform(
+    scrollYProgress,
+    [0, 0.3, 0.7, 1],
+    [0.95, 1, 1, 0.95],
+  );
 
   return (
-    <motion.div
-      ref={ref}
-      style={{ opacity, scale }}
-      className={className}
-    >
+    <motion.div ref={ref} style={{ opacity, scale }} className={className}>
       {children}
     </motion.div>
   );
@@ -71,20 +75,25 @@ export function ScrollFadeSection({ children, className = "" }: {
  */
 export function FloatingOrbs() {
   const { scrollY } = useScroll();
-  const [isMobile, setIsMobile] = useState(false);
+  const isMobile = useIsMobile();
 
-  useEffect(() => {
-    setIsMobile(window.innerWidth < 768);
-  }, []);
+  // Hooks must be called at the top level — pre-compute one transform per
+  // orb instead of calling useTransform inside the map() callback. The
+  // orb count is fixed at 5 below so the hook order stays stable.
+  const y0 = useTransform(scrollY, [0, 2000], [0, 0.3 * -400]);
+  const y1 = useTransform(scrollY, [0, 2000], [0, 0.5 * -400]);
+  const y2 = useTransform(scrollY, [0, 2000], [0, 0.2 * -400]);
+  const y3 = useTransform(scrollY, [0, 2000], [0, 0.4 * -400]);
+  const y4 = useTransform(scrollY, [0, 2000], [0, 0.35 * -400]);
 
   if (isMobile) return null;
 
   const orbs = [
-    { size: 300, color: "emerald", x: "10%", y: "20%", speed: 0.3 },
-    { size: 200, color: "cyan", x: "70%", y: "40%", speed: 0.5 },
-    { size: 150, color: "violet", x: "30%", y: "60%", speed: 0.2 },
-    { size: 250, color: "emerald", x: "80%", y: "10%", speed: 0.4 },
-    { size: 180, color: "amber", x: "50%", y: "70%", speed: 0.35 },
+    { size: 300, color: "emerald", x: "10%", y: "20%", yMv: y0 },
+    { size: 200, color: "cyan", x: "70%", y: "40%", yMv: y1 },
+    { size: 150, color: "violet", x: "30%", y: "60%", yMv: y2 },
+    { size: 250, color: "emerald", x: "80%", y: "10%", yMv: y3 },
+    { size: 180, color: "amber", x: "50%", y: "70%", yMv: y4 },
   ];
 
   return (
@@ -99,13 +108,16 @@ export function FloatingOrbs() {
             left: orb.x,
             top: orb.y,
             background: `radial-gradient(circle, rgba(${
-              orb.color === "emerald" ? "16,185,129" :
-              orb.color === "cyan" ? "6,182,212" :
-              orb.color === "violet" ? "139,92,246" :
-              "245,158,11"
+              orb.color === "emerald"
+                ? "16,185,129"
+                : orb.color === "cyan"
+                  ? "6,182,212"
+                  : orb.color === "violet"
+                    ? "139,92,246"
+                    : "245,158,11"
             },0.04) 0%, transparent 70%)`,
             filter: "blur(80px)",
-            y: useTransform(scrollY, [0, 2000], [0, orb.speed * -400]),
+            y: orb.yMv,
           }}
         />
       ))}

@@ -1,3 +1,5 @@
+// STATUS: ahead-of-consumers — see docs/audits/codebase-audit.md (Tier B).
+// multi-agent adversarial synthesis claim; not wired.
 /**
  * SOVEREIGN MATRIX — Adversarial Synthesis Engine
  *

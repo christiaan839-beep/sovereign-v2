@@ -9,23 +9,28 @@ const log = createLogger("launch-outreach");
 
 /**
  * Launch Outreach API
- * 
+ *
  * Generates personalized cold outreach emails for potential clients
  * using Gemini 2.5 Pro. Each email is tailored to the prospect's
  * industry and pain points.
  */
 export async function POST(req: Request) {
-  const auth = await requireAuth(); if (auth.error) return auth.error;
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
   try {
-    const { prospectName, businessName, industry, website, painPoints } = await req.json();
+    const { prospectName, businessName, industry, website, painPoints } =
+      await req.json();
 
     if (!prospectName || !businessName) {
-      return NextResponse.json({ error: "Missing prospectName or businessName" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Missing prospectName or businessName" },
+        { status: 400 },
+      );
     }
 
     const { text: emailContent } = await generateText({
       model: google("gemini-2.5-pro"),
-      prompt: `You are a world-class B2B sales copywriter working for SOVEREIGN, an autonomous AI marketing platform. Write a personalized cold outreach email.
+      prompt: `You are a B2B sales copywriter writing on behalf of Sovereign Matrix, an AI agent platform. Write a personalized cold outreach email.
 
 PROSPECT: ${prospectName}
 BUSINESS: ${businessName}
@@ -52,10 +57,17 @@ Output ONLY the JSON.`,
 
     let parsed;
     try {
-      const cleaned = emailContent.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
+      const cleaned = emailContent
+        .replace(/```json?\n?/g, "")
+        .replace(/```/g, "")
+        .trim();
       parsed = JSON.parse(cleaned);
     } catch {
-      parsed = { subject: "SOVEREIGN for your business", body: emailContent, followUp: "Following up on my previous email." };
+      parsed = {
+        subject: "SOVEREIGN for your business",
+        body: emailContent,
+        followUp: "Following up on my previous email.",
+      };
     }
 
     await db.insert(globalTelemetry).values({
@@ -67,6 +79,9 @@ Output ONLY the JSON.`,
     return NextResponse.json({ success: true, email: parsed });
   } catch (error) {
     log.error("Launch outreach error", error as Record<string, unknown>);
-    return NextResponse.json({ error: "Outreach generation failed" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Outreach generation failed" },
+      { status: 500 },
+    );
   }
 }

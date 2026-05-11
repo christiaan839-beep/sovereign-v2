@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle2, ArrowRight, X } from "lucide-react";
@@ -12,22 +12,29 @@ import { CheckCircle2, ArrowRight, X } from "lucide-react";
 export function CheckoutSuccess() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [show, setShow] = useState(false);
-  const [plan, setPlan] = useState("");
+
+  // Snapshot the checkout=success plan once on first mount — the effect below
+  // clears the URL params, which would otherwise break the modal mid-display.
+  const initialPlan = useMemo(() => {
+    return searchParams.get("checkout") === "success"
+      ? searchParams.get("plan") || "your new plan"
+      : null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const [dismissed, setDismissed] = useState(false);
+  const show = !!initialPlan && !dismissed;
+  const plan = initialPlan ?? "";
 
   useEffect(() => {
-    if (searchParams.get("checkout") === "success") {
-      setPlan(searchParams.get("plan") || "your new plan");
-      setShow(true);
-      // Clean the URL without navigation
-      const url = new URL(window.location.href);
-      url.searchParams.delete("checkout");
-      url.searchParams.delete("plan");
-      window.history.replaceState({}, "", url.pathname);
-    }
-  }, [searchParams]);
+    if (!initialPlan) return;
+    const url = new URL(window.location.href);
+    url.searchParams.delete("checkout");
+    url.searchParams.delete("plan");
+    window.history.replaceState({}, "", url.pathname);
+  }, [initialPlan]);
 
-  const dismiss = () => setShow(false);
+  const dismiss = () => setDismissed(true);
 
   const PLAN_NAMES: Record<string, string> = {
     starter: "Starter",
@@ -69,12 +76,16 @@ export function CheckoutSuccess() {
                 Welcome to {PLAN_NAMES[plan] || plan}!
               </h2>
               <p className="text-sm text-neutral-400 mb-8">
-                Your subscription is active. All features for your plan are now unlocked.
+                Your subscription is active. All features for your plan are now
+                unlocked.
               </p>
 
               <div className="space-y-3">
                 <button
-                  onClick={() => { dismiss(); router.push("/dashboard/playbooks"); }}
+                  onClick={() => {
+                    dismiss();
+                    router.push("/dashboard/playbooks");
+                  }}
                   className="w-full py-3 px-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm font-semibold hover:bg-emerald-500/20 transition-colors flex items-center justify-center gap-2"
                 >
                   Run your first playbook <ArrowRight className="w-4 h-4" />

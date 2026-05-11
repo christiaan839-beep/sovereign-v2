@@ -1,3 +1,5 @@
+// STATUS: ahead-of-consumers — see docs/audits/codebase-audit.md (Tier B).
+// knowledge-graph context weaver; not wired.
 /**
  * SOVEREIGN MATRIX — Context Weaver
  *

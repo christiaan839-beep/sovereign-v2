@@ -19,18 +19,25 @@ vi.mock("@/lib/logger", () => ({
 
 const mockGuardRoute = vi.fn();
 const mockSanitizeString = vi.fn((input: string, maxLen?: number) =>
-  typeof input === "string" ? input.trim().slice(0, maxLen ?? 50000) : ""
+  typeof input === "string" ? input.trim().slice(0, maxLen ?? 50000) : "",
 );
-const mockErrorResponse = vi.fn((message: string, status: number, code: string) => {
-  return new Response(
-    JSON.stringify({ error: message, code, timestamp: new Date().toISOString() }),
-    { status, headers: { "Content-Type": "application/json" } }
-  );
-});
+const mockErrorResponse = vi.fn(
+  (message: string, status: number, code: string) => {
+    return new Response(
+      JSON.stringify({
+        error: message,
+        code,
+        timestamp: new Date().toISOString(),
+      }),
+      { status, headers: { "Content-Type": "application/json" } },
+    );
+  },
+);
 
 vi.mock("@/lib/api-guard", () => ({
   guardRoute: (...args: unknown[]) => mockGuardRoute(...args),
-  sanitizeString: (input: string, maxLen?: number) => mockSanitizeString(input, maxLen),
+  sanitizeString: (input: string, maxLen?: number) =>
+    mockSanitizeString(input, maxLen),
   errorResponse: (message: string, status: number, code: string) =>
     mockErrorResponse(message, status, code),
 }));
@@ -61,20 +68,50 @@ vi.mock("@/lib/free-tier", () => ({
 }));
 
 vi.mock("@/lib/paywall", () => ({
-  checkAgentAccess: vi.fn().mockReturnValue({ allowed: true, reason: "", requiredPlan: null, upgradeUrl: "" }),
+  checkAgentAccess: vi
+    .fn()
+    .mockReturnValue({
+      allowed: true,
+      reason: "",
+      requiredPlan: null,
+      upgradeUrl: "",
+    }),
 }));
 
 vi.mock("@/lib/policy-engine", () => ({
-  evaluatePolicy: vi.fn().mockReturnValue({ allowed: true, effect: "allow", policyId: null, ruleName: null, reason: "", requiresApproval: false }),
+  evaluatePolicy: vi
+    .fn()
+    .mockReturnValue({
+      allowed: true,
+      effect: "allow",
+      policyId: null,
+      ruleName: null,
+      reason: "",
+      requiresApproval: false,
+    }),
 }));
 
 vi.mock("@/lib/budget-controls", () => ({
-  checkBudget: vi.fn().mockReturnValue({ allowed: true, reason: "", dailyPercent: 0, monthlyPercent: 0 }),
-  recordSpend: vi.fn(),
+  checkBudget: vi.fn().mockResolvedValue({
+    allowed: true,
+    dailyCents: 0,
+    dailyLimitCents: Infinity,
+    dailyPercent: 0,
+    monthlyCents: 0,
+    plan: "enterprise",
+  }),
+  recordSpend: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock("@/lib/agent-replay", () => ({
-  startReplay: vi.fn().mockReturnValue({ id: "test", addStep: vi.fn(), complete: vi.fn(), fail: vi.fn() }),
+  startReplay: vi
+    .fn()
+    .mockReturnValue({
+      id: "test",
+      addStep: vi.fn(),
+      complete: vi.fn(),
+      fail: vi.fn(),
+    }),
 }));
 
 vi.mock("@/lib/quality-scorer", () => ({
@@ -152,7 +189,7 @@ describe("createAgentRoute", () => {
       authorized: false,
       response: new Response(
         JSON.stringify({ error: "Unauthorized", code: "AUTH_REQUIRED" }),
-        { status: 401 }
+        { status: 401 },
       ),
     });
 
@@ -352,7 +389,7 @@ describe("createAgentRoute", () => {
     });
 
     const res = await handler(
-      makeRequest({ url: "https://example.com", keywords: "ai marketing" })
+      makeRequest({ url: "https://example.com", keywords: "ai marketing" }),
     );
     expect(res.status).toBe(200);
   });

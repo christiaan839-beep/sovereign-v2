@@ -14,11 +14,44 @@ const RATE_LIMIT = 3; // 3 runs per hour
 const RATE_WINDOW_MS = 60 * 60 * 1000; // 1 hour
 
 // Allowed agents for free tools (only non-destructive read-only agents)
-const ALLOWED_AGENTS = new Set(["seo-dominator", "seo", "leads", "brand-voice", "competitor-scan", "competitor", "brand-audit"]);
+const ALLOWED_AGENTS = new Set([
+  "seo-dominator",
+  "seo",
+  "leads",
+  "brand-voice",
+  "competitor-scan",
+  "competitor",
+  "brand-audit",
+]);
+
+/**
+ * Resolve the caller's IP for rate-limiting.
+ *
+ * Order of preference:
+ *  1. `x-real-ip` — set by Vercel directly, not user-controllable
+ *     when the request enters the platform.
+ *  2. `cf-connecting-ip` — Cloudflare equivalent, set by CF edge.
+ *  3. `x-forwarded-for` first hop — works on Vercel because Vercel
+ *     overwrites it, but is spoofable on self-hosted Docker / Railway
+ *     deploys (output: "standalone" path).
+ *
+ * Documented in security-review-2026-05.md (medium finding).
+ * For genuine load-side hardening, switch to @upstash/ratelimit
+ * (already wired in src/lib/rate-limit.ts) keyed on the same source.
+ */
+function resolveCallerIp(req: Request): string {
+  const realIp = req.headers.get("x-real-ip")?.trim();
+  if (realIp) return realIp;
+  const cfIp = req.headers.get("cf-connecting-ip")?.trim();
+  if (cfIp) return cfIp;
+  const xff = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+  if (xff) return xff;
+  return "unknown";
+}
 
 export async function POST(req: Request) {
   try {
-    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+    const ip = resolveCallerIp(req);
 
     // Rate limit
     const now = Date.now();
@@ -26,8 +59,12 @@ export async function POST(req: Request) {
     if (limit && limit.resetAt > now) {
       if (limit.count >= RATE_LIMIT) {
         return NextResponse.json(
-          { error: "Free tool limit reached (3/hour). Sign up for unlimited access.", remaining: 0 },
-          { status: 429 }
+          {
+            error:
+              "Free tool limit reached (3/hour). Sign up for unlimited access.",
+            remaining: 0,
+          },
+          { status: 429 },
         );
       }
       limit.count++;
@@ -46,15 +83,18 @@ export async function POST(req: Request) {
 
     if (!agent || !ALLOWED_AGENTS.has(agent)) {
       return NextResponse.json(
-        { error: `Agent not available in free tier. Allowed: ${[...ALLOWED_AGENTS].join(", ")}` },
-        { status: 400 }
+        {
+          error: `Agent not available in free tier. Allowed: ${[...ALLOWED_AGENTS].join(", ")}`,
+        },
+        { status: 400 },
       );
     }
 
     // Forward to internal agent route
-    const baseUrl = req.headers.get("x-forwarded-proto") === "https"
-      ? `https://${req.headers.get("host")}`
-      : `http://${req.headers.get("host") || "localhost:3000"}`;
+    const baseUrl =
+      req.headers.get("x-forwarded-proto") === "https"
+        ? `https://${req.headers.get("host")}`
+        : `http://${req.headers.get("host") || "localhost:3000"}`;
 
     const agentRes = await fetch(`${baseUrl}/api/agents/${agent}`, {
       method: "POST",
@@ -74,10 +114,13 @@ export async function POST(req: Request) {
       {
         status: agentRes.status,
         headers: { "X-Free-Remaining": String(Math.max(0, remaining)) },
-      }
+      },
     );
   } catch (err) {
     log.error("Free tool proxy error", { error: String(err) });
-    return NextResponse.json({ error: "Agent temporarily unavailable" }, { status: 502 });
+    return NextResponse.json(
+      { error: "Agent temporarily unavailable" },
+      { status: 502 },
+    );
   }
 }

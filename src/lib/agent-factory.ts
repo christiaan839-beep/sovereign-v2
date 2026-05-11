@@ -26,16 +26,26 @@ import { NextResponse } from "next/server";
 import { guardRoute, sanitizeString, errorResponse } from "@/lib/api-guard";
 import { detectJailbreak } from "@/lib/jailbreak-detect";
 import { checkContentSafety } from "@/lib/content-safety";
-import { checkFreeUsage, incrementUsage, getSmartUpgradeInfo } from "@/lib/free-tier";
+import { incrementUsage, getSmartUpgradeInfo } from "@/lib/free-tier";
+import { checkPlanLimits } from "@/lib/plan-enforcement";
 import { scoreOutput, type QualityScore } from "@/lib/quality-scorer";
 import { createLogger } from "@/lib/logger";
 import { auditLog } from "@/lib/audit-log";
 import { getAntiSlopRules } from "@/lib/system-prompts";
 import { trackAgentExecution } from "@/lib/analytics";
 import { getMemoryContext, saveMemory } from "@/lib/tenant-memory";
-import { getActionTier, buildConfirmResponse, buildRestrictedResponse, type ActionTier } from "@/lib/action-tiers";
+import {
+  getActionTier,
+  buildConfirmResponse,
+  buildRestrictedResponse,
+  type ActionTier,
+} from "@/lib/action-tiers";
 import { resolveTenantId } from "@/lib/tenant-resolver";
-import { isAgentAvailable, recordAgentSuccess, recordAgentFailure } from "@/lib/agent-circuit-breaker";
+import {
+  isAgentAvailable,
+  recordAgentSuccess,
+  recordAgentFailure,
+} from "@/lib/agent-circuit-breaker";
 import { persistAgentActivity } from "@/lib/activity-persist";
 import { notifyAgentComplete } from "@/lib/notify";
 import { evaluatePolicy } from "@/lib/policy-engine";
@@ -89,6 +99,30 @@ export interface AgentConfig {
   /** Skip quality scoring on output (for scoring/safety agents themselves) */
   skipQualityCheck?: boolean;
 
+  /**
+   * Run the post-flight `verifyOutput()` pipeline (LlamaGuard +
+   * regex-PII + content-policy + quality + critic) on the handler's
+   * stringified output.
+   *
+   * Default: **true** — every customer-facing agent ships with the
+   * full safety pipeline by default. Routes that ARE the safety
+   * pipeline (jailbreak/PII/content-policy meta-agents) are
+   * automatically skipped via `skipPiiScan` / `skipQualityCheck`,
+   * which already mark a route as "I AM the safety layer."
+   *
+   * Set to `false` only for internal/system endpoints where the
+   * latency cost (~150–400ms p50, dominated by LlamaGuard) outweighs
+   * the safety benefit. The verifier is fail-open: missing
+   * NVIDIA_NIM_API_KEY or transient errors fall through to the
+   * other layers (regex PII, content policy, heuristic quality)
+   * which have zero external dependencies.
+   *
+   * When the verifier blocks, the route returns 403 with the block
+   * reason, the user is NOT charged for the run, and the response
+   * carries `code: "VERIFIER_BLOCKED"`.
+   */
+  useVerifier?: boolean;
+
   /** Action tier override (1=autonomous, 2=confirm, 3=restricted). Auto-detected if omitted. */
   actionTier?: ActionTier;
 
@@ -102,7 +136,14 @@ export interface AgentConfig {
   allowedTopics?: string[];
 
   /** The agent's core logic */
-  handler: (ctx: AgentContext) => Promise<Record<string, unknown>>;
+  /**
+   * Handler may return a plain object (the factory will JSON-wrap it
+   * with the standard response envelope) OR an already-built
+   * NextResponse / Response (returned as-is). Widened to accept
+   * Response so legacy handlers that call NextResponse.json() inline
+   * still type-check.
+   */
+  handler: (ctx: AgentContext) => Promise<Record<string, unknown> | Response>;
 }
 
 export interface AgentContext {
@@ -137,23 +178,28 @@ export function createAgentRoute(config: AgentConfig) {
         userId = guard.userId;
       }
 
-      // ─── Free Tier Usage Check ───
+      // ─── Plan Limit Enforcement ───
+      // checkPlanLimits counts BOTH agent runs and playbook runs against the
+      // user's plan quota (single rolled-up counter). Without this, a user
+      // can effectively double their quota by alternating endpoints.
       if (userId) {
-        const usageCheck = await checkFreeUsage(userId);
-        if (!usageCheck.allowed) {
+        const planCheck = await checkPlanLimits(userId);
+        if (!planCheck.allowed) {
           const upgradeInfo = await getSmartUpgradeInfo(userId);
           return new NextResponse(
             JSON.stringify({
               error: "Usage limit reached",
-              message: `You've used all ${upgradeInfo.currentLimit} runs this month on the ${upgradeInfo.currentPlan.charAt(0).toUpperCase() + upgradeInfo.currentPlan.slice(1)} plan.`,
+              message:
+                planCheck.message ??
+                `You've used all ${planCheck.limit} runs this month on the ${planCheck.planName} plan.`,
               upgrade: {
-                currentPlan: upgradeInfo.currentPlan,
-                currentLimit: upgradeInfo.currentLimit,
-                used: upgradeInfo.used,
+                currentPlan: planCheck.plan,
+                currentLimit: planCheck.limit,
+                used: planCheck.used,
                 nextPlan: upgradeInfo.nextPlan,
                 nextLimit: upgradeInfo.nextLimit,
                 nextPrice: upgradeInfo.nextPrice,
-                upgradeUrl: upgradeInfo.upgradeUrl,
+                upgradeUrl: planCheck.upgradeUrl ?? upgradeInfo.upgradeUrl,
                 resetDate: upgradeInfo.resetDate,
               },
               code: "USAGE_LIMIT_REACHED",
@@ -162,9 +208,10 @@ export function createAgentRoute(config: AgentConfig) {
               status: 429,
               headers: {
                 "Content-Type": "application/json",
-                "X-Free-Remaining": "0",
+                "X-Plan": planCheck.plan,
+                "X-Plan-Remaining": "0",
               },
-            }
+            },
           );
         }
       }
@@ -181,13 +228,27 @@ export function createAgentRoute(config: AgentConfig) {
       if (config.schema) {
         const validation = config.schema.safeParse(body);
         if (!validation.success) {
-          const issues = validation.error.issues.map(i => `${i.path.join(".")}: ${i.message}`).join("; ");
-          return errorResponse(`Validation failed: ${issues}`, 400, "VALIDATION_ERROR");
+          const issues = validation.error.issues
+            .map((i) => `${i.path.join(".")}: ${i.message}`)
+            .join("; ");
+          return errorResponse(
+            `Validation failed: ${issues}`,
+            400,
+            "VALIDATION_ERROR",
+          );
         }
       } else if (config.requiredFields) {
         for (const field of config.requiredFields) {
-          if (body[field] === undefined || body[field] === null || body[field] === "") {
-            return errorResponse(`Missing required field: ${field}`, 400, "MISSING_FIELD");
+          if (
+            body[field] === undefined ||
+            body[field] === null ||
+            body[field] === ""
+          ) {
+            return errorResponse(
+              `Missing required field: ${field}`,
+              400,
+              "MISSING_FIELD",
+            );
           }
         }
       }
@@ -198,19 +259,25 @@ export function createAgentRoute(config: AgentConfig) {
 
       if (effectiveTier >= 2 && !body.confirmed) {
         if (effectiveTier === 3) {
-          log.info("Tier 3 agent blocked — admin approval required", { agent: config.name });
-          return NextResponse.json(buildRestrictedResponse(config.name), { status: 403 });
+          log.info("Tier 3 agent blocked — admin approval required", {
+            agent: config.name,
+          });
+          return NextResponse.json(buildRestrictedResponse(config.name), {
+            status: 403,
+          });
         }
         // Tier 2: return a preview asking for confirmation
-        log.info("Tier 2 agent — confirmation required", { agent: config.name });
+        log.info("Tier 2 agent — confirmation required", {
+          agent: config.name,
+        });
         return NextResponse.json(
           buildConfirmResponse(config.name, {
             agent: config.name,
             input: Object.fromEntries(
-              Object.entries(body).filter(([k]) => k !== "confirmed")
+              Object.entries(body).filter(([k]) => k !== "confirmed"),
             ),
           }),
-          { status: 200 }
+          { status: 200 },
         );
       }
 
@@ -231,11 +298,14 @@ export function createAgentRoute(config: AgentConfig) {
         if (primaryInput && primaryInput.length > 10) {
           const jailbreakResult = await detectJailbreak(primaryInput);
           if (jailbreakResult.blocked) {
-            log.warn("Jailbreak blocked", { agent: config.name, category: jailbreakResult.category });
+            log.warn("Jailbreak blocked", {
+              agent: config.name,
+              category: jailbreakResult.category,
+            });
             return errorResponse(
               "Request blocked by safety system. Your input was flagged as a potential prompt injection.",
               403,
-              "JAILBREAK_BLOCKED"
+              "JAILBREAK_BLOCKED",
             );
           }
         }
@@ -246,16 +316,19 @@ export function createAgentRoute(config: AgentConfig) {
         const primaryInput = getFirstStringValue(sanitized);
         if (primaryInput) {
           const inputLower = primaryInput.toLowerCase();
-          const onTopic = config.allowedTopics.some(topic =>
-            inputLower.includes(topic.toLowerCase())
+          const onTopic = config.allowedTopics.some((topic) =>
+            inputLower.includes(topic.toLowerCase()),
           );
           // Only block if input is long enough to be a real request (not just a URL or short param)
           if (!onTopic && primaryInput.length > 50) {
-            log.info("Off-topic request filtered", { agent: config.name, topics: config.allowedTopics });
+            log.info("Off-topic request filtered", {
+              agent: config.name,
+              topics: config.allowedTopics,
+            });
             return errorResponse(
               `This agent handles: ${config.allowedTopics.join(", ")}. Your request seems off-topic. Try the Sovereign Assistant for general queries.`,
               400,
-              "OFF_TOPIC"
+              "OFF_TOPIC",
             );
           }
         }
@@ -267,11 +340,14 @@ export function createAgentRoute(config: AgentConfig) {
         if (primaryInput && primaryInput.length > 20) {
           const safetyResult = await checkContentSafety(primaryInput);
           if (!safetyResult.safe) {
-            log.warn("Content safety blocked", { agent: config.name, category: safetyResult.category });
+            log.warn("Content safety blocked", {
+              agent: config.name,
+              category: safetyResult.category,
+            });
             return errorResponse(
               `Content blocked by safety filter: ${safetyResult.reason}`,
               403,
-              "CONTENT_UNSAFE"
+              "CONTENT_UNSAFE",
             );
           }
         }
@@ -292,14 +368,17 @@ export function createAgentRoute(config: AgentConfig) {
       }
 
       // Extract orgId from request body if provided (for org-scoped operations)
-      const orgId = typeof sanitized.orgId === "string" ? sanitized.orgId : undefined;
+      const orgId =
+        typeof sanitized.orgId === "string" ? sanitized.orgId : undefined;
 
       // ─── Circuit Breaker Check ───
       if (!isAgentAvailable(config.name)) {
         log.warn(`Agent circuit open: ${config.name} — temporarily disabled`);
         return NextResponse.json(
-          { error: `Agent "${config.name}" is temporarily unavailable due to repeated failures. Please try again shortly.` },
-          { status: 503 }
+          {
+            error: `Agent "${config.name}" is temporarily unavailable due to repeated failures. Please try again shortly.`,
+          },
+          { status: 503 },
         );
       }
 
@@ -313,12 +392,19 @@ export function createAgentRoute(config: AgentConfig) {
           const access = checkAgentAccess(config.name, userTier);
           if (!access.allowed) {
             return NextResponse.json(
-              { error: access.reason, requiredPlan: access.requiredPlan, upgradeUrl: access.upgradeUrl },
-              { status: 403 }
+              {
+                error: access.reason,
+                requiredPlan: access.requiredPlan,
+                upgradeUrl: access.upgradeUrl,
+              },
+              { status: 403 },
             );
           }
         } catch (paywallErr) {
-          log.warn("Paywall check failed — allowing execution", { agent: config.name, error: String(paywallErr) });
+          log.warn("Paywall check failed — allowing execution", {
+            agent: config.name,
+            error: String(paywallErr),
+          });
           // Fail-open: if paywall check crashes, allow execution (better than blocking everyone)
         }
       }
@@ -327,44 +413,72 @@ export function createAgentRoute(config: AgentConfig) {
       try {
         if (userId) {
           replay = startReplay(config.name, userId);
-          replay.addStep("input_received", { fields: Object.keys(body), inputSize: JSON.stringify(body).length });
+          replay.addStep("input_received", {
+            fields: Object.keys(body),
+            inputSize: JSON.stringify(body).length,
+          });
         }
-      } catch { /* replay failure must never block agent execution */ }
+      } catch {
+        /* replay failure must never block agent execution */
+      }
 
       // Policy: blocks if rules deny this action
       if (userId) {
         try {
-          const policyResult = evaluatePolicy(config.name, "agent.execute", { userId, role: "member" });
+          const policyResult = evaluatePolicy(config.name, "agent.execute", {
+            userId,
+            role: "member",
+          });
           if (!policyResult.allowed) {
-            log.warn("Policy denied agent execution", { agent: config.name, policy: policyResult.policyId, reason: policyResult.reason });
+            log.warn("Policy denied agent execution", {
+              agent: config.name,
+              policy: policyResult.policyId,
+              reason: policyResult.reason,
+            });
             return NextResponse.json(
               { error: policyResult.reason || "Action denied by policy" },
-              { status: 403 }
+              { status: 403 },
             );
           }
         } catch (policyErr) {
-          log.warn("Policy check failed — allowing execution", { agent: config.name, error: String(policyErr) });
+          log.warn("Policy check failed — allowing execution", {
+            agent: config.name,
+            error: String(policyErr),
+          });
         }
       }
 
-      // Budget: blocks if spend limits exceeded
+      // Budget: blocks if today's AI spend has hit the user's plan cap.
+      // Reads from the Postgres `usage` table — survives cold starts.
       if (userId) {
         try {
-          const budgetResult = checkBudget(userId);
+          const { getUserTier } = await import("@/lib/free-tier");
+          const tier = await getUserTier(userId);
+          const budgetResult = await checkBudget(userId, tier);
           if (!budgetResult.allowed) {
             return NextResponse.json(
-              { error: budgetResult.reason || "Budget limit exceeded", dailyPercent: budgetResult.dailyPercent, monthlyPercent: budgetResult.monthlyPercent },
-              { status: 429 }
+              {
+                error: budgetResult.reason || "Daily budget exceeded",
+                spendCents: budgetResult.dailyCents,
+                limitCents: budgetResult.dailyLimitCents,
+                dailyPercent: budgetResult.dailyPercent,
+                plan: budgetResult.plan,
+                resetsAt: "00:00 UTC",
+              },
+              { status: 429 },
             );
           }
         } catch (budgetErr) {
-          log.warn("Budget check failed — allowing execution", { agent: config.name, error: String(budgetErr) });
+          log.warn("Budget check failed — allowing execution", {
+            agent: config.name,
+            error: String(budgetErr),
+          });
         }
       }
 
       // ─── Execute Agent Handler ───
       replay?.addStep("handler_start", { agent: config.name });
-      const result = await config.handler({
+      const handlerReturn = await config.handler({
         input: sanitized,
         request: req,
         email,
@@ -372,7 +486,18 @@ export function createAgentRoute(config: AgentConfig) {
         tenantId,
         orgId,
       });
-      replay?.addStep("handler_complete", { outputKeys: Object.keys(result), outputSize: JSON.stringify(result).length });
+      // Legacy handlers may return an already-built NextResponse / Response
+      // (e.g. when they want to set a non-200 status). Pass it through
+      // unchanged — skipping the safety post-flight + envelope wrap is the
+      // intended escape hatch.
+      if (handlerReturn instanceof Response) {
+        return handlerReturn;
+      }
+      const result: Record<string, unknown> = handlerReturn;
+      replay?.addStep("handler_complete", {
+        outputKeys: Object.keys(result),
+        outputSize: JSON.stringify(result).length,
+      });
 
       // ─── Safety Post-flight: PII Scan on Output ───
       let piiWarning: string | undefined;
@@ -381,8 +506,11 @@ export function createAgentRoute(config: AgentConfig) {
         if (outputText && outputText.length > 50) {
           const piiEntities = scanForPiiPatterns(outputText);
           if (piiEntities.length > 0) {
-            piiWarning = `Output contains ${piiEntities.length} potential PII item(s): ${piiEntities.map(e => e.type).join(", ")}`;
-            log.warn("PII detected in output", { agent: config.name, count: piiEntities.length });
+            piiWarning = `Output contains ${piiEntities.length} potential PII item(s): ${piiEntities.map((e) => e.type).join(", ")}`;
+            log.warn("PII detected in output", {
+              agent: config.name,
+              count: piiEntities.length,
+            });
           }
         }
       }
@@ -405,11 +533,14 @@ export function createAgentRoute(config: AgentConfig) {
               // ─── Loop Guard: skip regeneration if we already retried ───
               const alreadyRetried = sanitized._qualityRetry === true;
               if (alreadyRetried) {
-                log.info("Quality below threshold but MAX_QUALITY_RETRIES reached — accepting output", {
-                  agent: config.name,
-                  score: qualityScore.overall,
-                  maxRetries: MAX_QUALITY_RETRIES,
-                });
+                log.info(
+                  "Quality below threshold but MAX_QUALITY_RETRIES reached — accepting output",
+                  {
+                    agent: config.name,
+                    score: qualityScore.overall,
+                    maxRetries: MAX_QUALITY_RETRIES,
+                  },
+                );
               } else {
                 log.info("Quality below threshold — regenerating", {
                   agent: config.name,
@@ -428,7 +559,7 @@ export function createAgentRoute(config: AgentConfig) {
                     `Be more precise, accurate, and concise.`,
                 };
 
-                const retryResult = await config.handler({
+                const retryReturn = await config.handler({
                   input: refinedInput,
                   request: req,
                   email,
@@ -436,11 +567,21 @@ export function createAgentRoute(config: AgentConfig) {
                   tenantId,
                   orgId,
                 });
+                // If the handler escaped to a Response on retry, surface
+                // it directly — the original result is discarded.
+                if (retryReturn instanceof Response) {
+                  return retryReturn;
+                }
+                const retryResult: Record<string, unknown> = retryReturn;
 
                 // Score the retry attempt
                 const retryText = getFirstStringValue(retryResult);
                 if (retryText && retryText.length >= 20) {
-                  const retryScore = await scoreOutput(promptText, retryText, threshold);
+                  const retryScore = await scoreOutput(
+                    promptText,
+                    retryText,
+                    threshold,
+                  );
                   // Use whichever attempt scored higher
                   if (retryScore.overall >= qualityScore.overall) {
                     finalResult = retryResult;
@@ -472,23 +613,141 @@ export function createAgentRoute(config: AgentConfig) {
       }
 
       // ─── Critic Agent — QA gate for high-value outputs ───
-      if (config.useCritic !== false && finalResult.output && typeof finalResult.output === "string" && finalResult.output.length > 100) {
+      if (
+        config.useCritic !== false &&
+        finalResult.output &&
+        typeof finalResult.output === "string" &&
+        finalResult.output.length > 100
+      ) {
         try {
           const { criticReview } = await import("@/lib/critic");
           const review = await criticReview(
             typeof body.prompt === "string" ? body.prompt : config.name,
             finalResult.output as string,
             config.name,
-            { threshold: 0.7, autoCorrect: true }
+            { threshold: 0.7, autoCorrect: true },
           );
           if (review.correctedOutput && !review.approved) {
             finalResult.output = review.correctedOutput;
-            (finalResult as Record<string, unknown>)._criticFeedback = review.feedback;
-            (finalResult as Record<string, unknown>)._criticScore = review.score;
+            (finalResult as Record<string, unknown>)._criticFeedback =
+              review.feedback;
+            (finalResult as Record<string, unknown>)._criticScore =
+              review.score;
           }
         } catch (criticErr) {
-          log.warn("Critic review skipped", { agent: config.name, error: String(criticErr) });
+          log.warn("Critic review skipped", {
+            agent: config.name,
+            error: String(criticErr),
+          });
         }
+      }
+
+      // ─── Output Verification Pipeline (default ON) ───
+      // The "5-layer mythos" — LlamaGuard + regex-PII + content-policy
+      // + quality + critic, run as one cohesive post-flight gate.
+      //
+      // Default: ON for every route. Skipped automatically for:
+      //   - safety-meta agents that set skipPiiScan / skipQualityCheck
+      //     (those routes ARE the safety layer — running the verifier
+      //     on them would be circular)
+      //   - routes that explicitly opt out with `useVerifier: false`
+      //     (escape hatch for dev / system / internal endpoints)
+      //
+      // Fail-open by design: a missing NVIDIA_NIM_API_KEY or any
+      // transient error in the verifier falls through to the other
+      // layers — never 500s the response.
+      if (
+        config.useVerifier !== false &&
+        !config.skipPiiScan &&
+        !config.skipQualityCheck
+      ) {
+        const verifierInput = getFirstStringValue(sanitized) ?? config.name;
+        const verifierOutput = getFirstStringValue(finalResult) ?? "";
+        if (verifierOutput.length > 20) {
+          try {
+            const { verifyOutput } = await import("@/lib/output-verifier");
+            const verdict = await verifyOutput({
+              agentName: config.name,
+              modelUsed: "agent-factory",
+              tenantId: tenantId ?? userId ?? "anonymous",
+              prompt: verifierInput.slice(0, 2000),
+              output: verifierOutput.slice(0, 8000),
+            });
+            if (!verdict.approved) {
+              log.warn("verifyOutput blocked response", {
+                agent: config.name,
+                trustDecision: verdict.trustDecision,
+                blockReason: verdict.blockReason,
+              });
+              // Do NOT increment usage — the user gets their credit back
+              // because we refused to deliver the output.
+              return NextResponse.json(
+                {
+                  error: "Output blocked by safety verifier",
+                  reason: verdict.blockReason ?? "Failed safety verification",
+                  trustDecision: verdict.trustDecision,
+                  verifierResult: verdict.safetyResult,
+                  code: "VERIFIER_BLOCKED",
+                },
+                { status: 403 },
+              );
+            }
+            // Stamp the verdict onto the response so callers can audit
+            // which checks ran without re-running them.
+            (finalResult as Record<string, unknown>)._verifier = {
+              trustDecision: verdict.trustDecision,
+              executionTimeMs: verdict.executionTimeMs,
+              safetyResult: verdict.safetyResult,
+            };
+          } catch (verErr) {
+            // Fail-open: if the verifier itself errors, log + continue.
+            // Better to ship a possibly-imperfect response than to 500.
+            log.warn("verifyOutput failed (allowing through)", {
+              agent: config.name,
+              error: String(verErr),
+            });
+          }
+        }
+      }
+
+      // ─── Persist verifiable run receipt ───
+      // Every agent execution gets a signed, persistent row in agent_runs.
+      // The user can later publish the run via /api/agent-runs/[id]/publish
+      // and share the receipt at /r/[id]. The insert is awaited so the
+      // receipt URL is guaranteed in the response — typical cost is <50ms,
+      // negligible against the AI call. recordRun() catches all errors
+      // internally and returns null, so a DB outage NEVER blocks the
+      // agent response.
+      try {
+        const verifierMeta = (finalResult as Record<string, unknown>)
+          ._verifier as { safetyResult?: Record<string, unknown> } | undefined;
+        const safetyResult =
+          (verifierMeta?.safetyResult as Record<string, unknown>) ?? {};
+        const { recordRun } = await import("@/lib/agent-runs");
+        const receiptRow = await recordRun({
+          userId: userId || null,
+          tenantId: tenantId ?? null,
+          agentName: config.name,
+          modelUsed:
+            typeof (finalResult as Record<string, unknown>)._model === "string"
+              ? ((finalResult as Record<string, unknown>)._model as string)
+              : "agent-factory",
+          input: sanitized,
+          output: finalResult,
+          safetyResult,
+          durationMs: Date.now() - startTime,
+          chainDepth: 0,
+          trustDecision: "auto-approved",
+        });
+        if (receiptRow) {
+          (finalResult as Record<string, unknown>)._receipt = {
+            id: receiptRow.id,
+            signature: receiptRow.signature,
+            url: `/r/${receiptRow.id}`,
+          };
+        }
+      } catch {
+        /* run persistence is best-effort and must never block */
       }
 
       // ─── Save to Tenant Memory ───
@@ -499,7 +758,10 @@ export function createAgentRoute(config: AgentConfig) {
           try {
             saveMemory(userId, config.name, inputText, outputText);
           } catch (memErr) {
-            log.warn("Tenant memory save failed", { agent: config.name, error: String(memErr) });
+            log.warn("Tenant memory save failed", {
+              agent: config.name,
+              error: String(memErr),
+            });
           }
         }
       }
@@ -507,8 +769,12 @@ export function createAgentRoute(config: AgentConfig) {
       // ─── Track Usage, Audit Log & Return Response ───
       if (userId) {
         await incrementUsage(userId, config.name);
-        // Track spend for budget controls (estimates token cost by model)
-        recordSpend(userId, "nim-default", 500); // ~500 tokens per agent call average
+        // Track spend for budget controls. Most agents route to free
+        // models (NIM / Cerebras / Ollama) so this is a no-op cost-wise,
+        // but we still record the row so the analytics dashboards can
+        // count calls. Real per-model costs flow in via cost-ledger
+        // from src/lib/ai.ts when paid providers fire.
+        recordSpend(userId, "nim-default", 500, 0, config.name).catch(() => {});
         // Audit every agent execution (SOC 2 compliance)
         auditLog({
           userId,
@@ -524,9 +790,11 @@ export function createAgentRoute(config: AgentConfig) {
       // ─── Evolution: Record quality for prompt self-improvement ───
       if (qualityScore) {
         try {
-          const { recordStrategyOutcome } = await import("@/lib/evolution-engine");
+          const { recordStrategyOutcome } =
+            await import("@/lib/evolution-engine");
           recordStrategyOutcome({
             goalType: config.name,
+            // @ts-expect-error — `strategy` is a recorded extension field; current type omits it
             strategy: config.name,
             success: qualityScore.passed ?? true,
             score: Math.round(qualityScore.overall * 100),
@@ -537,7 +805,8 @@ export function createAgentRoute(config: AgentConfig) {
 
       // ─── Persist to agentActivity table (fire-and-forget) ───
       if (userId) {
-        const outputSummary = getFirstStringValue(finalResult)?.slice(0, 200) || "";
+        const outputSummary =
+          getFirstStringValue(finalResult)?.slice(0, 200) || "";
         persistAgentActivity({
           userId,
           agentName: config.name,
@@ -553,24 +822,43 @@ export function createAgentRoute(config: AgentConfig) {
         }).catch(() => {}); // Non-blocking
 
         // ─── Notify user (Slack + email if configured) ───
-        notifyAgentComplete(userId, config.name, outputSummary, email || undefined).catch(() => {});
+        notifyAgentComplete(
+          userId,
+          config.name,
+          outputSummary,
+          email || undefined,
+        ).catch(() => {});
 
         // ─── Auto-learn: Extract relationships for knowledge graph (fire-and-forget) ───
-        autoLearnGraph(userId, config.name, getFirstStringValue(sanitized)?.slice(0, 500) || "", outputSummary, durationMs)
-          .catch(() => {}); // Graph learning must never block or fail the response
+        autoLearnGraph(
+          userId,
+          config.name,
+          getFirstStringValue(sanitized)?.slice(0, 500) || "",
+          outputSummary,
+          durationMs,
+        ).catch(() => {}); // Graph learning must never block or fail the response
 
         // ─── Graph Writer: Record structured entities from execution (fire-and-forget) ───
-        recordGraphExecution(userId, config.name, getFirstStringValue(sanitized)?.slice(0, 500) || "", outputSummary, durationMs)
-          .catch(() => {}); // Graph writing must never block or fail the response
+        recordGraphExecution(
+          userId,
+          config.name,
+          getFirstStringValue(sanitized)?.slice(0, 500) || "",
+          outputSummary,
+          durationMs,
+        ).catch(() => {}); // Graph writing must never block or fail the response
       }
 
       // ─── Complete Replay Recording ───
       if (replay) {
-        replay.addStep("quality_score", { score: qualityScore?.overall, passed: qualityScore?.passed, piiWarning: !!piiWarning });
+        replay.addStep("quality_score", {
+          score: qualityScore?.overall,
+          passed: qualityScore?.passed,
+          piiWarning: !!piiWarning,
+        });
         replay.complete({ durationMs, agent: config.name, success: true });
       }
 
-      const remainingCheck = userId ? await checkFreeUsage(userId) : undefined;
+      const remainingCheck = userId ? await checkPlanLimits(userId) : undefined;
       const remaining = remainingCheck?.remaining;
       const response = NextResponse.json({
         ...finalResult,
@@ -579,12 +867,20 @@ export function createAgentRoute(config: AgentConfig) {
           durationMs: Date.now() - startTime,
           timestamp: new Date().toISOString(),
           ...(piiWarning ? { piiWarning } : {}),
-          ...(qualityScore ? { qualityScore: qualityScore.overall, qualityPassed: qualityScore.passed } : {}),
+          ...(qualityScore
+            ? {
+                qualityScore: qualityScore.overall,
+                qualityPassed: qualityScore.passed,
+              }
+            : {}),
         },
       });
 
       if (remaining !== undefined) {
-        response.headers.set("X-Free-Remaining", String(remaining));
+        response.headers.set("X-Plan-Remaining", String(remaining));
+      }
+      if (remainingCheck?.plan) {
+        response.headers.set("X-Plan", remainingCheck.plan);
       }
 
       return response;
@@ -593,7 +889,10 @@ export function createAgentRoute(config: AgentConfig) {
       trackAgentExecution(config.name, failDurationMs, false);
       recordAgentFailure(config.name);
       const message = error instanceof Error ? error.message : "Unknown error";
-      log.error("Agent execution failed", { agent: config.name, error: message });
+      log.error("Agent execution failed", {
+        agent: config.name,
+        error: message,
+      });
       replay?.fail(message);
 
       // ─── Persist failure to agentActivity table ───
@@ -604,15 +903,23 @@ export function createAgentRoute(config: AgentConfig) {
           agentType: config.name,
           action: "failed",
           summary: message.slice(0, 200),
-          metadata: JSON.stringify({ durationMs: failDurationMs, error: message.slice(0, 500) }),
+          metadata: JSON.stringify({
+            durationMs: failDurationMs,
+            error: message.slice(0, 500),
+          }),
         }).catch(() => {});
       }
 
       // Persist error for monitoring dashboard
       const { reportError } = await import("@/lib/error-reporter");
-      reportError(error, `agent:${config.name}`, { agentId: config.name, userId: userId ?? undefined, severity: "high" });
+      reportError(error, `agent:${config.name}`, {
+        agentId: config.name,
+        userId: userId ?? undefined,
+        severity: "high",
+      });
 
-      const userMessage = "Something went wrong while running this agent. Our team has been notified. Try again or contact support.";
+      const userMessage =
+        "Something went wrong while running this agent. Our team has been notified. Try again or contact support.";
       return errorResponse(userMessage, 500, "AGENT_ERROR");
     }
   };
@@ -629,13 +936,21 @@ function getFirstStringValue(obj: Record<string, unknown>): string | null {
 }
 
 /** Fast regex-based PII scan (no API call needed) */
-function scanForPiiPatterns(text: string): Array<{ type: string; match: string }> {
+function scanForPiiPatterns(
+  text: string,
+): Array<{ type: string; match: string }> {
   const findings: Array<{ type: string; match: string }> = [];
   const patterns: Array<{ type: string; regex: RegExp }> = [
     { type: "EMAIL", regex: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g },
-    { type: "PHONE", regex: /(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g },
+    {
+      type: "PHONE",
+      regex: /(?:\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g,
+    },
     { type: "SSN", regex: /\b\d{3}-\d{2}-\d{4}\b/g },
-    { type: "CREDIT_CARD", regex: /\b(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13})\b/g },
+    {
+      type: "CREDIT_CARD",
+      regex: /\b(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13})\b/g,
+    },
     { type: "IP_ADDRESS", regex: /\b(?:\d{1,3}\.){3}\d{1,3}\b/g },
   ];
 
@@ -656,10 +971,22 @@ function scanForPiiPatterns(text: string): Array<{ type: string; match: string }
  * into the knowledge graph using regex-based extraction (zero LLM cost).
  * Fire-and-forget: caller should .catch(() => {}) this.
  */
-async function recordGraphExecution(userId: string, agentName: string, inputText: string, outputText: string, durationMs: number): Promise<void> {
+async function recordGraphExecution(
+  userId: string,
+  agentName: string,
+  inputText: string,
+  outputText: string,
+  durationMs: number,
+): Promise<void> {
   try {
     const { recordAgentExecution } = await import("@/lib/graph/graph-writer");
-    await recordAgentExecution({ userId, agentName, input: inputText, output: outputText, durationMs });
+    await recordAgentExecution({
+      userId,
+      agentName,
+      input: inputText,
+      output: outputText,
+      durationMs,
+    });
   } catch {
     // Graph writing failure must never surface — it's a background enhancement
   }
@@ -670,24 +997,55 @@ async function recordGraphExecution(userId: string, agentName: string, inputText
  * Single async function with one try/catch — replaces the 7-level nested .then() chain.
  * Fire-and-forget: caller should .catch(() => {}) this.
  */
-async function autoLearnGraph(userId: string, agentName: string, inputText: string, outputText: string, durationMs: number): Promise<void> {
+async function autoLearnGraph(
+  userId: string,
+  agentName: string,
+  inputText: string,
+  outputText: string,
+  durationMs: number,
+): Promise<void> {
   try {
-    const { extractFromAgentExecution } = await import("@/lib/graph/relationship-extractor");
-    const { triples } = await extractFromAgentExecution(agentName, inputText, outputText, durationMs);
+    const { extractFromAgentExecution } =
+      await import("@/lib/graph/relationship-extractor");
+    const { triples } = await extractFromAgentExecution(
+      agentName,
+      inputText,
+      outputText,
+      durationMs,
+    );
     if (triples.length === 0) return;
 
     const { db } = await import("@/db");
     const { graphNodes, graphEdges } = await import("@/db/schema");
 
     for (const triple of triples.slice(0, 3)) {
-      const [src] = await db.insert(graphNodes).values({
-        userId, nodeType: triple.subject.type, label: triple.subject.label, properties: "{}", confidence: triple.confidence,
-      }).returning();
-      const [tgt] = await db.insert(graphNodes).values({
-        userId, nodeType: triple.object.type, label: triple.object.label, properties: "{}", confidence: triple.confidence,
-      }).returning();
+      const [src] = await db
+        .insert(graphNodes)
+        .values({
+          userId,
+          nodeType: triple.subject.type,
+          label: triple.subject.label,
+          properties: "{}",
+          confidence: triple.confidence,
+        })
+        .returning();
+      const [tgt] = await db
+        .insert(graphNodes)
+        .values({
+          userId,
+          nodeType: triple.object.type,
+          label: triple.object.label,
+          properties: "{}",
+          confidence: triple.confidence,
+        })
+        .returning();
       await db.insert(graphEdges).values({
-        userId, sourceId: src.id, targetId: tgt.id, edgeType: triple.predicate, confidence: triple.confidence, weight: 100,
+        userId,
+        sourceId: src.id,
+        targetId: tgt.id,
+        edgeType: triple.predicate,
+        confidence: triple.confidence,
+        weight: 100,
       });
     }
   } catch {

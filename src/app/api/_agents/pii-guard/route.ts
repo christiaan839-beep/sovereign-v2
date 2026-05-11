@@ -9,27 +9,39 @@ import { NextResponse } from "next/server";
 export const POST = createAgentRoute({
   name: "pii-guard",
   handler: async ({ input, email, userId }) => {
-
-    const { text, action = "detect" } = input as Record<string, unknown>;
-    if (!text) return ({ error: "Missing `text`." });
+    const { text = "", action = "detect" } = input as {
+      text?: string;
+      action?: string;
+    };
+    if (!text) return { error: "Missing `text`." };
 
     const nimKey = process.env.NVIDIA_NIM_API_KEY;
-    if (!nimKey) return ({ error: "NVIDIA_NIM_API_KEY not configured." });
+    if (!nimKey) return { error: "NVIDIA_NIM_API_KEY not configured." };
 
     // Use GLiNER PII detection model
-    const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${nimKey}` },
-      body: JSON.stringify({
-        model: "nvidia/gliner-pii",
-        messages: [
-          { role: "system", content: "Detect all PII (Personally Identifiable Information) in the text. Return JSON: {\"pii_found\": [{\"type\": \"email|phone|ssn|name|address|credit_card\", \"value\": \"the PII\", \"position\": start_char_index}], \"clean_text\": \"text with PII replaced by [REDACTED]\"}" },
-          { role: "user", content: text },
-        ],
-        max_tokens: 1000,
-        temperature: 0.1,
-      }),
-    });
+    const res = await fetch(
+      "https://integrate.api.nvidia.com/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${nimKey}`,
+        },
+        body: JSON.stringify({
+          model: "nvidia/gliner-pii",
+          messages: [
+            {
+              role: "system",
+              content:
+                'Detect all PII (Personally Identifiable Information) in the text. Return JSON: {"pii_found": [{"type": "email|phone|ssn|name|address|credit_card", "value": "the PII", "position": start_char_index}], "clean_text": "text with PII replaced by [REDACTED]"}',
+            },
+            { role: "user", content: text },
+          ],
+          max_tokens: 1000,
+          temperature: 0.1,
+        }),
+      },
+    );
 
     if (!res.ok) {
       // Fallback: use regex-based PII detection
@@ -47,16 +59,19 @@ export const POST = createAgentRoute({
         let match;
         while ((match = pattern.exec(text)) !== null) {
           piiFound.push({ type, value: match[0], position: match.index });
-          cleanText = cleanText.replace(match[0], `[REDACTED_${type.toUpperCase()}]`);
+          cleanText = cleanText.replace(
+            match[0],
+            `[REDACTED_${type.toUpperCase()}]`,
+          );
         }
       }
 
-      return ({
+      return {
         pii_found: piiFound,
         clean_text: action === "redact" ? cleanText : text,
         pii_count: piiFound.length,
         model: "regex-fallback",
-      });
+      };
     }
 
     const data = await res.json();
@@ -64,16 +79,22 @@ export const POST = createAgentRoute({
 
     try {
       const match = raw.match(/\{[\s\S]*\}/);
-      const parsed = match ? JSON.parse(match[0]) : { pii_found: [], clean_text: text };
-      return ({
+      const parsed = match
+        ? JSON.parse(match[0])
+        : { pii_found: [], clean_text: text };
+      return {
         ...parsed,
         pii_count: parsed.pii_found?.length || 0,
         model: "gliner-pii",
-      });
+      };
     } catch {
-      return ({ pii_found: [], clean_text: text, pii_count: 0, model: "gliner-pii", raw: raw.slice(0, 200) });
+      return {
+        pii_found: [],
+        clean_text: text,
+        pii_count: 0,
+        model: "gliner-pii",
+        raw: raw.slice(0, 200),
+      };
     }
-  
   },
 });
-

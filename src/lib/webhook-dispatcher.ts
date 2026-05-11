@@ -1,3 +1,5 @@
+// STATUS: ahead-of-consumers — see docs/audits/codebase-audit.md (Tier B).
+// generic webhook fanout; superseded by /api/_webhooks routes.
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("webhook-dispatcher");

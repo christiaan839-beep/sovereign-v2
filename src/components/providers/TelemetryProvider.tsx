@@ -1,12 +1,22 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
 
-// ⚡ SOVEREIGN MATRIX // TELEMETRY SYNC ⚡
-// This physically bridges the Vercel Frontend UI to the Local Python Swarm.
-// It ensures the Dashboard and 3D Maps react instantly to real-world Swarm actions.
+// Real-time telemetry context. Bridges agent execution events from the
+// server to the dashboard UI so progress indicators stay in sync.
 
-type SystemState = "IDLE" | "SCRAPING" | "GENERATING" | "TRANSMITTING" | "UPLINK_SECURED";
+type SystemState =
+  | "IDLE"
+  | "SCRAPING"
+  | "GENERATING"
+  | "TRANSMITTING"
+  | "UPLINK_SECURED";
 
 interface TelemetryContextType {
   state: SystemState;
@@ -16,38 +26,50 @@ interface TelemetryContextType {
   triggerTelemetryUpdate: (action: string, newYield?: number) => void;
 }
 
-const TelemetryContext = createContext<TelemetryContextType | undefined>(undefined);
+const TelemetryContext = createContext<TelemetryContextType | undefined>(
+  undefined,
+);
 
 export function TelemetryProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<SystemState>("UPLINK_SECURED");
   const [activePipelines, _setActivePipelines] = useState(5);
   const [dataYield, setDataYield] = useState(1452);
-  const [lastAction, setLastAction] = useState("System initialized. Awaiting Commander inputs.");
+  const [lastAction, setLastAction] = useState(
+    "System initialized. Awaiting Commander inputs.",
+  );
 
   // In a full WebSockets production layer, this connects directly to `server/ws.ts`
   // to receive instantaneous hardware metrics from NemoClaw on your local macOS.
   useEffect(() => {
-     const pollStatus = setInterval(() => {
-        // Simulated dynamic self-correction ping
-        if (state === "IDLE" && Math.random() > 0.8) {
-           setLastAction("Ghost Fleet optimizing unread inbound hooks.");
-        }
-     }, 15000);
-     return () => clearInterval(pollStatus);
+    const pollStatus = setInterval(() => {
+      // Simulated dynamic self-correction ping
+      if (state === "IDLE" && Math.random() > 0.8) {
+        setLastAction("Ghost Fleet optimizing unread inbound hooks.");
+      }
+    }, 15000);
+    return () => clearInterval(pollStatus);
   }, [state]);
 
   const triggerTelemetryUpdate = (action: string, newYield?: number) => {
-     setLastAction(action);
-     setState("TRANSMITTING");
-     if (newYield) setDataYield(prev => prev + newYield);
-     
-     setTimeout(() => {
-        setState("IDLE");
-     }, 3000);
+    setLastAction(action);
+    setState("TRANSMITTING");
+    if (newYield) setDataYield((prev) => prev + newYield);
+
+    setTimeout(() => {
+      setState("IDLE");
+    }, 3000);
   };
 
   return (
-    <TelemetryContext.Provider value={{ state, activePipelines, dataYield, lastAction, triggerTelemetryUpdate }}>
+    <TelemetryContext.Provider
+      value={{
+        state,
+        activePipelines,
+        dataYield,
+        lastAction,
+        triggerTelemetryUpdate,
+      }}
+    >
       {children}
     </TelemetryContext.Provider>
   );

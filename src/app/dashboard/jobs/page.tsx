@@ -3,9 +3,18 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Zap, Clock, CheckCircle2, XCircle, Loader2,
-  RefreshCw, ChevronDown, ChevronUp, Copy, Play,
-  BrainCircuit, RotateCcw,
+  Zap,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  Loader2,
+  RefreshCw,
+  ChevronDown,
+  ChevronUp,
+  Copy,
+  Play,
+  BrainCircuit,
+  RotateCcw,
 } from "lucide-react";
 
 /* ─── Types ─── */
@@ -43,15 +52,41 @@ function formatDuration(ms: number | null): string {
 }
 
 const STATUS_CONFIG = {
-  pending:  { icon: Clock,        color: "text-amber-400",   bg: "bg-amber-400/10",   label: "Pending"  },
-  running:  { icon: Loader2,      color: "text-blue-400",    bg: "bg-blue-400/10",    label: "Running"  },
-  done:     { icon: CheckCircle2, color: "text-emerald-400", bg: "bg-emerald-400/10", label: "Done"     },
-  failed:   { icon: XCircle,      color: "text-rose-400",    bg: "bg-rose-400/10",    label: "Failed"   },
+  pending: {
+    icon: Clock,
+    color: "text-amber-400",
+    bg: "bg-amber-400/10",
+    label: "Pending",
+  },
+  running: {
+    icon: Loader2,
+    color: "text-blue-400",
+    bg: "bg-blue-400/10",
+    label: "Running",
+  },
+  done: {
+    icon: CheckCircle2,
+    color: "text-emerald-400",
+    bg: "bg-emerald-400/10",
+    label: "Done",
+  },
+  failed: {
+    icon: XCircle,
+    color: "text-rose-400",
+    bg: "bg-rose-400/10",
+    label: "Failed",
+  },
 } as const;
 
 /* ─── Job Card ─── */
 
-function JobCard({ job, onRerun }: { job: Job; onRerun: (goal: string) => void }) {
+function JobCard({
+  job,
+  onRerun,
+}: {
+  job: Job;
+  onRerun: (goal: string) => void;
+}) {
   const [expanded, setExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
   const cfg = STATUS_CONFIG[job.status];
@@ -79,7 +114,9 @@ function JobCard({ job, onRerun }: { job: Job; onRerun: (goal: string) => void }
     >
       {/* Header */}
       <div className="flex items-start gap-3 p-4">
-        <div className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${cfg.bg}`}>
+        <div
+          className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${cfg.bg}`}
+        >
           <StatusIcon
             size={14}
             className={`${cfg.color} ${job.status === "running" ? "animate-spin" : ""}`}
@@ -87,16 +124,16 @@ function JobCard({ job, onRerun }: { job: Job; onRerun: (goal: string) => void }
         </div>
 
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium text-neutral-100">{job.goal}</p>
+          <p className="truncate text-sm font-medium text-neutral-100">
+            {job.goal}
+          </p>
 
           <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-neutral-500">
             <span className={`font-medium ${cfg.color}`}>{cfg.label}</span>
             <span>{timeAgo(job.createdAt)}</span>
             {job.durationMs && <span>{formatDuration(job.durationMs)}</span>}
             {job.agents.length > 0 && (
-              <span className="text-neutral-600">
-                {job.agents.join(" → ")}
-              </span>
+              <span className="text-neutral-600">{job.agents.join(" → ")}</span>
             )}
           </div>
 
@@ -120,7 +157,11 @@ function JobCard({ job, onRerun }: { job: Job; onRerun: (goal: string) => void }
               title="Copy result"
               className="flex h-7 w-7 items-center justify-center rounded-lg text-neutral-500 transition hover:bg-white/8 hover:text-neutral-200"
             >
-              {copied ? <CheckCircle2 size={13} className="text-emerald-400" /> : <Copy size={13} />}
+              {copied ? (
+                <CheckCircle2 size={13} className="text-emerald-400" />
+              ) : (
+                <Copy size={13} />
+              )}
             </button>
           )}
           <button
@@ -132,7 +173,7 @@ function JobCard({ job, onRerun }: { job: Job; onRerun: (goal: string) => void }
           </button>
           {(resultText || job.error) && (
             <button
-              onClick={() => setExpanded(v => !v)}
+              onClick={() => setExpanded((v) => !v)}
               className="flex h-7 w-7 items-center justify-center rounded-lg text-neutral-500 transition hover:bg-white/8 hover:text-neutral-200"
             >
               {expanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
@@ -183,24 +224,33 @@ export default function JobsPage() {
         const data = await res.json();
         setJobs(data.jobs || []);
       }
-    } catch { /* silent */ }
+    } catch {
+      /* silent */
+    }
     if (!silent) setLoading(false);
   }, []);
 
-  // Auto-refresh every 3s when any job is running/pending
+  // Initial fetch on mount. The synchronous setLoading(true) inside fetchJobs
+  // is the intended UX (show spinner before the network round-trip), not a
+  // cascading-render bug — disable the rule narrowly on the call site.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchJobs();
   }, [fetchJobs]);
 
   useEffect(() => {
-    const hasLive = jobs.some(j => j.status === "pending" || j.status === "running");
+    const hasLive = jobs.some(
+      (j) => j.status === "pending" || j.status === "running",
+    );
     if (hasLive && !pollRef.current) {
       pollRef.current = setInterval(() => fetchJobs(true), 3000);
     } else if (!hasLive && pollRef.current) {
       clearInterval(pollRef.current);
       pollRef.current = null;
     }
-    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
   }, [jobs, fetchJobs]);
 
   const submitJob = async (goal: string) => {
@@ -216,21 +266,24 @@ export default function JobsPage() {
         setNewGoal("");
         await fetchJobs(true);
       }
-    } catch { /* silent */ }
+    } catch {
+      /* silent */
+    }
     setSubmitting(false);
   };
 
   const counts = {
     total: jobs.length,
-    done: jobs.filter(j => j.status === "done").length,
-    running: jobs.filter(j => j.status === "running" || j.status === "pending").length,
-    failed: jobs.filter(j => j.status === "failed").length,
+    done: jobs.filter((j) => j.status === "done").length,
+    running: jobs.filter(
+      (j) => j.status === "running" || j.status === "pending",
+    ).length,
+    failed: jobs.filter((j) => j.status === "failed").length,
   };
 
   return (
     <div className="min-h-screen bg-[#030303] px-4 py-8 text-neutral-200">
       <div className="mx-auto max-w-3xl space-y-8">
-
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -238,8 +291,12 @@ export default function JobsPage() {
               <Zap size={18} className="text-emerald-400" />
             </div>
             <div>
-              <h1 className="text-lg font-semibold text-neutral-100">Background Jobs</h1>
-              <p className="text-xs text-neutral-500">Fire-and-forget agent runs · results via Telegram</p>
+              <h1 className="text-lg font-semibold text-neutral-100">
+                Background Jobs
+              </h1>
+              <p className="text-xs text-neutral-500">
+                Fire-and-forget agent runs · results via Telegram
+              </p>
             </div>
           </div>
           <button
@@ -257,8 +314,11 @@ export default function JobsPage() {
             { label: "Done", value: counts.done, color: "text-emerald-400" },
             { label: "Running", value: counts.running, color: "text-blue-400" },
             { label: "Failed", value: counts.failed, color: "text-rose-400" },
-          ].map(s => (
-            <div key={s.label} className="rounded-xl border border-white/6 bg-white/3 p-4 text-center">
+          ].map((s) => (
+            <div
+              key={s.label}
+              className="rounded-xl border border-white/6 bg-white/3 p-4 text-center"
+            >
               <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
               <p className="mt-0.5 text-xs text-neutral-500">{s.label}</p>
             </div>
@@ -267,12 +327,14 @@ export default function JobsPage() {
 
         {/* New job input */}
         <div className="rounded-xl border border-white/8 bg-white/3 p-4">
-          <p className="mb-3 text-xs font-medium text-neutral-400">Queue a new background job</p>
+          <p className="mb-3 text-xs font-medium text-neutral-400">
+            Queue a new background job
+          </p>
           <div className="flex gap-2">
             <input
               value={newGoal}
-              onChange={e => setNewGoal(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && submitJob(newGoal)}
+              onChange={(e) => setNewGoal(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && submitJob(newGoal)}
               placeholder="Find 20 dental clinics in Cape Town and draft cold emails…"
               className="flex-1 rounded-lg border border-white/8 bg-white/5 px-3 py-2 text-sm text-neutral-100 placeholder-neutral-600 outline-none focus:border-emerald-400/40 focus:ring-1 focus:ring-emerald-400/20"
             />
@@ -281,7 +343,11 @@ export default function JobsPage() {
               disabled={submitting || !newGoal.trim()}
               className="flex items-center gap-1.5 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-medium text-black transition hover:bg-emerald-400 disabled:opacity-40"
             >
-              {submitting ? <Loader2 size={13} className="animate-spin" /> : <Play size={13} />}
+              {submitting ? (
+                <Loader2 size={13} className="animate-spin" />
+              ) : (
+                <Play size={13} />
+              )}
               Run
             </button>
           </div>
@@ -296,13 +362,19 @@ export default function JobsPage() {
         ) : jobs.length === 0 ? (
           <div className="py-16 text-center">
             <BrainCircuit size={32} className="mx-auto mb-3 text-neutral-700" />
-            <p className="text-sm text-neutral-500">No jobs yet. Queue your first one above.</p>
+            <p className="text-sm text-neutral-500">
+              No jobs yet. Queue your first one above.
+            </p>
           </div>
         ) : (
           <div className="space-y-2">
             <AnimatePresence mode="popLayout">
-              {jobs.map(job => (
-                <JobCard key={job.id} job={job} onRerun={goal => setNewGoal(goal)} />
+              {jobs.map((job) => (
+                <JobCard
+                  key={job.id}
+                  job={job}
+                  onRerun={(goal) => setNewGoal(goal)}
+                />
               ))}
             </AnimatePresence>
           </div>

@@ -1,5 +1,6 @@
 import { createAgentRoute } from "@/lib/agent-factory";
 import { NextResponse } from "next/server";
+import { currentUser } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { bookings } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -8,9 +9,7 @@ import { fireUserWebhook } from "@/lib/webhooks";
 import { createLogger } from "@/lib/logger";
 const log = createLogger("booking-agent");
 
-const BOOKING_AGENT_PROMPT = `You are SOVEREIGN's elite AI Booking Agent — a world-class digital sales representative with 15+ years of consultative selling experience.
-
-Your role is to qualify inbound leads using the BANT framework (Budget, Authority, Need, Timeline) and convert them into booked appointments.
+const BOOKING_AGENT_PROMPT = `You are a sales-qualification agent for Sovereign Matrix. Your job: take an inbound lead's message, score it against BANT (Budget, Authority, Need, Timeline), and either book a call or move them forward in nurture. You are not a salesperson — you are a fast filter that frees a human salesperson from doing intake.
 
 ## QUALIFICATION METHODOLOGY
 1. **Budget Signals**: Does the lead mention revenue, employees, or investment? Higher signals = higher score.
@@ -52,7 +51,7 @@ export async function GET() {
   try {
     const userBookings = await db.query.bookings.findMany({
       where: eq(bookings.userEmail, user.primaryEmailAddress.emailAddress),
-      orderBy: (b, { desc }) => [desc(b.createdAt)]
+      orderBy: (b, { desc }) => [desc(b.createdAt)],
     });
     return NextResponse.json({ bookings: userBookings });
   } catch (err) {
@@ -69,13 +68,13 @@ async function _postHandler(request: Request) {
   }
 
   try {
-    const body = await req.json();
+    const body = await request.json();
     const { action } = body;
 
     if (action === "qualify") {
       // AI qualifies the lead
       const { leadName, leadEmail, leadPhone, businessName, message } = body;
-      
+
       const qualificationPrompt = `A new lead just reached out. Here is their information:
 Name: ${leadName}
 Email: ${leadEmail}
@@ -85,19 +84,28 @@ Their message: "${message}"
 
 Qualify this lead and generate the appropriate response.`;
 
-      const result = await ai(qualificationPrompt, { system: BOOKING_AGENT_PROMPT });
-      
+      const result = await ai(qualificationPrompt, {
+        system: BOOKING_AGENT_PROMPT,
+      });
+
       let parsed;
       try {
         parsed = JSON.parse(result);
       } catch {
-        parsed = { suggestedResponse: result, leadScore: 50, qualificationNotes: "Auto-qualified", urgencyLevel: "medium" };
+        parsed = {
+          suggestedResponse: result,
+          leadScore: 50,
+          qualificationNotes: "Auto-qualified",
+          urgencyLevel: "medium",
+        };
       }
 
       await fireUserWebhook("BookingAgent", "LeadQualified", {
-        leadName, leadEmail, businessName,
+        leadName,
+        leadEmail,
+        businessName,
         score: parsed.leadScore,
-        urgency: parsed.urgencyLevel
+        urgency: parsed.urgencyLevel,
       });
 
       return NextResponse.json({ qualification: parsed });
@@ -105,20 +113,38 @@ Qualify this lead and generate the appropriate response.`;
 
     if (action === "book") {
       // Create the actual booking
-      const { leadName, leadEmail, leadPhone, businessName, date, time, qualificationNotes, source } = body;
+      const {
+        leadName,
+        leadEmail,
+        leadPhone,
+        businessName,
+        date,
+        time,
+        qualificationNotes,
+        source,
+      } = body;
 
-      const newBooking = await db.insert(bookings).values({
-        userEmail: user.primaryEmailAddress.emailAddress,
-        leadName, leadEmail,
-        leadPhone: leadPhone || null,
-        businessName: businessName || null,
-        date, time,
-        qualificationNotes: qualificationNotes || null,
-        source: source || "website",
-      }).returning();
+      const newBooking = await db
+        .insert(bookings)
+        .values({
+          userEmail: user.primaryEmailAddress.emailAddress,
+          leadName,
+          leadEmail,
+          leadPhone: leadPhone || null,
+          businessName: businessName || null,
+          date,
+          time,
+          qualificationNotes: qualificationNotes || null,
+          source: source || "website",
+        })
+        .returning();
 
       await fireUserWebhook("BookingAgent", "AppointmentBooked", {
-        leadName, leadEmail, date, time, businessName
+        leadName,
+        leadEmail,
+        date,
+        time,
+        businessName,
       });
 
       return NextResponse.json({ success: true, booking: newBooking[0] });
@@ -130,7 +156,6 @@ Qualify this lead and generate the appropriate response.`;
     return NextResponse.json({ error: "Server Error" }, { status: 500 });
   }
 }
-
 
 // Factory wrapper for POST (adds safety pipeline)
 export const POST = createAgentRoute({

@@ -1,3 +1,5 @@
+// STATUS: ahead-of-consumers — see docs/audits/codebase-audit.md (Tier B).
+// "PEER loop — peers review each other" claim; not wired.
 /**
  * SOVEREIGN MATRIX — Plan-Execute-Evaluate-Refine (PEER) Loop
  *

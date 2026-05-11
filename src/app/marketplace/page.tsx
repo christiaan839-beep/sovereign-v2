@@ -3,10 +3,13 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { SovereignLogo } from "@/components/ui/SovereignLogo";
 import { useHideyNav } from "@/components/ui/EliteEffects";
-import { AGENT_REGISTRY } from "@/app/api/agents/registry";
+import { AGENT_SLUGS } from "@/lib/agent-slugs";
+import { getAgentTier } from "@/lib/agent-tiers";
+import { DeliverablesSection } from "./DeliverablesSection";
 
 /**
  * /marketplace — The Agent Marketplace
@@ -58,29 +61,72 @@ function slugToName(slug: string): string {
 function inferCategory(slug: string): Category {
   const s = slug.toLowerCase();
   if (/voice|audio|speak|asr|music|tts|voicechat/.test(s)) return "Voice";
-  if (/vision|image|ocr|flux|florence|visual|imagen|video|cosmos/.test(s)) return "Vision";
-  if (/seo|content|blog|organic|brand|social|creative|filmmaker|page-builder/.test(s)) return "Content";
-  if (/lead|outbound|abm|sales|closer|funnel|ads|email-sequence|email-onboard|ghost-fleet/.test(s)) return "Sales";
-  if (/threat|compliance|pii|guard|audit|nemoclaw|content-safety|claw-queue/.test(s)) return "Safety";
-  if (/code|sandbox|deploy|webhook|pipeline|auto-heal|error-log/.test(s)) return "Code";
-  if (/god-brain|war-room|orchestrat|coordinator|chain|swarm|smart-router|agentic|super-agent|nexus|flywheel/.test(s)) return "Orchestration";
-  if (/healthcare|legal|agri|supply-chain|prior-auth|contract|billing|verticals|whitelabel|digital-human|booking/.test(s)) return "Industry";
-  if (/research|search|deep|benchmark|analytics|report|competitive|firecrawl|grounded|doc|memory/.test(s)) return "Research";
+  if (/vision|image|ocr|flux|florence|visual|imagen|video|cosmos/.test(s))
+    return "Vision";
+  if (
+    /seo|content|blog|organic|brand|social|creative|filmmaker|page-builder/.test(
+      s,
+    )
+  )
+    return "Content";
+  if (
+    /lead|outbound|abm|sales|closer|funnel|ads|email-sequence|email-onboard|ghost-fleet/.test(
+      s,
+    )
+  )
+    return "Sales";
+  if (
+    /threat|compliance|pii|guard|audit|nemoclaw|content-safety|claw-queue/.test(
+      s,
+    )
+  )
+    return "Safety";
+  if (/code|sandbox|deploy|webhook|pipeline|auto-heal|error-log/.test(s))
+    return "Code";
+  if (
+    /god-brain|war-room|orchestrat|coordinator|chain|swarm|smart-router|agentic|super-agent|nexus|flywheel/.test(
+      s,
+    )
+  )
+    return "Orchestration";
+  if (
+    /healthcare|legal|agri|supply-chain|prior-auth|contract|billing|verticals|whitelabel|digital-human|booking/.test(
+      s,
+    )
+  )
+    return "Industry";
+  if (
+    /research|search|deep|benchmark|analytics|report|competitive|firecrawl|grounded|doc|memory/.test(
+      s,
+    )
+  )
+    return "Research";
   return "Intelligence";
 }
 
 const CATEGORIES: Category[] = [
-  "All", "Sales", "Content", "Research", "Voice",
-  "Vision", "Code", "Industry", "Safety", "Orchestration", "Intelligence",
+  "All",
+  "Sales",
+  "Content",
+  "Research",
+  "Voice",
+  "Vision",
+  "Code",
+  "Industry",
+  "Safety",
+  "Orchestration",
+  "Intelligence",
 ];
 
 const PAGE_SIZE = 24;
 
-// Build agent list from registry
-const ALL_AGENTS = Object.keys(AGENT_REGISTRY).map((slug) => ({
+// Build agent list from registry, annotated with tier so the UI can
+// gate experimental items behind the `?experimental=1` query flag.
+const ALL_AGENTS = AGENT_SLUGS.map((slug) => ({
   slug,
   name: slugToName(slug),
   category: inferCategory(slug),
+  tier: getAgentTier(slug),
 }));
 
 // Featured agents — pinned top row
@@ -127,7 +173,22 @@ export default function MarketplacePage() {
       <MarketplaceNav />
       <main>
         <MarketplaceHero />
-        <AgentGridSection />
+        <DeliverablesSection />
+        {/* AgentGridSection calls useSearchParams() to honour ?experimental=1.
+            Wrapping in Suspense prevents the whole tree from being forced
+            into CSR (which would race framer-motion fade-ins against
+            smoke tests). The fallback matches the grid section's height
+            so layout doesn't shift on hydration. */}
+        <Suspense
+          fallback={
+            <div
+              className="px-6 pb-32 bg-[#030303]"
+              style={{ minHeight: "60vh" }}
+            />
+          }
+        >
+          <AgentGridSection />
+        </Suspense>
         <CreatorCTA />
       </main>
       <MarketplaceFooter />
@@ -173,18 +234,27 @@ function MarketplaceNav() {
         <div className="max-w-7xl mx-auto px-6 md:px-10 h-[60px] flex items-center justify-between">
           {/* Logo + back link */}
           <div className="flex items-center gap-5">
-            <Link href="/" className="group flex items-center gap-2.5 flex-shrink-0" aria-label="Sovereign Matrix home">
+            <Link
+              href="/"
+              className="group flex items-center gap-2.5 flex-shrink-0"
+              aria-label="Sovereign Matrix home"
+            >
               <SovereignLogo size="sm" />
               <span className="hidden sm:block font-serif text-[17px] tracking-tight text-white group-hover:text-[#E8DDD0] transition-colors">
                 Sovereign Matrix
               </span>
             </Link>
-            <span aria-hidden="true" className="hidden md:block h-4 w-px bg-white/[0.08]" />
+            <span
+              aria-hidden="true"
+              className="hidden md:block h-4 w-px bg-white/[0.08]"
+            />
             <Link
               href="/"
               className="hidden md:flex items-center gap-1.5 text-[12px] font-mono text-neutral-500 hover:text-white transition-colors tracking-tight"
             >
-              <span aria-hidden="true" className="text-[#B5532C]">←</span>
+              <span aria-hidden="true" className="text-[#B5532C]">
+                ←
+              </span>
               Sovereign Matrix
             </Link>
           </div>
@@ -197,10 +267,18 @@ function MarketplaceNav() {
             <span
               aria-hidden="true"
               className="pointer-events-none absolute inset-0 rounded-[3px] opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-              style={{ boxShadow: "0 0 0 1px rgba(181,83,44,0.4), 0 0 12px rgba(181,83,44,0.2)" }}
+              style={{
+                boxShadow:
+                  "0 0 0 1px rgba(181,83,44,0.4), 0 0 12px rgba(181,83,44,0.2)",
+              }}
             />
             Run Free Agent
-            <span aria-hidden="true" className="text-[#B5532C] transition-transform group-hover:translate-x-0.5">→</span>
+            <span
+              aria-hidden="true"
+              className="text-[#B5532C] transition-transform group-hover:translate-x-0.5"
+            >
+              →
+            </span>
           </Link>
         </div>
       </div>
@@ -236,7 +314,7 @@ function MarketplaceHero() {
               <span className="absolute inline-flex h-full w-full rounded-full bg-[#B5532C] opacity-75 animate-ping" />
               <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#B5532C]" />
             </span>
-            137 agents · Agent-to-Agent Economy · LIVE
+            30 featured · 100+ developer-API agents · LIVE
           </span>
         </motion.div>
 
@@ -247,8 +325,7 @@ function MarketplaceHero() {
           transition={{ delay: 0.1, duration: 0.7 }}
           className="font-serif text-5xl md:text-7xl lg:text-[82px] leading-[1.02] mb-6 tracking-[-0.02em] max-w-4xl"
         >
-          The Agent{" "}
-          <em className="not-italic text-[#B5532C]">Marketplace</em>
+          The Agent <em className="not-italic text-[#B5532C]">Marketplace</em>
         </motion.h1>
 
         {/* Subhead */}
@@ -259,7 +336,8 @@ function MarketplaceHero() {
           className="text-[17px] md:text-[19px] text-neutral-400 leading-[1.55] mb-10 max-w-2xl"
         >
           The only marketplace where AI agents hire other AI agents
-          autonomously. Browse 137 specialized agents. Deploy in seconds.
+          autonomously. 30 featured agents above the fold; 100+ more in the
+          developer API. Deploy in seconds.
         </motion.p>
 
         {/* Economy stats bar */}
@@ -268,7 +346,10 @@ function MarketplaceHero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.36, duration: 0.6 }}
           className="inline-flex flex-wrap gap-8 px-6 py-4 rounded-[6px] border border-white/[0.06] bg-white/[0.025] backdrop-blur-xl"
-          style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06), 0 1px 0 rgba(0,0,0,0.5)" }}
+          style={{
+            boxShadow:
+              "inset 0 1px 0 rgba(255,255,255,0.06), 0 1px 0 rgba(0,0,0,0.5)",
+          }}
         >
           {[
             { n: "137", label: "agents" },
@@ -277,9 +358,20 @@ function MarketplaceHero() {
             { n: "14", label: "industries" },
           ].map((item, i) => (
             <span key={item.label} className="flex items-baseline gap-2">
-              {i > 0 && <span aria-hidden="true" className="hidden sm:inline text-white/[0.06] text-[11px] font-mono select-none">·</span>}
-              <span className="font-mono text-[18px] font-bold text-white tabular-nums">{item.n}</span>
-              <span className="text-[11px] font-mono text-neutral-500 tracking-tight">{item.label}</span>
+              {i > 0 && (
+                <span
+                  aria-hidden="true"
+                  className="hidden sm:inline text-white/[0.06] text-[11px] font-mono select-none"
+                >
+                  ·
+                </span>
+              )}
+              <span className="font-mono text-[18px] font-bold text-white tabular-nums">
+                {item.n}
+              </span>
+              <span className="text-[11px] font-mono text-neutral-500 tracking-tight">
+                {item.label}
+              </span>
             </span>
           ))}
         </motion.div>
@@ -294,14 +386,24 @@ function AgentGridSection() {
   const [activeCategory, setActiveCategory] = useState<Category>("All");
   const [page, setPage] = useState(1);
 
+  // Show experimental agents only when the user opts in via
+  // ?experimental=1. Default surface stays focused on the curated
+  // core lineup. Deprecated agents are always hidden in the grid
+  // (the detail page still resolves them so deep-links don't break).
+  const searchParams = useSearchParams();
+  const initialExperimental = searchParams?.get("experimental") === "1";
+  const [showExperimental, setShowExperimental] = useState(initialExperimental);
+
   // Filter main grid (excluding featured on "All")
   const gridAgents = useMemo(() => {
     return ALL_AGENTS.filter((a) => {
+      if (a.tier === "deprecated") return false;
+      if (a.tier === "experimental" && !showExperimental) return false;
       if (activeCategory === "All" && FEATURED_SLUGS.has(a.slug)) return false;
       if (activeCategory === "All") return true;
       return a.category === activeCategory;
     });
-  }, [activeCategory]);
+  }, [activeCategory, showExperimental]);
 
   const visibleAgents = gridAgents.slice(0, page * PAGE_SIZE);
   const hasMore = visibleAgents.length < gridAgents.length;
@@ -331,6 +433,21 @@ function AgentGridSection() {
                   {cat}
                 </button>
               ))}
+              <span className="ml-2 h-4 w-px bg-white/10" aria-hidden="true" />
+              <button
+                onClick={() => {
+                  setShowExperimental((s) => !s);
+                  setPage(1);
+                }}
+                className={`px-3 py-1.5 rounded-full text-[12px] font-mono tracking-wide transition-all duration-200 whitespace-nowrap ${
+                  showExperimental
+                    ? "border border-cyan-500/40 bg-cyan-500/[0.08] text-cyan-200"
+                    : "border border-white/[0.12] text-neutral-500 hover:border-white/[0.25] hover:text-neutral-300"
+                }`}
+                title="Reveal long-tail agents that haven't been promoted to core."
+              >
+                {showExperimental ? "Experimental ✓" : "+ Experimental"}
+              </button>
             </div>
           </div>
         </div>
@@ -360,26 +477,37 @@ function AgentGridSection() {
                     <Link
                       href={`/dashboard/agents/${agent.slug}`}
                       className="group relative block h-full p-6 rounded-[6px] border border-[#B5532C]/20 bg-white/[0.025] hover:border-[#B5532C]/50 hover:bg-[#B5532C]/[0.04] transition-all duration-300 overflow-hidden"
-                      style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06), 0 1px 0 rgba(0,0,0,0.5)" }}
+                      style={{
+                        boxShadow:
+                          "inset 0 1px 0 rgba(255,255,255,0.06), 0 1px 0 rgba(0,0,0,0.5)",
+                      }}
                     >
                       {/* Copper top accent bar */}
                       <div
                         className="absolute top-0 left-0 right-0 h-[2px] rounded-t-[6px]"
-                        style={{ background: "linear-gradient(to right, rgba(181,83,44,0.8), rgba(181,83,44,0.15))" }}
+                        style={{
+                          background:
+                            "linear-gradient(to right, rgba(181,83,44,0.8), rgba(181,83,44,0.15))",
+                        }}
                         aria-hidden="true"
                       />
                       {/* Copper hover sweep */}
                       <span
                         aria-hidden="true"
                         className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                        style={{ background: "radial-gradient(circle at 20% 0%, rgba(181,83,44,0.14) 0%, transparent 50%)" }}
+                        style={{
+                          background:
+                            "radial-gradient(circle at 20% 0%, rgba(181,83,44,0.14) 0%, transparent 50%)",
+                        }}
                       />
 
                       <div className="relative flex items-center justify-between mb-5">
                         <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#B5532C]/15 border border-[#B5532C]/30 text-[10px] font-mono text-[#B5532C] tracking-[0.1em] uppercase">
                           Featured
                         </span>
-                        <span className="text-[10px] font-mono text-neutral-600 tracking-wide">{agent.category}</span>
+                        <span className="text-[10px] font-mono text-neutral-600 tracking-wide">
+                          {agent.category}
+                        </span>
                       </div>
 
                       <h3 className="relative font-serif text-[22px] text-white mb-1.5 leading-tight tracking-tight">
@@ -388,12 +516,18 @@ function AgentGridSection() {
                       <p className="relative text-[12.5px] text-[#B5532C] font-mono mb-3 tracking-tight">
                         {agent.tagline}
                       </p>
-                      <p className="relative text-[13px] text-neutral-400 leading-[1.6] mb-5">{agent.desc}</p>
+                      <p className="relative text-[13px] text-neutral-400 leading-[1.6] mb-5">
+                        {agent.desc}
+                      </p>
 
                       <div className="relative flex items-center justify-between">
                         <div className="flex flex-col gap-0.5">
-                          <span className="text-[10px] font-mono text-neutral-600 tracking-wide">{agent.hires} hires</span>
-                          <span className="text-[10px] font-mono text-neutral-700 tracking-wide">by {agent.creator}</span>
+                          <span className="text-[10px] font-mono text-neutral-600 tracking-wide">
+                            {agent.hires} hires
+                          </span>
+                          <span className="text-[10px] font-mono text-neutral-700 tracking-wide">
+                            by {agent.creator}
+                          </span>
                         </div>
                         <span className="text-[11px] font-mono text-neutral-500 group-hover:text-[#B5532C] transition-colors tracking-wide">
                           Hire Agent →
@@ -423,17 +557,27 @@ function AgentGridSection() {
               initial={{ opacity: 0, y: 10 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-40px" }}
-              transition={{ delay: (i % PAGE_SIZE) * 0.025, duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+              transition={{
+                delay: (i % PAGE_SIZE) * 0.025,
+                duration: 0.45,
+                ease: [0.16, 1, 0.3, 1],
+              }}
             >
               <Link
                 href={`/dashboard/agents/${agent.slug}`}
                 className="group relative flex flex-col h-full p-4 rounded-[6px] border border-white/[0.06] bg-white/[0.025] hover:border-[#B5532C]/30 hover:bg-[#B5532C]/[0.03] transition-all duration-250 overflow-hidden"
-                style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06), 0 1px 0 rgba(0,0,0,0.4)" }}
+                style={{
+                  boxShadow:
+                    "inset 0 1px 0 rgba(255,255,255,0.06), 0 1px 0 rgba(0,0,0,0.4)",
+                }}
               >
                 <span
                   aria-hidden="true"
                   className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-400"
-                  style={{ background: "radial-gradient(circle at 15% 0%, rgba(181,83,44,0.12) 0%, transparent 50%)" }}
+                  style={{
+                    background:
+                      "radial-gradient(circle at 15% 0%, rgba(181,83,44,0.12) 0%, transparent 50%)",
+                  }}
                 />
                 <div className="relative mb-3">
                   <span className="text-[9px] font-mono uppercase tracking-[0.18em] text-neutral-600 bg-white/[0.03] border border-white/[0.06] px-1.5 py-0.5 rounded-full">
@@ -459,7 +603,12 @@ function AgentGridSection() {
               className="group inline-flex items-center gap-2 px-6 py-2.5 border border-white/[0.1] text-neutral-400 font-mono text-[12px] tracking-wide hover:border-[#B5532C]/40 hover:text-white transition-colors rounded-[3px]"
             >
               Load more agents
-              <span aria-hidden="true" className="text-[#B5532C] transition-transform group-hover:translate-y-0.5">↓</span>
+              <span
+                aria-hidden="true"
+                className="text-[#B5532C] transition-transform group-hover:translate-y-0.5"
+              >
+                ↓
+              </span>
             </button>
             <p className="mt-3 text-[10px] font-mono text-neutral-700">
               Showing {visibleAgents.length} of {gridAgents.length}
@@ -496,20 +645,29 @@ function CreatorCTA() {
     <section className="relative px-6 py-28 md:py-36 bg-[#0A0807] border-t border-white/[0.04] overflow-hidden">
       <div
         className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[700px] rounded-full opacity-[0.07] blur-[120px] pointer-events-none"
-        style={{ background: "radial-gradient(ellipse, rgba(181,83,44,1) 0%, transparent 70%)" }}
+        style={{
+          background:
+            "radial-gradient(ellipse, rgba(181,83,44,1) 0%, transparent 70%)",
+        }}
         aria-hidden="true"
       />
 
       <div className="relative max-w-5xl mx-auto">
         <div className="mb-3 flex items-center gap-3">
-          <span className="font-mono text-[10px] text-neutral-600 tracking-[0.2em]">Creator program</span>
+          <span className="font-mono text-[10px] text-neutral-600 tracking-[0.2em]">
+            Creator program
+          </span>
           <span aria-hidden="true" className="h-px w-5 bg-white/[0.1]" />
-          <span className="font-mono text-[10px] text-[#B5532C] tracking-[0.18em] uppercase">70% earnings</span>
+          <span className="font-mono text-[10px] text-[#B5532C] tracking-[0.18em] uppercase">
+            70% earnings
+          </span>
         </div>
 
         <h2 className="font-serif text-4xl md:text-6xl leading-[1.05] mb-5 tracking-[-0.02em] max-w-3xl">
           Build Agents.{" "}
-          <em className="not-italic text-[#B5532C]">Earn Every Time They&apos;re Hired.</em>
+          <em className="not-italic text-[#B5532C]">
+            Earn Every Time They&apos;re Hired.
+          </em>
         </h2>
         <p className="text-[16px] text-neutral-400 leading-[1.6] mb-14 max-w-xl">
           List your agents on the marketplace. Every time another user — or
@@ -523,20 +681,34 @@ function CreatorCTA() {
               initial={{ opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-60px" }}
-              transition={{ delay: i * 0.1, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+              transition={{
+                delay: i * 0.1,
+                duration: 0.55,
+                ease: [0.16, 1, 0.3, 1],
+              }}
               className="group relative p-6 rounded-[6px] border border-white/[0.06] bg-white/[0.025] hover:border-[#B5532C]/30 transition-all duration-300 overflow-hidden"
-              style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06), 0 1px 0 rgba(0,0,0,0.5)" }}
+              style={{
+                boxShadow:
+                  "inset 0 1px 0 rgba(255,255,255,0.06), 0 1px 0 rgba(0,0,0,0.5)",
+              }}
             >
               <span
                 aria-hidden="true"
                 className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                style={{ background: "radial-gradient(circle at 20% 0%, rgba(181,83,44,0.15) 0%, transparent 45%)" }}
+                style={{
+                  background:
+                    "radial-gradient(circle at 20% 0%, rgba(181,83,44,0.15) 0%, transparent 45%)",
+                }}
               />
               <span className="relative font-mono text-[28px] font-bold text-[#B5532C] block mb-4 leading-none tabular-nums">
                 {step.n}
               </span>
-              <h3 className="relative font-serif text-[20px] text-white mb-2 tracking-tight">{step.title}</h3>
-              <p className="relative text-[13px] text-neutral-400 leading-[1.65]">{step.desc}</p>
+              <h3 className="relative font-serif text-[20px] text-white mb-2 tracking-tight">
+                {step.title}
+              </h3>
+              <p className="relative text-[13px] text-neutral-400 leading-[1.65]">
+                {step.desc}
+              </p>
             </motion.div>
           ))}
         </div>
@@ -546,7 +718,12 @@ function CreatorCTA() {
           className="group inline-flex items-center gap-2 px-7 py-3.5 bg-[#B5532C] text-white font-mono text-[13px] tracking-wide rounded-[3px] hover:bg-[#C96035] transition-colors"
         >
           List Your First Agent
-          <span aria-hidden="true" className="transition-transform group-hover:translate-x-0.5">→</span>
+          <span
+            aria-hidden="true"
+            className="transition-transform group-hover:translate-x-0.5"
+          >
+            →
+          </span>
         </Link>
       </div>
     </section>
@@ -562,20 +739,38 @@ function MarketplaceFooter() {
         <div className="flex items-center gap-3">
           <SovereignLogo size="sm" />
           <div className="flex flex-col gap-0.5">
-            <span className="font-serif text-[15px] text-white">Sovereign Matrix</span>
+            <span className="font-serif text-[15px] text-white">
+              Sovereign Matrix
+            </span>
             <span className="text-[10px] font-mono text-neutral-600 tracking-tight">
-              Agent Marketplace · 137 agents · 70% creator earnings
+              Agent Marketplace · 30 featured + 100+ API · 70% creator earnings
             </span>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-6 text-[12px] font-mono text-neutral-500">
-          <Link href="/" className="hover:text-white transition-colors">← Home</Link>
-          <Link href="/platform" className="hover:text-white transition-colors">Platform</Link>
-          <Link href="/pricing" className="hover:text-white transition-colors">Pricing</Link>
-          <Link href="/trust" className="hover:text-white transition-colors">Trust</Link>
-          <Link href="/developers/docs" className="hover:text-white transition-colors">API Docs</Link>
-          <Link href="/dashboard" className="text-[#B5532C] hover:text-white transition-colors">
+          <Link href="/" className="hover:text-white transition-colors">
+            ← Home
+          </Link>
+          <Link href="/platform" className="hover:text-white transition-colors">
+            Platform
+          </Link>
+          <Link href="/pricing" className="hover:text-white transition-colors">
+            Pricing
+          </Link>
+          <Link href="/trust" className="hover:text-white transition-colors">
+            Trust
+          </Link>
+          <Link
+            href="/developers/docs"
+            className="hover:text-white transition-colors"
+          >
+            API Docs
+          </Link>
+          <Link
+            href="/dashboard"
+            className="text-[#B5532C] hover:text-white transition-colors"
+          >
             Open Dashboard →
           </Link>
         </div>
@@ -583,7 +778,8 @@ function MarketplaceFooter() {
 
       <div className="max-w-7xl mx-auto mt-10 pt-6 border-t border-white/[0.04]">
         <p className="text-[10px] font-mono text-neutral-700 tracking-tight">
-          © 2026 Sovereign Matrix · Operates independently · Not formally affiliated with Anthropic
+          © 2026 Sovereign Matrix · Operates independently · Not formally
+          affiliated with Anthropic
         </p>
       </div>
     </footer>

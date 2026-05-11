@@ -1,3 +1,5 @@
+// STATUS: ahead-of-consumers — see docs/audits/codebase-audit.md (Tier B).
+// WhatsApp send-side helpers; not wired (agents handle WA inline today).
 import { google } from "@ai-sdk/google";
 import { generateText } from "ai";
 import { createLogger } from "@/lib/logger";

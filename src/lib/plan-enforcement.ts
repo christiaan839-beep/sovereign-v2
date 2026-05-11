@@ -13,7 +13,7 @@
  */
 
 import { db } from "@/db";
-import { playbookRuns, subscriptions } from "@/db/schema";
+import { playbookRuns, subscriptions, usage } from "@/db/schema";
 import { eq, gte, and, sql } from "drizzle-orm";
 import { PLANS, normalizePlanId, type PlanId } from "@/lib/plans";
 import { createLogger } from "@/lib/logger";
@@ -44,8 +44,8 @@ async function getUserPlan(userId: string): Promise<PlanId> {
       .where(
         and(
           eq(subscriptions.userId, userId),
-          eq(subscriptions.status, "active")
-        )
+          eq(subscriptions.status, "active"),
+        ),
       )
       .limit(1);
 
@@ -64,7 +64,10 @@ async function getUserPlan(userId: string): Promise<PlanId> {
 
   // 2. Check for founder status (first 10 users)
   try {
-    const { founders } = await import("@/app/api/_misc/founders/route");
+    const mod = (await import("@/app/api/_misc/founders/route")) as unknown as {
+      founders?: { has?: (id: string) => boolean };
+    };
+    const founders = mod.founders;
     if (typeof founders?.has === "function" && founders.has(userId)) {
       return "founder";
     }
@@ -76,34 +79,56 @@ async function getUserPlan(userId: string): Promise<PlanId> {
 }
 
 /**
- * Count the user's playbook runs in the current calendar month.
+ * Count the user's billable runs in the current calendar month.
+ *
+ * A "run" is anything the customer pays for: agent invocations live in the
+ * `usage` table, playbook executions live in `playbook_runs`. Plans sell a
+ * single quota ("X runs/mo"), so both counters must roll up to one number.
+ * Without this, a Free user (50/mo) could fire 50 agents AND 50 playbooks,
+ * silently doubling their effective quota.
  */
 async function getMonthlyUsage(userId: string): Promise<number> {
-  try {
-    const now = new Date();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    const [result] = await db
-      .select({ count: sql<number>`count(*)` })
+  let agentCount = 0;
+  let playbookCount = 0;
+
+  try {
+    const [row] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(usage)
+      .where(and(eq(usage.userId, userId), gte(usage.createdAt, monthStart)));
+    agentCount = Number(row?.count ?? 0);
+  } catch (err: unknown) {
+    const pgCode = (err as { code?: string })?.code;
+    const msg = err instanceof Error ? err.message : String(err);
+    if (pgCode !== "42P01" && !msg.includes("does not exist")) {
+      log.error("Failed to count agent usage", { error: msg, userId });
+    }
+    // Table missing in dev — treat as 0
+  }
+
+  try {
+    const [row] = await db
+      .select({ count: sql<number>`count(*)::int` })
       .from(playbookRuns)
       .where(
         and(
           eq(playbookRuns.userId, userId),
-          gte(playbookRuns.createdAt, monthStart)
-        )
+          gte(playbookRuns.createdAt, monthStart),
+        ),
       );
-
-    return Number(result?.count ?? 0);
+    playbookCount = Number(row?.count ?? 0);
   } catch (err: unknown) {
     const pgCode = (err as { code?: string })?.code;
     const msg = err instanceof Error ? err.message : String(err);
-    if (pgCode === "42P01" || msg.includes("does not exist")) {
-      // Table doesn't exist yet — no usage
-      return 0;
+    if (pgCode !== "42P01" && !msg.includes("does not exist")) {
+      log.error("Failed to count playbook usage", { error: msg, userId });
     }
-    log.error("Failed to check usage", { error: msg, userId });
-    return 0; // Fail open — don't block users if DB is down
   }
+
+  return agentCount + playbookCount;
 }
 
 /**
@@ -159,7 +184,8 @@ export async function incrementUsage(userId: string): Promise<void> {
     const planId = await getUserPlan(userId);
     const plan = PLANS[planId];
     const used = await getMonthlyUsage(userId);
-    const pct = plan.runsPerMonth === Infinity ? 0 : (used / plan.runsPerMonth) * 100;
+    const pct =
+      plan.runsPerMonth === Infinity ? 0 : (used / plan.runsPerMonth) * 100;
 
     if (pct >= 90) {
       log.warn("user approaching plan limit", {

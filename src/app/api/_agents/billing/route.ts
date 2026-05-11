@@ -1,10 +1,11 @@
 import { createAgentRoute } from "@/lib/agent-factory";
 import { NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 
 /**
  * USAGE-BASED BILLING — Calculates per-agent-call charges.
  * Tracks consumption and generates invoices.
- * 
+ *
  * Pricing per call (ZAR):
  * - Translate: R0.50
  * - PII Redactor: R1.00
@@ -30,36 +31,43 @@ interface UsageRecord {
 const BILLING_STORE = new Map<string, UsageRecord[]>();
 
 const AGENT_PRICING: Record<string, number> = {
-  "translate": 0.50,
-  "pii-redactor": 1.00,
-  "gliner-pii": 1.50,
-  "blog-gen": 5.00,
-  "swarm": 10.00,
-  "collab-room": 15.00,
-  "case-study": 5.00,
-  "page-builder": 3.00,
-  "image-gen": 2.00,
-  "voice-synth": 1.50,
-  "voicechat": 2.00,
-  "cosmos-video": 5.00,
-  "benchmark": 3.00,
-  "florence-ocr": 1.00,
-  "doc-intel": 2.00,
-  "abm-artillery": 3.00,
+  translate: 0.5,
+  "pii-redactor": 1.0,
+  "gliner-pii": 1.5,
+  "blog-gen": 5.0,
+  swarm: 10.0,
+  "collab-room": 15.0,
+  "case-study": 5.0,
+  "page-builder": 3.0,
+  "image-gen": 2.0,
+  "voice-synth": 1.5,
+  voicechat: 2.0,
+  "cosmos-video": 5.0,
+  benchmark: 3.0,
+  "florence-ocr": 1.0,
+  "doc-intel": 2.0,
+  "abm-artillery": 3.0,
 };
 
 async function _postHandler(request: Request) {
   try {
     const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+    if (!userId)
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401 },
+      );
     const { action, clientId, agent } = await request.json();
 
     if (action === "record") {
       if (!clientId || !agent) {
-        return NextResponse.json({ error: "clientId and agent required." }, { status: 400 });
+        return NextResponse.json(
+          { error: "clientId and agent required." },
+          { status: 400 },
+        );
       }
 
-      const cost = AGENT_PRICING[agent] || 0.50;
+      const cost = AGENT_PRICING[agent] || 0.5;
       const record: UsageRecord = {
         clientId,
         agent,
@@ -71,12 +79,19 @@ async function _postHandler(request: Request) {
       existing.push(record);
       BILLING_STORE.set(clientId, existing);
 
-      return NextResponse.json({ success: true, recorded: record, total_usage: existing.length });
+      return NextResponse.json({
+        success: true,
+        recorded: record,
+        total_usage: existing.length,
+      });
     }
 
     if (action === "invoice") {
       if (!clientId) {
-        return NextResponse.json({ error: "clientId required." }, { status: 400 });
+        return NextResponse.json(
+          { error: "clientId required." },
+          { status: 400 },
+        );
       }
 
       const records = BILLING_STORE.get(clientId) || [];
@@ -97,24 +112,33 @@ async function _postHandler(request: Request) {
           period: `${records[0]?.timestamp?.substring(0, 10) || "N/A"} → ${records[records.length - 1]?.timestamp?.substring(0, 10) || "N/A"}`,
           total_calls: records.length,
           total_cost_zar: totalCost,
-          breakdown: Object.entries(byAgent).map(([agent, data]) => ({
-            agent,
-            calls: data.calls,
-            unit_price: AGENT_PRICING[agent] || 0.50,
-            total: data.cost,
-          })).sort((a, b) => b.total - a.total),
+          breakdown: Object.entries(byAgent)
+            .map(([agent, data]) => ({
+              agent,
+              calls: data.calls,
+              unit_price: AGENT_PRICING[agent] || 0.5,
+              total: data.cost,
+            }))
+            .sort((a, b) => b.total - a.total),
         },
       });
     }
 
-    return NextResponse.json({ error: "action must be 'record' or 'invoice'." }, { status: 400 });
+    return NextResponse.json(
+      { error: "action must be 'record' or 'invoice'." },
+      { status: 400 },
+    );
   } catch (error) {
-    return NextResponse.json({ error: "Billing error", details: String(error) }, { status: 500 });
+    return NextResponse.json(
+      { error: "Billing error", details: String(error) },
+      { status: 500 },
+    );
   }
 }
 
 export async function GET() {
-  const allClients: Array<{ clientId: string; calls: number; spend: number }> = [];
+  const allClients: Array<{ clientId: string; calls: number; spend: number }> =
+    [];
   for (const [clientId, records] of BILLING_STORE.entries()) {
     allClients.push({
       clientId,
@@ -130,7 +154,6 @@ export async function GET() {
     total_revenue: allClients.reduce((s, c) => s + c.spend, 0),
   });
 }
-
 
 // Factory wrapper for POST (adds safety pipeline)
 export const POST = createAgentRoute({

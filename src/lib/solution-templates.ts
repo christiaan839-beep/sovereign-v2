@@ -1,3 +1,5 @@
+// STATUS: ahead-of-consumers — see docs/audits/codebase-audit.md (Tier B).
+// pre-built playbook templates; superseded by playbooks.ts.
 /**
  * SOVEREIGN MATRIX — Solution Templates
  *

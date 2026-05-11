@@ -1,5 +1,6 @@
 import { createAgentRoute } from "@/lib/agent-factory";
 import { NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 
 /**
  * VERTICAL AGENT TEMPLATES — Pre-configured agent stacks for 

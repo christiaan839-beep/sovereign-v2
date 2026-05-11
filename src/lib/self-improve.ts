@@ -1,3 +1,5 @@
+// STATUS: ahead-of-consumers — see docs/audits/codebase-audit.md (Tier B).
+// self-improvement loop; not wired.
 /**
  * SOVEREIGN MATRIX — Recursive Self-Improvement Engine
  *

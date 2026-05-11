@@ -7,11 +7,7 @@ type JsonLdProps = {
 };
 
 export function JsonLd({ data }: JsonLdProps) {
-  return (
-    <script type="application/ld+json">
-      {JSON.stringify(data)}
-    </script>
-  );
+  return <script type="application/ld+json">{JSON.stringify(data)}</script>;
 }
 
 // Helper: generate a BreadcrumbList for a route hierarchy.
@@ -26,5 +22,43 @@ export function breadcrumbSchema(crumbs: { name: string; url: string }[]) {
       name: crumb.name,
       item: crumb.url,
     })),
+  };
+}
+
+/**
+ * Service schema for a vertical playbook (agency packet, sourcing
+ * sprint, growth pulse, listing pulse). Renders as a Service offering
+ * by Sovereign Matrix to a specific audience type.
+ */
+export function playbookServiceSchema(args: {
+  name: string;
+  description: string;
+  url: string;
+  audienceType: string;
+  priceLow: number;
+  priceHigh: number;
+  priceCurrency: string;
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    name: args.name,
+    description: args.description,
+    url: args.url,
+    provider: {
+      "@type": "Organization",
+      name: "Sovereign Matrix",
+      url: "https://sovereignmatrix.agency",
+    },
+    audience: {
+      "@type": "Audience",
+      audienceType: args.audienceType,
+    },
+    offers: {
+      "@type": "AggregateOffer",
+      priceCurrency: args.priceCurrency,
+      lowPrice: String(args.priceLow),
+      highPrice: String(args.priceHigh),
+    },
   };
 }

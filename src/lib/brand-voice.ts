@@ -1,3 +1,5 @@
+// STATUS: ahead-of-consumers — see docs/audits/codebase-audit.md (Tier B).
+// brand-voice memory helpers; superseded by /api/_agents/brand-voice.
 /**
  * SOVEREIGN MATRIX — Brand Voice Extraction & Injection
  *

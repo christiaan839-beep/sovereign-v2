@@ -1,3 +1,5 @@
+// STATUS: ahead-of-consumers — see docs/audits/codebase-audit.md (Tier B).
+// "agent-to-agent economy" claim; not wired.
 /**
  * SOVEREIGN MATRIX — Agent Swarm Protocol
  *

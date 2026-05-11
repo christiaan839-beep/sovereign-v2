@@ -1,0 +1,106 @@
+#!/usr/bin/env bash
+#
+# Sovereign Matrix — pre-push gate
+#
+# Local mirror of the most expensive CI checks. Catches obvious breakage
+# before it leaves your laptop. Skips itself with PRE_PUSH_SKIP=1 if you
+# need to bypass for an emergency push (then fix forward, don't dwell).
+#
+# Install (once per clone):
+#   npm run hooks:install
+#
+# What this checks (in order, fail-fast):
+#   1. ESLint           — catches the lint errors CI also catches
+#   2. Vitest           — every unit/route test
+#   3. typecheck        — strict; CI runs this without continue-on-error
+#   4. Suspense trap    — useSearchParams/useParams without Suspense
+#   5. Migration parity — only runs when DATABASE_URL is set locally
+#
+# What this deliberately doesn't run:
+#   - npm run build (slow, CI does it anyway)
+#   - playwright (requires preview URL)
+#   - npm audit (security-audit job in CI; non-blocking by design)
+
+set -uo pipefail
+
+if [[ "${PRE_PUSH_SKIP:-0}" == "1" ]]; then
+  echo "pre-push: skipped via PRE_PUSH_SKIP=1"
+  exit 0
+fi
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT"
+
+failed=0
+
+echo "pre-push: lint…"
+if ! npm run --silent lint > /tmp/sovereign-pre-push-lint.log 2>&1; then
+  echo "  FAIL — see /tmp/sovereign-pre-push-lint.log"
+  tail -20 /tmp/sovereign-pre-push-lint.log
+  failed=1
+fi
+
+echo "pre-push: tests…"
+if ! npm run --silent test > /tmp/sovereign-pre-push-test.log 2>&1; then
+  echo "  FAIL — see /tmp/sovereign-pre-push-test.log"
+  tail -20 /tmp/sovereign-pre-push-test.log
+  failed=1
+fi
+
+echo "pre-push: typecheck…"
+if ! npm run --silent typecheck > /tmp/sovereign-pre-push-tsc.log 2>&1; then
+  errs=$(grep -cE "error TS" /tmp/sovereign-pre-push-tsc.log || echo 0)
+  echo "  FAIL — $errs type errors:"
+  grep -E "error TS" /tmp/sovereign-pre-push-tsc.log | head -10
+  echo "  (full log: /tmp/sovereign-pre-push-tsc.log)"
+  failed=1
+fi
+
+# ─── Suspense-trap detector ────────────────────────────────────────────────
+# Bit us once already (CI smoke flake from useSearchParams without a
+# Suspense ancestor). This static check warns BEFORE the push so we don't
+# round-trip through CI to discover it.
+#
+# Heuristic: any "use client" file that calls useSearchParams /
+# useParams / useSelectedLayoutSegment / useSelectedLayoutSegments AND
+# does NOT mention Suspense anywhere is suspicious. Not perfect — a parent
+# component might wrap it — but the false-positive rate is low and the
+# fix (add Suspense to the parent OR import it here) is cheap.
+echo "pre-push: hook-trap scan…"
+hook_trap_files=$(
+  grep -rlE "(useSearchParams|useParams|useSelectedLayoutSegment)\b" \
+    src/app src/components 2>/dev/null \
+  | xargs -I{} grep -l '"use client"' {} 2>/dev/null \
+  | xargs grep -L "Suspense" 2>/dev/null \
+  | head -5
+)
+if [[ -n "$hook_trap_files" ]]; then
+  echo "  warn — these client components use a dynamic-rendering hook"
+  echo "  but don't import Suspense. Confirm a parent wraps them:"
+  echo "$hook_trap_files" | sed 's/^/    /'
+  echo "  (set PRE_PUSH_SKIP=1 to bypass if you've verified the parent)"
+fi
+
+if [[ -n "${DATABASE_URL:-}" ]]; then
+  echo "pre-push: migration parity…"
+  if ! node scripts/check-migrations.mjs > /tmp/sovereign-pre-push-mig.log 2>&1; then
+    echo "  FAIL — schema drift detected:"
+    tail -20 /tmp/sovereign-pre-push-mig.log
+    echo
+    echo "  Apply pending migrations in Neon SQL Editor before pushing,"
+    echo "  or push with PRE_PUSH_SKIP=1 if you've already done so and"
+    echo "  the script can't see your DB."
+    failed=1
+  fi
+else
+  echo "pre-push: migration parity skipped (DATABASE_URL not set locally)"
+fi
+
+if [[ $failed -ne 0 ]]; then
+  echo
+  echo "pre-push: blocked. Fix the above or push with PRE_PUSH_SKIP=1 to bypass."
+  exit 1
+fi
+
+echo "pre-push: ok"
+exit 0

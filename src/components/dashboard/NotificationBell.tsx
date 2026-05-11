@@ -14,7 +14,11 @@ import {
 
 /* ─── Types ─── */
 
-type NotificationType = "playbook_completed" | "agent_failed" | "new_lead" | "approval_required";
+type NotificationType =
+  | "playbook_completed"
+  | "agent_failed"
+  | "new_lead"
+  | "approval_required";
 
 interface BellNotification {
   id: string;
@@ -30,7 +34,14 @@ interface BellNotification {
 const STORAGE_KEY = "sovereign_bell_notifications";
 const MAX_STORED = 50;
 
-const TYPE_CONFIG: Record<NotificationType, { label: string; dotColor: string; icon: React.ComponentType<{ className?: string }> }> = {
+const TYPE_CONFIG: Record<
+  NotificationType,
+  {
+    label: string;
+    dotColor: string;
+    icon: React.ComponentType<{ className?: string }>;
+  }
+> = {
   playbook_completed: {
     label: "Playbook completed",
     dotColor: "bg-emerald-400",
@@ -69,7 +80,10 @@ function readBellStore(): BellNotification[] {
 function writeBellStore(items: BellNotification[]): void {
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items.slice(0, MAX_STORED)));
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify(items.slice(0, MAX_STORED)),
+    );
   } catch {
     // localStorage may be full
   }
@@ -92,16 +106,13 @@ function timeAgo(timestamp: string): string {
 
 export function NotificationBell() {
   const [open, setOpen] = useState(false);
-  const [notifications, setNotifications] = useState<BellNotification[]>([]);
+  const [notifications, setNotifications] = useState<BellNotification[]>(() =>
+    typeof window !== "undefined" ? readBellStore() : [],
+  );
   const [lastPollKey, setLastPollKey] = useState<string>("");
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
-
-  // Initial load from localStorage
-  useEffect(() => {
-    setNotifications(readBellStore());
-  }, []);
 
   // Sync to localStorage whenever notifications change
   useEffect(() => {
@@ -167,7 +178,9 @@ export function NotificationBell() {
         }
 
         if (newNotifs.length > 0) {
-          setNotifications((prev) => [...newNotifs, ...prev].slice(0, MAX_STORED));
+          setNotifications((prev) =>
+            [...newNotifs, ...prev].slice(0, MAX_STORED),
+          );
         }
       }
 
@@ -177,8 +190,11 @@ export function NotificationBell() {
     }
   }, [lastPollKey]);
 
-  // Poll every 30 seconds
+  // Poll every 30 seconds. The first poll runs synchronously to seed
+  // lastPollKey before the interval; the resulting setLastPollKey in
+  // pollForEvents is intentional, not a cascading-render bug.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     pollForEvents();
     const interval = setInterval(pollForEvents, 30_000);
     return () => clearInterval(interval);
@@ -188,7 +204,10 @@ export function NotificationBell() {
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
         setOpen(false);
       }
     };
@@ -212,7 +231,7 @@ export function NotificationBell() {
 
   const handleMarkRead = (id: string) => {
     setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+      prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
     );
   };
 
@@ -256,7 +275,9 @@ export function NotificationBell() {
           >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
-              <h3 className="text-sm font-semibold text-white">Notifications</h3>
+              <h3 className="text-sm font-semibold text-white">
+                Notifications
+              </h3>
               {unreadCount > 0 && (
                 <button
                   onClick={handleMarkAllRead}
@@ -306,7 +327,9 @@ export function NotificationBell() {
                         <div className="flex items-start justify-between gap-2">
                           <p
                             className={`text-sm leading-tight ${
-                              n.read ? "text-neutral-400" : "text-white font-medium"
+                              n.read
+                                ? "text-neutral-400"
+                                : "text-white font-medium"
                             }`}
                           >
                             {n.title}

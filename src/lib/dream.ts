@@ -1,3 +1,5 @@
+// STATUS: ahead-of-consumers — see docs/audits/codebase-audit.md (Tier B).
+// "dream-state planning"; not wired.
 import { recall, getPineconeClient } from "./memory";
 import { ai, embed } from "./ai";
 import { createLogger } from "./logger";

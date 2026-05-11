@@ -1,5 +1,6 @@
 import { createAgentRoute } from "@/lib/agent-factory";
 import { NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 
 /**
  * WHITE-LABEL API — Returns branding configuration for white-label deployments.

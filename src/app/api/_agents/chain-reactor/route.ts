@@ -1,13 +1,14 @@
 import { createAgentRoute } from "@/lib/agent-factory";
 import { NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import { getBaseUrl } from "@/lib/base-url";
 
 /**
  * WEBHOOK CHAIN REACTOR — Autonomous Agent Orchestration Engine.
  * Chains multiple agents together into automated workflows.
- * 
+ *
  * Example chain: Lead Submit → Sentinel Call → ABM Email → PII Scrub → Doc Embed
- * 
+ *
  * Each chain is a sequence of agent API calls that execute sequentially,
  * passing output from one agent as input to the next.
  */
@@ -15,18 +16,28 @@ import { getBaseUrl } from "@/lib/base-url";
 interface ChainStep {
   agent: string;
   endpoint: string;
-  transform: (prevResult: Record<string, unknown>, initialInput: Record<string, unknown>) => Record<string, unknown>;
+  transform: (
+    prevResult: Record<string, unknown>,
+    initialInput: Record<string, unknown>,
+  ) => Record<string, unknown>;
 }
 
-const CHAINS: Record<string, { name: string; description: string; steps: ChainStep[] }> = {
+const CHAINS: Record<
+  string,
+  { name: string; description: string; steps: ChainStep[] }
+> = {
   "lead-to-close": {
     name: "Lead-to-Close Pipeline",
-    description: "Lead submits form → ABM Artillery researches company → generates email → PII scrubs data → embeds into knowledge base.",
+    description:
+      "Lead submits form → ABM Artillery researches company → generates email → PII scrubs data → embeds into knowledge base.",
     steps: [
       {
         agent: "ABM Artillery",
         endpoint: "/api/_agents/abm-artillery",
-        transform: (_prev, input) => ({ companyName: input.company || "Unknown Company", targetEmail: input.email }),
+        transform: (_prev, input) => ({
+          companyName: input.company || "Unknown Company",
+          targetEmail: input.email,
+        }),
       },
       {
         agent: "PII Redactor",
@@ -38,43 +49,60 @@ const CHAINS: Record<string, { name: string; description: string; steps: ChainSt
         endpoint: "/api/_agents/doc-intel",
         transform: (prev) => ({
           action: "embed",
-          text: typeof prev === "object" ? (prev as Record<string, unknown>).redacted_text || JSON.stringify(prev) : String(prev),
+          text:
+            typeof prev === "object"
+              ? (prev as Record<string, unknown>).redacted_text ||
+                JSON.stringify(prev)
+              : String(prev),
         }),
       },
     ],
   },
   "content-blitz": {
     name: "Content Blitz Pipeline",
-    description: "Research a topic → generate a blog post → translate to 3 languages → create social image.",
+    description:
+      "Research a topic → generate a blog post → translate to 3 languages → create social image.",
     steps: [
       {
         agent: "ABM Artillery (Research Only)",
         endpoint: "/api/_agents/abm-artillery",
-        transform: (_prev, input) => ({ companyName: input.topic || "AI Marketing" }),
+        transform: (_prev, input) => ({
+          companyName: input.topic || "AI Marketing",
+        }),
       },
       {
         agent: "Page Builder (Blog Post)",
         endpoint: "/api/_agents/page-builder",
         transform: (prev) => {
-          const intel = (prev as Record<string, unknown>).intelligence || "AI marketing automation";
-          return { prompt: `Write a 1500-word SEO blog post about: ${intel}. Include headers, bullet points, and a strong CTA.` };
+          const intel =
+            (prev as Record<string, unknown>).intelligence ||
+            "AI marketing automation";
+          return {
+            prompt: `Write a 1500-word SEO blog post about: ${intel}. Include headers, bullet points, and a strong CTA.`,
+          };
         },
       },
       {
         agent: "Image Generator",
         endpoint: "/api/_agents/image-gen",
-        transform: (_prev, input) => ({ prompt: `Professional blog header image for article about ${input.topic || "AI marketing"}, dark premium aesthetic, minimal` }),
+        transform: (_prev, input) => ({
+          prompt: `Professional blog header image for article about ${input.topic || "AI marketing"}, dark premium aesthetic, minimal`,
+        }),
       },
     ],
   },
   "security-audit": {
     name: "Security Audit Pipeline",
-    description: "Scrub PII → check content safety → guardrail validation → generate compliance report.",
+    description:
+      "Scrub PII → check content safety → guardrail validation → generate compliance report.",
     steps: [
       {
         agent: "PII Redactor",
         endpoint: "/api/_agents/pii-redactor",
-        transform: (_prev, input) => ({ text: input.content || "", redact: true }),
+        transform: (_prev, input) => ({
+          text: input.content || "",
+          redact: true,
+        }),
       },
       {
         agent: "Morpheus Shield (Safety Check)",
@@ -82,8 +110,18 @@ const CHAINS: Record<string, { name: string; description: string; steps: ChainSt
         transform: (prev) => ({
           model: "content-safety",
           messages: [
-            { role: "system", content: "Analyze this text for content safety violations. Return a JSON report with: safety_score (0-100), violations_found (array), recommendation." },
-            { role: "user", content: typeof prev === "object" ? (prev as Record<string, unknown>).redacted_text || "" : String(prev) },
+            {
+              role: "system",
+              content:
+                "Analyze this text for content safety violations. Return a JSON report with: safety_score (0-100), violations_found (array), recommendation.",
+            },
+            {
+              role: "user",
+              content:
+                typeof prev === "object"
+                  ? (prev as Record<string, unknown>).redacted_text || ""
+                  : String(prev),
+            },
           ],
         }),
       },
@@ -106,17 +144,29 @@ export async function GET() {
 async function _postHandler(request: Request) {
   try {
     const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+    if (!userId)
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401 },
+      );
     const { chain, input } = await request.json();
 
     if (!chain || !CHAINS[chain]) {
-      return NextResponse.json({
-        error: `Invalid chain. Available: ${Object.keys(CHAINS).join(", ")}`,
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: `Invalid chain. Available: ${Object.keys(CHAINS).join(", ")}`,
+        },
+        { status: 400 },
+      );
     }
 
     const selectedChain = CHAINS[chain];
-    const results: Array<{ agent: string; status: string; data: unknown; duration_ms: number }> = [];
+    const results: Array<{
+      agent: string;
+      status: string;
+      data: unknown;
+      duration_ms: number;
+    }> = [];
     let prevResult: Record<string, unknown> = {};
 
     for (const step of selectedChain.steps) {
@@ -162,10 +212,12 @@ async function _postHandler(request: Request) {
       results,
     });
   } catch (error) {
-    return NextResponse.json({ error: "Chain Reactor error", details: String(error) }, { status: 500 });
+    return NextResponse.json(
+      { error: "Chain Reactor error", details: String(error) },
+      { status: 500 },
+    );
   }
 }
-
 
 // Factory wrapper for POST (adds safety pipeline)
 export const POST = createAgentRoute({

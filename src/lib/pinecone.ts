@@ -1,3 +1,5 @@
+// STATUS: ahead-of-consumers — see docs/audits/codebase-audit.md (Tier B).
+// Pinecone client wrapper; vector-memory.ts is the only consumer path.
 import { Pinecone } from "@pinecone-database/pinecone";
 
 const pineconeKey = process.env.PINECONE_API_KEY || "";

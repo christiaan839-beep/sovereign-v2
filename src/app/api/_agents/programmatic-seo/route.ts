@@ -10,7 +10,7 @@ import { fireUserWebhook } from "@/lib/webhooks";
  * and provides schema markup.
  */
 
-const SEO_SWARM_PROMPT = `You are a SEO strategist and content engineer. You analyze search intent, identify content gaps, and generate authoritative long-form posts that dominate Google SERPs.
+const SEO_SWARM_PROMPT = `You are an SEO strategist and content engineer. You analyze search intent, identify content gaps, and generate long-form posts that rank for the target keyword.
 
 ${ANTI_SLOP_RULES}
 
@@ -28,7 +28,8 @@ export const POST = createAgentRoute({
   name: "programmatic-seo",
   requiredFields: ["action"],
   handler: async ({ input }) => {
-    const { action, niche, difficulty, keyword, contentAngle } = input as Record<string, unknown>;
+    const { action, niche, difficulty, keyword, contentAngle } =
+      input as Record<string, unknown>;
 
     if (action === "discover") {
       const discoveryPrompt = `You are a keyword research expert. Discover 8 high-intent, low-competition keyword opportunities for the niche: "${niche || "AI marketing automation"}".
@@ -47,14 +48,29 @@ Respond in JSON array format: [{ keyword, estimatedVolume, difficulty, intent, c
 
 Be realistic with volume estimates. Target keywords that a new domain could realistically rank for within 90 days.`;
 
-      const result = await ai(discoveryPrompt, { system: SEO_SWARM_PROMPT, maxTokens: 2000 });
+      const result = await ai(discoveryPrompt, {
+        system: SEO_SWARM_PROMPT,
+        maxTokens: 2000,
+      });
 
       let keywords;
       try {
-        const cleaned = result.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+        const cleaned = result
+          .replace(/```json\n?/g, "")
+          .replace(/```\n?/g, "")
+          .trim();
         keywords = JSON.parse(cleaned);
       } catch {
-        keywords = [{ keyword: niche, estimatedVolume: "N/A", difficulty: "Medium", intent: "Informational", contentAngle: "Comprehensive guide", currentTopResult: "Generic article" }];
+        keywords = [
+          {
+            keyword: niche,
+            estimatedVolume: "N/A",
+            difficulty: "Medium",
+            intent: "Informational",
+            contentAngle: "Comprehensive guide",
+            currentTopResult: "Generic article",
+          },
+        ];
       }
 
       return { success: true, keywords };
@@ -87,9 +103,14 @@ Include:
 
 Format: Output the complete post in clean markdown.`;
 
-      const post = await ai(generatePrompt, { system: SEO_SWARM_PROMPT, maxTokens: 4000 });
+      const post = await ai(generatePrompt, {
+        system: SEO_SWARM_PROMPT,
+        maxTokens: 4000,
+      });
 
-      await fireUserWebhook("ProgrammaticSEO", "PostGenerated", { keyword: keyword || niche });
+      await fireUserWebhook("ProgrammaticSEO", "PostGenerated", {
+        keyword: keyword || niche,
+      });
 
       return { success: true, post, keyword: keyword || niche };
     }

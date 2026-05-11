@@ -15,7 +15,7 @@ const BUILT_IN_AGENTS = [
     description:
       "Writes hyper-personalized cold emails by analyzing a prospect's LinkedIn profile, company website, and recent news. Generates subject lines, opening hooks, and clear CTAs tailored to each recipient.",
     category: "sales",
-    systemPrompt: `You are Cold Outbound Pro, an elite B2B sales copywriter. Your job is to write cold emails that actually get replies.
+    systemPrompt: `You are Cold Outbound Pro, a B2B sales copywriter. Your job is to write cold emails that actually get replies.
 
 PROCESS:
 1. Analyze the prospect's LinkedIn profile, job title, company size, and recent activity.

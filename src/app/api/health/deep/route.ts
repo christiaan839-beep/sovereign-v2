@@ -8,7 +8,10 @@ import { NextResponse } from "next/server";
 
 export async function GET() {
   const start = Date.now();
-  const checks: Record<string, { status: "ok" | "degraded" | "down"; latency_ms: number; detail?: string }> = {};
+  const checks: Record<
+    string,
+    { status: "ok" | "degraded" | "down"; latency_ms: number; detail?: string }
+  > = {};
 
   // Check NVIDIA NIM
   const nimKey = process.env.NVIDIA_NIM_API_KEY;
@@ -19,16 +22,28 @@ export async function GET() {
         headers: { Authorization: `Bearer ${nimKey}` },
         signal: AbortSignal.timeout(5000),
       });
-      checks.nvidia_nim = { status: res.ok ? "ok" : "degraded", latency_ms: Date.now() - nimStart };
+      checks.nvidia_nim = {
+        status: res.ok ? "ok" : "degraded",
+        latency_ms: Date.now() - nimStart,
+      };
     } catch {
-      checks.nvidia_nim = { status: "down", latency_ms: Date.now() - nimStart, detail: "Timeout or unreachable" };
+      checks.nvidia_nim = {
+        status: "down",
+        latency_ms: Date.now() - nimStart,
+        detail: "Timeout or unreachable",
+      };
     }
   } else {
-    checks.nvidia_nim = { status: "down", latency_ms: 0, detail: "API key not configured" };
+    checks.nvidia_nim = {
+      status: "down",
+      latency_ms: 0,
+      detail: "API key not configured",
+    };
   }
 
   // Check Gemini
-  const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+  const geminiKey =
+    process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
   checks.gemini = geminiKey
     ? { status: "ok", latency_ms: 0, detail: "Key configured" }
     : { status: "down", latency_ms: 0, detail: "API key not configured" };
@@ -48,11 +63,16 @@ export async function GET() {
   // Check Database
   try {
     const { db } = await import("@/db");
+    const { sql } = await import("drizzle-orm");
     const dbStart = Date.now();
-    await db.execute({ sql: "SELECT 1", params: [] });
+    await db.execute(sql`SELECT 1`);
     checks.database = { status: "ok", latency_ms: Date.now() - dbStart };
   } catch {
-    checks.database = { status: "down", latency_ms: 0, detail: "DATABASE_URL not configured or unreachable" };
+    checks.database = {
+      status: "down",
+      latency_ms: 0,
+      detail: "DATABASE_URL not configured or unreachable",
+    };
   }
 
   // Check Stripe
@@ -72,11 +92,14 @@ export async function GET() {
 
   // Summary
   const total = Object.keys(checks).length;
-  const healthy = Object.values(checks).filter(c => c.status === "ok").length;
-  const degraded = Object.values(checks).filter(c => c.status === "degraded").length;
+  const healthy = Object.values(checks).filter((c) => c.status === "ok").length;
+  const degraded = Object.values(checks).filter(
+    (c) => c.status === "degraded",
+  ).length;
 
   return NextResponse.json({
-    status: healthy === total ? "healthy" : degraded > 0 ? "degraded" : "partial",
+    status:
+      healthy === total ? "healthy" : degraded > 0 ? "degraded" : "partial",
     healthy,
     total,
     uptime_percent: Math.round((healthy / total) * 1000) / 10,

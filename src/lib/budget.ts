@@ -1,3 +1,5 @@
+// STATUS: ahead-of-consumers — see docs/audits/codebase-audit.md (Tier B).
+// older budget enforcement; superseded by budget-controls.ts.
 /**
  * SOVEREIGN MATRIX: BUDGET ENFORCEMENT
  *
