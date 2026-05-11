@@ -155,8 +155,29 @@ export default function ApiDocsPage() {
               <span className="text-cyan-300">·</span>
               <span>
                 <strong className="text-neutral-200">Postman / Insomnia</strong>{" "}
-                — Import → Link → paste the OpenAPI URL. Full collection
-                generated with examples.
+                — Import → Link → paste either{" "}
+                <code className="font-mono text-cyan-300">
+                  /api/openapi.json
+                </code>{" "}
+                or the ready-made{" "}
+                <a
+                  href="/api/postman.json"
+                  className="text-cyan-300 underline-offset-2 hover:underline"
+                >
+                  Postman v2.1 collection
+                </a>
+                . Full request set generated with example bodies.
+              </span>
+            </li>
+            <li className="flex gap-2">
+              <span className="text-cyan-300">·</span>
+              <span>
+                <strong className="text-neutral-200">Terminal</strong> — install
+                the CLI:{" "}
+                <code className="font-mono text-cyan-300">
+                  npx @sovereignmatrix/cli verify &lt;id&gt;
+                </code>
+                . Zero deps, Node 20+.
               </span>
             </li>
             <li className="flex gap-2">
