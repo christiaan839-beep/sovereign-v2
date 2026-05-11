@@ -45,6 +45,7 @@ import {
   Terminal,
   FileJson,
 } from "lucide-react";
+import { SpotlightCard } from "@/components/ui/SpotlightCard";
 
 const TRUST_BLOCKS: TrustBlockProps[] = [
   {
@@ -200,7 +201,12 @@ function TrustBlock({
   cta,
 }: TrustBlockProps): ReactNode {
   return (
-    <article className="overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 backdrop-blur-xl">
+    <SpotlightCard
+      as="article"
+      accent="cyan"
+      radius={300}
+      className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 backdrop-blur-xl"
+    >
       <Icon className="mb-3 h-5 w-5 text-cyan-300" aria-hidden="true" />
       <h3 className="mb-2 text-sm font-semibold text-white">{title}</h3>
       <p className="mb-4 text-xs leading-relaxed text-neutral-400">{body}</p>
@@ -223,6 +229,6 @@ function TrustBlock({
           <ArrowRight className="h-2.5 w-2.5" />
         </Link>
       )}
-    </article>
+    </SpotlightCard>
   );
 }
