@@ -43,6 +43,7 @@ import {
   Eye,
   ShieldCheck,
   Terminal,
+  FileJson,
 } from "lucide-react";
 
 const TRUST_BLOCKS: TrustBlockProps[] = [
@@ -97,6 +98,12 @@ const TRUST_BLOCKS: TrustBlockProps[] = [
     title: "Installable from any MCP client",
     body: "Sovereign publishes a public MCP server at /api/mcp/verifier — installable in one config line into Claude Desktop, Claude Code, Cursor, or any MCP-compatible client. Four tools: verify_receipt, fetch_receipt, latest_public_receipt, recent_public_receipts. No auth.",
     cta: { href: "/mcp", label: "Install the server" },
+  },
+  {
+    icon: FileJson,
+    title: "OpenAPI 3.1 contract",
+    body: "The same primitives exposed as a standards-compliant OpenAPI 3.1 schema. Importable into Cursor, Postman, Insomnia, VSCode REST Client, or any IDE that speaks OpenAPI. Pair with the MCP server for full protocol coverage.",
+    cta: { href: "/api-docs", label: "Read the API docs" },
   },
   {
     icon: FileText,
