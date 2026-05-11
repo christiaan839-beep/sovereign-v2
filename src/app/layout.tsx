@@ -25,23 +25,23 @@ export const metadata: Metadata = {
     template: "%s | Sovereign Matrix",
   },
   description:
-    "Multi-tenant AI agent platform — 30 featured agents, 100+ in the developer API, 8-provider unified router, 5-layer safety pipeline, ZAR-first billing for emerging markets.",
+    "Audit-grade AI agent infrastructure. Every agent run produces a cryptographically signed receipt — HMAC-SHA256, Ed25519, Merkle inclusion proofs, OpenTimestamps. 137 agents, 8-provider unified router, 5-layer safety pipeline, ZAR-first billing for emerging markets.",
   keywords: [
-    "AI agents",
+    "verifiable AI agents",
+    "AI agent audit standard",
+    "HMAC-signed AI outputs",
     "agent infrastructure",
-    "AI automation",
-    "enterprise AI",
+    "audit-grade AI",
+    "enterprise AI compliance",
     "multi-agent platform",
     "AI orchestration",
-    "NVIDIA NIM",
-    "semantic memory",
     "agent marketplace",
-    "AI workforce",
     "model routing",
     "agentic AI",
-    "lead generation AI",
-    "content automation",
-    "AI platform",
+    "POPIA AI compliance",
+    "SOC2 AI",
+    "OpenTimestamps AI",
+    "VAOS",
   ],
   authors: [
     { name: "Sovereign Matrix", url: "https://sovereignmatrix.agency" },
@@ -61,9 +61,9 @@ export const metadata: Metadata = {
   },
   alternates: { canonical: "https://sovereignmatrix.agency" },
   openGraph: {
-    title: "Sovereign Matrix — The Agent Infrastructure Stack",
+    title: "Sovereign Matrix — Audit-grade AI agent infrastructure",
     description:
-      "Multi-tenant AI agent platform — 30 featured agents, 100+ in the developer API, 8-provider unified router, 5-layer safety pipeline. ZAR-first billing for SMBs in emerging markets.",
+      "Every AI agent run produces a cryptographically signed receipt. HMAC-SHA256, Ed25519, Merkle inclusion proofs, Bitcoin notarization. 137 agents, 5-layer safety pipeline, ZAR + USD billing.",
     type: "website",
     siteName: "Sovereign Matrix",
     locale: "en_US",
@@ -73,15 +73,15 @@ export const metadata: Metadata = {
         url: "https://sovereignmatrix.agency/og-image.jpg",
         width: 1200,
         height: 630,
-        alt: "Sovereign Matrix — The Agent Infrastructure Stack",
+        alt: "Sovereign Matrix — Audit-grade AI agent infrastructure",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Sovereign Matrix — The Agent Infrastructure Stack",
+    title: "Sovereign Matrix — Audit-grade AI agent infrastructure",
     description:
-      "Multi-tenant AI agent platform — 30 featured agents, 100+ in the developer API, 8-provider unified router, 5-layer safety pipeline. ZAR-first billing for SMBs in emerging markets.",
+      "Every AI agent run produces a cryptographically signed receipt. 137 agents, 5-layer safety pipeline, Bitcoin-anchored proofs. Built for AI in regulated industries.",
     images: ["https://sovereignmatrix.agency/og-image.jpg"],
   },
   icons: {
@@ -238,7 +238,7 @@ export default function RootLayout({
                       name: "What is Sovereign Matrix?",
                       acceptedAnswer: {
                         "@type": "Answer",
-                        text: "Sovereign Matrix is an autonomous AI agent platform with 130+ specialized agents that execute business tasks like lead generation, content creation, SEO, voice calls, and competitor analysis. Built on NVIDIA NIM with 38 AI models at zero per-token cost.",
+                        text: "Sovereign Matrix is audit-grade AI agent infrastructure. 137 specialized agents handle lead generation, content creation, voice calls, competitor analysis, and more — and every run produces a cryptographically signed receipt (HMAC-SHA256, Ed25519 v2, Merkle inclusion proofs, OpenTimestamps notarization). Designed for AI deployments in regulated industries where compliance teams need to prove what an agent did.",
                       },
                     },
                     {
@@ -246,7 +246,7 @@ export default function RootLayout({
                       name: "How much does Sovereign Matrix cost?",
                       acceptedAnswer: {
                         "@type": "Answer",
-                        text: `Sovereign Matrix offers ${pricingSentence}. The Free tier includes 50 runs/month with no credit card required. Growth includes 500 runs/month and every featured playbook. Enterprise includes 10,000 runs/month, SAML SSO, SOC 2 evidence, and a direct Slack line to the founder. Month-to-month, no contracts.`,
+                        text: `Sovereign Matrix offers ${pricingSentence}. Free includes 50 verified runs/month, no credit card. Pro at $49/month adds Ed25519 v2 signatures, Merkle inclusion proofs, audit-bundle export. Team at $199/month adds white-label, Bitcoin notarization via OpenTimestamps, and SOC2-ready evidence export. Enterprise is custom — 10,000+ runs, SAML SSO, full evidence pack, and a direct Slack line to the founder. Month-to-month, no contracts.`,
                       },
                     },
                     {
@@ -262,7 +262,7 @@ export default function RootLayout({
                       name: "Is this a chatbot or a platform?",
                       acceptedAnswer: {
                         "@type": "Answer",
-                        text: "Neither. Sovereign Matrix is an agent operating system: 130 autonomous agents that plan, execute, and self-correct without human intervention. Agents work simultaneously across lead gen, content, SEO, voice calls, and research — with a scheduler that fires playbooks on cron.",
+                        text: "Neither. Sovereign Matrix is an agent operating system: 137 autonomous agents that plan, execute, and self-correct without human intervention — and every output ships with a verifiable HMAC-signed receipt. Agents work simultaneously across lead gen, content, SEO, voice calls, and research, with a scheduler that fires playbooks on cron.",
                       },
                     },
                     {

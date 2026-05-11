@@ -243,7 +243,15 @@ export const PLAN_LIMITS: Record<string, number> = Object.fromEntries(
  * purchasable. Order matches user-facing display.
  */
 export function getMarketingPlans(): PlanDefinition[] {
-  const order: PlanId[] = ["free", "starter", "array", "node", "enterprise"];
+  // Public-marketing surface (pricing page TIERS, JSON-LD Offer list,
+  // root-layout FAQ answer). Three visible tiers: Free / Pro (array) /
+  // Team (node). Enterprise is rendered as a separate "contact sales"
+  // strip and intentionally excluded here so Google's rich-result
+  // pricing table matches what visitors see.
+  //
+  // Legacy `starter` ($19) is kept purchasable in PLANS for existing
+  // subscribers but not surfaced to new visitors.
+  const order: PlanId[] = ["free", "array", "node"];
   return order
     .filter((id) => PLANS[id]?.purchasable || PLANS[id]?.priceUsdCents === 0)
     .map((id) => PLANS[id]);
