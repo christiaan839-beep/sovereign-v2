@@ -26,6 +26,7 @@ import {
   ArrowRight,
   ExternalLink,
 } from "lucide-react";
+import { SpotlightCard } from "@/components/ui/SpotlightCard";
 
 const CANONICAL_URL = "https://sovereignmatrix.agency/api/mcp/verifier";
 
@@ -224,9 +225,12 @@ export default function MCPPage() {
           </h2>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             {TOOLS.map((t) => (
-              <article
+              <SpotlightCard
+                as="article"
+                accent="cyan"
+                radius={260}
                 key={t.name}
-                className="overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 backdrop-blur-xl"
+                className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 backdrop-blur-xl"
               >
                 <code className="mb-2 inline-block font-mono text-[12px] font-semibold text-cyan-200">
                   {t.name}
@@ -234,7 +238,7 @@ export default function MCPPage() {
                 <p className="text-xs leading-relaxed text-neutral-400">
                   {t.pitch}
                 </p>
-              </article>
+              </SpotlightCard>
             ))}
           </div>
         </section>

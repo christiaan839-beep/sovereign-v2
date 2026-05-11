@@ -25,6 +25,7 @@ import {
   Globe,
   Coins,
 } from "lucide-react";
+import { SpotlightCard } from "@/components/ui/SpotlightCard";
 
 const TERMS = [
   {
@@ -130,9 +131,12 @@ export default function AffiliatePage() {
         {/* Terms grid */}
         <section className="mb-14 grid grid-cols-1 gap-4 md:grid-cols-2">
           {TERMS.map((t) => (
-            <article
+            <SpotlightCard
+              as="article"
+              accent="copper"
+              radius={320}
               key={t.title}
-              className="overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 backdrop-blur-xl"
+              className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 backdrop-blur-xl"
             >
               <t.icon
                 className="mb-3 h-5 w-5 text-[#E08558]"
@@ -144,7 +148,7 @@ export default function AffiliatePage() {
               <p className="text-xs leading-relaxed text-neutral-400">
                 {t.body}
               </p>
-            </article>
+            </SpotlightCard>
           ))}
         </section>
 

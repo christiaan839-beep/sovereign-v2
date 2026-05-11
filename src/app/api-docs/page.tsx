@@ -28,6 +28,7 @@ import {
   Shield,
   Globe,
 } from "lucide-react";
+import { SpotlightCard } from "@/components/ui/SpotlightCard";
 
 const OPENAPI_URL = "/api/openapi.json";
 
@@ -294,7 +295,12 @@ function EndpointCard({ endpoint }: { endpoint: Endpoint }) {
   }, [endpoint.curl]);
 
   return (
-    <article className="overflow-hidden rounded-xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl">
+    <SpotlightCard
+      as="article"
+      accent="cyan"
+      radius={300}
+      className="rounded-xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl"
+    >
       <header className="flex flex-wrap items-center gap-3 border-b border-white/[0.04] bg-black/20 px-5 py-3">
         <span
           className={`inline-flex items-center rounded-md px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider ${
@@ -334,6 +340,6 @@ function EndpointCard({ endpoint }: { endpoint: Endpoint }) {
           </button>
         </div>
       </div>
-    </article>
+    </SpotlightCard>
   );
 }

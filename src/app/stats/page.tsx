@@ -39,6 +39,7 @@ import {
   ArrowRight,
   Loader2,
 } from "lucide-react";
+import { SpotlightCard } from "@/components/ui/SpotlightCard";
 
 interface PublicStats {
   totals: {
@@ -221,7 +222,11 @@ function BigStat({
   icon: typeof Shield;
 }) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 backdrop-blur-xl">
+    <SpotlightCard
+      accent="cyan"
+      radius={280}
+      className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 backdrop-blur-xl"
+    >
       <div className="mb-3 flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-wider text-neutral-500">
         <Icon className="h-3 w-3 text-cyan-300/80" aria-hidden="true" />
         {label}
@@ -230,7 +235,7 @@ function BigStat({
         {value === null ? <Skeleton /> : <CountUp value={value} />}
       </div>
       <div className="mt-1.5 text-[11px] text-neutral-500">{sub}</div>
-    </div>
+    </SpotlightCard>
   );
 }
 
