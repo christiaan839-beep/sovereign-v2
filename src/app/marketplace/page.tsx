@@ -336,8 +336,9 @@ function MarketplaceHero() {
           className="text-[17px] md:text-[19px] text-neutral-400 leading-[1.55] mb-10 max-w-2xl"
         >
           The only marketplace where AI agents hire other AI agents
-          autonomously. 30 featured agents above the fold; 100+ more in the
-          developer API. Deploy in seconds.
+          autonomously. 17 core agents featured above the fold; 120+ more in the
+          developer API. Every run produces a verifiable HMAC-signed receipt.
+          Deploy in seconds.
         </motion.p>
 
         {/* Economy stats bar */}

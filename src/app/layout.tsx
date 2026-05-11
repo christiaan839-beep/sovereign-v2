@@ -210,9 +210,9 @@ export default function RootLayout({
                   operatingSystem: "Web",
                   offers: marketingOffers,
                   description:
-                    "Multi-tenant AI agent platform — 30 featured agents, 100+ in the developer API, 8-provider unified router, 5-layer safety pipeline, ZAR-first billing for emerging markets.",
+                    "Audit-grade AI agent infrastructure — 137 agents, every output cryptographically signed (HMAC-SHA256, Ed25519, Merkle inclusion proofs, OpenTimestamps), 8-provider unified router, 5-layer safety pipeline, ZAR + USD billing.",
                   featureList:
-                    "AI Agents, Multi-Provider Routing, Whitelabel, 5-layer Safety Pipeline, Plan-Aware Quotas, Daily $-Cap Budget Controls, Multi-Tenant Isolation, ZAR Billing, Open-Source AI Router (@sovereign/ai-router)",
+                    "Verifiable Agent Receipts (VAOS), HMAC-SHA256 Signatures, Ed25519 v2 Signatures, Merkle Inclusion Proofs, OpenTimestamps Bitcoin Notarization, Multi-Provider Routing, Whitelabel, 5-layer Safety Pipeline, Plan-Aware Quotas, Daily $-Cap Budget Controls, Multi-Tenant Isolation, ZAR Billing, Open-Source AI Router (@sovereign/ai-router)",
                 },
                 {
                   "@context": "https://schema.org",
@@ -220,7 +220,7 @@ export default function RootLayout({
                   name: "Sovereign Matrix",
                   url: "https://sovereignmatrix.agency",
                   description:
-                    "Multi-tenant AI agent platform — 30 featured agents, 100+ developer-API agents, 8-provider unified router, ZAR-first billing.",
+                    "Audit-grade AI agent infrastructure — 137 agents with cryptographically signed receipts, 8-provider unified router, ZAR + USD billing.",
                   logo: "https://sovereignmatrix.agency/icon-512.png",
                   contactPoint: {
                     "@type": "ContactPoint",
