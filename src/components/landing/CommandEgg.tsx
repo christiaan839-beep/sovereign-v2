@@ -49,7 +49,7 @@ const COMMANDS: Command[] = [
     hint: "Developer",
   },
   { label: "View the public changelog", href: "/changelog", hint: "Product" },
-  { label: "Read the customer cases", href: "/customers", hint: "Social" },
+  { label: "Read the customer cases", href: "/case-studies", hint: "Social" },
   {
     label: "Book a 15-minute demo",
     href: "https://cal.com/sovereign-matrix/15min",

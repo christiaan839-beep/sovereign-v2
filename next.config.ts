@@ -124,7 +124,7 @@ const nextConfig: NextConfig = {
       // Marketing aliases
       { source: "/platform", destination: "/marketplace", permanent: false },
       { source: "/trust", destination: "/spec", permanent: false },
-      { source: "/customers", destination: "/founders", permanent: false },
+      { source: "/customers", destination: "/case-studies", permanent: false },
       { source: "/sign-up", destination: "/signup", permanent: true },
       // Dashboard aliases
       {
