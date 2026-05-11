@@ -488,9 +488,11 @@ function Hero() {
           className="font-serif text-5xl sm:text-7xl md:text-8xl lg:text-9xl leading-[1.02] tracking-[-0.02em] mb-6"
         >
           <span className="block text-white">Audit-grade</span>
-          <span className="block" style={{ color: "#B5532C" }}>
-            AI agents.
-          </span>
+          {/* Slow gradient sweep between the two brand accents —
+              treats the dual-accent rule itself as a typographic
+              move. See globals.css `.brand-sweep`. Respects
+              prefers-reduced-motion. */}
+          <span className="block brand-sweep">AI agents.</span>
           <span className="block text-white text-3xl sm:text-5xl md:text-6xl lg:text-7xl mt-3">
             Every output, cryptographically signed.
           </span>

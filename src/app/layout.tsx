@@ -9,6 +9,7 @@ import { CursorGlow } from "@/components/cinematic/CursorGlow";
 import { ScrollProgress } from "@/components/cinematic/ScrollProgress";
 import { BackToTop } from "@/components/cinematic/BackToTop";
 import { CookieConsent } from "@/components/ui/CookieConsent";
+import { LiveActivityTicker } from "@/components/landing/LiveActivityTicker";
 import { FounderCTA } from "@/components/ui/FounderCTA";
 import { getMarketingPlans } from "@/lib/plans";
 import "./globals.css";
@@ -193,6 +194,7 @@ export default function RootLayout({
           {children}
           <BackToTop />
           <CookieConsent />
+          <LiveActivityTicker />
           <FounderCTA />
           {process.env.NODE_ENV === "production" && <Analytics />}
           {process.env.NODE_ENV === "production" && <SpeedInsights />}

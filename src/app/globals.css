@@ -145,6 +145,56 @@ select:focus-visible,
   outline: none;
 }
 
+/* ─── Brand gradient sweep ──────────────────────────────────────────
+ * Slow horizontal sweep between the two brand accents on display
+ * text. The dual-accent rule says cyan = audit/infra and copper =
+ * marketing/agency — the sweep treats the brand tension itself as
+ * a typographic move, the way Antigravity / Stripe use animated
+ * gradients on hero text.
+ *
+ * Apply with className="brand-sweep" on any text element (works
+ * on span, h1, etc.). Performance: GPU-composited background-position
+ * shift, no JavaScript, no layout impact.
+ *
+ * Respects prefers-reduced-motion — falls back to a static 50%
+ * midpoint (a balanced mix of both accents) so the brand tension is
+ * still legible without the animation.
+ */
+@keyframes brand-sweep {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.brand-sweep {
+  background: linear-gradient(
+    90deg,
+    #b5532c 0%,
+    #e08558 25%,
+    #00b7ff 50%,
+    #e08558 75%,
+    #b5532c 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: brand-sweep 9s ease-in-out infinite;
+  /* Hint to the browser to keep the gradient on a separate layer. */
+  will-change: background-position;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand-sweep {
+    animation: none;
+    background-position: 50% 50%;
+  }
+}
+
 /* ─── Custom Scrollbar (thin variant) ────────────── */
 
 .custom-scrollbar::-webkit-scrollbar {
