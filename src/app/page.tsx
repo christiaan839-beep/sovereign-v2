@@ -4,11 +4,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { SignInButton } from "@clerk/nextjs";
 import { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { SovereignLogo } from "@/components/ui/SovereignLogo";
-import { StackKiller } from "@/components/cinematic/StackKiller";
 import { getMarketingPlaybooks } from "@/lib/playbooks";
-import { FounderSeats } from "@/components/landing/FounderSeats";
-import { CommandEgg } from "@/components/landing/CommandEgg";
 import { PrimaryCTA } from "@/components/landing/PrimaryCTA";
 import { StatusIndicator } from "@/components/landing/StatusIndicator";
 import { TryItDemo } from "@/components/landing/TryItDemo";
@@ -19,14 +17,64 @@ import {
   TiltCard,
 } from "@/components/ui/EliteEffects";
 
-// New components
+// Above-the-fold (or near-fold) sections — static-imported to keep
+// LCP fast and avoid a flash of unstyled-skeleton in the visitor's
+// first paint.
 import { A2EGraph } from "@/components/landing/A2EGraph";
 import { LiveProofStrip } from "@/components/landing/LiveProofStrip";
 import { ThreeMoatsGrid } from "@/components/landing/ThreeMoatsGrid";
 import { A2EEconomySection } from "@/components/landing/A2EEconomySection";
 import { ModelRouterSection } from "@/components/landing/ModelRouterSection";
 import { VerificationPipeline } from "@/components/landing/VerificationPipeline";
-import { LiveVerifierDemo } from "@/components/landing/LiveVerifierDemo";
+
+// Below-the-fold sections — dynamic-imported with skeleton placeholders
+// so the visitor's initial JS bundle is smaller, LCP is faster, and
+// these heavier components (cinematic, network-on-mount, etc.) only
+// hydrate once the visitor scrolls into them.
+//
+// SSR stays on (ssr: true) for SEO + zero-flash readability — Next.js
+// still server-renders the markup, it just defers hydration.
+const LiveVerifierDemo = dynamic(
+  () =>
+    import("@/components/landing/LiveVerifierDemo").then((m) => ({
+      default: m.LiveVerifierDemo,
+    })),
+  {
+    loading: () => (
+      <section
+        aria-hidden="true"
+        className="relative z-10 mx-auto w-full max-w-5xl px-6 py-24"
+      >
+        <div className="h-72 rounded-2xl border border-white/[0.04] bg-white/[0.02] backdrop-blur-xl" />
+      </section>
+    ),
+  },
+);
+const StackKiller = dynamic(
+  () =>
+    import("@/components/cinematic/StackKiller").then((m) => ({
+      default: m.StackKiller,
+    })),
+  {
+    loading: () => <div className="h-[60vh]" aria-hidden="true" />,
+  },
+);
+const FounderSeats = dynamic(
+  () =>
+    import("@/components/landing/FounderSeats").then((m) => ({
+      default: m.FounderSeats,
+    })),
+  {
+    loading: () => <div className="h-[40vh]" aria-hidden="true" />,
+  },
+);
+const CommandEgg = dynamic(
+  () =>
+    import("@/components/landing/CommandEgg").then((m) => ({
+      default: m.CommandEgg,
+    })),
+  { ssr: false, loading: () => null },
+);
 
 /**
  * Landing page — Agent Infrastructure Stack narrative.
