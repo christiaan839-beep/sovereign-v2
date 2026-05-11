@@ -27,6 +27,7 @@ import {
   CheckCircle2,
   AlertTriangle,
   Loader2,
+  Code2,
 } from "lucide-react";
 
 interface ReceiptListItem {
@@ -301,6 +302,15 @@ export default function ReceiptsPage() {
                       >
                         <LinkIcon className="h-3.5 w-3.5" />
                       </button>
+                      <Link
+                        href={`/badge?id=${encodeURIComponent(item.id)}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs text-neutral-300 transition hover:border-cyan-500/30 hover:bg-cyan-500/[0.06] hover:text-cyan-200"
+                        title="Generate embed badge"
+                      >
+                        <Code2 className="h-3.5 w-3.5" />
+                      </Link>
                       <Link
                         href={`/r/${item.id}`}
                         target="_blank"
