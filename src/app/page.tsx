@@ -50,24 +50,6 @@ const LiveVerifierDemo = dynamic(
     ),
   },
 );
-const StackKiller = dynamic(
-  () =>
-    import("@/components/cinematic/StackKiller").then((m) => ({
-      default: m.StackKiller,
-    })),
-  {
-    loading: () => <div className="h-[60vh]" aria-hidden="true" />,
-  },
-);
-const FounderSeats = dynamic(
-  () =>
-    import("@/components/landing/FounderSeats").then((m) => ({
-      default: m.FounderSeats,
-    })),
-  {
-    loading: () => <div className="h-[40vh]" aria-hidden="true" />,
-  },
-);
 const CommandEgg = dynamic(
   () =>
     import("@/components/landing/CommandEgg").then((m) => ({
@@ -83,7 +65,7 @@ const CommandEgg = dynamic(
  * Section map:
  *   Nav · 01 Hero · LiveProofStrip · 02 ThreeMoats · 03 A2EEconomy ·
  *   04 MemoryMoat · 05 ModelRouter · 06 VerificationPipeline ·
- *   07 FeaturedPlaybooks · 08 IndustrySection · StackKiller ·
+ *   06.5 LiveVerifierDemo · 07 FeaturedPlaybooks · 08 IndustrySection ·
  *   09 PlatformScale · 10 PricingStrip · FinalCTA · Footer · CommandEgg
  */
 
@@ -192,17 +174,11 @@ export default function LandingPage() {
         {/* 08 · Industries */}
         <IndustrySection />
 
-        {/* Stack Killer — cost displacement */}
-        <StackKiller />
-
         {/* 09 · Platform Scale */}
         <PlatformScale />
 
         {/* 10 · Pricing Strip */}
         <PricingStrip />
-
-        {/* Founder network seats */}
-        <FounderSeats />
 
         {/* Final CTA */}
         <FinalCTA />
@@ -574,39 +550,29 @@ function Hero() {
           </Link>
         </motion.p>
 
-        {/* Trust line — links to real wins + competitor comparisons */}
+        {/* Trust line — audit-grade positioning */}
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.95, duration: 0.5 }}
           className="text-[11px] font-mono text-neutral-700 tracking-wide mb-12"
         >
-          <Link
-            href="/case-studies"
-            className="hover:text-[#B5532C] transition-colors"
-          >
-            Real customer wins →
+          <Link href="/spec" className="hover:text-cyan-300 transition-colors">
+            VAOS 1.0 open standard
           </Link>
           <span className="text-neutral-800 mx-1">·</span>
           <Link
-            href="/vs/lindy"
-            className="hover:text-neutral-400 transition-colors"
+            href="/verified"
+            className="hover:text-cyan-300 transition-colors"
           >
-            vs Lindy
+            Live verifier demo
           </Link>
           <span className="text-neutral-800 mx-1">·</span>
           <Link
-            href="/vs/apollo"
-            className="hover:text-neutral-400 transition-colors"
+            href="/explorer"
+            className="hover:text-cyan-300 transition-colors"
           >
-            vs Apollo
-          </Link>
-          <span className="text-neutral-800 mx-1">·</span>
-          <Link
-            href="/vs/jasper"
-            className="hover:text-neutral-400 transition-colors"
-          >
-            vs Jasper
+            Receipt explorer
           </Link>
         </motion.p>
 
@@ -1225,11 +1191,11 @@ function FinalCTA() {
             </span>
           </Link>
           <a
-            href="mailto:christiaan@sovereignmatrix.agency"
-            onClick={() => trackCtaClick("email-founder")}
+            href="mailto:hello@sovereignmatrix.agency"
+            onClick={() => trackCtaClick("email-sales")}
             className="inline-flex items-center px-6 py-4 border border-white/[0.12] text-neutral-400 font-mono text-[13px] tracking-wide hover:text-white hover:border-white/30 transition-colors rounded-[4px]"
           >
-            Email the founder
+            Contact sales
           </a>
         </div>
 

@@ -3,7 +3,14 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { Server, HeadsetIcon, Puzzle, BadgeDollarSign, CheckCircle, Loader2 } from "lucide-react";
+import {
+  Server,
+  HeadsetIcon,
+  Puzzle,
+  BadgeDollarSign,
+  CheckCircle,
+  Loader2,
+} from "lucide-react";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -18,25 +25,29 @@ const BENEFITS = [
   {
     icon: Server,
     title: "Custom Deployment",
-    description: "Deploy on your own cloud infrastructure or on-premise. Full control over data residency, network policies, and model execution via NemoClaw.",
+    description:
+      "Deploy on your own cloud infrastructure or on-premise. Full control over data residency, network policies, and model execution via NemoClaw.",
     color: "text-blue-400",
   },
   {
     icon: HeadsetIcon,
     title: "Dedicated Support",
-    description: "A named account manager, priority support queue, and direct Slack/Teams channel with the engineering team. SLA-backed response times.",
+    description:
+      "A named account manager, priority support queue, and a private support channel with the engineering team. SLA-backed response times.",
     color: "text-emerald-400",
   },
   {
     icon: Puzzle,
     title: "Custom Integrations",
-    description: "Bespoke agent development, custom API integrations, and workflow engineering tailored to your tech stack and business processes.",
+    description:
+      "Bespoke agent development, custom API integrations, and workflow engineering tailored to your tech stack and business processes.",
     color: "text-purple-400",
   },
   {
     icon: BadgeDollarSign,
     title: "Volume Pricing",
-    description: "Annual agreements with volume discounts, predictable billing, and flexible payment terms. No per-token costs on local execution.",
+    description:
+      "Annual agreements with volume discounts, predictable billing, and flexible payment terms. No per-token costs on local execution.",
     color: "text-orange-400",
   },
 ];
@@ -51,7 +62,9 @@ export default function EnterprisePage() {
     size: "",
     useCase: "",
   });
-  const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
+  const [status, setStatus] = useState<
+    "idle" | "submitting" | "success" | "error"
+  >("idle");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,8 +134,12 @@ export default function EnterprisePage() {
                 className="rounded-xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl p-6 hover:border-white/10 transition-colors"
               >
                 <Icon className={`w-6 h-6 ${benefit.color} mb-3`} />
-                <h3 className="text-base font-bold text-white mb-2">{benefit.title}</h3>
-                <p className="text-sm text-neutral-400 leading-relaxed">{benefit.description}</p>
+                <h3 className="text-base font-bold text-white mb-2">
+                  {benefit.title}
+                </h3>
+                <p className="text-sm text-neutral-400 leading-relaxed">
+                  {benefit.description}
+                </p>
               </motion.div>
             );
           })}
@@ -135,9 +152,12 @@ export default function EnterprisePage() {
           transition={{ delay: 0.4, duration: 0.5 }}
           className="max-w-xl mx-auto"
         >
-          <h2 className="text-2xl font-bold text-white mb-2 text-center">Request a Demo</h2>
+          <h2 className="text-2xl font-bold text-white mb-2 text-center">
+            Request a Demo
+          </h2>
           <p className="text-sm text-neutral-400 mb-8 text-center">
-            Tell us about your organization and we&apos;ll set up a personalized walkthrough.
+            Tell us about your organization and we&apos;ll set up a personalized
+            walkthrough.
           </p>
 
           <AnimatePresence mode="wait">
@@ -150,7 +170,9 @@ export default function EnterprisePage() {
                 className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-8 text-center"
               >
                 <CheckCircle className="w-10 h-10 text-emerald-400 mx-auto mb-4" />
-                <h3 className="text-lg font-bold text-white mb-2">Request Received</h3>
+                <h3 className="text-lg font-bold text-white mb-2">
+                  Request Received
+                </h3>
                 <p className="text-sm text-neutral-400">
                   We&apos;ll be in touch within 24 hours to schedule your demo.
                 </p>
@@ -164,58 +186,92 @@ export default function EnterprisePage() {
                 exit={{ opacity: 0 }}
               >
                 <div>
-                  <label htmlFor="enterprise-name" className="block text-xs text-neutral-400 mb-1.5 uppercase tracking-wider">Full Name *</label>
+                  <label
+                    htmlFor="enterprise-name"
+                    className="block text-xs text-neutral-400 mb-1.5 uppercase tracking-wider"
+                  >
+                    Full Name *
+                  </label>
                   <input
                     id="enterprise-name"
                     type="text"
                     required
                     autoComplete="name"
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
                     placeholder="Jane Smith"
                     className={inputClasses}
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="enterprise-email" className="block text-xs text-neutral-400 mb-1.5 uppercase tracking-wider">Work Email *</label>
+                  <label
+                    htmlFor="enterprise-email"
+                    className="block text-xs text-neutral-400 mb-1.5 uppercase tracking-wider"
+                  >
+                    Work Email *
+                  </label>
                   <input
                     id="enterprise-email"
                     type="email"
                     required
                     autoComplete="email"
                     value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
                     placeholder="jane@company.com"
                     className={inputClasses}
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="enterprise-company" className="block text-xs text-neutral-400 mb-1.5 uppercase tracking-wider">Company Name *</label>
+                  <label
+                    htmlFor="enterprise-company"
+                    className="block text-xs text-neutral-400 mb-1.5 uppercase tracking-wider"
+                  >
+                    Company Name *
+                  </label>
                   <input
                     id="enterprise-company"
                     type="text"
                     required
                     autoComplete="organization"
                     value={formData.company}
-                    onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, company: e.target.value })
+                    }
                     placeholder="Acme Inc."
                     className={inputClasses}
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="enterprise-size" className="block text-xs text-neutral-400 mb-1.5 uppercase tracking-wider">Company Size</label>
+                  <label
+                    htmlFor="enterprise-size"
+                    className="block text-xs text-neutral-400 mb-1.5 uppercase tracking-wider"
+                  >
+                    Company Size
+                  </label>
                   <select
                     id="enterprise-size"
                     value={formData.size}
-                    onChange={(e) => setFormData({ ...formData, size: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, size: e.target.value })
+                    }
                     className={inputClasses}
                   >
-                    <option value="" className="bg-neutral-900">Select size</option>
+                    <option value="" className="bg-neutral-900">
+                      Select size
+                    </option>
                     {COMPANY_SIZES.map((size) => (
-                      <option key={size} value={size} className="bg-neutral-900">
+                      <option
+                        key={size}
+                        value={size}
+                        className="bg-neutral-900"
+                      >
                         {size} employees
                       </option>
                     ))}
@@ -223,12 +279,19 @@ export default function EnterprisePage() {
                 </div>
 
                 <div>
-                  <label htmlFor="enterprise-usecase" className="block text-xs text-neutral-400 mb-1.5 uppercase tracking-wider">Use Case</label>
+                  <label
+                    htmlFor="enterprise-usecase"
+                    className="block text-xs text-neutral-400 mb-1.5 uppercase tracking-wider"
+                  >
+                    Use Case
+                  </label>
                   <textarea
                     id="enterprise-usecase"
                     rows={4}
                     value={formData.useCase}
-                    onChange={(e) => setFormData({ ...formData, useCase: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, useCase: e.target.value })
+                    }
                     placeholder="Tell us what you want to automate..."
                     className={inputClasses + " resize-none"}
                   />
@@ -273,19 +336,31 @@ export default function EnterprisePage() {
           className="mt-16 pt-8 border-t border-white/10 text-xs text-neutral-500"
         >
           <p>
-            <Link href="/security" className="text-neutral-500 hover:text-white transition-colors">
+            <Link
+              href="/security"
+              className="text-neutral-500 hover:text-white transition-colors"
+            >
               Security
             </Link>{" "}
             |{" "}
-            <Link href="/sla" className="text-neutral-500 hover:text-white transition-colors">
+            <Link
+              href="/sla"
+              className="text-neutral-500 hover:text-white transition-colors"
+            >
               SLA
             </Link>{" "}
             |{" "}
-            <Link href="/dpa" className="text-neutral-500 hover:text-white transition-colors">
+            <Link
+              href="/dpa"
+              className="text-neutral-500 hover:text-white transition-colors"
+            >
               DPA
             </Link>{" "}
             |{" "}
-            <Link href="/" className="text-neutral-500 hover:text-white transition-colors">
+            <Link
+              href="/"
+              className="text-neutral-500 hover:text-white transition-colors"
+            >
               Home
             </Link>
           </p>

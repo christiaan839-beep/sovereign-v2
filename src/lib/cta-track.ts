@@ -25,7 +25,8 @@ export type CtaName =
   | "primary-final"
   | "seat-claim"
   | "playbook-card"
-  | "email-founder"
+  | "email-founder" // legacy — kept for backward analytics compat
+  | "email-sales"
   | "final-cta";
 
 /**

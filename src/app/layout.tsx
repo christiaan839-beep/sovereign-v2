@@ -246,7 +246,7 @@ export default function RootLayout({
                       name: "How much does Sovereign Matrix cost?",
                       acceptedAnswer: {
                         "@type": "Answer",
-                        text: `Sovereign Matrix offers ${pricingSentence}. Free includes 50 verified runs/month, no credit card. Pro at $49/month adds Ed25519 v2 signatures, Merkle inclusion proofs, audit-bundle export. Team at $199/month adds white-label, Bitcoin notarization via OpenTimestamps, and SOC2-ready evidence export. Enterprise is custom — 10,000+ runs, SAML SSO, full evidence pack, and a direct Slack line to the founder. Month-to-month, no contracts.`,
+                        text: `Sovereign Matrix offers ${pricingSentence}. Free includes 50 verified runs/month, no credit card. Pro at $49/month adds Ed25519 v2 signatures, Merkle inclusion proofs, and audit-bundle export. Team at $199/month adds white-label, Bitcoin notarization via OpenTimestamps, and SOC2-ready evidence export. Enterprise is custom — 10,000+ runs, SAML SSO, full evidence pack, dedicated account manager, and a private support channel with the engineering team. Month-to-month, no contracts.`,
                       },
                     },
                     {
