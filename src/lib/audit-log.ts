@@ -15,6 +15,7 @@ export type AuditAction =
   | "webhook.received"
   | "data.export"
   | "data.delete"
+  | "data.audit-bundle"
   | "admin.provision"
   | "credits.add"
   | "credits.purchase"
