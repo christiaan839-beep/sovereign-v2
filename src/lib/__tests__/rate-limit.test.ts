@@ -120,23 +120,55 @@ describe("rateLimit — in-memory fallback", () => {
     expect(blocked).not.toBeNull();
   });
 
-  it("first IP in x-forwarded-for chain is used", async () => {
+  it("rightmost (trusted) IP in x-forwarded-for chain is used", async () => {
     const rateLimit = await freshLimiter();
     const limiter = rateLimit({ interval: 60, limit: 1 });
 
-    // Chained proxy header — should use the first entry (the real client).
+    // Threat model: a client controls the LEFTMOST X-Forwarded-For entry
+    // (anyone can set the header in their browser; Vercel + similar proxies
+    // APPEND the real client IP rather than overwriting). The rightmost
+    // entry is the trusted client IP from the proxy. Using the leftmost
+    // would let attackers rotate fake IPs to bypass per-IP rate limiting.
     const req = new Request("https://example.com/api/test", {
       method: "POST",
-      headers: { "x-forwarded-for": "7.7.7.7, 10.0.0.1, 10.0.0.2" },
+      // Same trusted (right-most) IP, attacker rotates fake left-most.
+      headers: { "x-forwarded-for": "1.2.3.4, 10.0.0.1" },
     });
     const req2 = new Request("https://example.com/api/test", {
       method: "POST",
-      headers: { "x-forwarded-for": "7.7.7.7, 10.0.0.9" },
+      headers: { "x-forwarded-for": "9.9.9.9, 10.0.0.1" },
     });
 
     await limiter.check(req);
     const blocked = await limiter.check(req2);
-    expect(blocked).not.toBeNull(); // Same first-IP → same bucket
+    expect(blocked).not.toBeNull(); // Same trusted IP → same bucket
+  });
+
+  it("x-real-ip wins over x-forwarded-for (most-trusted IP source)", async () => {
+    const rateLimit = await freshLimiter();
+    const limiter = rateLimit({ interval: 60, limit: 1 });
+
+    // Vercel sets x-real-ip with the verified client IP; we should prefer
+    // it over any X-Forwarded-For value (which a client can sneak past
+    // some proxies).
+    const req = new Request("https://example.com/api/test", {
+      method: "POST",
+      headers: {
+        "x-real-ip": "1.1.1.1",
+        "x-forwarded-for": "9.9.9.9, 10.0.0.1",
+      },
+    });
+    const req2 = new Request("https://example.com/api/test", {
+      method: "POST",
+      headers: {
+        "x-real-ip": "1.1.1.1",
+        "x-forwarded-for": "8.8.8.8, 10.0.0.2",
+      },
+    });
+
+    await limiter.check(req);
+    const blocked = await limiter.check(req2);
+    expect(blocked).not.toBeNull(); // Same x-real-ip → same bucket
   });
 
   it("API key is hashed, not used raw, in the identifier", async () => {

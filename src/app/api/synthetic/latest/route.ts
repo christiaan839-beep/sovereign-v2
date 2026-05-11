@@ -84,13 +84,18 @@ const PROBES: Array<{
   },
 ];
 
-function resolveBaseUrl(req: Request): string {
+// SSRF guard: probe target MUST be the platform's own deployment.
+// Trust only env-injected origins (NEXT_PUBLIC_APP_URL or VERCEL_URL),
+// never request headers — a spoofed Host: would make this endpoint
+// probe arbitrary hosts and cache poisoned results into /status.
+// Localhost fallback only when neither env is set (local dev).
+function resolveBaseUrl(_req: Request): string {
   if (process.env.NEXT_PUBLIC_APP_URL) {
     return process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "");
   }
-  const proto = req.headers.get("x-forwarded-proto") ?? "https";
-  const host = req.headers.get("host");
-  if (host) return `${proto}://${host}`;
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
   return "http://localhost:3000";
 }
 

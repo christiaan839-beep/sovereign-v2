@@ -132,14 +132,15 @@ export async function GET(req: Request) {
   }
 
   // Visibility gate: badges only show for receipts the bearer of the URL
-  // can already read. Private receipts return the "not found" state so we
-  // don't leak agent names cross-origin to drive-by scrapers.
+  // can already read. Private receipts return the SAME "not found" state
+  // as truly-missing receipts so a cross-origin enumerator can't tell
+  // a private receipt apart from a non-existent id.
   if (run.visibility === "private") {
     return svgResponse(
       renderBadge({
         state: "tampered",
         label: "sovereign",
-        value: "private",
+        value: "not found",
       }),
       60,
     );

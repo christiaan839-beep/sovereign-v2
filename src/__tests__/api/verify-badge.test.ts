@@ -75,7 +75,10 @@ describe("GET /api/verify/badge.svg", () => {
     expect(body).toContain("not found");
   });
 
-  it("private receipt → 'private' (no cross-origin leak)", async () => {
+  it("private receipt collapses to 'not found' (no cross-origin enumeration)", async () => {
+    // Security: a cross-origin enumerator hitting /api/verify/badge.svg with
+    // arbitrary ids must NOT be able to distinguish "this id exists but is
+    // private" from "this id doesn't exist." Both render as "not found."
     mockGetRun.mockResolvedValue({
       id: VALID_ID,
       userId: "u_owner",
@@ -94,8 +97,9 @@ describe("GET /api/verify/badge.svg", () => {
     });
     const { GET } = await loadRoute();
     const body = await (await GET(makeReq(`?id=${VALID_ID}`))).text();
-    expect(body).toContain("private");
+    expect(body).toContain("not found");
     expect(body).not.toContain("secret-internal-agent");
+    expect(body).not.toContain("private"); // no enumeration signal
   });
 
   it("valid signature → 'verified' with agent name", async () => {

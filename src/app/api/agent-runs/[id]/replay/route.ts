@@ -19,9 +19,13 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getRun } from "@/lib/agent-runs";
+import { AGENT_SLUGS } from "@/lib/agent-slugs";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("api/agent-runs/replay");
+
+// Snapshot once at module load — the registry is static.
+const AGENT_SLUG_SET = new Set(AGENT_SLUGS);
 
 export async function POST(
   req: Request,
@@ -60,15 +64,48 @@ export async function POST(
   }
   cleanInput._replayedFrom = original.id;
 
-  // Forward to the agent route. We re-use the same Host so internal
-  // routing works on Vercel and Railway alike.
-  const proto = req.headers.get("x-forwarded-proto") ?? "https";
-  const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host");
-  const origin =
-    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ??
-    (host ? `${proto}://${host}` : "http://localhost:3000");
+  // SSRF guard: agentName came from a stored DB row but the row's value
+  // could in theory be tainted (a future migration, a hand-edited row,
+  // etc.). Hard-validate against the static registry before letting it
+  // anywhere near a fetch URL. Bug history: a poisoned agentName would
+  // have steered the credential-forwarding fetch to /api/_agents/<anything>.
+  if (!AGENT_SLUG_SET.has(original.agentName)) {
+    log.warn("replay rejected: unknown agentName in stored receipt", {
+      id: original.id,
+      agentName: original.agentName,
+    });
+    return NextResponse.json(
+      { error: "Replay unavailable for this run" },
+      { status: 422 },
+    );
+  }
 
-  const target = `${origin}/api/_agents/${encodeURIComponent(
+  // SSRF + credential-leak guard: the forward target MUST be the
+  // platform's own deployment, never a Host-header-spoofed origin.
+  // We forward the caller's Cookie + Authorization so plan + tenant
+  // isolation apply on the re-run — sending those to a spoofed host
+  // would hand session credentials to an attacker. Hard-require
+  // NEXT_PUBLIC_APP_URL or the Vercel-injected VERCEL_URL; reject
+  // anything else with a 503 instead of risking the leak.
+  const allowedOrigin = (() => {
+    if (process.env.NEXT_PUBLIC_APP_URL) {
+      return process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "");
+    }
+    // VERCEL_URL is set by Vercel runtime, not by request header → safe.
+    if (process.env.VERCEL_URL) {
+      return `https://${process.env.VERCEL_URL}`;
+    }
+    return null;
+  })();
+  if (!allowedOrigin) {
+    log.error("replay rejected: no NEXT_PUBLIC_APP_URL or VERCEL_URL set");
+    return NextResponse.json(
+      { error: "Replay unavailable in this environment" },
+      { status: 503 },
+    );
+  }
+
+  const target = `${allowedOrigin}/api/_agents/${encodeURIComponent(
     original.agentName,
   )}`;
 

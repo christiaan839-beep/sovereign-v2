@@ -15,8 +15,14 @@ beforeAll(() => {
   process.env.AGENT_RUN_SIGNING_SECRET = "test_secret_with_enough_entropy_aaaa";
 });
 
+// Capture the rate-limit constructor args so we can regression-test
+// the unit bug (interval used to be 60_000 ms — should be 60 seconds).
+const rateLimitArgs: Array<{ interval: number; limit: number }> = [];
 vi.mock("@/lib/rate-limit", () => ({
-  rateLimit: () => ({ check: vi.fn().mockResolvedValue(null) }),
+  rateLimit: (config: { interval: number; limit: number }) => {
+    rateLimitArgs.push(config);
+    return { check: vi.fn().mockResolvedValue(null) };
+  },
 }));
 
 import { signRun } from "@/lib/agent-runs";
@@ -40,6 +46,18 @@ function makeReq(body: unknown): Request {
 }
 
 describe("POST /api/verify", () => {
+  it("regression: rate-limit interval is SECONDS, not milliseconds", async () => {
+    // Bug history: this used to pass 60_000 by mistake. The lib treats
+    // `interval` as seconds; passing 60_000 makes the bucket key roll over
+    // every ~16 hours, which is effectively no rate limiting.
+    rateLimitArgs.length = 0;
+    await loadRoute();
+    expect(rateLimitArgs.length).toBeGreaterThan(0);
+    const { interval } = rateLimitArgs[0]!;
+    expect(interval).toBeLessThanOrEqual(3600); // any value > 1h would be the same bug class
+    expect(interval).toBe(60);
+  });
+
   it("returns 400 on malformed JSON body", async () => {
     const { POST } = await loadRoute();
     const res = await POST(makeReq("this is not json"));

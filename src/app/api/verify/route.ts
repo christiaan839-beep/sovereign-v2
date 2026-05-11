@@ -24,7 +24,12 @@ import { rateLimit } from "@/lib/rate-limit";
 
 const MAX_CANONICAL_BYTES = 32_000;
 
-const limiter = rateLimit({ interval: 60_000, limit: 60 });
+// `interval` is SECONDS (the rate-limit lib multiplies by 1000 internally).
+// Bug history: this used to pass 60_000 by mistake, which made the bucket
+// key roll over every ~16 hours — effectively no rate limiting against
+// the abuse pattern this guards against. Don't change without reading
+// src/lib/rate-limit.ts:46.
+const limiter = rateLimit({ interval: 60, limit: 60 });
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",

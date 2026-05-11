@@ -155,6 +155,77 @@ describe("POST /api/agent-runs/[id]/replay", () => {
     }
   });
 
+  it("returns 422 when stored agentName is NOT in the slug registry (SSRF guard)", async () => {
+    // Threat model: a poisoned agent_runs row (hand-edited DB, future
+    // migration bug) carries an agentName like "../_admin/x" or any slug
+    // that doesn't exist in AGENT_SLUGS. The replay route must reject
+    // BEFORE forwarding the caller's Cookie/Authorization to an
+    // attacker-controlled path.
+    mockAuth.mockResolvedValue({ userId: "u_owner" });
+    mockGetRun.mockResolvedValue({
+      id: VALID_ID,
+      userId: "u_owner",
+      agentName: "this-agent-does-not-exist-in-the-registry",
+      modelUsed: "claude",
+      input: { topic: "x" },
+      output: {},
+      safetyResult: {},
+      durationMs: 0,
+      chainDepth: 0,
+      trustDecision: "auto-approved",
+      visibility: "private",
+      signature: "v1=abc",
+      createdAt: new Date(),
+      tenantId: null,
+    });
+    const fetchSpy = vi.fn();
+    globalThis.fetch = fetchSpy as typeof fetch;
+    try {
+      const { POST } = await loadRoute();
+      const res = await POST(makeReq(), makeParams(VALID_ID));
+      expect(res.status).toBe(422);
+      expect(fetchSpy).not.toHaveBeenCalled(); // never reaches the forward
+    } finally {
+      globalThis.fetch = realFetch;
+    }
+  });
+
+  it("returns 503 when neither NEXT_PUBLIC_APP_URL nor VERCEL_URL is set (SSRF guard)", async () => {
+    // Threat model: without an env-pinned origin, the previous
+    // implementation fell back to request.headers.host — spoofable.
+    // The new guard refuses to forward credentials to an unknown origin.
+    delete process.env.NEXT_PUBLIC_APP_URL;
+    delete process.env.VERCEL_URL;
+    mockAuth.mockResolvedValue({ userId: "u_owner" });
+    mockGetRun.mockResolvedValue({
+      id: VALID_ID,
+      userId: "u_owner",
+      agentName: "blog-gen",
+      modelUsed: "claude",
+      input: {},
+      output: {},
+      safetyResult: {},
+      durationMs: 0,
+      chainDepth: 0,
+      trustDecision: "auto-approved",
+      visibility: "private",
+      signature: "v1=abc",
+      createdAt: new Date(),
+      tenantId: null,
+    });
+    const fetchSpy = vi.fn();
+    globalThis.fetch = fetchSpy as typeof fetch;
+    try {
+      const { POST } = await loadRoute();
+      const res = await POST(makeReq(), makeParams(VALID_ID));
+      expect(res.status).toBe(503);
+      expect(fetchSpy).not.toHaveBeenCalled();
+    } finally {
+      globalThis.fetch = realFetch;
+      process.env.NEXT_PUBLIC_APP_URL = "http://test.local";
+    }
+  });
+
   it("returns 502 when forward fetch throws", async () => {
     mockAuth.mockResolvedValue({ userId: "u_owner" });
     mockGetRun.mockResolvedValue({
