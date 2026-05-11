@@ -38,103 +38,83 @@ const fadeIn = (d: number) => ({
  * forget to add its TIERS entry, or vice versa. Catches the whole
  * class of "pricing-page-out-of-sync" bugs in development.
  */
+// Public marketing tiers — simplified to 3 visible cards.
+// plans.ts still defines all 6 internal PlanIds for backward compat
+// with existing customers on legacy plans (Starter $19, Node $199).
+// Those legacy plans are accessible via a "More plans" link below the
+// main cards — not removed, just deemphasized for new visitors.
+//
+// Decision-fatigue research: every additional pricing card reduces
+// conversion. The Stripe/Linear/Vercel pattern is 3 visible + 1
+// Enterprise CTA. This matches.
 const TIERS = [
   {
-    name: "Founder Access",
+    name: "Free",
     price: "Free",
     priceZar: "Free",
     period: "forever",
     plan: "free",
     featured: false,
-    tagline: "Full platform access. 50 runs/month. No credit card.",
-    cta: "Run a Free Playbook",
+    tagline: "50 verified agent runs / month. No credit card.",
+    cta: "Start free",
     features: [
-      { name: "All 137 agents", included: true },
-      { name: "25 playbook workflows", included: true },
-      { name: "5-layer safety pipeline", included: true },
-      { name: "50 runs/month", included: true },
+      { name: "All 137 agents + 25 playbooks", included: true },
+      { name: "5-layer safety pipeline (default-on)", included: true },
+      { name: "50 verified agent runs / month", included: true },
+      { name: "HMAC-signed receipts (VAOS 1.0)", included: true },
       { name: "BYOK (Bring Your Own Key)", included: true },
-      { name: "A2E credits: 0/mo", included: false },
+      { name: "Public verifier API", included: true },
       { name: "Priority support", included: false },
     ],
   },
   {
-    name: "Starter",
-    price: "R349",
-    priceUsd: "$19",
-    period: "/mo",
-    plan: "starter",
-    featured: false,
-    tagline: "200 runs/month. Perfect for solo operators testing AI workflows.",
-    cta: "Start for $19",
-    features: [
-      { name: "Everything in Free", included: true },
-      { name: "200 runs/month", included: true },
-      { name: "1,000 API calls/day", included: true },
-      { name: "Email support", included: true },
-      { name: "All 39+ models", included: true },
-      { name: "A2E credits: 50/mo", included: true },
-      { name: "White-label", included: false },
-    ],
-  },
-  {
-    name: "Growth",
+    name: "Pro",
     price: "R997",
     priceUsd: "$49",
     period: "/mo",
     plan: "array",
     featured: true,
-    tagline: "500 runs/month. For agencies and teams scaling AI workflows.",
-    cta: "Scale with Growth",
+    tagline:
+      "For solo operators and small teams shipping AI in regulated industries.",
+    cta: "Get Pro",
     features: [
-      { name: "Everything in Starter", included: true },
-      { name: "500 runs/month", included: true },
-      { name: "5,000 API calls/day", included: true },
-      { name: "Multi-model consensus verification", included: true },
+      { name: "Everything in Free", included: true },
+      { name: "500 verified runs / month", included: true },
+      { name: "Ed25519 v2 signatures (non-repudiation)", included: true },
+      { name: "Audit-bundle export (signed evidence pack)", included: true },
+      { name: "Merkle inclusion proofs (O(log N) verify)", included: true },
       { name: "Priority support (24h)", included: true },
-      { name: "A2E credits: 200/mo", included: true },
-      { name: "White-label", included: false },
+      { name: "Custom domain for verify badge", included: false },
     ],
   },
   {
-    name: "Sovereign Node",
+    name: "Team",
     price: "R3,997",
     priceUsd: "$199",
     period: "/mo",
     plan: "node",
     featured: false,
-    tagline: "2,000 runs/month + NemoClaw local execution. Replace your SDR.",
-    cta: "Deploy Node",
+    tagline:
+      "For compliance-led teams. White-label, dedicated key rotation, audit-firm partnership.",
+    cta: "Get Team",
     features: [
-      { name: "Everything in Growth", included: true },
-      { name: "2,000 runs/month", included: true },
-      { name: "NemoClaw Local Execution", included: true },
-      { name: "Apollo Ghost Fleet Targeting", included: true },
-      { name: "10,000 API calls/day", included: true },
-      { name: "A2E credits: 1,000/mo", included: true },
-      { name: "White-label", included: false },
-    ],
-  },
-  {
-    name: "Enterprise",
-    price: "R9,997",
-    priceUsd: "$499",
-    period: "/mo",
-    plan: "enterprise",
-    featured: false,
-    tagline: "10,000 runs/month. White-label. SLA. Dedicated onboarding.",
-    cta: "Contact Sales",
-    features: [
-      { name: "Everything in Node", included: true },
-      { name: "10,000 runs/month", included: true },
-      { name: "Unlimited API calls", included: true },
-      { name: "White-label Dashboard", included: true },
-      { name: "A2E credits: Unlimited", included: true },
-      { name: "Dedicated setup + SLA", included: true },
-      { name: "Enterprise sub-licenses (5)", included: true },
+      { name: "Everything in Pro", included: true },
+      { name: "2,000 verified runs / month", included: true },
+      { name: "White-label dashboard + badge", included: true },
+      { name: "Bitcoin notarization (OpenTimestamps)", included: true },
+      { name: "Custom signing-key rotation (90-day SLA)", included: true },
+      { name: "SOC2-ready evidence export", included: true },
+      { name: "Dedicated success manager", included: true },
     ],
   },
 ];
+
+/**
+ * Legacy plans (Starter $19, Sovereign Node high-volume, Enterprise)
+ * remain configured in plans.ts and Stripe — existing subscribers stay
+ * on them. New visitors see the simplified 3-tier card grid above and
+ * the Enterprise strip below.
+ */
 
 const FAQS = [
   {
@@ -151,7 +131,7 @@ const FAQS = [
   },
   {
     q: "What counts as a 'run'?",
-    a: "One playbook execution = one run. A playbook can chain multiple agents internally (a lead-blitz playbook might run 5 agents), but we count it as one run. Free tier: 50 runs/mo. Starter $19: 200/mo. Growth $49: 500/mo. Node $199: 2,000/mo. Enterprise $499: 10,000/mo.",
+    a: "One playbook execution = one run. A playbook can chain multiple agents internally (a lead-blitz playbook might run 5 agents), but we count it as one run. Free: 50 runs/mo. Pro $49: 500/mo. Team $199: 2,000/mo. Enterprise: 10,000+/mo (custom).",
   },
   {
     q: "What is BYOK (Bring Your Own Key)?",
@@ -187,7 +167,6 @@ export default function PricingPage() {
       (id) => !tierPlanIds.includes(id),
     );
     if (onlyInTiers.length > 0 || onlyInMarketing.length > 0) {
-       
       console.warn("[pricing] TIERS ⇄ PLANS drift detected:", {
         onlyInTiers,
         onlyInMarketing,
@@ -197,13 +176,12 @@ export default function PricingPage() {
     // Also validate each TIER's plan actually exists in PLANS
     for (const t of TIERS) {
       if (!PLANS[t.plan as PlanId]) {
-         
         console.error(`[pricing] Unknown plan id in TIERS: "${t.plan}"`);
       }
     }
   }, []);
 
-  const checkout = async (plan: string) => {
+  const checkout = async (plan: string, method: "card" | "crypto" = "card") => {
     if (plan === "free") {
       window.location.assign("/signup");
       return;
@@ -215,20 +193,58 @@ export default function PricingPage() {
       return;
     }
 
+    // Crypto path — Coinbase Commerce hosted checkout. Pays once for
+    // 30 days of access; the webhook stamps the period end.
+    if (method === "crypto") {
+      try {
+        const res = await fetch("/api/payments/crypto/checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ plan }),
+        });
+        const data = await res.json();
+        if (res.ok && data.url) {
+          window.location.assign(data.url);
+          return;
+        }
+        setError(
+          data.error || "Crypto checkout unavailable. Try card instead.",
+        );
+      } catch {
+        setError("Crypto checkout failed. Please try again.");
+      }
+      return;
+    }
+
+    // Card path — Stripe first (USD/global), Yoco fallback (ZAR/SA).
     try {
-      const res = await fetch("/api/payments/yoco/checkout", {
+      const stripeRes = await fetch("/api/payments/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plan }),
       });
-      const data = await res.json();
-
-      if (res.ok && data.redirectUrl) {
-        window.location.assign(data.redirectUrl);
+      const stripeData = await stripeRes.json();
+      if (stripeRes.ok && stripeData.url) {
+        window.location.assign(stripeData.url);
         return;
       }
 
-      setError(data.error || "Payment is being set up. Please try again.");
+      const yocoRes = await fetch("/api/payments/yoco/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan }),
+      });
+      const yocoData = await yocoRes.json();
+      if (yocoRes.ok && yocoData.redirectUrl) {
+        window.location.assign(yocoData.redirectUrl);
+        return;
+      }
+
+      setError(
+        stripeData.error ||
+          yocoData.error ||
+          "Payment is being set up. Please try again.",
+      );
     } catch {
       setError("Checkout failed. Please try again.");
     }
@@ -459,6 +475,23 @@ export default function PricingPage() {
                 >
                   {t.cta} <ArrowRight className="w-4 h-4" />
                 </button>
+                {/* Crypto CTA hidden — centralized-only checkout for now.
+                    Backend (Coinbase Commerce + self-custody path) stays
+                    wired in `/api/payments/crypto/*` so flipping
+                    NEXT_PUBLIC_CRYPTO_PAYMENTS_ENABLED=true re-enables
+                    this affordance without a redeploy of the routes. */}
+                {t.plan !== "free" &&
+                  t.plan !== "enterprise" &&
+                  process.env.NEXT_PUBLIC_CRYPTO_PAYMENTS_ENABLED ===
+                    "true" && (
+                    <button
+                      onClick={() => checkout(t.plan, "crypto")}
+                      className="mt-2 w-full py-2 text-xs font-medium rounded-lg border border-white/[0.06] bg-white/[0.02] text-neutral-400 hover:text-white hover:bg-white/5 hover:border-white/10 transition-colors"
+                      aria-label={`Pay for ${t.name} with crypto`}
+                    >
+                      or pay with crypto (BTC · ETH · USDC)
+                    </button>
+                  )}
               </motion.div>
             ))}
           </div>
@@ -666,8 +699,8 @@ const VERTICAL_MATCHES: VerticalMatch[] = [
     buyerLine: "Solopreneur or 1–20 person SMB in ZA / NG / KE / EG / GH",
     deliverable:
       "Monthly growth pulse: local SEO + 4 social posts + email + WhatsApp + offer in your currency",
-    pricing: "R349 / month (≈ $19, Starter tier)",
-    recommendedTier: "Starter",
+    pricing: "R997 / month (≈ $49, Pro tier)",
+    recommendedTier: "Pro",
     playbookHref: "/playbooks/growth-pulse",
     accent: "emerald",
   },

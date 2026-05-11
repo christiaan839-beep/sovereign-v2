@@ -1,0 +1,29 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Sovereign Verified — HMAC-signed receipts for every AI agent run",
+  description:
+    "Every agent run produces a cryptographically signed receipt. Drop one line on your site; visitors verify against the public /api/verify endpoint with no signup, no API key, no iframe. Open CORS, sub-50ms.",
+  openGraph: {
+    title: "Sovereign Verified — proof every AI output is auditable",
+    description:
+      "HMAC-SHA256 signed receipts. Public verifier. Cross-origin readable. Bitcoin-anchored via OpenTimestamps. Audit-grade AI infrastructure.",
+    url: "https://sovereignmatrix.agency/verified",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Sovereign Verified",
+    description:
+      "Cryptographically signed receipts for every AI agent run. Drop-in verifier badge.",
+  },
+  alternates: { canonical: "https://sovereignmatrix.agency/verified" },
+};
+
+export default function VerifiedLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return <>{children}</>;
+}

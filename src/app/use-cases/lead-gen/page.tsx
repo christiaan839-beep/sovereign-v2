@@ -106,7 +106,7 @@ export default function LeadGenPage() {
             transition={{ delay: 0.2 }}
             className="text-lg text-neutral-400 max-w-xl mx-auto leading-relaxed mb-8"
           >
-            From ICP definition to qualified meetings &mdash; 130 agents handle the entire pipeline.
+            From ICP definition to qualified meetings &mdash; 137 agents handle the entire pipeline.
             No cold calling. No manual research. No spreadsheets.
           </motion.p>
 

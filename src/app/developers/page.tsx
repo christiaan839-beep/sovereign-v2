@@ -2,7 +2,17 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Code2, Zap, DollarSign, ArrowRight, Copy, CheckCircle2, Terminal, Users, TrendingUp } from "lucide-react";
+import {
+  Code2,
+  Zap,
+  DollarSign,
+  ArrowRight,
+  Copy,
+  CheckCircle2,
+  Terminal,
+  Users,
+  TrendingUp,
+} from "lucide-react";
 import Link from "next/link";
 
 /**
@@ -37,7 +47,13 @@ const SUBMIT_EXAMPLE = `curl -X POST https://sovereignmatrix.agency/api/marketpl
     "price": 9.99
   }'`;
 
-function CodeBlock({ code, language = "typescript" }: { code: string; language?: string }) {
+function CodeBlock({
+  code,
+  language = "typescript",
+}: {
+  code: string;
+  language?: string;
+}) {
   const [copied, setCopied] = useState(false);
   const copy = () => {
     navigator.clipboard.writeText(code);
@@ -47,9 +63,18 @@ function CodeBlock({ code, language = "typescript" }: { code: string; language?:
   return (
     <div className="relative rounded-xl border border-white/[0.08] bg-[#0A0A0A] overflow-hidden">
       <div className="flex items-center justify-between px-4 py-2 border-b border-white/[0.06] bg-[#060606]">
-        <span className="text-[10px] text-neutral-500 font-mono">{language}</span>
-        <button onClick={copy} className="text-[10px] text-neutral-500 hover:text-white flex items-center gap-1 transition-colors">
-          {copied ? <CheckCircle2 className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+        <span className="text-[10px] text-neutral-500 font-mono">
+          {language}
+        </span>
+        <button
+          onClick={copy}
+          className="text-[10px] text-neutral-500 hover:text-white flex items-center gap-1 transition-colors"
+        >
+          {copied ? (
+            <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+          ) : (
+            <Copy className="w-3 h-3" />
+          )}
           {copied ? "Copied" : "Copy"}
         </button>
       </div>
@@ -63,13 +88,20 @@ function CodeBlock({ code, language = "typescript" }: { code: string; language?:
 export default function DevelopersPage() {
   return (
     <div className="min-h-screen bg-[#030303]">
-      <title>Build Agents. Earn Revenue. | Sovereign Matrix Developer SDK</title>
+      <title>
+        Build Agents. Earn Revenue. | Sovereign Matrix Developer SDK
+      </title>
 
       {/* Nav */}
       <nav className="border-b border-white/5 px-6 py-4">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <Link href="/" className="text-sm font-bold text-white">Sovereign Matrix</Link>
-          <Link href="/signup" className="text-xs px-4 py-2 rounded-full bg-emerald-500 text-black font-semibold hover:bg-emerald-400 transition-colors">
+          <Link href="/" className="text-sm font-bold text-white">
+            Sovereign Matrix
+          </Link>
+          <Link
+            href="/signup"
+            className="text-xs px-4 py-2 rounded-full bg-emerald-500 text-black font-semibold hover:bg-emerald-400 transition-colors"
+          >
             Start Building →
           </Link>
         </div>
@@ -77,24 +109,37 @@ export default function DevelopersPage() {
 
       <div className="max-w-4xl mx-auto px-6 py-20">
         {/* Hero */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-20">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-20"
+        >
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/5 text-emerald-400 text-[11px] font-medium uppercase tracking-wider mb-6">
             <Terminal className="w-3 h-3" /> Agent SDK
           </div>
           <h1 className="text-4xl md:text-6xl font-black text-white tracking-tight mb-6">
-            Build agents.<br />
+            Build agents.
+            <br />
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-cyan-400">
               Earn 80% revenue.
             </span>
           </h1>
           <p className="text-lg text-neutral-400 max-w-lg mx-auto mb-8">
-            Create AI agents in under 50 lines of code. List them on our marketplace.
-            Get paid every time someone uses your agent.
+            Create AI agents in under 50 lines of code. List them on our
+            marketplace. Get paid every time someone uses your agent.
           </p>
           <div className="flex items-center justify-center gap-8 text-sm text-neutral-500">
-            <span className="flex items-center gap-2"><Users className="w-4 h-4 text-emerald-400" /> 10,000+ potential users</span>
-            <span className="flex items-center gap-2"><DollarSign className="w-4 h-4 text-emerald-400" /> 80/20 revenue split</span>
-            <span className="flex items-center gap-2"><Zap className="w-4 h-4 text-emerald-400" /> Ship in 1 hour</span>
+            <span className="flex items-center gap-2">
+              <Users className="w-4 h-4 text-emerald-400" /> 10,000+ potential
+              users
+            </span>
+            <span className="flex items-center gap-2">
+              <DollarSign className="w-4 h-4 text-emerald-400" /> 80/20 revenue
+              split
+            </span>
+            <span className="flex items-center gap-2">
+              <Zap className="w-4 h-4 text-emerald-400" /> Ship in 1 hour
+            </span>
           </div>
         </motion.div>
 
@@ -127,27 +172,41 @@ export default function DevelopersPage() {
               transition={{ delay: i * 0.1 }}
               className="p-6 rounded-2xl border border-white/[0.06] bg-white/[0.02]"
             >
-              <div className="text-3xl font-black text-emerald-500/20 font-mono mb-3">{item.step}</div>
+              <div className="text-3xl font-black text-emerald-500/20 font-mono mb-3">
+                {item.step}
+              </div>
               <item.icon className="w-5 h-5 text-emerald-400 mb-3" />
-              <h3 className="text-sm font-semibold text-white mb-2">{item.title}</h3>
-              <p className="text-xs text-neutral-500 leading-relaxed">{item.desc}</p>
+              <h3 className="text-sm font-semibold text-white mb-2">
+                {item.title}
+              </h3>
+              <p className="text-xs text-neutral-500 leading-relaxed">
+                {item.desc}
+              </p>
             </motion.div>
           ))}
         </div>
 
         {/* SDK Code Example */}
         <div className="mb-20">
-          <h2 className="text-2xl font-bold text-white mb-2">Build an agent in 15 lines</h2>
+          <h2 className="text-2xl font-bold text-white mb-2">
+            Build an agent in 15 lines
+          </h2>
           <p className="text-sm text-neutral-500 mb-6">
-            The agent factory handles everything — auth, rate limiting, jailbreak detection, PII scanning, quality scoring.
-            You just write the handler.
+            The agent factory handles everything — auth, rate limiting,
+            jailbreak detection, PII scanning, quality scoring. You just write
+            the handler.
           </p>
-          <CodeBlock code={SDK_EXAMPLE} language="typescript — my-agent/route.ts" />
+          <CodeBlock
+            code={SDK_EXAMPLE}
+            language="typescript — my-agent/route.ts"
+          />
         </div>
 
         {/* Submit Example */}
         <div className="mb-20">
-          <h2 className="text-2xl font-bold text-white mb-2">Submit to marketplace</h2>
+          <h2 className="text-2xl font-bold text-white mb-2">
+            Submit to marketplace
+          </h2>
           <p className="text-sm text-neutral-500 mb-6">
             One API call. Your agent is live on the marketplace within minutes.
           </p>
@@ -156,22 +215,53 @@ export default function DevelopersPage() {
 
         {/* What you get */}
         <div className="mb-20">
-          <h2 className="text-2xl font-bold text-white mb-8 text-center">What the platform handles for you</h2>
+          <h2 className="text-2xl font-bold text-white mb-8 text-center">
+            What the platform handles for you
+          </h2>
           <div className="grid md:grid-cols-2 gap-4">
             {[
-              { title: "Authentication & auth", desc: "Clerk-based user auth. Your agent never touches credentials." },
-              { title: "5-layer safety pipeline", desc: "Jailbreak detection, content safety, PII scan, quality scoring, critic review." },
-              { title: "Multi-model routing", desc: "39+ models. Smart router picks the best one for each request." },
-              { title: "Rate limiting & plan enforcement", desc: "Free tier limits, paid tier quotas — all handled automatically." },
-              { title: "Billing & revenue share", desc: "Stripe integration. 80% goes to you. Monthly payouts." },
-              { title: "Analytics dashboard", desc: "See installs, usage, revenue, ratings — all in real time." },
-              { title: "Distribution to 130+ agents", desc: "Your agent joins a catalog of 130+ specialized agents." },
-              { title: "White-label ready", desc: "Agencies can rebrand and resell your agent under their brand." },
+              {
+                title: "Authentication & auth",
+                desc: "Clerk-based user auth. Your agent never touches credentials.",
+              },
+              {
+                title: "5-layer safety pipeline",
+                desc: "Jailbreak detection, content safety, PII scan, quality scoring, critic review.",
+              },
+              {
+                title: "Multi-model routing",
+                desc: "39+ models. Smart router picks the best one for each request.",
+              },
+              {
+                title: "Rate limiting & plan enforcement",
+                desc: "Free tier limits, paid tier quotas — all handled automatically.",
+              },
+              {
+                title: "Billing & revenue share",
+                desc: "Stripe integration. 80% goes to you. Monthly payouts.",
+              },
+              {
+                title: "Analytics dashboard",
+                desc: "See installs, usage, revenue, ratings — all in real time.",
+              },
+              {
+                title: "Distribution to 137 agents",
+                desc: "Your agent joins a catalog of 137 specialized agents — and every output ships with a verifiable HMAC-signed receipt.",
+              },
+              {
+                title: "White-label ready",
+                desc: "Agencies can rebrand and resell your agent under their brand.",
+              },
             ].map((item) => (
-              <div key={item.title} className="flex items-start gap-3 p-4 rounded-xl border border-white/[0.04] bg-white/[0.01]">
+              <div
+                key={item.title}
+                className="flex items-start gap-3 p-4 rounded-xl border border-white/[0.04] bg-white/[0.01]"
+              >
                 <CheckCircle2 className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
                 <div>
-                  <span className="text-sm font-medium text-white">{item.title}</span>
+                  <span className="text-sm font-medium text-white">
+                    {item.title}
+                  </span>
                   <p className="text-xs text-neutral-500 mt-0.5">{item.desc}</p>
                 </div>
               </div>
@@ -182,8 +272,12 @@ export default function DevelopersPage() {
         {/* Revenue calculator */}
         <div className="mb-20 p-8 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 text-center">
           <TrendingUp className="w-8 h-8 text-emerald-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-white mb-2">Revenue potential</h2>
-          <p className="text-sm text-neutral-400 mb-6">If your agent gets 100 installs at $9.99/month:</p>
+          <h2 className="text-2xl font-bold text-white mb-2">
+            Revenue potential
+          </h2>
+          <p className="text-sm text-neutral-400 mb-6">
+            If your agent gets 100 installs at $9.99/month:
+          </p>
           <div className="grid grid-cols-3 gap-4 max-w-md mx-auto mb-6">
             <div>
               <div className="text-2xl font-black text-white">$999</div>
@@ -208,18 +302,42 @@ export default function DevelopersPage() {
 
         {/* FAQ */}
         <div className="mb-20">
-          <h2 className="text-2xl font-bold text-white mb-8 text-center">Developer FAQ</h2>
+          <h2 className="text-2xl font-bold text-white mb-8 text-center">
+            Developer FAQ
+          </h2>
           <div className="space-y-4">
             {[
-              { q: "How do I get started?", a: "Sign up for a free account, then use the createAgentRoute factory to build your agent. Submit it via the marketplace API. It goes live within minutes." },
-              { q: "What's the revenue split?", a: "You keep 80%. We keep 20%. Payouts are monthly via Stripe Connect. No minimum threshold — if you earned $1, you get $0.80." },
-              { q: "Can I use my own AI models?", a: "Yes. Your handler can call any API — OpenAI, Anthropic, your own fine-tuned model. The platform routes through our smart router by default, but you can override." },
-              { q: "What about safety and moderation?", a: "Every agent runs through our 5-layer safety pipeline automatically. Jailbreak detection, content safety, PII scanning, quality scoring. You don't have to implement any of it." },
-              { q: "Can agencies white-label my agent?", a: "Yes. Enterprise agencies can rebrand the entire platform including your agent. You still earn revenue share on every execution." },
+              {
+                q: "How do I get started?",
+                a: "Sign up for a free account, then use the createAgentRoute factory to build your agent. Submit it via the marketplace API. It goes live within minutes.",
+              },
+              {
+                q: "What's the revenue split?",
+                a: "You keep 80%. We keep 20%. Payouts are monthly via Stripe Connect. No minimum threshold — if you earned $1, you get $0.80.",
+              },
+              {
+                q: "Can I use my own AI models?",
+                a: "Yes. Your handler can call any API — OpenAI, Anthropic, your own fine-tuned model. The platform routes through our smart router by default, but you can override.",
+              },
+              {
+                q: "What about safety and moderation?",
+                a: "Every agent runs through our 5-layer safety pipeline automatically. Jailbreak detection, content safety, PII scanning, quality scoring. You don't have to implement any of it.",
+              },
+              {
+                q: "Can agencies white-label my agent?",
+                a: "Yes. Enterprise agencies can rebrand the entire platform including your agent. You still earn revenue share on every execution.",
+              },
             ].map((faq) => (
-              <div key={faq.q} className="p-5 rounded-xl border border-white/[0.06] bg-white/[0.02]">
-                <h3 className="text-sm font-semibold text-white mb-1">{faq.q}</h3>
-                <p className="text-xs text-neutral-500 leading-relaxed">{faq.a}</p>
+              <div
+                key={faq.q}
+                className="p-5 rounded-xl border border-white/[0.06] bg-white/[0.02]"
+              >
+                <h3 className="text-sm font-semibold text-white mb-1">
+                  {faq.q}
+                </h3>
+                <p className="text-xs text-neutral-500 leading-relaxed">
+                  {faq.a}
+                </p>
               </div>
             ))}
           </div>
@@ -231,7 +349,8 @@ export default function DevelopersPage() {
             The agent marketplace is open.
           </h2>
           <p className="text-neutral-400 mb-8">
-            130 agents. 10,000+ potential users. Your agent could be next.
+            137 agents. 10,000+ potential users. Every run verifiable. Your
+            agent could be next.
           </p>
           <Link
             href="/signup"

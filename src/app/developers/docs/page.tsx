@@ -50,11 +50,37 @@ interface Section {
    ──────────────────────────────────────────────────────── */
 
 const RATE_LIMITS = [
-  { plan: "Free", requests: "50 / day", color: "text-neutral-400", bg: "bg-neutral-500/10", border: "border-neutral-500/20" },
-  { plan: "Starter", requests: "200 / day", color: "text-blue-400", bg: "bg-blue-500/10", border: "border-blue-500/20", price: "$19/mo" },
-  { plan: "Growth", requests: "500 / day", color: "text-violet-400", bg: "bg-violet-500/10", border: "border-violet-500/20", price: "$49/mo" },
-  { plan: "Node", requests: "2,000 / day", color: "text-amber-400", bg: "bg-amber-500/10", border: "border-amber-500/20", price: "$199/mo" },
-  { plan: "Enterprise", requests: "10,000 / day", color: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/20", price: "$499/mo" },
+  {
+    plan: "Free",
+    requests: "50 / day",
+    color: "text-neutral-400",
+    bg: "bg-neutral-500/10",
+    border: "border-neutral-500/20",
+  },
+  {
+    plan: "Pro",
+    requests: "500 / day",
+    color: "text-violet-400",
+    bg: "bg-violet-500/10",
+    border: "border-violet-500/20",
+    price: "$49/mo",
+  },
+  {
+    plan: "Team",
+    requests: "2,000 / day",
+    color: "text-amber-400",
+    bg: "bg-amber-500/10",
+    border: "border-amber-500/20",
+    price: "$199/mo",
+  },
+  {
+    plan: "Enterprise",
+    requests: "10,000 / day",
+    color: "text-emerald-400",
+    bg: "bg-emerald-500/10",
+    border: "border-emerald-500/20",
+    price: "Custom",
+  },
 ];
 
 const SECTIONS: Section[] = [
@@ -71,7 +97,7 @@ const SECTIONS: Section[] = [
     title: "Agents",
     icon: Bot,
     description:
-      "Execute any of 130+ specialized AI agents. Each agent handles a specific task -- lead generation, content writing, SEO analysis, competitor scanning, and more.",
+      "Execute any of 137 specialized AI agents. Each agent handles a specific task -- lead generation, content writing, SEO analysis, competitor scanning, and more.",
     endpoints: [
       {
         id: "free-run",
@@ -244,7 +270,7 @@ const SECTIONS: Section[] = [
         method: "GET",
         path: "/api/playbooks/runs/{id}",
         description:
-          "Get full details for a single playbook run, including all step results. Poll this endpoint every 2 seconds while status is \"running\" to show live step-by-step progress.",
+          'Get full details for a single playbook run, including all step results. Poll this endpoint every 2 seconds while status is "running" to show live step-by-step progress.',
         status: "Stable",
         auth: true,
         responseBody: `{
@@ -292,7 +318,7 @@ const SECTIONS: Section[] = [
   ]
 }`,
         notes:
-          "The done field is true when status is \"done\" or \"failed\". The progress field is a percentage (0-100). The currentStep field is the index of the currently running step, or -1 if none are running.",
+          'The done field is true when status is "done" or "failed". The progress field is a percentage (0-100). The currentStep field is the index of the currently running step, or -1 if none are running.',
       },
     ],
   },
@@ -320,7 +346,7 @@ const SECTIONS: Section[] = [
     "voice-chat",
     "competitor-scan",
     "brand-voice",
-    "...130+ agents"
+    "...137 agents"
   ],
   "count": 130,
   "usage": "POST /api/agents/{agent-name} with { prompt: '...' }"
@@ -628,12 +654,34 @@ const RESPONSE_EXAMPLE = `{
 
 const ERROR_CODES = [
   { code: "400", description: "Bad Request -- Missing or invalid parameters." },
-  { code: "401", description: "Unauthorized -- Missing or invalid Bearer token." },
-  { code: "404", description: "Not Found -- Agent or playbook does not exist." },
-  { code: "429", description: "Too Many Requests -- Rate limit or plan quota exceeded. Check the usage object in the response body." },
-  { code: "500", description: "Internal Server Error -- Agent execution failed. Check the error field for details." },
-  { code: "502", description: "Bad Gateway -- Upstream model provider is temporarily unavailable. Retry with exponential backoff." },
-  { code: "503", description: "Service Unavailable -- Database tables not migrated. Run the SQL migration scripts." },
+  {
+    code: "401",
+    description: "Unauthorized -- Missing or invalid Bearer token.",
+  },
+  {
+    code: "404",
+    description: "Not Found -- Agent or playbook does not exist.",
+  },
+  {
+    code: "429",
+    description:
+      "Too Many Requests -- Rate limit or plan quota exceeded. Check the usage object in the response body.",
+  },
+  {
+    code: "500",
+    description:
+      "Internal Server Error -- Agent execution failed. Check the error field for details.",
+  },
+  {
+    code: "502",
+    description:
+      "Bad Gateway -- Upstream model provider is temporarily unavailable. Retry with exponential backoff.",
+  },
+  {
+    code: "503",
+    description:
+      "Service Unavailable -- Database tables not migrated. Run the SQL migration scripts.",
+  },
 ];
 
 export default function ApiDocsPage() {
@@ -651,7 +699,12 @@ export default function ApiDocsPage() {
 
   /* Track which section is in view */
   useEffect(() => {
-    const ids = ["quick-start", ...SECTIONS.map((s) => s.id), "rate-limits", "errors"];
+    const ids = [
+      "quick-start",
+      ...SECTIONS.map((s) => s.id),
+      "rate-limits",
+      "errors",
+    ];
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
@@ -660,7 +713,7 @@ export default function ApiDocsPage() {
           }
         }
       },
-      { rootMargin: "-20% 0px -60% 0px", threshold: 0 }
+      { rootMargin: "-20% 0px -60% 0px", threshold: 0 },
     );
     ids.forEach((id) => {
       const el = document.getElementById(id);
@@ -738,14 +791,18 @@ export default function ApiDocsPage() {
                 Sovereign Matrix API
               </h1>
               <p className="text-base text-neutral-400 max-w-2xl leading-relaxed">
-                Build on 130+ autonomous AI agents. Execute agents, run multi-step playbooks,
-                retrieve analytics, and trigger workflows -- all through a single REST API
-                with built-in safety, rate limiting, and model routing.
+                Build on 137 autonomous AI agents. Execute agents, run
+                multi-step playbooks, retrieve analytics, and trigger workflows
+                -- all through a single REST API with built-in safety, rate
+                limiting, and model routing.
               </p>
               <div className="flex flex-wrap items-center gap-4 mt-6 text-xs text-neutral-500">
                 <span className="flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  Base URL: <code className="text-neutral-300 font-mono">https://sovereignmatrix.agency</code>
+                  Base URL:{" "}
+                  <code className="text-neutral-300 font-mono">
+                    https://sovereignmatrix.agency
+                  </code>
                 </span>
                 <span className="flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
@@ -833,100 +890,105 @@ export default function ApiDocsPage() {
             {SECTIONS.map((section) => {
               const SectionIcon = section.icon;
               return (
-              <section key={section.id} id={section.id}>
-                <motion.div
-                  initial={{ opacity: 0, y: 16 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.4 }}
-                >
-                  {/* Section header */}
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-                      <SectionIcon className="w-4 h-4 text-emerald-400" />
+                <section key={section.id} id={section.id}>
+                  <motion.div
+                    initial={{ opacity: 0, y: 16 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.4 }}
+                  >
+                    {/* Section header */}
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                        <SectionIcon className="w-4 h-4 text-emerald-400" />
+                      </div>
+                      <h2 className="text-xl font-bold">{section.title}</h2>
                     </div>
-                    <h2 className="text-xl font-bold">{section.title}</h2>
-                  </div>
-                  <p className="text-sm text-neutral-400 leading-relaxed mb-6 ml-11">
-                    {section.description}
-                  </p>
+                    <p className="text-sm text-neutral-400 leading-relaxed mb-6 ml-11">
+                      {section.description}
+                    </p>
 
-                  {/* Auth section — special content */}
-                  {section.id === "authentication" && (
-                    <div className="space-y-4 ml-11">
-                      <div className="p-5 rounded-xl border border-white/[0.06] bg-white/[0.015]">
-                        <h3 className="text-sm font-semibold text-white mb-3">
-                          Bearer Token Authentication
-                        </h3>
-                        <p className="text-sm text-neutral-400 mb-4 leading-relaxed">
-                          Include your API key in the{" "}
-                          <code className="px-1.5 py-0.5 rounded bg-white/[0.05] text-emerald-400 text-xs font-mono">
-                            Authorization
-                          </code>{" "}
-                          header of every request. Generate your key from the{" "}
-                          <Link
-                            href="/dashboard/integrations"
-                            className="text-emerald-400 hover:underline"
-                          >
-                            dashboard integrations page
-                          </Link>
-                          .
-                        </p>
-                        <CodeBlock
-                          code={`Authorization: Bearer sk_live_your_api_key`}
-                          label="header"
-                        />
+                    {/* Auth section — special content */}
+                    {section.id === "authentication" && (
+                      <div className="space-y-4 ml-11">
+                        <div className="p-5 rounded-xl border border-white/[0.06] bg-white/[0.015]">
+                          <h3 className="text-sm font-semibold text-white mb-3">
+                            Bearer Token Authentication
+                          </h3>
+                          <p className="text-sm text-neutral-400 mb-4 leading-relaxed">
+                            Include your API key in the{" "}
+                            <code className="px-1.5 py-0.5 rounded bg-white/[0.05] text-emerald-400 text-xs font-mono">
+                              Authorization
+                            </code>{" "}
+                            header of every request. Generate your key from the{" "}
+                            <Link
+                              href="/dashboard/integrations"
+                              className="text-emerald-400 hover:underline"
+                            >
+                              dashboard integrations page
+                            </Link>
+                            .
+                          </p>
+                          <CodeBlock
+                            code={`Authorization: Bearer sk_live_your_api_key`}
+                            label="header"
+                          />
+                        </div>
+                        <div className="p-5 rounded-xl border border-white/[0.06] bg-white/[0.015]">
+                          <h3 className="text-sm font-semibold text-white mb-3">
+                            Unauthenticated Endpoints
+                          </h3>
+                          <p className="text-sm text-neutral-400 leading-relaxed">
+                            Some endpoints (marked &quot;No Auth&quot;) work
+                            without a token. These are rate-limited by IP
+                            address and restricted to read-only agents. Use{" "}
+                            <code className="px-1.5 py-0.5 rounded bg-white/[0.05] text-emerald-400 text-xs font-mono">
+                              POST /api/free/run
+                            </code>{" "}
+                            for unauthenticated agent access.
+                          </p>
+                        </div>
+                        <div className="p-5 rounded-xl border border-amber-500/10 bg-amber-500/[0.03]">
+                          <h3 className="text-sm font-semibold text-amber-400 mb-2">
+                            Security Best Practices
+                          </h3>
+                          <ul className="text-sm text-neutral-400 space-y-1.5 leading-relaxed">
+                            <li className="flex items-start gap-2">
+                              <span className="text-amber-400 mt-0.5">--</span>
+                              Never expose your API key in client-side code or
+                              public repositories.
+                            </li>
+                            <li className="flex items-start gap-2">
+                              <span className="text-amber-400 mt-0.5">--</span>
+                              Use environment variables to store your key on the
+                              server.
+                            </li>
+                            <li className="flex items-start gap-2">
+                              <span className="text-amber-400 mt-0.5">--</span>
+                              Rotate your key immediately if you suspect it has
+                              been compromised.
+                            </li>
+                            <li className="flex items-start gap-2">
+                              <span className="text-amber-400 mt-0.5">--</span>
+                              All requests pass through a 5-layer safety
+                              pipeline (jailbreak detection, PII scanning,
+                              content safety, quality scoring, critic review).
+                            </li>
+                          </ul>
+                        </div>
                       </div>
-                      <div className="p-5 rounded-xl border border-white/[0.06] bg-white/[0.015]">
-                        <h3 className="text-sm font-semibold text-white mb-3">
-                          Unauthenticated Endpoints
-                        </h3>
-                        <p className="text-sm text-neutral-400 leading-relaxed">
-                          Some endpoints (marked &quot;No Auth&quot;) work without a token. These
-                          are rate-limited by IP address and restricted to read-only
-                          agents. Use{" "}
-                          <code className="px-1.5 py-0.5 rounded bg-white/[0.05] text-emerald-400 text-xs font-mono">
-                            POST /api/free/run
-                          </code>{" "}
-                          for unauthenticated agent access.
-                        </p>
-                      </div>
-                      <div className="p-5 rounded-xl border border-amber-500/10 bg-amber-500/[0.03]">
-                        <h3 className="text-sm font-semibold text-amber-400 mb-2">
-                          Security Best Practices
-                        </h3>
-                        <ul className="text-sm text-neutral-400 space-y-1.5 leading-relaxed">
-                          <li className="flex items-start gap-2">
-                            <span className="text-amber-400 mt-0.5">--</span>
-                            Never expose your API key in client-side code or public repositories.
-                          </li>
-                          <li className="flex items-start gap-2">
-                            <span className="text-amber-400 mt-0.5">--</span>
-                            Use environment variables to store your key on the server.
-                          </li>
-                          <li className="flex items-start gap-2">
-                            <span className="text-amber-400 mt-0.5">--</span>
-                            Rotate your key immediately if you suspect it has been compromised.
-                          </li>
-                          <li className="flex items-start gap-2">
-                            <span className="text-amber-400 mt-0.5">--</span>
-                            All requests pass through a 5-layer safety pipeline (jailbreak detection, PII scanning, content safety, quality scoring, critic review).
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
-                  )}
+                    )}
 
-                  {/* Endpoint cards */}
-                  {section.endpoints.length > 0 && (
-                    <div className="space-y-3 ml-11">
-                      {section.endpoints.map((ep) => (
-                        <EndpointCard key={ep.id} endpoint={ep} />
-                      ))}
-                    </div>
-                  )}
-                </motion.div>
-              </section>
+                    {/* Endpoint cards */}
+                    {section.endpoints.length > 0 && (
+                      <div className="space-y-3 ml-11">
+                        {section.endpoints.map((ep) => (
+                          <EndpointCard key={ep.id} endpoint={ep} />
+                        ))}
+                      </div>
+                    )}
+                  </motion.div>
+                </section>
               );
             })}
 
@@ -945,9 +1007,9 @@ export default function ApiDocsPage() {
                   <h2 className="text-xl font-bold">Rate Limits</h2>
                 </div>
                 <p className="text-sm text-neutral-400 leading-relaxed mb-6 ml-11">
-                  Rate limits are enforced per user per day. When you exceed your
-                  limit, the API returns a 429 response with your current usage
-                  and an upgrade URL.
+                  Rate limits are enforced per user per day. When you exceed
+                  your limit, the API returns a 429 response with your current
+                  usage and an upgrade URL.
                 </p>
 
                 <div className="ml-11 space-y-4">
@@ -1030,8 +1092,8 @@ X-Free-Remaining: 2   # Only on /api/free/run`}
                   <h2 className="text-xl font-bold">Error Codes</h2>
                 </div>
                 <p className="text-sm text-neutral-400 leading-relaxed mb-6 ml-11">
-                  The API uses standard HTTP status codes. Error responses always
-                  include an{" "}
+                  The API uses standard HTTP status codes. Error responses
+                  always include an{" "}
                   <code className="px-1.5 py-0.5 rounded bg-white/[0.05] text-emerald-400 text-xs font-mono">
                     error
                   </code>{" "}
@@ -1094,7 +1156,8 @@ X-Free-Remaining: 2   # Only on /api/free/run`}
                 Ready to build?
               </h2>
               <p className="text-sm text-neutral-400 mb-6">
-                Generate your API key and make your first call in under a minute.
+                Generate your API key and make your first call in under a
+                minute.
               </p>
               <div className="flex flex-wrap items-center justify-center gap-3">
                 <Link

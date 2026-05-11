@@ -40,9 +40,28 @@ const CORE: ReadonlySet<string> = new Set([
   "deep-research",
 ]);
 
-/** Slugs explicitly marked for sunset. UI shows the banner; routes still work. */
+/**
+ * Slugs explicitly marked for sunset.
+ *
+ * UI hides these from the marketplace grid but the underlying routes
+ * keep working — anyone with a deep link still gets a response. Use
+ * for vertical-specific stubs nobody is currently shipping demos
+ * against. Promote back to "experimental" the moment a real
+ * conversation surfaces a use case.
+ *
+ * Audit: every entry below has zero non-registry references in the
+ * marketing site, dashboard, or playbooks as of 2026-05-11. They were
+ * built as exploratory verticals and never made it to a customer
+ * conversation.
+ */
 const DEPRECATED: ReadonlySet<string> = new Set([
-  // Add slugs here as we deprecate — empty by default.
+  "agri-intel", // agriculture vertical stub
+  "competitor-rip", // duplicates competitor-takedown / competitor-scan
+  "compliance-monitor", // overlaps the audit + privacy stack
+  "healthcare-docs", // healthcare vertical stub
+  "prior-auth", // healthcare prior-authorization stub
+  "supply-chain", // supply-chain vertical stub
+  "threat-hunt", // security vertical stub
 ]);
 
 export function getAgentTier(slug: string): AgentTier {

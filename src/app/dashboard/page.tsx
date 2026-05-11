@@ -39,6 +39,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { UsageWidget } from "@/components/dashboard/UsageWidget";
 import { CheckoutSuccess } from "@/components/dashboard/CheckoutSuccess";
+import { AuditPulseStrip } from "@/components/dashboard/AuditPulseStrip";
 // Chat is available via the floating widget (SovereignAssistant) in layout.tsx and /chat page
 
 const ONBOARDING_KEY = "sovereign_onboarding";
@@ -1229,6 +1230,12 @@ export default function DashboardHome() {
       <AnimatePresence>
         {showTour && <WelcomeTourModal onDismiss={dismissTour} />}
       </AnimatePresence>
+
+      {/* Audit pulse — receipts signed, Merkle root, evidence-bundle
+          links. The audit moat made tangible at the top of every
+          login. Hidden during the welcome flow so the first-time
+          experience isn't crowded. */}
+      {!showWelcome && <AuditPulseStrip />}
 
       {/* Stats — always visible */}
       {!showWelcome && <StatsPanel />}
