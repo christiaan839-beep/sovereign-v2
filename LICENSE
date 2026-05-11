@@ -1,0 +1,89 @@
+Sovereign Matrix Platform — License
+
+Copyright (c) 2026 Sovereign Matrix. All rights reserved.
+
+═══════════════════════════════════════════════════════════════════════
+Default
+═══════════════════════════════════════════════════════════════════════
+
+The contents of this repository are PROPRIETARY to Sovereign Matrix
+unless explicitly stated otherwise (see "Carve-outs" below). No part
+of the proprietary portions may be copied, modified, distributed,
+sold, sublicensed, or used to create derivative works without prior
+written permission from Sovereign Matrix.
+
+Permitted uses (no permission required):
+  • Reading the source code on this repository.
+  • Linking to public URLs of deployed code (e.g. sovereignmatrix.agency).
+  • Embedding the verifiable-receipt badge per the documented
+    integration in /embed/verify.js (output of a server you operate;
+    no license to redistribute the platform itself is granted).
+  • Quoting brief excerpts (≤25 lines) in technical articles,
+    research, or audits, with attribution.
+
+Prohibited without permission:
+  • Running a fork as a hosted service for third parties.
+  • Selling, sublicensing, or relicensing the proprietary portions.
+  • Using the platform's brand or "Sovereign Matrix" name on a
+    derivative product.
+
+Commercial-use and partnership inquiries: spec@sovereignmatrix.agency
+
+═══════════════════════════════════════════════════════════════════════
+Carve-outs (intentionally open-licensed)
+═══════════════════════════════════════════════════════════════════════
+
+The following components of this repository are released under
+permissive licenses so the ecosystem can adopt the verification format
+without committing to the platform. Each lists its own canonical
+license file:
+
+  1. /packages/vaos-verifier/                                MIT
+     The reference implementation of the Verifiable Agent Output
+     Specification (VAOS) 1.0 verifier. Zero dependencies. Designed
+     to be vendored or installed via npm by any party that wants to
+     verify a VAOS receipt without trusting Sovereign Matrix.
+
+     Canonical license: /packages/vaos-verifier/LICENSE
+
+  2. /docs/specs/vaos-1.0.md                                 CC0 1.0
+     The Verifiable Agent Output Specification itself, released into
+     the public domain. Implementations, extensions, and forks of the
+     specification are encouraged. No attribution required.
+
+  3. /cli/sovereign.mjs                                      MIT
+     The npx-runnable verification CLI. Same intent as the verifier
+     package — distribution should not require platform consent.
+
+  4. /docs/outreach/                                         CC BY 4.0
+     Outreach templates (cold emails, Loom scripts, blog posts,
+     partnership pitches). Use with attribution; modify freely.
+
+═══════════════════════════════════════════════════════════════════════
+Disclaimer
+═══════════════════════════════════════════════════════════════════════
+
+THE PROPRIETARY AND OPEN PORTIONS OF THIS SOFTWARE ARE PROVIDED
+"AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED. IN NO
+EVENT SHALL SOVEREIGN MATRIX BE LIABLE FOR ANY CLAIM, DAMAGES, OR
+OTHER LIABILITY ARISING FROM, OUT OF, OR IN CONNECTION WITH THIS
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THIS SOFTWARE.
+
+═══════════════════════════════════════════════════════════════════════
+Why a split license
+═══════════════════════════════════════════════════════════════════════
+
+The platform earns revenue. The standard does not. We deliberately
+permissively-license the spec + verifier + CLI so that VAOS receipts
+can be adopted as an industry format — by competitors, auditors,
+regulators, insurance underwriters — without anyone needing
+Sovereign's permission. The platform itself stays proprietary because
+that's how we sustain the engineering investment that keeps the
+reference implementation correct.
+
+This mirrors the model used by Stripe (Stripe Connect spec public;
+platform proprietary), Let's Encrypt (ACME protocol public; platform
+proprietary), and Sigstore (open protocol; hosted service operated
+by the Linux Foundation).
+
+Contact: spec@sovereignmatrix.agency
