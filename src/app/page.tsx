@@ -28,6 +28,7 @@ import { ModelRouterSection } from "@/components/landing/ModelRouterSection";
 import { VerificationPipeline } from "@/components/landing/VerificationPipeline";
 import { SectionDivider } from "@/components/landing/SectionDivider";
 import { FilmGrain } from "@/components/landing/FilmGrain";
+import { HeroProofPill } from "@/components/landing/HeroProofPill";
 import { NewsletterSignup } from "@/components/landing/NewsletterSignup";
 
 // Below-the-fold sections — dynamic-imported with skeleton placeholders
@@ -461,7 +462,11 @@ function Hero() {
       />
 
       <div className="relative max-w-5xl mx-auto w-full text-center">
-        {/* Pre-badge: live indicator */}
+        {/* Pre-badge — HeroProofPill fetches /api/agent-runs/latest-public
+            on mount and shows the freshest verified receipt id with a
+            live cyan pulse. Stripe's hero shows a fake code editor;
+            this is Sovereign's analog — real proof-of-life from the
+            production verifier as the very first thing a visitor sees. */}
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -472,17 +477,7 @@ function Hero() {
             01 / 10
           </span>
           <span aria-hidden="true" className="h-px w-6 bg-white/[0.12]" />
-          <div className="flex items-center gap-2 font-mono text-[11px] text-neutral-500">
-            <span className="relative inline-flex h-1.5 w-1.5">
-              <span className="absolute inline-flex h-full w-full rounded-full bg-[#B5532C] opacity-70 animate-ping" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#B5532C]" />
-            </span>
-            <span>HMAC-signed receipts</span>
-            <span className="text-neutral-700">·</span>
-            <span>POPIA + SOC2 native</span>
-            <span className="text-neutral-700">·</span>
-            <span className="text-[#B5532C]">LIVE</span>
-          </div>
+          <HeroProofPill />
         </motion.div>
 
         {/* Headline */}

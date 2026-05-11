@@ -1,0 +1,55 @@
+# Example workflow showing how to wire up the verify-ai-receipts
+# action on a real PR. This file is a template — copy it (or
+# reference the action directly) into your own repo.
+#
+# What it does:
+#   - On every PR, scans the PR description for receipt URLs/IDs.
+#   - Calls /api/verify on sovereignmatrix.agency for each one.
+#   - Fails the PR check if any receipt is invalid or unreachable.
+#
+# To enable on this repo: rename to verify-receipts.yml and remove
+# the "if: false" guard below.
+
+name: Verify AI receipts (example)
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize]
+
+jobs:
+  verify:
+    name: Verify receipts referenced in PR body
+    runs-on: ubuntu-latest
+    # Guarded off by default so this template doesn't run on every PR
+    # in the platform repo. Remove this `if` to enable.
+    if: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./packages/verify-action
+        id: verify
+        with:
+          text: ${{ github.event.pull_request.body }}
+          # Override if you're running a white-label deployment:
+          # verifier-host: https://verify.your-company.com
+
+      - name: Comment on PR with verification result
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = `## Sovereign — receipt verification
+
+            - Total receipts referenced: **${{ steps.verify.outputs.total }}**
+            - ✅ Verified: ${{ steps.verify.outputs.verified }}
+            - ❌ Invalid: ${{ steps.verify.outputs.invalid }}
+            - ❓ Unreachable: ${{ steps.verify.outputs.unreachable }}
+
+            IDs checked: \`${{ steps.verify.outputs.receipt-ids-found }}\`
+            `;
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body
+            });
