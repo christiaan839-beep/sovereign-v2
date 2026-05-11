@@ -110,6 +110,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/sla", priority: 0.6, changeFreq: "monthly" },
     { path: "/status", priority: 0.6, changeFreq: "daily" },
     { path: "/changelog", priority: 0.6, changeFreq: "weekly" },
+    { path: "/trust", priority: 0.92, changeFreq: "monthly" }, // procurement-ready trust hub — SOC2/POPIA/GDPR/verifier/security/status in one page
     { path: "/verified", priority: 0.9, changeFreq: "weekly" }, // verifiable-receipt live demo — SEO-priority for the audit-grade positioning
     { path: "/explorer", priority: 0.85, changeFreq: "daily" }, // public live feed of signed receipts — proof the platform is alive
     { path: "/badge", priority: 0.85, changeFreq: "monthly" }, // verification-badge builder — distribution surface for the embed snippet
