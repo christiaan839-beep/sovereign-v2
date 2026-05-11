@@ -146,7 +146,7 @@ export default function BadgePage() {
                   placeholder="paste your receipt id…"
                   spellCheck={false}
                   autoComplete="off"
-                  className="w-full rounded-lg border border-white/[0.08] bg-black/40 px-4 py-2.5 font-mono text-sm text-cyan-100 placeholder:text-neutral-600 focus:border-cyan-500/40 focus:outline-none"
+                  className="w-full rounded-lg border border-white/[0.08] bg-black/40 px-4 py-2.5 font-mono text-sm text-cyan-100 placeholder:text-neutral-600 focus:border-cyan-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/40"
                 />
               </Field>
 

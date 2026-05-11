@@ -39,6 +39,8 @@ Key endpoints:
 1. **Dark Mode First**: The system strictly relies on high-end dark mode aesthetics (e.g., `bg-[#030303]`, `text-neutral-200`).
 2. **Component Libraries**: Do not rely on external component libraries (like shadcn or MUI) unless necessary. Build UI natively using Tailwind CSS with heavy glassmorphism (`backdrop-blur-xl`, `bg-white/5`).
 3. **Animations**: Use `framer-motion` for complex micro-interactions. Any newly introduced UI elements require fluid enter/exit states natively hooked into `AnimatePresence`.
+4. **Brand colors**: Cyan = audit / infrastructure surfaces. Copper = marketing / agency surfaces. The dual-accent rule lives in `docs/design-system/brand-colors.md` — read it before adding accent color.
+5. **Focus rings (WCAG 2.4.7)**: The global `:focus-visible` rule in `globals.css` paints a cyan outline by default. Inputs/textareas/selects suppress that outline so each component renders its own focus state — if you use `focus:outline-none` on an input you **must** follow with a `focus-visible:` style (typically `focus-visible:ring-2 focus-visible:ring-cyan-500/40`) or keyboard users get no focus indicator. Buttons don't need this — they keep the global ring.
 
 _You are operating as a Sovereign Node. Execute all tasks defensively and accurately._
 
