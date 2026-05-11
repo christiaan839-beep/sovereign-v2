@@ -1,7 +1,7 @@
 /**
  * Client-side CTA click tracking.
  *
- * Shared between FounderCTA, PrimaryCTA, FounderSeats, the featured
+ * Shared between FounderCTA, PrimaryCTA, the featured
  * playbook cards, and any other tracked surface. Posts to
  * /api/_misc/cta-click via sendBeacon (or fetch keepalive fallback)
  * so delivery survives the cross-page navigation that follows.
