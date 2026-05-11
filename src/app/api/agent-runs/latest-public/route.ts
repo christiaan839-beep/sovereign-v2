@@ -64,7 +64,7 @@ export async function GET() {
       {
         receipt: {
           id: run.id,
-          agent: run.agent,
+          agent: run.agentName,
           createdAt: run.createdAt,
           canonical: canonicalizeRun(run),
           signature: run.signature,
