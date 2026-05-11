@@ -121,6 +121,14 @@ function scoreQuality(output: string, prompt: string): number {
 }
 
 // ─── LlamaGuard Output Check ────────────────────────────────
+// Wrapped in `nimBreaker` so a NIM degradation doesn't make every
+// agent request eat the full 5s timeout. After 3 consecutive failures
+// the breaker opens for 30s and llamaGuardOutput returns {safe:true}
+// (fail-open) without hitting NIM. The other 4 verifier layers — PII
+// regex, content-policy regex, heuristic quality, critic — remain
+// active throughout, so the safety pipeline never goes blind.
+import { nimBreaker } from "@/lib/circuit-breaker";
+
 async function llamaGuardOutput(
   text: string,
 ): Promise<{ safe: boolean; category?: string }> {
@@ -128,32 +136,38 @@ async function llamaGuardOutput(
   if (!nimKey) return { safe: true };
 
   try {
-    const res = await fetch(
-      "https://integrate.api.nvidia.com/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${nimKey}`,
+    return await nimBreaker.execute(async () => {
+      const res = await fetch(
+        "https://integrate.api.nvidia.com/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${nimKey}`,
+          },
+          body: JSON.stringify({
+            model: "meta/llama-guard-3-8b",
+            messages: [{ role: "assistant", content: text }],
+            max_tokens: 100,
+            temperature: 0,
+          }),
+          signal: AbortSignal.timeout(5000),
         },
-        body: JSON.stringify({
-          model: "meta/llama-guard-3-8b",
-          messages: [{ role: "assistant", content: text }],
-          max_tokens: 100,
-          temperature: 0,
-        }),
-        signal: AbortSignal.timeout(5000),
-      },
-    );
+      );
 
-    if (res.ok) {
+      if (!res.ok) {
+        // Throw so the breaker counts this as a failure — without
+        // this, transient 502s wouldn't trigger the breaker open.
+        throw new Error(`NIM LlamaGuard returned HTTP ${res.status}`);
+      }
+
       const data = await res.json();
       const verdict =
         data.choices?.[0]?.message?.content?.trim().toLowerCase() || "";
       return verdict.startsWith("safe") || verdict === "safe"
-        ? { safe: true }
-        : { safe: false, category: verdict };
-    }
+        ? { safe: true as const }
+        : { safe: false as const, category: verdict };
+    });
   } catch {
     log.warn(
       "LlamaGuard output check failed — allowing through (other layers active)",

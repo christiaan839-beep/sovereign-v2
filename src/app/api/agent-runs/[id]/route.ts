@@ -18,6 +18,16 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getRun, canonicalizeRun } from "@/lib/agent-runs";
 
+// Open CORS — the embed badge + cross-origin auditors call this from
+// any origin. Visibility gate stays enforced via run.visibility, so
+// private receipts still 404 cross-origin.
+//
+// SECURITY TRIPWIRE: do NOT add `Access-Control-Allow-Credentials: true`.
+// Cookies must NEVER flow through this endpoint cross-origin — Clerk's
+// session cookie would otherwise leak the authenticated owner's identity.
+// Browsers reject credentialed requests when origin is `*`, but a future
+// reviewer might "fix" that by hard-coding an origin and adding
+// Allow-Credentials. Don't.
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, OPTIONS",

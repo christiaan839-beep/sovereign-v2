@@ -67,8 +67,15 @@ const MAX_INPUT_BYTES = 4_000;
 const MAX_OUTPUT_BYTES = 16_000;
 
 /**
- * Canonical projection used as the HMAC payload. Order is locked to keep
- * signatures stable across language / library upgrades.
+ * Canonical projection used as the HMAC payload. Order at the top level
+ * is locked. Nested objects (input, output, safetyResult) are walked
+ * recursively and their keys sorted, so two clients that submit the
+ * same logical input with different JS object key orders produce
+ * BYTE-IDENTICAL canonical strings — and therefore identical signatures.
+ *
+ * `undefined` values are dropped (matching JSON.stringify's default).
+ * `NaN` / `Infinity` become `null` (also matching JSON.stringify).
+ * Arrays preserve element order (Array order IS canonical input).
  */
 function canonicalize(run: {
   id: string;
@@ -85,12 +92,27 @@ function canonicalize(run: {
     id: run.id,
     agentName: run.agentName,
     modelUsed: run.modelUsed,
-    input: run.input,
-    output: run.output,
-    safetyResult: run.safetyResult,
+    input: sortKeysDeep(run.input),
+    output: sortKeysDeep(run.output),
+    safetyResult: sortKeysDeep(run.safetyResult) as SafetyResultPayload,
     durationMs: run.durationMs,
     createdAt: run.createdAt,
   });
+}
+
+/**
+ * Recursively sort object keys so JSON.stringify produces identical
+ * output regardless of how the consumer constructed their object literal.
+ * Pure: returns a new object/array, never mutates input.
+ */
+function sortKeysDeep(value: unknown): unknown {
+  if (value === null || typeof value !== "object") return value;
+  if (Array.isArray(value)) return value.map(sortKeysDeep);
+  const out: Record<string, unknown> = {};
+  for (const k of Object.keys(value as Record<string, unknown>).sort()) {
+    out[k] = sortKeysDeep((value as Record<string, unknown>)[k]);
+  }
+  return out;
 }
 
 function getSecret(): string | null {

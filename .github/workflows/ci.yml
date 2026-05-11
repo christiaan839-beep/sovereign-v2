@@ -117,8 +117,13 @@ jobs:
     name: Smoke Tests
     runs-on: ubuntu-latest
     needs: build
-    # Smoke tests run against the deployed preview/prod URL. Skip when
-    # E2E_BASE_URL isn't configured (eg. fork PRs without secrets).
+    # Smoke runs against the THIS-PR build via `next start` on localhost.
+    # This catches regressions introduced by the PR even when the test
+    # spec changes faster than the deployed preview. Bug history: smoke
+    # used to default to https://sovereignmatrix.agency (PROD) when the
+    # E2E_PREVIEW_URL secret wasn't set — meaning a PR's test spec
+    # would assert against the deployed PROD UI, not the PR's UI.
+    # Locked to localhost so the PR is testing itself.
     if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
@@ -134,11 +139,41 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
+      - name: Build the app for the smoke run
+        # Same env shape as the Build job — dummy values are fine since
+        # smoke doesn't sign in or hit Stripe; the build needs them only
+        # so NEXT_PUBLIC_* keys aren't compiled as undefined.
+        run: npm run build
+        env:
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 'pk_test_smoke_dummy' }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY || 'sk_test_smoke_dummy' }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://x:y@localhost:5432/test' }}
+
+      - name: Start next server in background
+        run: |
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 'pk_test_smoke_dummy' }}" \
+          CLERK_SECRET_KEY="${{ secrets.CLERK_SECRET_KEY || 'sk_test_smoke_dummy' }}" \
+          DATABASE_URL="${{ secrets.DATABASE_URL || 'postgresql://x:y@localhost:5432/test' }}" \
+          PORT=3000 npm start > /tmp/next.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:3000/api/health/ping > /dev/null 2>&1; then
+              echo "next ready after ${i}s"; exit 0
+            fi
+            sleep 1
+          done
+          echo "next did not become ready in 60s; tail of log:"
+          tail -50 /tmp/next.log
+          exit 1
+
       - name: Run golden-path smoke tests
         run: npm run smoke
         env:
-          E2E_BASE_URL: ${{ secrets.E2E_PREVIEW_URL || 'https://sovereignmatrix.agency' }}
-          E2E_REQUIRE_READY: ${{ vars.E2E_REQUIRE_READY || 'false' }}
+          E2E_BASE_URL: http://localhost:3000
+          E2E_REQUIRE_READY: 'false'
+
+      - name: Show next.log on failure
+        if: failure()
+        run: tail -200 /tmp/next.log || true
 
       - name: Upload Playwright report on failure
         if: failure()

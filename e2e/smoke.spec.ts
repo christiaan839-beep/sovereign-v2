@@ -44,12 +44,20 @@ test.describe("Golden path smoke", () => {
     // Without this, the assertion can race the AnimatePresence enter animations
     // and report missing text that's still in initial=opacity:0.
     await page.waitForLoadState("networkidle");
-    // God Brain + War Room are both pinned in FEATURED_AGENTS — they render
-    // unconditionally when activeCategory==="All" (the default), independent
-    // of AGENT_SLUGS membership, the tier filter, and PAGE_SIZE pagination.
-    // If either is missing, the marketplace listing component itself broke.
-    await expect(page.locator("body")).toContainText(/God Brain/i);
+    // War Room + SEO Dominator are both pinned in FEATURED_AGENTS on
+    // EVERY branch we've shipped (history checked back to the original
+    // marketplace commit 989883f) — they render unconditionally when
+    // activeCategory==="All" (the default), independent of AGENT_SLUGS
+    // membership, the tier filter, and PAGE_SIZE pagination.
+    //
+    // Why these two specifically: smoke runs against E2E_BASE_URL which
+    // defaults to PROD (sovereignmatrix.agency) when E2E_PREVIEW_URL
+    // isn't set. Asserting agents that have ever been in featured on
+    // any branch will fail intermittently when the test code rolls
+    // ahead of prod. Pick agents present on BOTH the test code AND the
+    // currently-deployed code to prevent that.
     await expect(page.locator("body")).toContainText(/War Room/i);
+    await expect(page.locator("body")).toContainText(/SEO Dominator/i);
   });
 
   test("hand-curated agent detail loads", async ({ page }) => {

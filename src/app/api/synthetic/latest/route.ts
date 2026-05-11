@@ -38,6 +38,12 @@ interface CachedRun {
 }
 
 const CACHE_TTL_MS = 60_000;
+// SECURITY TRIPWIRE: this is a CROSS-TENANT module-level cache served at
+// `Access-Control-Allow-Origin: *`. The contract: the probe response
+// MUST contain only health metadata (HTTP status codes, latencies,
+// public route names). Never insert user data, auth state, secrets,
+// or anything tenant-specific into a probe spec or its result — it
+// would cache one tenant's data into every other tenant's /status view.
 let cached: CachedRun | null = null;
 
 const PROBES: Array<{

@@ -89,10 +89,19 @@ function ensureValidId(id) {
 }
 
 function resolveBaseUrl(flags) {
-  return (flags.baseUrl ?? env.SOVEREIGN_BASE_URL ?? DEFAULT_BASE_URL).replace(
-    /\/$/,
-    "",
-  );
+  const resolved = (
+    flags.baseUrl ??
+    env.SOVEREIGN_BASE_URL ??
+    DEFAULT_BASE_URL
+  ).replace(/\/$/, "");
+  // Always print the resolved baseUrl to stderr so a poisoned env
+  // (someone setting SOVEREIGN_BASE_URL to attacker.example in a CI
+  // runner) is obvious in the log. Goes to stderr so --json mode
+  // pipes stay clean.
+  if (resolved !== DEFAULT_BASE_URL) {
+    stderr.write(c("dim", `→ using base ${resolved}\n`));
+  }
+  return resolved;
 }
 
 async function fetchJson(url, init) {

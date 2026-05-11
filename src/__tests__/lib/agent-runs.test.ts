@@ -101,6 +101,72 @@ describe("canonicalizeRun", () => {
     expect(a).not.toBe(b);
   });
 
+  it("is key-order-independent (deterministic across SDK clients)", () => {
+    // Threat model: a JS client constructs `input` with one key order,
+    // a Python client serializes with another. Both should produce the
+    // same canonical → same signature → verifiable across boundaries.
+    const at = new Date("2026-05-10T12:00:00.000Z");
+    const base = {
+      id: "id-1",
+      agentName: "blog-gen",
+      modelUsed: "claude-sonnet-4-6",
+      durationMs: 100,
+      safetyResult: { jailbreak: "pass" as const, pii: "pass" as const },
+      createdAt: at,
+    };
+    const a = canonicalizeRun({
+      ...base,
+      input: { topic: "x", lang: "en", count: 5 },
+      output: { html: "<p>y</p>", chars: 10 },
+    });
+    const b = canonicalizeRun({
+      ...base,
+      // SAME values, DIFFERENT key insertion order at every level.
+      input: { count: 5, lang: "en", topic: "x" },
+      output: { chars: 10, html: "<p>y</p>" },
+    });
+    expect(a).toBe(b);
+  });
+
+  it("sorts nested object keys recursively", () => {
+    const at = new Date("2026-05-10T12:00:00.000Z");
+    const base = {
+      id: "id-1",
+      agentName: "x",
+      modelUsed: "m",
+      durationMs: 0,
+      safetyResult: {},
+      createdAt: at,
+    };
+    const a = canonicalizeRun({
+      ...base,
+      input: { meta: { z: 1, a: 2 }, foo: "bar" },
+      output: {},
+    });
+    const b = canonicalizeRun({
+      ...base,
+      input: { foo: "bar", meta: { a: 2, z: 1 } },
+      output: {},
+    });
+    expect(a).toBe(b);
+  });
+
+  it("preserves array element order (arrays ARE canonical)", () => {
+    const at = new Date("2026-05-10T12:00:00.000Z");
+    const base = {
+      id: "id-1",
+      agentName: "x",
+      modelUsed: "m",
+      durationMs: 0,
+      safetyResult: {},
+      output: {},
+      createdAt: at,
+    };
+    const a = canonicalizeRun({ ...base, input: { items: [1, 2, 3] } });
+    const b = canonicalizeRun({ ...base, input: { items: [3, 2, 1] } });
+    expect(a).not.toBe(b);
+  });
+
   it("includes the canonical version field for forward-compat", () => {
     const c = canonicalizeRun({
       id: "id",

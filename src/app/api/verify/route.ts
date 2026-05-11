@@ -31,6 +31,13 @@ const MAX_CANONICAL_BYTES = 32_000;
 // src/lib/rate-limit.ts:46.
 const limiter = rateLimit({ interval: 60, limit: 60 });
 
+// Open CORS — verification is a public good; any third-party tool
+// (auditor, customer compliance dashboard, GitHub Action) calls this.
+//
+// SECURITY TRIPWIRE: do NOT add `Access-Control-Allow-Credentials: true`.
+// This route never reads cookies; if a future change starts reading
+// session state, the credentialed-cross-origin path would let any
+// website probe the user's auth status by side-channel.
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
