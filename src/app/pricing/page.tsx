@@ -38,103 +38,83 @@ const fadeIn = (d: number) => ({
  * forget to add its TIERS entry, or vice versa. Catches the whole
  * class of "pricing-page-out-of-sync" bugs in development.
  */
+// Public marketing tiers — simplified to 3 visible cards.
+// plans.ts still defines all 6 internal PlanIds for backward compat
+// with existing customers on legacy plans (Starter $19, Node $199).
+// Those legacy plans are accessible via a "More plans" link below the
+// main cards — not removed, just deemphasized for new visitors.
+//
+// Decision-fatigue research: every additional pricing card reduces
+// conversion. The Stripe/Linear/Vercel pattern is 3 visible + 1
+// Enterprise CTA. This matches.
 const TIERS = [
   {
-    name: "Founder Access",
+    name: "Free",
     price: "Free",
     priceZar: "Free",
     period: "forever",
     plan: "free",
     featured: false,
-    tagline: "Full platform access. 50 runs/month. No credit card.",
-    cta: "Run a Free Playbook",
+    tagline: "50 verified agent runs / month. No credit card.",
+    cta: "Start free",
     features: [
-      { name: "All 137 agents", included: true },
-      { name: "25 playbook workflows", included: true },
-      { name: "5-layer safety pipeline", included: true },
-      { name: "50 runs/month", included: true },
+      { name: "All 137 agents + 25 playbooks", included: true },
+      { name: "5-layer safety pipeline (default-on)", included: true },
+      { name: "50 verified agent runs / month", included: true },
+      { name: "HMAC-signed receipts (VAOS 1.0)", included: true },
       { name: "BYOK (Bring Your Own Key)", included: true },
-      { name: "A2E credits: 0/mo", included: false },
+      { name: "Public verifier API", included: true },
       { name: "Priority support", included: false },
     ],
   },
   {
-    name: "Starter",
-    price: "R349",
-    priceUsd: "$19",
-    period: "/mo",
-    plan: "starter",
-    featured: false,
-    tagline: "200 runs/month. Perfect for solo operators testing AI workflows.",
-    cta: "Start for $19",
-    features: [
-      { name: "Everything in Free", included: true },
-      { name: "200 runs/month", included: true },
-      { name: "1,000 API calls/day", included: true },
-      { name: "Email support", included: true },
-      { name: "All 39+ models", included: true },
-      { name: "A2E credits: 50/mo", included: true },
-      { name: "White-label", included: false },
-    ],
-  },
-  {
-    name: "Growth",
+    name: "Pro",
     price: "R997",
     priceUsd: "$49",
     period: "/mo",
     plan: "array",
     featured: true,
-    tagline: "500 runs/month. For agencies and teams scaling AI workflows.",
-    cta: "Scale with Growth",
+    tagline:
+      "For solo operators and small teams shipping AI in regulated industries.",
+    cta: "Get Pro",
     features: [
-      { name: "Everything in Starter", included: true },
-      { name: "500 runs/month", included: true },
-      { name: "5,000 API calls/day", included: true },
-      { name: "Multi-model consensus verification", included: true },
+      { name: "Everything in Free", included: true },
+      { name: "500 verified runs / month", included: true },
+      { name: "Ed25519 v2 signatures (non-repudiation)", included: true },
+      { name: "Audit-bundle export (signed evidence pack)", included: true },
+      { name: "Merkle inclusion proofs (O(log N) verify)", included: true },
       { name: "Priority support (24h)", included: true },
-      { name: "A2E credits: 200/mo", included: true },
-      { name: "White-label", included: false },
+      { name: "Custom domain for verify badge", included: false },
     ],
   },
   {
-    name: "Sovereign Node",
+    name: "Team",
     price: "R3,997",
     priceUsd: "$199",
     period: "/mo",
     plan: "node",
     featured: false,
-    tagline: "2,000 runs/month + NemoClaw local execution. Replace your SDR.",
-    cta: "Deploy Node",
+    tagline:
+      "For compliance-led teams. White-label, dedicated key rotation, audit-firm partnership.",
+    cta: "Get Team",
     features: [
-      { name: "Everything in Growth", included: true },
-      { name: "2,000 runs/month", included: true },
-      { name: "NemoClaw Local Execution", included: true },
-      { name: "Apollo Ghost Fleet Targeting", included: true },
-      { name: "10,000 API calls/day", included: true },
-      { name: "A2E credits: 1,000/mo", included: true },
-      { name: "White-label", included: false },
-    ],
-  },
-  {
-    name: "Enterprise",
-    price: "R9,997",
-    priceUsd: "$499",
-    period: "/mo",
-    plan: "enterprise",
-    featured: false,
-    tagline: "10,000 runs/month. White-label. SLA. Dedicated onboarding.",
-    cta: "Contact Sales",
-    features: [
-      { name: "Everything in Node", included: true },
-      { name: "10,000 runs/month", included: true },
-      { name: "Unlimited API calls", included: true },
-      { name: "White-label Dashboard", included: true },
-      { name: "A2E credits: Unlimited", included: true },
-      { name: "Dedicated setup + SLA", included: true },
-      { name: "Enterprise sub-licenses (5)", included: true },
+      { name: "Everything in Pro", included: true },
+      { name: "2,000 verified runs / month", included: true },
+      { name: "White-label dashboard + badge", included: true },
+      { name: "Bitcoin notarization (OpenTimestamps)", included: true },
+      { name: "Custom signing-key rotation (90-day SLA)", included: true },
+      { name: "SOC2-ready evidence export", included: true },
+      { name: "Dedicated success manager", included: true },
     ],
   },
 ];
+
+/**
+ * Legacy plans (Starter $19, Sovereign Node high-volume, Enterprise)
+ * remain configured in plans.ts and Stripe — existing subscribers stay
+ * on them. New visitors see the simplified 3-tier card grid above and
+ * the Enterprise strip below.
+ */
 
 const FAQS = [
   {
@@ -187,7 +167,6 @@ export default function PricingPage() {
       (id) => !tierPlanIds.includes(id),
     );
     if (onlyInTiers.length > 0 || onlyInMarketing.length > 0) {
-       
       console.warn("[pricing] TIERS ⇄ PLANS drift detected:", {
         onlyInTiers,
         onlyInMarketing,
@@ -197,7 +176,6 @@ export default function PricingPage() {
     // Also validate each TIER's plan actually exists in PLANS
     for (const t of TIERS) {
       if (!PLANS[t.plan as PlanId]) {
-         
         console.error(`[pricing] Unknown plan id in TIERS: "${t.plan}"`);
       }
     }
