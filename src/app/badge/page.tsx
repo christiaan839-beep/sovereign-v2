@@ -44,8 +44,18 @@ type LinkMode = "show" | "hide";
 
 const DEMO_ID = "demo-paste-your-receipt-id-here";
 
+// Read ?id=<receipt> off window.location once at first render — lets
+// callers deep-link the builder pre-filled (the dashboard receipts
+// page wires this through). Sanitized to alphanumerics + dashes so a
+// malicious `?id=` can't smuggle anything into the snippet.
+function readIdFromUrl(): string {
+  if (typeof window === "undefined") return "";
+  const raw = new URLSearchParams(window.location.search).get("id") ?? "";
+  return raw.replace(/[^a-zA-Z0-9-]/g, "").slice(0, 64);
+}
+
 export default function BadgePage() {
-  const [receiptId, setReceiptId] = useState("");
+  const [receiptId, setReceiptId] = useState<string>(() => readIdFromUrl());
   const [theme, setTheme] = useState<Theme>("dark");
   const [linkMode, setLinkMode] = useState<LinkMode>("show");
   const [copied, setCopied] = useState(false);
