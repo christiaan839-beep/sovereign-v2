@@ -26,6 +26,8 @@ import { ThreeMoatsGrid } from "@/components/landing/ThreeMoatsGrid";
 import { A2EEconomySection } from "@/components/landing/A2EEconomySection";
 import { ModelRouterSection } from "@/components/landing/ModelRouterSection";
 import { VerificationPipeline } from "@/components/landing/VerificationPipeline";
+import { SectionDivider } from "@/components/landing/SectionDivider";
+import { FilmGrain } from "@/components/landing/FilmGrain";
 
 // Below-the-fold sections — dynamic-imported with skeleton placeholders
 // so the visitor's initial JS bundle is smaller, LCP is faster, and
@@ -137,11 +139,14 @@ export default function LandingPage() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#030303] text-white antialiased">
+    <div className="relative min-h-screen bg-[#030303] text-white antialiased">
+      {/* Cinematic film-grain overlay — analog texture, sub-3% alpha */}
+      <FilmGrain />
+
       <Nav mobileNavOpen={mobileNavOpen} setMobileNavOpen={setMobileNavOpen} />
 
-      <main id="main-content">
-        {/* 01 · Hero */}
+      <main id="main-content" className="relative z-10">
+        {/* 01 · Hero — copper surface (marketing) */}
         <Hero />
 
         {/* Try-it demo — embedded competitor scan, no signup */}
@@ -149,6 +154,8 @@ export default function LandingPage() {
 
         {/* Live stats strip */}
         <LiveProofStrip />
+
+        <SectionDivider accent="copper" />
 
         {/* 02 · Three Moats */}
         <ThreeMoatsGrid />
@@ -162,11 +169,17 @@ export default function LandingPage() {
         {/* 05 · Model Router */}
         <ModelRouterSection />
 
+        {/* Audit surface starts here — flip the divider accent to cyan */}
+        <SectionDivider accent="cyan" />
+
         {/* 06 · Verification Pipeline */}
         <VerificationPipeline />
 
         {/* 06.5 · Live Verifier — interactive proof against the real /api/verify */}
         <LiveVerifierDemo />
+
+        {/* Back to marketing surface */}
+        <SectionDivider accent="copper" />
 
         {/* 07 · Featured Playbooks */}
         <FeaturedPlaybooksSection />
