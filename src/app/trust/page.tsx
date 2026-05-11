@@ -42,6 +42,7 @@ import {
   Cpu,
   Eye,
   ShieldCheck,
+  Terminal,
 } from "lucide-react";
 
 const TRUST_BLOCKS: TrustBlockProps[] = [
@@ -90,6 +91,12 @@ const TRUST_BLOCKS: TrustBlockProps[] = [
     title: "Synthetic-probe uptime monitoring",
     body: "Public status page driven by cron-triggered synthetic probes of the actual API endpoints. Not a green-light marketing widget — real HTTP calls with budgeted response-time SLOs.",
     cta: { href: "/status", label: "Live status" },
+  },
+  {
+    icon: Terminal,
+    title: "Installable from any MCP client",
+    body: "Sovereign publishes a public MCP server at /api/mcp/verifier — installable in one config line into Claude Desktop, Claude Code, Cursor, or any MCP-compatible client. Four tools: verify_receipt, fetch_receipt, latest_public_receipt, recent_public_receipts. No auth.",
+    cta: { href: "/mcp", label: "Install the server" },
   },
   {
     icon: FileText,

@@ -116,6 +116,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/badge", priority: 0.85, changeFreq: "monthly" }, // verification-badge builder — distribution surface for the embed snippet
     { path: "/stats", priority: 0.8, changeFreq: "daily" }, // aggregate platform metrics — social proof for compliance buyers
     { path: "/affiliate", priority: 0.75, changeFreq: "monthly" }, // affiliate program landing — recurring revenue lever
+    { path: "/mcp", priority: 0.88, changeFreq: "monthly" }, // public MCP server — distribution into every Claude/Cursor install
     { path: "/spec", priority: 0.95, changeFreq: "monthly" }, // VAOS 1.0 open standard — top SEO target for "verifiable AI receipts" / "AI agent audit standard"
 
     // Legal
