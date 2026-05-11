@@ -714,7 +714,7 @@ function CreatorCTA() {
         </div>
 
         <Link
-          href="/dashboard/agents/new"
+          href="/dashboard/agent-builder"
           className="group inline-flex items-center gap-2 px-7 py-3.5 bg-[#B5532C] text-white font-mono text-[13px] tracking-wide rounded-[3px] hover:bg-[#C96035] transition-colors"
         >
           List Your First Agent

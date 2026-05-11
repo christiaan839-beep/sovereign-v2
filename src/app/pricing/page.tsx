@@ -181,7 +181,7 @@ export default function PricingPage() {
     }
   }, []);
 
-  const checkout = async (plan: string) => {
+  const checkout = async (plan: string, method: "card" | "crypto" = "card") => {
     if (plan === "free") {
       window.location.assign("/signup");
       return;
@@ -193,20 +193,58 @@ export default function PricingPage() {
       return;
     }
 
+    // Crypto path — Coinbase Commerce hosted checkout. Pays once for
+    // 30 days of access; the webhook stamps the period end.
+    if (method === "crypto") {
+      try {
+        const res = await fetch("/api/payments/crypto/checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ plan }),
+        });
+        const data = await res.json();
+        if (res.ok && data.url) {
+          window.location.assign(data.url);
+          return;
+        }
+        setError(
+          data.error || "Crypto checkout unavailable. Try card instead.",
+        );
+      } catch {
+        setError("Crypto checkout failed. Please try again.");
+      }
+      return;
+    }
+
+    // Card path — Stripe first (USD/global), Yoco fallback (ZAR/SA).
     try {
-      const res = await fetch("/api/payments/yoco/checkout", {
+      const stripeRes = await fetch("/api/payments/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plan }),
       });
-      const data = await res.json();
-
-      if (res.ok && data.redirectUrl) {
-        window.location.assign(data.redirectUrl);
+      const stripeData = await stripeRes.json();
+      if (stripeRes.ok && stripeData.url) {
+        window.location.assign(stripeData.url);
         return;
       }
 
-      setError(data.error || "Payment is being set up. Please try again.");
+      const yocoRes = await fetch("/api/payments/yoco/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan }),
+      });
+      const yocoData = await yocoRes.json();
+      if (yocoRes.ok && yocoData.redirectUrl) {
+        window.location.assign(yocoData.redirectUrl);
+        return;
+      }
+
+      setError(
+        stripeData.error ||
+          yocoData.error ||
+          "Payment is being set up. Please try again.",
+      );
     } catch {
       setError("Checkout failed. Please try again.");
     }
@@ -437,6 +475,15 @@ export default function PricingPage() {
                 >
                   {t.cta} <ArrowRight className="w-4 h-4" />
                 </button>
+                {t.plan !== "free" && t.plan !== "enterprise" && (
+                  <button
+                    onClick={() => checkout(t.plan, "crypto")}
+                    className="mt-2 w-full py-2 text-xs font-medium rounded-lg border border-white/[0.06] bg-white/[0.02] text-neutral-400 hover:text-white hover:bg-white/5 hover:border-white/10 transition-colors"
+                    aria-label={`Pay for ${t.name} with crypto`}
+                  >
+                    or pay with crypto (BTC · ETH · USDC)
+                  </button>
+                )}
               </motion.div>
             ))}
           </div>

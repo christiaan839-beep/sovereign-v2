@@ -26,6 +26,7 @@ import { ThreeMoatsGrid } from "@/components/landing/ThreeMoatsGrid";
 import { A2EEconomySection } from "@/components/landing/A2EEconomySection";
 import { ModelRouterSection } from "@/components/landing/ModelRouterSection";
 import { VerificationPipeline } from "@/components/landing/VerificationPipeline";
+import { LiveVerifierDemo } from "@/components/landing/LiveVerifierDemo";
 
 /**
  * Landing page — Agent Infrastructure Stack narrative.
@@ -133,6 +134,9 @@ export default function LandingPage() {
 
         {/* 06 · Verification Pipeline */}
         <VerificationPipeline />
+
+        {/* 06.5 · Live Verifier — interactive proof against the real /api/verify */}
+        <LiveVerifierDemo />
 
         {/* 07 · Featured Playbooks */}
         <FeaturedPlaybooksSection />
