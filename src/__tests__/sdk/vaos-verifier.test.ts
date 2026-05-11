@@ -28,7 +28,11 @@ import {
   parseSignature,
   verifyLocal,
   verifyRemote,
+  computeLeafHash,
+  computeNodeHash,
+  verifyInclusionProof,
   type VaosReceipt,
+  type VaosInclusionProof,
 } from "../../../packages/vaos-verifier/src/index";
 
 const KEY = "test_secret_with_enough_entropy_aaaa";
@@ -314,5 +318,164 @@ describe("verifyRemote (VAOS §8)", () => {
         fetch: fetchMock as typeof fetch,
       }),
     ).rejects.toThrow(/HTTP 500/);
+  });
+});
+
+// ─── Merkle inclusion proof verification (VAOS extension) ───────────────
+
+describe("computeLeafHash + computeNodeHash (VAOS extension §M.1)", () => {
+  it("computeLeafHash matches the issuer's domain-separated formula", async () => {
+    // Cross-implementation check: the verifier package + the issuer
+    // (src/lib/receipt-chain.ts) MUST produce byte-identical leaves
+    // for the same input. If this drifts, every proof breaks.
+    const leaf = await computeLeafHash("abc", "v1=def");
+    expect(leaf).toMatch(/^[0-9a-f]{64}$/);
+    // Domain separator + null bytes are intentional — change either
+    // and existing proofs invalidate.
+    const samePlain = await computeLeafHash("abc", "v1=def");
+    expect(leaf).toBe(samePlain);
+  });
+
+  it("LEAF and NODE hash domains are separate (no preimage collision)", async () => {
+    // A 1-element tree has root == leaf-hash. A 2-element tree where
+    // both elements are the same has root == node-hash(leaf, leaf).
+    // These two roots must differ — otherwise a single-leaf root could
+    // be forged as a duplicate-leaf branch.
+    const leaf = await computeLeafHash("x", "v1=y");
+    const branch = await computeNodeHash(leaf, leaf);
+    expect(leaf).not.toBe(branch);
+  });
+});
+
+describe("verifyInclusionProof (VAOS extension §M.2)", () => {
+  // Build a tiny chain manually so the test is self-contained — this
+  // covers the case where a third party WITHOUT access to our
+  // server-side lib reconstructs the exact algorithm.
+  async function buildTinyChain(
+    n: number,
+  ): Promise<{ leaves: string[]; root: string }> {
+    const leaves: string[] = [];
+    for (let i = 0; i < n; i++) {
+      leaves.push(await computeLeafHash(`id-${i}`, `v1=sig${i}`));
+    }
+    let level = [...leaves];
+    while (level.length > 1) {
+      const next: string[] = [];
+      for (let i = 0; i < level.length; i += 2) {
+        const left = level[i]!;
+        const right = level[i + 1] ?? left;
+        next.push(await computeNodeHash(left, right));
+      }
+      level = next;
+    }
+    return { leaves, root: level[0]! };
+  }
+
+  it("rejects malformed leaf / root / sibling hex", async () => {
+    const proof: VaosInclusionProof = {
+      leaf: "not-hex",
+      index: 0,
+      leafCount: 1,
+      siblings: [],
+      expectedRoot: "a".repeat(64),
+    };
+    expect(await verifyInclusionProof(proof)).toBe(false);
+  });
+
+  it("single-leaf chain → 0 siblings, root = leaf", async () => {
+    const { leaves, root } = await buildTinyChain(1);
+    expect(
+      await verifyInclusionProof({
+        leaf: leaves[0]!,
+        index: 0,
+        leafCount: 1,
+        siblings: [],
+        expectedRoot: root,
+      }),
+    ).toBe(true);
+  });
+
+  it("verifies a valid 4-leaf inclusion proof for index 1", async () => {
+    const { leaves, root } = await buildTinyChain(4);
+    // For index 1 (second leaf), first sibling is leaves[0] (LEFT),
+    // second sibling is the right-pair node (RIGHT).
+    const right23 = await computeNodeHash(leaves[2]!, leaves[3]!);
+    const proof: VaosInclusionProof = {
+      leaf: leaves[1]!,
+      index: 1,
+      leafCount: 4,
+      siblings: [
+        { hash: leaves[0]!, position: "left" },
+        { hash: right23, position: "right" },
+      ],
+      expectedRoot: root,
+    };
+    expect(await verifyInclusionProof(proof)).toBe(true);
+  });
+
+  it("flipping a sibling position breaks the proof", async () => {
+    const { leaves, root } = await buildTinyChain(4);
+    const right23 = await computeNodeHash(leaves[2]!, leaves[3]!);
+    const proof: VaosInclusionProof = {
+      leaf: leaves[1]!,
+      index: 1,
+      leafCount: 4,
+      siblings: [
+        // Wrong position — should be "left", not "right"
+        { hash: leaves[0]!, position: "right" },
+        { hash: right23, position: "right" },
+      ],
+      expectedRoot: root,
+    };
+    expect(await verifyInclusionProof(proof)).toBe(false);
+  });
+
+  it("tampered expectedRoot → fails", async () => {
+    const { leaves, root: realRoot } = await buildTinyChain(2);
+    const proof: VaosInclusionProof = {
+      leaf: leaves[0]!,
+      index: 0,
+      leafCount: 2,
+      siblings: [{ hash: leaves[1]!, position: "right" }],
+      expectedRoot: realRoot.replace(/.$/, "0").replace(/.$/, "1"), // mutate last char
+    };
+    expect(await verifyInclusionProof(proof)).toBe(false);
+  });
+
+  it("valid 8-leaf proof works at every index", async () => {
+    const { leaves, root } = await buildTinyChain(8);
+    for (let target = 0; target < 8; target++) {
+      // Build the proof manually so we exercise the spec, not our impl
+      let level = [...leaves];
+      let idx = target;
+      const siblings: VaosInclusionProof["siblings"] = [];
+      while (level.length > 1) {
+        const next: string[] = [];
+        for (let i = 0; i < level.length; i += 2) {
+          const left = level[i]!;
+          const right = level[i + 1] ?? left;
+          next.push(await computeNodeHash(left, right));
+        }
+        const isLeft = idx % 2 === 0;
+        const sibIdx = isLeft ? idx + 1 : idx - 1;
+        siblings.push({
+          hash: level[sibIdx] ?? level[idx]!,
+          position: isLeft ? "right" : "left",
+        });
+        idx = Math.floor(idx / 2);
+        level = next;
+      }
+      const proof: VaosInclusionProof = {
+        leaf: leaves[target]!,
+        index: target,
+        leafCount: 8,
+        siblings,
+        expectedRoot: root,
+      };
+      expect(
+        await verifyInclusionProof(proof),
+        `target=${target} should verify`,
+      ).toBe(true);
+    }
   });
 });

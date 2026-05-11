@@ -325,3 +325,101 @@ function constantTimeEqualHex(a: string, b: string): boolean {
   }
   return diff === 0;
 }
+
+// ─── Merkle inclusion proof verification (VAOS extension) ───────────────
+//
+// Pure verifier-side: given a receipt, an inclusion proof, and a signed
+// chain root, prove the receipt is part of the issuer's signed audit
+// chain — without trusting the issuer between any two checks. The
+// algorithm matches src/lib/receipt-chain.ts in the issuer codebase.
+
+export interface VaosInclusionProof {
+  leaf: string;
+  index: number;
+  leafCount: number;
+  siblings: Array<{ hash: string; position: "left" | "right" }>;
+  expectedRoot: string;
+}
+
+/**
+ * Compute a leaf hash for a (id, signature) pair using the same
+ * domain-separated SHA-256 prefix as the issuer.
+ *
+ *   leaf = sha256("LEAF\0" || id || "\0" || signature)
+ *
+ * Domain separation prevents a single leaf from being mistaken for a
+ * branch hash by a pre-image attack.
+ */
+export async function computeLeafHash(
+  id: string,
+  signature: string,
+): Promise<string> {
+  return sha256Hex(`LEAF\0${id}\0${signature}`);
+}
+
+/**
+ * Compute a branch (node) hash from two child hashes:
+ *
+ *   node = sha256("NODE\0" || left || right)
+ *
+ * Domain separation matches `LEAF\0` so the two hash classes can never
+ * collide.
+ */
+export async function computeNodeHash(
+  left: string,
+  right: string,
+): Promise<string> {
+  return sha256Hex(`NODE\0${left}${right}`);
+}
+
+/**
+ * Verify a Merkle inclusion proof.
+ *
+ * Walks the sibling hashes from the leaf up to the root, recomputing
+ * each parent. Returns true iff the recomputed root equals
+ * `proof.expectedRoot`.
+ *
+ * IMPORTANT: this only proves the leaf belongs to a tree with that
+ * root. To complete the chain of trust, the caller MUST separately:
+ *   1. Recompute the leaf from the receipt's (id, signature) and assert
+ *      it equals `proof.leaf`.
+ *   2. Cross-check `proof.expectedRoot` against the issuer's signed
+ *      chain root envelope (and verify that envelope's signature via
+ *      `verifyRemote()`).
+ *
+ * Without step 1, any leaf hash could match. Without step 2, the
+ * "expected root" could be attacker-supplied.
+ */
+export async function verifyInclusionProof(
+  proof: VaosInclusionProof,
+): Promise<boolean> {
+  if (!/^[0-9a-f]{64}$/i.test(proof.leaf)) return false;
+  if (!/^[0-9a-f]{64}$/i.test(proof.expectedRoot)) return false;
+
+  let acc = proof.leaf;
+  for (const sib of proof.siblings) {
+    if (!/^[0-9a-f]{64}$/i.test(sib.hash)) return false;
+    acc =
+      sib.position === "right"
+        ? await computeNodeHash(acc, sib.hash)
+        : await computeNodeHash(sib.hash, acc);
+  }
+  return acc === proof.expectedRoot;
+}
+
+/**
+ * SHA-256 hex digest using the Web Crypto API. Same primitive as
+ * `hmacSha256Hex` above, just unkeyed.
+ */
+async function sha256Hex(message: string): Promise<string> {
+  const subtle = globalThis.crypto?.subtle;
+  if (!subtle) {
+    throw new Error(
+      "vaos-verifier: globalThis.crypto.subtle unavailable — " +
+        "requires Node 18+, modern browser, or edge runtime",
+    );
+  }
+  const enc = new TextEncoder();
+  const buf = await subtle.digest("SHA-256", enc.encode(message));
+  return bufToHex(buf);
+}
