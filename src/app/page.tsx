@@ -1302,7 +1302,8 @@ function Footer() {
           <FooterCol
             title="Company"
             links={[
-              { href: "/trust", label: "About" },
+              { href: "/about", label: "About" },
+              { href: "/case-studies", label: "Customers" },
               { href: "/pricing", label: "Pricing" },
               { href: "/contact", label: "Contact" },
               { href: "/privacy", label: "Privacy" },
