@@ -19,7 +19,7 @@
  */
 import { db } from "@/db";
 import { agentRuns } from "@/db/schema";
-import { desc, inArray } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("rss/receipts");
@@ -73,7 +73,13 @@ export async function GET(req: Request) {
         createdAt: agentRuns.createdAt,
       })
       .from(agentRuns)
-      .where(inArray(agentRuns.visibility, ["public", "unlisted"]))
+      // SECURITY: only `public` is enumerable in a discoverable RSS
+      // feed. `unlisted` means share-by-link — exposing it here
+      // violates the user's intent the moment any RSS reader subscribes.
+      // Same fix applied to /api/agent-runs/latest-public and
+      // /api/agent-runs/recent-public per the pre-merge security
+      // review on PR #5.
+      .where(eq(agentRuns.visibility, "public"))
       .orderBy(desc(agentRuns.createdAt))
       .limit(FEED_LIMIT);
   } catch (err) {

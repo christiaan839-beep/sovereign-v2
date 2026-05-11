@@ -208,7 +208,33 @@ export default function ExplorerPage() {
           <p className="mt-3 text-center text-xs text-amber-300/80">{error}</p>
         )}
 
-        <p className="mt-8 text-center text-[11px] text-neutral-600">
+        {/* Subscribe via RSS — surfaces the feed for compliance teams
+            and journalists who track audit-grade infrastructure. */}
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-3 text-[11px]">
+          <a
+            href="/r/feed.xml"
+            className="inline-flex items-center gap-1.5 rounded-md border border-cyan-500/30 bg-cyan-500/[0.06] px-3 py-1.5 font-mono uppercase tracking-wider text-cyan-200 transition hover:bg-cyan-500/[0.12]"
+            aria-label="Subscribe via RSS"
+          >
+            <svg
+              className="h-3 w-3"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path d="M6.18 15.64a2.18 2.18 0 0 1 2.18 2.18C8.36 19 7.38 20 6.18 20A2.18 2.18 0 0 1 4 17.82a2.18 2.18 0 0 1 2.18-2.18M4 4.44A15.56 15.56 0 0 1 19.56 20h-2.83A12.73 12.73 0 0 0 4 7.27V4.44m0 5.66a9.9 9.9 0 0 1 9.9 9.9h-2.83A7.07 7.07 0 0 0 4 12.93V10.1z" />
+            </svg>
+            Subscribe via RSS
+          </a>
+          <Link
+            href="/badge"
+            className="inline-flex items-center gap-1.5 rounded-md border border-white/[0.06] bg-white/[0.02] px-3 py-1.5 font-mono uppercase tracking-wider text-neutral-400 transition hover:border-cyan-500/30 hover:bg-cyan-500/[0.06] hover:text-cyan-200"
+          >
+            Get a verify badge →
+          </Link>
+        </div>
+
+        <p className="mt-6 text-center text-[11px] text-neutral-600">
           Receipts marked &quot;public&quot; by their owners are enumerable
           here. &quot;Unlisted&quot; receipts stay share-by-link;
           &quot;private&quot; receipts never appear in any public feed. Read{" "}

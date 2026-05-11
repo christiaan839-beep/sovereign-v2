@@ -53,7 +53,7 @@ _You are operating as a Sovereign Node. Execute all tasks defensively and accura
 - `output: "standalone"` activates only for non-Vercel (Docker/Railway) deployments
 - Security headers active: HSTS, X-Frame-Options DENY, nosniff, strict referrer, permissions policy
 - `prerenderEarlyExit: false` in next.config.ts — prevents `_global-error` prerender crash from aborting build
-- `typescript: { ignoreBuildErrors: true }` is intentional — legacy agent routes have pre-existing TS errors
+- `typescript: { ignoreBuildErrors: false }` — strict TypeScript is ON. Every error has been knocked down or scoped with `@ts-expect-error` + a one-line reason. The CI Build gate fails on new TS errors; fix them or scope an `@ts-expect-error` in the offending line with a concrete justification. Run `npx tsc --noEmit` locally to verify.
 - Static agent registry (registry.ts) required for Vercel — dynamic import() with webpackIgnore doesn't work on serverless
 - All catch-all routes use static imports (not dynamic) for Vercel bundling
 - Turbopack stale module: new files imported via dynamic() cause HMR errors — use static imports for new client components

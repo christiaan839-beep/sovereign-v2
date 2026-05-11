@@ -4,7 +4,8 @@
  * Covers:
  *   - returns valid RSS 2.0 XML headers + content-type
  *   - includes channel metadata (title, atom self-link)
- *   - emits one <item> per public/unlisted row
+ *   - emits one <item> per PUBLIC row (unlisted stays share-by-link
+ *     per the pre-merge security review on PR #5)
  *   - escapes XML metacharacters in agent names + previews
  *   - returns an empty (still valid) feed on DB error
  */
