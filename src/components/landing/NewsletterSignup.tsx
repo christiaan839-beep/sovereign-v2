@@ -113,7 +113,7 @@ export function NewsletterSignup({
           onChange={(e) => setEmail(e.target.value)}
           placeholder="you@company.com"
           disabled={state === "submitting"}
-          className="w-full rounded-lg border border-white/[0.08] bg-black/40 py-2.5 pl-9 pr-3 text-sm text-white placeholder:text-neutral-600 transition focus:border-cyan-500/40 focus:outline-none disabled:opacity-50"
+          className="w-full rounded-lg border border-white/[0.08] bg-black/40 py-2.5 pl-9 pr-3 text-sm text-white placeholder:text-neutral-600 transition focus:border-cyan-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/40 disabled:opacity-50"
         />
       </div>
       <button
