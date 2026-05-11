@@ -468,7 +468,7 @@ function Hero() {
           transition={{ delay: 0.4, duration: 0.7 }}
           className="text-[17px] md:text-[19px] text-neutral-400 leading-[1.55] mb-4 max-w-2xl mx-auto"
         >
-          30 production agents that research, draft, qualify, and call — and
+          137 production agents that research, draft, qualify, and call — and
           ship a verifiable HMAC-signed receipt every time. Built for teams that
           need AI <em className="not-italic text-neutral-300">and</em> a paper
           trail.
@@ -479,8 +479,9 @@ function Hero() {
           transition={{ delay: 0.5, duration: 0.6 }}
           className="text-[15px] md:text-[16px] text-neutral-500 leading-[1.55] mb-10 max-w-xl mx-auto"
         >
-          From R349/mo (≈ $19). No per-seat fees. ZAR + USD billing.
-          POPIA-native, SOC2-mapped, audit-ready on day one.
+          Free forever — 50 verified runs/mo. Pro from R997/mo (≈ $49). No
+          per-seat fees. ZAR + USD billing. POPIA-native, SOC2-mapped,
+          audit-ready on day one.
         </motion.p>
 
         {/* CTAs */}
@@ -514,7 +515,7 @@ function Hero() {
           transition={{ delay: 0.8, duration: 0.5 }}
           className="text-[11px] font-mono text-neutral-600 tracking-wide mb-6"
         >
-          R0 · R349/mo · R9,997/mo · $0 · $19/mo · $499/mo ·{" "}
+          Free · R997/mo · R3,997/mo · $0 · $49/mo · $199/mo ·{" "}
           <Link
             href="/pricing"
             className="hover:text-neutral-400 transition-colors underline decoration-white/10 hover:decoration-white/30"
@@ -1035,10 +1036,9 @@ function PlatformScale() {
 function PricingStrip() {
   const tiers = [
     { name: "Free", price: null, popular: false },
-    { name: "Starter", price: "$19", popular: false },
-    { name: "Growth", price: "$49", popular: true },
-    { name: "Node", price: "$199", popular: false },
-    { name: "Enterprise", price: "$499", popular: false },
+    { name: "Pro", price: "$49", popular: true },
+    { name: "Team", price: "$199", popular: false },
+    { name: "Enterprise", price: "Custom", popular: false },
   ];
 
   return (

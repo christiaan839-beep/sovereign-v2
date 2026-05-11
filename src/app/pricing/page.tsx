@@ -475,15 +475,23 @@ export default function PricingPage() {
                 >
                   {t.cta} <ArrowRight className="w-4 h-4" />
                 </button>
-                {t.plan !== "free" && t.plan !== "enterprise" && (
-                  <button
-                    onClick={() => checkout(t.plan, "crypto")}
-                    className="mt-2 w-full py-2 text-xs font-medium rounded-lg border border-white/[0.06] bg-white/[0.02] text-neutral-400 hover:text-white hover:bg-white/5 hover:border-white/10 transition-colors"
-                    aria-label={`Pay for ${t.name} with crypto`}
-                  >
-                    or pay with crypto (BTC · ETH · USDC)
-                  </button>
-                )}
+                {/* Crypto CTA hidden — centralized-only checkout for now.
+                    Backend (Coinbase Commerce + self-custody path) stays
+                    wired in `/api/payments/crypto/*` so flipping
+                    NEXT_PUBLIC_CRYPTO_PAYMENTS_ENABLED=true re-enables
+                    this affordance without a redeploy of the routes. */}
+                {t.plan !== "free" &&
+                  t.plan !== "enterprise" &&
+                  process.env.NEXT_PUBLIC_CRYPTO_PAYMENTS_ENABLED ===
+                    "true" && (
+                    <button
+                      onClick={() => checkout(t.plan, "crypto")}
+                      className="mt-2 w-full py-2 text-xs font-medium rounded-lg border border-white/[0.06] bg-white/[0.02] text-neutral-400 hover:text-white hover:bg-white/5 hover:border-white/10 transition-colors"
+                      aria-label={`Pay for ${t.name} with crypto`}
+                    >
+                      or pay with crypto (BTC · ETH · USDC)
+                    </button>
+                  )}
               </motion.div>
             ))}
           </div>
