@@ -291,6 +291,7 @@ function Nav({
             <div className="flex items-center gap-6 mr-6">
               <NavLink href={PLATFORM_HREF}>Platform</NavLink>
               <NavLink href="/marketplace">Marketplace</NavLink>
+              <NavLink href="/explorer">Explorer</NavLink>
               <NavLink href="/trust">Trust</NavLink>
               <NavLink href="/pricing">Pricing</NavLink>
               <NavLink href="/developers/docs">Docs</NavLink>
@@ -373,6 +374,7 @@ function Nav({
             {[
               { href: PLATFORM_HREF, label: "Platform" },
               { href: "/marketplace", label: "Marketplace" },
+              { href: "/explorer", label: "Explorer" },
               { href: "/trust", label: "Trust" },
               { href: "/pricing", label: "Pricing" },
               { href: "/developers/docs", label: "Docs" },
