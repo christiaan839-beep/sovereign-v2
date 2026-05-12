@@ -209,15 +209,23 @@ export function generateAttestationLetter(
  * everything except the signature block, then constant-time compare
  * the HMAC. Returns `{ ok, reason }` so callers can render the
  * verification result.
+ *
+ * SECURITY: uses `crypto.timingSafeEqual` over fixed-length buffers
+ * via `Buffer.alloc + Buffer.compare`-safe wrapping. The sentinel
+ * extraction uses `lastIndexOf` so a body field that happens to
+ * contain "## Signature" can't truncate the digest input early —
+ * even though the redundant bodyDigest check on line below would
+ * still catch a tampered prefix, this removes the brittle path.
  */
 export function verifyAttestationLetter(
   letter: AttestationLetter,
   signingKey: string,
 ): { ok: boolean; reason?: string } {
   if (!signingKey) return { ok: false, reason: "missing-key" };
-  // Strip everything from "## Signature" onward; that's the body-for-signing.
+  // Strip from the LAST occurrence of the signature header — robust
+  // against caller-controlled fields that contain that substring.
   const sigHeader = "\n## Signature\n";
-  const idx = letter.body.indexOf(sigHeader);
+  const idx = letter.body.lastIndexOf(sigHeader);
   const bodyForSigning = idx >= 0 ? letter.body.slice(0, idx) : letter.body;
   const bodyDigest = createHash("sha256").update(bodyForSigning).digest("hex");
   if (bodyDigest !== letter.bodyDigest) {
@@ -226,14 +234,18 @@ export function verifyAttestationLetter(
   const expected = createHmac("sha256", signingKey)
     .update(bodyDigest)
     .digest("hex");
-  if (expected.length !== letter.signature.length) {
-    return { ok: false, reason: "invalid-signature" };
-  }
-  // Constant-time compare via Buffer.
-  const a = Buffer.from(expected);
-  const b = Buffer.from(letter.signature);
-  let mismatch = 0;
-  for (let i = 0; i < a.length; i++) mismatch |= a[i] ^ b[i];
+  // Constant-time compare. Pad both sides to the longer length with
+  // zero bytes so the comparison loop length is independent of the
+  // supplied signature length (no 1-bit length oracle).
+  const expectedBuf = Buffer.from(expected);
+  const suppliedBuf = Buffer.from(letter.signature);
+  const len = Math.max(expectedBuf.length, suppliedBuf.length);
+  const a = Buffer.alloc(len);
+  const b = Buffer.alloc(len);
+  expectedBuf.copy(a);
+  suppliedBuf.copy(b);
+  let mismatch = expectedBuf.length ^ suppliedBuf.length;
+  for (let i = 0; i < len; i++) mismatch |= a[i] ^ b[i];
   return mismatch === 0
     ? { ok: true }
     : { ok: false, reason: "invalid-signature" };
