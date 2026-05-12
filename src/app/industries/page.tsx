@@ -274,6 +274,7 @@ function VerticalCard({ v }: { v: Vertical }) {
     </>
   );
 
+  // Frontier / soon cards — plain link wrapper, no spotlight glow.
   if (v.accent === "neutral" || v.status === "soon") {
     return isExternal ? (
       <a
@@ -292,16 +293,20 @@ function VerticalCard({ v }: { v: Vertical }) {
     );
   }
 
+  // Audit-grade + sector cards — Link wraps SpotlightCard so the
+  // `as` prop stays a string (avoids passing a function across the
+  // server→client boundary, which Next.js rejects at prerender).
   return (
-    <SpotlightCard
-      as={Link}
-      href={v.href}
-      accent={cls.glow}
-      radius={260}
-      className={`block rounded-2xl border ${cls.border} bg-white/[0.02] p-5 backdrop-blur-xl transition`}
-    >
-      {inner}
-    </SpotlightCard>
+    <Link href={v.href} className="block">
+      <SpotlightCard
+        as="div"
+        accent={cls.glow}
+        radius={260}
+        className={`rounded-2xl border ${cls.border} bg-white/[0.02] p-5 backdrop-blur-xl transition`}
+      >
+        {inner}
+      </SpotlightCard>
+    </Link>
   );
 }
 
