@@ -112,6 +112,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/about", priority: 0.7, changeFreq: "monthly" },
     { path: "/partner", priority: 0.7, changeFreq: "monthly" },
     { path: "/blog", priority: 0.8, changeFreq: "daily" },
+    { path: "/blog/feed.xml", priority: 0.4, changeFreq: "daily" }, // RSS — surfaces for aggregator/syndication crawlers
     { path: "/marketplace", priority: 0.8, changeFreq: "weekly" },
     { path: "/developers", priority: 0.8, changeFreq: "weekly" },
     { path: "/developers/docs", priority: 0.8, changeFreq: "weekly" },
