@@ -36,8 +36,15 @@ import {
   type ToolRegistry,
   parseToolCallOutput,
 } from "./tool-registry";
-import { ai } from "./ai";
 import { createLogger } from "./logger";
+
+// `ai` is lazy-imported inside `runWithTools` to keep this module's
+// static import graph free of Clerk + db + provider SDKs. That way
+// any test that imports super-agent.ts (e.g., the Cook 33 super-agent
+// suite) doesn't have to mock `./ai` AND every transitive Clerk /
+// db / SDK module — vitest cleanly imports super-agent.ts and only
+// pays the heavy-deps cost when a caller actually invokes the
+// tool-use loop.
 
 const log = createLogger("super-agent");
 
@@ -333,6 +340,10 @@ export async function runWithTools(
 
   const transcript: string[] = [`USER: ${userPrompt}`];
   const steps: ToolStep[] = [];
+
+  // Lazy import — see the comment at the top of this file for
+  // why ai() isn't a static import.
+  const { ai } = await import("./ai");
 
   for (let stepIdx = 0; stepIdx < maxSteps; stepIdx++) {
     const stepPrompt = transcript.join("\n\n");
