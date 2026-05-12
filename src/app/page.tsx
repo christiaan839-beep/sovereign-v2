@@ -30,6 +30,7 @@ import { SectionDivider } from "@/components/landing/SectionDivider";
 import { FilmGrain } from "@/components/landing/FilmGrain";
 import { HeroProofPill } from "@/components/landing/HeroProofPill";
 import { NewsletterSignup } from "@/components/landing/NewsletterSignup";
+import { LiveReceiptCounter } from "@/components/landing/LiveReceiptCounter";
 
 // Below-the-fold sections — dynamic-imported with skeleton placeholders
 // so the visitor's initial JS bundle is smaller, LCP is faster, and
@@ -205,7 +206,7 @@ export default function LandingPage() {
   );
 }
 
-/* ─── SectionHead ───────────────────────────────────────────────── */
+/* ─── SectionHead ─────────────────────────────────── */
 function SectionHead({ n, label }: { n: string; label: string }) {
   return (
     <div className="mb-8 flex items-center gap-4 flex-wrap">
@@ -220,7 +221,7 @@ function SectionHead({ n, label }: { n: string; label: string }) {
   );
 }
 
-/* ─── Nav ───────────────────────────────────────────────────────── */
+/* ─── Nav ────────────────────────────────────────── */
 function Nav({
   mobileNavOpen,
   setMobileNavOpen,
@@ -281,8 +282,8 @@ function Nav({
           <div className="hidden md:flex items-center gap-0 text-[13px]">
             <div className="flex items-center gap-6 mr-6">
               <NavLink href={PLATFORM_HREF}>Platform</NavLink>
+              <NavLink href="/industries">Industries</NavLink>
               <NavLink href="/marketplace">Marketplace</NavLink>
-              <NavLink href="/explorer">Explorer</NavLink>
               <NavLink href="/trust">Trust</NavLink>
               <NavLink href="/pricing">Pricing</NavLink>
               <NavLink href="/developers/docs">Docs</NavLink>
@@ -364,6 +365,7 @@ function Nav({
           >
             {[
               { href: PLATFORM_HREF, label: "Platform" },
+              { href: "/industries", label: "Industries" },
               { href: "/marketplace", label: "Marketplace" },
               { href: "/explorer", label: "Explorer" },
               { href: "/trust", label: "Trust" },
@@ -416,7 +418,7 @@ function NavLink({
   );
 }
 
-/* ─── 01 · Hero ─────────────────────────────────────────────────── */
+/* ─── 01 · Hero ───────────────────────────────────── */
 function Hero() {
   return (
     <section className="relative min-h-screen flex items-center justify-center px-6 pt-20 pb-16 overflow-hidden">
@@ -621,7 +623,7 @@ function Hero() {
   );
 }
 
-/* ─── 04 · Memory Moat ──────────────────────────────────────────── */
+/* ─── 04 · Memory Moat ─────────────────────────────── */
 function MemoryMoat() {
   const timeline = [
     {
@@ -750,7 +752,7 @@ function MemoryMoat() {
   );
 }
 
-/* ─── 07 · Featured Playbooks ───────────────────────────────────── */
+/* ─── 07 · Featured Playbooks ───────────────────────── */
 
 // Slugs that have a dedicated public marketing + intake page under
 // /playbooks/<slug>. All others default to the auth-gated dashboard runner.
@@ -851,7 +853,7 @@ function FeaturedPlaybooksSection() {
   );
 }
 
-/* ─── 08 · Industry Section ─────────────────────────────────────── */
+/* ─── 08 · Industry Section ─────────────────────────── */
 function IndustrySection() {
   const industries = [
     {
@@ -974,7 +976,7 @@ function IndustrySection() {
   );
 }
 
-/* ─── 09 · Platform Scale ───────────────────────────────────────── */
+/* ─── 09 · Platform Scale ────────────────────────────── */
 const SCALE_METRICS = [
   {
     n: "137",
@@ -1030,26 +1032,29 @@ function PlatformScale() {
           ))}
         </div>
 
-        <div className="py-5 flex items-center justify-between">
-          <p className="text-[11px] font-mono text-neutral-700 tracking-wide">
-            137 agents · 8 industries · 90+ integrations · full surface at{" "}
-            <Link
-              href="/platform"
-              className="text-neutral-500 hover:text-white transition-colors"
-            >
-              /platform
-            </Link>{" "}
-            and{" "}
-            <Link
-              href="/developers/docs"
-              className="text-neutral-500 hover:text-white transition-colors"
-            >
-              /developers/docs
-            </Link>
-          </p>
+        <div className="py-5 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div className="flex flex-col gap-2">
+            <p className="text-[11px] font-mono text-neutral-700 tracking-wide">
+              137 agents · 8 industries · 90+ integrations · full surface at{" "}
+              <Link
+                href="/platform"
+                className="text-neutral-500 hover:text-white transition-colors"
+              >
+                /platform
+              </Link>{" "}
+              and{" "}
+              <Link
+                href="/developers/docs"
+                className="text-neutral-500 hover:text-white transition-colors"
+              >
+                /developers/docs
+              </Link>
+            </p>
+            <LiveReceiptCounter />
+          </div>
           <Link
             href="/dashboard"
-            className="text-[11px] font-mono text-neutral-600 hover:text-[#B5532C] transition-colors tracking-wide"
+            className="text-[11px] font-mono text-neutral-600 hover:text-[#B5532C] transition-colors tracking-wide self-start md:self-auto"
           >
             Open dashboard →
           </Link>
@@ -1059,7 +1064,7 @@ function PlatformScale() {
   );
 }
 
-/* ─── 10 · Pricing Strip ────────────────────────────────────────── */
+/* ─── 10 · Pricing Strip ─────────────────────────────── */
 function PricingStrip() {
   const tiers = [
     { name: "Free", price: null, popular: false },
@@ -1140,7 +1145,7 @@ function PricingStrip() {
   );
 }
 
-/* ─── Final CTA ─────────────────────────────────────────────────── */
+/* ─── Final CTA ──────────────────────────────────── */
 function FinalCTA() {
   return (
     <section
@@ -1226,7 +1231,7 @@ function FinalCTA() {
   );
 }
 
-/* ─── Footer ────────────────────────────────────────────────────── */
+/* ─── Footer ─────────────────────────────────────── */
 function Footer() {
   return (
     <footer className="px-6 pt-24 pb-12 border-t border-white/[0.04] bg-[#020202]">
@@ -1287,11 +1292,12 @@ function Footer() {
           <FooterCol
             title="Solutions"
             links={[
+              { href: "/industries", label: "All industries" },
+              { href: "/compliance", label: "Compliance" },
+              { href: "/vendor-risk", label: "Vendor risk" },
+              { href: "/insurance", label: "Insurance" },
               { href: "/for-healthcare", label: "Healthcare" },
               { href: "/for-legal", label: "Legal" },
-              { href: "/for-agriculture", label: "Agriculture" },
-              { href: "/for-manufacturing", label: "Manufacturing" },
-              { href: "/for-cybersecurity", label: "Security" },
             ]}
           />
           <FooterCol

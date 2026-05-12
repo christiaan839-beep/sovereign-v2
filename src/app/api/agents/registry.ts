@@ -6,7 +6,7 @@
  * is bundled here so Vercel's serverless packer can see the import paths.
  *
  * Regenerate: `npm run gen:registry`
- * Count: 137 agents
+ * Count: 145 agents (137 baseline + 5 entry-level from Cook 33 + 3 industry-specific from Cook 34)
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -164,6 +164,20 @@ export const AGENT_REGISTRY: Record<string, () => Promise<RouteModule>> = {
   whitelabel: () => import("@/app/api/_agents/whitelabel/route"),
   "workflow-engine": () => import("@/app/api/_agents/workflow-engine/route"),
   workflows: () => import("@/app/api/_agents/workflows/route"),
+
+  // ── Cook 33: entry-level agents (super-agent stack composed) ─────
+  "inbox-triage": () => import("@/app/api/_agents/inbox-triage/route"),
+  "meeting-scribe": () => import("@/app/api/_agents/meeting-scribe/route"),
+  "doc-extractor": () => import("@/app/api/_agents/doc-extractor/route"),
+  "lead-qualifier": () => import("@/app/api/_agents/lead-qualifier/route"),
+  "tier1-support": () => import("@/app/api/_agents/tier1-support/route"),
+
+  // ── Cook 34: industry-specific agents (per-vertical rubric + tier) ─
+  "clinical-protocol-reviewer": () =>
+    import("@/app/api/_agents/clinical-protocol-reviewer/route"),
+  "emissions-calculator": () =>
+    import("@/app/api/_agents/emissions-calculator/route"),
+  "submittal-router": () => import("@/app/api/_agents/submittal-router/route"),
 };
 
 /**

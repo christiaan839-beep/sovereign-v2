@@ -84,6 +84,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // Launch
     { path: "/launch", priority: 1.0, changeFreq: "weekly" },
 
+    // Industries hub — meta-landing that maps every vertical to the right surface
+    { path: "/industries", priority: 0.92, changeFreq: "weekly" },
+
+    // Audit-grade vertical positioning surfaces (cyan accent)
+    { path: "/compliance", priority: 0.92, changeFreq: "monthly" }, // Vanta-for-AI positioning — SOC 2 / EU AI Act / POPIA / GDPR
+    { path: "/vendor-risk", priority: 0.92, changeFreq: "monthly" }, // Procurement-ready — pre-answered security questionnaire
+    { path: "/insurance", priority: 0.9, changeFreq: "monthly" }, // AI E&O underwriting signals — carrier-facing positioning
+    { path: "/pharma", priority: 0.92, changeFreq: "monthly" }, // 21 CFR Part 11 + ICH-GCP + GxP receipts — life-sciences ICP
+    { path: "/climate", priority: 0.92, changeFreq: "monthly" }, // CSRD + SEC climate rule + GHG Protocol receipts — sustainability/finance ICP
+
     // Sector pages
     { path: "/for-healthcare", priority: 0.8, changeFreq: "monthly" },
     { path: "/for-legal", priority: 0.8, changeFreq: "monthly" },
@@ -93,6 +103,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/for-education", priority: 0.8, changeFreq: "monthly" },
     { path: "/for-fintech", priority: 0.8, changeFreq: "monthly" },
     { path: "/for-ecommerce", priority: 0.8, changeFreq: "monthly" },
+    { path: "/for-agriculture", priority: 0.8, changeFreq: "monthly" },
+    { path: "/for-manufacturing", priority: 0.8, changeFreq: "monthly" },
+    { path: "/for-government", priority: 0.8, changeFreq: "monthly" },
 
     // Contact
     { path: "/contact", priority: 0.7, changeFreq: "monthly" },
@@ -101,6 +114,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/about", priority: 0.7, changeFreq: "monthly" },
     { path: "/partner", priority: 0.7, changeFreq: "monthly" },
     { path: "/blog", priority: 0.8, changeFreq: "daily" },
+    { path: "/blog/feed.xml", priority: 0.4, changeFreq: "daily" }, // RSS — surfaces for aggregator/syndication crawlers
     { path: "/marketplace", priority: 0.8, changeFreq: "weekly" },
     { path: "/developers", priority: 0.8, changeFreq: "weekly" },
     { path: "/developers/docs", priority: 0.8, changeFreq: "weekly" },
