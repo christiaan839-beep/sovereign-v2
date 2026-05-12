@@ -6,7 +6,7 @@
  * is bundled here so Vercel's serverless packer can see the import paths.
  *
  * Regenerate: `npm run gen:registry`
- * Count: 142 agents (137 baseline + 5 entry-level from Cook 33)
+ * Count: 145 agents (137 baseline + 5 entry-level from Cook 33 + 3 industry-specific from Cook 34)
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -171,6 +171,13 @@ export const AGENT_REGISTRY: Record<string, () => Promise<RouteModule>> = {
   "doc-extractor": () => import("@/app/api/_agents/doc-extractor/route"),
   "lead-qualifier": () => import("@/app/api/_agents/lead-qualifier/route"),
   "tier1-support": () => import("@/app/api/_agents/tier1-support/route"),
+
+  // ── Cook 34: industry-specific agents (per-vertical rubric + tier) ─
+  "clinical-protocol-reviewer": () =>
+    import("@/app/api/_agents/clinical-protocol-reviewer/route"),
+  "emissions-calculator": () =>
+    import("@/app/api/_agents/emissions-calculator/route"),
+  "submittal-router": () => import("@/app/api/_agents/submittal-router/route"),
 };
 
 /**
