@@ -34,10 +34,23 @@ beforeEach(() => {
 });
 
 describe("RUBRICS library", () => {
-  it("ships the three baseline rubrics required by Cooks 31/32", () => {
+  it("ships the four baseline rubrics required by Cooks 31/32/34", () => {
     expect(RUBRICS["pharma-protocol-deviation"]).toBeDefined();
     expect(RUBRICS["climate-scope-calculation"]).toBeDefined();
+    expect(RUBRICS["aec-submittal-review"]).toBeDefined();
     expect(RUBRICS["generic-audit-ready"]).toBeDefined();
+  });
+
+  it("aec-submittal-review rubric enforces spec-section + reviewer + RFI bars", () => {
+    // Locking the AEC-specific must-pass criteria so a future
+    // 'simplification' can't accidentally remove the spec-section
+    // citation requirement (the single most common failure mode in
+    // construction submittal review).
+    const rubric = RUBRICS["aec-submittal-review"];
+    expect(rubric.expertSystem).toContain("submittal");
+    expect(rubric.mustPass.some((c) => /spec section/i.test(c))).toBe(true);
+    expect(rubric.mustPass.some((c) => /reviewer team/i.test(c))).toBe(true);
+    expect(rubric.mustPass.some((c) => /RFI/i.test(c))).toBe(true);
   });
 
   it("every rubric has a non-empty expertSystem + at least 3 must-pass criteria", () => {
