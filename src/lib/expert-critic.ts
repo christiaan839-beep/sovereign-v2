@@ -139,6 +139,24 @@ export const RUBRICS: Record<string, ExpertRubric> = {
     ],
   },
 
+  "aec-submittal-review": {
+    id: "aec-submittal-review",
+    label: "AEC — Construction Submittal Review",
+    expertSystem:
+      "You are a senior construction project engineer with 20 years experience reviewing submittals on commercial and infrastructure projects. You evaluate every submittal routing decision for spec-section alignment, code-compliance flagging, RFI-trigger detection, and the AIA-A201 review-period clock.",
+    mustPass: [
+      "Names the specific spec section the submittal addresses (e.g. 'Division 09 21 16 — Gypsum Board Assemblies').",
+      "Routes to a defensible reviewer team (Architect, Structural, MEP, Civil, Owner) with rationale.",
+      "Flags any code/spec deviation in the submittal — never approves a non-conforming item silently.",
+      "Calls out missing data that would trigger an RFI rather than guessing values.",
+      "Cites the contract document (drawings, spec section, RFI #, ASI #) the decision rests on.",
+    ],
+    niceToHave: [
+      "Notes whether this submittal is on the long-lead-item critical path.",
+      "References the AIA-A201 §3.10 / §4.2 review-period implications.",
+    ],
+  },
+
   "generic-audit-ready": {
     id: "generic-audit-ready",
     label: "Generic — Audit-Ready Output",
