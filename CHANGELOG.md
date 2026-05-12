@@ -2,6 +2,68 @@
 
 All notable changes to Sovereign Matrix are documented here.
 
+## [2.6.0] — 2026-05-12
+
+The **per-vertical agent specialization** pass. Cook 34 lands the
+first three industry-specific agents on the elite stack: each one
+binds a per-vertical confidence tier + per-vertical expert-critic
+rubric, validating the pattern that future industry agents will
+follow.
+
+### Added
+
+- **`/api/agents/clinical-protocol-reviewer`** — pharma. Replaces
+  the junior CRA triaging protocol deviations. Returns
+  `{severity, violatedSection, rootCause, capa, regulatoryCitation,
+  reportingTriggers, reasoning}`. CRITICAL confidence tier (sub-0.95
+  escalates; sub-0.5 abstains to a human CRA). pharma-protocol-
+  deviation rubric.
+- **`/api/agents/emissions-calculator`** — climate. Replaces the
+  junior ESG analyst computing Scope 1/2/3 from activity data.
+  Returns `{tonnesCO2e, factor: {value, unit, source, vintage},
+  gwpBasis, controlBoundary, formula, allocationMethod,
+  materialUnderSEC, caveats, reasoning}`. STRICT tier — emissions
+  numbers go on a CSRD/SEC disclosure an assurance provider will
+  challenge. climate-scope-calculation rubric.
+- **`/api/agents/submittal-router`** — AEC / construction.
+  Replaces the junior project engineer triaging incoming submittals.
+  Returns `{decision, specSectionMatch, reviewerTeam, reasoning,
+  comments, flags: {codeDeviation, longLeadCriticalPath,
+  missingData}, reviewClockDays}`. STRICT tier — wrong routing
+  creates RFIs and schedule slip. aec-submittal-review rubric.
+- **`aec-submittal-review`** rubric — added to RUBRICS in
+  expert-critic.ts. 20-yr senior PM persona. Five must-pass
+  criteria (spec-section citation, reviewer-team rationale,
+  code-deviation flagging, RFI-trigger detection, contract-document
+  citation). Two nice-to-have (long-lead critical path, AIA-A201
+  review-period implications).
+- **2 new expert-critic tests** lock the AEC rubric existence and
+  enforce the spec-section + reviewer + RFI must-pass bars so a
+  future "simplification" can't accidentally remove them.
+- **`AGENT_REGISTRY`** — 3 new entries. Total registered: 145.
+
+### Notes
+
+- The full elite stack on Cook 34 agents now runs at four
+  different confidence tiers — `permissive` (none yet),
+  `standard` (Cook 33 inbox-triage, meeting-scribe, lead-
+  qualifier), `strict` (Cook 33 doc-extractor, tier1-support;
+  Cook 34 emissions-calculator, submittal-router), and `critical`
+  (Cook 34 clinical-protocol-reviewer). The tier choice IS the
+  product decision: it controls how readily the agent ships vs
+  abstains.
+- Each Cook 34 agent uses its DOMAIN rubric, not the generic one.
+  This is the first time the per-domain critic actually fires
+  in production — pharma agents face the CRA persona, climate
+  agents face the ISO 14065 verifier persona, AEC agents face
+  the senior PM persona.
+- The pharma + climate vertical pages from Cook 31 now have real
+  agents behind them, not just marketing copy. AEC vertical page
+  (planned Cook 36) will have submittal-router live before the
+  page ships.
+
+---
+
 ## [2.5.0] — 2026-05-12
 
 The **entry-level agent rollout** pass. Cook 33 lands the first
