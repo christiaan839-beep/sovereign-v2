@@ -91,6 +91,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/compliance", priority: 0.92, changeFreq: "monthly" }, // Vanta-for-AI positioning — SOC 2 / EU AI Act / POPIA / GDPR
     { path: "/vendor-risk", priority: 0.92, changeFreq: "monthly" }, // Procurement-ready — pre-answered security questionnaire
     { path: "/insurance", priority: 0.9, changeFreq: "monthly" }, // AI E&O underwriting signals — carrier-facing positioning
+    { path: "/pharma", priority: 0.92, changeFreq: "monthly" }, // 21 CFR Part 11 + ICH-GCP + GxP receipts — life-sciences ICP
+    { path: "/climate", priority: 0.92, changeFreq: "monthly" }, // CSRD + SEC climate rule + GHG Protocol receipts — sustainability/finance ICP
 
     // Sector pages
     { path: "/for-healthcare", priority: 0.8, changeFreq: "monthly" },
