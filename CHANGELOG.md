@@ -2,6 +2,68 @@
 
 All notable changes to Sovereign Matrix are documented here.
 
+## [2.5.0] — 2026-05-12
+
+The **entry-level agent rollout** pass. Cook 33 lands the first
+five universal agents that compose the full elite-tier safety
+stack from Cook 32. Every agent inherits confidence-gate +
+expert-critic + factory verifier by default. Six independent
+safety layers, six new revenue surfaces.
+
+### Added
+
+- **`src/lib/super-agent.ts`** — elite-stack composition helper.
+  Wires confidence-gate (Cook 32) and expert-critic (Cook 32) into
+  one `runSuperAgent()` call. Three-outcome contract:
+  `commit` / `revise` / `abstain`. Returns receipt-friendly
+  `SuperAgentResult`. Centralizes the response envelope so every
+  agent route returns an identical shape (`toResponseEnvelope()`).
+  15 tests covering composition routing, gate→critic ordering,
+  rubricId=null skip path, option propagation, and
+  JSON-serializable round-tripping.
+- **`/api/agents/inbox-triage`** — receptionist / EA replacement.
+  Reads inbound email, returns
+  `{urgency, category, summary, draftReply, routeTo}`. Standard
+  confidence tier, generic-audit-ready rubric.
+- **`/api/agents/meeting-scribe`** — junior notetaker replacement.
+  Parses transcript, returns
+  `{summary, decisions, actionItems, openQuestions}`. Cites
+  attendees from the supplied roster only — no fabricated owners.
+  Standard tier, generic-audit-ready rubric.
+- **`/api/agents/doc-extractor`** — data-entry clerk replacement.
+  Caller provides text + field spec; agent returns
+  `{fields: {<name>: {value, confidence, sourceQuote}}, missingFields}`.
+  STRICT confidence tier — wrong fields are expensive downstream.
+- **`/api/agents/lead-qualifier`** — junior SDR replacement. BANT
+  qualification with score (0-100), tier (hot/warm/cool/unqualified),
+  per-dimension signal + evidence quote, ICP fit, next action,
+  reasoning. Standard tier, generic-audit-ready rubric.
+- **`/api/agents/tier1-support`** — helpdesk Lvl-1 replacement.
+  Answers ONLY from the supplied knowledge base; escalates rather
+  than fabricates when the KB doesn't contain the answer. Returns
+  `{reply, answeredFromKb, sourceQuotes, tags, escalate}`. STRICT
+  tier — wrong support replies erode customer trust.
+- **`AGENT_REGISTRY`** — 5 new agents registered for the unified
+  serverless router at `/api/agents/<slug>`. Total registered: 142.
+
+### Notes
+
+- The full elite stack on every Cook-33+ agent now reads:
+  `generate → confidence-gate → expert-critic → 5-layer verifier
+  (LlamaGuard + PII + content policy + quality + trust) →
+  cryptographic-receipt`. Six independent safety checks. No single
+  failure can ship a wrong answer.
+- Each agent's `confidenceTier` is chosen by stakes: medical/legal
+  = strict or critical, customer-facing reply drafts = standard,
+  internal brainstorming = permissive. Override per-call by
+  passing a numeric threshold instead of a tier name.
+- Agents return one of three response codes — `ok: true`,
+  `ok: false + code: REVISE_REQUIRED`, or
+  `ok: false + code: HUMAN_REVIEW_REQUIRED`. UI clients should
+  branch on `ok` first, then on `code`.
+
+---
+
 ## [2.4.0] — 2026-05-12
 
 The **elite-tier expansion** pass. Cook 31 + Cook 32 land together:
