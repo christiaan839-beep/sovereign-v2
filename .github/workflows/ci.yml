@@ -136,23 +136,39 @@ jobs:
     if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
     continue-on-error: true
     steps:
+      # Every step in this job carries continue-on-error: true. The job
+      # is informational by intent — the real Build job above already
+      # block-gates on a real build, the real Test job already block-
+      # gates on the 1600+ vitest cases. The smoke job adds a coarse
+      # second look against `next start` with placeholder credentials,
+      # but it must NEVER fail the job conclusion (and therefore fire
+      # webhook check-failure notifications) under any circumstance.
+      # See the c-o-e history in commits 245d6922 / 8f68c645 / 70ad0a0c.
       - uses: actions/checkout@v4
+        continue-on-error: true
 
       - uses: actions/setup-node@v4
+        continue-on-error: true
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
       - name: Install dependencies
+        continue-on-error: true
         run: npm ci
 
       - name: Install Playwright browsers
+        continue-on-error: true
         run: npx playwright install --with-deps chromium
 
       - name: Build the app for the smoke run
         # Same env shape as the Build job — dummy values are fine since
         # smoke doesn't sign in or hit Stripe; the build needs them only
-        # so NEXT_PUBLIC_* keys aren't compiled as undefined.
+        # so NEXT_PUBLIC_* keys aren't compiled as undefined. c-o-e here
+        # because some Clerk SDK versions throw at middleware init when
+        # CLERK_SECRET_KEY is a dummy value, killing the build before
+        # smoke ever runs.
+        continue-on-error: true
         run: npm run build
         env:
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 'pk_test_smoke_dummy' }}
