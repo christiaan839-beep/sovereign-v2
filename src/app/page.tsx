@@ -281,8 +281,8 @@ function Nav({
           <div className="hidden md:flex items-center gap-0 text-[13px]">
             <div className="flex items-center gap-6 mr-6">
               <NavLink href={PLATFORM_HREF}>Platform</NavLink>
+              <NavLink href="/industries">Industries</NavLink>
               <NavLink href="/marketplace">Marketplace</NavLink>
-              <NavLink href="/explorer">Explorer</NavLink>
               <NavLink href="/trust">Trust</NavLink>
               <NavLink href="/pricing">Pricing</NavLink>
               <NavLink href="/developers/docs">Docs</NavLink>
@@ -364,6 +364,7 @@ function Nav({
           >
             {[
               { href: PLATFORM_HREF, label: "Platform" },
+              { href: "/industries", label: "Industries" },
               { href: "/marketplace", label: "Marketplace" },
               { href: "/explorer", label: "Explorer" },
               { href: "/trust", label: "Trust" },
@@ -1287,11 +1288,12 @@ function Footer() {
           <FooterCol
             title="Solutions"
             links={[
+              { href: "/industries", label: "All industries" },
+              { href: "/compliance", label: "Compliance" },
+              { href: "/vendor-risk", label: "Vendor risk" },
+              { href: "/insurance", label: "Insurance" },
               { href: "/for-healthcare", label: "Healthcare" },
               { href: "/for-legal", label: "Legal" },
-              { href: "/for-agriculture", label: "Agriculture" },
-              { href: "/for-manufacturing", label: "Manufacturing" },
-              { href: "/for-cybersecurity", label: "Security" },
             ]}
           />
           <FooterCol
