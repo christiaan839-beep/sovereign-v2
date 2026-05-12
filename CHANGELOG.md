@@ -2,6 +2,66 @@
 
 All notable changes to Sovereign Matrix are documented here.
 
+## [2.4.0] — 2026-05-12
+
+The **elite-tier expansion** pass. Cook 31 + Cook 32 land together:
+two new audit-grade verticals (pharma + climate, both ★★★★★ on the
+audit-demand × TAM ranking) and the two missing super-agent
+reliability primitives (confidence-gate + expert-critic). Every new
+agent shipped after this release inherits both.
+
+### Added
+
+- **`/pharma`** — Life Sciences + Clinical Trials positioning. 21
+  CFR Part 11 (electronic records + signatures), ICH-GCP E6(R3),
+  GxP, ALCOA+, HIPAA + GDPR Art. 9. Three audit-ready workflows
+  (protocol deviation triage, AE narrative drafting, investigator-
+  site monitoring summary). Designed OG card + Service JSON-LD +
+  breadcrumb schema + sitemap entry (priority 0.92).
+- **`/climate`** — Climate + ESG Assurance positioning. CSRD
+  Article 8a limited assurance, SEC climate rule S-K 1500, GHG
+  Protocol Corporate Standard, SBTi/CDP/ISSB alignment. Three
+  audit-ready workflows (activity data → emissions, Scope 3
+  supplier triage, disclosure narrative drafting). Designed OG
+  card + Service JSON-LD + breadcrumb schema + sitemap entry.
+- **`src/lib/confidence-gate.ts`** — abstain-when-unsure policy
+  layer. Three-state outcome (commit / escalate / abstain), four
+  tier presets (permissive 0.6, standard 0.7, strict 0.85, critical
+  0.95), graceful upstream-failure degradation. Contract: NEVER
+  fabricates when upstream model is missing — defaults to abstain
+  with a "needs human review" reason. 17 tests covering threshold
+  resolution, policy classification, integration with consensus,
+  and the JSON-serializable-receipt contract.
+- **`src/lib/expert-critic.ts`** — domain-aware final-pass review.
+  Per-domain `ExpertRubric` (role + must-pass checklist + nice-to-
+  have). Three baseline rubrics shipped: `pharma-protocol-deviation`
+  (15-yr CRA persona, ICH-GCP 5.20 + 21 CFR 312.62(b) bar),
+  `climate-scope-calculation` (ISO 14065 verifier persona, GHG
+  Protocol + CSRD Article 8a bar), `generic-audit-ready` (audit
+  reviewer persona). Defensive parsing — model claiming `pass=true`
+  with blocker findings is overridden to fail. Network failures
+  degrade to blocker verdict (never silently accepts a missing
+  review as a pass). 24 tests covering rubric library shape,
+  prompt construction, JSON extraction, verdict normalization, and
+  the AI-router-mocked integration path.
+- **`/industries` hub** — pharma + climate cards added to the
+  audit-grade tier (cyan accent). Total audit-grade verticals now
+  5: compliance, vendor-risk, insurance, pharma, climate. Hard-
+  coded "3 / 3 live" count replaced with `{AUDIT.length}` so future
+  additions self-update.
+
+### Notes
+
+- The two new modules (`confidence-gate.ts` + `expert-critic.ts`)
+  COMPOSE with the existing `verifiedAi` consensus pipeline + the
+  5-layer output verifier. The full super-agent stack now reads:
+  generate → consensus-verify → confidence-gate → expert-critic →
+  cryptographic-receipt. Six independent safety layers.
+- New agents from Cook 33+ will compose these primitives explicitly
+  in their request pipeline. See `src/lib/agents/` (forthcoming).
+
+---
+
 ## [2.3.1] — 2026-05-12
 
 The **share-surface + proof-of-aliveness** pass. Cook 29 follows
