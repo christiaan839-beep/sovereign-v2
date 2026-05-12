@@ -37,6 +37,8 @@ import {
   ArrowRight,
   ClipboardCheck,
   FileSearch,
+  FlaskConical,
+  Leaf,
 } from "lucide-react";
 import { SpotlightCard } from "@/components/ui/SpotlightCard";
 
@@ -74,6 +76,22 @@ const AUDIT: Vertical[] = [
     title: "Insurance / AI E&O",
     body: "Cryptographic underwriting signals for AI errors-and-omissions carriers. Tier premiums on chain-integrity. Subrogation-grade evidence packs.",
     href: "/insurance",
+    status: "live",
+    accent: "cyan",
+  },
+  {
+    icon: FlaskConical,
+    title: "Pharma + Life Sciences",
+    body: "21 CFR Part 11 + ICH-GCP E6(R3) + GxP-aligned receipts. ALCOA+ by construction. Auditor verifies against /api/verify with no Sovereign trust required.",
+    href: "/pharma",
+    status: "live",
+    accent: "cyan",
+  },
+  {
+    icon: Leaf,
+    title: "Climate + ESG Assurance",
+    body: "CSRD Article 8a + SEC climate rule + GHG Protocol + ISSB-aligned receipts. Limited-assurance ready by construction. Auditor verifies the chain, not the spreadsheet.",
+    href: "/climate",
     status: "live",
     accent: "cyan",
   },
@@ -351,7 +369,7 @@ export default function IndustriesPage() {
               Audit-grade surfaces
             </h2>
             <span className="font-mono text-[11px] text-neutral-500">
-              3 / 3 live
+              {AUDIT.length} / {AUDIT.length} live
             </span>
           </div>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
