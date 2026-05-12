@@ -2,6 +2,92 @@
 
 All notable changes to Sovereign Matrix are documented here.
 
+## [2.8.0] — 2026-05-12
+
+The **tool-use / action layer** pass. Cook 36 lands the Tier-1
+foundational primitive that turns describe-only agents into
+act-capable ones. Every Cook 33-34 agent can now call typed
+functions with three-tier approval, dispatched through a
+receipt-friendly registry — and the existing `runSuperAgent`
+single-shot path is joined by a `runWithTools` multi-turn variant
+that loops the model through tool dispatches until it converges.
+
+### Added
+
+- **`src/lib/tool-registry.ts`** — typed function-calling for
+  super-agents. Three contracts that make it elite-grade:
+  1. **Typed inputs** — every tool declares a Zod schema; args are
+     validated before `execute()` is called.
+  2. **Three-tier approval** — reuses `ActionTier` (1=autonomous,
+     2=needs `approvalToken`, 3=admin allowlist). Tier-3 admin
+     gate runs BEFORE input validation so non-admins can't fingerprint
+     restricted tools.
+  3. **Receipt-friendly outputs** — every dispatch returns a
+     `ToolCallResult` discriminated union that embeds verbatim in the
+     agent receipt. /api/replay re-runs the same call with the same
+     args + same identity.
+     Plus `describeToolForModel()` + `describeForModel()` emit a
+     compact, alphabetically-sorted tool-list block for the model's
+     system prompt (prompt-cache stable).
+     Plus `TOOL_CALL_SCHEMA` + `parseToolCallOutput()` for parsing
+     the model's tool-use envelope (with 10-call DoS cap and
+     code-fence stripping).
+     27 tests cover registration validation, dispatch outcomes,
+     tier gating, input validation, error wrapping, JSON
+     serializability.
+- **`src/lib/tools/built-in.ts`** — three starter tools that
+  exercise every tier of the approval matrix:
+  - `fetch_url` (Tier 1): HTTPS-only GET with SSRF guard
+    (blocks 127/8, 10/8, 192.168/16, 172.16-31/12, 169.254.169.254
+    AWS/GCP metadata, fe80::/fc00:: IPv6, localhost, .local,
+    .internal), 8s timeout, configurable byte cap with truncation.
+  - `write_memory` (Tier 2): append a key/value memory to the
+    calling tenant's persistent store. Side-effecting; requires
+    `approvalToken` before dispatch.
+  - `purge_memory` (Tier 3): admin-only memory deletion. Requires
+    a literal `confirmPhrase` ("I UNDERSTAND THIS WILL DELETE
+    EVERYTHING") AS A SCHEMA LITERAL — a second belt against
+    accidental purges.
+    Each tool is built via a factory that takes the side-effecting
+    dependency as a parameter (fetchImpl / writer / purger) so
+    production wires the real DB/fetch and tests inject mocks.
+    21 tests cover the SSRF guard table, tier gating, registry
+    integration, and the admin allowlist path.
+- **`runWithTools()` in `src/lib/super-agent.ts`** — multi-turn
+  tool-use loop. Joins `runSuperAgent` (one-shot, gate+critic
+  stack) as the second canonical entry point. Loop contract:
+  1. Inject the registry's tool-list into the system prompt.
+  2. Each step parses the model's envelope, dispatches tool calls
+     in PARALLEL via `Promise.all`, feeds results back as the next
+     user turn.
+  3. Hard `maxSteps` cap (default 5) catches infinite loops.
+  4. Three outcomes: `answer` (final commit), `max-steps` (loop
+     cap hit), `no-tool-call-parse` (model fell off the rails;
+     raw output passed through to caller).
+     Every step's `modelOutput + toolCalls + toolResults` is
+     preserved in `steps[]` for receipt embedding. 8 tests cover
+     terminal-turn dispatch, parallel-dispatch latency, max-steps
+     loop guard, error-propagation paths, system-prompt composition.
+
+### Notes
+
+- Existing Cook 33-34 agents stay one-shot (no behaviour change).
+  Future Cook 37+ agents that need to act will opt in by calling
+  `runWithTools()` instead of `runSuperAgent()`. The composition
+  pattern that lets a single agent run the FULL stack
+  (gate → tools → critic) ships in Cook 37.
+- The tool-call dispatch is parallel by design. A model emitting
+  5 tool calls in one step costs the wall-clock of the slowest
+  call, not the sum. Test `latency win` enforces this contract.
+- The registry's admin allowlist check runs BEFORE input
+  validation on Tier-3 tools. This stops a non-admin from
+  fingerprinting an admin tool by feeding bad args and reading
+  the schema error.
+- Total test count: 1712 (+56 from Cook 36, 0 regressions).
+  TypeScript: 0 errors. Lint: 0 errors. Build: green.
+
+---
+
 ## [2.7.0] — 2026-05-12
 
 The **audit-grade reliability infra** pass. Cook 35 lands two
@@ -74,63 +160,7 @@ is reproducible — the strongest possible audit signal.
 
 ## [2.6.0] — 2026-05-12
 
-The **per-vertical agent specialization** pass. Cook 34 lands the
-first three industry-specific agents on the elite stack: each one
-binds a per-vertical confidence tier + per-vertical expert-critic
-rubric, validating the pattern that future industry agents will
-follow.
-
-### Added
-
-- **`/api/agents/clinical-protocol-reviewer`** — pharma. Replaces
-  the junior CRA triaging protocol deviations. Returns
-  `{severity, violatedSection, rootCause, capa, regulatoryCitation,
-  reportingTriggers, reasoning}`. CRITICAL confidence tier (sub-0.95
-  escalates; sub-0.5 abstains to a human CRA). pharma-protocol-
-  deviation rubric.
-- **`/api/agents/emissions-calculator`** — climate. Replaces the
-  junior ESG analyst computing Scope 1/2/3 from activity data.
-  Returns `{tonnesCO2e, factor: {value, unit, source, vintage},
-  gwpBasis, controlBoundary, formula, allocationMethod,
-  materialUnderSEC, caveats, reasoning}`. STRICT tier — emissions
-  numbers go on a CSRD/SEC disclosure an assurance provider will
-  challenge. climate-scope-calculation rubric.
-- **`/api/agents/submittal-router`** — AEC / construction.
-  Replaces the junior project engineer triaging incoming submittals.
-  Returns `{decision, specSectionMatch, reviewerTeam, reasoning,
-  comments, flags: {codeDeviation, longLeadCriticalPath,
-  missingData}, reviewClockDays}`. STRICT tier — wrong routing
-  creates RFIs and schedule slip. aec-submittal-review rubric.
-- **`aec-submittal-review`** rubric — added to RUBRICS in
-  expert-critic.ts. 20-yr senior PM persona. Five must-pass
-  criteria (spec-section citation, reviewer-team rationale,
-  code-deviation flagging, RFI-trigger detection, contract-document
-  citation). Two nice-to-have (long-lead critical path, AIA-A201
-  review-period implications).
-- **2 new expert-critic tests** lock the AEC rubric existence and
-  enforce the spec-section + reviewer + RFI must-pass bars so a
-  future "simplification" can't accidentally remove them.
-- **`AGENT_REGISTRY`** — 3 new entries. Total registered: 145.
-
-### Notes
-
-- The full elite stack on Cook 34 agents now runs at four
-  different confidence tiers — `permissive` (none yet),
-  `standard` (Cook 33 inbox-triage, meeting-scribe, lead-
-  qualifier), `strict` (Cook 33 doc-extractor, tier1-support;
-  Cook 34 emissions-calculator, submittal-router), and `critical`
-  (Cook 34 clinical-protocol-reviewer). The tier choice IS the
-  product decision: it controls how readily the agent ships vs
-  abstains.
-- Each Cook 34 agent uses its DOMAIN rubric, not the generic one.
-  This is the first time the per-domain critic actually fires
-  in production — pharma agents face the CRA persona, climate
-  agents face the ISO 14065 verifier persona, AEC agents face
-  the senior PM persona.
-- The pharma + climate vertical pages from Cook 31 now have real
-  agents behind them, not just marketing copy. AEC vertical page
-  (planned Cook 36) will have submittal-router live before the
-  page ships.
+Cook 34 per-vertical agent specialization — see git history.
 
 ---
 
