@@ -176,6 +176,16 @@ jobs:
           exit 1
 
       - name: Run golden-path smoke tests
+        # Step-level continue-on-error so the JOB conclusion stays
+        # "success" even on a flaky run. The job is intentionally
+        # informational (job-level continue-on-error: true above
+        # already prevents merge blocking), but GitHub still reports
+        # a JOB failure that fires webhook check-failure notifications
+        # to PR-activity subscribers. Step-level c-o-e makes the
+        # internal failure visible in the action UI/logs (red step)
+        # while the job rolls up to green — which is what
+        # "informational" actually means in this repo's intent.
+        continue-on-error: true
         run: npm run smoke
         env:
           E2E_BASE_URL: http://localhost:3000
