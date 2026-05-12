@@ -30,6 +30,13 @@
 
 import { confidenceGate, type ConfidenceTier } from "./confidence-gate";
 import { expertReview, type ExpertVerdict } from "./expert-critic";
+import {
+  type ToolCallResult,
+  type ToolContext,
+  type ToolRegistry,
+  parseToolCallOutput,
+} from "./tool-registry";
+import { ai } from "./ai";
 import { createLogger } from "./logger";
 
 const log = createLogger("super-agent");
@@ -240,5 +247,141 @@ export function toResponseEnvelope(
     code: "HUMAN_REVIEW_REQUIRED",
     reason: result.reason,
     confidence: result.confidence,
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Cook 36: Tool-use loop
+// ─────────────────────────────────────────────────────────────────
+
+/**
+ * One step in the tool-call loop. Each step the model either emits
+ * tool calls (we dispatch + feed the results back as a new user
+ * turn) or a final answer (we exit the loop).
+ *
+ * Receipt-relevant: every step's tool calls + results are recorded
+ * in `toolHistory` so the receipt captures the FULL chain of
+ * decisions, not just the final answer.
+ */
+export interface ToolStep {
+  /** The model's raw output for this step. */
+  modelOutput: string;
+  /** Tool calls the model emitted on this step. */
+  toolCalls: Array<{ name: string; args: Record<string, unknown> }>;
+  /** Dispatch results, in the same order as `toolCalls`. */
+  toolResults: ToolCallResult[];
+}
+
+export interface ToolAgentSpec {
+  /** Slug for telemetry. */
+  agentSlug: string;
+  /** Base system prompt; tool-list block appended automatically. */
+  systemPrompt: string;
+  /** The registry to dispatch against. */
+  registry: ToolRegistry;
+  /** Identity context for tool dispatches. */
+  toolContext: ToolContext;
+  /** Hard cap on iterations to prevent runaway loops. Default 5. */
+  maxSteps?: number;
+  /** Hard cap on output tokens per step. Default 2000. */
+  maxTokens?: number;
+}
+
+export interface ToolAgentResult {
+  outcome: "answer" | "max-steps" | "no-tool-call-parse";
+  /** The final answer the model converged on (empty on max-steps). */
+  finalAnswer: string;
+  /** Every step the agent took. */
+  steps: ToolStep[];
+}
+
+/**
+ * Tool-use loop. Distinct from `runSuperAgent` because tool use
+ * needs multi-turn dialogue with the model, while the super-agent
+ * stack is one-shot. Future Cook 37 (orchestration) can compose
+ * BOTH: confidence-gate first, then tool-use, then expert-critic.
+ *
+ * Contracts:
+ *   - Always returns a structured result. Never throws.
+ *   - `maxSteps` cap is hard — runaway models are caught.
+ *   - Every tool call goes through the registry's validation +
+ *     three-tier approval, so tier-3 / requires-confirmation
+ *     outcomes propagate up to the caller via `toolHistory`.
+ */
+export async function runWithTools(
+  userPrompt: string,
+  spec: ToolAgentSpec,
+): Promise<ToolAgentResult> {
+  const {
+    agentSlug,
+    systemPrompt,
+    registry,
+    toolContext,
+    maxSteps = 5,
+    maxTokens = 2000,
+  } = spec;
+
+  const toolListBlock = registry.describeForModel();
+  const fullSystem = [
+    systemPrompt,
+    "",
+    "─── TOOL USE ───",
+    toolListBlock,
+    "",
+    'When you want to act, emit ONLY a JSON object: {"toolCalls":[{"name":"tool_name","args":{...}}]}. When you have the final answer, emit {"toolCalls":[],"finalAnswer":"…"}. No markdown fences, no preamble.',
+  ].join("\n");
+
+  const transcript: string[] = [`USER: ${userPrompt}`];
+  const steps: ToolStep[] = [];
+
+  for (let stepIdx = 0; stepIdx < maxSteps; stepIdx++) {
+    const stepPrompt = transcript.join("\n\n");
+    const raw = await ai(stepPrompt, { system: fullSystem, maxTokens });
+    const parsed = parseToolCallOutput(raw);
+
+    if (parsed === null) {
+      log.warn(
+        "Tool agent could not parse model output as tool-call envelope",
+        {
+          agentSlug,
+          step: stepIdx,
+        },
+      );
+      return {
+        outcome: "no-tool-call-parse",
+        finalAnswer: raw, // give caller the raw model output as a fallback
+        steps,
+      };
+    }
+
+    // Terminal turn: model declared a final answer.
+    if (parsed.toolCalls.length === 0) {
+      steps.push({ modelOutput: raw, toolCalls: [], toolResults: [] });
+      return {
+        outcome: "answer",
+        finalAnswer: parsed.finalAnswer ?? "",
+        steps,
+      };
+    }
+
+    // Dispatch every tool call in parallel and gather results.
+    const toolResults = await Promise.all(
+      parsed.toolCalls.map((c) => registry.call(c.name, c.args, toolContext)),
+    );
+    steps.push({
+      modelOutput: raw,
+      toolCalls: parsed.toolCalls,
+      toolResults,
+    });
+
+    // Feed results back into the next user turn.
+    transcript.push(`ASSISTANT: ${raw}`);
+    transcript.push(`TOOL_RESULTS: ${JSON.stringify(toolResults)}`);
+  }
+
+  return {
+    outcome: "max-steps",
+    finalAnswer: "",
+    steps,
   };
 }
