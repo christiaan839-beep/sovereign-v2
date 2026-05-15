@@ -81,10 +81,31 @@ export async function POST(req: Request) {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
-        const plan = session.metadata?.plan || "node";
         const userId = session.metadata?.userId;
         const customerId = stripeId(session.customer);
         const subscriptionId = stripeId(session.subscription);
+
+        // Add-on checkout (Cook 143/146): metadata.skuId present →
+        // provision the SKU instead of writing a tier-plan row. The
+        // actual seat issuance / pack feature-flag flip / meter binding
+        // is centralized in provisionAddOn() so the webhook is dumb.
+        const skuId = session.metadata?.skuId;
+        if (skuId && userId) {
+          const { provisionAddOn } = await import("@/lib/add-on-provisioner");
+          const result = await provisionAddOn({
+            skuId,
+            userId,
+            family: session.metadata?.family,
+            quantity: Number(session.metadata?.quantity ?? "1"),
+            stripeCustomerId: customerId,
+            stripeSubscriptionId: subscriptionId,
+            eventId: event.id,
+          });
+          log.info("Add-on provisioned", { userId, ...result });
+          break;
+        }
+
+        const plan = session.metadata?.plan || "node";
         if (userId) {
           await db
             .insert(subscriptions)

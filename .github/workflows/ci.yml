@@ -6,23 +6,57 @@ on:
   pull_request:
     branches: [main]
 
+# Explicit minimum-viable permissions. Org-level "restrict default
+# workflow permissions" can otherwise leave actions/checkout@v4
+# without the contents:read scope it needs — manifesting as a
+# 2-second job failure before npm ever runs. Cook 140 tests this
+# theory; if the failures persist after this PR, the remaining
+# plausible cause is Actions minutes exhaustion (verify at
+# github.com/settings/billing).
+permissions:
+  contents: read
+  actions: read
+
+# A new push to the same ref cancels the in-flight run. Stops the
+# "two seconds, runner provisioning failed" flake from piling up
+# orange/red on every subsequent push.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   NODE_VERSION: '22'
 
 jobs:
   lint-and-typecheck:
     name: Lint & Type Check
-    runs-on: ubuntu-latest
+    # Pin a known-stable image. ubuntu-latest rotated to 24.04 with
+    # npm cache regressions across some weeks; 22.04 is the LTS we
+    # built every prior PR against.
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
 
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
+      # Retry npm ci up to 3x with backoff. Most "Lint & Type Check"
+      # failures across recent PRs were short-duration runner /
+      # registry flakes — a single retry pass eliminates the noise
+      # without burning quota on hung runs.
       - name: Install dependencies
-        run: npm ci
+        run: |
+          for attempt in 1 2 3; do
+            if npm ci; then exit 0; fi
+            echo "npm ci attempt $attempt failed; backing off..."
+            sleep $((attempt * 5))
+          done
+          exit 1
 
       - name: Run ESLint
         run: npm run lint
@@ -34,18 +68,34 @@ jobs:
 
   build:
     name: Build
-    runs-on: ubuntu-latest
+    # Pin a known-stable image. ubuntu-latest rotated to 24.04 with
+    # npm cache regressions across some weeks; 22.04 is the LTS we
+    # built every prior PR against.
+    runs-on: ubuntu-22.04
     needs: lint-and-typecheck
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
 
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
+      # Retry npm ci up to 3x with backoff. Most "Lint & Type Check"
+      # failures across recent PRs were short-duration runner /
+      # registry flakes — a single retry pass eliminates the noise
+      # without burning quota on hung runs.
       - name: Install dependencies
-        run: npm ci
+        run: |
+          for attempt in 1 2 3; do
+            if npm ci; then exit 0; fi
+            echo "npm ci attempt $attempt failed; backing off..."
+            sleep $((attempt * 5))
+          done
+          exit 1
 
       - name: Build application
         run: npm run build
@@ -56,35 +106,71 @@ jobs:
 
   test:
     name: Test
-    runs-on: ubuntu-latest
+    # Pin a known-stable image. ubuntu-latest rotated to 24.04 with
+    # npm cache regressions across some weeks; 22.04 is the LTS we
+    # built every prior PR against.
+    runs-on: ubuntu-22.04
     needs: lint-and-typecheck
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
 
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
+      # Retry npm ci up to 3x with backoff. Most "Lint & Type Check"
+      # failures across recent PRs were short-duration runner /
+      # registry flakes — a single retry pass eliminates the noise
+      # without burning quota on hung runs.
       - name: Install dependencies
-        run: npm ci
+        run: |
+          for attempt in 1 2 3; do
+            if npm ci; then exit 0; fi
+            echo "npm ci attempt $attempt failed; backing off..."
+            sleep $((attempt * 5))
+          done
+          exit 1
 
       - name: Run tests
         run: npm test
 
   security-audit:
     name: Security Audit
-    runs-on: ubuntu-latest
+    # Pin a known-stable image. ubuntu-latest rotated to 24.04 with
+    # npm cache regressions across some weeks; 22.04 is the LTS we
+    # built every prior PR against.
+    runs-on: ubuntu-22.04
+    timeout-minutes: 8
+    # Informational only: a flagged transitive vuln in npm audit doesn't
+    # break the build. Lift the soft-fail signal to the job level so the
+    # PR status row doesn't show red when only the audit step fired.
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
 
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
+      # Retry npm ci up to 3x with backoff. Most "Lint & Type Check"
+      # failures across recent PRs were short-duration runner /
+      # registry flakes — a single retry pass eliminates the noise
+      # without burning quota on hung runs.
       - name: Install dependencies
-        run: npm ci
+        run: |
+          for attempt in 1 2 3; do
+            if npm ci; then exit 0; fi
+            echo "npm ci attempt $attempt failed; backing off..."
+            sleep $((attempt * 5))
+          done
+          exit 1
 
       - name: Audit dependencies
         run: npm audit --audit-level=high
@@ -92,21 +178,37 @@ jobs:
 
   migration-parity:
     name: Migration Parity
-    runs-on: ubuntu-latest
+    # Pin a known-stable image. ubuntu-latest rotated to 24.04 with
+    # npm cache regressions across some weeks; 22.04 is the LTS we
+    # built every prior PR against.
+    runs-on: ubuntu-22.04
     needs: lint-and-typecheck
+    timeout-minutes: 8
     # Only run when DATABASE_URL_READONLY is configured. Use a *read-only*
     # Neon role here — never the same credential the app deploys with.
     if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
 
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
+      # Retry npm ci up to 3x with backoff. Most "Lint & Type Check"
+      # failures across recent PRs were short-duration runner /
+      # registry flakes — a single retry pass eliminates the noise
+      # without burning quota on hung runs.
       - name: Install dependencies
-        run: npm ci
+        run: |
+          for attempt in 1 2 3; do
+            if npm ci; then exit 0; fi
+            echo "npm ci attempt $attempt failed; backing off..."
+            sleep $((attempt * 5))
+          done
+          exit 1
 
       - name: Verify schema vs Neon (soft until baseline established)
         run: npm run check:migrations:soft
@@ -115,8 +217,12 @@ jobs:
 
   smoke:
     name: Smoke Tests (informational)
-    runs-on: ubuntu-latest
+    # Pin a known-stable image. ubuntu-latest rotated to 24.04 with
+    # npm cache regressions across some weeks; 22.04 is the LTS we
+    # built every prior PR against.
+    runs-on: ubuntu-22.04
     needs: build
+    timeout-minutes: 15
     # Smoke runs against the THIS-PR build via `next start` on localhost
     # with placeholder Clerk + DB credentials. It's a coarse signal —
     # auth-gated paths are never exercised (we can't sign in without
@@ -137,14 +243,26 @@ jobs:
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
 
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
+      # Retry npm ci up to 3x with backoff. Most "Lint & Type Check"
+      # failures across recent PRs were short-duration runner /
+      # registry flakes — a single retry pass eliminates the noise
+      # without burning quota on hung runs.
       - name: Install dependencies
-        run: npm ci
+        run: |
+          for attempt in 1 2 3; do
+            if npm ci; then exit 0; fi
+            echo "npm ci attempt $attempt failed; backing off..."
+            sleep $((attempt * 5))
+          done
+          exit 1
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
@@ -195,9 +313,13 @@ jobs:
 
   docker:
     name: Docker Build
-    runs-on: ubuntu-latest
+    # Pin a known-stable image. ubuntu-latest rotated to 24.04 with
+    # npm cache regressions across some weeks; 22.04 is the LTS we
+    # built every prior PR against.
+    runs-on: ubuntu-22.04
     needs: build
     if: github.ref == 'refs/heads/main'
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 

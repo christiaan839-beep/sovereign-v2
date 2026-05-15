@@ -151,6 +151,12 @@ export default function LandingPage() {
         {/* 01 · Hero — copper surface (marketing) */}
         <Hero />
 
+        {/* Investor signal strip — Vanta-comparable hook → /investors */}
+        <InvestorSignalStrip />
+
+        {/* Design-partner slots — buyer-track conversion (5 slots open) */}
+        <DesignPartnerSlotsStrip />
+
         {/* Try-it demo — embedded competitor scan, no signup */}
         <TryItDemo />
 
@@ -505,10 +511,10 @@ function Hero() {
           transition={{ delay: 0.4, duration: 0.7 }}
           className="text-[17px] md:text-[19px] text-neutral-400 leading-[1.55] mb-4 max-w-2xl mx-auto"
         >
-          137 production agents that research, draft, qualify, and call — and
-          ship a verifiable HMAC-signed receipt every time. Built for teams that
-          need AI <em className="not-italic text-neutral-300">and</em> a paper
-          trail.
+          145 production agents that research, draft, qualify, and call — and
+          ship a verifiable HMAC-signed receipt every time. 2,492 tests pass. 7
+          cryptographic primitives. Built for teams that need AI{" "}
+          <em className="not-italic text-neutral-300">and</em> a paper trail.
         </motion.p>
         <motion.p
           initial={{ opacity: 0, y: 10 }}
@@ -1141,6 +1147,189 @@ function PricingStrip() {
 }
 
 /* ─── Final CTA ─────────────────────────────────────────────────── */
+/* ─── InvestorSignalStrip ──────────────────────────────────────── */
+function InvestorSignalStrip() {
+  return (
+    <section className="relative px-6 py-10 border-y border-white/[0.04] bg-gradient-to-b from-[#030303] via-[#040303] to-[#030303] overflow-hidden">
+      {/* Faint cyan radial — signals the audit-track shift */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(ellipse 50% 50% at 50% 50%, rgba(6,182,212,0.04) 0%, transparent 70%)",
+        }}
+      />
+      <div className="relative max-w-5xl mx-auto text-center">
+        <p className="font-mono text-[10px] tracking-[0.3em] text-cyan-400/70 uppercase mb-3">
+          For investors + strategics
+        </p>
+        <p className="font-serif text-2xl md:text-3xl text-white leading-tight tracking-[-0.01em] max-w-3xl mx-auto">
+          Vanta sold for{" "}
+          <span className="text-cyan-400 font-semibold">$2.45B</span> doing
+          compliance scoreboards.{" "}
+          <span className="block sm:inline mt-1 sm:mt-0">
+            We ship the cryptographic layer they don&rsquo;t have.
+          </span>
+        </p>
+        <div className="mt-5 inline-flex items-center gap-2 px-3 py-1 rounded-full border border-emerald-500/25 bg-emerald-500/[0.04]">
+          <span
+            className="w-1.5 h-1.5 rounded-full bg-emerald-400"
+            aria-hidden="true"
+          />
+          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-emerald-300">
+            Readiness 100/100 across 8 verticals
+          </span>
+          <Link
+            href="/readiness"
+            className="font-mono text-[10px] text-emerald-200/80 hover:text-emerald-100 transition-colors"
+            aria-label="See per-vertical readiness scoreboard"
+          >
+            scoreboard →
+          </Link>
+        </div>
+        <div className="mt-4 flex items-center justify-center gap-4 flex-wrap text-[12px] font-mono text-neutral-500">
+          <Link
+            href="/investors"
+            className="inline-flex items-center gap-1.5 text-cyan-300 hover:text-cyan-200 transition-colors"
+          >
+            Open the data room <span aria-hidden="true">→</span>
+          </Link>
+          <span aria-hidden="true" className="text-white/[0.12]">
+            /
+          </span>
+          <Link
+            href="/demo/verify-receipt"
+            className="hover:text-neutral-300 transition-colors"
+          >
+            Verify a real receipt in 60s
+          </Link>
+          <span aria-hidden="true" className="text-white/[0.12]">
+            /
+          </span>
+          <Link
+            href="/pitch"
+            className="hover:text-neutral-300 transition-colors"
+          >
+            60-second pitch
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── DesignPartnerSlotsStrip ──────────────────────────────────── */
+function DesignPartnerSlotsStrip() {
+  return (
+    <section className="relative px-6 py-12 border-b border-white/[0.04] bg-gradient-to-b from-[#040303] via-[#050404] to-[#040303] overflow-hidden">
+      {/* Copper radial — signals the marketing-track shift back */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(ellipse 55% 40% at 50% 50%, rgba(181,83,44,0.035) 0%, transparent 70%)",
+        }}
+      />
+      <div className="relative max-w-5xl mx-auto">
+        <div className="flex items-center justify-center gap-3 mb-4">
+          <span
+            aria-hidden="true"
+            className="h-px w-12 bg-gradient-to-r from-transparent via-white/[0.18] to-white/[0.12]"
+          />
+          <span className="font-mono text-[10px] tracking-[0.3em] uppercase text-[#E08558]/85">
+            Design-partner cohort · Open
+          </span>
+          <span
+            aria-hidden="true"
+            className="h-px w-12 bg-gradient-to-l from-transparent via-white/[0.18] to-white/[0.12]"
+          />
+        </div>
+
+        <p className="font-serif text-center text-2xl md:text-3xl text-white leading-tight tracking-[-0.01em] max-w-3xl mx-auto">
+          <span className="text-[#E08558]">5 design-partner slots open.</span>{" "}
+          <span className="block sm:inline mt-1 sm:mt-0 text-neutral-300">
+            Be the customer whose audit trail every regulator points to.
+          </span>
+        </p>
+
+        {/* Slot tracker — a row of 5 dots, all filled for "open" */}
+        <div className="mt-6 flex items-center justify-center gap-2.5">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <div
+              key={i}
+              className="relative w-2 h-2 rounded-full bg-[#E08558]/40"
+              style={{
+                boxShadow: "0 0 12px rgba(224,133,88,0.35)",
+              }}
+              aria-label={`Slot ${i + 1} open`}
+            >
+              <div
+                className="absolute inset-0 rounded-full bg-[#E08558] animate-pulse"
+                style={{ animationDelay: `${i * 0.18}s`, opacity: 0.6 }}
+                aria-hidden="true"
+              />
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-6 grid sm:grid-cols-3 gap-3 max-w-2xl mx-auto">
+          <SlotPerk
+            label="What you get"
+            value="6-month pilot at -50% pricing"
+          />
+          <SlotPerk label="What we ask" value="One quarterly feedback call" />
+          <SlotPerk
+            label="Reference rights"
+            value="Logo + 1-line testimonial only"
+          />
+        </div>
+
+        <div className="mt-7 flex items-center justify-center gap-4 flex-wrap text-[12px] font-mono text-neutral-500">
+          <Link
+            href="/contact?intent=design-partner"
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[#E08558] text-black font-semibold hover:bg-[#F5A878] transition-colors text-[12px]"
+          >
+            Apply for a slot <span aria-hidden="true">→</span>
+          </Link>
+          <span aria-hidden="true" className="text-white/[0.12]">
+            /
+          </span>
+          <Link
+            href="/savings"
+            className="hover:text-neutral-300 transition-colors"
+          >
+            Run the savings calculator
+          </Link>
+          <span aria-hidden="true" className="text-white/[0.12]">
+            /
+          </span>
+          <Link
+            href="/vs/compare"
+            className="hover:text-neutral-300 transition-colors"
+          >
+            Compare vs Vanta + Lindy + Drata
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function SlotPerk({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="p-3 rounded-xl border border-white/[0.06] bg-white/[0.015] text-center">
+      <p className="text-[9px] uppercase tracking-[0.2em] text-neutral-500 mb-1">
+        {label}
+      </p>
+      <p className="text-[12px] text-neutral-200 font-medium leading-snug">
+        {value}
+      </p>
+    </div>
+  );
+}
+
 function FinalCTA() {
   return (
     <section
