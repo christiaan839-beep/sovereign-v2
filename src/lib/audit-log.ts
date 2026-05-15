@@ -28,7 +28,9 @@ export type AuditAction =
   | "marketplace.approved"
   | "marketplace.rejected"
   | "marketplace.published"
-  | "marketplace.unpublished";
+  | "marketplace.unpublished"
+  | "marketplace.run"
+  | "marketplace.connect";
 
 interface AuditEntry {
   userId: string;
