@@ -136,6 +136,25 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/quickstart", priority: 0.9, changeFreq: "monthly" }, // 5-min walkthrough — conversion-funnel doc
     { path: "/spec", priority: 0.95, changeFreq: "monthly" }, // VAOS 1.0 open standard — top SEO target for "verifiable AI receipts" / "AI agent audit standard"
 
+    // Investor + fundraise surfaces (Cook 144 + 147 + 157)
+    // /investors and /pitch are noindex via the page metadata; intentionally
+    // excluded from sitemap so search engines don't surface them publicly.
+    { path: "/savings", priority: 0.92, changeFreq: "monthly" }, // Audit-prep ROI calculator — high-intent compliance-buyer conversion
+    { path: "/vs/compare", priority: 0.9, changeFreq: "weekly" }, // 23-feature × 7-competitor matrix — comparison-shop SEO
+    { path: "/readiness", priority: 0.88, changeFreq: "weekly" }, // Programmatic vertical readiness scoreboard
+    { path: "/grants", priority: 0.85, changeFreq: "monthly" }, // Non-dilutive funding directory
+    { path: "/starter-packs", priority: 0.9, changeFreq: "weekly" }, // Self-serve SKUs ($99-$999) — direct revenue surface
+    { path: "/demo/verify-receipt", priority: 0.95, changeFreq: "monthly" }, // Live cryptographic demo — top of every funnel
+    { path: "/careers", priority: 0.7, changeFreq: "weekly" }, // Hiring page — fundraise legitimacy
+    { path: "/press", priority: 0.7, changeFreq: "monthly" }, // Media kit + journalist FAQ
+
+    // 2026 vertical landings (Cooks 134-142)
+    { path: "/for-csrd", priority: 0.92, changeFreq: "monthly" }, // EU CSRD wedge — highest-leverage GTM vertical
+    { path: "/for-clinical-trials", priority: 0.9, changeFreq: "monthly" }, // 21 CFR Part 11
+    { path: "/for-pharmacovigilance", priority: 0.9, changeFreq: "monthly" }, // ICH E2B — zero-competition niche
+    { path: "/for-insurance-claims", priority: 0.88, changeFreq: "monthly" }, // NAIC AI Bias
+    { path: "/for-utilities", priority: 0.88, changeFreq: "monthly" }, // NERC CIP + EU CSRD
+
     // Legal
     { path: "/privacy", priority: 0.5, changeFreq: "monthly" },
     { path: "/terms", priority: 0.5, changeFreq: "monthly" },
