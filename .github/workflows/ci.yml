@@ -6,6 +6,17 @@ on:
   pull_request:
     branches: [main]
 
+# Explicit minimum-viable permissions. Org-level "restrict default
+# workflow permissions" can otherwise leave actions/checkout@v4
+# without the contents:read scope it needs — manifesting as a
+# 2-second job failure before npm ever runs. Cook 140 tests this
+# theory; if the failures persist after this PR, the remaining
+# plausible cause is Actions minutes exhaustion (verify at
+# github.com/settings/billing).
+permissions:
+  contents: read
+  actions: read
+
 # A new push to the same ref cancels the in-flight run. Stops the
 # "two seconds, runner provisioning failed" flake from piling up
 # orange/red on every subsequent push.
