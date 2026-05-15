@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Sovereign Matrix — Options</title>
+    <style>
+      body {
+        font-family: -apple-system, "Segoe UI", sans-serif;
+        background: #050505;
+        color: #eaeaea;
+        padding: 32px;
+        max-width: 480px;
+        margin: 0 auto;
+      }
+      h1 {
+        font-size: 16px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        font-weight: 400;
+      }
+      label {
+        display: block;
+        margin-top: 18px;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: #aaa;
+      }
+      input {
+        width: 100%;
+        margin-top: 6px;
+        padding: 10px 12px;
+        background: #111;
+        border: 1px solid #222;
+        color: #fff;
+        border-radius: 8px;
+        font-size: 13px;
+      }
+      button {
+        margin-top: 18px;
+        padding: 10px 16px;
+        background: #10b981;
+        color: #000;
+        border: 0;
+        border-radius: 999px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .status {
+        font-size: 11px;
+        color: #10b981;
+        margin-top: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Sovereign Matrix</h1>
+    <label>Personal Access Token</label>
+    <input id="pat" type="password" placeholder="sk_pat_..." />
+    <label>Default agent slug</label>
+    <input id="agentSlug" type="text" placeholder="smart-router" />
+    <button id="save">Save</button>
+    <p class="status" id="status"></p>
+    <script src="options.js"></script>
+  </body>
+</html>

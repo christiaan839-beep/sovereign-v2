@@ -1,0 +1,57 @@
+{
+  "name": "sovereign-matrix",
+  "displayName": "Sovereign Matrix",
+  "description": "Run Sovereign Matrix agents on your editor selection. Every output produces a cryptographically-signed receipt.",
+  "version": "0.1.0",
+  "publisher": "sovereign-matrix",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other",
+    "Machine Learning"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "sovereign.runOnSelection",
+        "title": "Sovereign: Run agent on selection"
+      },
+      {
+        "command": "sovereign.setPat",
+        "title": "Sovereign: Set Personal Access Token"
+      },
+      {
+        "command": "sovereign.setAgent",
+        "title": "Sovereign: Set default agent slug"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "sovereign.runOnSelection",
+        "key": "ctrl+alt+s",
+        "mac": "cmd+alt+s",
+        "when": "editorHasSelection"
+      }
+    ],
+    "configuration": {
+      "title": "Sovereign Matrix",
+      "properties": {
+        "sovereign.apiBase": {
+          "type": "string",
+          "default": "https://sovereignmatrix.agency",
+          "description": "Sovereign API base URL"
+        },
+        "sovereign.defaultAgent": {
+          "type": "string",
+          "default": "smart-router",
+          "description": "Default agent slug for the run-on-selection command"
+        }
+      }
+    }
+  }
+}
