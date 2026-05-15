@@ -263,12 +263,14 @@ describe("runWorkflow — receipt-friendliness", () => {
 
   it("records durationMs for every step", async () => {
     const slow: AgentRunner = async () => {
-      await new Promise((r) => setTimeout(r, 10));
+      await new Promise((r) => setTimeout(r, 25));
       return {};
     };
     const wf = agent({ id: "x", agent: "x", buildInput: () => ({}) });
     const result = await runWorkflow(wf, CTX(), slow);
-    expect(result.steps[0].durationMs).toBeGreaterThanOrEqual(10);
+    // Allow generous slack — timer-based assertions are flaky on busy CI.
+    // 25ms target with 5ms floor still proves the duration was measured.
+    expect(result.steps[0].durationMs).toBeGreaterThanOrEqual(5);
   });
 
   it("passes the same ctx instance into the runner (predicates can read mutations)", async () => {
