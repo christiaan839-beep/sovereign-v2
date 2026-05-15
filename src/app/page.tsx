@@ -151,6 +151,9 @@ export default function LandingPage() {
         {/* 01 · Hero — copper surface (marketing) */}
         <Hero />
 
+        {/* Investor signal strip — Vanta-comparable hook → /investors */}
+        <InvestorSignalStrip />
+
         {/* Try-it demo — embedded competitor scan, no signup */}
         <TryItDemo />
 
@@ -505,10 +508,10 @@ function Hero() {
           transition={{ delay: 0.4, duration: 0.7 }}
           className="text-[17px] md:text-[19px] text-neutral-400 leading-[1.55] mb-4 max-w-2xl mx-auto"
         >
-          137 production agents that research, draft, qualify, and call — and
-          ship a verifiable HMAC-signed receipt every time. Built for teams that
-          need AI <em className="not-italic text-neutral-300">and</em> a paper
-          trail.
+          145 production agents that research, draft, qualify, and call — and
+          ship a verifiable HMAC-signed receipt every time. 2,492 tests pass. 7
+          cryptographic primitives. Built for teams that need AI{" "}
+          <em className="not-italic text-neutral-300">and</em> a paper trail.
         </motion.p>
         <motion.p
           initial={{ opacity: 0, y: 10 }}
@@ -1141,6 +1144,62 @@ function PricingStrip() {
 }
 
 /* ─── Final CTA ─────────────────────────────────────────────────── */
+/* ─── InvestorSignalStrip ──────────────────────────────────────── */
+function InvestorSignalStrip() {
+  return (
+    <section className="relative px-6 py-10 border-y border-white/[0.04] bg-gradient-to-b from-[#030303] via-[#040303] to-[#030303] overflow-hidden">
+      {/* Faint cyan radial — signals the audit-track shift */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(ellipse 50% 50% at 50% 50%, rgba(6,182,212,0.04) 0%, transparent 70%)",
+        }}
+      />
+      <div className="relative max-w-5xl mx-auto text-center">
+        <p className="font-mono text-[10px] tracking-[0.3em] text-cyan-400/70 uppercase mb-3">
+          For investors + strategics
+        </p>
+        <p className="font-serif text-2xl md:text-3xl text-white leading-tight tracking-[-0.01em] max-w-3xl mx-auto">
+          Vanta sold for{" "}
+          <span className="text-cyan-400 font-semibold">$2.45B</span> doing
+          compliance scoreboards.{" "}
+          <span className="block sm:inline mt-1 sm:mt-0">
+            We ship the cryptographic layer they don&rsquo;t have.
+          </span>
+        </p>
+        <div className="mt-5 flex items-center justify-center gap-4 flex-wrap text-[12px] font-mono text-neutral-500">
+          <Link
+            href="/investors"
+            className="inline-flex items-center gap-1.5 text-cyan-300 hover:text-cyan-200 transition-colors"
+          >
+            Open the data room <span aria-hidden="true">→</span>
+          </Link>
+          <span aria-hidden="true" className="text-white/[0.12]">
+            /
+          </span>
+          <Link
+            href="/demo/verify-receipt"
+            className="hover:text-neutral-300 transition-colors"
+          >
+            Verify a real receipt in 60s
+          </Link>
+          <span aria-hidden="true" className="text-white/[0.12]">
+            /
+          </span>
+          <Link
+            href="/pitch"
+            className="hover:text-neutral-300 transition-colors"
+          >
+            60-second pitch
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function FinalCTA() {
   return (
     <section
