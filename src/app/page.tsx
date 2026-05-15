@@ -1169,7 +1169,23 @@ function InvestorSignalStrip() {
             We ship the cryptographic layer they don&rsquo;t have.
           </span>
         </p>
-        <div className="mt-5 flex items-center justify-center gap-4 flex-wrap text-[12px] font-mono text-neutral-500">
+        <div className="mt-5 inline-flex items-center gap-2 px-3 py-1 rounded-full border border-emerald-500/25 bg-emerald-500/[0.04]">
+          <span
+            className="w-1.5 h-1.5 rounded-full bg-emerald-400"
+            aria-hidden="true"
+          />
+          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-emerald-300">
+            Readiness 100/100 across 8 verticals
+          </span>
+          <Link
+            href="/readiness"
+            className="font-mono text-[10px] text-emerald-200/80 hover:text-emerald-100 transition-colors"
+            aria-label="See per-vertical readiness scoreboard"
+          >
+            scoreboard →
+          </Link>
+        </div>
+        <div className="mt-4 flex items-center justify-center gap-4 flex-wrap text-[12px] font-mono text-neutral-500">
           <Link
             href="/investors"
             className="inline-flex items-center gap-1.5 text-cyan-300 hover:text-cyan-200 transition-colors"
