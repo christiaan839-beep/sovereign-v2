@@ -6,6 +6,13 @@ on:
   pull_request:
     branches: [main]
 
+# A new push to the same ref cancels the in-flight run. Stops the
+# "two seconds, runner provisioning failed" flake from piling up
+# orange/red on every subsequent push.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   NODE_VERSION: '22'
 
@@ -13,6 +20,7 @@ jobs:
   lint-and-typecheck:
     name: Lint & Type Check
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
@@ -36,6 +44,7 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     needs: lint-and-typecheck
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -58,6 +67,7 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
     needs: lint-and-typecheck
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -75,6 +85,11 @@ jobs:
   security-audit:
     name: Security Audit
     runs-on: ubuntu-latest
+    timeout-minutes: 8
+    # Informational only: a flagged transitive vuln in npm audit doesn't
+    # break the build. Lift the soft-fail signal to the job level so the
+    # PR status row doesn't show red when only the audit step fired.
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
 
@@ -94,6 +109,7 @@ jobs:
     name: Migration Parity
     runs-on: ubuntu-latest
     needs: lint-and-typecheck
+    timeout-minutes: 8
     # Only run when DATABASE_URL_READONLY is configured. Use a *read-only*
     # Neon role here — never the same credential the app deploys with.
     if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
@@ -117,6 +133,7 @@ jobs:
     name: Smoke Tests (informational)
     runs-on: ubuntu-latest
     needs: build
+    timeout-minutes: 15
     # Smoke runs against the THIS-PR build via `next start` on localhost
     # with placeholder Clerk + DB credentials. It's a coarse signal —
     # auth-gated paths are never exercised (we can't sign in without
@@ -198,6 +215,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     if: github.ref == 'refs/heads/main'
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
