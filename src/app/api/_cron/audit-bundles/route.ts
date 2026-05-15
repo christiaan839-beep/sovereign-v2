@@ -40,10 +40,12 @@ export async function GET(req: Request) {
     );
   }
 
-  // In production we'd read subscriptions from the DB. Until the
-  // marketplace_agents/audit_subscriptions migration is applied,
-  // this returns 0 deliveries — exactly the safe behavior.
-  const subscriptions: AuditSubscription[] = [];
+  // Read live subscriptions from the in-memory store (Cook 91).
+  // The store is the same shape the persistent table will use after
+  // migration 0021, so a future DB swap is a 2-line change.
+  const { listActiveSubscriptions } =
+    await import("@/lib/audit-subscription-store");
+  const subscriptions: AuditSubscription[] = listActiveSubscriptions();
 
   const now = new Date();
   const windowStart = now.getTime() - ONE_HOUR_MS;
