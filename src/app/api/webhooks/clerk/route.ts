@@ -44,7 +44,9 @@ function getPrimaryEmail(data: ClerkUserCreatedEvent["data"]): string | null {
   const primary = data.email_addresses.find(
     (e) => e.id === data.primary_email_address_id,
   );
-  return primary?.email_address ?? data.email_addresses[0]?.email_address ?? null;
+  return (
+    primary?.email_address ?? data.email_addresses[0]?.email_address ?? null
+  );
 }
 
 // ── Welcome Email ──
@@ -58,6 +60,17 @@ async function sendWelcomeEmail(email: string, firstName: string | null) {
 
   const name = firstName || "there";
 
+  // Welcome email — first-touch experience post-signup. Cyan accent
+  // (system / audit surface per docs/design-system/brand-colors.md).
+  // Leads with the verifiable-receipts moat, not the "lots of agents"
+  // narrative. Three CTAs by priority:
+  //   1. Open the dashboard (primary, conversion)
+  //   2. Read the spec / see the live verifier (education)
+  //   3. Install the MCP server (distribution — they ship the badge
+  //      out to wherever they live, AI tool or otherwise)
+  //
+  // Inline-styled HTML for maximum email-client compatibility (Gmail
+  // strips <style>, Outlook is Word). Cyan = #00B7FF.
   try {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -70,39 +83,76 @@ async function sendWelcomeEmail(email: string, firstName: string | null) {
           process.env.RESEND_FROM_EMAIL ||
           "Sovereign Matrix <hello@sovereignmatrix.agency>",
         to: email,
-        subject: "Welcome to Sovereign Matrix — your agents are ready",
+        subject: "Welcome to Sovereign — your audit-grade AI workspace is live",
         html: `
-          <div style="font-family: system-ui, sans-serif; max-width: 520px; margin: 0 auto; padding: 40px 20px; color: #e5e5e5; background: #010101;">
+          <div style="font-family: system-ui, -apple-system, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 20px; color: #e5e5e5; background: #030303;">
             <div style="text-align: center; margin-bottom: 32px;">
-              <div style="display: inline-block; padding: 8px 16px; border-radius: 8px; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2);">
-                <span style="color: #10b981; font-size: 14px; font-weight: 700;">Sovereign Matrix</span>
+              <div style="display: inline-block; padding: 6px 14px; border-radius: 999px; background: rgba(0,183,255,0.1); border: 1px solid rgba(0,183,255,0.3);">
+                <span style="color: #00B7FF; font-size: 11px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase;">Sovereign Matrix</span>
               </div>
             </div>
-            <h1 style="color: white; font-size: 24px; font-weight: 800; margin: 0 0 16px 0;">Welcome, ${name}.</h1>
-            <p style="color: #a3a3a3; font-size: 14px; line-height: 1.7; margin: 0 0 24px 0;">
-              Your account is live. You now have access to 130+ AI agents across 39+ models —
-              all verified through a 5-layer safety pipeline before any output reaches you.
+
+            <h1 style="color: white; font-size: 26px; font-weight: 600; margin: 0 0 16px 0; font-family: 'Instrument Serif', Georgia, serif;">
+              Welcome, ${name}.
+            </h1>
+            <p style="color: #a3a3a3; font-size: 15px; line-height: 1.6; margin: 0 0 12px 0;">
+              Your account is live. Every agent run you trigger from here produces a cryptographically signed receipt — HMAC-SHA256 over a canonical projection, verifiable by anyone against our public <code style="font-family: 'JetBrains Mono', monospace; color: #00B7FF; font-size: 13px;">/api/verify</code> endpoint.
             </p>
-            <h2 style="color: white; font-size: 18px; font-weight: 700; margin: 0 0 12px 0;">Get started in 30 seconds</h2>
-            <p style="color: #a3a3a3; font-size: 14px; line-height: 1.7; margin: 0 0 8px 0;">
-              <strong style="color: #e5e5e5;">1.</strong> Open your dashboard and pick a playbook<br/>
-              <strong style="color: #e5e5e5;">2.</strong> Paste a competitor URL or describe your goal<br/>
-              <strong style="color: #e5e5e5;">3.</strong> Watch the agents execute in real time
+            <p style="color: #a3a3a3; font-size: 15px; line-height: 1.6; margin: 0 0 28px 0;">
+              That's the moat: 137 agents you can actually prove the outputs of.
             </p>
+
+            <!-- Primary CTA -->
             <div style="text-align: center; margin: 32px 0;">
               <a href="https://sovereignmatrix.agency/dashboard"
-                style="display: inline-block; padding: 14px 32px; background: #10b981; color: black; font-weight: 700; font-size: 14px; text-decoration: none; border-radius: 9999px;">
-                Open Dashboard
+                style="display: inline-block; padding: 14px 36px; background: #00B7FF; color: #030303; font-weight: 700; font-size: 14px; text-decoration: none; border-radius: 8px; letter-spacing: 0.02em;">
+                Open your dashboard →
               </a>
             </div>
-            <p style="color: #a3a3a3; font-size: 14px; line-height: 1.7; margin: 0 0 24px 0;">
-              You have <strong style="color: #10b981;">50 free agent runs</strong> to start with.
-              Invite a friend with your referral link and you both get 50 more.
+
+            <h2 style="color: white; font-size: 16px; font-weight: 700; margin: 32px 0 12px 0; letter-spacing: 0.02em;">
+              While you're here
+            </h2>
+            <ul style="margin: 0 0 24px 0; padding: 0; list-style: none;">
+              <li style="color: #a3a3a3; font-size: 14px; line-height: 1.7; margin: 0 0 10px 0;">
+                <strong style="color: #e5e5e5;">→</strong>
+                <a href="https://sovereignmatrix.agency/verified" style="color: #00B7FF; text-decoration: none;">See the live verifier</a> — pick a public receipt, watch one byte of canonical-projection mutation break the signature in real time.
+              </li>
+              <li style="color: #a3a3a3; font-size: 14px; line-height: 1.7; margin: 0 0 10px 0;">
+                <strong style="color: #e5e5e5;">→</strong>
+                <a href="https://sovereignmatrix.agency/spec" style="color: #00B7FF; text-decoration: none;">Read the VAOS 1.0 spec</a> — the open standard your receipts implement. CC0 license; the reference verifier is MIT.
+              </li>
+              <li style="color: #a3a3a3; font-size: 14px; line-height: 1.7; margin: 0 0 10px 0;">
+                <strong style="color: #e5e5e5;">→</strong>
+                <a href="https://sovereignmatrix.agency/explorer" style="color: #00B7FF; text-decoration: none;">Browse the live explorer</a> — a real-time feed of every public receipt being signed across the platform.
+              </li>
+            </ul>
+
+            <!-- MCP install pro-tip -->
+            <div style="margin: 28px 0; padding: 16px 18px; border: 1px solid rgba(0,183,255,0.2); border-radius: 12px; background: rgba(0,183,255,0.04);">
+              <div style="color: #00B7FF; font-size: 11px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; margin: 0 0 6px 0;">
+                Pro tip
+              </div>
+              <p style="color: #d4d4d4; font-size: 14px; line-height: 1.55; margin: 0 0 12px 0;">
+                Install the Sovereign verifier into Claude Desktop, Cursor, or Claude Code with one line — verify receipts directly from your AI tool palette:
+              </p>
+              <a href="https://sovereignmatrix.agency/mcp"
+                style="color: #00B7FF; font-family: 'JetBrains Mono', monospace; font-size: 13px; text-decoration: none;">
+                sovereignmatrix.agency/mcp →
+              </a>
+            </div>
+
+            <p style="color: #a3a3a3; font-size: 14px; line-height: 1.7; margin: 24px 0 0 0;">
+              You start with <strong style="color: #00B7FF;">50 verified runs / month</strong>, free forever. Upgrade to Pro ($49/mo) for 500 runs + Ed25519 signatures + Merkle inclusion proofs.
             </p>
-            <p style="color: #525252; font-size: 12px; line-height: 1.6; margin: 32px 0 0 0; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 24px;">
-              Sovereign Matrix — Agent Operating System<br/>
-              130 agents. 39+ models. Flat pricing.<br/>
-              <a href="https://sovereignmatrix.agency" style="color: #10b981; text-decoration: none;">sovereignmatrix.agency</a>
+
+            <p style="color: #525252; font-size: 12px; line-height: 1.6; margin: 36px 0 0 0; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 20px;">
+              Sovereign Matrix — audit-grade AI agent infrastructure<br/>
+              <a href="https://sovereignmatrix.agency" style="color: #737373; text-decoration: none;">sovereignmatrix.agency</a>
+              &nbsp;·&nbsp;
+              <a href="https://sovereignmatrix.agency/trust" style="color: #737373; text-decoration: none;">Trust posture</a>
+              &nbsp;·&nbsp;
+              <a href="https://sovereignmatrix.agency/unsubscribe" style="color: #737373; text-decoration: none;">Unsubscribe</a>
             </p>
           </div>
         `,
@@ -133,7 +183,10 @@ async function ensureTenant(clerkUserId: string) {
       .limit(1);
 
     if (existing.length > 0) {
-      log.info("Tenant already exists", { clerkUserId, tenantId: existing[0].id });
+      log.info("Tenant already exists", {
+        clerkUserId,
+        tenantId: existing[0].id,
+      });
       return existing[0];
     }
 
@@ -150,7 +203,9 @@ async function ensureTenant(clerkUserId: string) {
     return inserted[0];
   } catch (err) {
     if (isTableMissing(err)) {
-      log.warn("tenants table does not exist — skipping tenant creation", { clerkUserId });
+      log.warn("tenants table does not exist — skipping tenant creation", {
+        clerkUserId,
+      });
       return null;
     }
     throw err;
@@ -159,7 +214,11 @@ async function ensureTenant(clerkUserId: string) {
 
 // ── Referral Tracking ──
 
-async function processReferral(clerkUserId: string, email: string, referralCode: string) {
+async function processReferral(
+  clerkUserId: string,
+  email: string,
+  referralCode: string,
+) {
   try {
     // Find the affiliate by referral code
     const rows = await db
@@ -203,7 +262,9 @@ async function processReferral(clerkUserId: string, email: string, referralCode:
     });
   } catch (err) {
     if (isTableMissing(err)) {
-      log.warn("affiliates/referrals tables do not exist — skipping referral tracking");
+      log.warn(
+        "affiliates/referrals tables do not exist — skipping referral tracking",
+      );
       return;
     }
     log.error("Failed to process referral", {
@@ -305,7 +366,10 @@ export async function POST(req: NextRequest) {
   for (const result of results) {
     if (result.status === "rejected") {
       log.error("Webhook side-effect failed", {
-        reason: result.reason instanceof Error ? result.reason.message : String(result.reason),
+        reason:
+          result.reason instanceof Error
+            ? result.reason.message
+            : String(result.reason),
       });
     }
   }

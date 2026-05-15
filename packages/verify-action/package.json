@@ -1,0 +1,18 @@
+{
+  "name": "@sovereignmatrix/verify-action",
+  "version": "1.0.0",
+  "description": "GitHub Action to verify Sovereign Matrix agent-run receipts referenced in PRs/commits.",
+  "type": "module",
+  "private": true,
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "esbuild src/index.ts --bundle --platform=node --target=node20 --format=esm --outfile=dist/index.js --banner:js='import { createRequire } from \"node:module\"; const require = createRequire(import.meta.url);'",
+    "test": "vitest run"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/christiaan839-beep/sovereign-v2",
+    "directory": "packages/verify-action"
+  }
+}

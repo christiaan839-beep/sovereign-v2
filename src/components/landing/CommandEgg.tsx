@@ -27,15 +27,39 @@ interface Command {
 }
 
 const COMMANDS: Command[] = [
-  { label: "Run Lead Blitz (free tier)", href: "/dashboard/playbooks?auto=lead-blitz", hint: "Playbook" },
+  {
+    label: "Run Lead Blitz (free tier)",
+    href: "/dashboard/playbooks?auto=lead-blitz",
+    hint: "Playbook",
+  },
   { label: "See live safety metrics", href: "/trust/anthropic", hint: "Trust" },
-  { label: "Browse the provider leaderboard", href: "/benchmarks", hint: "Trust" },
-  { label: "Read the security case study", href: "/trust/defenders", hint: "Trust" },
-  { label: "Installation: @sovereignmatrix/mcp", href: "https://www.npmjs.com/package/@sovereignmatrix/mcp", hint: "Developer" },
+  {
+    label: "Browse the provider leaderboard",
+    href: "/benchmarks",
+    hint: "Trust",
+  },
+  {
+    label: "Read the security case study",
+    href: "/trust/defenders",
+    hint: "Trust",
+  },
+  {
+    label: "Installation: @sovereignmatrix/mcp",
+    href: "https://www.npmjs.com/package/@sovereignmatrix/mcp",
+    hint: "Developer",
+  },
   { label: "View the public changelog", href: "/changelog", hint: "Product" },
-  { label: "Read the customer cases", href: "/customers", hint: "Social" },
-  { label: "Book 15 min with the founder", href: "https://cal.com/christiaan-sovereign/15min", hint: "Contact" },
-  { label: "Email christiaan@sovereignmatrix.agency", href: "mailto:christiaan@sovereignmatrix.agency", hint: "Contact" },
+  { label: "Read the customer cases", href: "/case-studies", hint: "Social" },
+  {
+    label: "Book a 15-minute demo",
+    href: "https://cal.com/sovereign-matrix/15min",
+    hint: "Contact",
+  },
+  {
+    label: "Email sales@sovereignmatrix.agency",
+    href: "mailto:hello@sovereignmatrix.agency",
+    hint: "Contact",
+  },
 ];
 
 const CONSOLE_SHOUTOUT = [
@@ -208,14 +232,17 @@ export function CommandEgg() {
             <div className="max-h-[50vh] overflow-y-auto py-2">
               {filtered.length === 0 && (
                 <p className="px-5 py-6 text-sm text-neutral-500">
-                  No match. Try &ldquo;benchmarks&rdquo; or &ldquo;founder&rdquo;.
+                  No match. Try &ldquo;verifier&rdquo;, &ldquo;playbook&rdquo;,
+                  or &ldquo;explorer&rdquo;.
                 </p>
               )}
               {filtered.map((cmd, i) => {
                 const isSelected = i === selectedIndex;
                 const content = (
                   <>
-                    <span className="flex-1 text-[14px] text-white">{cmd.label}</span>
+                    <span className="flex-1 text-[14px] text-white">
+                      {cmd.label}
+                    </span>
                     <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-neutral-600">
                       {cmd.hint}
                     </span>
@@ -233,7 +260,8 @@ export function CommandEgg() {
 
                 if (cmd.href) {
                   const isExternal =
-                    cmd.href.startsWith("http") || cmd.href.startsWith("mailto:");
+                    cmd.href.startsWith("http") ||
+                    cmd.href.startsWith("mailto:");
                   if (isExternal) {
                     return (
                       <a
@@ -280,7 +308,12 @@ export function CommandEgg() {
             <div className="flex items-center gap-4 px-5 py-3 border-t border-white/[0.04] bg-[#060605] text-[10px] font-mono text-neutral-600">
               <HintKey label="navigate" keys={["↑↓"]} />
               <HintKey label="open" keys={["↵"]} />
-              <HintKey label="Shortcut:" keys={["/", "⌘K"]} separator=" or " className="ml-auto" />
+              <HintKey
+                label="Shortcut:"
+                keys={["/", "⌘K"]}
+                separator=" or "
+                className="ml-auto"
+              />
             </div>
           </motion.div>
         </motion.div>
@@ -312,7 +345,7 @@ function HintKey({
 
   return (
     <span className={`flex items-center gap-1.5 ${className}`}>
-      {labelFirst && <>{label}{" "}</>}
+      {labelFirst && <>{label} </>}
       {keys.map((k, i) => (
         <span key={k} className="flex items-center gap-1.5">
           <kbd className={kbdClass}>{k}</kbd>

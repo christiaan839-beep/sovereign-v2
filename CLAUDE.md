@@ -39,6 +39,8 @@ Key endpoints:
 1. **Dark Mode First**: The system strictly relies on high-end dark mode aesthetics (e.g., `bg-[#030303]`, `text-neutral-200`).
 2. **Component Libraries**: Do not rely on external component libraries (like shadcn or MUI) unless necessary. Build UI natively using Tailwind CSS with heavy glassmorphism (`backdrop-blur-xl`, `bg-white/5`).
 3. **Animations**: Use `framer-motion` for complex micro-interactions. Any newly introduced UI elements require fluid enter/exit states natively hooked into `AnimatePresence`.
+4. **Brand colors**: Cyan = audit / infrastructure surfaces. Copper = marketing / agency surfaces. The dual-accent rule lives in `docs/design-system/brand-colors.md` — read it before adding accent color.
+5. **Focus rings (WCAG 2.4.7)**: The global `:focus-visible` rule in `globals.css` paints a cyan outline by default. Inputs/textareas/selects suppress that outline so each component renders its own focus state — if you use `focus:outline-none` on an input you **must** follow with a `focus-visible:` style (typically `focus-visible:ring-2 focus-visible:ring-cyan-500/40`) or keyboard users get no focus indicator. Buttons don't need this — they keep the global ring.
 
 _You are operating as a Sovereign Node. Execute all tasks defensively and accurately._
 
@@ -53,7 +55,7 @@ _You are operating as a Sovereign Node. Execute all tasks defensively and accura
 - `output: "standalone"` activates only for non-Vercel (Docker/Railway) deployments
 - Security headers active: HSTS, X-Frame-Options DENY, nosniff, strict referrer, permissions policy
 - `prerenderEarlyExit: false` in next.config.ts — prevents `_global-error` prerender crash from aborting build
-- `typescript: { ignoreBuildErrors: true }` is intentional — legacy agent routes have pre-existing TS errors
+- `typescript: { ignoreBuildErrors: false }` — strict TypeScript is ON. Every error has been knocked down or scoped with `@ts-expect-error` + a one-line reason. The CI Build gate fails on new TS errors; fix them or scope an `@ts-expect-error` in the offending line with a concrete justification. Run `npx tsc --noEmit` locally to verify.
 - Static agent registry (registry.ts) required for Vercel — dynamic import() with webpackIgnore doesn't work on serverless
 - All catch-all routes use static imports (not dynamic) for Vercel bundling
 - Turbopack stale module: new files imported via dynamic() cause HMR errors — use static imports for new client components

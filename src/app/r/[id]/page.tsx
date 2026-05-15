@@ -25,6 +25,7 @@ import {
 import { getRun, canonicalizeRun } from "@/lib/agent-runs";
 import { auth } from "@clerk/nextjs/server";
 import PrintReceiptButton from "./PrintReceiptButton";
+import { ReceiptInteractive } from "./ReceiptInteractive";
 
 interface RunPageProps {
   params: Promise<{ id: string }>;
@@ -211,6 +212,17 @@ export default async function ReceiptPage({ params }: RunPageProps) {
             {run.visibility}
           </span>
         </div>
+
+        {/* Live verify + share + local-verify panel — JS-progressive
+            enhancement. The server-rendered signature block below
+            still works without JavaScript. */}
+        <ReceiptInteractive
+          receiptId={run.id}
+          publicUrl={publicUrl}
+          canonical={canonical}
+          signature={run.signature}
+          agentName={run.agentName}
+        />
 
         {/* Safety strip */}
         <section className="mb-8 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 backdrop-blur-xl">

@@ -58,7 +58,7 @@ export function EarlyAccessCapture() {
               value={email}
               onChange={e => { setEmail(e.target.value); setError(""); }}
               placeholder="you@company.com"
-              className="flex-1 px-5 py-3.5 rounded-full bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-emerald-500/30 transition-colors"
+              className="flex-1 px-5 py-3.5 rounded-full bg-white/[0.04] border border-white/[0.08] text-sm text-white placeholder:text-neutral-600 focus:outline-none focus:border-cyan-500/30 focus-visible:ring-2 focus-visible:ring-cyan-500/40 transition-colors"
             />
             <button
               type="submit"

@@ -4,11 +4,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { SignInButton } from "@clerk/nextjs";
 import { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { SovereignLogo } from "@/components/ui/SovereignLogo";
-import { StackKiller } from "@/components/cinematic/StackKiller";
 import { getMarketingPlaybooks } from "@/lib/playbooks";
-import { FounderSeats } from "@/components/landing/FounderSeats";
-import { CommandEgg } from "@/components/landing/CommandEgg";
 import { PrimaryCTA } from "@/components/landing/PrimaryCTA";
 import { StatusIndicator } from "@/components/landing/StatusIndicator";
 import { TryItDemo } from "@/components/landing/TryItDemo";
@@ -19,13 +17,50 @@ import {
   TiltCard,
 } from "@/components/ui/EliteEffects";
 
-// New components
+// Above-the-fold (or near-fold) sections — static-imported to keep
+// LCP fast and avoid a flash of unstyled-skeleton in the visitor's
+// first paint.
 import { A2EGraph } from "@/components/landing/A2EGraph";
 import { LiveProofStrip } from "@/components/landing/LiveProofStrip";
 import { ThreeMoatsGrid } from "@/components/landing/ThreeMoatsGrid";
 import { A2EEconomySection } from "@/components/landing/A2EEconomySection";
 import { ModelRouterSection } from "@/components/landing/ModelRouterSection";
 import { VerificationPipeline } from "@/components/landing/VerificationPipeline";
+import { SectionDivider } from "@/components/landing/SectionDivider";
+import { FilmGrain } from "@/components/landing/FilmGrain";
+import { HeroProofPill } from "@/components/landing/HeroProofPill";
+import { NewsletterSignup } from "@/components/landing/NewsletterSignup";
+
+// Below-the-fold sections — dynamic-imported with skeleton placeholders
+// so the visitor's initial JS bundle is smaller, LCP is faster, and
+// these heavier components (cinematic, network-on-mount, etc.) only
+// hydrate once the visitor scrolls into them.
+//
+// SSR stays on (ssr: true) for SEO + zero-flash readability — Next.js
+// still server-renders the markup, it just defers hydration.
+const LiveVerifierDemo = dynamic(
+  () =>
+    import("@/components/landing/LiveVerifierDemo").then((m) => ({
+      default: m.LiveVerifierDemo,
+    })),
+  {
+    loading: () => (
+      <section
+        aria-hidden="true"
+        className="relative z-10 mx-auto w-full max-w-5xl px-6 py-24"
+      >
+        <div className="h-72 rounded-2xl border border-white/[0.04] bg-white/[0.02] backdrop-blur-xl" />
+      </section>
+    ),
+  },
+);
+const CommandEgg = dynamic(
+  () =>
+    import("@/components/landing/CommandEgg").then((m) => ({
+      default: m.CommandEgg,
+    })),
+  { ssr: false, loading: () => null },
+);
 
 /**
  * Landing page — Agent Infrastructure Stack narrative.
@@ -34,7 +69,7 @@ import { VerificationPipeline } from "@/components/landing/VerificationPipeline"
  * Section map:
  *   Nav · 01 Hero · LiveProofStrip · 02 ThreeMoats · 03 A2EEconomy ·
  *   04 MemoryMoat · 05 ModelRouter · 06 VerificationPipeline ·
- *   07 FeaturedPlaybooks · 08 IndustrySection · StackKiller ·
+ *   06.5 LiveVerifierDemo · 07 FeaturedPlaybooks · 08 IndustrySection ·
  *   09 PlatformScale · 10 PricingStrip · FinalCTA · Footer · CommandEgg
  */
 
@@ -106,11 +141,14 @@ export default function LandingPage() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#030303] text-white antialiased">
+    <div className="relative min-h-screen bg-[#030303] text-white antialiased">
+      {/* Cinematic film-grain overlay — analog texture, sub-3% alpha */}
+      <FilmGrain />
+
       <Nav mobileNavOpen={mobileNavOpen} setMobileNavOpen={setMobileNavOpen} />
 
-      <main id="main-content">
-        {/* 01 · Hero */}
+      <main id="main-content" className="relative z-10">
+        {/* 01 · Hero — copper surface (marketing) */}
         <Hero />
 
         {/* Try-it demo — embedded competitor scan, no signup */}
@@ -118,6 +156,8 @@ export default function LandingPage() {
 
         {/* Live stats strip */}
         <LiveProofStrip />
+
+        <SectionDivider accent="copper" />
 
         {/* 02 · Three Moats */}
         <ThreeMoatsGrid />
@@ -131,8 +171,17 @@ export default function LandingPage() {
         {/* 05 · Model Router */}
         <ModelRouterSection />
 
+        {/* Audit surface starts here — flip the divider accent to cyan */}
+        <SectionDivider accent="cyan" />
+
         {/* 06 · Verification Pipeline */}
         <VerificationPipeline />
+
+        {/* 06.5 · Live Verifier — interactive proof against the real /api/verify */}
+        <LiveVerifierDemo />
+
+        {/* Back to marketing surface */}
+        <SectionDivider accent="copper" />
 
         {/* 07 · Featured Playbooks */}
         <FeaturedPlaybooksSection />
@@ -140,17 +189,11 @@ export default function LandingPage() {
         {/* 08 · Industries */}
         <IndustrySection />
 
-        {/* Stack Killer — cost displacement */}
-        <StackKiller />
-
         {/* 09 · Platform Scale */}
         <PlatformScale />
 
         {/* 10 · Pricing Strip */}
         <PricingStrip />
-
-        {/* Founder network seats */}
-        <FounderSeats />
 
         {/* Final CTA */}
         <FinalCTA />
@@ -239,6 +282,7 @@ function Nav({
             <div className="flex items-center gap-6 mr-6">
               <NavLink href={PLATFORM_HREF}>Platform</NavLink>
               <NavLink href="/marketplace">Marketplace</NavLink>
+              <NavLink href="/explorer">Explorer</NavLink>
               <NavLink href="/trust">Trust</NavLink>
               <NavLink href="/pricing">Pricing</NavLink>
               <NavLink href="/developers/docs">Docs</NavLink>
@@ -321,6 +365,7 @@ function Nav({
             {[
               { href: PLATFORM_HREF, label: "Platform" },
               { href: "/marketplace", label: "Marketplace" },
+              { href: "/explorer", label: "Explorer" },
               { href: "/trust", label: "Trust" },
               { href: "/pricing", label: "Pricing" },
               { href: "/developers/docs", label: "Docs" },
@@ -417,7 +462,11 @@ function Hero() {
       />
 
       <div className="relative max-w-5xl mx-auto w-full text-center">
-        {/* Pre-badge: live indicator */}
+        {/* Pre-badge — HeroProofPill fetches /api/agent-runs/latest-public
+            on mount and shows the freshest verified receipt id with a
+            live cyan pulse. Stripe's hero shows a fake code editor;
+            this is Sovereign's analog — real proof-of-life from the
+            production verifier as the very first thing a visitor sees. */}
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -428,17 +477,7 @@ function Hero() {
             01 / 10
           </span>
           <span aria-hidden="true" className="h-px w-6 bg-white/[0.12]" />
-          <div className="flex items-center gap-2 font-mono text-[11px] text-neutral-500">
-            <span className="relative inline-flex h-1.5 w-1.5">
-              <span className="absolute inline-flex h-full w-full rounded-full bg-[#B5532C] opacity-70 animate-ping" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#B5532C]" />
-            </span>
-            <span>HMAC-signed receipts</span>
-            <span className="text-neutral-700">·</span>
-            <span>POPIA + SOC2 native</span>
-            <span className="text-neutral-700">·</span>
-            <span className="text-[#B5532C]">LIVE</span>
-          </div>
+          <HeroProofPill />
         </motion.div>
 
         {/* Headline */}
@@ -449,9 +488,11 @@ function Hero() {
           className="font-serif text-5xl sm:text-7xl md:text-8xl lg:text-9xl leading-[1.02] tracking-[-0.02em] mb-6"
         >
           <span className="block text-white">Audit-grade</span>
-          <span className="block" style={{ color: "#B5532C" }}>
-            AI agents.
-          </span>
+          {/* Slow gradient sweep between the two brand accents —
+              treats the dual-accent rule itself as a typographic
+              move. See globals.css `.brand-sweep`. Respects
+              prefers-reduced-motion. */}
+          <span className="block brand-sweep">AI agents.</span>
           <span className="block text-white text-3xl sm:text-5xl md:text-6xl lg:text-7xl mt-3">
             Every output, cryptographically signed.
           </span>
@@ -464,7 +505,7 @@ function Hero() {
           transition={{ delay: 0.4, duration: 0.7 }}
           className="text-[17px] md:text-[19px] text-neutral-400 leading-[1.55] mb-4 max-w-2xl mx-auto"
         >
-          30 production agents that research, draft, qualify, and call — and
+          137 production agents that research, draft, qualify, and call — and
           ship a verifiable HMAC-signed receipt every time. Built for teams that
           need AI <em className="not-italic text-neutral-300">and</em> a paper
           trail.
@@ -475,8 +516,9 @@ function Hero() {
           transition={{ delay: 0.5, duration: 0.6 }}
           className="text-[15px] md:text-[16px] text-neutral-500 leading-[1.55] mb-10 max-w-xl mx-auto"
         >
-          From R349/mo (≈ $19). No per-seat fees. ZAR + USD billing.
-          POPIA-native, SOC2-mapped, audit-ready on day one.
+          Free forever — 50 verified runs/mo. Pro from R997/mo (≈ $49). No
+          per-seat fees. ZAR + USD billing. POPIA-native, SOC2-mapped,
+          audit-ready on day one.
         </motion.p>
 
         {/* CTAs */}
@@ -510,7 +552,7 @@ function Hero() {
           transition={{ delay: 0.8, duration: 0.5 }}
           className="text-[11px] font-mono text-neutral-600 tracking-wide mb-6"
         >
-          R0 · R349/mo · R9,997/mo · $0 · $19/mo · $499/mo ·{" "}
+          Free · R997/mo · R3,997/mo · $0 · $49/mo · $199/mo ·{" "}
           <Link
             href="/pricing"
             className="hover:text-neutral-400 transition-colors underline decoration-white/10 hover:decoration-white/30"
@@ -519,39 +561,29 @@ function Hero() {
           </Link>
         </motion.p>
 
-        {/* Trust line — links to real wins + competitor comparisons */}
+        {/* Trust line — audit-grade positioning */}
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.95, duration: 0.5 }}
           className="text-[11px] font-mono text-neutral-700 tracking-wide mb-12"
         >
-          <Link
-            href="/case-studies"
-            className="hover:text-[#B5532C] transition-colors"
-          >
-            Real customer wins →
+          <Link href="/spec" className="hover:text-cyan-300 transition-colors">
+            VAOS 1.0 open standard
           </Link>
           <span className="text-neutral-800 mx-1">·</span>
           <Link
-            href="/vs/lindy"
-            className="hover:text-neutral-400 transition-colors"
+            href="/verified"
+            className="hover:text-cyan-300 transition-colors"
           >
-            vs Lindy
+            Live verifier demo
           </Link>
           <span className="text-neutral-800 mx-1">·</span>
           <Link
-            href="/vs/apollo"
-            className="hover:text-neutral-400 transition-colors"
+            href="/explorer"
+            className="hover:text-cyan-300 transition-colors"
           >
-            vs Apollo
-          </Link>
-          <span className="text-neutral-800 mx-1">·</span>
-          <Link
-            href="/vs/jasper"
-            className="hover:text-neutral-400 transition-colors"
-          >
-            vs Jasper
+            Receipt explorer
           </Link>
         </motion.p>
 
@@ -1031,10 +1063,9 @@ function PlatformScale() {
 function PricingStrip() {
   const tiers = [
     { name: "Free", price: null, popular: false },
-    { name: "Starter", price: "$19", popular: false },
-    { name: "Growth", price: "$49", popular: true },
-    { name: "Node", price: "$199", popular: false },
-    { name: "Enterprise", price: "$499", popular: false },
+    { name: "Pro", price: "$49", popular: true },
+    { name: "Team", price: "$199", popular: false },
+    { name: "Enterprise", price: "Custom", popular: false },
   ];
 
   return (
@@ -1171,11 +1202,11 @@ function FinalCTA() {
             </span>
           </Link>
           <a
-            href="mailto:christiaan@sovereignmatrix.agency"
-            onClick={() => trackCtaClick("email-founder")}
+            href="mailto:hello@sovereignmatrix.agency"
+            onClick={() => trackCtaClick("email-sales")}
             className="inline-flex items-center px-6 py-4 border border-white/[0.12] text-neutral-400 font-mono text-[13px] tracking-wide hover:text-white hover:border-white/30 transition-colors rounded-[4px]"
           >
-            Email the founder
+            Contact sales
           </a>
         </div>
 
@@ -1231,6 +1262,16 @@ function Footer() {
           </Link>
         </div>
 
+        {/* Newsletter capture — release notes + security advisories,
+            ~2 emails / month. Cyan-themed (audit/infrastructure
+            surface) per the dual-accent brand rule. */}
+        <div className="mb-12 max-w-md">
+          <p className="mb-3 text-[11px] font-mono uppercase tracking-widest text-neutral-500">
+            Release notes + security advisories
+          </p>
+          <NewsletterSignup source="landing-footer" />
+        </div>
+
         {/* Link grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-y-12 gap-x-8 mb-16">
           <FooterCol
@@ -1269,7 +1310,8 @@ function Footer() {
           <FooterCol
             title="Company"
             links={[
-              { href: "/trust", label: "About" },
+              { href: "/about", label: "About" },
+              { href: "/case-studies", label: "Customers" },
               { href: "/pricing", label: "Pricing" },
               { href: "/contact", label: "Contact" },
               { href: "/privacy", label: "Privacy" },

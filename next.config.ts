@@ -114,6 +114,35 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+
+  // Redirects for previously-referenced marketing / dashboard routes
+  // that never got their own page. Better to send the visitor to the
+  // nearest equivalent than to render a 404. When we ship a dedicated
+  // page for any of these, delete the corresponding entry.
+  async redirects() {
+    return [
+      // Marketing aliases
+      { source: "/platform", destination: "/marketplace", permanent: false },
+      { source: "/customers", destination: "/case-studies", permanent: false },
+      { source: "/sign-up", destination: "/signup", permanent: true },
+      // Dashboard aliases
+      {
+        source: "/dashboard/agents/new",
+        destination: "/dashboard/agent-builder",
+        permanent: false,
+      },
+      {
+        source: "/dashboard/blog-gen",
+        destination: "/dashboard/content-factory",
+        permanent: false,
+      },
+      {
+        source: "/dashboard/nexus",
+        destination: "/dashboard",
+        permanent: false,
+      },
+    ];
+  },
 };
 
 /**

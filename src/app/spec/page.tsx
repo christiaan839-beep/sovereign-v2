@@ -171,26 +171,28 @@ const { valid } = await verifyRemote(receipt, { baseUrl: issuerUrl });`}
               Spec at a glance
             </h2>
           </div>
-          <table className="w-full text-sm">
-            <tbody className="divide-y divide-white/[0.04]">
-              <Row k="Algorithm" v="HMAC-SHA256 over canonical JSON" />
-              <Row k="Signature envelope" v={`v1=<64-char-lowercase-hex>`} />
-              <Row
-                k="Canonicalization"
-                v="Top-level field order locked; nested object keys recursively sorted; arrays preserve element order"
-              />
-              <Row
-                k="Verification endpoint"
-                v="POST /api/verify (open CORS, no auth)"
-              />
-              <Row
-                k="Threat model"
-                v="Tamper detection · cross-origin verifiability · NOT non-repudiation (extension planned in v2)"
-              />
-              <Row k="License" v="CC0 1.0 (spec) · MIT (reference impl)" />
-              <Row k="Status" v="Draft — open for comment" />
-            </tbody>
-          </table>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <tbody className="divide-y divide-white/[0.04]">
+                <Row k="Algorithm" v="HMAC-SHA256 over canonical JSON" />
+                <Row k="Signature envelope" v={`v1=<64-char-lowercase-hex>`} />
+                <Row
+                  k="Canonicalization"
+                  v="Top-level field order locked; nested object keys recursively sorted; arrays preserve element order"
+                />
+                <Row
+                  k="Verification endpoint"
+                  v="POST /api/verify (open CORS, no auth)"
+                />
+                <Row
+                  k="Threat model"
+                  v="Tamper detection · cross-origin verifiability · NOT non-repudiation (extension planned in v2)"
+                />
+                <Row k="License" v="CC0 1.0 (spec) · MIT (reference impl)" />
+                <Row k="Status" v="Draft — open for comment" />
+              </tbody>
+            </table>
+          </div>
         </section>
 
         {/* Endorsers */}

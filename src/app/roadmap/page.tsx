@@ -89,7 +89,7 @@ export default function RoadmapPage() {
             Sovereign Matrix
           </Link>
           <Link
-            href="/sign-up"
+            href="/signup"
             className="px-4 py-1.5 rounded-lg bg-white text-black text-xs font-medium hover:bg-neutral-200 transition-colors"
           >
             Get Started
@@ -192,7 +192,7 @@ export default function RoadmapPage() {
               Want to influence the roadmap? Join as an early user.
             </p>
             <Link
-              href="/sign-up"
+              href="/signup"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-gradient-to-r from-emerald-600 to-cyan-600 text-white text-sm font-medium hover:from-emerald-500 hover:to-cyan-500 transition-all"
             >
               Get Started <ArrowRight className="w-4 h-4" />

@@ -34,16 +34,16 @@ html {
 @theme {
   /* Backgrounds */
   --color-midnight: #000000;
-  --color-onyx: #0A0A0A;
+  --color-onyx: #0a0a0a;
   --color-surface: #111111;
 
   /* Accents — Primary */
   --color-electric: #a855f7;
   --color-electric-light: #c084fc;
-  --color-electric-blue: #00B7FF;
+  --color-electric-blue: #00b7ff;
 
   /* Accents — Warm */
-  --color-rose-glow: #631C2D;
+  --color-rose-glow: #631c2d;
   --color-gold: #d4a574;
   --color-emerald-glow: #34d399;
 
@@ -85,7 +85,9 @@ body {
 }
 
 .glow-text {
-  text-shadow: 0 0 20px rgba(255, 255, 255, 0.2), 0 0 60px rgba(255, 255, 255, 0.05);
+  text-shadow:
+    0 0 20px rgba(255, 255, 255, 0.2),
+    0 0 60px rgba(255, 255, 255, 0.05);
 }
 
 /* ─── Glass Card ──────────────────────────────────── */
@@ -95,7 +97,8 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 1rem;
   backdrop-filter: blur(16px);
-  transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+  transition:
+    transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94),
     opacity 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94),
     border-color 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94),
     box-shadow 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -116,20 +119,25 @@ body {
 
 /* Opt-in utility for elements that need emphasis */
 .focus-ring:focus-visible {
-  outline: 2px solid rgba(16, 185, 129, 0.5);
+  outline: 2px solid rgba(0, 183, 255, 0.55);
   outline-offset: 2px;
 }
 
 /* Global keyboard focus indicator (WCAG 2.4.7) — applies only to
-   keyboard focus (:focus-visible), not mouse clicks. Uses emerald
-   brand color with high-contrast shadow to pierce through dark bg. */
+   keyboard focus (:focus-visible), not mouse clicks. Cyan per the
+   dual-accent brand rule (focus is a system-surface affordance, not
+   marketing). See docs/design-system/brand-colors.md. */
 :focus-visible {
-  outline: 2px solid rgba(16, 185, 129, 0.7);
+  outline: 2px solid rgba(0, 183, 255, 0.7);
   outline-offset: 2px;
   border-radius: 2px;
 }
 
-/* Elements that set their own focus style should keep control */
+/* Inputs/textareas suppress the outline so each component can render
+   its own focus state (typically a colored border + cyan ring). When
+   a contributor uses `focus:outline-none` they MUST follow with a
+   `focus-visible:` style — otherwise keyboard users get no focus
+   indicator at all, failing WCAG 2.4.7. */
 input:focus-visible,
 textarea:focus-visible,
 select:focus-visible,
@@ -137,12 +145,71 @@ select:focus-visible,
   outline: none;
 }
 
+/* ─── Brand gradient sweep ──────────────────────────────────────────
+ * Slow horizontal sweep between the two brand accents on display
+ * text. The dual-accent rule says cyan = audit/infra and copper =
+ * marketing/agency — the sweep treats the brand tension itself as
+ * a typographic move, the way Antigravity / Stripe use animated
+ * gradients on hero text.
+ *
+ * Apply with className="brand-sweep" on any text element (works
+ * on span, h1, etc.). Performance: GPU-composited background-position
+ * shift, no JavaScript, no layout impact.
+ *
+ * Respects prefers-reduced-motion — falls back to a static 50%
+ * midpoint (a balanced mix of both accents) so the brand tension is
+ * still legible without the animation.
+ */
+@keyframes brand-sweep {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.brand-sweep {
+  background: linear-gradient(
+    90deg,
+    #b5532c 0%,
+    #e08558 25%,
+    #00b7ff 50%,
+    #e08558 75%,
+    #b5532c 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: brand-sweep 9s ease-in-out infinite;
+  /* Hint to the browser to keep the gradient on a separate layer. */
+  will-change: background-position;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand-sweep {
+    animation: none;
+    background-position: 50% 50%;
+  }
+}
+
 /* ─── Custom Scrollbar (thin variant) ────────────── */
 
-.custom-scrollbar::-webkit-scrollbar { width: 4px; }
-.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 2px; }
-.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.12); }
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 2px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
 
 /* ─── Scrollbar ───────────────────────────────────── */
 
@@ -189,7 +256,9 @@ input[type="range"]::-webkit-slider-thumb {
 /* Use instead of transition-all to avoid layout thrashing */
 
 .transition-gpu {
-  transition-property: transform, opacity, box-shadow, border-color, background-color, color, fill, stroke, filter, backdrop-filter;
+  transition-property:
+    transform, opacity, box-shadow, border-color, background-color, color, fill,
+    stroke, filter, backdrop-filter;
   transition-timing-function: cubic-bezier(0.25, 0.46, 0.45, 0.94);
   transition-duration: 0.3s;
 }
@@ -197,8 +266,12 @@ input[type="range"]::-webkit-slider-thumb {
 /* ─── Custom Animations ──────────────────────────── */
 
 @keyframes spin-slow {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .animate-spin-slow {
@@ -208,7 +281,9 @@ input[type="range"]::-webkit-slider-thumb {
 /* ─── Reduced Motion ─────────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
@@ -222,14 +297,18 @@ input[type="range"]::-webkit-slider-thumb {
    this ensures a graceful fallback after 3 seconds. */
 
 @keyframes ensure-visible {
-  to { opacity: 1; }
+  to {
+    opacity: 1;
+  }
 }
 
-section, [role="main"] {
+section,
+[role="main"] {
   animation: ensure-visible 0s 3s forwards;
 }
 
-section *, [role="main"] * {
+section *,
+[role="main"] * {
   animation: ensure-visible 0s 3.5s forwards;
 }
 
@@ -255,8 +334,14 @@ section *, [role="main"] * {
 /* ─── Animations ──────────────────────────────────── */
 
 @keyframes fade-in {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .animate-fade-in {
@@ -267,8 +352,17 @@ section *, [role="main"] * {
 
 /* Pulsing glow on CTA button — emerald brand */
 @keyframes cta-glow {
-  0%, 100% { box-shadow: 0 0 20px rgba(16, 185, 129, 0.1), 0 0 40px rgba(16, 185, 129, 0.05); }
-  50% { box-shadow: 0 0 30px rgba(16, 185, 129, 0.2), 0 0 60px rgba(16, 185, 129, 0.1); }
+  0%,
+  100% {
+    box-shadow:
+      0 0 20px rgba(16, 185, 129, 0.1),
+      0 0 40px rgba(16, 185, 129, 0.05);
+  }
+  50% {
+    box-shadow:
+      0 0 30px rgba(16, 185, 129, 0.2),
+      0 0 60px rgba(16, 185, 129, 0.1);
+  }
 }
 
 .cta-glow {
@@ -277,13 +371,20 @@ section *, [role="main"] * {
 
 .cta-glow:hover {
   animation: none;
-  box-shadow: 0 0 40px rgba(16, 185, 129, 0.3), 0 0 80px rgba(16, 185, 129, 0.15);
+  box-shadow:
+    0 0 40px rgba(16, 185, 129, 0.3),
+    0 0 80px rgba(16, 185, 129, 0.15);
 }
 
 /* Floating / breathing animation */
 @keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-8px); }
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
 }
 
 .animate-float {
@@ -307,7 +408,7 @@ section *, [role="main"] * {
 
 /* Noise texture overlay */
 .noise-overlay::before {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
   background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
@@ -327,8 +428,12 @@ section *, [role="main"] * {
 /* ─── Cinematic Text Shimmer ─────────────────────── */
 
 @keyframes text-shimmer {
-  0% { background-position: -200% center; }
-  100% { background-position: 200% center; }
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
 }
 
 .text-shimmer {
@@ -350,21 +455,28 @@ section *, [role="main"] * {
 /* ─── Stat Counter Glow ──────────────────────────── */
 
 .stat-glow {
-  text-shadow: 0 0 30px rgba(16, 185, 129, 0.3), 0 0 80px rgba(16, 185, 129, 0.1);
+  text-shadow:
+    0 0 30px rgba(16, 185, 129, 0.3),
+    0 0 80px rgba(16, 185, 129, 0.1);
 }
 
 /* ─── Marquee Animation (for InfiniteMarquee) ────── */
 
 @keyframes marquee-scroll {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
 }
 
 /* ─── Print Styles (for legal docs, whitepapers via window.print) ─── */
 
 @media print {
   /* Force light background with dark text for readable PDF output */
-  html, body {
+  html,
+  body {
     background: #ffffff !important;
     color: #000000 !important;
     font-size: 11pt;
@@ -380,21 +492,34 @@ section *, [role="main"] * {
   }
 
   /* Strip motion / decoration */
-  [data-framer-motion], .animate-fade-in, .animate-float,
-  .text-shimmer, .cta-glow, .stat-glow {
+  [data-framer-motion],
+  .animate-fade-in,
+  .animate-float,
+  .text-shimmer,
+  .cta-glow,
+  .stat-glow {
     animation: none !important;
     transform: none !important;
   }
 
   /* Hide interactive / navigational chrome */
-  nav, button[type="button"], header nav, footer,
-  [role="navigation"], [aria-label*="menu" i], [aria-label*="toggle" i] {
+  nav,
+  button[type="button"],
+  header nav,
+  footer,
+  [role="navigation"],
+  [aria-label*="menu" i],
+  [aria-label*="toggle" i] {
     display: none !important;
   }
 
   /* But keep semantic headers, main content, articles */
-  header h1, header p, header .header-content,
-  main, article, section {
+  header h1,
+  header p,
+  header .header-content,
+  main,
+  article,
+  section {
     display: block !important;
   }
 
@@ -413,12 +538,21 @@ section *, [role="main"] * {
   }
 
   /* Page breaks */
-  h1, h2, h3 { page-break-after: avoid; }
-  section, article { page-break-inside: avoid; }
+  h1,
+  h2,
+  h3 {
+    page-break-after: avoid;
+  }
+  section,
+  article {
+    page-break-inside: avoid;
+  }
 
   /* Remove gradients/glow containers */
-  [class*="bg-gradient-"], [class*="bg-\\[\\#"],
-  [class*="border-"], [class*="rounded-"],
+  [class*="bg-gradient-"],
+  [class*="bg-\\[\\#"],
+  [class*="border-"],
+  [class*="rounded-"],
   [class*="backdrop-blur"] {
     background: transparent !important;
     border: none !important;
@@ -427,7 +561,10 @@ section *, [role="main"] * {
   }
 
   /* Restore sensible borders for tables/separators */
-  hr, table, th, td {
+  hr,
+  table,
+  th,
+  td {
     border-color: #d4d4d4 !important;
   }
 
@@ -440,18 +577,38 @@ section *, [role="main"] * {
 /* ─── Elite Effects Keyframes ────────────────────── */
 
 @keyframes shimmer {
-  0% { background-position: -200% center; }
-  100% { background-position: 200% center; }
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
 }
 
 @keyframes float-drift {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  25% { transform: translateY(-8px) rotate(0.5deg); }
-  50% { transform: translateY(-4px) rotate(-0.3deg); }
-  75% { transform: translateY(-12px) rotate(0.2deg); }
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-8px) rotate(0.5deg);
+  }
+  50% {
+    transform: translateY(-4px) rotate(-0.3deg);
+  }
+  75% {
+    transform: translateY(-12px) rotate(0.2deg);
+  }
 }
 
 @keyframes pulse-glow {
-  0%, 100% { opacity: 0.4; transform: scale(1); }
-  50% { opacity: 0.7; transform: scale(1.05); }
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.05);
+  }
 }

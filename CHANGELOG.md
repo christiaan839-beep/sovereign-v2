@@ -180,6 +180,132 @@ tests across Tiers 2-7.
 
 ---
 
+## [2.2.0] — 2026-05-11
+
+The **audit-grade UX pass**. Builds on the v2 launch's verifiable
+receipts foundation by making the moat tangible everywhere a visitor,
+customer, or compliance officer looks. Repositions the platform from
+indie-hackers "founders-club" framing to audit-grade infrastructure
+for AI in regulated industries.
+
+### Added
+
+- **`/explorer`** — public block-explorer-style live feed of receipts
+  being signed. Polls every 12s, cyan-themed, framer-motion staggered
+  entrance, stats strip. Subscribe via RSS link.
+- **`/badge`** — public verification-badge builder. Paste receipt id →
+  pick theme → toggle link-back → live preview using the actual
+  `/embed/verify.js` → copy snippet. Accepts `?id=<receipt>` deep-link.
+- **Receipt page (`/r/[id]`) live verification** — auto-verifies on
+  mount with timing animation, share widget (copy + tweet),
+  collapsible "verify in your own browser" panel with copy-pasteable
+  7-line JS snippet that works on preview deploys + white-label
+  domains.
+- **Landing `<LiveVerifierDemo />`** — interactive proof block on the
+  landing. Fetches the freshest public receipt, animates real
+  `/api/verify` round-trip, "Tamper & verify" mutates one byte and
+  shows the HMAC reject.
+- **Dashboard `<AuditPulseStrip />`** — at the top of `/dashboard`:
+  signed-receipt count, truncated Merkle chain root, copy-root button,
+  audit-bundle download, audit-trail link.
+- **Receipts list → badge builder wiring** — per-row "Get badge" code
+  icon on `/dashboard/receipts` opens `/badge?id=…` pre-filled. Three
+  clicks from receipt to live verification badge on the customer's
+  own domain.
+- **Coinbase Commerce integration** — BTC / ETH / USDC / DAI / LTC /
+  DOGE / SHIB checkout via hosted Commerce charges. UI gated behind
+  `NEXT_PUBLIC_CRYPTO_PAYMENTS_ENABLED` (off by default; backend
+  routes always live). Hardened webhook: amount + currency validation,
+  charge refetch via merchant API, rate-limited, prototype-pollution-
+  safe plan lookup, idempotent on event id.
+- **Cinematic landing dividers** — `<SectionDivider />` with cyan /
+  copper alternation marks the audit ↔ marketing surface boundaries
+  per the dual-accent rule.
+- **Film-grain overlay** — `<FilmGrain />` pure-SVG noise component
+  (~280 bytes inlined) for premium cinematic depth.
+- **Audit-grade SEO** — root `<head>` metadata, OG, Twitter, JSON-LD
+  rewritten to lead with the verifiable-receipts narrative.
+- **`docs/design-system/brand-colors.md`** — codifies the dual-accent
+  rule (cyan = audit/infrastructure, copper = marketing/agency).
+- **`docs/crypto-payments.md`** — three-mode framing
+  (centralized / hybrid / self-custody).
+- **+41 tests** — full coverage for `/api/agent-runs/recent-public`,
+  `/api/agent-runs/latest-public`, Coinbase Commerce lib + webhook.
+  Webhook tests pin every security-review finding to a regression
+  case.
+
+### Changed
+
+- **Pricing simplified** — 5 visible tiers (Founder / Starter $19 /
+  Growth $49 / Sovereign Node $199 / Enterprise $499) → 3 visible
+  (Free / Pro $49 / Team $199). `plans.ts` retains all 6 legacy plan
+  IDs for backward compatibility with existing subscribers.
+- **Landing professionalization** — removed `<StackKiller />` cost-
+  displacement section ("vs HubSpot $890/mo, vs Apollo, vs Jasper")
+  and `<FounderSeats />` ("100 seats", "Direct Slack to the founder",
+  monthly 1:1 founders-club pitch). vs-competitor trust-line links
+  → VAOS 1.0 spec / Live verifier demo / Receipt explorer.
+- **"Email the founder" CTA → "Contact sales"** with role address
+  (`hello@sovereignmatrix.agency`).
+- **TypeScript strict mode** — `typescript.ignoreBuildErrors: false`
+  enforced on every PR's CI Build gate. Every error knocked down or
+  scoped with a concrete `@ts-expect-error`.
+- **Root loading screen** — emerald → cyan per the dual-accent rule.
+- **Onboarding completion screen** — stat trio swapped to
+  "137 Agents / HMAC Signed / OTS Bitcoin anchor" + a paragraph
+  explaining `/r/<id>` receipts. Payments footer acknowledges Card +
+  EFT + ZAR + USD.
+- **Performance** — 4 below-fold landing sections (LiveVerifierDemo,
+  StackKiller, FounderSeats, CommandEgg) dynamic-imported with
+  skeleton fallbacks. SSR stays on for everything that needs it.
+
+### Fixed
+
+- **CRITICAL: RSS feed enumerated unlisted receipts** — `/r/feed.xml`
+  was returning `inArray(["public", "unlisted"])`. Same share-by-link
+  contract violation the pre-merge security review caught on the
+  other public endpoints. Fix: `eq("public")` only.
+- **CRITICAL: `/api/agent-runs/latest-public` could leak unlisted** —
+  added `eq("public")` filter.
+- **404 sweep** — `/sign-up → /signup` typo, `/dashboard/agents/new →
+/dashboard/agent-builder` typo, plus 5 `next.config.ts` redirects
+  for routes referenced in marketing but never built (`/platform`,
+  `/trust`, `/customers`, `/dashboard/blog-gen`, `/dashboard/nexus`).
+- **Mobile overflow on `/spec`** — wrapped the "Spec at a glance"
+  table in `overflow-x-auto`.
+- **Stale agent-count drift** — 130-agent and 30-featured-agent
+  mentions swept to 137 across landing, marketing pages, JSON-LD,
+  manifest, onboarding, dashboard billing, developer docs.
+- **Stale pricing drift** — R349/Starter $19 mentions on `/now`,
+  `/playbooks`, `/playbooks/growth-pulse` updated to R997/Pro $49.
+
+### Security
+
+- **Coinbase Commerce webhook hardened** after security-reviewer pass:
+  - HMAC signature header pre-validated for exactly 64-char hex
+    (pre-auth DoS guard — rejects a 1MB attacker payload before
+    Buffer allocation)
+  - Amount + currency match against `PLANS[plan]` (closes the "pay
+    $0.01 for enterprise" tampering attack)
+  - Charge refetch via merchant API key (defense-in-depth on a
+    hypothetically-leaked webhook secret)
+  - Pre-signature rate limit (60/min)
+  - `Object.prototype.hasOwnProperty.call` for plan whitelist (vs
+    `in` operator that walks the prototype chain — closes
+    `__proto__` / `constructor` injection)
+  - Idempotent on event id (chain-reorg duplicates)
+- **`/api/agent-runs/recent-public` returns signature fingerprints,
+  not raw signatures** — never exposes the HMAC the consumer should
+  fetch from `/r/[id]`.
+
+### Pending manual ops (block customer activation, not deploy)
+
+- `STRIPE_PRICE_*` env vars in Vercel
+- Stripe webhook endpoint URL + `STRIPE_WEBHOOK_SECRET`
+- Clerk webhook endpoint URL + `CLERK_WEBHOOK_SECRET`
+- Any unapplied Drizzle migrations in Neon SQL Editor
+  > > > > > > > origin/main
+
 ## [2.1.0] — 2026-04-03
 
 ### Added

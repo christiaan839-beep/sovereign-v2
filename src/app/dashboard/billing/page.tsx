@@ -3,9 +3,18 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
-  CreditCard, Zap, BarChart3, Activity, CheckCircle2,
-  ExternalLink, Loader2, AlertTriangle, ArrowUpRight,
-  Clock, FileText, Receipt,
+  CreditCard,
+  Zap,
+  BarChart3,
+  Activity,
+  CheckCircle2,
+  ExternalLink,
+  Loader2,
+  AlertTriangle,
+  ArrowUpRight,
+  Clock,
+  FileText,
+  Receipt,
 } from "lucide-react";
 import { useUsage } from "@/hooks/useUsage";
 import { useSafeUser } from "@/lib/safe-clerk";
@@ -51,27 +60,42 @@ export default function BillingPage() {
   const monthlyLimit = isPaid ? 10000 : 50;
   const monthlyUsed = total;
   const monthlyRemaining = Math.max(0, monthlyLimit - monthlyUsed);
-  const usagePercent = monthlyLimit > 0 ? Math.min(100, Math.round((monthlyUsed / monthlyLimit) * 100)) : 0;
+  const usagePercent =
+    monthlyLimit > 0
+      ? Math.min(100, Math.round((monthlyUsed / monthlyLimit) * 100))
+      : 0;
 
   const planDisplay = (() => {
     switch (plan) {
-      case "free": return "Free";
-      case "starter": return "Starter";
-      case "founder": return "Founder";
-      case "array": return "Growth";
-      case "node": return "Sovereign Node";
-      case "enterprise": return "Enterprise";
-      default: return plan ? plan.charAt(0).toUpperCase() + plan.slice(1) : "Free";
+      case "free":
+        return "Free";
+      case "starter":
+        return "Starter";
+      case "founder":
+        return "Founder";
+      case "array":
+        return "Growth";
+      case "node":
+        return "Sovereign Node";
+      case "enterprise":
+        return "Enterprise";
+      default:
+        return plan ? plan.charAt(0).toUpperCase() + plan.slice(1) : "Free";
     }
   })();
 
   const planPrice = (() => {
     switch (plan) {
-      case "starter": return "$19/mo";
-      case "array": return "$49/mo";
-      case "node": return "$199/mo";
-      case "enterprise": return "$499/mo";
-      default: return "$0/mo";
+      case "starter":
+        return "$19/mo";
+      case "array":
+        return "$49/mo";
+      case "node":
+        return "$199/mo";
+      case "enterprise":
+        return "$499/mo";
+      default:
+        return "$0/mo";
     }
   })();
 
@@ -84,14 +108,20 @@ export default function BillingPage() {
       if (res.ok && data.url) {
         window.location.assign(data.url);
       } else if (res.status === 503) {
-        setPortalError("Billing portal is being configured. Please try again shortly.");
+        setPortalError(
+          "Billing portal is being configured. Please try again shortly.",
+        );
       } else if (res.status === 404) {
-        setPortalError("No active subscription found. Subscribe to a plan first.");
+        setPortalError(
+          "No active subscription found. Subscribe to a plan first.",
+        );
       } else {
         setPortalError(data.error || "Could not open billing portal.");
       }
     } catch {
-      setPortalError("Connection failed. Please check your internet and try again.");
+      setPortalError(
+        "Connection failed. Please check your internet and try again.",
+      );
     } finally {
       setPortalLoading(false);
     }
@@ -146,7 +176,9 @@ export default function BillingPage() {
               <Skeleton className="h-8 w-32" />
             ) : (
               <div className="flex items-baseline gap-3">
-                <h2 className="text-2xl font-black text-white">{planDisplay}</h2>
+                <h2 className="text-2xl font-black text-white">
+                  {planDisplay}
+                </h2>
                 <span className="text-sm text-neutral-400">{planPrice}</span>
               </div>
             )}
@@ -186,7 +218,9 @@ export default function BillingPage() {
 
       {/* Usage Stats */}
       <div>
-        <h2 className="text-sm font-semibold text-white mb-4">Usage This Month</h2>
+        <h2 className="text-sm font-semibold text-white mb-4">
+          Usage This Month
+        </h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -201,7 +235,9 @@ export default function BillingPage() {
             {!loaded ? (
               <Skeleton className="h-7 w-20 mt-1" />
             ) : (
-              <span className="text-2xl font-bold text-white">{monthlyUsed.toLocaleString()}</span>
+              <span className="text-2xl font-bold text-white">
+                {monthlyUsed.toLocaleString()}
+              </span>
             )}
           </motion.div>
 
@@ -219,7 +255,9 @@ export default function BillingPage() {
               <Skeleton className="h-7 w-20 mt-1" />
             ) : (
               <span className="text-2xl font-bold text-white">
-                {isPaid && monthlyLimit >= 10000 ? "Unlimited" : monthlyRemaining.toLocaleString()}
+                {isPaid && monthlyLimit >= 10000
+                  ? "Unlimited"
+                  : monthlyRemaining.toLocaleString()}
               </span>
             )}
           </motion.div>
@@ -232,12 +270,16 @@ export default function BillingPage() {
           >
             <div className="flex items-center gap-2 mb-2">
               <Activity className="w-4 h-4 text-violet-400" />
-              <span className="text-xs text-neutral-400">Today&apos;s Usage</span>
+              <span className="text-xs text-neutral-400">
+                Today&apos;s Usage
+              </span>
             </div>
             {!loaded ? (
               <Skeleton className="h-7 w-20 mt-1" />
             ) : (
-              <span className="text-2xl font-bold text-white">{today} / {limit}</span>
+              <span className="text-2xl font-bold text-white">
+                {today} / {limit}
+              </span>
             )}
           </motion.div>
         </div>
@@ -253,7 +295,11 @@ export default function BillingPage() {
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs text-neutral-400">Monthly Usage</span>
               <span className="text-xs font-mono text-neutral-500">
-                {monthlyUsed.toLocaleString()} / {isPaid && monthlyLimit >= 10000 ? "10,000+" : monthlyLimit.toLocaleString()} runs
+                {monthlyUsed.toLocaleString()} /{" "}
+                {isPaid && monthlyLimit >= 10000
+                  ? "10,000+"
+                  : monthlyLimit.toLocaleString()}{" "}
+                runs
               </span>
             </div>
             <div className="h-2 bg-white/[0.04] rounded-full overflow-hidden">
@@ -265,8 +311,8 @@ export default function BillingPage() {
                   usagePercent >= 90
                     ? "bg-rose-500"
                     : usagePercent >= 70
-                    ? "bg-amber-500"
-                    : "bg-emerald-500"
+                      ? "bg-amber-500"
+                      : "bg-emerald-500"
                 }`}
               />
             </div>
@@ -284,11 +330,16 @@ export default function BillingPage() {
 
       {/* Payment History */}
       <div>
-        <h2 className="text-sm font-semibold text-white mb-4">Payment History</h2>
+        <h2 className="text-sm font-semibold text-white mb-4">
+          Payment History
+        </h2>
         {invoicesLoading ? (
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-16 rounded-xl bg-white/[0.02] animate-pulse" />
+              <div
+                key={i}
+                className="h-16 rounded-xl bg-white/[0.02] animate-pulse"
+              />
             ))}
           </div>
         ) : invoices.length > 0 ? (
@@ -296,29 +347,54 @@ export default function BillingPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-white/5">
-                  <th className="text-left text-[10px] uppercase tracking-widest text-neutral-500 px-5 py-3">Date</th>
-                  <th className="text-left text-[10px] uppercase tracking-widest text-neutral-500 px-5 py-3">Description</th>
-                  <th className="text-left text-[10px] uppercase tracking-widest text-neutral-500 px-5 py-3">Amount</th>
-                  <th className="text-left text-[10px] uppercase tracking-widest text-neutral-500 px-5 py-3">Status</th>
+                  <th className="text-left text-[10px] uppercase tracking-widest text-neutral-500 px-5 py-3">
+                    Date
+                  </th>
+                  <th className="text-left text-[10px] uppercase tracking-widest text-neutral-500 px-5 py-3">
+                    Description
+                  </th>
+                  <th className="text-left text-[10px] uppercase tracking-widest text-neutral-500 px-5 py-3">
+                    Amount
+                  </th>
+                  <th className="text-left text-[10px] uppercase tracking-widest text-neutral-500 px-5 py-3">
+                    Status
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {invoices.map((inv) => (
-                  <tr key={inv.id} className="border-b border-white/[0.03] last:border-0">
-                    <td className="px-5 py-4 text-sm text-neutral-300">{inv.date}</td>
-                    <td className="px-5 py-4 text-sm text-neutral-300">{inv.description}</td>
-                    <td className="px-5 py-4 text-sm font-mono text-white">{inv.amount}</td>
+                  <tr
+                    key={inv.id}
+                    className="border-b border-white/[0.03] last:border-0"
+                  >
+                    <td className="px-5 py-4 text-sm text-neutral-300">
+                      {inv.date}
+                    </td>
+                    <td className="px-5 py-4 text-sm text-neutral-300">
+                      {inv.description}
+                    </td>
+                    <td className="px-5 py-4 text-sm font-mono text-white">
+                      {inv.amount}
+                    </td>
                     <td className="px-5 py-4">
-                      <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                        inv.status === "paid"
-                          ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                          : inv.status === "pending"
-                          ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
-                          : "bg-rose-500/10 text-rose-400 border border-rose-500/20"
-                      }`}>
-                        {inv.status === "paid" && <CheckCircle2 className="w-3 h-3" />}
-                        {inv.status === "pending" && <Clock className="w-3 h-3" />}
-                        {inv.status === "failed" && <AlertTriangle className="w-3 h-3" />}
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                          inv.status === "paid"
+                            ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                            : inv.status === "pending"
+                              ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                              : "bg-rose-500/10 text-rose-400 border border-rose-500/20"
+                        }`}
+                      >
+                        {inv.status === "paid" && (
+                          <CheckCircle2 className="w-3 h-3" />
+                        )}
+                        {inv.status === "pending" && (
+                          <Clock className="w-3 h-3" />
+                        )}
+                        {inv.status === "failed" && (
+                          <AlertTriangle className="w-3 h-3" />
+                        )}
                         {inv.status}
                       </span>
                     </td>
@@ -336,7 +412,9 @@ export default function BillingPage() {
             <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-4">
               <Receipt className="w-5 h-5 text-neutral-500" />
             </div>
-            <h3 className="text-sm font-semibold text-white mb-1">No payment history</h3>
+            <h3 className="text-sm font-semibold text-white mb-1">
+              No payment history
+            </h3>
             <p className="text-xs text-neutral-400 max-w-sm mx-auto">
               {isPaid
                 ? "Your invoices will appear here after your first billing cycle."
@@ -353,12 +431,29 @@ export default function BillingPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
         >
-          <h2 className="text-sm font-semibold text-white mb-4">Available Plans</h2>
+          <h2 className="text-sm font-semibold text-white mb-4">
+            Available Plans
+          </h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[
-              { name: "Starter", price: "$19/mo", runs: "200 runs/month", highlight: false },
-              { name: "Growth", price: "$49/mo", runs: "500 runs/month", highlight: true },
-              { name: "Sovereign Node", price: "$199/mo", runs: "2,000 runs/month", highlight: false },
+              {
+                name: "Pro",
+                price: "$49/mo",
+                runs: "500 verified runs/month",
+                highlight: true,
+              },
+              {
+                name: "Team",
+                price: "$199/mo",
+                runs: "2,000 verified runs/month",
+                highlight: false,
+              },
+              {
+                name: "Enterprise",
+                price: "Custom",
+                runs: "Unlimited · white-label",
+                highlight: false,
+              },
             ].map((p) => (
               <div
                 key={p.name}
@@ -375,7 +470,9 @@ export default function BillingPage() {
                 )}
                 <h3 className="text-sm font-bold text-white">{p.name}</h3>
                 <div className="flex items-baseline gap-1 mt-1 mb-2">
-                  <span className="text-lg font-black text-white">{p.price}</span>
+                  <span className="text-lg font-black text-white">
+                    {p.price}
+                  </span>
                 </div>
                 <p className="text-[10px] text-neutral-500 mb-3">{p.runs}</p>
                 <a

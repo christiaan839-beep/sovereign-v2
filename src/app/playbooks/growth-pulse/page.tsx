@@ -274,7 +274,7 @@ function PageHeader() {
         Drop your business name, locale, and top services. Get a local-SEO
         checklist, four platform-specific social posts, a customer re-engagement
         email, a WhatsApp broadcast template, and a limited-time offer card in
-        your local currency. Monthly cadence, R349 / month.
+        your local currency. Monthly cadence, R997 / month.
       </p>
     </header>
   );
@@ -441,7 +441,7 @@ function IntakeForm(props: IntakeFormProps) {
       <div className="flex flex-col sm:flex-row items-center gap-4 mt-8 pt-6 border-t border-white/[0.06]">
         {props.authLoaded && !props.isSignedIn ? (
           <p className="text-[13px] text-neutral-500 flex-1">
-            R349 / month covers 50 pulses.{" "}
+            R997 / month covers 50 pulses.{" "}
             <Link
               href="/signup"
               className="text-white underline decoration-white/30 hover:decoration-white/60"
@@ -802,7 +802,7 @@ function PulseResult({
       <div className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <p className="text-[13px] text-neutral-400">
           <Sparkles className="inline w-3.5 h-3.5 text-[#B5532C] mr-1.5 align-text-bottom" />
-          Schedule this pulse to run monthly. R349 / month, billed in Rands.
+          Schedule this pulse to run monthly. R997 / month, billed in Rands.
         </p>
         <Link
           href="/dashboard/playbooks"

@@ -125,7 +125,15 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/sla", priority: 0.6, changeFreq: "monthly" },
     { path: "/status", priority: 0.6, changeFreq: "daily" },
     { path: "/changelog", priority: 0.6, changeFreq: "weekly" },
+    { path: "/trust", priority: 0.92, changeFreq: "monthly" }, // procurement-ready trust hub — SOC2/POPIA/GDPR/verifier/security/status in one page
     { path: "/verified", priority: 0.9, changeFreq: "weekly" }, // verifiable-receipt live demo — SEO-priority for the audit-grade positioning
+    { path: "/explorer", priority: 0.85, changeFreq: "daily" }, // public live feed of signed receipts — proof the platform is alive
+    { path: "/badge", priority: 0.85, changeFreq: "monthly" }, // verification-badge builder — distribution surface for the embed snippet
+    { path: "/stats", priority: 0.8, changeFreq: "daily" }, // aggregate platform metrics — social proof for compliance buyers
+    { path: "/affiliate", priority: 0.75, changeFreq: "monthly" }, // affiliate program landing — recurring revenue lever
+    { path: "/mcp", priority: 0.88, changeFreq: "monthly" }, // public MCP server — distribution into every Claude/Cursor install
+    { path: "/api-docs", priority: 0.85, changeFreq: "monthly" }, // OpenAPI 3.1 contract for the public verification API
+    { path: "/quickstart", priority: 0.9, changeFreq: "monthly" }, // 5-min walkthrough — conversion-funnel doc
     { path: "/spec", priority: 0.95, changeFreq: "monthly" }, // VAOS 1.0 open standard — top SEO target for "verifiable AI receipts" / "AI agent audit standard"
 
     // Legal
