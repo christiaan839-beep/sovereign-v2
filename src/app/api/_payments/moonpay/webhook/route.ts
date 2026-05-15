@@ -8,6 +8,7 @@ import {
   verifyWebhookSignature,
 } from "@/lib/moonpay";
 import { alreadyProcessed } from "@/lib/idempotency";
+import { rateLimit } from "@/lib/rate-limit";
 import { createLogger } from "@/lib/logger";
 
 /**
@@ -16,9 +17,14 @@ import { createLogger } from "@/lib/logger";
  * Receives MoonPay transaction-status events. Verifies the HMAC
  * signature, dedups by transaction id, and provisions the SKU on
  * status=completed via the existing add-on-provisioner.
+ *
+ * Rate-limited at 240 req/min/IP — MoonPay does not perform an
+ * outbound verify-call (HMAC is local) so the limit is purely
+ * abuse-control, set higher than the PayPal webhook.
  */
 
 const log = createLogger("moonpay-webhook");
+const limiter = rateLimit({ interval: 60, limit: 240 });
 
 export async function POST(req: Request) {
   if (!getConfig()) {
@@ -27,6 +33,9 @@ export async function POST(req: Request) {
       { status: 503 },
     );
   }
+
+  const limited = await limiter.check(req);
+  if (limited) return limited;
 
   const body = await req.text();
   const signatureHeader =

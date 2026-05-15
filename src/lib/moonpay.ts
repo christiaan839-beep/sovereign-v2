@@ -46,7 +46,14 @@ export interface MoonPayConfig {
 export interface BuildWidgetUrlRequest {
   /** Currency to buy — e.g. "usdc_polygon" or "eth". */
   currencyCode: string;
-  /** Wallet address payouts go to. */
+  /**
+   * **Customer-controlled wallet address** the purchased crypto
+   * is delivered to. NOT the operator's wallet — MoonPay is a
+   * pure on-ramp, not an escrow. If the platform wants to
+   * collect the funds itself, inject the operator's wallet
+   * address server-side at the route boundary; do not pass
+   * a user-supplied address through unchecked.
+   */
   walletAddress: string;
   /** Fiat amount to pay (USD). */
   baseAmount: number;

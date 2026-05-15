@@ -8,6 +8,7 @@ import {
   verifyWebhookSignature,
 } from "@/lib/paypal";
 import { alreadyProcessed } from "@/lib/idempotency";
+import { rateLimit } from "@/lib/rate-limit";
 import { createLogger } from "@/lib/logger";
 
 /**
@@ -21,9 +22,13 @@ import { createLogger } from "@/lib/logger";
  * The custom_id field encodes `<intent>:<itemId>:<userId>` set on
  * the original order in /paypal/checkout — round-trips cleanly so
  * the webhook knows what to provision.
+ *
+ * Rate-limited at 120 req/min/IP to cap the cost-amplification
+ * from the PayPal verify-webhook-signature outbound API call.
  */
 
 const log = createLogger("paypal-webhook");
+const limiter = rateLimit({ interval: 60, limit: 120 });
 
 export async function POST(req: Request) {
   if (!getConfig()) {
@@ -32,6 +37,9 @@ export async function POST(req: Request) {
       { status: 503 },
     );
   }
+
+  const limited = await limiter.check(req);
+  if (limited) return limited;
 
   const body = await req.text();
 
@@ -79,11 +87,13 @@ export async function POST(req: Request) {
           userId,
           eventId: event.id,
         });
+        // Mirror the Stripe webhook pattern — log the full result
+        // envelope so downstream operators see seats / pack flag /
+        // meter id alongside the family.
         log.info("PayPal add-on provisioned", {
-          itemId,
           userId,
-          eventId: event.id,
-          family: result.family,
+          ...result,
+          seatCount: result.seats?.length ?? 0,
         });
       } else {
         log.info("PayPal payment completed (no provisioning hook)", {
