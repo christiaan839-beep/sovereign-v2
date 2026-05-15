@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "Sovereign Matrix",
+  "version": "0.1.0",
+  "description": "Right-click any text to run a Sovereign agent. Every output produces a cryptographically-signed receipt.",
+  "permissions": ["contextMenus", "storage", "activeTab"],
+  "host_permissions": ["https://sovereignmatrix.agency/*"],
+  "background": { "service_worker": "background.js" },
+  "action": {
+    "default_title": "Sovereign Matrix",
+    "default_popup": "popup.html"
+  },
+  "options_page": "options.html",
+  "icons": { "128": "icon-128.png" }
+}

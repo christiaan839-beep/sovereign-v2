@@ -19,7 +19,18 @@ export type AuditAction =
   | "admin.provision"
   | "credits.add"
   | "credits.purchase"
-  | "credits.grant";
+  | "credits.grant"
+  | "admin.grant"
+  | "admin.revoke"
+  | "marketplace.submit"
+  | "marketplace.draft"
+  | "marketplace.submitted"
+  | "marketplace.approved"
+  | "marketplace.rejected"
+  | "marketplace.published"
+  | "marketplace.unpublished"
+  | "marketplace.run"
+  | "marketplace.connect";
 
 interface AuditEntry {
   userId: string;

@@ -34,6 +34,8 @@ const eslintConfig = defineConfig([
     "playwright.config.ts",
     // Chrome extension (plain JS, not TypeScript)
     "chrome-extension/**",
+    // Distributable extension shells (plain JS, runtime-resolved require / globals)
+    "extensions/**",
     // Utility scripts (plain JS, use require())
     "scripts/**",
     "server/**",

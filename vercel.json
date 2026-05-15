@@ -36,6 +36,14 @@
     {
       "path": "/api/cron/synthetic-probe",
       "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/_cron/audit-bundles",
+      "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/_cron/soc2-indicators",
+      "schedule": "*/15 * * * *"
     }
   ],
   "headers": [

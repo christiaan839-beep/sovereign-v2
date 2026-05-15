@@ -94,6 +94,21 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/for-fintech", priority: 0.8, changeFreq: "monthly" },
     { path: "/for-ecommerce", priority: 0.8, changeFreq: "monthly" },
 
+    // Tier-1 ICP regulated verticals (Cook 69, 76, 85-87)
+    { path: "/for-pharma", priority: 0.9, changeFreq: "monthly" },
+    { path: "/for-banking", priority: 0.9, changeFreq: "monthly" },
+    { path: "/for-insurance", priority: 0.9, changeFreq: "monthly" },
+    { path: "/for-defense", priority: 0.9, changeFreq: "monthly" },
+    { path: "/for-tax-audit", priority: 0.9, changeFreq: "monthly" },
+    { path: "/for-legal-services", priority: 0.9, changeFreq: "monthly" },
+    { path: "/for-prior-auth", priority: 0.9, changeFreq: "monthly" },
+    { path: "/for-esg", priority: 0.9, changeFreq: "monthly" },
+
+    // Platform surfaces (Cook 50, 70-71, 89)
+    { path: "/agents", priority: 0.85, changeFreq: "weekly" },
+    { path: "/builder", priority: 0.7, changeFreq: "weekly" },
+    { path: "/trust", priority: 0.9, changeFreq: "weekly" },
+
     // Contact
     { path: "/contact", priority: 0.7, changeFreq: "monthly" },
 
