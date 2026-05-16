@@ -18,6 +18,7 @@ import { auth } from "@clerk/nextjs/server";
 import { isAdmin } from "@/lib/admin-auth";
 import { listActiveTokens } from "@/lib/agent-tokens";
 import { computeStatusMetrics } from "@/lib/status-metrics";
+import { GovernanceLiveFeed } from "./LiveFeed";
 import { db } from "@/db";
 import { agentRuns, auditLogAnchors } from "@/db/schema";
 import { desc } from "drizzle-orm";
@@ -66,6 +67,12 @@ export default async function GovernancePage() {
           can be revoked instantly; every revoke action is itself a
           receipt-anchored audit row.
         </p>
+
+        {/* Wave-28: SSE-pushed live event feed — agent runs, token
+            issues/revokes, anomaly flags, budget thresholds, Guardian
+            blocks, ACP envelopes — all arrive over the Wave-21 stream
+            with no polling. */}
+        <GovernanceLiveFeed />
 
         {/* Top KPIs — 4 cards across */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-12">
