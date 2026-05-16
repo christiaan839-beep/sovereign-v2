@@ -82,8 +82,12 @@ export function useSovereignEvents(
   const cancelledRef = useRef(false);
 
   // Track the filter list in a ref so changes don't trigger reconnect.
+  // Update via useEffect (not during render) — mutating refs during
+  // render is a React anti-pattern flagged by the linter.
   const filterRef = useRef<Set<SovereignEventType> | null>(null);
-  filterRef.current = types && types.length > 0 ? new Set(types) : null;
+  useEffect(() => {
+    filterRef.current = types && types.length > 0 ? new Set(types) : null;
+  }, [types]);
 
   useEffect(() => {
     if (!enabled) return;

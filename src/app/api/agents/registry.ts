@@ -1,12 +1,21 @@
 /**
- * AUTO-GENERATED — DO NOT EDIT BY HAND.
+ * Manually-maintained agent registry.
  *
- * Produced by scripts/generate-agent-registry.mjs on every build.
  * Every agent whose route.ts lives at src/app/api/_agents/<slug>/route.ts
- * is bundled here so Vercel's serverless packer can see the import paths.
+ * MAY be bundled here so Vercel's serverless packer can see the import
+ * paths. Not all on-disk agents are listed — only the 97 entries below
+ * are wired into the serverless bundle.
  *
- * Regenerate: `npm run gen:registry`
- * Count: 137 agents
+ * Count drift:
+ *   On-disk agent route folders: 140
+ *   Listed in this registry:     97
+ *   Marketing surfaces claim:    140 (the truthful disk count, set in
+ *                                page.tsx / layout.tsx / SEO copy)
+ *
+ * To wire a new agent into the registry, append a line below + run
+ * `npm run typecheck` to confirm the import path resolves. The
+ * registry-regenerator script flagged in earlier comments was never
+ * implemented; flagged for Wave 32 follow-up.
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
