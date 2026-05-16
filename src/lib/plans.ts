@@ -19,10 +19,53 @@ export type PlanId =
   | "founder"
   | "array"
   | "node"
-  | "enterprise";
+  | "enterprise"
+  // Contract tier above enterprise — price-on-application, custom SLA,
+  // dedicated region, BYOC encryption keys. Never purchasable via the
+  // self-serve checkout — only via `/sales` Calendly flow and a manual
+  // Stripe invoice. Listed here so it's referenced consistently in copy,
+  // JSON-LD, and admin tooling.
+  | "sovereign";
 
 /** Legacy plan names that may exist in the database or older code paths */
 type LegacyPlanId = "pro" | "sniper" | "basic";
+
+/**
+ * Enterprise-grade levers carried on every PlanDefinition.
+ * These are the contract terms five-figure buyers actually negotiate.
+ * Free / Starter / Array all default to `false` / `null` for everything;
+ * Enterprise and Sovereign tiers turn them on. Stored alongside the plan
+ * so a single getPlan() returns enough to enforce in code paths.
+ */
+export interface PlanEnterpriseFlags {
+  /** SAML 2.0 / OIDC SSO via Clerk Organizations or WorkOS. */
+  samlEnabled: boolean;
+  /** Per-tenant data residency — pin a tenant to a specific Neon region. */
+  dataResidency: boolean;
+  /** Dedicated Vercel/Neon region (vs the multi-tenant pool). */
+  dedicatedRegion: boolean;
+  /** SLA tier in basis points uptime (9970 = 99.70%, 9999 = 99.99%). */
+  slaUptimeBps: number;
+  /** Audit log streaming export — webhook + S3 sink. */
+  auditLogExport: boolean;
+  /** Bring-your-own-encryption-key (KMS / HSM). */
+  byok: boolean;
+  /** Dedicated Slack channel + named CSM. */
+  dedicatedSupport: boolean;
+  /** Permission to white-label the dashboard under a custom domain. */
+  whiteLabel: boolean;
+}
+
+const DEFAULT_FLAGS: PlanEnterpriseFlags = {
+  samlEnabled: false,
+  dataResidency: false,
+  dedicatedRegion: false,
+  slaUptimeBps: 0,
+  auditLogExport: false,
+  byok: false,
+  dedicatedSupport: false,
+  whiteLabel: false,
+};
 
 // ── Plan Definition ──
 
@@ -55,6 +98,8 @@ export interface PlanDefinition {
   purchasable: boolean;
   /** Short description */
   description: string;
+  /** Enterprise contract levers — defaults to all-false for self-serve tiers. */
+  enterprise: PlanEnterpriseFlags;
 }
 
 // ── The Canonical Plan Registry ──
@@ -73,6 +118,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     stripePriceEnvKey: null,
     purchasable: false,
     description: "3 agents, 50 runs/month",
+    enterprise: DEFAULT_FLAGS,
   },
   starter: {
     name: "Starter",
@@ -87,6 +133,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     stripePriceEnvKey: "STRIPE_PRICE_STARTER",
     purchasable: true,
     description: "5 agents, 200 runs/month, email support",
+    enterprise: DEFAULT_FLAGS,
   },
   founder: {
     name: "Founder",
@@ -101,6 +148,11 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     stripePriceEnvKey: null,
     purchasable: false,
     description: "Enterprise-level access for first 10 users",
+    enterprise: {
+      ...DEFAULT_FLAGS,
+      dedicatedSupport: true,
+      slaUptimeBps: 9990,
+    },
   },
   array: {
     name: "Growth",
@@ -115,6 +167,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     stripePriceEnvKey: "STRIPE_PRICE_ARRAY",
     purchasable: true,
     description: "10 agents, 500 runs/month",
+    enterprise: DEFAULT_FLAGS,
   },
   node: {
     name: "Sovereign Node",
@@ -129,6 +182,12 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     stripePriceEnvKey: "STRIPE_PRICE_NODE",
     purchasable: true,
     description: "Unlimited agents, 2,000 runs/month, local execution",
+    enterprise: {
+      ...DEFAULT_FLAGS,
+      auditLogExport: true,
+      dedicatedSupport: true,
+      slaUptimeBps: 9990,
+    },
   },
   enterprise: {
     name: "Enterprise",
@@ -142,7 +201,47 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     priceDisplayZar: "R49,997/mo",
     stripePriceEnvKey: "STRIPE_PRICE_ENTERPRISE",
     purchasable: true,
-    description: "White-label, voice agents, video generation",
+    description:
+      "SAML SSO · audit log export · 99.95% SLA · dedicated CSM · white-label",
+    enterprise: {
+      samlEnabled: true,
+      dataResidency: true,
+      dedicatedRegion: false,
+      slaUptimeBps: 9995,
+      auditLogExport: true,
+      byok: false,
+      dedicatedSupport: true,
+      whiteLabel: true,
+    },
+  },
+  // Sovereign: price-on-application contract tier above Enterprise.
+  // Negotiated terms, dedicated region/cluster, BYOK encryption, 99.99%
+  // SLA, named architect engagement. Never purchasable via self-serve
+  // checkout — `/sales` Calendly only.
+  sovereign: {
+    name: "Sovereign",
+    runsPerMonth: Infinity,
+    apiRatePerDay: Infinity,
+    demoRatePerDay: 5,
+    dailyBudgetCents: Infinity,
+    priceUsdCents: 0,
+    priceZarCents: 0,
+    priceDisplayUsd: "Contract",
+    priceDisplayZar: "Kontrak",
+    stripePriceEnvKey: null,
+    purchasable: false,
+    description:
+      "Dedicated region · BYOK encryption · 99.99% SLA · named architect",
+    enterprise: {
+      samlEnabled: true,
+      dataResidency: true,
+      dedicatedRegion: true,
+      slaUptimeBps: 9999,
+      auditLogExport: true,
+      byok: true,
+      dedicatedSupport: true,
+      whiteLabel: true,
+    },
   },
 };
 
@@ -154,7 +253,8 @@ export const UPGRADE_PATH: Record<PlanId, PlanId | null> = {
   founder: null,
   array: "node",
   node: "enterprise",
-  enterprise: null,
+  enterprise: "sovereign",
+  sovereign: null,
 };
 
 /** Maximum number of founder slots */
@@ -217,6 +317,33 @@ export function getStripePriceId(
 export function isUnlimited(planId: string | null | undefined): boolean {
   const limit = getPlanLimit(planId);
   return limit >= 10_000;
+}
+
+/** Read a single enterprise flag for a plan. Defaults to safe-off. */
+export function getEnterpriseFlag<K extends keyof PlanEnterpriseFlags>(
+  planId: string | null | undefined,
+  key: K,
+): PlanEnterpriseFlags[K] {
+  return getPlan(planId).enterprise[key];
+}
+
+/** True when the plan has SAML SSO enabled (Enterprise + Sovereign). */
+export function hasSamlSso(planId: string | null | undefined): boolean {
+  return getEnterpriseFlag(planId, "samlEnabled");
+}
+
+/** True when the plan can pin its data to a specific region. */
+export function hasDataResidency(planId: string | null | undefined): boolean {
+  return getEnterpriseFlag(planId, "dataResidency");
+}
+
+/** SLA uptime as a percentage string (eg "99.95%"), or null for no SLA. */
+export function slaUptimePercent(
+  planId: string | null | undefined,
+): string | null {
+  const bps = getEnterpriseFlag(planId, "slaUptimeBps");
+  if (!bps) return null;
+  return `${(bps / 100).toFixed(2)}%`;
 }
 
 /** Get the next plan in the upgrade path, or null if at max. */
