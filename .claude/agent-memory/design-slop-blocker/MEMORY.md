@@ -3,3 +3,4 @@
 - [Recurring slop signatures](recurring_slop.md) — Two patterns that keep showing up off-landing: font-black H1 and solid pill CTAs
 - [Radius scale rule](radius_scale.md) — Allowed corner radii in this codebase; rounded-2xl/3xl are banned
 - [Typography system](typography.md) — Instrument Serif H1, Inter Tight body, JetBrains Mono micro-labels
+- [Vertical pages template-cloned](project_vertical_pages_clone.md) — for-\* pages share a template with regex-swapped nouns; accent color is the only differentiator
