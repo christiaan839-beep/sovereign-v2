@@ -94,20 +94,146 @@ async function replayReceipt(id) {
 function printHelp() {
   stdout.write(
     [
+      "Sovereign CLI — v2 (Wave 35)",
+      "",
       "Usage: sovereign <command> [args]",
       "",
-      "Commands:",
-      "  run <agent> [--input=./file.json] [--text=...]",
-      "  verify <receiptId>",
-      "  replay <receiptId>",
-      "  help",
+      "Agent commands:",
+      "  run <agent> [--input=./file.json] [--text=...]   Invoke an agent",
+      "  verify <receiptId>                               Verify a receipt",
+      "  replay <receiptId>                               Forensic re-derive",
+      "",
+      "Observability:",
+      "  status                                           Production p50/p95/p99",
+      "  health                                           Liveness probe",
+      "  anchor [--head=<sha>|--id=<uuid>]                Latest BTC chain anchor",
+      "",
+      "Identity:",
+      "  tokens [--agent=<slug>] [--limit=N]              List active JIT tokens",
+      "",
+      "Trust:",
+      "  built [--limit=N]                                Signed shipped-work ledger",
+      "  industries                                       Verifiable industry catalog",
+      "",
+      "Other:",
+      "  help                                             This message",
       "",
       "Env:",
       "  SOVEREIGN_PAT  Personal access token (required for run + replay)",
       "  SOVEREIGN_API  Override the API base URL",
       "",
+      "Examples:",
+      "  sovereign status",
+      "  sovereign verify 01HXTEST00000000000000000000000",
+      "  sovereign run lead-blitz --input=./icp.json",
+      "  sovereign anchor",
+      "",
     ].join("\n"),
   );
+}
+
+async function getJson(path) {
+  const url = `${API_BASE}${path}`;
+  const res = await fetch(url, {
+    headers: PAT ? { authorization: `Bearer ${PAT}` } : {},
+  });
+  const text = await res.text();
+  let parsed;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    fail(`non-JSON response from ${path} (HTTP ${res.status})`);
+  }
+  if (!res.ok) {
+    fail(`${path} → HTTP ${res.status}: ${JSON.stringify(parsed)}`, 2);
+  }
+  return parsed;
+}
+
+async function cmdStatus() {
+  const m = await getJson("/api/status/metrics");
+  stdout.write(`overall: ${m.overall}\n`);
+  stdout.write(`generated: ${m.generatedAt}\n\n`);
+  for (const w of m.windows ?? []) {
+    const l = w.latencyMs ?? {};
+    stdout.write(
+      `${w.window.padEnd(4)}  count=${String(w.count).padStart(6)} ` +
+        `success=${(w.successRate * 100).toFixed(2)}%  ` +
+        `p50=${l.p50 ?? "—"}ms p95=${l.p95 ?? "—"}ms p99=${l.p99 ?? "—"}ms\n`,
+    );
+  }
+}
+
+async function cmdHealth() {
+  const res = await fetch(`${API_BASE}/api/health/ping`);
+  if (!res.ok) fail(`health ping → HTTP ${res.status}`, 2);
+  const text = await res.text();
+  stdout.write(text + (text.endsWith("\n") ? "" : "\n"));
+}
+
+async function cmdAnchor(flags) {
+  const params = [];
+  if (flags.head) params.push(`head=${encodeURIComponent(flags.head)}`);
+  if (flags.id) params.push(`id=${encodeURIComponent(flags.id)}`);
+  const qs = params.length ? `?${params.join("&")}` : "";
+  const a = await getJson(`/api/auditor/anchor${qs}`);
+  stdout.write(`chain head:  ${a.chainHead}\n`);
+  stdout.write(`row count:   ${a.rowCount}\n`);
+  stdout.write(`ok:          ${a.ok}\n`);
+  stdout.write(`attested at: ${a.attestedAt}\n`);
+  stdout.write(`proofs:      ${(a.proofs ?? []).length}\n`);
+  for (const p of a.proofs ?? []) {
+    stdout.write(`  · ${p.calendar} (${p.submittedAt})\n`);
+  }
+}
+
+async function cmdTokens(flags) {
+  const params = [];
+  if (flags.agent) params.push(`agent=${encodeURIComponent(flags.agent)}`);
+  if (flags.limit) params.push(`limit=${encodeURIComponent(flags.limit)}`);
+  const qs = params.length ? `?${params.join("&")}` : "";
+  const r = await getJson(`/api/agent-tokens${qs}`);
+  stdout.write(`active tokens: ${r.count}\n\n`);
+  for (const t of r.tokens ?? []) {
+    const ttlMin = Math.max(
+      0,
+      Math.round(
+        (new Date(t.expiresAt).getTime() - Date.now()) / 60_000,
+      ),
+    );
+    stdout.write(
+      `${t.id}  ${t.agentSlug.padEnd(28)} ${t.scheme.padEnd(4)} ${ttlMin}m left\n`,
+    );
+    stdout.write(`  scopes: ${(t.scopes ?? []).join(", ") || "—"}\n`);
+  }
+}
+
+async function cmdBuilt(flags) {
+  const r = await getJson("/api/built/ledger");
+  const limit = flags.limit ? Math.max(1, Number(flags.limit)) : r.count ?? 0;
+  stdout.write(`built ledger:  ${r.count} entries\n`);
+  stdout.write(`digest:        ${r.digest}\n\n`);
+  const entries = (r.entries ?? []).slice(-limit);
+  for (const e of entries) {
+    const m = e.entry ?? {};
+    stdout.write(
+      `W${String(m.wave ?? "?").padStart(2, "0")}  ${m.commit ?? "—"}  ${m.title ?? ""}\n`,
+    );
+  }
+}
+
+async function cmdIndustries() {
+  const r = await getJson("/api/industries/registry");
+  const s = r.summary ?? {};
+  stdout.write(
+    `industries: ${s.industryCount} · workflows: ${s.workflowCount} ` +
+      `(shipped=${s.shippedCount} in-progress=${s.inProgressCount} scoped=${s.scopedCount})\n\n`,
+  );
+  for (const ind of r.industries ?? []) {
+    stdout.write(
+      `[${ind.weight.toUpperCase().padEnd(6)}] ${ind.name} — ${ind.workflows.length} workflow(s)\n`,
+    );
+  }
 }
 
 async function main() {
@@ -138,6 +264,24 @@ async function main() {
       await replayReceipt(id);
       return;
     }
+    case "status":
+      await cmdStatus();
+      return;
+    case "health":
+      await cmdHealth();
+      return;
+    case "anchor":
+      await cmdAnchor(flags);
+      return;
+    case "tokens":
+      await cmdTokens(flags);
+      return;
+    case "built":
+      await cmdBuilt(flags);
+      return;
+    case "industries":
+      await cmdIndustries();
+      return;
     default:
       fail(`unknown command: ${cmd}`, 64);
   }
