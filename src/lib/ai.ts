@@ -469,36 +469,54 @@ async function claudeText(
   return claudeBreaker.execute(() =>
     withRetry(
       async () => {
-        const response = await client.messages.create(requestParams);
+        // Wave-10 observability: every Claude call gets a Sentry span
+        // with gen_ai.* attributes (model, provider, token counts,
+        // cost). Span name is `ai.anthropic.<model>` for tidy filtering.
+        const { withAiSpan } = await import("@/lib/ai-trace");
+        const modelId = useOpus ? "claude-opus-4-7" : "claude-sonnet-4-6";
 
-        // Record spend for the per-tenant cost ledger. Best-effort — never
-        // fail the user-facing call if the ledger write fails.
-        try {
-          const { recordSpend } = await import("@/lib/budget-controls");
-          const { currentUser } = await import("@clerk/nextjs/server");
-          const user = await currentUser();
-          const userId = user?.id ?? "system";
-          const usage = response.usage as
-            | { input_tokens?: number; output_tokens?: number }
-            | undefined;
-          void recordSpend(
-            userId,
-            useOpus ? "claude-opus-4-7" : "claude-sonnet-4-6",
-            usage?.input_tokens ?? 0,
-            usage?.output_tokens ?? 0,
-            "ai-router",
-          );
-        } catch {
-          /* non-blocking */
-        }
+        return withAiSpan(
+          {
+            model: modelId,
+            provider: "anthropic",
+            inputTokens: Math.ceil(prompt.length / 4),
+            cacheHit: prompt.length >= 4500,
+          },
+          async () => {
+            const response = await client.messages.create(requestParams);
 
-        // Filter out thinking blocks and return only text content
-        const textBlock = response.content.find(
-          (b: { type: string }) => b.type === "text",
+            // Record spend for the per-tenant cost ledger. Best-effort
+            // — never fail the user-facing call if the ledger write
+            // fails. Computed cost is also bound to the span via the
+            // outer attrs so Sentry shows it inline.
+            try {
+              const { recordSpend } = await import("@/lib/budget-controls");
+              const { currentUser } = await import("@clerk/nextjs/server");
+              const user = await currentUser();
+              const userId = user?.id ?? "system";
+              const usage = response.usage as
+                | { input_tokens?: number; output_tokens?: number }
+                | undefined;
+              void recordSpend(
+                userId,
+                modelId,
+                usage?.input_tokens ?? 0,
+                usage?.output_tokens ?? 0,
+                "ai-router",
+              );
+            } catch {
+              /* non-blocking */
+            }
+
+            // Filter out thinking blocks and return only text content
+            const textBlock = response.content.find(
+              (b: { type: string }) => b.type === "text",
+            );
+            return textBlock && textBlock.type === "text"
+              ? (textBlock as { type: "text"; text: string }).text
+              : "";
+          },
         );
-        return textBlock && textBlock.type === "text"
-          ? (textBlock as { type: "text"; text: string }).text
-          : "";
       },
       { maxRetries: 2, label: "Claude" },
     ),
