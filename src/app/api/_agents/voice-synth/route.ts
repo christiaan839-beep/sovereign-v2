@@ -1,7 +1,10 @@
 import { auth } from "@clerk/nextjs/server";
+import { createLogger } from "@/lib/logger";
 import { getNimKey } from "@/lib/nvidia";
 import { elevenLabsTTS, isElevenLabsConfigured } from "@/lib/elevenlabs";
 import { NextResponse } from "next/server";
+
+const log = createLogger("voice-synth");
 
 /**
  * VOICE SYNTHESIS API — Multi-provider text-to-speech.
@@ -45,7 +48,7 @@ export async function POST(request: Request) {
         const fallbackAudio = await magpieTTS(text, voice, speed);
         if (!fallbackAudio.ok) {
           const errText = await fallbackAudio.text();
-          console.error("[voice-synth] Magpie fallback failed", {
+          log.error("[voice-synth] Magpie fallback failed", {
             status: fallbackAudio.status,
             errText,
           });
@@ -80,7 +83,7 @@ export async function POST(request: Request) {
         const fallbackAudio = await magpieTTS(text, voice, speed);
         if (!fallbackAudio.ok) {
           const errText = await fallbackAudio.text();
-          console.error("[voice-synth] Magpie fallback failed", {
+          log.error("[voice-synth] Magpie fallback failed", {
             status: fallbackAudio.status,
             errText,
           });
@@ -118,7 +121,7 @@ export async function POST(request: Request) {
 
     if (!nimRes.ok) {
       const errText = await nimRes.text();
-      console.error("[voice-synth] Magpie failed", {
+      log.error("[voice-synth] Magpie failed", {
         status: nimRes.status,
         errText,
       });
@@ -144,7 +147,7 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
-    console.error("[voice-synth]", error);
+    log.error("[voice-synth]", { error: String(error) });
     return NextResponse.json(
       { error: "Voice synthesis error" },
       { status: 500 },

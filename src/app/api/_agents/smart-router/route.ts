@@ -1015,7 +1015,7 @@ Then give your final answer.`
       },
     });
   } catch (error) {
-    console.error("[smart-router]", error);
+    log.error("[smart-router]", { error: String(error) });
     return NextResponse.json({ error: "Router error" }, { status: 500 });
   }
 }

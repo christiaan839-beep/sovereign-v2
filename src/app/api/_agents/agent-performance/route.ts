@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
+import { createLogger } from "@/lib/logger";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { agentActivity } from "@/db/schema";
 import { eq, and, gte, count, sql, avg as _avg } from "drizzle-orm";
+
+const log = createLogger("agent-performance");
 
 /**
  * AGENT PERFORMANCE API — Track which agents perform best.
@@ -106,7 +109,7 @@ export async function GET() {
       timestamp: new Date().toISOString(),
     });
   } catch (err) {
-    console.error("[agent-performance]", err);
+    log.error("[agent-performance]", { error: String(err) });
     return NextResponse.json(
       { error: "Failed to fetch performance data" },
       { status: 500 },
