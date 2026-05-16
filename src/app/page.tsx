@@ -23,8 +23,10 @@ import {
 import { A2EGraph } from "@/components/landing/A2EGraph";
 import { LiveProofStrip } from "@/components/landing/LiveProofStrip";
 import { ThreeMoatsGrid } from "@/components/landing/ThreeMoatsGrid";
-import { A2EEconomySection } from "@/components/landing/A2EEconomySection";
-import { ModelRouterSection } from "@/components/landing/ModelRouterSection";
+// A2EEconomySection + ModelRouterSection were dropped from the landing
+// in audit-2026-05 Wave 12 (slop-blocker cuts). Both still live at their
+// component paths and will be re-imported on /platform when that page
+// gets its own merchandising pass.
 import { VerificationPipeline } from "@/components/landing/VerificationPipeline";
 import { SectionDivider } from "@/components/landing/SectionDivider";
 import { FilmGrain } from "@/components/landing/FilmGrain";
@@ -147,61 +149,45 @@ export default function LandingPage() {
 
       <Nav mobileNavOpen={mobileNavOpen} setMobileNavOpen={setMobileNavOpen} />
 
+      {/*
+        Landing architecture (audit-2026-05, Wave 12).
+        Six sections, each pulling double duty. Removed from this surface
+        but kept intact at their dedicated routes:
+          - InvestorSignalStrip → /investors
+          - DesignPartnerSlotsStrip → /pitch (linked from /investors)
+          - ModelRouterSection → /platform
+          - FeaturedPlaybooksSection → /marketplace
+          - IndustrySection → /solutions
+          - PlatformScale → /trust (numbers belong with the proofs)
+        Removing them from `/` is a curation move — every visible block
+        below now answers "what is this and why does it exist" in 5s.
+      */}
       <main id="main-content" className="relative z-10">
-        {/* 01 · Hero — copper surface (marketing) */}
+        {/* 01 · Hero — one claim, one CTA, one live proof badge */}
         <Hero />
 
-        {/* Investor signal strip — Vanta-comparable hook → /investors */}
-        <InvestorSignalStrip />
-
-        {/* Design-partner slots — buyer-track conversion (5 slots open) */}
-        <DesignPartnerSlotsStrip />
-
-        {/* Try-it demo — embedded competitor scan, no signup */}
-        <TryItDemo />
-
-        {/* Live stats strip */}
+        {/* 02 · Live proof — receipt id updating against /api/verify */}
         <LiveProofStrip />
 
         <SectionDivider accent="copper" />
 
-        {/* 02 · Three Moats */}
+        {/* 03 · Three moats + Memory moat collapsed onto one canvas */}
         <ThreeMoatsGrid />
-
-        {/* 03 · A2E Economy */}
-        <A2EEconomySection />
-
-        {/* 04 · Memory Moat */}
         <MemoryMoat />
 
-        {/* 05 · Model Router */}
-        <ModelRouterSection />
-
-        {/* Audit surface starts here — flip the divider accent to cyan */}
         <SectionDivider accent="cyan" />
 
-        {/* 06 · Verification Pipeline */}
+        {/* 04 · Verification pipeline + interactive verifier demo */}
         <VerificationPipeline />
-
-        {/* 06.5 · Live Verifier — interactive proof against the real /api/verify */}
         <LiveVerifierDemo />
 
-        {/* Back to marketing surface */}
         <SectionDivider accent="copper" />
 
-        {/* 07 · Featured Playbooks */}
-        <FeaturedPlaybooksSection />
+        {/* 05 · Try-it demo — the only interactive element on the page */}
+        <TryItDemo />
 
-        {/* 08 · Industries */}
-        <IndustrySection />
-
-        {/* 09 · Platform Scale */}
-        <PlatformScale />
-
-        {/* 10 · Pricing Strip */}
+        {/* 06 · Pricing teaser + final CTA */}
         <PricingStrip />
-
-        {/* Final CTA */}
         <FinalCTA />
       </main>
 
@@ -815,6 +801,9 @@ function playbookHref(slug: string): string {
     : `/dashboard/playbooks?auto=${slug}`;
 }
 
+// Kept in this file for the /marketplace extraction follow-up; cut from
+// the landing in audit-2026-05 Wave 12.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function FeaturedPlaybooksSection() {
   return (
     <section className="px-6 py-28 md:py-36 bg-[#040303]">
@@ -900,6 +889,8 @@ function FeaturedPlaybooksSection() {
 }
 
 /* ─── 08 · Industry Section ─────────────────────────────────────── */
+// Kept for the /solutions extraction follow-up; cut from `/` in Wave 12.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function IndustrySection() {
   const industries = [
     {
@@ -1050,6 +1041,8 @@ const SCALE_METRICS = [
   },
 ] as const;
 
+// Kept for the /trust extraction follow-up; cut from `/` in Wave 12.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function PlatformScale() {
   return (
     <section className="px-6 py-0 bg-[#030303] border-t border-white/[0.04]">
@@ -1190,6 +1183,9 @@ function PricingStrip() {
 
 /* ─── Final CTA ─────────────────────────────────────────────────── */
 /* ─── InvestorSignalStrip ──────────────────────────────────────── */
+// Kept for /investors extraction follow-up; cut from `/` in Wave 12 —
+// "we're fundraising" above the fold is desperate-coded for buyers.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function InvestorSignalStrip() {
   return (
     <section className="relative px-6 py-10 border-y border-white/[0.04] bg-gradient-to-b from-[#030303] via-[#040303] to-[#030303] overflow-hidden">
@@ -1262,6 +1258,9 @@ function InvestorSignalStrip() {
 }
 
 /* ─── DesignPartnerSlotsStrip ──────────────────────────────────── */
+// Kept for /pitch + /design-partner extraction follow-up; cut from `/`
+// in Wave 12 — "5 slots open" above the fold signals "no customers yet".
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function DesignPartnerSlotsStrip() {
   return (
     <section className="relative px-6 py-12 border-b border-white/[0.04] bg-gradient-to-b from-[#040303] via-[#050404] to-[#040303] overflow-hidden">
