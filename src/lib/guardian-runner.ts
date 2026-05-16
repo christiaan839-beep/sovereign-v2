@@ -144,6 +144,24 @@ export async function runGuardian(
   const contentHash = sha256(canonical);
   const signature = signRun(canonical);
 
+  // Wave-21 SSE wire-up: emit guardian.verdict.block ONLY when the
+  // collapsed verdict is "block" (pass/warn shouldn't page anyone).
+  // Lazy-imported; best-effort.
+  if (overall === "block") {
+    try {
+      const firstBlocker = evaluated.find((r) => r.verdict === "block");
+      const { publishGuardianBlock } = await import("@/lib/event-bus");
+      publishGuardianBlock("*", {
+        verdictId,
+        agentSlug: ctx.agentSlug,
+        ruleId: firstBlocker?.ruleId ?? "unknown",
+        reason: firstBlocker?.reason,
+      });
+    } catch {
+      /* non-blocking */
+    }
+  }
+
   return {
     verdictId,
     overall,

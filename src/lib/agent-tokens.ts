@@ -147,6 +147,18 @@ export async function issueAgentToken(
     });
   }
 
+  // Wave-21 SSE wire-up — lazy-imported, best-effort.
+  try {
+    const { publishTokenIssued } = await import("@/lib/event-bus");
+    publishTokenIssued(input.tenantId ?? "*", {
+      tokenId,
+      agentSlug: input.agentSlug,
+      scopes,
+    });
+  } catch {
+    /* non-blocking */
+  }
+
   return { token, tokenId, claims, expiresAt: expiresAt.toISOString() };
 }
 
@@ -238,6 +250,19 @@ export async function revokeAgentToken(
           // Don't overwrite an existing revocation reason — first revoke wins.
         ),
       );
+    // Wave-21 SSE wire-up — lazy-imported. Look up the slug + tenant
+    // for the payload; if the row is gone, emit a minimal event.
+    try {
+      const status = await getTokenStatus(tokenId);
+      const { publishTokenRevoked } = await import("@/lib/event-bus");
+      publishTokenRevoked("*", {
+        tokenId,
+        agentSlug: status.agentSlug ?? "unknown",
+        scopes: [],
+      });
+    } catch {
+      /* non-blocking */
+    }
     return { ok: true };
   } catch (err) {
     log.warn("agent_tokens revoke failed", {

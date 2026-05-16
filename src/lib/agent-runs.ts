@@ -314,6 +314,22 @@ export async function recordRun(
       createdAt,
     });
 
+    // Wave-21 SSE wire-up: lazy-imported so the bus module isn't pulled
+    // into edge-runtime callers that don't subscribe. Best-effort —
+    // never blocks the persist path.
+    try {
+      const { publishAgentRunSealed } = await import("@/lib/event-bus");
+      publishAgentRunSealed(input.tenantId ?? "*", {
+        receiptId: id,
+        agentName: input.agentName,
+        modelUsed: input.modelUsed ?? "unknown",
+        durationMs: input.durationMs ?? 0,
+        trustDecision: input.trustDecision ?? "auto-approved",
+      });
+    } catch {
+      /* non-blocking */
+    }
+
     return {
       id,
       userId: input.userId ?? null,
