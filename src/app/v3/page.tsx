@@ -1,36 +1,34 @@
-import { createHash, createHmac } from "crypto";
+import { createHash } from "crypto";
 import Link from "next/link";
 import { ArrowRight, ShieldCheck, Hash, Lock } from "lucide-react";
 import type { Metadata } from "next";
+import { signRun } from "@/lib/agent-runs";
 
 /**
- * /v3 — Landing redesign experiment (Cook 186).
+ * /v3 — Landing redesign (Cook 186, polished audit-2026-05).
  *
  * Creative direction: "The page IS a receipt."
  *
- * The entire landing is rendered as a verifiable JSON receipt the
- * visitor can copy into `openssl dgst` and reproduce. Sections
- * appear AS the receipt fields are filled in — header, body, citations,
- * signature — each one a scroll-revealed step in receipt construction.
+ * The entire landing is rendered as a verifiable JSON receipt. The
+ * signature at the bottom is produced by the SAME signRun() the
+ * production agent runtime uses — Ed25519 (v2) when configured,
+ * HMAC-SHA256 (v1) otherwise. Visitors verify with the public key
+ * published at /.well-known/sovereign-receipts/ed25519.pem; we never
+ * publish a private key on this page.
  *
- * Every claim on the page is a citation. Every section header is a
- * receipt field. The signature at the bottom is computed live from
- * the page content and verifies on the visitor's machine.
- *
- * Production landing at `/` stays intact. This is the preview route
- * for testing before swap.
+ * Audit fix: dropped the hard-coded PAGE_SECRET that previously made
+ * /v3 read as "self-attestation" to crypto-literate auditors (the
+ * secret was printed in the verification snippet right next to the
+ * signature). The receipt is now signed under the production scheme.
  */
 
 export const metadata: Metadata = {
   title:
     "Sovereign Matrix · The verification layer underneath every AI decision",
   description:
-    "The landing page itself is a verifiable cryptographic receipt. Copy any section's canonical projection, reproduce the HMAC math, and prove this page wasn't rewritten in transit.",
+    "The landing page itself is a verifiable cryptographic receipt. Copy the canonical projection, fetch the published public key, verify with openssl or any standard library.",
   alternates: { canonical: "/v3" },
 };
-
-// Demo-only secret. Real receipts use per-tenant secrets derived from a KEK.
-const PAGE_SECRET = "sovereign-landing-v3-public-demo-secret-2026";
 
 // ── The receipt the page renders ─────────────────────────────────────────
 
@@ -197,9 +195,18 @@ function canonical(r: PageReceipt): string {
 
 const PAGE_CANONICAL = canonical(RECEIPT);
 const PAGE_HASH = createHash("sha256").update(PAGE_CANONICAL).digest("hex");
-const PAGE_SIGNATURE = createHmac("sha256", PAGE_SECRET)
-  .update(PAGE_CANONICAL)
-  .digest("hex");
+// Signed under the production scheme: signRun prefers Ed25519 (v2) when
+// AGENT_RUN_ED25519_PRIVATE_KEY is configured, otherwise falls back to
+// HMAC-SHA256 (v1) with the platform's signing secret. Either way the
+// verifier flow on this page never publishes a private key — visitors
+// use the public Ed25519 key at /.well-known/sovereign-receipts/ed25519.pem
+// (v2) or the documented /api/verify endpoint (v1).
+const PAGE_SIGNATURE = signRun(PAGE_CANONICAL);
+const SIG_SCHEME = PAGE_SIGNATURE.startsWith("v2=")
+  ? "ed25519"
+  : PAGE_SIGNATURE.startsWith("v1=")
+    ? "hmac-sha256"
+    : "unsigned";
 
 // ── Component ────────────────────────────────────────────────────────────
 
@@ -216,7 +223,9 @@ export default function LandingV3() {
             Sovereign Matrix
           </Link>
           <div className="flex items-center gap-5 text-[11px] font-mono uppercase tracking-[0.2em] text-neutral-500">
-            <span className="hidden md:inline">v3 · landing experiment</span>
+            <span className="hidden md:inline">
+              Verifiable AI infrastructure
+            </span>
             <Link href="/oss" className="hover:text-cyan-300 transition-colors">
               OSS
             </Link>
@@ -349,11 +358,17 @@ export default function LandingV3() {
             <FieldBlock
               label="SHA-256 content hash"
               value={PAGE_HASH}
-              accent="emerald"
+              accent="copper"
               icon={Hash}
             />
             <FieldBlock
-              label="HMAC-SHA256 signature"
+              label={
+                SIG_SCHEME === "ed25519"
+                  ? "Ed25519 signature (v2)"
+                  : SIG_SCHEME === "hmac-sha256"
+                    ? "HMAC-SHA256 signature (v1)"
+                    : "Unsigned"
+              }
               value={PAGE_SIGNATURE}
               accent="cyan"
               icon={ShieldCheck}
@@ -362,15 +377,33 @@ export default function LandingV3() {
 
           <div className="mt-10 p-6 rounded-2xl border border-cyan-500/20 bg-cyan-500/[0.03]">
             <p className="font-mono text-[10px] tracking-[0.3em] uppercase text-cyan-400/80 mb-3">
-              Reproduce on your machine
+              Verify on your machine
             </p>
             <pre className="text-[11px] text-cyan-200 font-mono leading-relaxed overflow-x-auto whitespace-pre-wrap break-words">
-              {`# 1. Copy the canonical projection above into a file
-# 2. Run:
-echo -n "$(cat canonical.txt)" | openssl dgst -sha256 -hmac "${PAGE_SECRET}"
+              {SIG_SCHEME === "ed25519"
+                ? `# 1. Fetch the public Ed25519 key
+curl -sSf https://sovereignmatrix.agency/.well-known/sovereign-receipts/ed25519.pem -o sov.pub.pem
 
-# You should get:
-${PAGE_SIGNATURE}`}
+# 2. Copy the canonical projection above into canonical.txt
+# 3. Copy the signature body (everything after "v2=") into sig.b64
+# 4. Verify:
+openssl pkeyutl -verify -pubin -inkey sov.pub.pem \\
+    -rawin -in canonical.txt \\
+    -sigfile <(base64 -d < sig.b64)
+
+# → "Signature Verified Successfully"`
+                : SIG_SCHEME === "hmac-sha256"
+                  ? `# v1 receipts are verified server-side (the HMAC secret is
+# private). POST the canonical projection to:
+curl -sSf https://sovereignmatrix.agency/api/verify \\
+  -H "content-type: application/json" \\
+  -d '{"canonical":"…","signature":"${PAGE_SIGNATURE}"}'
+
+# → {"valid": true, "scheme": "hmac-sha256"}`
+                  : `# No signing keys are configured in this environment.
+# Configure AGENT_RUN_ED25519_PRIVATE_KEY (preferred) or
+# AGENT_RUN_SIGNING_SECRET (fallback) and redeploy to enable
+# cryptographic verification on this page.`}
             </pre>
           </div>
         </div>
@@ -432,7 +465,7 @@ ${PAGE_SIGNATURE}`}
           <Link href="/oss" className="hover:text-neutral-300">
             Open ecosystem
           </Link>
-          <span className="ml-auto">v3 · experimental</span>
+          <span className="ml-auto">© Sovereign Matrix · Cape Town</span>
         </div>
       </footer>
     </div>
@@ -540,14 +573,17 @@ function FieldBlock({
 }: {
   label: string;
   value: string;
-  accent: "cyan" | "emerald" | "neutral";
+  accent: "cyan" | "copper" | "neutral";
   icon: React.ComponentType<{ className?: string }>;
 }) {
+  // Brand-strict: cyan for audit content, copper for marketing content,
+  // neutral elsewhere. The previous emerald tone (audit-2026-05) violated
+  // the dual-accent rule.
   const colorClass =
     accent === "cyan"
       ? "text-cyan-300 border-cyan-500/25 bg-cyan-500/[0.04]"
-      : accent === "emerald"
-        ? "text-emerald-300 border-emerald-500/25 bg-emerald-500/[0.04]"
+      : accent === "copper"
+        ? "text-[#E08558] border-[#B5532C]/25 bg-[#B5532C]/[0.04]"
         : "text-neutral-300 border-white/[0.08] bg-white/[0.02]";
 
   return (

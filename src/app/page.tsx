@@ -526,9 +526,9 @@ function Hero() {
           className="text-[17px] md:text-[19px] text-neutral-400 leading-[1.55] mb-4 max-w-2xl mx-auto"
         >
           140 production agents that research, draft, qualify, and call — and
-          ship a verifiable HMAC-signed receipt every time. 2,674 tests pass. 7
-          cryptographic primitives. Built for teams that need AI{" "}
-          <em className="not-italic text-neutral-300">and</em> a paper trail.
+          ship a verifiable HMAC-signed receipt every time. Built for teams that
+          need AI <em className="not-italic text-neutral-300">and</em> a paper
+          trail.
         </motion.p>
         <motion.p
           initial={{ opacity: 0, y: 10 }}
@@ -572,7 +572,7 @@ function Hero() {
           transition={{ delay: 0.8, duration: 0.5 }}
           className="text-[11px] font-mono text-neutral-600 tracking-wide mb-6"
         >
-          Free · R997/mo · R3,997/mo · $0 · $49/mo · $199/mo ·{" "}
+          From free → R997/mo (≈ $49) → R3,997/mo (≈ $199) ·{" "}
           <Link
             href="/pricing"
             className="hover:text-neutral-400 transition-colors underline decoration-white/10 hover:decoration-white/30"
@@ -581,28 +581,44 @@ function Hero() {
           </Link>
         </motion.p>
 
-        {/* Trust line — audit-grade positioning */}
+        {/* Trust line — audit-grade positioning. Promoted from
+            text-neutral-700 (below contrast threshold) to text-neutral-500
+            with a leading ◆ ledger glyph so the page's most credibility-
+            loaded links are actually readable. */}
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.95, duration: 0.5 }}
-          className="text-[11px] font-mono text-neutral-700 tracking-wide mb-12"
+          className="text-[11px] font-mono text-neutral-500 tracking-wide mb-12"
         >
           <Link href="/spec" className="hover:text-cyan-300 transition-colors">
+            <span aria-hidden="true" className="text-cyan-500/60 mr-1.5">
+              ◆
+            </span>
             VAOS 1.0 open standard
           </Link>
-          <span className="text-neutral-800 mx-1">·</span>
+          <span className="text-neutral-700 mx-2" aria-hidden="true">
+            ·
+          </span>
           <Link
             href="/verified"
             className="hover:text-cyan-300 transition-colors"
           >
+            <span aria-hidden="true" className="text-cyan-500/60 mr-1.5">
+              ◆
+            </span>
             Live verifier demo
           </Link>
-          <span className="text-neutral-800 mx-1">·</span>
+          <span className="text-neutral-700 mx-2" aria-hidden="true">
+            ·
+          </span>
           <Link
             href="/explorer"
             className="hover:text-cyan-300 transition-colors"
           >
+            <span aria-hidden="true" className="text-cyan-500/60 mr-1.5">
+              ◆
+            </span>
             Receipt explorer
           </Link>
         </motion.p>
@@ -997,7 +1013,7 @@ function IndustrySection() {
 /* ─── 09 · Platform Scale ───────────────────────────────────────── */
 const SCALE_METRICS = [
   {
-    n: "137",
+    n: "140",
     label: "Agents",
     sub: "Across 8 industries and 19 task categories. Healthcare, legal, agriculture, manufacturing, cybersecurity, and more.",
     href: "/platform",
@@ -1303,7 +1319,7 @@ function DesignPartnerSlotsStrip() {
         <div className="mt-7 flex items-center justify-center gap-4 flex-wrap text-[12px] font-mono text-neutral-500">
           <Link
             href="/contact?intent=design-partner"
-            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[#E08558] text-black font-semibold hover:bg-[#F5A878] transition-colors text-[12px]"
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-[3px] border border-[#B5532C]/50 text-[#E08558] font-mono uppercase tracking-[0.15em] hover:bg-[#B5532C]/10 hover:border-[#B5532C]/80 hover:text-white transition-colors text-[11px]"
           >
             Apply for a slot <span aria-hidden="true">→</span>
           </Link>
@@ -1332,8 +1348,10 @@ function DesignPartnerSlotsStrip() {
 }
 
 function SlotPerk({ label, value }: { label: string; value: string }) {
+  // rounded-[6px] keeps the radius scale consistent with the rest of the
+  // landing (audit-2026-05 — was rounded-xl, broke the section rhythm).
   return (
-    <div className="p-3 rounded-xl border border-white/[0.06] bg-white/[0.015] text-center">
+    <div className="p-3 rounded-[6px] border border-white/[0.06] bg-white/[0.015] text-center">
       <p className="text-[9px] uppercase tracking-[0.2em] text-neutral-500 mb-1">
         {label}
       </p>
