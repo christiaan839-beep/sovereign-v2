@@ -999,3 +999,60 @@ export const agentRuns = pgTable(
     index("idx_agent_runs_visibility").on(table.visibility),
   ],
 );
+
+/**
+ * WebAuthn credentials (audit-2026-05) — hardware-key step-up MFA.
+ *
+ * Required for SOC 2 CC6.1, PCI 8.4.2, and HIPAA §164.312(d) on
+ * administrative actions. Pairs with src/lib/webauthn.ts.
+ *
+ * One row per registered authenticator per user (so a single user can
+ * have a YubiKey + a passkey + a backup hardware key, all valid). The
+ * `signCounter` is updated after each successful assertion to detect
+ * cloned credentials (a counter regression = cloned key, lock the row).
+ */
+export const webauthnCredentials = pgTable(
+  "webauthn_credentials",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id").notNull(),
+    /** Base64url-encoded credential ID assigned by the authenticator. */
+    credentialId: text("credential_id").notNull().unique(),
+    /** Base64-encoded public key (COSE format). */
+    publicKey: text("public_key").notNull(),
+    /** Monotonic counter — regression = cloned authenticator. */
+    signCounter: integer("sign_counter").notNull().default(0),
+    /** Friendly label set at registration time ("YubiKey 5C NFC"). */
+    label: text("label").notNull().default("hardware-key"),
+    /** Authenticator attachment hint ("platform" | "cross-platform"). */
+    transports: text("transports").notNull().default("[]"),
+    /** When the credential was registered. */
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    /** Most recent successful assertion timestamp. */
+    lastUsedAt: timestamp("last_used_at"),
+    /** Locked-out rows that triggered counter-regression detection. */
+    revokedAt: timestamp("revoked_at"),
+  },
+  (table) => [
+    index("idx_webauthn_user").on(table.userId),
+    index("idx_webauthn_cred").on(table.credentialId),
+  ],
+);
+
+/**
+ * WebAuthn challenges (audit-2026-05).
+ *
+ * Server-issued random challenges for registration and authentication
+ * ceremonies. Rows live for 5 minutes then expire. One-shot use — the
+ * challenge is deleted on consumption to prevent replay.
+ */
+export const webauthnChallenges = pgTable("webauthn_challenges", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull(),
+  /** Base64url challenge issued by the server. */
+  challenge: text("challenge").notNull(),
+  /** "registration" or "authentication". */
+  ceremony: text("ceremony").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});

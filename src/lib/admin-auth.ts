@@ -49,21 +49,26 @@ function getAllowlist(): Set<string> {
  * userId on success, or a NextResponse to return from the route on
  * failure.
  *
+ * When `WEBAUTHN_REQUIRED=true`, admins must also have completed a
+ * hardware-key authentication within the last 15 minutes (audit-2026-05
+ * step-up MFA requirement for SOC 2 CC6.1 / PCI 8.4.2 / HIPAA §164.312(d)).
+ * Failure returns 403 with a `mfa-required` hint so the dashboard can
+ * trigger the WebAuthn ceremony and retry the action.
+ *
  * Usage:
  *   const gate = await requireAdmin();
- *   if (gate instanceof NextResponse) return gate;
+ *   if (gate instanceof Response) return gate;
  *   const { userId } = gate;
  */
 export async function requireAdmin(): Promise<
-  | { userId: string; admin: true }
-  | Response
+  { userId: string; admin: true } | Response
 > {
   const { userId } = await auth();
   if (!userId) {
-    return new Response(
-      JSON.stringify({ error: "Authentication required" }),
-      { status: 401, headers: { "Content-Type": "application/json" } },
-    );
+    return new Response(JSON.stringify({ error: "Authentication required" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
   if (!getAllowlist().has(userId)) {
@@ -71,10 +76,31 @@ export async function requireAdmin(): Promise<
     // or who's on it. A legitimate admin will see this + know to
     // check ADMIN_USER_IDS.
     log.warn("Non-admin user attempted admin action", { userId });
-    return new Response(
-      JSON.stringify({ error: "Not found" }),
-      { status: 404, headers: { "Content-Type": "application/json" } },
-    );
+    return new Response(JSON.stringify({ error: "Not found" }), {
+      status: 404,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  // Step-up MFA gate. Lazy-imported so a runtime without WebAuthn
+  // wired up (eg. unit tests) doesn't pay the import cost.
+  const { isWebauthnRequired, assertHasRecentMfa } =
+    await import("@/lib/webauthn");
+  if (isWebauthnRequired()) {
+    const recent = await assertHasRecentMfa(userId);
+    if (!recent) {
+      log.warn("Admin action denied — no recent hardware-key MFA", { userId });
+      return new Response(
+        JSON.stringify({
+          error: "mfa-required",
+          hint: "Complete a WebAuthn assertion at /api/webauthn/authenticate and retry within 15 minutes.",
+        }),
+        {
+          status: 403,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    }
   }
 
   return { userId, admin: true };

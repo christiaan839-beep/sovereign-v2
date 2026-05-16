@@ -30,7 +30,11 @@ export type AuditAction =
   | "marketplace.published"
   | "marketplace.unpublished"
   | "marketplace.run"
-  | "marketplace.connect";
+  | "marketplace.connect"
+  | "webauthn.credential.registered"
+  | "webauthn.credential.revoked"
+  | "webauthn.assertion.ok"
+  | "webauthn.assertion.failed";
 
 interface AuditEntry {
   userId: string;
