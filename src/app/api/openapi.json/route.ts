@@ -24,6 +24,7 @@
  */
 
 import { NextResponse } from "next/server";
+import { eliteOpenApiSlice } from "@/lib/openapi-elite";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -347,5 +348,52 @@ export async function GET(req: Request) {
     },
   };
 
-  return NextResponse.json(schema, { headers: CORS_HEADERS });
+  // Wave 22: merge in the elite-tier path additions (Waves 7–21 — 15
+  // public surfaces). Single edit point in src/lib/openapi-elite.ts;
+  // the existing path map above stays the source of truth for the
+  // original verification API.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const elite = eliteOpenApiSlice();
+  const merged = {
+    ...schema,
+    paths: { ...schema.paths, ...(elite.paths as Record<string, unknown>) },
+    components: {
+      ...(schema.components as Record<string, unknown>),
+      schemas: {
+        ...(schema.components as { schemas: Record<string, unknown> }).schemas,
+        ...elite.componentSchemas,
+      },
+      parameters: {
+        ...(((schema.components as { parameters?: Record<string, unknown> })
+          .parameters as Record<string, unknown> | undefined) ?? {}),
+        ReceiptIdPath: {
+          name: "id",
+          in: "path",
+          required: true,
+          description: "Receipt id (UUID or stable receipt slug).",
+          schema: { type: "string" },
+        },
+        TokenIdPath: {
+          name: "id",
+          in: "path",
+          required: true,
+          description: "Agent JIT token id (UUID).",
+          schema: { type: "string", format: "uuid" },
+        },
+      },
+      securitySchemes: {
+        ...(((
+          schema.components as { securitySchemes?: Record<string, unknown> }
+        ).securitySchemes as Record<string, unknown> | undefined) ?? {}),
+        bearerAuth: {
+          type: "http",
+          scheme: "bearer",
+          description:
+            "Clerk session JWT for user routes, or Wave-16 JIT agent token for downstream tool calls.",
+        },
+      },
+    },
+  };
+
+  return NextResponse.json(merged, { headers: CORS_HEADERS });
 }

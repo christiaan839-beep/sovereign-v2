@@ -17,6 +17,7 @@
  */
 
 import { NextResponse } from "next/server";
+import { elitePostmanItems } from "@/lib/openapi-elite";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -149,6 +150,11 @@ export async function GET(req: Request) {
         },
         response: [],
       },
+      // Wave 22: append elite-tier items (15 surfaces) auto-generated
+      // from the same slice that feeds /api/openapi.json. Single source
+      // of truth — adding a public route in src/lib/openapi-elite.ts
+      // makes it appear in both contracts.
+      ...elitePostmanItems(origin),
     ],
   };
 

@@ -55,7 +55,11 @@ describe("GET /api/postman.json", () => {
       name: string;
       request: { method: string; url: { path: string[] } };
     }>;
-    expect(items).toHaveLength(5);
+    // Wave 22 made the collection additive — it now includes the
+    // original 5 verification endpoints plus the elite-tier slice.
+    // The contract this test guards is "the 5 originals are still
+    // present"; we no longer pin the total to exactly 5.
+    expect(items.length).toBeGreaterThanOrEqual(5);
     const byPath = (path: string) =>
       items.find((it) => it.request.url.path.join("/").includes(path));
     expect(byPath("verify")?.request.method).toBe("POST");
