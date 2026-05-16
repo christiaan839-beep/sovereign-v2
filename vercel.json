@@ -2,7 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
   "installCommand": "npm install --force",
-  "regions": ["iad1"],
+  "regions": ["iad1", "fra1"],
   "functions": {
     "app/api/**/*.ts": {
       "maxDuration": 60

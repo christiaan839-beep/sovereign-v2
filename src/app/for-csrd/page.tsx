@@ -1,3 +1,6 @@
+// ISR — vertical pages are static marketing surfaces; regenerate hourly.
+export const revalidate = 3600;
+
 import Link from "next/link";
 import {
   ArrowRight,
