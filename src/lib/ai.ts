@@ -79,13 +79,29 @@ export async function ai(
 ): Promise<string> {
   // Default to NIM (NVIDIA open-source, $0) — Gemini is the paid fallback, not the default.
   const {
-    model = "nim",
     system,
     maxTokens = 2000,
     thinking,
     useOpus,
     useGeminiPro,
+    taskType,
   } = options;
+  let { model = "nim" } = options;
+
+  // ── Capability-based routing (Cook 183 model registry integration) ──
+  // If the caller annotated taskType but didn't pin a specific model,
+  // consult the registry for the cheapest production-status model that
+  // handles that task. This wires up ~50 ai() call sites that previously
+  // discarded their taskType annotation entirely (audited May 2026).
+  if (taskType && !options.model) {
+    try {
+      const { routeTask } = await import("@/lib/model-registry");
+      const routed = routeTask(taskType);
+      if (routed) model = routed;
+    } catch {
+      // Registry import failed — keep the default "nim".
+    }
+  }
 
   // Lazy-load model-attribution to avoid circular import risk.
   const { recordModel } = await import("@/lib/model-attribution");
@@ -409,20 +425,39 @@ async function claudeText(
     defaultHeaders: { "anthropic-beta": betaHeaders.join(",") },
   });
 
-  // Inject ephemeral caching on the system prompt to slash token costs by 90%
+  // System prompt → ephemeral cache (90% discount on cached input).
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const systemParam: any = system
     ? [{ type: "text", text: system, cache_control: { type: "ephemeral" } }]
     : undefined;
 
+  // User content → cache the last block when the prompt is large enough to
+  // exceed Anthropic's 1024-token minimum cacheable block (~4 chars/token,
+  // so >= 4500 chars is the heuristic). Audited May 2026 — we were caching
+  // only the system prompt and burning full price on every repeat-context
+  // call (god-brain, deep-think, reasoning-chain, contract-analyzer).
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const userMessage: any =
+    prompt.length >= 4500
+      ? [
+          {
+            type: "text",
+            text: prompt,
+            cache_control: { type: "ephemeral" },
+          },
+        ]
+      : prompt;
+
   // Extended thinking and max_tokens are incompatible — use one or the other
-  // Opus 4.6: strongest reasoning, 1M context, 128K output — use for God Brain, deep analysis
-  // Sonnet 4.6: best balance of speed/quality — default for all other agents
+  // Opus 4.7: strongest reasoning, 1M context, 128K output — only when caller
+  //   explicitly opts in via useOpus AND BYOK Anthropic key is present.
+  // Sonnet 4.6: default for everything else (~15x cheaper, same quality on
+  //   95% of tasks per May-2026 audit).
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const requestParams: any = {
-    model: useOpus ? "claude-opus-4-6" : "claude-sonnet-4-6",
+    model: useOpus ? "claude-opus-4-7" : "claude-sonnet-4-6",
     ...(systemParam ? { system: systemParam } : {}),
-    messages: [{ role: "user", content: prompt }],
+    messages: [{ role: "user", content: userMessage }],
   };
 
   if (thinking) {
@@ -435,6 +470,27 @@ async function claudeText(
     withRetry(
       async () => {
         const response = await client.messages.create(requestParams);
+
+        // Record spend for the per-tenant cost ledger. Best-effort — never
+        // fail the user-facing call if the ledger write fails.
+        try {
+          const { recordSpend } = await import("@/lib/budget-controls");
+          const { currentUser } = await import("@clerk/nextjs/server");
+          const user = await currentUser();
+          const userId = user?.id ?? "system";
+          const usage = response.usage as
+            | { input_tokens?: number; output_tokens?: number }
+            | undefined;
+          void recordSpend(
+            userId,
+            useOpus ? "claude-opus-4-7" : "claude-sonnet-4-6",
+            usage?.input_tokens ?? 0,
+            usage?.output_tokens ?? 0,
+            "ai-router",
+          );
+        } catch {
+          /* non-blocking */
+        }
 
         // Filter out thinking blocks and return only text content
         const textBlock = response.content.find(

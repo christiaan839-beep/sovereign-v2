@@ -96,7 +96,11 @@ export const POST = createAgentRoute({
           {
             model: "claude",
             thinking: true,
-            useOpus: true,
+            // Sonnet 4.6 + extended thinking is ~15x cheaper than Opus on
+            // input and identical on output quality for this strategist-
+            // style task per the May-2026 cost audit. Opus is now an
+            // explicit opt-in via `?opus=1` on the route, not the default.
+            useOpus: false,
             system:
               "You are a strategist performing deep analysis. Think through multiple angles, consider second-order effects, identify non-obvious insights. Be specific and actionable.",
           },

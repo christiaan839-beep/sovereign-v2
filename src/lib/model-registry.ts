@@ -474,6 +474,115 @@ export function findModel(id: string): ModelMetadata | undefined {
   return MODELS[id];
 }
 
+// ── Task-type → AIModel routing (cascade integration) ────────────────────
+
+/** Sovereign task taxonomy (must match the union in src/types/index.ts). */
+export type TaskType =
+  | "content"
+  | "analysis"
+  | "code"
+  | "sales"
+  | "creative"
+  | "reasoning"
+  | "general";
+
+/** Maps a Sovereign task to the registry capability tier we should prefer. */
+const TASK_TO_TIER: Record<TaskType, CapabilityTier[]> = {
+  // Drafting and short-form output — speed beats reasoning. Cerebras first,
+  // then NIM, fall through to high if absent.
+  content: ["fast", "high"],
+  // Structured analysis — wants reasoning, but cheap reasoning is fine.
+  analysis: ["reasoning", "high"],
+  // Code — Qwen-Coder / DeepSeek-Coder before frontier models.
+  code: ["code", "high"],
+  // Sales / outbound copy — fast tier, no reasoning needed.
+  sales: ["fast", "high"],
+  // Creative writing — wants quality but not deep reasoning.
+  creative: ["high", "fast"],
+  // Reasoning — reasoning tier explicitly, allow frontier fallback.
+  reasoning: ["reasoning", "frontier"],
+  // General fallback — cheap, fast, always available.
+  general: ["fast", "high"],
+};
+
+/**
+ * Map a registry `ModelProvider` to the cascade-router `AIModel` union.
+ * The router branches on this string to pick the right provider client.
+ * Returns null when the provider has no router branch yet — caller falls
+ * back to the existing default.
+ */
+export function providerToAIModel(
+  p: ModelProvider,
+):
+  | "ollama"
+  | "cerebras"
+  | "nim"
+  | "groq"
+  | "claude"
+  | "gemini"
+  | "mistral"
+  | "deepseek"
+  | null {
+  switch (p) {
+    case "ollama":
+      return "ollama";
+    case "cerebras":
+      return "cerebras";
+    case "nvidia-nim":
+      return "nim";
+    case "groq":
+      return "groq";
+    case "anthropic":
+      return "claude";
+    case "google":
+      return "gemini";
+    case "mistral":
+      return "mistral";
+    case "deepseek":
+      return "deepseek";
+    case "openai":
+    case "together":
+    case "xai":
+      // No router branch for these yet — callers should add one or fall
+      // through to the default cascade.
+      return null;
+  }
+}
+
+/**
+ * Recommend the cheapest production-status `AIModel` for a task.
+ *
+ * Caller flow (from src/lib/ai.ts):
+ *   1. taskType set on AIOptions? → call routeTask(taskType, budget)
+ *   2. routeTask returns an AIModel → use it as the cascade entry point
+ *   3. null result → fall through to the existing default cascade
+ *
+ * `maxInputUsd` is the per-million-token ceiling. Default Infinity means
+ * "any cost is fine"; pass eg. 1.0 to refuse anything > $1/M input.
+ */
+export function routeTask(
+  task: TaskType,
+  maxInputUsd: number = Infinity,
+):
+  | "ollama"
+  | "cerebras"
+  | "nim"
+  | "groq"
+  | "claude"
+  | "gemini"
+  | "mistral"
+  | "deepseek"
+  | null {
+  for (const tier of TASK_TO_TIER[task]) {
+    const candidates = preferredFor(tier, maxInputUsd);
+    for (const c of candidates) {
+      const route = providerToAIModel(c.provider);
+      if (route) return route;
+    }
+  }
+  return null;
+}
+
 /**
  * Summary stats for the /oss page hero — "we route to N models
  * across M providers, K of which have open weights."

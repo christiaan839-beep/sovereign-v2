@@ -189,17 +189,47 @@ describe("crypto", () => {
       expect(safeDecrypt("sk_live_plainAPIkey")).toBe("sk_live_plainAPIkey");
     });
 
-    it("returns ciphertext as-is on decryption failure (never throws)", async () => {
+    it("throws on tampered ciphertext (audit-grade tamper detection)", async () => {
+      // Audit-2026-05 hardening: silently returning bogus ciphertext as
+      // plaintext was the SOC 2 / HIPAA blocker. safeDecrypt now propagates
+      // the GCM auth-tag failure so callers can surface tampering rather
+      // than serve corrupted bytes.
       const { safeDecrypt } = await import("@/lib/crypto");
-      // Construct a long-enough base64 string that looks encrypted but will fail auth
       const bogus = Buffer.concat([
         Buffer.alloc(12), // fake IV
         Buffer.alloc(40), // fake data
         Buffer.alloc(16), // fake tag
       ]).toString("base64");
-      expect(() => safeDecrypt(bogus)).not.toThrow();
-      // Returns the bogus input unchanged
-      expect(safeDecrypt(bogus)).toBe(bogus);
+      expect(() => safeDecrypt(bogus)).toThrow();
+    });
+  });
+
+  describe("production hard-fail (audit-2026-05)", () => {
+    const originalNodeEnv = process.env.NODE_ENV;
+
+    afterEach(() => {
+      if (originalNodeEnv !== undefined) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (process.env as any).NODE_ENV = originalNodeEnv;
+      } else {
+        delete (process.env as Record<string, string | undefined>).NODE_ENV;
+      }
+    });
+
+    it("throws from safeEncrypt in production when ENCRYPTION_KEY is unset", async () => {
+      delete process.env.ENCRYPTION_KEY;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (process.env as any).NODE_ENV = "production";
+      const { safeEncrypt } = await import("@/lib/crypto");
+      expect(() => safeEncrypt("data")).toThrow(/ENCRYPTION_KEY/);
+    });
+
+    it("throws from safeDecrypt in production when ENCRYPTION_KEY is unset", async () => {
+      delete process.env.ENCRYPTION_KEY;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (process.env as any).NODE_ENV = "production";
+      const { safeDecrypt } = await import("@/lib/crypto");
+      expect(() => safeDecrypt("anything")).toThrow(/ENCRYPTION_KEY/);
     });
   });
 });
