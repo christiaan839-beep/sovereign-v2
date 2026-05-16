@@ -44,6 +44,10 @@
     {
       "path": "/api/_cron/soc2-indicators",
       "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/cron/audit-log-anchor",
+      "schedule": "30 2 * * *"
     }
   ],
   "headers": [

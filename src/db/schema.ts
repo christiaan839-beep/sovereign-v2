@@ -1056,3 +1056,43 @@ export const webauthnChallenges = pgTable("webauthn_challenges", {
   expiresAt: timestamp("expires_at").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
+
+/**
+ * Audit-log Bitcoin anchors (audit-2026-05 elite — Wave 9).
+ *
+ * Daily attestation that binds the hash-chained audit-log head into a
+ * Bitcoin block via OpenTimestamps public calendars. Pairs with
+ * src/lib/audit-log-anchor.ts and /api/_cron/audit-log-anchor.
+ *
+ * Each row carries:
+ *   - `chainHead`: the SHA-256 of `chainDigest(rows)` at submission time.
+ *   - `proofs`: JSON array of {calendar, proof, submittedAt}. Multiple
+ *     calendars per row for redundancy — losing one calendar doesn't
+ *     invalidate the anchor.
+ *   - `rowCount`: the number of audit-log rows the head covers (audit
+ *     receipts that bottom-line "as of this anchor, N events existed").
+ *
+ * Retention: keep forever. The whole point is long-horizon proof.
+ */
+export const auditLogAnchors = pgTable(
+  "audit_log_anchors",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    /** SHA-256 of chainDigest(rows). 64-char hex. */
+    chainHead: text("chain_head").notNull(),
+    /** Number of audit_logs rows covered at submission. */
+    rowCount: integer("row_count").notNull().default(0),
+    /** JSON array of OTS calendar proofs (see AnchorAttestation). */
+    proofs: text("proofs").notNull().default("[]"),
+    /** JSON array of {calendar, reason} that rejected the submission. */
+    failures: text("failures").notNull().default("[]"),
+    /** True iff at least one calendar accepted. */
+    ok: boolean("ok").notNull().default(false),
+    /** When the cron submitted to calendars. */
+    attestedAt: timestamp("attested_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_audit_anchor_head").on(table.chainHead),
+    index("idx_audit_anchor_time").on(table.attestedAt),
+  ],
+);
