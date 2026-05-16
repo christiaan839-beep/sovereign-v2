@@ -19,11 +19,15 @@ const TAG_LENGTH = 16;
 function getKey(): Buffer {
   const key = process.env.ENCRYPTION_KEY;
   if (!key) {
-    throw new Error("ENCRYPTION_KEY environment variable is required for API key encryption");
+    throw new Error(
+      "ENCRYPTION_KEY environment variable is required for API key encryption",
+    );
   }
   const keyBuffer = Buffer.from(key, "hex");
   if (keyBuffer.length !== 32) {
-    throw new Error("ENCRYPTION_KEY must be a 64-character hex string (32 bytes)");
+    throw new Error(
+      "ENCRYPTION_KEY must be a 64-character hex string (32 bytes)",
+    );
   }
   return keyBuffer;
 }
@@ -37,7 +41,10 @@ export function encrypt(plaintext: string): string {
   const iv = randomBytes(IV_LENGTH);
   const cipher = createCipheriv(ALGORITHM, key, iv);
 
-  const encrypted = Buffer.concat([cipher.update(plaintext, "utf8"), cipher.final()]);
+  const encrypted = Buffer.concat([
+    cipher.update(plaintext, "utf8"),
+    cipher.final(),
+  ]);
   const tag = cipher.getAuthTag();
 
   // Pack: IV (12) + encrypted data + auth tag (16)
@@ -59,7 +66,10 @@ export function decrypt(ciphertext: string): string {
   const decipher = createDecipheriv(ALGORITHM, key, iv);
   decipher.setAuthTag(tag);
 
-  const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()]);
+  const decrypted = Buffer.concat([
+    decipher.update(encrypted),
+    decipher.final(),
+  ]);
   return decrypted.toString("utf8");
 }
 
@@ -76,24 +86,59 @@ export function isEncrypted(value: string): boolean {
 }
 
 /**
- * Safely encrypt — returns plaintext if ENCRYPTION_KEY is not set.
- * This allows graceful degradation in development.
+ * Safely encrypt.
+ *
+ * Production: ENCRYPTION_KEY is mandatory. Missing key → hard throw
+ * (we never want to silently store API keys / PII in plaintext on a
+ * regulated tenant's database row — that's a SOC 2 / HIPAA blocker).
+ *
+ * Development: graceful pass-through, with a one-time warning so the
+ * developer notices.
  */
+let _devWarned = false;
 export function safeEncrypt(plaintext: string): string {
-  if (!process.env.ENCRYPTION_KEY) return plaintext;
+  if (!process.env.ENCRYPTION_KEY) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(
+        "ENCRYPTION_KEY is required in production — refusing to store data in plaintext",
+      );
+    }
+    if (!_devWarned) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        "[crypto] ENCRYPTION_KEY unset in development — values are stored in plaintext. NEVER ship without setting it.",
+      );
+      _devWarned = true;
+    }
+    return plaintext;
+  }
   return encrypt(plaintext);
 }
 
 /**
- * Safely decrypt — returns ciphertext as-is if ENCRYPTION_KEY is not set
- * or if the value doesn't look encrypted.
+ * Safely decrypt.
+ *
+ * Production: ENCRYPTION_KEY mandatory. A failed GCM auth-tag check
+ * means the ciphertext has been tampered with — we MUST throw, never
+ * return the bytes (returning corrupted ciphertext as plaintext was the
+ * audit-blocking bug in the original implementation).
+ *
+ * Development: when ENCRYPTION_KEY is unset, pass through unchanged so
+ * test fixtures with plaintext values continue to work.
  */
 export function safeDecrypt(ciphertext: string): string {
-  if (!process.env.ENCRYPTION_KEY) return ciphertext;
-  if (!isEncrypted(ciphertext)) return ciphertext;
-  try {
-    return decrypt(ciphertext);
-  } catch {
+  if (!process.env.ENCRYPTION_KEY) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(
+        "ENCRYPTION_KEY is required in production — cannot decrypt stored secrets",
+      );
+    }
     return ciphertext;
   }
+  // Heuristic skip — value never looked like ciphertext (legacy plaintext
+  // rows pre-encryption). Pass through unchanged.
+  if (!isEncrypted(ciphertext)) return ciphertext;
+  // decrypt() throws on auth-tag failure. We surface the error rather than
+  // hide tampering behind silent plaintext fall-through.
+  return decrypt(ciphertext);
 }
