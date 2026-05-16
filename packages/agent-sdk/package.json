@@ -1,0 +1,54 @@
+{
+  "name": "@sovereign-matrix/agent-sdk",
+  "version": "0.1.0",
+  "description": "Build verifiable AI agents that plug into the Sovereign Matrix platform. HMAC-signed receipts, 8-provider router, guardrail enforcement, tool execution.",
+  "license": "Apache-2.0",
+  "author": "Christiaan de Wet <christiaan@sovereignmatrix.agency>",
+  "homepage": "https://sovereignmatrix.agency/developers",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/christiaan839-beep/sovereign-v2.git",
+    "directory": "packages/agent-sdk"
+  },
+  "bugs": "https://github.com/christiaan839-beep/sovereign-v2/issues",
+  "keywords": [
+    "ai",
+    "agents",
+    "verifiable",
+    "cryptographic-receipts",
+    "audit-grade",
+    "anthropic",
+    "claude",
+    "gemini",
+    "groq",
+    "sovereign-matrix"
+  ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "npm run build"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  }
+}
