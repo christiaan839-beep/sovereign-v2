@@ -108,6 +108,30 @@ export async function ai(
 
   const userKeys = await getUserKeys();
 
+  // Wave-26 pre-flight: enforce per-tenant daily AI-spend cap BEFORE
+  // touching any provider. Free-tier providers (nim, ollama, cerebras)
+  // are exempt — they cost $0 and would never advance the meter.
+  // Throws BudgetExceededError when over; caller must catch.
+  const isFreeProvider =
+    model === "nim" || model === "ollama" || model === "cerebras";
+  if (!isFreeProvider) {
+    try {
+      const { enforceBudget } = await import("@/lib/budget-guard");
+      const { currentUser } = await import("@clerk/nextjs/server");
+      const user = await currentUser();
+      await enforceBudget({
+        userId: user?.id ?? null,
+        freeTier: false,
+      });
+    } catch (err) {
+      // Re-throw BudgetExceededError so the calling agent surfaces a
+      // structured 402 to the user. Any other error is fail-open (the
+      // guard itself fails open internally — this catches the throw
+      // path only).
+      if ((err as Error)?.name === "BudgetExceededError") throw err;
+    }
+  }
+
   // 1. Local execution (cost: $0)
   if (userKeys.ollama) {
     recordModel("ollama-local");
