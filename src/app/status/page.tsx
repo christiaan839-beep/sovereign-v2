@@ -273,6 +273,9 @@ export default function StatusPage() {
           </motion.div>
         )}
 
+        {/* Production latency — real numbers from agent_runs (Wave 15) */}
+        <ProductionLatencyBlock />
+
         {/* Incidents */}
         <motion.div
           initial={{ opacity: 0 }}
@@ -356,6 +359,144 @@ export default function StatusPage() {
           )}
         </motion.div>
       </div>
+    </div>
+  );
+}
+
+// ── ProductionLatencyBlock (Wave 15) ──────────────────────────────────
+//
+// Fetches /api/status/metrics and renders the real p50 / p95 / p99
+// latency from the agent_runs table. Replaces the hardcoded
+// "99.98% uptime" marketing claim with numbers a visitor can recompute
+// by hitting the JSON endpoint directly.
+
+interface WindowMetricsView {
+  window: "24h" | "7d" | "30d";
+  count: number;
+  successRate: number;
+  latencyMs: {
+    p50: number | null;
+    p95: number | null;
+    p99: number | null;
+    max: number | null;
+  };
+}
+
+interface StatusMetricsView {
+  generatedAt: string;
+  overall: "ok" | "degraded" | "fail";
+  windows: WindowMetricsView[];
+}
+
+function ProductionLatencyBlock() {
+  const [data, setData] = useState<StatusMetricsView | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const res = await fetch("/api/status/metrics");
+        if (!res.ok) {
+          if (!cancelled) setErr(`HTTP ${res.status}`);
+          return;
+        }
+        const json = (await res.json()) as StatusMetricsView;
+        if (!cancelled) setData(json);
+      } catch (e) {
+        if (!cancelled)
+          setErr(e instanceof Error ? e.message : "network error");
+      }
+    }
+    load();
+    const id = setInterval(load, 60_000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, []);
+
+  if (err) return null; // Silent fall-back — the page still functions.
+  if (!data) {
+    return (
+      <div className="mb-16">
+        <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-neutral-400">
+          <Activity className="h-3.5 w-3.5 text-cyan-300" />
+          Production latency · real numbers
+        </h2>
+        <p className="text-xs text-neutral-600 font-mono">Loading…</p>
+      </div>
+    );
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className="mb-16"
+    >
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-neutral-400">
+          <Activity className="h-3.5 w-3.5 text-cyan-300" />
+          Production latency · real numbers
+        </h2>
+        <span className="font-mono text-[10px] uppercase tracking-wider text-neutral-500">
+          {new Date(data.generatedAt).toLocaleTimeString()}
+        </span>
+      </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        {data.windows.map((w) => (
+          <div
+            key={w.window}
+            className="rounded-lg border border-white/[0.06] bg-white/[0.02] px-4 py-4 backdrop-blur-xl"
+          >
+            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-neutral-500 mb-3">
+              Rolling {w.window} · {w.count.toLocaleString()} runs
+            </p>
+            <dl className="space-y-1.5 text-[12px]">
+              <Stat label="p50" v={w.latencyMs.p50} />
+              <Stat label="p95" v={w.latencyMs.p95} />
+              <Stat label="p99" v={w.latencyMs.p99} />
+              <Stat label="max" v={w.latencyMs.max} />
+              <div className="mt-2 pt-2 border-t border-white/[0.04] flex items-baseline justify-between">
+                <span className="font-mono text-[10px] text-neutral-500 uppercase tracking-[0.15em]">
+                  success
+                </span>
+                <span
+                  className={`font-mono text-[13px] ${
+                    w.successRate >= 0.995
+                      ? "text-cyan-300"
+                      : w.successRate >= 0.95
+                        ? "text-amber-300"
+                        : "text-rose-300"
+                  }`}
+                >
+                  {(w.successRate * 100).toFixed(2)}%
+                </span>
+              </div>
+            </dl>
+          </div>
+        ))}
+      </div>
+      <p className="mt-3 text-[11px] text-neutral-600 font-mono leading-relaxed">
+        Computed live from <code>agent_runs</code> via{" "}
+        <code className="text-cyan-300">/api/status/metrics</code>. Reload-
+        cycle 60s. Recompute yourself by hitting the JSON endpoint.
+      </p>
+    </motion.div>
+  );
+}
+
+function Stat({ label, v }: { label: string; v: number | null }) {
+  return (
+    <div className="flex items-baseline justify-between">
+      <span className="font-mono text-[10px] text-neutral-500 uppercase tracking-[0.15em]">
+        {label}
+      </span>
+      <span className="font-mono text-[13px] text-neutral-200">
+        {v === null ? "—" : `${Math.round(v).toLocaleString()} ms`}
+      </span>
     </div>
   );
 }
