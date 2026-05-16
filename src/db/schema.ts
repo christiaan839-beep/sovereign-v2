@@ -1096,3 +1096,50 @@ export const auditLogAnchors = pgTable(
     index("idx_audit_anchor_time").on(table.attestedAt),
   ],
 );
+
+/**
+ * Agent tokens (Wave 16, audit-2026-05 elite) — per-agent JIT identity.
+ *
+ * Closes the "Authorization Gap": every agent run now holds a short-
+ * lived, scoped, revocable token (JWT-style). Tool calls during the
+ * run cite the token id; the audit log links every action to a
+ * verifiable agent identity rather than the platform's blanket key.
+ *
+ * Storage rationale: we need server-side revocation, so JWT-without-DB
+ * isn't enough. Each row is the platform's record of an issued token;
+ * the JWT itself contains only public claims so a verifier can validate
+ * offline. Revocation is checked against this table.
+ *
+ * Pairs with src/lib/agent-tokens.ts.
+ */
+export const agentTokens = pgTable(
+  "agent_tokens",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    /** Sovereign agent slug (e.g. "lead-blitz"). */
+    agentSlug: text("agent_slug").notNull(),
+    /** Issuing tenant. Null = platform-system token (cron, internal). */
+    tenantId: uuid("tenant_id").references(() => tenants.id, {
+      onDelete: "cascade",
+    }),
+    /** Issuing user (Clerk id), null for system runs. */
+    userId: text("user_id"),
+    /** JSON array of scope strings (e.g. ["agent:run", "tool:fetch"]). */
+    scopes: text("scopes").notNull().default("[]"),
+    /** Signature scheme: "v1" (HMAC) or "v2" (Ed25519). */
+    scheme: text("scheme").notNull().default("v1"),
+    /** Expiration timestamp. After this, verifyAgentToken rejects. */
+    expiresAt: timestamp("expires_at").notNull(),
+    /** When the token was issued. */
+    issuedAt: timestamp("issued_at").notNull().defaultNow(),
+    /** When the token was revoked (null = active). */
+    revokedAt: timestamp("revoked_at"),
+    /** Why the token was revoked (operator reason, structured). */
+    revokeReason: text("revoke_reason"),
+  },
+  (table) => [
+    index("idx_agent_tokens_agent").on(table.agentSlug),
+    index("idx_agent_tokens_tenant").on(table.tenantId),
+    index("idx_agent_tokens_expires").on(table.expiresAt),
+  ],
+);
