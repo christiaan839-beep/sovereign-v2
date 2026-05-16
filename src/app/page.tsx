@@ -621,6 +621,18 @@ function Hero() {
             </span>
             Receipt explorer
           </Link>
+          <span className="text-neutral-700 mx-2" aria-hidden="true">
+            ·
+          </span>
+          <Link
+            href="/auditor/replay"
+            className="hover:text-cyan-300 transition-colors"
+          >
+            <span aria-hidden="true" className="text-cyan-500/60 mr-1.5">
+              ◆
+            </span>
+            Auditor replay
+          </Link>
         </motion.p>
 
         {/* Scroll indicator */}
