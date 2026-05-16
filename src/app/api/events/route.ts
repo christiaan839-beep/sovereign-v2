@@ -24,6 +24,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { isAdmin } from "@/lib/admin-auth";
 import { subscribe } from "@/lib/event-bus";
+import { startRemotePoller } from "@/lib/event-bus-fanout";
 import { resolveTenantId } from "@/lib/tenant-resolver";
 import { createLogger } from "@/lib/logger";
 
@@ -97,6 +98,12 @@ export async function GET(req: Request) {
         })}\n\n`,
       );
 
+      // Wave 33: cross-instance fanout. When Upstash is configured the
+      // poller drains remote events into the local bus every 2s; from
+      // there the existing subscribe(...) delivers them to this SSE
+      // client. No-op when UPSTASH env is unset.
+      const stopFanout = startRemotePoller();
+
       const unsubscribe = subscribe(subscriptionScope, (evt) => {
         send(
           `event: ${evt.type}\nid: ${evt.id}\ndata: ${JSON.stringify(evt)}\n\n`,
@@ -112,6 +119,7 @@ export async function GET(req: Request) {
         closed = true;
         clearInterval(heartbeat);
         unsubscribe();
+        stopFanout();
         try {
           controller.close();
         } catch {
