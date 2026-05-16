@@ -153,7 +153,7 @@ export default function BuilderPage() {
             Visual Workflow Builder
           </p>
           <h1 className="text-3xl md:text-4xl font-black tracking-tight text-white mb-3">
-            Compose the 145 agents into one workflow.
+            Compose the 140 agents into one workflow.
           </h1>
           <p className="text-sm text-neutral-400 max-w-2xl">
             Every change re-validates against the Cook 66 rules (cycle

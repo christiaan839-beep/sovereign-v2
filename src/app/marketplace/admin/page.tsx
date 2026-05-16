@@ -10,7 +10,7 @@ import { ArrowLeft, ShieldCheck, AlertTriangle } from "lucide-react";
  * Lists every listing in submitted/approved/rejected state and lets
  * an admin transition them through the Cook 62 state machine.
  *
- * Server-side guard is in /api/marketplace/listings/[id] PATCH;
+ * Server-side guard is in /api/marketplace/listings/[slug] PATCH;
  * this UI surfaces a 404 to non-admins via the API response.
  */
 

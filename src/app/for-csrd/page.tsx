@@ -272,7 +272,7 @@ export default function ForCsrdPage() {
             Trust posture
           </Link>
           <Link href="/agents" className="hover:text-neutral-300">
-            145 agents
+            140 agents
           </Link>
         </div>
       </footer>

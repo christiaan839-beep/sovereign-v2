@@ -120,7 +120,7 @@ const STEPS = [
     id: "complete",
     title: "You're live.",
     subtitle:
-      "137 agents deployed. Every output you generate from here ships with a cryptographically signed receipt anyone can verify.",
+      "140 agents deployed. Every output you generate from here ships with a cryptographically signed receipt anyone can verify.",
     icon: CheckCircle2,
     isComplete: true,
   },

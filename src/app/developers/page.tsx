@@ -245,7 +245,7 @@ export default function DevelopersPage() {
                 desc: "See installs, usage, revenue, ratings — all in real time.",
               },
               {
-                title: "Distribution to 137 agents",
+                title: "Distribution to 140 agents",
                 desc: "Your agent joins a catalog of 137 specialized agents — and every output ships with a verifiable HMAC-signed receipt.",
               },
               {
@@ -349,7 +349,7 @@ export default function DevelopersPage() {
             The agent marketplace is open.
           </h2>
           <p className="text-neutral-400 mb-8">
-            137 agents. 10,000+ potential users. Every run verifiable. Your
+            140 agents. 10,000+ potential users. Every run verifiable. Your
             agent could be next.
           </p>
           <Link

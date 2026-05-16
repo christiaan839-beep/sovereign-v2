@@ -426,14 +426,28 @@ function NavLink({
 function Hero() {
   return (
     <section className="relative min-h-screen flex items-center justify-center px-6 pt-20 pb-16 overflow-hidden">
-      {/* A2EGraph background at low opacity */}
+      {/* A2EGraph background — faint, label-free so agent names never
+          bleed through the headline at narrow viewports. Opacity is
+          tighter on mobile because the canvas occupies a smaller area
+          relative to the text. */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-[0.18] md:opacity-30"
+        aria-hidden="true"
+      >
+        <A2EGraph className="w-full h-full" showLabels={false} />
+      </div>
+
+      {/* Centered radial dim — keeps the constellation visible at the
+          edges but ensures the headline area always renders on a near-
+          pure-black plate. */}
       <div
         className="absolute inset-0 pointer-events-none"
         aria-hidden="true"
-        style={{ opacity: 0.3 }}
-      >
-        <A2EGraph className="w-full h-full" />
-      </div>
+        style={{
+          background:
+            "radial-gradient(ellipse 55% 45% at 50% 45%, rgba(3,3,3,0.85) 0%, rgba(3,3,3,0.55) 45%, transparent 80%)",
+        }}
+      />
 
       {/* Copper radial gradient overlay — 4% center */}
       <div
@@ -511,8 +525,8 @@ function Hero() {
           transition={{ delay: 0.4, duration: 0.7 }}
           className="text-[17px] md:text-[19px] text-neutral-400 leading-[1.55] mb-4 max-w-2xl mx-auto"
         >
-          145 production agents that research, draft, qualify, and call — and
-          ship a verifiable HMAC-signed receipt every time. 2,492 tests pass. 7
+          140 production agents that research, draft, qualify, and call — and
+          ship a verifiable HMAC-signed receipt every time. 2,674 tests pass. 7
           cryptographic primitives. Built for teams that need AI{" "}
           <em className="not-italic text-neutral-300">and</em> a paper trail.
         </motion.p>
@@ -1038,7 +1052,7 @@ function PlatformScale() {
 
         <div className="py-5 flex items-center justify-between">
           <p className="text-[11px] font-mono text-neutral-700 tracking-wide">
-            137 agents · 8 industries · 90+ integrations · full surface at{" "}
+            140 agents · 8 industries · 90+ integrations · full surface at{" "}
             <Link
               href="/platform"
               className="text-neutral-500 hover:text-white transition-colors"
@@ -1364,7 +1378,7 @@ function FinalCTA() {
         </h2>
 
         <p className="text-[15px] md:text-[17px] text-neutral-400 mb-10 leading-[1.6] max-w-lg mx-auto">
-          No credit card required. 137 agents ready in 60 seconds. 50 runs reset
+          No credit card required. 140 agents ready in 60 seconds. 50 runs reset
           every month — free forever.
         </p>
 

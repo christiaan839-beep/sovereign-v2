@@ -36,7 +36,7 @@ const LAST_UPDATED = "May 2026";
 
 const NOW = {
   building: [
-    "Sovereign Matrix v2 — multi-tenant AI agent platform. 137 agents, 8-provider unified router, plan-aware $/day budget caps. Public source: github.com/christiaan839-beep/sovereign-v2.",
+    "Sovereign Matrix v2 — multi-tenant AI agent platform. 140 agents, 8-provider unified router, plan-aware $/day budget caps. Public source: github.com/christiaan839-beep/sovereign-v2.",
     "@sovereign/ai-router — extracted as standalone npm package. Zero deps, MIT, 7 tests passing. Routes across Anthropic, OpenAI, Cerebras, NVIDIA NIM, Groq, DeepSeek, and local Ollama with one call.",
     "Agency-replacement positioning for SMBs in emerging markets — sovereignmatrix.agency leads with R997/mo (≈$49 Pro tier) and ZAR-first billing.",
   ],

@@ -58,7 +58,7 @@ const TIERS = [
     tagline: "50 verified agent runs / month. No credit card.",
     cta: "Start free",
     features: [
-      { name: "All 137 agents + 25 playbooks", included: true },
+      { name: "All 140 agents + 25 playbooks", included: true },
       { name: "5-layer safety pipeline (default-on)", included: true },
       { name: "50 verified agent runs / month", included: true },
       { name: "HMAC-signed receipts (VAOS 1.0)", included: true },
@@ -597,7 +597,7 @@ export default function PricingPage() {
               className="text-neutral-500 mb-10 max-w-xl mx-auto"
               delay={0.1}
             >
-              50 free runs. 137 agents. Zero commitment. See what autonomous AI
+              50 free runs. 140 agents. Zero commitment. See what autonomous AI
               can do for your business.
             </RevealText>
             <MagneticButton>

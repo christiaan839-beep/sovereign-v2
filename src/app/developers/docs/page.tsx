@@ -346,7 +346,7 @@ const SECTIONS: Section[] = [
     "voice-chat",
     "competitor-scan",
     "brand-voice",
-    "...137 agents"
+    "...140 agents"
   ],
   "count": 130,
   "usage": "POST /api/agents/{agent-name} with { prompt: '...' }"

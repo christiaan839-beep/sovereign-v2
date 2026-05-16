@@ -81,7 +81,7 @@ const RECEIPT: PageReceipt = {
     {
       field: "product",
       display: "Product",
-      body: "145 production agents across 8 LLM providers, hybrid deterministic + LLM routing, 5-layer output verifier, 7 cryptographic primitives committed to every decision. Live at sovereignmatrix.agency.",
+      body: "140 production agents across 8 LLM providers, hybrid deterministic + LLM routing, 5-layer output verifier, 7 cryptographic primitives committed to every decision. Live at sovereignmatrix.agency.",
       citations: [
         {
           id: "cite_003",

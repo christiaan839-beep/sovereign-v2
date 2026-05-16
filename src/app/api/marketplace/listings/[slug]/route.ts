@@ -1,7 +1,11 @@
 /**
- * SOVEREIGN MATRIX — /api/marketplace/listings/[id] (Cook 70 admin).
+ * SOVEREIGN MATRIX — /api/marketplace/listings/[slug] (Cook 70 admin).
  *
- * Admin-only state transitions on a marketplace listing.
+ * Admin-only state transitions on a marketplace listing. The dynamic
+ * segment is named `slug` to share the parent with `/[slug]/run` —
+ * Next.js requires a single param name across siblings at the same
+ * path. The store key is still the listing's stable identifier; it's
+ * carried through under the `slug` field on params.
  *
  * PATCH { target: "approved" | "rejected" | "published" | "unpublished" }
  *   → admin-only via isAdmin(). Caller of /marketplace/admin uses this
@@ -17,7 +21,7 @@ import { auditLog } from "@/lib/audit-log";
 import { createLogger } from "@/lib/logger";
 import { z } from "zod";
 
-const log = createLogger("marketplace/listings/[id]");
+const log = createLogger("marketplace/listings/[slug]");
 
 const PATCH_SCHEMA = z.object({
   target: z.enum([
@@ -32,7 +36,7 @@ const PATCH_SCHEMA = z.object({
 
 export async function PATCH(
   req: Request,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: Promise<{ slug: string }> },
 ) {
   const auth = await requireAuth();
   if (auth.error) return auth.error;
@@ -40,7 +44,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const { id } = await params;
+  const { slug: id } = await params;
   const listing = get(id);
   if (!listing) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -73,7 +77,7 @@ export async function PATCH(
     return NextResponse.json({ ok: true, listing: result.listing });
   } catch (err) {
     log.error(
-      "PATCH /api/marketplace/listings/[id] failed",
+      "PATCH /api/marketplace/listings/[slug] failed",
       err as Record<string, unknown>,
     );
     return NextResponse.json({ error: "Failed" }, { status: 500 });
@@ -82,11 +86,11 @@ export async function PATCH(
 
 export async function GET(
   _req: Request,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: Promise<{ slug: string }> },
 ) {
   const auth = await requireAuth();
   if (auth.error) return auth.error;
-  const { id } = await params;
+  const { slug: id } = await params;
   const listing = get(id);
   if (!listing) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });

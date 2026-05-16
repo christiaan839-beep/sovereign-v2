@@ -99,7 +99,7 @@ async function sendWelcomeEmail(email: string, firstName: string | null) {
               Your account is live. Every agent run you trigger from here produces a cryptographically signed receipt — HMAC-SHA256 over a canonical projection, verifiable by anyone against our public <code style="font-family: 'JetBrains Mono', monospace; color: #00B7FF; font-size: 13px;">/api/verify</code> endpoint.
             </p>
             <p style="color: #a3a3a3; font-size: 15px; line-height: 1.6; margin: 0 0 28px 0;">
-              That's the moat: 137 agents you can actually prove the outputs of.
+              That's the moat: 140 agents you can actually prove the outputs of.
             </p>
 
             <!-- Primary CTA -->

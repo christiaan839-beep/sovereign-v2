@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     template: "%s | Sovereign Matrix",
   },
   description:
-    "Audit-grade AI agent infrastructure. Every agent run produces a cryptographically signed receipt — HMAC-SHA256, Ed25519, Merkle inclusion proofs, OpenTimestamps. 137 agents, 8-provider unified router, 5-layer safety pipeline, ZAR-first billing for emerging markets.",
+    "Audit-grade AI agent infrastructure. Every agent run produces a cryptographically signed receipt — HMAC-SHA256, Ed25519, Merkle inclusion proofs, OpenTimestamps. 140 agents, 8-provider unified router, 5-layer safety pipeline, ZAR-first billing for emerging markets.",
   keywords: [
     "verifiable AI agents",
     "AI agent audit standard",
@@ -64,7 +64,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Sovereign Matrix — Audit-grade AI agent infrastructure",
     description:
-      "Every AI agent run produces a cryptographically signed receipt. HMAC-SHA256, Ed25519, Merkle inclusion proofs, Bitcoin notarization. 137 agents, 5-layer safety pipeline, ZAR + USD billing.",
+      "Every AI agent run produces a cryptographically signed receipt. HMAC-SHA256, Ed25519, Merkle inclusion proofs, Bitcoin notarization. 140 agents, 5-layer safety pipeline, ZAR + USD billing.",
     type: "website",
     siteName: "Sovereign Matrix",
     locale: "en_US",
@@ -82,7 +82,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Sovereign Matrix — Audit-grade AI agent infrastructure",
     description:
-      "Every AI agent run produces a cryptographically signed receipt. 137 agents, 5-layer safety pipeline, Bitcoin-anchored proofs. Built for AI in regulated industries.",
+      "Every AI agent run produces a cryptographically signed receipt. 140 agents, 5-layer safety pipeline, Bitcoin-anchored proofs. Built for AI in regulated industries.",
     images: ["https://sovereignmatrix.agency/og-image.jpg"],
   },
   icons: {
@@ -212,7 +212,7 @@ export default function RootLayout({
                   operatingSystem: "Web",
                   offers: marketingOffers,
                   description:
-                    "Audit-grade AI agent infrastructure — 137 agents, every output cryptographically signed (HMAC-SHA256, Ed25519, Merkle inclusion proofs, OpenTimestamps), 8-provider unified router, 5-layer safety pipeline, ZAR + USD billing.",
+                    "Audit-grade AI agent infrastructure — 140 agents, every output cryptographically signed (HMAC-SHA256, Ed25519, Merkle inclusion proofs, OpenTimestamps), 8-provider unified router, 5-layer safety pipeline, ZAR + USD billing.",
                   featureList:
                     "Verifiable Agent Receipts (VAOS), HMAC-SHA256 Signatures, Ed25519 v2 Signatures, Merkle Inclusion Proofs, OpenTimestamps Bitcoin Notarization, Multi-Provider Routing, Whitelabel, 5-layer Safety Pipeline, Plan-Aware Quotas, Daily $-Cap Budget Controls, Multi-Tenant Isolation, ZAR Billing, Open-Source AI Router (@sovereign/ai-router)",
                 },
@@ -222,7 +222,7 @@ export default function RootLayout({
                   name: "Sovereign Matrix",
                   url: "https://sovereignmatrix.agency",
                   description:
-                    "Audit-grade AI agent infrastructure — 137 agents with cryptographically signed receipts, 8-provider unified router, ZAR + USD billing.",
+                    "Audit-grade AI agent infrastructure — 140 agents with cryptographically signed receipts, 8-provider unified router, ZAR + USD billing.",
                   logo: "https://sovereignmatrix.agency/icon-512.png",
                   contactPoint: {
                     "@type": "ContactPoint",

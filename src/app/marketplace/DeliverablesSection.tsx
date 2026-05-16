@@ -20,7 +20,7 @@ import { DELIVERABLES, type Deliverable } from "@/lib/marketplace-deliverables";
 /**
  * Buyer-outcome tiles — what the platform DOES for a business, presented
  * before the technology-grouped agent grid. Reframes the marketplace
- * from "browse 137 agents" to "pick the deliverable, the agents come
+ * from "browse 140 agents" to "pick the deliverable, the agents come
  * with it."
  */
 
@@ -178,7 +178,7 @@ export function DeliverablesSection() {
           <p className="text-[15px] md:text-[17px] text-neutral-400 leading-[1.55]">
             Six pre-composed stacks — each is a real business outcome, not a
             tutorial. Pick one and the agents that deliver it run together. Or
-            scroll down to browse all 137 agents individually.
+            scroll down to browse all 140 agents individually.
           </p>
         </motion.header>
 
