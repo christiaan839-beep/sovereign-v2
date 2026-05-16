@@ -338,10 +338,19 @@ async function nimText(
     ...(system ? [{ role: "system", content: system }] : []),
     { role: "user", content: prompt },
   ];
-  return nimChat("nvidia/llama-3.1-nemotron-ultra-253b-v1", messages, {
-    maxTokens,
-    temperature: 0.6,
-  }) as Promise<string>;
+  const { withAiSpan } = await import("@/lib/ai-trace");
+  return withAiSpan(
+    {
+      model: "nvidia/llama-3.1-nemotron-ultra-253b-v1",
+      provider: "nvidia-nim",
+      inputTokens: Math.ceil(prompt.length / 4),
+    },
+    () =>
+      nimChat("nvidia/llama-3.1-nemotron-ultra-253b-v1", messages, {
+        maxTokens,
+        temperature: 0.6,
+      }) as Promise<string>,
+  );
 }
 
 async function ollamaText(
@@ -349,25 +358,35 @@ async function ollamaText(
   system?: string,
   ollamaUrl: string = "http://localhost:11434",
 ): Promise<string> {
-  try {
-    const url = new URL("/api/generate", ollamaUrl).toString();
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "qwen2.5-coder",
-        prompt: prompt,
-        system: system || "",
-        stream: false,
-      }),
-    });
-    if (!res.ok) throw new Error("Ollama request failed");
-    const data = await res.json();
-    return data.response;
-  } catch (err) {
-    log.error("Local Ollama Node failed:", err as Record<string, unknown>);
-    throw err;
-  }
+  const { withAiSpan } = await import("@/lib/ai-trace");
+  return withAiSpan(
+    {
+      model: "qwen2.5-coder",
+      provider: "ollama",
+      inputTokens: Math.ceil(prompt.length / 4),
+    },
+    async () => {
+      try {
+        const url = new URL("/api/generate", ollamaUrl).toString();
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "qwen2.5-coder",
+            prompt: prompt,
+            system: system || "",
+            stream: false,
+          }),
+        });
+        if (!res.ok) throw new Error("Ollama request failed");
+        const data = await res.json();
+        return data.response;
+      } catch (err) {
+        log.error("Local Ollama Node failed:", err as Record<string, unknown>);
+        throw err;
+      }
+    },
+  );
 }
 
 async function geminiText(
@@ -392,14 +411,23 @@ async function geminiText(
     systemInstruction: system || undefined,
     generationConfig: { maxOutputTokens: maxTokens },
   });
-  return geminiBreaker.execute(() =>
-    withRetry(
-      async () => {
-        const result = await genModel.generateContent(prompt);
-        return result.response.text();
-      },
-      { maxRetries: 2, label: "Gemini" },
-    ),
+  const { withAiSpan } = await import("@/lib/ai-trace");
+  return withAiSpan(
+    {
+      model: modelName,
+      provider: "google",
+      inputTokens: Math.ceil(prompt.length / 4),
+    },
+    () =>
+      geminiBreaker.execute(() =>
+        withRetry(
+          async () => {
+            const result = await genModel.generateContent(prompt);
+            return result.response.text();
+          },
+          { maxRetries: 2, label: "Gemini" },
+        ),
+      ),
   );
 }
 
@@ -631,19 +659,31 @@ async function groqText(
   if (system) messages.push({ role: "system" as const, content: system });
   messages.push({ role: "user" as const, content: prompt });
 
-  return groqBreaker.execute(() =>
-    withRetry(
-      async () => {
-        const completion = await client.chat.completions.create({
-          messages,
-          model: groqModel,
-          max_tokens: maxTokens,
-        });
+  // Route to the correct provider enum for tracing — DeepSeek-distilled
+  // weights still run on Groq's inference, so the provider stays "groq"
+  // even when modelTarget === "deepseek".
+  const { withAiSpan } = await import("@/lib/ai-trace");
+  return withAiSpan(
+    {
+      model: groqModel,
+      provider: "groq",
+      inputTokens: Math.ceil(prompt.length / 4),
+    },
+    () =>
+      groqBreaker.execute(() =>
+        withRetry(
+          async () => {
+            const completion = await client.chat.completions.create({
+              messages,
+              model: groqModel,
+              max_tokens: maxTokens,
+            });
 
-        return completion.choices[0]?.message?.content || "";
-      },
-      { maxRetries: 2, label: "Groq" },
-    ),
+            return completion.choices[0]?.message?.content || "";
+          },
+          { maxRetries: 2, label: "Groq" },
+        ),
+      ),
   );
 }
 
@@ -668,28 +708,38 @@ async function cerebrasText(
     { role: "user", content: prompt },
   ];
 
-  const res = await fetch("https://api.cerebras.ai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
+  const { withAiSpan } = await import("@/lib/ai-trace");
+  return withAiSpan(
+    {
       model: "llama-4-scout-17b-16e-instruct",
-      messages,
-      max_tokens: maxTokens,
-      temperature: 0.4,
-    }),
-    signal: AbortSignal.timeout(15000),
-  });
+      provider: "cerebras",
+      inputTokens: Math.ceil(prompt.length / 4),
+    },
+    async () => {
+      const res = await fetch("https://api.cerebras.ai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: "llama-4-scout-17b-16e-instruct",
+          messages,
+          max_tokens: maxTokens,
+          temperature: 0.4,
+        }),
+        signal: AbortSignal.timeout(15000),
+      });
 
-  if (!res.ok) {
-    const err = await res.text().catch(() => res.statusText);
-    throw new Error(`Cerebras error ${res.status}: ${err}`);
-  }
+      if (!res.ok) {
+        const err = await res.text().catch(() => res.statusText);
+        throw new Error(`Cerebras error ${res.status}: ${err}`);
+      }
 
-  const data = await res.json();
-  return data.choices?.[0]?.message?.content || "";
+      const data = await res.json();
+      return data.choices?.[0]?.message?.content || "";
+    },
+  );
 }
 
 /**
@@ -704,10 +754,19 @@ async function mistralText(
     ...(system ? [{ role: "system", content: system }] : []),
     { role: "user", content: prompt },
   ];
-  return nimChat("mistralai/mistral-large-2-instruct", messages, {
-    maxTokens,
-    temperature: 0.4,
-  }) as Promise<string>;
+  const { withAiSpan } = await import("@/lib/ai-trace");
+  return withAiSpan(
+    {
+      model: "mistralai/mistral-large-2-instruct",
+      provider: "mistral",
+      inputTokens: Math.ceil(prompt.length / 4),
+    },
+    () =>
+      nimChat("mistralai/mistral-large-2-instruct", messages, {
+        maxTokens,
+        temperature: 0.4,
+      }) as Promise<string>,
+  );
 }
 
 /**
