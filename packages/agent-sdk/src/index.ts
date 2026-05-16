@@ -13,6 +13,9 @@
  *   - SovereignClient — main entry point
  *   - VerifyResult / RunResult / RunStreamEvent types
  *   - verifyReceipt() — standalone helper (no client needed)
+ *   - Guardian SDK (submitGuardian, GuardianRule, GuardianAttestation,
+ *     quorumCollapse) — write your own Guardians; the platform signs
+ *     the verdict envelope so it's independently verifiable.
  *
  * Quick start:
  *   ```ts
@@ -281,3 +284,17 @@ export class SovereignError extends Error {
     this.status = status;
   }
 }
+
+// ── Guardian SDK re-exports (Wave 17) ─────────────────────────────────
+//
+// External customers compose their own Guardians using these types.
+// See ./guardian.ts for the full surface.
+export {
+  submitGuardian,
+  quorumCollapse,
+  type GuardianVerdict,
+  type GuardianContext,
+  type GuardianRule,
+  type RuleVerdict,
+  type GuardianAttestation,
+} from "./guardian";
