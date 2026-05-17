@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     template: "%s | Sovereign Matrix",
   },
   description:
-    "Audit-grade AI agent infrastructure. Every agent run produces a cryptographically signed receipt — HMAC-SHA256, Ed25519, Merkle inclusion proofs, OpenTimestamps. 140 agents, 8-provider unified router, 5-layer safety pipeline, ZAR-first billing for emerging markets.",
+    "Audit-grade AI agent infrastructure. Every agent run produces a cryptographically signed receipt — Ed25519, ML-DSA-65 (FIPS 204 post-quantum dual-sign), Merkle inclusion + consistency proofs, RFC 6962-style transparency log, OpenTimestamps Bitcoin anchoring. 140 agents, 8-provider unified router, 5-layer safety pipeline, ZAR-first billing for emerging markets. Apache-2.0 OSS verifier on npm.",
   keywords: [
     "verifiable AI agents",
     "AI agent audit standard",
@@ -64,7 +64,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Sovereign Matrix — Audit-grade AI agent infrastructure",
     description:
-      "Every AI agent run produces a cryptographically signed receipt. HMAC-SHA256, Ed25519, Merkle inclusion proofs, Bitcoin notarization. 140 agents, 5-layer safety pipeline, ZAR + USD billing.",
+      "Every AI agent run produces a cryptographically signed receipt. Ed25519, ML-DSA-65 (FIPS 204 post-quantum), Merkle inclusion + consistency proofs, RFC 6962-style transparency log, Bitcoin notarization. 140 agents, 5-layer safety pipeline, ZAR + USD billing. Apache-2.0 OSS verifier on npm.",
     type: "website",
     siteName: "Sovereign Matrix",
     locale: "en_US",
@@ -82,7 +82,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Sovereign Matrix — Audit-grade AI agent infrastructure",
     description:
-      "Every AI agent run produces a cryptographically signed receipt. 140 agents, 5-layer safety pipeline, Bitcoin-anchored proofs. Built for AI in regulated industries.",
+      "Ed25519 + post-quantum-ready AI agent receipts. 140 agents, transparency log, Bitcoin-anchored proofs. Apache-2.0 OSS verifier — install and check the math yourself. Built for AI in regulated industries.",
     images: ["https://sovereignmatrix.agency/og-image.jpg"],
   },
   icons: {

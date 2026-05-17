@@ -512,9 +512,9 @@ function Hero() {
           className="text-[17px] md:text-[19px] text-neutral-400 leading-[1.55] mb-4 max-w-2xl mx-auto"
         >
           140 production agents that research, draft, qualify, and call — and
-          ship a verifiable HMAC-signed receipt every time. Built for teams that
-          need AI <em className="not-italic text-neutral-300">and</em> a paper
-          trail.
+          ship an Ed25519-signed receipt every time, post-quantum-ready via
+          ML-DSA-65 dual-signing. Built for teams that need AI{" "}
+          <em className="not-italic text-neutral-300">and</em> a paper trail.
         </motion.p>
         <motion.p
           initial={{ opacity: 0, y: 10 }}
@@ -575,15 +575,29 @@ function Hero() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.95, duration: 0.5 }}
-          className="text-[11px] font-mono text-neutral-500 tracking-wide mb-12"
+          className="text-[11px] font-mono text-neutral-500 tracking-wide mb-6 flex flex-wrap items-center justify-center gap-x-1 gap-y-2"
         >
           <Link href="/spec" className="hover:text-cyan-300 transition-colors">
             <span aria-hidden="true" className="text-cyan-500/60 mr-1.5">
               ◆
             </span>
-            VAOS 1.0 open standard
+            VAOS 1.0 · 2.0 · 3.0
           </Link>
-          <span className="text-neutral-700 mx-2" aria-hidden="true">
+          <span className="text-neutral-700 mx-1.5" aria-hidden="true">
+            ·
+          </span>
+          <a
+            href="https://www.npmjs.com/package/@sovereign-matrix/verifiable-receipts"
+            target="_blank"
+            rel="noreferrer noopener"
+            className="hover:text-cyan-300 transition-colors"
+          >
+            <span aria-hidden="true" className="text-cyan-500/60 mr-1.5">
+              ◆
+            </span>
+            OSS toolkit (Apache-2.0)
+          </a>
+          <span className="text-neutral-700 mx-1.5" aria-hidden="true">
             ·
           </span>
           <Link
@@ -595,7 +609,7 @@ function Hero() {
             </span>
             Live verifier demo
           </Link>
-          <span className="text-neutral-700 mx-2" aria-hidden="true">
+          <span className="text-neutral-700 mx-1.5" aria-hidden="true">
             ·
           </span>
           <Link
@@ -607,7 +621,7 @@ function Hero() {
             </span>
             Receipt explorer
           </Link>
-          <span className="text-neutral-700 mx-2" aria-hidden="true">
+          <span className="text-neutral-700 mx-1.5" aria-hidden="true">
             ·
           </span>
           <Link
@@ -620,6 +634,34 @@ function Hero() {
             Auditor replay
           </Link>
         </motion.p>
+
+        {/* Verify-the-math one-liner — the elite move borrowed from
+            /pilot. A skeptical CISO can confirm the central marketing
+            claim in two terminal commands before they ever email us.
+            Anchors to /pilot for the full procurement walkthrough. */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.05, duration: 0.5 }}
+          className="mb-10"
+        >
+          <p className="font-mono text-[10px] text-neutral-600 tracking-[0.2em] uppercase mb-2">
+            Verify the math yourself
+          </p>
+          <code className="inline-block max-w-full overflow-x-auto whitespace-nowrap font-mono text-[11px] sm:text-[12px] text-cyan-300/90 bg-black/40 border border-cyan-500/20 rounded-[3px] px-3 py-2 leading-[1.55]">
+            npx @sovereign-matrix/verifiable-receipts verify --manifest
+            ./sample-bundle.json --pubkey ./sample-bundle.ed25519.pem
+          </code>
+          <p className="text-[11px] text-neutral-500 mt-2">
+            <Link
+              href="/pilot"
+              className="hover:text-cyan-300 transition-colors underline decoration-cyan-500/30"
+            >
+              Download the sample bundle on /pilot
+            </Link>{" "}
+            — no account, no signup.
+          </p>
+        </motion.div>
 
         {/* Scroll indicator */}
         <motion.div
