@@ -60,6 +60,19 @@ export {
 } from "./bundle.js";
 
 export {
+  leafHash,
+  innerHash,
+  treeRoot,
+  inclusionProof,
+  verifyInclusionProof,
+  consistencyProof,
+  verifyConsistencyProof,
+  buildSth,
+  canonicalizeSth,
+  type SignedTreeHead,
+} from "./transparency.js";
+
+export {
   hipaaRules,
   hipaaPack,
   sr117Rules,

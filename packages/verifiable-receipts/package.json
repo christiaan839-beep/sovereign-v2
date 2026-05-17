@@ -56,6 +56,10 @@
     "./packs": {
       "types": "./dist/packs.d.ts",
       "import": "./dist/packs.js"
+    },
+    "./transparency": {
+      "types": "./dist/transparency.d.ts",
+      "import": "./dist/transparency.js"
     }
   },
   "files": [
