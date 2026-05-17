@@ -60,6 +60,10 @@
     "./transparency": {
       "types": "./dist/transparency.d.ts",
       "import": "./dist/transparency.js"
+    },
+    "./log-store": {
+      "types": "./dist/log-store.d.ts",
+      "import": "./dist/log-store.js"
     }
   },
   "files": [

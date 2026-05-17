@@ -73,6 +73,14 @@ export {
 } from "./transparency.js";
 
 export {
+  TransparencyLog,
+  InMemoryLogStore,
+  FileLogStore,
+  type LogStore,
+  type AppendResult,
+} from "./log-store.js";
+
+export {
   hipaaRules,
   hipaaPack,
   sr117Rules,
