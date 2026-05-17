@@ -1,0 +1,142 @@
+name: Release OSS package
+
+# Tag-driven npm release for the two open-source packages in this repo.
+#
+# Trigger contracts:
+#   verifiable-receipts-v0.1.1  → publishes packages/verifiable-receipts
+#   agent-sdk-v0.1.1            → publishes packages/agent-sdk
+#
+# How to ship a new version:
+#   1. Bump the version in packages/<pkg>/package.json on the release branch.
+#   2. Commit + push.
+#   3. Tag: `git tag verifiable-receipts-v0.1.1 && git push origin verifiable-receipts-v0.1.1`
+#   4. This workflow runs: build → typecheck → npm publish --provenance.
+#
+# Required repository secrets:
+#   NPM_TOKEN — npm automation token with publish scope on @sovereign-matrix
+#
+# Provenance is signed via OIDC (npm provenance) — no extra secret needed,
+# but `id-token: write` permission below is mandatory.
+
+on:
+  push:
+    tags:
+      - 'verifiable-receipts-v*'
+      - 'agent-sdk-v*'
+  workflow_dispatch:
+    inputs:
+      package:
+        description: 'Which package to publish (dry-run)'
+        required: true
+        type: choice
+        options:
+          - verifiable-receipts
+          - agent-sdk
+
+permissions:
+  contents: read
+  id-token: write  # required for npm provenance
+
+env:
+  NODE_VERSION: '22'
+
+jobs:
+  publish:
+    name: Build, verify, publish
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'npm'
+
+      # Derive which package the tag wants to publish. Tag form is
+      # <pkg-name>-v<semver>, e.g. verifiable-receipts-v0.1.1 → pkg=verifiable-receipts.
+      # workflow_dispatch reads the input field directly.
+      - name: Resolve target package
+        id: target
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "pkg=${{ github.event.inputs.package }}" >> "$GITHUB_OUTPUT"
+            echo "dry_run=true" >> "$GITHUB_OUTPUT"
+          else
+            tag="${GITHUB_REF_NAME}"
+            case "$tag" in
+              verifiable-receipts-v*) pkg="verifiable-receipts" ;;
+              agent-sdk-v*)           pkg="agent-sdk" ;;
+              *) echo "::error::Unknown tag shape: $tag"; exit 1 ;;
+            esac
+            echo "pkg=$pkg" >> "$GITHUB_OUTPUT"
+            echo "dry_run=false" >> "$GITHUB_OUTPUT"
+          fi
+          echo "Target package: $pkg"
+
+      - name: Install workspace dependencies
+        run: |
+          for attempt in 1 2 3; do
+            if npm ci; then exit 0; fi
+            echo "npm ci attempt $attempt failed; backing off..."
+            sleep $((attempt * 5))
+          done
+          exit 1
+
+      # Cross-check the tag's version matches package.json before doing
+      # anything irreversible. Mismatch = abort. A floating version in
+      # the manifest while a stale tag publishes is the classic supply-
+      # chain disaster.
+      - name: Verify tag version matches package.json
+        if: steps.target.outputs.dry_run == 'false'
+        run: |
+          pkg="${{ steps.target.outputs.pkg }}"
+          tag="${GITHUB_REF_NAME}"
+          tag_ver="${tag#${pkg}-v}"
+          manifest_ver=$(node -p "require('./packages/${pkg}/package.json').version")
+          if [ "$tag_ver" != "$manifest_ver" ]; then
+            echo "::error::Tag version ($tag_ver) does not match package.json ($manifest_ver)"
+            exit 1
+          fi
+          echo "Tag and manifest agree on $tag_ver"
+
+      - name: Type-check the package in isolation
+        run: |
+          cd "packages/${{ steps.target.outputs.pkg }}"
+          npx tsc -p tsconfig.json --noEmit
+
+      - name: Build the package
+        run: |
+          cd "packages/${{ steps.target.outputs.pkg }}"
+          npm run build
+
+      # Run the full root vitest suite to confirm the build didn't break
+      # any test that depends on the package via @sovereign-matrix/<pkg>
+      # import paths inside the monorepo.
+      - name: Run root test suite (regression guard)
+        run: npm test -- --run
+
+      # Dry-run pack so we can inspect the tarball contents in the action
+      # log. This catches "I forgot to add LICENSE / README to files[]"
+      # without burning a version number on npm.
+      - name: npm pack --dry-run (inspect tarball)
+        run: |
+          cd "packages/${{ steps.target.outputs.pkg }}"
+          npm pack --dry-run
+
+      - name: npm publish (with provenance)
+        if: steps.target.outputs.dry_run == 'false'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          cd "packages/${{ steps.target.outputs.pkg }}"
+          npm publish --access public --provenance
+
+      - name: Dry-run only — skipped publish
+        if: steps.target.outputs.dry_run == 'true'
+        run: |
+          echo "workflow_dispatch path — built and packed but did not publish"
+          echo "To publish for real, push a tag: ${{ steps.target.outputs.pkg }}-v<semver>"

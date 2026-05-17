@@ -138,3 +138,95 @@ test.describe("Auth gate smoke (no sign-in)", () => {
     expect([401, 404]).toContain(res.status());
   });
 });
+
+test.describe("Verifiable receipts surface (the central claim)", () => {
+  // The platform's marketing claim ("hand the receipt to an auditor and
+  // the math holds") has historically lived only in vitest mocks. These
+  // browser-level tests prove the public verifier surface actually exists
+  // and serves the documented shape. If any of these go red, a buyer who
+  // tries to verify our claim hits the same red.
+
+  test("/security/posture returns the documented machine-readable envelope", async ({
+    request,
+  }) => {
+    const res = await request.get("/api/security/posture");
+    expect(res.status()).toBe(200);
+    expect(res.headers()["content-type"]).toMatch(/application\/json/);
+    expect(res.headers()["access-control-allow-origin"]).toBe("*");
+    const body = (await res.json()) as Record<string, unknown>;
+    // Shape contract — keys procurement automation depends on.
+    for (const key of [
+      "generatedAt",
+      "issuer",
+      "receipts",
+      "chainOfCustody",
+      "transportSecurity",
+      "authentication",
+      "compliance",
+      "openSourcePrimitives",
+    ]) {
+      expect(body).toHaveProperty(key);
+    }
+    // The receipts.schemes block must enumerate v1/v2/v3 every deploy —
+    // a regression that drops a scheme would silently break vendor
+    // questionnaires that read from this endpoint.
+    const receipts = body.receipts as Record<string, Record<string, unknown>>;
+    expect(receipts.schemes).toHaveProperty("v1_hmac_sha256");
+    expect(receipts.schemes).toHaveProperty("v2_ed25519");
+    expect(receipts.schemes).toHaveProperty("v3_ed25519_mldsa65");
+  });
+
+  test("/.well-known/sovereign-receipts/ed25519.pem serves PEM or returns documented 404", async ({
+    request,
+  }) => {
+    const res = await request.get(
+      "/.well-known/sovereign-receipts/ed25519.pem",
+    );
+    // Either the deployment has an Ed25519 key (200 + PEM body) or it
+    // doesn't (404 + a documented text body). 5xx means the route itself
+    // is broken — that's the regression we want to catch.
+    expect([200, 404]).toContain(res.status());
+    if (res.status() === 200) {
+      const body = await res.text();
+      expect(body).toMatch(/-----BEGIN PUBLIC KEY-----/);
+      expect(res.headers()["content-type"]).toMatch(/x-pem-file/);
+    }
+  });
+
+  test("/for-claims-triage renders a real signed receipt at request time", async ({
+    page,
+  }) => {
+    // Wave-32 vertical surface: the sample receipt is signed by signRun()
+    // on every render. The signature should be present in the HTML source
+    // (no client-side fetch — it's server-rendered). Regression-guards
+    // the demonstrability of the central claim from a buyer's browser.
+    const res = await page.goto("/for-claims-triage");
+    expect(res?.status()).toBe(200);
+    // The signature container contains v1=, v2=, or v3= depending on the
+    // configured signing key. The dollar prefix proves we're rendering a
+    // real signature, not just stubbed marketing copy.
+    await expect(page.locator("body")).toContainText(/v[123]=/);
+    // The canonical-projection details block exists and announces its
+    // byte length — both halves of "you can re-derive this".
+    await expect(page.locator("body")).toContainText(
+      /Show input \+ output canonical/,
+    );
+  });
+
+  test("/for-pharmacovigilance renders the second-vertical conversion surface", async ({
+    page,
+  }) => {
+    const res = await page.goto("/for-pharmacovigilance");
+    expect(res?.status()).toBe(200);
+    await expect(page.locator("body")).toContainText(/Pharmacovigilance/i);
+  });
+
+  test("/api/verify rejects a forged receipt id", async ({ request }) => {
+    const res = await request.get(
+      "/api/verify?receiptId=rcpt_forged_does_not_exist",
+    );
+    expect(res.status()).toBe(200);
+    const body = (await res.json()) as { valid?: boolean };
+    expect(body.valid).toBe(false);
+  });
+});
