@@ -1,0 +1,80 @@
+{
+  "name": "@sovereign-matrix/verifiable-receipts",
+  "version": "0.1.0",
+  "description": "Pure-TypeScript primitives for cryptographically-signed AI agent receipts. Ed25519 + ML-DSA-65 (Dilithium3) dual-signing, ZIP-bundle export with signed manifest, Guardian verdict envelopes, post-quantum forward-secure verification. Zero platform coupling — drop into any AI agent runtime.",
+  "license": "Apache-2.0",
+  "author": "Christiaan de Wet <christiaan@sovereignmatrix.agency>",
+  "homepage": "https://github.com/christiaan839-beep/sovereign-v2/tree/main/packages/verifiable-receipts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/christiaan839-beep/sovereign-v2.git",
+    "directory": "packages/verifiable-receipts"
+  },
+  "bugs": "https://github.com/christiaan839-beep/sovereign-v2/issues",
+  "keywords": [
+    "ai",
+    "agents",
+    "agentic",
+    "cryptographic-receipts",
+    "verifiable-ai",
+    "ed25519",
+    "ml-dsa-65",
+    "dilithium3",
+    "post-quantum",
+    "audit-grade",
+    "compliance",
+    "hipaa",
+    "sr-11-7",
+    "naic",
+    "dscsa",
+    "csrd",
+    "sovereign-matrix"
+  ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./pq-sign": {
+      "types": "./dist/pq-sign.d.ts",
+      "import": "./dist/pq-sign.js"
+    },
+    "./guardian": {
+      "types": "./dist/guardian.d.ts",
+      "import": "./dist/guardian.js"
+    },
+    "./bundle": {
+      "types": "./dist/bundle.d.ts",
+      "import": "./dist/bundle.js"
+    },
+    "./packs": {
+      "types": "./dist/packs.d.ts",
+      "import": "./dist/packs.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "npm run build"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "dependencies": {
+    "@noble/post-quantum": "^0.6.1"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  }
+}
