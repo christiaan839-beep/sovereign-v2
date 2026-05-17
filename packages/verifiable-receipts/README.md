@@ -125,6 +125,46 @@ const result = verifyManifest(manifest, (canonical, sig) =>
 console.log(result.ok); // true | false-with-reason
 ```
 
+## CLI — verify without writing any code
+
+The package ships a self-hostable verifier binary. After install:
+
+```bash
+npx @sovereign-matrix/verifiable-receipts verify \
+  --manifest ./MANIFEST.signed.json \
+  --pubkey ./ed25519.pem
+```
+
+Exit codes: `0` valid · `1` invalid (with `--json` the reason is in the
+output: `hash-mismatch` / `signature-mismatch` / `wrong-type` /
+`wrong-version`) · `2` usage error.
+
+Pipe via stdin to slot the verifier into any audit pipeline:
+
+```bash
+curl -s https://issuer.example/bundles/2026-Q1.json \
+  | npx @sovereign-matrix/verifiable-receipts verify --pubkey ./ed25519.pem
+```
+
+This is the binary an auditor in 2040 runs against a manifest you
+signed in 2026 — `npm install` resolves the same version, the
+algorithm doesn't shift, the bytes verify or they don't.
+
+## Wire format spec (frozen with this version)
+
+Every published version of this package ships a frozen copy of the
+wire-format spec at `SPEC.md`. It documents:
+
+- v1 (HMAC-SHA256) — legacy VAOS 1.0 compatibility
+- v2 (Ed25519, RFC 8032) — public-key verifiable
+- v3 (Ed25519 + ML-DSA-65 / Dilithium3, FIPS 204) — post-quantum forward-secure
+
+A receipt signed under this version (0.1.x) verifies forever under
+any future verifier that retains v2/v3 support. The math is the
+contract. See `SPEC.md` and the canonical sources at
+[`docs/specs/vaos-2.0.md`](https://github.com/christiaan839-beep/sovereign-v2/blob/main/docs/specs/vaos-2.0.md)
+and [`docs/specs/vaos-3.0.md`](https://github.com/christiaan839-beep/sovereign-v2/blob/main/docs/specs/vaos-3.0.md).
+
 ## Why this library exists
 
 In 2026 every regulated buyer asks the same question of every AI vendor: **"if your AI made a decision that ends up in front of a judge, what evidence can you hand the court that the decision was defensible at the moment it was made?"**
