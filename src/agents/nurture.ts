@@ -22,7 +22,7 @@ STRUCTURE: ${structure}
 
 For each email: subject line (with emoji), body (under 150 words), CTA button text. Separate with "--- EMAIL ---".`,
     {
-      model: "claude",
+      model: "nim",
       system: "You are an email strategist with 40%+ open rates. Direct, valuable, slightly provocative. Never say 'I hope this finds you well'.",
       maxTokens: 3000,
     }

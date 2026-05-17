@@ -1,0 +1,32 @@
+{
+  "v": 1,
+  "type": "verifiable-receipt-bundle",
+  "generatedAt": "2026-05-17T18:28:49.872Z",
+  "receiptCount": 3,
+  "bundleDigest": "12164c4ad9cba79a79ad6c71d68f2bb27714b066917fccb37f2d718eab147957",
+  "receipts": [
+    {
+      "id": "rcpt_demo_001",
+      "agentName": "fnol-coverage-triage",
+      "modelUsed": "claude-sonnet-4-6",
+      "issuedAt": "2026-05-14T08:23:19.247Z",
+      "signature": "v2=demo_individual_receipt_signature_001"
+    },
+    {
+      "id": "rcpt_demo_002",
+      "agentName": "icsr-triage-meddra",
+      "modelUsed": "claude-sonnet-4-6",
+      "issuedAt": "2026-05-12T14:07:23.502Z",
+      "signature": "v2=demo_individual_receipt_signature_002"
+    },
+    {
+      "id": "rcpt_demo_003",
+      "agentName": "loan-underwriter",
+      "modelUsed": "claude-sonnet-4-6",
+      "issuedAt": "2026-05-10T11:14:55.812Z",
+      "signature": "v2=demo_individual_receipt_signature_003"
+    }
+  ],
+  "manifestHash": "625776051a72882caff4f4a28e60a6f68d0c4a6bda4bdd45ee67b001a400b61b",
+  "signature": "v2=PBHlnn12CUoMxwSUF8ELTpOZ0beeVv8E3a2XeKa+eea7+yGv5uWQ7G+jfVPP/XL8pvw6USp/Kzh0YpB2F2l+Bg=="
+}

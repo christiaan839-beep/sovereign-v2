@@ -229,4 +229,49 @@ test.describe("Verifiable receipts surface (the central claim)", () => {
     const body = (await res.json()) as { valid?: boolean };
     expect(body.valid).toBe(false);
   });
+
+  test("/pilot renders the conversion surface + downloadable sample bundle", async ({
+    page,
+  }) => {
+    const res = await page.goto("/pilot");
+    expect(res?.status()).toBe(200);
+    // The CLI invocation must be on the page — it's the central
+    // demonstration. A regression that hides it breaks the conversion.
+    await expect(page.locator("body")).toContainText(
+      /npx @sovereign-matrix\/verifiable-receipts verify/,
+    );
+    // Both download targets must resolve to real files (procurement
+    // teams click these before they send an email).
+    await expect(page.locator("a[href='/sample-bundle.json']")).toBeVisible();
+    await expect(
+      page.locator("a[href='/sample-bundle.ed25519.pem']"),
+    ).toBeVisible();
+  });
+
+  test("/sample-bundle.json downloads as a parseable signed manifest", async ({
+    request,
+  }) => {
+    const res = await request.get("/sample-bundle.json");
+    expect(res.status()).toBe(200);
+    const body = (await res.json()) as {
+      type?: string;
+      receiptCount?: number;
+      manifestHash?: string;
+      signature?: string;
+    };
+    expect(body.type).toBe("verifiable-receipt-bundle");
+    expect(body.receiptCount).toBeGreaterThan(0);
+    expect(body.manifestHash).toMatch(/^[0-9a-f]{64}$/);
+    expect(body.signature).toMatch(/^v[123]=/);
+  });
+
+  test("/sample-bundle.ed25519.pem downloads as a real PEM", async ({
+    request,
+  }) => {
+    const res = await request.get("/sample-bundle.ed25519.pem");
+    expect(res.status()).toBe(200);
+    const body = await res.text();
+    expect(body).toMatch(/-----BEGIN PUBLIC KEY-----/);
+    expect(body).toMatch(/-----END PUBLIC KEY-----/);
+  });
 });

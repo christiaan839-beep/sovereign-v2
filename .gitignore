@@ -30,6 +30,10 @@ node_modules
 !src/app/**/.well-known/**
 !src/app/**/route.ts
 !src/app/**/route.tsx
+# Public sample bundle for /pilot — this is the *public* half of a
+# throwaway demo keypair (the secret was discarded after generation).
+# It's safe to commit; the .pem extension is misleading here.
+!public/sample-bundle.ed25519.pem
 
 # debug
 npm-debug.log*
