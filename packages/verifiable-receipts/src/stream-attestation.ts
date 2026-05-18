@@ -201,22 +201,52 @@ export function canonicalizeStreamAttestation(
 }
 
 /**
+ * Options for chunk-inclusion verification.
+ */
+export interface ChunkInclusionOptions {
+  /**
+   * Required: a callback that verifies the attestation envelope's
+   * Ed25519/ML-DSA signature against the issuer's public key. Returns
+   * true iff the envelope is authentic. Without this, the verifier
+   * would accept any (envelope, audit_path, chunk) triple — including
+   * envelopes the issuer never signed.
+   *
+   * Caller typically passes a closure that wraps `verifyDualSig()`
+   * from ./pq-sign with the issuer's pubkey pre-bound.
+   *
+   * The signature precondition is mandatory in v0.2+. v0.1 callers
+   * that explicitly want the old behavior can pass `() => true`
+   * after acknowledging the risk in their threat model.
+   */
+  verifyEnvelopeSignature: (attestation: StreamAttestation) => boolean;
+}
+
+/**
  * Verify that a chunk with the given content was actually part of the
  * signed stream at the given index.
  *
- * Returns true iff:
+ * Returns true iff ALL of:
+ *   - opts.verifyEnvelopeSignature(attestation) returns true
  *   - sha256(0x00 || chunkContent) reconstructs the leaf hash
  *   - the inclusion proof verifies against attestation.merkleRoot
  *
- * Caller is responsible for first verifying the attestation's own
- * Ed25519/ML-DSA signature via `verifyDualSig()` — without that,
- * any merkleRoot in the envelope is just an attacker's claim.
+ * Without the envelope-signature precondition the merkleRoot in the
+ * envelope is just an attacker's claim — anyone who knows the chunk
+ * content can forge an "inclusion proof" against an unsigned
+ * envelope. v0.2+ enforces the precondition at the verifier API
+ * boundary rather than relying on caller discipline.
  */
 export function verifyChunkInclusion(
   attestation: StreamAttestation,
   chunk: { index: number; content: string },
   auditPath: readonly string[],
+  opts: ChunkInclusionOptions,
 ): boolean {
+  // Signature precondition first — never trust the envelope's
+  // merkleRoot until we've confirmed the envelope itself is signed
+  // by the issuer.
+  if (!opts.verifyEnvelopeSignature(attestation)) return false;
+
   const leaf = transparencyLeafHash(chunk.content);
   return transparencyVerifyInclusionProof(
     leaf,

@@ -80,6 +80,7 @@ export {
   verifyFinalOutputHash,
   type StreamChunk,
   type StreamAttestation,
+  type ChunkInclusionOptions,
 } from "./stream-attestation.js";
 
 export {

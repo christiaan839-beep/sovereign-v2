@@ -100,6 +100,12 @@ describe("Inclusion proof — RFC 9162 verifier composability", () => {
     return b;
   }
 
+  // Test-side stub: the production callback wraps verifyDualSig() with
+  // the issuer's pubkey pre-bound. Tests just assert the envelope hash
+  // matches the in-memory builder.
+  const verifyOK = { verifyEnvelopeSignature: () => true };
+  const verifyFAIL = { verifyEnvelopeSignature: () => false };
+
   it("verifies inclusion for every chunk in a 4-chunk stream", () => {
     const chunks = ["alpha", "beta", "gamma", "delta"];
     const b = buildStream(chunks);
@@ -111,6 +117,7 @@ describe("Inclusion proof — RFC 9162 verifier composability", () => {
           att,
           { index: i, content: chunks[i] },
           proof.auditPath,
+          verifyOK,
         ),
       ).toBe(true);
     }
@@ -122,8 +129,28 @@ describe("Inclusion proof — RFC 9162 verifier composability", () => {
     const proof = b.buildInclusionProof(0);
     expect(proof.auditPath.length).toBe(0);
     expect(
-      verifyChunkInclusion(att, { index: 0, content: "only-one" }, []),
+      verifyChunkInclusion(
+        att,
+        { index: 0, content: "only-one" },
+        [],
+        verifyOK,
+      ),
     ).toBe(true);
+  });
+
+  it("rejects inclusion when envelope signature precondition fails", () => {
+    const chunks = ["alpha", "beta"];
+    const b = buildStream(chunks);
+    const att = b.finalize();
+    const proof = b.buildInclusionProof(0);
+    expect(
+      verifyChunkInclusion(
+        att,
+        { index: 0, content: "alpha" },
+        proof.auditPath,
+        verifyFAIL,
+      ),
+    ).toBe(false);
   });
 
   it("rejects inclusion when chunk content is tampered", () => {
@@ -136,6 +163,7 @@ describe("Inclusion proof — RFC 9162 verifier composability", () => {
         att,
         { index: 1, content: "TAMPERED" },
         proof.auditPath,
+        verifyOK,
       ),
     ).toBe(false);
   });
@@ -150,6 +178,7 @@ describe("Inclusion proof — RFC 9162 verifier composability", () => {
         att,
         { index: 2, content: "beta" }, // chunk 1's content claimed at index 2
         proof.auditPath,
+        verifyOK,
       ),
     ).toBe(false);
   });

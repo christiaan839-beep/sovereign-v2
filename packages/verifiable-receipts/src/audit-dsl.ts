@@ -533,6 +533,16 @@ function evalComparison(c: Comparison, row: ReceiptRecord): boolean {
 }
 
 function compareScalars(a: unknown, b: Value): number {
+  // Deterministic null/undefined handling: missing values sort LAST,
+  // regardless of order direction. Without this, String(null) === "null"
+  // collated lexicographically with real strings + ISO dates produced
+  // bogus orderings for rows with missing fields.
+  const aMissing = a === null || a === undefined;
+  const bMissing = b === null || b === undefined;
+  if (aMissing && bMissing) return 0;
+  if (aMissing) return 1;
+  if (bMissing) return -1;
+
   if (typeof a === "number" && typeof b === "number") {
     return a < b ? -1 : a > b ? 1 : 0;
   }

@@ -165,13 +165,19 @@ export function detectAnomalies(
   }
 
   // Sort by issuedAt so window selection is consistent. We don't
-  // mutate the input — work on indices.
+  // mutate the input — work on indices. Tie-break on verdictId so
+  // windowing is deterministic across input-order permutations of
+  // receipts with identical timestamps.
   const sortedIdx = receipts
     .map((_, i) => i)
     .sort((a, b) => {
       const ai = receipts[a].issuedAt;
       const bi = receipts[b].issuedAt;
-      return ai < bi ? -1 : ai > bi ? 1 : 0;
+      if (ai < bi) return -1;
+      if (ai > bi) return 1;
+      const av = receipts[a].verdictId;
+      const bv = receipts[b].verdictId;
+      return av < bv ? -1 : av > bv ? 1 : 0;
     });
   const windowIdx = sortedIdx.slice(-windowSize);
   const baselineIdx = sortedIdx.slice(0, -windowSize);
