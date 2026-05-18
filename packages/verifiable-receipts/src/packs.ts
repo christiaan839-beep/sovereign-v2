@@ -1171,6 +1171,472 @@ export const doraPack: GuardianPack = {
   rules: doraRules,
 };
 
+// ── Wave 62: Colorado AI Consumer Protection Act ─────────────────────
+//
+// SB 24-205 takes effect Feb 1, 2026 with a private right of action.
+// "Consequential decisions" cover employment, education, financial,
+// healthcare, housing, insurance, legal, and essential services. Every
+// developer + deployer of a high-risk AI system used on a Colorado
+// resident must (a) maintain an impact assessment, (b) disclose
+// algorithmic discrimination risk to consumers, (c) post a public
+// statement on the agency website.
+//
+// Citation: Colo. Rev. Stat. §§ 6-1-1701 to 6-1-1707 (added by SB 24-205).
+
+const COLO_CONSEQUENTIAL_TERMS =
+  /\b(consequential[-\s]?decision|hiring[-\s]?decision|loan[-\s]?(?:approved|denied|decision)|housing[-\s]?(?:application|decision)|insurance[-\s]?(?:underwriting|denial)|essential[-\s]?service|legal[-\s]?service|education[-\s]?(?:placement|admission)|credit[-\s]?(?:application|decision)|adverse[-\s]?action)/i;
+const COLO_RESIDENT_TERMS =
+  /\b(Colorado[-\s]?resident|CO[-\s]?resident|consumer[-\s]?in[-\s]?Colorado|state[-\s]?of[-\s]?Colorado)/i;
+
+export const coloradoAiRules: GuardianRule[] = [
+  {
+    id: "colorado-sb24-205-impact-assessment",
+    description:
+      "WARN on consequential-decision output without impact-assessment reference — CRS § 6-1-1703(3)",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (COLO_CONSEQUENTIAL_TERMS.test(text)) {
+        const hasAssessment =
+          /\bimpact[-\s]?assessment|\bIA[-\s]?(?:reference|id|version)|\balgorithmic[-\s]?impact|\bAIA[-\s]?ref/i.test(
+            text,
+          );
+        if (!hasAssessment) {
+          return {
+            verdict: "warn",
+            reason:
+              "CRS § 6-1-1703(3): consequential-decision output missing impact-assessment reference",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "colorado-sb24-205-discrimination-disclosure",
+    description:
+      "BLOCK consequential-decision output to CO resident without algorithmic-discrimination disclosure — CRS § 6-1-1703(4)",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (
+        COLO_CONSEQUENTIAL_TERMS.test(text) &&
+        COLO_RESIDENT_TERMS.test(text + " " + asText(ctx.input))
+      ) {
+        const hasDisclosure =
+          /\balgorithmic[-\s]?discrimination|\bbias[-\s]?(?:disclosure|notice)|\bSB[-\s]?24[-\s]?205|\bright[-\s]?to[-\s]?appeal|\bhuman[-\s]?review[-\s]?available/i.test(
+            text,
+          );
+        if (!hasDisclosure) {
+          return {
+            verdict: "block",
+            reason:
+              "CRS § 6-1-1703(4): consequential decision affecting Colorado resident lacks algorithmic-discrimination disclosure + appeal right",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "colorado-sb24-205-public-statement-link",
+    description:
+      "WARN on high-risk AI deployment notice without link to public statement on agency website — CRS § 6-1-1705(2)",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (
+        /\bhigh[-\s]?risk[-\s]?AI|\bAI[-\s]?system[-\s]?deployment|\bAI[-\s]?notice/i.test(
+          text,
+        )
+      ) {
+        const hasLink =
+          /\bpublic[-\s]?statement|\bsovereignmatrix\.agency\/[a-z0-9\-\/]+|\bagency[-\s]?website|https?:\/\/\S+/i.test(
+            text,
+          );
+        if (!hasLink) {
+          return {
+            verdict: "warn",
+            reason:
+              "CRS § 6-1-1705(2): high-risk AI notice missing link to public statement",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+];
+
+export const coloradoAiPack: GuardianPack = {
+  id: "us-colorado-ai-2026",
+  name: "Colorado AI Consumer Protection Act (SB 24-205)",
+  citation:
+    "Colo. Rev. Stat. §§ 6-1-1701 to 6-1-1707 (Colorado AI Consumer Protection Act, eff. Feb 1, 2026)",
+  rules: coloradoAiRules,
+};
+
+// ── Wave 62: California AB 2013 — GenAI training-data transparency ──
+//
+// Effective Jan 1, 2026. Any developer that makes a generative AI
+// model available to Californians (foundation API, RAG, fine-tuned
+// vertical LLM) must post a public summary of training data:
+// sources, copyright clearance, synthetic-vs-real %, IP/PII handling,
+// purchased datasets, web-crawl scope. Cal Bus & Prof § 22757.1.
+
+const CA_AB2013_GENAI_TERMS =
+  /\b(generated|generation|inference|completion|model[-\s]?output|LLM[-\s]?(?:response|output)|GenAI|foundation[-\s]?model)/i;
+
+export const californiaAb2013Rules: GuardianRule[] = [
+  {
+    id: "ca-ab2013-training-data-manifest",
+    description:
+      "WARN on GenAI receipt without training-data manifest hash — Cal Bus & Prof § 22757.1(b)",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (CA_AB2013_GENAI_TERMS.test(text)) {
+        const hasManifest =
+          /\btraining[-\s]?data[-\s]?manifest|\bmanifest[-\s]?hash|\bdataset[-\s]?fingerprint|\btraining[-\s]?summary|\bdata[-\s]?provenance/i.test(
+            text,
+          );
+        if (!hasManifest) {
+          return {
+            verdict: "warn",
+            reason:
+              "Cal Bus & Prof § 22757.1(b): GenAI output missing training-data manifest reference",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "ca-ab2013-synthetic-data-percentage",
+    description:
+      "WARN on GenAI output without synthetic-vs-real data percentage — Cal Bus & Prof § 22757.1(c)",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (CA_AB2013_GENAI_TERMS.test(text)) {
+        const hasPct =
+          /\bsynthetic[-\s]?(?:data|percentage|ratio)|\bsynth[-\s]?\d+%|\breal[-\s]?data[-\s]?\d+%|\bdata[-\s]?composition/i.test(
+            text,
+          );
+        if (!hasPct) {
+          return {
+            verdict: "warn",
+            reason:
+              "Cal Bus & Prof § 22757.1(c): GenAI output missing synthetic-vs-real data composition disclosure",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "ca-ab2013-copyright-clearance-flag",
+    description:
+      "WARN on GenAI output without copyright-clearance flag for source data — Cal Bus & Prof § 22757.1(d)",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (CA_AB2013_GENAI_TERMS.test(text)) {
+        const hasClearance =
+          /\bcopyright[-\s]?(?:cleared|clearance|status)|\blicensed[-\s]?data|\bpublic[-\s]?domain|\bfair[-\s]?use[-\s]?(?:analysis|determination)|\bIP[-\s]?cleared/i.test(
+            text,
+          );
+        if (!hasClearance) {
+          return {
+            verdict: "warn",
+            reason:
+              "Cal Bus & Prof § 22757.1(d): GenAI output missing copyright-clearance flag for source data",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+];
+
+export const californiaAb2013Pack: GuardianPack = {
+  id: "us-ca-ab2013-2026",
+  name: "California AB 2013 — Generative AI Training Data Transparency",
+  citation: "Cal. Bus. & Prof. Code § 22757.1 (AB 2013, eff. Jan 1, 2026)",
+  rules: californiaAb2013Rules,
+};
+
+// ── Wave 62: Australia APRA CPS 230 — operational resilience ─────────
+//
+// Active July 1, 2025. APRA-regulated entities (banks, insurers,
+// super funds) must (a) maintain tolerance levels for material
+// services, (b) map fourth-party dependencies, (c) provide consumer
+// explanations for automated decisions under Privacy Act ADM right.
+// Citation: APRA Prudential Standard CPS 230 (eff. 1 Jul 2025) +
+// Privacy Act 1988 (Cth) automated-decision provisions (2026 tranche).
+
+const APRA_MATERIAL_SERVICE_TERMS =
+  /\b(material[-\s]?service|critical[-\s]?operation|payment[-\s]?(?:rail|service)|core[-\s]?banking|claims[-\s]?processing|fund[-\s]?(?:transfer|allocation)|insurance[-\s]?underwriting)/i;
+const APRA_AUTOMATED_DECISION_TERMS =
+  /\b(automated[-\s]?decision|ADM|algorithmic[-\s]?(?:decision|outcome)|AI[-\s]?(?:approval|denial)|model[-\s]?based[-\s]?decision)/i;
+
+export const apraCps230Rules: GuardianRule[] = [
+  {
+    id: "apra-cps230-tolerance-level",
+    description:
+      "WARN on material-service call without tolerance-level metric — APRA CPS 230 § 35",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (APRA_MATERIAL_SERVICE_TERMS.test(text)) {
+        const hasTolerance =
+          /\btolerance[-\s]?(?:level|threshold|metric)|\bRTO[-\s]?\d|\bRPO[-\s]?\d|\bavailability[-\s]?\d+%|\bSLA[-\s]?(?:target|ref)/i.test(
+            text,
+          );
+        if (!hasTolerance) {
+          return {
+            verdict: "warn",
+            reason:
+              "APRA CPS 230 § 35: material-service output missing tolerance-level metric (RTO/RPO/availability)",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "apra-cps230-fourth-party-chain",
+    description:
+      "WARN on third-party-decision output without fourth-party dependency chain — APRA CPS 230 § 44",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (
+        /\bthird[-\s]?party[-\s]?(?:risk|provider|dependency)|\bvendor[-\s]?assessment|\boutsourced[-\s]?service/i.test(
+          text,
+        )
+      ) {
+        const hasFourth =
+          /\bfourth[-\s]?party|\bsub[-\s]?(?:contractor|provider|tier)|\bdependency[-\s]?chain|\bnth[-\s]?party|\bupstream[-\s]?dependency/i.test(
+            text,
+          );
+        if (!hasFourth) {
+          return {
+            verdict: "warn",
+            reason:
+              "APRA CPS 230 § 44: third-party-risk decision missing fourth-party dependency chain disclosure",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "apra-cps230-consumer-explanation",
+    description:
+      "WARN on automated decision without consumer-explanation token — Privacy Act 1988 ADM right (2026 tranche)",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (APRA_AUTOMATED_DECISION_TERMS.test(text)) {
+        const hasExplanation =
+          /\bconsumer[-\s]?explanation|\bplain[-\s]?language[-\s]?reason|\breason[-\s]?code|\bexplanation[-\s]?token|\bright[-\s]?to[-\s]?explanation|\bmeaningful[-\s]?information/i.test(
+            text,
+          );
+        if (!hasExplanation) {
+          return {
+            verdict: "warn",
+            reason:
+              "Privacy Act 1988 ADM right: automated decision missing consumer-explanation token",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+];
+
+export const apraCps230Pack: GuardianPack = {
+  id: "au-apra-cps230-2025",
+  name: "Australia APRA CPS 230 + Privacy Act ADM",
+  citation:
+    "APRA Prudential Standard CPS 230 (eff. 1 Jul 2025) + Privacy Act 1988 (Cth) automated-decision-making provisions (2026 tranche)",
+  rules: apraCps230Rules,
+};
+
+// ── Wave 62: FDA Predetermined Change Control Plans (PCCP) ───────────
+//
+// Dec 2024 final guidance. Continuous-learning AI medical devices
+// (radiology triage, sepsis predictors, continuous glucose) need a
+// PCCP that pre-specifies how the model may change post-clearance.
+// Every inference must reference (a) PCCP version, (b) current model
+// weights hash, (c) drift metrics within Modification Protocol bounds.
+// Citation: FDA "Marketing Submission Recommendations for a PCCP for
+// Artificial Intelligence/Machine Learning (AI/ML)-Enabled Device
+// Software Functions" (Dec 4, 2024).
+
+const FDA_PCCP_CLINICAL_TERMS =
+  /\b(continuous[-\s]?learning|adaptive[-\s]?model|model[-\s]?update|retrain(?:ed|ing)?|model[-\s]?(?:weights|version)|inference[-\s]?(?:output|result)|AI[-\s]?(?:diagnosis|triage|prediction))/i;
+
+export const fdaPccpRules: GuardianRule[] = [
+  {
+    id: "fda-pccp-version-reference",
+    description:
+      "WARN on continuous-learning AI medical inference without PCCP version reference — FDA PCCP Guidance Dec 2024",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (FDA_PCCP_CLINICAL_TERMS.test(text)) {
+        const hasPccp =
+          /\bPCCP[-\s]?(?:v|version|ref)|\bpredetermined[-\s]?change[-\s]?control|\bMP[-\s]?(?:v|version|ref)|\bmodification[-\s]?protocol/i.test(
+            text,
+          );
+        if (!hasPccp) {
+          return {
+            verdict: "warn",
+            reason:
+              "FDA PCCP Dec 2024 § V: continuous-learning AI inference missing PCCP version reference",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "fda-pccp-weights-hash",
+    description:
+      "WARN on continuous-learning AI inference without current-model-weights hash — FDA PCCP Guidance Dec 2024 § VI",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (FDA_PCCP_CLINICAL_TERMS.test(text)) {
+        const hasHash =
+          /\bweights[-\s]?hash|\bmodel[-\s]?(?:sha|fingerprint|digest)|\bsha256:[0-9a-f]{16}|\bcheckpoint[-\s]?id/i.test(
+            text,
+          );
+        if (!hasHash) {
+          return {
+            verdict: "warn",
+            reason:
+              "FDA PCCP Dec 2024 § VI: continuous-learning AI inference missing current-model-weights hash",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "fda-pccp-drift-bounds",
+    description:
+      "BLOCK adaptive-model output reporting drift beyond Modification Protocol bounds — FDA PCCP Guidance Dec 2024 § VII",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (FDA_PCCP_CLINICAL_TERMS.test(text)) {
+        const driftOutOfBounds =
+          /\bdrift[-\s]?(?:exceeded|out[-\s]?of[-\s]?bounds|above[-\s]?threshold)|\bMP[-\s]?bounds[-\s]?breached|\bAUC[-\s]?drop[-\s]?>\s?0\.\d/i.test(
+            text,
+          );
+        if (driftOutOfBounds) {
+          return {
+            verdict: "block",
+            reason:
+              "FDA PCCP Dec 2024 § VII: drift exceeds Modification Protocol bounds — model must be re-cleared before further inference",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+];
+
+export const fdaPccpPack: GuardianPack = {
+  id: "us-fda-pccp-2024",
+  name: "FDA Predetermined Change Control Plans (PCCP)",
+  citation:
+    "FDA Final Guidance: Marketing Submission Recommendations for a PCCP for AI/ML-Enabled Device Software Functions (Dec 4, 2024)",
+  rules: fdaPccpRules,
+};
+
+// ── Wave 62: Illinois AI Video Interview Act + HB 3773 ───────────────
+//
+// IL AI Video Interview Act (820 ILCS 42/) enforced since 2020 for
+// video-based hiring assessments. HB 3773 (Illinois Human Rights Act
+// amendment) extends bias-audit obligations to all employment AI
+// effective Jan 1, 2026. Together they require (a) candidate consent
+// for AI video analysis, (b) destruction of recordings within 30 days
+// of request, (c) annual bias-audit disclosure for any AI used in
+// hiring decisions.
+
+const IL_VIDEO_HIRING_TERMS =
+  /\b(video[-\s]?interview|recorded[-\s]?interview|AI[-\s]?(?:screen|interview|assessment)|facial[-\s]?analysis|voice[-\s]?analysis|emotion[-\s]?recognition)/i;
+const IL_EMPLOYMENT_AI_TERMS =
+  /\b(hiring[-\s]?decision|candidate[-\s]?(?:ranked|scored|advanced|rejected)|employment[-\s]?(?:decision|screen)|applicant[-\s]?(?:tracked|filtered))/i;
+
+export const illinoisAiRules: GuardianRule[] = [
+  {
+    id: "illinois-ai-video-consent",
+    description:
+      "BLOCK AI video-interview analysis without explicit candidate consent — IL AI Video Interview Act (820 ILCS 42/5)",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (IL_VIDEO_HIRING_TERMS.test(text)) {
+        const hasConsent =
+          /\bcandidate[-\s]?consent|\bexplicit[-\s]?consent|\bopt[-\s]?in[-\s]?confirmed|\bconsent[-\s]?(?:obtained|on[-\s]?file|verified)|\bsigned[-\s]?release/i.test(
+            text,
+          );
+        if (!hasConsent) {
+          return {
+            verdict: "block",
+            reason:
+              "820 ILCS 42/5: AI video-interview analysis without explicit candidate consent is prohibited in Illinois",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "illinois-ai-retention-policy",
+    description:
+      "WARN on AI video-interview output without 30-day destruction policy reference — IL AI Video Interview Act (820 ILCS 42/15)",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (IL_VIDEO_HIRING_TERMS.test(text)) {
+        const hasRetention =
+          /\b30[-\s]?day[-\s]?(?:destruction|retention|deletion)|\bretention[-\s]?policy|\bdestroy(?:ed)?[-\s]?within|\bdata[-\s]?retention[-\s]?(?:schedule|policy)/i.test(
+            text,
+          );
+        if (!hasRetention) {
+          return {
+            verdict: "warn",
+            reason:
+              "820 ILCS 42/15: AI video-interview output missing reference to 30-day destruction policy",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "illinois-hb3773-bias-audit",
+    description:
+      "WARN on Illinois employment-AI decision without annual bias-audit reference — IL HB 3773 + IHRA amendment (eff. Jan 1, 2026)",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (IL_EMPLOYMENT_AI_TERMS.test(text)) {
+        const hasAudit =
+          /\bbias[-\s]?audit|\bannual[-\s]?audit|\bHB[-\s]?3773|\bIHRA[-\s]?compliance|\bdisparate[-\s]?impact[-\s]?(?:audit|analysis)|\bfourth[-\s]?fifths[-\s]?rule/i.test(
+            text,
+          );
+        if (!hasAudit) {
+          return {
+            verdict: "warn",
+            reason:
+              "IL HB 3773 (IHRA amendment, eff. Jan 1 2026): employment-AI decision missing annual bias-audit reference",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+];
+
+export const illinoisAiPack: GuardianPack = {
+  id: "us-illinois-ai-2026",
+  name: "Illinois AI Video Interview Act + HB 3773",
+  citation:
+    "820 ILCS 42/ (Illinois AI Video Interview Act, eff. 2020) + HB 3773 / IHRA amendment (eff. Jan 1, 2026)",
+  rules: illinoisAiRules,
+};
+
 // ── Registry of packs ────────────────────────────────────────────────
 
 export interface GuardianPack {
@@ -1196,6 +1662,11 @@ export const ALL_PACKS: GuardianPack[] = [
   ferpaPack,
   fdaSaMDPack,
   doraPack,
+  coloradoAiPack,
+  californiaAb2013Pack,
+  apraCps230Pack,
+  fdaPccpPack,
+  illinoisAiPack,
 ];
 
 export function findPack(id: string): GuardianPack | undefined {

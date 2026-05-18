@@ -36,6 +36,15 @@ export {
 } from "./pq-sign.js";
 
 export {
+  toC2PAAssertion,
+  toC2PAManifest,
+  fromC2PAManifest,
+  C2PA_VAOS_LABEL,
+  type C2PAAssertion,
+  type C2PAManifestWithVaos,
+} from "./c2pa-bridge.js";
+
+export {
   runGuardian,
   verifyGuardianAttestation,
   quorumCollapse,
@@ -111,6 +120,16 @@ export {
   fdaSaMDPack,
   doraRules,
   doraPack,
+  coloradoAiRules,
+  coloradoAiPack,
+  californiaAb2013Rules,
+  californiaAb2013Pack,
+  apraCps230Rules,
+  apraCps230Pack,
+  fdaPccpRules,
+  fdaPccpPack,
+  illinoisAiRules,
+  illinoisAiPack,
   ALL_PACKS,
   findPack,
   composePacks,

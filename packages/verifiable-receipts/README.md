@@ -9,7 +9,9 @@ Three composable pieces:
 
 1. **Post-quantum dual-signing** — Ed25519 + ML-DSA-65 (Dilithium3, NIST FIPS 204). Receipts stay verifiable across the post-quantum transition (7–25 year retention horizons covered).
 2. **Signed receipt bundles** — pure-Node STORE-method ZIP writer (no compression, byte-deterministic) with a top-level `MANIFEST.signed.json`. Hand the bundle to an auditor; they re-derive the math without unzipping.
-3. **Guardian rule runner + 15 regulated-vertical packs** — HIPAA, SR 11-7, NAIC AI Bulletin, DSCSA, EU CSRD, CFPB / ECOA, MAS FEAT, FCA Consumer Duty, PCI DSS v4.0, EU AI Act, NYDFS Part 500, NYC AEDT (Local Law 144), FERPA, FDA SaMD, EU DORA. Compose rules into a pack, get a signed verdict envelope.
+3. **Guardian rule runner + 20 regulated-vertical packs** — HIPAA, SR 11-7, NAIC AI Bulletin, DSCSA, EU CSRD, CFPB / ECOA, MAS FEAT, FCA Consumer Duty, PCI DSS v4.0, EU AI Act, NYDFS Part 500, NYC AEDT (Local Law 144), FERPA, FDA SaMD, EU DORA, Colorado SB 24-205, California AB 2013, Australia APRA CPS 230, FDA PCCP (continuous-learning medical AI), Illinois AI VIA + HB 3773. Compose rules into a pack, get a signed verdict envelope.
+
+4. **C2PA bridge** — convert any signed VAOS verdict into a Content Authenticity Initiative manifest (`org.sovereignmatrix.vaos.v1` assertion label). Travels through Adobe Firefly, Microsoft Copilot, and Truepic Lens pipelines without losing the signature. `toC2PAManifest()` ↔ `fromC2PAManifest()` round-trip is byte-deterministic.
 
 Extracted from the [Sovereign Matrix](https://sovereignmatrix.agency) platform as a standalone library. Apache 2.0. No runtime fee. No telemetry.
 
@@ -217,27 +219,32 @@ The primitive should be public. Vendors compete on the **integration** of receip
 
 So: take it, ship it, run it against your own AI stack. If you're building a regulated-AI product and you want to compare notes, reach out — `christiaan@sovereignmatrix.agency`.
 
-## Fifteen regulated-vertical packs included
+## Twenty regulated-vertical packs included
 
-| Pack          | Citation                                           | Use case                                   |
-| ------------- | -------------------------------------------------- | ------------------------------------------ |
-| `hipaaPack`   | 45 CFR §164.514 Safe Harbor                        | US health · SSN block, MRN/DOB/phone warns |
-| `sr117Pack`   | Fed SR 11-7 / OCC 2011-12                          | US banking model risk                      |
-| `naicPack`    | NAIC AI Bulletin (Dec 2023)                        | US insurance                               |
-| `dscsaPack`   | DSCSA §581(11), §582(b)(2)(A)(iv)                  | US pharma supply chain                     |
-| `csrdPack`    | EU Directive 2022/2464 + ESRS                      | EU sustainability disclosure               |
-| `cfpbPack`    | 12 CFR §1002 (ECOA) + §1024/§1026 (Reg Z)          | US consumer credit + mortgage              |
-| `masPack`     | MAS FEAT 2018 + Singapore PDPA                     | Singapore financial AI + NRIC              |
-| `fcaPack`     | FCA PRIN 2A + FG24/2 + FG21/1                      | UK Consumer Duty + AI guidance             |
-| `pciDssPack`  | PCI DSS v4.0 §3.3 / §3.5                           | Card data — PAN / CVV / track-data blocks  |
-| `euAiActPack` | EU 2024/1689 Art. 13 / 14 / 15 / 50                | EU AI Act high-risk system obligations     |
-| `nydfsPack`   | 23 NYCRR Part 500 + NYDFS AI Letter (Oct 2024)     | NY state financial cybersecurity + AI      |
-| `nycAedtPack` | NYC Local Law 144 §§20-870 to 20-874               | NYC algorithmic hiring decisions           |
-| `ferpaPack`   | 20 USC §1232g + 34 CFR Part 99                     | US student records                         |
-| `fdaSaMDPack` | FDA SaMD + AI/ML SaMD Action Plan + 21 CFR §807.87 | US medical-device AI                       |
-| `doraPack`    | Reg (EU) 2022/2554 + ESA RTS Art. 18/19/28-30      | EU financial ICT resilience                |
+| Pack                   | Citation                                             | Use case                                    |
+| ---------------------- | ---------------------------------------------------- | ------------------------------------------- |
+| `hipaaPack`            | 45 CFR §164.514 Safe Harbor                          | US health · SSN block, MRN/DOB/phone warns  |
+| `sr117Pack`            | Fed SR 11-7 / OCC 2011-12                            | US banking model risk                       |
+| `naicPack`             | NAIC AI Bulletin (Dec 2023)                          | US insurance                                |
+| `dscsaPack`            | DSCSA §581(11), §582(b)(2)(A)(iv)                    | US pharma supply chain                      |
+| `csrdPack`             | EU Directive 2022/2464 + ESRS                        | EU sustainability disclosure                |
+| `cfpbPack`             | 12 CFR §1002 (ECOA) + §1024/§1026 (Reg Z)            | US consumer credit + mortgage               |
+| `masPack`              | MAS FEAT 2018 + Singapore PDPA                       | Singapore financial AI + NRIC               |
+| `fcaPack`              | FCA PRIN 2A + FG24/2 + FG21/1                        | UK Consumer Duty + AI guidance              |
+| `pciDssPack`           | PCI DSS v4.0 §3.3 / §3.5                             | Card data — PAN / CVV / track-data blocks   |
+| `euAiActPack`          | EU 2024/1689 Art. 13 / 14 / 15 / 50                  | EU AI Act high-risk system obligations      |
+| `nydfsPack`            | 23 NYCRR Part 500 + NYDFS AI Letter (Oct 2024)       | NY state financial cybersecurity + AI       |
+| `nycAedtPack`          | NYC Local Law 144 §§20-870 to 20-874                 | NYC algorithmic hiring decisions            |
+| `ferpaPack`            | 20 USC §1232g + 34 CFR Part 99                       | US student records                          |
+| `fdaSaMDPack`          | FDA SaMD + AI/ML SaMD Action Plan + 21 CFR §807.87   | US medical-device AI                        |
+| `doraPack`             | Reg (EU) 2022/2554 + ESA RTS Art. 18/19/28-30        | EU financial ICT resilience                 |
+| `coloradoAiPack`       | Colo. Rev. Stat. §§ 6-1-1701 to 6-1-1707 (SB 24-205) | Colorado consequential-decision AI          |
+| `californiaAb2013Pack` | Cal. Bus. & Prof. § 22757.1 (AB 2013)                | California GenAI training-data transparency |
+| `apraCps230Pack`       | APRA CPS 230 + Privacy Act 1988 (Cth) ADM provisions | Australia financial operational resilience  |
+| `fdaPccpPack`          | FDA PCCP Final Guidance (Dec 4, 2024)                | US continuous-learning medical-device AI    |
+| `illinoisAiPack`       | 820 ILCS 42/ + HB 3773 (IHRA amendment)              | Illinois AI hiring + video-interview        |
 
-Every rule cites the specific regulatory clause in its `description`. Pure functions, sub-10ms each, composable. Geographic coverage: US (10 packs) + EU (3 packs) + UK + Singapore + NYC + Global (PCI DSS).
+Every rule cites the specific regulatory clause in its `description`. Pure functions, sub-10ms each, composable. Geographic coverage: US (13 packs) + EU (3 packs) + UK + Singapore + Australia + NYC + Illinois + Colorado + California + Global (PCI DSS).
 
 ## Subpath imports
 
