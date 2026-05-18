@@ -45,6 +45,170 @@ const STATUS_COLOR: Record<string, string> = {
   "not-applicable": "bg-neutral-500/10 text-neutral-400 border-neutral-500/30",
 };
 
+interface TrustPrimitive {
+  category: string;
+  tag: string;
+  title: string;
+  summary: string;
+  links: Array<{ label: string; href: string }>;
+}
+
+// Inventory of every cryptographic + auditable trust primitive shipped
+// in the platform. Procurement teams can paste this URL to their
+// assurance team and have every primitive linked + verifiable in one
+// place. Order is by depth-of-stack (math first, distribution last).
+const TRUST_PRIMITIVES: TrustPrimitive[] = [
+  {
+    category: "Receipt math",
+    tag: "VAOS 2.0 / 3.0",
+    title: "Post-quantum dual-signed receipts",
+    summary:
+      "Every agent run mints an Ed25519 + ML-DSA-65 (FIPS 204) dual-signed receipt. Verifiable forever, including post-quantum harvest-now-decrypt-later attacks.",
+    links: [
+      { label: "VAOS 2.0 spec", href: "/docs/specs/vaos-2.0" },
+      { label: "VAOS 3.0 spec (post-quantum)", href: "/docs/specs/vaos-3.0" },
+      {
+        label: "Ed25519 public key",
+        href: "/.well-known/sovereign-receipts/ed25519.pem",
+      },
+    ],
+  },
+  {
+    category: "Receipt math",
+    tag: "VAOS-TRS 1.0",
+    title: "Threshold Receipt Signatures (m-of-n)",
+    summary:
+      "Receipts canonical only when ≥ m of n authorized issuers cosign. No single issuer can fraud — the trust model is Byzantine-fault-tolerant against minority compromise.",
+    links: [
+      { label: "TRS 1.0 spec", href: "/docs/specs/vaos-trs-1.0" },
+      {
+        label: "Reference implementation",
+        href: "https://github.com/christiaan839-beep/sovereign-v2/blob/main/packages/verifiable-receipts/src/threshold.ts",
+      },
+    ],
+  },
+  {
+    category: "Receipt math",
+    tag: "VAOS-RSA 1.0",
+    title: "Streaming Attestation",
+    summary:
+      "LLM streams sign the Merkle root of every chunk, not just the final output. Auditors can prove chunk #N had this exact content — mid-stream tampering is detectable.",
+    links: [
+      { label: "RSA 1.0 spec", href: "/docs/specs/vaos-rsa-1.0" },
+      {
+        label: "Reference implementation",
+        href: "https://github.com/christiaan839-beep/sovereign-v2/blob/main/packages/verifiable-receipts/src/stream-attestation.ts",
+      },
+    ],
+  },
+  {
+    category: "Agentic commerce",
+    tag: "VAPT 1.0",
+    title: "Verifiable Agentic Payment Tokens",
+    summary:
+      "Apache-2.0 open analogue of Mastercard Agent Pay. Transaction-scoped tokens bind autonomous agent → verified user → amount/currency/merchant envelope. No payment credentials exposed.",
+    links: [
+      { label: "VAPT 1.0 spec", href: "/docs/specs/vapt-1.0" },
+      {
+        label: "Reference implementation",
+        href: "https://github.com/christiaan839-beep/sovereign-v2/blob/main/packages/verifiable-receipts/src/vapt.ts",
+      },
+    ],
+  },
+  {
+    category: "Transparency",
+    tag: "RFC 9162",
+    title: "Append-only log + witness federation",
+    summary:
+      "Every receipt anchored to an RFC 9162 transparency log. Independent witnesses cosign STHs; any equivocation is detectable. Multi-issuer registry under /.well-known.",
+    links: [
+      { label: "Signed Tree Head", href: "/api/transparency/sth" },
+      {
+        label: "Witness observations",
+        href: "/api/transparency/witness/observations",
+      },
+      { label: "Issuer registry", href: "/.well-known/vaos" },
+    ],
+  },
+  {
+    category: "Adversarial",
+    tag: "Red-team",
+    title: "Public adversarial corpus + ASR report",
+    summary:
+      "Every BLOCK rule across 34 Guardian packs tested against a public adversarial corpus. Defender holds ≥ 90% block-rate; coverage stats sorted weakest-rule-first.",
+    links: [
+      {
+        label: "Red-team module",
+        href: "https://github.com/christiaan839-beep/sovereign-v2/blob/main/packages/verifiable-receipts/src/red-team.ts",
+      },
+    ],
+  },
+  {
+    category: "HITL",
+    tag: "Dual-approval",
+    title: "Aviation-CRM dual-approval middleware",
+    summary:
+      "Schema migrations, large wire transfers, mass deletions gate on two distinct human approvers. SLA timers per risk lane (15s / 2min / 15min / 30min). Audit-logged.",
+    links: [
+      {
+        label: "Middleware source",
+        href: "https://github.com/christiaan839-beep/sovereign-v2/blob/main/src/lib/dual-approval.ts",
+      },
+    ],
+  },
+  {
+    category: "Supply chain",
+    tag: "Sigstore + SLSA",
+    title: "Keyless-signed npm releases",
+    summary:
+      "Every @sovereign-matrix/verifiable-receipts release publishes with --provenance — Sigstore Fulcio + Rekor public transparency log. Installers can verify the tarball matches the commit.",
+    links: [
+      {
+        label: "Release workflow",
+        href: "https://github.com/christiaan839-beep/sovereign-v2/blob/main/.github/workflows/sigstore-release.yml",
+      },
+      {
+        label: "OpenSSF Scorecard",
+        href: "https://github.com/christiaan839-beep/sovereign-v2/blob/main/.github/workflows/scorecard.yml",
+      },
+    ],
+  },
+  {
+    category: "Distribution",
+    tag: "3 languages",
+    title: "TypeScript + Python + Go verifiers",
+    summary:
+      "Three independent SDKs verify the same wire bytes byte-for-byte. Every regulator audit pipeline, every Python notebook, every Go cloud-tool can re-check a receipt.",
+    links: [
+      {
+        label: "TypeScript on npm",
+        href: "https://www.npmjs.com/package/@sovereign-matrix/verifiable-receipts",
+      },
+      {
+        label: "Python (PyPI ready)",
+        href: "https://github.com/christiaan839-beep/sovereign-v2/tree/main/packages/verifiable-receipts-py",
+      },
+      {
+        label: "Go (pkg.go.dev ready)",
+        href: "https://github.com/christiaan839-beep/sovereign-v2/tree/main/packages/verifiable-receipts-go",
+      },
+    ],
+  },
+  {
+    category: "Content provenance",
+    tag: "C2PA bridge",
+    title: "VAOS ⇄ C2PA round-trip",
+    summary:
+      "VAOS receipts convert to Content Authenticity Initiative manifests (label org.sovereignmatrix.vaos.v1). Travels through Adobe Firefly, Microsoft Copilot, Truepic Lens without losing the signature.",
+    links: [
+      {
+        label: "C2PA bridge source",
+        href: "https://github.com/christiaan839-beep/sovereign-v2/blob/main/packages/verifiable-receipts/src/c2pa-bridge.ts",
+      },
+    ],
+  },
+];
+
 export default function TrustPage() {
   const posture = buildPosture(BASELINE_READINGS);
   const frameworks = (
@@ -194,6 +358,52 @@ export default function TrustPage() {
                 {sc.implemented} implemented · {sc.partial} partial ·{" "}
                 {sc.planned} planned
               </p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="max-w-5xl mx-auto px-6 py-16 border-t border-white/5">
+        <h2 className="text-2xl md:text-3xl font-black tracking-tight text-white mb-3">
+          Trust primitives shipped
+        </h2>
+        <p className="text-sm text-neutral-400 max-w-2xl mb-8">
+          Every primitive on this list is Apache-2.0, fully tested, and
+          verifiable from any language. Hand a procurement team the links — they
+          don&rsquo;t have to take our word for any of it.
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {TRUST_PRIMITIVES.map((p) => (
+            <div
+              key={p.title}
+              className="p-6 rounded-2xl border border-white/5 bg-white/[0.02] hover:border-cyan-500/20 transition-colors"
+            >
+              <div className="flex items-start justify-between gap-3 mb-2">
+                <div className="text-[11px] font-bold tracking-widest text-cyan-400/80 uppercase">
+                  {p.category}
+                </div>
+                <div className="text-[10px] font-mono text-neutral-500">
+                  {p.tag}
+                </div>
+              </div>
+              <div className="text-base font-bold text-white mb-1.5">
+                {p.title}
+              </div>
+              <p className="text-xs text-neutral-400 leading-relaxed mb-3">
+                {p.summary}
+              </p>
+              <div className="flex flex-wrap gap-3 text-[11px]">
+                {p.links.map((l) => (
+                  <Link
+                    key={l.href}
+                    href={l.href}
+                    className="text-cyan-400/80 hover:text-cyan-300 underline-offset-2 hover:underline transition-colors"
+                  >
+                    {l.label}
+                  </Link>
+                ))}
+              </div>
             </div>
           ))}
         </div>
