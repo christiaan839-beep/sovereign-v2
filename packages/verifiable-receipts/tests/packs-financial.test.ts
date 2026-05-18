@@ -216,9 +216,11 @@ describe("FCA pack — Consumer Duty + AI Guidance", () => {
   });
 });
 
-describe("Composition — all 8 packs", () => {
-  it("ALL_PACKS contains 8 packs after Wave 51", () => {
-    expect(ALL_PACKS.length).toBe(8);
+describe("Composition — at least the 8 packs from Wave 51", () => {
+  it("ALL_PACKS contains AT LEAST the 8 packs known at Wave 51", () => {
+    // Open-ended assertion so later waves can add packs without
+    // breaking this test (Wave 52 added PCI/EU/NYDFS).
+    expect(ALL_PACKS.length).toBeGreaterThanOrEqual(8);
   });
 
   it("every pack has a unique id + non-empty rules", () => {

@@ -544,6 +544,262 @@ export const fcaPack: GuardianPack = {
   rules: fcaRules,
 };
 
+// ── PCI DSS pack — Payment Card Industry Data Security Standard ───────
+
+// PCI DSS v4.0 §3.5.1 — Primary Account Number (PAN) must be rendered
+// unreadable anywhere it is stored. AI agents that handle payment
+// data MUST NOT emit a full PAN in outputs. Standard masks: keep first
+// 6 + last 4, mask the middle.
+const PAN_REGEX_VISA = /\b4\d{12}(?:\d{3})?\b/; // Visa: 13 or 16 digits starting with 4
+const PAN_REGEX_MASTERCARD = /\b5[1-5]\d{14}\b/; // Mastercard: 16 digits starting with 51-55
+const PAN_REGEX_AMEX = /\b3[47]\d{13}\b/; // Amex: 15 digits starting with 34 or 37
+const PAN_REGEX_DISCOVER = /\b6(?:011|5\d{2})\d{12}\b/; // Discover
+const CVV_REGEX = /\b(?:CVV|CVC|CV2|CID)[-:\s]*\d{3,4}\b/i;
+
+function hasFullPan(text: string): boolean {
+  return (
+    PAN_REGEX_VISA.test(text) ||
+    PAN_REGEX_MASTERCARD.test(text) ||
+    PAN_REGEX_AMEX.test(text) ||
+    PAN_REGEX_DISCOVER.test(text)
+  );
+}
+
+export const pciDssRules: GuardianRule[] = [
+  {
+    id: "pci-dss-no-full-pan",
+    description:
+      "BLOCK output containing a full Primary Account Number — PCI DSS v4.0 §3.5.1",
+    evaluate: async (ctx) => {
+      if (hasFullPan(asText(ctx.output))) {
+        return {
+          verdict: "block",
+          reason:
+            "PCI DSS §3.5.1: output contains a full PAN — must be masked (first6 + last4)",
+        };
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "pci-dss-no-cvv",
+    description:
+      "BLOCK output containing a CVV / CVC / CID — PCI DSS v4.0 §3.3.1 (CAV2/CVC2/CVV2/CID never stored after authorization)",
+    evaluate: async (ctx) => {
+      if (CVV_REGEX.test(asText(ctx.output))) {
+        return {
+          verdict: "block",
+          reason:
+            "PCI DSS §3.3.1: output contains card verification value — MUST NOT be retained or emitted",
+        };
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "pci-dss-no-track-data",
+    description:
+      "BLOCK output containing full magnetic stripe / track data — PCI DSS v4.0 §3.3.1.1",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      // Track 1: ^B<pan>^<name>^<exp><svc><discretionary>?
+      // Track 2: ;<pan>=<exp><svc><discretionary>?
+      const track1 = /\^B\d{13,19}\^/;
+      const track2 = /;\d{13,19}=\d{4}/;
+      if (track1.test(text) || track2.test(text)) {
+        return {
+          verdict: "block",
+          reason:
+            "PCI DSS §3.3.1.1: output contains card track data — never retained after authorization",
+        };
+      }
+      return { verdict: "pass" };
+    },
+  },
+];
+
+export const pciDssPack: GuardianPack = {
+  id: "pci-dss-v4-2026",
+  name: "PCI DSS v4.0",
+  citation: "Payment Card Industry Data Security Standard v4.0 §3.3 / §3.5",
+  rules: pciDssRules,
+};
+
+// ── EU AI Act pack — high-risk AI system obligations ──────────────────
+
+// Regulation (EU) 2024/1689. Articles 13 (transparency), 14 (human
+// oversight), 15 (accuracy + robustness), and Annex III (high-risk
+// use cases). The rules below trip on outputs from high-risk AI
+// systems (credit scoring, employment, education, law enforcement,
+// migration, justice administration) that violate disclosure or
+// oversight obligations.
+const HIGH_RISK_DOMAINS =
+  /\b(credit scor|hir|employ(?:ment|er|ee)|admission|recruit|grading|exam|asylum|visa|deport|criminal|sentenc|paro|recidivism|biometric identif)/i;
+
+export const euAiActRules: GuardianRule[] = [
+  {
+    id: "eu-ai-act-art13-ai-disclosure",
+    description:
+      "BLOCK outputs in high-risk domains that don't disclose they are AI-generated — EU AI Act Art. 13(1) + Art. 50",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (HIGH_RISK_DOMAINS.test(text)) {
+        const hasDisclosure =
+          /\bAI[-\s]?generated\b|\bproduced by (?:an? )?(?:AI|automated|algorithm)|\bautomated decision\b/i.test(
+            text,
+          );
+        if (!hasDisclosure) {
+          return {
+            verdict: "block",
+            reason:
+              "EU AI Act Art. 13/50: high-risk AI output must disclose its AI-generated nature",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "eu-ai-act-art14-human-oversight-handoff",
+    description:
+      "WARN on high-risk outputs without a documented human-review pathway — EU AI Act Art. 14",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (HIGH_RISK_DOMAINS.test(text)) {
+        const hasReview =
+          /\b(review|appeal|contest|human (?:oversight|review|decision)|escalat|override)/i.test(
+            text,
+          );
+        if (!hasReview) {
+          return {
+            verdict: "warn",
+            reason:
+              "EU AI Act Art. 14: high-risk AI output lacks human-oversight / appeal pathway",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "eu-ai-act-art15-accuracy-attestation",
+    description:
+      "WARN on high-risk outputs missing accuracy / confidence attestation — EU AI Act Art. 15",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (HIGH_RISK_DOMAINS.test(text)) {
+        const hasMetric =
+          /\bconfidence[-\s:]|accuracy[-\s:]|score[-\s:]\d|\bp[-\s]?value|threshold|tested against|benchmark/i.test(
+            text,
+          );
+        if (!hasMetric) {
+          return {
+            verdict: "warn",
+            reason:
+              "EU AI Act Art. 15: high-risk AI output missing accuracy / confidence metric",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+];
+
+export const euAiActPack: GuardianPack = {
+  id: "eu-ai-act-2026",
+  name: "EU AI Act — High-Risk System Obligations",
+  citation:
+    "Regulation (EU) 2024/1689 Art. 13 (transparency) + Art. 14 (human oversight) + Art. 15 (accuracy) + Art. 50 (disclosure)",
+  rules: euAiActRules,
+};
+
+// ── NYDFS Part 500 pack — NY State financial cybersecurity ────────────
+
+// 23 NYCRR Part 500 — Cybersecurity Requirements for Financial Services
+// Companies. Plus AI-specific guidance from the NYDFS Industry Letter
+// (Oct 2024) on AI-related cybersecurity risks. Per-decision applicable
+// to AI outputs in NY-regulated financial workflows.
+
+export const nydfsRules: GuardianRule[] = [
+  {
+    id: "nydfs-500-multi-factor-recommendation",
+    description:
+      "WARN on authentication-related outputs that don't reference MFA — 23 NYCRR §500.12",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (
+        /\b(login|authentic|access (?:control|grant)|password|credential)/i.test(
+          text,
+        ) &&
+        !/\bmulti[-\s]?factor|MFA|two[-\s]?factor|2FA|step[-\s]?up\b/i.test(
+          text,
+        )
+      ) {
+        return {
+          verdict: "warn",
+          reason:
+            "NYDFS Part 500 §500.12: authentication output lacks MFA reference",
+        };
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "nydfs-ai-letter-third-party-attestation",
+    description:
+      "WARN when AI output relies on third-party data without attestation — NYDFS Industry Letter (Oct 2024) §IV",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (
+        /\b(third[-\s]?party|vendor|external (?:data|source|api)|integration)/i.test(
+          text,
+        ) &&
+        !/\battest|certif|verif|due[-\s]?dilig|source[-\s]?validation/i.test(
+          text,
+        )
+      ) {
+        return {
+          verdict: "warn",
+          reason:
+            "NYDFS AI Letter §IV: third-party data dependency lacks attestation / verification note",
+        };
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "nydfs-500-incident-trigger-language",
+    description:
+      "WARN on outputs describing potential incidents without filing-window reminder — 23 NYCRR §500.17",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (
+        /\b(breach|compromise|unauthorized access|data exfiltr|incident|intrusion)/i.test(
+          text,
+        ) &&
+        !/\b72[-\s]?hour|reportab(?:le|ility)|file (?:with|to) (?:NYDFS|the superintendent)\b/i.test(
+          text,
+        )
+      ) {
+        return {
+          verdict: "warn",
+          reason:
+            "NYDFS Part 500 §500.17: incident-related output missing 72h filing reminder",
+        };
+      }
+      return { verdict: "pass" };
+    },
+  },
+];
+
+export const nydfsPack: GuardianPack = {
+  id: "nydfs-500-2026",
+  name: "NYDFS Part 500 + AI Industry Letter",
+  citation:
+    "23 NYCRR Part 500 (Cybersecurity Requirements for Financial Services Companies) + NYDFS Industry Letter on AI (Oct 2024)",
+  rules: nydfsRules,
+};
+
 // ── Registry of packs ────────────────────────────────────────────────
 
 export interface GuardianPack {
@@ -562,6 +818,9 @@ export const ALL_PACKS: GuardianPack[] = [
   cfpbPack,
   masPack,
   fcaPack,
+  pciDssPack,
+  euAiActPack,
+  nydfsPack,
 ];
 
 export function findPack(id: string): GuardianPack | undefined {

@@ -400,4 +400,15 @@ test.describe("Verifiable receipts surface (the central claim)", () => {
     expect(body.issuers[0].id).toBe("sovereignmatrix.agency");
     expect(body.issuers[0].schemes).toContain("v2");
   });
+
+  test("/diff renders the receipt diff widget", async ({ page }) => {
+    const res = await page.goto("/diff");
+    expect(res?.status()).toBe(200);
+    // Headline + both input fields + the procurement use-case section
+    // must be present. Regression-guard the diff surface.
+    await expect(page.locator("body")).toContainText(/What changed/i);
+    await expect(page.locator("input[type='text']").first()).toBeVisible();
+    await expect(page.locator("button[type='submit']")).toBeVisible();
+    await expect(page.locator("body")).toContainText(/Procurement use cases/i);
+  });
 });
