@@ -3274,6 +3274,590 @@ export const vietnamCyberPack: GuardianPack = {
   rules: vietnamCyberRules,
 };
 
+// ── Wave 68: OWASP Agentic Top 10 (one-for-one rule mapping) ─────────
+//
+// Direct rule-level cross-walk of the OWASP Top 10 for Agentic
+// Applications. Each rule cites the corresponding OWASP risk
+// identifier so an auditor reading a Guardian verdict can map it
+// directly back to the OWASP taxonomy.
+//
+// Citation: OWASP "Top 10 for Agentic AI Applications" 2024-2026
+// (https://owasp.org/www-project-top-10-for-large-language-model-applications/agentic).
+
+const OWASP_AGENT_OUTPUT_TERMS =
+  /\b(agent[-\s]?(?:output|inference|action|response|tool[-\s]?call)|LLM[-\s]?(?:output|inference|response|tool[-\s]?call)|autonomous[-\s]?(?:agent|execution|action))/i;
+
+export const owaspAgenticTop10Rules: GuardianRule[] = [
+  {
+    id: "owasp-A01-excessive-agency",
+    description:
+      "WARN on agent action without least-privilege attestation — OWASP Top 10 for Agentic Apps A01: Excessive Agency",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (
+        OWASP_AGENT_OUTPUT_TERMS.test(text) &&
+        /\b(write|delete|drop|update|grant|invoke|execute|modify)[-\s]?(?:database|schema|production|prod[-\s]?env)/i.test(
+          text,
+        )
+      ) {
+        const hasLeastPrivilege =
+          /\bleast[-\s]?privilege|\bscoped[-\s]?(?:token|RBAC|permission)|\bservice[-\s]?account[-\s]?(?:id|ref)|\bagent[-\s]?identity[-\s]?ref|\bRBAC[-\s]?attested/i.test(
+            text,
+          );
+        if (!hasLeastPrivilege) {
+          return {
+            verdict: "warn",
+            reason:
+              "OWASP A01 Excessive Agency: agent performing destructive action without scoped service-account / least-privilege attestation",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "owasp-A02-goal-theft",
+    description:
+      "BLOCK agent output reporting goal-redirect / instruction-override without halt-and-escalate — OWASP A02: Goal Theft",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (
+        OWASP_AGENT_OUTPUT_TERMS.test(text) &&
+        /\b(ignore[-\s]?previous[-\s]?(?:instructions|directives)|system[-\s]?prompt[-\s]?(?:override|injected)|new[-\s]?(?:primary[-\s]?)?(?:directive|goal)|disregard[-\s]?(?:earlier|prior)|jailbreak)/i.test(
+          text,
+        )
+      ) {
+        const hasHalt =
+          /\bhalt[-\s]?and[-\s]?escalate|\bgoal[-\s]?redirect[-\s]?detected|\bfreezing[-\s]?state[-\s]?for[-\s]?(?:audit|review)|\bquarantined[-\s]?(?:agent|session)/i.test(
+            text,
+          );
+        if (!hasHalt) {
+          return {
+            verdict: "block",
+            reason:
+              "OWASP A02 Goal Theft: instruction-override pattern detected without halt-and-escalate response",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "owasp-A03-tool-orchestration-abuse",
+    description:
+      "BLOCK destructive tool-call sequence without orchestration-policy reference — OWASP A03: Tool Orchestration Abuse",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (
+        OWASP_AGENT_OUTPUT_TERMS.test(text) &&
+        /\b(delete_file|exec_shell|drop[-\s]?table|rm[-\s]?-rf|fs\.rm|shell[-\s]?command|spawn[-\s]?process)/i.test(
+          text,
+        )
+      ) {
+        const hasPolicy =
+          /\borchestration[-\s]?policy[-\s]?(?:ref|approved)|\btool[-\s]?call[-\s]?sequence[-\s]?(?:validated|whitelisted)|\bMCP[-\s]?policy[-\s]?(?:enforced|ref)|\bsandbox[-\s]?(?:scope|enforced)/i.test(
+            text,
+          );
+        if (!hasPolicy) {
+          return {
+            verdict: "block",
+            reason:
+              "OWASP A03 Tool Orchestration Abuse: destructive tool invocation without orchestration-policy / MCP-policy reference",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "owasp-A04-secrets-leakage",
+    description:
+      "BLOCK agent output containing raw API key / private key / long-lived token — OWASP A04: Secrets Leakage",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      const hasSecret =
+        /(?:^|\s)(?:sk|pk|ak|api[-\s]?key|secret)[-_][a-zA-Z0-9_-]{16,}|AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{36,}|xox[bpoa]-[A-Za-z0-9-]{10,}|-----BEGIN[-\s]?(?:RSA[-\s]?)?PRIVATE[-\s]?KEY-----|eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{10,}/.test(
+          text,
+        );
+      if (hasSecret) {
+        const isRedacted =
+          /\b(?:redacted|\[REDACTED\]|\*{4,}|<\*+>|<redacted>|sk[-_].*\*+|api[-_]key[-_].*\*+)/i.test(
+            text,
+          );
+        if (!isRedacted) {
+          return {
+            verdict: "block",
+            reason:
+              "OWASP A04 Secrets Leakage: agent output contains raw API key / private key / long-lived JWT without redaction",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "owasp-A05-supply-chain-unverified",
+    description:
+      "WARN on agent loading external tool / model without supply-chain attestation — OWASP A05: Supply Chain",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (
+        OWASP_AGENT_OUTPUT_TERMS.test(text) &&
+        /\b(loaded[-\s]?(?:model|tool|plugin)|imported[-\s]?(?:package|dependency)|installed[-\s]?(?:npm|pip|cargo)[-\s]?(?:package|module)|fetched[-\s]?(?:external|third[-\s]?party))/i.test(
+          text,
+        )
+      ) {
+        const hasAttestation =
+          /\bSigstore[-\s]?(?:verified|attestation)|\bSLSA[-\s]?L\d|\bprovenance[-\s]?(?:attested|verified)|\bSBOM[-\s]?ref|\bSHA[-\s]?256[-\s]?(?:matched|pinned)|\bcosign[-\s]?(?:verified|attestation)/i.test(
+            text,
+          );
+        if (!hasAttestation) {
+          return {
+            verdict: "warn",
+            reason:
+              "OWASP A05 Supply Chain: agent loaded external component without Sigstore / SLSA / SBOM attestation",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+];
+
+export const owaspAgenticTop10Pack: GuardianPack = {
+  id: "owasp-agentic-top10-2026",
+  name: "OWASP Top 10 for Agentic Applications (A01-A05)",
+  citation:
+    "OWASP Top 10 for Agentic AI Applications (2024-2026): A01 Excessive Agency · A02 Goal Theft · A03 Tool Orchestration Abuse · A04 Secrets Leakage · A05 Supply Chain",
+  rules: owaspAgenticTop10Rules,
+};
+
+// ── Wave 68: Multi-agent cascade detection (Google 17.2× scaling law) ─
+//
+// Closes the Gemini "Agentic Transition" research §Multi-Agent Scaling
+// Laws gap. Google's 2026 controlled evaluation of 180 agent configs
+// established that independent multi-agent systems amplify execution
+// errors by up to 17.2× when chained sequentially without containment.
+//
+// Citation: Google 2026 "Science of Scaling Principles" + OWASP A06
+// (Cascading Failure) + the P(S) = (1-p)^n error-product model.
+
+const MULTI_AGENT_TERMS =
+  /\b(multi[-\s]?agent|agent[-\s]?(?:swarm|team|chain|pipeline|orchestration)|N[-\s]?agent[-\s]?(?:chain|sequential|pipeline)|sub[-\s]?agent[-\s]?(?:invocation|delegation))/i;
+
+export const multiAgentCascadeRules: GuardianRule[] = [
+  {
+    id: "multi-agent-circuit-breaker-attestation",
+    description:
+      "WARN on multi-agent chain without circuit-breaker attestation — Google 2026 scaling laws + OWASP A06",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (MULTI_AGENT_TERMS.test(text)) {
+        const hasCircuitBreaker =
+          /\bcircuit[-\s]?breaker[-\s]?(?:enabled|attested|ref)|\berror[-\s]?(?:containment|cascade[-\s]?prevention)|\bhalt[-\s]?on[-\s]?N[-\s]?failures|\bbackoff[-\s]?policy[-\s]?ref/i.test(
+            text,
+          );
+        if (!hasCircuitBreaker) {
+          return {
+            verdict: "warn",
+            reason:
+              "Multi-agent chain executing without circuit-breaker attestation — 17.2× error-cascade risk per Google 2026 scaling laws",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "multi-agent-sequential-bottleneck-flag",
+    description:
+      "WARN on long sequential agent chain (n≥5) without parallelization / Sequential-Bottleneck mitigation — Google 2026",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (MULTI_AGENT_TERMS.test(text)) {
+        const longChain =
+          /\b(?:chain[-\s]?length|sequential[-\s]?(?:steps|agents))[-\s]?(?:[5-9]|[1-9]\d+)|\bN\s?=\s?(?:[5-9]|[1-9]\d+)|\bsequential[-\s]?agents?[-\s]?(?:[5-9]|[1-9]\d+)/i.test(
+            text,
+          );
+        if (longChain) {
+          const hasMitigation =
+            /\bparallel[-\s]?(?:execution|fan[-\s]?out)|\bsequential[-\s]?bottleneck[-\s]?(?:mitigated|noted)|\bgraph[-\s]?execution[-\s]?(?:model|engine)|\bDAG[-\s]?(?:optimized|fanout)/i.test(
+              text,
+            );
+          if (!hasMitigation) {
+            return {
+              verdict: "warn",
+              reason:
+                "Google 2026 Sequential Bottleneck: long sequential agent chain without parallelization / DAG attestation",
+            };
+          }
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "multi-agent-error-propagation-bound",
+    description:
+      "BLOCK multi-agent output reporting >17× amplification without state-machine containment — Google 2026 bound",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (
+        MULTI_AGENT_TERMS.test(text) &&
+        /\b(?:error[-\s]?(?:amplification|cascade)[-\s]?(?:>|exceeded)[-\s]?1\d|17\.2[-\s]?x|cascade[-\s]?factor[-\s]?(?:>|exceeded)[-\s]?\d)/i.test(
+          text,
+        )
+      ) {
+        const hasContainment =
+          /\bstate[-\s]?machine[-\s]?(?:containment|enforced)|\bcentralized[-\s]?graph[-\s]?(?:execution|routing)|\bdeterministic[-\s]?routing[-\s]?enforced|\bnode[-\s]?transition[-\s]?schema[-\s]?validated/i.test(
+            text,
+          );
+        if (!hasContainment) {
+          return {
+            verdict: "block",
+            reason:
+              "Google 2026 17.2× cascade bound exceeded without state-machine containment — must halt + escalate for human review",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+];
+
+export const multiAgentCascadePack: GuardianPack = {
+  id: "multi-agent-cascade-2026",
+  name: "Multi-Agent Cascade Detection (Google 2026 Scaling Laws)",
+  citation:
+    "Google 2026 'Science of Scaling Principles' controlled evaluations + Sequential Bottleneck + 17.2× error-amplification bound + OWASP A06 Cascading Failure",
+  rules: multiAgentCascadeRules,
+};
+
+// ── Wave 68: Carmack Amendment + US logistics claims ──────────────────
+//
+// Closes the Gemini research §Logistics gap explicitly named in the
+// research's Logistics Exception Agent blueprint. 49 USC § 14706
+// (the Carmack Amendment) governs carrier liability for damaged or
+// lost goods on US domestic surface transport. Claims MUST be filed
+// within a 9-month statutory window.
+//
+// Citation: 49 USC § 14706 (Carmack Amendment) + 49 CFR Part 1005
+// (Principles and Practices for the Investigation and Voluntary
+// Disposition of Loss and Damage Claims).
+
+const CARMACK_LOGISTICS_TERMS =
+  /\b(OS&D|over[,\s]?short[,\s]?and[-\s]?damaged|cargo[-\s]?(?:damage|loss|claim)|freight[-\s]?(?:damage|loss|claim)|carrier[-\s]?liability|BOL[-\s]?(?:reference|number)|PRO[-\s]?(?:number|#)|reefer[-\s]?failure)/i;
+
+export const carmackLogisticsRules: GuardianRule[] = [
+  {
+    id: "carmack-9month-window-attestation",
+    description:
+      "BLOCK Carmack claim recommendation past 9-month statutory window — 49 USC § 14706(e)",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (
+        CARMACK_LOGISTICS_TERMS.test(text) &&
+        /\b(?:file[-\s]?(?:a[-\s]?)?(?:Carmack[-\s]?)?claim|claim[-\s]?recommend|claim[-\s]?filing[-\s]?required)/i.test(
+          text,
+        )
+      ) {
+        const withinWindow =
+          /\bwithin[-\s]?9[-\s]?months|\bday[s]?[-\s]?since[-\s]?delivery[-\s]?\d+|\bstatutory[-\s]?window[-\s]?(?:valid|open)|\bdate[-\s]?of[-\s]?delivery[-\s]?\d{4}-\d{2}-\d{2}/i.test(
+            text,
+          );
+        const pastWindow =
+          /\b(?:past|exceeded|beyond|outside)[-\s]?(?:the[-\s]?)?9[-\s]?month[-\s]?(?:window|limit|deadline)|\b(?:1[0-9]|[2-9]\d|1\d{2})[-\s]?months[-\s]?since[-\s]?delivery/i.test(
+            text,
+          );
+        if (pastWindow && !withinWindow) {
+          return {
+            verdict: "block",
+            reason:
+              "49 USC § 14706(e): Carmack claim past 9-month statutory window — filing is barred, do not recommend",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "carmack-osd-required-elements",
+    description:
+      "WARN on OS&D claim package missing required elements — 49 CFR § 1005.2",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (
+        CARMACK_LOGISTICS_TERMS.test(text) &&
+        /\b(?:claim[-\s]?package|claim[-\s]?filing|OS&D[-\s]?notification)/i.test(
+          text,
+        )
+      ) {
+        const hasBOL =
+          /\bBOL[-\s]?(?:attached|ref|#)|\bbill[-\s]?of[-\s]?lading[-\s]?(?:attached|ref)/i.test(
+            text,
+          );
+        const hasPOD =
+          /\bPOD[-\s]?(?:attached|ref|clean)|\bproof[-\s]?of[-\s]?delivery|\bclean[-\s]?delivery[-\s]?receipt/i.test(
+            text,
+          );
+        const hasInvoice =
+          /\bcommercial[-\s]?invoice|\binvoice[-\s]?(?:ref|attached|#)/i.test(
+            text,
+          );
+        if (!hasBOL || !hasPOD || !hasInvoice) {
+          return {
+            verdict: "warn",
+            reason:
+              "49 CFR § 1005.2: Carmack OS&D claim package missing required element(s) — BOL / POD / commercial invoice all required",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "carmack-liability-limitation-consent",
+    description:
+      "BLOCK acceptance of below-standard carrier liability limitation without explicit shipper consent — 49 USC § 14706(c)",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (
+        CARMACK_LOGISTICS_TERMS.test(text) &&
+        /\b(?:liability[-\s]?limit(?:ation|ed)[-\s]?(?:below|less[-\s]?than|reduced)|released[-\s]?value[-\s]?(?:below|<)|carrier[-\s]?liability[-\s]?cap[-\s]?(?:reduced|lowered))/i.test(
+          text,
+        )
+      ) {
+        const hasConsent =
+          /\bshipper[-\s]?consent[-\s]?(?:on[-\s]?file|signed|verified)|\bcontract[-\s]?addendum[-\s]?(?:signed|ref)|\breleased[-\s]?value[-\s]?(?:declaration|signed)/i.test(
+            text,
+          );
+        if (!hasConsent) {
+          return {
+            verdict: "block",
+            reason:
+              "49 USC § 14706(c): cannot accept below-standard carrier liability limitation without explicit shipper consent on file",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+];
+
+export const carmackLogisticsPack: GuardianPack = {
+  id: "us-carmack-logistics-2026",
+  name: "Carmack Amendment + US Logistics Claims",
+  citation:
+    "49 USC § 14706 (Carmack Amendment) + 49 CFR Part 1005 (Loss & Damage Claims) + standard carrier-liability limitation rules per § 14706(c)",
+  rules: carmackLogisticsRules,
+};
+
+// ── Wave 68: MCP Tool & Resource governance pack ──────────────────────
+//
+// Closes the Gemini research §MCP gap. Model Context Protocol defines
+// Tools (executable functions), Resources (read-only URIs), Prompts
+// (templates). A secure deployment requires:
+//   - Tool calls reference a validated JSON schema id
+//   - Resource reads reference an MCP URI scheme allowlist
+//   - Cross-tool sequences cite the MCP server identity
+//
+// Citation: Anthropic MCP Specification 2024-2026 (modelcontextprotocol.io)
+// + OWASP A03 Tool Orchestration Abuse cross-walk.
+
+const MCP_TOOL_CALL_TERMS =
+  /\b(MCP[-\s]?(?:tool[-\s]?call|server[-\s]?invocation|resource[-\s]?read|prompt[-\s]?fetch)|mcp:\/\/|tool[-\s]?(?:invocation|call|exec)[-\s]?via[-\s]?MCP)/i;
+
+export const mcpGovernanceRules: GuardianRule[] = [
+  {
+    id: "mcp-tool-schema-validated",
+    description:
+      "WARN on MCP tool call without JSON-schema validation reference — MCP §Tools",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (MCP_TOOL_CALL_TERMS.test(text)) {
+        const hasSchema =
+          /\bschema[-\s]?(?:validated|id|ref)|\bJSON[-\s]?schema[-\s]?(?:ref|validated)|\btool[-\s]?contract[-\s]?(?:validated|signed)|\bMCP[-\s]?manifest[-\s]?ref/i.test(
+            text,
+          );
+        if (!hasSchema) {
+          return {
+            verdict: "warn",
+            reason:
+              "MCP §Tools: tool invocation missing JSON-schema validation reference",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "mcp-resource-uri-allowlist",
+    description:
+      "BLOCK MCP resource read against unknown URI scheme — MCP §Resources allowlist",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (
+        MCP_TOOL_CALL_TERMS.test(text) &&
+        /\bmcp:\/\/[a-z0-9-]+\/[^\s]+|\bresource[-\s]?(?:read|fetch)[-\s]?uri/i.test(
+          text,
+        )
+      ) {
+        const hasAllowlist =
+          /\bURI[-\s]?(?:scheme[-\s]?)?allowlist[-\s]?(?:matched|ref)|\bMCP[-\s]?resource[-\s]?(?:allowed|registered)|\bscheme[-\s]?whitelist[-\s]?(?:ref|matched)|\bMCP[-\s]?policy[-\s]?(?:enforced|ref)/i.test(
+            text,
+          );
+        if (!hasAllowlist) {
+          return {
+            verdict: "block",
+            reason:
+              "MCP §Resources: resource read against URI scheme outside the registered allowlist",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "mcp-cross-tool-sequence-server-id",
+    description:
+      "WARN on cross-tool MCP sequence without server-identity attestation — MCP server-id discipline",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (
+        MCP_TOOL_CALL_TERMS.test(text) &&
+        /\b(?:tool[-\s]?call[-\s]?sequence|cross[-\s]?tool[-\s]?chain|multi[-\s]?tool[-\s]?invocation)/i.test(
+          text,
+        )
+      ) {
+        const hasServerId =
+          /\bMCP[-\s]?server[-\s]?(?:id|identity|ref|fingerprint)|\bserver[-\s]?(?:identity|fingerprint)[-\s]?(?:verified|attested)|\bMCP[-\s]?capability[-\s]?(?:signed|attested)/i.test(
+            text,
+          );
+        if (!hasServerId) {
+          return {
+            verdict: "warn",
+            reason:
+              "MCP §Server identity: cross-tool sequence missing server-identity attestation per MCP capability discipline",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+];
+
+export const mcpGovernancePack: GuardianPack = {
+  id: "mcp-governance-2026",
+  name: "MCP Tool & Resource Governance",
+  citation:
+    "Anthropic Model Context Protocol Specification (2024-2026) §Tools / §Resources / §Server-identity + OWASP A03 Tool Orchestration Abuse cross-walk",
+  rules: mcpGovernanceRules,
+};
+
+// ── Wave 68: Pedagogical / Education AI engagement signals ────────────
+//
+// Closes the Gemini research §Education gap. Modern adaptive learning
+// agents monitor student engagement micro-signals — gaze tracking,
+// keystroke patterns, emotional body language — to adjust instruction
+// in real time. FERPA + IDEA + state-level student-privacy statutes
+// govern what may be captured + retained + shared. AMA-Augmented-
+// Intelligence-style human-in-the-loop applies to pedagogy too.
+
+const PEDAGOGICAL_AI_TERMS =
+  /\b(student[-\s]?engagement[-\s]?(?:signal|track|monitor)|pedagogical[-\s]?AI|adaptive[-\s]?learning[-\s]?(?:agent|adjustment)|gaze[-\s]?(?:tracking|monitor)|keystroke[-\s]?pattern|classroom[-\s]?AI[-\s]?observ)/i;
+
+export const pedagogicalAiRules: GuardianRule[] = [
+  {
+    id: "pedagogical-ai-parental-consent-minor",
+    description:
+      "BLOCK pedagogical AI engagement-signal capture on minor without parental consent — FERPA + state student-privacy law",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (
+        PEDAGOGICAL_AI_TERMS.test(text) &&
+        /\b(?:minor[-\s]?student|under[-\s]?18|K[-\s]?12|elementary|middle[-\s]?school|high[-\s]?school)/i.test(
+          text,
+        )
+      ) {
+        const hasConsent =
+          /\bparental[-\s]?consent[-\s]?(?:on[-\s]?file|verified|signed)|\bopt[-\s]?in[-\s]?signed[-\s]?by[-\s]?(?:guardian|parent)|\bIEP[-\s]?(?:approved|consent)/i.test(
+            text,
+          );
+        if (!hasConsent) {
+          return {
+            verdict: "block",
+            reason:
+              "FERPA + state student-privacy laws: pedagogical AI engagement-signal capture on minor requires parental consent before observation",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "pedagogical-ai-instructor-in-the-loop",
+    description:
+      "WARN on adaptive learning adjustment without instructor sign-off — AMA AI 2024 + pedagogical-standard-of-care",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (
+        PEDAGOGICAL_AI_TERMS.test(text) &&
+        /\b(?:adjusted[-\s]?(?:lesson|instruction|difficulty)|flagged[-\s]?student[-\s]?(?:for[-\s]?intervention|behavior)|escalated[-\s]?to[-\s]?support|recommend(?:ed|s)[-\s]?intervention)/i.test(
+          text,
+        )
+      ) {
+        const hasReview =
+          /\binstructor[-\s]?(?:signed|attested|reviewed|approved)|\bteacher[-\s]?(?:id|approval|sign[-\s]?off)|\beducator[-\s]?in[-\s]?the[-\s]?loop|\bhuman[-\s]?reviewer[-\s]?id/i.test(
+            text,
+          );
+        if (!hasReview) {
+          return {
+            verdict: "warn",
+            reason:
+              "Pedagogical standard-of-care: adaptive-learning intervention missing instructor sign-off",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "pedagogical-ai-retention-purpose-limit",
+    description:
+      "WARN on engagement-signal retention without purpose-limitation reference — FERPA § 99.31 + COPPA crosswalk",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (
+        PEDAGOGICAL_AI_TERMS.test(text) &&
+        /\b(?:stored|retained|archived|saved|logged)[-\s]?(?:signal|recording|capture|biometric)/i.test(
+          text,
+        )
+      ) {
+        const hasPurpose =
+          /\bpurpose[-\s]?limitation[-\s]?(?:applied|ref)|\bretention[-\s]?(?:schedule|policy)[-\s]?(?:ref|applied)|\bschool[-\s]?official[-\s]?exception|\beducational[-\s]?purpose[-\s]?(?:stated|attested)|\bdestroyed[-\s]?within[-\s]?\d+[-\s]?(?:days|months)/i.test(
+            text,
+          );
+        if (!hasPurpose) {
+          return {
+            verdict: "warn",
+            reason:
+              "FERPA § 99.31 + COPPA: engagement-signal retention missing purpose-limitation / retention-schedule reference",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+];
+
+export const pedagogicalAiPack: GuardianPack = {
+  id: "pedagogical-ai-2026",
+  name: "Pedagogical AI Engagement Signals (FERPA + COPPA crosswalk)",
+  citation:
+    "FERPA 20 USC § 1232g + 34 CFR Part 99 (§ 99.31 school-official exception) + COPPA 15 USC § 6501 + state student-privacy statutes + AMA-Augmented-Intelligence pedagogical standard-of-care",
+  rules: pedagogicalAiRules,
+};
+
 // ── Registry of packs ────────────────────────────────────────────────
 
 export interface GuardianPack {
@@ -3321,6 +3905,11 @@ export const ALL_PACKS: GuardianPack[] = [
   quebecLaw25Pack,
   saudiPdplPack,
   vietnamCyberPack,
+  owaspAgenticTop10Pack,
+  multiAgentCascadePack,
+  carmackLogisticsPack,
+  mcpGovernancePack,
+  pedagogicalAiPack,
 ];
 
 export function findPack(id: string): GuardianPack | undefined {
