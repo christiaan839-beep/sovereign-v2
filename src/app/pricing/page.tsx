@@ -119,7 +119,7 @@ const TIERS = [
 const FAQS = [
   {
     q: "What AI tools are included?",
-    a: "137 autonomous agents across lead generation, content creation, SEO, competitor intelligence, voice calls, and code review. Every agent routes to the best of 39+ models (Claude Sonnet 4.6 for reasoning, Nemotron Ultra for throughput, Gemini 3.1 Pro for grounded search, and more) via our smart-router.",
+    a: "140 autonomous agents across lead generation, content creation, SEO, competitor intelligence, voice calls, and code review. Every agent routes to the best of 39+ models (Claude Sonnet 4.6 for reasoning, Nemotron Ultra for throughput, Gemini 3.1 Pro for grounded search, and more) via our smart-router.",
   },
   {
     q: "Do I need technical skills?",
@@ -127,7 +127,7 @@ const FAQS = [
   },
   {
     q: "Do I have to build the agents myself?",
-    a: "No. Sovereign Matrix ships 137 production agents and 25 multi-agent playbooks out of the box. Pick one, give it inputs, run. You can also compose custom playbooks via the workflow builder when you want something bespoke.",
+    a: "No. Sovereign Matrix ships 140 production agents and 25 multi-agent playbooks out of the box. Pick one, give it inputs, run. You can also compose custom playbooks via the workflow builder when you want something bespoke.",
   },
   {
     q: "What counts as a 'run'?",

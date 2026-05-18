@@ -336,22 +336,22 @@ the same proof shapes, and the same RFC 6962 §2.1 Merkle Tree Hash.
 
 ## 7. Reference implementation status
 
-| Component                                                 | License    | Status                                                            |
-| --------------------------------------------------------- | ---------- | ----------------------------------------------------------------- |
-| VAOS specs (1.0 / 2.0 / 3.0)                              | CC0        | Published; SPEC.md frozen with every npm release                  |
-| `@sovereign-matrix/verifiable-receipts`                   | Apache-2.0 | Ready for npm publication (release pipeline wired)                |
-| OSS CLI verifier (`verify`)                               | Apache-2.0 | Shipped — runs against any v1/v2/v3 receipt                       |
-| OSS witness CLI (`witness`)                               | Apache-2.0 | Shipped — any third party can run a witness                       |
-| Transparency log (primitives)                             | Apache-2.0 | Shipped — RFC 6962 inclusion + consistency proofs                 |
-| Transparency log (server impl)                            | (platform) | Shipped — Upstash-backed durable, in-memory dev                   |
-| Public `/api/transparency/*` endpoints                    | (platform) | Shipped — CORS-open, no-account                                   |
-| Public `/transparency` monitor UI                         | (platform) | Shipped — visual STH + protocol walkthrough                       |
-| Public `/security/live` posture                           | (platform) | Shipped — machine-readable evidence dashboard                     |
-| 5 Guardian rule packs (HIPAA, SR 11-7, NAIC, DSCSA, CSRD) | Apache-2.0 | Shipped                                                           |
-| Bitcoin anchoring (OpenTimestamps)                        | OTS        | Wired — anchors hourly via OTS calendar servers                   |
-| IETF Internet-Draft                                       | n/a        | Drafted (`draft-dewet-vaos-receipts-00`); ready for submission    |
-| External cryptographer review                             | n/a        | Not yet engaged — Trail of Bits / NCC Group recommended pre-pilot |
-| First regulated-vertical pilot                            | n/a        | Outreach work; not yet underway                                   |
+| Component                                                                                                         | License    | Status                                                            |
+| ----------------------------------------------------------------------------------------------------------------- | ---------- | ----------------------------------------------------------------- |
+| VAOS specs (1.0 / 2.0 / 3.0)                                                                                      | CC0        | Published; SPEC.md frozen with every npm release                  |
+| `@sovereign-matrix/verifiable-receipts`                                                                           | Apache-2.0 | Ready for npm publication (release pipeline wired)                |
+| OSS CLI verifier (`verify`)                                                                                       | Apache-2.0 | Shipped — runs against any v1/v2/v3 receipt                       |
+| OSS witness CLI (`witness`)                                                                                       | Apache-2.0 | Shipped — any third party can run a witness                       |
+| Transparency log (primitives)                                                                                     | Apache-2.0 | Shipped — RFC 6962 inclusion + consistency proofs                 |
+| Transparency log (server impl)                                                                                    | (platform) | Shipped — Upstash-backed durable, in-memory dev                   |
+| Public `/api/transparency/*` endpoints                                                                            | (platform) | Shipped — CORS-open, no-account                                   |
+| Public `/transparency` monitor UI                                                                                 | (platform) | Shipped — visual STH + protocol walkthrough                       |
+| Public `/security/live` posture                                                                                   | (platform) | Shipped — machine-readable evidence dashboard                     |
+| 11 Guardian rule packs (HIPAA, SR 11-7, NAIC, DSCSA, CSRD, CFPB, MAS, FCA, PCI DSS v4, EU AI Act, NYDFS Part 500) | Apache-2.0 | Shipped                                                           |
+| Bitcoin anchoring (OpenTimestamps)                                                                                | OTS        | Wired — anchors hourly via OTS calendar servers                   |
+| IETF Internet-Draft                                                                                               | n/a        | Drafted (`draft-dewet-vaos-receipts-00`); ready for submission    |
+| External cryptographer review                                                                                     | n/a        | Not yet engaged — Trail of Bits / NCC Group recommended pre-pilot |
+| First regulated-vertical pilot                                                                                    | n/a        | Outreach work; not yet underway                                   |
 
 3244 conformance tests cover the cryptographic primitives + the
 server endpoints + the CLI tools. The verifier and witness binaries

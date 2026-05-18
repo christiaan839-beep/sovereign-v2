@@ -97,7 +97,7 @@ const SECTIONS: Section[] = [
     title: "Agents",
     icon: Bot,
     description:
-      "Execute any of 137 specialized AI agents. Each agent handles a specific task -- lead generation, content writing, SEO analysis, competitor scanning, and more.",
+      "Execute any of 140 specialized AI agents. Each agent handles a specific task -- lead generation, content writing, SEO analysis, competitor scanning, and more.",
     endpoints: [
       {
         id: "free-run",
@@ -791,7 +791,7 @@ export default function ApiDocsPage() {
                 Sovereign Matrix API
               </h1>
               <p className="text-base text-neutral-400 max-w-2xl leading-relaxed">
-                Build on 137 autonomous AI agents. Execute agents, run
+                Build on 140 autonomous AI agents. Execute agents, run
                 multi-step playbooks, retrieve analytics, and trigger workflows
                 -- all through a single REST API with built-in safety, rate
                 limiting, and model routing.

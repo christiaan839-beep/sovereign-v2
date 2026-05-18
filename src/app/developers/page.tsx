@@ -246,7 +246,7 @@ export default function DevelopersPage() {
               },
               {
                 title: "Distribution to 140 agents",
-                desc: "Your agent joins a catalog of 137 specialized agents — and every output ships with a verifiable HMAC-signed receipt.",
+                desc: "Your agent joins a catalog of 140 specialized agents — and every output ships with a verifiable Ed25519-signed receipt (post-quantum-ready via ML-DSA-65).",
               },
               {
                 title: "White-label ready",

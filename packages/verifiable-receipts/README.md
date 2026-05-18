@@ -9,7 +9,7 @@ Three composable pieces:
 
 1. **Post-quantum dual-signing** — Ed25519 + ML-DSA-65 (Dilithium3, NIST FIPS 204). Receipts stay verifiable across the post-quantum transition (7–25 year retention horizons covered).
 2. **Signed receipt bundles** — pure-Node STORE-method ZIP writer (no compression, byte-deterministic) with a top-level `MANIFEST.signed.json`. Hand the bundle to an auditor; they re-derive the math without unzipping.
-3. **Guardian rule runner + 5 regulated-vertical packs** — HIPAA, SR 11-7, NAIC AI Bulletin, DSCSA, EU CSRD. Compose rules into a pack, get a signed verdict envelope.
+3. **Guardian rule runner + 11 regulated-vertical packs** — HIPAA, SR 11-7, NAIC AI Bulletin, DSCSA, EU CSRD, CFPB / ECOA, MAS FEAT, FCA Consumer Duty, PCI DSS v4.0, EU AI Act, NYDFS Part 500. Compose rules into a pack, get a signed verdict envelope.
 
 Extracted from the [Sovereign Matrix](https://sovereignmatrix.agency) platform as a standalone library. Apache 2.0. No runtime fee. No telemetry.
 
@@ -125,19 +125,36 @@ const result = verifyManifest(manifest, (canonical, sig) =>
 console.log(result.ok); // true | false-with-reason
 ```
 
-## CLI — verify without writing any code
+## Three CLIs — verify, sign, witness
 
-The package ships a self-hostable verifier binary. After install:
+The package ships three self-hostable binaries. After install, every
+party in the VAOS ecosystem (issuer / verifier / witness) has a
+runnable tool:
 
 ```bash
+# Verify any signed bundle
 npx @sovereign-matrix/verifiable-receipts verify \
   --manifest ./MANIFEST.signed.json \
   --pubkey ./ed25519.pem
+
+# Mint your own VAOS receipt (v2 or v3 with --mldsa-key)
+npx @sovereign-matrix/verifiable-receipts-sign \
+  --input ./body.json \
+  --key ./ed25519-private.pem \
+  --out ./signed.json
+
+# Run an independent witness against any transparency log
+npx @sovereign-matrix/verifiable-receipts-witness \
+  --url https://issuer.example \
+  --key ./witness-ed25519.pem \
+  --witness-id "Your Name · City" \
+  --interval 3600
 ```
 
-Exit codes: `0` valid · `1` invalid (with `--json` the reason is in the
-output: `hash-mismatch` / `signature-mismatch` / `wrong-type` /
-`wrong-version`) · `2` usage error.
+Exit codes (verify / sign): `0` valid · `1` invalid (reason in
+`--json` output) · `2` usage error.
+Witness `--once` mode: `0` witnessed OR no-change · `1` fork detected
+(operator must investigate) · `2` usage / network error.
 
 Pipe via stdin to slot the verifier into any audit pipeline:
 
@@ -146,9 +163,30 @@ curl -s https://issuer.example/bundles/2026-Q1.json \
   | npx @sovereign-matrix/verifiable-receipts verify --pubkey ./ed25519.pem
 ```
 
-This is the binary an auditor in 2040 runs against a manifest you
-signed in 2026 — `npm install` resolves the same version, the
-algorithm doesn't shift, the bytes verify or they don't.
+The verify binary is what an auditor in 2040 runs against a manifest
+you signed in 2026 — `npm install` resolves the same version, the
+algorithm doesn't shift, the bytes verify or they don't. The sign +
+witness binaries make the wire format round-trippable without any
+SaaS dependency.
+
+### Docker (for non-Node operators)
+
+A pre-built witness image lives at
+[`docker/Dockerfile.witness`](./docker/Dockerfile.witness):
+
+```bash
+docker build -f packages/verifiable-receipts/docker/Dockerfile.witness \
+  -t sovereign-matrix/witness:0.1.0 .
+
+docker run -d --name sovereign-witness \
+  -v /etc/witness-key.pem:/etc/witness-key.pem:ro \
+  -v sovereign-witness-state:/var/lib/witness \
+  sovereign-matrix/witness:0.1.0 \
+    --url https://sovereignmatrix.agency \
+    --key /etc/witness-key.pem \
+    --witness-id "EU Witness · Berlin" \
+    --state /var/lib/witness/state.json
+```
 
 ## Wire format spec (frozen with this version)
 
@@ -179,17 +217,23 @@ The primitive should be public. Vendors compete on the **integration** of receip
 
 So: take it, ship it, run it against your own AI stack. If you're building a regulated-AI product and you want to compare notes, reach out — `christiaan@sovereignmatrix.agency`.
 
-## Five regulated-vertical packs included
+## Eleven regulated-vertical packs included
 
-| Pack        | Citation                          | Rules                                     |
-| ----------- | --------------------------------- | ----------------------------------------- |
-| `hipaaPack` | 45 CFR §164.514 Safe Harbor       | SSN block, MRN/DOB/phone warns            |
-| `sr117Pack` | Fed SR 11-7 / OCC 2011-12         | bare-numeric block, short-narrative warn  |
-| `naicPack`  | NAIC AI Bulletin (Dec 2023)       | protected-class warn, model-citation warn |
-| `dscsaPack` | DSCSA §581(11), §582(b)(2)(A)(iv) | NDC + lot/serial enforcement              |
-| `csrdPack`  | EU CSRD + ESRS                    | source-citation + double-materiality      |
+| Pack          | Citation                                       | Use case                                   |
+| ------------- | ---------------------------------------------- | ------------------------------------------ |
+| `hipaaPack`   | 45 CFR §164.514 Safe Harbor                    | US health · SSN block, MRN/DOB/phone warns |
+| `sr117Pack`   | Fed SR 11-7 / OCC 2011-12                      | US banking model risk                      |
+| `naicPack`    | NAIC AI Bulletin (Dec 2023)                    | US insurance                               |
+| `dscsaPack`   | DSCSA §581(11), §582(b)(2)(A)(iv)              | US pharma supply chain                     |
+| `csrdPack`    | EU Directive 2022/2464 + ESRS                  | EU sustainability disclosure               |
+| `cfpbPack`    | 12 CFR §1002 (ECOA) + §1024/§1026 (Reg Z)      | US consumer credit + mortgage              |
+| `masPack`     | MAS FEAT 2018 + Singapore PDPA                 | Singapore financial AI + NRIC              |
+| `fcaPack`     | FCA PRIN 2A + FG24/2 + FG21/1                  | UK Consumer Duty + AI guidance             |
+| `pciDssPack`  | PCI DSS v4.0 §3.3 / §3.5                       | Card data — PAN / CVV / track-data blocks  |
+| `euAiActPack` | EU 2024/1689 Art. 13 / 14 / 15 / 50            | EU AI Act high-risk system obligations     |
+| `nydfsPack`   | 23 NYCRR Part 500 + NYDFS AI Letter (Oct 2024) | NY state financial cybersecurity + AI      |
 
-Every rule cites the specific regulatory clause in its `description`. Pure functions, sub-10ms each, composable.
+Every rule cites the specific regulatory clause in its `description`. Pure functions, sub-10ms each, composable. Geographic coverage: US (7 packs) + EU (2 packs) + UK + Singapore.
 
 ## Subpath imports
 
