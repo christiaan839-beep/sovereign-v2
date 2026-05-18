@@ -274,4 +274,41 @@ test.describe("Verifiable receipts surface (the central claim)", () => {
     expect(body).toMatch(/-----BEGIN PUBLIC KEY-----/);
     expect(body).toMatch(/-----END PUBLIC KEY-----/);
   });
+
+  test("/transparency renders the public monitor surface", async ({ page }) => {
+    const res = await page.goto("/transparency");
+    expect(res?.status()).toBe(200);
+    // Headline + three documented sections must be present.
+    await expect(page.locator("body")).toContainText(/Signed Tree Head/i);
+    await expect(page.locator("body")).toContainText(/Witness Protocol/i);
+    // Every section anchors a real endpoint — the page is the spec
+    // surfaced as UI, no marketing slop.
+    await expect(page.locator("body")).toContainText(
+      /\/api\/transparency\/sth/,
+    );
+    await expect(page.locator("body")).toContainText(
+      /\/api\/transparency\/proof/,
+    );
+  });
+
+  test("/api/transparency/sth returns a real signed tree head envelope", async ({
+    request,
+  }) => {
+    const res = await request.get("/api/transparency/sth");
+    expect(res.status()).toBe(200);
+    expect(res.headers()["access-control-allow-origin"]).toBe("*");
+    const body = (await res.json()) as {
+      v?: number;
+      logId?: string;
+      treeSize?: number;
+      rootHash?: string;
+      timestamp?: string;
+      canonical?: string;
+    };
+    expect(body.v).toBe(1);
+    expect(body.logId).toBe("demo.sovereignmatrix.agency");
+    expect(typeof body.treeSize).toBe("number");
+    expect(body.rootHash).toMatch(/^[0-9a-f]{64}$/);
+    expect(typeof body.canonical).toBe("string");
+  });
 });

@@ -30,7 +30,11 @@ export const metadata: Metadata = {
   keywords: [
     "verifiable AI agents",
     "AI agent audit standard",
-    "HMAC-signed AI outputs",
+    "Ed25519 AI receipts",
+    "post-quantum AI signatures",
+    "AI transparency log",
+    "ML-DSA-65 dual-sign",
+    "RFC 6962 AI receipts",
     "agent infrastructure",
     "audit-grade AI",
     "enterprise AI compliance",
@@ -212,9 +216,9 @@ export default function RootLayout({
                   operatingSystem: "Web",
                   offers: marketingOffers,
                   description:
-                    "Audit-grade AI agent infrastructure — 140 agents, every output cryptographically signed (HMAC-SHA256, Ed25519, Merkle inclusion proofs, OpenTimestamps), 8-provider unified router, 5-layer safety pipeline, ZAR + USD billing.",
+                    "Audit-grade AI agent infrastructure — 140 agents, every output cryptographically signed (Ed25519 v2, ML-DSA-65 v3 post-quantum dual-sign per FIPS 204, RFC 6962-style transparency log, Merkle inclusion + consistency proofs, OpenTimestamps Bitcoin anchoring), 8-provider unified router, 5-layer safety pipeline, ZAR + USD billing. Apache-2.0 OSS verifier on npm.",
                   featureList:
-                    "Verifiable Agent Receipts (VAOS), HMAC-SHA256 Signatures, Ed25519 v2 Signatures, Merkle Inclusion Proofs, OpenTimestamps Bitcoin Notarization, Multi-Provider Routing, Whitelabel, 5-layer Safety Pipeline, Plan-Aware Quotas, Daily $-Cap Budget Controls, Multi-Tenant Isolation, ZAR Billing, Open-Source AI Router (@sovereign/ai-router)",
+                    "Verifiable Agent Receipts (VAOS 1.0/2.0/3.0), Ed25519 v2 Signatures, ML-DSA-65 v3 Post-Quantum Dual-Sign (FIPS 204), RFC 6962-Style Transparency Log, Merkle Inclusion + Consistency Proofs, OpenTimestamps Bitcoin Notarization, Multi-Provider Routing, Whitelabel, 5-layer Safety Pipeline, Plan-Aware Quotas, Daily $-Cap Budget Controls, Multi-Tenant Isolation, ZAR Billing, Apache-2.0 OSS Verifier (@sovereign-matrix/verifiable-receipts)",
                 },
                 {
                   "@context": "https://schema.org",
@@ -240,7 +244,7 @@ export default function RootLayout({
                       name: "What is Sovereign Matrix?",
                       acceptedAnswer: {
                         "@type": "Answer",
-                        text: "Sovereign Matrix is audit-grade AI agent infrastructure. 137 specialized agents handle lead generation, content creation, voice calls, competitor analysis, and more — and every run produces a cryptographically signed receipt (HMAC-SHA256, Ed25519 v2, Merkle inclusion proofs, OpenTimestamps notarization). Designed for AI deployments in regulated industries where compliance teams need to prove what an agent did.",
+                        text: "Sovereign Matrix is audit-grade AI agent infrastructure. 140 specialized agents handle lead generation, content creation, voice calls, competitor analysis, and more — and every run produces a cryptographically signed receipt (Ed25519 v2, ML-DSA-65 v3 post-quantum dual-sign per FIPS 204, RFC 6962-style transparency log, Merkle inclusion + consistency proofs, OpenTimestamps Bitcoin notarization). An Apache-2.0 OSS verifier on npm lets any auditor independently confirm the math without an account. Designed for AI deployments in regulated industries where compliance teams need to prove what an agent did.",
                       },
                     },
                     {
@@ -264,7 +268,7 @@ export default function RootLayout({
                       name: "Is this a chatbot or a platform?",
                       acceptedAnswer: {
                         "@type": "Answer",
-                        text: "Neither. Sovereign Matrix is an agent operating system: 137 autonomous agents that plan, execute, and self-correct without human intervention — and every output ships with a verifiable HMAC-signed receipt. Agents work simultaneously across lead gen, content, SEO, voice calls, and research, with a scheduler that fires playbooks on cron.",
+                        text: "Neither. Sovereign Matrix is an agent operating system: 140 autonomous agents that plan, execute, and self-correct without human intervention — and every output ships with a verifiable Ed25519-signed receipt (post-quantum-ready via ML-DSA-65). Agents work simultaneously across lead gen, content, SEO, voice calls, and research, with a scheduler that fires playbooks on cron.",
                       },
                     },
                     {
