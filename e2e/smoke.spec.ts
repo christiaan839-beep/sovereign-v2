@@ -311,4 +311,32 @@ test.describe("Verifiable receipts surface (the central claim)", () => {
     expect(body.rootHash).toMatch(/^[0-9a-f]{64}$/);
     expect(typeof body.canonical).toBe("string");
   });
+
+  test("/security/live renders the machine-readable evidence dashboard", async ({
+    page,
+  }) => {
+    const res = await page.goto("/security/live");
+    expect(res?.status()).toBe(200);
+    // All seven documented sections must be present — the page is
+    // the proof surface, a regression that hides one of them breaks
+    // the procurement signal.
+    await expect(page.locator("body")).toContainText(/RECEIPT SCHEMES/i);
+    await expect(page.locator("body")).toContainText(/CHAIN OF CUSTODY/i);
+    await expect(page.locator("body")).toContainText(/TRANSPORT SECURITY/i);
+    await expect(page.locator("body")).toContainText(/AUTHENTICATION/i);
+    await expect(page.locator("body")).toContainText(/COMPLIANCE MAPPING/i);
+    await expect(page.locator("body")).toContainText(/OPEN-SOURCE PRIMITIVES/i);
+  });
+
+  test("/security marketing page links to the live posture", async ({
+    page,
+  }) => {
+    const res = await page.goto("/security");
+    expect(res?.status()).toBe(200);
+    // The auditor-strip link must be present so a procurement reviewer
+    // who lands on the marketing page can pivot to the machine-readable
+    // surface in one click.
+    await expect(page.locator("a[href='/security/live']")).toBeVisible();
+    await expect(page.locator("a[href='/api/security/posture']")).toBeVisible();
+  });
 });
