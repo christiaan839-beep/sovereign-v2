@@ -2202,6 +2202,583 @@ export const indiaDpdpAiPack: GuardianPack = {
   rules: indiaDpdpAiRules,
 };
 
+// ── Wave 64: NIST AI RMF 600-1 GenAI Profile ─────────────────────────
+//
+// NIST AI 600-1 "Generative Artificial Intelligence Profile" published
+// July 2024. Voluntary in name, mandatory in practice — every US
+// federal AI procurement spec from Q4 2025 onward cites it. Pairs the
+// AI RMF four functions (Govern / Map / Measure / Manage) with the
+// 12 GAI-specific risks (confabulation, dangerous-content, data-
+// privacy, etc.). Runtime hooks: every GenAI output should reference
+// the applicable AI 600-1 risk-control ID + GMMM function + provenance
+// flag for AI-generated content.
+
+const NIST_GENAI_TERMS =
+  /\b(generative[-\s]?AI|GenAI[-\s]?(?:output|response)|LLM[-\s]?output|foundation[-\s]?model[-\s]?(?:output|response)|AI[-\s]?generated[-\s]?content)/i;
+
+export const nistAiRmfRules: GuardianRule[] = [
+  {
+    id: "nist-ai-600-risk-control-id",
+    description:
+      "WARN on GenAI output without AI 600-1 risk-control ID reference — NIST AI 600-1 §3 Suggested Actions",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (NIST_GENAI_TERMS.test(text)) {
+        const hasControl =
+          /\bAI[-\s]?600[-\s]?1|\bGAI[-\s]?(?:risk|control)|\bGOVERN[-\s]?\d+\.\d+|\bMAP[-\s]?\d+\.\d+|\bMEASURE[-\s]?\d+\.\d+|\bMANAGE[-\s]?\d+\.\d+|\bGV[-\s]?\d|\bMP[-\s]?\d|\bMS[-\s]?\d|\bMG[-\s]?\d/i.test(
+            text,
+          );
+        if (!hasControl) {
+          return {
+            verdict: "warn",
+            reason:
+              "NIST AI 600-1 §3: GenAI output missing applicable risk-control ID (GOVERN/MAP/MEASURE/MANAGE)",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "nist-ai-rmf-function-tag",
+    description:
+      "WARN on AI inference output without NIST AI RMF function tag — NIST AI 100-1 §5",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (NIST_GENAI_TERMS.test(text)) {
+        const hasFunction =
+          /\bAI[-\s]?RMF[-\s]?function|\b(?:Govern|Map|Measure|Manage)[-\s]?function|\bRMF[-\s]?(?:Govern|Map|Measure|Manage)|\bNIST[-\s]?AI[-\s]?(?:RMF|100[-\s]?1)/i.test(
+            text,
+          );
+        if (!hasFunction) {
+          return {
+            verdict: "warn",
+            reason:
+              "NIST AI 100-1 §5: GenAI output missing AI RMF function tag (Govern/Map/Measure/Manage)",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "nist-ai-provenance-flag",
+    description:
+      "WARN on AI-generated content output without provenance flag — NIST AI 600-1 §2.10 Information Integrity",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (NIST_GENAI_TERMS.test(text)) {
+        const hasProvenance =
+          /\bAI[-\s]?generated[-\s]?(?:content|output)[-\s]?(?:flag|tag|marker)|\bC2PA[-\s]?(?:assertion|manifest)|\bcontent[-\s]?credentials|\bsynthetic[-\s]?media[-\s]?(?:marker|label)|\bprovenance[-\s]?(?:flag|tag|chain)/i.test(
+            text,
+          );
+        if (!hasProvenance) {
+          return {
+            verdict: "warn",
+            reason:
+              "NIST AI 600-1 §2.10: AI-generated content output missing provenance flag (C2PA / content credentials)",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+];
+
+export const nistAiRmfPack: GuardianPack = {
+  id: "us-nist-ai-rmf-600-1",
+  name: "NIST AI RMF 600-1 Generative AI Profile",
+  citation:
+    "NIST AI 100-1 (AI RMF 1.0, Jan 2023) + NIST AI 600-1 (Generative AI Profile, July 2024)",
+  rules: nistAiRmfRules,
+};
+
+// ── Wave 64: China PIPL + GenAI Interim Measures ─────────────────────
+//
+// PIPL (Personal Information Protection Law of the People's Republic
+// of China) in force Nov 2021. Cyberspace Administration of China
+// (CAC) "Interim Measures for the Management of Generative AI
+// Services" (生成式人工智能服务管理暂行办法) effective Aug 15, 2023.
+// Plus the Deep Synthesis Provisions (Jan 2023) requiring synthetic-
+// content marks.
+//
+// We deliberately keep rule text citation-only and do NOT include
+// operational instructions; export-control / dual-use considerations
+// apply when shipping content-marking rules into Chinese jurisdiction.
+
+const CHINA_PIPL_TERMS =
+  /\b(PIPL|Chinese[-\s]?(?:resident|user|data[-\s]?subject)|cross[-\s]?border[-\s]?transfer[-\s]?(?:to[-\s]?)?China|mainland[-\s]?China|CAC[-\s]?(?:filing|registered))/i;
+const CHINA_GENAI_TERMS =
+  /\b(generative[-\s]?AI|GenAI|content[-\s]?generation|deep[-\s]?synthesis|生成式人工智能)/i;
+
+export const chinaPiplGenAiRules: GuardianRule[] = [
+  {
+    id: "cn-genai-algorithm-filing",
+    description:
+      "WARN on GenAI output to Chinese users without CAC algorithm-filing reference — Interim Measures art. 17",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (CHINA_GENAI_TERMS.test(text)) {
+        const hasFiling =
+          /\bCAC[-\s]?(?:filing|algorithm[-\s]?registration)|\balgorithm[-\s]?(?:filing|filing[-\s]?number|registry[-\s]?id)|\b算法备案|\bnetwork[-\s]?(?:filing|number)/i.test(
+            text,
+          );
+        if (!hasFiling) {
+          return {
+            verdict: "warn",
+            reason:
+              "Interim Measures for the Management of Generative AI Services art. 17: GenAI output to Chinese users missing CAC algorithm-filing reference",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "cn-pipl-art24-disclosure",
+    description:
+      "WARN on PIPL automated decision without Art. 24 transparency disclosure — PIPL Art. 24",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (
+        CHINA_PIPL_TERMS.test(text) &&
+        /\bautomated[-\s]?decision|\b自动化决策|\balgorithmic[-\s]?(?:decision|recommendation)/i.test(
+          text,
+        )
+      ) {
+        const hasDisclosure =
+          /\bPIPL[-\s]?Art\.?\s?24|\btransparency[-\s]?disclosure|\bdecision[-\s]?logic[-\s]?notice|\bright[-\s]?to[-\s]?refuse[-\s]?automated/i.test(
+            text,
+          );
+        if (!hasDisclosure) {
+          return {
+            verdict: "warn",
+            reason:
+              "PIPL Art. 24: automated decision affecting PIPL data subject lacks transparency disclosure",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "cn-deep-synthesis-content-mark",
+    description:
+      "WARN on synthetic media output without Deep Synthesis content mark — Deep Synthesis Provisions art. 17",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (
+        /\b(?:deep[-\s]?fake|synthetic[-\s]?(?:image|video|audio|media)|deep[-\s]?synthesis|AI[-\s]?(?:image|video|audio)[-\s]?generated)/i.test(
+          text,
+        )
+      ) {
+        const hasMark =
+          /\bsynthetic[-\s]?(?:content[-\s]?)?(?:mark|label)|\bdeep[-\s]?synthesis[-\s]?(?:label|mark|notice)|\bcontent[-\s]?credential|\b深度合成标识/i.test(
+            text,
+          );
+        if (!hasMark) {
+          return {
+            verdict: "warn",
+            reason:
+              "Deep Synthesis Provisions art. 17 (Jan 2023): synthetic-media output missing required content mark",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+];
+
+export const chinaPiplGenAiPack: GuardianPack = {
+  id: "cn-pipl-genai-2023",
+  name: "China PIPL + Generative AI Interim Measures",
+  citation:
+    "Personal Information Protection Law of the PRC (Nov 2021) Art. 24 + CAC Interim Measures for the Management of Generative AI Services (Aug 15, 2023) art. 17 + Deep Synthesis Provisions (Jan 2023) art. 17",
+  rules: chinaPiplGenAiRules,
+};
+
+// ── Wave 64: Japan APPI + METI AI Guidelines for Business ────────────
+//
+// APPI (Act on the Protection of Personal Information) revised April
+// 2022. METI "AI Guidelines for Business v1.0" (April 2024); v1.1
+// expected Q4 2025 with continuous-learning specific addenda.
+// Pattern fit with the rest of G7 AI regulation circle.
+
+const JAPAN_AI_TERMS =
+  /\b(APPI|Japanese[-\s]?(?:resident|user|data[-\s]?subject)|個人情報保護法|METI[-\s]?guideline|J[-\s]?AI)/i;
+
+export const japanAppiRules: GuardianRule[] = [
+  {
+    id: "jp-appi-consent-basis",
+    description:
+      "WARN on Japan AI processing without APPI consent-basis reference — APPI Art. 17 (revised 2022)",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (JAPAN_AI_TERMS.test(text)) {
+        const hasConsent =
+          /\bAPPI[-\s]?(?:consent|Art\.?\s?17)|\bArt\.?\s?17[-\s]?(?:basis|reference|consent)|\bopt[-\s]?in[-\s]?(?:basis|consent|confirmed|verified)|\bdata[-\s]?subject[-\s]?consent[-\s]?(?:on[-\s]?file|verified|ref)|\bconsent[-\s]?basis[-\s]?(?:verified|on[-\s]?file)/i.test(
+            text,
+          );
+        if (!hasConsent) {
+          return {
+            verdict: "warn",
+            reason:
+              "APPI Art. 17 (revised 2022): Japan AI processing missing consent-basis reference",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "jp-meti-guideline-applicability",
+    description:
+      "WARN on Japan AI output without METI AI Guidelines applicability tag — METI AI Guidelines v1.0 §2",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (JAPAN_AI_TERMS.test(text)) {
+        const hasGuideline =
+          /\bMETI[-\s]?(?:guideline|guidance|principle)[-\s]?(?:v\d|applicability|ref)|\bAI[-\s]?guidelines[-\s]?for[-\s]?business|\b経済産業省[-\s]?AI/i.test(
+            text,
+          );
+        if (!hasGuideline) {
+          return {
+            verdict: "warn",
+            reason:
+              "METI AI Guidelines for Business v1.0 §2: Japan AI output missing applicability tag",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "jp-appi-cross-border-attestation",
+    description:
+      "WARN on Japan-data AI cross-border transfer without APPI Art. 28 attestation — APPI Art. 28",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (
+        JAPAN_AI_TERMS.test(text) &&
+        /\bcross[-\s]?border|\binternational[-\s]?transfer|\boverseas[-\s]?(?:processing|inference)|\b国外移転/i.test(
+          text,
+        )
+      ) {
+        const hasAttestation =
+          /\bAPPI[-\s]?Art\.?\s?28|\bcross[-\s]?border[-\s]?attestation|\boverseas[-\s]?(?:transfer[-\s]?)?(?:notification|attestation|notice)|\bequivalent[-\s]?protection[-\s]?confirmed/i.test(
+            text,
+          );
+        if (!hasAttestation) {
+          return {
+            verdict: "warn",
+            reason:
+              "APPI Art. 28: Japan-data AI cross-border transfer missing attestation",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+];
+
+export const japanAppiPack: GuardianPack = {
+  id: "jp-appi-ai-2024",
+  name: "Japan APPI + METI AI Guidelines",
+  citation:
+    "Act on the Protection of Personal Information (APPI, revised Apr 2022) Arts. 17 / 28 + METI AI Guidelines for Business v1.0 (Apr 2024)",
+  rules: japanAppiRules,
+};
+
+// ── Wave 64: South Korea PIPA + AI Basic Act ─────────────────────────
+//
+// AI Basic Act (인공지능 기본법) passed Dec 2024, effective Jan 2026.
+// Layered on PIPA (Personal Information Protection Act). Defines
+// general / high-impact / generative AI tiers + Korean-language
+// right-to-explanation. PIPA Art. 28-2 already covers automated
+// decisions.
+
+const KOREA_AI_TERMS =
+  /\b(PIPA|Korean[-\s]?(?:resident|user|data[-\s]?subject)|개인정보보호법|AI[-\s]?Basic[-\s]?Act|인공지능[-\s]?기본법)/i;
+
+export const koreaPipaRules: GuardianRule[] = [
+  {
+    id: "kr-pipa-art28-consent",
+    description:
+      "WARN on Korean automated decision without PIPA Art. 28-2 consent reference — PIPA Art. 28-2 (auto-decision rule)",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (KOREA_AI_TERMS.test(text)) {
+        const hasConsent =
+          /\bPIPA[-\s]?(?:Art\.?\s?)?28[-\s]?2|\bautomated[-\s]?decision[-\s]?consent|\bdata[-\s]?subject[-\s]?consent[-\s]?(?:on[-\s]?file|verified|ref)/i.test(
+            text,
+          );
+        if (!hasConsent) {
+          return {
+            verdict: "warn",
+            reason:
+              "PIPA Art. 28-2: Korean automated decision missing data-subject consent reference",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "kr-ai-basic-act-risk-tier",
+    description:
+      "WARN on Korea-deployed AI output without AI Basic Act risk-tier tag — AI Basic Act Art. 6",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (KOREA_AI_TERMS.test(text)) {
+        const hasTier =
+          /\bAI[-\s]?Basic[-\s]?Act[-\s]?(?:tier|risk)|\b(?:general|high[-\s]?impact|generative)[-\s]?AI[-\s]?(?:tier|category)|\b일반[-\s]?AI|\b고영향[-\s]?AI/i.test(
+            text,
+          );
+        if (!hasTier) {
+          return {
+            verdict: "warn",
+            reason:
+              "AI Basic Act Art. 6: Korean AI output missing risk-tier tag (general / high-impact / generative)",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "kr-right-to-explanation",
+    description:
+      "WARN on Korean high-impact AI decision without Korean-language right-to-explanation — AI Basic Act Art. 11",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (
+        KOREA_AI_TERMS.test(text) &&
+        /\bhigh[-\s]?impact|\b고영향|\bautomated[-\s]?decision/i.test(text)
+      ) {
+        const hasExplain =
+          /\bright[-\s]?to[-\s]?explanation|\bKorean[-\s]?language[-\s]?(?:notice|explanation)|\b설명[-\s]?(?:권리|요구)|\bnotice[-\s]?in[-\s]?Korean/i.test(
+            text,
+          );
+        if (!hasExplain) {
+          return {
+            verdict: "warn",
+            reason:
+              "AI Basic Act Art. 11: Korean high-impact AI decision missing Korean-language right-to-explanation",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+];
+
+export const koreaPipaPack: GuardianPack = {
+  id: "kr-pipa-ai-2026",
+  name: "South Korea PIPA + AI Basic Act",
+  citation:
+    "Personal Information Protection Act (PIPA) Art. 28-2 + AI Basic Act (인공지능 기본법, eff. Jan 2026) Arts. 6 / 11",
+  rules: koreaPipaRules,
+};
+
+// ── Wave 64: South Africa POPIA + AI National Policy Framework ───────
+//
+// POPIA (Protection of Personal Information Act) in force since July
+// 2021. Draft AI National Policy Framework released by Department of
+// Communications and Digital Technologies, Aug 2024. Information
+// Regulator AI guidance Q2 2026. Home jurisdiction for Sovereign
+// Matrix, regulatory beachhead for the African continent.
+
+const ZA_AI_TERMS =
+  /\b(POPIA|South[-\s]?African[-\s]?(?:resident|user|data[-\s]?subject|market|personal[-\s]?information)|SA[-\s]?(?:data[-\s]?subject|resident)|Information[-\s]?Regulator[-\s]?(?:SA|South[-\s]?Africa)|African[-\s]?fintech|to[-\s]?(?:the[-\s]?)?(?:South[-\s]?African|SA)[-\s]?market)/i;
+
+export const southAfricaPopiaRules: GuardianRule[] = [
+  {
+    id: "za-popia-s71-auto-decision-notice",
+    description:
+      "WARN on South African automated decision without POPIA s. 71 notice — Protection of Personal Information Act s. 71",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (
+        ZA_AI_TERMS.test(text) &&
+        /\bautomated[-\s]?(?:decision|processing)|\balgorithmic[-\s]?decision|\bAI[-\s]?(?:approval|denial|decision)/i.test(
+          text,
+        )
+      ) {
+        const hasNotice =
+          /\bPOPIA[-\s]?s\.?\s?71|\bs[-\s]?71[-\s]?notice|\bautomated[-\s]?decision[-\s]?notice|\bright[-\s]?to[-\s]?representation/i.test(
+            text,
+          );
+        if (!hasNotice) {
+          return {
+            verdict: "warn",
+            reason:
+              "POPIA s. 71: South African automated decision missing data-subject notice + right-to-representation",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "za-ai-framework-high-risk-notification",
+    description:
+      "WARN on high-risk AI deployment to SA without Information Regulator notification — Draft AI National Policy Framework (Aug 2024)",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (
+        ZA_AI_TERMS.test(text) &&
+        /\bhigh[-\s]?risk[-\s]?AI|\bhigh[-\s]?impact[-\s]?AI[-\s]?deployment/i.test(
+          text,
+        )
+      ) {
+        const hasNotification =
+          /\bInformation[-\s]?Regulator[-\s]?(?:notification|filed|ref)|\bIR[-\s]?(?:filing|notification[-\s]?ref)|\bSA[-\s]?AI[-\s]?(?:registry|filing)/i.test(
+            text,
+          );
+        if (!hasNotification) {
+          return {
+            verdict: "warn",
+            reason:
+              "Draft AI National Policy Framework (Aug 2024): high-risk AI to SA missing Information Regulator notification",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "za-popia-responsible-party-attribution",
+    description:
+      "WARN on POPIA-scope AI output without responsible-party attribution — POPIA s. 8",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (ZA_AI_TERMS.test(text)) {
+        const hasAttribution =
+          /\bresponsible[-\s]?party|\boperator[-\s]?identified|\bdata[-\s]?(?:controller|processor)[-\s]?(?:ref|identified)|\bPOPIA[-\s]?(?:s\.?\s?8|responsible[-\s]?party)/i.test(
+            text,
+          );
+        if (!hasAttribution) {
+          return {
+            verdict: "warn",
+            reason:
+              "POPIA s. 8: AI output processing SA personal information missing responsible-party attribution",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+];
+
+export const southAfricaPopiaPack: GuardianPack = {
+  id: "za-popia-ai-2026",
+  name: "South Africa POPIA + AI National Policy Framework",
+  citation:
+    "Protection of Personal Information Act 4 of 2013 ss. 8 / 71 (POPIA, eff. July 2021) + Draft AI National Policy Framework (DCDT, Aug 2024)",
+  rules: southAfricaPopiaRules,
+};
+
+// ── Wave 64: UAE PDPL + DIFC AI Regulation ───────────────────────────
+//
+// UAE Personal Data Protection Law (Federal Decree-Law No. 45 of 2021)
+// in force since Jan 2022. DIFC (Dubai International Financial Centre)
+// AI Regulation in consultation 2026; ADGM (Abu Dhabi Global Market)
+// Data Protection Regulations live since 2025. Dubai Digital Strategy
+// 2031 codifies AI procurement standards for federal entities.
+
+const UAE_AI_TERMS =
+  /\b(UAE[-\s]?(?:PDPL|resident|user)|Emirati[-\s]?(?:resident|data[-\s]?subject)|DIFC[-\s]?(?:AI|regulation)|ADGM[-\s]?(?:AI|data[-\s]?protection))/i;
+
+export const uaePdplRules: GuardianRule[] = [
+  {
+    id: "ae-pdpl-art13-auto-decision-notice",
+    description:
+      "WARN on UAE automated decision without PDPL Art. 13 notice — Federal Decree-Law No. 45 of 2021 Art. 13",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (
+        UAE_AI_TERMS.test(text) &&
+        /\bautomated[-\s]?(?:decision|processing)|\balgorithmic[-\s]?decision/i.test(
+          text,
+        )
+      ) {
+        const hasNotice =
+          /\bPDPL[-\s]?Art\.?\s?13|\bArt\.?\s?13[-\s]?notice|\bautomated[-\s]?decision[-\s]?notice|\bright[-\s]?to[-\s]?object/i.test(
+            text,
+          );
+        if (!hasNotice) {
+          return {
+            verdict: "warn",
+            reason:
+              "UAE PDPL Art. 13: automated decision affecting UAE data subject missing Art. 13 notice + right-to-object",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "ae-difc-ai-risk-tier",
+    description:
+      "WARN on DIFC-scope AI output without risk-tier tag — DIFC AI Regulation consultation (Q3 2026 expected)",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (
+        UAE_AI_TERMS.test(text) &&
+        /\bDIFC|\bADGM|\bDubai[-\s]?(?:financial|free[-\s]?zone)/i.test(text)
+      ) {
+        const hasTier =
+          /\bDIFC[-\s]?AI[-\s]?(?:tier|risk[-\s]?(?:tier|category))|\brisk[-\s]?(?:tier|category)[-\s]?(?:tagged|low|moderate|high|unacceptable)|\bADGM[-\s]?AI[-\s]?(?:risk[-\s]?tier|classification)/i.test(
+            text,
+          );
+        if (!hasTier) {
+          return {
+            verdict: "warn",
+            reason:
+              "DIFC AI Regulation (in consultation): UAE financial-free-zone AI output missing risk-tier tag",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "ae-arabic-right-to-review",
+    description:
+      "WARN on UAE high-stakes AI decision without Arabic-language right-to-review — PDPL Art. 13 §3",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (
+        UAE_AI_TERMS.test(text) &&
+        /\bhigh[-\s]?stakes|\bhigh[-\s]?impact|\bdenial[-\s]?of[-\s]?service|\bcredit[-\s]?(?:denied|approved)/i.test(
+          text,
+        )
+      ) {
+        const hasArabic =
+          /\bArabic[-\s]?(?:language[-\s]?)?(?:notice|review[-\s]?(?:right)?|right[-\s]?to[-\s]?review|explanation)|\bbilingual[-\s]?notice|\bحق[-\s]?(?:المراجعة|الاعتراض)/i.test(
+            text,
+          );
+        if (!hasArabic) {
+          return {
+            verdict: "warn",
+            reason:
+              "UAE PDPL Art. 13 §3: high-stakes AI decision missing Arabic-language right-to-review notice",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+];
+
+export const uaePdplPack: GuardianPack = {
+  id: "ae-pdpl-ai-2026",
+  name: "UAE PDPL + DIFC AI Regulation",
+  citation:
+    "Federal Decree-Law No. 45 of 2021 (UAE PDPL) Art. 13 + DIFC AI Regulation (in consultation, expected Q3 2026) + ADGM Data Protection Regulations (2025)",
+  rules: uaePdplRules,
+};
+
 // ── Registry of packs ────────────────────────────────────────────────
 
 export interface GuardianPack {
@@ -2238,6 +2815,12 @@ export const ALL_PACKS: GuardianPack[] = [
   texasAiPack,
   brazilLgpdAiPack,
   indiaDpdpAiPack,
+  nistAiRmfPack,
+  chinaPiplGenAiPack,
+  japanAppiPack,
+  koreaPipaPack,
+  southAfricaPopiaPack,
+  uaePdplPack,
 ];
 
 export function findPack(id: string): GuardianPack | undefined {

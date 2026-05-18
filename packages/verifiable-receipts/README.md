@@ -9,9 +9,11 @@ Three composable pieces:
 
 1. **Post-quantum dual-signing** — Ed25519 + ML-DSA-65 (Dilithium3, NIST FIPS 204). Receipts stay verifiable across the post-quantum transition (7–25 year retention horizons covered).
 2. **Signed receipt bundles** — pure-Node STORE-method ZIP writer (no compression, byte-deterministic) with a top-level `MANIFEST.signed.json`. Hand the bundle to an auditor; they re-derive the math without unzipping.
-3. **Guardian rule runner + 26 regulated-vertical packs** — HIPAA, SR 11-7, NAIC AI Bulletin, DSCSA, EU CSRD, CFPB / ECOA, MAS FEAT, FCA Consumer Duty, PCI DSS v4.0, EU AI Act, NYDFS Part 500, NYC AEDT (Local Law 144), FERPA, FDA SaMD, EU DORA, Colorado SB 24-205, California AB 2013, Australia APRA CPS 230, FDA PCCP (continuous-learning medical AI), Illinois AI VIA + HB 3773, Canada AIDA (C-27), UK ICO AI Auditing Framework, ISO/IEC 42001 AIMS, Texas CUBI + TX-RAMP, Brazil LGPD AI (PL 2338/2023), India DPDP + MeitY. Compose rules into a pack, get a signed verdict envelope.
+3. **Guardian rule runner + 32 regulated-vertical packs across 6 continents** — HIPAA, SR 11-7, NAIC AI Bulletin, DSCSA, EU CSRD, CFPB / ECOA, MAS FEAT, FCA Consumer Duty, PCI DSS v4.0, EU AI Act, NYDFS Part 500, NYC AEDT (Local Law 144), FERPA, FDA SaMD, EU DORA, Colorado SB 24-205, California AB 2013, Australia APRA CPS 230, FDA PCCP, Illinois AI VIA + HB 3773, Canada AIDA (C-27), UK ICO Auditing Framework, ISO/IEC 42001 AIMS, Texas CUBI + TX-RAMP, Brazil LGPD AI, India DPDP + MeitY, NIST AI RMF 600-1 GenAI Profile, China PIPL + CAC GenAI Interim Measures, Japan APPI + METI, South Korea PIPA + AI Basic Act, South Africa POPIA + AI Framework, UAE PDPL + DIFC AI. Compose rules into a pack, get a signed verdict envelope.
 
-4. **C2PA bridge** — convert any signed VAOS verdict into a Content Authenticity Initiative manifest (`org.sovereignmatrix.vaos.v1` assertion label). Travels through Adobe Firefly, Microsoft Copilot, and Truepic Lens pipelines without losing the signature. `toC2PAManifest()` ↔ `fromC2PAManifest()` round-trip is byte-deterministic.
+4. **Python verifier (`sovereign-matrix-verifiable-receipts` on PyPI, v0.1)** — pure-Python Ed25519 + RFC 9162 inclusion-proof verifier. `pip install` and call `verify_v2_receipt()` from any Python audit pipeline, model-eval notebook, or regulator tool. Verifier-side only; the math is symmetric so any language can re-check a TypeScript-signed receipt.
+
+5. **C2PA bridge** — convert any signed VAOS verdict into a Content Authenticity Initiative manifest (`org.sovereignmatrix.vaos.v1` assertion label). Travels through Adobe Firefly, Microsoft Copilot, and Truepic Lens pipelines without losing the signature. `toC2PAManifest()` ↔ `fromC2PAManifest()` round-trip is byte-deterministic.
 
 Extracted from the [Sovereign Matrix](https://sovereignmatrix.agency) platform as a standalone library. Apache 2.0. No runtime fee. No telemetry.
 
@@ -219,7 +221,7 @@ The primitive should be public. Vendors compete on the **integration** of receip
 
 So: take it, ship it, run it against your own AI stack. If you're building a regulated-AI product and you want to compare notes, reach out — `christiaan@sovereignmatrix.agency`.
 
-## Twenty-six regulated-vertical packs included
+## Thirty-two regulated-vertical packs included (six continents)
 
 | Pack                   | Citation                                             | Use case                                    |
 | ---------------------- | ---------------------------------------------------- | ------------------------------------------- |
@@ -249,8 +251,14 @@ So: take it, ship it, run it against your own AI stack. If you're building a reg
 | `texasAiPack`          | Tex. Bus. & Com. § 503.001 + HB 4 + TX-RAMP          | Texas biometric AI + state procurement      |
 | `brazilLgpdAiPack`     | LGPD Art. 20 + PL 2338/2023 art. 13                  | Brazil GenAI + automated-decision           |
 | `indiaDpdpAiPack`      | DPDP Act §§ 6 / 10 + MeitY AI Advisory (Mar 2024)    | India DPDP + significant-data-fiduciary AI  |
+| `nistAiRmfPack`        | NIST AI 100-1 + AI 600-1 GenAI Profile (Jul 2024)    | US federal GenAI procurement standard       |
+| `chinaPiplGenAiPack`   | PIPL Art. 24 + CAC Interim Measures + Deep Synthesis | China PIPL + GenAI service registration     |
+| `japanAppiPack`        | APPI Arts. 17/28 + METI AI Guidelines v1.0           | Japan APPI + cross-border AI                |
+| `koreaPipaPack`        | PIPA Art. 28-2 + AI Basic Act (eff. Jan 2026)        | South Korea risk-tiered AI                  |
+| `southAfricaPopiaPack` | POPIA ss. 8/71 + Draft AI Framework (Aug 2024)       | South Africa automated decisions            |
+| `uaePdplPack`          | UAE PDPL Art. 13 + DIFC AI + ADGM DP                 | UAE / Gulf AI procurement                   |
 
-Every rule cites the specific regulatory clause in its `description`. Pure functions, sub-10ms each, composable. Geographic coverage: US (13 packs) + EU (3 packs) + UK + Singapore + Australia + Canada + Brazil + India + Texas + Illinois + Colorado + California + NYC + Global (PCI DSS) + ISO (international standard).
+Every rule cites the specific regulatory clause in its `description`. Pure functions, sub-10ms each, composable. **Geographic coverage: 32 packs spanning six continents** — Americas (US 13 / Canada / Brazil) · Europe (EU 3 / UK) · APAC (Singapore / Japan / South Korea / India / China / Australia) · MEA (South Africa / UAE) · ISO international · Global (PCI DSS).
 
 ## Subpath imports
 
