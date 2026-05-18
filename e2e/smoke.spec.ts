@@ -339,4 +339,13 @@ test.describe("Verifiable receipts surface (the central claim)", () => {
     await expect(page.locator("a[href='/security/live']")).toBeVisible();
     await expect(page.locator("a[href='/api/security/posture']")).toBeVisible();
   });
+
+  test("/changelog/live renders the git-log timeline", async ({ page }) => {
+    const res = await page.goto("/changelog/live");
+    expect(res?.status()).toBe(200);
+    // Header + at least one wave indicator must be present. Even on a
+    // fresh checkout this should pick up the most recent wave commit.
+    await expect(page.locator("body")).toContainText(/Every wave/i);
+    await expect(page.locator("body")).toContainText(/CHANGELOG · LIVE/i);
+  });
 });
