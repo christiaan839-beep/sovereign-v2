@@ -2977,6 +2977,303 @@ export const ambientScribePack: GuardianPack = {
   rules: ambientScribeRules,
 };
 
+// ── Wave 67: Quebec Law 25 — French Canada data + AI ─────────────────
+//
+// Bill 64 / Law 25 in force Sept 22, 2023 (with Sept 2024 + Sept 2025
+// tranche additions). Quebec's CAI (Commission d'accès à l'information)
+// has the strictest automated-decision and language-rights regime
+// in the Americas — French-language right-to-explanation, mandatory
+// PIA (privacy impact assessment), and a strict cross-border transfer
+// rule that requires demonstrating the destination jurisdiction
+// offers "adequate protection equivalent to Quebec".
+//
+// Citation: An Act to modernize legislative provisions as regards
+// the protection of personal information (Quebec Bill 64, c. 25)
+// + CAI guidance (Sept 2024) + Charter of the French Language
+// language-rights overlay.
+
+const QUEBEC_TERMS =
+  /\b(Quebec[-\s]?(?:resident|user|data[-\s]?subject)|Q[uéé]b[eé]cois|Law[-\s]?25|Bill[-\s]?64|CAI[-\s]?Quebec|loi[-\s]?25)/i;
+
+export const quebecLaw25Rules: GuardianRule[] = [
+  {
+    id: "qc-law25-pia-reference",
+    description:
+      "WARN on Quebec automated decision without PIA reference — Quebec Law 25 s. 3.3 / s. 14",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (QUEBEC_TERMS.test(text)) {
+        const hasPia =
+          /\bPIA[-\s]?(?:ref|reference|completed|on[-\s]?file)|\bprivacy[-\s]?impact[-\s]?assessment|évaluation[-\s]?des[-\s]?facteurs[-\s]?relatifs[-\s]?à[-\s]?la[-\s]?vie[-\s]?privée|ÉFVP|É?FVP[-\s]?(?:completed|on[-\s]?file|ref|reference)/i.test(
+            text,
+          );
+        if (!hasPia) {
+          return {
+            verdict: "warn",
+            reason:
+              "Quebec Law 25 s. 3.3 / s. 14: automated decision affecting Quebec resident missing PIA / ÉFVP reference",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "qc-law25-french-explanation",
+    description:
+      "WARN on Quebec automated decision without French-language explanation pathway — Charter of the French Language + Law 25 s. 12.1",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (
+        QUEBEC_TERMS.test(text) &&
+        /\bautomated[-\s]?decision|\balgorithmic[-\s]?decision|\bdécision[-\s]?automatisée/i.test(
+          text,
+        )
+      ) {
+        const hasFrench =
+          /\bFrench[-\s]?(?:language[-\s]?)?(?:explanation|notice|right[-\s]?to[-\s]?explanation)|\bexplication[-\s]?en[-\s]?français|\bbilingual[-\s]?notice|\bdroit[-\s]?à[-\s]?l['']?explication/i.test(
+            text,
+          );
+        if (!hasFrench) {
+          return {
+            verdict: "warn",
+            reason:
+              "Quebec Law 25 s. 12.1 + Charter of the French Language: automated decision missing French-language explanation pathway",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "qc-law25-cross-border-adequacy",
+    description:
+      "BLOCK Quebec PI cross-border transfer without adequacy attestation — Quebec Law 25 s. 17",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (
+        QUEBEC_TERMS.test(text) &&
+        /\bcross[-\s]?border|\binternational[-\s]?transfer|\boutside[-\s]?Quebec|\bhors[-\s]?Québec|\bUS[-\s]?(?:processing|inference)/i.test(
+          text,
+        )
+      ) {
+        const hasAdequacy =
+          /\badequacy[-\s]?(?:attestation|assessment|ref)|\bcomparable[-\s]?protection|\bs\.?\s?17[-\s]?assessment|\bCAI[-\s]?(?:approval|registered)|\bequivalent[-\s]?protection/i.test(
+            text,
+          );
+        if (!hasAdequacy) {
+          return {
+            verdict: "block",
+            reason:
+              "Quebec Law 25 s. 17: cross-border transfer of Quebec PI requires demonstrated adequacy attestation before processing",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+];
+
+export const quebecLaw25Pack: GuardianPack = {
+  id: "ca-quebec-law25-2023",
+  name: "Quebec Law 25 — Modernization of Personal Info Protection",
+  citation:
+    "Quebec Law 25 / Bill 64 (in force Sept 22, 2023) ss. 3.3 / 12.1 / 14 / 17 + Charter of the French Language (R.S.Q., c. C-11)",
+  rules: quebecLaw25Rules,
+};
+
+// ── Wave 67: Saudi PDPL — Personal Data Protection Law ───────────────
+//
+// Saudi PDPL (Personal Data Protection Law) issued by SDAIA (Saudi
+// Data and Artificial Intelligence Authority) in force Sept 14, 2023,
+// with enforcement grace ending Sept 14, 2024. SDAIA also issues
+// AI Ethics Principles (v2.0, 2023). Saudi Vision 2030 mandates AI
+// integration across $500B+ Neom + Public Investment Fund deployments
+// — every vendor selling into KSA financial / health / government
+// AI needs PDPL conformance.
+//
+// Citation: Royal Decree M/19 of 9/2/1443H (Saudi PDPL) + SDAIA AI
+// Ethics Principles v2.0 (2023) + Article 29 cross-border transfer rule.
+
+const SAUDI_TERMS =
+  /\b(Saudi[-\s]?(?:Arabian)?[-\s]?(?:resident|user|data[-\s]?subject)|KSA[-\s]?(?:user|data[-\s]?subject)|SDAIA[-\s]?(?:registered|compliant)|PDPL[-\s]?(?:Saudi|KSA)|المملكة[-\s]?العربية[-\s]?السعودية)/i;
+
+export const saudiPdplRules: GuardianRule[] = [
+  {
+    id: "sa-pdpl-sdaia-registration",
+    description:
+      "WARN on Saudi AI processing without SDAIA registration reference — Saudi PDPL Art. 17",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (SAUDI_TERMS.test(text)) {
+        const hasReg =
+          /\bSDAIA[-\s]?(?:registration|filing|number|ref)|\bcontroller[-\s]?registration[-\s]?(?:id|ref)|\bSaudi[-\s]?PDPL[-\s]?(?:registered|filing)/i.test(
+            text,
+          );
+        if (!hasReg) {
+          return {
+            verdict: "warn",
+            reason:
+              "Saudi PDPL Art. 17: Saudi AI processing missing SDAIA controller registration reference",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "sa-pdpl-ai-ethics-principle-tag",
+    description:
+      "WARN on Saudi high-impact AI output without SDAIA AI Ethics Principles applicability tag — SDAIA AI Ethics v2.0",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (SAUDI_TERMS.test(text)) {
+        const hasEthics =
+          /\bSDAIA[-\s]?AI[-\s]?Ethics|\bAI[-\s]?Ethics[-\s]?Principles[-\s]?(?:v\d|applicable|tag)|\bAccountability|\bFairness|\bTransparency|\bReliability[-\s]?and[-\s]?Safety/i.test(
+            text,
+          );
+        if (!hasEthics) {
+          return {
+            verdict: "warn",
+            reason:
+              "SDAIA AI Ethics Principles v2.0: Saudi AI output missing applicable principles tag (Accountability / Fairness / Transparency / Reliability)",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "sa-pdpl-cross-border-art29",
+    description:
+      "BLOCK Saudi PI cross-border transfer without Art. 29 adequacy attestation — Saudi PDPL Art. 29",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (
+        SAUDI_TERMS.test(text) &&
+        /\bcross[-\s]?border|\bexport[-\s]?(?:to|outside)|\binternational[-\s]?transfer|\boutside[-\s]?KSA|\boutside[-\s]?Saudi[-\s]?Arabia/i.test(
+          text,
+        )
+      ) {
+        const hasAttestation =
+          /\bArt\.?\s?29[-\s]?(?:attestation|approval|adequacy)|\bSDAIA[-\s]?cross[-\s]?border[-\s]?(?:approval|ref)|\badequacy[-\s]?(?:list|decision)|\bcontrolled[-\s]?transfer/i.test(
+            text,
+          );
+        if (!hasAttestation) {
+          return {
+            verdict: "block",
+            reason:
+              "Saudi PDPL Art. 29: cross-border transfer of Saudi PI requires SDAIA adequacy attestation before processing",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+];
+
+export const saudiPdplPack: GuardianPack = {
+  id: "sa-pdpl-ai-2023",
+  name: "Saudi PDPL + SDAIA AI Ethics Principles",
+  citation:
+    "Royal Decree M/19 of 9/2/1443H (Saudi PDPL, in force Sept 14, 2023) Arts. 17 / 29 + SDAIA AI Ethics Principles v2.0 (2023)",
+  rules: saudiPdplRules,
+};
+
+// ── Wave 67: Vietnam Cybersecurity Law + Decree 13 AI ─────────────────
+//
+// Vietnam Decree 13/2023/ND-CP on personal data protection (in force
+// July 1, 2023) + Cybersecurity Law 2018 + Decree 53/2022/ND-CP
+// data-localization rules. Vietnamese AI deployments must reference
+// (a) personal-data-impact assessment under Decree 13, (b) data-
+// localization compliance for "important data", (c) Vietnamese-
+// language notice obligations.
+
+const VIETNAM_TERMS =
+  /\b(Vietnam(?:ese)?[-\s]?(?:resident|user|data[-\s]?subject)|VN[-\s]?(?:user|data[-\s]?subject)|Decree[-\s]?13[-\s]?(?:2023|ND[-\s]?CP)|Vietnam[-\s]?Cybersecurity[-\s]?Law)/i;
+
+export const vietnamCyberRules: GuardianRule[] = [
+  {
+    id: "vn-decree13-impact-assessment",
+    description:
+      "WARN on Vietnamese AI processing without Decree 13 PDPIA reference — Vietnam Decree 13/2023/ND-CP Art. 25",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (VIETNAM_TERMS.test(text)) {
+        const hasAssessment =
+          /\bPDPIA|\bpersonal[-\s]?data[-\s]?(?:protection[-\s]?)?impact[-\s]?assessment|\bDecree[-\s]?13[-\s]?(?:ref|completed)|\bAssessment[-\s]?(?:on|of)[-\s]?personal[-\s]?data[-\s]?protection/i.test(
+            text,
+          );
+        if (!hasAssessment) {
+          return {
+            verdict: "warn",
+            reason:
+              "Vietnam Decree 13/2023/ND-CP Art. 25: Vietnamese AI processing missing PDPIA reference",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "vn-data-localization-attestation",
+    description:
+      "WARN on Vietnamese 'important data' processing without localization attestation — Decree 53/2022/ND-CP",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (
+        VIETNAM_TERMS.test(text) &&
+        /\bimportant[-\s]?data|\bnational[-\s]?security[-\s]?data|\bcritical[-\s]?(?:infrastructure|sector)|\bdữ[-\s]?liệu[-\s]?quan[-\s]?trọng/i.test(
+          text,
+        )
+      ) {
+        const hasLocalization =
+          /\bdata[-\s]?localization[-\s]?(?:attested|verified|on[-\s]?file)|\bonshore[-\s]?(?:processing|storage)|\bDecree[-\s]?53[-\s]?(?:compliant|ref)|\bVietnamese[-\s]?soil/i.test(
+            text,
+          );
+        if (!hasLocalization) {
+          return {
+            verdict: "warn",
+            reason:
+              "Vietnam Decree 53/2022/ND-CP: important-data processing missing data-localization attestation",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "vn-vietnamese-notice",
+    description:
+      "WARN on Vietnamese data-subject notice without Vietnamese-language version — Decree 13 Art. 11",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (VIETNAM_TERMS.test(text)) {
+        const hasVietnamese =
+          /\bVietnamese[-\s]?(?:language[-\s]?)?notice|\bbilingual[-\s]?notice|\bnotice[-\s]?in[-\s]?Vietnamese|\bthông[-\s]?báo[-\s]?tiếng[-\s]?Việt/i.test(
+            text,
+          );
+        if (!hasVietnamese) {
+          return {
+            verdict: "warn",
+            reason:
+              "Vietnam Decree 13/2023/ND-CP Art. 11: data-subject notice missing Vietnamese-language version",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+];
+
+export const vietnamCyberPack: GuardianPack = {
+  id: "vn-cybersecurity-ai-2023",
+  name: "Vietnam Cybersecurity Law + Decree 13/2023",
+  citation:
+    "Vietnam Decree 13/2023/ND-CP (in force July 1, 2023) Arts. 11 / 25 + Vietnam Cybersecurity Law 2018 + Decree 53/2022/ND-CP (data localization)",
+  rules: vietnamCyberRules,
+};
+
 // ── Registry of packs ────────────────────────────────────────────────
 
 export interface GuardianPack {
@@ -3021,6 +3318,9 @@ export const ALL_PACKS: GuardianPack[] = [
   uaePdplPack,
   industrialFoundationPack,
   ambientScribePack,
+  quebecLaw25Pack,
+  saudiPdplPack,
+  vietnamCyberPack,
 ];
 
 export function findPack(id: string): GuardianPack | undefined {
