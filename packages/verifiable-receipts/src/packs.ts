@@ -800,6 +800,377 @@ export const nydfsPack: GuardianPack = {
   rules: nydfsRules,
 };
 
+// ── NYC AEDT pack — NYC Local Law 144 (Automated Employment Decision Tools) ──
+
+// Effective July 5, 2023. Every "automated employment decision tool"
+// (AEDT) used to substantially assist a hiring or promotion decision
+// for a NYC-based candidate or employee MUST: (1) have an annual
+// independent bias audit, (2) give candidates 10 business days
+// notice + an alternative process, (3) post a bias-audit summary
+// publicly. Receipts from such tools should record the compliance
+// signals so a Department of Consumer and Worker Protection (DCWP)
+// inspector can audit per-decision.
+
+const HIRING_DECISION_TERMS =
+  /\b(hir|interview|shortlist|reject|advance|reject candidate|move forward|disqualif|recommend for promotion|promote)/i;
+
+export const nycAedtRules: GuardianRule[] = [
+  {
+    id: "nyc-aedt-bias-audit-attestation",
+    description:
+      "WARN on hiring decisions issued without a bias-audit attestation in the receipt — NYC Local Law 144 §20-871",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (HIRING_DECISION_TERMS.test(text)) {
+        const hasAttestation =
+          /\bbias[-\s]?audit(?:ed)?\b|\baudit (?:date|completed|reference)|\bDCWP[-\s]?audit/i.test(
+            text,
+          );
+        if (!hasAttestation) {
+          return {
+            verdict: "warn",
+            reason:
+              "NYC Local Law 144 §20-871: AEDT output lacks bias-audit attestation reference",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "nyc-aedt-candidate-notice",
+    description:
+      "WARN on hiring decisions issued without candidate-notice attestation — NYC Local Law 144 §20-870",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (HIRING_DECISION_TERMS.test(text)) {
+        const hasNotice =
+          /\bnotice[-\s]?(?:given|provided|sent)|\b10[-\s]?(?:business[-\s]?)?day|\bcandidate (?:notice|notification)|\balternative process/i.test(
+            text,
+          );
+        if (!hasNotice) {
+          return {
+            verdict: "warn",
+            reason:
+              "NYC Local Law 144 §20-870: AEDT output lacks candidate-notice / 10-business-day acknowledgement",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "nyc-aedt-protected-class-in-output",
+    description:
+      "BLOCK AEDT output that surfaces a candidate's protected class as a decision factor — NYC Local Law 144 §20-871(b) + EEOC Title VII",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (
+        HIRING_DECISION_TERMS.test(text) &&
+        PROTECTED_CLASS_TERMS.test(text)
+      ) {
+        return {
+          verdict: "block",
+          reason:
+            "NYC Local Law 144 / EEOC Title VII: AEDT decision references a protected class (race/sex/religion/age/etc.)",
+        };
+      }
+      return { verdict: "pass" };
+    },
+  },
+];
+
+export const nycAedtPack: GuardianPack = {
+  id: "nyc-aedt-2026",
+  name: "NYC AEDT — Local Law 144",
+  citation:
+    "NYC Local Law 144 (2021) §§20-870 to 20-874 (Automated Employment Decision Tools) + EEOC Title VII",
+  rules: nycAedtRules,
+};
+
+// ── FERPA pack — US student records ───────────────────────────────────
+
+// Family Educational Rights and Privacy Act (20 USC §1232g + 34 CFR
+// Part 99). Applies to any institution receiving Department of
+// Education funds. AI agents that touch student records MUST NOT
+// disclose education records or PII without consent (or via documented
+// exceptions like school-official, directory-info-with-opt-out).
+
+const STUDENT_TERMS =
+  /\b(student|pupil|minor child|class[-\s]?of[-\s]?\d{4}|enroll|transcript|grade|GPA|matricul)/i;
+const EDUCATIONAL_PII =
+  /\b(SSN|social security|date of birth|home address|disciplin(?:ary|e)|guardian phone|parent email)/i;
+
+export const ferpaRules: GuardianRule[] = [
+  {
+    id: "ferpa-no-student-pii-without-consent",
+    description:
+      "BLOCK output combining student identifier + sensitive PII without consent attestation — FERPA 34 CFR §99.30",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (STUDENT_TERMS.test(text) && EDUCATIONAL_PII.test(text)) {
+        const hasConsent =
+          /\bparental[-\s]?consent|\beligible[-\s]?student[-\s]?consent|\b(?:written|signed)[-\s]?consent|\bFERPA[-\s]?(?:exception|consent)/i.test(
+            text,
+          );
+        if (!hasConsent) {
+          return {
+            verdict: "block",
+            reason:
+              "FERPA §99.30: educational record + PII disclosed without consent attestation",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "ferpa-directory-info-opt-out-check",
+    description:
+      "WARN when output discloses directory information without opt-out check — FERPA 34 CFR §99.37",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      const directoryInfo =
+        /\b(name|email|telephone|honors|awards|enrollment status|dates of attendance|photograph)/i;
+      if (
+        STUDENT_TERMS.test(text) &&
+        directoryInfo.test(text) &&
+        !/\bopt[-\s]?out[-\s]?(?:check|verified|status)|\bdirectory[-\s]?disclosure[-\s]?allowed/i.test(
+          text,
+        )
+      ) {
+        return {
+          verdict: "warn",
+          reason:
+            "FERPA §99.37: directory information disclosed without opt-out verification",
+        };
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "ferpa-school-official-exception-rationale",
+    description:
+      "WARN when AI agent acts as a 'school official' without legitimate-educational-interest rationale — FERPA 34 CFR §99.31(a)(1)",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (STUDENT_TERMS.test(text)) {
+        const isInternal =
+          /\bschool[-\s]?official|\binternal use|\beducational[-\s]?purpose/i.test(
+            text,
+          );
+        const hasRationale =
+          /\blegitimate[-\s]?educational[-\s]?interest|\binstructional[-\s]?need|\bsupport[-\s]?(?:learning|student)/i.test(
+            text,
+          );
+        if (isInternal && !hasRationale) {
+          return {
+            verdict: "warn",
+            reason:
+              "FERPA §99.31(a)(1): school-official exception requires legitimate-educational-interest rationale",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+];
+
+export const ferpaPack: GuardianPack = {
+  id: "ferpa-2026",
+  name: "FERPA — US Student Records",
+  citation:
+    "Family Educational Rights and Privacy Act (20 USC §1232g) + 34 CFR Part 99",
+  rules: ferpaRules,
+};
+
+// ── FDA SaMD pack — Software as Medical Device ────────────────────────
+
+// FDA's Software as Medical Device (SaMD) framework + the AI/ML
+// Software as Medical Device Action Plan (Jan 2021). EU equivalent:
+// MDR 2017/745 + IVDR 2017/746. AI agents that influence clinical
+// decisions face higher diligence: intended-use statements, confidence
+// disclosure, and human-in-the-loop language for prescriptive output.
+
+const CLINICAL_TERMS =
+  /\b(diagnos|prognos|treatment|prescri|dosing|dosage|clinical|patient[-\s]?care|medical[-\s]?advice|interpret[-\s]?(?:scan|image|x-ray|MRI|CT))/i;
+const PRESCRIPTIVE_TERMS =
+  /\b(prescribe|administer|inject|dispense|start[-\s]?therapy|begin[-\s]?treatment|initiate[-\s]?(?:dose|treatment))/i;
+
+export const fdaSaMDRules: GuardianRule[] = [
+  {
+    id: "fda-samd-intended-use-statement",
+    description:
+      "WARN on clinical-decision output missing intended-use statement — FDA SaMD framework + 21 CFR §807.87",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (CLINICAL_TERMS.test(text)) {
+        const hasIntendedUse =
+          /\bintended[-\s]?use|\bindicat(?:ed|ion)[-\s]?for|\bfor[-\s]?clinician[-\s]?(?:review|use)|\bdecision[-\s]?support[-\s]?only/i.test(
+            text,
+          );
+        if (!hasIntendedUse) {
+          return {
+            verdict: "warn",
+            reason:
+              "FDA SaMD: clinical output lacks intended-use / decision-support qualifier",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "fda-samd-confidence-disclosure",
+    description:
+      "WARN on AI/ML clinical output without confidence / uncertainty disclosure — FDA AI/ML SaMD Action Plan §4",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (CLINICAL_TERMS.test(text)) {
+        const hasConfidence =
+          /\bconfidence[-\s]?(?:interval|score|level)|\baccuracy[-\s]?(?:rate|metric)|\bsensitivity[-\s]?\d|\bspecificity[-\s]?\d|\buncertainty[-\s]?(?:range|bounds)/i.test(
+            text,
+          );
+        if (!hasConfidence) {
+          return {
+            verdict: "warn",
+            reason:
+              "FDA AI/ML SaMD Action Plan §4: clinical AI output missing confidence / uncertainty disclosure",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "fda-samd-no-direct-prescription",
+    description:
+      "BLOCK output that issues a prescription / dosing decision without human-in-the-loop qualifier — FDA SaMD §III.B + 21 CFR §1300",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (PRESCRIPTIVE_TERMS.test(text)) {
+        const hasHumanLoop =
+          /\bfor[-\s]?(?:clinician|physician|prescriber)[-\s]?(?:review|approval|sign[-\s]?off)|\bhuman[-\s]?in[-\s]?the[-\s]?loop|\bsubject[-\s]?to[-\s]?(?:physician|medical)[-\s]?review/i.test(
+            text,
+          );
+        if (!hasHumanLoop) {
+          return {
+            verdict: "block",
+            reason:
+              "FDA SaMD: AI output issues a prescriptive medical action without human-in-the-loop qualifier",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+];
+
+export const fdaSaMDPack: GuardianPack = {
+  id: "fda-samd-2026",
+  name: "FDA SaMD + AI/ML Action Plan",
+  citation:
+    "FDA Software as Medical Device (SaMD) framework + AI/ML SaMD Action Plan (Jan 2021) + 21 CFR §807.87 + 21 CFR §1300",
+  rules: fdaSaMDRules,
+};
+
+// ── EU DORA pack — Digital Operational Resilience Act ─────────────────
+
+// Regulation (EU) 2022/2554. Enforceable since Jan 17, 2025. Covers
+// ~22,000 EU financial entities (banks, insurers, CCPs, crypto-asset
+// service providers). AI agents handling ICT third-party risk
+// classification, fraud-model outputs, or incident reporting must
+// emit receipts compatible with the 4-hour major-incident clock + the
+// RTS Art. 18 severity tiers. Per Celent 2025, ICT-risk compliance
+// spend in scope is €1.5-2B annually.
+
+const DORA_INCIDENT_TERMS =
+  /\b(ICT[-\s]?incident|operational[-\s]?incident|outage|breach|service[-\s]?disruption|major[-\s]?incident)/i;
+const DORA_THIRD_PARTY_TERMS =
+  /\b(third[-\s]?party[-\s]?provider|CTPP|critical[-\s]?ICT[-\s]?service|vendor[-\s]?risk|sub[-\s]?contractor)/i;
+
+export const doraRules: GuardianRule[] = [
+  {
+    id: "dora-rts-art18-severity-tier",
+    description:
+      "WARN on ICT-incident outputs without RTS Art. 18 severity tier — EU DORA Reg 2022/2554 + ESA RTS",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (DORA_INCIDENT_TERMS.test(text)) {
+        const hasTier =
+          /\bseverity[-\s]?(?:tier|level|class)|\bmajor|\bsignificant|\bnotifiable|\bRTS[-\s]?Art\.?\s?18|\btier[-\s]?[1-4]\b/i.test(
+            text,
+          );
+        if (!hasTier) {
+          return {
+            verdict: "warn",
+            reason:
+              "DORA Reg 2022/2554 + ESA RTS Art. 18: ICT-incident output missing severity tier classification",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "dora-4h-major-incident-clock",
+    description:
+      "WARN on major-incident classification without 4-hour reporting clock start timestamp — EU DORA Art. 19",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (
+        DORA_INCIDENT_TERMS.test(text) &&
+        /\bmajor[-\s]?incident|\bnotifiable|\bsignificant[-\s]?incident/i.test(
+          text,
+        )
+      ) {
+        const hasClock =
+          /\b4[-\s]?hour|\bclock[-\s]?(?:start|started|begins)|\binitial[-\s]?notification[-\s]?(?:by|at|due)|\bdetected[-\s]?at[-\s]?\d{4}/i.test(
+            text,
+          );
+        if (!hasClock) {
+          return {
+            verdict: "warn",
+            reason:
+              "DORA Art. 19: major-incident output lacks 4-hour reporting-clock start timestamp",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "dora-third-party-id-attestation",
+    description:
+      "WARN on third-party-risk decisions without CTPP / vendor identifier — EU DORA Art. 28-30 + Register of Information",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (DORA_THIRD_PARTY_TERMS.test(text)) {
+        const hasId =
+          /\bCTPP[-\s]?(?:id|reference)|\bvendor[-\s]?id|\bLEI[-\s]?\d|\bregister[-\s]?of[-\s]?information|\bRoI[-\s]?reference/i.test(
+            text,
+          );
+        if (!hasId) {
+          return {
+            verdict: "warn",
+            reason:
+              "DORA Art. 28-30: third-party decision lacks CTPP / vendor / LEI / Register-of-Information identifier",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+];
+
+export const doraPack: GuardianPack = {
+  id: "eu-dora-2026",
+  name: "EU DORA — Digital Operational Resilience",
+  citation:
+    "Regulation (EU) 2022/2554 (DORA) + ESA RTS Art. 18 (severity) + Art. 19 (incident reporting) + Art. 28-30 (third-party risk)",
+  rules: doraRules,
+};
+
 // ── Registry of packs ────────────────────────────────────────────────
 
 export interface GuardianPack {
@@ -821,6 +1192,10 @@ export const ALL_PACKS: GuardianPack[] = [
   pciDssPack,
   euAiActPack,
   nydfsPack,
+  nycAedtPack,
+  ferpaPack,
+  fdaSaMDPack,
+  doraPack,
 ];
 
 export function findPack(id: string): GuardianPack | undefined {
