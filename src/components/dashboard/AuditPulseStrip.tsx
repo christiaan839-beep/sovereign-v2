@@ -152,8 +152,9 @@ export function AuditPulseStrip() {
                   Your audit chain starts on your first run
                 </p>
                 <p className="mt-0.5 text-[10px] text-neutral-500">
-                  Every agent execution from here is HMAC-signed and added to a
-                  Merkle tree only you control.
+                  Every agent execution from here is Ed25519-signed
+                  (post-quantum-ready) and added to a Merkle tree only you
+                  control.
                 </p>
               </>
             ) : (

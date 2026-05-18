@@ -149,11 +149,29 @@ export function LiveVerifierDemo() {
       <h2 className="mb-4 max-w-3xl font-serif text-4xl tracking-tight text-white md:text-5xl">
         Watch a real receipt verify in real time.
       </h2>
-      <p className="mb-10 max-w-2xl text-[15px] leading-relaxed text-neutral-400">
+      <p className="mb-4 max-w-2xl text-[15px] leading-relaxed text-neutral-400">
         The receipt below is the most recent public agent run on this deployment
-        — not a screenshot. Click <em>Verify</em> to recompute the HMAC-SHA256
+        — not a screenshot. Click <em>Verify</em> to recompute the signature
         against the public verifier. Then tamper with one byte and watch it
         fail.
+      </p>
+      <p className="mb-10 max-w-2xl text-[12px] leading-relaxed text-neutral-500">
+        <span className="text-neutral-400">
+          v1 (HMAC-SHA256) reference demo.
+        </span>{" "}
+        Production receipts ship as v2 (Ed25519) — verifiable with{" "}
+        <a
+          href="/transparency/verify"
+          className="text-cyan-300 hover:text-cyan-200 underline underline-offset-4 decoration-cyan-500/40"
+        >
+          /transparency/verify
+        </a>{" "}
+        or the OSS CLI{" "}
+        <code className="text-neutral-400">
+          npx @sovereign-matrix/verifiable-receipts verify
+        </code>
+        . Where ML-DSA-65 dual-sign is configured, every receipt also carries a
+        v3 wire signature (post-quantum forward-secure per FIPS 204).
       </p>
 
       <div className="overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl">

@@ -190,7 +190,7 @@ export default function SpecPage() {
           <Pillar
             Icon={Lock}
             title="Tamper-evident"
-            body="HMAC-SHA256 over a byte-deterministic canonical projection. A single byte changed in input/output/safety = signature mismatch."
+            body="Ed25519 / ML-DSA-65 dual-sign over a byte-deterministic canonical projection. A single byte changed in input/output/safety = signature mismatch. HMAC-SHA256 supported as a legacy v1 path for closed-loop deployments."
           />
           <Pillar
             Icon={Globe}
@@ -232,8 +232,14 @@ const { valid } = await verifyRemote(receipt, { baseUrl: issuerUrl });`}
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <tbody className="divide-y divide-white/[0.04]">
-                <Row k="Algorithm" v="HMAC-SHA256 over canonical JSON" />
-                <Row k="Signature envelope" v={`v1=<64-char-lowercase-hex>`} />
+                <Row
+                  k="Algorithm"
+                  v="Ed25519 (RFC 8032) over canonical JSON. ML-DSA-65 (FIPS 204) dual-sign for v3. HMAC-SHA256 supported as legacy v1."
+                />
+                <Row
+                  k="Signature envelope"
+                  v={`v1=<hex-HMAC> | v2=<base64-Ed25519> | v3=<base64-Ed25519>.<base64-ML-DSA-65>`}
+                />
                 <Row
                   k="Canonicalization"
                   v="Top-level field order locked; nested object keys recursively sorted; arrays preserve element order"

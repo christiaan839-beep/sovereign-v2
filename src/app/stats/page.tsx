@@ -115,7 +115,7 @@ export default function StatsPage() {
         <section className="mb-10 grid grid-cols-1 gap-4 md:grid-cols-3">
           <BigStat
             label="Signed receipts"
-            sub="Lifetime · HMAC-SHA256"
+            sub="Lifetime · Ed25519 + PQ (ML-DSA-65)"
             value={data?.totals.signedReceipts ?? null}
             icon={Shield}
           />

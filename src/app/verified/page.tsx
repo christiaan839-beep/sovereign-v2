@@ -77,9 +77,10 @@ export default async function VerifiedPage() {
             <span style={{ color: "#22d3ee" }}>Cryptographic proof.</span>
           </h1>
           <p className="mt-5 max-w-2xl text-[17px] leading-relaxed text-neutral-400">
-            Every agent run on Sovereign produces an HMAC-SHA256-signed receipt.
-            Drop the embed badge on any page and your end users see a live
-            verification — no log-in, no API key, no iframe.
+            Every agent run on Sovereign produces an Ed25519-signed receipt
+            (post-quantum-ready via ML-DSA-65 dual-sign). Drop the embed badge
+            on any page and your end users see a live verification — no log-in,
+            no API key, no iframe.
           </p>
         </header>
 
@@ -158,8 +159,8 @@ export default async function VerifiedPage() {
         <section className="mb-12 grid grid-cols-1 gap-4 md:grid-cols-3">
           <Pillar
             Icon={KeyRound}
-            title="HMAC-SHA256"
-            body="Every receipt is signed server-side over a versioned canonical projection. The secret never leaves Sovereign's infrastructure."
+            title="Ed25519 + ML-DSA-65"
+            body="Every receipt is signed server-side over a versioned canonical projection. v2 (Ed25519) is publicly verifiable against the published PEM; v3 (Ed25519 + ML-DSA-65 dual-sign) is post-quantum forward-secure per FIPS 204."
           />
           <Pillar
             Icon={Eye}

@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Sovereign Verified — HMAC-signed receipts for every AI agent run",
+  title: "Sovereign Verified — Ed25519-signed receipts for every AI agent run",
   description:
-    "Every agent run produces a cryptographically signed receipt. Drop one line on your site; visitors verify against the public /api/verify endpoint with no signup, no API key, no iframe. Open CORS, sub-50ms.",
+    "Every agent run produces a cryptographically signed receipt (Ed25519, post-quantum-ready via ML-DSA-65 dual-sign). Drop one line on your site; visitors verify against the public /api/verify endpoint with no signup, no API key, no iframe. Open CORS, sub-50ms.",
   openGraph: {
     title: "Sovereign Verified — proof every AI output is auditable",
     description:
-      "HMAC-SHA256 signed receipts. Public verifier. Cross-origin readable. Bitcoin-anchored via OpenTimestamps. Audit-grade AI infrastructure.",
+      "Ed25519 + ML-DSA-65 dual-signed receipts (FIPS 204 post-quantum). Public verifier. Cross-origin readable. Bitcoin-anchored via OpenTimestamps. Audit-grade AI infrastructure.",
     url: "https://sovereignmatrix.agency/verified",
     type: "website",
   },

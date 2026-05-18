@@ -105,7 +105,11 @@ export async function GET() {
           required: ["receiptId", "signature", "headline", "body"],
           properties: {
             receiptId: { type: "string", description: "Stable identifier" },
-            signature: { type: "string", description: "Hex HMAC-SHA256" },
+            signature: {
+              type: "string",
+              description:
+                "VAOS wire signature: `v1=<hex-HMAC>` (legacy) | `v2=<base64-Ed25519>` | `v3=<base64-Ed25519>.<base64-ML-DSA-65>` (FIPS 204 dual-sign).",
+            },
             headline: { type: "string" },
             body: { type: "string" },
             citations: {
