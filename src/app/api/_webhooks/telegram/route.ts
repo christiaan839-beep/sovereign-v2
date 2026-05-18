@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { createLogger } from "@/lib/logger";
 import { rateLimit } from "@/lib/rate-limit";
+import { alreadyProcessed } from "@/lib/idempotency";
 const log = createLogger("telegram-webhook");
 
 const limiter = rateLimit({ interval: 60, limit: 30 });
@@ -82,6 +83,19 @@ export async function POST(req: Request) {
 
     if (!body.message || !body.message.text) {
       return NextResponse.json({ status: "ignored" });
+    }
+
+    // Idempotency — Telegram retries on 5xx and our reply triggers
+    // a paid AI call. Without dedup, a retried update_id re-charges
+    // the model + re-replies to the user.
+    if (
+      typeof body.update_id === "number" &&
+      (await alreadyProcessed("telegram:update", String(body.update_id)))
+    ) {
+      log.info("Skipped: Telegram update already processed", {
+        updateId: body.update_id,
+      });
+      return NextResponse.json({ status: "duplicate" });
     }
 
     const chatId = body.message.chat.id;

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { rateLimit } from "@/lib/rate-limit";
 import { createLogger } from "@/lib/logger";
+import { alreadyProcessed } from "@/lib/idempotency";
 
 const log = createLogger("twilio-webhook");
 
@@ -96,6 +97,18 @@ export async function POST(request: NextRequest) {
     }
 
     if (!incomingText) {
+      return new NextResponse(EMPTY_TWIML, {
+        status: 200,
+        headers: XML_HEADERS,
+      });
+    }
+
+    // Idempotency — Twilio retries on 5xx and our reply triggers
+    // a paid NIM call. Without dedup, a retried MessageSid
+    // re-charges the model + sends a duplicate reply.
+    const messageSid = formData.get("MessageSid")?.toString() || "";
+    if (messageSid && (await alreadyProcessed("twilio:sms", messageSid))) {
+      log.info("Skipped: Twilio MessageSid already processed", { messageSid });
       return new NextResponse(EMPTY_TWIML, {
         status: 200,
         headers: XML_HEADERS,

@@ -84,6 +84,24 @@ export interface AgentConfig {
   /** Skip authentication (for public demo endpoints) */
   public?: boolean;
 
+  /**
+   * When true (default for new routes), the factory resolves the
+   * authenticated user to a tenant UUID via requireTenantScope()
+   * BEFORE calling the handler. The handler receives `tenantId` in
+   * ctx — guaranteeing every DB write in the handler can be
+   * tenant-scoped via `eq(table.tenantId, ctx.tenantId)`.
+   *
+   * If tenant resolution fails (no tenant row for this Clerk user),
+   * the factory returns 403 instead of running the handler. This
+   * closes the silent-cross-tenant-leak surface that the Wave 72
+   * architecture review flagged on 140 agent routes.
+   *
+   * Defaults to undefined (legacy behavior — no enforced scope).
+   * New routes SHOULD set this to true. Routes that don't need
+   * tenant scope (e.g. /api/_agents/public-demo) can leave it false.
+   */
+  requireTenant?: boolean;
+
   /** Maximum request body size in characters (default: 50000) */
   maxInputSize?: number;
 
@@ -166,6 +184,7 @@ export function createAgentRoute(config: AgentConfig) {
     const startTime = Date.now();
     let email = "";
     let userId = "";
+    let tenantId: string | undefined;
     let replay: ReplayBuilder | null = null;
 
     try {
@@ -176,6 +195,36 @@ export function createAgentRoute(config: AgentConfig) {
         if (!guard.authorized) return guard.response;
         email = guard.email;
         userId = guard.userId;
+      }
+
+      // ─── Tenant Scope (Wave 73) ─────────────────────────────────
+      // When requireTenant is set, resolve the user → tenant UUID
+      // BEFORE running the handler. Refuse to run unscoped: a
+      // transient Neon error returning undefined would otherwise let
+      // the handler write rows with no tenant binding, leaking
+      // across tenants. requireTenantScope throws TenantResolutionError;
+      // we map that to a 403 with a non-leaking reason.
+      if (config.requireTenant && userId) {
+        const { requireTenantScope, TenantResolutionError } =
+          await import("@/lib/tenant-resolver");
+        try {
+          tenantId = await requireTenantScope(userId);
+        } catch (err) {
+          if (err instanceof TenantResolutionError) {
+            return new NextResponse(
+              JSON.stringify({
+                error:
+                  "tenant scope unavailable — try again or contact support",
+                code: "TENANT_SCOPE_REQUIRED",
+              }),
+              {
+                status: 403,
+                headers: { "Content-Type": "application/json" },
+              },
+            );
+          }
+          throw err;
+        }
       }
 
       // ─── Plan Limit Enforcement ───
@@ -362,8 +411,10 @@ export function createAgentRoute(config: AgentConfig) {
       }
 
       // ─── Resolve Tenant ID for Multi-Tenant Isolation ───
-      let tenantId: string | undefined;
-      if (userId) {
+      // Skip if the strict requireTenant path above already
+      // resolved it. Otherwise fall back to the legacy soft
+      // resolution that returns undefined on miss.
+      if (!tenantId && userId) {
         tenantId = await resolveTenantId(userId);
       }
 

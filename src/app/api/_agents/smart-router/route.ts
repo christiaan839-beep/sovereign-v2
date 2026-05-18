@@ -1,4 +1,5 @@
 import { auth } from "@clerk/nextjs/server";
+import { ai } from "@/lib/ai";
 import { getNimKey, selectBestModel } from "@/lib/nvidia";
 import { NextResponse } from "next/server";
 import { enhanceWithSkills } from "@/lib/skill-engine";
@@ -586,24 +587,22 @@ async function compileDAG(
   if (!isComplex) return null;
 
   try {
-    const { default: Anthropic } = await import("@anthropic-ai/sdk");
-    const client = new Anthropic({ apiKey: anthropicKey });
+    // Wave 73 cost audit: previously this called Anthropic SDK
+    // directly, skipping the unified ai() router — no budget gate,
+    // no prompt-caching, no Sentry span, no circuit breaker. Routed
+    // through ai() now so every shared safety + cost guarantee
+    // applies. Anthropic key resolution falls through ai()'s
+    // tier-checking logic; the underlying SDK call is identical.
+    const text = await ai(
+      `Compile this goal into a workflow DAG:\n\n${prompt}\n\nReturn JSON array: [{"agent": "leads", "task": "Find 50 leads", "dependsOn": []}]`,
+      {
+        model: "claude",
+        maxTokens: 1000,
+        system:
+          "You are a workflow compiler. Break complex goals into a DAG of agent tasks. Available agents: leads, content, seo, email-sequence, voice, competitor, design, page-builder, code-agent, ads. Return ONLY a JSON array.",
+      },
+    );
 
-    const response = await client.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 1000,
-      system:
-        "You are a workflow compiler. Break complex goals into a DAG of agent tasks. Available agents: leads, content, seo, email-sequence, voice, competitor, design, page-builder, code-agent, ads. Return ONLY a JSON array.",
-      messages: [
-        {
-          role: "user",
-          content: `Compile this goal into a workflow DAG:\n\n${prompt}\n\nReturn JSON array: [{"agent": "leads", "task": "Find 50 leads", "dependsOn": []}]`,
-        },
-      ],
-    });
-
-    const text =
-      response.content[0].type === "text" ? response.content[0].text : "";
     return JSON.parse(
       text
         .replace(/```json?\n?/g, "")

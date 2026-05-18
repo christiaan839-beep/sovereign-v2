@@ -200,11 +200,14 @@ export default function LandingPage() {
 }
 
 /* ─── SectionHead ───────────────────────────────────────────────── */
+// Total section count = 9 (section 09 "PlatformScale" was cut in
+// Wave 12; see PlatformScale comment below). Display "/ 09" so the
+// visitor's running count matches what's actually on the page.
 function SectionHead({ n, label }: { n: string; label: string }) {
   return (
     <div className="mb-8 flex items-center gap-4 flex-wrap">
       <span className="font-mono text-[10px] text-neutral-600 tracking-[0.2em]">
-        {n} / 10
+        {n} / 09
       </span>
       <span aria-hidden="true" className="h-px w-6 bg-white/[0.12]" />
       <p className="font-serif italic text-[13px] text-neutral-500 tracking-[-0.01em]">
@@ -482,7 +485,7 @@ function Hero() {
           className="flex items-center justify-center gap-3 mb-8 flex-wrap"
         >
           <span className="font-mono text-[10px] text-neutral-600 tracking-[0.2em]">
-            01 / 10
+            01 / 09
           </span>
           <span aria-hidden="true" className="h-px w-6 bg-white/[0.12]" />
           <HeroProofPill />
@@ -1131,7 +1134,7 @@ function PricingStrip() {
   return (
     <section className="px-6 py-20 md:py-28 bg-[#040303]">
       <div className="max-w-4xl mx-auto">
-        <SectionHead n="10" label="pricing" />
+        <SectionHead n="09" label="pricing" />
 
         <h2 className="font-serif text-3xl md:text-5xl leading-[1.08] mb-4 tracking-[-0.02em] max-w-2xl">
           Simple, Transparent Pricing.

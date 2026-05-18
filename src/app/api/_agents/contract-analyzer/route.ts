@@ -9,7 +9,10 @@ import { ai } from "@/lib/ai";
  */
 
 const schema = z.object({
-  document: z.string().min(50, "Document text must be at least 50 characters").max(500_000),
+  document: z
+    .string()
+    .min(50, "Document text must be at least 50 characters")
+    .max(500_000),
   prompt: z.string().optional(),
   context: z.string().max(5000).optional(),
 });
@@ -43,20 +46,47 @@ export const POST = createAgentRoute({
         "nvidia/nemotron-3-nano-30b-a3b",
         [
           { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: `Analyze this contract:\n\n${document.substring(0, 200_000)}` },
+          {
+            role: "user",
+            content: `Analyze this contract:\n\n${document.substring(0, 200_000)}`,
+          },
         ],
-        { maxTokens: 3000, temperature: 0.1 }
+        { maxTokens: 3000, temperature: 0.1 },
       );
     } catch {
-      result = await ai(
-        `Analyze this contract:\n\n${document.substring(0, 50_000)}`,
-        { system: SYSTEM_PROMPT, maxTokens: 3000, model: "claude", thinking: true }
-      );
+      // Tiered fallback (Wave 73 cost audit): try Mistral Large 2 via
+      // NIM first (~30× cheaper than Claude Sonnet+thinking). Only
+      // escalate to Claude+thinking on a second consecutive failure.
+      try {
+        result = await ai(
+          `Analyze this contract:\n\n${document.substring(0, 50_000)}`,
+          {
+            system: SYSTEM_PROMPT,
+            maxTokens: 3000,
+            model: "mistral",
+          },
+        );
+      } catch {
+        result = await ai(
+          `Analyze this contract:\n\n${document.substring(0, 50_000)}`,
+          {
+            system: SYSTEM_PROMPT,
+            maxTokens: 3000,
+            model: "claude",
+            thinking: true,
+          },
+        );
+      }
     }
 
     let parsed;
     try {
-      parsed = JSON.parse(result.replace(/```json?\n?/g, "").replace(/```/g, "").trim());
+      parsed = JSON.parse(
+        result
+          .replace(/```json?\n?/g, "")
+          .replace(/```/g, "")
+          .trim(),
+      );
     } catch {
       parsed = { raw_analysis: result };
     }

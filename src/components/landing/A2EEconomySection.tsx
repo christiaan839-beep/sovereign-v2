@@ -28,7 +28,7 @@ export function A2EEconomySection() {
             transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
           >
             <div className="mb-8 flex items-center gap-4 flex-wrap">
-              <span className="font-mono text-[10px] text-neutral-600 tracking-[0.2em]">03 / 10</span>
+              <span className="font-mono text-[10px] text-neutral-600 tracking-[0.2em]">03 / 09</span>
               <span aria-hidden="true" className="h-px w-6 bg-white/[0.12]" />
               <p className="font-serif italic text-[13px] text-neutral-500 tracking-[-0.01em]">
                 agent economy

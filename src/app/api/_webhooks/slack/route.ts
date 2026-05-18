@@ -13,6 +13,7 @@
 import { NextResponse } from "next/server";
 import { rateLimit } from "@/lib/rate-limit";
 import { createLogger } from "@/lib/logger";
+import { alreadyProcessed } from "@/lib/idempotency";
 import {
   buildResponse,
   parseSlashCommand,
@@ -60,6 +61,20 @@ export async function POST(req: Request) {
   }
 
   const cmd = parseSlashCommand(rawBody);
+
+  // Idempotency — Slack delivers a unique trigger_id per slash
+  // command invocation. Even though Slack doesn't aggressively
+  // retry slash commands, doubled requests have been observed in
+  // the wild from network hiccups and ngrok-style tunnels.
+  const params = new URLSearchParams(rawBody);
+  const triggerId = params.get("trigger_id") || "";
+  if (triggerId && (await alreadyProcessed("slack:trigger", triggerId))) {
+    log.info("Skipped: Slack trigger_id already processed", { triggerId });
+    return NextResponse.json(buildResponse("(already processed)"), {
+      status: 200,
+    });
+  }
+
   if (!cmd) {
     return NextResponse.json(
       buildResponse("Could not parse command. Try `/sovereign help`."),

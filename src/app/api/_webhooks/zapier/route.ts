@@ -6,6 +6,7 @@ import crypto from "crypto";
 import { createLogger } from "@/lib/logger";
 import { rateLimit } from "@/lib/rate-limit";
 import { getPublicUrl } from "@/lib/base-url";
+import { alreadyProcessed } from "@/lib/idempotency";
 
 const log = createLogger("zapier-webhook");
 
@@ -98,6 +99,23 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { action, agent, params, playbook_id, hook_url } = body;
+
+    // Idempotency — Zapier sends x-zapier-request-id on every
+    // delivery and retries failed actions. Without dedup, retried
+    // agent invocations re-charge the model + replay the action.
+    const zapierRequestId =
+      req.headers.get("x-zapier-request-id") ||
+      req.headers.get("x-zapier-event-id") ||
+      "";
+    if (
+      zapierRequestId &&
+      (await alreadyProcessed("zapier:request", zapierRequestId))
+    ) {
+      log.info("Skipped: Zapier request already processed", {
+        zapierRequestId,
+      });
+      return NextResponse.json({ status: "duplicate" });
+    }
 
     // Webhook subscription (Zapier trigger)
     if (action === "subscribe" && hook_url) {

@@ -26,7 +26,7 @@ export function ModelRouterSection() {
 
       <div className="relative max-w-5xl mx-auto">
         <div className="mb-8 flex items-center gap-4 flex-wrap">
-          <span className="font-mono text-[10px] text-neutral-600 tracking-[0.2em]">05 / 10</span>
+          <span className="font-mono text-[10px] text-neutral-600 tracking-[0.2em]">05 / 09</span>
           <span aria-hidden="true" className="h-px w-6 bg-white/[0.12]" />
           <p className="font-serif italic text-[13px] text-neutral-500 tracking-[-0.01em]">
             model infrastructure

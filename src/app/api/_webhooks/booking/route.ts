@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { createLogger } from "@/lib/logger";
 import { getPublicUrl } from "@/lib/base-url";
 import { rateLimit } from "@/lib/rate-limit";
+import { alreadyProcessed } from "@/lib/idempotency";
 
 const log = createLogger("booking-webhook");
 
@@ -89,6 +90,21 @@ export async function POST(req: Request) {
 
     // Cal.com sends: BOOKING_CREATED, BOOKING_CANCELLED, BOOKING_RESCHEDULED
     const booking = payload.payload || payload;
+
+    // Idempotency — Cal.com retries on 5xx and our handler triggers
+    // a paid internal email + analytics call. Without dedup, retries
+    // re-fire both. Key on the booking UID (Cal.com guarantees unique).
+    const bookingUid = booking.uid || booking.id || payload.uid || "";
+    if (
+      bookingUid &&
+      (await alreadyProcessed("calcom:event", `${event}:${bookingUid}`))
+    ) {
+      log.info("Skipped: Cal.com event already processed", {
+        event,
+        bookingUid,
+      });
+      return NextResponse.json({ status: "duplicate" });
+    }
     const attendee = booking.attendees?.[0] || {};
     const name = attendee.name || "Unknown";
     const email = attendee.email || "";

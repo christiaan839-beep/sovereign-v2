@@ -161,8 +161,14 @@ export async function POST(req: Request) {
         9. Page must be fully responsive (mobile-first). Avoid fixed pixel heights, use padding/margins instead.
         `;
 
+        // Wave 73 cost audit: code generation is Qwen 2.5 Coder's
+        // specialty — free via NIM, sharper at structured HTML/JSX
+        // than Gemini Flash. `taskType: "code"` lets the router pick
+        // the best free model in the registry automatically; falls
+        // back to NIM-default if the code-tier model is unavailable.
         const rawCode = await ai(codePrompt, {
-          model: "gemini", // Or claude if user prefers
+          model: "nim",
+          taskType: "code",
           system:
             "You are a Frontend Web Developer. Output ONLY RAW JSX code. No markdown formatting. No explanations.",
           maxTokens: 4000,

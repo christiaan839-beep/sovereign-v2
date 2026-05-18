@@ -22,7 +22,9 @@ const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
  * Resolve a Clerk userId to the tenant UUID.
  * Returns undefined if the user has no tenant row (e.g., brand-new signup).
  */
-export async function resolveTenantId(userId: string): Promise<string | undefined> {
+export async function resolveTenantId(
+  userId: string,
+): Promise<string | undefined> {
   if (!userId) return undefined;
 
   // Check cache
@@ -60,4 +62,63 @@ export async function resolveTenantId(userId: string): Promise<string | undefine
  */
 export function invalidateTenantCache(userId: string): void {
   TENANT_CACHE.delete(userId);
+}
+
+/**
+ * Strict tenant resolution — throws TenantResolutionError if no tenant
+ * is found for the given userId. Use this in any agent route that
+ * writes tenant-scoped data; without it, a transient Neon error in
+ * resolveTenantId() returns undefined and the caller silently runs
+ * unscoped (cross-tenant data leakage risk).
+ *
+ * Wave 73 added this as the default boundary for new agent routes.
+ * Legacy routes that still call resolveTenantId() directly should
+ * migrate when next touched.
+ */
+export class TenantResolutionError extends Error {
+  constructor(
+    public readonly userId: string,
+    message: string,
+  ) {
+    super(`${message} (userId=${userId})`);
+    this.name = "TenantResolutionError";
+  }
+}
+
+export async function requireTenantScope(userId: string): Promise<string> {
+  if (!userId) {
+    throw new TenantResolutionError("", "missing userId for tenant resolution");
+  }
+  const tenantId = await resolveTenantId(userId);
+  if (!tenantId) {
+    throw new TenantResolutionError(
+      userId,
+      "no tenant exists for this user — refusing to run unscoped",
+    );
+  }
+  return tenantId;
+}
+
+/**
+ * Build a Drizzle WHERE-fragment helper for tenant-scoped queries.
+ *
+ * Wraps the common pattern:
+ *   const tenantId = await requireTenantScope(userId);
+ *   const rows = await db.select().from(table).where(eq(table.tenantId, tenantId));
+ *
+ * Use as:
+ *   const scope = await tenantScope(userId);
+ *   const rows = await db.select().from(table).where(scope.eq(table.tenantId));
+ *
+ * The returned helper carries the resolved tenantId so multiple
+ * downstream queries don't each re-hit the cache.
+ */
+export interface TenantScope {
+  readonly tenantId: string;
+  readonly userId: string;
+}
+
+export async function tenantScope(userId: string): Promise<TenantScope> {
+  const tenantId = await requireTenantScope(userId);
+  return Object.freeze({ tenantId, userId });
 }

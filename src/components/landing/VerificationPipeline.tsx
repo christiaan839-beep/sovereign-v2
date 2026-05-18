@@ -46,7 +46,7 @@ export function VerificationPipeline() {
     <section className="px-6 py-28 md:py-36 bg-[#0A0807]">
       <div className="max-w-4xl mx-auto">
         <div className="mb-8 flex items-center gap-4 flex-wrap">
-          <span className="font-mono text-[10px] text-neutral-600 tracking-[0.2em]">06 / 10</span>
+          <span className="font-mono text-[10px] text-neutral-600 tracking-[0.2em]">06 / 09</span>
           <span aria-hidden="true" className="h-px w-6 bg-white/[0.12]" />
           <p className="font-serif italic text-[13px] text-neutral-500 tracking-[-0.01em]">
             trust layer
