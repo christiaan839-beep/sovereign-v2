@@ -348,4 +348,21 @@ test.describe("Verifiable receipts surface (the central claim)", () => {
     await expect(page.locator("body")).toContainText(/Every wave/i);
     await expect(page.locator("body")).toContainText(/CHANGELOG · LIVE/i);
   });
+
+  test("/transparency/verify renders the in-browser verifier widget", async ({
+    page,
+  }) => {
+    const res = await page.goto("/transparency/verify");
+    expect(res?.status()).toBe(200);
+    await expect(page.locator("body")).toContainText(/Verify a proof/i);
+    await expect(page.locator("button[type='submit']")).toBeVisible();
+    await expect(page.locator("input[type='number']").first()).toBeVisible();
+    await expect(page.locator("body")).toContainText(/Web Crypto/i);
+  });
+
+  test("/transparency links to the in-browser verifier", async ({ page }) => {
+    const res = await page.goto("/transparency");
+    expect(res?.status()).toBe(200);
+    await expect(page.locator("a[href='/transparency/verify']")).toBeVisible();
+  });
 });

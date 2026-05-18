@@ -158,6 +158,25 @@ export default async function TransparencyPage() {
               desc="Consistency proof — confirms the log at size M is a prefix of the log at size N. Catches forks."
             />
           </div>
+
+          {/* Direct link to the in-browser verifier — the elite procurement move */}
+          <div className="mt-5 p-4 border border-[#B5532C]/30 bg-[#B5532C]/[0.04] rounded-[3px]">
+            <p className="flex items-center gap-2 font-mono text-[10px] text-[#E08558] tracking-[0.2em] uppercase mb-2">
+              <ShieldCheck className="w-3 h-3" /> Or verify in your browser
+              right now
+            </p>
+            <p className="text-[13px] text-neutral-300 leading-[1.6] mb-2">
+              Skip the install — pick a leaf index, click a button, and watch
+              every SHA-256 hash recomputed locally via Web Crypto.
+            </p>
+            <Link
+              href="/transparency/verify"
+              className="inline-flex items-center gap-2 font-mono text-[12px] text-cyan-300 hover:text-cyan-200 underline underline-offset-4 decoration-cyan-500/40"
+            >
+              Open the in-browser verifier
+              <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
           <p className="font-mono text-[10px] text-neutral-500 tracking-[0.2em] uppercase mt-6 mb-2">
             Then verify the math locally:
           </p>
