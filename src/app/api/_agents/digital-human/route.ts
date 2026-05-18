@@ -1,5 +1,4 @@
 import { createAgentRoute } from "@/lib/agent-factory";
-import { NextResponse } from "next/server";
 
 /**
  * DIGITAL HUMANS BLUEPRINT — Combines Nemotron VoiceChat + FLUX image gen

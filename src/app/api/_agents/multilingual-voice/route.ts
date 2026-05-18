@@ -1,6 +1,5 @@
 import { createAgentRoute } from "@/lib/agent-factory";
 
-import { NextResponse } from "next/server";
 import { getBaseUrl } from "@/lib/base-url";
 
 /**

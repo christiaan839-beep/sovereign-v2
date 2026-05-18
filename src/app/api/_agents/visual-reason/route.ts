@@ -1,5 +1,4 @@
 import { createAgentRoute } from "@/lib/agent-factory";
-import { NextResponse } from "next/server";
 
 /**
  * VISUAL REASONING — Uses cosmos-reason2-8b for deep visual analysis.

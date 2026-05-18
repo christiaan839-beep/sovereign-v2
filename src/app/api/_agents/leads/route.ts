@@ -45,7 +45,7 @@ export const POST = createAgentRoute({
         `${niche} companies ${location} hiring growing 2026`,
         `Find real companies in the ${niche} industry located in ${location}. For each company found, identify: the company name, what they do, their website URL if available, and any recent news (funding, hiring, product launches). Focus on companies that would be good prospects for outreach.`
       );
-    } catch (err) {
+    } catch (_err) {
       // Don't hallucinate fake leads — flag that research was unavailable
       webResearch = "";
     }

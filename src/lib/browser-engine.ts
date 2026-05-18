@@ -22,7 +22,6 @@
 import { ai } from "@/lib/ai";
 import { createLogger } from "@/lib/logger";
 
-const log = createLogger("browser-engine");
 
 // ── Types ──
 
@@ -92,7 +91,7 @@ async function scrapePage(url: string): Promise<{ content: string; title: string
     const links = [...linkMatches].map(m => m[1]).slice(0, 50);
 
     return { content, title, links };
-  } catch (err) {
+  } catch (_err) {
     return { content: "", title: "", links: [] };
   }
 }

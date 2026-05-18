@@ -45,10 +45,8 @@ const SSN_REGEX = /\b\d{3}-\d{2}-\d{4}\b/;
 const PHONE_REGEX = /\b\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b/;
 
 /** Email — basic RFC-shape detection, not full validation. */
-const EMAIL_REGEX = /\b[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b/;
 
 /** Credit card — Luhn-checked 13-16 digit number. */
-const CARD_REGEX = /\b(?:\d[ -]*?){13,16}\b/;
 
 /** MRN (Medical Record Number) — common patterns: 7-12 alphanumerics
  *  with optional MRN/PT prefix. */

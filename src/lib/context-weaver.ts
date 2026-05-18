@@ -24,7 +24,6 @@
 import { ai } from "@/lib/ai";
 import { createLogger } from "@/lib/logger";
 
-const log = createLogger("context-weaver");
 
 // ── Types ──
 

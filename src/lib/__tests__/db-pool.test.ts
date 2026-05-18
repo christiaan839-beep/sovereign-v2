@@ -2,7 +2,7 @@
  * Tests for src/lib/db-pool.ts — Cook 114.
  */
 
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect } from "vitest";
 import { createGuard } from "../db-pool";
 
 describe("createGuard — config", () => {

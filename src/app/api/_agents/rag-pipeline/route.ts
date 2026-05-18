@@ -1,5 +1,4 @@
 import { createAgentRoute } from "@/lib/agent-factory";
-import { NextResponse } from "next/server";
 
 /**
  * RAG PIPELINE — Full Retrieval-Augmented Generation using NVIDIA NIM.

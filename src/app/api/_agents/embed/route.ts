@@ -1,5 +1,4 @@
 import { createAgentRoute } from "@/lib/agent-factory";
-import { NextResponse } from "next/server";
 
 /**
  * FREE EMBEDDINGS — Uses llama-nemotron-embed-1b-v2 from NVIDIA NIM.

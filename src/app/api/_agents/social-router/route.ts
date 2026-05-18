@@ -1,10 +1,8 @@
 import { createAgentRoute } from "@/lib/agent-factory";
-import { NextResponse } from "next/server";
 import { ai } from "@/lib/ai";
 import { ANTI_SLOP_RULES, PLATFORM_RULES } from "@/lib/content-engine";
 import { fireUserWebhook } from "@/lib/webhooks";
 import { createLogger } from "@/lib/logger";
-const log = createLogger("social-router");
 
 /**
  * Social Router API

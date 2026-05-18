@@ -253,7 +253,7 @@ async function writeToDB(
         values: (v: Record<string, unknown>) => Promise<void>;
       }
     ).values(insertData);
-  } catch (err) {
+  } catch (_err) {
     // Likely the new columns don't exist yet (migration not run). Write without them.
     try {
       await db.insert(tenantMemories).values({

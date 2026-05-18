@@ -1,6 +1,5 @@
 import { createAgentRoute } from "@/lib/agent-factory";
 import { getNimKey } from "@/lib/nvidia";
-import { NextResponse } from "next/server";
 
 /**
  * COSMOS VIDEO PREDICTION API — Uses NVIDIA Cosmos Predict 1 (5B)
