@@ -5,50 +5,126 @@ underserved relative to enforceable regulation + procurement budget.
 This file is a working document — updated as new packs ship + new
 regulations land.
 
-Last updated: 2026-05-18 (Wave 64).
+Last updated: 2026-05-18 (Wave 71).
 
 CC0 1.0. Republish freely.
 
 ---
 
-## What we ship today (32 Apache-2.0 Guardian packs across 6 continents)
+## What we ship today (42 Apache-2.0 Guardian packs across 7 continents + cross-cutting agentic frameworks)
 
-| #      | Pack                             | Citation                                             | Vertical                                   | Geography    |
-| ------ | -------------------------------- | ---------------------------------------------------- | ------------------------------------------ | ------------ |
-| 1      | `hipaaPack`                      | 45 CFR §164.514 Safe Harbor                          | Health (PII)                               | US           |
-| 2      | `sr117Pack`                      | Fed SR 11-7 / OCC 2011-12                            | Banking model risk                         | US           |
-| 3      | `naicPack`                       | NAIC AI Bulletin (Dec 2023)                          | Insurance                                  | US           |
-| 4      | `dscsaPack`                      | DSCSA §581(11)                                       | Pharma supply chain                        | US           |
-| 5      | `csrdPack`                       | EU Directive 2022/2464 + ESRS                        | Sustainability disclosure                  | EU           |
-| 6      | `cfpbPack`                       | 12 CFR §1002 (ECOA) + §1024/§1026 (Reg Z)            | Consumer credit + mortgage                 | US           |
-| 7      | `masPack`                        | MAS FEAT 2018 + Singapore PDPA                       | Financial AI + NRIC                        | Singapore    |
-| 8      | `fcaPack`                        | FCA PRIN 2A + FG24/2 + FG21/1                        | Consumer Duty + AI guidance                | UK           |
-| 9      | `pciDssPack`                     | PCI DSS v4.0 §3.3 / §3.5                             | Payment card data                          | Global       |
-| 10     | `euAiActPack`                    | Reg (EU) 2024/1689 Art. 13/14/15/50                  | High-risk AI systems                       | EU           |
-| 11     | `nydfsPack`                      | 23 NYCRR Part 500 + NYDFS AI Letter (Oct 2024)       | NY state financial cybersecurity           | NY           |
-| 12     | `nycAedtPack`                    | NYC Local Law 144 §§20-870 to 20-874                 | Algorithmic hiring decisions               | NYC          |
-| 13     | `ferpaPack`                      | 20 USC §1232g + 34 CFR Part 99                       | US student records                         | US           |
-| 14     | `fdaSaMDPack`                    | FDA SaMD + AI/ML SaMD Action Plan + 21 CFR §807.87   | Medical-device AI                          | US           |
-| 15     | `doraPack`                       | Reg (EU) 2022/2554 + ESA RTS Art. 18/19/28-30        | EU financial ICT resilience                | EU           |
-| **16** | **`coloradoAiPack`** (NEW)       | Colo. Rev. Stat. §§ 6-1-1701 to 6-1-1707 (SB 24-205) | **Consequential-decision AI**              | Colorado     |
-| **17** | **`californiaAb2013Pack`** (NEW) | Cal. Bus. & Prof. § 22757.1 (AB 2013)                | **GenAI training-data transparency**       | California   |
-| **18** | **`apraCps230Pack`** (NEW)       | APRA CPS 230 + Privacy Act 1988 (Cth) ADM            | **Financial operational resilience + ADM** | Australia    |
-| 19     | `fdaPccpPack`                    | FDA PCCP Final Guidance (Dec 4, 2024)                | Continuous-learning medical AI             | US           |
-| 20     | `illinoisAiPack`                 | 820 ILCS 42/ + HB 3773 (IHRA amendment)              | AI video interview + hiring bias           | Illinois     |
-| **21** | **`canadaAidaPack`** (NEW)       | Bill C-27 Part 3 (AIDA) ss. 8-12 + PIPEDA ADM        | **High-impact AI (employment + service)**  | Canada       |
-| **22** | **`ukIcoPack`** (NEW)            | ICO Guidance on AI + UK GDPR Art. 22 + ATRS v2       | **Cross-sector UK auditing framework**     | UK           |
-| **23** | **`iso42001Pack`** (NEW)         | ISO/IEC 42001:2023 §§ 6.1.4 / 7.5 + Annex A          | **AI Management System runtime hooks**     | ISO          |
-| **24** | **`texasAiPack`** (NEW)          | Tex. Bus. & Com. § 503.001 + HB 4 + TX-RAMP          | **Biometric AI + state procurement**       | Texas        |
-| **25** | **`brazilLgpdAiPack`** (NEW)     | LGPD Art. 20 + PL 2338/2023 art. 13                  | **GenAI + automated decisions**            | Brazil       |
-| 26     | `indiaDpdpAiPack`                | DPDP Act §§ 6 / 10 + MeitY AI Advisory (Mar 2024)    | DPDP + significant-data-fiduciary AI       | India        |
-| **27** | **`nistAiRmfPack`** (NEW)        | NIST AI 100-1 + AI 600-1 GenAI Profile (Jul 2024)    | **US federal GenAI procurement**           | US           |
-| **28** | **`chinaPiplGenAiPack`** (NEW)   | PIPL Art. 24 + CAC Interim Measures + Deep Synthesis | **China PIPL + GenAI registration**        | China        |
-| **29** | **`japanAppiPack`** (NEW)        | APPI Arts. 17/28 + METI AI Guidelines v1.0           | **Japan APPI + cross-border AI**           | Japan        |
-| **30** | **`koreaPipaPack`** (NEW)        | PIPA Art. 28-2 + AI Basic Act (eff. Jan 2026)        | **South Korea risk-tiered AI**             | South Korea  |
-| **31** | **`southAfricaPopiaPack`** (NEW) | POPIA ss. 8/71 + Draft AI Framework (Aug 2024)       | **South Africa automated decisions**       | South Africa |
-| **32** | **`uaePdplPack`** (NEW)          | UAE PDPL Art. 13 + DIFC AI + ADGM DP                 | **UAE / Gulf AI procurement**              | UAE          |
+| #      | Pack                                 | Citation                                             | Vertical                                     | Geography     |
+| ------ | ------------------------------------ | ---------------------------------------------------- | -------------------------------------------- | ------------- |
+| 1      | `hipaaPack`                          | 45 CFR §164.514 Safe Harbor                          | Health (PII)                                 | US            |
+| 2      | `sr117Pack`                          | Fed SR 11-7 / OCC 2011-12                            | Banking model risk                           | US            |
+| 3      | `naicPack`                           | NAIC AI Bulletin (Dec 2023)                          | Insurance                                    | US            |
+| 4      | `dscsaPack`                          | DSCSA §581(11)                                       | Pharma supply chain                          | US            |
+| 5      | `csrdPack`                           | EU Directive 2022/2464 + ESRS                        | Sustainability disclosure                    | EU            |
+| 6      | `cfpbPack`                           | 12 CFR §1002 (ECOA) + §1024/§1026 (Reg Z)            | Consumer credit + mortgage                   | US            |
+| 7      | `masPack`                            | MAS FEAT 2018 + Singapore PDPA                       | Financial AI + NRIC                          | Singapore     |
+| 8      | `fcaPack`                            | FCA PRIN 2A + FG24/2 + FG21/1                        | Consumer Duty + AI guidance                  | UK            |
+| 9      | `pciDssPack`                         | PCI DSS v4.0 §3.3 / §3.5                             | Payment card data                            | Global        |
+| 10     | `euAiActPack`                        | Reg (EU) 2024/1689 Art. 13/14/15/50                  | High-risk AI systems                         | EU            |
+| 11     | `nydfsPack`                          | 23 NYCRR Part 500 + NYDFS AI Letter (Oct 2024)       | NY state financial cybersecurity             | NY            |
+| 12     | `nycAedtPack`                        | NYC Local Law 144 §§20-870 to 20-874                 | Algorithmic hiring decisions                 | NYC           |
+| 13     | `ferpaPack`                          | 20 USC §1232g + 34 CFR Part 99                       | US student records                           | US            |
+| 14     | `fdaSaMDPack`                        | FDA SaMD + AI/ML SaMD Action Plan + 21 CFR §807.87   | Medical-device AI                            | US            |
+| 15     | `doraPack`                           | Reg (EU) 2022/2554 + ESA RTS Art. 18/19/28-30        | EU financial ICT resilience                  | EU            |
+| **16** | **`coloradoAiPack`** (NEW)           | Colo. Rev. Stat. §§ 6-1-1701 to 6-1-1707 (SB 24-205) | **Consequential-decision AI**                | Colorado      |
+| **17** | **`californiaAb2013Pack`** (NEW)     | Cal. Bus. & Prof. § 22757.1 (AB 2013)                | **GenAI training-data transparency**         | California    |
+| **18** | **`apraCps230Pack`** (NEW)           | APRA CPS 230 + Privacy Act 1988 (Cth) ADM            | **Financial operational resilience + ADM**   | Australia     |
+| 19     | `fdaPccpPack`                        | FDA PCCP Final Guidance (Dec 4, 2024)                | Continuous-learning medical AI               | US            |
+| 20     | `illinoisAiPack`                     | 820 ILCS 42/ + HB 3773 (IHRA amendment)              | AI video interview + hiring bias             | Illinois      |
+| **21** | **`canadaAidaPack`** (NEW)           | Bill C-27 Part 3 (AIDA) ss. 8-12 + PIPEDA ADM        | **High-impact AI (employment + service)**    | Canada        |
+| **22** | **`ukIcoPack`** (NEW)                | ICO Guidance on AI + UK GDPR Art. 22 + ATRS v2       | **Cross-sector UK auditing framework**       | UK            |
+| **23** | **`iso42001Pack`** (NEW)             | ISO/IEC 42001:2023 §§ 6.1.4 / 7.5 + Annex A          | **AI Management System runtime hooks**       | ISO           |
+| **24** | **`texasAiPack`** (NEW)              | Tex. Bus. & Com. § 503.001 + HB 4 + TX-RAMP          | **Biometric AI + state procurement**         | Texas         |
+| **25** | **`brazilLgpdAiPack`** (NEW)         | LGPD Art. 20 + PL 2338/2023 art. 13                  | **GenAI + automated decisions**              | Brazil        |
+| 26     | `indiaDpdpAiPack`                    | DPDP Act §§ 6 / 10 + MeitY AI Advisory (Mar 2024)    | DPDP + significant-data-fiduciary AI         | India         |
+| **27** | **`nistAiRmfPack`** (NEW)            | NIST AI 100-1 + AI 600-1 GenAI Profile (Jul 2024)    | **US federal GenAI procurement**             | US            |
+| **28** | **`chinaPiplGenAiPack`** (NEW)       | PIPL Art. 24 + CAC Interim Measures + Deep Synthesis | **China PIPL + GenAI registration**          | China         |
+| **29** | **`japanAppiPack`** (NEW)            | APPI Arts. 17/28 + METI AI Guidelines v1.0           | **Japan APPI + cross-border AI**             | Japan         |
+| **30** | **`koreaPipaPack`** (NEW)            | PIPA Art. 28-2 + AI Basic Act (eff. Jan 2026)        | **South Korea risk-tiered AI**               | South Korea   |
+| **31** | **`southAfricaPopiaPack`** (NEW)     | POPIA ss. 8/71 + Draft AI Framework (Aug 2024)       | **South Africa automated decisions**         | South Africa  |
+| 32     | `uaePdplPack`                        | UAE PDPL Art. 13 + DIFC AI + ADGM DP                 | UAE / Gulf AI procurement                    | UAE           |
+| **33** | **`industrialFoundationPack`** (NEW) | ISA-95 / IEC 62264 + IEC 62443-3-2                   | **Industrial Foundation Model + shop-floor** | Cross-cutting |
+| **34** | **`ambientScribePack`** (NEW)        | HIPAA § 164.502(b) + 21st Century Cures § 4004       | **Ambient clinical scribe**                  | Cross-cutting |
+| **35** | **`quebecLaw25Pack`** (NEW)          | Quebec Bill 64 / Law 25 (ss. 3.3 / 12.1 / 14 / 17)   | **Quebec PI + French + cross-border**        | Quebec        |
+| **36** | **`saudiPdplPack`** (NEW)            | Saudi PDPL (M/19 of 1443H) + SDAIA AI Ethics v2.0    | **Saudi PDPL + SDAIA AI Ethics**             | Saudi Arabia  |
+| **37** | **`vietnamCyberPack`** (NEW)         | Vietnam Decree 13/2023/ND-CP + Decree 53/2022        | **Vietnam PI + data localization**           | Vietnam       |
+| **38** | **`owaspAgenticTop10Pack`** (NEW)    | OWASP Top 10 for Agentic AI (A01-A05)                | **OWASP agentic risks (one-for-one)**        | Cross-cutting |
+| **39** | **`multiAgentCascadePack`** (NEW)    | Google 2026 Scaling + 17.2× cascade bound            | **Multi-agent error cascade detection**      | Cross-cutting |
+| **40** | **`carmackLogisticsPack`** (NEW)     | 49 USC § 14706 + 49 CFR Part 1005                    | **Carmack Amendment + US logistics**         | US            |
+| **41** | **`mcpGovernancePack`** (NEW)        | Anthropic MCP spec §Tools / §Resources               | **MCP tool & resource governance**           | Cross-cutting |
+| **42** | **`pedagogicalAiPack`** (NEW)        | FERPA + COPPA + AMA AI 2024                          | **Pedagogical AI engagement signals**        | Cross-cutting |
 
-Coverage: **32 packs across 6 continents** — Americas (US 14 incl. NIST/CA/IL/CO/NYC/TX · Canada · Brazil) · Europe (EU 3 · UK) · APAC (Singapore · Japan · South Korea · India · China · Australia) · MEA (South Africa · UAE) · ISO international · Global (PCI DSS).
+Coverage: **42 packs across 7 continents + cross-cutting agentic frameworks** — Americas (US 14 incl. NIST/CA/IL/CO/NYC/TX/Carmack · Canada 2 · Brazil · Quebec) · Europe (EU 3 · UK) · APAC (Singapore · Japan · South Korea · India · China · Vietnam · Australia) · MEA (South Africa · UAE · Saudi Arabia) · ISO international · Global (PCI DSS) · Cross-cutting (OWASP-Agentic-Top-10 · Multi-Agent Cascade · MCP Governance · Pedagogical AI · Industrial Foundation Model · Ambient Clinical Scribe).
+
+---
+
+## Waves 65-71 shipped (catch-up since this doc was last refreshed)
+
+The previous version of this doc was current to Wave 64. Below is
+the changelog for Waves 65-71 — everything in `ALL_PACKS` that
+wasn't in the Wave 64 table, plus the genuinely-new cryptographic
+primitives shipped in the same window.
+
+### Wave 65 — Adversarial red-team module + Apache-2.0 Agentic Payment Tokens
+
+- `red-team.ts` — public adversarial corpus with 14 attack classes
+  (post-Wave-71: every class has corpus entries). Each BLOCK rule
+  exercised against named attacks; `≥ 90%` block-rate floor.
+- VAPT 1.0 — verifiable agentic payment tokens. Open-source analog
+  of Mastercard Agent Pay. Spec at `docs/specs/vapt-1.0.md`.
+- Dual-approval middleware (aviation-CRM HITL escalation pattern).
+
+### Wave 66 — Three new cryptographic primitives + Go SDK
+
+- VAOS-TRS 1.0 (Threshold Receipt Signatures, m-of-n)
+- VAOS-RSA 1.0 (Receipt Streaming Attestation, Merkle-rooted)
+- Industrial Foundation Model + Ambient Clinical Scribe packs
+- Go verifier SDK (`packages/verifiable-receipts-go`)
+- `/trust` Trust Primitives Inventory section
+
+### Wave 67 — Audit-DSL + mathematical proofs + 3 more packs
+
+- Receipt-Audit DSL (SQL over receipts)
+- 5-proof mathematical corpus in `packages/verifiable-receipts/proofs/`
+- Quebec Law 25 + Saudi PDPL + Vietnam Decree 13 packs
+
+### Wave 68 — 5 cross-cutting agentic-framework packs
+
+- OWASP-Agentic-Top-10 (A01-A05)
+- Multi-Agent Cascade Detection (Google 2026 17.2× bound)
+- Carmack Amendment + US Logistics
+- MCP Tool & Resource Governance
+- Pedagogical AI (FERPA + COPPA + AMA AI 2024)
+
+### Wave 69 — IETF Internet-Draft + cross-language conformance + anomaly detection
+
+- IETF Internet-Draft for VAOS (Independent Stream, Informational RFC track)
+- Cross-language conformance suite (TS + Python + Go on shared fixtures)
+- Receipt anomaly detection (statistical outlier detection)
+
+### Wave 70 — Security-review fix batch
+
+- 5 critical + 4 high security findings resolved
+- Cross-language inclusion-proof bug surfaced + fixed via the
+  conformance corpus (idx=6 in 7-leaf tree); Python + Go ports
+  rewritten to match TS bit-decomposition
+- TRS canonical binding (m/n/authorizedIssuers bound into signed bytes)
+- VAPT lifetime check enforced at verify time
+- Dual-approval case/whitespace normalization
+- DSL prototype-chain access blocked + LIMIT bound + likeMatch ReDoS cap
+
+### Wave 71 — Deferred review items closed + perf baseline
+
+- Red-team corpus extended to cover 14/14 declared attack classes
+- Stream-attestation mandatory envelope-signature precondition
+- DSL null/undefined ordering deterministic (NULLS LAST)
+- Anomaly tie-breaking on verdictId for stable windowing
+- Performance benchmark suite at `bench/verifiable-receipts.bench.ts`
+  - frozen baseline at `bench/BASELINE.md`
 
 **Python SDK shipped (Wave 64, NEW):** `sovereign-matrix-verifiable-receipts`
 on PyPI (v0.1). Pure-Python Ed25519 verifier + RFC 9162 transparency-log
