@@ -35,7 +35,8 @@
   "types": "./dist/index.d.ts",
   "bin": {
     "verifiable-receipts": "./bin/verify.mjs",
-    "verifiable-receipts-witness": "./bin/witness.mjs"
+    "verifiable-receipts-witness": "./bin/witness.mjs",
+    "verifiable-receipts-sign": "./bin/sign.mjs"
   },
   "exports": {
     ".": {

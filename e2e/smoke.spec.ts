@@ -365,4 +365,39 @@ test.describe("Verifiable receipts surface (the central claim)", () => {
     expect(res?.status()).toBe(200);
     await expect(page.locator("a[href='/transparency/verify']")).toBeVisible();
   });
+
+  test("/vaos renders the adoption registry + links to the JSON sibling", async ({
+    page,
+  }) => {
+    const res = await page.goto("/vaos");
+    expect(res?.status()).toBe(200);
+    await expect(page.locator("body")).toContainText(/Sovereign Matrix/i);
+    await expect(page.locator("body")).toContainText(/ACTIVE ISSUERS/i);
+    await expect(
+      page.locator("a[href='/.well-known/sovereign-receipts/issuers.json']"),
+    ).toBeVisible();
+  });
+
+  test("/.well-known/sovereign-receipts/issuers.json returns the schema-stable registry", async ({
+    request,
+  }) => {
+    const res = await request.get(
+      "/.well-known/sovereign-receipts/issuers.json",
+    );
+    expect(res.status()).toBe(200);
+    expect(res.headers()["access-control-allow-origin"]).toBe("*");
+    const body = (await res.json()) as {
+      version: number;
+      issuers: Array<{
+        id: string;
+        ed25519PublicKeyUrl: string;
+        schemes: string[];
+      }>;
+    };
+    expect(body.version).toBe(1);
+    expect(Array.isArray(body.issuers)).toBe(true);
+    expect(body.issuers.length).toBeGreaterThan(0);
+    expect(body.issuers[0].id).toBe("sovereignmatrix.agency");
+    expect(body.issuers[0].schemes).toContain("v2");
+  });
 });
