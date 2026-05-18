@@ -818,19 +818,19 @@ function MemoryMoat() {
   const timeline = [
     {
       label: "Day 1",
-      desc: "Run a Lead Blitz for SaaS companies in London. Agents find 8 prospects.",
+      desc: "First run on a fresh tenant. Lead Blitz against SaaS founders in London returns 8 prospects, signed receipt id `rcpt_…001`.",
     },
     {
       label: "Week 2",
-      desc: "Run a Competitor Takedown. Agents remember the London SaaS context — no re-briefing.",
+      desc: "Competitor Takedown on the same vertical. The agent retrieves the Day-1 prospect set + recent outreach from semantic memory rather than re-asking for context.",
     },
     {
       label: "Month 2",
-      desc: "A new Lead run auto-recalls past niches, past angles, past conversion signals.",
+      desc: "A new Lead Blitz auto-loads the prior ICP, the angles that converted, and the angles that didn't. Receipt chain anchors the input set to the previous runs.",
     },
     {
       label: "Month 6",
-      desc: "Your agents know your ICP, your tone, your past campaigns, and your live competitor set. New runs start from six months of context, not a blank prompt.",
+      desc: "Each new run begins from ~180 days of signed prior context. Every retrieval is verifiable — you (or an auditor) can trace which past receipts informed today's output.",
     },
   ];
 
@@ -853,21 +853,26 @@ function MemoryMoat() {
         <div className="grid md:grid-cols-2 gap-16 items-start">
           <div>
             <h2 className="font-serif text-4xl md:text-5xl lg:text-[58px] leading-[1.05] mb-6 tracking-[-0.02em]">
-              Agents that get
+              Memory that
               <br />
-              <em className="not-italic text-[#B5532C]">smarter every run.</em>
+              <em className="not-italic text-[#B5532C]">verifies itself.</em>
             </h2>
             <p className="text-[16px] text-neutral-400 leading-[1.65] mb-6 max-w-md">
-              Every execution is embedded in semantic memory — 1024-dimensional
-              vectors that capture what you worked on, what worked, and what
-              your business is about. Future agents retrieve relevant context
-              automatically. No re-briefing. No lost context.
+              Every run is embedded in semantic memory — 1024-dimensional
+              vectors over the run&apos;s canonical projection. Future agents
+              retrieve relevant context by vector similarity, and{" "}
+              <em className="not-italic text-neutral-300">
+                every retrieved item is itself a signed receipt
+              </em>
+              . The chain of which past decisions informed today&apos;s output
+              is reconstructable from public bytes.
             </p>
             <p className="text-[14px] text-neutral-500 leading-[1.7] max-w-md mb-8 font-serif italic">
-              After six months of use, your Sovereign agents know your niche,
-              your tone, your past campaigns, your competitors, and your
-              customers. That institutional knowledge is yours — and it
-              compounds with every run.
+              The compounding moat is not &ldquo;the agent gets smarter.&rdquo;
+              It&apos;s that your retrieval graph becomes audit-grade. An
+              auditor can ask &ldquo;which past runs informed this
+              decision?&rdquo; and get a list of verifiable receipt ids — not a
+              vendor promise.
             </p>
             <Link
               href="/dashboard"

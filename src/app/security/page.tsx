@@ -15,6 +15,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { PrintButton } from "@/components/ui/PrintButton";
+import { LivePostureBanner } from "./LivePostureBanner";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -203,6 +204,12 @@ export default function SecurityPage() {
             </a>
           </p>
         </motion.div>
+
+        {/* Wave 54: live machine-readable posture banner, fetched
+            client-side from /api/security/posture. Removes the
+            slop-grade gap between "marketing claim" and "live
+            evidence" by putting both on the same page. */}
+        <LivePostureBanner />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {SECTIONS.map((section, i) => {
