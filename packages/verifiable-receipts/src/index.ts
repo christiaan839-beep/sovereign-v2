@@ -90,6 +90,15 @@ export {
 } from "./audit-dsl.js";
 
 export {
+  detectAnomalies,
+  type Anomaly,
+  type AnomalyKind,
+  type AnomalySeverity,
+  type AnomalyOptions,
+  type AnomalyReport,
+} from "./anomaly.js";
+
+export {
   runGuardian,
   verifyGuardianAttestation,
   quorumCollapse,
