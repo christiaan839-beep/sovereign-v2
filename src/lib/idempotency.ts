@@ -32,16 +32,28 @@ async function setRedisIfAbsent(
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
   if (!url || !token) throw new Error("Redis not configured");
 
+  // Upstash REST SET options MUST be passed as URL query parameters,
+  // not as a JSON body — the body is silently ignored. Prior version
+  // sent `{NX: true, EX: ttl}` in the body and Upstash applied
+  // neither, so every call succeeded unconditionally and idempotency
+  // was effectively disabled. Fixed in Wave 72.
+  //
   // SET key "1" NX EX <ttl> — atomic set-if-absent with expiration.
-  // Returns "OK" on success, null if key already existed.
-  const res = await fetch(`${url}/set/${encodeURIComponent(key)}/1`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ NX: true, EX: ttlSeconds }),
+  // Returns {result: "OK"} on success, {result: null} when NX rejected
+  // because the key already existed.
+  const params = new URLSearchParams({
+    NX: "true",
+    EX: String(ttlSeconds),
   });
+  const res = await fetch(
+    `${url}/set/${encodeURIComponent(key)}/1?${params.toString()}`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    },
+  );
   const data = await res.json();
   return data?.result === "OK";
 }

@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server";
-import { verifyYocoWebhook, getYocoPayment, getYocoCheckout } from "@/lib/payments";
+import {
+  verifyYocoWebhook,
+  getYocoPayment,
+  getYocoCheckout,
+} from "@/lib/payments";
 import { db } from "@/db";
 import { subscriptions } from "@/db/schema";
 import { createLogger } from "@/lib/logger";
 import { auditLog } from "@/lib/audit-log";
+import { alreadyProcessed } from "@/lib/idempotency";
+import { normalizePlanId, PLANS } from "@/lib/plans";
 
 const log = createLogger("yoco-webhook");
 
@@ -21,7 +27,10 @@ const log = createLogger("yoco-webhook");
  */
 export async function POST(req: Request) {
   if (!process.env.YOCO_WEBHOOK_SECRET) {
-    return NextResponse.json({ error: "Yoco webhook not configured" }, { status: 503 });
+    return NextResponse.json(
+      { error: "Yoco webhook not configured" },
+      { status: 503 },
+    );
   }
 
   const body = await req.text();
@@ -32,6 +41,15 @@ export async function POST(req: Request) {
   if (!verifyYocoWebhook(body, { id, timestamp, signature })) {
     log.error("Yoco webhook signature verification failed", { id, timestamp });
     return NextResponse.json({ error: "Invalid signature" }, { status: 403 });
+  }
+
+  // Idempotency — Standard Webhooks delivers `webhook-id`. Without
+  // dedup, a retried payment.succeeded re-inserts the subscription
+  // and re-fires the audit log. (Pre-Wave-72 Yoco lacked this check
+  // entirely.)
+  if (id && (await alreadyProcessed("yoco:event", id))) {
+    log.info("Skipped: Yoco webhook already processed", { id });
+    return NextResponse.json({ received: true, duplicate: true });
   }
 
   try {
@@ -50,7 +68,8 @@ export async function POST(req: Request) {
 
     // Normalize event type between legacy (`type`) and new (`event_type`).
     const eventType = event.event_type || event.type || "";
-    const isSuccess = eventType === "payment.succeeded" || eventType === "payment.created";
+    const isSuccess =
+      eventType === "payment.succeeded" || eventType === "payment.created";
 
     if (!isSuccess) {
       log.info("Yoco webhook received (ignored)", { eventType });
@@ -69,7 +88,30 @@ export async function POST(req: Request) {
     }
 
     const email = metadata.email;
-    const plan = metadata.plan || "node";
+    const rawPlan = metadata.plan;
+
+    // Whitelist plan against canonical PLANS. Attacker-controlled
+    // metadata could otherwise stuff `plan: "enterprise"` into a $1
+    // charge and elevate.
+    let plan = "node";
+    if (rawPlan) {
+      try {
+        const normalized = normalizePlanId(rawPlan);
+        if (normalized !== "free" && PLANS[normalized]) {
+          plan = normalized;
+        } else {
+          log.warn("Yoco metadata.plan is 'free' or unknown — skipping", {
+            rawPlan,
+          });
+          return NextResponse.json({ received: true });
+        }
+      } catch {
+        log.warn("Yoco metadata.plan does not normalize to a known plan", {
+          rawPlan,
+        });
+        return NextResponse.json({ received: true });
+      }
+    }
 
     if (!email) {
       log.error("Yoco webhook missing email metadata", {
@@ -78,7 +120,10 @@ export async function POST(req: Request) {
         orderId: event.order_id,
       });
       // Return 200 so Yoco doesn't retry — this is a config issue, not transient.
-      return NextResponse.json({ received: true, warning: "No email in metadata" });
+      return NextResponse.json({
+        received: true,
+        warning: "No email in metadata",
+      });
     }
 
     await db
@@ -105,10 +150,17 @@ export async function POST(req: Request) {
       },
     });
 
-    log.info("Yoco payment succeeded", { email, plan, paymentId: event.payment_id });
+    log.info("Yoco payment succeeded", {
+      email,
+      plan,
+      paymentId: event.payment_id,
+    });
     return NextResponse.json({ received: true });
   } catch (err) {
     log.error("Yoco webhook processing failed", err as Record<string, unknown>);
-    return NextResponse.json({ error: "Webhook processing failed" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Webhook processing failed" },
+      { status: 500 },
+    );
   }
 }

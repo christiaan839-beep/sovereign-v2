@@ -1,9 +1,22 @@
+import { NextResponse } from "next/server";
+import crypto from "crypto";
 import { createAgentRoute } from "@/lib/agent-factory";
 import { sendOnboardingEmail } from "@/lib/onboarding-emails";
 import { getBaseUrl } from "@/lib/base-url";
 
 function escapeHtml(str: string): string {
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+/** Constant-time compare to avoid timing-leak on the internal secret. */
+function timingSafeStringEqual(a: string, b: string): boolean {
+  if (typeof a !== "string" || typeof b !== "string") return false;
+  if (a.length !== b.length) return false;
+  return crypto.timingSafeEqual(Buffer.from(a, "utf8"), Buffer.from(b, "utf8"));
 }
 
 /**
@@ -13,10 +26,23 @@ function escapeHtml(str: string): string {
  * 3. Sends a welcome email via Resend
  * 4. Activates their agent fleet
  * 5. Stores first memory for personalization
+ *
+ * Auth surface: this route is reachable from two paths —
+ *   (a) Internal server-to-server from payment webhooks (PayFast,
+ *       Paystack, Yoco, Stripe). Webhooks present
+ *       `x-sovereign-internal-secret` matching INTERNAL_WEBHOOK_SECRET.
+ *   (b) Direct Clerk-authenticated calls (admin tooling).
+ *
+ * Pre-Wave-72 the webhooks called this with NO auth headers; the
+ * underlying createAgentRoute required Clerk and the webhook's
+ * best-effort catch swallowed the 401, leaving onboarding silently
+ * broken in production. Wave 72 closes the bypass with the
+ * internal-secret gate below.
  */
 
-export const POST = createAgentRoute({
+const handler = createAgentRoute({
   name: "auto-onboard",
+  public: true, // auth handled by the wrapper below
   requiredFields: ["clientName", "email"],
   handler: async ({ input }) => {
     const {
@@ -27,8 +53,14 @@ export const POST = createAgentRoute({
       companyUrl,
     } = input as Record<string, unknown>;
 
-    const clientId = (clientName as string).toLowerCase().replace(/[^a-z0-9]+/g, "-");
-    const onboardingSteps: Array<{ step: string; status: string; detail: string }> = [];
+    const clientId = (clientName as string)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-");
+    const onboardingSteps: Array<{
+      step: string;
+      status: string;
+      detail: string;
+    }> = [];
 
     // Step 1: Deploy vertical template
     const baseUrl = getBaseUrl();
@@ -46,7 +78,11 @@ export const POST = createAgentRoute({
         detail: `${verticalData.deployed?.vertical || vertical} stack deployed with ${verticalData.deployed?.agents_deployed || 0} agents`,
       });
     } catch {
-      onboardingSteps.push({ step: "Deploy Vertical Template", status: "partial", detail: "Default agents deployed" });
+      onboardingSteps.push({
+        step: "Deploy Vertical Template",
+        status: "partial",
+        detail: "Default agents deployed",
+      });
     }
 
     // Step 2: Create portal access
@@ -59,7 +95,8 @@ export const POST = createAgentRoute({
 
     // Step 3: Send welcome email
     const resendKey = process.env.RESEND_API_KEY;
-    const fromEmail = process.env.RESEND_FROM_EMAIL || "onboarding@sovereignmatrix.agency";
+    const fromEmail =
+      process.env.RESEND_FROM_EMAIL || "onboarding@sovereignmatrix.agency";
 
     if (resendKey) {
       try {
@@ -67,7 +104,7 @@ export const POST = createAgentRoute({
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${resendKey}`,
+            Authorization: `Bearer ${resendKey}`,
           },
           body: JSON.stringify({
             from: fromEmail,
@@ -91,12 +128,24 @@ export const POST = createAgentRoute({
             `,
           }),
         });
-        onboardingSteps.push({ step: "Send Welcome Email", status: "done", detail: `Sent to ${email}` });
+        onboardingSteps.push({
+          step: "Send Welcome Email",
+          status: "done",
+          detail: `Sent to ${email}`,
+        });
       } catch {
-        onboardingSteps.push({ step: "Send Welcome Email", status: "partial", detail: "Email queued" });
+        onboardingSteps.push({
+          step: "Send Welcome Email",
+          status: "partial",
+          detail: "Email queued",
+        });
       }
     } else {
-      onboardingSteps.push({ step: "Send Welcome Email", status: "skipped", detail: "RESEND_API_KEY not configured" });
+      onboardingSteps.push({
+        step: "Send Welcome Email",
+        status: "skipped",
+        detail: "RESEND_API_KEY not configured",
+      });
     }
 
     // Step 3b: Trigger onboarding email sequence (first email immediately)
@@ -130,9 +179,17 @@ export const POST = createAgentRoute({
           type: "fact",
         }),
       });
-      onboardingSteps.push({ step: "Initialize Agent Memory", status: "done", detail: "Client profile stored" });
+      onboardingSteps.push({
+        step: "Initialize Agent Memory",
+        status: "done",
+        detail: "Client profile stored",
+      });
     } catch {
-      onboardingSteps.push({ step: "Initialize Agent Memory", status: "partial", detail: "Memory will initialize on first interaction" });
+      onboardingSteps.push({
+        step: "Initialize Agent Memory",
+        status: "partial",
+        detail: "Memory will initialize on first interaction",
+      });
     }
 
     // Step 5: Activate metering
@@ -153,8 +210,54 @@ export const POST = createAgentRoute({
         portal_url: portalUrl,
       },
       onboarding_steps: onboardingSteps,
-      steps_completed: onboardingSteps.filter(s => s.status === "done").length,
+      steps_completed: onboardingSteps.filter((s) => s.status === "done")
+        .length,
       steps_total: onboardingSteps.length,
     };
   },
 });
+
+/**
+ * Auth wrapper — requires EITHER a matching internal-webhook secret
+ * (server-to-server from payment webhooks) OR a Clerk session
+ * (direct admin call). Anything else gets a 403.
+ *
+ * Without this wrapper, marking the route public would let any
+ * unauthenticated caller spam-onboard arbitrary email addresses,
+ * burning Resend credits and torching domain reputation.
+ */
+export async function POST(req: Request): Promise<Response> {
+  const internalSecret = process.env.INTERNAL_WEBHOOK_SECRET || "";
+  const presented = req.headers.get("x-sovereign-internal-secret") || "";
+
+  const internalOk =
+    internalSecret.length > 0 &&
+    timingSafeStringEqual(presented, internalSecret);
+
+  if (internalOk) {
+    // Trusted server-to-server caller — skip Clerk and proceed.
+    return handler(req);
+  }
+
+  // Fall back to Clerk-authenticated direct call. Re-run the factory
+  // with the public flag flipped off effectively by checking auth
+  // here ourselves — we already invoked the factory once with
+  // `public: true`, but the factory's `public` short-circuit only
+  // happens at request-time when the option is true, so we must
+  // recreate the auth check.
+  const { guardRoute } = await import("@/lib/api-guard");
+  const guard = await guardRoute();
+  if (!guard.authorized) {
+    return new NextResponse(
+      JSON.stringify({
+        error:
+          "auto-onboard requires either x-sovereign-internal-secret or a Clerk session",
+      }),
+      {
+        status: 403,
+        headers: { "Content-Type": "application/json" },
+      },
+    );
+  }
+  return handler(req);
+}

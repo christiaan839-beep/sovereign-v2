@@ -398,7 +398,13 @@ export const subscriptions = pgTable(
   "subscriptions",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    userId: text("user_id").notNull(),
+    // userId MUST be unique — the Stripe webhook uses
+    // .onConflictDoUpdate({ target: subscriptions.userId }), which
+    // Postgres rejects (error 42P10) against a non-unique column.
+    // Pre-Wave-72 the schema declared no unique constraint here, so
+    // every checkout.session.completed crashed and Stripe retried
+    // indefinitely. Migration 0017 adds the missing constraint.
+    userId: text("user_id").notNull().unique(),
     stripeCustomerId: text("stripe_customer_id"),
     stripeSubscriptionId: text("stripe_subscription_id").unique(),
     plan: text("plan").notNull().default("free"),

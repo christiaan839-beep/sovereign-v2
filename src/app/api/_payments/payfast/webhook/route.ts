@@ -5,7 +5,9 @@ import { payments, tenants } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { createLogger } from "@/lib/logger";
 import crypto from "crypto";
-import { getBaseUrl } from "@/lib/base-url";
+import { getPublicUrl } from "@/lib/base-url";
+import { alreadyProcessed } from "@/lib/idempotency";
+import { PLANS, type PlanId } from "@/lib/plans";
 
 const log = createLogger("payfast-webhook");
 
@@ -15,7 +17,11 @@ const log = createLogger("payfast-webhook");
  *  - 41.74.179.192/27   (41.74.179.192 – 41.74.179.223)
  */
 function ipToLong(ip: string): number {
-  return ip.split(".").reduce((acc, octet) => (acc << 8) + parseInt(octet, 10), 0) >>> 0;
+  return (
+    ip
+      .split(".")
+      .reduce((acc, octet) => (acc << 8) + parseInt(octet, 10), 0) >>> 0
+  );
 }
 
 function isInCIDR(ip: string, cidr: string): boolean {
@@ -38,12 +44,17 @@ function isPayFastIP(ip: string): boolean {
  * 4. If PAYFAST_PASSPHRASE is set, append &passphrase=<value>
  * 5. MD5 hash the result and compare to the submitted signature
  */
-function verifySignature(data: Record<string, string>, signature: string): boolean {
+function verifySignature(
+  data: Record<string, string>,
+  signature: string,
+): boolean {
   // Build param string from all fields except signature, sorted alphabetically
   const paramString = Object.keys(data)
     .filter((key) => key !== "signature")
     .sort()
-    .map((key) => `${key}=${encodeURIComponent(data[key]).replace(/%20/g, "+")}`)
+    .map(
+      (key) => `${key}=${encodeURIComponent(data[key]).replace(/%20/g, "+")}`,
+    )
     .join("&");
 
   const passphrase = process.env.PAYFAST_PASSPHRASE;
@@ -97,33 +108,115 @@ export async function POST(req: Request) {
     // --- Process the verified payment ---
     const status = data.payment_status;
     const email = data.email_address || "";
-    const amount = data.amount_gross || "0";
-    const planName = (data.item_name || "node").toLowerCase();
+    const amountRaw = data.amount_gross;
+    const mPaymentId = data.m_payment_id;
+    // PayFast checkout MUST stuff the buyer's Clerk userId into
+    // custom_str1. Without this binding the handler used to upgrade
+    // the FIRST free tenant on signed-but-stranger PayFast notifications
+    // — i.e. anyone with a valid PayFast payment could elevate an
+    // arbitrary tenant. Wave 72 hard-requires the binding.
+    const buyerClerkUserId = (data.custom_str1 || "").trim();
+    const itemName = (data.item_name || "").toLowerCase();
 
-    // Normalize plan name from PayFast item_name
-    const plan = planName.includes("enterprise") ? "enterprise"
-      : planName.includes("array") ? "array"
-      : "node";
+    // Whitelist plan against canonical PLANS instead of substring match
+    // (prior code did `itemName.includes("enterprise")`, letting the
+    // attacker pick the tier by stuffing the word into item_name).
+    let plan: PlanId | null = null;
+    for (const pid of Object.keys(PLANS) as PlanId[]) {
+      if (pid !== "free" && itemName.includes(pid)) {
+        plan = pid;
+        break;
+      }
+    }
 
-    // Log every ITN for audit
-    persistAppend("payfast-itn-log", {
-      id: data.m_payment_id || `pf-${Date.now()}`,
-      status,
-      amount,
-      email,
-      plan,
-      timestamp: new Date().toISOString(),
-    }, 500);
+    // Parse + validate amount (numeric, positive, finite).
+    const amountNum = Number(amountRaw);
+    const amountValid =
+      Number.isFinite(amountNum) && amountNum > 0 && amountNum < 1_000_000;
+
+    // Require m_payment_id — without it idempotency cannot work and
+    // collision-prone `pf-${Date.now()}` IDs in prior code allowed
+    // replay races within the same millisecond.
+    if (!mPaymentId) {
+      log.error("Rejected: PayFast ITN missing m_payment_id");
+      return new NextResponse("Bad Request", { status: 400 });
+    }
+
+    // Idempotency — Upstash-backed (fixed in Wave 72).
+    if (await alreadyProcessed("payfast:itn", mPaymentId)) {
+      log.info("Skipped: PayFast ITN already processed", { mPaymentId });
+      return new NextResponse("OK", { status: 200 });
+    }
+
+    // Log every ITN for audit (after idempotency check so re-tries
+    // don't grow the audit log infinitely).
+    persistAppend(
+      "payfast-itn-log",
+      {
+        id: mPaymentId,
+        status,
+        amount: amountRaw,
+        email,
+        plan,
+        timestamp: new Date().toISOString(),
+      },
+      500,
+    );
 
     if (status === "COMPLETE") {
+      if (!plan) {
+        log.warn(
+          "PayFast ITN COMPLETE without recognizable plan in item_name",
+          {
+            itemName,
+            mPaymentId,
+          },
+        );
+        // Don't 4xx — PayFast retries non-2xx. Record for manual review.
+        return new NextResponse("OK", { status: 200 });
+      }
+      if (!amountValid) {
+        log.error("PayFast ITN COMPLETE with invalid amount", {
+          amountRaw,
+          mPaymentId,
+        });
+        return new NextResponse("OK", { status: 200 });
+      }
+      if (!buyerClerkUserId) {
+        log.error(
+          "PayFast ITN COMPLETE without custom_str1 (clerkUserId) — refusing arbitrary tenant upgrade",
+          { mPaymentId },
+        );
+        return new NextResponse("OK", { status: 200 });
+      }
+
+      // Validate amount against canonical ZAR price (PLANS stores USD;
+      // PayFast charges in ZAR — use a generous +/-10% band to absorb
+      // FX drift between checkout and ITN).
+      const expectedZar = PLANS[plan].priceUsdCents
+        ? (PLANS[plan].priceUsdCents / 100) * 19 // ~ZAR per USD floor
+        : 0;
+      if (
+        expectedZar > 0 &&
+        Math.abs(amountNum - expectedZar) / expectedZar > 0.5
+      ) {
+        log.error("PayFast ITN amount far from expected ZAR price", {
+          amountNum,
+          expectedZar,
+          plan,
+          mPaymentId,
+        });
+        return new NextResponse("OK", { status: 200 });
+      }
+
       // 1. Record payment in database
       try {
         await db.insert(payments).values({
           email,
           gateway: "payfast",
-          externalId: data.m_payment_id || `pf-${Date.now()}`,
+          externalId: mPaymentId,
           plan,
-          amount,
+          amount: amountRaw,
           currency: "ZAR",
           status: "complete",
         });
@@ -131,44 +224,65 @@ export async function POST(req: Request) {
         log.error("DB insert failed", dbErr as Record<string, unknown>);
       }
 
-      // 2. Update tenant plan if they exist
+      // 2. Upgrade ONLY the tenant whose clerkUserId matches the
+      //    PayFast custom_str1 field set at checkout. No more
+      //    "first free tenant" land-grab.
       try {
-        const existingTenants = await db.select().from(tenants).where(eq(tenants.plan, "free")).limit(100);
-        // Find by matching clerk user (best effort — email matching isn't ideal but works pre-RBAC)
-        // Future: store clerkUserId in PayFast custom_str1 field
-        for (const tenant of existingTenants) {
-          // We can't match by email easily with Clerk, so this upgrades the most recent free tenant
-          // In production, pass clerkUserId via PayFast custom fields
-          await db.update(tenants)
-            .set({ plan })
-            .where(eq(tenants.id, tenant.id));
-          break;
+        const result = await db
+          .update(tenants)
+          .set({ plan })
+          .where(eq(tenants.clerkUserId, buyerClerkUserId))
+          .returning({ id: tenants.id });
+        if (result.length === 0) {
+          log.warn(
+            "PayFast: no tenant matched clerkUserId — payment recorded but plan unchanged",
+            {
+              buyerClerkUserId,
+              mPaymentId,
+            },
+          );
         }
       } catch (err) {
-        log.warn("Plan upgrade failed — may need manual intervention", { error: (err as Error).message, email });
+        log.warn("Plan upgrade failed — may need manual intervention", {
+          error: (err as Error).message,
+          buyerClerkUserId,
+        });
       }
 
-      // 3. Trigger auto-onboard (best effort)
-      const baseUrl = getBaseUrl();
+      // 3. Trigger auto-onboard (best effort) with internal-secret header
+      const baseUrl = getPublicUrl();
+      const internalSecret = process.env.INTERNAL_WEBHOOK_SECRET || "";
       try {
         await fetch(`${baseUrl}/api/_agents/auto-onboard`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "x-sovereign-internal-secret": internalSecret,
+          },
+          signal: AbortSignal.timeout(10_000),
           body: JSON.stringify({
-            clientName: `${data.name_first || ""} ${data.name_last || ""}`.trim() || "New Client",
+            clientName:
+              `${data.name_first || ""} ${data.name_last || ""}`.trim() ||
+              "New Client",
             email,
             plan,
           }),
         });
-      } catch { /* auto-onboard is best-effort */ }
+      } catch {
+        /* auto-onboard is best-effort */
+      }
 
-      persistAppend("payfast-payments", {
-        id: data.m_payment_id || `pf-${Date.now()}`,
-        plan,
-        amount,
-        email,
-        timestamp: new Date().toISOString(),
-      }, 1000);
+      persistAppend(
+        "payfast-payments",
+        {
+          id: mPaymentId,
+          plan,
+          amount: amountRaw,
+          email,
+          timestamp: new Date().toISOString(),
+        },
+        1000,
+      );
     }
 
     return new NextResponse("OK", { status: 200 });
