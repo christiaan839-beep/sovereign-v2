@@ -524,7 +524,7 @@ function Hero() {
           transition={{ delay: 0.5, duration: 0.6 }}
           className="text-[15px] md:text-[16px] text-neutral-500 leading-[1.55] mb-10 max-w-xl mx-auto"
         >
-          Free forever — 50 verified runs/mo. Pro from R997/mo (≈ $49). No
+          Free forever — 50 verified runs/mo. Growth from R4,997/mo (≈ $49). No
           per-seat fees. ZAR + USD billing. POPIA-native, SOC2-mapped,
           audit-ready on day one.
         </motion.p>
@@ -576,7 +576,7 @@ function Hero() {
           transition={{ delay: 0.8, duration: 0.5 }}
           className="text-[11px] font-mono text-neutral-600 tracking-wide mb-6"
         >
-          From free → R997/mo (≈ $49) → R3,997/mo (≈ $199) ·{" "}
+          From free → R4,997/mo (≈ $49) → R9,997/mo (≈ $199) ·{" "}
           <Link
             href="/pricing"
             className="hover:text-neutral-400 transition-colors underline decoration-white/10 hover:decoration-white/30"
@@ -1118,11 +1118,14 @@ function PlatformScale() {
 
 /* ─── 10 · Pricing Strip ────────────────────────────────────────── */
 function PricingStrip() {
+  // Sourced from src/lib/plans.ts (PLANS map). Pre-Wave-72 this
+  // strip showed Pro $49 / Team $199 — names that don't exist in
+  // PLANS. Fixed to match canonical names + prices.
   const tiers = [
     { name: "Free", price: null, popular: false },
-    { name: "Pro", price: "$49", popular: true },
-    { name: "Team", price: "$199", popular: false },
-    { name: "Enterprise", price: "Custom", popular: false },
+    { name: "Growth", price: "$49", popular: true },
+    { name: "Sovereign Node", price: "$199", popular: false },
+    { name: "Enterprise", price: "$499", popular: false },
   ];
 
   return (

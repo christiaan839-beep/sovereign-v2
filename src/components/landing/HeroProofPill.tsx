@@ -98,6 +98,8 @@ export function HeroProofPill() {
   const id = data.receipt.id;
   const agentName = data.receipt.agentName;
   const truncatedId = id.length > 8 ? `${id.slice(0, 8)}…` : id;
+  // Malformed createdAt yields NaN here; RelativeTime guards
+  // internally against NaN and renders nothing in that case.
   const createdAtMs = new Date(data.receipt.createdAt).getTime();
 
   return (
@@ -141,6 +143,11 @@ function RelativeTime({ ms }: { ms: number }) {
   const [label, setLabel] = useState<string>("");
 
   useEffect(() => {
+    if (!Number.isFinite(ms)) {
+      // Malformed createdAt — render nothing rather than "NaNs ago".
+      // Initial state is already "" so no setLabel call needed.
+      return;
+    }
     function recompute() {
       const seconds = Math.max(0, Math.round((Date.now() - ms) / 1000));
       if (seconds < 60) setLabel(`${seconds}s ago`);
