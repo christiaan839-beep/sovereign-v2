@@ -1,0 +1,88 @@
+# Sigstore keyless signing for OSS package releases.
+#
+# Triggered on every tag matching `verifiable-receipts-v*` (e.g. v0.2.0).
+# Mints an in-toto / SLSA-style provenance attestation via cosign keyless
+# (Sigstore Fulcio + Rekor) and publishes the npm tarball with the
+# `--provenance` flag so any installer can verify the published artifact
+# was built from the exact commit the tag points to.
+#
+# What this closes:
+#   - Procurement question "how do I know your npm release wasn't poisoned"
+#   - Supply-chain attestation gap flagged in docs/MARKET-GAPS-2026.md
+#   - Gemini "Agentic Transition" research §Identity-Centric Governance
+#
+# Requirements (operator action):
+#   - NPM_TOKEN secret with automation-token scope on @sovereign-matrix
+#   - id-token: write permission (granted below) for Sigstore OIDC
+#   - GitHub Actions cache enabled
+#
+# Cost: zero. Sigstore + Rekor are free public infrastructure.
+name: Sigstore release (verifiable-receipts)
+
+on:
+  push:
+    tags:
+      - "verifiable-receipts-v*"
+
+permissions:
+  contents: read
+  id-token: write # required for Sigstore keyless signing
+  packages: write # required for npm publish
+
+jobs:
+  publish-with-provenance:
+    name: Publish to npm with Sigstore provenance
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/verifiable-receipts
+
+    steps:
+      - name: Checkout (full history for provenance)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+          cache: "npm"
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies (workspace root)
+        working-directory: .
+        run: npm ci --ignore-scripts
+
+      - name: Build OSS package
+        run: |
+          if [ -f package.json ] && grep -q '"build"' package.json; then
+            npm run build
+          fi
+
+      - name: Run test gate (must be green to publish)
+        working-directory: .
+        run: npx vitest run packages/verifiable-receipts/tests/
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3.7.0
+
+      - name: Publish to npm with Sigstore provenance
+        run: |
+          # --provenance flag emits an in-toto attestation signed by Sigstore.
+          # The attestation is automatically uploaded to Rekor (the public
+          # transparency log) and linked to this npm release.
+          npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Verify published provenance (sanity check)
+        run: |
+          PKG=$(node -p "require('./package.json').name")
+          VERSION=$(node -p "require('./package.json').version")
+          echo "Verifying provenance for $PKG@$VERSION..."
+          npm view "$PKG@$VERSION" --json | grep -q "attestations" \
+            || (echo "ERROR: published version is missing provenance attestation" && exit 1)
+          echo "✓ Provenance attestation confirmed in npm registry metadata"

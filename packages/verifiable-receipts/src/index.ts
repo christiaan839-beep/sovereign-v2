@@ -45,6 +45,25 @@ export {
 } from "./c2pa-bridge.js";
 
 export {
+  runRedTeam,
+  defaultAdversarialCorpus,
+  type AttackClass,
+  type AdversarialInput,
+  type RedTeamRuleResult,
+  type RedTeamReport,
+} from "./red-team.js";
+
+export {
+  mintVapt,
+  parseVapt,
+  verifyVapt,
+  vaptHash,
+  type VaptPayload,
+  type VerifyVaptOptions,
+  type VaptVerifyResult,
+} from "./vapt.js";
+
+export {
   runGuardian,
   verifyGuardianAttestation,
   quorumCollapse,
