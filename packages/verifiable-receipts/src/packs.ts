@@ -293,6 +293,257 @@ export const csrdPack: GuardianPack = {
   rules: csrdRules,
 };
 
+// ── CFPB pack — Consumer Financial Protection Bureau ──────────────────
+
+// Adverse-action notice triggers per ECOA + 12 CFR §1002.9. When an
+// AI agent denies / counter-offers credit, the receipt MUST carry an
+// adverse-action explanation. This pack flags missing rationale.
+const ADVERSE_ACTION_VERBS =
+  /\b(deny|denied|reject|decline|counter[-\s]?offer)\b/i;
+const PROTECTED_CLASS_TERMS =
+  /\b(race|color|religion|national origin|sex|gender|marital|familial|age(?:\s+\d+)?|disability|disabled)\b/i;
+
+export const cfpbRules: GuardianRule[] = [
+  {
+    id: "cfpb-adverse-action-rationale",
+    description:
+      "BLOCK adverse credit decisions without a specific reason — 12 CFR §1002.9(a)(2)(i) (ECOA)",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (ADVERSE_ACTION_VERBS.test(text)) {
+        // Must carry at least one principal reason for the decision.
+        // Heuristic: presence of an "because"/"due to"/"reason" anchor +
+        // some non-trivial follow-up. Real implementations should
+        // require a structured `reasons: string[]` field.
+        const hasRationale =
+          /\b(because|due to|reason\(s?\)?\s*:|principal\s+reason)\b/i.test(
+            text,
+          );
+        if (!hasRationale) {
+          return {
+            verdict: "block",
+            reason:
+              "ECOA §1002.9: adverse credit action requires specific reason(s)",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "cfpb-no-protected-class-as-factor",
+    description:
+      "BLOCK credit decisions that cite a protected class as a factor — 12 CFR §1002.4 + ECOA §701",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (ADVERSE_ACTION_VERBS.test(text) && PROTECTED_CLASS_TERMS.test(text)) {
+        return {
+          verdict: "block",
+          reason:
+            "ECOA §701: credit decision references a protected class (race/sex/religion/etc.)",
+        };
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "cfpb-ufmip-disclosure",
+    description:
+      "WARN on mortgage outputs missing APR / UDAAP boilerplate — 12 CFR §1024 + §1026",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (/\b(mortgage|home loan|HELOC|refinance)\b/i.test(text)) {
+        const hasApr = /\bAPR\b|\bannual percentage rate\b/i.test(text);
+        if (!hasApr) {
+          return {
+            verdict: "warn",
+            reason: "Mortgage output missing APR disclosure (Reg Z §1026.24)",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+];
+
+export const cfpbPack: GuardianPack = {
+  id: "cfpb-2026",
+  name: "CFPB — ECOA + Reg Z",
+  citation: "12 CFR §1002 (ECOA) + 12 CFR §1024 / §1026 (RESPA / Reg Z)",
+  rules: cfpbRules,
+};
+
+// ── MAS pack — Singapore Monetary Authority FEAT principles ───────────
+
+// MAS 2018 "Principles to Promote Fairness, Ethics, Accountability and
+// Transparency (FEAT) in the Use of AI and Data Analytics in Singapore's
+// Financial Sector." Plus PDPA disclosure rules for personal data.
+const SINGAPORE_NRIC_REGEX = /\b[STFG]\d{7}[A-Z]\b/;
+
+export const masRules: GuardianRule[] = [
+  {
+    id: "mas-feat-traceability",
+    description:
+      "WARN when financial decisions lack model + data-source traceability — MAS FEAT §F.4",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (
+        /\b(approve|deny|decline|recommend|advise|invest|loan|insurance|premium)\b/i.test(
+          text,
+        )
+      ) {
+        // FEAT requires the audit trail to show WHICH model + WHICH data
+        // produced the decision. Receipts that carry only the verdict
+        // without `modelUsed` lineage fail traceability.
+        if (!ctx.modelUsed || ctx.modelUsed === "unknown") {
+          return {
+            verdict: "warn",
+            reason:
+              "MAS FEAT §F.4: financial decision lacks model lineage in receipt",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "mas-pdpa-no-raw-nric",
+    description:
+      "BLOCK output containing a Singapore NRIC — PDPA §13 / Advisory Guidelines on NRIC",
+    evaluate: async (ctx) => {
+      if (SINGAPORE_NRIC_REGEX.test(asText(ctx.output))) {
+        return {
+          verdict: "block",
+          reason:
+            "PDPA: output contains a Singapore NRIC pattern — collect or redact only under §17",
+        };
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "mas-feat-bias-attestation",
+    description:
+      "WARN when financial decisions omit a bias / protected-class attestation — MAS FEAT §F.3",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (
+        /\b(approve|deny|decline|insurance|premium|loan)\b/i.test(text) &&
+        !/\bbias[-\s]?(check|attestation|review)|\bprotected[-\s]?class\b|\bfair(?:ness)?\s+(?:check|review)\b/i.test(
+          text,
+        )
+      ) {
+        return {
+          verdict: "warn",
+          reason:
+            "MAS FEAT §F.3: financial decision missing bias/fairness attestation",
+        };
+      }
+      return { verdict: "pass" };
+    },
+  },
+];
+
+export const masPack: GuardianPack = {
+  id: "mas-feat-2026",
+  name: "MAS FEAT Principles + PDPA",
+  citation:
+    "MAS FEAT 2018 + Singapore PDPA (Personal Data Protection Act 2012)",
+  rules: masRules,
+};
+
+// ── FCA pack — UK Financial Conduct Authority ─────────────────────────
+
+// FCA Consumer Duty (PRIN 2A) + FG24/2 AI guidance + SYSC 8.1 outsourcing.
+// Most-relevant for retail banking / insurance / investment-advice AI.
+
+export const fcaRules: GuardianRule[] = [
+  {
+    id: "fca-consumer-duty-good-outcomes",
+    description:
+      "WARN when output suggests poor consumer outcome without rationale — FCA PRIN 2A.1 (Consumer Duty)",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      // Heuristic: detection of pushy / opaque language that the
+      // Consumer Duty's "good outcomes" test would flag.
+      const pushy =
+        /\b(must|need to|urgent|limited time|act now|today only|exclusive offer)\b/i.test(
+          text,
+        );
+      const hasJustification =
+        /\b(because|the reason|benefit to you|in your interest|consumer outcome)\b/i.test(
+          text,
+        );
+      if (pushy && !hasJustification) {
+        return {
+          verdict: "warn",
+          reason:
+            "FCA PRIN 2A: high-pressure language without consumer-outcome justification",
+        };
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "fca-vulnerable-customer-flag",
+    description:
+      "WARN on outputs handling potentially vulnerable customers without an adjustment note — FCA FG21/1",
+    evaluate: async (ctx) => {
+      const inputText = asText(ctx.input).toLowerCase();
+      const outputText = asText(ctx.output).toLowerCase();
+      const vulnSignals =
+        /\b(bereav|dement|carer|mental health|disabled|disability|pensioner|terminally ill|cancer)/;
+      if (
+        vulnSignals.test(inputText) &&
+        !/\bvulnerable|\badjustment|\benhanced (?:support|disclosure)\b/.test(
+          outputText,
+        )
+      ) {
+        return {
+          verdict: "warn",
+          reason:
+            "FCA FG21/1: input flags potential vulnerability but output has no adjustment note",
+        };
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "fca-sysc-ai-explainability",
+    description:
+      "WARN on financial AI outputs without an explainability anchor — FCA FG24/2 §3.2",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (
+        /\b(approv|den[iy]|reject|recommend|trade|invest|premium|claim)/i.test(
+          text,
+        )
+      ) {
+        if (
+          !/\bbecause|due to|rationale|reason\(s?\)?:|factors? considered\b/i.test(
+            text,
+          )
+        ) {
+          return {
+            verdict: "warn",
+            reason:
+              "FCA FG24/2: financial AI decision lacks per-decision explanation",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+];
+
+export const fcaPack: GuardianPack = {
+  id: "fca-consumer-duty-2026",
+  name: "FCA Consumer Duty + AI Guidance",
+  citation:
+    "FCA PRIN 2A (Consumer Duty) + FG24/2 (AI in Financial Services) + FG21/1 (Vulnerable Customers)",
+  rules: fcaRules,
+};
+
 // ── Registry of packs ────────────────────────────────────────────────
 
 export interface GuardianPack {
@@ -308,6 +559,9 @@ export const ALL_PACKS: GuardianPack[] = [
   naicPack,
   dscsaPack,
   csrdPack,
+  cfpbPack,
+  masPack,
+  fcaPack,
 ];
 
 export function findPack(id: string): GuardianPack | undefined {

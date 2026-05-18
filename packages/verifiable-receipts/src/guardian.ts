@@ -22,6 +22,8 @@ export interface GuardianContext {
   tokenId?: string;
   input: unknown;
   output: unknown;
+  /** Optional model lineage. Used by traceability rules (e.g. MAS FEAT §F.4). */
+  modelUsed?: string;
 }
 
 export interface GuardianRule {
