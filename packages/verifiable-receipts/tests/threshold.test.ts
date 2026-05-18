@@ -18,9 +18,20 @@ import {
 import {
   assembleThresholdAttestation,
   verifyThresholdAttestation,
+  trsSigningBytes,
   type ThresholdCosigner,
   type ThresholdVerifyOptions,
 } from "../src/threshold.js";
+
+/** Convenience: sign the bound TRS bytes for a given configuration. */
+function signBound(
+  issuer: ReturnType<typeof makeIssuer>,
+  canonical: string,
+  threshold: { m: number; n: number },
+  authorized: readonly string[],
+): string {
+  return issuer.sign(trsSigningBytes(canonical, threshold, authorized));
+}
 
 function makeIssuer(id: string) {
   const { publicKey, privateKey } = generateKeyPairSync("ed25519");
@@ -62,7 +73,12 @@ describe("assembleThresholdAttestation", () => {
       canonical: CANONICAL,
       threshold: { m: 1, n: 1 },
       authorizedIssuers: ["a"],
-      cosigners: [{ issuerId: "a", signature: issuer.sign(CANONICAL) }],
+      cosigners: [
+        {
+          issuerId: "a",
+          signature: signBound(issuer, CANONICAL, { m: 1, n: 1 }, ["a"]),
+        },
+      ],
     });
     expect(att.scheme).toBe("trs1");
     expect(att.canonical).toBe(CANONICAL);
@@ -150,7 +166,12 @@ describe("verifyThresholdAttestation — happy paths", () => {
       canonical: CANONICAL,
       threshold: { m: 1, n: 1 },
       authorizedIssuers: ["a"],
-      cosigners: [{ issuerId: "a", signature: a.sign(CANONICAL) }],
+      cosigners: [
+        {
+          issuerId: "a",
+          signature: signBound(a, CANONICAL, { m: 1, n: 1 }, ["a"]),
+        },
+      ],
     });
     const result = await verifyThresholdAttestation(att, makeVerifier([a]));
     expect(result.ok).toBe(true);
@@ -168,8 +189,14 @@ describe("verifyThresholdAttestation — happy paths", () => {
       threshold: { m: 2, n: 3 },
       authorizedIssuers: ["a", "b", "c"],
       cosigners: [
-        { issuerId: "a", signature: a.sign(CANONICAL) },
-        { issuerId: "b", signature: b.sign(CANONICAL) },
+        {
+          issuerId: "a",
+          signature: signBound(a, CANONICAL, { m: 2, n: 3 }, ["a", "b", "c"]),
+        },
+        {
+          issuerId: "b",
+          signature: signBound(b, CANONICAL, { m: 2, n: 3 }, ["a", "b", "c"]),
+        },
       ],
     });
     const result = await verifyThresholdAttestation(
@@ -183,13 +210,15 @@ describe("verifyThresholdAttestation — happy paths", () => {
 
   it("accepts 3-of-5 when more than the minimum verify", async () => {
     const issuers = ["a", "b", "c", "d", "e"].map(makeIssuer);
+    const authorized = issuers.map((i) => i.id);
+    const threshold = { m: 3, n: 5 };
     const att = assembleThresholdAttestation({
       canonical: CANONICAL,
-      threshold: { m: 3, n: 5 },
-      authorizedIssuers: issuers.map((i) => i.id),
+      threshold,
+      authorizedIssuers: authorized,
       cosigners: issuers.slice(0, 4).map((i) => ({
         issuerId: i.id,
-        signature: i.sign(CANONICAL),
+        signature: signBound(i, CANONICAL, threshold, authorized),
       })),
     });
     const result = await verifyThresholdAttestation(att, makeVerifier(issuers));
@@ -206,7 +235,12 @@ describe("verifyThresholdAttestation — adversarial rejections", () => {
       canonical: CANONICAL,
       threshold: { m: 2, n: 2 },
       authorizedIssuers: ["a", "b"],
-      cosigners: [{ issuerId: "a", signature: a.sign(CANONICAL) }],
+      cosigners: [
+        {
+          issuerId: "a",
+          signature: signBound(a, CANONICAL, { m: 2, n: 2 }, ["a", "b"]),
+        },
+      ],
     });
     const result = await verifyThresholdAttestation(att, makeVerifier([a, b]));
     expect(result.ok).toBe(false);
@@ -241,9 +275,15 @@ describe("verifyThresholdAttestation — adversarial rejections", () => {
       threshold: { m: 2, n: 2 },
       authorizedIssuers: ["a", "b"],
       cosigners: [
-        { issuerId: "a", signature: a.sign(CANONICAL) },
+        {
+          issuerId: "a",
+          signature: signBound(a, CANONICAL, { m: 2, n: 2 }, ["a", "b"]),
+        },
         // Forged: c signed but claiming to be b
-        { issuerId: "b", signature: c.sign(CANONICAL) },
+        {
+          issuerId: "b",
+          signature: signBound(c, CANONICAL, { m: 2, n: 2 }, ["a", "b"]),
+        },
       ],
     });
     const result = await verifyThresholdAttestation(
@@ -265,7 +305,12 @@ describe("verifyThresholdAttestation — adversarial rejections", () => {
       canonical: CANONICAL,
       threshold: { m: 1, n: 1 },
       authorizedIssuers: ["a"],
-      cosigners: [{ issuerId: "a", signature: a.sign(CANONICAL) }],
+      cosigners: [
+        {
+          issuerId: "a",
+          signature: signBound(a, CANONICAL, { m: 1, n: 1 }, ["a"]),
+        },
+      ],
     });
     // Tamper the canonical field in-place — verifier MUST catch this.
     const tampered = { ...att, canonical: CANONICAL + " " };
@@ -324,8 +369,14 @@ describe("verifyThresholdAttestation — adversarial rejections", () => {
       threshold: { m: 2, n: 2 },
       authorizedIssuers: ["a", "b"],
       cosigners: [
-        { issuerId: "a", signature: a.sign(CANONICAL) },
-        { issuerId: "a", signature: a.sign(CANONICAL) }, // dup
+        {
+          issuerId: "a",
+          signature: signBound(a, CANONICAL, { m: 2, n: 2 }, ["a", "b"]),
+        },
+        {
+          issuerId: "a",
+          signature: signBound(a, CANONICAL, { m: 2, n: 2 }, ["a", "b"]),
+        }, // dup
       ] as ThresholdCosigner[],
       assembledAt: new Date().toISOString(),
     };

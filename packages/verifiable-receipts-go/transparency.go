@@ -57,8 +57,33 @@ type InclusionProof struct {
 	AuditPath []string
 }
 
+// bitsLen returns the number of bits required to represent n.
+// Equivalent to math/bits.Len + cast.
+func bitsLen(n int) int {
+	c := 0
+	for n > 0 {
+		c++
+		n >>= 1
+	}
+	return c
+}
+
+// onesCount returns the popcount of n.
+func onesCount(n int) int {
+	c := 0
+	for n > 0 {
+		c += n & 1
+		n >>= 1
+	}
+	return c
+}
+
 // VerifyInclusionProof returns true iff hashing the leaf with the
 // audit path siblings (per RFC 9162 §2.1.1) yields rootHashHex.
+//
+// Uses the inner/border decomposition that handles every tree shape
+// — including odd-tree right-edge carry-up cases like idx=6 in a
+// 7-leaf tree. Byte-identical with the TypeScript canonical verifier.
 //
 // Returns false (not error) for all routine failure modes — wrong
 // root, wrong index, malformed audit path entry, leaf-index out of
@@ -76,45 +101,42 @@ func VerifyInclusionProof(proof InclusionProof, leafHashHex, rootHashHex string)
 		return len(proof.AuditPath) == 0 && leafHashHex == rootHashHex
 	}
 
-	// RFC 9162 §2.1.1 walk: track the running hash, the leaf index,
-	// and the effective sub-tree size.
-	current := leafHashHex
-	index := proof.LeafIndex
-	size := proof.TreeSize
-
-	for _, siblingHex := range proof.AuditPath {
-		if size <= 1 {
-			// Audit-path entries remain but the tree degenerated.
-			return false
-		}
-		if index%2 == 1 {
-			// We are the right child; sibling on the left.
-			h, err := InnerHash(siblingHex, current)
-			if err != nil {
-				return false
-			}
-			current = h
-		} else {
-			// We are the left child. If we have no right neighbor at
-			// this level, a well-formed proof would not include a step.
-			if index+1 >= size {
-				return false
-			}
-			h, err := InnerHash(current, siblingHex)
-			if err != nil {
-				return false
-			}
-			current = h
-		}
-		index = index / 2
-		size = (size + 1) / 2
-	}
-
-	// After consuming the full audit path, size must have collapsed
-	// to a single subtree (the root).
-	if size != 1 {
+	// RFC 9162 §2.1.1 inner/border decomposition.
+	inner := bitsLen(proof.LeafIndex ^ (proof.TreeSize - 1))
+	border := onesCount(proof.LeafIndex >> inner)
+	if len(proof.AuditPath) != inner+border {
 		return false
 	}
+
+	current := leafHashHex
+
+	// Inner segment: walk the bits of leafIndex.
+	// Bit=0 → sibling on the right; bit=1 → sibling on the left.
+	for i := 0; i < inner; i++ {
+		sibling := proof.AuditPath[i]
+		var h string
+		var err error
+		if (proof.LeafIndex>>i)&1 == 0 {
+			h, err = InnerHash(current, sibling)
+		} else {
+			h, err = InnerHash(sibling, current)
+		}
+		if err != nil {
+			return false
+		}
+		current = h
+	}
+
+	// Border segment: every remaining sibling combines on the LEFT
+	// (these are left-children we skipped while walking up the right edge).
+	for i := 0; i < border; i++ {
+		h, err := InnerHash(proof.AuditPath[inner+i], current)
+		if err != nil {
+			return false
+		}
+		current = h
+	}
+
 	return current == rootHashHex
 }
 

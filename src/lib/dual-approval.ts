@@ -31,6 +31,22 @@ import { createLogger } from "@/lib/logger";
 
 const log = createLogger("dual-approval");
 
+/**
+ * Normalize an approver / proposer identifier for case- and whitespace-
+ * insensitive equality. Without this, an attacker who controls both
+ * the proposerId casing AND the approverId casing can self-approve by
+ * varying capitalization or whitespace (e.g. "Alice@example.com" vs
+ * "alice@example.com" pass the strict-equality self-approval guard).
+ *
+ * Returns null for empty / whitespace-only ids — those are rejected
+ * by the surrounding caller.
+ */
+function normalizeId(id: string): string | null {
+  if (typeof id !== "string") return null;
+  const trimmed = id.trim().toLowerCase();
+  return trimmed.length === 0 ? null : trimmed;
+}
+
 export type ApprovalLane =
   | "low" // 15-second response window, default-deny on timeout
   | "pii" // 2-minute response window for PII modifications
@@ -205,6 +221,21 @@ export async function approve(
   if (!action) {
     return { ok: false, reason: "action not found" };
   }
+
+  // Normalize the approver id and the stored proposer id before any
+  // comparison. Without this, "Alice@x.com" and "alice@x.com" are
+  // distinct under === and a single human can self-approve by varying
+  // case or whitespace.
+  const normalizedApprover = normalizeId(approverId);
+  const normalizedProposer = normalizeId(action.request.proposerId);
+  if (normalizedApprover === null) {
+    return {
+      ok: false,
+      reason: "approverId must be a non-empty string",
+      state: snapshot(action, now.getTime()),
+    };
+  }
+
   if (action.consumed) {
     return {
       ok: false,
@@ -219,14 +250,14 @@ export async function approve(
       state: snapshot(action, now.getTime()),
     };
   }
-  if (approverId === action.request.proposerId) {
+  if (normalizedApprover === normalizedProposer) {
     return {
       ok: false,
       reason: "proposer cannot self-approve",
       state: snapshot(action, now.getTime()),
     };
   }
-  if (action.approvals.has(approverId)) {
+  if (action.approvals.has(normalizedApprover)) {
     return {
       ok: false,
       reason: "approver already recorded",
@@ -234,8 +265,8 @@ export async function approve(
     };
   }
 
-  action.approvals.set(approverId, {
-    approverId,
+  action.approvals.set(normalizedApprover, {
+    approverId: normalizedApprover,
     approvedAt: now.getTime(),
   });
 
@@ -335,8 +366,15 @@ export function gcExpired(now: Date = new Date()): number {
   }
   const inner = (store as unknown as { map: Map<string, PendingAction> }).map;
   const ids: string[] = [];
+  // Grace window: never sweep an action with any approvals on file —
+  // approve() is async (awaits an audit-log promise), and a gc tick
+  // scheduled between the in-memory write and the promise resolution
+  // would delete the record after the approver believed they had
+  // successfully recorded their approval. Once an action has been
+  // touched by an approver, only consume() should remove it.
   for (const [id, action] of inner) {
     if (action.consumed) continue;
+    if (action.approvals.size > 0) continue;
     if (now.getTime() >= action.expiresAt) ids.push(id);
   }
   for (const id of ids) {

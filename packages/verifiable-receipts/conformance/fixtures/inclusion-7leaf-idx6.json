@@ -1,0 +1,14 @@
+{
+  "description": "inclusion 7-leaf — proof for index 6 (rightmost leaf, odd-tree carry-up)",
+  "leafHashHex": "5aeb196e83598231b45c61f3e0c5a0fda49b0d4f86a6db5f893aacccf514fa99",
+  "leafIndex": 6,
+  "treeSize": 7,
+  "auditPath": [
+    "918566184c9d5be235ad2b6dd60828f5cec14fc409f02f7db8647009ec6da588",
+    "33376a3bd63e9993708a84ddfe6c28ae58b83505dd1fed711bd924ec5a6239f0"
+  ],
+  "rootHashHex": "4ae191939f548d9934740b88dea2c5cb89bb8870fc4505cd79dec6bbfaaee9cb",
+  "expected": {
+    "ok": true
+  }
+}

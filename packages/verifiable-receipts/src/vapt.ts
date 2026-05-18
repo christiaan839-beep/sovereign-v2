@@ -249,6 +249,28 @@ export function verifyVapt(
   const issued = Date.parse(payload.issuedAt);
   const expires = Date.parse(payload.expiresAt);
 
+  if (!Number.isFinite(issued) || !Number.isFinite(expires)) {
+    return { ok: false, reason: "issuedAt or expiresAt invalid", payload };
+  }
+  if (expires <= issued) {
+    return {
+      ok: false,
+      reason: "expiresAt must be after issuedAt",
+      payload,
+    };
+  }
+  // Re-enforce the 1-hour spec ceiling at verify time. The mint
+  // validator enforces this too, but a malicious or buggy minter
+  // can violate it — the verifier must not honor a token whose
+  // embedded lifetime exceeds policy.
+  if (expires - issued > 60 * 60 * 1000) {
+    return {
+      ok: false,
+      reason: "token lifetime exceeds 1-hour spec ceiling",
+      payload,
+    };
+  }
+
   if (now < issued) {
     return { ok: false, reason: "token not yet valid", payload };
   }

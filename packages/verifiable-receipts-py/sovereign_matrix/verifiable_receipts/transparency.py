@@ -89,47 +89,48 @@ def verify_inclusion_proof(
     if leaf_index < 0 or leaf_index >= tree_size:
         return False
 
+    # Single-leaf tree: root equals leaf, no audit path.
+    if tree_size == 1:
+        return len(audit_path) == 0 and leaf_hash_hex == root_hash_hex
+
+    # RFC 9162 / RFC 6962 §2.1.1 inner/border decomposition. The
+    # simpler index%2 walk fails on right-edge carry-up cases (e.g.
+    # idx=6 in a 7-leaf tree); the bit-decomposition handles every
+    # tree shape correctly. Matches the TypeScript canonical verifier.
     try:
         current = _hex_to_bytes(leaf_hash_hex)
         expected_root = _hex_to_bytes(root_hash_hex)
     except ValueError:
         return False
 
-    index = leaf_index
-    size = tree_size
+    inner = (leaf_index ^ (tree_size - 1)).bit_length()
+    border = bin(leaf_index >> inner).count("1")
+    if len(audit_path) != inner + border:
+        return False
 
+    # Pre-decode every audit-path entry; reject any malformed entry.
+    siblings: list[bytes] = []
     for sibling_hex in audit_path:
         if not isinstance(sibling_hex, str):
             return False
         try:
-            sibling = _hex_to_bytes(sibling_hex)
+            siblings.append(_hex_to_bytes(sibling_hex))
         except ValueError:
             return False
 
-        # Right-edge handling: if the leaf has no right neighbor at
-        # this level (i.e. index is the last leaf and even), it carries
-        # over without combining. RFC 9162 §2.1.1.
-        if size <= 1:
-            # We have audit-path entries left but the tree degenerated —
-            # the proof claims more depth than the tree supports.
-            return False
-
-        if index % 2 == 1:
-            # We're the right child; sibling is the left child.
-            current = inner_hash(sibling, current)
+    # Inner segment: walk the bits of leaf_index. Bit=0 → sibling on
+    # the right; bit=1 → sibling on the left.
+    for i in range(inner):
+        sib = siblings[i]
+        if (leaf_index >> i) & 1 == 0:
+            current = inner_hash(current, sib)
         else:
-            # We're the left child; sibling is the right child.
-            # If index+1 == size (odd-leaf right edge), the sibling
-            # would be us — but the well-formed proof wouldn't include
-            # such a step. If it does, treat as malformed.
-            if index + 1 >= size:
-                return False
-            current = inner_hash(current, sibling)
+            current = inner_hash(sib, current)
 
-        index //= 2
-        size = (size + 1) // 2
+    # Border segment: every remaining sibling combines on the LEFT
+    # (these are left-children we skipped while walking up the right
+    # edge).
+    for i in range(border):
+        current = inner_hash(siblings[inner + i], current)
 
-    # After consuming the full audit path, we should be at the root.
-    if size != 1:
-        return False
     return current == expected_root

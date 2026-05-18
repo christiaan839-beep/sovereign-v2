@@ -66,6 +66,7 @@ export {
 export {
   assembleThresholdAttestation,
   verifyThresholdAttestation,
+  trsSigningBytes,
   type ThresholdAttestation,
   type ThresholdCosigner,
   type ThresholdVerifyOptions,

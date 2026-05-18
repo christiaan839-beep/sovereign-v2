@@ -315,8 +315,10 @@ class Parser {
     let limit: number | null = null;
     if (this.match("keyword", "LIMIT")) {
       const n = this.expectNumber();
-      if (n < 0 || !Number.isInteger(n)) {
-        throw new SyntaxError("LIMIT must be a non-negative integer");
+      if (!Number.isInteger(n) || n < 0 || n > Number.MAX_SAFE_INTEGER) {
+        throw new SyntaxError(
+          "LIMIT must be a non-negative integer ≤ 2^53 - 1",
+        );
       }
       limit = n;
     }
@@ -495,8 +497,19 @@ function evalExpr(expr: Expr, row: ReceiptRecord): boolean {
   return evalComparison(expr, row);
 }
 
+/** Field names we reject to prevent prototype-chain access. */
+const RESERVED_FIELD_NAMES = new Set(["__proto__", "constructor", "prototype"]);
+
+/** Safely read a field from a row, only returning own-enumerable properties. */
+function readField(row: ReceiptRecord, field: string): unknown {
+  if (RESERVED_FIELD_NAMES.has(field)) return undefined;
+  return Object.prototype.hasOwnProperty.call(row, field)
+    ? (row as Record<string, unknown>)[field]
+    : undefined;
+}
+
 function evalComparison(c: Comparison, row: ReceiptRecord): boolean {
-  const lhs = row[c.field];
+  const lhs = readField(row, c.field);
   switch (c.op) {
     case "=":
       return lhs === c.value;
@@ -533,7 +546,19 @@ function compareScalars(a: unknown, b: Value): number {
  * SQL LIKE → regex translation. % matches any sequence; _ matches one
  * char. Everything else is treated literally (escaped).
  */
+/** Maximum LIKE-pattern length. Bounds the worst-case regex
+ * backtracking surface. A pattern of 200 chars with all `%` is the
+ * regex `^.*.*…200×…$`, which on a near-match input is still
+ * exponential — but at length 200 the wall-clock cost is microseconds.
+ * Patterns longer than this are rejected as a defensive ReDoS guard.
+ */
+const LIKE_PATTERN_MAX_LENGTH = 200;
+
 function likeMatch(value: string, pattern: string): boolean {
+  if (pattern.length > LIKE_PATTERN_MAX_LENGTH) {
+    // Defensive: refuse oversized patterns rather than risk ReDoS.
+    return false;
+  }
   let regex = "^";
   for (const ch of pattern) {
     if (ch === "%") regex += ".*";
@@ -587,8 +612,8 @@ export function queryReceipts(
   if (ast.order) {
     matched.sort((a, b) => {
       const cmp = compareScalars(
-        a[ast.order!.field],
-        b[ast.order!.field] as Value,
+        readField(a, ast.order!.field),
+        readField(b, ast.order!.field) as Value,
       );
       return ast.order!.dir === "ASC" ? cmp : -cmp;
     });
@@ -599,7 +624,7 @@ export function queryReceipts(
   const rows: Array<Record<string, unknown>> = limited.map((r) => {
     if (ast.fields === "*") return { ...r };
     const projected: Record<string, unknown> = {};
-    for (const f of ast.fields) projected[f] = r[f];
+    for (const f of ast.fields) projected[f] = readField(r, f);
     return projected;
   });
 

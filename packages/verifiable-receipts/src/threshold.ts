@@ -98,6 +98,38 @@ export interface ThresholdVerifyResult {
 }
 
 /**
+ * Compute the bytes each cosigner MUST sign for a TRS envelope.
+ *
+ * Binds the canonical receipt bytes together with the threshold
+ * parameters (m, n) and the sorted authorizedIssuers list. Without
+ * this binding, an attacker who collects valid VAOS v2 signatures
+ * for the same canonical from m authorized issuers could rewrap
+ * them into a TRS envelope with arbitrary (m, n) and authorizedIssuers
+ * values — none of which the cosigners explicitly agreed to.
+ *
+ * The wire-tag `trs1:` plus the sorted authorizedIssuers commit each
+ * signature to a specific TRS configuration. Reusing a signature
+ * collected for VAOS v2 (which signs raw canonical, no tag) is
+ * impossible because the byte strings differ.
+ *
+ * @public
+ */
+export function trsSigningBytes(
+  canonical: string,
+  threshold: { m: number; n: number },
+  authorizedIssuers: readonly string[],
+): string {
+  const sorted = [...authorizedIssuers].sort();
+  return JSON.stringify({
+    scheme: "trs1",
+    canonical,
+    m: threshold.m,
+    n: threshold.n,
+    authorizedIssuers: sorted,
+  });
+}
+
+/**
  * Assemble a threshold envelope from a canonical projection + a set of
  * cosigner contributions. Does NOT verify signatures here — that's the
  * verifier's job. The assembler may be the issuer aggregator service,
@@ -209,6 +241,16 @@ export async function verifyThresholdAttestation(
   const seen = new Set<string>();
   const verifying: string[] = [];
 
+  // Bind the canonical bytes with the TRS configuration. Every
+  // cosigner MUST have signed this same byte string — never the raw
+  // canonical alone. This prevents reusing a VAOS v2 signature
+  // (which signs raw canonical, no tag) as a TRS cosignature.
+  const boundBytes = trsSigningBytes(
+    attestation.canonical,
+    attestation.threshold,
+    attestation.authorizedIssuers,
+  );
+
   for (const c of attestation.cosigners) {
     if (!authorized.has(c.issuerId)) {
       rejected.push({
@@ -228,7 +270,7 @@ export async function verifyThresholdAttestation(
     let ok = false;
     try {
       ok = await opts.verifyIssuerSignature(
-        attestation.canonical,
+        boundBytes,
         c.signature,
         c.issuerId,
       );

@@ -135,7 +135,7 @@ const TRUST_PRIMITIVES: TrustPrimitive[] = [
     tag: "Red-team",
     title: "Public adversarial corpus + ASR report",
     summary:
-      "Every BLOCK rule across 34 Guardian packs tested against a public adversarial corpus. Defender holds ≥ 90% block-rate; coverage stats sorted weakest-rule-first.",
+      "Every BLOCK rule across 42 Guardian packs tested against a public adversarial corpus. Defender holds ≥ 90% block-rate; coverage stats sorted weakest-rule-first.",
     links: [
       {
         label: "Red-team module",
@@ -204,6 +204,32 @@ const TRUST_PRIMITIVES: TrustPrimitive[] = [
       {
         label: "C2PA bridge source",
         href: "https://github.com/christiaan839-beep/sovereign-v2/blob/main/packages/verifiable-receipts/src/c2pa-bridge.ts",
+      },
+    ],
+  },
+  {
+    category: "Audit query",
+    tag: "RAD-DSL 1.0",
+    title: "SQL over receipt sets",
+    summary:
+      "Pure-TS SQL-flavored query language over receipt arrays. Auditors paste SELECT verdictId, agentSlug FROM receipts WHERE pack = 'hipaa-2026' AND overall = 'block' — get cryptographically-anchored rows back. Read-only by design.",
+    links: [
+      {
+        label: "Audit-DSL source",
+        href: "https://github.com/christiaan839-beep/sovereign-v2/blob/main/packages/verifiable-receipts/src/audit-dsl.ts",
+      },
+    ],
+  },
+  {
+    category: "Operational",
+    tag: "Anomaly detector",
+    title: "Statistical outlier detection",
+    summary:
+      "Pure-stdlib Z-score detector over receipt streams. Surfaces block-rate spikes, per-pack failure drift, volume bursts, quiet periods, and never-before-seen agents — every detection is regulator-auditable in 5 lines of math.",
+    links: [
+      {
+        label: "Anomaly module source",
+        href: "https://github.com/christiaan839-beep/sovereign-v2/blob/main/packages/verifiable-receipts/src/anomaly.ts",
       },
     ],
   },
