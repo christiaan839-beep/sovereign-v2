@@ -1,0 +1,11 @@
+{
+  "description": "inclusion 1-leaf — single-leaf tree, empty audit path",
+  "leafHashHex": "05b6b0145f63ad831a6f233dce184e4dc4454ad3c589d834f5ba97c2531619ed",
+  "leafIndex": 0,
+  "treeSize": 1,
+  "auditPath": [],
+  "rootHashHex": "05b6b0145f63ad831a6f233dce184e4dc4454ad3c589d834f5ba97c2531619ed",
+  "expected": {
+    "ok": true
+  }
+}

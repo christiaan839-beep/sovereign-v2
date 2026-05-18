@@ -1,0 +1,11 @@
+{
+  "description": "v2 invalid — signature has v1 prefix",
+  "receipt": {
+    "canonical": "{\"agentSlug\":\"loan-underwriter\",\"issuedAt\":\"2026-05-18T10:00:00Z\",\"overall\":\"pass\",\"rules\":[{\"ruleId\":\"hipaa-no-raw-ssn\",\"verdict\":\"pass\",\"durationMs\":2}],\"runId\":\"run_conformance_001\",\"tokenId\":\"tok_001\",\"verdictId\":\"v_conf_001\"}",
+    "signature": "v1=aG1hYw=="
+  },
+  "expected": {
+    "ok": false,
+    "reasonContains": "v2"
+  }
+}

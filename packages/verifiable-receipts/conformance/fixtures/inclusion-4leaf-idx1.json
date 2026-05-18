@@ -1,0 +1,14 @@
+{
+  "description": "inclusion 4-leaf — proof for index 1 (beta)",
+  "leafHashHex": "e23537b050e84af2cbaab46f2f83d8d3b5febc8e5ac6200d306284f687d46924",
+  "leafIndex": 1,
+  "treeSize": 4,
+  "auditPath": [
+    "2a158d8afd48e3f88cb4195dfdb2a9e4817d95fa57fd34440d93f9aae5c4f82b",
+    "839a554f6df0e53b2c704fb42b7a3fb5eacc1fe568612f06921b19f5229f115c"
+  ],
+  "rootHashHex": "42fc54eeb6352f90cc81fdd5791292cca3974a168208b395b06a76240b24884d",
+  "expected": {
+    "ok": true
+  }
+}
