@@ -2779,6 +2779,204 @@ export const uaePdplPack: GuardianPack = {
   rules: uaePdplRules,
 };
 
+// ── Wave 66: Industrial Foundation Model (ISA-95 + IEC 62443) ────────
+//
+// Closes the Gemini "Agentic Transition" research §Manufacturing gap.
+// Industrial Foundation Models pretrained on sensor streams,
+// maintenance logs, CAD documents drive shop-floor agents that
+// detect OEE drops + suggest corrective actions. Production
+// deployments must reference:
+//   - ISA-95 operational hierarchy level (L1 sensors → L4 ERP)
+//   - IEC 62443 security zone classification (the industrial-cyber
+//     equivalent of network segmentation)
+//   - OEE drop magnitude when a corrective action is proposed
+//
+// Citation: ISA-95 / IEC 62264 (Enterprise-Control System Integration)
+// + IEC 62443 (Industrial Communication Networks — IT Security).
+
+const IFM_SHOPFLOOR_TERMS =
+  /\b(industrial[-\s]?foundation[-\s]?model|IFM[-\s]?(?:output|inference)|shop[-\s]?floor[-\s]?agent|OEE[-\s]?(?:drop|degradation|alert)|predictive[-\s]?maintenance[-\s]?(?:flag|signal)|asset[-\s]?utilization[-\s]?advisory)/i;
+
+export const industrialFoundationRules: GuardianRule[] = [
+  {
+    id: "ifm-isa95-level-attribution",
+    description:
+      "WARN on industrial AI output without ISA-95 operational hierarchy level — ISA-95 / IEC 62264",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (IFM_SHOPFLOOR_TERMS.test(text)) {
+        const hasLevel =
+          /\bISA[-\s]?95[-\s]?(?:L|level)?[-\s]?[0-4]|\b(?:L[0-4]|Level[-\s]?[0-4])[-\s]?(?:operational|process)|\bIEC[-\s]?62264/i.test(
+            text,
+          );
+        if (!hasLevel) {
+          return {
+            verdict: "warn",
+            reason:
+              "ISA-95 / IEC 62264: industrial AI output missing ISA-95 operational hierarchy level (L0-L4)",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "ifm-iec62443-zone-classification",
+    description:
+      "WARN on industrial AI output without IEC 62443 security zone classification — IEC 62443-3-2",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (IFM_SHOPFLOOR_TERMS.test(text)) {
+        const hasZone =
+          /\bIEC[-\s]?62443|\bzone[-\s]?(?:and[-\s]?)?conduit|\bSL[-\s]?[0-4]|\bsecurity[-\s]?level[-\s]?[0-4]|\bzone[-\s]?(?:id|classification|tag)/i.test(
+            text,
+          );
+        if (!hasZone) {
+          return {
+            verdict: "warn",
+            reason:
+              "IEC 62443-3-2: industrial AI output missing zone-and-conduit security classification",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "ifm-oee-corrective-action-magnitude",
+    description:
+      "BLOCK shop-floor corrective action proposing line stop without numeric OEE/throughput justification — operator-safety invariant",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (
+        IFM_SHOPFLOOR_TERMS.test(text) &&
+        /\b(?:stop[-\s]?the[-\s]?line|halt[-\s]?production|emergency[-\s]?(?:stop|shutdown)|line[-\s]?stop[-\s]?recommended)/i.test(
+          text,
+        )
+      ) {
+        const hasJustification =
+          /\bOEE[-\s]?(?:dropped|fell|delta|=|:)[-\s]?\d|\bthroughput[-\s]?(?:loss|drop)[-\s]?\d|\bavailability[-\s]?[<≤]\s?\d|\bquality[-\s]?index[-\s]?<\s?\d/i.test(
+            text,
+          );
+        if (!hasJustification) {
+          return {
+            verdict: "block",
+            reason:
+              "Operator-safety invariant: line-stop recommendation without numeric OEE/throughput justification — must be human-approved",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+];
+
+export const industrialFoundationPack: GuardianPack = {
+  id: "industrial-foundation-2026",
+  name: "Industrial Foundation Model (ISA-95 + IEC 62443)",
+  citation:
+    "ISA-95 / IEC 62264 (Enterprise-Control System Integration) + IEC 62443-3-2 (Zone & Conduit Risk Assessment) + operator-safety invariant for line-stop recommendations",
+  rules: industrialFoundationRules,
+};
+
+// ── Wave 66: Ambient Clinical Scribe (HIPAA + 21st Century Cures Act) ─
+//
+// Closes the Gemini research §Healthcare gap. Ambient AI scribes
+// (Abridge, DAX Copilot, Suki) listen to clinical encounters and
+// generate notes — reported 83% reduction in documentation time.
+// They MUST reference:
+//   - HIPAA minimum-necessary standard for PHI captured in the
+//     ambient audio
+//   - 21st Century Cures Act + ONC's Information Blocking Rule
+//     (§ 4004) — the note must be exportable on patient request
+//   - AMA "Augmented Intelligence" 2024 guidance on AI-generated
+//     clinical content provenance
+
+const AMBIENT_SCRIBE_TERMS =
+  /\b(ambient[-\s]?(?:AI[-\s]?)?(?:clinical[-\s]?)?(?:scribe|note|transcript|documentation)|ambient[-\s]?(?:AI[-\s]?)?\w+[-\s]?(?:scribe|note|transcript)|clinical[-\s]?(?:note|documentation)[-\s]?(?:generated|AI[-\s]?drafted)|encounter[-\s]?(?:transcript|summary)[-\s]?(?:AI|auto[-\s]?generated)|SOAP[-\s]?note[-\s]?AI|AI[-\s]?(?:generated|drafted)[-\s]?(?:clinical[-\s]?)?(?:note|SOAP))/i;
+
+export const ambientScribeRules: GuardianRule[] = [
+  {
+    id: "ambient-scribe-minimum-necessary",
+    description:
+      "WARN on ambient clinical note without minimum-necessary attestation — HIPAA 45 CFR § 164.502(b)",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (AMBIENT_SCRIBE_TERMS.test(text)) {
+        const hasMinimumNecessary =
+          /\bminimum[-\s]?necessary|\bMNS[-\s]?(?:applied|attested|ref)|\b164\.502\(b\)|\bPHI[-\s]?scope[-\s]?(?:limited|reviewed)|\bambient[-\s]?(?:PHI[-\s]?)?filter[-\s]?applied/i.test(
+            text,
+          );
+        if (!hasMinimumNecessary) {
+          return {
+            verdict: "warn",
+            reason:
+              "HIPAA 45 CFR § 164.502(b): ambient clinical note missing minimum-necessary attestation",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "ambient-scribe-info-blocking-exportable",
+    description:
+      "WARN on ambient clinical note without patient-export pathway reference — 21st Century Cures Act § 4004 (ONC Information Blocking Rule)",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (AMBIENT_SCRIBE_TERMS.test(text)) {
+        const hasExport =
+          /\bUSCDI[-\s]?(?:v\d|export)|\bpatient[-\s]?(?:request|access)[-\s]?(?:exportable|pathway)|\binformation[-\s]?blocking[-\s]?(?:rule|compliant)|\b21st[-\s]?Century[-\s]?Cures|\bONC[-\s]?(?:certified|compliant)|\bFHIR[-\s]?(?:export|endpoint)/i.test(
+            text,
+          );
+        if (!hasExport) {
+          return {
+            verdict: "warn",
+            reason:
+              "21st Century Cures Act § 4004: ambient clinical note missing patient-export pathway / USCDI reference",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "ambient-scribe-clinician-attestation",
+    description:
+      "BLOCK ambient clinical note finalized without clinician attestation — AMA Augmented Intelligence 2024 + standard of care",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (
+        AMBIENT_SCRIBE_TERMS.test(text) &&
+        /\b(?:finalized|signed[-\s]?off|committed[-\s]?to[-\s]?(?:chart|EHR)|attested[-\s]?for[-\s]?billing)/i.test(
+          text,
+        )
+      ) {
+        const hasClinicianSignoff =
+          /\bclinician[-\s]?(?:signed|attested|reviewed)|\bphysician[-\s]?attestation|\bsigning[-\s]?provider[-\s]?(?:id|ref)|\bhuman[-\s]?reviewer[-\s]?id|\bprovider[-\s]?id\s?[:=]\s?\w/i.test(
+            text,
+          );
+        if (!hasClinicianSignoff) {
+          return {
+            verdict: "block",
+            reason:
+              "AMA Augmented Intelligence 2024 + clinical-standard-of-care: ambient note finalized without clinician attestation — must be human-signed before EHR commit / billing",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+];
+
+export const ambientScribePack: GuardianPack = {
+  id: "ambient-clinical-scribe-2026",
+  name: "Ambient Clinical Scribe (HIPAA + 21st Century Cures Act)",
+  citation:
+    "HIPAA 45 CFR § 164.502(b) (minimum necessary) + 21st Century Cures Act § 4004 (Information Blocking Rule) + AMA Augmented Intelligence 2024 guidance",
+  rules: ambientScribeRules,
+};
+
 // ── Registry of packs ────────────────────────────────────────────────
 
 export interface GuardianPack {
@@ -2821,6 +3019,8 @@ export const ALL_PACKS: GuardianPack[] = [
   koreaPipaPack,
   southAfricaPopiaPack,
   uaePdplPack,
+  industrialFoundationPack,
+  ambientScribePack,
 ];
 
 export function findPack(id: string): GuardianPack | undefined {
