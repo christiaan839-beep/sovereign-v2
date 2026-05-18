@@ -82,6 +82,14 @@ export {
 } from "./stream-attestation.js";
 
 export {
+  queryReceipts,
+  parseQuery,
+  type ReceiptRecord,
+  type QueryResult,
+  type QueryOperator,
+} from "./audit-dsl.js";
+
+export {
   runGuardian,
   verifyGuardianAttestation,
   quorumCollapse,
