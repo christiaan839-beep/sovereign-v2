@@ -9,7 +9,7 @@ Three composable pieces:
 
 1. **Post-quantum dual-signing** — Ed25519 + ML-DSA-65 (Dilithium3, NIST FIPS 204). Receipts stay verifiable across the post-quantum transition (7–25 year retention horizons covered).
 2. **Signed receipt bundles** — pure-Node STORE-method ZIP writer (no compression, byte-deterministic) with a top-level `MANIFEST.signed.json`. Hand the bundle to an auditor; they re-derive the math without unzipping.
-3. **Guardian rule runner + 20 regulated-vertical packs** — HIPAA, SR 11-7, NAIC AI Bulletin, DSCSA, EU CSRD, CFPB / ECOA, MAS FEAT, FCA Consumer Duty, PCI DSS v4.0, EU AI Act, NYDFS Part 500, NYC AEDT (Local Law 144), FERPA, FDA SaMD, EU DORA, Colorado SB 24-205, California AB 2013, Australia APRA CPS 230, FDA PCCP (continuous-learning medical AI), Illinois AI VIA + HB 3773. Compose rules into a pack, get a signed verdict envelope.
+3. **Guardian rule runner + 26 regulated-vertical packs** — HIPAA, SR 11-7, NAIC AI Bulletin, DSCSA, EU CSRD, CFPB / ECOA, MAS FEAT, FCA Consumer Duty, PCI DSS v4.0, EU AI Act, NYDFS Part 500, NYC AEDT (Local Law 144), FERPA, FDA SaMD, EU DORA, Colorado SB 24-205, California AB 2013, Australia APRA CPS 230, FDA PCCP (continuous-learning medical AI), Illinois AI VIA + HB 3773, Canada AIDA (C-27), UK ICO AI Auditing Framework, ISO/IEC 42001 AIMS, Texas CUBI + TX-RAMP, Brazil LGPD AI (PL 2338/2023), India DPDP + MeitY. Compose rules into a pack, get a signed verdict envelope.
 
 4. **C2PA bridge** — convert any signed VAOS verdict into a Content Authenticity Initiative manifest (`org.sovereignmatrix.vaos.v1` assertion label). Travels through Adobe Firefly, Microsoft Copilot, and Truepic Lens pipelines without losing the signature. `toC2PAManifest()` ↔ `fromC2PAManifest()` round-trip is byte-deterministic.
 
@@ -219,7 +219,7 @@ The primitive should be public. Vendors compete on the **integration** of receip
 
 So: take it, ship it, run it against your own AI stack. If you're building a regulated-AI product and you want to compare notes, reach out — `christiaan@sovereignmatrix.agency`.
 
-## Twenty regulated-vertical packs included
+## Twenty-six regulated-vertical packs included
 
 | Pack                   | Citation                                             | Use case                                    |
 | ---------------------- | ---------------------------------------------------- | ------------------------------------------- |
@@ -243,8 +243,14 @@ So: take it, ship it, run it against your own AI stack. If you're building a reg
 | `apraCps230Pack`       | APRA CPS 230 + Privacy Act 1988 (Cth) ADM provisions | Australia financial operational resilience  |
 | `fdaPccpPack`          | FDA PCCP Final Guidance (Dec 4, 2024)                | US continuous-learning medical-device AI    |
 | `illinoisAiPack`       | 820 ILCS 42/ + HB 3773 (IHRA amendment)              | Illinois AI hiring + video-interview        |
+| `canadaAidaPack`       | Bill C-27 Part 3 ss. 8-12 + PIPEDA ADM               | Canada high-impact AI                       |
+| `ukIcoPack`            | ICO Guidance on AI + UK GDPR Art. 22 + ATRS v2       | UK ICO Auditing Framework                   |
+| `iso42001Pack`         | ISO/IEC 42001:2023 §§ 6.1.4 / 7.5 + Annex A          | ISO 42001 AI Management System              |
+| `texasAiPack`          | Tex. Bus. & Com. § 503.001 + HB 4 + TX-RAMP          | Texas biometric AI + state procurement      |
+| `brazilLgpdAiPack`     | LGPD Art. 20 + PL 2338/2023 art. 13                  | Brazil GenAI + automated-decision           |
+| `indiaDpdpAiPack`      | DPDP Act §§ 6 / 10 + MeitY AI Advisory (Mar 2024)    | India DPDP + significant-data-fiduciary AI  |
 
-Every rule cites the specific regulatory clause in its `description`. Pure functions, sub-10ms each, composable. Geographic coverage: US (13 packs) + EU (3 packs) + UK + Singapore + Australia + NYC + Illinois + Colorado + California + Global (PCI DSS).
+Every rule cites the specific regulatory clause in its `description`. Pure functions, sub-10ms each, composable. Geographic coverage: US (13 packs) + EU (3 packs) + UK + Singapore + Australia + Canada + Brazil + India + Texas + Illinois + Colorado + California + NYC + Global (PCI DSS) + ISO (international standard).
 
 ## Subpath imports
 

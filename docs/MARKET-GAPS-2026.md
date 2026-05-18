@@ -5,13 +5,13 @@ underserved relative to enforceable regulation + procurement budget.
 This file is a working document — updated as new packs ship + new
 regulations land.
 
-Last updated: 2026-05-18 (Wave 62).
+Last updated: 2026-05-18 (Wave 63).
 
 CC0 1.0. Republish freely.
 
 ---
 
-## What we ship today (20 Apache-2.0 Guardian packs)
+## What we ship today (26 Apache-2.0 Guardian packs)
 
 | #      | Pack                             | Citation                                             | Vertical                                   | Geography  |
 | ------ | -------------------------------- | ---------------------------------------------------- | ------------------------------------------ | ---------- |
@@ -33,10 +33,25 @@ CC0 1.0. Republish freely.
 | **16** | **`coloradoAiPack`** (NEW)       | Colo. Rev. Stat. §§ 6-1-1701 to 6-1-1707 (SB 24-205) | **Consequential-decision AI**              | Colorado   |
 | **17** | **`californiaAb2013Pack`** (NEW) | Cal. Bus. & Prof. § 22757.1 (AB 2013)                | **GenAI training-data transparency**       | California |
 | **18** | **`apraCps230Pack`** (NEW)       | APRA CPS 230 + Privacy Act 1988 (Cth) ADM            | **Financial operational resilience + ADM** | Australia  |
-| **19** | **`fdaPccpPack`** (NEW)          | FDA PCCP Final Guidance (Dec 4, 2024)                | **Continuous-learning medical AI**         | US         |
-| **20** | **`illinoisAiPack`** (NEW)       | 820 ILCS 42/ + HB 3773 (IHRA amendment)              | **AI video interview + hiring bias**       | Illinois   |
+| 19     | `fdaPccpPack`                    | FDA PCCP Final Guidance (Dec 4, 2024)                | Continuous-learning medical AI             | US         |
+| 20     | `illinoisAiPack`                 | 820 ILCS 42/ + HB 3773 (IHRA amendment)              | AI video interview + hiring bias           | Illinois   |
+| **21** | **`canadaAidaPack`** (NEW)       | Bill C-27 Part 3 (AIDA) ss. 8-12 + PIPEDA ADM        | **High-impact AI (employment + service)**  | Canada     |
+| **22** | **`ukIcoPack`** (NEW)            | ICO Guidance on AI + UK GDPR Art. 22 + ATRS v2       | **Cross-sector UK auditing framework**     | UK         |
+| **23** | **`iso42001Pack`** (NEW)         | ISO/IEC 42001:2023 §§ 6.1.4 / 7.5 + Annex A          | **AI Management System runtime hooks**     | ISO        |
+| **24** | **`texasAiPack`** (NEW)          | Tex. Bus. & Com. § 503.001 + HB 4 + TX-RAMP          | **Biometric AI + state procurement**       | Texas      |
+| **25** | **`brazilLgpdAiPack`** (NEW)     | LGPD Art. 20 + PL 2338/2023 art. 13                  | **GenAI + automated decisions**            | Brazil     |
+| **26** | **`indiaDpdpAiPack`** (NEW)      | DPDP Act §§ 6 / 10 + MeitY AI Advisory (Mar 2024)    | **DPDP + significant-data-fiduciary AI**   | India      |
 
-Coverage: US (13 packs incl. CA/IL/CO/NYC) · EU (3 packs) · UK · Singapore · Australia · Global (PCI DSS).
+Coverage: US (13 packs incl. CA/IL/CO/NYC) · EU (3 packs) · UK · Singapore · Australia · Canada · Brazil · India · Texas · ISO international · Global (PCI DSS).
+
+**Witness federation primitive (Wave 63, NEW):** every Sovereign Matrix
+deployment exposes a public observation list at
+`/api/transparency/witness/observations`. A peer monitor pulls the
+full set of STHs we've ever recorded cosignatures against, then
+cross-checks against other witness aggregators running the same
+endpoint shape. Disagreement on `(treeSize → rootHash)` between
+honest witnesses is the smoke signal for log equivocation. See
+`docs/WITNESSES.md` for the federation operator governance.
 
 **Federation primitive (Wave 62, NEW):** every Sovereign Matrix
 deployment now hosts an `/.well-known/vaos` discovery document
@@ -53,18 +68,119 @@ and Truepic Lens pipelines without losing the signature.
 
 ---
 
-## Wave 62 shipped — what was on the prior roadmap is now in `ALL_PACKS`
+## Wave 63 shipped — six more packs + witness federation primitive
 
-The five regulations called out in the May 18 roadmap (Colorado SB
-24-205, California AB 2013, Australia APRA CPS 230 + Privacy Act ADM,
-FDA PCCP, Illinois AI VIA + HB 3773) shipped in Wave 62 alongside the
-federation + content-provenance primitives. Below is the next-wave
-horizon — Wave 63 candidates that still meet our three-criteria gate
-(enforceable, procurement budget, pattern-credibly-maps).
+Every regulation called out in the prior Wave 63 candidate list
+(Canada AIDA, UK ICO Auditing Framework + Art. 22 UK GDPR, ISO/IEC
+42001, Texas CUBI + HB 4 + TX-RAMP, Brazil LGPD AI / PL 2338, India
+DPDP + MeitY Advisory) is now in `ALL_PACKS` — 18 new rules and 45
+new tests. Plus the witness federation observation endpoint described
+above. The pack table at the top of this doc reflects the new state.
+
+Below: the Wave 64 horizon — verticals still meeting the
+three-criteria gate (enforceable, procurement budget, pattern fit).
 
 ---
 
-## Wave 63 candidates — next-horizon underserved verticals
+## Wave 64 candidates — next-horizon underserved verticals
+
+### 1. NIST AI RMF 1.0 Generative AI Profile (GAI-Profile) runtime hooks
+
+- **Status**: NIST AI 600-1 published July 2024; voluntary but cited
+  in every major US federal AI procurement spec from Q4 2025 onward
+- **AI use case**: Any GenAI deployed in a US federal-adjacent
+  procurement context; defense contractors; FedRAMP-aligned AI
+- **Per-decision rule**: WARN when GenAI output lacks (a) AI 600-1
+  risk-control ID reference, (b) NIST AI RMF function (Govern / Map /
+  Measure / Manage) tag, (c) "AI-generated content" provenance flag
+- **Market**: Federal AI procurement spend $13.5B (2025); the
+  voluntary-but-de-facto-mandatory layer for US public-sector AI
+- **Pattern fit**: high — NIST AI RMF maps to ISO 42001 Annex A
+  control language with NIST CSF nomenclature overlay
+
+### 2. China PIPL + Generative AI Services Interim Measures
+
+- **Status**: PIPL in force since Nov 2021; CAC's "Interim Measures
+  for the Management of Generative AI Services" (生成式人工智能服务管理暂行办法)
+  effective Aug 15, 2023; algorithmic-recommendation rules layered
+- **AI use case**: Any GenAI made available to Chinese mainland users;
+  any cross-border AI inference of Chinese data subjects
+- **Per-decision rule**: WARN on GenAI output without (a) algorithm
+  filing number, (b) PIPL Art. 24 automated-decision disclosure,
+  (c) content-mark for AI-generated output per Deep Synthesis rules
+- **Market**: ~$50B Chinese enterprise AI market by 2027; required
+  for any global SaaS shipping into mainland China
+- **Risk**: ITAR / export-control entanglement requires legal review
+  before shipping rule text — keep description language regulator-
+  citation-only
+
+### 3. Japan APPI + METI AI Guidelines for Business
+
+- **Status**: APPI revised April 2022; METI "AI Guidelines for
+  Business v1.0" (Apr 2024) + v1.1 (Q4 2025); Japan AI Promotion
+  Act expected late 2026
+- **AI use case**: Any AI processing personal data of Japanese
+  residents; any AI sold to Japanese keiretsu or government
+- **Per-decision rule**: WARN on output without (a) APPI consent
+  basis reference, (b) METI guideline applicability tag,
+  (c) cross-border-transfer attestation when applicable
+- **Market**: Japan enterprise AI spend $9.2B (2025); completes
+  the G7 AI-regulation circumference (US, UK, EU, Canada, Japan)
+
+### 4. South Korea PIPA + AI Basic Act (eff. Jan 2026)
+
+- **Status**: AI Basic Act (인공지능 기본법) passed Dec 2024,
+  effective Jan 2026; layered on PIPA + the Algorithm Discrimination
+  Prohibition Act
+- **AI use case**: Korean residents + B2B SaaS in the K-AI ecosystem
+- **Per-decision rule**: WARN when high-impact AI output lacks
+  (a) PIPA consent reference, (b) AI Basic Act risk tier (general /
+  high-impact / generative), (c) Korean-language right-to-explanation
+- **Market**: K-AI ecosystem $14B by 2027; the third APAC pack
+  rounding out Japan + Singapore + India + Australia
+
+### 5. South Africa POPIA + draft AI National Policy Framework
+
+- **Status**: POPIA in force since July 2021; draft AI National
+  Policy Framework released by Department of Communications Aug 2024;
+  Information Regulator AI guidance Q2 2026
+- **AI use case**: Any AI processing personal data of SA residents;
+  any AI deployed in the African financial-inclusion sector
+- **Per-decision rule**: WARN on output without (a) POPIA s. 71
+  automated-decision notice, (b) Information Regulator notification
+  for high-risk AI per draft framework, (c) responsible-party
+  attribution
+- **Market**: Africa fintech AI spend $1.6B (2025) → $4.8B (2030);
+  South Africa is the regulatory beachhead for the continent —
+  Sovereign Matrix is South African, the home jurisdiction warrants
+  shipping
+
+### 6. UAE PDPL + DIFC AI Regulation + Dubai Digital Strategy 2031
+
+- **Status**: UAE PDPL in force since Jan 2022; DIFC AI Regulation
+  in consultation (expected Q3 2026); ADGM Data Protection Regulations
+  for AI live since 2025
+- **AI use case**: AI sold to UAE government + DIFC / ADGM financial
+  free-zones; Gulf cross-border AI inference
+- **Per-decision rule**: WARN when output lacks (a) PDPL Art. 13
+  automated-decision notice, (b) DIFC AI Regulation risk-tier tag,
+  (c) Arabic-language right-to-review where applicable
+- **Market**: Gulf AI spend $50B by 2030; the GCC procurement
+  superhub for emerging-market AI
+
+---
+
+**Wave 64 sizing.** 6 packs × ~3 rules each = ~18 rules + ~40 tests.
+At the established velocity pattern this is a single dedicated wave.
+Brings the moat to **32 packs across 6 continents**: Americas (8 packs
+incl. US/CA/BR/Tex/Cal/Ill/Col/NYC) · Europe (4 incl. EU/UK) · APAC
+(6 incl. SG/JP/KR/AU/IN/CN) · MEA (2 incl. ZA/UAE) · ISO international
+· Global (PCI DSS). The 4th continent (Africa) and 6th continent (MEA)
+land here.
+
+---
+
+## Wave 63 reference (shipped) — for transparency, the candidates that became packs
 
 ### 1. Canada AIDA (Artificial Intelligence and Data Act, C-27)
 

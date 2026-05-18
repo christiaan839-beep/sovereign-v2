@@ -1637,6 +1637,571 @@ export const illinoisAiPack: GuardianPack = {
   rules: illinoisAiRules,
 };
 
+// ── Wave 63: Canada AIDA (Artificial Intelligence and Data Act, C-27) ─
+//
+// Bill C-27 (Digital Charter Implementation Act, 2022) bundles AIDA
+// with PIPEDA reform. AIDA defines "high-impact AI systems" and
+// requires (a) bias-mitigation measures, (b) human-oversight
+// attestation, (c) accessibility considerations, plus a material-harm
+// notification path to the Minister. The companion Statutory Instrument
+// is pre-published 2025; Royal Assent expected late 2026, with class-
+// definition rulemaking through 2027.
+//
+// Citation: AIDA in Bill C-27 (parl.ca/DocumentViewer/en/44-1/bill/C-27)
+// + PIPEDA (Personal Information Protection and Electronic Documents
+// Act, R.S.C. 1985, c. 5) automated-decision provisions.
+
+const AIDA_HIGH_IMPACT_TERMS =
+  /\b(high[-\s]?impact|biometric[-\s]?identification|content[-\s]?moderation|employment[-\s]?(?:decision|filter)|essential[-\s]?service|automated[-\s]?decision)/i;
+const AIDA_CANADIAN_NEXUS =
+  /\b(Canadian[-\s]?resident|Canada[-\s]?user|served[-\s]?in[-\s]?Canada|federally[-\s]?regulated[-\s]?entity)/i;
+
+export const canadaAidaRules: GuardianRule[] = [
+  {
+    id: "canada-aida-bias-mitigation",
+    description:
+      "WARN on high-impact AI output without bias-mitigation reference — AIDA s. 8 (high-impact systems)",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (AIDA_HIGH_IMPACT_TERMS.test(text)) {
+        const hasMitigation =
+          /\bbias[-\s]?mitigation|\bfairness[-\s]?(?:audit|test|measure)|\bdisparate[-\s]?impact[-\s]?analysis|\bequity[-\s]?(?:test|review)/i.test(
+            text,
+          );
+        if (!hasMitigation) {
+          return {
+            verdict: "warn",
+            reason:
+              "AIDA s. 8: high-impact AI output missing bias-mitigation reference",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "canada-aida-human-oversight",
+    description:
+      "WARN on high-impact AI decision without human-oversight attestation — AIDA s. 9",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (AIDA_HIGH_IMPACT_TERMS.test(text)) {
+        const hasOversight =
+          /\bhuman[-\s]?(?:oversight|review|in[-\s]?the[-\s]?loop)|\bHITL|\boperator[-\s]?supervised|\bhuman[-\s]?approved/i.test(
+            text,
+          );
+        if (!hasOversight) {
+          return {
+            verdict: "warn",
+            reason:
+              "AIDA s. 9: high-impact AI decision missing human-oversight attestation",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "canada-aida-material-harm-notification",
+    description:
+      "BLOCK high-impact AI output reporting material harm without ministerial-notification reference — AIDA s. 12",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (
+        /\bmaterial[-\s]?harm|\bserious[-\s]?injury|\bproperty[-\s]?damage|\bsystemic[-\s]?bias[-\s]?detected/i.test(
+          text,
+        ) &&
+        AIDA_HIGH_IMPACT_TERMS.test(text)
+      ) {
+        const hasNotice =
+          /\bministerial[-\s]?notification|\bMinister[-\s]?of[-\s]?Innovation|\bAIDA[-\s]?(?:incident|report)|\bnotification[-\s]?filed/i.test(
+            text,
+          );
+        if (!hasNotice) {
+          return {
+            verdict: "block",
+            reason:
+              "AIDA s. 12: material-harm event from high-impact AI lacks ministerial-notification reference",
+          };
+        }
+      }
+      // Silence unused-warning for the nexus regex — retained for future
+      // jurisdiction-scoped enforcement extension.
+      void AIDA_CANADIAN_NEXUS;
+      return { verdict: "pass" };
+    },
+  },
+];
+
+export const canadaAidaPack: GuardianPack = {
+  id: "ca-aida-2026",
+  name: "Canada AIDA (Artificial Intelligence and Data Act, C-27)",
+  citation:
+    "Bill C-27 Part 3 (AIDA) ss. 8-12 + PIPEDA automated-decision-making provisions",
+  rules: canadaAidaRules,
+};
+
+// ── Wave 63: UK ICO AI Auditing Framework ────────────────────────────
+//
+// ICO's "Guidance on AI and data protection" (updated Q1 2026) sets
+// five cross-sector principles plus a procurement-grade Auditing
+// Framework. Article 22 GDPR (carried into UK GDPR) requires
+// meaningful information about the logic of solely automated decisions
+// + safeguards. Public-sector AI also faces the Algorithmic
+// Transparency Recording Standard (ATRS) from CDDO.
+//
+// Citation: ICO Guidance on AI + UK GDPR Art. 22 + ATRS v2 (Q4 2024)
+// + AI White Paper (Mar 2023) regulatory principles.
+
+const UK_AI_HIGH_STAKES_TERMS =
+  /\b(solely[-\s]?automated|automated[-\s]?decision|high[-\s]?stakes[-\s]?AI|public[-\s]?sector[-\s]?AI|healthcare[-\s]?AI|education[-\s]?AI)/i;
+
+export const ukIcoRules: GuardianRule[] = [
+  {
+    id: "uk-ico-dpia-reference",
+    description:
+      "WARN on high-stakes UK AI output without DPIA reference — UK GDPR Art. 35 + ICO Guidance §3",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (UK_AI_HIGH_STAKES_TERMS.test(text)) {
+        const hasDpia =
+          /\bDPIA|\bdata[-\s]?protection[-\s]?impact[-\s]?assessment|\bArt\.?\s?35|\bICO[-\s]?(?:registered|notified)/i.test(
+            text,
+          );
+        if (!hasDpia) {
+          return {
+            verdict: "warn",
+            reason:
+              "UK GDPR Art. 35 + ICO Guidance §3: high-stakes AI output missing DPIA reference",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "uk-ico-explainability-artefact",
+    description:
+      "WARN on solely-automated UK AI decision without explainability artefact — UK GDPR Art. 22(3)",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (UK_AI_HIGH_STAKES_TERMS.test(text)) {
+        const hasExplain =
+          /\bexplainability[-\s]?(?:artefact|artifact|report)|\bmeaningful[-\s]?information|\bdecision[-\s]?rationale|\bSHAP|\bLIME|\bcounterfactual[-\s]?explanation/i.test(
+            text,
+          );
+        if (!hasExplain) {
+          return {
+            verdict: "warn",
+            reason:
+              "UK GDPR Art. 22(3): solely-automated UK AI decision missing explainability artefact",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "uk-ico-human-review-pathway",
+    description:
+      "WARN on UK automated decision without human-review pathway — ICO Guidance §6 + Art. 22(3)",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (UK_AI_HIGH_STAKES_TERMS.test(text)) {
+        const hasReview =
+          /\bhuman[-\s]?review[-\s]?(?:available|pathway|process)|\bright[-\s]?to[-\s]?contest|\bcontestability|\bappeal[-\s]?(?:right|process)/i.test(
+            text,
+          );
+        if (!hasReview) {
+          return {
+            verdict: "warn",
+            reason:
+              "ICO Guidance §6 + UK GDPR Art. 22(3): UK automated decision missing human-review pathway",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+];
+
+export const ukIcoPack: GuardianPack = {
+  id: "uk-ico-ai-2026",
+  name: "UK ICO AI Auditing Framework + Art. 22 UK GDPR",
+  citation:
+    "ICO Guidance on AI and data protection (Q1 2026) + UK GDPR Art. 22 (automated decisions) + ATRS v2 (CDDO, Q4 2024)",
+  rules: ukIcoRules,
+};
+
+// ── Wave 63: ISO/IEC 42001 AIMS runtime hooks ────────────────────────
+//
+// Published Dec 2023. The "AI management system" certification gate
+// procurement teams now treat as the replacement for "do you have a
+// responsible AI policy?". Annex A control set spans 9 categories
+// (policies, internal organisation, AI system lifecycle, etc.).
+// Runtime hook: every AI inference should reference its AIMS document
+// + applicable Annex A controls + the corresponding risk-treatment
+// record so the audit trail composes back to the certificate.
+
+const ISO42001_AI_INFERENCE_TERMS =
+  /\b(AI[-\s]?(?:inference|decision|output)|model[-\s]?(?:output|prediction)|automated[-\s]?(?:recommendation|score)|AIMS[-\s]?scope)/i;
+
+export const iso42001Rules: GuardianRule[] = [
+  {
+    id: "iso42001-aims-doc-reference",
+    description:
+      "WARN on AI inference output without AIMS document reference — ISO/IEC 42001:2023 § 7.5",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (ISO42001_AI_INFERENCE_TERMS.test(text)) {
+        const hasAims =
+          /\bAIMS[-\s]?(?:doc|document|policy|ref|v\d)|\bISO[-\s]?42001|\bAI[-\s]?management[-\s]?system[-\s]?(?:policy|document)/i.test(
+            text,
+          );
+        if (!hasAims) {
+          return {
+            verdict: "warn",
+            reason:
+              "ISO/IEC 42001:2023 § 7.5: AI inference output missing AIMS document reference",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "iso42001-risk-treatment-record",
+    description:
+      "WARN on AI inference output without risk-treatment record id — ISO/IEC 42001:2023 § 6.1.4",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (ISO42001_AI_INFERENCE_TERMS.test(text)) {
+        const hasRtr =
+          /\brisk[-\s]?treatment[-\s]?(?:record|id|plan)|\bRTR[-\s]?\d|\bAIMS[-\s]?risk[-\s]?id|\brisk[-\s]?register[-\s]?ref/i.test(
+            text,
+          );
+        if (!hasRtr) {
+          return {
+            verdict: "warn",
+            reason:
+              "ISO/IEC 42001:2023 § 6.1.4: AI inference output missing risk-treatment record id",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "iso42001-annex-a-applicability",
+    description:
+      "WARN on AI inference output without Annex A control set applicability tag — ISO/IEC 42001:2023 Annex A",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (ISO42001_AI_INFERENCE_TERMS.test(text)) {
+        const hasAnnex =
+          /\bAnnex[-\s]?A(?:[-\s]?\d)?|\bA\.\d+(?:\.\d+)*[-\s]?control|\bcontrol[-\s]?(?:set|tag)|\bSoA[-\s]?(?:ref|reference)/i.test(
+            text,
+          );
+        if (!hasAnnex) {
+          return {
+            verdict: "warn",
+            reason:
+              "ISO/IEC 42001:2023 Annex A: AI inference output missing applicable control set tag",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+];
+
+export const iso42001Pack: GuardianPack = {
+  id: "iso-42001-2023",
+  name: "ISO/IEC 42001 AI Management System",
+  citation:
+    "ISO/IEC 42001:2023 §§ 6.1.4 / 7.5 + Annex A (AI Management System requirements)",
+  rules: iso42001Rules,
+};
+
+// ── Wave 63: Texas TX-RAMP + biometric AI ────────────────────────────
+//
+// TX-RAMP (Texas Risk and Authorization Management Program) is the
+// state-procurement security-authorization regime — any cloud or AI
+// product sold to a Texas state agency needs TX-RAMP cert at the
+// appropriate impact level. HB 4 (passed June 2025) extends biometric-
+// AI consent + retention obligations beyond the original Capture/Use
+// of Biometric Identifier Act (Bus. & Com. Code § 503.001). Texas
+// state IT spend is $3.4B/yr; biometric-AI market $32B by 2027.
+
+const TX_BIOMETRIC_TERMS =
+  /\b(biometric[-\s]?(?:identifier|template|scan|matching|verification)|face[-\s]?(?:print|recognition)|iris[-\s]?(?:scan|template)|voice[-\s]?print|fingerprint[-\s]?match)/i;
+const TX_RAMP_SCOPE_TERMS =
+  /\b(TX[-\s]?RAMP|Texas[-\s]?state[-\s]?agency|state[-\s]?procurement|DIR[-\s]?contract|DIR[-\s]?vendor)/i;
+
+export const texasAiRules: GuardianRule[] = [
+  {
+    id: "tx-biometric-consent",
+    description:
+      "BLOCK biometric-AI output on Texas data without prior written consent — Tex. Bus. & Com. Code § 503.001(b)",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (TX_BIOMETRIC_TERMS.test(text)) {
+        const hasConsent =
+          /\bprior[-\s]?written[-\s]?consent|\bsigned[-\s]?consent|\bconsent[-\s]?on[-\s]?file|\bopt[-\s]?in[-\s]?verified|\bsigned[-\s]?release/i.test(
+            text,
+          );
+        if (!hasConsent) {
+          return {
+            verdict: "block",
+            reason:
+              "Tex. Bus. & Com. Code § 503.001(b): biometric AI requires prior written consent before capture/use",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "tx-biometric-retention-schedule",
+    description:
+      "WARN on biometric-AI output without retention/destruction schedule — Tex. Bus. & Com. Code § 503.001(c) + HB 4",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (TX_BIOMETRIC_TERMS.test(text)) {
+        const hasRetention =
+          /\bretention[-\s]?(?:schedule|policy|window)|\bdestruction[-\s]?schedule|\bdelete(?:d)?[-\s]?within|\bauto[-\s]?purge[-\s]?after/i.test(
+            text,
+          );
+        if (!hasRetention) {
+          return {
+            verdict: "warn",
+            reason:
+              "Tex. Bus. & Com. Code § 503.001(c) + HB 4 (2025): biometric AI output missing retention/destruction schedule",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "tx-ramp-certification-ref",
+    description:
+      "WARN on TX-RAMP-scope output without certification reference — TX-RAMP Statewide Standard",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (TX_RAMP_SCOPE_TERMS.test(text)) {
+        const hasCert =
+          /\bTX[-\s]?RAMP[-\s]?(?:level|certified|certification|cert[-\s]?id)|\bauthorization[-\s]?to[-\s]?operate|\bATO[-\s]?(?:date|reference)|\bdata[-\s]?residency[-\s]?attested/i.test(
+            text,
+          );
+        if (!hasCert) {
+          return {
+            verdict: "warn",
+            reason:
+              "TX-RAMP Statewide Standard: state-agency AI output missing TX-RAMP certification reference",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+];
+
+export const texasAiPack: GuardianPack = {
+  id: "us-texas-ai-2025",
+  name: "Texas TX-RAMP + Biometric Identifier Act + HB 4",
+  citation:
+    "Tex. Bus. & Com. Code § 503.001 (CUBI) + HB 4 (eff. June 2025) + TX-RAMP Statewide Standard (Dept. of Information Resources)",
+  rules: texasAiRules,
+};
+
+// ── Wave 63: Brazil LGPD AI Regulation (PL 2338/2023) ────────────────
+//
+// ANPD (Brazil's data-protection authority) released the AI-regulation
+// draft in April 2025. LGPD Art. 20 already grants a right to human
+// review of automated decisions; PL 2338/2023 layers (a) DPIA
+// requirements for AI (RIA — Relatório de Impacto Algorítmico),
+// (b) Portuguese-language right-to-review notices, (c) algorithmic
+// impact categorisation (excessivo / alto / médio / baixo risco /
+// risco inaceitável).
+//
+// Enforcement expected Q3 2026. Brazil enterprise AI spend $4.8B (2025).
+
+const BRAZIL_AI_TERMS =
+  /\b(LGPD|Brazilian[-\s]?(?:resident|data[-\s]?subject)|automated[-\s]?decision|decisão[-\s]?automatizada|titular[-\s]?de[-\s]?dados)/i;
+
+export const brazilLgpdAiRules: GuardianRule[] = [
+  {
+    id: "br-lgpd-ai-ria-reference",
+    description:
+      "WARN on Brazilian AI decision without RIA (Algorithmic Impact Report) reference — PL 2338/2023 art. 13",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (BRAZIL_AI_TERMS.test(text)) {
+        const hasRia =
+          /\bRIA[-\s]?(?:ref|reference|id|v\d)|\bRelat[oó]rio[-\s]?de[-\s]?Impacto|\balgorithmic[-\s]?impact[-\s]?report|\bDPIA[-\s]?(?:ref|for[-\s]?AI)/i.test(
+            text,
+          );
+        if (!hasRia) {
+          return {
+            verdict: "warn",
+            reason:
+              "PL 2338/2023 art. 13: Brazilian AI decision missing RIA (Relatório de Impacto Algorítmico) reference",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "br-lgpd-ai-portuguese-review-notice",
+    description:
+      "WARN on Brazilian automated decision without Portuguese-language right-to-review notice — LGPD Art. 20 §1",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (BRAZIL_AI_TERMS.test(text)) {
+        const hasNotice =
+          /\bdireito[-\s]?(?:a|à)[-\s]?revis[aã]o|\brevis[aã]o[-\s]?humana|\bnotice[-\s]?(?:in|em)[-\s]?Portuguese|\bplain[-\s]?language[-\s]?review[-\s]?notice/i.test(
+            text,
+          );
+        if (!hasNotice) {
+          return {
+            verdict: "warn",
+            reason:
+              "LGPD Art. 20 §1: Brazilian automated decision missing Portuguese-language right-to-review notice",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "br-lgpd-ai-impact-category",
+    description:
+      "WARN on Brazilian AI output without algorithmic-impact category — PL 2338/2023 art. 13 §III",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (BRAZIL_AI_TERMS.test(text)) {
+        const hasCategory =
+          /\b(?:risco[-\s]?)?(?:inaceit[aá]vel|excessivo|alto[-\s]?risco|médio[-\s]?risco|baixo[-\s]?risco)|\bAI[-\s]?risk[-\s]?(?:tier|category|class)|\bimpact[-\s]?category[-\s]?(?:low|medium|high|unacceptable)/i.test(
+            text,
+          );
+        if (!hasCategory) {
+          return {
+            verdict: "warn",
+            reason:
+              "PL 2338/2023 art. 13 §III: Brazilian AI output missing algorithmic-impact category (baixo/médio/alto/inaceitável)",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+];
+
+export const brazilLgpdAiPack: GuardianPack = {
+  id: "br-lgpd-ai-2026",
+  name: "Brazil LGPD AI Regulation (PL 2338/2023)",
+  citation:
+    "Lei Geral de Proteção de Dados Art. 20 + PL 2338/2023 art. 13 (ANPD AI Regulation, Apr 2025 draft, eff. Q3 2026)",
+  rules: brazilLgpdAiRules,
+};
+
+// ── Wave 63: India DPDP Act + MeitY AI Advisory ──────────────────────
+//
+// DPDP (Digital Personal Data Protection) Act in force since Aug 2023.
+// MeitY AI Advisory (March 2024) requires Government of India
+// notification before deploying "unreliable / under-tested" LLMs +
+// significant-data-fiduciary tagging for high-impact processors.
+// IndiaAI Safety Institute guidance (Q4 2025) layers further runtime
+// hooks for high-risk AI.
+
+const INDIA_AI_TERMS =
+  /\b(Indian[-\s]?(?:resident|data[-\s]?principal)|DPDP|MeitY|significant[-\s]?data[-\s]?fiduciary|SDF[-\s]?obligation)/i;
+const INDIA_HIGH_RISK_LLM_TERMS =
+  /\b(LLM[-\s]?(?:output|response|deployment)|generative[-\s]?AI|content[-\s]?generation|unreliable[-\s]?AI|under[-\s]?tested[-\s]?model)/i;
+
+export const indiaDpdpAiRules: GuardianRule[] = [
+  {
+    id: "in-dpdp-consent-artefact",
+    description:
+      "WARN on Indian data-principal AI processing without consent artefact reference — DPDP Act § 6",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (INDIA_AI_TERMS.test(text)) {
+        const hasConsent =
+          /\bconsent[-\s]?(?:artefact|artifact|id|reference|ref|notice)|\bconsent[-\s]?manager|\bDPDP[-\s]?consent|\bdata[-\s]?principal[-\s]?consent/i.test(
+            text,
+          );
+        if (!hasConsent) {
+          return {
+            verdict: "warn",
+            reason:
+              "DPDP Act § 6: Indian data-principal AI processing missing consent-artefact reference",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "in-meity-unreliable-disclaimer",
+    description:
+      "WARN on high-risk LLM output without 'may be unreliable' disclaimer — MeitY AI Advisory (Mar 2024)",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (INDIA_HIGH_RISK_LLM_TERMS.test(text)) {
+        const hasDisclaimer =
+          /\bmay[-\s]?be[-\s]?unreliable|\boutput[-\s]?reliability[-\s]?(?:disclosure|disclaimer)|\bsubject[-\s]?to[-\s]?errors|\bnot[-\s]?guaranteed[-\s]?accurate|\bMeitY[-\s]?advisory/i.test(
+            text,
+          );
+        if (!hasDisclaimer) {
+          return {
+            verdict: "warn",
+            reason:
+              "MeitY AI Advisory (Mar 2024): high-risk LLM output missing reliability disclaimer",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+  {
+    id: "in-sdf-significant-fiduciary-tag",
+    description:
+      "WARN on Significant-Data-Fiduciary AI output without SDF obligations tag — DPDP Act § 10",
+    evaluate: async (ctx) => {
+      const text = asText(ctx.output);
+      if (
+        /\bsignificant[-\s]?data[-\s]?fiduciary|\bSDF|\blarge[-\s]?scale[-\s]?processing|\bhigh[-\s]?volume[-\s]?AI/i.test(
+          text,
+        )
+      ) {
+        const hasTag =
+          /\bSDF[-\s]?obligation|\bDPO[-\s]?(?:ref|appointed)|\bDPIA[-\s]?(?:ref|completed)|\bindependent[-\s]?audit[-\s]?(?:ref|annual)|\bData[-\s]?Protection[-\s]?Officer/i.test(
+            text,
+          );
+        if (!hasTag) {
+          return {
+            verdict: "warn",
+            reason:
+              "DPDP Act § 10: Significant-Data-Fiduciary AI output missing SDF obligations tag (DPO/DPIA/audit)",
+          };
+        }
+      }
+      return { verdict: "pass" };
+    },
+  },
+];
+
+export const indiaDpdpAiPack: GuardianPack = {
+  id: "in-dpdp-ai-2024",
+  name: "India DPDP Act + MeitY AI Advisory",
+  citation:
+    "Digital Personal Data Protection Act 2023 §§ 6 / 10 + MeitY AI Advisory (Mar 2024) + IndiaAI Safety Institute guidance (Q4 2025)",
+  rules: indiaDpdpAiRules,
+};
+
 // ── Registry of packs ────────────────────────────────────────────────
 
 export interface GuardianPack {
@@ -1667,6 +2232,12 @@ export const ALL_PACKS: GuardianPack[] = [
   apraCps230Pack,
   fdaPccpPack,
   illinoisAiPack,
+  canadaAidaPack,
+  ukIcoPack,
+  iso42001Pack,
+  texasAiPack,
+  brazilLgpdAiPack,
+  indiaDpdpAiPack,
 ];
 
 export function findPack(id: string): GuardianPack | undefined {

@@ -65,6 +65,35 @@ export function getCosignatures(canonical: string): WitnessCosignature[] {
   return entry ? entry.cosignatures.slice() : [];
 }
 
+/**
+ * Public observation read-out — every STH this issuer has ever recorded
+ * cosignatures against, with the full cosig list per STH. This is the
+ * federation primitive: a peer monitor pulls this list, fans out to
+ * other witness aggregators, and detects log equivocation if any pair
+ * of issuers ever signed two different rootHashes at the same treeSize.
+ *
+ * Returned ordering is insertion order (Map iteration semantics) so a
+ * polling monitor can paginate by timestamp without server-side state.
+ */
+export interface WitnessObservation {
+  sthCanonical: string;
+  sthHash: string;
+  cosignatures: WitnessCosignature[];
+}
+
+export function listObservations(limit?: number): WitnessObservation[] {
+  const out: WitnessObservation[] = [];
+  for (const [hash, entry] of store) {
+    out.push({
+      sthCanonical: entry.sthCanonical,
+      sthHash: hash,
+      cosignatures: entry.cosignatures.slice(),
+    });
+    if (limit && out.length >= limit) break;
+  }
+  return out;
+}
+
 /** Test helper — clear all stored cosignatures. NEVER call in prod. */
 export function _resetWitnessStore(): void {
   store.clear();
