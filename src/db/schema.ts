@@ -999,3 +999,147 @@ export const agentRuns = pgTable(
     index("idx_agent_runs_visibility").on(table.visibility),
   ],
 );
+
+/**
+ * WebAuthn credentials (audit-2026-05) — hardware-key step-up MFA.
+ *
+ * Required for SOC 2 CC6.1, PCI 8.4.2, and HIPAA §164.312(d) on
+ * administrative actions. Pairs with src/lib/webauthn.ts.
+ *
+ * One row per registered authenticator per user (so a single user can
+ * have a YubiKey + a passkey + a backup hardware key, all valid). The
+ * `signCounter` is updated after each successful assertion to detect
+ * cloned credentials (a counter regression = cloned key, lock the row).
+ */
+export const webauthnCredentials = pgTable(
+  "webauthn_credentials",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id").notNull(),
+    /** Base64url-encoded credential ID assigned by the authenticator. */
+    credentialId: text("credential_id").notNull().unique(),
+    /** Base64-encoded public key (COSE format). */
+    publicKey: text("public_key").notNull(),
+    /** Monotonic counter — regression = cloned authenticator. */
+    signCounter: integer("sign_counter").notNull().default(0),
+    /** Friendly label set at registration time ("YubiKey 5C NFC"). */
+    label: text("label").notNull().default("hardware-key"),
+    /** Authenticator attachment hint ("platform" | "cross-platform"). */
+    transports: text("transports").notNull().default("[]"),
+    /** When the credential was registered. */
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    /** Most recent successful assertion timestamp. */
+    lastUsedAt: timestamp("last_used_at"),
+    /** Locked-out rows that triggered counter-regression detection. */
+    revokedAt: timestamp("revoked_at"),
+  },
+  (table) => [
+    index("idx_webauthn_user").on(table.userId),
+    index("idx_webauthn_cred").on(table.credentialId),
+  ],
+);
+
+/**
+ * WebAuthn challenges (audit-2026-05).
+ *
+ * Server-issued random challenges for registration and authentication
+ * ceremonies. Rows live for 5 minutes then expire. One-shot use — the
+ * challenge is deleted on consumption to prevent replay.
+ */
+export const webauthnChallenges = pgTable("webauthn_challenges", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id").notNull(),
+  /** Base64url challenge issued by the server. */
+  challenge: text("challenge").notNull(),
+  /** "registration" or "authentication". */
+  ceremony: text("ceremony").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+/**
+ * Audit-log Bitcoin anchors (audit-2026-05 elite — Wave 9).
+ *
+ * Daily attestation that binds the hash-chained audit-log head into a
+ * Bitcoin block via OpenTimestamps public calendars. Pairs with
+ * src/lib/audit-log-anchor.ts and /api/_cron/audit-log-anchor.
+ *
+ * Each row carries:
+ *   - `chainHead`: the SHA-256 of `chainDigest(rows)` at submission time.
+ *   - `proofs`: JSON array of {calendar, proof, submittedAt}. Multiple
+ *     calendars per row for redundancy — losing one calendar doesn't
+ *     invalidate the anchor.
+ *   - `rowCount`: the number of audit-log rows the head covers (audit
+ *     receipts that bottom-line "as of this anchor, N events existed").
+ *
+ * Retention: keep forever. The whole point is long-horizon proof.
+ */
+export const auditLogAnchors = pgTable(
+  "audit_log_anchors",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    /** SHA-256 of chainDigest(rows). 64-char hex. */
+    chainHead: text("chain_head").notNull(),
+    /** Number of audit_logs rows covered at submission. */
+    rowCount: integer("row_count").notNull().default(0),
+    /** JSON array of OTS calendar proofs (see AnchorAttestation). */
+    proofs: text("proofs").notNull().default("[]"),
+    /** JSON array of {calendar, reason} that rejected the submission. */
+    failures: text("failures").notNull().default("[]"),
+    /** True iff at least one calendar accepted. */
+    ok: boolean("ok").notNull().default(false),
+    /** When the cron submitted to calendars. */
+    attestedAt: timestamp("attested_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("idx_audit_anchor_head").on(table.chainHead),
+    index("idx_audit_anchor_time").on(table.attestedAt),
+  ],
+);
+
+/**
+ * Agent tokens (Wave 16, audit-2026-05 elite) — per-agent JIT identity.
+ *
+ * Closes the "Authorization Gap": every agent run now holds a short-
+ * lived, scoped, revocable token (JWT-style). Tool calls during the
+ * run cite the token id; the audit log links every action to a
+ * verifiable agent identity rather than the platform's blanket key.
+ *
+ * Storage rationale: we need server-side revocation, so JWT-without-DB
+ * isn't enough. Each row is the platform's record of an issued token;
+ * the JWT itself contains only public claims so a verifier can validate
+ * offline. Revocation is checked against this table.
+ *
+ * Pairs with src/lib/agent-tokens.ts.
+ */
+export const agentTokens = pgTable(
+  "agent_tokens",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    /** Sovereign agent slug (e.g. "lead-blitz"). */
+    agentSlug: text("agent_slug").notNull(),
+    /** Issuing tenant. Null = platform-system token (cron, internal). */
+    tenantId: uuid("tenant_id").references(() => tenants.id, {
+      onDelete: "cascade",
+    }),
+    /** Issuing user (Clerk id), null for system runs. */
+    userId: text("user_id"),
+    /** JSON array of scope strings (e.g. ["agent:run", "tool:fetch"]). */
+    scopes: text("scopes").notNull().default("[]"),
+    /** Signature scheme: "v1" (HMAC) or "v2" (Ed25519). */
+    scheme: text("scheme").notNull().default("v1"),
+    /** Expiration timestamp. After this, verifyAgentToken rejects. */
+    expiresAt: timestamp("expires_at").notNull(),
+    /** When the token was issued. */
+    issuedAt: timestamp("issued_at").notNull().defaultNow(),
+    /** When the token was revoked (null = active). */
+    revokedAt: timestamp("revoked_at"),
+    /** Why the token was revoked (operator reason, structured). */
+    revokeReason: text("revoke_reason"),
+  },
+  (table) => [
+    index("idx_agent_tokens_agent").on(table.agentSlug),
+    index("idx_agent_tokens_tenant").on(table.tenantId),
+    index("idx_agent_tokens_expires").on(table.expiresAt),
+  ],
+);

@@ -62,7 +62,7 @@ Provide a detailed SEO X-Ray including:
 
 Return as structured analysis with clear headings.`,
       {
-        model: "claude",
+        model: "nim",
         system: `You are a SEO intelligence analyst. You find the exact weak points in competitor strategies that can be exploited for rapid ranking gains. Be specific — generic advice is useless. Every recommendation should be actionable this week.`,
         maxTokens: 2500,
       }
@@ -110,7 +110,7 @@ For each gap provide:
 
 Sort by priority (critical first).`,
     {
-      model: "claude",
+      model: "nim",
       system: `You are a content strategy mastermind who has grown sites from 0 to 1M organic visitors. You know that targeting low-competition, high-intent keywords with comprehensive, well-structured content is the fastest way to rank. Every content brief you write should be specific enough that a writer can start immediately.`,
       maxTokens: 3000,
     }
@@ -153,7 +153,7 @@ Prioritize schemas that directly impact:
 
 Generate AT LEAST 5 schema recommendations with full JSON-LD code.`,
     {
-      model: "claude",
+      model: "nim",
       system: `You are a technical SEO engineer specializing in structured data. You know the exact Schema.org types that Google actively uses for rich results. Every JSON-LD block you generate must be valid and production-ready. Include realistic placeholder data that the user can customize.`,
       maxTokens: 3000,
     }
@@ -198,7 +198,7 @@ SEO Rules:
 - Vary the post types across the 10 posts
 - Make posts sound human, not spammy`,
     {
-      model: "claude",
+      model: "nim",
       system: `You are a local SEO specialist who has helped 200+ businesses dominate their local pack. You know that GBP posts are the most underutilized ranking signal in local SEO. Every post you write sounds authentic and drives real engagement.`,
       maxTokens: 3000,
     }

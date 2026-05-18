@@ -58,7 +58,7 @@ const TIERS = [
     tagline: "50 verified agent runs / month. No credit card.",
     cta: "Start free",
     features: [
-      { name: "All 137 agents + 25 playbooks", included: true },
+      { name: "All 140 agents + 25 playbooks", included: true },
       { name: "5-layer safety pipeline (default-on)", included: true },
       { name: "50 verified agent runs / month", included: true },
       { name: "HMAC-signed receipts (VAOS 1.0)", included: true },
@@ -119,7 +119,7 @@ const TIERS = [
 const FAQS = [
   {
     q: "What AI tools are included?",
-    a: "137 autonomous agents across lead generation, content creation, SEO, competitor intelligence, voice calls, and code review. Every agent routes to the best of 39+ models (Claude Sonnet 4.6 for reasoning, Nemotron Ultra for throughput, Gemini 3.1 Pro for grounded search, and more) via our smart-router.",
+    a: "140 autonomous agents across lead generation, content creation, SEO, competitor intelligence, voice calls, and code review. Every agent routes to the best of 39+ models (Claude Sonnet 4.6 for reasoning, Nemotron Ultra for throughput, Gemini 3.1 Pro for grounded search, and more) via our smart-router.",
   },
   {
     q: "Do I need technical skills?",
@@ -127,7 +127,7 @@ const FAQS = [
   },
   {
     q: "Do I have to build the agents myself?",
-    a: "No. Sovereign Matrix ships 137 production agents and 25 multi-agent playbooks out of the box. Pick one, give it inputs, run. You can also compose custom playbooks via the workflow builder when you want something bespoke.",
+    a: "No. Sovereign Matrix ships 140 production agents and 25 multi-agent playbooks out of the box. Pick one, give it inputs, run. You can also compose custom playbooks via the workflow builder when you want something bespoke.",
   },
   {
     q: "What counts as a 'run'?",
@@ -271,10 +271,13 @@ export default function PricingPage() {
         )}
       </AnimatePresence>
 
-      {/* Background ambience */}
+      {/* Background ambience — on-brand cyan + copper only.
+          Audit-2026-05: dropped the emerald/teal/purple blurs that
+          violated the dual-accent rule and made pricing look like a
+          different product. */}
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[600px] bg-emerald-500/[0.04] rounded-full blur-[250px]" />
-        <div className="absolute top-40 right-1/4 w-[400px] h-[400px] bg-purple-500/[0.03] rounded-full blur-[200px]" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[600px] bg-cyan-500/[0.035] rounded-full blur-[250px]" />
+        <div className="absolute top-40 right-1/4 w-[400px] h-[400px] bg-[#B5532C]/[0.04] rounded-full blur-[200px]" />
       </div>
 
       {/* ─── Navigation ─── */}
@@ -328,7 +331,7 @@ export default function PricingPage() {
                 color: "#8F8576",
               }}
             >
-              Five tiers · Flat pricing · No per-token fees
+              Three tiers · Flat pricing · No per-token fees
             </p>
 
             <h1
@@ -393,31 +396,37 @@ export default function PricingPage() {
             className="text-neutral-500 text-center max-w-xl mx-auto mb-16"
             delay={0.1}
           >
-            Deploy enterprise-grade NVIDIA execution pipelines. Replaces entire
-            agency overheads.
+            One number per month. Every agent. Every model. Receipts on every
+            output.
           </RevealText>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {TIERS.map((t, i) => (
               <motion.div
                 key={i}
                 {...fadeIn(i * 0.1)}
-                className={`rounded-2xl bg-white/[0.02] backdrop-blur-xl border p-7 flex flex-col ${t.featured ? "border-emerald-500/40 relative overflow-hidden scale-[1.02] shadow-[0_0_40px_rgba(16,185,129,0.1)]" : t.plan === "free" ? "border-cyan-500/30 relative overflow-hidden" : "border-white/[0.06]"}`}
+                className={`rounded-2xl bg-white/[0.02] backdrop-blur-xl border p-7 flex flex-col ${t.featured ? "border-[#B5532C]/40 relative overflow-hidden scale-[1.02] shadow-[0_0_40px_rgba(181,83,44,0.10)]" : t.plan === "free" ? "border-cyan-500/30 relative overflow-hidden" : "border-white/[0.06]"}`}
               >
                 {t.featured && (
-                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-500" />
+                  <div
+                    aria-hidden="true"
+                    className="absolute top-0 left-0 right-0 h-px bg-[#B5532C]/60"
+                  />
                 )}
                 {t.plan === "free" && (
-                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-500 to-blue-500" />
+                  <div
+                    aria-hidden="true"
+                    className="absolute top-0 left-0 right-0 h-px bg-cyan-500/60"
+                  />
                 )}
                 {t.featured && (
-                  <span className="inline-flex self-start items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase mb-3">
-                    <Crown className="w-2.5 h-2.5" /> Most Popular
+                  <span className="inline-flex self-start items-center gap-1 px-2 py-0.5 rounded-full bg-[#B5532C]/10 border border-[#B5532C]/25 text-[#E08558] text-[10px] font-mono uppercase tracking-[0.15em] mb-3">
+                    <Crown className="w-2.5 h-2.5" /> Most popular
                   </span>
                 )}
                 {t.plan === "free" && (
-                  <span className="inline-flex self-start items-center gap-1 px-2 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-[10px] font-bold uppercase mb-3">
-                    <Zap className="w-2.5 h-2.5" /> No Credit Card
+                  <span className="inline-flex self-start items-center gap-1 px-2 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 text-[10px] font-mono uppercase tracking-[0.15em] mb-3">
+                    <Zap className="w-2.5 h-2.5" /> No credit card
                   </span>
                 )}
                 <p className="text-sm font-bold uppercase tracking-widest text-neutral-400 mb-1">
@@ -448,7 +457,7 @@ export default function PricingPage() {
                     >
                       {f.included ? (
                         <CheckCircle2
-                          className="w-4 h-4 text-emerald-400 shrink-0"
+                          className="w-4 h-4 text-cyan-400/80 shrink-0"
                           aria-hidden="true"
                         />
                       ) : (
@@ -463,11 +472,11 @@ export default function PricingPage() {
                 </ul>
                 <button
                   onClick={() => checkout(t.plan)}
-                  className={`w-full py-3 font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${
+                  className={`w-full py-3 font-medium rounded-[3px] transition-colors flex items-center justify-center gap-2 ${
                     t.featured
-                      ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:opacity-90 shadow-[0_0_20px_rgba(16,185,129,0.2)]"
+                      ? "bg-[#B5532C] text-white hover:bg-[#C96234]"
                       : t.plan === "free"
-                        ? "bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:opacity-90"
+                        ? "bg-white/5 border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/10"
                         : t.plan === "node"
                           ? "bg-white/5 border border-white/10 text-white hover:bg-white/10"
                           : "border border-white/[0.06] text-white hover:bg-white/5"
@@ -513,22 +522,25 @@ export default function PricingPage() {
               your first paid invoice, email{" "}
               <a
                 href="mailto:refunds@sovereignmatrix.agency"
-                className="text-emerald-400 underline"
+                className="text-cyan-300 underline underline-offset-4 decoration-cyan-500/40 hover:decoration-cyan-400"
               >
                 refunds@sovereignmatrix.agency
               </a>
               . One email, full refund, no outcome conditions. See{" "}
-              <a href="/terms" className="text-emerald-400 underline">
+              <a
+                href="/terms"
+                className="text-cyan-300 underline underline-offset-4 decoration-cyan-500/40 hover:decoration-cyan-400"
+              >
                 terms
               </a>{" "}
               for the fine print.
             </p>
             <div className="flex items-center justify-center gap-4 mt-4">
-              <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-bold uppercase tracking-wider">
-                <Shield className="w-3 h-3" /> Stripe Secured
+              <span className="flex items-center gap-1 text-[10px] text-cyan-300/80 font-mono uppercase tracking-[0.2em]">
+                <Shield className="w-3 h-3" /> Stripe secured
               </span>
-              <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-bold uppercase tracking-wider">
-                <Shield className="w-3 h-3" /> Cancel Anytime
+              <span className="flex items-center gap-1 text-[10px] text-cyan-300/80 font-mono uppercase tracking-[0.2em]">
+                <Shield className="w-3 h-3" /> Cancel anytime
               </span>
             </div>
           </motion.div>
@@ -597,15 +609,15 @@ export default function PricingPage() {
               className="text-neutral-500 mb-10 max-w-xl mx-auto"
               delay={0.1}
             >
-              50 free runs. 137 agents. Zero commitment. See what autonomous AI
+              50 free runs. 140 agents. Zero commitment. See what autonomous AI
               can do for your business.
             </RevealText>
             <MagneticButton>
               <Link
                 href="/dashboard"
-                className="inline-flex items-center gap-2 px-10 py-4 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-sm font-bold uppercase tracking-widest hover:from-emerald-600 hover:to-teal-600 transition-all shadow-[0_0_30px_rgba(16,185,129,0.3)]"
+                className="inline-flex items-center gap-2 px-10 py-4 rounded-[3px] bg-[#B5532C] text-white text-[12px] font-mono uppercase tracking-[0.2em] hover:bg-[#C96234] transition-colors"
               >
-                Start Free <ArrowRight className="w-4 h-4" />
+                Start free <ArrowRight className="w-4 h-4" />
               </Link>
             </MagneticButton>
           </div>
@@ -658,7 +670,13 @@ interface VerticalMatch {
   pricing: string;
   recommendedTier: string;
   playbookHref: string;
-  accent: string;
+  /**
+   * Brand-strict accent — cyan for audit/infrastructure-coded verticals,
+   * copper for agency/outbound-coded ones. The pricing page previously
+   * fanned out into amber/violet/emerald which violated the dual-accent
+   * rule documented in docs/design-system/brand-colors.md (audit 2026-05).
+   */
+  accent: "cyan" | "copper";
 }
 
 const VERTICAL_MATCHES: VerticalMatch[] = [
@@ -671,7 +689,7 @@ const VERTICAL_MATCHES: VerticalMatch[] = [
     pricing: "$499–$1,999 / mo (Array or Node tier)",
     recommendedTier: "Array",
     playbookHref: "/playbooks/agency-content-packet",
-    accent: "amber",
+    accent: "copper",
   },
   {
     vertical: "Recruiting agencies",
@@ -692,7 +710,7 @@ const VERTICAL_MATCHES: VerticalMatch[] = [
     pricing: "$299–$799 / mo (Starter or Array tier)",
     recommendedTier: "Starter",
     playbookHref: "/playbooks/realestate-listing-pulse",
-    accent: "violet",
+    accent: "copper",
   },
   {
     vertical: "African SMBs",
@@ -702,15 +720,13 @@ const VERTICAL_MATCHES: VerticalMatch[] = [
     pricing: "R997 / month (≈ $49, Pro tier)",
     recommendedTier: "Pro",
     playbookHref: "/playbooks/growth-pulse",
-    accent: "emerald",
+    accent: "cyan",
   },
 ];
 
 const VERTICAL_TONE: Record<VerticalMatch["accent"], string> = {
-  amber: "border-amber-500/20 bg-amber-500/[0.04] text-amber-300",
   cyan: "border-cyan-500/20 bg-cyan-500/[0.04] text-cyan-300",
-  violet: "border-violet-500/20 bg-violet-500/[0.04] text-violet-300",
-  emerald: "border-emerald-500/20 bg-emerald-500/[0.04] text-emerald-300",
+  copper: "border-[#B5532C]/25 bg-[#B5532C]/[0.06] text-[#E08558]",
 };
 
 function VerticalMatcher() {

@@ -1,7 +1,12 @@
 import { createAgentRoute } from "@/lib/agent-factory";
 import { z } from "zod";
 import { ai } from "@/lib/ai";
-import { ANTI_SLOP_RULES, VOICE_PRESETS, PLATFORM_RULES, QUALITY_SCORER_PROMPT } from "@/lib/content-engine";
+import {
+  ANTI_SLOP_RULES,
+  VOICE_PRESETS,
+  PLATFORM_RULES,
+  QUALITY_SCORER_PROMPT,
+} from "@/lib/content-engine";
 import type { VoicePreset } from "@/lib/content-engine";
 import { fireUserWebhook } from "@/lib/webhooks";
 
@@ -12,7 +17,13 @@ import { fireUserWebhook } from "@/lib/webhooks";
  */
 
 const schema = z.object({
-  contentType: z.enum(["blog", "social-pack", "video-script", "newsletter", "thread"]),
+  contentType: z.enum([
+    "blog",
+    "social-pack",
+    "video-script",
+    "newsletter",
+    "thread",
+  ]),
   topic: z.string().min(3).max(500),
   platform: z.string().max(50).optional(),
   voice: z.string().max(50).optional(),
@@ -28,9 +39,19 @@ export const POST = createAgentRoute({
   schema,
   skipQualityCheck: true, // Agent has its own 3-pass quality system
   handler: async ({ input }) => {
-    const { contentType, topic, platform, voice, targetAudience, brandContext, keywords, context } = input as z.infer<typeof schema>;
+    const {
+      contentType,
+      topic,
+      platform,
+      voice,
+      targetAudience,
+      brandContext,
+      keywords,
+      context,
+    } = input as z.infer<typeof schema>;
 
-    const voicePreset = VOICE_PRESETS[(voice as VoicePreset) || "conversational"];
+    const voicePreset =
+      VOICE_PRESETS[(voice as VoicePreset) || "conversational"];
     const platformRules = PLATFORM_RULES[platform || "blog"] || "";
 
     // Build content-type-specific prompt
@@ -50,31 +71,49 @@ export const POST = createAgentRoute({
 
     // PASS 1: Generate with anti-slop rules
     const systemPrompt = `${voicePreset}\n\n${ANTI_SLOP_RULES}\n\n${platformRules}`;
-    const rawContent = await ai(contentPrompt, { system: systemPrompt, maxTokens: 4000, model: "gemini" });
+    // Cost: long-form content gen at 4k tokens. NIM Nemotron-Ultra-253B
+    // beats Gemini Flash on long-form quality at $0.
+    const rawContent = await ai(contentPrompt, {
+      system: systemPrompt,
+      maxTokens: 4000,
+      model: "nim",
+    });
 
     // PASS 2: Quality score
     const scoreResult = await ai(
       `Score this ${contentType} content:\n\n---\n${rawContent}\n---`,
-      { system: QUALITY_SCORER_PROMPT, maxTokens: 500 }
+      { system: QUALITY_SCORER_PROMPT, maxTokens: 500 },
     );
 
     let qualityScore;
     try {
-      qualityScore = JSON.parse(scoreResult.replace(/```json?\n?/g, "").replace(/```/g, "").trim());
+      qualityScore = JSON.parse(
+        scoreResult
+          .replace(/```json?\n?/g, "")
+          .replace(/```/g, "")
+          .trim(),
+      );
     } catch {
       qualityScore = { overallScore: 7, verdict: "PUBLISH", scores: {} };
     }
 
     // PASS 3: Auto-revise if needed
     let finalContent = rawContent;
-    if (qualityScore.verdict === "NEEDS_REVISION" && qualityScore.issues?.length > 0) {
+    if (
+      qualityScore.verdict === "NEEDS_REVISION" &&
+      qualityScore.issues?.length > 0
+    ) {
       finalContent = await ai(
         `Revise this ${contentType} to fix:\n\nISSUES:\n${qualityScore.issues.join("\n")}\n\nORIGINAL:\n${rawContent}\n\nRewrite the FULL content. No explanations.`,
-        { system: systemPrompt, maxTokens: 4000 }
+        { system: systemPrompt, maxTokens: 4000 },
       );
     }
 
-    await fireUserWebhook("OrganicContent", contentType, { topic, platform, qualityScore: qualityScore.overallScore }).catch(() => {});
+    await fireUserWebhook("OrganicContent", contentType, {
+      topic,
+      platform,
+      qualityScore: qualityScore.overallScore,
+    }).catch(() => {});
 
     return {
       success: true,

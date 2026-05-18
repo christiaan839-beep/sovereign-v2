@@ -97,6 +97,64 @@ export default function SpecPage() {
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
+
+          {/* VAOS family — versions live alongside 1.0 */}
+          <div className="mt-10 rounded-lg border border-white/[0.08] bg-white/[0.02] p-5">
+            <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.25em] text-neutral-500">
+              The VAOS family
+            </p>
+            <ul className="space-y-2 text-[14px] text-neutral-300">
+              <li className="flex flex-wrap items-baseline gap-2">
+                <span className="font-mono text-cyan-300">VAOS 1.0</span>
+                <span className="text-neutral-500">·</span>
+                <span>HMAC-SHA256 receipts — shared-secret verification.</span>
+              </li>
+              <li className="flex flex-wrap items-baseline gap-2">
+                <span className="font-mono text-cyan-300">VAOS 2.0</span>
+                <span className="text-neutral-500">·</span>
+                <span>
+                  Ed25519 receipts — public-key verifiable.{" "}
+                  <a
+                    href="https://github.com/christiaan839-beep/sovereign-v2/blob/main/docs/specs/vaos-2.0.md"
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="text-cyan-300 underline underline-offset-4 decoration-cyan-500/40 hover:text-cyan-200"
+                  >
+                    Read the spec →
+                  </a>
+                </span>
+              </li>
+              <li className="flex flex-wrap items-baseline gap-2">
+                <span className="font-mono text-[#E08558]">VAOS 3.0</span>
+                <span className="text-neutral-500">·</span>
+                <span>
+                  Ed25519 + ML-DSA-65 dual-sign — post-quantum forward-secure
+                  (FIPS 204).{" "}
+                  <a
+                    href="https://github.com/christiaan839-beep/sovereign-v2/blob/main/docs/specs/vaos-3.0.md"
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="text-cyan-300 underline underline-offset-4 decoration-cyan-500/40 hover:text-cyan-200"
+                  >
+                    Read the spec →
+                  </a>
+                </span>
+              </li>
+            </ul>
+            <p className="mt-4 text-[12px] leading-relaxed text-neutral-500">
+              The reference implementation of v2 + v3 is the Apache-2.0 package{" "}
+              <code className="rounded bg-white/[0.06] px-1.5 py-0.5 text-neutral-300">
+                @sovereign-matrix/verifiable-receipts
+              </code>
+              . It ships a CLI verifier and a frozen{" "}
+              <code className="rounded bg-white/[0.06] px-1.5 py-0.5 text-neutral-300">
+                SPEC.md
+              </code>{" "}
+              with every published version — so any auditor in 2040 can install
+              the same version, fetch the public key, and independently
+              re-derive the math.
+            </p>
+          </div>
         </header>
 
         {/* Why */}

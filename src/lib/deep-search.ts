@@ -31,7 +31,16 @@ interface DeepSearchResult {
  * This approaches Perplexity-level quality.
  */
 export async function deepSearch(question: string): Promise<DeepSearchResult> {
-  const tavilyKey = process.env.TAVILY_API_KEY || "tvly-demo";
+  const tavilyKey = process.env.TAVILY_API_KEY;
+  if (!tavilyKey) {
+    return {
+      answer:
+        "Deep search is not configured — TAVILY_API_KEY is unset. Set it in your environment or fall back to a non-search agent.",
+      sources: [],
+      searchQueries: [],
+      confidence: 0,
+    };
+  }
   const searchClient = tavily({ apiKey: tavilyKey });
 
   // Step 1: Decompose into sub-queries
@@ -39,10 +48,19 @@ export async function deepSearch(question: string): Promise<DeepSearchResult> {
   try {
     const decomposition = await ai(
       `Break this question into 3 specific search queries that together would fully answer it. Return ONLY a JSON array of 3 strings, nothing else.\n\nQuestion: ${question}`,
-      { system: "Return only a JSON array of 3 search query strings. No explanation.", maxTokens: 200 }
+      {
+        system:
+          "Return only a JSON array of 3 search query strings. No explanation.",
+        maxTokens: 200,
+      },
     );
 
-    const parsed = JSON.parse(decomposition.replace(/```json?\n?/g, "").replace(/```/g, "").trim());
+    const parsed = JSON.parse(
+      decomposition
+        .replace(/```json?\n?/g, "")
+        .replace(/```/g, "")
+        .trim(),
+    );
     queries = Array.isArray(parsed) ? parsed : [question];
   } catch {
     log.warn("Query decomposition failed, using fallback queries");
@@ -50,11 +68,16 @@ export async function deepSearch(question: string): Promise<DeepSearchResult> {
   }
 
   // Step 2: Search all queries in parallel
-  const searchPromises = queries.map(q =>
-    searchClient.search(q, { searchDepth: "advanced", maxResults: 5 }).catch((err) => {
-      log.warn("Search query failed", { query: q, error: (err as Error).message });
-      return { results: [] };
-    })
+  const searchPromises = queries.map((q) =>
+    searchClient
+      .search(q, { searchDepth: "advanced", maxResults: 5 })
+      .catch((err) => {
+        log.warn("Search query failed", {
+          query: q,
+          error: (err as Error).message,
+        });
+        return { results: [] };
+      }),
   );
   const searchResults = await Promise.all(searchPromises);
 
@@ -62,10 +85,15 @@ export async function deepSearch(question: string): Promise<DeepSearchResult> {
   const allResults: SearchResult[] = [];
   const seenUrls = new Set<string>();
   for (const result of searchResults) {
-    for (const r of (result.results || [])) {
+    for (const r of result.results || []) {
       if (!seenUrls.has(r.url)) {
         seenUrls.add(r.url);
-        allResults.push({ title: r.title, url: r.url, content: r.content, score: r.score || 0.5 });
+        allResults.push({
+          title: r.title,
+          url: r.url,
+          content: r.content,
+          score: r.score || 0.5,
+        });
       }
     }
   }
@@ -73,18 +101,32 @@ export async function deepSearch(question: string): Promise<DeepSearchResult> {
   const topResults = allResults.slice(0, 10);
 
   // Step 4: Synthesize grounded answer
-  const context = topResults.map((r, i) => `[Source ${i + 1}] ${r.title} (${r.url}):\n${r.content}`).join("\n\n---\n\n");
+  const context = topResults
+    .map((r, i) => `[Source ${i + 1}] ${r.title} (${r.url}):\n${r.content}`)
+    .join("\n\n---\n\n");
 
   const answer = await ai(
     `Based on these search results, answer the question comprehensively.\n\nQuestion: ${question}\n\n${context}\n\nProvide a clear, well-structured answer. Cite sources using [Source N] notation. If sources conflict, note the disagreement.`,
-    { system: "You are a research analyst. Provide accurate, well-sourced answers. Always cite which source number supports each claim. Be concise but thorough.", maxTokens: 2000 }
+    {
+      system:
+        "You are a research analyst. Provide accurate, well-sourced answers. Always cite which source number supports each claim. Be concise but thorough.",
+      maxTokens: 2000,
+    },
   );
 
-  log.info("Deep search completed", { queries: queries.length, results: allResults.length, topResults: topResults.length });
+  log.info("Deep search completed", {
+    queries: queries.length,
+    results: allResults.length,
+    topResults: topResults.length,
+  });
 
   return {
     answer,
-    sources: topResults.slice(0, 5).map(r => ({ title: r.title, url: r.url, snippet: r.content.slice(0, 200) })),
+    sources: topResults.slice(0, 5).map((r) => ({
+      title: r.title,
+      url: r.url,
+      snippet: r.content.slice(0, 200),
+    })),
     searchQueries: queries,
     confidence: topResults.length > 5 ? 0.9 : topResults.length > 2 ? 0.7 : 0.4,
   };

@@ -6,8 +6,18 @@ import { useEffect, useRef } from "react";
  * A2EGraph — Animated canvas visualization of the A2E economy.
  * Agent nodes with copper edges and traveling pulse dots.
  * Pure copper color scheme: #B5532C and rgba(181,83,44,x).
+ *
+ * `showLabels` defaults to true (the focal A2EEconomySection use). The hero
+ * uses this as a low-opacity background and sets `showLabels={false}` so
+ * agent-name labels don't bleed through the headline text on narrow viewports.
  */
-export function A2EGraph({ className = "" }: { className?: string }) {
+export function A2EGraph({
+  className = "",
+  showLabels = true,
+}: {
+  className?: string;
+  showLabels?: boolean;
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -28,25 +38,33 @@ export function A2EGraph({ className = "" }: { className?: string }) {
 
     // Node definitions (normalized 0-1 positions)
     const NODE_DEFS = [
-      { id: "lead",      label: "Lead Agent",  nx: 0.5,  ny: 0.18, isHub: true },
-      { id: "seo",       label: "SEO",         nx: 0.15, ny: 0.5,  isHub: false },
-      { id: "content",   label: "Content",     nx: 0.38, ny: 0.78, isHub: false },
-      { id: "video",     label: "Video",       nx: 0.62, ny: 0.78, isHub: false },
-      { id: "email",     label: "Email",       nx: 0.85, ny: 0.5,  isHub: false },
-      { id: "analytics", label: "Analytics",   nx: 0.27, ny: 0.38, isHub: false },
-      { id: "social",    label: "Social",      nx: 0.73, ny: 0.38, isHub: false },
+      { id: "lead", label: "Lead Agent", nx: 0.5, ny: 0.18, isHub: true },
+      { id: "seo", label: "SEO", nx: 0.15, ny: 0.5, isHub: false },
+      { id: "content", label: "Content", nx: 0.38, ny: 0.78, isHub: false },
+      { id: "video", label: "Video", nx: 0.62, ny: 0.78, isHub: false },
+      { id: "email", label: "Email", nx: 0.85, ny: 0.5, isHub: false },
+      { id: "analytics", label: "Analytics", nx: 0.27, ny: 0.38, isHub: false },
+      { id: "social", label: "Social", nx: 0.73, ny: 0.38, isHub: false },
     ];
 
     // Edges: all outer nodes connect to the hub (index 0)
     // plus a few lateral connections for visual richness
     const EDGE_PAIRS = [
-      [0, 1], [0, 2], [0, 3], [0, 4], [0, 5], [0, 6],
-      [5, 1], [5, 2], [6, 3], [6, 4],
+      [0, 1],
+      [0, 2],
+      [0, 3],
+      [0, 4],
+      [0, 5],
+      [0, 6],
+      [5, 1],
+      [5, 2],
+      [6, 3],
+      [6, 4],
     ];
 
     // Animated pulses: one per edge at offset phases
     const pulses = EDGE_PAIRS.map((_, i) => ({
-      t: (i / EDGE_PAIRS.length), // offset start so they don't all sync
+      t: i / EDGE_PAIRS.length, // offset start so they don't all sync
       speed: 0.0028 + Math.random() * 0.001,
     }));
 
@@ -113,7 +131,14 @@ export function A2EGraph({ className = "" }: { className?: string }) {
         const pulse = Math.sin(time * 1.4 + node.nx * 10) * 0.12 + 0.88;
 
         // Outer glow ring
-        const outerGrad = ctx.createRadialGradient(node.x, node.y, r * 0.6, node.x, node.y, r * 2.5);
+        const outerGrad = ctx.createRadialGradient(
+          node.x,
+          node.y,
+          r * 0.6,
+          node.x,
+          node.y,
+          r * 2.5,
+        );
         outerGrad.addColorStop(0, `rgba(181,83,44,${0.18 * pulse})`);
         outerGrad.addColorStop(1, "rgba(181,83,44,0)");
         ctx.beginPath();
@@ -122,7 +147,14 @@ export function A2EGraph({ className = "" }: { className?: string }) {
         ctx.fill();
 
         // Node fill
-        const fillGrad = ctx.createRadialGradient(node.x - r * 0.3, node.y - r * 0.3, 0, node.x, node.y, r);
+        const fillGrad = ctx.createRadialGradient(
+          node.x - r * 0.3,
+          node.y - r * 0.3,
+          0,
+          node.x,
+          node.y,
+          r,
+        );
         fillGrad.addColorStop(0, `rgba(181,83,44,${node.isHub ? 0.45 : 0.25})`);
         fillGrad.addColorStop(1, `rgba(60,20,5,${node.isHub ? 0.6 : 0.4})`);
         ctx.beginPath();
@@ -137,12 +169,19 @@ export function A2EGraph({ className = "" }: { className?: string }) {
         ctx.lineWidth = node.isHub ? 1.5 : 1;
         ctx.stroke();
 
-        // Label — JetBrains Mono style
-        const labelY = node.y + r + 14;
-        ctx.font = `${node.isHub ? "11px" : "10px"} "JetBrains Mono", monospace`;
-        ctx.textAlign = "center";
-        ctx.fillStyle = node.isHub ? "rgba(230,140,90,0.9)" : "rgba(181,83,44,0.65)";
-        ctx.fillText(node.label, node.x, labelY);
+        // Label — JetBrains Mono style. Suppressed when this graph is used
+        // as a faint hero backdrop; bleeding agent names through the
+        // headline at narrow viewports is the worst kind of "AI slop"
+        // visual debt.
+        if (showLabels) {
+          const labelY = node.y + r + 14;
+          ctx.font = `${node.isHub ? "11px" : "10px"} "JetBrains Mono", monospace`;
+          ctx.textAlign = "center";
+          ctx.fillStyle = node.isHub
+            ? "rgba(230,140,90,0.9)"
+            : "rgba(181,83,44,0.65)";
+          ctx.fillText(node.label, node.x, labelY);
+        }
       }
     };
 
@@ -160,7 +199,7 @@ export function A2EGraph({ className = "" }: { className?: string }) {
       window.removeEventListener("resize", resize);
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, []);
+  }, [showLabels]);
 
   return (
     <canvas

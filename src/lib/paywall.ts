@@ -19,24 +19,24 @@ import { normalizePlanId, getPlan, type PlanId } from "@/lib/plans";
 // Which agents are available on which plan
 
 const FREE_AGENTS = new Set([
-  "leads",           // Lead finder
-  "blog-gen",        // Blog generator
-  "seo-dominator",   // SEO audit
+  "leads", // Lead finder
+  "blog-gen", // Blog generator
+  "seo-dominator", // SEO audit
 ]);
 
 const STARTER_AGENTS = new Set([
   ...FREE_AGENTS,
-  "email-sequence",  // Email drip
+  "email-sequence", // Email drip
   "organic-content", // Social content
 ]);
 
 const ARRAY_AGENTS = new Set([
   ...STARTER_AGENTS,
-  "competitor-scan",     // Competitor intel
-  "brand-voice",         // Brand voice learning
-  "proposal-generator",  // Proposal creation
-  "creative-director",   // Ad copy
-  "funnel-xray",         // Landing page analysis
+  "competitor-scan", // Competitor intel
+  "brand-voice", // Brand voice learning
+  "proposal-generator", // Proposal creation
+  "creative-director", // Ad copy
+  "funnel-xray", // Landing page analysis
 ]);
 
 // Node + Enterprise = ALL agents (no restrictions)
@@ -68,6 +68,7 @@ const PLAN_RANK: Record<PlanId, number> = {
   array: 2,
   node: 3,
   enterprise: 4,
+  sovereign: 6, // Contract tier above enterprise — outranks founder.
 };
 
 // ── Access Check ──
@@ -82,7 +83,10 @@ export interface AccessResult {
 /**
  * Check if a user's plan allows access to a specific agent.
  */
-export function checkAgentAccess(agentName: string, userPlan: string | null | undefined): AccessResult {
+export function checkAgentAccess(
+  agentName: string,
+  userPlan: string | null | undefined,
+): AccessResult {
   const plan = normalizePlanId(userPlan);
   const rank = PLAN_RANK[plan];
 
@@ -124,7 +128,10 @@ export function checkAgentAccess(agentName: string, userPlan: string | null | un
 /**
  * Check if a user's plan allows access to a specific feature.
  */
-export function checkFeatureAccess(feature: string, userPlan: string | null | undefined): AccessResult {
+export function checkFeatureAccess(
+  feature: string,
+  userPlan: string | null | undefined,
+): AccessResult {
   const plan = normalizePlanId(userPlan);
   const rank = PLAN_RANK[plan];
 
@@ -151,7 +158,11 @@ export function checkFeatureAccess(feature: string, userPlan: string | null | un
 /**
  * Get available agents for a plan.
  */
-export function getAvailableAgents(userPlan: string | null | undefined): { agents: string[]; total: number; locked: number } {
+export function getAvailableAgents(userPlan: string | null | undefined): {
+  agents: string[];
+  total: number;
+  locked: number;
+} {
   const plan = normalizePlanId(userPlan);
   const rank = PLAN_RANK[plan];
 
@@ -159,19 +170,33 @@ export function getAvailableAgents(userPlan: string | null | undefined): { agent
     return { agents: ["*"], total: 129, locked: 0 }; // All agents
   }
   if (rank >= PLAN_RANK.array) {
-    return { agents: [...ARRAY_AGENTS], total: ARRAY_AGENTS.size, locked: 129 - ARRAY_AGENTS.size };
+    return {
+      agents: [...ARRAY_AGENTS],
+      total: ARRAY_AGENTS.size,
+      locked: 129 - ARRAY_AGENTS.size,
+    };
   }
   if (rank >= PLAN_RANK.starter) {
-    return { agents: [...STARTER_AGENTS], total: STARTER_AGENTS.size, locked: 129 - STARTER_AGENTS.size };
+    return {
+      agents: [...STARTER_AGENTS],
+      total: STARTER_AGENTS.size,
+      locked: 129 - STARTER_AGENTS.size,
+    };
   }
 
-  return { agents: [...FREE_AGENTS], total: FREE_AGENTS.size, locked: 129 - FREE_AGENTS.size };
+  return {
+    agents: [...FREE_AGENTS],
+    total: FREE_AGENTS.size,
+    locked: 129 - FREE_AGENTS.size,
+  };
 }
 
 /**
  * Get locked features for a plan.
  */
-export function getLockedFeatures(userPlan: string | null | undefined): string[] {
+export function getLockedFeatures(
+  userPlan: string | null | undefined,
+): string[] {
   const plan = normalizePlanId(userPlan);
   const rank = PLAN_RANK[plan];
 

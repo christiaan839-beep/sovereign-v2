@@ -147,3 +147,66 @@ describe("registrySummary", () => {
     expect(s.averageInputCostUsd).toBeGreaterThanOrEqual(0);
   });
 });
+
+import { routeTask, providerToAIModel } from "../model-registry";
+
+describe("routeTask — capability-based router (audit-2026-05)", () => {
+  it("routes content tasks to a fast-tier provider", () => {
+    const route = routeTask("content");
+    expect(route).not.toBeNull();
+    // Fast-tier providers — Gemini Flash is registry's cheapest at $0.075/M
+    // so it can legitimately win here. The point is we DON'T route to Opus.
+    expect(["cerebras", "groq", "nim", "ollama", "gemini"]).toContain(route);
+  });
+
+  it("routes reasoning tasks to a reasoning-tier provider", () => {
+    const route = routeTask("reasoning");
+    expect(route).not.toBeNull();
+    // DeepSeek-R1 is the cheapest reasoning option — should win
+    expect(["deepseek", "groq", "nim", "ollama"]).toContain(route);
+  });
+
+  it("never routes any task to Opus by default", () => {
+    // Opus is opt-in only via the `useOpus` flag. The cheap router must
+    // never pick it. Audit-2026-05 finding #2.
+    for (const task of [
+      "content",
+      "analysis",
+      "code",
+      "sales",
+      "creative",
+      "reasoning",
+      "general",
+    ] as const) {
+      const route = routeTask(task);
+      // claude here would mean Sonnet, which is the cheap tier — fine.
+      // Opus is invoked only when the caller explicitly sets useOpus=true.
+      expect(route).not.toBe("opus");
+    }
+  });
+
+  it("respects the budget cap", () => {
+    // No production model under $0 except $0 self-hosted ones — Ollama wins
+    const route = routeTask("reasoning", 0);
+    if (route !== null) {
+      // Must be a $0 provider
+      expect(["ollama", "nim", "cerebras", "groq"]).toContain(route);
+    }
+  });
+
+  it("providerToAIModel handles every ModelProvider enum value", () => {
+    // Spot-check the major branches
+    expect(providerToAIModel("anthropic")).toBe("claude");
+    expect(providerToAIModel("google")).toBe("gemini");
+    expect(providerToAIModel("nvidia-nim")).toBe("nim");
+    expect(providerToAIModel("cerebras")).toBe("cerebras");
+    expect(providerToAIModel("ollama")).toBe("ollama");
+    expect(providerToAIModel("groq")).toBe("groq");
+    expect(providerToAIModel("deepseek")).toBe("deepseek");
+    expect(providerToAIModel("mistral")).toBe("mistral");
+    // Providers without a router branch yet → null
+    expect(providerToAIModel("openai")).toBe(null);
+    expect(providerToAIModel("together")).toBe(null);
+    expect(providerToAIModel("xai")).toBe(null);
+  });
+});

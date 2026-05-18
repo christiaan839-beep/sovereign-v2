@@ -78,7 +78,13 @@ describe("GET /api/openapi.json (public verification API)", () => {
       expect(op.operationId).toBeDefined();
       expect(op.summary).toBeDefined();
       expect(op.responses).toBeDefined();
-      expect(op.responses!["200"]).toBeDefined();
+      // Success can be 200 (GET / verify-style) OR 201 (POST resource
+      // creation per RFC 9110). Wave 22 added 201-responding endpoints
+      // (token issue, ACP intent, clinical scribe).
+      const hasSuccess =
+        op.responses!["200"] !== undefined ||
+        op.responses!["201"] !== undefined;
+      expect(hasSuccess).toBe(true);
     }
   });
 

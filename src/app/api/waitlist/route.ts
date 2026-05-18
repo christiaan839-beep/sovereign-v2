@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { sql } from "drizzle-orm";
 import { rateLimit } from "@/lib/rate-limit";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("waitlist");
 
 // Tight IP-keyed limit — prevents burning Resend credits via welcome-email loops.
 const limiter = rateLimit({ interval: 60 * 60, limit: 5 });
@@ -33,12 +36,11 @@ export async function POST(req: Request) {
       const msg = dbErr instanceof Error ? dbErr.message : "";
       // Table doesn't exist yet — that's okay, log and continue
       if (msg.includes("42P01") || msg.includes("does not exist")) {
-        console.log(
-          "[waitlist] Table not yet created — email captured client-side only:",
-          cleaned,
-        );
+        log.warn("Table not yet created — email captured client-side only", {
+          email: cleaned,
+        });
       } else {
-        console.error("[waitlist] DB error:", msg);
+        log.error("DB error", { error: msg });
       }
     }
 

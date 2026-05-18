@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     "How a solo founder built 137 AI agents, the VAOS verifiable-receipts standard, a multi-model consensus engine, and a live production platform using Claude as the reasoning core.",
   openGraph: {
     title: "Built with Claude — Sovereign Matrix",
-    description: "137 agents, one founder, Claude as the reasoning core.",
+    description: "140 agents, one founder, Claude as the reasoning core.",
     type: "article",
   },
 };

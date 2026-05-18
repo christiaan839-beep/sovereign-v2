@@ -45,7 +45,7 @@ const pricingJsonLd = {
       price: "0",
       priceCurrency: "USD",
       description:
-        "50 verified runs/month. All 137 agents. HMAC-signed receipts. Public verifier API. No credit card.",
+        "50 verified runs/month. All 140 agents. HMAC-signed receipts. Public verifier API. No credit card.",
       availability: "https://schema.org/InStock",
       url: "https://sovereignmatrix.agency/signup",
     },
@@ -105,7 +105,7 @@ const faqJsonLd = {
       name: "What's included in the Free plan?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Full platform access. All 137 agents. All 25 playbooks. 50 verified agent runs per month. HMAC-signed receipts. Public verifier API. No credit card required. Designed so anyone can prove the platform works before paying.",
+        text: "Full platform access. All 140 agents. All 25 playbooks. 50 verified agent runs per month. HMAC-signed receipts. Public verifier API. No credit card required. Designed so anyone can prove the platform works before paying.",
       },
     },
   ],

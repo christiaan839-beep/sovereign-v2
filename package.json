@@ -2,6 +2,9 @@
   "name": "sovereign-v2",
   "version": "2.0.0",
   "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "engines": {
     "node": ">=18.0.0 <=22.x"
   },
@@ -19,6 +22,8 @@
     "smoke": "playwright test e2e/smoke.spec.ts",
     "check:migrations": "node scripts/check-migrations.mjs",
     "check:migrations:soft": "node scripts/check-migrations.mjs --soft",
+    "gen:registry": "node scripts/generate-agent-registry.mjs",
+    "check:registry": "node scripts/generate-agent-registry.mjs --check",
     "hooks:install": "git config core.hooksPath scripts/git-hooks && chmod +x scripts/git-hooks/pre-push && echo 'hooks installed: pre-push will run lint + tests + migration check'",
     "hooks:uninstall": "git config --unset core.hooksPath && echo 'hooks uninstalled'"
   },
@@ -30,10 +35,13 @@
     "@google/generative-ai": "^0.24.1",
     "@google/stitch-sdk": "^0.0.3",
     "@neondatabase/serverless": "^1.0.2",
+    "@noble/post-quantum": "^0.6.1",
     "@pinecone-database/pinecone": "^7.1.0",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
     "@sentry/nextjs": "^10.47.0",
+    "@simplewebauthn/browser": "^13.3.0",
+    "@simplewebauthn/server": "^13.3.0",
     "@tailwindcss/oxide": "^4.2.2",
     "@tavily/core": "^0.7.2",
     "@upstash/ratelimit": "^2.0.8",

@@ -66,6 +66,12 @@ jobs:
       - name: Type check
         run: npm run typecheck
 
+      # Wave-31: regenerator drift guard. Fails the build if the agent
+      # registry on disk doesn't match the on-disk agent route folders.
+      # Run `npm run gen:registry` locally to fix.
+      - name: Agent registry drift check
+        run: npm run check:registry
+
   build:
     name: Build
     # Pin a known-stable image. ubuntu-latest rotated to 24.04 with
@@ -140,15 +146,8 @@ jobs:
 
   security-audit:
     name: Security Audit
-    # Pin a known-stable image. ubuntu-latest rotated to 24.04 with
-    # npm cache regressions across some weeks; 22.04 is the LTS we
-    # built every prior PR against.
     runs-on: ubuntu-22.04
-    timeout-minutes: 8
-    # Informational only: a flagged transitive vuln in npm audit doesn't
-    # break the build. Lift the soft-fail signal to the job level so the
-    # PR status row doesn't show red when only the audit step fired.
-    continue-on-error: true
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
@@ -159,10 +158,6 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
-      # Retry npm ci up to 3x with backoff. Most "Lint & Type Check"
-      # failures across recent PRs were short-duration runner /
-      # registry flakes — a single retry pass eliminates the noise
-      # without burning quota on hung runs.
       - name: Install dependencies
         run: |
           for attempt in 1 2 3; do
@@ -172,9 +167,45 @@ jobs:
           done
           exit 1
 
-      - name: Audit dependencies
+      # Blocking audit — high-severity transitive vulns must be addressed.
+      # If a vendor advisory genuinely has no fix path, scope a temporary
+      # `npm audit --json | jq` allowlist in a follow-up PR rather than
+      # weakening this gate. Soft-fail audits are the audit-process bug
+      # the security-reviewer flagged in May-2026.
+      - name: Audit dependencies (blocking on high+)
         run: npm audit --audit-level=high
-        continue-on-error: true
+
+      # Generate a CycloneDX SBOM on every build for SOC 2 / supply-chain
+      # transparency. Stored as an artifact for 90 days so audit evidence
+      # is reproducible without re-running CI.
+      - name: Generate SBOM (CycloneDX)
+        run: npx --yes @cyclonedx/cyclonedx-npm@1 --output-file sbom.cdx.json
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-${{ github.sha }}
+          path: sbom.cdx.json
+          retention-days: 90
+
+      # Verify package provenance signatures where vendors ship them.
+      # `npm audit signatures` is a best-effort check today (most packages
+      # aren't signed yet) but it's a SOC 2 CC6.8 evidence line item.
+      - name: Verify package signatures (best-effort)
+        run: npm audit signatures || true
+
+  # PR-only: surface added/changed dependencies and any new advisories
+  # right on the diff, before the audit job even has to fail.
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-22.04
+    if: github.event_name == 'pull_request'
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
 
   migration-parity:
     name: Migration Parity

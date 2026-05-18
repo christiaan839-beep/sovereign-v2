@@ -1,0 +1,64 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":semanticCommits",
+    ":dependencyDashboard",
+    ":timezone(Africa/Johannesburg)",
+    ":separatePatchReleases"
+  ],
+  "labels": ["dependencies"],
+  "rangeStrategy": "bump",
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 4am on monday"]
+  },
+  "vulnerabilityAlerts": {
+    "labels": ["security"],
+    "minimumReleaseAge": "0 days"
+  },
+  "packageRules": [
+    {
+      "matchUpdateTypes": ["patch", "minor"],
+      "matchCurrentVersion": "!/^0/",
+      "automerge": true,
+      "automergeType": "branch"
+    },
+    {
+      "matchPackagePatterns": [
+        "^@clerk/",
+        "^@stripe/",
+        "stripe",
+        "^next$",
+        "^react$",
+        "^react-dom$"
+      ],
+      "automerge": false,
+      "reviewers": ["christiaan839-beep"]
+    },
+    {
+      "matchPackagePatterns": [
+        "^@anthropic-ai/",
+        "^@google/",
+        "^@upstash/",
+        "^@sentry/"
+      ],
+      "automerge": false
+    },
+    {
+      "groupName": "drizzle",
+      "matchPackagePatterns": ["^drizzle-"]
+    },
+    {
+      "groupName": "tailwind",
+      "matchPackagePatterns": ["^tailwindcss", "^@tailwindcss/"]
+    },
+    {
+      "groupName": "vitest",
+      "matchPackagePatterns": ["^vitest", "^@vitest/"]
+    }
+  ],
+  "prHourlyLimit": 4,
+  "prConcurrentLimit": 10,
+  "schedule": ["after 9am and before 5pm every weekday"]
+}

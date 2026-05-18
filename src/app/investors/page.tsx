@@ -422,7 +422,7 @@ export default function InvestorsPage() {
             Trust posture
           </Link>
           <Link href="/agents" className="hover:text-neutral-300">
-            145 agents
+            140 agents
           </Link>
           <Link href="/demo/verify-receipt" className="hover:text-neutral-300">
             Live verify demo

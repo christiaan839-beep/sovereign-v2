@@ -1,8 +1,11 @@
 import { auth } from "@clerk/nextjs/server";
+import { createLogger } from "@/lib/logger";
 import { NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 
 import { nimChat } from "@/lib/nvidia";
+
+const log = createLogger("collab-room");
 
 /**
  * AGENT COLLABORATION ROOMS — Multiple agents work on the same task,
@@ -210,7 +213,7 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
-    console.error("[collab-room]", error);
+    log.error("[collab-room]", { error: String(error) });
     return new Response(JSON.stringify({ error: "Collaboration room error" }), {
       status: 500,
     });

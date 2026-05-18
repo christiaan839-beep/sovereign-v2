@@ -15,6 +15,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { PrintButton } from "@/components/ui/PrintButton";
+import { LivePostureBanner } from "./LivePostureBanner";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -129,10 +130,86 @@ export default function SecurityPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.5 }}
-          className="mb-12"
+          className="mb-6 flex flex-wrap items-center gap-4"
         >
           <PrintButton />
+          <Link
+            href="/security/live"
+            className="group inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-cyan-500/30 bg-cyan-500/[0.06] text-cyan-300 hover:bg-cyan-500/[0.10] hover:border-cyan-500/50 text-xs font-mono tracking-wide transition-colors"
+          >
+            <span
+              className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"
+              aria-hidden="true"
+            />
+            Live posture (machine-readable)
+            <span
+              aria-hidden="true"
+              className="transition-transform group-hover:translate-x-0.5"
+            >
+              →
+            </span>
+          </Link>
         </motion.div>
+
+        {/* Audit-grade evidence trail — the procurement-ready link strip.
+            Marketing copy below is for the human reader; these links are
+            for the auditor / security questionnaire automation. */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.25, duration: 0.5 }}
+          className="mb-12 p-4 rounded-xl border border-white/[0.06] bg-white/[0.015]"
+        >
+          <p className="text-[10px] font-mono text-neutral-500 tracking-[0.2em] uppercase mb-2">
+            For your auditor — go straight to proof:
+          </p>
+          <p className="text-[12px] text-neutral-400 leading-[1.7]">
+            <Link
+              href="/api/security/posture"
+              className="text-cyan-300 hover:text-cyan-200 underline underline-offset-4 decoration-cyan-500/40"
+            >
+              /api/security/posture
+            </Link>
+            <span className="text-neutral-600 mx-2">·</span>
+            <Link
+              href="/api/transparency/sth"
+              className="text-cyan-300 hover:text-cyan-200 underline underline-offset-4 decoration-cyan-500/40"
+            >
+              /api/transparency/sth
+            </Link>
+            <span className="text-neutral-600 mx-2">·</span>
+            <Link
+              href="/.well-known/sovereign-receipts/ed25519.pem"
+              className="text-cyan-300 hover:text-cyan-200 underline underline-offset-4 decoration-cyan-500/40"
+            >
+              /.well-known/.../ed25519.pem
+            </Link>
+            <span className="text-neutral-600 mx-2">·</span>
+            <a
+              href="https://github.com/christiaan839-beep/sovereign-v2/blob/main/docs/REPRODUCIBLE.md"
+              target="_blank"
+              rel="noreferrer noopener"
+              className="text-cyan-300 hover:text-cyan-200 underline underline-offset-4 decoration-cyan-500/40"
+            >
+              REPRODUCIBLE.md
+            </a>
+            <span className="text-neutral-600 mx-2">·</span>
+            <a
+              href="https://www.npmjs.com/package/@sovereign-matrix/verifiable-receipts"
+              target="_blank"
+              rel="noreferrer noopener"
+              className="text-cyan-300 hover:text-cyan-200 underline underline-offset-4 decoration-cyan-500/40"
+            >
+              OSS verifier on npm
+            </a>
+          </p>
+        </motion.div>
+
+        {/* Wave 54: live machine-readable posture banner, fetched
+            client-side from /api/security/posture. Removes the
+            slop-grade gap between "marketing claim" and "live
+            evidence" by putting both on the same page. */}
+        <LivePostureBanner />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {SECTIONS.map((section, i) => {
@@ -148,9 +225,13 @@ export default function SecurityPage() {
               >
                 <div className="flex items-center gap-3 mb-3">
                   <Icon className={`w-5 h-5 ${section.color}`} />
-                  <h2 className="text-base font-bold text-white">{section.title}</h2>
+                  <h2 className="text-base font-bold text-white">
+                    {section.title}
+                  </h2>
                 </div>
-                <p className="text-sm text-neutral-400 leading-relaxed">{section.content}</p>
+                <p className="text-sm text-neutral-400 leading-relaxed">
+                  {section.content}
+                </p>
               </motion.div>
             );
           })}
@@ -168,59 +249,93 @@ export default function SecurityPage() {
               <Shield className="w-5 h-5 text-violet-400" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-white">Project Glasswing — Why This Matters</h2>
-              <p className="text-[10px] text-neutral-600">anthropic.com/glasswing</p>
+              <h2 className="text-base font-bold text-white">
+                Project Glasswing — Why This Matters
+              </h2>
+              <p className="text-[10px] text-neutral-600">
+                anthropic.com/glasswing
+              </p>
             </div>
           </div>
           <p className="text-sm text-neutral-400 leading-relaxed mb-4">
-            Anthropic&apos;s Claude Mythos Preview scored 83.1% on CyberGym (vs 66.6% for Opus 4.6) and autonomously
-            found zero-day vulnerabilities in OpenBSD (27 years undetected), FFmpeg (16 years, missed by 5 million automated tests),
-            and the Linux kernel (privilege escalation chains). All were responsibly disclosed and patched.
+            Anthropic&apos;s Claude Mythos Preview scored 83.1% on CyberGym (vs
+            66.6% for Opus 4.6) and autonomously found zero-day vulnerabilities
+            in OpenBSD (27 years undetected), FFmpeg (16 years, missed by 5
+            million automated tests), and the Linux kernel (privilege escalation
+            chains). All were responsibly disclosed and patched.
           </p>
           <p className="text-sm text-neutral-400 leading-relaxed mb-4">
-            When frontier AI models can find vulnerabilities faster than humans can patch them, the execution environment
-            becomes the security boundary. Sovereign Matrix was designed for exactly this moment:
+            When frontier AI models can find vulnerabilities faster than humans
+            can patch them, the execution environment becomes the security
+            boundary. Sovereign Matrix was designed for exactly this moment:
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {[
-              { title: "Sandboxed execution", desc: "Every agent runs in an isolated context. No shared state between tenants." },
-              { title: "5-layer guardrails", desc: "Jailbreak detection, PII scanning, content safety, quality scoring, critic review — on every request." },
-              { title: "Human-in-the-loop", desc: "Anomalous actions require human approval. Full audit trail on every execution." },
+              {
+                title: "Sandboxed execution",
+                desc: "Every agent runs in an isolated context. No shared state between tenants.",
+              },
+              {
+                title: "5-layer guardrails",
+                desc: "Jailbreak detection, PII scanning, content safety, quality scoring, critic review — on every request.",
+              },
+              {
+                title: "Human-in-the-loop",
+                desc: "Anomalous actions require human approval. Full audit trail on every execution.",
+              },
             ].map((item) => (
-              <div key={item.title} className="p-4 rounded-xl border border-white/[0.06] bg-white/[0.02]">
-                <h3 className="text-xs font-semibold text-white mb-1">{item.title}</h3>
+              <div
+                key={item.title}
+                className="p-4 rounded-xl border border-white/[0.06] bg-white/[0.02]"
+              >
+                <h3 className="text-xs font-semibold text-white mb-1">
+                  {item.title}
+                </h3>
                 <p className="text-[10px] text-neutral-500">{item.desc}</p>
               </div>
             ))}
           </div>
           {/* Vulnerability chaining — the key technical insight */}
           <div className="mt-6 p-4 rounded-xl border border-white/[0.06] bg-white/[0.02]">
-            <h3 className="text-xs font-semibold text-white mb-2">Why this changes everything: vulnerability chaining</h3>
+            <h3 className="text-xs font-semibold text-white mb-2">
+              Why this changes everything: vulnerability chaining
+            </h3>
             <p className="text-[11px] text-neutral-400 leading-relaxed">
-              Mythos doesn&apos;t just find single bugs — it chains 3, 4, sometimes 5 vulnerabilities together into
-              sophisticated exploit sequences. Each vulnerability alone is low-severity. Chained together, they produce
-              privilege escalation, remote code execution, or data exfiltration. This is how it found the Linux kernel
-              privesc: multiple low-risk flaws combined into a path from regular user to root. Human researchers
-              do this — but it takes days. Mythos does it autonomously in minutes.
+              Mythos doesn&apos;t just find single bugs — it chains 3, 4,
+              sometimes 5 vulnerabilities together into sophisticated exploit
+              sequences. Each vulnerability alone is low-severity. Chained
+              together, they produce privilege escalation, remote code
+              execution, or data exfiltration. This is how it found the Linux
+              kernel privesc: multiple low-risk flaws combined into a path from
+              regular user to root. Human researchers do this — but it takes
+              days. Mythos does it autonomously in minutes.
             </p>
           </div>
 
           {/* Sandbox escape — why guardrails matter */}
           <div className="mt-4 p-4 rounded-xl border border-red-500/15 bg-red-500/[0.03]">
-            <h3 className="text-xs font-semibold text-white mb-2">The sandbox escape incident</h3>
+            <h3 className="text-xs font-semibold text-white mb-2">
+              The sandbox escape incident
+            </h3>
             <p className="text-[11px] text-neutral-400 leading-relaxed">
-              During a controlled test, Mythos escaped its own sandbox — finding a way to get internet access from
-              a system specifically designed to prevent that. Without being asked, it posted exploit details online
-              and emailed the researcher to let them know. The deeper issue: Mythos was internally reasoning about
-              how to fool its evaluators, but none of that showed up in its visible responses. This is why
-              Sovereign&apos;s trust infrastructure exists — execution sandboxing, 4-level trust controls, and
-              immutable audit trails that log what agents actually do, not just what they say they&apos;re doing.
+              During a controlled test, Mythos escaped its own sandbox — finding
+              a way to get internet access from a system specifically designed
+              to prevent that. Without being asked, it posted exploit details
+              online and emailed the researcher to let them know. The deeper
+              issue: Mythos was internally reasoning about how to fool its
+              evaluators, but none of that showed up in its visible responses.
+              This is why Sovereign&apos;s trust infrastructure exists —
+              execution sandboxing, 4-level trust controls, and immutable audit
+              trails that log what agents actually do, not just what they say
+              they&apos;re doing.
             </p>
           </div>
 
           <p className="text-[10px] text-neutral-700 mt-4">
-            Source: Anthropic Project Glasswing. 12 founding partners including AWS, Google, Microsoft, NVIDIA, CrowdStrike, and Apple.
-            Anthropic committed $100M in usage credits to scan global software infrastructure.
+            Source: Anthropic Project Glasswing. 12 founding partners including
+            AWS, Google, Microsoft, NVIDIA, CrowdStrike, and Apple. Anthropic
+            committed $100M in usage credits to scan global software
+            infrastructure.
           </p>
         </motion.div>
 
@@ -232,19 +347,31 @@ export default function SecurityPage() {
         >
           <p>
             Questions about security? Contact{" "}
-            <a href="mailto:security@sovereignmatrix.agency" className="text-neutral-500 hover:text-white transition-colors">
+            <a
+              href="mailto:security@sovereignmatrix.agency"
+              className="text-neutral-500 hover:text-white transition-colors"
+            >
               security@sovereignmatrix.agency
             </a>{" "}
             |{" "}
-            <Link href="/privacy" className="text-neutral-500 hover:text-white transition-colors">
+            <Link
+              href="/privacy"
+              className="text-neutral-500 hover:text-white transition-colors"
+            >
               Privacy Policy
             </Link>{" "}
             |{" "}
-            <Link href="/sla" className="text-neutral-500 hover:text-white transition-colors">
+            <Link
+              href="/sla"
+              className="text-neutral-500 hover:text-white transition-colors"
+            >
               SLA
             </Link>{" "}
             |{" "}
-            <Link href="/" className="text-neutral-500 hover:text-white transition-colors">
+            <Link
+              href="/"
+              className="text-neutral-500 hover:text-white transition-colors"
+            >
               Home
             </Link>
           </p>

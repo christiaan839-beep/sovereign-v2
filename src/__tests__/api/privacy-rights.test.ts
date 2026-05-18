@@ -67,6 +67,14 @@ function makeRequest(body?: unknown): Request {
 // ─── /api/me/export ──────────────────────────────────────────────────────
 
 describe("GET /api/me/export", () => {
+  // Wave-13: the ?signed=1 path needs AGENT_RUN_SIGNING_SECRET present
+  // so signRun returns "v1=..." instead of "unsigned". Set once for the
+  // describe block; restored implicitly when the process ends.
+  if (!process.env.AGENT_RUN_SIGNING_SECRET) {
+    process.env.AGENT_RUN_SIGNING_SECRET =
+      "test-dsar-signing-secret-for-vitest-only";
+  }
+
   beforeEach(() => {
     vi.clearAllMocks();
     mockAuditLog.mockResolvedValue(undefined);
@@ -75,17 +83,21 @@ describe("GET /api/me/export", () => {
     });
   });
 
+  // Wave 13 added a Request parameter (the route reads ?signed=1).
+  // Tests construct a minimal stub URL so the route can resolve query.
+  const exportReq = () => new Request("http://localhost/api/me/export");
+
   it("returns 401 when unauthenticated", async () => {
     mockAuth.mockResolvedValue({ userId: null });
     const { GET } = await loadExport();
-    const res = await GET();
+    const res = await GET(exportReq());
     expect(res.status).toBe(401);
   });
 
   it("returns 200 + Content-Disposition attachment for downloadable JSON", async () => {
     mockAuth.mockResolvedValue({ userId: "user_test_123" });
     const { GET } = await loadExport();
-    const res = await GET();
+    const res = await GET(exportReq());
     expect(res.status).toBe(200);
     expect(res.headers.get("content-type")).toMatch(/application\/json/);
     expect(res.headers.get("content-disposition")).toMatch(/attachment/);
@@ -94,10 +106,29 @@ describe("GET /api/me/export", () => {
   it("audit-logs the export request (GDPR Art. 30 records of processing)", async () => {
     mockAuth.mockResolvedValue({ userId: "user_test_123" });
     const { GET } = await loadExport();
-    await GET();
+    await GET(exportReq());
     expect(mockAuditLog).toHaveBeenCalledWith(
       expect.objectContaining({ action: "data.export" }),
     );
+  });
+
+  it("?signed=1 appends a cryptographic attestation envelope (Wave 13)", async () => {
+    mockAuth.mockResolvedValue({ userId: "user_test_123" });
+    const { GET } = await loadExport();
+    const res = await GET(
+      new Request("http://localhost/api/me/export?signed=1"),
+    );
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toMatch(
+      /vnd\.sovereign-dsar\+json/,
+    );
+    const body = (await res.json()) as Record<string, unknown>;
+    expect(body.attestation).toBeTruthy();
+    const att = body.attestation as Record<string, unknown>;
+    expect(att.receiptId).toMatch(/^[0-9a-f-]{36}$/);
+    expect(att.contentHash).toMatch(/^[0-9a-f]{64}$/);
+    expect(att.signature).toMatch(/^v\d=/);
+    expect(att.verifyUrl).toMatch(/^\/api\/dsar\/verify\//);
   });
 });
 

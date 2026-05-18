@@ -227,7 +227,7 @@ export default function TrustPage() {
             VAOS 2.0 receipts spec
           </Link>
           <Link href="/agents" className="hover:text-neutral-300">
-            145 agents
+            140 agents
           </Link>
           <Link href="/changelog" className="hover:text-neutral-300">
             Changelog

@@ -52,7 +52,7 @@ No markdown. No explanation. Just the JSON object.`;
 // ---------------------------------------------------------------------------
 
 export async function extractBrandVoice(
-  examples: string[]
+  examples: string[],
 ): Promise<BrandVoiceProfile> {
   const combinedExamples = examples
     .map((ex, i) => `--- SAMPLE ${i + 1} ---\n${ex}`)
@@ -60,8 +60,10 @@ export async function extractBrandVoice(
 
   const prompt = `Analyze these writing samples and extract the brand voice profile:\n\n${combinedExamples}`;
 
+  // Cost: voice extraction is structured tagging from samples. Cerebras
+  // is purpose-built for fast tagging; falls back to Groq with no key.
   const raw = await ai(prompt, {
-    model: "gemini",
+    model: "cerebras",
     system: EXTRACTION_SYSTEM,
     maxTokens: 1500,
   });
@@ -90,7 +92,10 @@ export async function extractBrandVoice(
       industry: parsed.industry || "general",
     };
   } catch (err) {
-    log.error("Failed to parse brand voice extraction:", err as Record<string, unknown>);
+    log.error(
+      "Failed to parse brand voice extraction:",
+      err as Record<string, unknown>,
+    );
     // Return a sensible fallback rather than crashing
     return {
       tone: "professional, clear",
@@ -121,7 +126,7 @@ export function getBrandVoicePrompt(profile: BrandVoiceProfile): string {
 
   if (profile.avoidWords.length > 0) {
     parts.push(
-      `NEVER use these words/phrases: ${profile.avoidWords.join(", ")}`
+      `NEVER use these words/phrases: ${profile.avoidWords.join(", ")}`,
     );
   }
 
@@ -142,7 +147,7 @@ export function getBrandVoicePrompt(profile: BrandVoiceProfile): string {
 
 export async function saveBrandVoice(
   orgId: string,
-  profile: BrandVoiceProfile
+  profile: BrandVoiceProfile,
 ): Promise<void> {
   const pc = await getPineconeClient();
   if (!pc) {
@@ -177,7 +182,7 @@ export async function saveBrandVoice(
 // ---------------------------------------------------------------------------
 
 export async function loadBrandVoice(
-  orgId: string
+  orgId: string,
 ): Promise<BrandVoiceProfile | null> {
   const pc = await getPineconeClient();
   if (!pc) return null;
@@ -186,7 +191,9 @@ export async function loadBrandVoice(
     const index = pc.client.index(pc.index);
 
     // Direct ID fetch — much faster than vector similarity
-    const result = await index.fetch({ ids: [`${BRAND_VOICE_PREFIX}-${orgId}`] });
+    const result = await index.fetch({
+      ids: [`${BRAND_VOICE_PREFIX}-${orgId}`],
+    });
     const record = result.records?.[`${BRAND_VOICE_PREFIX}-${orgId}`];
 
     if (record?.metadata?.profile) {

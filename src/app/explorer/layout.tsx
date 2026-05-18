@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Receipt Explorer — Sovereign Matrix",
     description:
-      "Real-time stream of HMAC-signed agent receipts. Proof the platform is alive — every row independently verifiable.",
+      "Real-time stream of Ed25519-signed agent receipts (post-quantum-ready via ML-DSA-65 dual-sign). Proof the platform is alive — every row independently verifiable.",
     url: "https://sovereignmatrix.agency/explorer",
     type: "website",
   },

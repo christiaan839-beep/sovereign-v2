@@ -76,7 +76,7 @@ Provide a detailed, section-by-section wireframe specification including:
     criticSystem: `You are a conversion rate optimization (CRO) expert. Ruthlessly evaluate: Does every section reduce friction? Is the value proposition crystal clear in 3 seconds? Are the CTAs positioned at moments of peak persuasion? Does the design system feel premium, not corporate?`,
 
     maxRounds: 3,
-    model: "claude",
+    model: "nim",
   });
 
   await remember(
@@ -157,7 +157,7 @@ Deliver a comprehensive brand identity document:
     criticSystem: `You are a brand consistency auditor. Check: Does every element reinforce the same personality? Would this identity stand out in a crowded market? Is it versatile enough for web, mobile, print, and social? Does the color palette have enough contrast for accessibility?`,
 
     maxRounds: 3,
-    model: "claude",
+    model: "nim",
   });
 
   await remember(
@@ -211,7 +211,7 @@ For EACH screen provide:
 
 Make every specification specific enough that a developer can build the screen without asking any follow-up questions.`,
     {
-      model: "claude",
+      model: "nim",
       system: `You are a senior UI/UX designer and front-end architect. You think in component hierarchies, interaction patterns, and user psychology. Your specs are so detailed that junior developers can build pixel-perfect implementations from them alone. You favor ${style} design patterns.`,
       maxTokens: 3500,
     },

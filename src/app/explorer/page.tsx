@@ -127,7 +127,7 @@ export default function ExplorerPage() {
             Receipt Explorer
           </h1>
           <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-neutral-400">
-            A public stream of HMAC-signed agent receipts as they&apos;re
+            A public stream of Ed25519-signed agent receipts as they&apos;re
             produced by the platform. Every row is a real receipt — click
             through to the full canonical projection, run a live verification
             against <code className="font-mono text-cyan-300">/api/verify</code>
@@ -151,8 +151,8 @@ export default function ExplorerPage() {
           />
           <StatCard
             label="Sealed"
-            value="HMAC-SHA256"
-            sub="every row"
+            value="Ed25519 / PQ"
+            sub="every row, post-quantum-ready"
             icon={Lock}
           />
           <StatCard

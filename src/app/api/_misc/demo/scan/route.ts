@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const { url } = await req.json();
-    
+
     if (!url || typeof url !== "string") {
       return NextResponse.json({ error: "Missing URL" }, { status: 400 });
     }
@@ -24,18 +24,43 @@ export async function POST(req: NextRequest) {
     // localhost, metadata endpoints, and file:// proto injection.
     let cleanUrl: string;
     try {
-      const normalised = url.trim().startsWith("http") ? url.trim() : `https://${url.trim()}`;
+      const normalised = url.trim().startsWith("http")
+        ? url.trim()
+        : `https://${url.trim()}`;
       const parsed = new URL(normalised);
       if (parsed.protocol !== "https:") {
-        return NextResponse.json({ error: "Only HTTPS URLs are accepted" }, { status: 400 });
+        return NextResponse.json(
+          { error: "Only HTTPS URLs are accepted" },
+          { status: 400 },
+        );
       }
       const host = parsed.hostname.toLowerCase();
       const blocked = [
-        "localhost", "127.", "0.0.0.0", "169.254.", // loopback + link-local
-        "10.", "192.168.", "172.16.", "172.17.", "172.18.", "172.19.",
-        "172.20.", "172.21.", "172.22.", "172.23.", "172.24.", "172.25.",
-        "172.26.", "172.27.", "172.28.", "172.29.", "172.30.", "172.31.",
-        "metadata.google.internal", "metadata.", "169.254.169.254",
+        "localhost",
+        "127.",
+        "0.0.0.0",
+        "169.254.", // loopback + link-local
+        "10.",
+        "192.168.",
+        "172.16.",
+        "172.17.",
+        "172.18.",
+        "172.19.",
+        "172.20.",
+        "172.21.",
+        "172.22.",
+        "172.23.",
+        "172.24.",
+        "172.25.",
+        "172.26.",
+        "172.27.",
+        "172.28.",
+        "172.29.",
+        "172.30.",
+        "172.31.",
+        "metadata.google.internal",
+        "metadata.",
+        "169.254.169.254",
       ];
       if (blocked.some((b) => host === b || host.startsWith(b))) {
         return NextResponse.json({ error: "Invalid URL" }, { status: 400 });
@@ -88,10 +113,13 @@ Provide a brutal, data-driven competitive scan in this EXACT JSON format:
 
 Keep findings BRUTAL and ACTIONABLE. You are replacing them. Return ONLY valid JSON.`,
       {
-        model: "gemini",
-        system: "You are the Sovereign Matrix. Be brutal, data-driven, and highly analytical. Expose why their stack is obsolete. Return only JSON.",
+        // Cost: 1k-token JSON output for a public demo scanner. NIM keeps
+        // the demo $0 even under abuse.
+        model: "nim",
+        system:
+          "You are the Sovereign Matrix. Be brutal, data-driven, and highly analytical. Expose why their stack is obsolete. Return only JSON.",
         maxTokens: 1000,
-      }
+      },
     );
 
     // Parse the JSON from the AI response
@@ -107,7 +135,7 @@ Keep findings BRUTAL and ACTIONABLE. You are replacing them. Return ONLY valid J
   } catch {
     return NextResponse.json(
       { error: "Scan failed. Try again." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

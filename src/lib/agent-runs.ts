@@ -314,6 +314,41 @@ export async function recordRun(
       createdAt,
     });
 
+    // Wave-21 SSE wire-up: lazy-imported so the bus module isn't pulled
+    // into edge-runtime callers that don't subscribe. Best-effort —
+    // never blocks the persist path.
+    try {
+      const { publishAgentRunSealed } = await import("@/lib/event-bus");
+      publishAgentRunSealed(input.tenantId ?? "*", {
+        receiptId: id,
+        agentName: input.agentName,
+        modelUsed: input.modelUsed ?? "unknown",
+        durationMs: input.durationMs ?? 0,
+        trustDecision: input.trustDecision ?? "auto-approved",
+      });
+    } catch {
+      /* non-blocking */
+    }
+
+    // Wave-46 transparency log wire-up: every persisted receipt's
+    // (id, signature) pair is hashed and appended to the public
+    // append-only Merkle log. Same fire-and-forget pattern as the
+    // SSE bus — a transient log failure logs a warning but never
+    // blocks the receipt itself. The receipt is still mathematically
+    // valid even if the public log is unreachable; the next append
+    // will catch up (transparency-singleton seeds from the persistent
+    // backend on cold-start).
+    try {
+      const { appendReceiptToTransparencyLog } =
+        await import("@/lib/transparency-append");
+      // No await — fire-and-forget. Errors are caught inside the helper
+      // and logged; we don't want to block the persist response on a
+      // network round-trip to Upstash.
+      void appendReceiptToTransparencyLog({ id, signature });
+    } catch {
+      /* non-blocking */
+    }
+
     return {
       id,
       userId: input.userId ?? null,

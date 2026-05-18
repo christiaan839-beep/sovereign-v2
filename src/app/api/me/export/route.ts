@@ -58,6 +58,7 @@ import {
 import { eq } from "drizzle-orm";
 import { auditLog } from "@/lib/audit-log";
 import { createLogger } from "@/lib/logger";
+import { signDsarEnvelope, stableStringify } from "@/lib/dsar-envelope";
 
 const log = createLogger("api/me/export");
 
@@ -75,7 +76,7 @@ async function safeQuery<T>(
   }
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   const { userId } = await auth();
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -83,6 +84,19 @@ export async function GET() {
 
   const user = await currentUser();
   const email = user?.emailAddresses?.[0]?.emailAddress?.toLowerCase() ?? "";
+
+  // Wave 13 elite-tier: opt-in cryptographic attestation. ?signed=1
+  // (or Accept: application/vnd.sovereign-dsar+json) seals the export
+  // with the same Ed25519 key used for receipts so a regulator can
+  // verify the bytes came from us. Default is the unsigned legacy
+  // export to avoid breaking existing callers / link-share flows.
+  const url = new URL(req.url);
+  const wantSigned =
+    url.searchParams.get("signed") === "1" ||
+    req.headers
+      .get("accept")
+      ?.includes("application/vnd.sovereign-dsar+json") ||
+    false;
 
   // ─── Run every table query in parallel — best-effort ─────────────
   const [
@@ -410,12 +424,48 @@ export async function GET() {
     },
   };
 
-  const filename = `sovereign-matrix-export-${userId.slice(0, 8)}-${new Date().toISOString().slice(0, 10)}.json`;
+  // Wave-13 signing layer: opt-in. When ?signed=1, append a cryptographic
+  // attestation envelope and persist the canonical projection to
+  // audit_logs so /api/dsar/verify/<receiptId> can re-derive and verify
+  // without storing the full export anywhere.
+  let finalPayload: Record<string, unknown> = payload;
+  if (wantSigned) {
+    const attestation = signDsarEnvelope(payload, {
+      clerkUserId: userId,
+      email,
+    });
+    finalPayload = { ...payload, attestation };
 
-  return new NextResponse(JSON.stringify(payload, null, 2), {
+    // Persist canonical to audit_logs as a structured trail. The Wave 9
+    // Bitcoin anchor will sweep this row into the daily attestation, so
+    // the DSAR is doubly tamper-evident (Ed25519 + chained + Bitcoin).
+    auditLog({
+      userId,
+      action: "data.export",
+      resource: `dsar:${attestation.receiptId}`,
+      details: {
+        receiptId: attestation.receiptId,
+        contentHash: attestation.contentHash,
+        signature: attestation.signature,
+        canonical: attestation.canonical,
+        payloadHash: JSON.parse(attestation.canonical).payloadHash,
+        // payload is NOT persisted — keeping the DSAR contents off-disk
+        // is the GDPR data-minimisation answer. The verify endpoint
+        // requires the holder to bring the export when checking.
+      },
+    }).catch(() => {
+      /* non-blocking */
+    });
+  }
+
+  const filename = `sovereign-matrix-export-${userId.slice(0, 8)}-${new Date().toISOString().slice(0, 10)}${wantSigned ? "-signed" : ""}.json`;
+
+  return new NextResponse(stableStringify(finalPayload), {
     status: 200,
     headers: {
-      "Content-Type": "application/json",
+      "Content-Type": wantSigned
+        ? "application/vnd.sovereign-dsar+json"
+        : "application/json",
       "Content-Disposition": `attachment; filename="${filename}"`,
       "Cache-Control": "no-store",
     },

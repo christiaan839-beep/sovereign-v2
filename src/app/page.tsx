@@ -10,6 +10,8 @@ import { getMarketingPlaybooks } from "@/lib/playbooks";
 import { PrimaryCTA } from "@/components/landing/PrimaryCTA";
 import { StatusIndicator } from "@/components/landing/StatusIndicator";
 import { TryItDemo } from "@/components/landing/TryItDemo";
+import { CliTabs } from "@/components/landing/CliTabs";
+import { TrustChips } from "@/components/landing/TrustChips";
 import { trackCtaClick } from "@/lib/cta-track";
 import {
   useHideyNav,
@@ -23,8 +25,10 @@ import {
 import { A2EGraph } from "@/components/landing/A2EGraph";
 import { LiveProofStrip } from "@/components/landing/LiveProofStrip";
 import { ThreeMoatsGrid } from "@/components/landing/ThreeMoatsGrid";
-import { A2EEconomySection } from "@/components/landing/A2EEconomySection";
-import { ModelRouterSection } from "@/components/landing/ModelRouterSection";
+// A2EEconomySection + ModelRouterSection were dropped from the landing
+// in audit-2026-05 Wave 12 (slop-blocker cuts). Both still live at their
+// component paths and will be re-imported on /platform when that page
+// gets its own merchandising pass.
 import { VerificationPipeline } from "@/components/landing/VerificationPipeline";
 import { SectionDivider } from "@/components/landing/SectionDivider";
 import { FilmGrain } from "@/components/landing/FilmGrain";
@@ -147,61 +151,45 @@ export default function LandingPage() {
 
       <Nav mobileNavOpen={mobileNavOpen} setMobileNavOpen={setMobileNavOpen} />
 
+      {/*
+        Landing architecture (audit-2026-05, Wave 12).
+        Six sections, each pulling double duty. Removed from this surface
+        but kept intact at their dedicated routes:
+          - InvestorSignalStrip → /investors
+          - DesignPartnerSlotsStrip → /pitch (linked from /investors)
+          - ModelRouterSection → /platform
+          - FeaturedPlaybooksSection → /marketplace
+          - IndustrySection → /solutions
+          - PlatformScale → /trust (numbers belong with the proofs)
+        Removing them from `/` is a curation move — every visible block
+        below now answers "what is this and why does it exist" in 5s.
+      */}
       <main id="main-content" className="relative z-10">
-        {/* 01 · Hero — copper surface (marketing) */}
+        {/* 01 · Hero — one claim, one CTA, one live proof badge */}
         <Hero />
 
-        {/* Investor signal strip — Vanta-comparable hook → /investors */}
-        <InvestorSignalStrip />
-
-        {/* Design-partner slots — buyer-track conversion (5 slots open) */}
-        <DesignPartnerSlotsStrip />
-
-        {/* Try-it demo — embedded competitor scan, no signup */}
-        <TryItDemo />
-
-        {/* Live stats strip */}
+        {/* 02 · Live proof — receipt id updating against /api/verify */}
         <LiveProofStrip />
 
         <SectionDivider accent="copper" />
 
-        {/* 02 · Three Moats */}
+        {/* 03 · Three moats + Memory moat collapsed onto one canvas */}
         <ThreeMoatsGrid />
-
-        {/* 03 · A2E Economy */}
-        <A2EEconomySection />
-
-        {/* 04 · Memory Moat */}
         <MemoryMoat />
 
-        {/* 05 · Model Router */}
-        <ModelRouterSection />
-
-        {/* Audit surface starts here — flip the divider accent to cyan */}
         <SectionDivider accent="cyan" />
 
-        {/* 06 · Verification Pipeline */}
+        {/* 04 · Verification pipeline + interactive verifier demo */}
         <VerificationPipeline />
-
-        {/* 06.5 · Live Verifier — interactive proof against the real /api/verify */}
         <LiveVerifierDemo />
 
-        {/* Back to marketing surface */}
         <SectionDivider accent="copper" />
 
-        {/* 07 · Featured Playbooks */}
-        <FeaturedPlaybooksSection />
+        {/* 05 · Try-it demo — the only interactive element on the page */}
+        <TryItDemo />
 
-        {/* 08 · Industries */}
-        <IndustrySection />
-
-        {/* 09 · Platform Scale */}
-        <PlatformScale />
-
-        {/* 10 · Pricing Strip */}
+        {/* 06 · Pricing teaser + final CTA */}
         <PricingStrip />
-
-        {/* Final CTA */}
         <FinalCTA />
       </main>
 
@@ -426,14 +414,28 @@ function NavLink({
 function Hero() {
   return (
     <section className="relative min-h-screen flex items-center justify-center px-6 pt-20 pb-16 overflow-hidden">
-      {/* A2EGraph background at low opacity */}
+      {/* A2EGraph background — faint, label-free so agent names never
+          bleed through the headline at narrow viewports. Opacity is
+          tighter on mobile because the canvas occupies a smaller area
+          relative to the text. */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-[0.18] md:opacity-30"
+        aria-hidden="true"
+      >
+        <A2EGraph className="w-full h-full" showLabels={false} />
+      </div>
+
+      {/* Centered radial dim — keeps the constellation visible at the
+          edges but ensures the headline area always renders on a near-
+          pure-black plate. */}
       <div
         className="absolute inset-0 pointer-events-none"
         aria-hidden="true"
-        style={{ opacity: 0.3 }}
-      >
-        <A2EGraph className="w-full h-full" />
-      </div>
+        style={{
+          background:
+            "radial-gradient(ellipse 55% 45% at 50% 45%, rgba(3,3,3,0.85) 0%, rgba(3,3,3,0.55) 45%, transparent 80%)",
+        }}
+      />
 
       {/* Copper radial gradient overlay — 4% center */}
       <div
@@ -511,9 +513,9 @@ function Hero() {
           transition={{ delay: 0.4, duration: 0.7 }}
           className="text-[17px] md:text-[19px] text-neutral-400 leading-[1.55] mb-4 max-w-2xl mx-auto"
         >
-          145 production agents that research, draft, qualify, and call — and
-          ship a verifiable HMAC-signed receipt every time. 2,492 tests pass. 7
-          cryptographic primitives. Built for teams that need AI{" "}
+          140 production agents that research, draft, qualify, and call — and
+          ship an Ed25519-signed receipt every time, post-quantum-ready via
+          ML-DSA-65 dual-signing. Built for teams that need AI{" "}
           <em className="not-italic text-neutral-300">and</em> a paper trail.
         </motion.p>
         <motion.p
@@ -534,9 +536,25 @@ function Hero() {
           transition={{ delay: 0.62, duration: 0.6 }}
           className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8"
         >
-          <PrimaryCTA href={HERO_CTA} variant="hero">
-            Run a Free Playbook
-          </PrimaryCTA>
+          {/* Subtle copper aura under the primary CTA — Stripe-style
+              polish. Visible without being loud. Respects
+              prefers-reduced-motion (the gradient is static; only
+              the existing PrimaryCTA micro-physics animate). */}
+          <div className="relative">
+            <div
+              aria-hidden="true"
+              className="absolute inset-0 -m-2 rounded-full blur-2xl opacity-50 pointer-events-none motion-reduce:opacity-0"
+              style={{
+                background:
+                  "radial-gradient(ellipse, rgba(181,83,44,0.30) 0%, transparent 70%)",
+              }}
+            />
+            <div className="relative">
+              <PrimaryCTA href={HERO_CTA} variant="hero">
+                Run a Free Playbook
+              </PrimaryCTA>
+            </div>
+          </div>
           <Link
             href="/marketplace"
             className="group inline-flex items-center gap-1.5 px-6 py-3.5 border border-white/[0.12] text-neutral-400 hover:text-white hover:border-white/25 font-mono text-[13px] tracking-tight transition-colors rounded-[3px]"
@@ -558,7 +576,7 @@ function Hero() {
           transition={{ delay: 0.8, duration: 0.5 }}
           className="text-[11px] font-mono text-neutral-600 tracking-wide mb-6"
         >
-          Free · R997/mo · R3,997/mo · $0 · $49/mo · $199/mo ·{" "}
+          From free → R997/mo (≈ $49) → R3,997/mo (≈ $199) ·{" "}
           <Link
             href="/pricing"
             className="hover:text-neutral-400 transition-colors underline decoration-white/10 hover:decoration-white/30"
@@ -567,31 +585,52 @@ function Hero() {
           </Link>
         </motion.p>
 
-        {/* Trust line — audit-grade positioning */}
-        <motion.p
+        {/* Trust strip — two rows:
+            (1) standards layer (CC0 spec + Apache-2.0 verifier + IETF I-D)
+            (2) live surfaces a procurement reviewer / regulator clicks
+            Promoted from the prior 5-link single row so all 11 procurement-
+            grade surfaces shipped through Wave 52 are reachable in one
+            hop from the landing. */}
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.95, duration: 0.5 }}
-          className="text-[11px] font-mono text-neutral-700 tracking-wide mb-12"
+          className="mb-6"
         >
-          <Link href="/spec" className="hover:text-cyan-300 transition-colors">
-            VAOS 1.0 open standard
-          </Link>
-          <span className="text-neutral-800 mx-1">·</span>
-          <Link
-            href="/verified"
-            className="hover:text-cyan-300 transition-colors"
-          >
-            Live verifier demo
-          </Link>
-          <span className="text-neutral-800 mx-1">·</span>
-          <Link
-            href="/explorer"
-            className="hover:text-cyan-300 transition-colors"
-          >
-            Receipt explorer
-          </Link>
-        </motion.p>
+          <TrustChips />
+        </motion.div>
+
+        {/* Verify-the-math one-liner — the elite move borrowed from
+            /pilot. A skeptical CISO can confirm the central marketing
+            claim in two terminal commands before they ever email us.
+            Anchors to /pilot for the full procurement walkthrough. */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.05, duration: 0.5 }}
+          className="mb-10"
+        >
+          <p className="font-mono text-[10px] text-neutral-600 tracking-[0.2em] uppercase mb-2">
+            Three CLIs · zero accounts · pure crypto
+          </p>
+          <CliTabs />
+          <p className="text-[11px] text-neutral-500 mt-3">
+            <Link
+              href="/pilot"
+              className="hover:text-cyan-300 transition-colors underline decoration-cyan-500/30"
+            >
+              Download a real signed bundle on /pilot
+            </Link>{" "}
+            — no account, no signup. Or paste a leaf into{" "}
+            <Link
+              href="/transparency/verify"
+              className="hover:text-cyan-300 transition-colors underline decoration-cyan-500/30"
+            >
+              /transparency/verify
+            </Link>{" "}
+            and watch the SHA-256 fold run locally in your browser.
+          </p>
+        </motion.div>
 
         {/* Scroll indicator */}
         <motion.div
@@ -632,19 +671,19 @@ function MemoryMoat() {
   const timeline = [
     {
       label: "Day 1",
-      desc: "Run a Lead Blitz for SaaS companies in London. Agents find 8 prospects.",
+      desc: "First run on a fresh tenant. Lead Blitz against SaaS founders in London returns 8 prospects, signed receipt id `rcpt_…001`.",
     },
     {
       label: "Week 2",
-      desc: "Run a Competitor Takedown. Agents remember the London SaaS context — no re-briefing.",
+      desc: "Competitor Takedown on the same vertical. The agent retrieves the Day-1 prospect set + recent outreach from semantic memory rather than re-asking for context.",
     },
     {
       label: "Month 2",
-      desc: "A new Lead run auto-recalls past niches, past angles, past conversion signals.",
+      desc: "A new Lead Blitz auto-loads the prior ICP, the angles that converted, and the angles that didn't. Receipt chain anchors the input set to the previous runs.",
     },
     {
       label: "Month 6",
-      desc: "Your agents know your ICP, your tone, your past campaigns, and your live competitor set. New runs start from six months of context, not a blank prompt.",
+      desc: "Each new run begins from ~180 days of signed prior context. Every retrieval is verifiable — you (or an auditor) can trace which past receipts informed today's output.",
     },
   ];
 
@@ -667,21 +706,26 @@ function MemoryMoat() {
         <div className="grid md:grid-cols-2 gap-16 items-start">
           <div>
             <h2 className="font-serif text-4xl md:text-5xl lg:text-[58px] leading-[1.05] mb-6 tracking-[-0.02em]">
-              Agents that get
+              Memory that
               <br />
-              <em className="not-italic text-[#B5532C]">smarter every run.</em>
+              <em className="not-italic text-[#B5532C]">verifies itself.</em>
             </h2>
             <p className="text-[16px] text-neutral-400 leading-[1.65] mb-6 max-w-md">
-              Every execution is embedded in semantic memory — 1024-dimensional
-              vectors that capture what you worked on, what worked, and what
-              your business is about. Future agents retrieve relevant context
-              automatically. No re-briefing. No lost context.
+              Every run is embedded in semantic memory — 1024-dimensional
+              vectors over the run&apos;s canonical projection. Future agents
+              retrieve relevant context by vector similarity, and{" "}
+              <em className="not-italic text-neutral-300">
+                every retrieved item is itself a signed receipt
+              </em>
+              . The chain of which past decisions informed today&apos;s output
+              is reconstructable from public bytes.
             </p>
             <p className="text-[14px] text-neutral-500 leading-[1.7] max-w-md mb-8 font-serif italic">
-              After six months of use, your Sovereign agents know your niche,
-              your tone, your past campaigns, your competitors, and your
-              customers. That institutional knowledge is yours — and it
-              compounds with every run.
+              The compounding moat is not &ldquo;the agent gets smarter.&rdquo;
+              It&apos;s that your retrieval graph becomes audit-grade. An
+              auditor can ask &ldquo;which past runs informed this
+              decision?&rdquo; and get a list of verifiable receipt ids — not a
+              vendor promise.
             </p>
             <Link
               href="/dashboard"
@@ -773,6 +817,9 @@ function playbookHref(slug: string): string {
     : `/dashboard/playbooks?auto=${slug}`;
 }
 
+// Kept in this file for the /marketplace extraction follow-up; cut from
+// the landing in audit-2026-05 Wave 12.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function FeaturedPlaybooksSection() {
   return (
     <section className="px-6 py-28 md:py-36 bg-[#040303]">
@@ -858,6 +905,8 @@ function FeaturedPlaybooksSection() {
 }
 
 /* ─── 08 · Industry Section ─────────────────────────────────────── */
+// Kept for the /solutions extraction follow-up; cut from `/` in Wave 12.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function IndustrySection() {
   const industries = [
     {
@@ -983,7 +1032,7 @@ function IndustrySection() {
 /* ─── 09 · Platform Scale ───────────────────────────────────────── */
 const SCALE_METRICS = [
   {
-    n: "137",
+    n: "140",
     label: "Agents",
     sub: "Across 8 industries and 19 task categories. Healthcare, legal, agriculture, manufacturing, cybersecurity, and more.",
     href: "/platform",
@@ -1008,6 +1057,8 @@ const SCALE_METRICS = [
   },
 ] as const;
 
+// Kept for the /trust extraction follow-up; cut from `/` in Wave 12.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function PlatformScale() {
   return (
     <section className="px-6 py-0 bg-[#030303] border-t border-white/[0.04]">
@@ -1038,7 +1089,7 @@ function PlatformScale() {
 
         <div className="py-5 flex items-center justify-between">
           <p className="text-[11px] font-mono text-neutral-700 tracking-wide">
-            137 agents · 8 industries · 90+ integrations · full surface at{" "}
+            140 agents · 8 industries · 90+ integrations · full surface at{" "}
             <Link
               href="/platform"
               className="text-neutral-500 hover:text-white transition-colors"
@@ -1148,6 +1199,9 @@ function PricingStrip() {
 
 /* ─── Final CTA ─────────────────────────────────────────────────── */
 /* ─── InvestorSignalStrip ──────────────────────────────────────── */
+// Kept for /investors extraction follow-up; cut from `/` in Wave 12 —
+// "we're fundraising" above the fold is desperate-coded for buyers.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function InvestorSignalStrip() {
   return (
     <section className="relative px-6 py-10 border-y border-white/[0.04] bg-gradient-to-b from-[#030303] via-[#040303] to-[#030303] overflow-hidden">
@@ -1220,6 +1274,9 @@ function InvestorSignalStrip() {
 }
 
 /* ─── DesignPartnerSlotsStrip ──────────────────────────────────── */
+// Kept for /pitch + /design-partner extraction follow-up; cut from `/`
+// in Wave 12 — "5 slots open" above the fold signals "no customers yet".
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function DesignPartnerSlotsStrip() {
   return (
     <section className="relative px-6 py-12 border-b border-white/[0.04] bg-gradient-to-b from-[#040303] via-[#050404] to-[#040303] overflow-hidden">
@@ -1289,7 +1346,7 @@ function DesignPartnerSlotsStrip() {
         <div className="mt-7 flex items-center justify-center gap-4 flex-wrap text-[12px] font-mono text-neutral-500">
           <Link
             href="/contact?intent=design-partner"
-            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-[#E08558] text-black font-semibold hover:bg-[#F5A878] transition-colors text-[12px]"
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-[3px] border border-[#B5532C]/50 text-[#E08558] font-mono uppercase tracking-[0.15em] hover:bg-[#B5532C]/10 hover:border-[#B5532C]/80 hover:text-white transition-colors text-[11px]"
           >
             Apply for a slot <span aria-hidden="true">→</span>
           </Link>
@@ -1318,8 +1375,10 @@ function DesignPartnerSlotsStrip() {
 }
 
 function SlotPerk({ label, value }: { label: string; value: string }) {
+  // rounded-[6px] keeps the radius scale consistent with the rest of the
+  // landing (audit-2026-05 — was rounded-xl, broke the section rhythm).
   return (
-    <div className="p-3 rounded-xl border border-white/[0.06] bg-white/[0.015] text-center">
+    <div className="p-3 rounded-[6px] border border-white/[0.06] bg-white/[0.015] text-center">
       <p className="text-[9px] uppercase tracking-[0.2em] text-neutral-500 mb-1">
         {label}
       </p>
@@ -1364,7 +1423,7 @@ function FinalCTA() {
         </h2>
 
         <p className="text-[15px] md:text-[17px] text-neutral-400 mb-10 leading-[1.6] max-w-lg mx-auto">
-          No credit card required. 137 agents ready in 60 seconds. 50 runs reset
+          No credit card required. 140 agents ready in 60 seconds. 50 runs reset
           every month — free forever.
         </p>
 

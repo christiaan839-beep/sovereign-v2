@@ -15,9 +15,18 @@ DO NOT output anything other than the generated prompt. No markdown code blocks.
 
 export const POST = createAgentRoute({
   name: "meta-prompt",
-  schema: z.object({ task: z.string().min(3).max(5000), prompt: z.string().optional() }),
+  schema: z.object({
+    task: z.string().min(3).max(5000),
+    prompt: z.string().optional(),
+  }),
   handler: async ({ input }) => {
-    const generatedPrompt = await ai(input.task as string, { model: "claude", system: ANTHROPIC_META_PROMPT, maxTokens: 1500 });
+    // Cost: meta-prompt rewriting at 1500 tokens — NIM Nemotron handles
+    // prompt-engineering tasks on par with Claude at $0.
+    const generatedPrompt = await ai(input.task as string, {
+      model: "nim",
+      system: ANTHROPIC_META_PROMPT,
+      maxTokens: 1500,
+    });
     return { prompt: generatedPrompt };
   },
 });

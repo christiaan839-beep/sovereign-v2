@@ -1,3 +1,6 @@
+// ISR — vertical pages are static marketing surfaces; regenerate hourly.
+export const revalidate = 3600;
+
 import Link from "next/link";
 import {
   ArrowRight,
@@ -261,7 +264,7 @@ export default function ForTaxAuditPage() {
             Trust posture
           </Link>
           <Link href="/agents" className="hover:text-neutral-300">
-            145 agents
+            140 agents
           </Link>
         </div>
       </footer>

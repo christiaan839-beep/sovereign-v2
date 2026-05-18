@@ -1,3 +1,6 @@
+// ISR — vertical pages are static marketing surfaces; regenerate hourly.
+export const revalidate = 3600;
+
 import Link from "next/link";
 import {
   ArrowRight,
@@ -15,7 +18,7 @@ import type { Metadata } from "next";
  *
  * Hook: Sovereign Matrix is the only AI agent platform that ships
  * 21 CFR Part 11–defensible receipts out of the box. Pharma teams
- * can use any of the 145 agents to draft, review, and route
+ * can use any of the 140 agents to draft, review, and route
  * GxP-relevant documents — and every output produces a
  * cryptographically signed receipt that an FDA or EMA inspector
  * can paste back into our replay endpoint to verify on demand.
@@ -272,7 +275,7 @@ export default function ForPharmaPage() {
             Trust posture
           </Link>
           <Link href="/agents" className="hover:text-neutral-300">
-            145 agents
+            140 agents
           </Link>
           <Link href="/changelog" className="hover:text-neutral-300">
             Changelog

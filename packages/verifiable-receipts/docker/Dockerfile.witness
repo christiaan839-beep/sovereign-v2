@@ -1,0 +1,95 @@
+# Witness daemon Docker image — verifiable-receipts-witness
+#
+# Run an independent witness against a Sovereign Matrix transparency
+# log without installing Node locally. Stateful by default — mount a
+# host directory at /var/lib/witness so the witness state survives
+# restarts.
+#
+# Build:
+#   docker build -f packages/verifiable-receipts/docker/Dockerfile.witness \
+#     -t sovereign-matrix/witness:0.1.0 .
+#
+# Run as a daemon (default):
+#   docker run -d --name witness \
+#     -v /etc/sovereign/witness-key.pem:/etc/witness-key.pem:ro \
+#     -v witness-state:/var/lib/witness \
+#     sovereign-matrix/witness:0.1.0 \
+#     --url https://sovereignmatrix.agency \
+#     --key /etc/witness-key.pem \
+#     --witness-id "EU Witness · Berlin" \
+#     --public-key-url https://eu-witness.example/key.pem \
+#     --state /var/lib/witness/state.json \
+#     --interval 3600
+#
+# Run a single check (--once) for a CI pipeline:
+#   docker run --rm \
+#     -v /etc/sovereign/witness-key.pem:/etc/witness-key.pem:ro \
+#     sovereign-matrix/witness:0.1.0 \
+#     --url https://sovereignmatrix.agency \
+#     --key /etc/witness-key.pem \
+#     --witness-id "CI Witness" \
+#     --once --json
+#   # exit 0 → witnessed OR no-change
+#   # exit 1 → FORK DETECTED (operator action required)
+#   # exit 2 → usage / network error
+#
+# Build context expected at the repo root so the COPY paths resolve.
+
+FROM node:22-alpine AS builder
+WORKDIR /build
+
+# Copy only what's needed to build the OSS package (small surface).
+COPY packages/verifiable-receipts/package.json ./
+COPY packages/verifiable-receipts/tsconfig.json ./
+COPY packages/verifiable-receipts/src ./src
+COPY packages/verifiable-receipts/bin ./bin
+COPY packages/verifiable-receipts/SPEC.md ./
+COPY packages/verifiable-receipts/README.md ./
+COPY packages/verifiable-receipts/LICENSE ./
+
+# Install only the runtime dep (@noble/post-quantum) and build the dist
+RUN npm install --omit=dev --no-audit --no-fund --loglevel=error \
+    && npm install --no-save --no-audit --no-fund --loglevel=error typescript@5 \
+    && npx tsc -p tsconfig.json \
+    && npm prune --omit=dev
+
+# ── Final image — minimal runtime, no toolchain ────────────────────
+FROM node:22-alpine
+
+# Run as a non-root user. The default `node` user (uid 1000) ships
+# with the official Node images.
+USER node
+WORKDIR /home/node/witness
+
+# Bring in only what the witness CLI actually loads at runtime:
+# the compiled dist/, the bin/ script, the package manifest, the
+# runtime deps. No tests, no source, no docs in the final layer.
+COPY --from=builder --chown=node:node /build/package.json ./
+COPY --from=builder --chown=node:node /build/dist ./dist
+COPY --from=builder --chown=node:node /build/bin ./bin
+COPY --from=builder --chown=node:node /build/node_modules ./node_modules
+
+# Persistent state mount point — operator binds a host volume here
+# so witness state (lastSize, lastRoot) survives container restarts.
+# Without persistence, every restart looks like "first-time witness"
+# to the daemon, which is harmless but wasteful.
+VOLUME ["/var/lib/witness"]
+
+# Healthcheck: exit code from a --once run. 0 = healthy (witnessed OR
+# no-change). 1 = fork detected (CRITICAL — operator must investigate).
+# Docker treats exit 1 as unhealthy after `retries` consecutive fails.
+# We bias toward false negatives by not setting a network-dependent
+# healthcheck here; operators should monitor the daemon's structured
+# stderr externally.
+
+LABEL org.opencontainers.image.title="verifiable-receipts-witness" \
+      org.opencontainers.image.description="Independent witness daemon for Sovereign Matrix transparency logs (VAOS / ART-Log)" \
+      org.opencontainers.image.source="https://github.com/christiaan839-beep/sovereign-v2" \
+      org.opencontainers.image.licenses="Apache-2.0" \
+      org.opencontainers.image.vendor="Sovereign Matrix" \
+      org.opencontainers.image.version="0.1.0"
+
+ENTRYPOINT ["node", "/home/node/witness/bin/witness.mjs"]
+
+# Default CMD: print help. Override with the actual witness args.
+CMD ["--help"]
