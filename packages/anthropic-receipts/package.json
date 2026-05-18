@@ -1,0 +1,41 @@
+{
+  "name": "@sovereign-matrix/anthropic-receipts",
+  "version": "0.1.0",
+  "description": "Drop-in wrapper that mints VAOS receipts around Anthropic SDK calls. 3-line integration; post-quantum signed; regulator-defensible.",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "vitest run"
+  },
+  "keywords": [
+    "anthropic",
+    "claude",
+    "vaos",
+    "verifiable-receipts",
+    "ai-audit",
+    "post-quantum",
+    "regulated-ai",
+    "ed25519",
+    "ml-dsa"
+  ],
+  "author": "Sovereign Matrix",
+  "license": "Apache-2.0",
+  "homepage": "https://sovereignmatrix.agency",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/christiaan839-beep/sovereign-v2",
+    "directory": "packages/anthropic-receipts"
+  },
+  "peerDependencies": {
+    "@anthropic-ai/sdk": ">=0.30.0",
+    "@sovereign-matrix/verifiable-receipts": ">=0.3.0"
+  }
+}
