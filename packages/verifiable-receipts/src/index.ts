@@ -64,6 +64,24 @@ export {
 } from "./vapt.js";
 
 export {
+  assembleThresholdAttestation,
+  verifyThresholdAttestation,
+  type ThresholdAttestation,
+  type ThresholdCosigner,
+  type ThresholdVerifyOptions,
+  type ThresholdVerifyResult,
+} from "./threshold.js";
+
+export {
+  StreamAttestationBuilder,
+  canonicalizeStreamAttestation,
+  verifyChunkInclusion,
+  verifyFinalOutputHash,
+  type StreamChunk,
+  type StreamAttestation,
+} from "./stream-attestation.js";
+
+export {
   runGuardian,
   verifyGuardianAttestation,
   quorumCollapse,
