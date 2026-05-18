@@ -401,6 +401,37 @@ test.describe("Verifiable receipts surface (the central claim)", () => {
     expect(body.issuers[0].schemes).toContain("v2");
   });
 
+  test("/status/integrity renders the crypto-integrity dashboard", async ({
+    page,
+  }) => {
+    const res = await page.goto("/status/integrity");
+    expect(res?.status()).toBe(200);
+    // All six documented tiles + the verdict banner.
+    await expect(page.locator("body")).toContainText(
+      /Integrity, in one number/i,
+    );
+    await expect(page.locator("body")).toContainText(/Receipt schemes active/i);
+    await expect(page.locator("body")).toContainText(/Transparency log size/i);
+    await expect(page.locator("body")).toContainText(/Latest STH age/i);
+    await expect(page.locator("body")).toContainText(/Last Bitcoin anchor/i);
+    await expect(page.locator("body")).toContainText(
+      /Witnesses on current STH/i,
+    );
+  });
+
+  test("/feed.xml returns a well-formed Atom feed", async ({ request }) => {
+    const res = await request.get("/feed.xml");
+    expect(res.status()).toBe(200);
+    expect(res.headers()["content-type"]).toMatch(/application\/atom\+xml/);
+    expect(res.headers()["access-control-allow-origin"]).toBe("*");
+    const body = await res.text();
+    // Atom envelope present even when no entries are available.
+    expect(body).toContain('xmlns="http://www.w3.org/2005/Atom"');
+    expect(body).toContain("<feed");
+    expect(body).toContain("</feed>");
+    expect(body).toContain("Sovereign Matrix — Signed Receipts");
+  });
+
   test("/diff renders the receipt diff widget", async ({ page }) => {
     const res = await page.goto("/diff");
     expect(res?.status()).toBe(200);
