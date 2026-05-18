@@ -43,7 +43,7 @@ export default async function TransparencyPage() {
   // we want it to be — fine for ISR since we explicitly cache for 60s.
   void (await headers());
 
-  const tlog = getDemoTransparencyLog();
+  const tlog = await getDemoTransparencyLog();
   const sth = tlog.currentSth();
   const canonical = canonicalizeSth(sth);
   const signature = signRun(canonical);

@@ -64,7 +64,7 @@ export async function GET(req: Request): Promise<NextResponse> {
   try {
     const url = new URL(req.url);
     const kind = url.searchParams.get("kind");
-    const tlog = getDemoTransparencyLog();
+    const tlog = await getDemoTransparencyLog();
     const currentSize = tlog.size();
 
     if (kind === "inclusion") {

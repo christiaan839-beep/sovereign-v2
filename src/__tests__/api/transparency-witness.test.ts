@@ -35,7 +35,7 @@ async function loadRoute() {
 
 async function loadSingleton() {
   const m = await import("@/lib/transparency-singleton");
-  return m.getDemoTransparencyLog();
+  return await m.getDemoTransparencyLog();
 }
 
 async function loadWitnessStore() {

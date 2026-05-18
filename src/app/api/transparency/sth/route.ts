@@ -23,7 +23,7 @@ export const revalidate = 60; // 1-min CDN cache; STH only advances on append
 
 export async function GET(): Promise<NextResponse> {
   try {
-    const tlog = getDemoTransparencyLog();
+    const tlog = await getDemoTransparencyLog();
     const sth = tlog.currentSth();
     const canonical = canonicalizeSth(sth);
     const signature = signRun(canonical);

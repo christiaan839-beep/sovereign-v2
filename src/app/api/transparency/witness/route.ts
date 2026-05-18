@@ -26,9 +26,15 @@ import { createLogger } from "@/lib/logger";
 import {
   recordCosignature,
   getCosignatures,
+  sthKey,
   type WitnessCosignature,
 } from "@/lib/witness-store";
 import { getDemoTransparencyLog } from "@/lib/transparency-singleton";
+import {
+  isPersistenceEnabled,
+  upstashRecordCosignature,
+  upstashGetCosignatures,
+} from "@/lib/upstash-log-store";
 
 const log = createLogger("transparency-witness");
 
@@ -75,7 +81,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     // canonical that commits to the same tree state). What we reject:
     // a canonical that commits to a DIFFERENT tree state (different
     // root or size), which is the actual attacker scenario.
-    const tlog = getDemoTransparencyLog();
+    const tlog = await getDemoTransparencyLog();
     const currentSth = tlog.currentSth();
     let canonicalShape: {
       logId?: unknown;
@@ -111,12 +117,30 @@ export async function POST(req: Request): Promise<NextResponse> {
       publicKeyUrl,
     };
     const { created } = recordCosignature(sthCanonical, cosig);
+
+    // Mirror to Upstash when configured so cosignatures survive across
+    // replica restarts. Failure to persist is non-fatal — the in-memory
+    // store has already recorded the cosig + the request returned 200,
+    // but the operator gets a structured warning in the logs.
+    if (isPersistenceEnabled()) {
+      const hashHex = sthKey(sthCanonical);
+      try {
+        await upstashRecordCosignature(sthCanonical, hashHex, cosig);
+      } catch (err) {
+        log.warn("Upstash cosig persistence failed (in-memory only)", {
+          error: String(err),
+          witnessId,
+        });
+      }
+    }
+
     return NextResponse.json(
       {
         ok: true,
         recorded: true,
         firstForThisSth: created,
         witnessCount: getCosignatures(sthCanonical).length,
+        persistent: isPersistenceEnabled(),
       },
       { headers: corsHeaders() },
     );
@@ -139,12 +163,36 @@ export async function GET(req: Request): Promise<NextResponse> {
         { status: 400, headers: corsHeaders() },
       );
     }
-    const list = getCosignatures(sth);
+    // Union in-memory + Upstash (when configured) so a query against a
+    // replica that hasn't seen an in-memory submission still returns
+    // cosignatures recorded by other replicas.
+    const local = getCosignatures(sth);
+    let remote: WitnessCosignature[] = [];
+    if (isPersistenceEnabled()) {
+      try {
+        remote = await upstashGetCosignatures(sthKey(sth));
+      } catch (err) {
+        log.warn("Upstash cosig fetch failed (local-only response)", {
+          error: String(err),
+        });
+      }
+    }
+    // Dedup by (witnessId, signature) — local cosig may have already
+    // been mirrored remotely, we don't want to double-count.
+    const seen = new Set<string>();
+    const merged: WitnessCosignature[] = [];
+    for (const c of [...local, ...remote]) {
+      const key = `${c.witnessId}|${c.signature}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      merged.push(c);
+    }
     return NextResponse.json(
       {
         sthCanonical: sth,
-        witnessCount: list.length,
-        cosignatures: list,
+        witnessCount: merged.length,
+        cosignatures: merged,
+        persistent: isPersistenceEnabled(),
       },
       {
         headers: {
