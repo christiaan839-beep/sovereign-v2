@@ -567,73 +567,162 @@ function Hero() {
           </Link>
         </motion.p>
 
-        {/* Trust line — audit-grade positioning. Promoted from
-            text-neutral-700 (below contrast threshold) to text-neutral-500
-            with a leading ◆ ledger glyph so the page's most credibility-
-            loaded links are actually readable. */}
-        <motion.p
+        {/* Trust strip — two rows:
+            (1) standards layer (CC0 spec + Apache-2.0 verifier + IETF I-D)
+            (2) live surfaces a procurement reviewer / regulator clicks
+            Promoted from the prior 5-link single row so all 11 procurement-
+            grade surfaces shipped through Wave 52 are reachable in one
+            hop from the landing. */}
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.95, duration: 0.5 }}
-          className="text-[11px] font-mono text-neutral-500 tracking-wide mb-6 flex flex-wrap items-center justify-center gap-x-1 gap-y-2"
+          className="mb-6 space-y-2"
         >
-          <Link href="/spec" className="hover:text-cyan-300 transition-colors">
-            <span aria-hidden="true" className="text-cyan-500/60 mr-1.5">
-              ◆
+          <p className="text-[10px] font-mono text-neutral-600 tracking-[0.25em] uppercase mb-1">
+            Standards layer
+          </p>
+          <p className="text-[11px] font-mono text-neutral-500 tracking-wide flex flex-wrap items-center justify-center gap-x-1 gap-y-2">
+            <Link
+              href="/spec"
+              className="hover:text-cyan-300 transition-colors"
+            >
+              <span aria-hidden="true" className="text-cyan-500/60 mr-1.5">
+                ◆
+              </span>
+              VAOS 1.0 · 2.0 · 3.0
+            </Link>
+            <span className="text-neutral-700 mx-1.5" aria-hidden="true">
+              ·
             </span>
-            VAOS 1.0 · 2.0 · 3.0
-          </Link>
-          <span className="text-neutral-700 mx-1.5" aria-hidden="true">
-            ·
-          </span>
-          <a
-            href="https://www.npmjs.com/package/@sovereign-matrix/verifiable-receipts"
-            target="_blank"
-            rel="noreferrer noopener"
-            className="hover:text-cyan-300 transition-colors"
-          >
-            <span aria-hidden="true" className="text-cyan-500/60 mr-1.5">
-              ◆
+            <a
+              href="https://www.npmjs.com/package/@sovereign-matrix/verifiable-receipts"
+              target="_blank"
+              rel="noreferrer noopener"
+              className="hover:text-cyan-300 transition-colors"
+            >
+              <span aria-hidden="true" className="text-cyan-500/60 mr-1.5">
+                ◆
+              </span>
+              OSS toolkit (Apache-2.0)
+            </a>
+            <span className="text-neutral-700 mx-1.5" aria-hidden="true">
+              ·
             </span>
-            OSS toolkit (Apache-2.0)
-          </a>
-          <span className="text-neutral-700 mx-1.5" aria-hidden="true">
-            ·
-          </span>
-          <Link
-            href="/verified"
-            className="hover:text-cyan-300 transition-colors"
-          >
-            <span aria-hidden="true" className="text-cyan-500/60 mr-1.5">
-              ◆
+            <a
+              href="https://github.com/christiaan839-beep/sovereign-v2/blob/main/docs/specs/draft-dewet-vaos-receipts-00.md"
+              target="_blank"
+              rel="noreferrer noopener"
+              className="hover:text-cyan-300 transition-colors"
+            >
+              <span aria-hidden="true" className="text-cyan-500/60 mr-1.5">
+                ◆
+              </span>
+              IETF Internet-Draft
+            </a>
+            <span className="text-neutral-700 mx-1.5" aria-hidden="true">
+              ·
             </span>
-            Live verifier demo
-          </Link>
-          <span className="text-neutral-700 mx-1.5" aria-hidden="true">
-            ·
-          </span>
-          <Link
-            href="/explorer"
-            className="hover:text-cyan-300 transition-colors"
-          >
-            <span aria-hidden="true" className="text-cyan-500/60 mr-1.5">
-              ◆
+            <a
+              href="https://github.com/christiaan839-beep/sovereign-v2/blob/main/docs/WHITEPAPER.md"
+              target="_blank"
+              rel="noreferrer noopener"
+              className="hover:text-cyan-300 transition-colors"
+            >
+              <span aria-hidden="true" className="text-cyan-500/60 mr-1.5">
+                ◆
+              </span>
+              Whitepaper
+            </a>
+            <span className="text-neutral-700 mx-1.5" aria-hidden="true">
+              ·
             </span>
-            Receipt explorer
-          </Link>
-          <span className="text-neutral-700 mx-1.5" aria-hidden="true">
-            ·
-          </span>
-          <Link
-            href="/auditor/replay"
-            className="hover:text-cyan-300 transition-colors"
-          >
-            <span aria-hidden="true" className="text-cyan-500/60 mr-1.5">
-              ◆
+            <Link
+              href="/vaos"
+              className="hover:text-cyan-300 transition-colors"
+            >
+              <span aria-hidden="true" className="text-cyan-500/60 mr-1.5">
+                ◆
+              </span>
+              Adoption registry
+            </Link>
+          </p>
+
+          <p className="text-[10px] font-mono text-neutral-600 tracking-[0.25em] uppercase mb-1 mt-3">
+            Live surfaces
+          </p>
+          <p className="text-[11px] font-mono text-neutral-500 tracking-wide flex flex-wrap items-center justify-center gap-x-1 gap-y-2">
+            <Link
+              href="/transparency"
+              className="hover:text-cyan-300 transition-colors"
+            >
+              <span aria-hidden="true" className="text-[#E08558]/70 mr-1.5">
+                ◆
+              </span>
+              Transparency log
+            </Link>
+            <span className="text-neutral-700 mx-1.5" aria-hidden="true">
+              ·
             </span>
-            Auditor replay
-          </Link>
-        </motion.p>
+            <Link
+              href="/transparency/verify"
+              className="hover:text-cyan-300 transition-colors"
+            >
+              <span aria-hidden="true" className="text-[#E08558]/70 mr-1.5">
+                ◆
+              </span>
+              In-browser verifier
+            </Link>
+            <span className="text-neutral-700 mx-1.5" aria-hidden="true">
+              ·
+            </span>
+            <Link
+              href="/security/live"
+              className="hover:text-cyan-300 transition-colors"
+            >
+              <span aria-hidden="true" className="text-[#E08558]/70 mr-1.5">
+                ◆
+              </span>
+              Security posture
+            </Link>
+            <span className="text-neutral-700 mx-1.5" aria-hidden="true">
+              ·
+            </span>
+            <Link
+              href="/diff"
+              className="hover:text-cyan-300 transition-colors"
+            >
+              <span aria-hidden="true" className="text-[#E08558]/70 mr-1.5">
+                ◆
+              </span>
+              Receipt diff
+            </Link>
+            <span className="text-neutral-700 mx-1.5" aria-hidden="true">
+              ·
+            </span>
+            <Link
+              href="/pilot"
+              className="hover:text-cyan-300 transition-colors"
+            >
+              <span aria-hidden="true" className="text-[#E08558]/70 mr-1.5">
+                ◆
+              </span>
+              Pilot
+            </Link>
+            <span className="text-neutral-700 mx-1.5" aria-hidden="true">
+              ·
+            </span>
+            <Link
+              href="/auditor/replay"
+              className="hover:text-cyan-300 transition-colors"
+            >
+              <span aria-hidden="true" className="text-[#E08558]/70 mr-1.5">
+                ◆
+              </span>
+              Auditor replay
+            </Link>
+          </p>
+        </motion.div>
 
         {/* Verify-the-math one-liner — the elite move borrowed from
             /pilot. A skeptical CISO can confirm the central marketing
@@ -646,20 +735,47 @@ function Hero() {
           className="mb-10"
         >
           <p className="font-mono text-[10px] text-neutral-600 tracking-[0.2em] uppercase mb-2">
-            Verify the math yourself
+            Three CLIs · zero accounts · pure crypto
           </p>
-          <code className="inline-block max-w-full overflow-x-auto whitespace-nowrap font-mono text-[11px] sm:text-[12px] text-cyan-300/90 bg-black/40 border border-cyan-500/20 rounded-[3px] px-3 py-2 leading-[1.55]">
-            npx @sovereign-matrix/verifiable-receipts verify --manifest
-            ./sample-bundle.json --pubkey ./sample-bundle.ed25519.pem
-          </code>
-          <p className="text-[11px] text-neutral-500 mt-2">
+          <div className="space-y-1.5">
+            <code className="block max-w-full overflow-x-auto whitespace-nowrap font-mono text-[11px] sm:text-[12px] text-cyan-300/90 bg-black/40 border border-cyan-500/20 rounded-[3px] px-3 py-2 leading-[1.55]">
+              <span className="text-neutral-500">
+                # Verify any signed bundle
+              </span>
+              {"\n"}npx @sovereign-matrix/verifiable-receipts verify --manifest
+              ./bundle.json --pubkey ./pubkey.pem
+            </code>
+            <code className="block max-w-full overflow-x-auto whitespace-nowrap font-mono text-[11px] sm:text-[12px] text-cyan-300/90 bg-black/40 border border-cyan-500/20 rounded-[3px] px-3 py-2 leading-[1.55]">
+              <span className="text-neutral-500">
+                # Mint your own VAOS receipt
+              </span>
+              {"\n"}npx @sovereign-matrix/verifiable-receipts-sign --input
+              ./body.json --key ./privkey.pem
+            </code>
+            <code className="block max-w-full overflow-x-auto whitespace-nowrap font-mono text-[11px] sm:text-[12px] text-cyan-300/90 bg-black/40 border border-cyan-500/20 rounded-[3px] px-3 py-2 leading-[1.55]">
+              <span className="text-neutral-500">
+                # Run an independent witness on our log
+              </span>
+              {"\n"}npx @sovereign-matrix/verifiable-receipts-witness --url
+              https://sovereignmatrix.agency --key ./witness.pem --witness-id{" "}
+              &quot;...&quot;
+            </code>
+          </div>
+          <p className="text-[11px] text-neutral-500 mt-3">
             <Link
               href="/pilot"
               className="hover:text-cyan-300 transition-colors underline decoration-cyan-500/30"
             >
-              Download the sample bundle on /pilot
+              Download a real signed bundle on /pilot
             </Link>{" "}
-            — no account, no signup.
+            — no account, no signup. Or paste a leaf into{" "}
+            <Link
+              href="/transparency/verify"
+              className="hover:text-cyan-300 transition-colors underline decoration-cyan-500/30"
+            >
+              /transparency/verify
+            </Link>{" "}
+            and watch the SHA-256 fold run locally in your browser.
           </p>
         </motion.div>
 
