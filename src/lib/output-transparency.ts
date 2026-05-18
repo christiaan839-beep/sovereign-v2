@@ -1,6 +1,5 @@
 // STATUS: ahead-of-consumers — see docs/audits/codebase-audit.md (Tier B).
 // "cite every claim" surface; not wired.
-import { createLogger } from "@/lib/logger";
 
 
 /**

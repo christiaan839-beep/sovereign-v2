@@ -26,7 +26,7 @@ export interface AuthResult {
 const USAGE_TRACKER = new Map<string, { count: number; reset: number }>();
 let lastTrackerCleanup = Date.now();
 
-import { getPlan, normalizePlanId } from "@/lib/plans";
+import { getPlan } from "@/lib/plans";
 
 // Daily rate limits for agent calls (derived from plan's demoRatePerDay / apiRatePerDay)
 function getDailyLimit(planId: string): number {

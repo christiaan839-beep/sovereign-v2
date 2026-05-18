@@ -20,7 +20,6 @@ import {
  * Shows the step-by-step fold so the visitor can trace each inner hash.
  */
 
-const LEAF_PREFIX = new Uint8Array([0x00]);
 const INNER_PREFIX = new Uint8Array([0x01]);
 
 function hexToBytes(hex: string): Uint8Array {

@@ -1,6 +1,5 @@
 import { createAgentRoute } from "@/lib/agent-factory";
 import { NextResponse } from "next/server";
-import { createLogger } from "@/lib/logger";
 
 export const POST = createAgentRoute({
   name: "ghost-fleet",

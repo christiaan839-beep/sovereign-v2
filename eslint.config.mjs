@@ -10,7 +10,17 @@ const eslintConfig = defineConfig([
       "@typescript-eslint/no-unused-vars": [
         "warn",
         {
-          argsIgnorePattern: "^_",
+          // Framework-mandated arg names — every agent-route handler
+          // receives `{ input, userId, email, request }` from the
+          // AgentContext type. Most handlers use only a subset, but
+          // renaming the destructured property to `_userId` would
+          // break the destructure (the property comes from a typed
+          // object) and lose the documentation value. The names
+          // ARE the contract; their unused-ness is not slop.
+          //
+          // Also allow plain `_`-prefix for genuinely-unused args
+          // outside the framework signature.
+          argsIgnorePattern: "^(_|email$|userId$|request$|req$|res$)",
           varsIgnorePattern: "^_",
           caughtErrorsIgnorePattern: "^_",
         },

@@ -104,7 +104,7 @@ export function safeEncrypt(plaintext: string): string {
       );
     }
     if (!_devWarned) {
-      // eslint-disable-next-line no-console
+       
       console.warn(
         "[crypto] ENCRYPTION_KEY unset in development — values are stored in plaintext. NEVER ship without setting it.",
       );

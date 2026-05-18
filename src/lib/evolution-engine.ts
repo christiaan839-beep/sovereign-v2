@@ -1,7 +1,7 @@
 // STATUS: ahead-of-consumers — see docs/audits/codebase-audit.md (Tier B).
 // "self-improving agents" claim; not wired.
 import { createLogger } from "@/lib/logger";
-import { getRelevantLearnings, emitLearningSignal } from "@/lib/competitive-moat";
+import { emitLearningSignal } from "@/lib/competitive-moat";
 import { getModelRecommendation } from "@/lib/agent-performance";
 
 const log = createLogger("evolution-engine");

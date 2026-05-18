@@ -22,7 +22,6 @@
  */
 
 import { ai } from "@/lib/ai";
-import { createLogger } from "@/lib/logger";
 
 
 // ── Types ──

@@ -1,7 +1,6 @@
 import { createAgentRoute } from "@/lib/agent-factory";
 import { ai } from "@/lib/ai";
 import { ANTI_SLOP_RULES } from "@/lib/content-engine";
-import { createLogger } from "@/lib/logger";
 
 /**
  * Content Calendar API

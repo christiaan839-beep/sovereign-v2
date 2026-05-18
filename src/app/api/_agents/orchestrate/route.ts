@@ -1,5 +1,5 @@
 import { createAgentRoute } from "@/lib/agent-factory";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getAvailablePipelines, runPipeline } from "@/agents/orchestrator";
 import { fireUserWebhook } from "@/lib/webhooks";
 import { requireAuth } from "@/lib/auth-guard";

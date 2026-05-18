@@ -19,7 +19,36 @@
 import { execSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 
-const REMOVABLE_IMPORTS = new Set(["NextResponse", "log", "ai", "beforeEach"]);
+const REMOVABLE_IMPORTS = new Set([
+  "NextResponse",
+  "NextRequest",
+  "log",
+  "ai",
+  "beforeEach",
+  "createLogger",
+  "guardRoute",
+  "isUnlimited",
+  "gte",
+  "and",
+  "getStripePriceId",
+  "getNextPlan",
+  "getPlanLimit",
+  "getPlan",
+  "recordModelExecution",
+  "normalizePlanId",
+  "knownAgents",
+  "getRelevantLearnings",
+  "classifyTask",
+  "customSkills",
+  "chain",
+  "emailSequenceSchema",
+  "Zap",
+  "Eye",
+  "Bell",
+  "Briefcase",
+  "DashboardStats",
+  "subscribe",
+]);
 const PREFIXABLE_CATCH = new Set(["err"]);
 const REMOVABLE_TOPLEVEL_VARS = new Set([
   "log",
@@ -28,6 +57,10 @@ const REMOVABLE_TOPLEVEL_VARS = new Set([
   "EMAIL_REGEX",
   "CanonicalPlanId",
   "TOutput",
+  "LEAF_PREFIX",
+  "NIM_MODELS",
+  "ago30d",
+  "GENDERED_PRONOUNS",
   "knownAgents",
   "normalizePlanId",
   "subscribe",

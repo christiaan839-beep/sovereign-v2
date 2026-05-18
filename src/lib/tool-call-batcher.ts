@@ -75,7 +75,7 @@ export async function dispatchBatched<TInput = unknown, TOutput = unknown>(
       if (!adapter) {
         // Unknown tool — surface a structured "unknown-tool" output.
         for (const g of group) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+           
           outputs[g.index] = {
             outcome: "unknown-tool",
             tool: name,

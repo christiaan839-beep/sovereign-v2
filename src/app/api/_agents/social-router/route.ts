@@ -2,7 +2,6 @@ import { createAgentRoute } from "@/lib/agent-factory";
 import { ai } from "@/lib/ai";
 import { ANTI_SLOP_RULES, PLATFORM_RULES } from "@/lib/content-engine";
 import { fireUserWebhook } from "@/lib/webhooks";
-import { createLogger } from "@/lib/logger";
 
 /**
  * Social Router API

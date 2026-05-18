@@ -352,7 +352,7 @@ export async function GET(req: Request) {
   // public surfaces). Single edit point in src/lib/openapi-elite.ts;
   // the existing path map above stays the source of truth for the
   // original verification API.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const elite = eliteOpenApiSlice();
   const merged = {
     ...schema,

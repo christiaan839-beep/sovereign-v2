@@ -1,5 +1,5 @@
 import { createAgentRoute } from "@/lib/agent-factory";
-import { guardRoute, sanitizeString, errorResponse } from "@/lib/api-guard";
+import { sanitizeString, errorResponse } from "@/lib/api-guard";
 import { nimChat } from "@/lib/nvidia";
 
 /**

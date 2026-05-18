@@ -63,7 +63,6 @@ export interface AuditRequest {
 
 // ── Rubric patterns ───────────────────────────────────────────────────────
 
-const GENDERED_PRONOUNS = /\b(he|him|his|she|her|hers)\b/gi;
 
 // Each pair matches a career/role keyword within a short window of a
 // gendered or demographic pronoun. The window is `.{0,60}` (≤ 60 chars)

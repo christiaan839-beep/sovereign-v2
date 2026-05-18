@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { marketplaceAgents } from "@/db/schema";
-import { eq, sum, count, desc, gte } from "drizzle-orm";
+import { eq, sum, count, desc } from "drizzle-orm";
 import { requireAuth } from "@/lib/auth-guard";
 import { createLogger } from "@/lib/logger";
 

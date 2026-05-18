@@ -372,7 +372,7 @@ function BadgePreview({
   return (
     <div
       className="min-h-[60px] min-w-[200px] flex items-center justify-center"
-      // eslint-disable-next-line react/no-danger
+       
       dangerouslySetInnerHTML={{ __html: script }}
     />
   );

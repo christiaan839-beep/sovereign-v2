@@ -20,7 +20,7 @@ const log = createLogger("usage-api");
  * Used by: billing page, usage dashboard, upgrade prompts
  */
 
-import { getPlan, getPlanLimit, normalizePlanId } from "@/lib/plans";
+import { getPlan, normalizePlanId } from "@/lib/plans";
 
 export async function GET() {
   const { userId } = await auth();

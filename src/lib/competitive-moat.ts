@@ -1,5 +1,5 @@
 import { createLogger } from "@/lib/logger";
-import { classifyTask, NIM_MODELS } from "@/lib/llm-router";
+import { NIM_MODELS } from "@/lib/llm-router";
 
 const log = createLogger("competitive-moat");
 
