@@ -77,6 +77,7 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "prepare": "tsc -p tsconfig.json",
     "prepublishOnly": "npm run build"
   },
   "engines": {
