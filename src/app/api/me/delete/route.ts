@@ -13,10 +13,14 @@
  * Body MUST contain `{ confirm: "DELETE" }` exactly. Any other value
  * returns 400. This guards against accidental client-side calls.
  *
- * The deletion is logged to audit_logs BEFORE the cascade runs, so the
- * audit row survives even if the cascade nukes audit_logs entries
- * keyed to this user (which it does — that's by design; only the
- * entry that records the deletion itself remains).
+ * The cryptographic-deletion receipt (wave 97) is emitted AFTER the
+ * cascade with userId="system" — that audit row is NOT swept by the
+ * cascade's `delete(auditLogs).where(eq(auditLogs.userId, deletedUser))`
+ * because its userId is "system", not the deleted user. The subject's
+ * former identifiers appear in the receipt only as sha256 commitments,
+ * so the surviving audit row is cryptographic evidence of the act,
+ * not personal data about the subject (GDPR Art. 30 records vs Art. 4
+ * personal data).
  *
  * Best-effort: each table delete is independent. If one table is
  * missing (migration not yet applied) we still proceed with the rest.
@@ -54,7 +58,8 @@ import {
   workflows,
 } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { auditLog } from "@/lib/audit-log";
+import { createHash } from "node:crypto";
+import { emitDeletionReceipt } from "@/lib/deletion-receipts";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("api/me/delete");
@@ -114,22 +119,18 @@ export async function POST(req: Request) {
   const user = await currentUser();
   const email = user?.emailAddresses?.[0]?.emailAddress?.toLowerCase() ?? "";
 
-  // ─── Audit FIRST so the row survives the cascade ─────────────────
-  // Audit logs themselves are user-scoped, so this entry will be
-  // deleted by the cascade below. We log it anyway so any external
-  // log shipper (Sentry breadcrumb, Vercel runtime log, Datadog) gets
-  // the deletion intent recorded.
+  // ─── Log to runtime shipper only ─────────────────────────────────
+  // External log shippers (Sentry, Datadog) capture the deletion
+  // intent here. We deliberately do NOT write a pre-cascade audit_logs
+  // row keyed to the deleted user — wave-97 security review flagged
+  // that the row contained the raw email + userId in plaintext AND
+  // would be swept by the cascade below anyway. The post-cascade
+  // wave-97 deletion receipt is the durable, commitment-only evidence.
   log.info("RIGHT_TO_ERASURE_REQUEST", {
-    userId,
-    email,
+    userIdHash: createHash("sha256").update(userId).digest("hex"),
+    emailHash: email ? createHash("sha256").update(email).digest("hex") : null,
     timestamp: new Date().toISOString(),
   });
-  await auditLog({
-    userId,
-    action: "data.delete",
-    resource: "user",
-    details: { email, requestedAt: new Date().toISOString() },
-  }).catch(() => {});
 
   // ─── Cascade in parallel ─────────────────────────────────────────
   // Order doesn't matter — each delete is keyed independently. Running
@@ -244,6 +245,26 @@ export async function POST(req: Request) {
   ]);
 
   const failed = summaries.filter((s) => !s.deleted);
+
+  // Wave-97: cryptographic-deletion receipt. Persists AFTER the
+  // cascade so the table-summary reflects the real outcome. Survives
+  // the cascade because it's written with userId="system" (not the
+  // deleted user) and identifiers appear only as sha256 commitments.
+  // Errors swallowed inside emitDeletionReceipt — never blocks the
+  // user-facing response.
+  const deletionReceipt = await emitDeletionReceipt({
+    subjectKind: "user",
+    subjectId: userId,
+    subjectEmail: email || undefined,
+    legalBasis: "gdpr-art-17",
+    requestedBy: userId,
+    tablesAffected: summaries.map((s) => ({
+      table: s.table,
+      ok: s.deleted,
+      error: s.error,
+    })),
+  });
+
   return NextResponse.json(
     {
       ok: true,
@@ -256,8 +277,20 @@ export async function POST(req: Request) {
       },
       thirdPartyDataNote:
         "Data held by sub-processors (Stripe, Clerk, Sentry, etc.) is not deleted by this endpoint. Contact each provider directly — the list is at /sub-processors.",
+      deletionReceipt: {
+        ticketId: deletionReceipt.ticketId,
+        ts: deletionReceipt.ts,
+        verifyUrl: `/api/privacy/deletion-receipt/${deletionReceipt.ticketId}`,
+        subjectCommitment: deletionReceipt.subjectCommitment,
+        emailCommitment: deletionReceipt.emailCommitment,
+        summaryHash: deletionReceipt.summaryHash,
+        mldsa65Sig: deletionReceipt.mldsa65Sig,
+        legalBasis: deletionReceipt.legalBasis,
+        howToVerify:
+          "Save the ticketId above. The deletion is recorded as a SIGNED, COMMITMENT-ONLY receipt that survives the cascade. To verify later: recompute sha256(yourFormerUserId) and confirm it equals subjectCommitment; recompute sha256(yourFormerEmail.toLowerCase()) and confirm it equals emailCommitment; then verify mldsa65Sig against the public key at /.well-known/sovereign-receipts/mldsa65.b64.",
+      },
       _retentionNote:
-        "A single audit-log entry recording this deletion is retained as required by GDPR Art. 30 (records of processing activities). It contains your former Clerk user ID and email but no other personal data.",
+        "Only the deletion receipt above is retained — it contains only SHA-256 commitments of your former identifiers (not the raw values), so under GDPR it is cryptographic evidence of an act rather than personal data about you.",
     },
     { status: 200 },
   );

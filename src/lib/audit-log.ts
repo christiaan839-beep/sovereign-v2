@@ -40,7 +40,8 @@ export type AuditAction =
   | "defense.block"
   | "capability.invoke"
   | "trs.attestation"
-  | "adversarial.eval";
+  | "adversarial.eval"
+  | "data.delete-receipt";
 
 interface AuditEntry {
   userId: string;

@@ -192,12 +192,36 @@ describe("POST /api/me/delete", () => {
     expect(json.tables.succeeded).toBeGreaterThan(0);
   });
 
-  it("audit-logs the deletion BEFORE cascading (GDPR Art. 30)", async () => {
+  it("emits a cascade-surviving deletion receipt (wave 97 — no raw identifiers persisted)", async () => {
+    // Wave-97 change: the pre-cascade `auditLog({action:"data.delete"})`
+    // call was removed because it stored raw email + userId in plaintext
+    // AND was swept by the cascade anyway. The new evidence is the
+    // post-cascade `data.delete-receipt` audit row with userId="system"
+    // and sha256-committed subject identifiers (handled inside
+    // emitDeletionReceipt → auditLog).
     mockAuth.mockResolvedValue({ userId: "user_test_123" });
     const { POST } = await loadDelete();
     await POST(makeRequest({ confirm: "DELETE" }));
-    expect(mockAuditLog).toHaveBeenCalledWith(
-      expect.objectContaining({ action: "data.delete", resource: "user" }),
+    // Find the receipt-write call (action='data.delete-receipt').
+    const receiptCalls = mockAuditLog.mock.calls.filter(
+      (call: unknown[]) =>
+        (call[0] as { action?: string })?.action === "data.delete-receipt",
     );
+    expect(receiptCalls.length).toBeGreaterThan(0);
+    const receipt = receiptCalls[0][0] as {
+      userId: string;
+      resource: string;
+      details: Record<string, unknown>;
+    };
+    // CRITICAL guarantee: userId='system', NOT the deleted user's id —
+    // otherwise the cascade's `delete(auditLogs).where(userId = X)`
+    // would nuke the only proof the deletion happened.
+    expect(receipt.userId).toBe("system");
+    expect(receipt.resource).toMatch(/^deletion:[a-f0-9-]{36}$/);
+    expect(receipt.details.schema).toBe("vaos-deletion-event-v1");
+    expect(receipt.details.subjectCommitment).toMatch(/^[a-f0-9]{64}$/);
+    // Raw userId MUST NOT appear in the persisted body.
+    const serialized = JSON.stringify(receipt.details);
+    expect(serialized).not.toContain("user_test_123");
   });
 });
