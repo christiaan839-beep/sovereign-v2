@@ -45,10 +45,13 @@ PACKAGES=(
   ai-sdk-receipts
   annex-iv
   iso-42001
+  iso-23894
   nist-ai-rmf
   soc2-evidence
   gdpr-dpia
   hipaa-security
+  eu-cra
+  ai-constitution
   mcp
 )
 
@@ -68,7 +71,7 @@ if [[ -z "$DRY_RUN" ]]; then
   echo "Publishing as: $WHOAMI"
   echo "Target registry: $(npm config get registry)"
   echo ""
-  read -rp "Confirm publish of 12 packages to npm? [y/N] " confirm
+  read -rp "Confirm publish of 15 packages to npm? [y/N] " confirm
   [[ "$confirm" == "y" || "$confirm" == "Y" ]] || { echo "Aborted."; exit 0; }
 fi
 

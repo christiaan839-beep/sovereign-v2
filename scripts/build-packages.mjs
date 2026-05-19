@@ -31,10 +31,13 @@ const PACKAGES = [
   "ai-sdk-receipts",
   "annex-iv",
   "iso-42001",
+  "iso-23894",
   "nist-ai-rmf",
   "soc2-evidence",
   "gdpr-dpia",
   "hipaa-security",
+  "eu-cra",
+  "ai-constitution",
   "mcp",
 ];
 

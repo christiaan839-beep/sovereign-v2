@@ -1,0 +1,60 @@
+{
+  "name": "@sovereign-matrix/ai-constitution",
+  "version": "0.1.0",
+  "description": "Cryptographically-anchored AI constitutions. Sign an immutable policy document; every VAOS receipt then commits to the policy hash. If the agent ever violates the constitution, the receipts themselves prove it. Apache 2.0. Novel primitive — no existing OSS does this.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "npm run build",
+    "test": "vitest run"
+  },
+  "keywords": [
+    "constitutional-ai",
+    "ai-policy",
+    "policy-anchoring",
+    "cryptographic-policy",
+    "agi-safety",
+    "agi-readiness",
+    "agent-governance",
+    "ai-safety",
+    "vaos",
+    "verifiable-receipts",
+    "sovereign-matrix",
+    "anthropic-constitutional-ai"
+  ],
+  "author": "Sovereign Matrix",
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/christiaan839-beep/sovereign-v2/tree/main/packages/ai-constitution",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/christiaan839-beep/sovereign-v2.git",
+    "directory": "packages/ai-constitution"
+  },
+  "bugs": "https://github.com/christiaan839-beep/sovereign-v2/issues",
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "peerDependencies": {
+    "@sovereign-matrix/verifiable-receipts": ">=0.3.0"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  }
+}

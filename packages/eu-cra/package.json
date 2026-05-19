@@ -1,0 +1,59 @@
+{
+  "name": "@sovereign-matrix/eu-cra",
+  "version": "0.1.0",
+  "description": "EU Cyber Resilience Act (Regulation (EU) 2024/2847) essential cybersecurity requirements exporter for products with digital elements — including AI software. Annex I + technical documentation per Article 15. Apache 2.0; enforcement begins 2027.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "npm run build",
+    "test": "vitest run"
+  },
+  "keywords": [
+    "eu-cra",
+    "cyber-resilience-act",
+    "regulation-2024-2847",
+    "products-with-digital-elements",
+    "annex-i",
+    "essential-cybersecurity",
+    "ai-cybersecurity",
+    "compliance-as-code",
+    "vaos",
+    "verifiable-receipts",
+    "sovereign-matrix"
+  ],
+  "author": "Sovereign Matrix",
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/christiaan839-beep/sovereign-v2/tree/main/packages/eu-cra",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/christiaan839-beep/sovereign-v2.git",
+    "directory": "packages/eu-cra"
+  },
+  "bugs": "https://github.com/christiaan839-beep/sovereign-v2/issues",
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "peerDependencies": {
+    "@sovereign-matrix/verifiable-receipts": ">=0.3.0"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  }
+}
