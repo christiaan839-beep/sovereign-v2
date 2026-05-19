@@ -72,8 +72,67 @@ const globalGenAI = new GoogleGenerativeAI(globalGeminiKey);
  * 2. NVIDIA NIM (free open-source models) — if model is "nim" or NIM key exists
  * 3. Gemini (Google free tier) — default
  * 4. Claude (Anthropic) — if explicitly selected or BYOK key exists
+ *
+ * Wave-98: every call emits a capability receipt (kind="llm-call")
+ * when AI_CAPABILITY_RECEIPTS=true. Default-off because LLM calls are
+ * high-volume — opting in is a deliberate operator choice to trade
+ * audit-log row growth for full per-call cryptographic provenance.
  */
 export async function ai(
+  prompt: string,
+  options: AIOptions = {},
+): Promise<string> {
+  const start = Date.now();
+  let output = "";
+  let outcome: "allowed" | "error" = "allowed";
+  let errMessage: string | null = null;
+  try {
+    output = await _aiInternal(prompt, options);
+    return output;
+  } catch (err) {
+    outcome = "error";
+    errMessage = err instanceof Error ? err.message : String(err);
+    throw err;
+  } finally {
+    // Fire-and-forget capability receipt — never block the response
+    // path or the recovery path. Gated by env so high-volume
+    // deployments aren't forced into audit-log row growth without
+    // opting in.
+    if (process.env.AI_CAPABILITY_RECEIPTS === "true") {
+      void (async () => {
+        try {
+          const { emitCapabilityReceipt } =
+            await import("@/lib/capability-receipts");
+          const durationMs = Date.now() - start;
+          await emitCapabilityReceipt({
+            ruleId: `ai.call.${options.model ?? "auto"}`,
+            kind: "llm-call",
+            outcome,
+            summary:
+              outcome === "allowed"
+                ? `${options.model ?? "auto"} → ${output.length} chars in ${durationMs}ms`
+                : `${options.model ?? "auto"} → error: ${(errMessage ?? "unknown").slice(0, 80)}`,
+            // Hash the prompt + system + output so the audit trail
+            // proves WHICH call happened without storing the content.
+            // capability-receipts internally sha256s these via its
+            // `sensitive` field.
+            sensitive: {
+              prompt,
+              ...(options.system ? { system: options.system } : {}),
+              ...(outcome === "allowed" && output.length > 0 ? { output } : {}),
+            },
+            durationMs,
+            responseBytes: outcome === "allowed" ? output.length : 0,
+          });
+        } catch {
+          // Receipt subsystem failure must never break the LLM call.
+        }
+      })();
+    }
+  }
+}
+
+async function _aiInternal(
   prompt: string,
   options: AIOptions = {},
 ): Promise<string> {
