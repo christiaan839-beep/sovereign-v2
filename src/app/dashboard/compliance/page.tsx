@@ -57,6 +57,31 @@ const EXPORTERS = [
       "45 CFR § 164.308-318 evidence binder — administrative + physical + technical safeguards.",
     enforcement: "Enforced since 2003",
   },
+  {
+    href: "/dashboard/compliance/iso-23894",
+    pill: "AI risk management",
+    title: "ISO/IEC 23894:2023",
+    description:
+      "Risk scenarios scored via 5×5 likelihood × impact matrix, residual attenuated by receipt evidence.",
+    enforcement: "Referenced by ISO 42001 as the canonical method",
+  },
+  {
+    href: "/dashboard/compliance/eu-cra",
+    pill: "EU cybersecurity",
+    title: "EU Cyber Resilience Act",
+    description:
+      "Annex I (Part I + II) + Article 13/14 obligations for products with digital elements.",
+    enforcement: "Vulnerability reporting 2026-09-11; full 2027-12-11",
+  },
+  {
+    href: "/dashboard/compliance/ai-constitution",
+    pill: "Novel primitive",
+    title: "Constitutional AI Anchoring",
+    description:
+      "Sign an immutable AI constitution; audit receipts against article-level violations.",
+    enforcement:
+      "AGI / ASI accountability primitive — first OSS implementation",
+  },
 ];
 
 export default function ComplianceDashboardHub() {

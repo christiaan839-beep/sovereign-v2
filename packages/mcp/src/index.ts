@@ -17,6 +17,9 @@
  *   build_soc2_evidence   - generate a SOC 2 evidence binder
  *   build_gdpr_dpia       - generate a GDPR Article 35 DPIA + Article 30 RoPA
  *   build_hipaa_security  - generate a HIPAA Security Rule evidence binder
+ *   build_iso_23894       - generate an ISO/IEC 23894:2023 AI risk-management report
+ *   build_eu_cra          - generate an EU Cyber Resilience Act compliance report
+ *   build_constitution_audit - audit a receipt set against a signed constitution
  *
  * Zero external SDK dependency — the package speaks the MCP wire
  * format directly. Keeps the install footprint tiny (just peer deps
@@ -57,6 +60,19 @@ import {
   buildHipaaSecurity,
   toMarkdown as hipaaMarkdown,
 } from "@sovereign-matrix/hipaa-security";
+import {
+  buildIso23894,
+  toMarkdown as iso23894Markdown,
+} from "@sovereign-matrix/iso-23894";
+import {
+  buildEuCra,
+  toMarkdown as craMarkdown,
+} from "@sovereign-matrix/eu-cra";
+import {
+  buildConstitution,
+  auditAgainstConstitution,
+  toMarkdown as constitutionMarkdown,
+} from "@sovereign-matrix/ai-constitution";
 
 // ─── MCP protocol types (subset we need) ─────────────────────────
 
@@ -269,6 +285,103 @@ const TOOLS: McpTool[] = [
       required: ["scope", "receipts"],
     },
   },
+  {
+    name: "build_iso_23894",
+    description:
+      "Build an ISO/IEC 23894:2023 AI risk-management report from operator-declared risk scenarios + a VAOS receipt set. Computes inherent + residual risk per scenario via the 5×5 likelihood × impact matrix, attenuated by receipt evidence count. Returns auditor-ready Markdown.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        scope: {
+          type: "object",
+          description:
+            "RiskMgmtScope: organizationName, systemName, lifecyclePhase (inception/design/development/verification-validation/deployment/operation-monitoring/re-evaluation/retirement), policyVersion, periodStart, periodEnd.",
+        },
+        scenarios: {
+          type: "array",
+          description:
+            "Array of RiskScenario: { id, description, source, likelihood (rare/unlikely/possible/likely/almost-certain), impact (negligible/minor/moderate/major/catastrophic), characteristic, treatment (avoid/reduce/share/accept), treatmentDescription, evidencePackPrefixes }.",
+        },
+        receipts: { type: "array", description: "VAOS receipts." },
+      },
+      required: ["scope", "scenarios", "receipts"],
+    },
+  },
+  {
+    name: "build_eu_cra",
+    description:
+      "Build an EU Cyber Resilience Act (Regulation (EU) 2024/2847) compliance report from a VAOS receipt set. Maps every Annex I essential cybersecurity requirement + Article 13/14 obligation to receipt-derived evidence. Surfaces open findings.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        scope: {
+          type: "object",
+          description:
+            "CraScope: manufacturer, productName, productIdentifier, category (default/important-class-I/important-class-II/critical), intendedUse, placedOnMarketAt, authorisedRepresentative.",
+        },
+        receipts: { type: "array", description: "VAOS receipts." },
+        implementationStatus: {
+          type: "object",
+          description:
+            "Optional map of requirement id → { status: compliant/alternative-measure/not-applicable/open, note }.",
+        },
+        residualRisks: {
+          type: "array",
+          description: "Operator-declared residual cybersecurity risks.",
+        },
+      },
+      required: ["scope", "receipts"],
+    },
+  },
+  {
+    name: "build_constitution_audit",
+    description:
+      "Audit a VAOS receipt set against a signed AI constitution. The constitution is a content-addressed (SHA-256) document of inviolable rules; receipts commit to its hash. This tool surfaces every receipt that violated a constitutional article, ranked by severity. Use it when you want to prove (or disprove) an autonomous agent followed its policy.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        constitution: {
+          type: "object",
+          description:
+            "A SignedConstitution returned by buildConstitution(). Must include articles + hash + signedAt + name + signedBy. Use the buildConstitution_create tool below if you need to sign one first.",
+        },
+        receipts: {
+          type: "array",
+          description:
+            "VAOS receipts whose canonical projection may include the constitution hash.",
+        },
+      },
+      required: ["constitution", "receipts"],
+    },
+  },
+  {
+    name: "buildConstitution_create",
+    description:
+      "Sign a new AI constitution. Returns a SignedConstitution whose `hash` field is the content-addressed identifier. Every receipt produced under this constitution should commit to this hash. The constitution itself is byte-deterministic — anyone can re-derive the hash given the same articles + name + signedBy.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        name: {
+          type: "string",
+          description: "Human-readable constitution name.",
+        },
+        signedBy: {
+          type: "string",
+          description: "Operator identifier (org legal name).",
+        },
+        preamble: {
+          type: "string",
+          description: "Optional opening explaining the purpose.",
+        },
+        articles: {
+          type: "array",
+          description:
+            "Array of ConstitutionArticle: { id, title, text, severity (advisory/warning/blocking), measurableCondition (optional { pack, ruleId }), citations (optional string[]) }.",
+        },
+      },
+      required: ["name", "signedBy", "articles"],
+    },
+  },
 ];
 
 // ─── Tool implementations ────────────────────────────────────────
@@ -408,6 +521,53 @@ async function callTool(
           >[0]["implementationStatus"],
         });
         return ok(hipaaMarkdown(report));
+      }
+      case "build_iso_23894": {
+        const report = buildIso23894({
+          scope: args.scope as Parameters<typeof buildIso23894>[0]["scope"],
+          scenarios: args.scenarios as Parameters<
+            typeof buildIso23894
+          >[0]["scenarios"],
+          receipts: args.receipts as Parameters<
+            typeof buildIso23894
+          >[0]["receipts"],
+        });
+        return ok(iso23894Markdown(report));
+      }
+      case "build_eu_cra": {
+        const report = buildEuCra({
+          scope: args.scope as Parameters<typeof buildEuCra>[0]["scope"],
+          receipts: args.receipts as Parameters<
+            typeof buildEuCra
+          >[0]["receipts"],
+          implementationStatus: args.implementationStatus as Parameters<
+            typeof buildEuCra
+          >[0]["implementationStatus"],
+          residualRisks: args.residualRisks as string[] | undefined,
+        });
+        return ok(craMarkdown(report));
+      }
+      case "build_constitution_audit": {
+        const audit = auditAgainstConstitution({
+          constitution: args.constitution as Parameters<
+            typeof auditAgainstConstitution
+          >[0]["constitution"],
+          receipts: args.receipts as Parameters<
+            typeof auditAgainstConstitution
+          >[0]["receipts"],
+        });
+        return ok(constitutionMarkdown(audit));
+      }
+      case "buildConstitution_create": {
+        const c = buildConstitution({
+          name: args.name as string,
+          signedBy: args.signedBy as string,
+          preamble: args.preamble as string | undefined,
+          articles: args.articles as Parameters<
+            typeof buildConstitution
+          >[0]["articles"],
+        });
+        return ok(JSON.stringify(c, null, 2));
       }
       default:
         return err(`Unknown tool: ${name}`);

@@ -30,6 +30,22 @@ import {
   toMarkdown as hipaaMd,
   toJSON as hipaaJson,
 } from "@sovereign-matrix/hipaa-security";
+import {
+  buildIso23894,
+  toMarkdown as iso23894Md,
+  toJSON as iso23894Json,
+} from "@sovereign-matrix/iso-23894";
+import {
+  buildEuCra,
+  toMarkdown as craMd,
+  toJSON as craJson,
+} from "@sovereign-matrix/eu-cra";
+import {
+  buildConstitution,
+  auditAgainstConstitution,
+  toMarkdown as constMd,
+  toJSON as constJson,
+} from "@sovereign-matrix/ai-constitution";
 import type { ReceiptRecord } from "@sovereign-matrix/verifiable-receipts";
 
 /**
@@ -56,7 +72,10 @@ type Framework =
   | "nist-ai-rmf"
   | "soc2"
   | "gdpr-dpia"
-  | "hipaa";
+  | "hipaa"
+  | "iso-23894"
+  | "eu-cra"
+  | "ai-constitution";
 
 interface RouteContext {
   params: Promise<{ framework: string }>;
@@ -262,9 +281,111 @@ function generate(
       });
       return { markdown: hipaaMd(report), json: hipaaJson(report) };
     }
+    case "iso-23894": {
+      const report = buildIso23894({
+        scope: {
+          organizationName: scope["organizationName"] ?? "Sample Operator",
+          systemName: scope["systemName"] ?? "Primary AI System",
+          lifecyclePhase:
+            (scope["lifecyclePhase"] as
+              | "inception"
+              | "design"
+              | "development"
+              | "verification-validation"
+              | "deployment"
+              | "operation-monitoring"
+              | "re-evaluation"
+              | "retirement") ?? "operation-monitoring",
+          policyVersion: scope["policyVersion"] ?? "RMP-2026-v1",
+          periodStart: scope["periodStart"] ?? "2026-01-01T00:00:00Z",
+          periodEnd: scope["periodEnd"] ?? "2026-12-31T23:59:59Z",
+        },
+        scenarios: [
+          {
+            id: "RS-1",
+            description:
+              "Prompt-injection or adversarial input causes the agent to produce a non-compliant output.",
+            source: "prompt-injection",
+            likelihood: "possible",
+            impact: "major",
+            characteristic: "secure-and-resilient",
+            treatment: "reduce",
+            treatmentDescription:
+              "OWASP Agentic Top 10 pack + structured-output validation.",
+            evidencePackPrefixes: ["owasp", "owasp-agentic", "jailbreak"],
+          },
+          {
+            id: "RS-2",
+            description:
+              "Model drift causes regression on fairness or accuracy metrics.",
+            source: "model-drift",
+            likelihood: "likely",
+            impact: "moderate",
+            characteristic: "fair-with-bias-managed",
+            treatment: "reduce",
+            treatmentDescription: "Weekly fairness-eval pack.",
+            evidencePackPrefixes: ["fairness-eval"],
+          },
+        ],
+        receipts,
+      });
+      return { markdown: iso23894Md(report), json: iso23894Json(report) };
+    }
+    case "eu-cra": {
+      const report = buildEuCra({
+        scope: {
+          manufacturer: scope["manufacturer"] ?? "Sample Manufacturer",
+          productName: scope["productName"] ?? "Sample Product",
+          productIdentifier: scope["productIdentifier"] ?? "sample-1.0",
+          category:
+            (scope["category"] as
+              | "default"
+              | "important-class-I"
+              | "important-class-II"
+              | "critical") ?? "default",
+          intendedUse:
+            scope["intendedUse"] ?? "Operator-supplied intended use.",
+          placedOnMarketAt: scope["placedOnMarketAt"] ?? "2026-06-01T00:00:00Z",
+          authorisedRepresentative:
+            scope["authorisedRepresentative"] || undefined,
+        },
+        receipts,
+      });
+      return { markdown: craMd(report), json: craJson(report) };
+    }
+    case "ai-constitution": {
+      // Operator supplies constitution metadata; for the dashboard MVP
+      // we build a small sample constitution. Real flow: operator imports
+      // their existing signed constitution from disk; we audit against it.
+      const constitution = buildConstitution({
+        name: scope["name"] ?? "Sample AI Constitution",
+        signedBy: scope["signedBy"] ?? "Sample Operator",
+        preamble: scope["preamble"] || undefined,
+        articles: [
+          {
+            id: "ART-1.1",
+            title: "No PII leakage",
+            text: "The agent SHALL NOT include personally-identifiable information in any output destined for an end-user channel.",
+            severity: "blocking",
+            measurableCondition: {
+              pack: "gdpr-2026",
+              ruleId: "gdpr-pii-leak-detect",
+            },
+          },
+          {
+            id: "ART-2.1",
+            title: "Honour the kill switch",
+            text: "The agent MUST cease all autonomous action within 200ms of receiving a kill signal.",
+            severity: "blocking",
+          },
+        ],
+      });
+      const audit = auditAgainstConstitution({ constitution, receipts });
+      return { markdown: constMd(audit), json: constJson(audit) };
+    }
     default:
       throw new Error(
-        `Unknown framework: ${framework}. Valid: annex-iv, iso-42001, nist-ai-rmf, soc2, gdpr-dpia, hipaa.`,
+        `Unknown framework: ${framework}. Valid: annex-iv, iso-42001, nist-ai-rmf, soc2, gdpr-dpia, hipaa, iso-23894, eu-cra, ai-constitution.`,
       );
   }
 }

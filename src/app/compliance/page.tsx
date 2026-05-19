@@ -70,6 +70,36 @@ const EXPORTERS = [
       "Enforced since 2003 — every ePHI handler audited periodically",
     vendor: "HITRUST / Compliancy Group: $20-100K/yr closed-source",
   },
+  {
+    href: "/compliance/iso-23894",
+    npm: "@sovereign-matrix/iso-23894",
+    pill: "AI risk management",
+    title: "ISO/IEC 23894:2023",
+    description:
+      "The AI-specific adaptation of ISO 31000. 5×5 likelihood × impact matrix; residual risk attenuated by receipt evidence. Operator-explainable, no black-box.",
+    enforcement: "Referenced by ISO 42001 as the canonical risk-mgmt method",
+    vendor: "Bundled in closed-source AIMS modules: $30-100K/yr",
+  },
+  {
+    href: "/compliance/eu-cra",
+    npm: "@sovereign-matrix/eu-cra",
+    pill: "EU cybersecurity",
+    title: "EU Cyber Resilience Act",
+    description:
+      "Regulation (EU) 2024/2847 — every product with digital elements on the EU market. Annex I (Part I + II) + Article 13/14 + post-market obligations.",
+    enforcement: "Vulnerability reporting: 2026-09-11 · full: 2027-12-11",
+    vendor: "Future closed-source bundles: $30-150K/yr expected",
+  },
+  {
+    href: "/compliance/ai-constitution",
+    npm: "@sovereign-matrix/ai-constitution",
+    pill: "Novel primitive",
+    title: "Constitutional AI anchoring",
+    description:
+      "Cryptographically-anchored AI constitutions. Sign an immutable policy; every receipt commits to its SHA-256 hash. The inference-time analogue to Anthropic's Constitutional AI training methodology.",
+    enforcement: "AGI / ASI accountability primitive — genuinely first OSS",
+    vendor: "No existing OSS or closed-source equivalent",
+  },
 ];
 
 export default function ComplianceHub() {
@@ -99,9 +129,11 @@ export default function ComplianceHub() {
             Compliance exporters · Apache 2.0
           </p>
           <h1 className="font-serif text-5xl md:text-6xl leading-[1.04] tracking-[-0.02em] mb-6">
-            Six frameworks.
+            Eight frameworks
             <br />
-            <em className="not-italic text-[#B5532C]">One receipt set.</em>
+            <em className="not-italic text-[#B5532C]">
+              + one novel primitive.
+            </em>
           </h1>
           <p className="text-[17px] text-neutral-400 leading-[1.6] mb-3">
             The same VAOS receipts that prove an individual AI call was
@@ -181,7 +213,7 @@ export default function ComplianceHub() {
             Three lines around your AI call.
             <br />
             <em className="not-italic text-[#B5532C]">
-              Six frameworks worth of evidence.
+              Eight frameworks worth of evidence.
             </em>
           </h3>
           <div className="flex flex-wrap gap-3 mt-6">
