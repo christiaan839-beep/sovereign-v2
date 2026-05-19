@@ -106,6 +106,13 @@ describe("getThresholdConfig", () => {
     expect(getThresholdConfig()).toBeNull();
   });
 
+  it("rejects an issuer set larger than MAX_THRESHOLD_ISSUERS (bounds audit-row size)", () => {
+    const tooMany = Array.from({ length: 33 }, (_, i) => `w${i}`);
+    process.env.THRESHOLD_ISSUERS = tooMany.join(",");
+    process.env.THRESHOLD_M = "2";
+    expect(getThresholdConfig()).toBeNull();
+  });
+
   it("returns null when issuer list has duplicates", () => {
     process.env.THRESHOLD_ISSUERS = "a,b,a";
     process.env.THRESHOLD_M = "2";

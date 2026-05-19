@@ -349,6 +349,28 @@ export async function recordRun(
       /* non-blocking */
     }
 
+    // Wave-95 threshold attestation: ADDITIVE — runs only when
+    // THRESHOLD_ISSUERS is configured. Persists a TRS attestation
+    // over the SAME canonical bytes the v2 receipt covers, into the
+    // audit_logs table with action='trs.attestation'. The v2 receipt
+    // path above is unchanged — single-signer verifiers continue to
+    // work identically. Threshold-aware verifiers fetch the TRS
+    // attestation via /api/transparency/trs/[receiptId] and verify
+    // both signatures bind to the same canonical.
+    try {
+      const { persistRunTrsAttestation } = await import("@/lib/agent-run-trs");
+      // Fire-and-forget — persistRunTrsAttestation already swallows
+      // its own errors. We never let TRS issues affect the receipt
+      // path; threshold is a strengthening, not a precondition.
+      void persistRunTrsAttestation({
+        receiptId: id,
+        canonical,
+        tenantId: input.tenantId ?? null,
+      });
+    } catch {
+      /* non-blocking */
+    }
+
     return {
       id,
       userId: input.userId ?? null,

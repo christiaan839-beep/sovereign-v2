@@ -62,6 +62,16 @@ export function issuerEnvSuffix(issuerId: string): string {
  * than 2 issuers, or invalid THRESHOLD_M). Callers fall back to
  * single-signer mode in that case.
  */
+/**
+ * Hard cap on the threshold-issuer set. Bounds the size of every
+ * persisted TRS attestation (each cosigner contributes ~120B to the
+ * audit-log row). 32 is far above any plausible federation membership
+ * — Ethereum-style threshold consensus uses 4-16 in practice — while
+ * keeping a single attestation row well under the Postgres TOAST
+ * threshold even with verbose issuer ids.
+ */
+export const MAX_THRESHOLD_ISSUERS = 32;
+
 export function getThresholdConfig(): ThresholdConfig | null {
   const raw = process.env.THRESHOLD_ISSUERS;
   if (!raw) return null;
@@ -70,6 +80,13 @@ export function getThresholdConfig(): ThresholdConfig | null {
     .map((s) => s.trim())
     .filter((s) => s.length > 0);
   if (issuers.length < 2) return null;
+  if (issuers.length > MAX_THRESHOLD_ISSUERS) {
+    log.warn(
+      "THRESHOLD_ISSUERS exceeds MAX_THRESHOLD_ISSUERS — threshold disabled",
+      { n: issuers.length, max: MAX_THRESHOLD_ISSUERS },
+    );
+    return null;
+  }
   if (new Set(issuers).size !== issuers.length) {
     log.warn("THRESHOLD_ISSUERS contains duplicates — threshold disabled");
     return null;

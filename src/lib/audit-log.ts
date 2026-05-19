@@ -38,7 +38,8 @@ export type AuditAction =
   | "agent_token.issued"
   | "agent_token.revoked"
   | "defense.block"
-  | "capability.invoke";
+  | "capability.invoke"
+  | "trs.attestation";
 
 interface AuditEntry {
   userId: string;
