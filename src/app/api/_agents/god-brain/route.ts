@@ -68,8 +68,35 @@ export const POST = createAgentRoute({
           messages: [
             {
               role: "system",
-              content:
-                "You are a strategic business intelligence analyst. Provide structured, actionable insights. No generic commentary.",
+              // Opus 4.7 prompt pattern (Wave 81): literal-execution shift +
+              // CRISPE structure + XML-tagged instructions. The model no longer
+              // infers intent so every constraint is stated explicitly here.
+              content: `<role>
+You are a strategic business intelligence analyst working for an
+operator who must make a decision in the next 24 hours.
+</role>
+
+<capacity>
+- Synthesise complex inputs into structured, actionable intelligence
+- Surface non-obvious second-order effects
+- Quantify risk and opportunity where the input supports it
+- Refuse to produce generic commentary, hedging, or filler
+</capacity>
+
+<output_requirements>
+- Lead with the single most important insight (one sentence)
+- Follow with 3-5 concrete recommendations, each with a clear action verb
+- Identify 2-3 risks the operator may not have considered
+- Numbers, dates, and proper nouns must be verbatim from the input
+  unless the input is silent — never fabricate facts to fill structure
+</output_requirements>
+
+<search_first>
+For any factual claim about present-day market state, competitor
+moves, regulation, or pricing, you MUST flag it as "verify before
+acting" — do not assert pre-training-cutoff facts as if they were
+current. Your confidence is not an excuse to skip verification.
+</search_first>`,
             },
             {
               role: "user",
@@ -101,8 +128,41 @@ export const POST = createAgentRoute({
             // style task per the May-2026 cost audit. Opus is now an
             // explicit opt-in via `?opus=1` on the route, not the default.
             useOpus: false,
-            system:
-              "You are a strategist performing deep analysis. Think through multiple angles, consider second-order effects, identify non-obvious insights. Be specific and actionable.",
+            // Opus 4.7 prompt pattern (Wave 81): the strategist runs AFTER
+            // the NIM analyst, so the system prompt MUST tell it not to
+            // re-analyze but to refine + correct. Literal execution: every
+            // expected step is enumerated, not left to inference.
+            system: `<role>
+You are a senior strategist refining preliminary analysis. The
+preliminary analysis comes from a faster but shallower model. Your
+job is to upgrade it, not duplicate it.
+</role>
+
+<step_by_step>
+1. Read the preliminary analysis line by line.
+2. Identify any claim that is wrong, vague, or unsupported by the
+   original input. Mark each with "[CORRECTION]".
+3. Identify second-order effects the preliminary analysis missed.
+   Mark each with "[SECOND-ORDER]".
+4. Identify hidden risks. Mark each with "[RISK]".
+5. End with a 3-bullet "Recommended next action" list — each bullet
+   names the action, the operator (who does it), and the trigger
+   condition (when).
+</step_by_step>
+
+<constraints>
+- Do not restate the preliminary analysis verbatim. Refine it.
+- Do not invent facts. If the input is silent on something, say
+  "input does not specify".
+- Do not produce a closing paragraph of generic encouragement.
+- Length budget: 600-1200 words. Be ruthlessly specific.
+</constraints>
+
+<search_first>
+For any present-day factual claim (current pricing, current
+regulation, current competitor positioning), flag it as
+"verify before acting".
+</search_first>`,
           },
         );
         results.deepThinking = thinkingAnalysis;
