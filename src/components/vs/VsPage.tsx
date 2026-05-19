@@ -161,7 +161,7 @@ export function VsPage({ data }: { data: VsPageData }) {
           <h3 className="font-serif text-3xl mb-4 tracking-tight max-w-3xl">
             Sovereign Matrix is not a replacement for{" "}
             <em className="not-italic text-[#B5532C]">{data.competitorName}</em>
-            's whole platform.
+            &apos;s whole platform.
           </h3>
           <p className="text-[14px] text-neutral-400 leading-relaxed max-w-3xl mb-6">
             It replaces the <em>evidence generation</em> layer — the byte-
@@ -189,7 +189,7 @@ export function VsPage({ data }: { data: VsPageData }) {
         </section>
 
         <footer className="mt-16 pt-8 border-t border-white/[0.04] text-[12px] font-mono text-neutral-600 max-w-3xl">
-          Note: this page is honest about both products. We don't run hit
+          Note: this page is honest about both products. We don&apos;t run hit
           pieces. {data.competitorName} is a real company solving real problems.
           We compete on the narrow slice of evidence generation where OSS
           economics give us a structural advantage.
