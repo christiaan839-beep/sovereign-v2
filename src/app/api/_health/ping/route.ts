@@ -1,6 +1,4 @@
 import { NextResponse } from "next/server";
-import { db } from "@/db";
-import { sql } from "drizzle-orm";
 
 /**
  * SOVEREIGN MATRIX — Uptime Ping Endpoint
@@ -13,12 +11,12 @@ import { sql } from "drizzle-orm";
  *
  * Monitor URL: https://sovereignmatrix.agency/api/health/ping
  *
- * Runtime: nodejs. We do NOT use edge here — @neondatabase/serverless
- * needs a real socket for the cold-start handshake, and Vercel's edge
- * sandbox times out the first SELECT 1 after a long idle. The Node
- * runtime gives the driver ~3 seconds to wake the compute and complete
- * the query, which keeps p99 under 2s and removes the false 503s the
- * edge variant produced.
+ * Runtime: nodejs. Edge runtime broke the @neondatabase/serverless
+ * cold-start handshake; the previous drizzle-executor variant failed
+ * instantly because the orm wrapper's lazy schema load happens before
+ * the connection check. Both issues vanish when we reuse the same
+ * raw-sql code path that `/api/health` already uses — testConnection()
+ * is a dynamic import so a broken DB module can't take down the route.
  */
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -28,8 +26,21 @@ export async function GET() {
   const start = Date.now();
 
   try {
-    await db.execute(sql`SELECT 1`);
+    const { testConnection } = await import("@/db");
+    const result = await testConnection();
     const latency = Date.now() - start;
+
+    if (!result.connected) {
+      return NextResponse.json(
+        {
+          status: "unhealthy",
+          db: "disconnected",
+          latency_ms: latency,
+          timestamp: new Date().toISOString(),
+        },
+        { status: 503 },
+      );
+    }
 
     return NextResponse.json(
       {
@@ -51,7 +62,7 @@ export async function GET() {
     return NextResponse.json(
       {
         status: "unhealthy",
-        db: "disconnected",
+        db: "module-error",
         latency_ms: Date.now() - start,
         timestamp: new Date().toISOString(),
         error: err instanceof Error ? err.message : String(err),
