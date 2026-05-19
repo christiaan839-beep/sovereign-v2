@@ -220,7 +220,7 @@ export function CommandEgg() {
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={handleItemKeyDown}
                 placeholder="Search commands · /trust, /benchmarks, book a call..."
-                className="flex-1 bg-transparent outline-none text-[15px] text-white placeholder:text-neutral-600"
+                className="flex-1 bg-transparent outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/40 focus-visible:rounded-sm text-[15px] text-white placeholder:text-neutral-600"
                 aria-label="Command input"
               />
               <kbd className="font-mono text-[10px] text-neutral-600 border border-white/[0.08] px-1.5 py-0.5 rounded">

@@ -52,7 +52,7 @@ export function LiveProofStrip() {
   return (
     <div
       className="py-3 border-y border-white/[0.06] bg-white/[0.02] overflow-x-auto"
-      role="status"
+      role="group"
       aria-label="Platform live stats"
     >
       <div className="flex justify-center items-center gap-6 flex-wrap min-w-max px-6">

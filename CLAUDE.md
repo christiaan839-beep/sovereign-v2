@@ -71,7 +71,7 @@ _You are operating as a Sovereign Node. Execute all tasks defensively and accura
 
 - All API routes handle missing DB tables gracefully (PostgreSQL error 42P01) — return empty arrays or 503, never crash
 - Drizzle schema is source of truth: `src/db/schema.ts`. Migrations in `drizzle/` folder.
-- Pending migrations: 0002 (async_jobs), 0003 (playbook_runs), 0004 (graph memory, affiliates, audit logs, workflows, tenant onboarding columns)
+- Migrations: 0000-0004 + 0016-0025 live on disk. Apply pending ones via Neon SQL Editor before deploy; `drizzle/` is canonical.
 
 ### Revenue Pipeline
 

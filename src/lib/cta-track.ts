@@ -27,7 +27,13 @@ export type CtaName =
   | "playbook-card"
   | "email-founder" // legacy — kept for backward analytics compat
   | "email-sales"
-  | "final-cta";
+  | "final-cta"
+  | "nav-run-free"
+  | "mobile-nav-run-free"
+  | "hero-marketplace"
+  | "hero-pilot-bundle"
+  | "pricing-teaser-full"
+  | "footer-colophon";
 
 /**
  * Return (creating if missing) a 36-char UUID unique to this browser.

@@ -82,7 +82,7 @@ export function CliTabs() {
                 role="tab"
                 aria-selected={isActive}
                 onClick={() => setActive(t.id)}
-                className={`px-3 py-1 font-mono text-[10px] tracking-[0.15em] uppercase rounded-[2px] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/40 ${
+                className={`px-3 py-1.5 min-h-[28px] font-mono text-[10px] tracking-[0.15em] uppercase rounded-[2px] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/40 ${
                   isActive
                     ? "bg-cyan-500/[0.12] text-cyan-300 border border-cyan-500/30"
                     : "text-neutral-500 hover:text-neutral-300 border border-transparent"
@@ -97,7 +97,7 @@ export function CliTabs() {
           type="button"
           onClick={onCopy}
           aria-label="Copy command"
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 font-mono text-[10px] text-neutral-500 hover:text-cyan-300 border border-white/[0.08] hover:border-cyan-500/30 rounded-[2px] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/40"
+          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 min-h-[28px] font-mono text-[10px] text-neutral-500 hover:text-cyan-300 border border-white/[0.08] hover:border-cyan-500/30 rounded-[2px] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/40"
         >
           {copied === active ? (
             <>

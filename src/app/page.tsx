@@ -145,7 +145,7 @@ export default function LandingPage() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   return (
-    <div className="relative min-h-screen bg-[#030303] text-white antialiased">
+    <div className="relative min-h-dvh bg-[#030303] text-white antialiased">
       {/* Cinematic film-grain overlay — analog texture, sub-3% alpha */}
       <FilmGrain />
 
@@ -307,6 +307,7 @@ function Nav({
 
             <Link
               href={HERO_CTA}
+              onClick={() => trackCtaClick("nav-run-free")}
               className="group relative inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#B5532C] text-white font-medium text-[12.5px] tracking-tight rounded-[3px] hover:bg-[#C96234] transition-colors"
             >
               <span
@@ -380,7 +381,10 @@ function Nav({
             <Link
               href={HERO_CTA}
               className="mt-2 px-5 py-2.5 bg-[#B5532C] text-white text-sm text-center font-medium rounded-[3px] hover:bg-[#C96234] transition-colors"
-              onClick={() => setMobileNavOpen(false)}
+              onClick={() => {
+                trackCtaClick("mobile-nav-run-free");
+                setMobileNavOpen(false);
+              }}
             >
               Run Free Agent →
             </Link>
@@ -416,7 +420,7 @@ function NavLink({
 /* ─── 01 · Hero ─────────────────────────────────────────────────── */
 function Hero() {
   return (
-    <section className="relative min-h-screen flex items-center justify-center px-6 pt-20 pb-16 overflow-hidden">
+    <section className="relative min-h-dvh flex items-center justify-center px-6 pt-20 pb-16 overflow-hidden">
       {/* A2EGraph background — faint, label-free so agent names never
           bleed through the headline at narrow viewports. Opacity is
           tighter on mobile because the canvas occupies a smaller area
@@ -481,7 +485,7 @@ function Hero() {
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1, duration: 0.7 }}
+          transition={{ delay: 0.05, duration: 0.5 }}
           className="flex items-center justify-center gap-3 mb-8 flex-wrap"
         >
           <span className="font-mono text-[10px] text-neutral-600 tracking-[0.2em]">
@@ -495,7 +499,7 @@ function Hero() {
         <motion.h1
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ delay: 0.1, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
           className="font-serif text-5xl sm:text-7xl md:text-8xl lg:text-9xl leading-[1.02] tracking-[-0.02em] mb-6"
         >
           <span className="block text-white">Audit-grade</span>
@@ -513,7 +517,7 @@ function Hero() {
         <motion.p
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4, duration: 0.7 }}
+          transition={{ delay: 0.2, duration: 0.5 }}
           className="text-[17px] md:text-[19px] text-neutral-400 leading-[1.55] mb-4 max-w-2xl mx-auto"
         >
           140 production agents that research, draft, qualify, and call — and
@@ -524,7 +528,7 @@ function Hero() {
         <motion.p
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5, duration: 0.6 }}
+          transition={{ delay: 0.28, duration: 0.5 }}
           className="text-[15px] md:text-[16px] text-neutral-500 leading-[1.55] mb-10 max-w-xl mx-auto"
         >
           Free forever — 50 verified runs/mo. Growth from R4,997/mo (≈ $49). No
@@ -536,7 +540,7 @@ function Hero() {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.62, duration: 0.6 }}
+          transition={{ delay: 0.35, duration: 0.5 }}
           className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8"
         >
           {/* Subtle copper aura under the primary CTA — Stripe-style
@@ -560,6 +564,7 @@ function Hero() {
           </div>
           <Link
             href="/marketplace"
+            onClick={() => trackCtaClick("hero-marketplace")}
             className="group inline-flex items-center gap-1.5 px-6 py-3.5 border border-white/[0.12] text-neutral-400 hover:text-white hover:border-white/25 font-mono text-[13px] tracking-tight transition-colors rounded-[3px]"
           >
             Explore the Marketplace
@@ -576,7 +581,7 @@ function Hero() {
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.8, duration: 0.5 }}
+          transition={{ delay: 0.45, duration: 0.4 }}
           className="text-[11px] font-mono text-neutral-600 tracking-wide mb-6"
         >
           From free → R4,997/mo (≈ $49) → R9,997/mo (≈ $199) ·{" "}
@@ -597,7 +602,7 @@ function Hero() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.95, duration: 0.5 }}
+          transition={{ delay: 0.55, duration: 0.4 }}
           className="mb-6"
         >
           <TrustChips />
@@ -610,7 +615,7 @@ function Hero() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 1.05, duration: 0.5 }}
+          transition={{ delay: 0.65, duration: 0.4 }}
           className="mb-10"
         >
           <p className="font-mono text-[10px] text-neutral-600 tracking-[0.2em] uppercase mb-2">
@@ -620,6 +625,7 @@ function Hero() {
           <p className="text-[11px] text-neutral-500 mt-3">
             <Link
               href="/pilot"
+              onClick={() => trackCtaClick("hero-pilot-bundle")}
               className="hover:text-cyan-300 transition-colors underline decoration-cyan-500/30"
             >
               Download a real signed bundle on /pilot
@@ -639,7 +645,7 @@ function Hero() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 1.2, duration: 0.5 }}
+          transition={{ delay: 0.8, duration: 0.4 }}
           className="flex justify-center"
         >
           <motion.div
@@ -714,14 +720,14 @@ function MemoryMoat() {
               <em className="not-italic text-[#B5532C]">verifies itself.</em>
             </h2>
             <p className="text-[16px] text-neutral-400 leading-[1.65] mb-6 max-w-md">
-              Every run is embedded in semantic memory — 1024-dimensional
-              vectors over the run&apos;s canonical projection. Future agents
-              retrieve relevant context by vector similarity, and{" "}
+              Every run leaves a signed trace. Tomorrow&apos;s agents read
+              yesterday&apos;s decisions and{" "}
               <em className="not-italic text-neutral-300">
-                every retrieved item is itself a signed receipt
+                every retrieved memory is itself a verifiable receipt
               </em>
-              . The chain of which past decisions informed today&apos;s output
-              is reconstructable from public bytes.
+              . The chain of which past calls informed today&apos;s output is
+              reconstructable from public bytes — by you, by your customer, by
+              your regulator.
             </p>
             <p className="text-[14px] text-neutral-500 leading-[1.7] max-w-md mb-8 font-serif italic">
               The compounding moat is not &ldquo;the agent gets smarter.&rdquo;
@@ -1174,7 +1180,7 @@ function PricingStrip() {
                   </span>
                 )}
                 {tier.popular && (
-                  <span className="absolute -top-2 -right-1 font-mono text-[8px] text-[#B5532C] bg-[#B5532C]/10 border border-[#B5532C]/35 px-1.5 py-0.5 rounded-full tracking-wide">
+                  <span className="absolute -top-2 -right-1 font-mono text-[10px] text-[#FFB89A] bg-[#1a0f0a] border border-[#B5532C]/60 px-1.5 py-0.5 rounded-full tracking-wide">
                     Popular
                   </span>
                 )}
@@ -1189,6 +1195,7 @@ function PricingStrip() {
             </p>
             <Link
               href="/pricing"
+              onClick={() => trackCtaClick("pricing-teaser-full")}
               className="group inline-flex items-center gap-1.5 text-[12px] font-mono text-[#B5532C] hover:text-white transition-colors tracking-tight"
             >
               See full pricing
@@ -1414,7 +1421,7 @@ function FinalCTA() {
       <div className="relative max-w-2xl mx-auto text-center">
         <div className="mb-8 flex items-center justify-center gap-4 flex-wrap">
           <span className="font-mono text-[10px] text-neutral-600 tracking-[0.2em]">
-            10 / 10
+            09 / 09
           </span>
           <span aria-hidden="true" className="h-px w-6 bg-white/[0.12]" />
           <p className="font-serif italic text-[13px] text-neutral-500 tracking-[-0.01em]">
@@ -1471,7 +1478,10 @@ function FinalCTA() {
             "Cancel anytime",
           ].map((t) => (
             <span key={t} className="flex items-center gap-1.5">
-              <span className="text-[#B5532C]/60">✓</span> {t}
+              <span aria-hidden="true" className="text-[#B5532C]/60">
+                ✓
+              </span>
+              {t}
             </span>
           ))}
         </div>
@@ -1497,14 +1507,14 @@ function Footer() {
               audit trail at a time.
             </p>
             <p className="mt-6 text-[14px] text-neutral-400 leading-relaxed max-w-xl">
-              Hand-written in Cape Town. Claude is the critic on every run.
-              We&apos;re not Anthropic — we just build on their model and
-              publish the receipts.
+              Hand-written in Cape Town. Claude is the critic on every run, and
+              every run leaves a public receipt anyone can verify.
             </p>
           </div>
 
           <Link
             href={HERO_CTA}
+            onClick={() => trackCtaClick("footer-colophon")}
             className="group inline-flex items-center gap-3 text-[13px] font-mono tracking-tight text-neutral-400 hover:text-white transition-colors whitespace-nowrap"
           >
             <span className="font-serif italic text-lg text-[#B5532C] not-italic">
@@ -1583,8 +1593,7 @@ function Footer() {
                 Sovereign Matrix
               </span>
               <span className="text-[10px] font-mono text-neutral-600 tracking-tight">
-                © 2026 · Operates independently · Not formally affiliated with
-                Anthropic
+                © 2026 · Independent · Apache 2.0 verifiers
               </span>
             </div>
           </div>
