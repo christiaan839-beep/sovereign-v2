@@ -18,6 +18,8 @@
 
 import { createLogger } from "@/lib/logger";
 import { emitDefenseReceipt } from "@/lib/defense-receipts";
+import { recordHoneypotSignal } from "@/lib/honeypot-emitter";
+import { synthesizeAttackFingerprint } from "@/lib/attack-fingerprint";
 
 const log = createLogger("jailbreak-detect");
 
@@ -115,6 +117,22 @@ export async function detectJailbreak(
         tenantId: ctx.tenantId,
         userId: ctx.userId,
       });
+      // Federation contribution (wave 101). Only fires when the
+      // operator has explicitly opted in via HONEYPOT_AUTO_EMIT=true.
+      // Source must be a server-trusted identifier — we use tenantId
+      // when available; without tenant context we skip federation
+      // (no trustworthy source = no contribution, per the wave-100
+      // TrustedSourceKind safeguard).
+      if (ctx.tenantId) {
+        void recordHoneypotSignal({
+          fingerprint: synthesizeAttackFingerprint({
+            attackClass: "jailbreak-prompt",
+            severity: 95,
+            payload: text,
+          }),
+          source: { kind: "tenant", tenantId: ctx.tenantId },
+        });
+      }
       return { blocked: true, confidence: 0.95, category, reason };
     }
   }
@@ -194,6 +212,17 @@ export async function detectJailbreak(
       tenantId: ctx.tenantId,
       userId: ctx.userId,
     });
+    // Federation contribution — same gating as the pattern path above.
+    if (ctx.tenantId) {
+      void recordHoneypotSignal({
+        fingerprint: synthesizeAttackFingerprint({
+          attackClass: "jailbreak-prompt",
+          severity: Math.min(99, Math.round(suspicionScore * 100)),
+          payload: text,
+        }),
+        source: { kind: "tenant", tenantId: ctx.tenantId },
+      });
+    }
     return {
       blocked: true,
       confidence: Math.min(suspicionScore, 1),
@@ -248,6 +277,17 @@ export async function detectJailbreak(
               tenantId: ctx.tenantId,
               userId: ctx.userId,
             });
+            // Federation contribution.
+            if (ctx.tenantId) {
+              void recordHoneypotSignal({
+                fingerprint: synthesizeAttackFingerprint({
+                  attackClass: "jailbreak-prompt",
+                  severity: 85,
+                  payload: text,
+                }),
+                source: { kind: "tenant", tenantId: ctx.tenantId },
+              });
+            }
             return {
               blocked: true,
               confidence: 0.85,

@@ -122,6 +122,43 @@ export function extractAttackFingerprint(
 }
 
 /**
+ * Synthesise a fingerprint when no `Request` is available — used by
+ * deep library callers (e.g. jailbreak detector inside agent-factory)
+ * that observe an attack without direct HTTP context.
+ *
+ * The result is sparser than `extractAttackFingerprint` (ja4 / UA /
+ * path / country are all null), but the `class + payloadDigest` pair
+ * is still enough for federation correlation: two members that see
+ * the identical attack payload produce identical fingerprintIds, which
+ * is exactly the cross-member dedup signal aggregateSignals needs.
+ *
+ * Use this in contexts where threading a Request through every call
+ * site would be a larger refactor than the federation value warrants.
+ */
+export function synthesizeAttackFingerprint(args: {
+  attackClass: AttackClass;
+  severity: number;
+  payload?: string;
+  method?: string;
+}): AttackFingerprint {
+  return {
+    schema: FINGERPRINT_SCHEMA,
+    ts: new Date().toISOString(),
+    class: args.attackClass,
+    ja4: null,
+    userAgentDigest: null,
+    // Empty path digest — `digest16("")` is deterministic, so all
+    // synthesised fingerprints share the same pathDigest. Combined
+    // with class+payloadDigest, the fingerprintId stays well-defined.
+    pathDigest: digest16(""),
+    method: (args.method ?? "N/A").toUpperCase(),
+    payloadDigest: args.payload ? digest16(args.payload) : null,
+    countryHint: null,
+    severity: Math.max(0, Math.min(100, Math.round(args.severity))),
+  };
+}
+
+/**
  * Stable canonical bytes for a fingerprint — used by the federation
  * bulletin signer and by any verifier reproducing the bulletin hash.
  */
