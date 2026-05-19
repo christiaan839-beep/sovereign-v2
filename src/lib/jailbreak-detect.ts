@@ -17,6 +17,7 @@
  */
 
 import { createLogger } from "@/lib/logger";
+import { emitDefenseReceipt } from "@/lib/defense-receipts";
 
 const log = createLogger("jailbreak-detect");
 
@@ -27,12 +28,26 @@ export interface JailbreakResult {
   reason: string;
 }
 
+export interface DetectJailbreakContext {
+  tenantId?: string;
+  userId?: string;
+}
+
 /**
  * Check if a user prompt contains jailbreak or injection attempts.
  * Fast path: pattern-based detection (~0ms).
  * Slow path: NIM model-based detection (~200ms, only if patterns miss).
+ *
+ * When a block is returned, a defense receipt is emitted fire-and-forget
+ * via `defense-receipts.ts`. The receipt commits sha256(input) so the
+ * audit trail proves the input existed without storing the raw prompt.
+ * Pass `tenantId` / `userId` when known so the receipt attributes the
+ * block to the right principal.
  */
-export async function detectJailbreak(text: string): Promise<JailbreakResult> {
+export async function detectJailbreak(
+  text: string,
+  ctx: DetectJailbreakContext = {},
+): Promise<JailbreakResult> {
   if (!text || text.length < 5) {
     return {
       blocked: false,
@@ -90,6 +105,15 @@ export async function detectJailbreak(text: string): Promise<JailbreakResult> {
       log.warn("Jailbreak blocked (pattern)", {
         category,
         inputLength: text.length,
+      });
+      void emitDefenseReceipt({
+        ruleId: `jailbreak.pattern.${category}`,
+        category: "jailbreak",
+        severity: 95,
+        reason,
+        signal: text,
+        tenantId: ctx.tenantId,
+        userId: ctx.userId,
       });
       return { blocked: true, confidence: 0.95, category, reason };
     }
@@ -161,6 +185,15 @@ export async function detectJailbreak(text: string): Promise<JailbreakResult> {
       score: suspicionScore,
       inputLength: text.length,
     });
+    void emitDefenseReceipt({
+      ruleId: "jailbreak.keyword-accumulation",
+      category: "jailbreak",
+      severity: Math.min(99, Math.round(suspicionScore * 100)),
+      reason: "Multiple jailbreak indicators detected",
+      signal: text,
+      tenantId: ctx.tenantId,
+      userId: ctx.userId,
+    });
     return {
       blocked: true,
       confidence: Math.min(suspicionScore, 1),
@@ -205,6 +238,15 @@ export async function detectJailbreak(text: string): Promise<JailbreakResult> {
           if (verdict.includes("jailbreak")) {
             log.warn("Jailbreak blocked (NIM model)", {
               inputLength: text.length,
+            });
+            void emitDefenseReceipt({
+              ruleId: "jailbreak.nim-safety-guard",
+              category: "jailbreak",
+              severity: 85,
+              reason: "NeMo Safety Guard flagged as jailbreak",
+              signal: text,
+              tenantId: ctx.tenantId,
+              userId: ctx.userId,
             });
             return {
               blocked: true,

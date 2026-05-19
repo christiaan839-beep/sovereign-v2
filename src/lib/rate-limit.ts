@@ -16,6 +16,7 @@
 
 import { NextResponse } from "next/server";
 import crypto from "crypto";
+import { emitDefenseReceipt } from "@/lib/defense-receipts";
 
 interface RateLimitConfig {
   interval: number; // seconds
@@ -150,6 +151,22 @@ export function rateLimit(config: RateLimitConfig) {
       }
 
       if (!result.allowed) {
+        // Fire-and-forget defense receipt. We commit the client identifier
+        // (hashed) and a URL hash — never the raw IP or API key — so the
+        // audit trail attributes the throttle without becoming a PII store.
+        void emitDefenseReceipt({
+          ruleId: "rate-limit",
+          category: "rate-limit",
+          severity: 40,
+          reason: `Rate limit exceeded (${limit}/${interval}s)`,
+          commitments: {
+            client: crypto.createHash("sha256").update(clientId).digest("hex"),
+            url: crypto
+              .createHash("sha256")
+              .update(req.url ?? "")
+              .digest("hex"),
+          },
+        });
         return NextResponse.json(
           {
             error: "Rate limit exceeded. Please slow down.",

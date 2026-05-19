@@ -10,6 +10,7 @@ import {
   DEFAULT_TRUST_LEVEL,
   type TrustLevel,
 } from "@/lib/trust-levels";
+import { emitDefenseReceipt } from "@/lib/defense-receipts";
 
 const log = createLogger("output-verifier");
 
@@ -216,6 +217,24 @@ export async function verifyOutput(params: {
     : !contentResult.passes
       ? contentResult.violation
       : undefined;
+
+  if (isBlocked) {
+    // Fire-and-forget — the signal is the OUTPUT (not the prompt), so the
+    // commitment proves which output was blocked without storing the
+    // blocked text. Category is "output-policy" for content violations,
+    // "pii-leak" if PII triggered the policy fail (rare; pii is normally
+    // redacted, not blocked).
+    void emitDefenseReceipt({
+      ruleId: !llamaResult.safe
+        ? `output-verifier.llama-guard.${llamaResult.category ?? "unsafe"}`
+        : "output-verifier.content-policy",
+      category: "output-policy",
+      severity: 80,
+      reason: blockReason ?? "Output blocked by verifier",
+      signal: params.output,
+      tenantId: params.tenantId,
+    });
+  }
 
   // Classify action for trust gate
   const actionClass = classifyAction({
