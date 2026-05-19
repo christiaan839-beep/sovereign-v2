@@ -31,6 +31,8 @@ const PACKAGES = [
   "ai-sdk-receipts",
   "annex-iv",
   "iso-42001",
+  "nist-ai-rmf",
+  "soc2-evidence",
 ];
 
 function newestMtime(dir) {

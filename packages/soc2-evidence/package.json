@@ -1,0 +1,61 @@
+{
+  "name": "@sovereign-matrix/soc2-evidence",
+  "version": "0.1.0",
+  "description": "SOC 2 Trust Service Criteria evidence-binder exporter. Takes a set of VAOS receipts and emits the auditor-ready evidence package mapped to the 2017 TSC (CC1-CC9 + A1 + C1 + PI1 + P-series) (Markdown + JSON). Apache-2.0; Vanta / Drata charge $5-50K/yr for the same deliverable.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "npm run build",
+    "test": "vitest run"
+  },
+  "keywords": [
+    "soc2",
+    "soc-2",
+    "soc2-type-ii",
+    "trust-service-criteria",
+    "tsc",
+    "aicpa",
+    "compliance",
+    "compliance-as-code",
+    "audit-evidence",
+    "vaos",
+    "verifiable-receipts",
+    "ai-audit",
+    "sovereign-matrix"
+  ],
+  "author": "Sovereign Matrix",
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/christiaan839-beep/sovereign-v2/tree/main/packages/soc2-evidence",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/christiaan839-beep/sovereign-v2.git",
+    "directory": "packages/soc2-evidence"
+  },
+  "bugs": "https://github.com/christiaan839-beep/sovereign-v2/issues",
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "peerDependencies": {
+    "@sovereign-matrix/verifiable-receipts": ">=0.3.0"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  }
+}
