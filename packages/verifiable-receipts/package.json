@@ -1,6 +1,6 @@
 {
   "name": "@sovereign-matrix/verifiable-receipts",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "Pure-TypeScript primitives for cryptographically-signed AI agent receipts. Ed25519 + ML-DSA-65 (Dilithium3) dual-signing, ZIP-bundle export with signed manifest, Guardian verdict envelopes, post-quantum forward-secure verification. Zero platform coupling — drop into any AI agent runtime.",
   "license": "Apache-2.0",
   "author": "Christiaan de Wet <christiaan@sovereignmatrix.agency>",
