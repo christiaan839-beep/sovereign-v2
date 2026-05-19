@@ -41,7 +41,8 @@ export type AuditAction =
   | "capability.invoke"
   | "trs.attestation"
   | "adversarial.eval"
-  | "data.delete-receipt";
+  | "data.delete-receipt"
+  | "honeypot.bulletin";
 
 interface AuditEntry {
   userId: string;
