@@ -8,8 +8,9 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-const { emitMock } = vi.hoisted(() => ({
+const { emitMock, capMock } = vi.hoisted(() => ({
   emitMock: vi.fn(async () => ({}) as Record<string, unknown>),
+  capMock: vi.fn(async () => ({}) as Record<string, unknown>),
 }));
 
 vi.mock("@/lib/logger", () => ({
@@ -27,6 +28,16 @@ vi.mock("@/lib/defense-receipts", async () => {
   return {
     ...actual,
     emitDefenseReceipt: emitMock,
+  };
+});
+
+vi.mock("@/lib/capability-receipts", async () => {
+  const actual = await vi.importActual<
+    typeof import("@/lib/capability-receipts")
+  >("@/lib/capability-receipts");
+  return {
+    ...actual,
+    emitCapabilityReceipt: capMock,
   };
 });
 
@@ -52,6 +63,7 @@ const originalEnv = { ...process.env };
 
 beforeEach(() => {
   emitMock.mockClear();
+  capMock.mockClear();
   process.env.NODE_ENV = "test";
   delete process.env.AGENT_EGRESS_MODE;
   delete process.env.AGENT_EGRESS_ALLOWLIST;
@@ -285,5 +297,81 @@ describe("outboundFetch — defense-receipt details", () => {
       commitments?: Record<string, string>;
     };
     expect(call.commitments?.url).toMatch(/^[0-9a-f]{64}$/);
+  });
+});
+
+describe("outboundFetch — capability receipts on PERMITTED calls", () => {
+  it("emits a 'fetch' capability receipt on allowed egress", async () => {
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(
+        mockResponse(200, "hello"),
+      ) as unknown as typeof fetch;
+    await outboundFetch(
+      "https://en.wikipedia.org/wiki/AI",
+      {},
+      {
+        ruleId: "agent.research-fetch",
+        modeOverride: "allowlist",
+        allowedHosts: ["en.wikipedia.org"],
+        tenantId: "t1",
+        userId: "u1",
+      },
+    );
+    await Promise.resolve();
+    expect(capMock).toHaveBeenCalledTimes(1);
+    const call = capMock.mock.calls[0][0] as Record<string, unknown> & {
+      sensitive?: Record<string, string>;
+    };
+    expect(call.kind).toBe("fetch");
+    expect(call.outcome).toBe("allowed");
+    expect(call.ruleId).toBe("agent.research-fetch");
+    expect(call.policyMode).toBe("allowlist");
+    expect(call.tenantId).toBe("t1");
+    expect(call.userId).toBe("u1");
+    // The raw URL goes through sensitive (capability-receipts hashes it
+    // before persistence — covered by capability-receipts.test.ts).
+    expect(call.sensitive?.url).toBe("https://en.wikipedia.org/wiki/AI");
+  });
+
+  it("marks outcome 'allowed-truncated' when body was capped", async () => {
+    const big = "x".repeat(10_000);
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(mockResponse(200, big)) as unknown as typeof fetch;
+    await outboundFetch(
+      "https://en.wikipedia.org/big",
+      {},
+      {
+        ruleId: "test",
+        modeOverride: "allowlist",
+        allowedHosts: ["en.wikipedia.org"],
+        maxResponseBytes: 50,
+      },
+    );
+    await Promise.resolve();
+    expect(capMock).toHaveBeenCalledTimes(1);
+    expect(capMock.mock.calls[0][0].outcome).toBe("allowed-truncated");
+  });
+
+  it("does NOT emit a capability receipt on policy-denied calls", async () => {
+    globalThis.fetch = vi.fn() as unknown as typeof fetch;
+    await expect(
+      outboundFetch(
+        "https://evil.example.com/exfil",
+        {},
+        {
+          ruleId: "test",
+          modeOverride: "allowlist",
+          allowedHosts: ["en.wikipedia.org"],
+        },
+      ),
+    ).rejects.toBeInstanceOf(EgressBlockedError);
+    await Promise.resolve();
+    // Denied path emits a defense-receipt (covered above), NOT a
+    // capability-receipt — capability receipts mean "this call was
+    // permitted under our policy and here's what happened."
+    expect(capMock).not.toHaveBeenCalled();
+    expect(emitMock).toHaveBeenCalled();
   });
 });

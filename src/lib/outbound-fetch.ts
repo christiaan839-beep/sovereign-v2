@@ -40,6 +40,7 @@ import {
   type SessionMeter,
 } from "@/lib/sandbox-egress";
 import { emitDefenseReceipt, commit } from "@/lib/defense-receipts";
+import { emitCapabilityReceipt } from "@/lib/capability-receipts";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("outbound-fetch");
@@ -224,6 +225,7 @@ export async function outboundFetch(
   const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const startedAt = Date.now();
   let res: Response;
   try {
     res = await fetch(url, {
@@ -261,6 +263,23 @@ export async function outboundFetch(
       throw new EgressBlockedError(url, v);
     }
   }
+
+  // Capability receipt: every PERMITTED egress also leaves a signed
+  // audit trail. Combined with defense-receipts.ts (which records every
+  // block), the audit log now captures every gate decision the egress
+  // policy makes — provably bounded agent activity.
+  void emitCapabilityReceipt({
+    ruleId: opts.ruleId,
+    kind: "fetch",
+    outcome: truncated ? "allowed-truncated" : "allowed",
+    summary: `${init.method ?? "GET"} ${new URL(url).host} → ${res.status} (${bytes.byteLength}B)`,
+    sensitive: { url },
+    durationMs: Date.now() - startedAt,
+    responseBytes: bytes.byteLength,
+    policyMode: policy.mode,
+    tenantId: opts.tenantId,
+    userId: opts.userId,
+  });
 
   return {
     status: res.status,
