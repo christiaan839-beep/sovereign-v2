@@ -1,42 +1,66 @@
 {
   "name": "@sovereign-matrix/google-receipts",
   "version": "0.1.0",
-  "description": "Drop-in wrapper that mints VAOS receipts around Google Gemini SDK calls. 3-line integration; post-quantum signed; regulator-defensible.",
+  "description": "Drop-in Google Gemini SDK wrapper that mints post-quantum-signed VAOS receipts around generateContent calls. Three-line integration; regulator-defensible audit envelope around every model call.",
   "type": "module",
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
   },
   "files": [
-    "src",
-    "README.md"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepare": "node -e \"if(!require('node:fs').existsSync('dist'))require('node:child_process').execSync('tsc -p tsconfig.json',{stdio:'inherit'})\"",
+    "prepublishOnly": "npm run build",
     "test": "vitest run"
   },
   "keywords": [
     "google",
     "gemini",
     "generative-ai",
+    "ai-sdk",
+    "ai-receipts",
+    "verifiable-ai",
     "vaos",
-    "verifiable-receipts",
-    "ai-audit",
-    "post-quantum",
-    "regulated-ai",
+    "audit-grade",
+    "compliance",
     "ed25519",
-    "ml-dsa"
+    "ml-dsa-65",
+    "post-quantum",
+    "eu-ai-act",
+    "iso-42001",
+    "soc2",
+    "sovereign-matrix"
   ],
   "author": "Sovereign Matrix",
   "license": "Apache-2.0",
-  "homepage": "https://sovereignmatrix.agency",
+  "homepage": "https://github.com/christiaan839-beep/sovereign-v2/tree/main/packages/google-receipts",
   "repository": {
     "type": "git",
-    "url": "https://github.com/christiaan839-beep/sovereign-v2",
+    "url": "git+https://github.com/christiaan839-beep/sovereign-v2.git",
     "directory": "packages/google-receipts"
+  },
+  "bugs": "https://github.com/christiaan839-beep/sovereign-v2/issues",
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   },
   "peerDependencies": {
     "@google/generative-ai": ">=0.20.0",
     "@sovereign-matrix/verifiable-receipts": ">=0.3.0"
+  },
+  "devDependencies": {
+    "typescript": "^5"
   }
 }

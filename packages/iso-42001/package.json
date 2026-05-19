@@ -1,18 +1,25 @@
 {
   "name": "@sovereign-matrix/iso-42001",
   "version": "0.1.0",
-  "description": "ISO/IEC 42001:2023 AI management system (AIMS) control-matrix exporter. Takes a set of VAOS receipts and emits the auditor-ready Clause 4-10 + Annex A control report (Markdown + JSON).",
+  "description": "ISO/IEC 42001:2023 AI management system (AIMS) control-matrix exporter. Takes a set of VAOS receipts and emits the auditor-ready Clause 4-10 + Annex A control report (Markdown + JSON). Apache-2.0; closed-source GRC vendors charge $50-200K+/yr.",
   "type": "module",
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
   },
   "files": [
-    "src",
-    "README.md"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepare": "node -e \"if(!require('node:fs').existsSync('dist'))require('node:child_process').execSync('tsc -p tsconfig.json',{stdio:'inherit'})\"",
+    "prepublishOnly": "npm run build",
     "test": "vitest run"
   },
   "keywords": [
@@ -21,20 +28,34 @@
     "aims",
     "ai-management-system",
     "ai-governance",
+    "compliance-as-code",
+    "annex-a-controls",
+    "statement-of-applicability",
     "vaos",
     "verifiable-receipts",
     "ai-audit",
-    "annex-a-controls"
+    "sovereign-matrix"
   ],
   "author": "Sovereign Matrix",
   "license": "Apache-2.0",
-  "homepage": "https://sovereignmatrix.agency",
+  "homepage": "https://github.com/christiaan839-beep/sovereign-v2/tree/main/packages/iso-42001",
   "repository": {
     "type": "git",
-    "url": "https://github.com/christiaan839-beep/sovereign-v2",
+    "url": "git+https://github.com/christiaan839-beep/sovereign-v2.git",
     "directory": "packages/iso-42001"
+  },
+  "bugs": "https://github.com/christiaan839-beep/sovereign-v2/issues",
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   },
   "peerDependencies": {
     "@sovereign-matrix/verifiable-receipts": ">=0.3.0"
+  },
+  "devDependencies": {
+    "typescript": "^5"
   }
 }

@@ -12,8 +12,17 @@ import { sql } from "drizzle-orm";
  * No auth required — this is a public health check.
  *
  * Monitor URL: https://sovereignmatrix.agency/api/health/ping
+ *
+ * Runtime: nodejs. We do NOT use edge here — @neondatabase/serverless
+ * needs a real socket for the cold-start handshake, and Vercel's edge
+ * sandbox times out the first SELECT 1 after a long idle. The Node
+ * runtime gives the driver ~3 seconds to wake the compute and complete
+ * the query, which keeps p99 under 2s and removes the false 503s the
+ * edge variant produced.
  */
-export const runtime = "edge";
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export async function GET() {
   const start = Date.now();
@@ -36,17 +45,18 @@ export async function GET() {
           "Cache-Control": "no-store, no-cache, must-revalidate",
           "X-Response-Time": `${latency}ms`,
         },
-      }
+      },
     );
-  } catch {
+  } catch (err) {
     return NextResponse.json(
       {
         status: "unhealthy",
         db: "disconnected",
         latency_ms: Date.now() - start,
         timestamp: new Date().toISOString(),
+        error: err instanceof Error ? err.message : String(err),
       },
-      { status: 503 }
+      { status: 503 },
     );
   }
 }

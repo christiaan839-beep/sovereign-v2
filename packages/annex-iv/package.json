@@ -1,18 +1,25 @@
 {
   "name": "@sovereign-matrix/annex-iv",
   "version": "0.1.0",
-  "description": "EU AI Act Annex IV technical-documentation exporter. Takes a set of VAOS receipts and emits the Article 11 regulator-ready report (Markdown + JSON).",
+  "description": "EU AI Act Annex IV technical-documentation exporter. Takes a set of VAOS receipts and emits the Article 11 regulator-ready report (Markdown + JSON). First-of-its-kind Apache-2.0 OSS — closed-source vendors charge $50-200K+/yr.",
   "type": "module",
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
   },
   "files": [
-    "src",
-    "README.md"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepare": "node -e \"if(!require('node:fs').existsSync('dist'))require('node:child_process').execSync('tsc -p tsconfig.json',{stdio:'inherit'})\"",
+    "prepublishOnly": "npm run build",
     "test": "vitest run"
   },
   "keywords": [
@@ -22,19 +29,34 @@
     "high-risk-ai",
     "technical-documentation",
     "post-market-monitoring",
+    "regulatory-compliance",
     "vaos",
     "verifiable-receipts",
-    "ai-audit"
+    "ai-audit",
+    "ai-governance",
+    "compliance-as-code",
+    "sovereign-matrix"
   ],
   "author": "Sovereign Matrix",
   "license": "Apache-2.0",
-  "homepage": "https://sovereignmatrix.agency",
+  "homepage": "https://github.com/christiaan839-beep/sovereign-v2/tree/main/packages/annex-iv",
   "repository": {
     "type": "git",
-    "url": "https://github.com/christiaan839-beep/sovereign-v2",
+    "url": "git+https://github.com/christiaan839-beep/sovereign-v2.git",
     "directory": "packages/annex-iv"
+  },
+  "bugs": "https://github.com/christiaan839-beep/sovereign-v2/issues",
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   },
   "peerDependencies": {
     "@sovereign-matrix/verifiable-receipts": ">=0.3.0"
+  },
+  "devDependencies": {
+    "typescript": "^5"
   }
 }
