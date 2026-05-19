@@ -47,6 +47,8 @@ PACKAGES=(
   iso-42001
   nist-ai-rmf
   soc2-evidence
+  gdpr-dpia
+  hipaa-security
   mcp
 )
 
@@ -66,7 +68,7 @@ if [[ -z "$DRY_RUN" ]]; then
   echo "Publishing as: $WHOAMI"
   echo "Target registry: $(npm config get registry)"
   echo ""
-  read -rp "Confirm publish of 10 packages to npm? [y/N] " confirm
+  read -rp "Confirm publish of 12 packages to npm? [y/N] " confirm
   [[ "$confirm" == "y" || "$confirm" == "Y" ]] || { echo "Aborted."; exit 0; }
 fi
 

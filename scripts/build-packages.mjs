@@ -33,6 +33,8 @@ const PACKAGES = [
   "iso-42001",
   "nist-ai-rmf",
   "soc2-evidence",
+  "gdpr-dpia",
+  "hipaa-security",
   "mcp",
 ];
 

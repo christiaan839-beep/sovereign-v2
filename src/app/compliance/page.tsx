@@ -49,6 +49,27 @@ const EXPORTERS = [
     enforcement: "Most-requested B2B procurement document worldwide",
     vendor: "Vanta / Drata: $5-50K/yr closed-source",
   },
+  {
+    href: "/compliance/gdpr-dpia",
+    npm: "@sovereign-matrix/gdpr-dpia",
+    pill: "EU privacy",
+    title: "GDPR DPIA + RoPA",
+    description:
+      "Article 35 Data Protection Impact Assessment + Article 30 Records of Processing Activities. Auto-flags Article 36 prior consultation when residual risk is high.",
+    enforcement: "Enforced since 2018 — every EU controller needs DPIA + RoPA",
+    vendor: "OneTrust / TrustArc: $10-100K/yr closed-source",
+  },
+  {
+    href: "/compliance/hipaa",
+    npm: "@sovereign-matrix/hipaa-security",
+    pill: "US healthcare",
+    title: "HIPAA Security Rule",
+    description:
+      "45 CFR § 164.308-318 evidence binder. Administrative + physical + technical safeguards. REQUIRED specs without evidence surfaced as OCR-audit findings.",
+    enforcement:
+      "Enforced since 2003 — every ePHI handler audited periodically",
+    vendor: "HITRUST / Compliancy Group: $20-100K/yr closed-source",
+  },
 ];
 
 export default function ComplianceHub() {
@@ -78,7 +99,7 @@ export default function ComplianceHub() {
             Compliance exporters · Apache 2.0
           </p>
           <h1 className="font-serif text-5xl md:text-6xl leading-[1.04] tracking-[-0.02em] mb-6">
-            Four frameworks.
+            Six frameworks.
             <br />
             <em className="not-italic text-[#B5532C]">One receipt set.</em>
           </h1>
@@ -160,7 +181,7 @@ export default function ComplianceHub() {
             Three lines around your AI call.
             <br />
             <em className="not-italic text-[#B5532C]">
-              Four frameworks worth of evidence.
+              Six frameworks worth of evidence.
             </em>
           </h3>
           <div className="flex flex-wrap gap-3 mt-6">

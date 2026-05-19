@@ -15,6 +15,8 @@
  *   build_iso_42001       - generate an ISO/IEC 42001:2023 report
  *   build_nist_ai_rmf     - generate a NIST AI RMF 1.0 profile
  *   build_soc2_evidence   - generate a SOC 2 evidence binder
+ *   build_gdpr_dpia       - generate a GDPR Article 35 DPIA + Article 30 RoPA
+ *   build_hipaa_security  - generate a HIPAA Security Rule evidence binder
  *
  * Zero external SDK dependency — the package speaks the MCP wire
  * format directly. Keeps the install footprint tiny (just peer deps
@@ -47,6 +49,14 @@ import {
   buildSoc2Report,
   toMarkdown as soc2Markdown,
 } from "@sovereign-matrix/soc2-evidence";
+import {
+  buildDpia,
+  toMarkdown as dpiaMarkdown,
+} from "@sovereign-matrix/gdpr-dpia";
+import {
+  buildHipaaSecurity,
+  toMarkdown as hipaaMarkdown,
+} from "@sovereign-matrix/hipaa-security";
 
 // ─── MCP protocol types (subset we need) ─────────────────────────
 
@@ -210,6 +220,55 @@ const TOOLS: McpTool[] = [
       required: ["scope", "receipts"],
     },
   },
+  {
+    name: "build_gdpr_dpia",
+    description:
+      "Build a GDPR Article 35 DPIA + Article 30 RoPA report from operator-declared processing activities + a VAOS receipt set. Returns Markdown ready for the DPO + supervisory authority. High-residual-risk activities automatically flagged for Article 36 prior consultation.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        controller: {
+          type: "object",
+          description:
+            "ControllerIdentity: name, address, email, dpoName, dpoEmail, euRepresentative.",
+        },
+        activities: {
+          type: "array",
+          description:
+            "Array of ProcessingActivity records per Article 30(1): id, name, purpose, dataSubjectCategories, dataCategories, specialCategories, recipients, transfers, retention, securityMeasures, legalBasis.",
+        },
+        risks: {
+          type: "object",
+          description:
+            "Map of activity id → risk assessment (necessityProportionality, risks[], mitigations[], residualRisk, priorConsultationRequired). Activities without an entry are auto-flagged as high-risk.",
+        },
+        receipts: { type: "array", description: "VAOS receipts." },
+      },
+      required: ["controller", "activities", "risks", "receipts"],
+    },
+  },
+  {
+    name: "build_hipaa_security",
+    description:
+      "Build a HIPAA Security Rule (45 CFR § 164.308-318) evidence binder from a set of VAOS receipts. Maps every implementation specification to receipt-derived evidence. REQUIRED specifications without evidence are surfaced as findings; ADDRESSABLE specifications can be marked alternative-implemented with an operator note.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        scope: {
+          type: "object",
+          description:
+            "HipaaScope: organizationName, organizationType (covered-entity/business-associate/both), ephiCategoriesDescription, auditPeriodStart, auditPeriodEnd, securityOfficial, privacyOfficial.",
+        },
+        receipts: { type: "array", description: "VAOS receipts." },
+        implementationStatus: {
+          type: "object",
+          description:
+            "Optional map of specification id → { status, note }. status ∈ implemented / alternative-implemented / not-implemented / not-applicable.",
+        },
+      },
+      required: ["scope", "receipts"],
+    },
+  },
 ];
 
 // ─── Tool implementations ────────────────────────────────────────
@@ -320,6 +379,35 @@ async function callTool(
             | undefined,
         });
         return ok(soc2Markdown(report));
+      }
+      case "build_gdpr_dpia": {
+        const report = buildDpia({
+          controller: args.controller as Parameters<
+            typeof buildDpia
+          >[0]["controller"],
+          activities: args.activities as Parameters<
+            typeof buildDpia
+          >[0]["activities"],
+          risks: args.risks as Parameters<typeof buildDpia>[0]["risks"],
+          receipts: args.receipts as Parameters<
+            typeof buildDpia
+          >[0]["receipts"],
+        });
+        return ok(dpiaMarkdown(report));
+      }
+      case "build_hipaa_security": {
+        const report = buildHipaaSecurity({
+          scope: args.scope as Parameters<
+            typeof buildHipaaSecurity
+          >[0]["scope"],
+          receipts: args.receipts as Parameters<
+            typeof buildHipaaSecurity
+          >[0]["receipts"],
+          implementationStatus: args.implementationStatus as Parameters<
+            typeof buildHipaaSecurity
+          >[0]["implementationStatus"],
+        });
+        return ok(hipaaMarkdown(report));
       }
       default:
         return err(`Unknown tool: ${name}`);

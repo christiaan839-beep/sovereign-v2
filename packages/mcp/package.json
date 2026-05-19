@@ -61,7 +61,9 @@
     "@sovereign-matrix/annex-iv": ">=0.1.0",
     "@sovereign-matrix/iso-42001": ">=0.1.0",
     "@sovereign-matrix/nist-ai-rmf": ">=0.1.0",
-    "@sovereign-matrix/soc2-evidence": ">=0.1.0"
+    "@sovereign-matrix/soc2-evidence": ">=0.1.0",
+    "@sovereign-matrix/gdpr-dpia": ">=0.1.0",
+    "@sovereign-matrix/hipaa-security": ">=0.1.0"
   },
   "devDependencies": {
     "typescript": "^5"

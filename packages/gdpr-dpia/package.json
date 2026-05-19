@@ -1,0 +1,61 @@
+{
+  "name": "@sovereign-matrix/gdpr-dpia",
+  "version": "0.1.0",
+  "description": "GDPR Article 35 Data Protection Impact Assessment (DPIA) + Article 30 Records of Processing Activities (RoPA) exporter. Takes a set of VAOS receipts and emits the regulator-ready report. Apache-2.0; OneTrust / TrustArc charge $10-100K/yr for the same.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "npm run build",
+    "test": "vitest run"
+  },
+  "keywords": [
+    "gdpr",
+    "gdpr-dpia",
+    "dpia",
+    "article-35",
+    "ropa",
+    "article-30",
+    "privacy",
+    "data-protection",
+    "eu-privacy",
+    "compliance-as-code",
+    "vaos",
+    "verifiable-receipts",
+    "sovereign-matrix"
+  ],
+  "author": "Sovereign Matrix",
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/christiaan839-beep/sovereign-v2/tree/main/packages/gdpr-dpia",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/christiaan839-beep/sovereign-v2.git",
+    "directory": "packages/gdpr-dpia"
+  },
+  "bugs": "https://github.com/christiaan839-beep/sovereign-v2/issues",
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "peerDependencies": {
+    "@sovereign-matrix/verifiable-receipts": ">=0.3.0"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  }
+}
