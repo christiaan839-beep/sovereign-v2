@@ -239,6 +239,40 @@ describe("buildIso42001 — Annex A reference controls", () => {
     expect(a103?.applicable).toBe(false);
     expect(a22?.applicable).toBe(true);
   });
+
+  it("throws on unknown applicabilityOverrides keys", () => {
+    expect(() =>
+      buildIso42001({
+        scope: SCOPE,
+        receipts: [],
+        applicabilityOverrides: { "A.99.99": false },
+      }),
+    ).toThrow(/A\.99\.99/);
+  });
+
+  it("lists every unknown override id in the error message", () => {
+    expect(() =>
+      buildIso42001({
+        scope: SCOPE,
+        receipts: [],
+        applicabilityOverrides: {
+          "A.99.99": false,
+          "A.2.2": true, // valid — should not appear in error
+          "A.42.0": false,
+        },
+      }),
+    ).toThrow(/A\.99\.99.*A\.42\.0|A\.42\.0.*A\.99\.99/);
+  });
+
+  it("allows an empty overrides object", () => {
+    expect(() =>
+      buildIso42001({
+        scope: SCOPE,
+        receipts: [],
+        applicabilityOverrides: {},
+      }),
+    ).not.toThrow();
+  });
 });
 
 describe("buildIso42001 — Reporting window", () => {

@@ -460,6 +460,19 @@ export function buildIso42001(opts: BuildIso42001Options): Iso42001Report {
   } = opts;
   const generatedAt = new Date().toISOString();
 
+  // Validate override keys against the canonical catalog. A typoed key
+  // (e.g. "A.99.99") silently no-opping would produce a wrong-and-confident
+  // regulatory artifact — fail loud so the operator fixes the input.
+  const catalogIds = new Set(ANNEX_A_CATALOG.map((c) => c.id));
+  const unknown = Object.keys(applicabilityOverrides).filter(
+    (k) => !catalogIds.has(k),
+  );
+  if (unknown.length > 0) {
+    throw new Error(
+      `buildIso42001: applicabilityOverrides referenced unknown control id(s): ${unknown.join(", ")}. Valid ids: ${[...catalogIds].sort().join(", ")}`,
+    );
+  }
+
   // Reporting window — earliest + latest issuedAt across receipts.
   const sortedTimestamps = receipts
     .map((r) => r.issuedAt)

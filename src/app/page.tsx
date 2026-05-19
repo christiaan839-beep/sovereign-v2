@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, MotionConfig } from "framer-motion";
 import Link from "next/link";
 import { SignInButton } from "@clerk/nextjs";
 import { useState, useEffect } from "react";
@@ -145,13 +145,21 @@ export default function LandingPage() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   return (
-    <div className="relative min-h-dvh bg-[#030303] text-white antialiased">
-      {/* Cinematic film-grain overlay — analog texture, sub-3% alpha */}
-      <FilmGrain />
+    // `reducedMotion="user"` makes every framer-motion descendant honour
+    // the visitor's prefers-reduced-motion setting at the animation layer
+    // (the CSS rule in globals.css only kills CSS animations, not JS-driven
+    // ones). Wrapping the whole page is the lowest-touch fix per WCAG 2.3.3.
+    <MotionConfig reducedMotion="user">
+      <div className="relative min-h-dvh bg-[#030303] text-white antialiased">
+        {/* Cinematic film-grain overlay — analog texture, sub-3% alpha */}
+        <FilmGrain />
 
-      <Nav mobileNavOpen={mobileNavOpen} setMobileNavOpen={setMobileNavOpen} />
+        <Nav
+          mobileNavOpen={mobileNavOpen}
+          setMobileNavOpen={setMobileNavOpen}
+        />
 
-      {/*
+        {/*
         Landing architecture (audit-2026-05, Wave 12).
         Six sections, each pulling double duty. Removed from this surface
         but kept intact at their dedicated routes:
@@ -164,50 +172,56 @@ export default function LandingPage() {
         Removing them from `/` is a curation move — every visible block
         below now answers "what is this and why does it exist" in 5s.
       */}
-      <main id="main-content" className="relative z-10">
-        {/* 01 · Hero — one claim, one CTA, one live proof badge */}
-        <Hero />
+        <main id="main-content" className="relative z-10">
+          {/* 01 · Hero — one claim, one CTA, one live proof badge */}
+          <Hero />
 
-        {/* 02 · Live proof — receipt id updating against /api/verify */}
-        <LiveProofStrip />
+          {/* 02 · Live proof — receipt id updating against /api/verify */}
+          <LiveProofStrip />
 
-        <SectionDivider accent="copper" />
+          <SectionDivider accent="copper" />
 
-        {/* 03 · Three moats + Memory moat collapsed onto one canvas */}
-        <ThreeMoatsGrid />
-        <MemoryMoat />
+          {/* 03 · Three moats + Memory moat collapsed onto one canvas */}
+          <ThreeMoatsGrid />
+          <MemoryMoat />
 
-        <SectionDivider accent="cyan" />
+          <SectionDivider accent="cyan" />
 
-        {/* 04 · Verification pipeline + interactive verifier demo */}
-        <VerificationPipeline />
-        <LiveVerifierDemo />
+          {/* 04 · Verification pipeline + interactive verifier demo */}
+          <VerificationPipeline />
+          <LiveVerifierDemo />
 
-        <SectionDivider accent="copper" />
+          <SectionDivider accent="copper" />
 
-        {/* 05 · Try-it demo — the only interactive element on the page */}
-        <TryItDemo />
+          {/* 05 · Try-it demo — the only interactive element on the page */}
+          <TryItDemo />
 
-        {/* 06 · Pricing teaser + final CTA */}
-        <PricingStrip />
-        <FinalCTA />
-      </main>
+          {/* 06 · Pricing teaser + final CTA */}
+          <PricingStrip />
+          <FinalCTA />
+        </main>
 
-      <Footer />
-      <CommandEgg />
-    </div>
+        <Footer />
+        <CommandEgg />
+      </div>
+    </MotionConfig>
   );
 }
 
 /* ─── SectionHead ───────────────────────────────────────────────── */
-// Total section count = 9 (section 09 "PlatformScale" was cut in
-// Wave 12; see PlatformScale comment below). Display "/ 09" so the
-// visitor's running count matches what's actually on the page.
+// Single source of truth for the section-counter denominator. The
+// content sections that survived the Wave-12 audit are 01, 04, 07,
+// 08, 09 (non-contiguous on purpose — the missing slots map to
+// extracted routes, see PlatformScale comment below). The displayed
+// "/ NN" is the abstract design space, not the visible count.
+export const TOTAL_SECTIONS = 9;
+const padded = (n: number): string => String(n).padStart(2, "0");
+
 function SectionHead({ n, label }: { n: string; label: string }) {
   return (
     <div className="mb-8 flex items-center gap-4 flex-wrap">
       <span className="font-mono text-[10px] text-neutral-600 tracking-[0.2em]">
-        {n} / 09
+        {n} / {padded(TOTAL_SECTIONS)}
       </span>
       <span aria-hidden="true" className="h-px w-6 bg-white/[0.12]" />
       <p className="font-serif italic text-[13px] text-neutral-500 tracking-[-0.01em]">
@@ -489,7 +503,7 @@ function Hero() {
           className="flex items-center justify-center gap-3 mb-8 flex-wrap"
         >
           <span className="font-mono text-[10px] text-neutral-600 tracking-[0.2em]">
-            01 / 09
+            01 / {padded(TOTAL_SECTIONS)}
           </span>
           <span aria-hidden="true" className="h-px w-6 bg-white/[0.12]" />
           <HeroProofPill />
@@ -1420,8 +1434,10 @@ function FinalCTA() {
 
       <div className="relative max-w-2xl mx-auto text-center">
         <div className="mb-8 flex items-center justify-center gap-4 flex-wrap">
-          <span className="font-mono text-[10px] text-neutral-600 tracking-[0.2em]">
-            09 / 09
+          {/* No section number here — Pricing already owns "09".
+              FinalCTA is the closing call, not a content section. */}
+          <span className="font-mono text-[10px] text-neutral-600 tracking-[0.2em] uppercase">
+            end
           </span>
           <span aria-hidden="true" className="h-px w-6 bg-white/[0.12]" />
           <p className="font-serif italic text-[13px] text-neutral-500 tracking-[-0.01em]">
