@@ -1,0 +1,40 @@
+{
+  "name": "@sovereign-matrix/annex-iv",
+  "version": "0.1.0",
+  "description": "EU AI Act Annex IV technical-documentation exporter. Takes a set of VAOS receipts and emits the Article 11 regulator-ready report (Markdown + JSON).",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "vitest run"
+  },
+  "keywords": [
+    "eu-ai-act",
+    "annex-iv",
+    "article-11",
+    "high-risk-ai",
+    "technical-documentation",
+    "post-market-monitoring",
+    "vaos",
+    "verifiable-receipts",
+    "ai-audit"
+  ],
+  "author": "Sovereign Matrix",
+  "license": "Apache-2.0",
+  "homepage": "https://sovereignmatrix.agency",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/christiaan839-beep/sovereign-v2",
+    "directory": "packages/annex-iv"
+  },
+  "peerDependencies": {
+    "@sovereign-matrix/verifiable-receipts": ">=0.3.0"
+  }
+}
