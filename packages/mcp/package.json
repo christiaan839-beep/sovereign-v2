@@ -1,0 +1,69 @@
+{
+  "name": "@sovereign-matrix/mcp",
+  "version": "0.1.0",
+  "description": "Model Context Protocol server exposing Sovereign Matrix compliance exporters + receipt verification as tools to Claude Code, Cursor, and any MCP-compatible client. Receipts in, regulator-ready reports out — without leaving your editor.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "sovereign-matrix-mcp": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json && chmod +x dist/index.js",
+    "prepublishOnly": "npm run build",
+    "start": "node dist/index.js"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "claude-code",
+    "cursor",
+    "ai-tools",
+    "ai-receipts",
+    "compliance",
+    "eu-ai-act",
+    "iso-42001",
+    "nist-ai-rmf",
+    "soc2",
+    "vaos",
+    "verifiable-receipts",
+    "sovereign-matrix"
+  ],
+  "author": "Sovereign Matrix",
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/christiaan839-beep/sovereign-v2/tree/main/packages/mcp",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/christiaan839-beep/sovereign-v2.git",
+    "directory": "packages/mcp"
+  },
+  "bugs": "https://github.com/christiaan839-beep/sovereign-v2/issues",
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "peerDependencies": {
+    "@sovereign-matrix/verifiable-receipts": ">=0.3.0",
+    "@sovereign-matrix/annex-iv": ">=0.1.0",
+    "@sovereign-matrix/iso-42001": ">=0.1.0",
+    "@sovereign-matrix/nist-ai-rmf": ">=0.1.0",
+    "@sovereign-matrix/soc2-evidence": ">=0.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  }
+}

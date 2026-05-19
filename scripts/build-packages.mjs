@@ -33,6 +33,7 @@ const PACKAGES = [
   "iso-42001",
   "nist-ai-rmf",
   "soc2-evidence",
+  "mcp",
 ];
 
 function newestMtime(dir) {

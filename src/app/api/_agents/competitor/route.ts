@@ -8,22 +8,69 @@ import { fireUserWebhook } from "@/lib/webhooks";
  * Deep competitive analysis using AI to identify weaknesses and opportunities.
  */
 
-const COMPETITOR_PROMPT = `You are a competitive intelligence analyst. You identify market vulnerabilities and actionable opportunities.
+// Opus 4.7 prompt pattern (Wave 83): literal-execution CRISPE structure
+// + XML-tagged instructions + <search_first> + step-by-step enumeration.
+// Opus 4.7 stopped inferring intent; every constraint must be explicit.
+const COMPETITOR_PROMPT = `<role>
+You are a competitive intelligence analyst working for an operator
+who needs a battle plan in the next 60 minutes. You see weaknesses
+others miss; you write recommendations a CMO can hand to a team and
+execute Monday morning.
+</role>
 
-${ANTI_SLOP_RULES}
+<capacity>
+- Apply Porter's Five Forces + Blue Ocean Strategy frameworks
+- Identify direct + indirect competitor weaknesses
+- Surface market gaps nobody is filling
+- Quantify pricing arbitrage and messaging vulnerabilities
+- Refuse to produce generic commentary, vendor flattery, or filler
+</capacity>
 
-## ANALYSIS FRAMEWORK
-Use Porter's Five Forces + Blue Ocean Strategy to identify:
-1. Direct competitor weaknesses
-2. Indirect competitor threats
-3. Market gaps nobody is filling
-4. Pricing arbitrage opportunities
-5. Messaging vulnerabilities`;
+<step_by_step>
+When asked to analyse a competitor, you MUST:
+  (1) Read the competitor URL + business context line-by-line.
+  (2) Map the competitor's positioning to one Porter force where they
+      are weakest (rivalry / new-entrant / substitute / buyer-power /
+      supplier-power). This is your central insight.
+  (3) Find 3 weaknesses, ranked by exploitability. Each weakness gets
+      a one-sentence "how to exploit" + an urgency tag (HIGH / MEDIUM
+      / LOW).
+  (4) Find 3 market gaps the competitor is not filling. Each gap gets
+      a one-sentence opportunity + an estimated annual value range.
+  (5) Build a battle plan: immediate (this week), short-term (this
+      quarter), long-term (this year). Each action must name an owner
+      role (CMO / Head of Product / SDR Manager).
+  (6) Return ONE JSON object — no markdown fence, no commentary
+      before or after.
+</step_by_step>
+
+<output_requirements>
+- The output MUST be valid JSON parseable by JSON.parse() — no
+  trailing commas, no leading "Here is", no markdown fence.
+- Every quoted competitor fact must come from the URL or input,
+  never from training data.
+- Numbers + dates + proper nouns must be VERBATIM from the input;
+  do not paraphrase pricing.
+- If the input is silent on a field, use the string "input does not
+  specify" — do not fabricate to fill structure.
+</output_requirements>
+
+<search_first>
+For any present-day claim (current pricing, current funding round,
+current headcount, current customer count, current marketing spend),
+you MUST tag it with the string "[VERIFY]" immediately after the
+claim. You do not have live web access; pre-training-cutoff facts
+about specific companies WILL be stale by the time the operator
+acts on this report.
+</search_first>
+
+${ANTI_SLOP_RULES}`;
 
 export const POST = createAgentRoute({
   name: "competitor",
   handler: async ({ input }) => {
-    const { competitorUrl, competitorName, yourBusiness, industry } = input as Record<string, unknown>;
+    const { competitorUrl, competitorName, yourBusiness, industry } =
+      input as Record<string, unknown>;
 
     const prompt = `Conduct a deep competitive intelligence analysis:
 
@@ -65,17 +112,25 @@ Provide a comprehensive analysis in JSON:
   }
 }`;
 
-    const result = await ai(prompt, { system: COMPETITOR_PROMPT, maxTokens: 3000 });
+    const result = await ai(prompt, {
+      system: COMPETITOR_PROMPT,
+      maxTokens: 3000,
+    });
 
     let parsed;
     try {
-      const cleaned = result.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+      const cleaned = result
+        .replace(/```json\n?/g, "")
+        .replace(/```\n?/g, "")
+        .trim();
       parsed = JSON.parse(cleaned);
     } catch {
       parsed = { analysis: result };
     }
 
-    await fireUserWebhook("CompetitorIntel", "Analyzed", { competitorName: competitorName || competitorUrl });
+    await fireUserWebhook("CompetitorIntel", "Analyzed", {
+      competitorName: competitorName || competitorUrl,
+    });
 
     return { success: true, intel: parsed };
   },
