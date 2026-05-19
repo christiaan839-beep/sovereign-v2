@@ -38,6 +38,7 @@ const PACKAGES = [
   "hipaa-security",
   "eu-cra",
   "ai-constitution",
+  "zk-compliance",
   "mcp",
 ];
 

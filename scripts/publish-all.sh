@@ -52,6 +52,7 @@ PACKAGES=(
   hipaa-security
   eu-cra
   ai-constitution
+  zk-compliance
   mcp
 )
 
@@ -71,7 +72,7 @@ if [[ -z "$DRY_RUN" ]]; then
   echo "Publishing as: $WHOAMI"
   echo "Target registry: $(npm config get registry)"
   echo ""
-  read -rp "Confirm publish of 15 packages to npm? [y/N] " confirm
+  read -rp "Confirm publish of 16 packages to npm? [y/N] " confirm
   [[ "$confirm" == "y" || "$confirm" == "Y" ]] || { echo "Aborted."; exit 0; }
 fi
 

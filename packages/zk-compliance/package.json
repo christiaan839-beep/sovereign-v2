@@ -1,0 +1,59 @@
+{
+  "name": "@sovereign-matrix/zk-compliance",
+  "version": "0.1.0",
+  "description": "Zero-knowledge compliance proofs over VAOS receipt sets. Prove 'agent X complied with policy Y over period Z' to a regulator WITHOUT revealing the underlying receipts. Apache-2.0; novel primitive — no existing OSS does this.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "npm run build",
+    "test": "vitest run"
+  },
+  "keywords": [
+    "zero-knowledge",
+    "zk-proofs",
+    "zk-compliance",
+    "privacy-preserving-audit",
+    "selective-disclosure",
+    "regulator-friendly",
+    "classified-deployment",
+    "ai-governance",
+    "vaos",
+    "verifiable-receipts",
+    "sovereign-matrix"
+  ],
+  "author": "Sovereign Matrix",
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/christiaan839-beep/sovereign-v2/tree/main/packages/zk-compliance",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/christiaan839-beep/sovereign-v2.git",
+    "directory": "packages/zk-compliance"
+  },
+  "bugs": "https://github.com/christiaan839-beep/sovereign-v2/issues",
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "peerDependencies": {
+    "@sovereign-matrix/verifiable-receipts": ">=0.3.0"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  }
+}
