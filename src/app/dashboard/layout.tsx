@@ -10,9 +10,9 @@ import {
   Search, ChevronDown, ChevronRight, Sparkles,
   X, Menu,
   PanelLeftOpen, PanelLeftClose, Plug, Cpu,
-  BarChart3, Eye, Shield, Wrench,
+  BarChart3, Shield, Wrench,
   Wand2, Workflow, MessageSquare, Zap, Rocket,
-  Bot, ClipboardList, Store, Code2, Mail, FileText, Bell,
+  Bot, ClipboardList, Store, Code2, Mail, FileText,
   CreditCard, Users,
 } from "lucide-react";
 import { useKeyboardShortcuts } from "@/lib/keyboard-shortcuts";

@@ -3,10 +3,23 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Activity, TrendingUp, Zap, Target, FileText,
-  Clock, CheckCircle2, XCircle, BarChart3, Cpu,
-  ArrowUp, ArrowDown, Minus, RefreshCw, Bot,
-  Layers, Sparkles,
+  Activity,
+  TrendingUp,
+  Zap,
+  Target,
+  FileText,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  BarChart3,
+  Cpu,
+  ArrowUp,
+  ArrowDown,
+  Minus,
+  RefreshCw,
+  Bot,
+  Layers,
+  Sparkles,
 } from "lucide-react";
 
 /* ──────────────────────────────────────────────
@@ -39,7 +52,7 @@ interface RecentActivity {
   createdAt: string;
 }
 
-interface DashboardStats {
+interface _DashboardStats {
   stats: {
     agentExecutions: number;
     totalTokens: number;
@@ -99,7 +112,14 @@ function lastNDays(n: number): string[] {
    Stat Card
    ────────────────────────────────────────────── */
 
-function StatCard({ label, value, icon: Icon, color, trend, delay = 0 }: {
+function StatCard({
+  label,
+  value,
+  icon: Icon,
+  color,
+  trend,
+  delay = 0,
+}: {
   label: string;
   value: string;
   icon: React.ComponentType<{ className?: string }>;
@@ -107,13 +127,34 @@ function StatCard({ label, value, icon: Icon, color, trend, delay = 0 }: {
   trend?: "up" | "down" | "flat";
   delay?: number;
 }) {
-  const colorMap: Record<string, { border: string; bg: string; icon: string }> = {
-    emerald: { border: "border-emerald-500/10", bg: "bg-emerald-500/[0.03]", icon: "text-emerald-400" },
-    cyan: { border: "border-cyan-500/10", bg: "bg-cyan-500/[0.03]", icon: "text-cyan-400" },
-    violet: { border: "border-violet-500/10", bg: "bg-violet-500/[0.03]", icon: "text-violet-400" },
-    amber: { border: "border-amber-500/10", bg: "bg-amber-500/[0.03]", icon: "text-amber-400" },
-    red: { border: "border-red-500/10", bg: "bg-red-500/[0.03]", icon: "text-red-400" },
-  };
+  const colorMap: Record<string, { border: string; bg: string; icon: string }> =
+    {
+      emerald: {
+        border: "border-emerald-500/10",
+        bg: "bg-emerald-500/[0.03]",
+        icon: "text-emerald-400",
+      },
+      cyan: {
+        border: "border-cyan-500/10",
+        bg: "bg-cyan-500/[0.03]",
+        icon: "text-cyan-400",
+      },
+      violet: {
+        border: "border-violet-500/10",
+        bg: "bg-violet-500/[0.03]",
+        icon: "text-violet-400",
+      },
+      amber: {
+        border: "border-amber-500/10",
+        bg: "bg-amber-500/[0.03]",
+        icon: "text-amber-400",
+      },
+      red: {
+        border: "border-red-500/10",
+        bg: "bg-red-500/[0.03]",
+        icon: "text-red-400",
+      },
+    };
   const c = colorMap[color] || colorMap.emerald;
 
   return (
@@ -126,9 +167,15 @@ function StatCard({ label, value, icon: Icon, color, trend, delay = 0 }: {
       <div className="flex items-center justify-between mb-3">
         <Icon className={`w-4 h-4 ${c.icon}`} />
         {trend && (
-          <div className={`flex items-center gap-0.5 text-[10px] ${
-            trend === "up" ? "text-emerald-400" : trend === "down" ? "text-red-400" : "text-neutral-500"
-          }`}>
+          <div
+            className={`flex items-center gap-0.5 text-[10px] ${
+              trend === "up"
+                ? "text-emerald-400"
+                : trend === "down"
+                  ? "text-red-400"
+                  : "text-neutral-500"
+            }`}
+          >
             {trend === "up" && <ArrowUp className="w-3 h-3" />}
             {trend === "down" && <ArrowDown className="w-3 h-3" />}
             {trend === "flat" && <Minus className="w-3 h-3" />}
@@ -136,7 +183,9 @@ function StatCard({ label, value, icon: Icon, color, trend, delay = 0 }: {
         )}
       </div>
       <div className="text-2xl font-black text-white mb-0.5">{value}</div>
-      <div className="text-[10px] text-neutral-500 uppercase tracking-wider">{label}</div>
+      <div className="text-[10px] text-neutral-500 uppercase tracking-wider">
+        {label}
+      </div>
     </motion.div>
   );
 }
@@ -145,14 +194,23 @@ function StatCard({ label, value, icon: Icon, color, trend, delay = 0 }: {
    Skeleton Loader
    ────────────────────────────────────────────── */
 
+// Stable deterministic heights so the skeleton renders the same on every
+// pass (react-hooks/purity wants pure render; Math.random() during render
+// is impure). Pattern echoes a real chart silhouette without the impurity.
+const SKELETON_HEIGHTS = [
+  42, 58, 36, 71, 49, 64, 31, 55, 68, 44, 39, 62, 51, 47,
+];
+
 function ChartSkeleton({ height = "h-64" }: { height?: string }) {
   return (
-    <div className={`${height} rounded-2xl border border-white/[0.06] bg-white/[0.02] animate-pulse flex items-end gap-2 p-6`}>
-      {Array.from({ length: 14 }).map((_, i) => (
+    <div
+      className={`${height} rounded-2xl border border-white/[0.06] bg-white/[0.02] animate-pulse flex items-end gap-2 p-6`}
+    >
+      {SKELETON_HEIGHTS.map((h, i) => (
         <div
           key={i}
           className="flex-1 bg-white/[0.04] rounded-t"
-          style={{ height: `${20 + Math.random() * 60}%` }}
+          style={{ height: `${h}%` }}
         />
       ))}
     </div>
@@ -167,7 +225,10 @@ function RunsOverTimeChart({ runs }: { runs: PlaybookRun[] }) {
   const days = lastNDays(14);
 
   const buckets = useMemo(() => {
-    const map: Record<string, { done: number; failed: number; running: number }> = {};
+    const map: Record<
+      string,
+      { done: number; failed: number; running: number }
+    > = {};
     for (const d of days) map[d] = { done: 0, failed: 0, running: 0 };
     for (const run of runs) {
       const key = getDateKey(run.createdAt);
@@ -176,10 +237,13 @@ function RunsOverTimeChart({ runs }: { runs: PlaybookRun[] }) {
       else if (run.status === "failed") map[key].failed++;
       else map[key].running++;
     }
-    return days.map(d => ({ day: d, ...map[d] }));
+    return days.map((d) => ({ day: d, ...map[d] }));
   }, [runs, days]);
 
-  const maxVal = Math.max(1, ...buckets.map(b => b.done + b.failed + b.running));
+  const maxVal = Math.max(
+    1,
+    ...buckets.map((b) => b.done + b.failed + b.running),
+  );
 
   return (
     <motion.div
@@ -191,7 +255,9 @@ function RunsOverTimeChart({ runs }: { runs: PlaybookRun[] }) {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h3 className="text-sm font-semibold text-white">Runs Over Time</h3>
-          <p className="text-[10px] text-neutral-500 mt-0.5">Playbook executions — last 14 days</p>
+          <p className="text-[10px] text-neutral-500 mt-0.5">
+            Playbook executions — last 14 days
+          </p>
         </div>
         <div className="flex items-center gap-4 text-[10px]">
           <span className="flex items-center gap-1.5">
@@ -228,13 +294,20 @@ function RunsOverTimeChart({ runs }: { runs: PlaybookRun[] }) {
               {failedPct > 0 && (
                 <div
                   className="w-full bg-red-500/60 rounded-t transition-all duration-300"
-                  style={{ height: `${failedPct}%`, minHeight: failedPct > 0 ? 2 : 0 }}
+                  style={{
+                    height: `${failedPct}%`,
+                    minHeight: failedPct > 0 ? 2 : 0,
+                  }}
                 />
               )}
               {/* Done segment */}
               <div
                 className="w-full bg-emerald-500/70 rounded-t transition-all duration-300"
-                style={{ height: `${donePct}%`, minHeight: total > 0 ? 3 : 0, borderRadius: failedPct > 0 ? 0 : undefined }}
+                style={{
+                  height: `${donePct}%`,
+                  minHeight: total > 0 ? 3 : 0,
+                  borderRadius: failedPct > 0 ? 0 : undefined,
+                }}
               />
               {/* Day label */}
               <div className="text-[8px] text-neutral-600 text-center mt-2 truncate">
@@ -274,8 +347,14 @@ function ModelUsageChart({ activity }: { activity: RecentActivity[] }) {
   const maxCount = Math.max(1, ...modelCounts.map(([, c]) => c));
 
   const colors = [
-    "bg-emerald-400", "bg-cyan-400", "bg-violet-400", "bg-amber-400",
-    "bg-rose-400", "bg-teal-400", "bg-indigo-400", "bg-orange-400",
+    "bg-emerald-400",
+    "bg-cyan-400",
+    "bg-violet-400",
+    "bg-amber-400",
+    "bg-rose-400",
+    "bg-teal-400",
+    "bg-indigo-400",
+    "bg-orange-400",
   ];
 
   return (
@@ -287,7 +366,9 @@ function ModelUsageChart({ activity }: { activity: RecentActivity[] }) {
     >
       <div className="mb-6">
         <h3 className="text-sm font-semibold text-white">Model Usage</h3>
-        <p className="text-[10px] text-neutral-500 mt-0.5">Which AI models are handling your tasks</p>
+        <p className="text-[10px] text-neutral-500 mt-0.5">
+          Which AI models are handling your tasks
+        </p>
       </div>
 
       {modelCounts.length === 0 ? (
@@ -314,13 +395,19 @@ function ModelUsageChart({ activity }: { activity: RecentActivity[] }) {
                   <span className="text-[11px] text-neutral-300 truncate max-w-[65%] font-mono">
                     {displayName}
                   </span>
-                  <span className="text-[10px] text-neutral-500 tabular-nums">{count} call{count !== 1 ? "s" : ""}</span>
+                  <span className="text-[10px] text-neutral-500 tabular-nums">
+                    {count} call{count !== 1 ? "s" : ""}
+                  </span>
                 </div>
                 <div className="h-2 w-full bg-white/[0.04] rounded-full overflow-hidden">
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${pct}%` }}
-                    transition={{ duration: 0.6, delay: 0.1 + 0.05 * i, ease: "easeOut" }}
+                    transition={{
+                      duration: 0.6,
+                      delay: 0.1 + 0.05 * i,
+                      ease: "easeOut",
+                    }}
                     className={`h-full rounded-full ${colors[i % colors.length]} opacity-80`}
                   />
                 </div>
@@ -345,7 +432,8 @@ function TopAgentsChart({ runs }: { runs: PlaybookRun[] }) {
         const name = step.agentName;
         if (!map[name]) map[name] = { total: 0, succeeded: 0 };
         map[name].total++;
-        if (step.status === "done" || step.status === "succeeded") map[name].succeeded++;
+        if (step.status === "done" || step.status === "succeeded")
+          map[name].succeeded++;
       }
     }
     return Object.entries(map)
@@ -368,7 +456,9 @@ function TopAgentsChart({ runs }: { runs: PlaybookRun[] }) {
     >
       <div className="mb-6">
         <h3 className="text-sm font-semibold text-white">Top Agents</h3>
-        <p className="text-[10px] text-neutral-500 mt-0.5">Most-used agents by step execution count</p>
+        <p className="text-[10px] text-neutral-500 mt-0.5">
+          Most-used agents by step execution count
+        </p>
       </div>
 
       {agentStats.length === 0 ? (
@@ -389,25 +479,38 @@ function TopAgentsChart({ runs }: { runs: PlaybookRun[] }) {
               className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-white/[0.03] transition-colors group"
             >
               {/* Rank */}
-              <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold ${
-                i === 0 ? "bg-emerald-500/20 text-emerald-400" :
-                i === 1 ? "bg-cyan-500/20 text-cyan-400" :
-                i === 2 ? "bg-violet-500/20 text-violet-400" :
-                "bg-white/[0.05] text-neutral-500"
-              }`}>
+              <div
+                className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold ${
+                  i === 0
+                    ? "bg-emerald-500/20 text-emerald-400"
+                    : i === 1
+                      ? "bg-cyan-500/20 text-cyan-400"
+                      : i === 2
+                        ? "bg-violet-500/20 text-violet-400"
+                        : "bg-white/[0.05] text-neutral-500"
+                }`}
+              >
                 {i + 1}
               </div>
               {/* Name + runs */}
               <div className="flex-1 min-w-0">
-                <div className="text-[11px] text-neutral-200 font-medium truncate">{agent.name}</div>
-                <div className="text-[9px] text-neutral-600">{agent.total} execution{agent.total !== 1 ? "s" : ""}</div>
+                <div className="text-[11px] text-neutral-200 font-medium truncate">
+                  {agent.name}
+                </div>
+                <div className="text-[9px] text-neutral-600">
+                  {agent.total} execution{agent.total !== 1 ? "s" : ""}
+                </div>
               </div>
               {/* Success rate badge */}
-              <div className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
-                agent.rate >= 90 ? "bg-emerald-500/15 text-emerald-400" :
-                agent.rate >= 70 ? "bg-amber-500/15 text-amber-400" :
-                "bg-red-500/15 text-red-400"
-              }`}>
+              <div
+                className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
+                  agent.rate >= 90
+                    ? "bg-emerald-500/15 text-emerald-400"
+                    : agent.rate >= 70
+                      ? "bg-amber-500/15 text-amber-400"
+                      : "bg-red-500/15 text-red-400"
+                }`}
+              >
                 {agent.rate}%
               </div>
             </motion.div>
@@ -434,9 +537,12 @@ function SuccessRateTrend({ runs }: { runs: PlaybookRun[] }) {
       map[key].total++;
       if (run.status === "done" || run.status === "succeeded") map[key].done++;
     }
-    return days.map(d => ({
+    return days.map((d) => ({
       day: d,
-      rate: map[d].total > 0 ? Math.round((map[d].done / map[d].total) * 100) : null,
+      rate:
+        map[d].total > 0
+          ? Math.round((map[d].done / map[d].total) * 100)
+          : null,
     }));
   }, [runs, days]);
 
@@ -461,14 +567,17 @@ function SuccessRateTrend({ runs }: { runs: PlaybookRun[] }) {
     .join(" ");
 
   // Gradient area path
-  const areaD = validPoints.length > 1
-    ? pathD +
-      ` L ${padding.left + (validPoints[validPoints.length - 1].i / (points.length - 1)) * chartW} ${padding.top + chartH}` +
-      ` L ${padding.left + (validPoints[0].i / (points.length - 1)) * chartW} ${padding.top + chartH} Z`
-    : "";
+  const areaD =
+    validPoints.length > 1
+      ? pathD +
+        ` L ${padding.left + (validPoints[validPoints.length - 1].i / (points.length - 1)) * chartW} ${padding.top + chartH}` +
+        ` L ${padding.left + (validPoints[0].i / (points.length - 1)) * chartW} ${padding.top + chartH} Z`
+      : "";
 
   const overallRate = useMemo(() => {
-    const done = runs.filter(r => r.status === "done" || r.status === "succeeded").length;
+    const done = runs.filter(
+      (r) => r.status === "done" || r.status === "succeeded",
+    ).length;
     return runs.length > 0 ? Math.round((done / runs.length) * 100) : null;
   }, [runs]);
 
@@ -481,15 +590,23 @@ function SuccessRateTrend({ runs }: { runs: PlaybookRun[] }) {
     >
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-sm font-semibold text-white">Success Rate Trend</h3>
-          <p className="text-[10px] text-neutral-500 mt-0.5">Done vs failed ratio — last 14 days</p>
+          <h3 className="text-sm font-semibold text-white">
+            Success Rate Trend
+          </h3>
+          <p className="text-[10px] text-neutral-500 mt-0.5">
+            Done vs failed ratio — last 14 days
+          </p>
         </div>
         {overallRate !== null && (
-          <div className={`text-xl font-black ${
-            overallRate >= 90 ? "text-emerald-400" :
-            overallRate >= 70 ? "text-amber-400" :
-            "text-red-400"
-          }`}>
+          <div
+            className={`text-xl font-black ${
+              overallRate >= 90
+                ? "text-emerald-400"
+                : overallRate >= 70
+                  ? "text-amber-400"
+                  : "text-red-400"
+            }`}
+          >
             {overallRate}%
           </div>
         )}
@@ -499,11 +616,17 @@ function SuccessRateTrend({ runs }: { runs: PlaybookRun[] }) {
         <div className="h-40 flex items-center justify-center">
           <div className="text-center">
             <TrendingUp className="w-6 h-6 text-neutral-700 mx-auto mb-2" />
-            <p className="text-xs text-neutral-600">Need at least 2 days of data</p>
+            <p className="text-xs text-neutral-600">
+              Need at least 2 days of data
+            </p>
           </div>
         </div>
       ) : (
-        <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto" preserveAspectRatio="xMidYMid meet">
+        <svg
+          viewBox={`0 0 ${width} ${height}`}
+          className="w-full h-auto"
+          preserveAspectRatio="xMidYMid meet"
+        >
           <defs>
             <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#10b981" stopOpacity="0.25" />
@@ -512,16 +635,25 @@ function SuccessRateTrend({ runs }: { runs: PlaybookRun[] }) {
           </defs>
 
           {/* Horizontal grid lines */}
-          {[0, 25, 50, 75, 100].map(pct => {
+          {[0, 25, 50, 75, 100].map((pct) => {
             const y = padding.top + chartH - (pct / 100) * chartH;
             return (
               <g key={pct}>
                 <line
-                  x1={padding.left} y1={y}
-                  x2={padding.left + chartW} y2={y}
-                  stroke="white" strokeOpacity={0.04}
+                  x1={padding.left}
+                  y1={y}
+                  x2={padding.left + chartW}
+                  y2={y}
+                  stroke="white"
+                  strokeOpacity={0.04}
                 />
-                <text x={padding.left - 6} y={y + 3} textAnchor="end" fill="#525252" fontSize="8">
+                <text
+                  x={padding.left - 6}
+                  y={y + 3}
+                  textAnchor="end"
+                  fill="#525252"
+                  fontSize="8"
+                >
                   {pct}%
                 </text>
               </g>
@@ -533,7 +665,14 @@ function SuccessRateTrend({ runs }: { runs: PlaybookRun[] }) {
             if (i % 2 !== 0) return null;
             const x = padding.left + (i / (points.length - 1)) * chartW;
             return (
-              <text key={p.day} x={x} y={height - 4} textAnchor="middle" fill="#525252" fontSize="8">
+              <text
+                key={p.day}
+                x={x}
+                y={height - 4}
+                textAnchor="middle"
+                fill="#525252"
+                fontSize="8"
+              >
                 {getDayLabel(p.day).split(" ")[1]}
               </text>
             );
@@ -562,8 +701,12 @@ function SuccessRateTrend({ runs }: { runs: PlaybookRun[] }) {
             return (
               <motion.circle
                 key={p.i}
-                cx={x} cy={y} r="3"
-                fill="#030303" stroke="#10b981" strokeWidth="1.5"
+                cx={x}
+                cy={y}
+                r="3"
+                fill="#030303"
+                stroke="#10b981"
+                strokeWidth="1.5"
                 initial={{ opacity: 0, scale: 0 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.3, delay: 0.5 + idx * 0.06 }}
@@ -592,18 +735,24 @@ export default function AnalyticsPage() {
     if (!silent) setRefreshing(true);
     try {
       const [statsRes, runsRes] = await Promise.all([
-        fetch("/api/agents/dashboard-stats").then(r => r.ok ? r.json() : { stats: {} }),
-        fetch("/api/playbooks/runs").then(r => r.ok ? r.json() : { runs: [] }),
+        fetch("/api/agents/dashboard-stats").then((r) =>
+          r.ok ? r.json() : { stats: {} },
+        ),
+        fetch("/api/playbooks/runs").then((r) =>
+          r.ok ? r.json() : { runs: [] },
+        ),
       ]);
 
       const stats = statsRes.stats ?? statsRes;
       const allRuns: PlaybookRun[] = runsRes.runs || [];
 
-      const succeeded = allRuns.filter(r => r.status === "done" || r.status === "succeeded");
-      const failed = allRuns.filter(r => r.status === "failed");
+      const succeeded = allRuns.filter(
+        (r) => r.status === "done" || r.status === "succeeded",
+      );
+      const failed = allRuns.filter((r) => r.status === "failed");
       const durations = allRuns
-        .filter(r => r.durationMs)
-        .map(r => r.durationMs!);
+        .filter((r) => r.durationMs)
+        .map((r) => r.durationMs!);
 
       setMetrics({
         agentExecutions: stats.agentExecutions || 0,
@@ -615,9 +764,12 @@ export default function AnalyticsPage() {
           total: allRuns.length,
           succeeded: succeeded.length,
           failed: failed.length,
-          avgDurationMs: durations.length > 0
-            ? Math.round(durations.reduce((s, d) => s + d, 0) / durations.length)
-            : 0,
+          avgDurationMs:
+            durations.length > 0
+              ? Math.round(
+                  durations.reduce((s, d) => s + d, 0) / durations.length,
+                )
+              : 0,
         },
       });
 
@@ -638,7 +790,8 @@ export default function AnalyticsPage() {
     return () => clearInterval(iv);
   }, [fetchMetrics]);
 
-  const hasData = metrics && (metrics.agentExecutions > 0 || metrics.playbooks.total > 0);
+  const hasData =
+    metrics && (metrics.agentExecutions > 0 || metrics.playbooks.total > 0);
 
   return (
     <div className="p-6 lg:p-8 max-w-7xl mx-auto">
@@ -666,7 +819,9 @@ export default function AnalyticsPage() {
             disabled={refreshing}
             className="inline-flex items-center gap-1.5 text-[10px] text-emerald-400 hover:text-emerald-300 transition-colors disabled:opacity-40"
           >
-            <RefreshCw className={`w-3 h-3 ${refreshing ? "animate-spin" : ""}`} />
+            <RefreshCw
+              className={`w-3 h-3 ${refreshing ? "animate-spin" : ""}`}
+            />
             Refresh
           </button>
         </div>
@@ -683,7 +838,10 @@ export default function AnalyticsPage() {
             {/* Skeleton stat cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
               {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="p-5 rounded-2xl border border-white/[0.06] bg-white/[0.02] animate-pulse">
+                <div
+                  key={i}
+                  className="p-5 rounded-2xl border border-white/[0.06] bg-white/[0.02] animate-pulse"
+                >
                   <div className="h-3 w-8 bg-white/[0.04] rounded mb-3" />
                   <div className="h-6 w-14 bg-white/[0.04] rounded mb-2" />
                   <div className="h-2 w-20 bg-white/[0.04] rounded" />
@@ -707,18 +865,74 @@ export default function AnalyticsPage() {
           >
             {/* ── Summary Stat Cards ── */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              <StatCard label="Agent Executions" value={metrics?.agentExecutions?.toLocaleString() || "0"} icon={Zap} color="emerald" trend={hasData ? "up" : "flat"} delay={0} />
-              <StatCard label="Leads Generated" value={metrics?.leadsGenerated?.toLocaleString() || "0"} icon={Target} color="cyan" trend={hasData ? "up" : "flat"} delay={0.05} />
-              <StatCard label="Content Created" value={metrics?.contentGenerated?.toLocaleString() || "0"} icon={FileText} color="violet" trend={hasData ? "up" : "flat"} delay={0.1} />
-              <StatCard label="Meetings Booked" value={metrics?.bookings?.toLocaleString() || "0"} icon={CheckCircle2} color="amber" trend={hasData ? "up" : "flat"} delay={0.15} />
+              <StatCard
+                label="Agent Executions"
+                value={metrics?.agentExecutions?.toLocaleString() || "0"}
+                icon={Zap}
+                color="emerald"
+                trend={hasData ? "up" : "flat"}
+                delay={0}
+              />
+              <StatCard
+                label="Leads Generated"
+                value={metrics?.leadsGenerated?.toLocaleString() || "0"}
+                icon={Target}
+                color="cyan"
+                trend={hasData ? "up" : "flat"}
+                delay={0.05}
+              />
+              <StatCard
+                label="Content Created"
+                value={metrics?.contentGenerated?.toLocaleString() || "0"}
+                icon={FileText}
+                color="violet"
+                trend={hasData ? "up" : "flat"}
+                delay={0.1}
+              />
+              <StatCard
+                label="Meetings Booked"
+                value={metrics?.bookings?.toLocaleString() || "0"}
+                icon={CheckCircle2}
+                color="amber"
+                trend={hasData ? "up" : "flat"}
+                delay={0.15}
+              />
             </div>
 
             {/* ── Playbook Summary Row ── */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-              <StatCard label="Playbook Runs" value={metrics?.playbooks.total.toString() || "0"} icon={Layers} color="emerald" delay={0.2} />
-              <StatCard label="Succeeded" value={metrics?.playbooks.succeeded.toString() || "0"} icon={CheckCircle2} color="emerald" delay={0.25} />
-              <StatCard label="Failed" value={metrics?.playbooks.failed.toString() || "0"} icon={XCircle} color="red" delay={0.3} />
-              <StatCard label="Avg Duration" value={metrics?.playbooks.avgDurationMs ? formatDuration(metrics.playbooks.avgDurationMs) : "--"} icon={Clock} color="cyan" delay={0.35} />
+              <StatCard
+                label="Playbook Runs"
+                value={metrics?.playbooks.total.toString() || "0"}
+                icon={Layers}
+                color="emerald"
+                delay={0.2}
+              />
+              <StatCard
+                label="Succeeded"
+                value={metrics?.playbooks.succeeded.toString() || "0"}
+                icon={CheckCircle2}
+                color="emerald"
+                delay={0.25}
+              />
+              <StatCard
+                label="Failed"
+                value={metrics?.playbooks.failed.toString() || "0"}
+                icon={XCircle}
+                color="red"
+                delay={0.3}
+              />
+              <StatCard
+                label="Avg Duration"
+                value={
+                  metrics?.playbooks.avgDurationMs
+                    ? formatDuration(metrics.playbooks.avgDurationMs)
+                    : "--"
+                }
+                icon={Clock}
+                color="cyan"
+                delay={0.35}
+              />
             </div>
 
             {/* ── Charts Grid ── */}
@@ -746,19 +960,27 @@ export default function AnalyticsPage() {
               <div className="p-5 rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl">
                 <Cpu className="w-4 h-4 text-emerald-400 mb-2" />
                 <div className="text-lg font-bold text-white">39+</div>
-                <div className="text-[10px] text-neutral-500 uppercase tracking-wider">Models available</div>
+                <div className="text-[10px] text-neutral-500 uppercase tracking-wider">
+                  Models available
+                </div>
               </div>
               <div className="p-5 rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl">
                 <Activity className="w-4 h-4 text-cyan-400 mb-2" />
                 <div className="text-lg font-bold text-white">130</div>
-                <div className="text-[10px] text-neutral-500 uppercase tracking-wider">Agents deployed</div>
+                <div className="text-[10px] text-neutral-500 uppercase tracking-wider">
+                  Agents deployed
+                </div>
               </div>
               <div className="p-5 rounded-2xl border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl">
                 <Sparkles className="w-4 h-4 text-violet-400 mb-2" />
                 <div className="text-lg font-bold text-white">
-                  {metrics?.totalTokens ? (metrics.totalTokens / 1000).toFixed(0) + "K" : "--"}
+                  {metrics?.totalTokens
+                    ? (metrics.totalTokens / 1000).toFixed(0) + "K"
+                    : "--"}
                 </div>
-                <div className="text-[10px] text-neutral-500 uppercase tracking-wider">Total tokens used</div>
+                <div className="text-[10px] text-neutral-500 uppercase tracking-wider">
+                  Total tokens used
+                </div>
               </div>
             </motion.div>
 
@@ -771,10 +993,12 @@ export default function AnalyticsPage() {
                 className="p-8 rounded-2xl border border-emerald-500/15 bg-emerald-500/[0.03] backdrop-blur-xl text-center"
               >
                 <Zap className="w-8 h-8 text-emerald-400 mx-auto mb-3" />
-                <h3 className="text-lg font-bold text-white mb-2">No data yet</h3>
+                <h3 className="text-lg font-bold text-white mb-2">
+                  No data yet
+                </h3>
                 <p className="text-sm text-neutral-400 mb-4 max-w-md mx-auto">
-                  Run your first playbook or agent to start seeing real analytics.
-                  Every execution is tracked and visualized here.
+                  Run your first playbook or agent to start seeing real
+                  analytics. Every execution is tracked and visualized here.
                 </p>
                 <a
                   href="/dashboard/playbooks"

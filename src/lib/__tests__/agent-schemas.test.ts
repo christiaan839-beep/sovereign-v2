@@ -6,7 +6,7 @@ import {
   leadGenSchema,
   siteAnalysisSchema,
   contentGenSchema,
-  emailSequenceSchema,
+  emailSequenceSchema as _emailSequenceSchema,
   competitorSchema,
   promptOnlySchema,
   visionSchema,
@@ -52,28 +52,42 @@ describe("agent-schemas.ts", () => {
   });
 
   it("leadGenSchema rejects invalid count", () => {
-    expect(leadGenSchema.safeParse({ niche: "Tech", count: 100 }).success).toBe(false);
-    expect(leadGenSchema.safeParse({ niche: "Tech", count: 0 }).success).toBe(false);
+    expect(leadGenSchema.safeParse({ niche: "Tech", count: 100 }).success).toBe(
+      false,
+    );
+    expect(leadGenSchema.safeParse({ niche: "Tech", count: 0 }).success).toBe(
+      false,
+    );
   });
 
   // ── Site Analysis Schema ──
 
   it("siteAnalysisSchema requires valid URL", () => {
-    expect(siteAnalysisSchema.safeParse({ url: "https://example.com" }).success).toBe(true);
-    expect(siteAnalysisSchema.safeParse({ url: "not-a-url" }).success).toBe(false);
+    expect(
+      siteAnalysisSchema.safeParse({ url: "https://example.com" }).success,
+    ).toBe(true);
+    expect(siteAnalysisSchema.safeParse({ url: "not-a-url" }).success).toBe(
+      false,
+    );
     expect(siteAnalysisSchema.safeParse({}).success).toBe(false);
   });
 
   // ── Content Gen Schema ──
 
   it("contentGenSchema requires prompt", () => {
-    expect(contentGenSchema.safeParse({ prompt: "Write about AI" }).success).toBe(true);
+    expect(
+      contentGenSchema.safeParse({ prompt: "Write about AI" }).success,
+    ).toBe(true);
     expect(contentGenSchema.safeParse({}).success).toBe(false);
   });
 
   it("contentGenSchema validates length enum", () => {
-    expect(contentGenSchema.safeParse({ prompt: "test", length: "short" }).success).toBe(true);
-    expect(contentGenSchema.safeParse({ prompt: "test", length: "huge" }).success).toBe(false);
+    expect(
+      contentGenSchema.safeParse({ prompt: "test", length: "short" }).success,
+    ).toBe(true);
+    expect(
+      contentGenSchema.safeParse({ prompt: "test", length: "huge" }).success,
+    ).toBe(false);
   });
 
   // ── Competitor Schema ──
@@ -81,23 +95,34 @@ describe("agent-schemas.ts", () => {
   it("competitorSchema requires at least one field", () => {
     expect(competitorSchema.safeParse({}).success).toBe(false);
     expect(competitorSchema.safeParse({ company: "Acme" }).success).toBe(true);
-    expect(competitorSchema.safeParse({ url: "https://acme.com" }).success).toBe(true);
-    expect(competitorSchema.safeParse({ prompt: "Analyze Acme" }).success).toBe(true);
+    expect(
+      competitorSchema.safeParse({ url: "https://acme.com" }).success,
+    ).toBe(true);
+    expect(competitorSchema.safeParse({ prompt: "Analyze Acme" }).success).toBe(
+      true,
+    );
   });
 
   // ── Prompt Only Schema ──
 
   it("promptOnlySchema validates prompt length", () => {
     expect(promptOnlySchema.safeParse({ prompt: "Hi" }).success).toBe(false); // too short
-    expect(promptOnlySchema.safeParse({ prompt: "Hello world, do something" }).success).toBe(true);
+    expect(
+      promptOnlySchema.safeParse({ prompt: "Hello world, do something" })
+        .success,
+    ).toBe(true);
   });
 
   // ── Vision Schema ──
 
   it("visionSchema requires at least one input", () => {
     expect(visionSchema.safeParse({}).success).toBe(false);
-    expect(visionSchema.safeParse({ url: "https://img.com/photo.jpg" }).success).toBe(true);
+    expect(
+      visionSchema.safeParse({ url: "https://img.com/photo.jpg" }).success,
+    ).toBe(true);
     expect(visionSchema.safeParse({ image: "base64data" }).success).toBe(true);
-    expect(visionSchema.safeParse({ prompt: "Describe this image" }).success).toBe(true);
+    expect(
+      visionSchema.safeParse({ prompt: "Describe this image" }).success,
+    ).toBe(true);
   });
 });

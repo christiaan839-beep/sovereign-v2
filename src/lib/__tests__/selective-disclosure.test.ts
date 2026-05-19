@@ -132,7 +132,6 @@ describe("verifyDisclosure — tampering", () => {
 
 describe("verifyDisclosure — non-disclosure property", () => {
   it("undisclosed fields cannot be inferred from the proof envelope", () => {
-    const d = commit(RECORD);
     const proof = discloseField(RECORD, "safetyVerdict");
     // The proof carries SIBLING hashes only. They are SHA-256 of leaf or
     // internal nodes — preimages are infeasible to recover. The test

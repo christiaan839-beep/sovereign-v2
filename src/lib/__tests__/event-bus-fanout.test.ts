@@ -13,7 +13,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
   _resetBusForTests,
-  subscribe,
+  subscribe as _subscribe,
   type SovereignEvent,
 } from "@/lib/event-bus";
 

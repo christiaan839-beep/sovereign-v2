@@ -1,6 +1,6 @@
 /**
  * Unified Payment Provider Abstraction
- * 
+ *
  * Supports PayFast (SA EFT/SnapScan/Cards) and Paystack (Cards/Bank Transfer).
  * Falls back gracefully if credentials not configured.
  */
@@ -9,39 +9,72 @@ import crypto from "crypto";
 
 // ─── Pricing (from canonical plans.ts — single source of truth) ──
 
-import { PLANS as CANONICAL_PLANS, type PlanId as CanonicalPlanId } from "@/lib/plans";
+import {
+  PLANS as CANONICAL_PLANS,
+  type PlanId as _CanonicalPlanId,
+} from "@/lib/plans";
 
 // Re-export for backward compatibility with existing payment routes
 export type PlanId = "starter" | "array" | "node" | "enterprise";
 
-export const PLANS: Record<PlanId, { name: string; priceZAR: number; priceDisplay: string; monthlyAmount: number; features: string[] }> = {
+export const PLANS: Record<
+  PlanId,
+  {
+    name: string;
+    priceZAR: number;
+    priceDisplay: string;
+    monthlyAmount: number;
+    features: string[];
+  }
+> = {
   starter: {
     name: CANONICAL_PLANS.starter.name,
     priceZAR: CANONICAL_PLANS.starter.priceZarCents,
     priceDisplay: CANONICAL_PLANS.starter.priceDisplayZar,
     monthlyAmount: CANONICAL_PLANS.starter.priceZarCents / 100,
-    features: ["5 core agents", "200 tasks/month", "Smart Router", "Email support"],
+    features: [
+      "5 core agents",
+      "200 tasks/month",
+      "Smart Router",
+      "Email support",
+    ],
   },
   array: {
     name: CANONICAL_PLANS.array.name,
     priceZAR: CANONICAL_PLANS.array.priceZarCents,
     priceDisplay: CANONICAL_PLANS.array.priceDisplayZar,
     monthlyAmount: CANONICAL_PLANS.array.priceZarCents / 100,
-    features: ["10 agents", "500 tasks/month", "BYOK support", "Priority email support"],
+    features: [
+      "10 agents",
+      "500 tasks/month",
+      "BYOK support",
+      "Priority email support",
+    ],
   },
   node: {
     name: CANONICAL_PLANS.node.name,
     priceZAR: CANONICAL_PLANS.node.priceZarCents,
     priceDisplay: CANONICAL_PLANS.node.priceDisplayZar,
     monthlyAmount: CANONICAL_PLANS.node.priceZarCents / 100,
-    features: ["All 129 agents", "2,000 tasks/month", "Local execution", "Voice agents"],
+    features: [
+      "All 129 agents",
+      "2,000 tasks/month",
+      "Local execution",
+      "Voice agents",
+    ],
   },
   enterprise: {
     name: CANONICAL_PLANS.enterprise.name,
     priceZAR: CANONICAL_PLANS.enterprise.priceZarCents,
     priceDisplay: CANONICAL_PLANS.enterprise.priceDisplayZar,
     monthlyAmount: CANONICAL_PLANS.enterprise.priceZarCents / 100,
-    features: ["Everything in Node", "White-label", "Client portal", "10,000 tasks/month", "SLA guarantee"],
+    features: [
+      "Everything in Node",
+      "White-label",
+      "Client portal",
+      "10,000 tasks/month",
+      "SLA guarantee",
+    ],
   },
 };
 
@@ -67,7 +100,11 @@ function getPayFastConfig(): PayFastConfig | null {
   };
 }
 
-export function generatePayFastForm(plan: PlanId, email: string, returnUrl: string): string | null {
+export function generatePayFastForm(
+  plan: PlanId,
+  email: string,
+  returnUrl: string,
+): string | null {
   const config = getPayFastConfig();
   if (!config) return null;
 
@@ -100,7 +137,10 @@ export function generatePayFastForm(plan: PlanId, email: string, returnUrl: stri
     ? `${signatureString}&passphrase=${encodeURIComponent(config.passphrase)}`
     : signatureString;
 
-  data.signature = crypto.createHash("md5").update(signatureWithPassphrase).digest("hex");
+  data.signature = crypto
+    .createHash("md5")
+    .update(signatureWithPassphrase)
+    .digest("hex");
 
   const fields = Object.entries(data)
     .map(([k, v]) => `<input type="hidden" name="${k}" value="${v}" />`)
@@ -109,7 +149,10 @@ export function generatePayFastForm(plan: PlanId, email: string, returnUrl: stri
   return `<form action="${baseUrl}" method="POST" id="payfast-form">\n${fields}\n</form>`;
 }
 
-export function verifyPayFastSignature(data: Record<string, string>, passphrase: string): boolean {
+export function verifyPayFastSignature(
+  data: Record<string, string>,
+  passphrase: string,
+): boolean {
   const receivedSig = data.signature;
   const params = { ...data };
   delete params.signature;
@@ -122,7 +165,10 @@ export function verifyPayFastSignature(data: Record<string, string>, passphrase:
     ? `${signatureString}&passphrase=${encodeURIComponent(passphrase)}`
     : signatureString;
 
-  const expectedSig = crypto.createHash("md5").update(withPassphrase).digest("hex");
+  const expectedSig = crypto
+    .createHash("md5")
+    .update(withPassphrase)
+    .digest("hex");
   return expectedSig === receivedSig;
 }
 
@@ -132,7 +178,11 @@ function getPaystackKey(): string | null {
   return process.env.PAYSTACK_SECRET_KEY || null;
 }
 
-export async function initializePaystack(plan: PlanId, email: string, callbackUrl: string) {
+export async function initializePaystack(
+  plan: PlanId,
+  email: string,
+  callbackUrl: string,
+) {
   const key = getPaystackKey();
   if (!key) return null;
 
@@ -169,15 +219,21 @@ export async function verifyPaystackTransaction(reference: string) {
   const key = getPaystackKey();
   if (!key) return null;
 
-  const res = await fetch(`https://api.paystack.co/transaction/verify/${reference}`, {
-    headers: { Authorization: `Bearer ${key}` },
-  });
+  const res = await fetch(
+    `https://api.paystack.co/transaction/verify/${reference}`,
+    {
+      headers: { Authorization: `Bearer ${key}` },
+    },
+  );
 
   const data = await res.json();
   return data.status ? data.data : null;
 }
 
-export function verifyPaystackWebhook(body: string, signature: string): boolean {
+export function verifyPaystackWebhook(
+  body: string,
+  signature: string,
+): boolean {
   const key = getPaystackKey();
   if (!key) return false;
 
@@ -196,7 +252,11 @@ function getYocoKey(): string | null {
  * Creates a checkout session and returns the redirect URL.
  * Supports cards, SnapScan, and EFT.
  */
-export async function initializeYoco(plan: PlanId, email: string, callbackUrl: string) {
+export async function initializeYoco(
+  plan: PlanId,
+  email: string,
+  callbackUrl: string,
+) {
   const key = getYocoKey();
   if (!key) return null;
 
@@ -247,7 +307,7 @@ export function verifyYocoWebhook(
     id: string;
     timestamp: string;
     signature: string;
-  }
+  },
 ): boolean {
   const rawSecret = process.env.YOCO_WEBHOOK_SECRET;
   if (!rawSecret || !headers.id || !headers.timestamp || !headers.signature) {
@@ -261,7 +321,9 @@ export function verifyYocoWebhook(
   if (ageMs > 5 * 60 * 1000 || ageMs < -5 * 60 * 1000) return false;
 
   // Strip `whsec_` prefix if present, then base64-decode to get raw key bytes.
-  const secretKey = rawSecret.startsWith("whsec_") ? rawSecret.slice(6) : rawSecret;
+  const secretKey = rawSecret.startsWith("whsec_")
+    ? rawSecret.slice(6)
+    : rawSecret;
   let secretBytes: Buffer;
   try {
     secretBytes = Buffer.from(secretKey, "base64");
@@ -301,9 +363,12 @@ export async function getYocoPayment(paymentId: string) {
   const key = getYocoKey();
   if (!key) return null;
 
-  const res = await fetch(`https://payments.yoco.com/api/payments/${encodeURIComponent(paymentId)}`, {
-    headers: { Authorization: `Bearer ${key}` },
-  });
+  const res = await fetch(
+    `https://payments.yoco.com/api/payments/${encodeURIComponent(paymentId)}`,
+    {
+      headers: { Authorization: `Bearer ${key}` },
+    },
+  );
 
   if (!res.ok) return null;
   return res.json() as Promise<{
@@ -323,9 +388,12 @@ export async function getYocoCheckout(checkoutId: string) {
   const key = getYocoKey();
   if (!key) return null;
 
-  const res = await fetch(`https://payments.yoco.com/api/checkouts/${encodeURIComponent(checkoutId)}`, {
-    headers: { Authorization: `Bearer ${key}` },
-  });
+  const res = await fetch(
+    `https://payments.yoco.com/api/checkouts/${encodeURIComponent(checkoutId)}`,
+    {
+      headers: { Authorization: `Bearer ${key}` },
+    },
+  );
 
   if (!res.ok) return null;
   return res.json() as Promise<{

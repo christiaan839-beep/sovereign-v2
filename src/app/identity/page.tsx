@@ -32,6 +32,15 @@ export const revalidate = 10;
  */
 export default async function IdentityPage() {
   const tokens = await listActiveTokens({ limit: 50 });
+  // Compute once at request time — passed down to TokenCard so the card's
+  // render function stays pure (react-hooks/purity).
+  //
+  // react-compiler doesn't yet model the server-component vs client-component
+  // distinction. This is an async server component running at request time,
+  // where Date.now() is the canonical way to capture "now" — same status as
+  // listActiveTokens() above (which is also impure but allowed).
+  // eslint-disable-next-line react-hooks/purity
+  const nowMs = Date.now();
 
   return (
     <main className="min-h-screen bg-[#030303] text-neutral-200 px-6 py-20">
@@ -95,7 +104,7 @@ export default async function IdentityPage() {
         ) : (
           <div className="space-y-3">
             {tokens.map((t) => (
-              <TokenCard key={t.id} t={t} />
+              <TokenCard key={t.id} t={t} nowMs={nowMs} />
             ))}
           </div>
         )}
@@ -139,10 +148,11 @@ interface TokenView {
   expiresAt: string;
 }
 
-function TokenCard({ t }: { t: TokenView }) {
+function TokenCard({ t, nowMs }: { t: TokenView; nowMs: number }) {
+  // nowMs is computed once by the parent server component at request time
+  // (rather than during this card's render) so the function is pure.
   const issuedMs = new Date(t.issuedAt).getTime();
   const expiresMs = new Date(t.expiresAt).getTime();
-  const nowMs = Date.now();
   const ttlMs = expiresMs - issuedMs;
   const elapsedMs = Math.max(0, Math.min(ttlMs, nowMs - issuedMs));
   const pct = ttlMs > 0 ? Math.round((elapsedMs / ttlMs) * 100) : 0;

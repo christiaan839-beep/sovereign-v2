@@ -25,7 +25,7 @@ export async function GET() {
 
   try {
     // Run all queries in parallel
-    const ago30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1_000);
+    const _ago30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1_000);
 
     const [agents, totals, recent] = await Promise.all([
       // All agents owned by this creator

@@ -18,23 +18,23 @@
 
 // ── Public types ──────────────────────────────────────────────────────────
 
-export interface SingleCall<TInput = unknown, TOutput = unknown> {
+export interface SingleCall<TInput = unknown, _TOutput = unknown> {
   name: string;
   args: TInput;
 }
 
-export interface BatchAdapter<TInput = unknown, TOutput = unknown> {
+export interface BatchAdapter<TInput = unknown, _TOutput = unknown> {
   /** Tool name (matches Cook 36 tool name). */
   name: string;
   /** Optional batch executor. */
-  batch?: (inputs: TInput[]) => Promise<TOutput[]>;
+  batch?: (inputs: TInput[]) => Promise<_TOutput[]>;
   /** Fallback single-call dispatcher. */
-  single: (input: TInput) => Promise<TOutput>;
+  single: (input: TInput) => Promise<_TOutput>;
 }
 
-export interface BatchResult<TOutput = unknown> {
+export interface BatchResult<_TOutput = unknown> {
   /** Same length + order as the input call list. */
-  outputs: TOutput[];
+  outputs: _TOutput[];
   /** Whether the batch path was taken for each call (debugging). */
   batched: boolean[];
   /** Wall-clock time in ms. */
@@ -51,10 +51,10 @@ export interface BatchResult<TOutput = unknown> {
  *   - If not, every call goes through `single()` in parallel.
  *   - Outputs are stitched back to original index order.
  */
-export async function dispatchBatched<TInput = unknown, TOutput = unknown>(
-  calls: SingleCall<TInput, TOutput>[],
-  adapters: Map<string, BatchAdapter<TInput, TOutput>>,
-): Promise<BatchResult<TOutput>> {
+export async function dispatchBatched<TInput = unknown, _TOutput = unknown>(
+  calls: SingleCall<TInput, _TOutput>[],
+  adapters: Map<string, BatchAdapter<TInput, _TOutput>>,
+): Promise<BatchResult<_TOutput>> {
   const start = Date.now();
   // Group by name, preserving original indices.
   const groups = new Map<string, Array<{ index: number; input: TInput }>>();
@@ -65,7 +65,7 @@ export async function dispatchBatched<TInput = unknown, TOutput = unknown>(
     groups.set(c.name, list);
   }
 
-  const outputs: TOutput[] = new Array(calls.length);
+  const outputs: _TOutput[] = new Array(calls.length);
   const batched: boolean[] = new Array(calls.length).fill(false);
 
   // Dispatch each group in parallel.
@@ -79,7 +79,7 @@ export async function dispatchBatched<TInput = unknown, TOutput = unknown>(
           outputs[g.index] = {
             outcome: "unknown-tool",
             tool: name,
-          } as unknown as TOutput;
+          } as unknown as _TOutput;
         }
         return;
       }

@@ -35,7 +35,7 @@ export interface BaseLead {
 export interface EnrichedLead extends BaseLead {
   enrichment?: {
     email?: string;
-    email_confidence?: number;    // 0-100 (Hunter score)
+    email_confidence?: number; // 0-100 (Hunter score)
     firstName?: string;
     lastName?: string;
     title?: string;
@@ -46,7 +46,7 @@ export interface EnrichedLead extends BaseLead {
     company_revenue?: string;
     company_industry?: string;
     company_founded?: number;
-    sources: string[];            // which providers fired
+    sources: string[]; // which providers fired
     enrichedAt: string;
   };
 }
@@ -63,9 +63,14 @@ interface EnrichmentKeys {
  * Load BYOK enrichment keys for a user from their settings.
  * Returns empty object if none configured — callers skip enrichment.
  */
-export async function loadEnrichmentKeys(userEmail: string): Promise<EnrichmentKeys> {
+export async function loadEnrichmentKeys(
+  userEmail: string,
+): Promise<EnrichmentKeys> {
   try {
-    const rows = await db.select().from(settings).where(eq(settings.userEmail, userEmail));
+    const rows = await db
+      .select()
+      .from(settings)
+      .where(eq(settings.userEmail, userEmail));
     if (!rows.length || !rows[0].apiKeys) return {};
 
     const stored: Record<string, string> = JSON.parse(rows[0].apiKeys);
@@ -92,7 +97,7 @@ interface HunterEmailFinderResult {
 
 async function hunterFindEmail(
   domain: string,
-  apiKey: string
+  apiKey: string,
 ): Promise<HunterEmailFinderResult | null> {
   try {
     const url = new URL("https://api.hunter.io/v2/domain-search");
@@ -106,7 +111,18 @@ async function hunterFindEmail(
     });
 
     if (!res.ok) return null;
-    const data = await res.json() as { data?: { emails?: Array<{ value: string; confidence: number; first_name?: string; last_name?: string; position?: string; linkedin?: string }> } };
+    const data = (await res.json()) as {
+      data?: {
+        emails?: Array<{
+          value: string;
+          confidence: number;
+          first_name?: string;
+          last_name?: string;
+          position?: string;
+          linkedin?: string;
+        }>;
+      };
+    };
     const emails = data?.data?.emails;
     if (!emails?.length) return null;
 
@@ -145,11 +161,11 @@ interface ApolloEnrichResult {
 
 async function apolloEnrich(
   domain: string,
-  apiKey: string
+  apiKey: string,
 ): Promise<ApolloEnrichResult | null> {
   try {
     // Apollo organization enrichment by domain
-    const res = await fetch("https://api.apollo.io/v1/organizations/enrich", {
+    const _res = await fetch("https://api.apollo.io/v1/organizations/enrich", {
       method: "GET",
       signal: AbortSignal.timeout(8_000),
       headers: {
@@ -171,7 +187,7 @@ async function apolloEnrich(
     });
 
     if (!res2.ok) return null;
-    const data = await res2.json() as { organization?: ApolloEnrichResult };
+    const data = (await res2.json()) as { organization?: ApolloEnrichResult };
     return data.organization ?? null;
   } catch {
     return null;
@@ -197,17 +213,20 @@ interface ClearbitCompany {
 
 async function clearbitEnrich(
   domain: string,
-  apiKey: string
+  apiKey: string,
 ): Promise<ClearbitCompany | null> {
   try {
-    const res = await fetch(`https://company.clearbit.com/v2/companies/find?domain=${encodeURIComponent(domain)}`, {
-      signal: AbortSignal.timeout(8_000),
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
+    const res = await fetch(
+      `https://company.clearbit.com/v2/companies/find?domain=${encodeURIComponent(domain)}`,
+      {
+        signal: AbortSignal.timeout(8_000),
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+        },
       },
-    });
+    );
     if (!res.ok) return null;
-    return await res.json() as ClearbitCompany;
+    return (await res.json()) as ClearbitCompany;
   } catch {
     return null;
   }
@@ -218,7 +237,9 @@ async function clearbitEnrich(
 function extractDomain(website: string | undefined): string | null {
   if (!website) return null;
   try {
-    const url = new URL(website.startsWith("http") ? website : `https://${website}`);
+    const url = new URL(
+      website.startsWith("http") ? website : `https://${website}`,
+    );
     return url.hostname.replace(/^www\./, "");
   } catch {
     return null;
@@ -227,7 +248,10 @@ function extractDomain(website: string | undefined): string | null {
 
 // ─── Per-lead enricher ────────────────────────────────────────
 
-async function enrichLead(lead: BaseLead, keys: EnrichmentKeys): Promise<EnrichedLead> {
+async function enrichLead(
+  lead: BaseLead,
+  keys: EnrichmentKeys,
+): Promise<EnrichedLead> {
   const domain = extractDomain(lead.website as string);
   if (!domain) return lead;
 
@@ -238,16 +262,27 @@ async function enrichLead(lead: BaseLead, keys: EnrichmentKeys): Promise<Enriche
   };
 
   // Run Hunter + Apollo + Clearbit in parallel (they don't depend on each other)
-  const [hunterResult, apolloResult, clearbitResult] = await Promise.allSettled([
-    keys.HUNTER_API_KEY ? hunterFindEmail(domain, keys.HUNTER_API_KEY) : Promise.resolve(null),
-    keys.APOLLO_API_KEY ? apolloEnrich(domain, keys.APOLLO_API_KEY) : Promise.resolve(null),
-    keys.CLEARBIT_API_KEY ? clearbitEnrich(domain, keys.CLEARBIT_API_KEY) : Promise.resolve(null),
-  ]);
+  const [hunterResult, apolloResult, clearbitResult] = await Promise.allSettled(
+    [
+      keys.HUNTER_API_KEY
+        ? hunterFindEmail(domain, keys.HUNTER_API_KEY)
+        : Promise.resolve(null),
+      keys.APOLLO_API_KEY
+        ? apolloEnrich(domain, keys.APOLLO_API_KEY)
+        : Promise.resolve(null),
+      keys.CLEARBIT_API_KEY
+        ? clearbitEnrich(domain, keys.CLEARBIT_API_KEY)
+        : Promise.resolve(null),
+    ],
+  );
 
   // Hunter — email + contact person
   if (hunterResult.status === "fulfilled" && hunterResult.value) {
     const h = hunterResult.value;
-    if (h.email) { enrichment.email = h.email; sources.push("hunter"); }
+    if (h.email) {
+      enrichment.email = h.email;
+      sources.push("hunter");
+    }
     if (h.score) enrichment.email_confidence = h.score;
     if (h.first_name) enrichment.firstName = h.first_name;
     if (h.last_name) enrichment.lastName = h.last_name;
@@ -259,17 +294,23 @@ async function enrichLead(lead: BaseLead, keys: EnrichmentKeys): Promise<Enriche
   if (apolloResult.status === "fulfilled" && apolloResult.value) {
     const a = apolloResult.value;
     sources.push("apollo");
-    if (!enrichment.email && a.email) { enrichment.email = a.email; }
-    if (!enrichment.firstName && a.first_name) enrichment.firstName = a.first_name;
+    if (!enrichment.email && a.email) {
+      enrichment.email = a.email;
+    }
+    if (!enrichment.firstName && a.first_name)
+      enrichment.firstName = a.first_name;
     if (!enrichment.lastName && a.last_name) enrichment.lastName = a.last_name;
     if (!enrichment.title && a.title) enrichment.title = a.title;
     if (a.linkedin_url) enrichment.linkedin = a.linkedin_url;
-    if (a.phone_numbers?.[0]?.raw_number) enrichment.phone = a.phone_numbers[0].raw_number;
+    if (a.phone_numbers?.[0]?.raw_number)
+      enrichment.phone = a.phone_numbers[0].raw_number;
     if (a.organization) {
       const org = a.organization;
       enrichment.company_domain = org.primary_domain;
-      if (org.estimated_num_employees) enrichment.company_size = `${org.estimated_num_employees.toLocaleString()} employees`;
-      if (org.annual_revenue) enrichment.company_revenue = `$${(org.annual_revenue / 1_000_000).toFixed(1)}M ARR`;
+      if (org.estimated_num_employees)
+        enrichment.company_size = `${org.estimated_num_employees.toLocaleString()} employees`;
+      if (org.annual_revenue)
+        enrichment.company_revenue = `$${(org.annual_revenue / 1_000_000).toFixed(1)}M ARR`;
       if (org.industry) enrichment.company_industry = org.industry;
       if (org.founded_year) enrichment.company_founded = org.founded_year;
     }
@@ -304,13 +345,17 @@ const CONCURRENCY = 5;
 
 export async function enrichLeads(
   leads: BaseLead[],
-  userEmail: string
+  userEmail: string,
 ): Promise<EnrichedLead[]> {
   const keys = await loadEnrichmentKeys(userEmail);
-  const hasAnyKey = Boolean(keys.HUNTER_API_KEY || keys.APOLLO_API_KEY || keys.CLEARBIT_API_KEY);
+  const hasAnyKey = Boolean(
+    keys.HUNTER_API_KEY || keys.APOLLO_API_KEY || keys.CLEARBIT_API_KEY,
+  );
 
   if (!hasAnyKey) {
-    log.info("No enrichment keys configured — returning raw leads", { email: userEmail });
+    log.info("No enrichment keys configured — returning raw leads", {
+      email: userEmail,
+    });
     return leads as EnrichedLead[];
   }
 
@@ -320,13 +365,21 @@ export async function enrichLeads(
   for (let i = 0; i < leads.length; i += CONCURRENCY) {
     const batch = leads.slice(i, i + CONCURRENCY);
     const batchResults = await Promise.all(
-      batch.map((lead) => enrichLead(lead, keys).catch(() => lead as EnrichedLead))
+      batch.map((lead) =>
+        enrichLead(lead, keys).catch(() => lead as EnrichedLead),
+      ),
     );
     results.push(...batchResults);
   }
 
-  const enrichedCount = results.filter((r) => r.enrichment?.sources.length).length;
-  log.info("Enrichment complete", { total: leads.length, enriched: enrichedCount, email: userEmail });
+  const enrichedCount = results.filter(
+    (r) => r.enrichment?.sources.length,
+  ).length;
+  log.info("Enrichment complete", {
+    total: leads.length,
+    enriched: enrichedCount,
+    email: userEmail,
+  });
 
   return results;
 }

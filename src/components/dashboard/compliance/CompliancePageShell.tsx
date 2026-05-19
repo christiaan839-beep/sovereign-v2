@@ -31,6 +31,16 @@ export type SchemaField =
       required?: boolean;
       defaultValue?: string;
       hint?: string;
+    }
+  | {
+      type: "file";
+      key: string;
+      label: string;
+      accept: string;
+      required?: boolean;
+      hint?: string;
+      /** Maximum size in bytes. Defaults to 4 MB. */
+      maxBytes?: number;
     };
 
 export interface ComplianceShellProps {
@@ -58,7 +68,8 @@ export function CompliancePageShell(props: ComplianceShellProps) {
   const [formValues, setFormValues] = useState<Record<string, string>>(() => {
     const init: Record<string, string> = {};
     for (const f of props.fields) {
-      init[f.key] = f.defaultValue ?? "";
+      // File fields have no defaultValue — initialise empty.
+      init[f.key] = f.type === "file" ? "" : (f.defaultValue ?? "");
     }
     return init;
   });
@@ -181,7 +192,11 @@ export function CompliancePageShell(props: ComplianceShellProps) {
           {props.fields.map((field) => (
             <div
               key={field.key}
-              className={field.type === "textarea" ? "sm:col-span-2" : ""}
+              className={
+                field.type === "textarea" || field.type === "file"
+                  ? "sm:col-span-2"
+                  : ""
+              }
             >
               <label
                 htmlFor={field.key}
@@ -227,6 +242,19 @@ export function CompliancePageShell(props: ComplianceShellProps) {
                     </option>
                   ))}
                 </select>
+              ) : field.type === "file" ? (
+                <FileInput
+                  fieldKey={field.key}
+                  accept={field.accept}
+                  maxBytes={field.maxBytes ?? 4 * 1024 * 1024}
+                  currentValue={formValues[field.key] ?? ""}
+                  onChange={(content) =>
+                    setFormValues({
+                      ...formValues,
+                      [field.key]: content,
+                    })
+                  }
+                />
               ) : (
                 <input
                   id={field.key}
@@ -361,6 +389,96 @@ function Stat({ label, value }: { label: string; value: string }) {
         {label}
       </p>
       <p className="text-neutral-200 text-[13px] font-mono">{value}</p>
+    </div>
+  );
+}
+
+interface FileInputProps {
+  fieldKey: string;
+  accept: string;
+  maxBytes: number;
+  currentValue: string;
+  onChange: (content: string) => void;
+}
+
+function FileInput({
+  fieldKey,
+  accept,
+  maxBytes,
+  currentValue,
+  onChange,
+}: FileInputProps) {
+  const [fileName, setFileName] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const hasValue = currentValue.length > 0;
+
+  function handleFile(file: File | null): void {
+    setError(null);
+    if (!file) {
+      setFileName(null);
+      onChange("");
+      return;
+    }
+    if (file.size > maxBytes) {
+      setError(
+        `File is ${(file.size / 1024).toFixed(1)} KB; max is ${(maxBytes / 1024).toFixed(0)} KB.`,
+      );
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = typeof reader.result === "string" ? reader.result : "";
+      setFileName(file.name);
+      onChange(text);
+    };
+    reader.onerror = () => {
+      setError("Could not read the file.");
+    };
+    reader.readAsText(file);
+  }
+
+  return (
+    <div>
+      <label
+        htmlFor={fieldKey}
+        className="block rounded-[4px] border border-dashed border-white/[0.12] hover:border-cyan-500/40 bg-black/40 px-4 py-5 cursor-pointer transition-colors"
+      >
+        <div className="flex items-baseline justify-between gap-3 flex-wrap">
+          <span className="text-[13px] text-neutral-300">
+            {fileName ? (
+              <>
+                <span className="text-cyan-300/90 font-mono">✓ {fileName}</span>{" "}
+                <span className="text-[11px] text-neutral-500">
+                  ({Math.round(currentValue.length / 1024)} KB parsed)
+                </span>
+              </>
+            ) : (
+              <>Click to upload or drop a file here</>
+            )}
+          </span>
+          <span className="text-[10px] font-mono text-neutral-600">
+            {accept}
+          </span>
+        </div>
+        <input
+          id={fieldKey}
+          type="file"
+          accept={accept}
+          className="sr-only"
+          onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
+        />
+      </label>
+      {hasValue && fileName === null && (
+        <p className="text-[11px] text-neutral-500 mt-1">
+          Loaded {Math.round(currentValue.length / 1024)} KB from previous
+          upload.
+        </p>
+      )}
+      {error && (
+        <p role="alert" className="text-[12px] text-red-300 font-mono mt-1.5">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

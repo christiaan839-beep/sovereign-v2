@@ -1,5 +1,5 @@
 import { createLogger } from "@/lib/logger";
-import { NIM_MODELS } from "@/lib/llm-router";
+import { NIM_MODELS as _NIM_MODELS } from "@/lib/llm-router";
 
 const log = createLogger("competitive-moat");
 
@@ -30,7 +30,7 @@ export interface ConsensusResult {
 
 export async function runConsensus(
   prompt: string,
-  options?: { models?: string[]; requireUnanimous?: boolean }
+  options?: { models?: string[]; requireUnanimous?: boolean },
 ): Promise<ConsensusResult> {
   const start = Date.now();
   const models = options?.models || [
@@ -40,7 +40,9 @@ export async function runConsensus(
     "qwen/qwen3-235b-a22b",
   ];
 
-  log.info(`Consensus: ${models.length} models, prompt length: ${prompt.length}`);
+  log.info(
+    `Consensus: ${models.length} models, prompt length: ${prompt.length}`,
+  );
 
   // In production, this calls the actual consensus engine in src/lib/consensus.ts
   // This wrapper adds the competitive moat tracking
@@ -101,7 +103,9 @@ export interface LearningSignal {
 // In-memory learning store (production: Pinecone vector DB)
 const learningStore: LearningSignal[] = [];
 
-export function emitLearningSignal(signal: Omit<LearningSignal, "timestamp">): void {
+export function emitLearningSignal(
+  signal: Omit<LearningSignal, "timestamp">,
+): void {
   learningStore.push({ ...signal, timestamp: Date.now() });
 
   // Cap store size
@@ -109,12 +113,17 @@ export function emitLearningSignal(signal: Omit<LearningSignal, "timestamp">): v
     learningStore.splice(0, learningStore.length - 5000);
   }
 
-  log.info(`Learning: ${signal.sourceAgent} → ${signal.targetAgent} [${signal.signalType}]`);
+  log.info(
+    `Learning: ${signal.sourceAgent} → ${signal.targetAgent} [${signal.signalType}]`,
+  );
 }
 
-export function getRelevantLearnings(agentName: string, limit = 10): LearningSignal[] {
+export function getRelevantLearnings(
+  agentName: string,
+  limit = 10,
+): LearningSignal[] {
   return learningStore
-    .filter(s => s.targetAgent === agentName && s.confidence > 0.5)
+    .filter((s) => s.targetAgent === agentName && s.confidence > 0.5)
     .sort((a, b) => b.timestamp - a.timestamp)
     .slice(0, limit);
 }
@@ -143,7 +152,7 @@ export interface AgentChain {
 export function createChain(trigger: string, steps: string[]): AgentChain {
   return {
     id: `chain_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-    steps: steps.map(name => ({
+    steps: steps.map((name) => ({
       agentName: name,
       input: {},
       status: "pending" as const,
@@ -156,12 +165,17 @@ export function createChain(trigger: string, steps: string[]): AgentChain {
 // ─── 5. Pricing Advantage Calculator ────────────────────────
 // Makes the cost argument undeniable.
 
-export function calculateStackSavings(tools: Array<{ name: string; monthlyPrice: number }>) {
+export function calculateStackSavings(
+  tools: Array<{ name: string; monthlyPrice: number }>,
+) {
   const totalCompetitorCost = tools.reduce((s, t) => s + t.monthlyPrice, 0);
   const sovereignCost = 199;
   const monthlySavings = totalCompetitorCost - sovereignCost;
   const annualSavings = monthlySavings * 12;
-  const paybackDays = totalCompetitorCost > 0 ? Math.ceil(sovereignCost / (totalCompetitorCost / 30)) : 0;
+  const paybackDays =
+    totalCompetitorCost > 0
+      ? Math.ceil(sovereignCost / (totalCompetitorCost / 30))
+      : 0;
 
   return {
     competitorTotal: totalCompetitorCost,

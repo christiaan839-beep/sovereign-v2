@@ -15,7 +15,7 @@ import {
   getPlanMrrUsd,
   isUnlimited,
   getNextPlan,
-  getStripePriceId,
+  getStripePriceId as _getStripePriceId,
   type PlanId,
 } from "@/lib/plans";
 

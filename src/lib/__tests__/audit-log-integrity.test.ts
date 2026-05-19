@@ -117,7 +117,6 @@ describe("verifyChain", () => {
     expect(v.reason).toBe("chain-discontinuity");
   });
   it("detects non-monotonic time", () => {
-    const chain = buildChain([{}, {}, {}]);
     // Direct mutation of the middle row's occurredAt (without
     // recomputing chainHead) is detected as 'row-tampered'.
     // For non-monotonic specifically, we need a row whose chainHead

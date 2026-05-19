@@ -7,7 +7,6 @@ import { useUser } from "@clerk/nextjs";
 import {
   ArrowRight,
   ArrowLeft,
-  Briefcase,
   FileText,
   Mail,
   Megaphone,

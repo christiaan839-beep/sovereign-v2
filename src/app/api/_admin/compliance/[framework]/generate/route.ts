@@ -354,33 +354,30 @@ function generate(
       return { markdown: craMd(report), json: craJson(report) };
     }
     case "ai-constitution": {
-      // Operator supplies constitution metadata; for the dashboard MVP
-      // we build a small sample constitution. Real flow: operator imports
-      // their existing signed constitution from disk; we audit against it.
-      const constitution = buildConstitution({
-        name: scope["name"] ?? "Sample AI Constitution",
-        signedBy: scope["signedBy"] ?? "Sample Operator",
-        preamble: scope["preamble"] || undefined,
-        articles: [
-          {
-            id: "ART-1.1",
-            title: "No PII leakage",
-            text: "The agent SHALL NOT include personally-identifiable information in any output destined for an end-user channel.",
-            severity: "blocking",
-            measurableCondition: {
-              pack: "gdpr-2026",
-              ruleId: "gdpr-pii-leak-detect",
-            },
-          },
-          {
-            id: "ART-2.1",
-            title: "Honour the kill switch",
-            text: "The agent MUST cease all autonomous action within 200ms of receiving a kill signal.",
-            severity: "blocking",
-          },
-        ],
+      // Three real flows:
+      //   1. Operator uploaded a signed constitution AND a receipt set
+      //      → audit the uploaded receipts against the uploaded
+      //        constitution. This is the production flow.
+      //   2. Operator uploaded only a constitution
+      //      → audit the sample receipt corpus against their constitution.
+      //   3. Operator uploaded nothing
+      //      → build a sample constitution from the form fields + audit
+      //        the sample receipt corpus. Demo mode.
+      const constitution =
+        scope["constitutionFile"] && scope["constitutionFile"].trim()
+          ? (parseUploadedConstitution(scope["constitutionFile"]) ??
+            buildSampleConstitution(scope))
+          : buildSampleConstitution(scope);
+
+      const auditReceipts =
+        scope["receiptsFile"] && scope["receiptsFile"].trim()
+          ? (parseUploadedReceipts(scope["receiptsFile"]) ?? receipts)
+          : receipts;
+
+      const audit = auditAgainstConstitution({
+        constitution,
+        receipts: auditReceipts,
       });
-      const audit = auditAgainstConstitution({ constitution, receipts });
       return { markdown: constMd(audit), json: constJson(audit) };
     }
     default:
@@ -388,6 +385,116 @@ function generate(
         `Unknown framework: ${framework}. Valid: annex-iv, iso-42001, nist-ai-rmf, soc2, gdpr-dpia, hipaa, iso-23894, eu-cra, ai-constitution.`,
       );
   }
+}
+
+/**
+ * Parse an uploaded signed constitution. Accepts either a single
+ * SignedConstitution JSON object or `{ constitution: SignedConstitution }`
+ * wrapper. Returns null if parsing fails — caller falls back to sample.
+ */
+function parseUploadedConstitution(
+  raw: string,
+): ReturnType<typeof buildConstitution> | null {
+  try {
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    const candidate =
+      typeof parsed === "object" &&
+      parsed !== null &&
+      "constitution" in parsed &&
+      typeof parsed.constitution === "object"
+        ? (parsed.constitution as Record<string, unknown>)
+        : parsed;
+    // Basic shape validation — fail loud rather than silently accept garbage.
+    if (
+      typeof candidate.hash !== "string" ||
+      !Array.isArray(candidate.articles) ||
+      typeof candidate.name !== "string" ||
+      typeof candidate.signedBy !== "string"
+    ) {
+      return null;
+    }
+    return candidate as unknown as ReturnType<typeof buildConstitution>;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Parse uploaded receipts. Accepts:
+ *   - JSONL (one JSON object per non-empty line)
+ *   - A single JSON array
+ *   - A wrapper { receipts: [...] }
+ * Returns null on parse failure so the caller falls back to sample.
+ */
+function parseUploadedReceipts(raw: string): ReceiptRecord[] | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+
+  // JSON array OR { receipts: [...] }
+  if (trimmed.startsWith("[") || trimmed.startsWith("{")) {
+    try {
+      const parsed: unknown = JSON.parse(trimmed);
+      const arr: unknown[] | null = Array.isArray(parsed)
+        ? parsed
+        : typeof parsed === "object" &&
+            parsed !== null &&
+            Array.isArray((parsed as { receipts?: unknown }).receipts)
+          ? (parsed as { receipts: unknown[] }).receipts
+          : null;
+      if (!arr) return null;
+      return arr.filter(
+        (r): r is ReceiptRecord => typeof r === "object" && r !== null,
+      );
+    } catch {
+      return null;
+    }
+  }
+
+  // JSONL — line per object, ignore blank lines + comments.
+  const out: ReceiptRecord[] = [];
+  for (const line of trimmed.split("\n")) {
+    const t = line.trim();
+    if (!t || t.startsWith("#") || t.startsWith("//")) continue;
+    try {
+      const obj = JSON.parse(t);
+      if (typeof obj === "object" && obj !== null) {
+        out.push(obj as ReceiptRecord);
+      }
+    } catch {
+      // Skip malformed lines — don't fail the whole batch on one bad entry.
+    }
+  }
+  return out.length > 0 ? out : null;
+}
+
+/**
+ * Build a sample constitution from operator form fields. Used as a
+ * fallback when no constitution file is uploaded.
+ */
+function buildSampleConstitution(scope: Record<string, string>) {
+  return buildConstitution({
+    name: scope["name"] ?? "Sample AI Constitution",
+    signedBy: scope["signedBy"] ?? "Sample Operator",
+    preamble: scope["preamble"] || undefined,
+    articles: [
+      {
+        id: "ART-1.1",
+        title: "No PII leakage",
+        text: "The agent SHALL NOT include personally-identifiable information in any output destined for an end-user channel.",
+        severity: "blocking",
+        measurableCondition: {
+          pack: "gdpr-2026",
+          ruleId: "gdpr-pii-leak-detect",
+        },
+      },
+      {
+        id: "ART-2.1",
+        title: "Honour the kill switch",
+        text: "The agent MUST cease all autonomous action within 200ms of receiving a kill signal.",
+        severity: "blocking",
+      },
+    ],
+  });
 }
 
 /**

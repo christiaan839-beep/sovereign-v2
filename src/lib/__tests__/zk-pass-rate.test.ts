@@ -153,12 +153,6 @@ describe("discloseOutcome + verifyInclusion", () => {
 describe("ZK-lite non-disclosure property", () => {
   it("inclusion proof never carries other outcomes verbatim", () => {
     const seq = [...outcomes(8, 0), ...outcomes(0, 8)];
-    const c = commitPassRate({
-      outcomes: seq,
-      tenantId: "t",
-      periodStart: "x",
-      periodEnd: "y",
-    });
     const proof = discloseOutcome(seq, 0);
     const serialized = JSON.stringify(proof);
     // The proof carries 1 outcome (the disclosed leaf) + sibling

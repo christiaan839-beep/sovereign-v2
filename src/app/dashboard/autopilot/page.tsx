@@ -12,7 +12,6 @@ import {
   ChevronUp,
   Play,
   RefreshCw,
-  Zap,
   BarChart3,
   Activity,
 } from "lucide-react";

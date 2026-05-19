@@ -11,30 +11,46 @@ export const metadata: Metadata = {
 
 const FIELDS: SchemaField[] = [
   {
+    type: "file",
+    key: "constitutionFile",
+    label: "Signed constitution (JSON)",
+    accept: "application/json,.json",
+    hint: "Upload the output of buildConstitution() — the .hash + .articles must be intact. Leave blank to auto-generate a sample constitution from the fields below.",
+    maxBytes: 1024 * 1024, // 1 MB
+  },
+  {
+    type: "file",
+    key: "receiptsFile",
+    label: "Receipts (JSONL or JSON array)",
+    accept: ".jsonl,.json,application/json",
+    hint: "Upload your VAOS receipt set. One JSON object per line OR a single JSON array. Leave blank to audit a sample 512-receipt corpus instead.",
+    maxBytes: 4 * 1024 * 1024, // 4 MB
+  },
+  {
     type: "text",
     key: "name",
-    label: "Constitution name",
+    label: "Constitution name (fallback)",
     placeholder: "Acme Healthcare AI Constitution",
-    required: true,
     defaultValue: "Acme Healthcare AI Constitution",
+    hint: "Used only when no constitution file is uploaded",
   },
   {
     type: "text",
     key: "signedBy",
-    label: "Signed by (operator legal name)",
+    label: "Signed by (fallback)",
     placeholder: "Acme Health AI Inc.",
-    required: true,
     defaultValue: "Acme Health AI Inc.",
+    hint: "Used only when no constitution file is uploaded",
   },
   {
     type: "textarea",
     key: "preamble",
-    label: "Preamble",
+    label: "Preamble (fallback)",
     placeholder:
       "This constitution governs all autonomous AI agents operating against patient ePHI within our clinical-decision-support stack.",
     defaultValue:
       "This constitution governs all autonomous AI agents operating against patient ePHI within our clinical-decision-support stack.",
-    hint: "One paragraph stating the scope and purpose",
+    hint: "One paragraph stating the scope and purpose; only used when no constitution file is uploaded",
   },
 ];
 
