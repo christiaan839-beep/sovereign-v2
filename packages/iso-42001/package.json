@@ -1,0 +1,40 @@
+{
+  "name": "@sovereign-matrix/iso-42001",
+  "version": "0.1.0",
+  "description": "ISO/IEC 42001:2023 AI management system (AIMS) control-matrix exporter. Takes a set of VAOS receipts and emits the auditor-ready Clause 4-10 + Annex A control report (Markdown + JSON).",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "vitest run"
+  },
+  "keywords": [
+    "iso-42001",
+    "iso-iec-42001",
+    "aims",
+    "ai-management-system",
+    "ai-governance",
+    "vaos",
+    "verifiable-receipts",
+    "ai-audit",
+    "annex-a-controls"
+  ],
+  "author": "Sovereign Matrix",
+  "license": "Apache-2.0",
+  "homepage": "https://sovereignmatrix.agency",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/christiaan839-beep/sovereign-v2",
+    "directory": "packages/iso-42001"
+  },
+  "peerDependencies": {
+    "@sovereign-matrix/verifiable-receipts": ">=0.3.0"
+  }
+}
