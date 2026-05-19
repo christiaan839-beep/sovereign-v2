@@ -23,9 +23,10 @@
  */
 import { NextResponse } from "next/server";
 import { db } from "@/db";
-import { auditLogAnchors } from "@/db/schema";
-import { desc } from "drizzle-orm";
+import { auditLogAnchors, auditLogs } from "@/db/schema";
+import { desc, sql } from "drizzle-orm";
 import { getEd25519PublicKeyPem } from "@/lib/agent-runs";
+import { thresholdStatus } from "@/lib/threshold-signer";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("security-posture");
@@ -53,6 +54,50 @@ interface AnchorSummary {
   rowCount: number;
   attestedAt: string;
   proofs: number;
+}
+
+interface DefenseStats {
+  windowHours: number;
+  totalBlocks: number;
+  byCategory: Record<string, number>;
+}
+
+/**
+ * Defense-block aggregate for the last 24h. Counts only `defense.block`
+ * audit rows and groups by category (jailbreak, rate-limit, ssrf, etc.).
+ * No PII surfaced; counts only. Receipts emitted by wave-92 wiring are
+ * already commitment-only, so even pulling the raw rows is leak-safe —
+ * we just don't need them for the public posture page.
+ */
+async function defenseStats(): Promise<DefenseStats | null> {
+  try {
+    const since = new Date(Date.now() - 24 * 3600 * 1000);
+    const rows = await db
+      .select({
+        resource: auditLogs.resource,
+        n: sql<number>`count(*)::int`,
+      })
+      .from(auditLogs)
+      .where(
+        sql`${auditLogs.action} = ${"defense.block"} and ${auditLogs.createdAt} >= ${since}`,
+      )
+      .groupBy(auditLogs.resource);
+
+    const byCategory: Record<string, number> = {};
+    let total = 0;
+    for (const r of rows) {
+      // resource format is `<category>:<ruleId>` per defense-receipts.ts
+      const category = String(r.resource ?? "unknown").split(":")[0];
+      byCategory[category] = (byCategory[category] ?? 0) + Number(r.n);
+      total += Number(r.n);
+    }
+    return { windowHours: 24, totalBlocks: total, byCategory };
+  } catch (err) {
+    // audit_logs table may not exist on a fresh deploy — keep posture
+    // page renderable.
+    log.warn("defense stats lookup failed", { error: String(err) });
+    return null;
+  }
 }
 
 async function latestAnchor(): Promise<AnchorSummary | null> {
@@ -94,7 +139,8 @@ async function latestAnchor(): Promise<AnchorSummary | null> {
 export async function GET() {
   const generatedAt = new Date().toISOString();
   const ed25519Pem = getEd25519PublicKeyPem();
-  const anchor = await latestAnchor();
+  const [anchor, defense] = await Promise.all([latestAnchor(), defenseStats()]);
+  const threshold = thresholdStatus();
 
   // The shape of this envelope is the contract for any vendor-questionnaire
   // automation we (or our buyers) build later. Keys are stable; add new
@@ -152,6 +198,34 @@ export async function GET() {
       stale:
         anchor?.attestedAt &&
         Date.now() - new Date(anchor.attestedAt).getTime() > 6 * 3600 * 1000,
+    },
+    thresholdSigning: {
+      // Threshold receipt signatures (TRS) — m-of-n issuer cosigning.
+      // When enabled, every issued threshold envelope requires `m`
+      // valid signatures from the `authorizedIssuers` set. Compromising
+      // any single witness (including this deploy) cannot forge a
+      // valid envelope — quorum from independent parties is required.
+      enabled: threshold.enabled,
+      m: threshold.m,
+      n: threshold.n,
+      // We deliberately publish the issuer set so verifiers can fetch
+      // each pubkey out-of-band, but NOT which witnesses this server
+      // holds local keys for — that'd help an attacker target the
+      // minimum set of compromises.
+      authorizedIssuers: threshold.authorizedIssuers,
+      verifierEndpoint: "/api/transparency/threshold-status",
+      specCitation: "RFC 9162 §4 + Bitcoin-style m-of-n multisig",
+    },
+    defenses: {
+      // Aggregate over the last 24 hours of defense.block audit rows.
+      // Counts only — every individual block already left a signed
+      // receipt with sha256(signal) commitment (wave 92). Counts give
+      // an observable hardening signal without exposing per-event data.
+      window: defense ? `${defense.windowHours}h` : null,
+      totalBlocks: defense?.totalBlocks ?? null,
+      byCategory: defense?.byCategory ?? null,
+      receiptEnvelopeSchema: "vaos-defense-event-v1",
+      verifierEndpoint: "/api/verify",
     },
     transportSecurity: {
       hsts: "max-age=63072000; includeSubDomains; preload",
