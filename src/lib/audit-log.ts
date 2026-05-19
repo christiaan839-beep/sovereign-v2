@@ -36,7 +36,8 @@ export type AuditAction =
   | "webauthn.assertion.ok"
   | "webauthn.assertion.failed"
   | "agent_token.issued"
-  | "agent_token.revoked";
+  | "agent_token.revoked"
+  | "defense.block";
 
 interface AuditEntry {
   userId: string;
