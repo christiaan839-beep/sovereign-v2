@@ -4,6 +4,17 @@
  * Replaces raw console.log/error/warn across the codebase.
  * - Production: JSON structured output for log aggregation
  * - Development: Human-readable colored output
+ *
+ * Wave-107 PII REDACTION:
+ *   The `data` object passed to log() is recursively scrubbed before
+ *   emission. Sensitive keys (email/password/token/secret/api_key/
+ *   authorization/cookie/etc.) are replaced with a `[REDACTED]` marker.
+ *   String VALUES that look like emails or API keys are also masked
+ *   regardless of key name — defends against developer mistakes where
+ *   a raw user object is logged under a benign-looking key.
+ *   The audit found logger calls passing raw email/key payloads from
+ *   `byok/route.ts`, `data-export/route.ts`, `webhooks/clerk/route.ts`,
+ *   and `_email/unsubscribe/route.ts`. All flow through this redactor.
  */
 
 type LogLevel = "info" | "warn" | "error" | "debug";
@@ -17,6 +28,123 @@ interface LogEntry {
 }
 
 const isProd = process.env.NODE_ENV === "production";
+
+// ── Wave-107 PII REDACTION ────────────────────────────────────────────────────
+
+/**
+ * Keys whose VALUES are always sensitive — replaced wholesale with
+ * `[REDACTED]`. Compared case-insensitively after lowercasing the key.
+ * Substring matching (so `userEmail` / `email_address` / `oldEmail` all
+ * match `email`) keeps the policy fail-closed against developer naming
+ * variants.
+ */
+const REDACT_KEY_PATTERNS: readonly string[] = [
+  "password",
+  "passwd",
+  "secret",
+  "token",
+  "api_key",
+  "apikey",
+  "authorization",
+  "cookie",
+  "session",
+  "private_key",
+  "privatekey",
+  "client_secret",
+  "webhook_secret",
+  "bearer",
+  "stripe_signature",
+  "svix",
+  "email", // BYOK callers + Clerk webhook pass these directly
+  "phone",
+  "ssn",
+  "national_id",
+  "card_number",
+  "cardnumber",
+  "cvv",
+  "ip_address",
+];
+
+/** Regex patterns over string VALUES (independent of key name). */
+const VALUE_REDACTORS: ReadonlyArray<{ pattern: RegExp; replace: string }> = [
+  // Email — coarse but covers the common case
+  {
+    pattern: /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g,
+    replace: "[email]",
+  },
+  // sk_ / pk_ / Bearer-style API tokens (Stripe, Clerk, OpenAI, etc.)
+  {
+    pattern:
+      /\b(?:sk|pk|whsec|rk|cs|sb|nvapi|tvly|gh[oprsu])_[A-Za-z0-9_]{16,}/g,
+    replace: "[token]",
+  },
+  // JWT-shape token (three dot-separated base64url segments)
+  {
+    pattern: /\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\b/g,
+    replace: "[jwt]",
+  },
+  // Long opaque hex/base64 secret-looking strings (40+ chars, no whitespace)
+  {
+    pattern: /\b[A-Za-z0-9_+/=-]{48,}\b/g,
+    replace: "[opaque]",
+  },
+];
+
+function keyIsSensitive(key: string): boolean {
+  const lower = key.toLowerCase();
+  for (const p of REDACT_KEY_PATTERNS) {
+    if (lower.includes(p)) return true;
+  }
+  return false;
+}
+
+function redactString(s: string): string {
+  let out = s;
+  for (const r of VALUE_REDACTORS) {
+    out = out.replace(r.pattern, r.replace);
+  }
+  return out;
+}
+
+/**
+ * Recursive redactor with cycle protection. Exported for tests so the
+ * exact contract (key matching + value matching + depth) is pinned.
+ *
+ * Visited-set guards against circular references in `data` — without
+ * it, a self-referencing object would stack-overflow the logger.
+ */
+export function redactPii(
+  value: unknown,
+  depth = 0,
+  visited: WeakSet<object> = new WeakSet(),
+): unknown {
+  if (depth > 12) return "[depth-limit]";
+  if (value === null || value === undefined) return value;
+  if (typeof value === "string") return redactString(value);
+  if (
+    typeof value === "number" ||
+    typeof value === "boolean" ||
+    typeof value === "bigint"
+  ) {
+    return value;
+  }
+  if (Array.isArray(value)) {
+    return value.map((v) => redactPii(v, depth + 1, visited));
+  }
+  if (typeof value === "object") {
+    if (visited.has(value)) return "[circular]";
+    visited.add(value);
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value)) {
+      out[k] = keyIsSensitive(k)
+        ? "[REDACTED]"
+        : redactPii(v, depth + 1, visited);
+    }
+    return out;
+  }
+  // Functions, symbols, etc. — drop to safe placeholder
+  return `[${typeof value}]`;
+}
 
 function formatEntry(entry: LogEntry): string {
   if (isProd) {
@@ -32,12 +160,23 @@ function formatEntry(entry: LogEntry): string {
   return `${prefix} [${entry.module}] ${entry.message}${dataStr}`;
 }
 
-function log(level: LogLevel, module: string, message: string, data?: Record<string, unknown>) {
+function log(
+  level: LogLevel,
+  module: string,
+  message: string,
+  data?: Record<string, unknown>,
+) {
+  // Wave-107: scrub PII before the entry is serialised. Also scrub the
+  // message itself (e.g. `logger.info("processing user@example.com")`
+  // would otherwise leak the email even if the data object was clean).
+  const redactedData = data
+    ? (redactPii(data) as Record<string, unknown>)
+    : undefined;
   const entry: LogEntry = {
     level,
     module,
-    message,
-    data,
+    message: redactString(message),
+    data: redactedData,
     timestamp: new Date().toISOString(),
   };
 
@@ -62,10 +201,14 @@ function log(level: LogLevel, module: string, message: string, data?: Record<str
 /** Create a logger scoped to a module */
 export function createLogger(module: string) {
   return {
-    info: (message: string, data?: Record<string, unknown>) => log("info", module, message, data),
-    warn: (message: string, data?: Record<string, unknown>) => log("warn", module, message, data),
-    error: (message: string, data?: Record<string, unknown>) => log("error", module, message, data),
-    debug: (message: string, data?: Record<string, unknown>) => log("debug", module, message, data),
+    info: (message: string, data?: Record<string, unknown>) =>
+      log("info", module, message, data),
+    warn: (message: string, data?: Record<string, unknown>) =>
+      log("warn", module, message, data),
+    error: (message: string, data?: Record<string, unknown>) =>
+      log("error", module, message, data),
+    debug: (message: string, data?: Record<string, unknown>) =>
+      log("debug", module, message, data),
   };
 }
 

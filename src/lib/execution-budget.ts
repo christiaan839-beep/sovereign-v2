@@ -314,3 +314,81 @@ export async function logExhaustion(
     /* non-blocking */
   }
 }
+
+/**
+ * Wave-107 ergonomic wrapper for route handlers.
+ *
+ * Combines `withExecutionBudget` + `ExecutionExhaustedError`-to-429
+ * translation + `logExhaustion` audit into a single call. The result
+ * discriminated-union shape lets a route handler write:
+ *
+ *   const result = await runWithBudgetAndAudit(
+ *     { userId, requestId },
+ *     async () => { ...your existing handler body... }
+ *   );
+ *   if (!result.ok) {
+ *     return NextResponse.json(
+ *       { error: "Execution budget exceeded", reason: result.reason },
+ *       { status: result.status, headers: result.headers },
+ *     );
+ *   }
+ *   return NextResponse.json(result.value);
+ *
+ * Any non-ExecutionExhaustedError throw inside `fn` propagates to the
+ * caller untouched — this helper does NOT swallow real errors. The
+ * 429 status (not 500) is intentional: kill-switch trips are "you're
+ * hitting our anti-loop ceiling", not "we broke", and clients can
+ * retry with backoff after addressing the loop.
+ */
+export type BudgetRunResult<T> =
+  | { ok: true; value: T; stats: ReturnType<typeof getExecutionStats> }
+  | {
+      ok: false;
+      status: 429;
+      reason: ExhaustionReason;
+      details: ExecutionExhaustionDetails;
+      headers: Record<string, string>;
+    };
+
+export async function runWithBudgetAndAudit<T>(
+  opts: {
+    userId: string | null;
+    requestId: string;
+    limits?: Partial<ExecutionBudgetLimits>;
+  },
+  fn: () => Promise<T>,
+): Promise<BudgetRunResult<T>> {
+  try {
+    // Capture stats INSIDE the budget scope — once the storage.run()
+    // returns, AsyncLocalStorage has torn down and getExecutionStats()
+    // would return null.
+    let capturedStats: ReturnType<typeof getExecutionStats> = null;
+    const value = await withExecutionBudget(opts, async () => {
+      const v = await fn();
+      capturedStats = getExecutionStats();
+      return v;
+    });
+    return { ok: true, value, stats: capturedStats };
+  } catch (err) {
+    if (err instanceof ExecutionExhaustedError) {
+      // Fire audit row but do not await — kill-switch translation must
+      // be fast so the client gets the 429 immediately.
+      void logExhaustion(err, opts.userId, opts.requestId);
+      return {
+        ok: false,
+        status: 429,
+        reason: err.details.reason,
+        details: err.details,
+        headers: {
+          "X-Sovereign-Reason": `kill-switch:${err.details.reason}`,
+          "X-Sovereign-Request-Id": opts.requestId,
+          // Retry-After is a soft hint — the underlying loop must
+          // change for the next request to succeed, so a long
+          // backoff is appropriate.
+          "Retry-After": "30",
+        },
+      };
+    }
+    throw err;
+  }
+}

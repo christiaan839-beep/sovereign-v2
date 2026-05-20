@@ -32,6 +32,7 @@ import {
   DEFAULT_LIMITS,
   getExecutionStats,
   logExhaustion,
+  runWithBudgetAndAudit,
 } from "../execution-budget";
 
 beforeEach(() => {
@@ -385,5 +386,78 @@ describe("logExhaustion — best-effort audit", () => {
     await expect(
       logExhaustion(err, "user-x", "req-y"),
     ).resolves.toBeUndefined();
+  });
+});
+
+describe("runWithBudgetAndAudit — wave-107 route-handler ergonomic wrapper", () => {
+  it("returns ok:true with the value when fn completes normally", async () => {
+    const r = await runWithBudgetAndAudit(
+      { userId: "u", requestId: "r" },
+      async () => 42,
+    );
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.value).toBe(42);
+      expect(r.stats?.requestId).toBe("r");
+    }
+  });
+
+  it("returns ok:false with 429 + Retry-After when the kill-switch trips", async () => {
+    const r = await runWithBudgetAndAudit(
+      { userId: "u", requestId: "r", limits: { maxIdenticalRepeats: 1 } },
+      async () => {
+        checkpoint("t", { same: 1 });
+        checkpoint("t", { same: 1 }); // 2nd same fp = trip with cap=1
+        return "should not reach";
+      },
+    );
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.status).toBe(429);
+      expect(r.reason).toBe("identical_repeat");
+      expect(r.headers["Retry-After"]).toBe("30");
+      expect(r.headers["X-Sovereign-Reason"]).toContain("kill-switch");
+      expect(r.headers["X-Sovereign-Request-Id"]).toBe("r");
+    }
+  });
+
+  it("emits an audit row when the kill-switch trips", async () => {
+    auditLogMock.mockReset();
+    auditLogMock.mockResolvedValue(undefined);
+    await runWithBudgetAndAudit(
+      {
+        userId: "audit-user",
+        requestId: "audit-req",
+        limits: { maxToolCalls: 1 },
+      },
+      async () => {
+        checkpoint("t", { i: 1 });
+        checkpoint("t", { i: 2 });
+      },
+    );
+    // logExhaustion is fire-and-forget — give the microtask queue a tick
+    await new Promise((r) => setTimeout(r, 5));
+    expect(auditLogMock).toHaveBeenCalledTimes(1);
+    expect(auditLogMock.mock.calls[0][0].userId).toBe("audit-user");
+    expect(auditLogMock.mock.calls[0][0].action).toBe("execution.exhausted");
+  });
+
+  it("does NOT swallow non-ExecutionExhaustedError throws", async () => {
+    await expect(
+      runWithBudgetAndAudit({ userId: "u", requestId: "r" }, async () => {
+        throw new Error("real bug");
+      }),
+    ).rejects.toThrow("real bug");
+  });
+
+  it("works with userId=null (anonymous calls)", async () => {
+    const r = await runWithBudgetAndAudit(
+      { userId: null, requestId: "anon", limits: { maxIdenticalRepeats: 1 } },
+      async () => {
+        checkpoint("t", { x: 1 });
+        checkpoint("t", { x: 1 });
+      },
+    );
+    expect(r.ok).toBe(false);
   });
 });

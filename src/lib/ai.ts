@@ -10,6 +10,8 @@ import { nimChat } from "./nvidia";
 import { safeDecrypt } from "@/lib/crypto";
 import type { AIOptions } from "@/types";
 import { createLogger } from "@/lib/logger";
+import { checkpoint as budgetCheckpoint } from "@/lib/execution-budget";
+import { createHash } from "node:crypto";
 import {
   geminiBreaker,
   claudeBreaker,
@@ -82,6 +84,24 @@ export async function ai(
   prompt: string,
   options: AIOptions = {},
 ): Promise<string> {
+  // Wave-107: per-request kill-switch. No-op outside a withExecutionBudget
+  // scope (backward-compat). When inside a scope, this throws
+  // ExecutionExhaustedError if the request has already hit one of:
+  //   - maxToolCalls (default 50)
+  //   - maxIdenticalRepeats on (model, promptHash) (default 8)
+  //   - maxWallClockMs (default 60s)
+  // Fingerprint uses a sha256 prefix of prompt + system so PII never
+  // enters the in-memory budget map.
+  const promptHash = createHash("sha256")
+    .update(prompt)
+    .update(options.system ?? "")
+    .digest("hex")
+    .slice(0, 16);
+  budgetCheckpoint("ai.call", {
+    model: options.model ?? "auto",
+    promptHash,
+  });
+
   const start = Date.now();
   let output = "";
   let outcome: "allowed" | "error" = "allowed";

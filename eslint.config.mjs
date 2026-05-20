@@ -30,6 +30,26 @@ const eslintConfig = defineConfig([
       "react-hooks/purity": "warn",
     },
   },
+  // ── Wave-107 SSRF guardrail ─────────────────────────────────────────
+  // Bare `fetch(url)` in API routes accepts ANY URL including
+  // RFC1918 / 169.254.169.254 (cloud metadata) / localhost / file://.
+  // `src/lib/outbound-fetch.ts` (293 LOC) implements hostname
+  // allowlisting + private-net blocking. New code in API routes
+  // MUST go through it. This rule prevents regressions; the
+  // existing 177 callsites get codemodded in a follow-up wave.
+  {
+    files: ["src/app/api/**/*.ts", "src/app/api/**/*.tsx"],
+    rules: {
+      "no-restricted-syntax": [
+        "warn",
+        {
+          selector: "CallExpression[callee.name='fetch']",
+          message:
+            "Bare fetch() in API routes is SSRF-unsafe. Use `outboundFetch` from @/lib/outbound-fetch — it enforces hostname allowlist + blocks RFC1918 / cloud-metadata / localhost.",
+        },
+      ],
+    },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:
