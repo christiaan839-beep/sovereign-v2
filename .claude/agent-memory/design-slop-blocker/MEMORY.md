@@ -4,3 +4,4 @@
 - [Radius scale rule](radius_scale.md) — Allowed corner radii in this codebase; rounded-2xl/3xl are banned
 - [Typography system](typography.md) — Instrument Serif H1, Inter Tight body, JetBrains Mono micro-labels
 - [Vertical pages template-cloned](project_vertical_pages_clone.md) — for-\* pages share a template with regex-swapped nouns; accent color is the only differentiator
+- [Landing + vertical audit 2026-05-20](landing_audit_2026_05_20.md) — / is elite (A2EGraph, CliTabs, HeroProofPill); 24 /for-\* pages are slop clones with bg-#010101 and white-pill CTAs
