@@ -29,8 +29,10 @@ import { lookup as dnsLookup } from "node:dns/promises";
 import { isSafeUrl } from "@/lib/tools/built-in";
 import {
   activeBulletins,
+  canonicalizeBulletin,
   type FederationBulletin,
 } from "@/lib/federation-bulletin";
+import { verifyMlDsa65WithKey } from "@/lib/pq-sign";
 import { createLogger } from "@/lib/logger";
 import {
   fingerprintId,
@@ -315,29 +317,116 @@ export async function fetchPeerFeed(
 }
 
 /**
+ * Whether the operator has opted into STRICT signature verification.
+ * When true, every consumed bulletin MUST carry a valid ML-DSA-65
+ * signature from a known issuer pubkey — unsigned or unverifiable
+ * bulletins are dropped.
+ *
+ * When false (default / bootstrap mode), shape-valid bulletins are
+ * accepted regardless of signature state. Useful for early-federation
+ * setups where pubkey distribution is still in flight.
+ */
+export function isStrictVerifyEnabled(): boolean {
+  return process.env.FEDERATION_VERIFY_SIGS === "true";
+}
+
+/**
+ * Look up an issuer's ML-DSA-65 base64 public key from the env. Mirror
+ * of the wave-95 TRS_ED25519_PK_<ISSUER> pattern, scoped to
+ * federation peer issuers so the two key registries can be managed
+ * independently.
+ *
+ * Returns null when no key configured for the issuer — caller decides
+ * (per FEDERATION_VERIFY_SIGS) whether absence is fatal.
+ */
+function issuerPubKeyBase64(issuerId: string): string | null {
+  const envName = `FEDERATION_PEER_MLDSA65_PK_${issuerId
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "_")}`;
+  const val = process.env[envName];
+  return val && val.length > 0 ? val : null;
+}
+
+/**
+ * Verify one bulletin's ML-DSA-65 signature against the
+ * configured peer issuer pubkey. Returns:
+ *   - { ok: true }              — verified
+ *   - { ok: false, reason }     — fail / unknown issuer / no sig
+ *
+ * Pure of I/O — caller wires the result into trust decisions.
+ *
+ * NOTE: wave-95's `pq-sign.ts:verifyMlDsa65` reads ONE platform-wide
+ * pubkey from env. For federation, each PEER has its own pubkey.
+ * This helper does NOT reuse verifyMlDsa65 — instead it inlines the
+ * ml_dsa65 verification using the per-issuer key. To keep the
+ * change tiny + auditable, the actual `@noble/post-quantum` call
+ * lives in `pq-sign.ts:verifyMlDsa65WithKey` (added in this wave).
+ */
+export function verifyBulletinSig(
+  b: FederationBulletin,
+):
+  | { ok: true }
+  | { ok: false; reason: "no-signature" | "no-pubkey" | "verify-failed" } {
+  if (!b.mldsa65Sig) return { ok: false, reason: "no-signature" };
+  const pkB64 = issuerPubKeyBase64(b.issuerId);
+  if (!pkB64) return { ok: false, reason: "no-pubkey" };
+  // Verify the canonical bytes the issuer actually signed.
+  const canonical = canonicalizeBulletin({
+    schema: b.schema,
+    issuedAt: b.issuedAt,
+    expiresAt: b.expiresAt,
+    issuerId: b.issuerId,
+    fingerprints: b.fingerprints,
+    contentHash: b.contentHash,
+  });
+  const verified = verifyMlDsa65WithKey(canonical, b.mldsa65Sig, pkB64);
+  return verified ? { ok: true } : { ok: false, reason: "verify-failed" };
+}
+
+/**
  * Filter raw peer bulletins to those that pass our trust checks:
  *   1. Schema id is vaos-honeypot-bulletin-v1
  *   2. issuerId / expiresAt / fingerprints all present + shaped
  *   3. TTL still active (server-side activeBulletins re-check)
  *   4. Capped at MAX_BULLETINS_PER_PULL
+ *   5. When FEDERATION_VERIFY_SIGS=true: ML-DSA-65 sig verifies
+ *      against the configured peer pubkey (wave-103 trust loop)
  *
- * Signature verification is OPTIONAL — when the operator has the
- * peer's ML-DSA-65 public key configured (via TRS_ED25519_PK_<issuer>
- * or a dedicated FEDERATION_PEER_PK_<issuer>), we verify the sig
- * here. When the key isn't configured, we accept the bulletin but
- * mark the trust as "unverified" via the result struct. This lets
- * operators bootstrap a federation incrementally without all key
- * material up front.
+ * Returns the surviving bulletins. Each survivor whose signature
+ * couldn't be verified (no key, no sig, or mismatched sig) is
+ * dropped when strict mode is on, and accepted with a "unverified"
+ * log entry when strict mode is off.
  */
 export function filterValidBulletins(
   raw: FederationBulletin[],
 ): FederationBulletin[] {
+  const strict = isStrictVerifyEnabled();
   const filtered: FederationBulletin[] = [];
   for (const b of raw) {
     if (b.schema !== "vaos-honeypot-bulletin-v1") continue;
     if (typeof b.issuerId !== "string" || b.issuerId.length === 0) continue;
     if (typeof b.expiresAt !== "string") continue;
     if (!Array.isArray(b.fingerprints)) continue;
+
+    // Wave-103: optional ML-DSA-65 verification gate. In strict mode
+    // an unverifiable bulletin is dropped entirely — the federation
+    // does not consume unsigned attack data. In bootstrap mode the
+    // bulletin is accepted but the gap is logged for ops visibility.
+    const sigCheck = verifyBulletinSig(b);
+    if (!sigCheck.ok) {
+      if (strict) {
+        log.warn("dropping unverifiable bulletin (strict mode)", {
+          issuerId: b.issuerId,
+          reason: sigCheck.reason,
+        });
+        continue;
+      }
+      log.info("accepting unverified bulletin (bootstrap mode)", {
+        issuerId: b.issuerId,
+        reason: sigCheck.reason,
+      });
+    }
+
     filtered.push(b);
     if (filtered.length >= MAX_BULLETINS_PER_PULL) break;
   }

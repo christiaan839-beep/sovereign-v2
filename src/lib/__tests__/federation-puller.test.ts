@@ -31,6 +31,8 @@ import {
   resolvedHostIsSafe,
   runPullCycle,
   getConfiguredPeers,
+  isStrictVerifyEnabled,
+  verifyBulletinSig,
   MAX_BULLETINS_PER_PULL,
   MAX_FINGERPRINTS_PER_CYCLE,
   MAX_FEED_BYTES,
@@ -445,5 +447,92 @@ describe("runPullCycle — end-to-end", () => {
     const r = await runPullCycle();
     expect(r.uniqueFingerprintIds).toHaveLength(1);
     expect(r.totalBulletinsAccepted).toBe(2);
+  });
+});
+
+describe("FEDERATION_VERIFY_SIGS — strict verification gate (wave 103)", () => {
+  const originalStrict = process.env.FEDERATION_VERIFY_SIGS;
+  const originalKey = process.env.FEDERATION_PEER_MLDSA65_PK_PEER_A;
+
+  afterEach(() => {
+    if (originalStrict === undefined) {
+      delete process.env.FEDERATION_VERIFY_SIGS;
+    } else {
+      process.env.FEDERATION_VERIFY_SIGS = originalStrict;
+    }
+    if (originalKey === undefined) {
+      delete process.env.FEDERATION_PEER_MLDSA65_PK_PEER_A;
+    } else {
+      process.env.FEDERATION_PEER_MLDSA65_PK_PEER_A = originalKey;
+    }
+  });
+
+  it("isStrictVerifyEnabled returns false by default", () => {
+    delete process.env.FEDERATION_VERIFY_SIGS;
+    expect(isStrictVerifyEnabled()).toBe(false);
+  });
+
+  it("isStrictVerifyEnabled returns true only for exact 'true'", () => {
+    process.env.FEDERATION_VERIFY_SIGS = "true";
+    expect(isStrictVerifyEnabled()).toBe(true);
+    process.env.FEDERATION_VERIFY_SIGS = "1";
+    expect(isStrictVerifyEnabled()).toBe(false);
+    process.env.FEDERATION_VERIFY_SIGS = "yes";
+    expect(isStrictVerifyEnabled()).toBe(false);
+  });
+
+  it("verifyBulletinSig: 'no-signature' when mldsa65Sig is null", () => {
+    const b = bulletin([fp("x")]); // unsigned by default
+    const r = verifyBulletinSig(b);
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.reason).toBe("no-signature");
+  });
+
+  it("verifyBulletinSig: 'no-pubkey' when no FEDERATION_PEER_MLDSA65_PK_<issuer> configured", () => {
+    delete process.env.FEDERATION_PEER_MLDSA65_PK_PEER_A;
+    const b: FederationBulletin = {
+      ...bulletin([fp("x")], { issuerId: "peer_a" }),
+      mldsa65Sig: "fake-sig-base64",
+    };
+    const r = verifyBulletinSig(b);
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.reason).toBe("no-pubkey");
+  });
+
+  it("verifyBulletinSig: 'verify-failed' when sig doesn't match pubkey", () => {
+    // Set a fake pubkey + fake sig — they won't validate.
+    process.env.FEDERATION_PEER_MLDSA65_PK_PEER_A = Buffer.from(
+      "not-a-real-mldsa65-pubkey",
+    ).toString("base64");
+    const b: FederationBulletin = {
+      ...bulletin([fp("x")], { issuerId: "peer_a" }),
+      mldsa65Sig: Buffer.from("not-a-real-sig").toString("base64"),
+    };
+    const r = verifyBulletinSig(b);
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.reason).toBe("verify-failed");
+  });
+
+  it("filterValidBulletins: strict mode DROPS unsigned bulletins", () => {
+    process.env.FEDERATION_VERIFY_SIGS = "true";
+    const out = filterValidBulletins([bulletin([fp("x")])]);
+    expect(out).toEqual([]);
+  });
+
+  it("filterValidBulletins: bootstrap mode (default) ACCEPTS unsigned bulletins", () => {
+    delete process.env.FEDERATION_VERIFY_SIGS;
+    const out = filterValidBulletins([bulletin([fp("x")])]);
+    expect(out).toHaveLength(1);
+  });
+
+  it("filterValidBulletins: strict mode drops bulletins from unknown issuers", () => {
+    process.env.FEDERATION_VERIFY_SIGS = "true";
+    delete process.env.FEDERATION_PEER_MLDSA65_PK_PEER_A;
+    const b: FederationBulletin = {
+      ...bulletin([fp("x")], { issuerId: "peer_a" }),
+      mldsa65Sig: "any-sig-base64",
+    };
+    const out = filterValidBulletins([b]);
+    expect(out).toEqual([]);
   });
 });

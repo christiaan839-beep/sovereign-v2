@@ -118,6 +118,33 @@ export function verifyMlDsa65(
 }
 
 /**
+ * Verify an ML-DSA-65 signature using an EXPLICIT public key (rather
+ * than the platform's env-configured one). Used by the federation
+ * peer-pull layer where each remote issuer has its own pubkey.
+ *
+ * Returns false on any parse/verify failure — never throws.
+ */
+export function verifyMlDsa65WithKey(
+  canonical: string,
+  signatureB64: string,
+  publicKeyB64: string,
+): boolean {
+  let sigBytes: Uint8Array;
+  let pkBytes: Uint8Array;
+  try {
+    sigBytes = Uint8Array.from(Buffer.from(signatureB64, "base64"));
+    pkBytes = Uint8Array.from(Buffer.from(publicKeyB64, "base64"));
+  } catch {
+    return false;
+  }
+  try {
+    return ml_dsa65.verify(sigBytes, Buffer.from(canonical, "utf8"), pkBytes);
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Verify a dual-signature in the v3 wire format
  * (`v3=<ed25519-b64>.<mldsa65-b64>`). Both signatures must validate
  * for the receipt to be accepted as forward-secure. Use this in /api/
