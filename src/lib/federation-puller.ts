@@ -25,8 +25,11 @@
  * Wire schema: bulletins follow `vaos-honeypot-bulletin-v1`.
  */
 
-import { lookup as dnsLookup } from "node:dns/promises";
 import { isSafeUrl } from "@/lib/tools/built-in";
+import {
+  resolvedHostIsSafe as sharedResolvedHostIsSafe,
+  safeResolveOrNull as sharedSafeResolveOrNull,
+} from "@/lib/safe-host";
 import {
   activeBulletins,
   canonicalizeBulletin,
@@ -139,25 +142,14 @@ export function isValidPeerUrl(url: string): boolean {
  * the window (small TOCTOU remains between resolve and fetch but is
  * impractical to exploit at the millisecond timescale).
  */
-export function resolvedHostIsSafe(address: string): boolean {
-  // IPv4 patterns (mirrors isSafeUrl).
-  const blockedV4 = [
-    /^127\./,
-    /^10\./,
-    /^192\.168\./,
-    /^172\.(1[6-9]|2[0-9]|3[0-1])\./,
-    /^169\.254\./,
-    /^0\.0\.0\.0$/,
-  ];
-  if (blockedV4.some((re) => re.test(address))) return false;
-  // IPv6 (lowercase compare). fc00::/7 unique-local, fe80::/10 link-local,
-  // ::1 loopback.
-  const lower = address.toLowerCase();
-  if (lower === "::1") return false;
-  if (lower.startsWith("fc") || lower.startsWith("fd")) return false;
-  if (lower.startsWith("fe80:")) return false;
-  return true;
-}
+/**
+ * Wave-107.2: now a re-export of the shared `resolvedHostIsSafe` in
+ * `src/lib/safe-host.ts`. The implementation moved verbatim so the
+ * single source of truth lives in one file. Federation-puller keeps
+ * the re-export for backward-compat — any external caller of this
+ * symbol continues to work.
+ */
+export const resolvedHostIsSafe = sharedResolvedHostIsSafe;
 
 /**
  * Resolve a hostname to its IP and check the IP isn't private/loopback/
@@ -168,15 +160,11 @@ export function resolvedHostIsSafe(address: string): boolean {
  * cache coherency is good — the IP we validate is the one fetch will
  * connect to in the next few milliseconds.
  */
-async function safeResolveOrNull(hostname: string): Promise<string | null> {
-  try {
-    const { address } = await dnsLookup(hostname);
-    if (!resolvedHostIsSafe(address)) return null;
-    return address;
-  } catch {
-    return null;
-  }
-}
+// Wave-107.2: now an alias of the shared `safeResolveOrNull` in
+// `src/lib/safe-host.ts`. Implementation moved verbatim. The wave-
+// 102 audit of this exact logic carries over — same semantics, same
+// TOCTOU envelope, just one source of truth.
+const safeResolveOrNull = sharedSafeResolveOrNull;
 
 /**
  * Read a Response body with a hard byte cap. Streams chunks so a

@@ -30,6 +30,7 @@
  */
 
 import { isSafeUrl } from "@/lib/tools/built-in";
+import { safeResolveOrNull } from "@/lib/safe-host";
 import {
   buildPolicy,
   testUrl,
@@ -213,6 +214,79 @@ export async function outboundFetch(
       ruleId: opts.ruleId,
       category: "ssrf",
       severity: 95,
+      reason: v.message,
+      signal: url,
+      commitments: { url: commit(url) },
+      tenantId: opts.tenantId,
+      userId: opts.userId,
+    });
+    throw new EgressBlockedError(url, v);
+  }
+
+  // Wave-107.2: DNS-resolved private-IP check.
+  //
+  // `isSafeUrl` above is a STRING-prefix regex against the URL's
+  // hostname. It catches `https://10.0.0.1` but does NOT resolve
+  // DNS — so `https://evil.example.com` whose A record points at
+  // `10.0.0.5` (or `169.254.169.254` for cloud metadata) slips
+  // past. This is the classic DNS-rebinding shape.
+  //
+  // `safeResolveOrNull` (promoted from federation-puller in this
+  // wave) does a real DNS lookup and rejects the call when ANY
+  // returned address is RFC1918 / loopback / link-local / unique-
+  // local. Closes the gap uniformly across all `outboundFetch`
+  // callers — every existing route that uses this helper now
+  // inherits the defense without changing the call site.
+  //
+  // TOCTOU note: a small window remains between `dns.lookup` here
+  // and the actual `fetch` connect downstream. At millisecond
+  // scale an attacker would need to swing their DNS record between
+  // the lookup and the syscall. Practical mitigation is sticky-IP
+  // fetch (resolve once, connect to the address explicitly);
+  // that's a future hardening. For now: same envelope federation-
+  // puller's audited wave-102 pattern carries.
+  try {
+    const parsed = new URL(url);
+    // Skip the DNS check for IP-literal URLs — isSafeUrl above
+    // already rejected the private ones; remaining public IPs
+    // need no lookup. This also avoids a needless OS resolver
+    // call for the IP literal.
+    const isIpLiteral =
+      /^\d{1,3}(\.\d{1,3}){3}$/.test(parsed.hostname) ||
+      parsed.hostname.startsWith("[");
+    if (!isIpLiteral) {
+      const resolved = await safeResolveOrNull(parsed.hostname);
+      if (resolved === null) {
+        const v: EgressViolation = {
+          reason: "ssrf-blocked",
+          message: `URL blocked: ${parsed.hostname} resolves to a private/loopback/link-local address (or DNS failed)`,
+        };
+        await emitDefenseReceipt({
+          ruleId: opts.ruleId,
+          category: "ssrf",
+          severity: 95,
+          reason: v.message,
+          signal: url,
+          commitments: { url: commit(url) },
+          tenantId: opts.tenantId,
+          userId: opts.userId,
+        });
+        throw new EgressBlockedError(url, v);
+      }
+    }
+  } catch (err) {
+    // `new URL(url)` threw or our own EgressBlockedError above —
+    // re-throw EgressBlockedError so callers see the typed error;
+    // an unparseable URL is rejected.
+    if (err instanceof EgressBlockedError) throw err;
+    const v: EgressViolation = {
+      reason: "ssrf-blocked",
+      message: `URL parse failed: ${url}`,
+    };
+    await emitDefenseReceipt({
+      ruleId: opts.ruleId,
+      category: "ssrf",
+      severity: 90,
       reason: v.message,
       signal: url,
       commitments: { url: commit(url) },

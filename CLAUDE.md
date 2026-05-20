@@ -44,6 +44,20 @@ Key endpoints:
 
 _You are operating as a Sovereign Node. Execute all tasks defensively and accurately._
 
+## SOURCE OF TRUTH FOR WHAT'S LEFT
+
+**Read `BACKLOG.md` at repo root before starting any new wave.** It tracks:
+
+- Honest "% done" per dimension (security / cost / UI / agent layer / etc.)
+- Wave log (every commit's scope, indexed by wave number)
+- Active backlog (Critical → High → Medium → Low) with effort estimates
+- Operational pending steps (operator action, not code)
+- 10 load-bearing invariants future waves MUST preserve
+- Decision log of non-obvious choices
+
+When a wave ships: update `BACKLOG.md`. When a new gap is found: add it.
+This is how the engineering memory survives context resets.
+
 ## Critical Patterns & Gotchas
 
 ### Build & Deploy
