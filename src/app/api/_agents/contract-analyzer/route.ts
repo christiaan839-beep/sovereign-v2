@@ -55,8 +55,13 @@ export const POST = createAgentRoute({
       );
     } catch {
       // Tiered fallback (Wave 73 cost audit): try Mistral Large 2 via
-      // NIM first (~30× cheaper than Claude Sonnet+thinking). Only
-      // escalate to Claude+thinking on a second consecutive failure.
+      // Wave-108 cost fix: Mistral → Cerebras (extraction) → Claude.
+      // Previously the fallback jumped straight to Claude Sonnet+thinking
+      // (~$3/$15 per M tokens) for what is structurally a JSON-shaped
+      // extraction task. Cerebras Llama-3.1-70B at ~$0.10/M tokens
+      // handles structured extraction reliably AND is 10x faster.
+      // Claude is preserved as the THIRD fallback so a double-failure
+      // path still produces a result rather than a 500.
       try {
         result = await ai(
           `Analyze this contract:\n\n${document.substring(0, 50_000)}`,
@@ -67,15 +72,29 @@ export const POST = createAgentRoute({
           },
         );
       } catch {
-        result = await ai(
-          `Analyze this contract:\n\n${document.substring(0, 50_000)}`,
-          {
-            system: SYSTEM_PROMPT,
-            maxTokens: 3000,
-            model: "claude",
-            thinking: true,
-          },
-        );
+        try {
+          result = await ai(
+            `Analyze this contract:\n\n${document.substring(0, 50_000)}`,
+            {
+              system: SYSTEM_PROMPT,
+              maxTokens: 3000,
+              model: "cerebras",
+            },
+          );
+        } catch {
+          // Final-resort Claude+thinking — only reached on cascading
+          // upstream failures. Expensive but guarantees we don't
+          // serve a 500 on a legal/contract analysis request.
+          result = await ai(
+            `Analyze this contract:\n\n${document.substring(0, 50_000)}`,
+            {
+              system: SYSTEM_PROMPT,
+              maxTokens: 3000,
+              model: "claude",
+              thinking: true,
+            },
+          );
+        }
       }
     }
 

@@ -56,16 +56,32 @@ interface VerifiedResult {
  *
  * This is the same pattern Anthropic uses for Constitutional AI.
  */
+/**
+ * Wave-108: prompts shorter than this are NOT worth a critique/revise
+ * pass. The verify loop costs 2-3x baseline (generator + critic + maybe
+ * revise); for short prompts the marginal answer-quality bump rarely
+ * justifies the cost. Callers can override by passing `skipVerify: false`
+ * explicitly. The 500-char threshold comes from the cost audit's
+ * recommendation and matches the median tool-use / classification prompt
+ * length in the codebase. Long-form generation, contract analysis,
+ * legal reasoning, etc. still verify by default.
+ */
+export const VERIFY_AUTO_MIN_PROMPT_CHARS = 500;
+
 export async function verifiedAi(
   prompt: string,
-  options: VerifyOptions = {}
+  options: VerifyOptions = {},
 ): Promise<VerifiedResult> {
   const {
     system = "",
     maxTokens = 2500,
     generatorModel = "nvidia/llama-3.1-nemotron-ultra-253b-v1",
     criticModel = "deepseek-ai/deepseek-v3-2-0324",
-    skipVerify = false,
+    // Wave-108: auto-skip verification when the prompt is short.
+    // The verify loop triples cost + latency for prompts where the
+    // critic pass has little signal to find. Explicit `skipVerify`
+    // (true|false) overrides the auto behaviour.
+    skipVerify = prompt.length < VERIFY_AUTO_MIN_PROMPT_CHARS,
   } = options;
 
   // Step 1: Generate
@@ -114,7 +130,7 @@ End with: CONFIDENCE: X/10`,
           content: `ORIGINAL PROMPT: ${prompt}\n\nRESPONSE TO REVIEW:\n${initialAnswer}`,
         },
       ],
-      { maxTokens: 800, temperature: 0.3 }
+      { maxTokens: 800, temperature: 0.3 },
     );
 
     // Extract confidence score
@@ -160,7 +176,7 @@ End with: CONFIDENCE: X/10`,
           content: `A quality reviewer found these issues with your response:\n\n${critique}\n\nPlease revise your answer to fix these issues. Keep everything that was correct. Only improve what was flagged.`,
         },
       ],
-      { maxTokens, temperature: 0.4 }
+      { maxTokens, temperature: 0.4 },
     );
 
     log.info("Consensus: revised after critique", {
@@ -222,7 +238,7 @@ const CONSENSUS_MODELS = [
  */
 export async function consensusAi(
   prompt: string,
-  options: ConsensusOptions = {}
+  options: ConsensusOptions = {},
 ): Promise<ConsensusResult> {
   const { system = "", maxTokens = 2000, models: modelCount = 2 } = options;
 
@@ -237,14 +253,17 @@ export async function consensusAi(
           ...(system ? [{ role: "system", content: system }] : []),
           { role: "user", content: prompt },
         ],
-        { maxTokens, temperature: 0.5 }
+        { maxTokens, temperature: 0.5 },
       );
       return { model, answer };
-    })
+    }),
   );
 
   const successful = results
-    .filter((r): r is PromiseFulfilledResult<{ model: string; answer: string }> => r.status === "fulfilled")
+    .filter(
+      (r): r is PromiseFulfilledResult<{ model: string; answer: string }> =>
+        r.status === "fulfilled",
+    )
     .map((r) => r.value);
 
   if (successful.length === 0) {
@@ -263,7 +282,10 @@ export async function consensusAi(
   // Synthesize the best answer from all responses
   try {
     const synthesisPrompt = successful
-      .map((r, i) => `--- MODEL ${i + 1} (${r.model.split("/").pop()}) ---\n${r.answer}`)
+      .map(
+        (r, i) =>
+          `--- MODEL ${i + 1} (${r.model.split("/").pop()}) ---\n${r.answer}`,
+      )
       .join("\n\n");
 
     const synthesized = await nimChat(
@@ -285,7 +307,7 @@ Do NOT say "Model 1 said..." — just give the best unified answer.`,
           content: `ORIGINAL QUESTION: ${prompt}\n\n${synthesisPrompt}`,
         },
       ],
-      { maxTokens, temperature: 0.3 }
+      { maxTokens, temperature: 0.3 },
     );
 
     return {
@@ -296,7 +318,9 @@ Do NOT say "Model 1 said..." — just give the best unified answer.`,
     };
   } catch {
     // Synthesis failed — return the longest answer (usually most detailed)
-    const best = successful.sort((a, b) => b.answer.length - a.answer.length)[0];
+    const best = successful.sort(
+      (a, b) => b.answer.length - a.answer.length,
+    )[0];
     return {
       answer: best.answer,
       modelAnswers: successful,
@@ -314,8 +338,13 @@ Do NOT say "Model 1 said..." — just give the best unified answer.`,
  */
 export async function confidentAi(
   prompt: string,
-  options: { system?: string; maxTokens?: number; threshold?: number } = {}
-): Promise<{ answer: string; confidence: number; escalated: boolean; method: string }> {
+  options: { system?: string; maxTokens?: number; threshold?: number } = {},
+): Promise<{
+  answer: string;
+  confidence: number;
+  escalated: boolean;
+  method: string;
+}> {
   const { system = "", maxTokens = 2000, threshold = 0.7 } = options;
 
   // First pass: fast model with confidence request
@@ -328,16 +357,23 @@ export async function confidentAi(
         content: `${prompt}\n\nAfter your answer, on a new line write: CONFIDENCE: X/10 (how confident you are in the accuracy of your answer)`,
       },
     ],
-    { maxTokens, temperature: 0.5 }
+    { maxTokens, temperature: 0.5 },
   );
 
   // Extract confidence
   const confMatch = answer.match(/CONFIDENCE:\s*(\d+)\s*\/\s*10/i);
   const confidence = confMatch ? parseInt(confMatch[1]) / 10 : 0.5;
-  const cleanAnswer = answer.replace(/\n?CONFIDENCE:\s*\d+\s*\/\s*10/i, "").trim();
+  const cleanAnswer = answer
+    .replace(/\n?CONFIDENCE:\s*\d+\s*\/\s*10/i, "")
+    .trim();
 
   if (confidence >= threshold) {
-    return { answer: cleanAnswer, confidence, escalated: false, method: "fast" };
+    return {
+      answer: cleanAnswer,
+      confidence,
+      escalated: false,
+      method: "fast",
+    };
   }
 
   // Low confidence — escalate to verified AI

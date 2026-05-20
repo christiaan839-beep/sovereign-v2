@@ -371,25 +371,38 @@ Then give your final answer after your reasoning.`
 
   const fullPrompt = `${prompt}${researchData ? `\n\n--- LIVE RESEARCH DATA ---\n${researchData.slice(0, 3000)}` : ""}${thinkingInstruction}`;
 
-  // Phase 3: Generate with fast model first
+  // Phase 3: Generate with fast model first.
+  //
+  // Wave-108: FLIPPED to NIM-first. Previously this routed to PAID
+  // Gemini Flash by default ($0.075/M tokens for short prompts), with
+  // free NIM as the error-only fallback. The cost audit found this
+  // burned ~$200-500/month across god-brain, super-agent, meta-prompt,
+  // and weekly-report callsites that hit smartAi() on every run.
+  //
+  // NIM (nvidia/llama-3.1-nemotron-ultra-253b-v1) is free, on par with
+  // Gemini Flash for reasoning, and is the documented priority per
+  // CLAUDE.md ("Ollama → Cerebras → NIM → Claude/Gemini"). Escalation
+  // to Gemini happens only when (a) NIM fails or (b) the `escalate`
+  // flag is set AND the output looks too short — which already runs
+  // a separate escalation pass via nimChat() at line 401 below.
   let answer: string;
-  let modelUsed = "gemini-2.5-flash";
+  let modelUsed = "nemotron-ultra-253b-v1";
   let escalated = false;
 
   try {
     answer = await ai(fullPrompt, {
       system: systemPrompt,
       maxTokens,
-      model: "gemini",
+      model: "nim",
     });
   } catch {
-    // Fast model failed, try NIM
+    // NIM unreachable / rate-limited — fall back to Gemini Flash.
     answer = await ai(fullPrompt, {
       system: systemPrompt,
       maxTokens,
-      model: "nim",
+      model: "gemini",
     });
-    modelUsed = "nemotron-ultra-253b-v1";
+    modelUsed = "gemini-2.5-flash";
   }
 
   // Phase 4: ESCALATE if output is too short or looks low quality
@@ -1139,6 +1152,12 @@ export async function embed(text: string): Promise<number[]> {
  * Gemini Grounded Search — Uses Google Search as grounding tool.
  * Available on Google AI Ultra plan. Combines Gemini's reasoning with live Google Search results.
  * More accurate than Tavily for general web queries since it uses Google's own index.
+ *
+ * Wave-108: this function bypasses the unified `ai()` router because
+ * Google Search grounding is a Gemini-only SDK feature (no NIM/Claude
+ * equivalent). To keep the wave-106 kill-switch coverage intact for
+ * runaway loops that call grounded search repeatedly, we explicitly
+ * checkpoint here.
  */
 export async function geminiGroundedSearch(
   query: string,
@@ -1147,6 +1166,17 @@ export async function geminiGroundedSearch(
   text: string;
   searchResults?: Array<{ title: string; url: string }>;
 }> {
+  // Wave-108 kill-switch coverage. Hash the query so the fingerprint
+  // identifies repeated calls without embedding PII in the budget map.
+  const queryHash = createHash("sha256")
+    .update(query)
+    .update(system ?? "")
+    .digest("hex")
+    .slice(0, 16);
+  budgetCheckpoint("ai.grounded-search", {
+    model: "gemini-2.5-pro",
+    queryHash,
+  });
   const userKeys = await getUserKeys();
   const apiKey = userKeys.gemini || globalGeminiKey;
 

@@ -1,6 +1,8 @@
 import { createAgentRoute } from "@/lib/agent-factory";
 import { ai } from "@/lib/ai";
 import { verifiedAi } from "@/lib/consensus";
+import { checkpoint as budgetCheckpoint } from "@/lib/execution-budget";
+import { createHash } from "node:crypto";
 
 /**
  * GEMINI DEEP THINK — Advanced reasoning with parallel thought streams.
@@ -97,6 +99,22 @@ Be specific. Use numbers. No generic advice.`,
         };
       }
     }
+
+    // Wave-108 kill-switch coverage: this path bypasses ai() because
+    // it uses Gemini 2.5 Pro's `thinkingConfig.thinkingBudget` which
+    // isn't exposed through the unified router. Checkpoint here so a
+    // runaway loop calling deep-think repeatedly with the same
+    // problem still trips wave-106's identical_repeat detector.
+    const problemHash = createHash("sha256")
+      .update(problem)
+      .update(context ?? "")
+      .digest("hex")
+      .slice(0, 16);
+    budgetCheckpoint("ai.deep-think", {
+      model: "gemini-2.5-pro",
+      thinkingBudget,
+      problemHash,
+    });
 
     const res = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${geminiKey}`,
