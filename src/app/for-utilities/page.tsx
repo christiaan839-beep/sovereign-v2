@@ -103,7 +103,7 @@ const COMPLIANCE = [
   "ISO 14064 — Greenhouse-gas inventories",
   "SOX 404 — IT general controls",
   "NIST SP 800-82 — ICS / OT security",
-  "SOC 2 Type 2 — continuous monitoring",
+  "SOC 2 readiness controls — continuous monitoring (audit-ready posture; formal Type 2 attestation in progress)",
 ];
 
 export default function ForUtilitiesPage() {

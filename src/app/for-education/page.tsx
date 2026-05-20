@@ -24,7 +24,7 @@ const config: VerticalConfig = {
   heroLine1: "AI agents for",
   heroHighlight: "education.",
   heroBlurb:
-    "FERPA-compliant. Curriculum generation. Student assessment. Runs locally.",
+    "FERPA-aware controls. Curriculum generation, student assessment, and progress reporting. Ollama Local path keeps student records on your network for air-gapped processing.",
   capabilitiesHeadline: "Less busywork. More teaching.",
   capabilitiesBlurb:
     "Educators spend 50% of their time on non-teaching tasks. AI agents handle curriculum prep, assessment creation, and admin so your teachers can teach.",

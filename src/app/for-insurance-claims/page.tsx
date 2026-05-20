@@ -110,7 +110,7 @@ const COMPLIANCE = [
   "HIPAA — PHI handling for health-plan claims",
   "Fair Claims Settlement Practices regs (per state)",
   "ECOA — applicable to credit-related coverage decisions",
-  "SOC 2 Type 2 — continuous monitoring",
+  "SOC 2 readiness controls — continuous monitoring (audit-ready posture; formal Type 2 attestation in progress)",
 ];
 
 export default function ForInsuranceClaimsPage() {

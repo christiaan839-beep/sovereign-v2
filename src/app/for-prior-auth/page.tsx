@@ -102,7 +102,7 @@ const COMPLIANCE = [
   "CMS Final Rule on Prior Authorization (2024)",
   "Texas SB 1086 / California SB 1120 — AI in claims",
   "EU AI Act Annex III — High-Risk Healthcare",
-  "SOC 2 Type 2 — continuous monitoring",
+  "SOC 2 readiness controls — continuous monitoring (audit-ready posture; formal Type 2 attestation in progress)",
 ];
 
 export default function ForPriorAuthPage() {

@@ -103,7 +103,7 @@ const COMPLIANCE = [
   "FCRA — Fair Credit Reporting Act",
   "BSA / AML — Bank Secrecy Act / FinCEN",
   "EU AI Act — High-Risk Credit Scoring (Annex III)",
-  "SOC 2 Type 2 — continuous monitoring",
+  "SOC 2 readiness controls — continuous monitoring (audit-ready posture; formal Type 2 attestation in progress)",
 ];
 
 export default function ForBankingPage() {

@@ -99,7 +99,7 @@ const COMPLIANCE = [
   "GHG Protocol — Scope 1, 2, 3 Standards",
   "CDP Climate Change Questionnaire",
   "EU Taxonomy Regulation",
-  "SOC 2 Type 2 — continuous monitoring",
+  "SOC 2 readiness controls — continuous monitoring (audit-ready posture; formal Type 2 attestation in progress)",
 ];
 
 export default function ForEsgPage() {

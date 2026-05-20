@@ -100,7 +100,7 @@ const COMPLIANCE = [
   "EU AI Liability Directive (AILD)",
   "EU AI Act Annex III — High-Risk Insurance Use",
   "GDPR Art. 22 — Automated Decision-Making",
-  "SOC 2 Type 2 — continuous monitoring",
+  "SOC 2 readiness controls — continuous monitoring (audit-ready posture; formal Type 2 attestation in progress)",
 ];
 
 export default function ForInsurancePage() {

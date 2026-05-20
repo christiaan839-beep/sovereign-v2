@@ -23,7 +23,7 @@ const config: VerticalConfig = {
   heroLine1: "AI agents for",
   heroHighlight: "healthcare.",
   heroBlurb:
-    "HIPAA-compliant. Local execution. Patient data never leaves your machine.",
+    "HIPAA-aware controls. Ollama Local path supports air-gapped processing where patient data stays on your infrastructure. BAA available for enterprise deployments.",
   capabilitiesHeadline: "Automate the admin. Focus on the patient.",
   capabilitiesBlurb:
     "Every task that pulls clinicians away from patient care — automated, verified, and audit-logged.",

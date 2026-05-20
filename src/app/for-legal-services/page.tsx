@@ -101,7 +101,7 @@ const COMPLIANCE = [
   "EU GDPR Art. 9 — special-category data",
   "EU AI Act Annex III — High-Risk AI in justice",
   "SRA Code of Conduct (UK)",
-  "SOC 2 Type 2 — continuous monitoring",
+  "SOC 2 readiness controls — continuous monitoring (audit-ready posture; formal Type 2 attestation in progress)",
 ];
 
 export default function ForLegalServicesPage() {
