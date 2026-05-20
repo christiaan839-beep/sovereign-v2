@@ -43,7 +43,8 @@ export type AuditAction =
   | "adversarial.eval"
   | "data.delete-receipt"
   | "honeypot.bulletin"
-  | "honeypot.signal";
+  | "honeypot.signal"
+  | "execution.exhausted";
 
 interface AuditEntry {
   userId: string;

@@ -87,6 +87,10 @@ export const RETENTION_POLICIES: Readonly<Record<string, number>> =
     "agent.execute": 720, // 30 days
     "credits.add": 720, // 30 days (refund/grant rows separately preserved)
     "marketplace.run": 720, // 30 days
+
+    // Wave-106 kill-switch trips — high signal for SRE postmortems but
+    // not evidence; 30d gives a generous incident-debugging window.
+    "execution.exhausted": 720, // 30 days
   });
 
 export interface PruneActionResult {
@@ -252,6 +256,7 @@ export const OPERATIONAL_ACTIONS = new Set<string>([
   "agent.execute",
   "credits.add",
   "marketplace.run",
+  "execution.exhausted",
 ]);
 
 for (const action of Object.keys(RETENTION_POLICIES)) {
