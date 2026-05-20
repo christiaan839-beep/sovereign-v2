@@ -105,8 +105,8 @@ const COMPLIANCE = [
 
 export default function ForTaxAuditPage() {
   return (
-    <div className="min-h-screen bg-[#010101] text-neutral-200">
-      <nav className="border-b border-white/5 px-6 py-4 bg-[#010101]/80 backdrop-blur-xl sticky top-0 z-50">
+    <div className="min-h-screen bg-[#030303] text-neutral-200">
+      <nav className="border-b border-white/5 px-6 py-4 bg-[#030303]/80 backdrop-blur-xl sticky top-0 z-50">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <Link href="/" className="text-sm font-bold text-white tracking-wide">
             Sovereign Matrix
@@ -126,7 +126,7 @@ export default function ForTaxAuditPage() {
             </Link>
             <Link
               href="/dashboard"
-              className="text-xs px-4 py-2 rounded-full bg-white text-black font-semibold hover:bg-neutral-200 transition-colors"
+              className="text-xs px-4 py-2 rounded-[3px] bg-white/[0.04] border border-white/[0.08] font-medium text-neutral-300 hover:bg-white/[0.07] hover:text-white transition-colors"
             >
               Dashboard
             </Link>

@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { PrimaryCTA } from "@/components/landing/PrimaryCTA";
 import {
   ArrowRight,
   Users,
@@ -81,7 +82,7 @@ const WORKFLOWS = [
 
 export default function ForRecruitingPage() {
   return (
-    <div className="min-h-screen bg-[#010101] text-white">
+    <div className="min-h-screen bg-[#030303] text-white">
       {/* Nav */}
       <nav className="px-6 md:px-10 h-16 flex items-center justify-between max-w-7xl mx-auto">
         <Link href="/" className="text-sm font-semibold text-white">
@@ -323,12 +324,11 @@ export default function ForRecruitingPage() {
             interview booked. Your recruiting pipeline runs itself while you
             focus on closing offers.
           </p>
-          <Link
-            href="/signup"
-            className="inline-flex items-center gap-2 px-8 py-4 bg-white text-black font-semibold rounded-full text-sm hover:bg-neutral-100 transition-all"
-          >
-            Get started free <ArrowRight className="w-4 h-4" />
-          </Link>
+          <div className="flex items-center justify-center">
+            <PrimaryCTA href="/signup" variant="final">
+              Get started free <ArrowRight className="w-4 h-4" />
+            </PrimaryCTA>
+          </div>
         </div>
       </section>
     </div>
