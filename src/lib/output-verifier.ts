@@ -11,6 +11,10 @@ import {
   type TrustLevel,
 } from "@/lib/trust-levels";
 import { emitDefenseReceipt } from "@/lib/defense-receipts";
+import {
+  methodologyVerify,
+  type MethodologyResult,
+} from "@/lib/methodology-verifier";
 
 const log = createLogger("output-verifier");
 
@@ -39,6 +43,16 @@ export interface VerificationResult {
   trustDecision: "auto-approved" | "needs-approval" | "blocked";
   blockReason?: string;
   executionTimeMs: number;
+  /**
+   * Wave 112 — methodology-grade verification result (CRAAP + SIFT,
+   * plus FINER when a research question is supplied). Populated
+   * ONLY when the caller opts in via `runMethodology: true`. The
+   * pipeline does NOT use this to block delivery — it's an audit
+   * signal that flows into the cryptographic receipt envelope so
+   * downstream regulators / buyers can see HOW the output was
+   * verified, not just THAT it was.
+   */
+  methodology?: MethodologyResult;
 }
 
 // ─── PII Detection (regex-based, zero API cost) ─────────────
@@ -187,16 +201,42 @@ export async function verifyOutput(params: {
   trustLevel?: TrustLevel;
   chainDepth?: number;
   externalApis?: string[];
+  /**
+   * Wave 112 — when true, runs the methodology-grade audit
+   * (CRAAP + SIFT, plus FINER when `researchQuestion` is supplied)
+   * in parallel with the existing 5-layer safety pipeline. Adds
+   * ~1-2s p50 latency from the two NIM calls. Opt-in because the
+   * cost (token spend, latency) only pays off for outputs that
+   * will be presented as audit evidence — agency-packet, compliance
+   * exporters, regulated-vertical agents.
+   */
+  runMethodology?: boolean;
+  /** When provided alongside `runMethodology`, activates the FINER scorer. */
+  researchQuestion?: string;
 }): Promise<VerificationResult> {
   const start = Date.now();
   const trustLevel = params.trustLevel || DEFAULT_TRUST_LEVEL;
 
-  // Run all checks in parallel for speed
-  const [llamaResult, piiResult, contentResult] = await Promise.all([
-    llamaGuardOutput(params.output),
-    Promise.resolve(scanPII(params.output)),
-    Promise.resolve(checkContentPolicy(params.output)),
-  ]);
+  // Run all checks in parallel for speed. Wave 112 adds the
+  // methodology pass alongside the existing 5 layers — also parallel,
+  // so the additional NIM round-trips overlap with LlamaGuard's.
+  const [llamaResult, piiResult, contentResult, methodologyResult] =
+    await Promise.all([
+      llamaGuardOutput(params.output),
+      Promise.resolve(scanPII(params.output)),
+      Promise.resolve(checkContentPolicy(params.output)),
+      params.runMethodology
+        ? methodologyVerify(params.output, {
+            context: params.prompt,
+            researchQuestion: params.researchQuestion,
+          }).catch((err) => {
+            log.warn("methodologyVerify threw at verifyOutput layer", {
+              error: err instanceof Error ? err.message : String(err),
+            });
+            return undefined;
+          })
+        : Promise.resolve(undefined),
+    ]);
 
   const qualityScore = scoreQuality(params.output, params.prompt);
   const executionTimeMs = Date.now() - start;
@@ -299,5 +339,6 @@ export async function verifyOutput(params: {
     trustDecision,
     blockReason,
     executionTimeMs,
+    methodology: methodologyResult,
   };
 }
