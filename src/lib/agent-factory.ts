@@ -141,6 +141,19 @@ export interface AgentConfig {
    */
   useVerifier?: boolean;
 
+  /**
+   * Wave 112.1 — opt this route into the wave-112 methodology layer
+   * (CRAAP + SIFT, plus FINER when `researchQuestion` is supplied
+   * via input). Adds ~1-2s p50 latency from two NIM calls that run
+   * IN PARALLEL with LlamaGuard, so the wall-clock cost is whichever
+   * is slower — not the sum. Opt-in because the cost only pays off
+   * for outputs that will be presented as audit evidence (regulated-
+   * vertical agency-packet, clinical-scribe, contract-analyzer).
+   * The result attaches to the response's `_verifier.methodology`
+   * field for downstream receipt-envelope wiring.
+   */
+  runMethodology?: boolean;
+
   /** Action tier override (1=autonomous, 2=confirm, 3=restricted). Auto-detected if omitted. */
   actionTier?: ActionTier;
 
@@ -915,6 +928,7 @@ export function createAgentRoute(config: AgentConfig) {
               tenantId: tenantId ?? userId ?? "anonymous",
               prompt: verifierInput.slice(0, 2000),
               output: verifierOutput.slice(0, 8000),
+              runMethodology: config.runMethodology === true,
             });
             if (!verdict.approved) {
               log.warn("verifyOutput blocked response", {
@@ -936,11 +950,17 @@ export function createAgentRoute(config: AgentConfig) {
               );
             }
             // Stamp the verdict onto the response so callers can audit
-            // which checks ran without re-running them.
+            // which checks ran without re-running them. Wave 112.1
+            // attaches the methodology ledger when the route opted in
+            // — downstream callers can lift this into the cryptographic
+            // receipt envelope without re-running the scorers.
             (finalResult as Record<string, unknown>)._verifier = {
               trustDecision: verdict.trustDecision,
               executionTimeMs: verdict.executionTimeMs,
               safetyResult: verdict.safetyResult,
+              ...(verdict.methodology !== undefined
+                ? { methodology: verdict.methodology }
+                : {}),
             };
           } catch (verErr) {
             // Fail-open: if the verifier itself errors, log + continue.

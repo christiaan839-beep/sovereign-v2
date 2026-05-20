@@ -36,6 +36,14 @@ Output ONLY valid JSON.`;
 export const POST = createAgentRoute({
   name: "contract-analyzer",
   schema,
+  // Wave 112.1 — contract-analyzer is a flagship regulated-vertical
+  // route whose buyers (legal counsel, procurement, compliance) want
+  // to see HOW each clause/red-flag was verified, not just THAT it
+  // was. Opting into the wave-112 methodology layer means the
+  // response's `_verifier.methodology` carries a CRAAP-scored ledger
+  // of every extracted claim plus SIFT lateral-reading actions, which
+  // downstream code lifts into the signed cryptographic receipt.
+  runMethodology: true,
   handler: async ({ input }) => {
     const document = input.document as string;
     const start = Date.now();

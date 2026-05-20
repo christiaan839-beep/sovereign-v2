@@ -58,6 +58,16 @@ jobs:
           done
           exit 1
 
+      # Wave 111.x — build workspace packages BEFORE typecheck.
+      # `packages/*` (annex-iv, iso-42001, ai-constitution, etc.)
+      # publish `main`/`types` pointing at `./dist/index.{js,d.ts}`.
+      # Without this step, `tsc --noEmit` fails on every compliance
+      # page that imports `@sovereign-matrix/*` — pre-existing red
+      # CI that survived wave 88+ silently. `build:packages` is
+      # idempotent and short-circuits when `dist/` is current.
+      - name: Build workspace packages
+        run: npm run build:packages
+
       - name: Run ESLint
         run: npm run lint
 
@@ -103,6 +113,11 @@ jobs:
           done
           exit 1
 
+      # Wave 111.x — build workspace packages so `next build` can
+      # resolve `@sovereign-matrix/*` imports (see lint-and-typecheck).
+      - name: Build workspace packages
+        run: npm run build:packages
+
       - name: Build application
         run: npm run build
         env:
@@ -140,6 +155,11 @@ jobs:
             sleep $((attempt * 5))
           done
           exit 1
+
+      # Wave 111.x — build workspace packages so vitest's transformer
+      # can resolve `@sovereign-matrix/*` if any test imports them.
+      - name: Build workspace packages
+        run: npm run build:packages
 
       - name: Run tests
         run: npm test

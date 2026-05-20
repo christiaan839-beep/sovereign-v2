@@ -8,6 +8,10 @@ import crypto from "crypto";
 import { getPublicUrl } from "@/lib/base-url";
 import { alreadyProcessed } from "@/lib/idempotency";
 import { PLANS, type PlanId } from "@/lib/plans";
+import {
+  getInternalSecretForOutboundCall,
+  hasInternalSecretConfigured,
+} from "@/lib/internal-secret";
 
 const log = createLogger("payfast-webhook");
 
@@ -249,27 +253,38 @@ export async function POST(req: Request) {
         });
       }
 
-      // 3. Trigger auto-onboard (best effort) with internal-secret header
-      const baseUrl = getPublicUrl();
-      const internalSecret = process.env.INTERNAL_WEBHOOK_SECRET || "";
-      try {
-        await fetch(`${baseUrl}/api/_agents/auto-onboard`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-sovereign-internal-secret": internalSecret,
-          },
-          signal: AbortSignal.timeout(10_000),
-          body: JSON.stringify({
-            clientName:
-              `${data.name_first || ""} ${data.name_last || ""}`.trim() ||
-              "New Client",
-            email,
-            plan,
-          }),
-        });
-      } catch {
-        /* auto-onboard is best-effort */
+      // 3. Trigger auto-onboard (best effort) with internal-secret header.
+      // Wave 111.x H3: skip the call entirely when the secret isn't
+      // configured — sending an empty header just earns a 403 from
+      // auto-onboard and pollutes logs. Log explicitly so the
+      // misconfiguration is visible.
+      const internalSecret = getInternalSecretForOutboundCall();
+      if (!hasInternalSecretConfigured() || !internalSecret) {
+        log.warn(
+          "Skipping auto-onboard call — INTERNAL_WEBHOOK_SECRET not configured",
+          { mPaymentId },
+        );
+      } else {
+        const baseUrl = getPublicUrl();
+        try {
+          await fetch(`${baseUrl}/api/_agents/auto-onboard`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-sovereign-internal-secret": internalSecret,
+            },
+            signal: AbortSignal.timeout(10_000),
+            body: JSON.stringify({
+              clientName:
+                `${data.name_first || ""} ${data.name_last || ""}`.trim() ||
+                "New Client",
+              email,
+              plan,
+            }),
+          });
+        } catch {
+          /* auto-onboard is best-effort */
+        }
       }
 
       persistAppend(
