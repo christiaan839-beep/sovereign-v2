@@ -154,11 +154,20 @@ describe("buildBulletin — content + signing", () => {
 });
 
 describe("canonicalizeBulletin — fixed projection", () => {
-  it("produces deterministic bytes (sorted fingerprints)", () => {
+  it("produces deterministic bytes (sorted fingerprints — same issuedAt)", () => {
+    // Build a single bulletin, then re-canonicalise it with the
+    // fingerprint order reversed. Reusing the same bulletin object
+    // pins issuedAt/expiresAt to the same millisecond — the prior
+    // test built two bulletins which sometimes landed in different
+    // milliseconds and produced a flaky byte mismatch unrelated to
+    // the sort-order invariant we actually care about.
     const a = fp("scanner-recon", "a");
     const c = fp("jailbreak-prompt", "c");
     const b1 = buildBulletin({ issuerId: "x", fingerprints: [a, c] });
-    const b2 = buildBulletin({ issuerId: "x", fingerprints: [c, a] });
+    const b2 = {
+      ...b1,
+      fingerprints: [...b1.fingerprints].reverse(),
+    };
     expect(canonicalizeBulletin(b1)).toBe(canonicalizeBulletin(b2));
   });
 });

@@ -19,7 +19,11 @@
 import { createLogger } from "@/lib/logger";
 import { emitDefenseReceipt } from "@/lib/defense-receipts";
 import { recordHoneypotSignal } from "@/lib/honeypot-emitter";
-import { synthesizeAttackFingerprint } from "@/lib/attack-fingerprint";
+import {
+  synthesizeAttackFingerprint,
+  fingerprintId,
+} from "@/lib/attack-fingerprint";
+import { isFederationBlocked } from "@/lib/federation-block-set";
 
 const log = createLogger("jailbreak-detect");
 
@@ -28,6 +32,18 @@ export interface JailbreakResult {
   confidence: number;
   category: string;
   reason: string;
+  /**
+   * Federation block-set attribution (wave 104). Present on every call
+   * regardless of `blocked` value. INFORMATIONAL ONLY — `blocked` is
+   * not derived from `federationMatch.matched`; the local detector
+   * remains the authoritative decision. A follow-up wave may wire
+   * `matched=true` into a configurable escalation policy once operators
+   * have measured false-positive rates from the federation feed.
+   */
+  federationMatch?: {
+    fingerprintId: string;
+    matched: boolean;
+  };
 }
 
 export interface DetectJailbreakContext {
@@ -45,8 +61,55 @@ export interface DetectJailbreakContext {
  * audit trail proves the input existed without storing the raw prompt.
  * Pass `tenantId` / `userId` when known so the receipt attributes the
  * block to the right principal.
+ *
+ * WAVE 104: every result is decorated with a `federationMatch` field
+ * recording whether the prompt's fingerprintId is in the federation
+ * block-set. This is INFORMATIONAL — `blocked` is unchanged by the
+ * federation status. The wrapper isolates the federation lookup from
+ * the inner detection logic so each return path is decorated uniformly.
  */
 export async function detectJailbreak(
+  text: string,
+  ctx: DetectJailbreakContext = {},
+): Promise<JailbreakResult> {
+  const result = await _detectJailbreakInner(text, ctx);
+
+  // Compute the same fingerprint shape the federation uses (wave 101
+  // synthesised fingerprints — no Request object available here).
+  // Severity uses the detector's confidence when blocked, otherwise a
+  // baseline 50 so the fingerprintId is stable for benign prompts too
+  // (lets the federation observe ATTEMPTED attacks that just barely
+  // missed our local detector).
+  const synthSeverity = result.blocked
+    ? Math.min(99, Math.max(50, Math.round(result.confidence * 100)))
+    : 50;
+  const fp = synthesizeAttackFingerprint({
+    attackClass: "jailbreak-prompt",
+    severity: synthSeverity,
+    payload: text,
+  });
+  const fpId = fingerprintId(fp);
+
+  let matched = false;
+  try {
+    matched = await isFederationBlocked(fpId);
+  } catch (err) {
+    // Defence in depth — isFederationBlocked already swallows its own
+    // failures and fails-open with false, but the catch here makes
+    // explicit that this lookup must never affect the local result.
+    log.warn("federation lookup threw inside detectJailbreak", {
+      error: String(err),
+    });
+    matched = false;
+  }
+
+  return {
+    ...result,
+    federationMatch: { fingerprintId: fpId, matched },
+  };
+}
+
+async function _detectJailbreakInner(
   text: string,
   ctx: DetectJailbreakContext = {},
 ): Promise<JailbreakResult> {

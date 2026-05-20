@@ -27,6 +27,7 @@
 import { NextResponse } from "next/server";
 import { timingSafeEqual } from "node:crypto";
 import { runPullCycle } from "@/lib/federation-puller";
+import { writeBlockSet } from "@/lib/federation-block-set";
 import { auditLog } from "@/lib/audit-log";
 import { createLogger } from "@/lib/logger";
 
@@ -91,6 +92,12 @@ export async function GET(req: Request) {
     distinctFingerprints: cycle.uniqueFingerprintIds.length,
   });
 
+  // Wave-104: write the deduplicated fingerprintIds into the federation
+  // block-set so live guards can query membership via
+  // isFederationBlocked(). Best-effort — never fail the cron on a
+  // Redis error; the audit-log snapshot above is the durable record.
+  const blockSetResult = await writeBlockSet(cycle.uniqueFingerprintIds);
+
   return NextResponse.json({
     ok: true,
     attemptedAt: cycle.attemptedAt,
@@ -98,6 +105,7 @@ export async function GET(req: Request) {
     peersReached: cycle.peers.filter((p) => p.reached).length,
     distinctFingerprints: cycle.uniqueFingerprintIds.length,
     totalBulletinsAccepted: cycle.totalBulletinsAccepted,
+    blockSet: blockSetResult,
     peers: cycle.peers.map((p) => ({
       peerUrl: p.peerUrl,
       reached: p.reached,
