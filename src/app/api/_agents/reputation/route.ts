@@ -23,8 +23,54 @@ ${ANTI_SLOP_RULES}
 export const POST = createAgentRoute({
   name: "reputation",
   requiredFields: ["action"],
-  handler: async ({ input }) => {
-    const { action, reviewerName, rating, reviewText, businessName, businessType, reviews, customerName, platform } = input as Record<string, unknown>;
+  // Wave-111.1: memory hooks. The analyze action benefits most —
+  // past sentiment summaries on the same business compound into
+  // trend visibility. Respond + generate-request don't store
+  // (they're one-shot drafts, not insights worth re-feeding).
+  memory: {
+    search: {
+      query: (input) => {
+        if (input.action !== "analyze") return "";
+        return `reputation business:${input.businessName ?? ""} type:${input.businessType ?? ""}`;
+      },
+      limit: 3,
+    },
+    store: {
+      extract: (result, input) => {
+        if (input.action !== "analyze") return null;
+        const r = result as {
+          analysis?: {
+            overallSentiment?: string;
+            averageRating?: number;
+            commonComplaints?: string[];
+            urgentIssues?: string[];
+          };
+        };
+        const a = r.analysis;
+        if (!a || !a.overallSentiment) return null;
+        const complaints = (a.commonComplaints ?? []).slice(0, 3).join("; ");
+        const urgent = (a.urgentIssues ?? []).slice(0, 2).join("; ");
+        return `Sentiment: ${a.overallSentiment} (avg ${a.averageRating ?? "?"}). Top complaints: ${complaints || "none"}. Urgent: ${urgent || "none"}.`;
+      },
+      metadata: (input) => ({
+        businessName: String(input.businessName ?? ""),
+        businessType: String(input.businessType ?? ""),
+        kind: "reputation-analysis",
+      }),
+    },
+  },
+  handler: async ({ input, pastContextAsPrompt }) => {
+    const {
+      action,
+      reviewerName,
+      rating,
+      reviewText,
+      businessName,
+      businessType,
+      reviews,
+      customerName,
+      platform,
+    } = input as Record<string, unknown>;
 
     if (action === "respond") {
       const prompt = `Generate a professional response to this review:
@@ -37,17 +83,21 @@ REVIEW: "${reviewText || "Great service!"}"
 
 Write ONLY the response text. No explanations, no options — just the response.`;
 
-      const response = await ai(prompt, { system: REPUTATION_PROMPT, maxTokens: 300 });
+      const response = await ai(prompt, {
+        system: REPUTATION_PROMPT,
+        maxTokens: 300,
+      });
 
       return { success: true, response: response.trim() };
     }
 
     if (action === "analyze") {
+      const pastAnalyses = pastContextAsPrompt();
       const prompt = `Analyze these reviews for ${businessName || "our business"} and provide a reputation intelligence report:
 
 REVIEWS:
 ${((reviews || []) as Array<{ name: string; rating: number; text: string }>).map((r) => `- ${r.name} (${r.rating}): "${r.text}"`).join("\n")}
-
+${pastAnalyses ? `\nPRIOR ANALYSES on this business (historical FACTS — surface trend changes vs prior periods):\n${pastAnalyses}\n` : ""}
 Respond in JSON:
 {
   "overallSentiment": "positive|neutral|negative",
@@ -64,17 +114,26 @@ Respond in JSON:
   }
 }`;
 
-      const result = await ai(prompt, { system: REPUTATION_PROMPT, maxTokens: 2000 });
+      const result = await ai(prompt, {
+        system: REPUTATION_PROMPT,
+        maxTokens: 2000,
+      });
 
       let parsed;
       try {
-        const cleaned = result.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+        const cleaned = result
+          .replace(/```json\n?/g, "")
+          .replace(/```\n?/g, "")
+          .trim();
         parsed = JSON.parse(cleaned);
       } catch {
         parsed = { analysis: result };
       }
 
-      await fireUserWebhook("Reputation", "Analyzed", { businessName, reviewCount: ((reviews || []) as unknown[]).length });
+      await fireUserWebhook("Reputation", "Analyzed", {
+        businessName,
+        reviewCount: ((reviews || []) as unknown[]).length,
+      });
 
       return { success: true, analysis: parsed };
     }
@@ -89,7 +148,10 @@ Rules:
 - Sound personal, not automated
 - Don't be pushy`;
 
-      const message = await ai(prompt, { system: REPUTATION_PROMPT, maxTokens: 200 });
+      const message = await ai(prompt, {
+        system: REPUTATION_PROMPT,
+        maxTokens: 200,
+      });
 
       return { success: true, message: message.trim() };
     }

@@ -11,13 +11,54 @@ import { fireUserWebhook } from "@/lib/webhooks";
 
 export const POST = createAgentRoute({
   name: "social-router",
-  handler: async ({ input }) => {
+  // Wave-111.1: memory hooks. Past posts on the same topic+platform
+  // compound brand-voice consistency and prevent the model from
+  // re-suggesting the same hook. Store the platform + caption first
+  // line so the next run sees what the user already shipped.
+  memory: {
+    search: {
+      query: (input) => {
+        const topic = String(input.topic ?? "");
+        if (!topic) return "";
+        const platforms = Array.isArray(input.platforms)
+          ? (input.platforms as string[]).join(",")
+          : "default";
+        return `social topic:${topic} platforms:${platforms} voice:${input.brandVoice ?? ""}`;
+      },
+      limit: 4,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as {
+          posts?: Array<{ platform?: string; caption?: string }>;
+        };
+        const posts = r.posts ?? [];
+        if (posts.length === 0) return null;
+        return posts
+          .filter((p) => p.platform && p.caption)
+          .map((p) => {
+            const firstLine = (p.caption ?? "").split("\n")[0].slice(0, 200);
+            return `${p.platform}: ${firstLine}`;
+          });
+      },
+      metadata: (input) => ({
+        topic: String(input.topic ?? ""),
+        platforms: Array.isArray(input.platforms)
+          ? (input.platforms as string[]).join(",")
+          : "",
+        brandVoice: String(input.brandVoice ?? ""),
+        kind: "social-post",
+      }),
+    },
+  },
+  handler: async ({ input, pastContextAsPrompt }) => {
     const { topic, platforms, brandVoice, targetAudience } = input as {
       topic?: string;
       platforms?: string[];
       brandVoice?: string;
       targetAudience?: string;
     };
+    const pastPosts = pastContextAsPrompt();
 
     const selectedPlatforms = platforms || ["instagram", "linkedin", "twitter"];
 
@@ -26,7 +67,7 @@ export const POST = createAgentRoute({
 TARGET AUDIENCE: ${targetAudience || "Business professionals"}
 BRAND VOICE: ${brandVoice || "Authoritative but approachable"}
 PLATFORMS: ${selectedPlatforms.join(", ")}
-
+${pastPosts ? `\nPRIOR POSTS on similar topics (historical FACTS — avoid duplicating hooks/captions already used):\n${pastPosts}\n` : ""}
 For EACH platform, generate a COMPLETE, ready-to-post piece of content following these platform-specific rules:
 
 ${selectedPlatforms.map((p: string) => `### ${p.toUpperCase()}\n${PLATFORM_RULES[p] || "Write platform-native content."}`).join("\n\n")}

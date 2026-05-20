@@ -42,12 +42,57 @@ const schema = z
 export const POST = createAgentRoute({
   name: "funnel-xray",
   schema,
-  handler: async ({ input }) => {
+  // Wave-111.1: memory hooks. Per-URL analyses compound — if the
+  // user has previously scanned a competitor, prior vulnerabilities
+  // and recommended attack vectors inform this scan's positioning.
+  // Synthesize action stores the superior-variant hook so future
+  // analyses see what we've already attacked.
+  memory: {
+    search: {
+      query: (input) => {
+        const url = String(input.url ?? "");
+        if (!url) return "";
+        return `funnel-xray url:${url} action:${input.action ?? "analyze"}`;
+      },
+      limit: 3,
+    },
+    store: {
+      extract: (result, input) => {
+        if (input.action === "analyze") {
+          const r = result as {
+            analysis?: {
+              domain?: string;
+              overallConversionScore?: number;
+              topVulnerabilities?: string[];
+              recommendedAttackVector?: string;
+            };
+          };
+          const a = r.analysis;
+          if (!a || !a.domain) return null;
+          const vulns = (a.topVulnerabilities ?? []).slice(0, 3).join("; ");
+          return `${a.domain} (score ${a.overallConversionScore ?? "?"}): vulns: ${vulns}. attack: ${a.recommendedAttackVector ?? "n/a"}`;
+        }
+        if (input.action === "synthesize") {
+          const r = result as { synthesis?: { superiorHook?: string } };
+          if (!r.synthesis?.superiorHook) return null;
+          return `Superior hook vs ${input.url ?? "competitor"}: ${r.synthesis.superiorHook}`;
+        }
+        return null;
+      },
+      metadata: (input) => ({
+        url: String(input.url ?? ""),
+        action: String(input.action ?? ""),
+        kind: "funnel-xray",
+      }),
+    },
+  },
+  handler: async ({ input, pastContextAsPrompt }) => {
     const { action, url, analysis } = input as z.infer<typeof schema>;
+    const pastScans = pastContextAsPrompt();
 
     if (action === "analyze") {
       const result = await ai(
-        `Analyze this competitor landing page: ${url}\n\nBased on the domain and likely page structure, extract conversion intelligence.\n\nRespond in JSON:\n{"domain": "${url}", "primaryHook": {"text": "...", "score": 5, "weakness": "..."}, "pricingModel": {"structure": "...", "weakness": "..."}, "proofElements": {"count": 3, "types": [], "weakness": "..."}, "ctaStructure": {"primary": "...", "urgency": "low/medium/high", "weakness": "..."}, "overallConversionScore": 6, "topVulnerabilities": ["..."], "recommendedAttackVector": "..."}`,
+        `Analyze this competitor landing page: ${url}\n\nBased on the domain and likely page structure, extract conversion intelligence.\n${pastScans ? `\nPRIOR SCANS on this URL (historical FACTS — surface what's changed since the last scan, don't duplicate analysis):\n${pastScans}\n` : ""}\nRespond in JSON:\n{"domain": "${url}", "primaryHook": {"text": "...", "score": 5, "weakness": "..."}, "pricingModel": {"structure": "...", "weakness": "..."}, "proofElements": {"count": 3, "types": [], "weakness": "..."}, "ctaStructure": {"primary": "...", "urgency": "low/medium/high", "weakness": "..."}, "overallConversionScore": 6, "topVulnerabilities": ["..."], "recommendedAttackVector": "..."}`,
         { system: FUNNEL_XRAY_PROMPT, maxTokens: 2000 },
       );
 
