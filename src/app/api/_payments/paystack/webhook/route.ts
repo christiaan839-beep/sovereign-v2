@@ -5,6 +5,10 @@ import { createLogger } from "@/lib/logger";
 import { getPublicUrl } from "@/lib/base-url";
 import { alreadyProcessed } from "@/lib/idempotency";
 import { PLANS, type PlanId, normalizePlanId } from "@/lib/plans";
+import {
+  getInternalSecretForOutboundCall,
+  hasInternalSecretConfigured,
+} from "@/lib/internal-secret";
 
 const log = createLogger("paystack-webhook");
 
@@ -73,7 +77,11 @@ export async function POST(req: Request) {
     );
 
     const baseUrl = getPublicUrl();
-    const internalSecret = process.env.INTERNAL_WEBHOOK_SECRET || "";
+    // Wave 111.x H3: read once via the helper. `null` means
+    // misconfigured — callers below skip the internal call and log.
+    const internalSecret = getInternalSecretForOutboundCall();
+    const internalSecretReady =
+      hasInternalSecretConfigured() && internalSecret !== null;
 
     switch (event.event) {
       case "charge.success": {
@@ -128,8 +136,11 @@ export async function POST(req: Request) {
           1000,
         );
 
-        // Trigger auto-onboard (best-effort) with internal-secret header
-        if (email) {
+        // Trigger auto-onboard (best-effort) with internal-secret header.
+        // Wave 111.x H3: skip when the secret is unconfigured —
+        // surfaces the misconfig in logs instead of silently
+        // earning a 403 from auto-onboard.
+        if (email && internalSecretReady && internalSecret) {
           try {
             await fetch(`${baseUrl}/api/_agents/auto-onboard`, {
               method: "POST",
@@ -147,6 +158,11 @@ export async function POST(req: Request) {
           } catch {
             // Best-effort
           }
+        } else if (email && !internalSecretReady) {
+          log.warn(
+            "Skipping auto-onboard call — INTERNAL_WEBHOOK_SECRET not configured",
+            { eventReference },
+          );
         }
         break;
       }

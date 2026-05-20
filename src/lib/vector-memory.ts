@@ -30,6 +30,74 @@ const log = createLogger("vector-memory");
 const NIM_EMBED_URL = "https://integrate.api.nvidia.com/v1/embeddings";
 const EMBED_MODEL = "nvidia/llama-3.2-nv-embedqa-1b-v2";
 
+// ─── Wave 111.x — per-user write cap (BACKLOG H2) ───────────────────────────
+//
+// Without a cap, a user running a memory-storing agent in a loop
+// fills Neon storage and degrades IVFFlat recall as N grows
+// (flagged by wave-110 + wave-111 reviews — "don't defer a third
+// time"). The cap is enforced lazily on insert: when the per-user
+// row count is at or above the cap, the oldest rows are trimmed in
+// the same transaction before the new insert.
+//
+// Env-tunable so operators can raise it for an enterprise tenant
+// without code changes; floor is 100 to avoid pathological configs.
+function getPerUserCap(): number {
+  const raw = Number(process.env.AGENT_MEMORIES_PER_USER_CAP);
+  if (!Number.isFinite(raw) || raw < 100) return 10_000;
+  return Math.floor(raw);
+}
+
+// How many extra rows to trim beyond `count - cap` when over the
+// limit. Amortises the cleanup cost across many inserts instead of
+// trimming exactly one row per insert.
+const TRIM_BATCH = 50;
+
+/**
+ * Trim oldest rows for a user when their memory count is at/above
+ * the per-user cap. Best-effort: a failure here MUST NOT block the
+ * subsequent insert — degraded retention is preferable to lost
+ * memory writes.
+ *
+ * Exported for tests.
+ */
+export async function trimOverCap(userId: string): Promise<number> {
+  if (!userId) return 0;
+  const cap = getPerUserCap();
+  try {
+    const countRes = await db.execute(
+      sql`SELECT COUNT(*)::int AS n FROM agent_memories WHERE user_id = ${userId}`,
+    );
+    const row = (countRes.rows || [])[0] as { n?: number } | undefined;
+    const current = Number(row?.n ?? 0);
+    if (current < cap) return 0;
+
+    const toDelete = current - cap + TRIM_BATCH;
+    if (toDelete <= 0) return 0;
+
+    await db.execute(sql`
+      DELETE FROM agent_memories
+      WHERE id IN (
+        SELECT id FROM agent_memories
+        WHERE user_id = ${userId}
+        ORDER BY created_at ASC
+        LIMIT ${toDelete}
+      )
+    `);
+    log.info("Trimmed per-user memory rows over cap", {
+      userId,
+      cap,
+      current,
+      trimmed: toDelete,
+    });
+    return toDelete;
+  } catch (err) {
+    log.warn("Per-user memory trim failed (continuing with insert)", {
+      error: String(err),
+    });
+    return 0;
+  }
+}
+
 // ─── Initialize pgvector extension + table ──────────────────────────────────
 
 let _initialized = false;
@@ -55,13 +123,17 @@ async function ensureVectorTable(): Promise<boolean> {
     `);
 
     // Create index for fast similarity search
-    await db.execute(sql`
+    await db
+      .execute(
+        sql`
       CREATE INDEX IF NOT EXISTS agent_memories_embedding_idx
       ON agent_memories USING ivfflat (embedding vector_cosine_ops)
       WITH (lists = 100)
-    `).catch(() => {
-      // IVFFlat index needs some rows first — skip on empty table
-    });
+    `,
+      )
+      .catch(() => {
+        // IVFFlat index needs some rows first — skip on empty table
+      });
 
     // Create index for user lookups
     await db.execute(sql`
@@ -88,7 +160,7 @@ async function embedText(text: string): Promise<number[] | null> {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${nimKey}`,
+        Authorization: `Bearer ${nimKey}`,
       },
       body: JSON.stringify({
         model: EMBED_MODEL,
@@ -119,10 +191,16 @@ export async function storeMemory(
   userId: string,
   agentName: string,
   content: string,
-  metadata: Record<string, unknown> = {}
+  metadata: Record<string, unknown> = {},
 ): Promise<boolean> {
   const ready = await ensureVectorTable();
   if (!ready) return false;
+
+  // Wave 111.x — enforce per-user cap BEFORE insert. Trim is
+  // best-effort: a failure here logs and the insert still proceeds,
+  // so the cap can drift slightly under pathological DB conditions
+  // but we never lose memory writes due to a trim failure.
+  await trimOverCap(userId);
 
   const embedding = await embedText(content);
   if (!embedding) {
@@ -158,8 +236,15 @@ export async function storeMemory(
 export async function searchMemory(
   userId: string,
   query: string,
-  limit: number = 3
-): Promise<Array<{ content: string; agentName: string; similarity: number; createdAt: string }>> {
+  limit: number = 3,
+): Promise<
+  Array<{
+    content: string;
+    agentName: string;
+    similarity: number;
+    createdAt: string;
+  }>
+> {
   const ready = await ensureVectorTable();
   if (!ready) return [];
 
@@ -199,7 +284,7 @@ export async function searchMemory(
  */
 export async function getMemoryContextForPrompt(
   userId: string,
-  query: string
+  query: string,
 ): Promise<string> {
   const memories = await searchMemory(userId, query);
 

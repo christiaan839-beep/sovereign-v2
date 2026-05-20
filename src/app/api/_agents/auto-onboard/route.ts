@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import crypto from "crypto";
 import { createAgentRoute } from "@/lib/agent-factory";
 import { sendOnboardingEmail } from "@/lib/onboarding-emails";
 import { getBaseUrl } from "@/lib/base-url";
+import { verifyInternalSecret } from "@/lib/internal-secret";
 
 function escapeHtml(str: string): string {
   return str
@@ -10,13 +10,6 @@ function escapeHtml(str: string): string {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
-}
-
-/** Constant-time compare to avoid timing-leak on the internal secret. */
-function timingSafeStringEqual(a: string, b: string): boolean {
-  if (typeof a !== "string" || typeof b !== "string") return false;
-  if (a.length !== b.length) return false;
-  return crypto.timingSafeEqual(Buffer.from(a, "utf8"), Buffer.from(b, "utf8"));
 }
 
 /**
@@ -227,14 +220,13 @@ const handler = createAgentRoute({
  * burning Resend credits and torching domain reputation.
  */
 export async function POST(req: Request): Promise<Response> {
-  const internalSecret = process.env.INTERNAL_WEBHOOK_SECRET || "";
-  const presented = req.headers.get("x-sovereign-internal-secret") || "";
+  const presented = req.headers.get("x-sovereign-internal-secret");
 
-  const internalOk =
-    internalSecret.length > 0 &&
-    timingSafeStringEqual(presented, internalSecret);
-
-  if (internalOk) {
+  // Wave 111.x H3: `verifyInternalSecret` fails closed when the env
+  // is unset, empty, or below the minimum-length floor — eliminating
+  // the prior `|| ""` fallback that would have become an auth bypass
+  // if a future cleanup PR dropped the surrounding length guard.
+  if (verifyInternalSecret(presented)) {
     // Trusted server-to-server caller — skip Clerk and proceed.
     return handler(req);
   }
