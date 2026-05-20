@@ -24,6 +24,7 @@ import {
 // first paint.
 import { A2EGraph } from "@/components/landing/A2EGraph";
 import { LiveProofStrip } from "@/components/landing/LiveProofStrip";
+import { LiveReceiptFeed } from "@/components/landing/LiveReceiptFeed";
 import { ThreeMoatsGrid } from "@/components/landing/ThreeMoatsGrid";
 // A2EEconomySection + ModelRouterSection were dropped from the landing
 // in audit-2026-05 Wave 12 (slop-blocker cuts). Both still live at their
@@ -178,6 +179,12 @@ export default function LandingPage() {
 
           {/* 02 · Live proof — receipt id updating against /api/verify */}
           <LiveProofStrip />
+
+          {/* 02b · Wave-109.6 live receipt feed — shows the last 8
+              public signed receipts streaming in real time. The
+              floating LiveActivityTicker remains as a glance widget;
+              this block is the actual telemetry. */}
+          <LiveReceiptFeed />
 
           <SectionDivider accent="copper" />
 

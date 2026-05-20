@@ -1,7 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useRef, useState } from "react";
+import {
+  motion,
+  AnimatePresence,
+  useScroll,
+  useTransform,
+  useReducedMotion,
+} from "framer-motion";
+import type { MotionValue } from "framer-motion";
 
 const LAYERS = [
   {
@@ -37,16 +44,83 @@ const LAYERS = [
 ];
 
 /**
- * VerificationPipeline — 5-layer safety pipeline, expandable accordion rows.
+ * VerificationPipeline — 5-layer safety pipeline.
+ *
+ * Wave-109.6 added a scroll-linked progress rail on the left edge of
+ * the section. As the visitor scrolls through, a thin vertical bar
+ * fills with a cyan→copper gradient and 5 dot markers light up
+ * sequentially — one per safety layer — giving the section
+ * cinematic motion that rewards scroll instead of just sitting
+ * static. The accordion's click-to-expand behaviour is untouched.
+ *
+ * Honours `prefers-reduced-motion` — the rail renders fully-filled
+ * (no scroll-driven animation) so the visual remains intact for
+ * users opting out of motion.
  */
 export function VerificationPipeline() {
+  const sectionRef = useRef<HTMLElement>(null);
+  const reduceMotion = useReducedMotion();
   const [openId, setOpenId] = useState<string | null>(null);
 
+  // useScroll with the section as the target: scrollYProgress goes 0→1
+  // as the visitor scrolls from "section enters viewport from below"
+  // to "section exits at top". The offset values move the active
+  // window inward by 20% on each side so the rail visibly fills as
+  // the section sits centred — not at the edges where the visitor's
+  // eye isn't tracking it.
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start 80%", "end 20%"],
+  });
+
+  // Drive a vertical bar's scaleY from 0 → 1. originY=0 keeps the
+  // fill anchored at the top so the bar grows downward as the
+  // visitor scrolls. Reduced-motion users see the bar at full
+  // height immediately (no animation, but the visual is intact).
+  const railFill = useTransform(scrollYProgress, [0, 1], [0, 1]);
+
   return (
-    <section className="px-6 py-28 md:py-36 bg-[#0A0807]">
+    <section
+      ref={sectionRef}
+      className="relative px-6 py-28 md:py-36 bg-[#0A0807]"
+    >
+      {/* Wave-109.6 scroll-linked rail. Hidden below md to keep the
+          mobile layout uncluttered. The rail is positioned absolute
+          so it doesn't shift the existing content layout. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute left-4 top-28 bottom-28 hidden md:block w-[2px]"
+      >
+        {/* Static dim track */}
+        <div className="absolute inset-0 bg-white/[0.04] rounded-full" />
+        {/* Scroll-driven fill — copper at top, fading through cyan to
+            transparent at bottom. originY=top so it grows downward. */}
+        <motion.div
+          style={{
+            scaleY: reduceMotion ? 1 : railFill,
+            transformOrigin: "top",
+          }}
+          className="absolute inset-0 rounded-full bg-gradient-to-b from-[#B5532C] via-cyan-500/60 to-cyan-500/0"
+        />
+        {/* 5 evenly-spaced node markers — each lights up as the rail
+            fill crosses its segment. Placed via top:% so they track
+            the rail's geometry. */}
+        {LAYERS.map((layer, i) => (
+          <RailNode
+            key={layer.id}
+            index={i}
+            total={LAYERS.length}
+            progress={scrollYProgress}
+            reduceMotion={reduceMotion ?? false}
+          />
+        ))}
+      </div>
+
       <div className="max-w-4xl mx-auto">
         <div className="mb-8 flex items-center gap-4 flex-wrap">
-          <span className="font-mono text-[10px] text-neutral-600 tracking-[0.2em]">06 / 09</span>
+          <span className="font-mono text-[10px] text-neutral-600 tracking-[0.2em]">
+            06 / 09
+          </span>
           <span aria-hidden="true" className="h-px w-6 bg-white/[0.12]" />
           <p className="font-serif italic text-[13px] text-neutral-500 tracking-[-0.01em]">
             trust layer
@@ -59,8 +133,9 @@ export function VerificationPipeline() {
           <em className="not-italic text-[#B5532C]">Every Single Run.</em>
         </h2>
         <p className="text-neutral-400 text-[15px] mb-12 max-w-xl leading-relaxed">
-          Not optional. Not enterprise-only. Every execution — free tier included — passes through
-          the full verification pipeline before output reaches you.
+          Not optional. Not enterprise-only. Every execution — free tier
+          included — passes through the full verification pipeline before output
+          reaches you.
         </p>
 
         {/* Accordion */}
@@ -87,7 +162,13 @@ export function VerificationPipeline() {
                     aria-hidden="true"
                   >
                     <svg width="8" height="6" viewBox="0 0 8 6" fill="none">
-                      <path d="M1 3l2 2 4-4" stroke="#B5532C" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" />
+                      <path
+                        d="M1 3l2 2 4-4"
+                        stroke="#B5532C"
+                        strokeWidth="1.25"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
                     </svg>
                   </span>
 
@@ -112,7 +193,13 @@ export function VerificationPipeline() {
                     aria-hidden="true"
                   >
                     <svg width="12" height="7" viewBox="0 0 12 7" fill="none">
-                      <path d="M1 1l5 5 5-5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                      <path
+                        d="M1 1l5 5 5-5"
+                        stroke="currentColor"
+                        strokeWidth="1.2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
                     </svg>
                   </span>
                 </button>
@@ -145,9 +232,62 @@ export function VerificationPipeline() {
         {/* Audit trail note */}
         <p className="mt-8 text-[12px] font-mono text-neutral-600 leading-relaxed">
           Every execution is immutably logged.{" "}
-          <span className="text-neutral-500">CISO-ready audit trail available on Node and Enterprise plans.</span>
+          <span className="text-neutral-500">
+            CISO-ready audit trail available on Node and Enterprise plans.
+          </span>
         </p>
       </div>
     </section>
+  );
+}
+
+/**
+ * RailNode — single dot marker on the scroll-progress rail.
+ *
+ * Lights up (opacity + scale) as scrollYProgress crosses its segment
+ * threshold. Threshold is `(index + 0.5) / total` so the node activates
+ * when half of its layer's vertical real-estate has been scrolled into
+ * view — feels natural, not jumpy.
+ *
+ * Exported only as a private helper; not part of the public surface.
+ */
+function RailNode({
+  index,
+  total,
+  progress,
+  reduceMotion,
+}: {
+  index: number;
+  total: number;
+  progress: MotionValue<number>;
+  reduceMotion: boolean;
+}) {
+  const threshold = (index + 0.5) / total;
+  // Light up over a 12% scroll window centred on the threshold so the
+  // transition feels continuous rather than snapping on.
+  const opacity = useTransform(
+    progress,
+    [threshold - 0.06, threshold, threshold + 0.06],
+    [0.35, 1, 1],
+  );
+  const scale = useTransform(
+    progress,
+    [threshold - 0.06, threshold, threshold + 0.2],
+    [0.7, 1.15, 1],
+  );
+  // Top % positions the node along the rail. Spread evenly across the
+  // 5 layers, accounting for the dot's own height.
+  const top = `${(index / (total - 1)) * 100}%`;
+  return (
+    <motion.div
+      style={{
+        top,
+        opacity: reduceMotion ? 1 : opacity,
+        scale: reduceMotion ? 1 : scale,
+        translateY: "-50%",
+        translateX: "-50%",
+      }}
+      className="absolute left-1/2 w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_10px_rgba(0,183,255,0.7)]"
+    />
   );
 }
