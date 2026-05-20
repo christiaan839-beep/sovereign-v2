@@ -33,12 +33,23 @@ const isProd = process.env.NODE_ENV === "production";
 
 /**
  * Keys whose VALUES are always sensitive — replaced wholesale with
- * `[REDACTED]`. Compared case-insensitively after lowercasing the key.
- * Substring matching (so `userEmail` / `email_address` / `oldEmail` all
- * match `email`) keeps the policy fail-closed against developer naming
- * variants.
+ * `[REDACTED]`. Two tiers of matching:
+ *
+ *  - SUBSTRING tier: terms that are uniquely sensitive in any field
+ *    name containing them. `password` / `secret` / `token` / etc.
+ *  - EXACT tier: terms that are sensitive when they ARE the field
+ *    name (with common variants) but get over-redacted by substring
+ *    match. e.g. `email` is sensitive, but `email_template_name`,
+ *    `email_open_count`, `welcome_email_sent_at` are business
+ *    telemetry that the content-machine + sequence engine need in
+ *    logs for debugging.
+ *
+ * Wave-107.1 fix: prevent operators from setting LOG_LEVEL=debug to
+ * work around over-redaction (which would defeat the entire layer).
+ * The fail-closed bias is preserved — anything ambiguous redacts;
+ * the exact-tier just enumerates known business variants.
  */
-const REDACT_KEY_PATTERNS: readonly string[] = [
+const REDACT_KEY_SUBSTRINGS: readonly string[] = [
   "password",
   "passwd",
   "secret",
@@ -55,15 +66,39 @@ const REDACT_KEY_PATTERNS: readonly string[] = [
   "bearer",
   "stripe_signature",
   "svix",
-  "email", // BYOK callers + Clerk webhook pass these directly
-  "phone",
   "ssn",
   "national_id",
   "card_number",
   "cardnumber",
   "cvv",
-  "ip_address",
 ];
+
+/**
+ * Exact-match (case-insensitive) sensitive field names. Enumerates the
+ * known variants used in BYOK callers, Clerk webhook payloads, audit
+ * findings, and DSAR/export flows.
+ */
+const REDACT_KEY_EXACT: ReadonlySet<string> = new Set([
+  "email",
+  "user_email",
+  "useremail",
+  "to_email",
+  "from_email",
+  "email_address",
+  "emailaddress",
+  "email_addresses",
+  "emailaddresses",
+  "phone",
+  "phone_number",
+  "phonenumber",
+  "phone_numbers",
+  "phonenumbers",
+  "ip",
+  "ip_address",
+  "ipaddress",
+  "remote_addr",
+  "remoteaddr",
+]);
 
 /** Regex patterns over string VALUES (independent of key name). */
 const VALUE_REDACTORS: ReadonlyArray<{ pattern: RegExp; replace: string }> = [
@@ -83,16 +118,22 @@ const VALUE_REDACTORS: ReadonlyArray<{ pattern: RegExp; replace: string }> = [
     pattern: /\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\b/g,
     replace: "[jwt]",
   },
-  // Long opaque hex/base64 secret-looking strings (40+ chars, no whitespace)
+  // Long opaque hex/base64 secret-looking strings. Wave-107.1: bumped
+  // from 48 → 64 chars to reduce false positives on signed S3 URLs,
+  // base64 image previews, request IDs, and audit-log hashes. True
+  // secrets (Anthropic/Google API keys, long JWTs) are well above 64.
+  // The earlier `sk_/pk_/whsec_/eyJ` matchers run FIRST so this is
+  // just the safety net for unknown-prefix tokens.
   {
-    pattern: /\b[A-Za-z0-9_+/=-]{48,}\b/g,
+    pattern: /\b[A-Za-z0-9_+/=-]{64,}\b/g,
     replace: "[opaque]",
   },
 ];
 
 function keyIsSensitive(key: string): boolean {
   const lower = key.toLowerCase();
-  for (const p of REDACT_KEY_PATTERNS) {
+  if (REDACT_KEY_EXACT.has(lower)) return true;
+  for (const p of REDACT_KEY_SUBSTRINGS) {
     if (lower.includes(p)) return true;
   }
   return false;

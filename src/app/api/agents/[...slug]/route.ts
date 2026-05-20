@@ -64,11 +64,32 @@ export async function POST(
     // structured trip reason; the audit row captures the killed
     // request for SRE postmortem.
     const requestId = req.headers.get("x-request-id") ?? crypto.randomUUID();
-    const { userId } = await auth().catch(() => ({ userId: null }));
+    // Wave-107.1: do NOT silently fall back to anonymous when auth()
+    // throws. A Clerk outage swallowed here would downgrade every
+    // agent call to anonymous, bypassing per-user kill-switch quotas.
+    // We catch only to log + 503 — never to mask the failure as
+    // "no session". A genuinely-unauthenticated caller resolves with
+    // userId=null (the normal path), not an exception.
+    let userId: string | null;
+    try {
+      const a = await auth();
+      userId = a.userId ?? null;
+    } catch (err) {
+      const { createLogger } = await import("@/lib/logger");
+      createLogger("agents-router").error("auth() threw — failing closed", {
+        agent: agentName,
+        requestId,
+        error: err instanceof Error ? err.message : String(err),
+      });
+      return NextResponse.json(
+        { error: "Authentication service unavailable", requestId },
+        { status: 503, headers: { "Retry-After": "15" } },
+      );
+    }
 
     const start = Date.now();
     const result = await runWithBudgetAndAudit<NextResponse>(
-      { userId: userId ?? null, requestId },
+      { userId, requestId },
       async () => {
         const res = await handler.POST!(req);
         return res as NextResponse;

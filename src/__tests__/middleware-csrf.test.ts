@@ -70,13 +70,14 @@ describe("enforceCsrfOrigin — wave 107", () => {
     ).toBeNull();
   });
 
-  it("allows webhook routes (HMAC-verified separately)", async () => {
+  it("allows EXPLICITLY-ALLOWLISTED webhook routes (HMAC-verified separately)", async () => {
     const { enforceCsrfOrigin } = await import("../middleware");
     const cases = [
       "/api/webhooks/clerk",
       "/api/_webhooks/twilio/voice",
       "/api/_payments/stripe/webhook",
       "/api/_payments/paystack/webhook",
+      "/api/_payments/payfast/webhook",
       "/api/_billing/webhook",
     ];
     for (const pathname of cases) {
@@ -86,6 +87,32 @@ describe("enforceCsrfOrigin — wave 107", () => {
         headers: { "sec-fetch-site": "cross-site", origin: "https://evil.com" },
       });
       expect(enforceCsrfOrigin(r), `${pathname} should bypass CSRF`).toBeNull();
+    }
+  });
+
+  it("Wave-107.1 CRITICAL: does NOT bypass cookie-authed routes that merely CONTAIN '/webhook' substring", async () => {
+    // The audit caught the substring-match flaw: these routes contain
+    // '/webhook' in the path but ARE cookie-authed user-action routes,
+    // NOT HMAC-verified inbound webhooks. They MUST still receive
+    // CSRF protection or an attacker can CSRF the victim into
+    // mutating their webhook config / triggering SSRF via the
+    // integrations webhook.
+    const { enforceCsrfOrigin } = await import("../middleware");
+    const dangerouslyBypassed = [
+      "/api/_settings/webhooks",
+      "/api/_integrations/webhook",
+      "/api/agents/webhook-gateway",
+      "/api/some-future/webhook-thing",
+    ];
+    for (const pathname of dangerouslyBypassed) {
+      const r = makeReq({
+        method: "POST",
+        pathname,
+        headers: { "sec-fetch-site": "cross-site" },
+      });
+      const blocked = enforceCsrfOrigin(r);
+      expect(blocked, `${pathname} MUST be CSRF-protected`).not.toBeNull();
+      expect(blocked!.status).toBe(403);
     }
   });
 
@@ -99,30 +126,57 @@ describe("enforceCsrfOrigin — wave 107", () => {
     expect(enforceCsrfOrigin(r)).toBeNull();
   });
 
-  it("allows Bearer-authed requests (cannot be CSRF'd from browser)", async () => {
+  it("allows Bearer-authed requests with credential-shaped value (≥16 chars)", async () => {
     const { enforceCsrfOrigin } = await import("../middleware");
     const r = makeReq({
       method: "POST",
       pathname: "/api/agents/foo",
       headers: {
-        authorization: "Bearer sk_live_xxx",
+        authorization: "Bearer sk_live_long_realkey_at_least_16chars",
         "sec-fetch-site": "cross-site",
       },
     });
     expect(enforceCsrfOrigin(r)).toBeNull();
   });
 
-  it("allows x-api-key requests (cannot be CSRF'd from browser)", async () => {
+  it("allows x-api-key requests with credential-shaped value", async () => {
     const { enforceCsrfOrigin } = await import("../middleware");
     const r = makeReq({
       method: "POST",
       pathname: "/api/agents/foo",
       headers: {
-        "x-api-key": "key_abc",
+        "x-api-key": "key_abc_at_least_16chars",
         "sec-fetch-site": "cross-site",
       },
     });
     expect(enforceCsrfOrigin(r)).toBeNull();
+  });
+
+  it("Wave-107.1 HIGH: does NOT bypass on short/empty bearer values", async () => {
+    // Previously `headers.get('x-api-key')` returning any non-empty
+    // string disabled the CSRF check. An attacker could set
+    // `x-api-key: x` to bypass. Now we require ≥16 chars (real API
+    // keys are always longer).
+    const { enforceCsrfOrigin } = await import("../middleware");
+    const cases = [
+      { authorization: "x" },
+      { authorization: "Bearer" },
+      { authorization: "Bearer x" },
+      { "x-api-key": "x" },
+      { "x-api-key": "   " },
+      { "x-api-key": "shorty" },
+    ];
+    for (const headers of cases) {
+      const r = makeReq({
+        method: "POST",
+        pathname: "/api/jobs",
+        headers: { ...headers, "sec-fetch-site": "cross-site" },
+      });
+      expect(
+        enforceCsrfOrigin(r),
+        `${JSON.stringify(headers)} should NOT bypass CSRF`,
+      ).not.toBeNull();
+    }
   });
 
   it("allows same-origin POST (Sec-Fetch-Site=same-origin)", async () => {
@@ -148,14 +202,32 @@ describe("enforceCsrfOrigin — wave 107", () => {
     expect(enforceCsrfOrigin(r)).toBeNull();
   });
 
-  it("allows user-initiated POST with Sec-Fetch-Site=none (address bar)", async () => {
+  it("Wave-107.1: Sec-Fetch-Site=none falls through to Origin allowlist (NOT auto-trusted)", async () => {
     const { enforceCsrfOrigin } = await import("../middleware");
-    const r = makeReq({
-      method: "POST",
-      pathname: "/api/jobs",
-      headers: { "sec-fetch-site": "none" },
-    });
-    expect(enforceCsrfOrigin(r)).toBeNull();
+    // Address-bar / bookmark / extension POST with no Origin → BLOCK.
+    // State-changing POSTs from these contexts are rare and suspicious.
+    const blocked = enforceCsrfOrigin(
+      makeReq({
+        method: "POST",
+        pathname: "/api/jobs",
+        headers: { "sec-fetch-site": "none" },
+      }),
+    );
+    expect(blocked).not.toBeNull();
+
+    // Same scenario but WITH an allowed Origin → ALLOW (legitimate
+    // user-initiated POST from a typed URL on our own domain).
+    const allowed = enforceCsrfOrigin(
+      makeReq({
+        method: "POST",
+        pathname: "/api/jobs",
+        headers: {
+          "sec-fetch-site": "none",
+          origin: "https://sovereignmatrix.agency",
+        },
+      }),
+    );
+    expect(allowed).toBeNull();
   });
 
   it("BLOCKS cross-site POST (Sec-Fetch-Site=cross-site)", async () => {

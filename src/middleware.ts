@@ -52,26 +52,59 @@ const STATE_CHANGING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 /**
  * Routes that authenticate via HMAC signature or CRON_SECRET — they do NOT
  * read the Clerk cookie, so cross-origin POSTs cannot ride a user's session.
- * Listed by prefix so a single check covers e.g. /api/_payments/stripe/webhook
- * and /api/_webhooks/twilio/voice.
+ *
+ * Wave-107.1: Replaced the previous `pathname.includes('/webhook')` substring
+ * match with an EXPLICIT PREFIX ALLOWLIST. The substring match created a
+ * Critical CSRF bypass: `/api/_settings/webhooks` (user-action route mutating
+ * the user's own webhook config), `/api/_integrations/webhook` (SSRF-on-
+ * demand — server-side fetches a user-supplied URL), and any future route
+ * named "webhook-*" would all bypass the CSRF check while still being
+ * cookie-authed. Explicit allowlist is the only safe model — never grow
+ * this list without confirming HMAC or CRON_SECRET verification in the
+ * route handler itself.
  */
+const COOKIE_INDEPENDENT_PREFIXES: readonly string[] = [
+  "/api/webhooks/", // Clerk + svix-style inbound webhooks (HMAC-verified)
+  "/api/_webhooks/", // Twilio, Slack, Zapier, GitHub etc. (HMAC-verified)
+  "/api/cron/", // Vercel cron (CRON_SECRET-verified)
+  "/api/_cron/", // legacy cron paths (CRON_SECRET-verified)
+  "/api/_payments/stripe/webhook", // stripe-signature HMAC
+  "/api/_payments/paystack/webhook", // x-paystack-signature HMAC
+  "/api/_payments/payfast/webhook", // PayFast signature
+  "/api/_payments/paypal/webhook", // PayPal Transmission-Signature
+  "/api/_payments/yoco/webhook", // Yoco signature
+  "/api/_payments/crypto/webhook", // crypto provider signature
+  "/api/_payments/moonpay/webhook", // MoonPay signature
+  "/api/payments/stripe/webhook", // legacy stripe path
+  "/api/payments/paystack/webhook",
+  "/api/payments/payfast/webhook",
+  "/api/payments/paypal/webhook",
+  "/api/payments/yoco/webhook",
+  "/api/payments/crypto/webhook",
+  "/api/payments/moonpay/webhook",
+  "/api/_billing/webhook", // internal billing pipeline
+];
+
 function isCookieIndependentRoute(pathname: string): boolean {
-  return (
-    pathname.startsWith("/api/webhooks/") ||
-    pathname.startsWith("/api/_webhooks/") ||
-    pathname.startsWith("/api/cron/") ||
-    pathname.startsWith("/api/_cron/") ||
-    pathname.includes("/webhook") // catches /api/_payments/stripe/webhook etc.
-  );
+  return COOKIE_INDEPENDENT_PREFIXES.some((pref) => pathname.startsWith(pref));
 }
+
+/** Minimum length for a header to be treated as a credential.
+ *  Wave-107.1: the original check only looked at PRESENCE, allowing
+ *  `x-api-key: x` to disable the entire CSRF check. Real API keys are
+ *  always at least 16 chars (Stripe sk_/pk_, Clerk sess_*, etc.). */
+const MIN_CREDENTIAL_LENGTH = 16;
 
 /** Server-to-server callers identify via Authorization / x-api-key — those
  *  headers are NOT auto-sent cross-origin by browsers, so they can't be
- *  used in a CSRF attack. Skip origin enforcement when present. */
+ *  used in a CSRF attack. Skip origin enforcement when a CREDENTIAL-SHAPED
+ *  value is present (not just any non-empty header). */
 function hasBearerOrApiKey(request: NextRequest): boolean {
-  return !!(
-    request.headers.get("authorization") || request.headers.get("x-api-key")
-  );
+  const authz = request.headers.get("authorization")?.trim() ?? "";
+  if (authz.length >= MIN_CREDENTIAL_LENGTH) return true;
+  const apiKey = request.headers.get("x-api-key")?.trim() ?? "";
+  if (apiKey.length >= MIN_CREDENTIAL_LENGTH) return true;
+  return false;
 }
 
 function buildAllowedOrigins(): Set<string> {
@@ -105,8 +138,15 @@ export function enforceCsrfOrigin(request: NextRequest): NextResponse | null {
 
   // Sec-Fetch-Site is the modern primary signal. Browsers set it on every
   // request; non-browser clients usually don't. Trust it when present.
+  //
+  // Wave-107.1: NARROWED — "none" is no longer auto-allowed. Spec-wise
+  // "none" means "not initiated by a document" (typed URL, bookmark,
+  // extension worker). For a state-changing POST that's almost never
+  // legitimate from a real user flow. Fall through to the Origin/Referer
+  // allowlist so address-bar / extension POSTs still work IF they carry
+  // a valid Origin or Referer, but aren't auto-trusted.
   const sfs = request.headers.get("sec-fetch-site");
-  if (sfs === "same-origin" || sfs === "same-site" || sfs === "none") {
+  if (sfs === "same-origin" || sfs === "same-site") {
     return null; // browser-confirmed safe
   }
   if (sfs === "cross-site") {

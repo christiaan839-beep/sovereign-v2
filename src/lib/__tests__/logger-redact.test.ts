@@ -16,7 +16,7 @@ describe("redactPii — key-based redaction (fail-closed)", () => {
     expect(r.password).toBe("[REDACTED]");
   });
 
-  it("matches partial / camelCase / snake_case variants", () => {
+  it("matches partial / camelCase / snake_case variants on substring tier", () => {
     const r = redactPii({
       userPassword: "x",
       password_hash: "x",
@@ -30,12 +30,56 @@ describe("redactPii — key-based redaction (fail-closed)", () => {
     for (const v of Object.values(r)) expect(v).toBe("[REDACTED]");
   });
 
-  it("redacts email-named fields wholesale", () => {
+  it("redacts EXACT email-variant field names (wave-107.1 exact tier)", () => {
     const r = redactPii({
       email: "u@example.com",
       userEmail: "u@example.com",
-      oldEmail: "u@example.com",
+      user_email: "u@example.com",
       email_address: "u@example.com",
+      email_addresses: ["u@example.com"],
+      to_email: "u@example.com",
+      from_email: "u@example.com",
+    }) as Record<string, unknown>;
+    for (const k of Object.keys(r)) {
+      expect(r[k], `${k} should be redacted`).toBe("[REDACTED]");
+    }
+  });
+
+  it("wave-107.1: does NOT over-redact business-meaningful email_* fields", () => {
+    // The previous substring-only policy redacted these unconditionally,
+    // which would have broken the content-machine / email-sequence
+    // engine's debuggability. The exact-tier policy preserves them.
+    const r = redactPii({
+      email_template_name: "welcome_v3",
+      email_campaign_id: "camp_42",
+      email_open_count: 17,
+      email_subject: "Your trial ends soon",
+      welcome_email_sent_at: "2026-05-20T12:00:00Z",
+    }) as Record<string, unknown>;
+    expect(r.email_template_name).toBe("welcome_v3");
+    expect(r.email_campaign_id).toBe("camp_42");
+    expect(r.email_open_count).toBe(17);
+    // email_subject contains an email-shaped value? No → preserved.
+    expect(r.email_subject).toBe("Your trial ends soon");
+    expect(r.welcome_email_sent_at).toBe("2026-05-20T12:00:00Z");
+  });
+
+  it("wave-107.1: does NOT over-redact phone_* business fields (e.g. Clerk phone_number_id)", () => {
+    const r = redactPii({
+      phone_number_id: "idn_publicclerkid", // public Clerk identifier
+      phone_provider: "twilio",
+      phone_country_code: "+27",
+    }) as Record<string, unknown>;
+    expect(r.phone_number_id).toBe("idn_publicclerkid");
+    expect(r.phone_provider).toBe("twilio");
+    expect(r.phone_country_code).toBe("+27");
+  });
+
+  it("BUT still redacts exact phone variants when the field IS the phone number", () => {
+    const r = redactPii({
+      phone: "+27821234567",
+      phone_number: "+27821234567",
+      phoneNumber: "+27821234567",
     }) as Record<string, string>;
     for (const v of Object.values(r)) expect(v).toBe("[REDACTED]");
   });
@@ -97,10 +141,24 @@ describe("redactPii — value-based redaction (catches misnamed fields)", () => 
     expect(r.note).not.toContain(jwt);
   });
 
-  it("masks long opaque secret-shaped values", () => {
-    const opaque = "ZGVtb2RlbW9kZW1vZGVtb2RlbW9kZW1vZGVtb2RlbW9kZW1vZGVtbw==";
+  it("masks long opaque secret-shaped values (≥64 chars, wave-107.1)", () => {
+    // Bumped from 48 to 64 chars to avoid false positives on UUIDs +
+    // signed S3 URLs. 64+ is still well below real API-key lengths.
+    const opaque =
+      "ZGVtb2RlbW9kZW1vZGVtb2RlbW9kZW1vZGVtb2RlbW9kZW1vZGVtb2RlbW9kZW1vZA==";
     const r = redactPii({ note: `key=${opaque}` }) as Record<string, string>;
     expect(r.note).toContain("[opaque]");
+  });
+
+  it("wave-107.1: does NOT mask <64-char opaque strings (UUIDs, request IDs, S3 keys)", () => {
+    const r = redactPii({
+      requestId: "req_01HXYZ123456789",
+      uuid: "550e8400-e29b-41d4-a716-446655440000",
+      shortHash: "abc123def456ghi789",
+    }) as Record<string, string>;
+    expect(r.requestId).not.toContain("[opaque]");
+    expect(r.uuid).not.toContain("[opaque]");
+    expect(r.shortHash).not.toContain("[opaque]");
   });
 
   it("leaves short strings untouched (no false positives on counts/ids)", () => {
