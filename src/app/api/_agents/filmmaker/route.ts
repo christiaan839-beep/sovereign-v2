@@ -1,5 +1,7 @@
 import { createAgentRoute } from "@/lib/agent-factory";
 import { createLogger } from "@/lib/logger";
+import { checkpoint as budgetCheckpoint } from "@/lib/execution-budget";
+import { createHash } from "node:crypto";
 const log = createLogger("filmmaker-agent");
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
@@ -13,7 +15,10 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
  *
  * @see https://ai.google.dev/gemini-api/docs/video-generation
  */
-async function submitVeoGeneration(prompt: string, aspectRatio: string = "16:9"): Promise<{
+async function submitVeoGeneration(
+  prompt: string,
+  aspectRatio: string = "16:9",
+): Promise<{
   success: boolean;
   operationId?: string;
   error?: string;
@@ -29,7 +34,7 @@ async function submitVeoGeneration(prompt: string, aspectRatio: string = "16:9")
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${GEMINI_API_KEY}`,
+          Authorization: `Bearer ${GEMINI_API_KEY}`,
         },
         body: JSON.stringify({
           instances: [{ prompt }],
@@ -39,7 +44,7 @@ async function submitVeoGeneration(prompt: string, aspectRatio: string = "16:9")
             sampleCount: 1,
           },
         }),
-      }
+      },
     );
 
     if (!res.ok) {
@@ -91,26 +96,53 @@ Output a highly structured JSON array of 5 exact visual prompts to be fed into V
       throw new Error("GEMINI_API_KEY missing");
     }
 
-    // Step 1: Generate the production brief via Gemini
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${GEMINI_API_KEY}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: `Generate the Veo 3.1 prompt sequence for: ${topic}. Target Audience: ${targetAudience}. Duration: ${duration}.` }] }],
-        systemInstruction: { parts: [{ text: systemInstruction }] },
-        generationConfig: {
-          temperature: 0.2,
-          responseMimeType: "application/json",
-        }
-      })
+    // Wave-108.5 kill-switch coverage: this path bypasses ai() with
+    // a direct SDK call to gemini-1.5-pro. Hash the topic+audience
+    // fingerprint so a runaway loop calling filmmaker repeatedly
+    // with the same brief trips wave-106's identical_repeat detector.
+    const briefHash = createHash("sha256")
+      .update(String(topic ?? ""))
+      .update(String(targetAudience ?? ""))
+      .update(String(duration ?? ""))
+      .digest("hex")
+      .slice(0, 16);
+    budgetCheckpoint("ai.filmmaker", {
+      model: "gemini-1.5-pro",
+      briefHash,
     });
+
+    // Step 1: Generate the production brief via Gemini
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: `Generate the Veo 3.1 prompt sequence for: ${topic}. Target Audience: ${targetAudience}. Duration: ${duration}.`,
+                },
+              ],
+            },
+          ],
+          systemInstruction: { parts: [{ text: systemInstruction }] },
+          generationConfig: {
+            temperature: 0.2,
+            responseMimeType: "application/json",
+          },
+        }),
+      },
+    );
 
     if (!response.ok) {
       throw new Error(`Google AI API Error: ${response.statusText}`);
     }
 
     const aiData = await response.json();
-    const productionBrief = aiData.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+    const productionBrief =
+      aiData.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
     let parsedBrief;
     try {
       parsedBrief = JSON.parse(productionBrief);
@@ -121,21 +153,36 @@ Output a highly structured JSON array of 5 exact visual prompts to be fed into V
     // Step 2: Submit the first visual prompt to Veo 3.1
     let veoPrompt: string | null = null;
     if (Array.isArray(parsedBrief)) {
-      veoPrompt = parsedBrief[0]?.prompt || parsedBrief[0]?.visual_prompt || parsedBrief[0]?.text || null;
+      veoPrompt =
+        parsedBrief[0]?.prompt ||
+        parsedBrief[0]?.visual_prompt ||
+        parsedBrief[0]?.text ||
+        null;
     } else if (parsedBrief.prompts && Array.isArray(parsedBrief.prompts)) {
-      veoPrompt = parsedBrief.prompts[0]?.prompt || parsedBrief.prompts[0]?.visual_prompt || null;
+      veoPrompt =
+        parsedBrief.prompts[0]?.prompt ||
+        parsedBrief.prompts[0]?.visual_prompt ||
+        null;
     } else if (parsedBrief.scenes && Array.isArray(parsedBrief.scenes)) {
-      veoPrompt = parsedBrief.scenes[0]?.prompt || parsedBrief.scenes[0]?.visual_prompt || null;
+      veoPrompt =
+        parsedBrief.scenes[0]?.prompt ||
+        parsedBrief.scenes[0]?.visual_prompt ||
+        null;
     }
 
     if (!veoPrompt) {
       veoPrompt = `Cinematic ${duration} video: ${topic}. Target audience: ${targetAudience}. 24fps, film grain, authoritative tone.`;
     }
 
-    const veoResult = await submitVeoGeneration(veoPrompt, aspectRatio as string);
+    const veoResult = await submitVeoGeneration(
+      veoPrompt,
+      aspectRatio as string,
+    );
 
     if (veoResult.success) {
-      log.info("Veo 3.1 generation submitted", { operationId: veoResult.operationId });
+      log.info("Veo 3.1 generation submitted", {
+        operationId: veoResult.operationId,
+      });
       return {
         status: "video_generation_submitted",
         pipeline: "Google Veo 3.1 + Gemini",
@@ -150,10 +197,12 @@ Output a highly structured JSON array of 5 exact visual prompts to be fed into V
       };
     }
 
-    log.warn("Veo 3.1 unavailable, returning text-only brief", { error: veoResult.error });
+    log.warn("Veo 3.1 unavailable, returning text-only brief", {
+      error: veoResult.error,
+    });
     return {
-      status: 'production_scheduled',
-      pipeline: 'Google Flow (Veo 3.1 + Imagen)',
+      status: "production_scheduled",
+      pipeline: "Google Flow (Veo 3.1 + Imagen)",
       veo: {
         submitted: false,
         reason: veoResult.error,

@@ -11,7 +11,7 @@ import type { AgentResult, Lead } from "@/types";
 export async function prospectLeads(
   industry: string,
   idealClient: string,
-  location?: string
+  location?: string,
 ): Promise<AgentResult & { leads: Lead[] }> {
   // 1. Search for real businesses via Tavily
   const searchQuery = `${industry} ${idealClient} businesses ${location || "South Africa"} company contact`;
@@ -44,11 +44,19 @@ Return ONLY a JSON array. No explanation. Format:
     "reason": "Why this is a good lead"
   }
 ]`,
+    // Wave-108.5 cost fix: Cerebras Llama-3.1-70B handles JSON-shaped
+    // lead extraction at ~$0.10/M tokens vs Gemini Flash at ~$0.30/M
+    // input, while remaining faithful to the "only return real
+    // companies in the search results" instruction. No explicit
+    // fallback here — the caller catches research_ai errors and the
+    // markdown-strip + JSON.parse below tolerates the formatting
+    // variance between providers.
     {
-      model: "gemini",
-      system: "You are a B2B lead generation expert. Only return real companies found in the search results. Never fabricate data.",
+      model: "cerebras",
+      system:
+        "You are a B2B lead generation expert. Only return real companies found in the search results. Never fabricate data.",
       maxTokens: 2000,
-    }
+    },
   );
 
   let leads: Lead[] = [];
@@ -64,7 +72,7 @@ Return ONLY a JSON array. No explanation. Format:
     if (lead.stage === "hot") {
       await remember(
         `Hot lead found: ${lead.name} at ${lead.company} — ${(lead as Lead & { reason?: string }).reason || industry}`,
-        JSON.stringify({ type: "lead", stage: "hot", industry })
+        JSON.stringify({ type: "lead", stage: "hot", industry }),
       );
     }
   }

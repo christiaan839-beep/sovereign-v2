@@ -1,5 +1,7 @@
 import { createAgentRoute } from "@/lib/agent-factory";
 import { createLogger } from "@/lib/logger";
+import { checkpoint as budgetCheckpoint } from "@/lib/execution-budget";
+import { createHash } from "node:crypto";
 
 const log = createLogger("claude-think");
 
@@ -23,12 +25,34 @@ export const POST = createAgentRoute({
   handler: async ({ input }) => {
     const problem = input.problem as string;
     const context = (input.context as string) || "";
-    const maxThinkingTokens = Math.min((input.maxThinkingTokens as number) || 10000, 32000);
+    const maxThinkingTokens = Math.min(
+      (input.maxThinkingTokens as number) || 10000,
+      32000,
+    );
 
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
-      return { error: "Anthropic API key not configured. Add ANTHROPIC_API_KEY to your environment or use BYOK in Settings." };
+      return {
+        error:
+          "Anthropic API key not configured. Add ANTHROPIC_API_KEY to your environment or use BYOK in Settings.",
+      };
     }
+
+    // Wave-108.5 kill-switch coverage: this path bypasses ai() with a
+    // direct fetch to Anthropic. Claude Sonnet+thinking is one of the
+    // most expensive single calls in the stack ($3 in / $15 out per M
+    // tokens + thinking budget), so runaway-loop protection here is
+    // worth the small fingerprint cost.
+    const problemHash = createHash("sha256")
+      .update(String(input.problem ?? ""))
+      .update(context)
+      .digest("hex")
+      .slice(0, 16);
+    budgetCheckpoint("ai.claude-think", {
+      model: "claude-sonnet-4-6",
+      problemHash,
+      maxThinkingTokens,
+    });
 
     try {
       const res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -59,7 +83,10 @@ export const POST = createAgentRoute({
       if (!res.ok) {
         const errorText = await res.text();
         log.warn("Claude API error", { status: res.status });
-        return { error: `Claude API error (${res.status})`, details: errorText };
+        return {
+          error: `Claude API error (${res.status})`,
+          details: errorText,
+        };
       }
 
       const data = await res.json();

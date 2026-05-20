@@ -118,8 +118,21 @@ current. Your confidence is not an excuse to skip verification.
     if (depth === "deep") {
       const t25 = Date.now();
       try {
+        // Wave-108.5 token-waste fix: previously embedded the full
+        // JSON.stringify(input) — for a structured agent input that's
+        // commonly 10-50KB of context, this multiplied Claude+thinking
+        // token spend by 5-10x. The strategist refinement only needs
+        // the gist of the original problem, not the full structured
+        // payload. Truncate to 4000 chars (≈1000 tokens) which is
+        // enough for context anchoring without burning budget.
+        const inputStr =
+          typeof input === "string" ? input : JSON.stringify(input);
+        const inputForPrompt =
+          inputStr.length > 4000
+            ? `${inputStr.slice(0, 4000)}\n…[truncated]`
+            : inputStr;
         const thinkingAnalysis = await ai(
-          `You have been given preliminary analysis from another model. Now apply deep, multi-step reasoning to refine it.\n\nOriginal input: ${typeof input === "string" ? input : JSON.stringify(input)}\n\nPreliminary analysis:\n${results.analysis || "No preliminary analysis available."}\n\nProvide a refined, strategic intelligence assessment with second-order implications, hidden risks, and actionable recommendations.`,
+          `You have been given preliminary analysis from another model. Now apply deep, multi-step reasoning to refine it.\n\nOriginal input: ${inputForPrompt}\n\nPreliminary analysis:\n${results.analysis || "No preliminary analysis available."}\n\nProvide a refined, strategic intelligence assessment with second-order implications, hidden risks, and actionable recommendations.`,
           {
             model: "claude",
             thinking: true,

@@ -593,15 +593,31 @@ async function compileDAG(
     // through ai() now so every shared safety + cost guarantee
     // applies. Anthropic key resolution falls through ai()'s
     // tier-checking logic; the underlying SDK call is identical.
-    const text = await ai(
-      `Compile this goal into a workflow DAG:\n\n${prompt}\n\nReturn JSON array: [{"agent": "leads", "task": "Find 50 leads", "dependsOn": []}]`,
-      {
+    //
+    // Wave-108.5 cost fix: this is pure structured JSON extraction
+    // (compile goal → DAG of {agent, task, dependsOn}). Cerebras
+    // Llama-3.1-70B handles it for $0.10/M tokens vs Claude
+    // Sonnet at $3/$15. Claude preserved as fallback so a
+    // Cerebras outage doesn't break workflow compilation. The
+    // markdown-strip + JSON.parse below already tolerates the
+    // formatting variance between providers.
+    const compilePrompt = `Compile this goal into a workflow DAG:\n\n${prompt}\n\nReturn JSON array: [{"agent": "leads", "task": "Find 50 leads", "dependsOn": []}]`;
+    const compileSystem =
+      "You are a workflow compiler. Break complex goals into a DAG of agent tasks. Available agents: leads, content, seo, email-sequence, voice, competitor, design, page-builder, code-agent, ads. Return ONLY a JSON array.";
+    let text: string;
+    try {
+      text = await ai(compilePrompt, {
+        model: "cerebras",
+        maxTokens: 1000,
+        system: compileSystem,
+      });
+    } catch {
+      text = await ai(compilePrompt, {
         model: "claude",
         maxTokens: 1000,
-        system:
-          "You are a workflow compiler. Break complex goals into a DAG of agent tasks. Available agents: leads, content, seo, email-sequence, voice, competitor, design, page-builder, code-agent, ads. Return ONLY a JSON array.",
-      },
-    );
+        system: compileSystem,
+      });
+    }
 
     return JSON.parse(
       text

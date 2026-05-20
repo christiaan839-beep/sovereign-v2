@@ -1,4 +1,6 @@
 import { createAgentRoute } from "@/lib/agent-factory";
+import { checkpoint as budgetCheckpoint } from "@/lib/execution-budget";
+import { createHash } from "node:crypto";
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
@@ -18,25 +20,48 @@ Target: ${lead_name || "Enterprise Decision Maker"}.
 Write a conversational script that professionally introduces the platform's capabilities and asks qualifying questions.
 Keep it under 4 sentences after the disclosure. Tone: Professional, concise, consultative. No aggressive language.`;
 
-    // Fetch the dynamic conversational hook from Gemini
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: "Synthesize the outbound voice strike protocol." }] }],
-        systemInstruction: { parts: [{ text: systemInstruction }] },
-        generationConfig: { temperature: 0.3 }
-      })
+    // Wave-108.5 kill-switch coverage: direct fetch to gemini-1.5-flash
+    // bypasses ai(); checkpoint here so per-request limits still apply.
+    const targetHash = createHash("sha256")
+      .update(String(lead_name ?? ""))
+      .update(String(target_number ?? ""))
+      .digest("hex")
+      .slice(0, 16);
+    budgetCheckpoint("ai.voice-script", {
+      model: "gemini-1.5-flash",
+      targetHash,
     });
 
+    // Fetch the dynamic conversational hook from Gemini
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                { text: "Synthesize the outbound voice strike protocol." },
+              ],
+            },
+          ],
+          systemInstruction: { parts: [{ text: systemInstruction }] },
+          generationConfig: { temperature: 0.3 },
+        }),
+      },
+    );
+
     const aiData = await response.json();
-    const generatedScript = aiData.candidates?.[0]?.content?.parts?.[0]?.text || "Communication relay offline.";
+    const generatedScript =
+      aiData.candidates?.[0]?.content?.parts?.[0]?.text ||
+      "Communication relay offline.";
 
     return {
-      status: 'voice_call_authorized',
-      telephony_engine: 'Pipecat/Twilio WebRTC',
+      status: "voice_call_authorized",
+      telephony_engine: "Pipecat/Twilio WebRTC",
       target: target_number,
-      synthesized_script: generatedScript
+      synthesized_script: generatedScript,
     };
   },
 });

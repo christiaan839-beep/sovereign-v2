@@ -30,7 +30,11 @@ interface GeminiSearchResult {
 }
 
 /** Run a single Gemini grounded search for one query */
-async function geminiGroundedSearch(query: string, context: string, geminiKey: string): Promise<GeminiSearchResult> {
+async function geminiGroundedSearch(
+  query: string,
+  context: string,
+  geminiKey: string,
+): Promise<GeminiSearchResult> {
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${geminiKey}`,
     {
@@ -40,7 +44,13 @@ async function geminiGroundedSearch(query: string, context: string, geminiKey: s
         contents: [
           {
             role: "user",
-            parts: [{ text: context ? `Context: ${context}\n\nQuery: ${query}` : query }],
+            parts: [
+              {
+                text: context
+                  ? `Context: ${context}\n\nQuery: ${query}`
+                  : query,
+              },
+            ],
           },
         ],
         systemInstruction: {
@@ -60,7 +70,7 @@ async function geminiGroundedSearch(query: string, context: string, geminiKey: s
           maxOutputTokens: 2000,
         },
       }),
-    }
+    },
   );
 
   if (!res.ok) {
@@ -70,13 +80,19 @@ async function geminiGroundedSearch(query: string, context: string, geminiKey: s
 
   const data = await res.json();
   const candidate = data.candidates?.[0];
-  const answer = candidate?.content?.parts?.map((p: { text?: string }) => p.text || "").join("") || "";
+  const answer =
+    candidate?.content?.parts
+      ?.map((p: { text?: string }) => p.text || "")
+      .join("") || "";
 
   const groundingMeta = candidate?.groundingMetadata;
-  const sources: GeminiSource[] = groundingMeta?.groundingChunks?.map((chunk: { web?: { uri: string; title: string } }) => ({
-    url: chunk.web?.uri || "",
-    title: chunk.web?.title || "",
-  })) || [];
+  const sources: GeminiSource[] =
+    groundingMeta?.groundingChunks?.map(
+      (chunk: { web?: { uri: string; title: string } }) => ({
+        url: chunk.web?.uri || "",
+        title: chunk.web?.title || "",
+      }),
+    ) || [];
 
   const searchQueries: string[] = groundingMeta?.webSearchQueries || [];
 
@@ -91,9 +107,13 @@ export const POST = createAgentRoute({
     const context = (input.context as string) || "";
     const deep = input.deep === true;
 
-    const geminiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY;
+    const geminiKey =
+      process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY;
     if (!geminiKey) {
-      return { error: "Google AI API key not configured. Add GOOGLE_GENERATIVE_AI_API_KEY to your environment." };
+      return {
+        error:
+          "Google AI API key not configured. Add GOOGLE_GENERATIVE_AI_API_KEY to your environment.",
+      };
     }
 
     // ─── Standard (shallow) search ───
@@ -122,9 +142,10 @@ export const POST = createAgentRoute({
         `Break this research query into 2-3 focused, specific sub-questions that together comprehensively answer the original query. Return ONLY a JSON array of strings, no other text.\n\nQuery: "${query}"`,
         {
           model: "groq",
-          system: "You are a research decomposition engine. Output only valid JSON arrays of strings. Each sub-question should target a different aspect of the query.",
+          system:
+            "You are a research decomposition engine. Output only valid JSON arrays of strings. Each sub-question should target a different aspect of the query.",
           maxTokens: 500,
-        }
+        },
       );
 
       // Parse the JSON array from the response
@@ -150,8 +171,8 @@ export const POST = createAgentRoute({
           answer: "",
           sources: [] as GeminiSource[],
           searchQueries: [] as string[],
-        }))
-      )
+        })),
+      ),
     );
 
     // Collect all sources and deduplicate by URL
@@ -176,18 +197,40 @@ export const POST = createAgentRoute({
 
     // Build sub-answer context
     const subAnswerContext = searchResults
-      .map((r, i) => `--- Sub-question ${i + 1}: "${subQuestions[i]}" ---\n${r.answer}`)
+      .map(
+        (r, i) =>
+          `--- Sub-question ${i + 1}: "${subQuestions[i]}" ---\n${r.answer}`,
+      )
       .join("\n\n");
 
-    // Step 3: Synthesize all results into a comprehensive answer
-    const synthesized = await ai(
-      `You have been given multiple research findings from different sub-questions about the user's query. Synthesize them into a single, comprehensive, well-structured answer.\n\nOriginal query: "${query}"\n\n${subAnswerContext}\n\nAvailable sources for citation:\n${sourceReference}\n\nInstructions:\n- Combine all findings into one cohesive response\n- Use inline citations like [1], [2], [3] referencing the numbered sources\n- End with a "Sources:" section listing all cited sources\n- Be direct and factual — no filler`,
-      {
-        model: "gemini",
-        system: "You are a senior research synthesizer. Produce comprehensive, well-cited answers from multiple research threads. Use inline citations [1], [2], etc. and always include a Sources section at the end.",
-        maxTokens: 3000,
-      }
-    );
+    // Step 3: Synthesize all results into a comprehensive answer.
+    // Wave-108.5 cost fix: synthesis is NIM nemotron-ultra's wheelhouse
+    // (long-context multi-source consolidation). Free vs Gemini Flash's
+    // ~$0.075/M tokens — saves ~$40-80/mo at audited node-plan volume.
+    // Gemini preserved as fallback so the deep-search path stays
+    // resilient if NIM rate-limits.
+    let synthesized: string;
+    try {
+      synthesized = await ai(
+        `You have been given multiple research findings from different sub-questions about the user's query. Synthesize them into a single, comprehensive, well-structured answer.\n\nOriginal query: "${query}"\n\n${subAnswerContext}\n\nAvailable sources for citation:\n${sourceReference}\n\nInstructions:\n- Combine all findings into one cohesive response\n- Use inline citations like [1], [2], [3] referencing the numbered sources\n- End with a "Sources:" section listing all cited sources\n- Be direct and factual — no filler`,
+        {
+          model: "nim",
+          system:
+            "You are a senior research synthesizer. Produce comprehensive, well-cited answers from multiple research threads. Use inline citations [1], [2], etc. and always include a Sources section at the end.",
+          maxTokens: 3000,
+        },
+      );
+    } catch {
+      synthesized = await ai(
+        `You have been given multiple research findings from different sub-questions about the user's query. Synthesize them into a single, comprehensive, well-structured answer.\n\nOriginal query: "${query}"\n\n${subAnswerContext}\n\nAvailable sources for citation:\n${sourceReference}\n\nInstructions:\n- Combine all findings into one cohesive response\n- Use inline citations like [1], [2], [3] referencing the numbered sources\n- End with a "Sources:" section listing all cited sources\n- Be direct and factual — no filler`,
+        {
+          model: "gemini",
+          system:
+            "You are a senior research synthesizer. Produce comprehensive, well-cited answers from multiple research threads. Use inline citations [1], [2], etc. and always include a Sources section at the end.",
+          maxTokens: 3000,
+        },
+      );
+    }
 
     return {
       answer: synthesized,
