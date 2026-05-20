@@ -950,7 +950,27 @@ export async function claudeToolUse(
   const allToolCalls: Array<{ name: string; input: Record<string, unknown> }> =
     [];
 
+  // Wave-110 kill-switch coverage. Hash the prompt once outside the
+  // loop; checkpoint EACH iteration inside the loop. This means:
+  //   - identical_repeat trip if the model gets stuck calling the
+  //     same tool with the same params each iteration
+  //   - wall_clock trip if the tool loop spends >60s (default) on
+  //     a single user request
+  //   - tool_call_cap trip if the loop fires >50 ai.* checkpoints
+  //     in the surrounding request (e.g. agent calling claudeToolUse
+  //     in a fan-out)
+  // No-op outside withExecutionBudget scope — backward-compat.
+  const initialHash = createHash("sha256")
+    .update(prompt)
+    .update(system ?? "")
+    .digest("hex")
+    .slice(0, 16);
+
   for (let i = 0; i < MAX_ITERATIONS; i++) {
+    budgetCheckpoint("ai.claude-tool-iteration", {
+      iteration: i,
+      promptHash: initialHash,
+    });
     const response = await client.messages.create({
       model: "claude-sonnet-4-6",
       max_tokens: maxTokens,
