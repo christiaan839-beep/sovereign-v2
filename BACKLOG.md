@@ -21,7 +21,7 @@ These percentages are anchored in code I read this session, not marketing.
 | **Cost-aware AI routing**                                                                                         | **~90%**   | NIM-first default, verifiedAi auto-gated, contract-analyzer 3-tier, 4 SDK-direct paths checkpoint-covered. ~$590-1,300/mo savings live.                                 |
 | **UI / Landing** (brand-correct, glass, motion, telemetry)                                                        | **~80%**   | All 26 /for-\* pages brand-correct (10 shell + 14 bespoke-corrected wave 109.7 + 2 already-clean). VerticalPageShell + scroll rail + LiveReceiptFeed live.              |
 | **Agent layer — multi-step tool-use**                                                                             | **~0.7%**  | 1 of 140 (competitor-scan, wave 110). Pattern proven. Per-flagship conversion is mechanical now but per-agent.                                                          |
-| **Agent layer — memory-awareness**                                                                                | **~12.9%** | 18 of 140 opted in via wave-111 factory hooks (15 prior + auto-heal, code-reviewer, outbound from batch 5). 122 are one ~25-line config block away.                     |
+| **Agent layer — memory-awareness**                                                                                | **~15.0%** | 21 of 140 opted in via wave-111 factory hooks (18 prior + competitor, threat-hunt, supply-chain from batch 6). 119 are one ~25-line config block away.                  |
 | **DAG executor for playbooks**                                                                                    | **0%**     | Still a for-loop in `src/app/api/playbooks/run/route.ts`. swarm-protocol.ts (299 LOC) has zero callers.                                                                 |
 | **Marketing claims vs actual compliance certifications**                                                          | **~30%**   | Platform infrastructure addresses HIPAA/FERPA/SOC 2 architecturally, but no signed certifications. Marketing language needs softening OR certifications need acquiring. |
 
@@ -50,7 +50,8 @@ The platform is production-deployable RIGHT NOW for: agency operators automating
 | 13  | `478c5c45`     | 111.1 (batch 2)    | Memory opt-in on 4 more agents: blog-gen, reputation, funnel-xray, social-router. Memory-aware coverage 3 → 7 of 140 (~5%). All use factory `pastContextAsPrompt()` with auto-prepended untrusted-marker directive.                                                                          |
 | 14  | `2b31bcd3`     | 111.1 (batch 3)    | Memory opt-in on 3 more agents: brand-audit, client-report, competitor-rip. Memory-aware coverage 7 → 10 of 140 (~7%).                                                                                                                                                                       |
 | 15  | `a1acd62c`     | 111.1 (batch 4)    | Memory opt-in on 5 more agents: competitive-radar, organic-content, agri-intel, compliance-monitor, meeting-notes. Memory-aware coverage 10 → 15 of 140 (~11%). Diverse domain coverage — competitive intel, content gen, ag, compliance, meeting-summary.                                   |
-| 16  | _pending push_ | 111.1 (batch 5)    | Memory opt-in on 3 more agents: auto-heal (proven-remediation pattern compounding), code-reviewer (repeat-issue surface), outbound (industry/offer sequence-hook compounding). Memory-aware coverage 15 → 18 of 140 (~13%). Skipped booking + healthcare-docs (delegation + HIPAA concerns). |
+| 16  | `815f87a9`     | 111.1 (batch 5)    | Memory opt-in on 3 more agents: auto-heal (proven-remediation pattern compounding), code-reviewer (repeat-issue surface), outbound (industry/offer sequence-hook compounding). Memory-aware coverage 15 → 18 of 140 (~13%). Skipped booking + healthcare-docs (delegation + HIPAA concerns). |
+| 17  | _pending push_ | 111.1 (batch 6)    | Memory opt-in on 3 more agents: competitor (per-competitor battle-plan compounding), threat-hunt (recurring TTP surface), supply-chain (per-region disruption history). Memory-aware coverage 18 → 21 of 140 (~15%).                                                                         |
 
 ---
 
@@ -114,7 +115,7 @@ The platform is production-deployable RIGHT NOW for: agency operators automating
 | ~~107.2~~ | ~~DNS-rebinding hardening at `outboundFetch` (H1)~~ — SHIPPED                                                                 |
 | 107.5     | Bulk `fetch()` → `outboundFetch()` codemod (M1)                                                                               |
 | ~~109.7~~ | ~~Brand-correct the 14 bespoke `/for-*` pages (M4) — page-by-page~~ — SHIPPED                                                 |
-| 111.1     | Mass memory opt-in across remaining 122 agents (M3) — batched. **In progress:** 18 of 140 (~13%) opted in across batches 1-5. |
+| 111.1     | Mass memory opt-in across remaining 119 agents (M3) — batched. **In progress:** 21 of 140 (~15%) opted in across batches 1-6. |
 | 111.x     | Per-user storeMemory write cap (H2)                                                                                           |
 | 112       | DAG executor for playbooks (M5)                                                                                               |
 | 113-117   | Flagship agent conversions: lead-blitz / closer / site-assassin / deep-think / content-machine / super-agent (M2)             |

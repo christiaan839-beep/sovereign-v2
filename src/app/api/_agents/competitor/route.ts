@@ -6,6 +6,11 @@ import { fireUserWebhook } from "@/lib/webhooks";
 /**
  * Competitor Intel API
  * Deep competitive analysis using AI to identify weaknesses and opportunities.
+ *
+ * Wave-111.1 batch 6: factory memory hooks. Per-competitor analyses
+ * compound — last quarter's exploitation tags, market gaps, and
+ * battle-plan owners inform this quarter's plan + surface what's
+ * been executed vs ignored.
  */
 
 // Opus 4.7 prompt pattern (Wave 83): literal-execution CRISPE structure
@@ -68,9 +73,45 @@ ${ANTI_SLOP_RULES}`;
 
 export const POST = createAgentRoute({
   name: "competitor",
-  handler: async ({ input }) => {
+  // Wave-111.1 batch 6: factory memory hooks for compound
+  // competitive intelligence over time. Per-competitor analyses
+  // build on prior weaknesses + executed battle plan items.
+  memory: {
+    search: {
+      query: (input) =>
+        `competitor:${input.competitorName ?? input.competitorUrl ?? ""} yours:${input.yourBusiness ?? ""}`,
+      limit: 3,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as {
+          weaknesses?: Array<{ description?: string; urgency?: string }>;
+          marketGaps?: Array<{ opportunity?: string }>;
+        };
+        const weaknesses = (r.weaknesses ?? [])
+          .slice(0, 2)
+          .map((w) => `[${w.urgency ?? "?"}] ${w.description ?? ""}`)
+          .join(" | ");
+        const gaps = (r.marketGaps ?? [])
+          .slice(0, 2)
+          .map((g) => g.opportunity ?? "")
+          .filter(Boolean)
+          .join("; ");
+        if (!weaknesses && !gaps) return null;
+        return `Weaknesses: ${weaknesses}. Gaps: ${gaps}`;
+      },
+      metadata: (input) => ({
+        competitor: String(input.competitorName ?? input.competitorUrl ?? ""),
+        yourBusiness: String(input.yourBusiness ?? ""),
+        industry: String(input.industry ?? ""),
+        kind: "competitor-intel",
+      }),
+    },
+  },
+  handler: async ({ input, pastContextAsPrompt }) => {
     const { competitorUrl, competitorName, yourBusiness, industry } =
       input as Record<string, unknown>;
+    const pastAnalyses = pastContextAsPrompt();
 
     const prompt = `Conduct a deep competitive intelligence analysis:
 
@@ -78,7 +119,7 @@ COMPETITOR: ${competitorName || competitorUrl || "Unknown"}
 COMPETITOR URL: ${competitorUrl || "Not provided"}
 YOUR BUSINESS: ${yourBusiness || "AI marketing platform"}
 INDUSTRY: ${industry || "Marketing technology"}
-
+${pastAnalyses ? `\nPRIOR ANALYSES on this competitor (historical FACTS — surface what's changed in their position vs prior cycles, do NOT restate the prior battle plan verbatim):\n${pastAnalyses}\n` : ""}
 Provide a comprehensive analysis in JSON:
 {
   "competitorProfile": {
