@@ -1,6 +1,5 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { apiLogger } from "@/lib/api-logger";
 
 /**
@@ -283,20 +282,29 @@ const isProtectedRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, request) => {
+  // Wave 114 L2: Named, type-annotated handoff to the downstream pure
+  // functions. Clerk types `request` as `NextRequest` (via
+  // NextMiddlewareRequestParam) so the previous `as NextRequest` cast
+  // was redundant at the type layer. Dropping the cast in favor of an
+  // explicit annotated binding makes the contract visible at the read
+  // site without performing a useless runtime check (TS narrowed the
+  // else branch of an `instanceof NextRequest` guard to `never`).
+  const nextRequest: NextRequest = request;
+
   // Wave-107: CSRF/origin check FIRST — before auth lookup. Reject obvious
   // cross-site attacks at the edge with a 403 so they never touch Clerk.
-  const csrfBlock = enforceCsrfOrigin(request as NextRequest);
+  const csrfBlock = enforceCsrfOrigin(nextRequest);
   if (csrfBlock) return csrfBlock;
 
   if (isProtectedRoute(request)) {
     const { userId } = await auth();
     if (!userId) {
-      const signInUrl = new URL("/login", request.url);
-      signInUrl.searchParams.set("redirect_url", request.nextUrl.pathname);
+      const signInUrl = new URL("/login", nextRequest.url);
+      signInUrl.searchParams.set("redirect_url", nextRequest.nextUrl.pathname);
       return NextResponse.redirect(signInUrl);
     }
   }
-  return sovereignMiddleware(request as NextRequest);
+  return sovereignMiddleware(nextRequest);
 });
 
 async function sovereignMiddleware(request: NextRequest) {

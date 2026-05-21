@@ -46,6 +46,11 @@ import { createLogger } from "@/lib/logger";
 
 const log = createLogger("competitor-scan");
 
+// Wave 114 L3: env-configurable User-Agent. Lets deployments brand
+// outbound scans without forking the file, and lets staging/test
+// runs distinguish themselves from production in target-site logs.
+const USER_AGENT = process.env.SOVEREIGN_USER_AGENT || "SovereignBot/1.0";
+
 const schema = z
   .object({
     target: z
@@ -283,7 +288,7 @@ export function buildToolExecutor(ctx: CompetitorScanContext) {
           try {
             const result = await outboundFetch(
               url,
-              { method: "GET", headers: { "User-Agent": "SovereignBot/1.0" } },
+              { method: "GET", headers: { "User-Agent": USER_AGENT } },
               {
                 ruleId: "competitor-scan.fetch_page",
                 tenantId: ctx.userId,
@@ -366,7 +371,12 @@ export function buildToolExecutor(ctx: CompetitorScanContext) {
       });
       output = `ERROR: tool "${name}" threw — ${err instanceof Error ? err.message : String(err)}`;
     }
-    ctx.trace.push({ tool: name, input, output: output.slice(0, 400) });
+    // Wave 114 L4: cap the per-request trace at 50 entries. Long
+    // error-retry loops (model calls same tool with same params on
+    // each iteration) would otherwise grow this array unbounded.
+    if (ctx.trace.length < 50) {
+      ctx.trace.push({ tool: name, input, output: output.slice(0, 400) });
+    }
     return output;
   };
 }

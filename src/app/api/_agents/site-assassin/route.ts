@@ -44,6 +44,9 @@ import { createLogger } from "@/lib/logger";
 
 const log = createLogger("site-assassin");
 
+// Wave 114 L3: env-configurable User-Agent (see competitor-scan).
+const USER_AGENT = process.env.SOVEREIGN_USER_AGENT || "SovereignBot/1.0";
+
 const schema = z.object({
   url: z.string().min(1).max(500),
   mode: z.enum(["analyze", "clone-superior"]).optional().default("analyze"),
@@ -261,7 +264,7 @@ export function buildToolExecutor(ctx: SiteAssassinContext) {
           try {
             const result = await outboundFetch(
               url,
-              { method: "GET", headers: { "User-Agent": "SovereignBot/1.0" } },
+              { method: "GET", headers: { "User-Agent": USER_AGENT } },
               {
                 ruleId: "site-assassin.fetch_page",
                 tenantId: ctx.userId,
@@ -368,7 +371,11 @@ export function buildToolExecutor(ctx: SiteAssassinContext) {
       });
       output = `ERROR: tool "${name}" threw — ${err instanceof Error ? err.message : String(err)}`;
     }
-    ctx.trace.push({ tool: name, input, output: output.slice(0, 400) });
+    // Wave 114 L4: cap the per-request trace at 50 entries (see
+    // competitor-scan for full rationale).
+    if (ctx.trace.length < 50) {
+      ctx.trace.push({ tool: name, input, output: output.slice(0, 400) });
+    }
     return output;
   };
 }

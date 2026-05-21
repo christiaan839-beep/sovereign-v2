@@ -24,6 +24,7 @@ import { z } from "zod";
 import { createHmac, randomBytes } from "crypto";
 import { rateLimit } from "@/lib/rate-limit";
 import { createLogger } from "@/lib/logger";
+import { outboundFetch } from "@/lib/outbound-fetch";
 
 const log = createLogger("receipts-trial");
 const limiter = rateLimit({ interval: 60, limit: 3 });
@@ -148,36 +149,49 @@ async function sendTrialEmail(args: {
   quota: number;
 }): Promise<void> {
   const apiBase = process.env.NEXT_PUBLIC_BASE_URL ?? "";
-  const sendUrl = apiBase ? `${apiBase}/api/_email/send` : "/api/_email/send";
+  if (!apiBase) return; // No absolute base — can't send via outboundFetch.
+  const sendUrl = `${apiBase}/api/_email/send`;
   const founder =
     process.env.FOUNDER_NOTIFICATION_EMAIL ?? "founder@sovereignmatrix.agency";
 
   const html = renderTrialEmail(args);
+  const sendOpts = {
+    ruleId: "receipts.trial.email" as const,
+    allowedHosts: [new URL(sendUrl).hostname],
+  };
 
   // Send to requester.
-  await fetch(sendUrl, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      to: args.to,
-      subject: "Your Sovereign Matrix trial key (30 days · 10K receipts)",
-      html,
-      replyTo: founder,
-    }),
-  }).catch(() => {
+  await outboundFetch(
+    sendUrl,
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        to: args.to,
+        subject: "Your Sovereign Matrix trial key (30 days · 10K receipts)",
+        html,
+        replyTo: founder,
+      }),
+    },
+    sendOpts,
+  ).catch(() => {
     /* swallow */
   });
 
   // Send a copy to the founder for visibility.
-  await fetch(sendUrl, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      to: founder,
-      subject: `[Trial signup] ${args.to}${args.company ? ` (${args.company})` : ""}`,
-      html: `<p>Trial issued to <strong>${escape(args.to)}</strong>${args.company ? ` from <strong>${escape(args.company)}</strong>` : ""}.</p><p>Expires: ${args.expiryDate}</p>`,
-    }),
-  }).catch(() => {
+  await outboundFetch(
+    sendUrl,
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        to: founder,
+        subject: `[Trial signup] ${args.to}${args.company ? ` (${args.company})` : ""}`,
+        html: `<p>Trial issued to <strong>${escape(args.to)}</strong>${args.company ? ` from <strong>${escape(args.company)}</strong>` : ""}.</p><p>Expires: ${args.expiryDate}</p>`,
+      }),
+    },
+    sendOpts,
+  ).catch(() => {
     /* swallow */
   });
 }

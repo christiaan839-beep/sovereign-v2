@@ -5,6 +5,8 @@ import { createLogger } from "@/lib/logger";
 import { getPublicUrl } from "@/lib/base-url";
 import { alreadyProcessed } from "@/lib/idempotency";
 import { PLANS, type PlanId, normalizePlanId } from "@/lib/plans";
+import { getInternalWebhookSecret } from "@/lib/internal-secret";
+import { outboundFetch } from "@/lib/outbound-fetch";
 
 const log = createLogger("paystack-webhook");
 
@@ -73,7 +75,10 @@ export async function POST(req: Request) {
     );
 
     const baseUrl = getPublicUrl();
-    const internalSecret = process.env.INTERNAL_WEBHOOK_SECRET || "";
+    // Wave 114 H3: fail-closed read. `null` signals the env var is
+    // unset/empty; senders must skip the auto-onboard call instead of
+    // posting an empty header that gets silently rejected downstream.
+    const internalSecret = getInternalWebhookSecret();
 
     switch (event.event) {
       case "charge.success": {
@@ -128,22 +133,33 @@ export async function POST(req: Request) {
           1000,
         );
 
-        // Trigger auto-onboard (best-effort) with internal-secret header
-        if (email) {
+        // Trigger auto-onboard (best-effort) with internal-secret header.
+        // Wave 114 H3: skip the call entirely when the secret is unset —
+        // the receiver would reject our empty header anyway, but this
+        // surfaces the misconfiguration as a single warning per process.
+        if (email && internalSecret) {
           try {
-            await fetch(`${baseUrl}/api/_agents/auto-onboard`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "x-sovereign-internal-secret": internalSecret,
+            const onboardUrl = `${baseUrl}/api/_agents/auto-onboard`;
+            await outboundFetch(
+              onboardUrl,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "x-sovereign-internal-secret": internalSecret,
+                },
+                signal: AbortSignal.timeout(10_000),
+                body: JSON.stringify({
+                  clientName: event.data?.customer?.first_name || "New Client",
+                  email,
+                  plan,
+                }),
               },
-              signal: AbortSignal.timeout(10_000),
-              body: JSON.stringify({
-                clientName: event.data?.customer?.first_name || "New Client",
-                email,
-                plan,
-              }),
-            });
+              {
+                ruleId: "paystack.auto-onboard",
+                allowedHosts: [new URL(onboardUrl).hostname],
+              },
+            );
           } catch {
             // Best-effort
           }

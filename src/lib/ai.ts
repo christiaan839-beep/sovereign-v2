@@ -945,10 +945,63 @@ export async function claudeToolUse(
   const client = new Anthropic({ apiKey });
 
   const MAX_ITERATIONS = 10;
+  // Wave 114 L4: cap the per-call tool-trace at 50 entries so a
+  // model that loops on the same tool can't grow this array
+  // without bound. Callers that surface the trace already slice
+  // it (response shape stays the same).
+  const MAX_TOOL_CALL_TRACE = 50;
+  // Wave 114 M7: tool_result content older than this many user-turns
+  // gets summarised to a one-line stub. Keeps the request token cost
+  // bounded (each iteration re-sends the full message history to
+  // Claude, so 10 iterations of 50KB tool results = 500KB sent on
+  // the final iteration without this cap).
+  const KEEP_FULL_TOOL_RESULT_TURNS = 2;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const messages: any[] = [{ role: "user", content: prompt }];
   const allToolCalls: Array<{ name: string; input: Record<string, unknown> }> =
     [];
+
+  /**
+   * Walk back through `messages` and replace tool_result content with a
+   * short summary for everything older than the last
+   * KEEP_FULL_TOOL_RESULT_TURNS user-turns. The `tool_use_id` stays
+   * intact (Anthropic requires the assistant's tool_use blocks to be
+   * mirrored by user tool_result blocks with matching IDs).
+   */
+  const summariseOldToolResults = (): void => {
+    // Count user-turns from the end. A user-turn here means a `role: "user"`
+    // message whose `content` is an array of tool_result blocks. The
+    // initial user prompt is also `role: "user"` but with a string content,
+    // so it's naturally excluded.
+    let toolResultTurnsSeen = 0;
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const msg = messages[i];
+      if (
+        msg?.role !== "user" ||
+        !Array.isArray(msg.content) ||
+        msg.content.length === 0 ||
+        msg.content[0]?.type !== "tool_result"
+      ) {
+        continue;
+      }
+      toolResultTurnsSeen += 1;
+      if (toolResultTurnsSeen <= KEEP_FULL_TOOL_RESULT_TURNS) continue;
+      // Summarise every tool_result block in this older turn.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      msg.content = msg.content.map((block: any) => {
+        if (block?.type !== "tool_result") return block;
+        const raw =
+          typeof block.content === "string"
+            ? block.content
+            : JSON.stringify(block.content ?? "");
+        if (raw.length <= 200) return block;
+        return {
+          ...block,
+          content: `[summarised — original ${raw.length} chars] ${raw.slice(0, 160)}…`,
+        };
+      });
+    }
+  };
 
   // Wave-110 kill-switch coverage. Hash the prompt once outside the
   // loop; checkpoint EACH iteration inside the loop. This means:
@@ -993,9 +1046,11 @@ export async function claudeToolUse(
         return { id: tu.id, name: tu.name, input: tu.input };
       });
 
-    allToolCalls.push(
-      ...iterToolCalls.map(({ name, input }) => ({ name, input })),
-    );
+    // Wave 114 L4: bounded push — never let the trace exceed the cap.
+    for (const { name, input } of iterToolCalls) {
+      if (allToolCalls.length >= MAX_TOOL_CALL_TRACE) break;
+      allToolCalls.push({ name, input });
+    }
 
     // If no tool calls or no executor, return immediately (legacy single-call behavior)
     if (
@@ -1030,6 +1085,9 @@ export async function claudeToolUse(
       });
     }
     messages.push({ role: "user", content: toolResults });
+    // Wave 114 M7: clamp older tool_result payloads to a one-line summary
+    // so the next iteration's send size stays bounded.
+    summariseOldToolResults();
   }
 
   // Max iterations reached — return whatever text we have

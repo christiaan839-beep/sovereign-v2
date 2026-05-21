@@ -1,6 +1,7 @@
 import { createAgentRoute } from "@/lib/agent-factory";
 import { createLogger } from "@/lib/logger";
 import { getBaseUrl } from "@/lib/base-url";
+import { outboundFetch } from "@/lib/outbound-fetch";
 const log = createLogger("telegram-router");
 
 /**
@@ -19,7 +20,10 @@ const log = createLogger("telegram-router");
  * /help                        -> Show commands
  */
 
-const AGENT_ROUTES: Record<string, { endpoint: string; buildBody: (args: string) => Record<string, unknown> }> = {
+const AGENT_ROUTES: Record<
+  string,
+  { endpoint: string; buildBody: (args: string) => Record<string, unknown> }
+> = {
   "/translate": {
     endpoint: "/api/_agents/translate",
     buildBody: (args) => {
@@ -55,19 +59,27 @@ const AGENT_ROUTES: Record<string, { endpoint: string; buildBody: (args: string)
       const parts = args.split(" ");
       const chain = parts[0] || "lead-to-close";
       const inputStr = parts.slice(1).join(" ");
-      return { chain, input: { company: inputStr, topic: inputStr, content: inputStr } };
+      return {
+        chain,
+        input: { company: inputStr, topic: inputStr, content: inputStr },
+      };
     },
   },
   "/deploy": {
     endpoint: "/api/_agents/nemoclaw",
-    buildBody: (args) => ({ action: "deploy", config: { name: args || "TelegramAgent" } }),
+    buildBody: (args) => ({
+      action: "deploy",
+      config: { name: args || "TelegramAgent" },
+    }),
   },
 };
 
 export const POST = createAgentRoute({
   name: "telegram-router",
   handler: async ({ input }) => {
-    const message = (input as Record<string, unknown>)?.message as Record<string, unknown> | undefined;
+    const message = (input as Record<string, unknown>)?.message as
+      | Record<string, unknown>
+      | undefined;
 
     if (!message?.text) {
       return { ok: true };
@@ -82,44 +94,57 @@ export const POST = createAgentRoute({
     }
 
     const sendReply = async (reply: string) => {
-      await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chat_id: chatId,
-          text: reply,
-          parse_mode: "Markdown",
-        }),
-      });
+      await outboundFetch(
+        `https://api.telegram.org/bot${botToken}/sendMessage`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chat_id: chatId,
+            text: reply,
+            parse_mode: "Markdown",
+          }),
+        },
+        {
+          ruleId: "telegram-router.sendMessage",
+          allowedHosts: ["api.telegram.org"],
+        },
+      );
     };
 
     // /help command
     if (text === "/help" || text === "/start") {
       await sendReply(
         `*Sovereign Matrix Agent Router*\n\n` +
-        `Available commands:\n` +
-        `\`/translate hello to es\` — Translate text\n` +
-        `\`/research Tesla\` — Research a company\n` +
-        `\`/pii John lives at 123 Main St\` — Detect PII\n` +
-        `\`/blog AI marketing strategies\` — Generate SEO blog\n` +
-        `\`/build luxury landing page\` — Generate HTML page\n` +
-        `\`/image futuristic city at night\` — Generate image\n` +
-        `\`/chain lead-to-close Acme Corp\` — Run agent chain\n` +
-        `\`/deploy SalesBot\` — Deploy NemoClaw agent\n` +
-        `\`/agents\` — List all active agents`
+          `Available commands:\n` +
+          `\`/translate hello to es\` — Translate text\n` +
+          `\`/research Tesla\` — Research a company\n` +
+          `\`/pii John lives at 123 Main St\` — Detect PII\n` +
+          `\`/blog AI marketing strategies\` — Generate SEO blog\n` +
+          `\`/build luxury landing page\` — Generate HTML page\n` +
+          `\`/image futuristic city at night\` — Generate image\n` +
+          `\`/chain lead-to-close Acme Corp\` — Run agent chain\n` +
+          `\`/deploy SalesBot\` — Deploy NemoClaw agent\n` +
+          `\`/agents\` — List all active agents`,
       );
       return { ok: true };
     }
 
     // /agents command
     if (text === "/agents") {
-      const agentList = Object.keys(AGENT_ROUTES).map(cmd => `- \`${cmd}\``).join("\n");
-      await sendReply(`*14 Active Agents*\n\n${agentList}\n\nUse /help for syntax.`);
+      const agentList = Object.keys(AGENT_ROUTES)
+        .map((cmd) => `- \`${cmd}\``)
+        .join("\n");
+      await sendReply(
+        `*14 Active Agents*\n\n${agentList}\n\nUse /help for syntax.`,
+      );
       return { ok: true };
     }
 
     // Route to agent
-    const command = Object.keys(AGENT_ROUTES).find(cmd => text.startsWith(cmd));
+    const command = Object.keys(AGENT_ROUTES).find((cmd) =>
+      text.startsWith(cmd),
+    );
 
     if (!command) {
       await sendReply("Unknown command. Type /help for available commands.");
@@ -134,7 +159,9 @@ export const POST = createAgentRoute({
       return { ok: true };
     }
 
-    await sendReply(`Processing via *${command.replace("/", "").toUpperCase()}* agent...`);
+    await sendReply(
+      `Processing via *${command.replace("/", "").toUpperCase()}* agent...`,
+    );
 
     const baseUrl = getBaseUrl();
 
