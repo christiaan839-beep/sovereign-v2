@@ -23,11 +23,28 @@ import { getBaseUrl } from "@/lib/base-url";
 import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
 
 const AVAILABLE_AGENTS = [
-  "leads", "blog-gen", "seo-dominator", "site-assassin", "competitor-scan",
-  "email-sequence", "smart-router", "vision", "translate", "embed",
-  "omni-search", "deep-think", "proposal-generator", "case-study",
-  "brand-voice", "brand-audit", "ad-report", "funnel-xray",
-  "organic-content", "content", "doc-intel", "contract-analyzer",
+  "leads",
+  "blog-gen",
+  "seo-dominator",
+  "site-assassin",
+  "competitor-scan",
+  "email-sequence",
+  "smart-router",
+  "vision",
+  "translate",
+  "embed",
+  "omni-search",
+  "deep-think",
+  "proposal-generator",
+  "case-study",
+  "brand-voice",
+  "brand-audit",
+  "ad-report",
+  "funnel-xray",
+  "organic-content",
+  "content",
+  "doc-intel",
+  "contract-analyzer",
   "client-report",
 ];
 
@@ -52,10 +69,39 @@ interface StepResult {
 export const POST = createAgentRoute({
   name: "super-agent",
   requiredFields: ["goal"],
+  // Wave 116 M3 batch 11: memory hooks. Per-goal-class plan compounding —
+  // last week's super-agent decomposition + step-success pattern informs
+  // the next decomposition on a similar goal so the model doesn't re-
+  // derive the same sub-plan structure each run.
+  memory: {
+    search: {
+      query: (input) => `super-agent ${String(input.goal ?? "").slice(0, 120)}`,
+      limit: 2,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as {
+          goal?: string;
+          plan?: Array<{ step?: number; tool?: string; status?: string }>;
+          finalOutput?: string;
+        };
+        if (!r.plan?.length) return null;
+        const chain = r.plan
+          .slice(0, 6)
+          .map((s) => `${s.tool ?? "?"}${s.status === "failed" ? "✗" : ""}`)
+          .join(" → ");
+        return `chain: ${chain}`;
+      },
+      metadata: () => ({ kind: "super-agent" }),
+    },
+  },
   handler: async ({ input }) => {
     const goal = input.goal as string;
     const useVerification = (input.verified as boolean) ?? false;
-    const maxSteps = Math.min((input.max_steps as number) || MAX_STEPS, MAX_STEPS);
+    const maxSteps = Math.min(
+      (input.max_steps as number) || MAX_STEPS,
+      MAX_STEPS,
+    );
     const totalStart = Date.now();
 
     // ─── Phase 1: UNDERSTAND + PLAN ───
@@ -89,7 +135,7 @@ Agent params:
         category: "analysis",
         research: goal.includes("http") || goal.includes(".com"),
         thinking: true,
-      }
+      },
     );
 
     // Parse the plan
@@ -104,7 +150,13 @@ Agent params:
       plan = jsonMatch ? JSON.parse(jsonMatch[0]) : [];
     } catch {
       // If planning fails, use smart-router as fallback
-      plan = [{ agent: "smart-router", params: { prompt: goal, task_type: "analysis" }, reason: "Direct execution — planning failed" }];
+      plan = [
+        {
+          agent: "smart-router",
+          params: { prompt: goal, task_type: "analysis" },
+          reason: "Direct execution — planning failed",
+        },
+      ];
     }
 
     // Validate and clamp
@@ -113,7 +165,13 @@ Agent params:
       .slice(0, maxSteps);
 
     if (plan.length === 0) {
-      plan = [{ agent: "smart-router", params: { prompt: goal, task_type: "analysis" }, reason: "Fallback — no valid steps planned" }];
+      plan = [
+        {
+          agent: "smart-router",
+          params: { prompt: goal, task_type: "analysis" },
+          reason: "Fallback — no valid steps planned",
+        },
+      ];
     }
 
     // ─── Phase 2: EXECUTE ───
@@ -136,23 +194,46 @@ Agent params:
       if (previousOutput && !body.context) {
         body.context = previousOutput.slice(0, 2000);
       }
-      if (!body.prompt && !body.text && !body.url && !body.target && !body.niche && !body.query && !body.domain && !body.problem) {
+      if (
+        !body.prompt &&
+        !body.text &&
+        !body.url &&
+        !body.target &&
+        !body.niche &&
+        !body.query &&
+        !body.domain &&
+        !body.problem
+      ) {
         body.prompt = `${step.reason}. Context: ${previousOutput.slice(0, 500)}`;
       }
 
       try {
-        const res = await outboundFetchAsResponse(`${baseUrl}/api/agents/${step.agent}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...body, confirmed: true }),
-          signal: AbortSignal.timeout(45000),
-        }, { ruleId: "agents.super-agent.route.1", allowedHosts: [new URL(baseUrl).hostname] });
+        const res = await outboundFetchAsResponse(
+          `${baseUrl}/api/agents/${step.agent}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ...body, confirmed: true }),
+            signal: AbortSignal.timeout(45000),
+          },
+          {
+            ruleId: "agents.super-agent.route.1",
+            allowedHosts: [new URL(baseUrl).hostname],
+          },
+        );
 
         const data = await res.json();
         const duration_ms = Date.now() - start;
 
         if (!res.ok) {
-          results.push({ step: i + 1, agent: step.agent, reason: step.reason, status: "failed", error: data.error || `HTTP ${res.status}`, duration_ms });
+          results.push({
+            step: i + 1,
+            agent: step.agent,
+            reason: step.reason,
+            status: "failed",
+            error: data.error || `HTTP ${res.status}`,
+            duration_ms,
+          });
           previousOutput += `\nStep ${i + 1} failed: ${data.error || res.status}`;
           continue;
         }
@@ -161,10 +242,24 @@ Agent params:
         previousOutput = summary;
         stepOutputs[`{{step_${i + 1}}}`] = summary;
 
-        results.push({ step: i + 1, agent: step.agent, reason: step.reason, status: "success", data, duration_ms });
+        results.push({
+          step: i + 1,
+          agent: step.agent,
+          reason: step.reason,
+          status: "success",
+          data,
+          duration_ms,
+        });
       } catch (err) {
         const duration_ms = Date.now() - start;
-        results.push({ step: i + 1, agent: step.agent, reason: step.reason, status: "failed", error: err instanceof Error ? err.message : "Unknown", duration_ms });
+        results.push({
+          step: i + 1,
+          agent: step.agent,
+          reason: step.reason,
+          status: "failed",
+          error: err instanceof Error ? err.message : "Unknown",
+          duration_ms,
+        });
       }
     }
 
@@ -174,15 +269,25 @@ Agent params:
       try {
         const successData = results
           .filter((r) => r.status === "success")
-          .map((r) => `Step ${r.step} (${r.agent}): ${JSON.stringify(r.data).slice(0, 500)}`)
+          .map(
+            (r) =>
+              `Step ${r.step} (${r.agent}): ${JSON.stringify(r.data).slice(0, 500)}`,
+          )
           .join("\n");
 
         verification = await verifiedAi(
           `Review this multi-agent execution result for accuracy and completeness:\n\nGOAL: ${goal}\n\nRESULTS:\n${successData}`,
-          { system: "You are a quality reviewer. Check for errors, gaps, and inconsistencies.", maxTokens: 1500 }
+          {
+            system:
+              "You are a quality reviewer. Check for errors, gaps, and inconsistencies.",
+            maxTokens: 1500,
+          },
         );
       } catch {
-        verification = { answer: "Verification skipped — reviewer unavailable", verified: false };
+        verification = {
+          answer: "Verification skipped — reviewer unavailable",
+          verified: false,
+        };
       }
     }
 
@@ -194,12 +299,14 @@ Agent params:
       goal,
       plan,
       results,
-      verification: verification ? {
-        review: verification.answer,
-        confidence: verification.confidence,
-        verified: verification.verified,
-        models_used: verification.models,
-      } : undefined,
+      verification: verification
+        ? {
+            review: verification.answer,
+            confidence: verification.confidence,
+            verified: verification.verified,
+            models_used: verification.models,
+          }
+        : undefined,
       summary: {
         total_steps: results.length,
         succeeded,
