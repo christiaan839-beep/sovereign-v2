@@ -84,7 +84,40 @@ export const POST = createAgentRoute({
   skipJailbreakCheck: true,
   skipSafetyCheck: true,
   skipQualityCheck: true,
-  handler: async ({ input }) => {
+  // Wave-111.1 batch 3: memory hooks. Operator regenerates competitor
+  // registry entries as competitors update pricing / positioning;
+  // prior drafts compound — the model sees what we already published
+  // and produces a delta-aware update rather than starting fresh.
+  // Note: this agent is admin-only; the userId="anon" skip in the
+  // factory ensures non-admin invocations never write memory anyway.
+  memory: {
+    search: {
+      query: (input) =>
+        `competitor-rip name:${input.name ?? ""} slug:${input.slug ?? ""}`,
+      limit: 2,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as {
+          draft?: {
+            name?: string;
+            theirTagline?: string;
+            theirPricing?: string;
+            honestSummary?: string;
+          };
+        };
+        const d = r.draft;
+        if (!d?.name) return null;
+        return `${d.name} (${d.theirPricing ?? "?"}): ${d.theirTagline ?? ""} — ${(d.honestSummary ?? "").slice(0, 200)}`;
+      },
+      metadata: (input) => ({
+        name: String(input.name ?? ""),
+        slug: String(input.slug ?? ""),
+        kind: "competitor-registry-draft",
+      }),
+    },
+  },
+  handler: async ({ input, pastContextAsPrompt }) => {
     // Admin gate. The agent itself costs money to run; non-admin
     // shouldn't be able to invoke it as a free competitive-research tool.
     const callerUserId = (input as { userId?: string }).userId;
@@ -119,6 +152,7 @@ Their pricing (operator-supplied): ${theirPricing}
 Target audience: ${audience}
 
 ${context ? `Additional context the operator has gathered:\n${context}\n` : ""}
+${pastContextAsPrompt() ? `\nPRIOR REGISTRY DRAFTS for this competitor (historical FACTS — surface what's changed in their positioning/pricing, do NOT restate the prior draft verbatim):\n${pastContextAsPrompt()}\n` : ""}
 
 Produce the full Competitor JSON. The "ourPricing" field should be "$19–$199 / month flat — agents included" unless context suggests a more specific match. Pick 8–12 honest comparison rows that meaningfully differentiate. Aim for at least 3 rows where the competitor wins.`;
 

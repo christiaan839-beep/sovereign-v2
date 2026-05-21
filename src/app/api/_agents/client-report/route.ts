@@ -27,7 +27,45 @@ const schema = z.object({
 export const POST = createAgentRoute({
   name: "client-report",
   schema,
-  handler: async ({ input }) => {
+  // Wave-111.1 batch 3: memory hooks. Per-client period-over-period
+  // reports compound. The model sees last quarter's executive summary
+  // + recommendations to surface trend deltas + recommendation follow-
+  // through. Store the executive summary + top recommendation as the
+  // discrete next-run anchor.
+  memory: {
+    search: {
+      query: (input) =>
+        `client-report client:${input.clientName ?? "Client"} businessType:${input.businessType ?? ""} focus:${input.focus ?? ""}`,
+      limit: 3,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as {
+          report?: {
+            title?: string;
+            executiveSummary?: string;
+            recommendations?: Array<{ priority?: string; action?: string }>;
+          };
+        };
+        const rep = r.report;
+        if (!rep) return null;
+        const summary = rep.executiveSummary?.slice(0, 300) ?? "";
+        const topRec = rep.recommendations?.[0];
+        const recText = topRec
+          ? ` Top rec (${topRec.priority ?? "?"}): ${topRec.action ?? ""}`
+          : "";
+        return summary || recText ? `${summary}${recText}` : null;
+      },
+      metadata: (input) => ({
+        clientName: String(input.clientName ?? "Client"),
+        businessType: String(input.businessType ?? ""),
+        focus: String(input.focus ?? ""),
+        reportPeriod: String(input.reportPeriod ?? ""),
+        kind: "client-report",
+      }),
+    },
+  },
+  handler: async ({ input, pastContextAsPrompt }) => {
     const clientName = (input.clientName as string) || "Client";
     const businessType = (input.businessType as string) || "Local Business";
     const reportPeriod = (input.reportPeriod as string) || "March 2026";
@@ -35,6 +73,7 @@ export const POST = createAgentRoute({
     const focus =
       (input.focus as string) || "SEO, Content Marketing, Lead Generation";
     const context = (input.context as string) || "";
+    const pastReports = pastContextAsPrompt();
 
     const prompt = `Generate a comprehensive marketing performance report.
 
@@ -44,7 +83,7 @@ REPORT PERIOD: ${reportPeriod}
 FOCUS AREAS: ${focus}
 ${metrics ? `RAW METRICS:\n${JSON.stringify(metrics, null, 2)}` : "No raw metrics — generate realistic example data."}
 ${context ? `\nCONTEXT:\n${context.slice(0, 2000)}` : ""}
-
+${pastReports ? `\nPRIOR REPORTS on this client (historical FACTS — surface trend deltas, track recommendation follow-through, do NOT restate prior summaries verbatim):\n${pastReports}\n` : ""}
 Include: Executive Summary, KPI Dashboard (6-8 metrics), SEO Performance, Content Performance, Lead Generation, Recommendations (3-5), Next Month Focus.`;
 
     const result = await ai(prompt, { system: REPORT_PROMPT, maxTokens: 4000 });
