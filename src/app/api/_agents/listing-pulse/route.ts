@@ -416,6 +416,37 @@ export const POST = createAgentRoute({
   name: "listing-pulse",
   schema: listingPulseSchema,
   useCritic: false,
+  // Wave 116 M3 batch 10: memory hooks. Per-listing market context
+  // compounds — last quarter's pricing band + competitor positioning
+  // inform delta framing in this quarter's report.
+  memory: {
+    search: {
+      query: (input) =>
+        `listing ${input.listingType ?? ""} ${input.location ?? ""} ${input.priceBand ?? ""}`.trim(),
+      limit: 2,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as {
+          listingType?: string;
+          location?: string;
+          assets?: {
+            comparables?: { medianPrice?: string };
+            positioning?: { recommendedAngle?: string };
+          };
+        };
+        if (!r.listingType) return null;
+        const median = r.assets?.comparables?.medianPrice ?? "?";
+        const angle =
+          r.assets?.positioning?.recommendedAngle?.slice(0, 80) ?? "";
+        return `listing ${r.listingType} (${r.location ?? "?"}): median=${median} angle="${angle}"`;
+      },
+      metadata: (input) => ({
+        location: typeof input.location === "string" ? input.location : "",
+        kind: "listing-pulse",
+      }),
+    },
+  },
   handler: async ({ input, userId }) => {
     const parsed = listingPulseSchema.parse(input);
     const pulse = await buildListingPulse(parsed);

@@ -9,6 +9,31 @@ import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
 
 export const POST = createAgentRoute({
   name: "digital-human",
+  // Wave 116 M3 batch 10: memory hooks. Per-name + style persona history
+  // compounds — last avatar's voice profile + face params let the model
+  // maintain visual consistency across multiple takes for the same persona.
+  memory: {
+    search: {
+      query: (input) =>
+        `digital-human name:${input.name ?? ""} ${input.style ?? "any"} ${input.gender ?? "any"}`,
+      limit: 2,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as {
+          name?: string;
+          face_params?: { seed?: number };
+          voice?: { profile?: string };
+        };
+        if (!r.name) return null;
+        return `persona ${r.name}: face_seed=${r.face_params?.seed ?? "?"} voice=${r.voice?.profile ?? "?"}`;
+      },
+      metadata: (input) => ({
+        name: typeof input.name === "string" ? input.name : "",
+        kind: "digital-human",
+      }),
+    },
+  },
   handler: async ({ input, email, userId }) => {
     const {
       name,
@@ -27,7 +52,9 @@ export const POST = createAgentRoute({
     if (!nimKey) return { error: "NVIDIA_NIM_API_KEY not configured." };
 
     // Step 1: Generate avatar face via FLUX
-    const faceRes = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/images/generations", {
+    const faceRes = await outboundFetchAsResponse(
+      "https://integrate.api.nvidia.com/v1/images/generations",
+      {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -40,11 +67,18 @@ export const POST = createAgentRoute({
           height: 512,
           n: 1,
         }),
-      }, { ruleId: "agents.digital-human.route.1", allowedHosts: ["integrate.api.nvidia.com"] });
+      },
+      {
+        ruleId: "agents.digital-human.route.1",
+        allowedHosts: ["integrate.api.nvidia.com"],
+      },
+    );
     const faceData = faceRes.ok ? await faceRes.json() : null;
 
     // Step 2: Generate voice dialogue via VoiceChat
-    const voiceRes = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
+    const voiceRes = await outboundFetchAsResponse(
+      "https://integrate.api.nvidia.com/v1/chat/completions",
+      {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -62,14 +96,21 @@ export const POST = createAgentRoute({
           max_tokens: 500,
           temperature: 0.7,
         }),
-      }, { ruleId: "agents.digital-human.route.2", allowedHosts: ["integrate.api.nvidia.com"] });
+      },
+      {
+        ruleId: "agents.digital-human.route.2",
+        allowedHosts: ["integrate.api.nvidia.com"],
+      },
+    );
 
     let voiceData;
     if (voiceRes.ok) {
       voiceData = await voiceRes.json();
     } else {
       // Fallback to Super
-      const fallback = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
+      const fallback = await outboundFetchAsResponse(
+        "https://integrate.api.nvidia.com/v1/chat/completions",
+        {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -80,7 +121,12 @@ export const POST = createAgentRoute({
             messages: [{ role: "user", content: script }],
             max_tokens: 500,
           }),
-        }, { ruleId: "agents.digital-human.route.3", allowedHosts: ["integrate.api.nvidia.com"] });
+        },
+        {
+          ruleId: "agents.digital-human.route.3",
+          allowedHosts: ["integrate.api.nvidia.com"],
+        },
+      );
       voiceData = await fallback.json();
     }
 

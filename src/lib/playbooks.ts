@@ -526,6 +526,11 @@ export const PLAYBOOKS: Playbook[] = [
     icon: "Swords",
     color: "red",
     category: "intelligence",
+    // Wave 116 — first playbook to opt into the wave-115 DAG executor.
+    // site-assassin + seo-dominator run in parallel (both only need the
+    // URL); smart-router merges their outputs. Cuts wall-clock time
+    // roughly in half vs the strict for-loop.
+    dag: true,
     fields: [
       {
         key: "url",
@@ -548,23 +553,31 @@ export const PLAYBOOKS: Playbook[] = [
         params: { url: "{{url}}" },
         reason:
           "Deep scrape and analyze competitor's website structure and messaging",
+        // Wave-116 DAG root — no dependencies; fires immediately in parallel
+        // with seo-dominator below.
+        dependsOn: [],
       },
       {
         agent: "seo-dominator",
-        params: { url: "{{url}}", context: "{{step_1}}" },
+        params: { url: "{{url}}", mode: "audit" },
         reason: "Analyze their SEO strategy, rankings, and keyword gaps",
+        // Parallel root — independent of site-assassin so both scrapers
+        // hit the network at the same time.
+        dependsOn: [],
       },
       {
         agent: "smart-router",
         params: {
           prompt:
-            "Based on this competitive analysis, create a battle card with 5 counter-positioning strategies. Competitor data: {{step_1}} SEO data: {{step_2}}",
+            "Based on this competitive analysis, create a battle card with 5 counter-positioning strategies. Competitor data: {{step_0}} SEO data: {{step_1}}",
           task_type: "analysis",
         },
         reason: "Synthesize findings into an actionable competitive strategy",
+        // Merge node — waits for both scrapers to finish before synthesising.
+        dependsOn: [0, 1],
       },
     ],
-    estimatedTime: "3-5 min",
+    estimatedTime: "2-3 min",
     agentCount: 3,
     guarantee:
       "5+ counter-positioning strategies with specific action items or re-run free",

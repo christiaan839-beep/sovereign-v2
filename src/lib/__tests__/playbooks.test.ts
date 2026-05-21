@@ -209,11 +209,13 @@ describe("resolvePlaybookSteps", () => {
       your_url: "mysite.com",
     });
 
-    // Step 2 references step_1
-    expect(steps[1].params.context).toBe("{{step_1}}");
-    // Step 3 references both step_1 and step_2
+    // Wave 116: competitor-takedown converted to DAG (parallel root scrapers
+    // → merge node). The 3rd step (index 2) is the merge node and references
+    // both parallel-root outputs via {{step_0}} (site-assassin) and
+    // {{step_1}} (seo-dominator) — 0-indexed to match the runner's
+    // `stepOutputs[i]` keying.
+    expect(steps[2].params.prompt).toContain("{{step_0}}");
     expect(steps[2].params.prompt).toContain("{{step_1}}");
-    expect(steps[2].params.prompt).toContain("{{step_2}}");
   });
 
   it("returns the correct number of steps", () => {

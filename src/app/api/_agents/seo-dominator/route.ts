@@ -23,23 +23,58 @@ const schema = z.object({
 export const POST = createAgentRoute({
   name: "seo-dominator",
   schema,
+  // Wave 116 M3 batch 10: memory hooks. Per-domain SEO history compounds —
+  // last quarter's audit findings + content-plan let the model surface
+  // delta (what got fixed, what's still ranked low) without re-crawling.
+  memory: {
+    search: {
+      query: (input) =>
+        `seo ${input.mode ?? "audit"} domain:${input.domain ?? ""}`,
+      limit: 2,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as {
+          domain?: string;
+          mode?: string;
+          top_recommendations?: string[];
+          score?: number;
+        };
+        if (!r.domain) return null;
+        const recs = (r.top_recommendations ?? []).slice(0, 3).join(" · ");
+        return `seo[${r.mode ?? "audit"}] ${r.domain}: score=${r.score ?? "?"} recs=[${recs}]`;
+      },
+      metadata: (input) => ({
+        domain: typeof input.domain === "string" ? input.domain : "",
+        mode: typeof input.mode === "string" ? input.mode : "audit",
+        kind: "seo-dominator",
+      }),
+    },
+  },
   handler: async ({ input }) => {
     const { domain, keywords, mode } = input as z.infer<typeof schema>;
     const start = Date.now();
 
     // Step 1: Live SERP research — flag explicitly when unavailable
-    const keywordList = keywords || [`${domain} reviews`, `${domain} pricing`, `${domain} alternatives`];
+    const keywordList = keywords || [
+      `${domain} reviews`,
+      `${domain} pricing`,
+      `${domain} alternatives`,
+    ];
     let serpIntel = "";
     let serpAvailable = false;
 
     try {
       serpIntel = await research_ai(
         `site:${domain} SEO analysis content marketing`,
-        `Analyze the SEO performance of ${domain}. Identify: top ranking keywords, content publishing frequency, backlink quality indicators, meta tag optimization, site speed indicators, and content gaps.`
+        `Analyze the SEO performance of ${domain}. Identify: top ranking keywords, content publishing frequency, backlink quality indicators, meta tag optimization, site speed indicators, and content gaps.`,
       );
       serpAvailable = serpIntel.length > 50;
     } catch (err) {
-      log.warn("SERP research unavailable for seo-dominator", { domain, error: String(err) });
+      log.warn("SERP research unavailable for seo-dominator", {
+        domain,
+        error: String(err),
+      });
     }
 
     if (mode === "audit") {
@@ -48,19 +83,25 @@ export const POST = createAgentRoute({
         [
           {
             role: "system",
-            content: "You are a senior SEO strategist. Provide specific, actionable SEO intelligence. Do NOT make up metrics — if data is unavailable, say so explicitly. Never fabricate domain authority scores or traffic numbers without real data.",
+            content:
+              "You are a senior SEO strategist. Provide specific, actionable SEO intelligence. Do NOT make up metrics — if data is unavailable, say so explicitly. Never fabricate domain authority scores or traffic numbers without real data.",
           },
           {
             role: "user",
             content: `Full SEO audit for ${domain}.\n\n${serpAvailable ? `LIVE SERP DATA:\n${serpIntel}` : "NOTE: Live SERP data was unavailable. Base your analysis on general domain knowledge and clearly mark any estimates."}\n\nKEYWORDS TO ANALYZE: ${keywordList.join(", ")}\n\nOutput JSON:\n{"domain_authority_estimate": "number or 'unknown'", "content_velocity": "posts/month estimate", "keyword_gaps": [{"keyword": "term", "monthly_volume": "est", "difficulty": "LOW|MED|HIGH", "opportunity": "why this matters"}], "technical_issues": ["list"], "content_strategy": {"strengths": [], "weaknesses": [], "recommended_topics": ["5 specific topics to write"]}, "backlink_strategy": "recommendation", "data_grounded": ${serpAvailable}, "dominance_score": "0-100 or 'insufficient data'"}`,
           },
         ],
-        { maxTokens: 2500, temperature: 0.3 }
+        { maxTokens: 2500, temperature: 0.3 },
       );
 
       let parsed;
       try {
-        parsed = JSON.parse(analysis.replace(/```json?\n?/g, "").replace(/```/g, "").trim());
+        parsed = JSON.parse(
+          analysis
+            .replace(/```json?\n?/g, "")
+            .replace(/```/g, "")
+            .trim(),
+        );
       } catch {
         parsed = { raw: analysis };
       }
@@ -82,19 +123,25 @@ export const POST = createAgentRoute({
         [
           {
             role: "system",
-            content: "You are an SEO content strategist. Create a 30-day content calendar with exact titles, target keywords, and word count goals. Base recommendations on actual research data when available.",
+            content:
+              "You are an SEO content strategist. Create a 30-day content calendar with exact titles, target keywords, and word count goals. Base recommendations on actual research data when available.",
           },
           {
             role: "user",
             content: `Create a 30-day SEO content plan for ${domain}.\n\n${serpAvailable ? `Current intel:\n${serpIntel}` : "No live SERP data available — create plan based on general best practices for this domain type."}\n\nOutput a JSON array of 30 posts:\n[{"day": 1, "title": "Exact Blog Title", "target_keyword": "primary keyword", "word_count": 1500, "content_type": "pillar|supporting|comparison|how-to", "estimated_traffic": "monthly search volume"}]`,
           },
         ],
-        { maxTokens: 3000, temperature: 0.4 }
+        { maxTokens: 3000, temperature: 0.4 },
       );
 
       let parsed;
       try {
-        parsed = JSON.parse(plan.replace(/```json?\n?/g, "").replace(/```/g, "").trim());
+        parsed = JSON.parse(
+          plan
+            .replace(/```json?\n?/g, "")
+            .replace(/```/g, "")
+            .trim(),
+        );
       } catch {
         parsed = { raw: plan };
       }

@@ -99,11 +99,43 @@ Return ONLY a JSON array. No markdown, no explanation.`;
 export const POST = createAgentRoute({
   name: "coordinator",
   requiredFields: [],
+  // Wave 116 M3 batch 10: memory hooks. Per-goal plan compounding — past
+  // multi-agent execution traces inform which agents to chain for
+  // similar goals (avoid repeating sub-plans that failed).
+  memory: {
+    search: {
+      query: (input) => {
+        const goal =
+          typeof input.goal === "string"
+            ? input.goal
+            : typeof input.prompt === "string"
+              ? input.prompt
+              : "";
+        return `coordinator ${goal.slice(0, 120)}`;
+      },
+      limit: 2,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as {
+          plan?: Array<{ agent?: string; reasoning?: string }>;
+          status?: string;
+        };
+        if (!r.plan?.length) return null;
+        const chain = r.plan
+          .slice(0, 5)
+          .map((s) => s.agent ?? "?")
+          .join(" → ");
+        return `chain: ${chain}${r.status ? ` (${r.status})` : ""}`;
+      },
+      metadata: () => ({ kind: "coordinator" }),
+    },
+  },
   handler: async ({ input }) => {
     const autoExecute = (input.auto_execute as boolean) ?? false;
     const maxSteps = Math.min(
       (input.max_steps as number) || MAX_STEPS_HARD_LIMIT,
-      MAX_STEPS_HARD_LIMIT
+      MAX_STEPS_HARD_LIMIT,
     );
 
     let plan: PlanStep[];
@@ -123,7 +155,10 @@ export const POST = createAgentRoute({
 
       // Validate required fields
       for (const field of playbook.fields) {
-        if (field.required && (!userInputs[field.key] || !userInputs[field.key].trim())) {
+        if (
+          field.required &&
+          (!userInputs[field.key] || !userInputs[field.key].trim())
+        ) {
           return { error: `Missing required field: ${field.label}` };
         }
       }
@@ -149,7 +184,7 @@ export const POST = createAgentRoute({
           { role: "system", content: PLANNER_SYSTEM },
           { role: "user", content: goal },
         ],
-        { maxTokens: 1200, temperature: 0.3 }
+        { maxTokens: 1200, temperature: 0.3 },
       );
 
       try {
@@ -167,15 +202,25 @@ export const POST = createAgentRoute({
       }
 
       if (!Array.isArray(plan) || plan.length === 0) {
-        return { goal: goalText, error: "LLM returned an empty or invalid plan", raw: planRaw.slice(0, 500) };
+        return {
+          goal: goalText,
+          error: "LLM returned an empty or invalid plan",
+          raw: planRaw.slice(0, 500),
+        };
       }
 
-      plan = plan.slice(0, maxSteps).filter(
-        (s) => s.agent && AVAILABLE_AGENTS.includes(s.agent as AgentName)
-      );
+      plan = plan
+        .slice(0, maxSteps)
+        .filter(
+          (s) => s.agent && AVAILABLE_AGENTS.includes(s.agent as AgentName),
+        );
 
       if (plan.length === 0) {
-        return { goal: goalText, error: "No valid agent steps in the plan", raw: planRaw.slice(0, 500) };
+        return {
+          goal: goalText,
+          error: "No valid agent steps in the plan",
+          raw: planRaw.slice(0, 500),
+        };
       }
     }
 
@@ -237,17 +282,31 @@ export const POST = createAgentRoute({
       if (previousOutput && !body.context) {
         body.context = previousOutput.slice(0, 1500);
       }
-      if (!body.prompt && !body.text && !body.url && !body.target && !body.niche && !body.query) {
+      if (
+        !body.prompt &&
+        !body.text &&
+        !body.url &&
+        !body.target &&
+        !body.niche &&
+        !body.query
+      ) {
         body.prompt = `${step.reason}. Context: ${previousOutput.slice(0, 500)}`;
       }
 
       try {
-        const res = await outboundFetchAsResponse(`${baseUrl}/api/agents/${step.agent}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...body, confirmed: true }),
-          signal: AbortSignal.timeout(45000),
-        }, { ruleId: "agents.coordinator.route.1", allowedHosts: [new URL(baseUrl).hostname] });
+        const res = await outboundFetchAsResponse(
+          `${baseUrl}/api/agents/${step.agent}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ...body, confirmed: true }),
+            signal: AbortSignal.timeout(45000),
+          },
+          {
+            ruleId: "agents.coordinator.route.1",
+            allowedHosts: [new URL(baseUrl).hostname],
+          },
+        );
 
         const data = await res.json();
         const duration_ms = Date.now() - start;
@@ -302,9 +361,12 @@ export const POST = createAgentRoute({
     const skipped = results.filter((r) => r.status === "skipped").length;
 
     // Overall status: success (all passed), partial (some passed), failed (none passed)
-    const overallStatus = succeeded === results.length ? "success"
-      : succeeded > 0 ? "partial"
-      : "failed";
+    const overallStatus =
+      succeeded === results.length
+        ? "success"
+        : succeeded > 0
+          ? "partial"
+          : "failed";
 
     return {
       goal: goalText,
