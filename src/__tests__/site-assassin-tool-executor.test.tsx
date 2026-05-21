@@ -15,6 +15,8 @@ const {
   nimChatMock,
   dnsLookupMock,
   resolvedHostIsSafeMock,
+  claudeToolUseMock,
+  researchAiMock,
 } = vi.hoisted(() => ({
   searchMemoryMock: vi.fn(),
   storeMemoryMock: vi.fn(),
@@ -22,6 +24,8 @@ const {
   nimChatMock: vi.fn(),
   dnsLookupMock: vi.fn(),
   resolvedHostIsSafeMock: vi.fn(),
+  claudeToolUseMock: vi.fn(),
+  researchAiMock: vi.fn(),
 }));
 
 vi.mock("@/lib/logger", () => ({
@@ -37,8 +41,8 @@ vi.mock("@/lib/vector-memory", () => ({
   storeMemory: storeMemoryMock,
 }));
 vi.mock("@/lib/ai", () => ({
-  research_ai: vi.fn(),
-  claudeToolUse: vi.fn(),
+  research_ai: researchAiMock,
+  claudeToolUse: claudeToolUseMock,
 }));
 vi.mock("@/lib/nvidia", () => ({
   nimChat: nimChatMock,
@@ -58,8 +62,22 @@ vi.mock("@/lib/agent-factory", () => ({
 
 import {
   buildToolExecutor,
+  POST as siteAssassinConfig,
   type SiteAssassinContext,
 } from "@/app/api/_agents/site-assassin/route";
+
+// createAgentRoute is mocked to return its config object, so the
+// exported POST is actually the config — its `.handler` is the inner
+// async function we want to test for response shape.
+const handler = (
+  siteAssassinConfig as unknown as {
+    handler: (args: {
+      input: Record<string, unknown>;
+      userId: string;
+      pastContextAsPrompt: () => string;
+    }) => Promise<Record<string, unknown>>;
+  }
+).handler;
 
 function freshCtx(): SiteAssassinContext {
   return {
@@ -77,6 +95,8 @@ beforeEach(() => {
   nimChatMock.mockReset();
   dnsLookupMock.mockReset();
   resolvedHostIsSafeMock.mockReset();
+  claudeToolUseMock.mockReset();
+  researchAiMock.mockReset();
   dnsLookupMock.mockResolvedValue({ address: "93.184.216.34", family: 4 });
   resolvedHostIsSafeMock.mockReturnValue(true);
 });
@@ -319,5 +339,82 @@ describe("buildToolExecutor — unknown tool + trace bookkeeping", () => {
     });
     expect(ctx.trace).toHaveLength(2);
     expect(ctx.trace[1].output.length).toBeLessThanOrEqual(400);
+  });
+
+  it("caps trace at 50 entries (wave-113.1 L1 — unbounded-trace fix)", async () => {
+    searchMemoryMock.mockResolvedValue([]);
+    const ctx = freshCtx();
+    const exec = buildToolExecutor(ctx);
+    for (let i = 0; i < 60; i++) {
+      await exec("search_past_audits", { query: `q${i}` });
+    }
+    expect(ctx.trace.length).toBeLessThanOrEqual(50);
+  });
+});
+
+// ── Wave-113.1 M1 fix: handler response shape ────────────────────────────
+//
+// The handler must NEVER return `success: true` when the tool-use loop
+// failed or the audit had to be synthesized. Consumers (UI badges,
+// downstream jobs, billing) rely on `success` to mean "real result".
+describe("site-assassin handler — wave-113.1 success/degraded contract", () => {
+  it("returns success=true, degraded=false when finalize_audit fires", async () => {
+    claudeToolUseMock.mockImplementationOnce(
+      async (
+        _p,
+        _t,
+        _s,
+        _max,
+        exec: (n: string, i: Record<string, unknown>) => Promise<string>,
+      ) => {
+        await exec("finalize_audit", {
+          ux_score: 72,
+          weaknesses: [
+            { issue: "buried CTA", severity: "HIGH", fix: "move it" },
+          ],
+          conversion_killers: ["long form"],
+          speed_estimate: "medium",
+          mobile_score: 55,
+          overall_verdict: "needs work",
+        });
+        return "done";
+      },
+    );
+    const res = await handler({
+      input: { url: "https://example.com", mode: "analyze" },
+      userId: "user-1",
+      pastContextAsPrompt: () => "",
+    });
+    expect(res.success).toBe(true);
+    expect(res.degraded).toBe(false);
+    expect(res.error).toBeUndefined();
+    expect((res.audit as { ux_score: number }).ux_score).toBe(72);
+  });
+
+  it("returns success=false, degraded=true when claudeToolUse throws", async () => {
+    claudeToolUseMock.mockRejectedValueOnce(new Error("kill-switch tripped"));
+    const res = await handler({
+      input: { url: "https://example.com", mode: "analyze" },
+      userId: "user-1",
+      pastContextAsPrompt: () => "",
+    });
+    expect(res.success).toBe(false);
+    expect(res.degraded).toBe(true);
+    expect(res.error).toContain("kill-switch tripped");
+    // Synthesized fallback report still returned so callers don't crash.
+    expect((res.audit as { ux_score: number }).ux_score).toBe(0);
+  });
+
+  it("returns success=false, degraded=true when finalize_audit never fires", async () => {
+    claudeToolUseMock.mockResolvedValueOnce("loop ended without finalize");
+    const res = await handler({
+      input: { url: "https://example.com", mode: "analyze" },
+      userId: "user-1",
+      pastContextAsPrompt: () => "",
+    });
+    expect(res.success).toBe(false);
+    expect(res.degraded).toBe(true);
+    expect(res.error).toBeUndefined();
+    expect((res.audit as { ux_score: number }).ux_score).toBe(0);
   });
 });

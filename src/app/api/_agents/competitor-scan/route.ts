@@ -366,7 +366,12 @@ export function buildToolExecutor(ctx: CompetitorScanContext) {
       });
       output = `ERROR: tool "${name}" threw — ${err instanceof Error ? err.message : String(err)}`;
     }
-    ctx.trace.push({ tool: name, input, output: output.slice(0, 400) });
+    // Wave-113.1 L1 fix: cap trace at 50 entries so a runaway loop
+    // (or an attacker feeding tool-shaped outputs back via memory)
+    // can't grow ctx.trace unbounded and blow the response payload.
+    if (ctx.trace.length < 50) {
+      ctx.trace.push({ tool: name, input, output: output.slice(0, 400) });
+    }
     return output;
   };
 }
@@ -401,6 +406,12 @@ Be specific. Never fabricate data. Mark inferences as estimates. The data_ground
 
     const userPrompt = `Run a competitive intelligence scan on this target:\n\nTARGET: ${target}${context ? `\n\nADDITIONAL CONTEXT:\n${context.slice(0, 2000)}` : ""}\n\nFollow the tool sequence in your system prompt. Use the tools to gather real data before finalizing.`;
 
+    // Wave-113.1 M1 fix: capture any throw from the tool-use loop so
+    // the response can honestly report success vs degraded state. A
+    // kill-switch trip, budget exhaustion, or upstream Claude failure
+    // must NOT come back as `success: true` — consumers (UI, downstream
+    // jobs, billing) need to know the report is synthesized, not real.
+    let toolError: string | null = null;
     try {
       await claudeToolUse(
         userPrompt,
@@ -410,12 +421,14 @@ Be specific. Never fabricate data. Mark inferences as estimates. The data_ground
         buildToolExecutor(ctx),
       );
     } catch (err) {
+      toolError = err instanceof Error ? err.message : String(err);
       log.warn("claudeToolUse threw — returning partial state", {
         target,
-        error: err instanceof Error ? err.message : String(err),
+        error: toolError,
       });
     }
 
+    const reportSynthesized = !ctx.report;
     // If Claude never called finalize_report (failure mode), synthesize
     // a degraded report from the trace so the caller still gets a
     // structured response. data_grounded=false signals to consumers
@@ -433,7 +446,9 @@ Be specific. Never fabricate data. Mark inferences as estimates. The data_ground
     }
 
     return {
-      success: true,
+      success: !reportSynthesized && !toolError,
+      degraded: reportSynthesized || !!toolError,
+      error: toolError ?? undefined,
       target,
       researchGrounded: ctx.report.data_grounded,
       threat_level: ctx.report.threat_level,
