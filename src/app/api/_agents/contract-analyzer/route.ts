@@ -36,6 +36,39 @@ Output ONLY valid JSON.`;
 export const POST = createAgentRoute({
   name: "contract-analyzer",
   schema,
+  // Wave 115 M3 batch 9: memory hooks. Per-document-shape risk patterns
+  // compound — last quarter's NDAs, MSAs, or vendor agreements taught the
+  // operator what red flags recurred. Surface those without re-reading
+  // the whole prior contract.
+  memory: {
+    search: {
+      query: (input) => {
+        const doc = typeof input.document === "string" ? input.document : "";
+        // Lightweight bigram hash — first 80 chars of the document is enough
+        // to land near-duplicate contract types (template-style agreements)
+        // without retrieving unrelated docs.
+        return `contract ${doc.slice(0, 80)}`.trim();
+      },
+      limit: 2,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as {
+          risk_score?: number;
+          red_flags?: Array<{ flag?: string; severity?: string }>;
+          parties?: string[];
+        };
+        if (typeof r.risk_score !== "number" && !r.red_flags) return null;
+        const flags = (r.red_flags ?? [])
+          .slice(0, 3)
+          .map((f) => `[${f.severity ?? "?"}] ${f.flag ?? ""}`)
+          .join(" · ");
+        const partyTag = (r.parties ?? []).slice(0, 2).join(" / ");
+        return `risk=${r.risk_score ?? "?"} parties=${partyTag} flags=${flags}`;
+      },
+      metadata: () => ({ kind: "contract-analysis" }),
+    },
+  },
   handler: async ({ input }) => {
     const document = input.document as string;
     const start = Date.now();

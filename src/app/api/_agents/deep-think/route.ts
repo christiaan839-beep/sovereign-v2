@@ -19,6 +19,36 @@ import { createHash } from "node:crypto";
 export const POST = createAgentRoute({
   name: "deep-think",
   requiredFields: ["problem"],
+  // Wave 115 M3 batch 9: memory hooks. Per-domain reasoning compounds —
+  // last week's strategy/research output on a similar problem class
+  // informs this week's solution without re-deriving common framing.
+  memory: {
+    search: {
+      query: (input) => {
+        const problem =
+          typeof input.problem === "string"
+            ? input.problem
+            : typeof input.prompt === "string"
+              ? input.prompt
+              : "";
+        return `deep-think ${problem.slice(0, 120)}`;
+      },
+      limit: 2,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as {
+          solution?: string;
+          confidence?: number;
+          problem?: string;
+        };
+        if (!r.solution) return null;
+        const head = r.solution.slice(0, 240).replace(/\s+/g, " ");
+        return `solution: ${head}${r.confidence ? ` (conf=${r.confidence})` : ""}`;
+      },
+      metadata: () => ({ kind: "deep-think" }),
+    },
+  },
   handler: async ({ input }) => {
     const problem = input.problem as string;
     const prompt = input.prompt as string | undefined;

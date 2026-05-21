@@ -8,6 +8,35 @@ const log = createLogger("audit-engine");
 
 export const POST = createAgentRoute({
   name: "audit",
+  // Wave 115 M3 batch 9: memory hooks. Per-URL audit history compounds —
+  // last audit's findings + recommended fixes let the model report DELTAS
+  // (what got patched, what's still open) rather than restating the whole
+  // attack surface every time.
+  memory: {
+    search: {
+      query: (input) => `audit url:${input.targetUrl ?? ""}`,
+      limit: 2,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as {
+          targetUrl?: string;
+          findings?: Array<{ severity?: string; issue?: string }>;
+          score?: number;
+        };
+        if (!r.targetUrl && !r.findings) return null;
+        const top = (r.findings ?? [])
+          .slice(0, 3)
+          .map((f) => `[${f.severity ?? "?"}] ${f.issue ?? ""}`)
+          .join(" · ");
+        return `audit ${r.targetUrl ?? ""}: score=${r.score ?? "?"} top=${top}`;
+      },
+      metadata: (input) => ({
+        url: typeof input.targetUrl === "string" ? input.targetUrl : "",
+        kind: "audit",
+      }),
+    },
+  },
   handler: async ({ input, email, userId }) => {
     const { targetUrl } = input as Record<string, unknown>;
 
