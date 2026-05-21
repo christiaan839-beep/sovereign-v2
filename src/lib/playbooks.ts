@@ -27,6 +27,31 @@ export interface PlaybookStep {
   agent: string;
   params: Record<string, string>;
   reason: string;
+  /**
+   * Wave 115 M5 — DAG dependency fields (only honoured when the parent
+   * playbook has `dag: true`). All optional for backwards compat with
+   * the 35 existing playbooks.
+   *
+   * Step indices this step waits for. Omit to default to `[i - 1]`
+   * (the linear / for-loop behaviour). Use `[]` to make the step
+   * independent of all earlier steps (a true fan-out root).
+   */
+  dependsOn?: number[];
+  /**
+   * Conditional edge — skip this step unless the parent's output
+   * satisfies the predicate. Comparison is case-insensitive.
+   */
+  condition?: {
+    ifStep: number;
+    contains?: string;
+    equals?: string;
+  };
+  /**
+   * When true, a failed status on this step does NOT cause downstream
+   * steps to be skipped. Useful for "best effort" sub-tasks like
+   * Telegram notify or background memory store.
+   */
+  optional?: boolean;
 }
 
 export interface Playbook {
@@ -50,6 +75,12 @@ export interface Playbook {
     minScore?: number; // e.g., quality score > 0.7
     maxAiDetection?: number; // e.g., < 10% AI detection
   };
+  /**
+   * Wave 115 M5 — Opt into the DAG executor (parallel fan-out +
+   * conditional edges) instead of the legacy for-loop. When false or
+   * omitted, the playbook keeps strictly sequential semantics.
+   */
+  dag?: boolean;
 }
 
 // ─── Playbook Definitions ───────────────────────────────────────────────────
