@@ -1591,6 +1591,7 @@ function Footer() {
                 label: "MCP Server",
                 external: true,
               },
+              { href: "/metrics", label: "Live metrics" },
               { href: "/changelog", label: "Changelog" },
             ]}
           />

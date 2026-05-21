@@ -19,6 +19,36 @@ import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
 export const POST = createAgentRoute({
   name: "reasoning-chain",
   requiredFields: ["question"],
+  // Wave 117 M3 batch 12: memory hooks. Per-question-class chain
+  // compounding — past reasoning chains on similar questions show
+  // which framings produced robust conclusions vs which led astray.
+  memory: {
+    search: {
+      query: (input) => {
+        const q = typeof input.question === "string" ? input.question : "";
+        const domain =
+          typeof input.domain === "string" ? input.domain : "general";
+        return `reasoning ${domain} ${q.slice(0, 120)}`;
+      },
+      limit: 2,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as {
+          conclusion?: string;
+          confidence?: number;
+          domain?: string;
+        };
+        if (!r.conclusion) return null;
+        const head = r.conclusion.slice(0, 220).replace(/\s+/g, " ");
+        return `[${r.domain ?? "general"}] ${head}${r.confidence ? ` (conf=${r.confidence})` : ""}`;
+      },
+      metadata: (input) => ({
+        domain: typeof input.domain === "string" ? input.domain : "general",
+        kind: "reasoning-chain",
+      }),
+    },
+  },
   handler: async ({ input }) => {
     const {
       question,
@@ -36,7 +66,9 @@ export const POST = createAgentRoute({
 
     // Step 1: Decompose into sub-questions
     const decomposeStart = Date.now();
-    const decomposeRes = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
+    const decomposeRes = await outboundFetchAsResponse(
+      "https://integrate.api.nvidia.com/v1/chat/completions",
+      {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -54,7 +86,12 @@ export const POST = createAgentRoute({
           max_tokens: 500,
           temperature: 0.3,
         }),
-      }, { ruleId: "agents.reasoning-chain.route.1", allowedHosts: ["integrate.api.nvidia.com"] });
+      },
+      {
+        ruleId: "agents.reasoning-chain.route.1",
+        allowedHosts: ["integrate.api.nvidia.com"],
+      },
+    );
 
     const decomposeData = await decomposeRes.json();
     const subQuestions = decomposeData?.choices?.[0]?.message?.content || "";
@@ -67,7 +104,9 @@ export const POST = createAgentRoute({
 
     // Step 2: Deep analysis on each sub-question
     const analysisStart = Date.now();
-    const analysisRes = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
+    const analysisRes = await outboundFetchAsResponse(
+      "https://integrate.api.nvidia.com/v1/chat/completions",
+      {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -88,7 +127,12 @@ export const POST = createAgentRoute({
           max_tokens: 1500,
           temperature: 0.5,
         }),
-      }, { ruleId: "agents.reasoning-chain.route.2", allowedHosts: ["integrate.api.nvidia.com"] });
+      },
+      {
+        ruleId: "agents.reasoning-chain.route.2",
+        allowedHosts: ["integrate.api.nvidia.com"],
+      },
+    );
 
     const analysisData = await analysisRes.json();
     const analysis = analysisData?.choices?.[0]?.message?.content || "";
@@ -116,7 +160,9 @@ export const POST = createAgentRoute({
       );
       synthModel = "claude-sonnet-4-extended-thinking";
     } catch {
-      const synthRes = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
+      const synthRes = await outboundFetchAsResponse(
+        "https://integrate.api.nvidia.com/v1/chat/completions",
+        {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -138,7 +184,12 @@ export const POST = createAgentRoute({
             max_tokens: 1000,
             temperature: 0.3,
           }),
-        }, { ruleId: "agents.reasoning-chain.route.3", allowedHosts: ["integrate.api.nvidia.com"] });
+        },
+        {
+          ruleId: "agents.reasoning-chain.route.3",
+          allowedHosts: ["integrate.api.nvidia.com"],
+        },
+      );
 
       const synthData = await synthRes.json();
       synthesis = synthData?.choices?.[0]?.message?.content || "";
@@ -152,7 +203,9 @@ export const POST = createAgentRoute({
 
     // Step 4: Self-critique
     const critiqueStart = Date.now();
-    const critiqueRes = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
+    const critiqueRes = await outboundFetchAsResponse(
+      "https://integrate.api.nvidia.com/v1/chat/completions",
+      {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -174,7 +227,12 @@ export const POST = createAgentRoute({
           max_tokens: 400,
           temperature: 0.4,
         }),
-      }, { ruleId: "agents.reasoning-chain.route.4", allowedHosts: ["integrate.api.nvidia.com"] });
+      },
+      {
+        ruleId: "agents.reasoning-chain.route.4",
+        allowedHosts: ["integrate.api.nvidia.com"],
+      },
+    );
 
     const critiqueData = await critiqueRes.json();
     const critique = critiqueData?.choices?.[0]?.message?.content || "";

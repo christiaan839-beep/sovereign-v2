@@ -13,6 +13,36 @@ import { runAgentTeam, getAvailableTeams } from "@/lib/agent-teams";
 export const POST = createAgentRoute({
   name: "war-room",
   requiredFields: ["objective"],
+  // Wave 117 M3 batch 12: memory hooks. Per-objective debate compounding
+  // — past war-room verdicts on similar objectives let the team surface
+  // which arguments held up vs which got revised, instead of re-running
+  // the full debate from scratch.
+  memory: {
+    search: {
+      query: (input) => {
+        const obj = typeof input.objective === "string" ? input.objective : "";
+        const team = typeof input.team === "string" ? input.team : "war-room";
+        return `war-room ${team} ${obj.slice(0, 120)}`;
+      },
+      limit: 2,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as {
+          objective?: string;
+          verdict?: string;
+          consensus?: string;
+          confidence?: number;
+        };
+        if (!r.verdict && !r.consensus) return null;
+        const head = (r.verdict ?? r.consensus ?? "")
+          .slice(0, 220)
+          .replace(/\s+/g, " ");
+        return `verdict: ${head}${r.confidence ? ` (conf=${r.confidence})` : ""}`;
+      },
+      metadata: () => ({ kind: "war-room" }),
+    },
+  },
   handler: async ({ input }) => {
     const objective = input.objective as string;
     const team = (input.team as string) || "war-room";
@@ -33,7 +63,7 @@ export const POST = createAgentRoute({
       synthesis: result.synthesis,
       confidence: result.confidence,
       duration: `${result.duration}ms`,
-      agents: result.perspectives.map(p => p.role),
+      agents: result.perspectives.map((p) => p.role),
     };
   },
 });

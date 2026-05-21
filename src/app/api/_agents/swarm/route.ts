@@ -14,6 +14,30 @@ import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
 export const POST = createAgentRoute({
   name: "swarm",
   requiredFields: ["task"],
+  // Wave 117 M3 batch 12: memory hooks. Per-task swarm history — past
+  // swarm runs surface which agent combinations produced strong
+  // consensus on similar tasks, so the orchestrator can favor proven
+  // panel compositions.
+  memory: {
+    search: {
+      query: (input) => `swarm ${String(input.task ?? "").slice(0, 120)}`,
+      limit: 2,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as {
+          agentsUsed?: string[];
+          consensus?: string;
+          confidence?: number;
+        };
+        if (!r.consensus && !r.agentsUsed) return null;
+        const agents = (r.agentsUsed ?? []).slice(0, 4).join(", ");
+        const head = (r.consensus ?? "").slice(0, 160).replace(/\s+/g, " ");
+        return `panel=[${agents}] consensus="${head}"${r.confidence ? ` (conf=${r.confidence})` : ""}`;
+      },
+      metadata: () => ({ kind: "swarm" }),
+    },
+  },
   handler: async ({ input }) => {
     const { task, agents, jury = true } = input as Record<string, unknown>;
 
@@ -29,7 +53,9 @@ export const POST = createAgentRoute({
       async (agent: { model: string; name: string }) => {
         const startTime = Date.now();
         try {
-          const res = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
+          const res = await outboundFetchAsResponse(
+            "https://integrate.api.nvidia.com/v1/chat/completions",
+            {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
@@ -48,7 +74,12 @@ export const POST = createAgentRoute({
                 max_tokens: 1024,
                 temperature: 0.7,
               }),
-            }, { ruleId: "agents.swarm.route.1", allowedHosts: ["integrate.api.nvidia.com"] });
+            },
+            {
+              ruleId: "agents.swarm.route.1",
+              allowedHosts: ["integrate.api.nvidia.com"],
+            },
+          );
 
           const data = await res.json();
           return {
@@ -83,7 +114,9 @@ export const POST = createAgentRoute({
         .map((r, i) => `=== Agent ${i + 1} (${r.agent}) ===\n${r.output}`)
         .join("\n\n");
 
-      const juryRes = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
+      const juryRes = await outboundFetchAsResponse(
+        "https://integrate.api.nvidia.com/v1/chat/completions",
+        {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -101,7 +134,12 @@ export const POST = createAgentRoute({
             max_tokens: 1500,
             temperature: 0.3,
           }),
-        }, { ruleId: "agents.swarm.route.2", allowedHosts: ["integrate.api.nvidia.com"] });
+        },
+        {
+          ruleId: "agents.swarm.route.2",
+          allowedHosts: ["integrate.api.nvidia.com"],
+        },
+      );
 
       const juryData = await juryRes.json();
       juryVerdict = juryData?.choices?.[0]?.message?.content || null;

@@ -19,58 +19,149 @@ const log = createLogger("agentic-planner");
 import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
 
 const AVAILABLE_TOOLS = [
-  { name: "translate", description: "Translate text between languages", params: "text, target_lang" },
-  { name: "blog-gen", description: "Generate SEO blog posts", params: "topic, keywords" },
-  { name: "pii-redactor", description: "Detect and redact personally identifiable information", params: "text" },
-  { name: "case-study", description: "Generate professional case studies", params: "clientName, industry, metrics" },
-  { name: "page-builder", description: "Generate landing pages with HTML/CSS", params: "prompt" },
-  { name: "image-gen", description: "Generate images from text descriptions", params: "prompt, width, height" },
-  { name: "voice-synth", description: "Convert text to speech audio", params: "text, voice" },
-  { name: "smart-router", description: "Route a prompt to the optimal AI model", params: "prompt, task_type" },
-  { name: "research", description: "Deep web research on any topic", params: "query" },
-  { name: "reasoning-chain", description: "Multi-step deep reasoning for complex problems", params: "question, domain" },
+  {
+    name: "translate",
+    description: "Translate text between languages",
+    params: "text, target_lang",
+  },
+  {
+    name: "blog-gen",
+    description: "Generate SEO blog posts",
+    params: "topic, keywords",
+  },
+  {
+    name: "pii-redactor",
+    description: "Detect and redact personally identifiable information",
+    params: "text",
+  },
+  {
+    name: "case-study",
+    description: "Generate professional case studies",
+    params: "clientName, industry, metrics",
+  },
+  {
+    name: "page-builder",
+    description: "Generate landing pages with HTML/CSS",
+    params: "prompt",
+  },
+  {
+    name: "image-gen",
+    description: "Generate images from text descriptions",
+    params: "prompt, width, height",
+  },
+  {
+    name: "voice-synth",
+    description: "Convert text to speech audio",
+    params: "text, voice",
+  },
+  {
+    name: "smart-router",
+    description: "Route a prompt to the optimal AI model",
+    params: "prompt, task_type",
+  },
+  {
+    name: "research",
+    description: "Deep web research on any topic",
+    params: "query",
+  },
+  {
+    name: "reasoning-chain",
+    description: "Multi-step deep reasoning for complex problems",
+    params: "question, domain",
+  },
 ];
 
 export const POST = createAgentRoute({
   name: "agentic-planner",
   requiredFields: ["goal"],
+  // Wave 117 M3 batch 12: memory hooks. Per-goal-class plan compounding —
+  // last planner output on a similar goal exposes which tool sequence
+  // executed cleanly vs which sub-step failed. Bias the next plan toward
+  // proven sequences.
+  memory: {
+    search: {
+      query: (input) =>
+        `agentic-planner ${String(input.goal ?? "").slice(0, 120)}`,
+      limit: 2,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as {
+          plan?: Array<{ tool?: string; reason?: string }>;
+          executed?: boolean;
+        };
+        if (!r.plan?.length) return null;
+        const chain = r.plan
+          .slice(0, 6)
+          .map((s) => s.tool ?? "?")
+          .join(" → ");
+        return `plan: ${chain}${r.executed ? " [executed]" : " [draft]"}`;
+      },
+      metadata: () => ({ kind: "agentic-planner" }),
+    },
+  },
   handler: async ({ input }) => {
     const { goal, auto_execute = false } = input as Record<string, unknown>;
 
     // Step 1: GLM-5 creates the execution plan
-    const toolList = AVAILABLE_TOOLS.map(t => `- ${t.name}: ${t.description} (params: ${t.params})`).join("\n");
+    const toolList = AVAILABLE_TOOLS.map(
+      (t) => `- ${t.name}: ${t.description} (params: ${t.params})`,
+    ).join("\n");
 
-    const planRes = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${await getNimKey()}` },
-      body: JSON.stringify({
-        model: "z-ai/glm5",
-        messages: [
-          {
-            role: "system",
-            content: `You are an autonomous AI orchestrator. Given a goal, create an execution plan using the available tools.
+    const planRes = await outboundFetchAsResponse(
+      "https://integrate.api.nvidia.com/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${await getNimKey()}`,
+        },
+        body: JSON.stringify({
+          model: "z-ai/glm5",
+          messages: [
+            {
+              role: "system",
+              content: `You are an autonomous AI orchestrator. Given a goal, create an execution plan using the available tools.
 
 Available tools:
 ${toolList}
 
 Output a JSON array of steps. Each step must have: {"tool": "tool_name", "params": {key: value}, "reason": "why this step"}. Output ONLY valid JSON array, nothing else.`,
-          },
-          { role: "user", content: `Goal: ${goal}` },
-        ],
-        max_tokens: 800,
-        temperature: 0.3,
-      }),
-    }, { ruleId: "agents.agentic-planner.route.1", allowedHosts: ["integrate.api.nvidia.com"] });
+            },
+            { role: "user", content: `Goal: ${goal}` },
+          ],
+          max_tokens: 800,
+          temperature: 0.3,
+        }),
+      },
+      {
+        ruleId: "agents.agentic-planner.route.1",
+        allowedHosts: ["integrate.api.nvidia.com"],
+      },
+    );
 
     const planData = await planRes.json();
     const rawPlan = planData?.choices?.[0]?.message?.content || "[]";
 
     let executionPlan;
     try {
-      executionPlan = JSON.parse(rawPlan.replace(/```json?\n?/g, "").replace(/```/g, "").trim());
+      executionPlan = JSON.parse(
+        rawPlan
+          .replace(/```json?\n?/g, "")
+          .replace(/```/g, "")
+          .trim(),
+      );
     } catch (err) {
-      log.warn("Plan JSON parse failed, using fallback", { error: (err as Error).message });
-      executionPlan = [{ tool: "smart-router", params: { prompt: goal }, reason: "Fallback: Direct routing" }];
+      log.warn("Plan JSON parse failed, using fallback", {
+        error: (err as Error).message,
+      });
+      executionPlan = [
+        {
+          tool: "smart-router",
+          params: { prompt: goal },
+          reason: "Fallback: Direct routing",
+        },
+      ];
     }
 
     // Step 2: Optionally auto-execute the plan
@@ -81,11 +172,18 @@ Output a JSON array of steps. Each step must have: {"tool": "tool_name", "params
       for (const step of executionPlan.slice(0, 5)) {
         try {
           const stepStart = Date.now();
-          const res = await outboundFetchAsResponse(`${baseUrl}/api/agents/${step.tool}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(step.params || {}),
-          }, { ruleId: "agents.agentic-planner.route.2", allowedHosts: [new URL(baseUrl).hostname] });
+          const res = await outboundFetchAsResponse(
+            `${baseUrl}/api/agents/${step.tool}`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(step.params || {}),
+            },
+            {
+              ruleId: "agents.agentic-planner.route.2",
+              allowedHosts: [new URL(baseUrl).hostname],
+            },
+          );
 
           const data = await res.json();
           results.push({
@@ -96,7 +194,12 @@ Output a JSON array of steps. Each step must have: {"tool": "tool_name", "params
             preview: JSON.stringify(data).substring(0, 200),
           });
         } catch (err) {
-          results.push({ tool: step.tool, reason: step.reason, status: "Failed", error: String(err) });
+          results.push({
+            tool: step.tool,
+            reason: step.reason,
+            status: "Failed",
+            error: String(err),
+          });
         }
       }
     }
@@ -108,7 +211,9 @@ Output a JSON array of steps. Each step must have: {"tool": "tool_name", "params
       auto_execute,
       execution_plan: executionPlan,
       steps_planned: Array.isArray(executionPlan) ? executionPlan.length : 0,
-      results: auto_execute ? results : "Set auto_execute: true to run the plan",
+      results: auto_execute
+        ? results
+        : "Set auto_execute: true to run the plan",
       license: "GLM License — commercial use permitted",
     };
   },
