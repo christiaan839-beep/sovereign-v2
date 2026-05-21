@@ -22,8 +22,46 @@ const HEAL_LOG: HealRecord[] = [];
 export const POST = createAgentRoute({
   name: "auto-heal",
   requiredFields: ["action"],
-  handler: async ({ input }) => {
-    const { action, agent, error_message, original_payload } = input as Record<string, unknown>;
+  // Wave-111.1 batch 5: memory hooks. Past heal records for the
+  // same agent + similar error_message strongly inform diagnosis +
+  // healing action. High-value: a proven remediation pattern from
+  // last week is the best starting point for today's identical
+  // failure.
+  memory: {
+    search: {
+      query: (input) => {
+        if (input.action !== "heal") return "";
+        return `auto-heal agent:${input.agent ?? ""} error:${String(input.error_message ?? "").slice(0, 200)}`;
+      },
+      limit: 3,
+    },
+    store: {
+      extract: (result, input) => {
+        if (input.action !== "heal") return null;
+        const r = result as {
+          diagnosis?: {
+            root_cause?: string;
+            healing_actions?: string[];
+            severity?: string;
+          };
+          healed?: boolean;
+        };
+        const d = r.diagnosis;
+        if (!d?.root_cause) return null;
+        const actions = (d.healing_actions ?? []).slice(0, 2).join("; ");
+        return `${input.agent} | ${String(input.error_message ?? "").slice(0, 120)} → ${d.severity ?? "?"} | cause: ${d.root_cause.slice(0, 200)} | actions: ${actions} | healed: ${r.healed ?? false}`;
+      },
+      metadata: (input) => ({
+        agent: String(input.agent ?? ""),
+        kind: "auto-heal-record",
+      }),
+    },
+  },
+  handler: async ({ input, pastContextAsPrompt }) => {
+    const { action, agent, error_message, original_payload } = input as Record<
+      string,
+      unknown
+    >;
 
     if (action === "heal") {
       if (!agent || !error_message) {
@@ -42,15 +80,25 @@ Only output valid JSON, nothing else.`,
           },
           {
             role: "user",
-            content: `Agent: ${agent}\nError: ${error_message}\nOriginal payload: ${JSON.stringify(original_payload || {}).substring(0, 500)}`,
+            content: `Agent: ${agent}\nError: ${error_message}\nOriginal payload: ${JSON.stringify(original_payload || {}).substring(0, 500)}${(() => {
+              const past = pastContextAsPrompt();
+              return past
+                ? `\n\nPRIOR HEAL RECORDS for similar failures on this agent (historical FACTS — prefer proven remediation patterns):\n${past}`
+                : "";
+            })()}`,
           },
         ],
-        { maxTokens: 300, temperature: 0.2 }
+        { maxTokens: 300, temperature: 0.2 },
       );
 
       let diagnosis;
       try {
-        diagnosis = JSON.parse(rawDiagnosis.replace(/```json?\n?/g, "").replace(/```/g, "").trim());
+        diagnosis = JSON.parse(
+          rawDiagnosis
+            .replace(/```json?\n?/g, "")
+            .replace(/```/g, "")
+            .trim(),
+        );
       } catch {
         diagnosis = {
           root_cause: "Unable to parse diagnosis",
@@ -69,7 +117,9 @@ Only output valid JSON, nothing else.`,
 
       if (original_payload) {
         try {
-          const adjustedPayload = { ...(original_payload as Record<string, unknown>) };
+          const adjustedPayload = {
+            ...(original_payload as Record<string, unknown>),
+          };
           if (diagnosis.recommended_temperature) {
             adjustedPayload.temperature = diagnosis.recommended_temperature;
           }
@@ -109,7 +159,9 @@ Only output valid JSON, nothing else.`,
           healing_actions: diagnosis.healing_actions,
           recommended_model: diagnosis.recommended_model,
         },
-        heal_result: healed ? { preview: JSON.stringify(healResult).substring(0, 300) } : null,
+        heal_result: healed
+          ? { preview: JSON.stringify(healResult).substring(0, 300) }
+          : null,
         record,
       };
     }
@@ -118,9 +170,10 @@ Only output valid JSON, nothing else.`,
       return {
         status: "NemoClaw Auto-Heal — Active",
         total_heals: HEAL_LOG.length,
-        success_rate: HEAL_LOG.length > 0
-          ? `${Math.round((HEAL_LOG.filter(h => h.healed).length / HEAL_LOG.length) * 100)}%`
-          : "N/A",
+        success_rate:
+          HEAL_LOG.length > 0
+            ? `${Math.round((HEAL_LOG.filter((h) => h.healed).length / HEAL_LOG.length) * 100)}%`
+            : "N/A",
         recent: HEAL_LOG.slice(-10).reverse(),
       };
     }

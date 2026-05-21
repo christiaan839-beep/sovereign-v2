@@ -9,7 +9,32 @@ import { nimChat } from "@/lib/nvidia";
 
 export const POST = createAgentRoute({
   name: "code-reviewer",
-  handler: async ({ input, email, userId }) => {
+  // Wave-111.1 batch 5: memory hooks. Recurring patterns in a
+  // user's reviews (same language, same focus area) compound — the
+  // reviewer surfaces patterns it flagged in prior reviews so the
+  // author sees they're a repeat-issue, not a one-off.
+  memory: {
+    search: {
+      query: (input) =>
+        `code-review language:${input.language ?? "auto"} focus:${input.focus ?? "full"}`,
+      limit: 3,
+    },
+    store: {
+      extract: (result, input) => {
+        const r = result as { review?: string };
+        if (!r.review) return null;
+        // Store the first 500 chars — typically the lead issue +
+        // verdict, which is the signal worth surfacing next time.
+        return `${input.language ?? "auto"}/${input.focus ?? "full"}: ${r.review.slice(0, 500)}`;
+      },
+      metadata: (input) => ({
+        language: String(input.language ?? "auto"),
+        focus: String(input.focus ?? "full"),
+        kind: "code-review",
+      }),
+    },
+  },
+  handler: async ({ input, email, userId, pastContextAsPrompt }) => {
     const {
       code = "",
       language = "auto-detect",
@@ -73,7 +98,12 @@ is to ship a review they can act on Monday morning.
         },
         {
           role: "user",
-          content: `Review this ${language} code.\n\nFOCUS: ${focusPrompts[focus] || focusPrompts.full}\n\n\`\`\`${language}\n${code.substring(0, 50000)}\n\`\`\`\n\nOutput JSON:
+          content: `Review this ${language} code.\n\nFOCUS: ${focusPrompts[focus] || focusPrompts.full}${(() => {
+            const past = pastContextAsPrompt();
+            return past
+              ? `\n\nPRIOR REVIEWS on similar code (historical FACTS — surface repeat patterns / author's recurring issues):\n${past}\n`
+              : "";
+          })()}\n\n\`\`\`${language}\n${code.substring(0, 50000)}\n\`\`\`\n\nOutput JSON:
 {
   "overall_grade": "A|B|C|D|F",
   "security_score": 0-100,
