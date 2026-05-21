@@ -11,6 +11,8 @@ import { createAgentRoute } from "@/lib/agent-factory";
  * Output: { analysis, keyFindings[], url }
  */
 
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export const POST = createAgentRoute({
   name: "url-context",
   requiredFields: ["url"],
@@ -23,9 +25,7 @@ export const POST = createAgentRoute({
       return { error: "Google AI API key not configured." };
     }
 
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${geminiKey}`,
-      {
+    const res = await outboundFetchAsResponse(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${geminiKey}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -50,14 +50,11 @@ export const POST = createAgentRoute({
             maxOutputTokens: 3000,
           },
         }),
-      }
-    );
+      }, { ruleId: "agents.url-context.route.1", allowedHosts: ["generativelanguage.googleapis.com"] });
 
     if (!res.ok) {
       // Fallback: try with google_search grounding instead
-      const fallbackRes = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${geminiKey}`,
-        {
+      const fallbackRes = await outboundFetchAsResponse(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${geminiKey}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -70,8 +67,7 @@ export const POST = createAgentRoute({
             tools: [{ google_search: {} }],
             generationConfig: { temperature: 0.3, maxOutputTokens: 3000 },
           }),
-        }
-      );
+        }, { ruleId: "agents.url-context.route.2", allowedHosts: ["generativelanguage.googleapis.com"] });
 
       if (!fallbackRes.ok) {
         return { error: `Gemini API error`, details: await fallbackRes.text() };

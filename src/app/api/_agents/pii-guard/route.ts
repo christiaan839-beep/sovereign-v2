@@ -5,6 +5,8 @@ import { createAgentRoute } from "@/lib/agent-factory";
  * Wraps any AI output to detect and redact PII before it reaches the user.
  * Based on NVIDIA's NeMo Guardrails Blueprint.
  */
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export const POST = createAgentRoute({
   name: "pii-guard",
   handler: async ({ input, email, userId }) => {
@@ -18,9 +20,7 @@ export const POST = createAgentRoute({
     if (!nimKey) return { error: "NVIDIA_NIM_API_KEY not configured." };
 
     // Use GLiNER PII detection model
-    const res = await fetch(
-      "https://integrate.api.nvidia.com/v1/chat/completions",
-      {
+    const res = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -39,8 +39,7 @@ export const POST = createAgentRoute({
           max_tokens: 1000,
           temperature: 0.1,
         }),
-      },
-    );
+      }, { ruleId: "agents.pii-guard.route.1", allowedHosts: ["integrate.api.nvidia.com"] });
 
     if (!res.ok) {
       // Fallback: use regex-based PII detection

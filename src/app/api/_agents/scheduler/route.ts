@@ -79,11 +79,11 @@ async function _postHandler(request: Request) {
 
       const baseUrl = getBaseUrl();
 
-      const res = await fetch(`${baseUrl}/api/agents/chain-reactor`, {
+      const res = await outboundFetchAsResponse(`${baseUrl}/api/agents/chain-reactor`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ chain: job.chain, input: job.input }),
-      });
+      }, { ruleId: "agents.scheduler.route.1", allowedHosts: [new URL(baseUrl).hostname] });
 
       const result = await res.json();
       job.last_run = new Date().toISOString();
@@ -116,11 +116,11 @@ async function _postHandler(request: Request) {
         const baseUrl = getBaseUrl();
 
         try {
-          const res = await fetch(`${baseUrl}/api/agents/chain-reactor`, {
+          const res = await outboundFetchAsResponse(`${baseUrl}/api/agents/chain-reactor`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ chain: job.chain, input: job.input }),
-          });
+          }, { ruleId: "agents.scheduler.route.2", allowedHosts: [new URL(baseUrl).hostname] });
           const result = await res.json();
           job.last_run = new Date().toISOString();
           job.run_count += 1;
@@ -145,6 +145,8 @@ async function _postHandler(request: Request) {
 
 
 // Factory wrapper for POST (adds safety pipeline)
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export const POST = createAgentRoute({
   name: "scheduler",
   handler: async ({ input, email, userId, request }) => {

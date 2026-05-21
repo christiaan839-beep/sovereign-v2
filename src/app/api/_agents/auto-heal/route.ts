@@ -7,6 +7,8 @@ import { getBaseUrl } from "@/lib/base-url";
  * Now BYOK-aware via nimChat().
  */
 
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 interface HealRecord {
   id: string;
   agent: string;
@@ -124,11 +126,11 @@ Only output valid JSON, nothing else.`,
             adjustedPayload.temperature = diagnosis.recommended_temperature;
           }
 
-          const retryRes = await fetch(`${baseUrl}/api/agents/${agent}`, {
+          const retryRes = await outboundFetchAsResponse(`${baseUrl}/api/agents/${agent}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(adjustedPayload),
-          });
+          }, { ruleId: "agents.auto-heal.route.1", allowedHosts: [new URL(baseUrl).hostname] });
 
           healResult = await retryRes.json();
           healed = retryRes.ok && healResult?.success;

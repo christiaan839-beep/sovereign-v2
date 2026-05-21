@@ -1,7 +1,7 @@
 import { createAgentRoute } from "@/lib/agent-factory";
 import { createLogger } from "@/lib/logger";
 import { getBaseUrl } from "@/lib/base-url";
-import { outboundFetch } from "@/lib/outbound-fetch";
+import { outboundFetch, outboundFetchAsResponse } from "@/lib/outbound-fetch";
 const log = createLogger("telegram-router");
 
 /**
@@ -165,11 +165,18 @@ export const POST = createAgentRoute({
 
     const baseUrl = getBaseUrl();
 
-    const agentRes = await fetch(`${baseUrl}${route.endpoint}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(route.buildBody(args)),
-    });
+    const agentRes = await outboundFetchAsResponse(
+      `${baseUrl}${route.endpoint}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(route.buildBody(args)),
+      },
+      {
+        ruleId: "agents.telegram-router.route.1",
+        allowedHosts: [new URL(baseUrl).hostname],
+      },
+    );
 
     const agentData = await agentRes.json();
 

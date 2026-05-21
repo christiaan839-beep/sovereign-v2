@@ -12,6 +12,8 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
  * expertise through practical examples and clear outcomes.
  */
 
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export async function GET(req: Request) {
   const authErr = requireCronAuth(req);
   if (authErr) return authErr;
@@ -41,9 +43,7 @@ No markdown formatting.`;
       );
     }
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${GEMINI_API_KEY}`,
-      {
+    const response = await outboundFetchAsResponse(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${GEMINI_API_KEY}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -59,8 +59,7 @@ No markdown formatting.`;
           systemInstruction: { parts: [{ text: systemInstruction }] },
           generationConfig: { temperature: 0.6 },
         }),
-      },
-    );
+      }, { ruleId: "cron.tiktok-autopilot.route.1", allowedHosts: ["generativelanguage.googleapis.com"] });
 
     if (!response.ok) {
       throw new Error(`Gemini API error: ${response.statusText}`);

@@ -10,6 +10,8 @@ import { persistRead, persistAppend } from "@/lib/persist";
  * Operations: rate, stats, improve
  */
 
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 interface FeedbackRecord {
   id: string;
   agent: string;
@@ -89,7 +91,7 @@ ${highRated.slice(-5).map(r => `- Rating: ${r.rating}/5 | Comment: ${r.comment} 
 LOW RATED (${lowRated.length}):
 ${lowRated.slice(-5).map(r => `- Rating: ${r.rating}/5 | Comment: ${r.comment} | Prompt: ${r.prompt_used}`).join("\n")}`;
 
-      const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+      const res = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${await getNimKey()}` },
         body: JSON.stringify({
@@ -101,7 +103,7 @@ ${lowRated.slice(-5).map(r => `- Rating: ${r.rating}/5 | Comment: ${r.comment} |
           max_tokens: 500,
           temperature: 0.3,
         }),
-      });
+      }, { ruleId: "agents.feedback.route.1", allowedHosts: ["integrate.api.nvidia.com"] });
 
       const data = await res.json();
 

@@ -5,6 +5,8 @@ import { NextResponse } from "next/server";
  * Returns per-model status for the SystemPulseStrip dashboard.
  */
 
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 const MODELS = [
   { id: "deepseek-ai/deepseek-v3-2-0324", name: "DeepSeek V3.2", category: "reasoning" },
   { id: "mistralai/mistral-nemotron", name: "Mistral Nemotron", category: "chat" },
@@ -27,7 +29,7 @@ export async function GET() {
     MODELS.map(async (model) => {
       const start = Date.now();
       try {
-        const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+        const res = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${nimKey}` },
           body: JSON.stringify({
@@ -37,7 +39,7 @@ export async function GET() {
             temperature: 0,
           }),
           signal: AbortSignal.timeout(8000),
-        });
+        }, { ruleId: "health.nim-models.route.1", allowedHosts: ["integrate.api.nvidia.com"] });
         return {
           ...model,
           status: res.ok ? "operational" : `error (${res.status})`,

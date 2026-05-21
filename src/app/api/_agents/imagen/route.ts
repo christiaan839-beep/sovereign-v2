@@ -14,6 +14,8 @@ import { getNimKey } from "@/lib/nvidia";
  * Output: { images: [{ base64, mimeType }] }
  */
 
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export const POST = createAgentRoute({
   name: "imagen",
   requiredFields: ["prompt"],
@@ -27,9 +29,7 @@ export const POST = createAgentRoute({
     // --- Strategy 1: Google Imagen 4 ---
     if (geminiKey) {
       try {
-        const res = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${geminiKey}`,
-          {
+        const res = await outboundFetchAsResponse(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${geminiKey}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -40,8 +40,7 @@ export const POST = createAgentRoute({
                 personGeneration: "allow_adult",
               },
             }),
-          }
-        );
+          }, { ruleId: "agents.imagen.route.1", allowedHosts: ["generativelanguage.googleapis.com"] });
 
         if (res.ok) {
           const data = await res.json();
@@ -88,7 +87,7 @@ export const POST = createAgentRoute({
       };
       const dims = dimensionMap[aspectRatio] || { width: 1024, height: 1024 };
 
-      const nimRes = await fetch("https://integrate.api.nvidia.com/v1/images/generations", {
+      const nimRes = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/images/generations", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -103,7 +102,7 @@ export const POST = createAgentRoute({
           steps: 28,
           n: numberOfImages,
         }),
-      });
+      }, { ruleId: "agents.imagen.route.2", allowedHosts: ["integrate.api.nvidia.com"] });
 
       if (!nimRes.ok) {
         const errorText = await nimRes.text();

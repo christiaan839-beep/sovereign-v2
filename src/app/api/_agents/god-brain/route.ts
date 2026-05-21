@@ -9,6 +9,8 @@ import { ai } from "@/lib/ai";
  * Output: complete intelligence package — analysis, safety check, PII scrub,
  *         embeddings for memory, voice-ready script, and image generation.
  */
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export const POST = createAgentRoute({
   name: "god-brain",
   requiredFields: ["input"],
@@ -25,9 +27,7 @@ export const POST = createAgentRoute({
     // STAGE 1: Content Safety Check
     const t1 = Date.now();
     try {
-      const safetyRes = await fetch(
-        "https://integrate.api.nvidia.com/v1/chat/completions",
-        {
+      const safetyRes = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -43,8 +43,7 @@ export const POST = createAgentRoute({
             ],
             max_tokens: 100,
           }),
-        },
-      );
+        }, { ruleId: "agents.god-brain.route.1", allowedHosts: ["integrate.api.nvidia.com"] });
       results.safety = safetyRes.ok
         ? (await safetyRes.json()).choices?.[0]?.message?.content
         : "Safety check skipped";
@@ -55,9 +54,7 @@ export const POST = createAgentRoute({
 
     // STAGE 2: Deep Analysis
     const t2 = Date.now();
-    const analysisRes = await fetch(
-      "https://integrate.api.nvidia.com/v1/chat/completions",
-      {
+    const analysisRes = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -106,8 +103,7 @@ current. Your confidence is not an excuse to skip verification.
           max_tokens: depth === "deep" ? 1500 : 700,
           temperature: 0.3,
         }),
-      },
-    );
+      }, { ruleId: "agents.god-brain.route.2", allowedHosts: ["integrate.api.nvidia.com"] });
     if (analysisRes.ok) {
       const data = await analysisRes.json();
       results.analysis = data.choices?.[0]?.message?.content || "";
@@ -189,9 +185,7 @@ regulation, current competitor positioning), flag it as
     // STAGE 3: Vector Embedding
     const t3 = Date.now();
     try {
-      const embedRes = await fetch(
-        "https://integrate.api.nvidia.com/v1/embeddings",
-        {
+      const embedRes = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/embeddings", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -202,8 +196,7 @@ regulation, current competitor positioning), flag it as
             input: [String(results.analysis || input).slice(0, 500)],
             encoding_format: "float",
           }),
-        },
-      );
+        }, { ruleId: "agents.god-brain.route.3", allowedHosts: ["integrate.api.nvidia.com"] });
       if (embedRes.ok) {
         const embedData = await embedRes.json();
         results.embedding = {
@@ -221,9 +214,7 @@ regulation, current competitor positioning), flag it as
     if (depth === "deep") {
       const t4 = Date.now();
       try {
-        const voiceRes = await fetch(
-          "https://integrate.api.nvidia.com/v1/chat/completions",
-          {
+        const voiceRes = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -241,8 +232,7 @@ regulation, current competitor positioning), flag it as
               ],
               max_tokens: 200,
             }),
-          },
-        );
+          }, { ruleId: "agents.god-brain.route.4", allowedHosts: ["integrate.api.nvidia.com"] });
         if (voiceRes.ok) {
           results.voiceScript =
             (await voiceRes.json()).choices?.[0]?.message?.content || "";
@@ -257,9 +247,7 @@ regulation, current competitor positioning), flag it as
     if (depth === "deep") {
       const t5 = Date.now();
       try {
-        const imgRes = await fetch(
-          "https://integrate.api.nvidia.com/v1/images/generations",
-          {
+        const imgRes = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/images/generations", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -272,8 +260,7 @@ regulation, current competitor positioning), flag it as
               height: 512,
               n: 1,
             }),
-          },
-        );
+          }, { ruleId: "agents.god-brain.route.5", allowedHosts: ["integrate.api.nvidia.com"] });
         if (imgRes.ok) {
           const imgData = await imgRes.json();
           results.visual = {

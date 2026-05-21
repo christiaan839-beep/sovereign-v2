@@ -4,6 +4,8 @@ import { createAgentRoute } from "@/lib/agent-factory";
  * FREE EMBEDDINGS — Uses llama-nemotron-embed-1b-v2 from NVIDIA NIM.
  * Replaces OpenAI embeddings entirely. Zero cost.
  */
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export const POST = createAgentRoute({
   name: "embed",
   handler: async ({ input, email, userId }) => {
@@ -16,7 +18,7 @@ export const POST = createAgentRoute({
     const nimKey = process.env.NVIDIA_NIM_API_KEY;
     if (!nimKey) return ({ error: "NVIDIA_NIM_API_KEY not configured." });
 
-    const res = await fetch("https://integrate.api.nvidia.com/v1/embeddings", {
+    const res = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/embeddings", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -27,7 +29,7 @@ export const POST = createAgentRoute({
         input: texts,
         encoding_format: "float",
       }),
-    });
+    }, { ruleId: "agents.embed.route.1", allowedHosts: ["integrate.api.nvidia.com"] });
 
     if (!res.ok) {
       const errText = await res.text();

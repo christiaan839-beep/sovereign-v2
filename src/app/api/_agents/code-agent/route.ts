@@ -7,6 +7,8 @@ import { getNimKey } from "@/lib/nvidia";
  * HTML, CSS, JS, Python, TypeScript, React, SQL, shell scripts, debugging.
  */
 
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 const schema = z.object({
   task: z.string().min(3, "Task description is required").max(5000),
   language: z.string().max(50).optional().default("typescript"),
@@ -22,7 +24,7 @@ export const POST = createAgentRoute({
     const { task, language, context } = input as z.infer<typeof schema>;
     const start = Date.now();
 
-    const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+    const res = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${await getNimKey()}` },
       body: JSON.stringify({
@@ -37,7 +39,7 @@ export const POST = createAgentRoute({
         max_tokens: 2048,
         temperature: 0.2,
       }),
-    });
+    }, { ruleId: "agents.code-agent.route.1", allowedHosts: ["integrate.api.nvidia.com"] });
 
     if (!res.ok) throw new Error(`NIM API returned ${res.status}`);
     const data = await res.json();

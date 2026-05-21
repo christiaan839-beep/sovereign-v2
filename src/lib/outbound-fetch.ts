@@ -365,3 +365,52 @@ export async function outboundFetch(
     truncated,
   };
 }
+
+/**
+ * Wave 116 — Response-compatible wrapper around `outboundFetch`.
+ *
+ * Why this exists:
+ *   `outboundFetch` returns a structured `OutboundFetchResult` — different
+ *   shape from the web standard `Response`. That means converting an
+ *   existing `await fetch(...).json()` callsite to `outboundFetch`
+ *   requires touching the consumer code too (rename `.json()` to
+ *   `JSON.parse(result.body)`, replace `.ok` with `result.ok`, etc.).
+ *   Across 156 remaining callsites in the M1 backlog that's a lot of
+ *   per-site verification.
+ *
+ *   This wrapper rebuilds a real `Response` from the structured result
+ *   so the consumer code stays unchanged. The SSRF guard, hostname
+ *   allowlist, byte cap, defense receipts, and DNS-resolved private-IP
+ *   check ALL still run — only the return shape adapter changes.
+ *
+ * Usage (drop-in for `fetch`):
+ *   const res = await outboundFetchAsResponse(url, init, {
+ *     ruleId: "agent.foo.bar",
+ *     allowedHosts: ["api.provider.com"],
+ *   });
+ *   if (!res.ok) ...
+ *   const data = await res.json();
+ *
+ * Caveats:
+ *   - The Response body is the already-cap-truncated body string. Stream
+ *     consumers won't get more bytes than `maxResponseBytes` allowed.
+ *   - Only `content-type` is preserved on the rebuilt Response headers —
+ *     callers depending on other response headers (e.g. `etag`,
+ *     `x-rate-limit`) must continue to use raw `outboundFetch` and read
+ *     headers from the `init.headers` echo (or do their own raw fetch
+ *     through a different code path).
+ */
+export async function outboundFetchAsResponse(
+  url: string,
+  init: RequestInit,
+  opts: OutboundFetchOptions,
+): Promise<Response> {
+  const result = await outboundFetch(url, init, opts);
+  return new Response(result.body, {
+    status: result.status,
+    statusText: result.status >= 200 && result.status < 300 ? "OK" : "",
+    headers: {
+      "content-type": result.contentType ?? "application/octet-stream",
+    },
+  });
+}

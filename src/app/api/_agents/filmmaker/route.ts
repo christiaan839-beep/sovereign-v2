@@ -15,6 +15,8 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
  *
  * @see https://ai.google.dev/gemini-api/docs/video-generation
  */
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 async function submitVeoGeneration(
   prompt: string,
   aspectRatio: string = "16:9",
@@ -28,9 +30,7 @@ async function submitVeoGeneration(
   }
 
   try {
-    const res = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/veo-3.1-generate-001:predictLongRunning",
-      {
+    const res = await outboundFetchAsResponse("https://generativelanguage.googleapis.com/v1beta/models/veo-3.1-generate-001:predictLongRunning", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -44,8 +44,7 @@ async function submitVeoGeneration(
             sampleCount: 1,
           },
         }),
-      },
-    );
+      }, { ruleId: "agents.filmmaker.route.1", allowedHosts: ["generativelanguage.googleapis.com"] });
 
     if (!res.ok) {
       const errorBody = await res.text();
@@ -112,9 +111,7 @@ Output a highly structured JSON array of 5 exact visual prompts to be fed into V
     });
 
     // Step 1: Generate the production brief via Gemini
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${GEMINI_API_KEY}`,
-      {
+    const response = await outboundFetchAsResponse(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${GEMINI_API_KEY}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -133,8 +130,7 @@ Output a highly structured JSON array of 5 exact visual prompts to be fed into V
             responseMimeType: "application/json",
           },
         }),
-      },
-    );
+      }, { ruleId: "agents.filmmaker.route.2", allowedHosts: ["generativelanguage.googleapis.com"] });
 
     if (!response.ok) {
       throw new Error(`Google AI API Error: ${response.statusText}`);

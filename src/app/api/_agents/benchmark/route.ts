@@ -7,6 +7,8 @@ import { getNimKey } from "@/lib/nvidia";
  * Publishes results for authority building.
  */
 
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export const POST = createAgentRoute({
   name: "benchmark",
   handler: async ({ input, email, userId }) => {
@@ -24,7 +26,7 @@ export const POST = createAgentRoute({
       models.map(async (model) => {
         const start = Date.now();
         try {
-          const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+          const res = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -36,7 +38,7 @@ export const POST = createAgentRoute({
               max_tokens: 300,
               temperature: 0.7,
             }),
-          });
+          }, { ruleId: "agents.benchmark.route.1", allowedHosts: ["integrate.api.nvidia.com"] });
 
           const data = await res.json();
           const output = data?.choices?.[0]?.message?.content || "";

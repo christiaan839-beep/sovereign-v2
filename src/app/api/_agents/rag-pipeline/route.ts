@@ -5,6 +5,8 @@ import { createAgentRoute } from "@/lib/agent-factory";
  * Combines: embed → search → rerank → generate.
  * This is the NVIDIA NeMo Retriever Blueprint implemented as a single endpoint.
  */
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export const POST = createAgentRoute({
   name: "rag-pipeline",
   handler: async ({ input, email, userId }) => {
@@ -19,9 +21,7 @@ export const POST = createAgentRoute({
     if (!nimKey) return { error: "NVIDIA_NIM_API_KEY not configured." };
 
     // Step 1: Embed the query
-    const embedRes = await fetch(
-      "https://integrate.api.nvidia.com/v1/embeddings",
-      {
+    const embedRes = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/embeddings", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -32,8 +32,7 @@ export const POST = createAgentRoute({
           input: [query],
           encoding_format: "float",
         }),
-      },
-    );
+      }, { ruleId: "agents.rag-pipeline.route.1", allowedHosts: ["integrate.api.nvidia.com"] });
     const embedData = embedRes.ok ? await embedRes.json() : null;
     const queryEmbedding = embedData?.data?.[0]?.embedding || [];
 
@@ -41,9 +40,7 @@ export const POST = createAgentRoute({
     let rankedDocs = documents;
     if (documents.length > 0) {
       // Use reranker for better results
-      const rerankRes = await fetch(
-        "https://integrate.api.nvidia.com/v1/ranking",
-        {
+      const rerankRes = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/ranking", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -54,8 +51,7 @@ export const POST = createAgentRoute({
             query: { text: query },
             passages: documents.map((d: string) => ({ text: d })),
           }),
-        },
-      );
+        }, { ruleId: "agents.rag-pipeline.route.2", allowedHosts: ["integrate.api.nvidia.com"] });
 
       if (rerankRes.ok) {
         const rerankData = await rerankRes.json();
@@ -74,9 +70,7 @@ export const POST = createAgentRoute({
         ? `\n\nContext from retrieved documents:\n${rankedDocs.map((d: string, i: number) => `[${i + 1}] ${d}`).join("\n")}`
         : "";
 
-    const genRes = await fetch(
-      "https://integrate.api.nvidia.com/v1/chat/completions",
-      {
+    const genRes = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -94,8 +88,7 @@ export const POST = createAgentRoute({
           max_tokens: 500,
           temperature: 0.2,
         }),
-      },
-    );
+      }, { ruleId: "agents.rag-pipeline.route.3", allowedHosts: ["integrate.api.nvidia.com"] });
     const genData = genRes.ok
       ? await genRes.json()
       : { choices: [{ message: { content: "Generation failed." } }] };

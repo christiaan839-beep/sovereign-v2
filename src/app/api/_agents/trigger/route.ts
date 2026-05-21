@@ -206,7 +206,7 @@ async function handlePlaybookTrigger(
   // Call the coordinator to execute the playbook
   try {
     const baseUrl = getBaseUrl();
-    const coordinatorRes = await fetch(`${baseUrl}/api/agents/coordinator`, {
+    const coordinatorRes = await outboundFetchAsResponse(`${baseUrl}/api/agents/coordinator`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -216,7 +216,7 @@ async function handlePlaybookTrigger(
         confirmed: true,
       }),
       signal: AbortSignal.timeout(120_000), // 2 min timeout for multi-step playbooks
-    });
+    }, { ruleId: "agents.trigger.route.1", allowedHosts: [new URL(baseUrl).hostname] });
 
     const data = await coordinatorRes.json();
     const duration_ms = Date.now() - startTime;
@@ -353,12 +353,12 @@ async function handleAgentTrigger(
       }
     }
 
-    const agentRes = await fetch(`${baseUrl}/api/agents/${agent}`, {
+    const agentRes = await outboundFetchAsResponse(`${baseUrl}/api/agents/${agent}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(agentBody),
       signal: AbortSignal.timeout(60_000),
-    });
+    }, { ruleId: "agents.trigger.route.2", allowedHosts: [new URL(baseUrl).hostname] });
 
     const data = await agentRes.json();
     const duration_ms = Date.now() - startTime;
@@ -433,6 +433,8 @@ async function handleAgentTrigger(
 }
 
 // ─── GET Handler — API Documentation ────────────────────────────────────────
+
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
 
 export async function GET() {
   return NextResponse.json({

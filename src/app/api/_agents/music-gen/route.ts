@@ -9,6 +9,8 @@ const log = createLogger("music-gen");
  * Available on Vertex AI (public preview) and Gemini API.
  * Outputs are watermarked and avoid mimicking existing artists.
  */
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export const POST = createAgentRoute({
   name: "music-gen",
   handler: async ({ input, email, userId }) => {
@@ -34,9 +36,7 @@ export const POST = createAgentRoute({
     if (instruments) enhancedPrompt += `. Instruments: ${instruments}`;
 
     // Lyria 3 Pro API via Gemini API
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/lyria-3-pro:generateMusic?key=${apiKey}`,
-      {
+    const res = await outboundFetchAsResponse(`https://generativelanguage.googleapis.com/v1beta/models/lyria-3-pro:generateMusic?key=${apiKey}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -45,8 +45,7 @@ export const POST = createAgentRoute({
             durationSeconds: Math.min(duration, 180), // Max 3 minutes
           },
         }),
-      },
-    );
+      }, { ruleId: "agents.music-gen.route.1", allowedHosts: ["generativelanguage.googleapis.com"] });
 
     if (!res.ok) {
       const errorText = await res.text();

@@ -13,6 +13,8 @@ import { persistRead, persistAppend } from "@/lib/persist";
  * This is the self-teaching backbone of the platform.
  */
 
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 interface FlywheelEntry {
   id: string;
   agent: string;
@@ -59,7 +61,7 @@ export const POST = createAgentRoute({
         return { success: true, message: `Need at least 10 data points. Current: ${agentData.length}` };
       }
 
-      const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+      const res = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${await getNimKey()}` },
         body: JSON.stringify({
@@ -71,7 +73,7 @@ export const POST = createAgentRoute({
           max_tokens: 800,
           temperature: 0.2,
         }),
-      });
+      }, { ruleId: "agents.flywheel.route.1", allowedHosts: ["integrate.api.nvidia.com"] });
 
       const optimData = await res.json();
 

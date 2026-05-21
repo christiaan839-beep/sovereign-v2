@@ -4,7 +4,7 @@ import { createAgentRoute } from "@/lib/agent-factory";
 import { sendOnboardingEmail } from "@/lib/onboarding-emails";
 import { getBaseUrl } from "@/lib/base-url";
 import { getInternalWebhookSecret } from "@/lib/internal-secret";
-import { outboundFetch } from "@/lib/outbound-fetch";
+import { outboundFetch, outboundFetchAsResponse } from "@/lib/outbound-fetch";
 
 function escapeHtml(str: string): string {
   return str
@@ -68,11 +68,18 @@ const handler = createAgentRoute({
     const baseUrl = getBaseUrl();
 
     try {
-      const verticalRes = await fetch(`${baseUrl}/api/agents/verticals`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ verticalId: vertical, clientName }),
-      });
+      const verticalRes = await outboundFetchAsResponse(
+        `${baseUrl}/api/agents/verticals`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ verticalId: vertical, clientName }),
+        },
+        {
+          ruleId: "agents.auto-onboard.route.1",
+          allowedHosts: [new URL(baseUrl).hostname],
+        },
+      );
       const verticalData = await verticalRes.json();
       onboardingSteps.push({
         step: "Deploy Vertical Template",

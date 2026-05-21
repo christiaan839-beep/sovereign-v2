@@ -9,6 +9,8 @@ import { getNimKey } from "@/lib/nvidia";
  * Uses MiniMax M2.7's native multi-agent collaboration capability.
  */
 
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export const POST = createAgentRoute({
   name: "swarm",
   requiredFields: ["task"],
@@ -27,9 +29,7 @@ export const POST = createAgentRoute({
       async (agent: { model: string; name: string }) => {
         const startTime = Date.now();
         try {
-          const res = await fetch(
-            "https://integrate.api.nvidia.com/v1/chat/completions",
-            {
+          const res = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
@@ -48,8 +48,7 @@ export const POST = createAgentRoute({
                 max_tokens: 1024,
                 temperature: 0.7,
               }),
-            },
-          );
+            }, { ruleId: "agents.swarm.route.1", allowedHosts: ["integrate.api.nvidia.com"] });
 
           const data = await res.json();
           return {
@@ -84,9 +83,7 @@ export const POST = createAgentRoute({
         .map((r, i) => `=== Agent ${i + 1} (${r.agent}) ===\n${r.output}`)
         .join("\n\n");
 
-      const juryRes = await fetch(
-        "https://integrate.api.nvidia.com/v1/chat/completions",
-        {
+      const juryRes = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -104,8 +101,7 @@ export const POST = createAgentRoute({
             max_tokens: 1500,
             temperature: 0.3,
           }),
-        },
-      );
+        }, { ruleId: "agents.swarm.route.2", allowedHosts: ["integrate.api.nvidia.com"] });
 
       const juryData = await juryRes.json();
       juryVerdict = juryData?.choices?.[0]?.message?.content || null;

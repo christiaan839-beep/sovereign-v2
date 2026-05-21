@@ -2,6 +2,8 @@ import { createAgentRoute } from "@/lib/agent-factory";
 import { checkpoint as budgetCheckpoint } from "@/lib/execution-budget";
 import { createHash } from "node:crypto";
 
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 export const POST = createAgentRoute({
@@ -33,9 +35,7 @@ Keep it under 4 sentences after the disclosure. Tone: Professional, concise, con
     });
 
     // Fetch the dynamic conversational hook from Gemini
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-      {
+    const response = await outboundFetchAsResponse(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -49,8 +49,7 @@ Keep it under 4 sentences after the disclosure. Tone: Professional, concise, con
           systemInstruction: { parts: [{ text: systemInstruction }] },
           generationConfig: { temperature: 0.3 },
         }),
-      },
-    );
+      }, { ruleId: "agents.voice.route.1", allowedHosts: ["generativelanguage.googleapis.com"] });
 
     const aiData = await response.json();
     const generatedScript =

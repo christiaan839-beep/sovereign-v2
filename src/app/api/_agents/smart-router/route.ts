@@ -572,6 +572,8 @@ function findBestModel(
  * For complex multi-step goals, use Claude to compile a DAG
  * (Directed Acyclic Graph) of agent tasks.
  */
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 async function compileDAG(
   prompt: string,
 ): Promise<Array<{ agent: string; task: string; dependsOn: string[] }> | null> {
@@ -911,9 +913,7 @@ Then give your final answer.`
 
     const nimCtrl = new AbortController();
     const nimTimeout = setTimeout(() => nimCtrl.abort(), 30000);
-    const res = await fetch(
-      "https://integrate.api.nvidia.com/v1/chat/completions",
-      {
+    const res = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -929,8 +929,7 @@ Then give your final answer.`
           temperature: isComplexTask ? 0.4 : 0.7,
         }),
         signal: nimCtrl.signal,
-      },
-    );
+      }, { ruleId: "agents.smart-router.route.1", allowedHosts: ["integrate.api.nvidia.com"] });
     clearTimeout(nimTimeout);
 
     const data = await res.json();
@@ -949,9 +948,7 @@ Then give your final answer.`
         outputLength: finalResult.length,
       });
       try {
-        const escalateRes = await fetch(
-          "https://integrate.api.nvidia.com/v1/chat/completions",
-          {
+        const escalateRes = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -967,8 +964,7 @@ Then give your final answer.`
               temperature: 0.5,
             }),
             signal: AbortSignal.timeout(30000),
-          },
-        );
+          }, { ruleId: "agents.smart-router.route.2", allowedHosts: ["integrate.api.nvidia.com"] });
         const escalateData = await escalateRes.json();
         const escalated = escalateData?.choices?.[0]?.message?.content;
         if (escalated && escalated.length > finalResult.length) {

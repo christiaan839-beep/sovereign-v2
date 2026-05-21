@@ -9,6 +9,8 @@ import { getNimKey } from "@/lib/nvidia";
  * 3. Resend fires the email (if target email provided)
  */
 
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 const schema = z.object({
   companyName: z.string().min(1, "Company name is required").max(200),
   targetEmail: z.string().email().optional(),
@@ -58,7 +60,7 @@ export const POST = createAgentRoute({
 
     if (tavilyKey) {
       try {
-        const tavilyRes = await fetch("https://api.tavily.com/search", {
+        const tavilyRes = await outboundFetchAsResponse("https://api.tavily.com/search", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -68,7 +70,7 @@ export const POST = createAgentRoute({
             max_results: 5,
             include_answer: true,
           }),
-        });
+        }, { ruleId: "agents.abm-artillery.route.1", allowedHosts: ["api.tavily.com"] });
         const tavilyData = await tavilyRes.json();
         companyIntel =
           tavilyData.answer ||
@@ -83,9 +85,7 @@ export const POST = createAgentRoute({
     }
 
     // Step 2: NIM generates outreach email
-    const nimRes = await fetch(
-      "https://integrate.api.nvidia.com/v1/chat/completions",
-      {
+    const nimRes = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -111,8 +111,7 @@ export const POST = createAgentRoute({
           max_tokens: 500,
           temperature: 0.7,
         }),
-      },
-    );
+      }, { ruleId: "agents.abm-artillery.route.2", allowedHosts: ["integrate.api.nvidia.com"] });
 
     const nimData = await nimRes.json();
     const emailBody =
@@ -133,7 +132,7 @@ export const POST = createAgentRoute({
     const resendKey = process.env.RESEND_API_KEY;
     if (resendKey && targetEmail) {
       try {
-        const resendRes = await fetch("https://api.resend.com/emails", {
+        const resendRes = await outboundFetchAsResponse("https://api.resend.com/emails", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -147,7 +146,7 @@ export const POST = createAgentRoute({
             subject,
             text: bodyWithoutSubject,
           }),
-        });
+        }, { ruleId: "agents.abm-artillery.route.3", allowedHosts: ["api.resend.com"] });
         emailSent = resendRes.ok;
       } catch {
         /* email send failed — non-blocking */

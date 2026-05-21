@@ -19,6 +19,8 @@ const log = createLogger("claude-think");
  * Output: { thinking, answer, thinkingTokens, model }
  */
 
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export const POST = createAgentRoute({
   name: "claude-think",
   requiredFields: ["problem"],
@@ -55,7 +57,7 @@ export const POST = createAgentRoute({
     });
 
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await outboundFetchAsResponse("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -78,7 +80,7 @@ export const POST = createAgentRoute({
             },
           ],
         }),
-      });
+      }, { ruleId: "agents.claude-think.route.1", allowedHosts: ["api.anthropic.com"] });
 
       if (!res.ok) {
         const errorText = await res.text();

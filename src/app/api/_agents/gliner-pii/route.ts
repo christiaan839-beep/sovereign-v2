@@ -9,6 +9,8 @@ import { getNimKey } from "@/lib/nvidia";
  * passport numbers, medical IDs, bank accounts, IP addresses.
  */
 
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export const POST = createAgentRoute({
   name: "gliner-pii",
   handler: async ({ input, email, userId }) => {
@@ -30,9 +32,7 @@ export const POST = createAgentRoute({
       return { error: "text is required." };
     }
 
-    const res = await fetch(
-      "https://integrate.api.nvidia.com/v1/chat/completions",
-      {
+    const res = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -50,8 +50,7 @@ export const POST = createAgentRoute({
           max_tokens: 1024,
           temperature: 0.1,
         }),
-      },
-    );
+      }, { ruleId: "agents.gliner-pii.route.1", allowedHosts: ["integrate.api.nvidia.com"] });
 
     const data = await res.json();
     const rawOutput = data?.choices?.[0]?.message?.content || "[]";

@@ -1,5 +1,7 @@
 import { createAgentRoute } from "@/lib/agent-factory";
 import { createLogger } from "@/lib/logger";
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 const log = createLogger("closer-agent");
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
@@ -41,9 +43,7 @@ Keep replies under 3 sentences. Don't waste their time.`;
     }
 
     // Google Gemini 1.5 Flash REST API (Bypassing NPM lockouts)
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-      {
+    const response = await outboundFetchAsResponse(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -56,8 +56,7 @@ Keep replies under 3 sentences. Don't waste their time.`;
             maxOutputTokens: 300,
           },
         }),
-      },
-    );
+      }, { ruleId: "agents.closer.route.1", allowedHosts: ["generativelanguage.googleapis.com"] });
 
     if (!response.ok) {
       throw new Error(`Google AI API Error: ${response.statusText}`);
@@ -70,17 +69,14 @@ Keep replies under 3 sentences. Don't waste their time.`;
 
     // Production Meta Hook Dispatch
     if (META_ACCESS_TOKEN && senderId !== "test_lead_id") {
-      await fetch(
-        `https://graph.facebook.com/v18.0/me/messages?access_token=${META_ACCESS_TOKEN}`,
-        {
+      await outboundFetchAsResponse(`https://graph.facebook.com/v18.0/me/messages?access_token=${META_ACCESS_TOKEN}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             recipient: { id: senderId },
             message: { text: replyText },
           }),
-        },
-      );
+        }, { ruleId: "agents.closer.route.2", allowedHosts: ["graph.facebook.com"] });
     }
 
     return {

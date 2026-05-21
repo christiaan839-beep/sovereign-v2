@@ -2,6 +2,8 @@ import { createAgentRoute } from "@/lib/agent-factory";
 import { z } from "zod";
 import { getNimKey } from "@/lib/nvidia";
 
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export const POST = createAgentRoute({
   name: "omni-search",
   schema: z.object({
@@ -14,7 +16,7 @@ export const POST = createAgentRoute({
     const sources = input.sources as string[];
     const key = await getNimKey();
 
-    const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+    const res = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
       method: "POST",
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -25,7 +27,7 @@ export const POST = createAgentRoute({
         ],
         max_tokens: 2048, temperature: 0.3,
       }),
-    });
+    }, { ruleId: "agents.omni-search.route.1", allowedHosts: ["integrate.api.nvidia.com"] });
 
     if (!res.ok) throw new Error(`NIM returned ${res.status}`);
     const data = await res.json();

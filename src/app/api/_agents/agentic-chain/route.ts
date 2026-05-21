@@ -16,6 +16,8 @@ import { getBaseUrl } from "@/lib/base-url";
  * Output: { result, steps[], toolCalls }
  */
 
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 const AVAILABLE_TOOLS: Record<string, { description: string; endpoint: string; paramKey: string }> = {
   search: { description: "Search the web for current information", endpoint: "/api/_agents/grounded-search", paramKey: "query" },
   analyze_competitor: { description: "Analyze a competitor website", endpoint: "/api/_agents/competitive-radar", paramKey: "url" },
@@ -134,12 +136,12 @@ Decide the next step. If the goal is already achieved, call the "done" tool.`;
       }
 
       try {
-        const toolRes = await fetch(`${getBaseUrl()}${tool.endpoint}`, {
+        const toolRes = await outboundFetchAsResponse(`${getBaseUrl()}${tool.endpoint}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ [tool.paramKey]: plan.input }),
           signal: AbortSignal.timeout(15000),
-        });
+        }, { ruleId: "agents.agentic-chain.route.1", allowedHosts: [new URL(`${getBaseUrl()}${tool.endpoint}`).hostname] });
 
         const toolData = await toolRes.json();
         const observation = JSON.stringify(toolData).slice(0, 1000);

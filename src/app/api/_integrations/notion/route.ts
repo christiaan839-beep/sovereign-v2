@@ -89,11 +89,11 @@ export async function POST(req: Request) {
       }));
     }
 
-    const res = await fetch(`${NOTION_BASE}/pages`, {
+    const res = await outboundFetchAsResponse(`${NOTION_BASE}/pages`, {
       method: "POST",
       headers: notionHeaders(apiKey),
       body: JSON.stringify(pagePayload),
-    });
+    }, { ruleId: "integrations.notion.route.1", allowedHosts: [new URL(NOTION_BASE).hostname] });
 
     if (!res.ok) {
       const errBody = await res.json().catch(() => ({}));
@@ -138,7 +138,7 @@ export async function GET(req: NextRequest) {
 
     log.info("Searching Notion", { query, pageSize, userId: auth.userId });
 
-    const res = await fetch(`${NOTION_BASE}/search`, {
+    const res = await outboundFetchAsResponse(`${NOTION_BASE}/search`, {
       method: "POST", // Notion search is POST
       headers: notionHeaders(apiKey),
       body: JSON.stringify({
@@ -149,7 +149,7 @@ export async function GET(req: NextRequest) {
           timestamp: "last_edited_time",
         },
       }),
-    });
+    }, { ruleId: "integrations.notion.route.2", allowedHosts: [new URL(NOTION_BASE).hostname] });
 
     if (!res.ok) {
       const errBody = await res.json().catch(() => ({}));
@@ -190,6 +190,8 @@ function splitIntoChunks(text: string, maxLen: number): string[] {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 function extractTitle(page: any): string {
   try {
     const props = page.properties ?? {};

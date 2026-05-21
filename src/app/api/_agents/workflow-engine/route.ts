@@ -18,6 +18,8 @@ const log = createLogger("workflow-engine");
  * Output: { results: [...], duration, nodesExecuted }
  */
 
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 interface WorkflowNode {
   id: string;
   type: string;           // Agent endpoint key (e.g., "blog-gen", "translate", "flux-image")
@@ -121,12 +123,12 @@ export const POST = createAgentRoute({
 
         const nodeStart = Date.now();
         try {
-          const res = await fetch(`${baseUrl}${endpoint}`, {
+          const res = await outboundFetchAsResponse(`${baseUrl}${endpoint}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(resolvedParams),
             signal: AbortSignal.timeout(30000),
-          });
+          }, { ruleId: "agents.workflow-engine.route.1", allowedHosts: [new URL(baseUrl).hostname] });
 
           const data = await res.json();
           results[node.id] = { output: data, durationMs: Date.now() - nodeStart, status: "success" };

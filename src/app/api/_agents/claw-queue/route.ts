@@ -52,7 +52,7 @@ async function processQueue() {
 
       switch (task.type) {
         case "competitor-audit": {
-          const res = await fetch(`${clawUrl}/execute`, {
+          const res = await outboundFetchAsResponse(`${clawUrl}/execute`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -61,25 +61,25 @@ async function processQueue() {
               selectors: ["h1", "h2", "meta[name='description']", "title"],
               screenshot: true,
             }),
-          });
+          }, { ruleId: "agents.claw-queue.route.1", allowedHosts: [new URL(clawUrl).hostname] });
           task.result = res.ok
             ? await res.json()
             : { error: "NemoClaw offline" };
           break;
         }
         case "screenshot": {
-          const res = await fetch(`${clawUrl}/screenshot`, {
+          const res = await outboundFetchAsResponse(`${clawUrl}/screenshot`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ url: task.payload.url, fullPage: true }),
-          });
+          }, { ruleId: "agents.claw-queue.route.2", allowedHosts: [new URL(clawUrl).hostname] });
           task.result = res.ok
             ? await res.json()
             : { error: "Screenshot failed" };
           break;
         }
         case "lead-scrape": {
-          const res = await fetch(`${clawUrl}/execute`, {
+          const res = await outboundFetchAsResponse(`${clawUrl}/execute`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -87,13 +87,13 @@ async function processQueue() {
               url: task.payload.url,
               patterns: ["email", "phone", "linkedin"],
             }),
-          });
+          }, { ruleId: "agents.claw-queue.route.3", allowedHosts: [new URL(clawUrl).hostname] });
           task.result = res.ok ? await res.json() : { error: "Scrape failed" };
           break;
         }
         case "social-post": {
           // NemoClaw navigates to social platform and posts
-          const res = await fetch(`${clawUrl}/execute`, {
+          const res = await outboundFetchAsResponse(`${clawUrl}/execute`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -102,12 +102,12 @@ async function processQueue() {
               content: task.payload.content,
               media: task.payload.mediaUrl,
             }),
-          });
+          }, { ruleId: "agents.claw-queue.route.4", allowedHosts: [new URL(clawUrl).hostname] });
           task.result = res.ok ? await res.json() : { error: "Post failed" };
           break;
         }
         case "form-fill": {
-          const res = await fetch(`${clawUrl}/execute`, {
+          const res = await outboundFetchAsResponse(`${clawUrl}/execute`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -116,7 +116,7 @@ async function processQueue() {
               fields: task.payload.fields,
               submit: task.payload.submit !== false,
             }),
-          });
+          }, { ruleId: "agents.claw-queue.route.5", allowedHosts: [new URL(clawUrl).hostname] });
           task.result = res.ok
             ? await res.json()
             : { error: "Form fill failed" };
@@ -248,6 +248,8 @@ async function _postHandler(request: Request) {
 }
 
 // Factory wrapper for POST (adds safety pipeline)
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export const POST = createAgentRoute({
   name: "claw-queue",
   handler: async ({ input, email, userId, request }) => {

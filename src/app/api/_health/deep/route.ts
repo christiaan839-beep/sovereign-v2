@@ -7,6 +7,8 @@ import { capabilities } from "@/lib/env.validated";
  * DEEP HEALTH CHECK — Tests actual connectivity to all services.
  * Use /api/health for basic status, /api/health/deep for production monitoring.
  */
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export async function GET() {
   const checks: Record<string, { status: string; latencyMs?: number; error?: string }> = {};
 
@@ -27,11 +29,11 @@ export async function GET() {
   if (capabilities.nvidia) {
     const nimStart = Date.now();
     try {
-      const res = await fetch("https://integrate.api.nvidia.com/v1/models", {
+      const res = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/models", {
         method: "GET",
         headers: { Authorization: `Bearer ${process.env.NVIDIA_NIM_API_KEY}` },
         signal: AbortSignal.timeout(5000),
-      });
+      }, { ruleId: "health.deep.route.1", allowedHosts: ["integrate.api.nvidia.com"] });
       checks.nvidia_nim = {
         status: res.ok ? "operational" : `degraded (${res.status})`,
         latencyMs: Date.now() - nimStart,

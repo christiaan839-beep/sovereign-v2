@@ -5,6 +5,8 @@ import { whitelabelConfig } from '@/db/schema';
 import { auditLog } from '@/lib/audit-log';
 import { createLogger } from '@/lib/logger';
 
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 const log = createLogger('provisioning');
 const VERCEL_API_URL = 'https://api.vercel.com';
 const SOURCE_REPO = 'christiaan839-beep/sovereign-matrix'; // The master template
@@ -34,7 +36,7 @@ export async function POST(req: Request) {
     const projectSlug = agencyName.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-');
 
     // 1. Create the Vercel Project
-    const createProjectRes = await fetch(`${VERCEL_API_URL}/v10/projects`, {
+    const createProjectRes = await outboundFetchAsResponse(`${VERCEL_API_URL}/v10/projects`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${vercelToken}`,
@@ -70,7 +72,7 @@ export async function POST(req: Request) {
             }
         ]
       })
-    });
+    }, { ruleId: "misc.provisioning.route.1", allowedHosts: [new URL(VERCEL_API_URL).hostname] });
 
     if (!createProjectRes.ok) {
       const errorData = await createProjectRes.json();
@@ -81,7 +83,7 @@ export async function POST(req: Request) {
 
     // 2. Assign Domain (if requested)
     if (requestedDomain) {
-        await fetch(`${VERCEL_API_URL}/v10/projects/${projectData.id}/domains`, {
+        await outboundFetchAsResponse(`${VERCEL_API_URL}/v10/projects/${projectData.id}/domains`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${vercelToken}`,
@@ -90,7 +92,7 @@ export async function POST(req: Request) {
             body: JSON.stringify({
                 name: requestedDomain
             })
-        });
+        }, { ruleId: "misc.provisioning.route.2", allowedHosts: [new URL(VERCEL_API_URL).hostname] });
     }
 
     // 3. Update the Database Record

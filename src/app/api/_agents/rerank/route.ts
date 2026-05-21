@@ -4,6 +4,8 @@ import { createAgentRoute } from "@/lib/agent-factory";
  * RERANK — Uses llama-nemotron-rerank-1b-v2 to re-score search results.
  * Makes RAG retrieval dramatically more accurate by re-ordering by relevance.
  */
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export const POST = createAgentRoute({
   name: "rerank",
   handler: async ({ input, email, userId }) => {
@@ -16,7 +18,7 @@ export const POST = createAgentRoute({
     const nimKey = process.env.NVIDIA_NIM_API_KEY;
     if (!nimKey) return ({ error: "NVIDIA_NIM_API_KEY not configured." });
 
-    const res = await fetch("https://integrate.api.nvidia.com/v1/ranking", {
+    const res = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/ranking", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -27,7 +29,7 @@ export const POST = createAgentRoute({
         query: { text: query },
         passages: documents.map((d: string) => ({ text: d })),
       }),
-    });
+    }, { ruleId: "agents.rerank.route.1", allowedHosts: ["integrate.api.nvidia.com"] });
 
     if (!res.ok) {
       const errText = await res.text();

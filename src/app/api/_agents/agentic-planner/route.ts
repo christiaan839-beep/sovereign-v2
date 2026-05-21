@@ -16,6 +16,8 @@ const log = createLogger("agentic-planner");
  * LICENSE: GLM License — free for commercial use.
  */
 
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 const AVAILABLE_TOOLS = [
   { name: "translate", description: "Translate text between languages", params: "text, target_lang" },
   { name: "blog-gen", description: "Generate SEO blog posts", params: "topic, keywords" },
@@ -38,7 +40,7 @@ export const POST = createAgentRoute({
     // Step 1: GLM-5 creates the execution plan
     const toolList = AVAILABLE_TOOLS.map(t => `- ${t.name}: ${t.description} (params: ${t.params})`).join("\n");
 
-    const planRes = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+    const planRes = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": `Bearer ${await getNimKey()}` },
       body: JSON.stringify({
@@ -58,7 +60,7 @@ Output a JSON array of steps. Each step must have: {"tool": "tool_name", "params
         max_tokens: 800,
         temperature: 0.3,
       }),
-    });
+    }, { ruleId: "agents.agentic-planner.route.1", allowedHosts: ["integrate.api.nvidia.com"] });
 
     const planData = await planRes.json();
     const rawPlan = planData?.choices?.[0]?.message?.content || "[]";
@@ -79,11 +81,11 @@ Output a JSON array of steps. Each step must have: {"tool": "tool_name", "params
       for (const step of executionPlan.slice(0, 5)) {
         try {
           const stepStart = Date.now();
-          const res = await fetch(`${baseUrl}/api/agents/${step.tool}`, {
+          const res = await outboundFetchAsResponse(`${baseUrl}/api/agents/${step.tool}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(step.params || {}),
-          });
+          }, { ruleId: "agents.agentic-planner.route.2", allowedHosts: [new URL(baseUrl).hostname] });
 
           const data = await res.json();
           results.push({

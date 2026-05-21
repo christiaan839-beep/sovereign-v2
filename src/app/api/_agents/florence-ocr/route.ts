@@ -6,6 +6,8 @@ import { getNimKey } from "@/lib/nvidia";
  * document OCR, image captioning, and visual question answering.
  */
 
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export const POST = createAgentRoute({
   name: "florence-ocr",
   handler: async ({ input, email, userId }) => {
@@ -26,9 +28,7 @@ export const POST = createAgentRoute({
       vqa: question || "What is shown in this image?",
     };
 
-    const res = await fetch(
-      "https://integrate.api.nvidia.com/v1/chat/completions",
-      {
+    const res = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -48,8 +48,7 @@ export const POST = createAgentRoute({
           max_tokens: 2048,
           temperature: 0.2,
         }),
-      },
-    );
+      }, { ruleId: "agents.florence-ocr.route.1", allowedHosts: ["integrate.api.nvidia.com"] });
 
     const data = await res.json();
     const result = data?.choices?.[0]?.message?.content || "";

@@ -14,6 +14,8 @@ import { getNimKey } from "@/lib/nvidia";
  * LICENSE: Apache 2.0 — free for commercial use.
  */
 
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export const POST = createAgentRoute({
   name: "vision",
   requiredFields: ["image_url"],
@@ -32,7 +34,7 @@ export const POST = createAgentRoute({
     };
 
     const start = Date.now();
-    const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+    const res = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": `Bearer ${await getNimKey()}` },
       body: JSON.stringify({
@@ -49,7 +51,7 @@ export const POST = createAgentRoute({
         max_tokens: 1024,
         temperature: 0.3,
       }),
-    });
+    }, { ruleId: "agents.vision.route.1", allowedHosts: ["integrate.api.nvidia.com"] });
 
     const data = await res.json();
 

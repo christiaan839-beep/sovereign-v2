@@ -9,6 +9,8 @@ import { getBaseUrl } from "@/lib/base-url";
  * Wire to CI: Add to Vercel deploy hooks
  */
 
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 interface TestResult {
   name: string;
   endpoint: string;
@@ -47,7 +49,7 @@ export async function GET() {
         fetchOpts.body = test.body;
       }
 
-      const res = await fetch(`${baseUrl}${test.endpoint}`, fetchOpts);
+      const res = await outboundFetchAsResponse(`${baseUrl}${test.endpoint}`, fetchOpts, { ruleId: "misc.tests.smoke.route.1", allowedHosts: [new URL(baseUrl).hostname] });
       const duration = Date.now() - start;
 
       results.push({

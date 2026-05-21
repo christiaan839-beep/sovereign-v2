@@ -74,11 +74,11 @@ async function _postHandler(request: Request) {
       const pineconeKey = process.env.PINECONE_API_KEY;
       if (pineconeKey && await getNimKey()) {
         try {
-          const embedRes = await fetch("https://integrate.api.nvidia.com/v1/embeddings", {
+          const embedRes = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/embeddings", {
             method: "POST",
             headers: { "Content-Type": "application/json", "Authorization": `Bearer ${await getNimKey()}` },
             body: JSON.stringify({ model: "nvidia/nv-embed-v1", input: [content], input_type: "passage" }),
-          });
+          }, { ruleId: "agents.memory.route.1", allowedHosts: ["integrate.api.nvidia.com"] });
           const embedData = await embedRes.json();
           if (embedData?.data?.[0]?.embedding) {
             // Store in Pinecone (production-ready)
@@ -153,7 +153,7 @@ async function _postHandler(request: Request) {
         .map(m => `[${m.timestamp}] ${m.content}`)
         .join("\n");
 
-      const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+      const res = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${await getNimKey()}` },
         body: JSON.stringify({
@@ -165,7 +165,7 @@ async function _postHandler(request: Request) {
           max_tokens: 500,
           temperature: 0.3,
         }),
-      });
+      }, { ruleId: "agents.memory.route.2", allowedHosts: ["integrate.api.nvidia.com"] });
 
       const data = await res.json();
 
@@ -278,6 +278,8 @@ export async function GET(request: Request) {
 
 
 // Factory wrapper for POST (adds safety pipeline)
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export const POST = createAgentRoute({
   name: "memory",
   handler: async ({ input, email, userId, request }) => {

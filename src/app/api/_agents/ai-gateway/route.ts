@@ -10,6 +10,8 @@ import { getNimKey } from "@/lib/nvidia";
  * - minimax/minimax-m2.7-highspeed (~100 tok/s)
  */
 
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export const POST = createAgentRoute({
   name: "ai-gateway",
   requiredFields: ["messages"],
@@ -26,7 +28,7 @@ export const POST = createAgentRoute({
     }
 
     // Vercel AI Gateway uses the standard OpenAI-compatible endpoint
-    const gatewayResponse = await fetch("https://api.vercel.ai/v1/chat/completions", {
+    const gatewayResponse = await outboundFetchAsResponse("https://api.vercel.ai/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -39,12 +41,12 @@ export const POST = createAgentRoute({
         temperature,
         stream: false,
       }),
-    });
+    }, { ruleId: "agents.ai-gateway.route.1", allowedHosts: ["api.vercel.ai"] });
 
     if (!gatewayResponse.ok) {
       // Fallback to NVIDIA NIM if Vercel AI Gateway is not configured
       if (await getNimKey()) {
-        const fallbackRes = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+        const fallbackRes = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -57,7 +59,7 @@ export const POST = createAgentRoute({
             temperature,
             stream: false,
           }),
-        });
+        }, { ruleId: "agents.ai-gateway.route.2", allowedHosts: ["integrate.api.nvidia.com"] });
         const fallbackData = await fallbackRes.json();
         return {
           success: true,

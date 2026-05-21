@@ -6,6 +6,8 @@ import { NextResponse } from "next/server";
  * Uses NVIDIA Magpie TTS (free tier) for voice synthesis.
  */
 
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 
 export async function POST(req: Request) {
@@ -34,7 +36,7 @@ export async function POST(req: Request) {
     }
 
     // Use NVIDIA Magpie TTS — free, low-latency
-    const ttsRes = await fetch("https://integrate.api.nvidia.com/v1/audio/speech", {
+    const ttsRes = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/audio/speech", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${nimKey}`,
@@ -47,7 +49,7 @@ export async function POST(req: Request) {
         response_format: "mp3",
         speed: 1.05,
       }),
-    });
+    }, { ruleId: "voice.speak.route.1", allowedHosts: ["integrate.api.nvidia.com"] });
 
     if (!ttsRes.ok) {
       return NextResponse.json({ error: "TTS generation failed" }, { status: 502 });

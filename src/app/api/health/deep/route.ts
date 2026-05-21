@@ -6,6 +6,8 @@ import { NextResponse } from "next/server";
  * Used by: /status page, monitoring, admin panel.
  */
 
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export async function GET() {
   const start = Date.now();
   const checks: Record<
@@ -18,10 +20,10 @@ export async function GET() {
   if (nimKey) {
     const nimStart = Date.now();
     try {
-      const res = await fetch("https://integrate.api.nvidia.com/v1/models", {
+      const res = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/models", {
         headers: { Authorization: `Bearer ${nimKey}` },
         signal: AbortSignal.timeout(5000),
-      });
+      }, { ruleId: "health.deep.route.1", allowedHosts: ["integrate.api.nvidia.com"] });
       checks.nvidia_nim = {
         status: res.ok ? "ok" : "degraded",
         latency_ms: Date.now() - nimStart,

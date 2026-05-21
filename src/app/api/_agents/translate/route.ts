@@ -25,6 +25,8 @@ export async function GET() {
 }
 
 // POST: translate text — wrapped in factory
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 const schema = z.object({
   text: z.string().min(1, "Text is required").max(10_000),
   source_lang: z.string().length(2).optional().default("en"),
@@ -43,7 +45,7 @@ export const POST = createAgentRoute({
       throw new Error(`Unsupported language: ${target_lang}. Supported: ${SUPPORTED_LANGUAGES.join(", ")}`);
     }
 
-    const nimRes = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+    const nimRes = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -61,7 +63,7 @@ export const POST = createAgentRoute({
         max_tokens: 2048,
         temperature: 0.3,
       }),
-    });
+    }, { ruleId: "agents.translate.route.1", allowedHosts: ["integrate.api.nvidia.com"] });
 
     if (!nimRes.ok) {
       throw new Error(`Translation API returned ${nimRes.status}`);

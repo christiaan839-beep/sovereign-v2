@@ -4,6 +4,8 @@ import { createAgentRoute } from "@/lib/agent-factory";
  * OCR — Uses nemotron-ocr-v1 to extract text from images (screenshots, PDFs, competitor pricing tables).
  * Essential for the Ghost Fleet SDR to read G2 review screenshots.
  */
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export const POST = createAgentRoute({
   name: "ocr",
   handler: async ({ input, email, userId }) => {
@@ -37,9 +39,7 @@ export const POST = createAgentRoute({
       });
     }
 
-    const res = await fetch(
-      "https://integrate.api.nvidia.com/v1/chat/completions",
-      {
+    const res = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -51,8 +51,7 @@ export const POST = createAgentRoute({
           max_tokens: 2000,
           temperature: 0.1,
         }),
-      },
-    );
+      }, { ruleId: "agents.ocr.route.1", allowedHosts: ["integrate.api.nvidia.com"] });
 
     if (!res.ok) {
       const errText = await res.text();

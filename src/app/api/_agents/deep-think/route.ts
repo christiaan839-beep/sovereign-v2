@@ -16,6 +16,8 @@ import { createHash } from "node:crypto";
  * Output: { solution, reasoning, confidence }
  */
 
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export const POST = createAgentRoute({
   name: "deep-think",
   requiredFields: ["problem"],
@@ -146,9 +148,7 @@ Be specific. Use numbers. No generic advice.`,
       problemHash,
     });
 
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${geminiKey}`,
-      {
+    const res = await outboundFetchAsResponse(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${geminiKey}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -187,8 +187,7 @@ Be specific. Use numbers. No generic advice.`,
             },
           },
         }),
-      },
-    );
+      }, { ruleId: "agents.deep-think.route.1", allowedHosts: ["generativelanguage.googleapis.com"] });
 
     if (!res.ok) {
       const errorText = await res.text();

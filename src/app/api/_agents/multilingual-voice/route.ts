@@ -11,6 +11,8 @@ import { getBaseUrl } from "@/lib/base-url";
  * Supports 20+ languages via NIM translation + voice models.
  */
 
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export const POST = createAgentRoute({
   name: "multilingual-voice",
   handler: async ({ input, email, userId }) => {
@@ -28,11 +30,11 @@ export const POST = createAgentRoute({
     let translatedText = text;
     if (source_lang !== target_lang) {
       try {
-        const translateRes = await fetch(`${baseUrl}/api/agents/translate`, {
+        const translateRes = await outboundFetchAsResponse(`${baseUrl}/api/agents/translate`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ text, target_lang }),
-        });
+        }, { ruleId: "agents.multilingual-voice.route.1", allowedHosts: [new URL(baseUrl).hostname] });
         const translateData = await translateRes.json();
         translatedText = translateData?.translated || translateData?.result || text;
       } catch {
@@ -43,11 +45,11 @@ export const POST = createAgentRoute({
     // Step 2: Voice synthesis
     let voiceResult = null;
     try {
-      const voiceRes = await fetch(`${baseUrl}/api/agents/voice-synth`, {
+      const voiceRes = await outboundFetchAsResponse(`${baseUrl}/api/agents/voice-synth`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: translatedText, voice }),
-      });
+      }, { ruleId: "agents.multilingual-voice.route.2", allowedHosts: [new URL(baseUrl).hostname] });
       voiceResult = await voiceRes.json();
     } catch {
       voiceResult = { status: "Voice synthesis unavailable" };

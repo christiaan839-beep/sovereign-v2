@@ -4,6 +4,8 @@ import { createAgentRoute } from "@/lib/agent-factory";
  * AI IMAGE GENERATION — Uses FLUX.2 Klein 4B from Black Forest Labs via NIM.
  * Generates high-quality images for blog headers, social media, and client deliverables.
  */
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export const POST = createAgentRoute({
   name: "flux-image",
   handler: async ({ input, email, userId }) => {
@@ -14,7 +16,7 @@ export const POST = createAgentRoute({
     const nimKey = process.env.NVIDIA_NIM_API_KEY;
     if (!nimKey) return ({ error: "NVIDIA_NIM_API_KEY not configured." });
 
-    const res = await fetch("https://integrate.api.nvidia.com/v1/images/generations", {
+    const res = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/images/generations", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -27,7 +29,7 @@ export const POST = createAgentRoute({
         height,
         n: 1,
       }),
-    });
+    }, { ruleId: "agents.flux-image.route.1", allowedHosts: ["integrate.api.nvidia.com"] });
 
     if (!res.ok) {
       const errText = await res.text();

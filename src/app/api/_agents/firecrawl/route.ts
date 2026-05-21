@@ -9,6 +9,8 @@ import { eq } from "drizzle-orm";
  * Uses the Firecrawl API to turn any website into LLM-ready markdown.
  * Bypasses anti-bot protections natively.
  */
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export const POST = createAgentRoute({
   name: "firecrawl",
   handler: async ({ input, email, userId }) => {
@@ -39,7 +41,7 @@ export const POST = createAgentRoute({
     }
 
     // Call Firecrawl Scrape API
-    const response = await fetch("https://api.firecrawl.dev/v1/scrape", {
+    const response = await outboundFetchAsResponse("https://api.firecrawl.dev/v1/scrape", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -49,7 +51,7 @@ export const POST = createAgentRoute({
         url,
         formats,
       }),
-    });
+    }, { ruleId: "agents.firecrawl.route.1", allowedHosts: ["api.firecrawl.dev"] });
 
     if (!response.ok) {
       const errorText = await response.text();

@@ -31,6 +31,8 @@ const limiter = rateLimit({ interval: 60, limit: 10 });
 
 // RFC-ish minimal regex — enough to reject obvious garbage. Final
 // validation happens at Resend.
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 const ALLOWED_SOURCES = new Set([
@@ -74,17 +76,14 @@ export async function POST(req: Request) {
   const audienceId = process.env.RESEND_AUDIENCE_ID;
   if (resendKey && audienceId) {
     try {
-      const res = await fetch(
-        `https://api.resend.com/audiences/${audienceId}/contacts`,
-        {
+      const res = await outboundFetchAsResponse(`https://api.resend.com/audiences/${audienceId}/contacts`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${resendKey}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({ email, unsubscribed: false }),
-        },
-      );
+        }, { ruleId: "newsletter.subscribe.route.1", allowedHosts: ["api.resend.com"] });
       if (!res.ok && res.status !== 409) {
         // 409 = already subscribed (Resend returns it). Anything else
         // is logged but not surfaced to the user.

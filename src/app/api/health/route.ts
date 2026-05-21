@@ -8,6 +8,8 @@ const startedAt = Date.now();
  * NEVER crashes. NEVER returns 500. Always returns JSON with status.
  * Uses dynamic imports so a broken DB module can't take down the health endpoint.
  */
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export async function GET() {
   try {
     const services: Record<string, string> = {};
@@ -34,10 +36,10 @@ export async function GET() {
       const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
       const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
       if (redisUrl && redisToken) {
-        const pingRes = await fetch(`${redisUrl}/ping`, {
+        const pingRes = await outboundFetchAsResponse(`${redisUrl}/ping`, {
           headers: { Authorization: `Bearer ${redisToken}` },
           signal: AbortSignal.timeout(2000),
-        });
+        }, { ruleId: "health.route.1", allowedHosts: [new URL(redisUrl).hostname] });
         services.redis = pingRes.ok ? "ok" : "error";
       } else {
         services.redis = "unconfigured";

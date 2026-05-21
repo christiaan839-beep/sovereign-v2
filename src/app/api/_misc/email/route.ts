@@ -11,6 +11,8 @@ import { rateLimit } from "@/lib/rate-limit";
  *
  * Hard-capped at 10 sends/hour per IP to prevent spam relay abuse.
  */
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 const limiter = rateLimit({ interval: 3600, limit: 10 });
 
 export async function POST(req: Request) {
@@ -104,7 +106,7 @@ export async function POST(req: Request) {
 
     // Send via Resend if API key exists
     if (resendKey) {
-      const resendRes = await fetch("https://api.resend.com/emails", {
+      const resendRes = await outboundFetchAsResponse("https://api.resend.com/emails", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${resendKey}` },
         body: JSON.stringify({
@@ -113,7 +115,7 @@ export async function POST(req: Request) {
           subject: emailSubject,
           html: emailBody,
         }),
-      });
+      }, { ruleId: "misc.email.route.1", allowedHosts: ["api.resend.com"] });
       const resendData = await resendRes.json();
       return NextResponse.json({ sent: true, provider: "resend", id: resendData.id });
     }

@@ -1,6 +1,8 @@
 import { createAgentRoute } from "@/lib/agent-factory";
 import { NextResponse } from "next/server";
 
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export const POST = createAgentRoute({
   name: "ghost-fleet",
   handler: async ({ input, email, userId }) => {
@@ -41,7 +43,7 @@ Respond ONLY in strict JSON format:
   "draftMessage": "The 3 sentence message..."
 }`;
 
-    const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+    const res = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -54,7 +56,7 @@ Respond ONLY in strict JSON format:
         max_tokens: 800,
         response_format: { type: "json_object" }
       }),
-    });
+    }, { ruleId: "agents.ghost-fleet.route.1", allowedHosts: ["integrate.api.nvidia.com"] });
 
     if (!res.ok) {
       throw new Error(`NIM API error: ${res.status}`);

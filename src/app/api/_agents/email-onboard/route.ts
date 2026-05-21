@@ -16,6 +16,8 @@ import { ai } from "@/lib/ai";
  * Env var: RESEND_API_KEY
  */
 
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 interface EmailStep {
   day: number;
   subject: string;
@@ -101,7 +103,7 @@ export const POST = createAgentRoute({
       );
 
       if (resendKey) {
-        const res = await fetch("https://api.resend.com/emails", {
+        const res = await outboundFetchAsResponse("https://api.resend.com/emails", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -113,7 +115,7 @@ export const POST = createAgentRoute({
             subject: welcomeEmail.subject,
             text: welcomeEmail.body,
           }),
-        });
+        }, { ruleId: "agents.email-onboard.route.1", allowedHosts: ["api.resend.com"] });
 
         const data = await res.json();
 

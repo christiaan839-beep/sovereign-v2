@@ -14,6 +14,8 @@ import { createAgentRoute } from "@/lib/agent-factory";
  * Output: { answer, citations[], searchQueries[], confidence }
  */
 
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export const POST = createAgentRoute({
   name: "vertex-search",
   requiredFields: ["query"],
@@ -44,9 +46,7 @@ Rules:
 
 ${context ? `\nAdditional context provided by the user:\n${context}` : ""}`;
 
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${geminiKey}`,
-      {
+    const res = await outboundFetchAsResponse(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${geminiKey}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -60,8 +60,7 @@ ${context ? `\nAdditional context provided by the user:\n${context}` : ""}`;
             maxOutputTokens: 3000,
           },
         }),
-      }
-    );
+      }, { ruleId: "agents.vertex-search.route.1", allowedHosts: ["generativelanguage.googleapis.com"] });
 
     if (!res.ok) {
       return { error: `Gemini API error (${res.status})`, details: await res.text() };

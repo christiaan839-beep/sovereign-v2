@@ -5,6 +5,8 @@ import { getNimKey } from "@/lib/nvidia";
 /**
  * DEEPSEEK R1 — Reasoning model for math, science, logic, code debugging.
  */
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export const POST = createAgentRoute({
   name: "deepseek-r1",
   schema: z.object({
@@ -17,7 +19,7 @@ export const POST = createAgentRoute({
     const domain = input.domain as string;
     const start = Date.now();
 
-    const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+    const res = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${await getNimKey()}` },
       body: JSON.stringify({
@@ -28,7 +30,7 @@ export const POST = createAgentRoute({
         ],
         max_tokens: 2048, temperature: 0.1,
       }),
-    });
+    }, { ruleId: "agents.deepseek-r1.route.1", allowedHosts: ["integrate.api.nvidia.com"] });
 
     if (!res.ok) throw new Error(`NIM returned ${res.status}`);
     const data = await res.json();

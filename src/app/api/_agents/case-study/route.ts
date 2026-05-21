@@ -18,6 +18,8 @@ import { isAdmin } from "@/lib/admin-auth";
  * touches the DB — useful for previewing copy before saving.
  */
 
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 const schema = z
   .object({
     clientName: z.string().max(200).optional(),
@@ -114,9 +116,7 @@ export const POST = createAgentRoute({
     const prompt = (input.prompt || input.topic || "") as string;
     const context = (input.context || "") as string;
 
-    const nimRes = await fetch(
-      "https://integrate.api.nvidia.com/v1/chat/completions",
-      {
+    const nimRes = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -149,8 +149,7 @@ Outcome: ${outcome || "Not specified"}`,
           max_tokens: 3000,
           temperature: 0.7,
         }),
-      },
-    );
+      }, { ruleId: "agents.case-study.route.1", allowedHosts: ["integrate.api.nvidia.com"] });
 
     if (!nimRes.ok) {
       throw new Error(`NIM API returned ${nimRes.status}`);

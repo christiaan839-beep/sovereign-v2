@@ -30,14 +30,14 @@ interface GeminiSearchResult {
 }
 
 /** Run a single Gemini grounded search for one query */
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 async function geminiGroundedSearch(
   query: string,
   context: string,
   geminiKey: string,
 ): Promise<GeminiSearchResult> {
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${geminiKey}`,
-    {
+  const res = await outboundFetchAsResponse(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${geminiKey}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -70,8 +70,7 @@ async function geminiGroundedSearch(
           maxOutputTokens: 2000,
         },
       }),
-    },
-  );
+    }, { ruleId: "agents.grounded-search.route.1", allowedHosts: ["generativelanguage.googleapis.com"] });
 
   if (!res.ok) {
     const errorText = await res.text();

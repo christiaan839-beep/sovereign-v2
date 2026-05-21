@@ -39,6 +39,8 @@ const ALLOWED_AGENTS = new Set([
  * For genuine load-side hardening, switch to @upstash/ratelimit
  * (already wired in src/lib/rate-limit.ts) keyed on the same source.
  */
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 function resolveCallerIp(req: Request): string {
   const realIp = req.headers.get("x-real-ip")?.trim();
   if (realIp) return realIp;
@@ -96,7 +98,7 @@ export async function POST(req: Request) {
         ? `https://${req.headers.get("host")}`
         : `http://${req.headers.get("host") || "localhost:3000"}`;
 
-    const agentRes = await fetch(`${baseUrl}/api/agents/${agent}`, {
+    const agentRes = await outboundFetchAsResponse(`${baseUrl}/api/agents/${agent}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -104,7 +106,7 @@ export async function POST(req: Request) {
       },
       body: JSON.stringify({ ...params, confirmed: true }),
       signal: AbortSignal.timeout(30000),
-    });
+    }, { ruleId: "free.run.route.1", allowedHosts: [new URL(baseUrl).hostname] });
 
     const data = await agentRes.json();
     const remaining = RATE_LIMIT - (ipLimits.get(ip)?.count || 0);

@@ -11,6 +11,8 @@ import { ai } from "@/lib/ai";
  * Uses AI to enhance prompts into cinematic directives before generation.
  */
 
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export const POST = createAgentRoute({
   name: "video-gen",
   handler: async ({ input, email, userId }) => {
@@ -71,9 +73,7 @@ Return ONLY the enhanced prompt (no explanations). The enhanced prompt should:
     }
 
     if (provider === "luma") {
-      const response = await fetch(
-        "https://api.lumalabs.ai/dream-machine/v1/generations",
-        {
+      const response = await outboundFetchAsResponse("https://api.lumalabs.ai/dream-machine/v1/generations", {
           method: "POST",
           headers: {
             Authorization: `Bearer ${apiKey}`,
@@ -83,8 +83,7 @@ Return ONLY the enhanced prompt (no explanations). The enhanced prompt should:
             prompt: cinematicPrompt,
             aspect_ratio: "16:9",
           }),
-        },
-      );
+        }, { ruleId: "agents.video-gen.route.1", allowedHosts: ["api.lumalabs.ai"] });
 
       if (!response.ok) {
         const errDump = await response.text();

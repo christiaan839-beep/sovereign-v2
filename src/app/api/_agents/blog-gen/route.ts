@@ -16,6 +16,8 @@ const log = createLogger("blog-gen");
  * quality scoring, rate limiting, circuit breaker, audit logging.
  */
 
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 const schema = z.object({
   topic: z
     .string()
@@ -81,9 +83,7 @@ export const POST = createAgentRoute({
     }
 
     // Step 2: Generate blog via NIM
-    const nimRes = await fetch(
-      "https://integrate.api.nvidia.com/v1/chat/completions",
-      {
+    const nimRes = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -114,8 +114,7 @@ Requirements:
           max_tokens: 4096,
           temperature: 0.7,
         }),
-      },
-    );
+      }, { ruleId: "agents.blog-gen.route.1", allowedHosts: ["integrate.api.nvidia.com"] });
 
     if (!nimRes.ok) {
       throw new Error(

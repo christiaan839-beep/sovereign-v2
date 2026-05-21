@@ -16,6 +16,8 @@ import { getBaseUrl } from "@/lib/base-url";
  * Output: { response, intent, voiceResponse?, agentResult? }
  */
 
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export const POST = createAgentRoute({
   name: "voice-assistant",
   requiredFields: ["text"],
@@ -32,12 +34,12 @@ export const POST = createAgentRoute({
     if (intent.confidence > 0.7 && intent.endpoint !== "/api/ai/stream") {
       try {
         const baseUrl = getBaseUrl();
-        const res = await fetch(`${baseUrl}${intent.endpoint}`, {
+        const res = await outboundFetchAsResponse(`${baseUrl}${intent.endpoint}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(intent.params),
           signal: AbortSignal.timeout(15000),
-        });
+        }, { ruleId: "agents.voice-assistant.route.1", allowedHosts: [new URL(baseUrl).hostname] });
         agentResult = await res.json();
       } catch {
         // Agent call failed — fall through to conversational response
@@ -71,7 +73,7 @@ ${agentResult ? `\nYou just executed the "${intent.label}" tool. Here are the re
       const nimKey = process.env.NVIDIA_NIM_API_KEY;
       if (nimKey && response.length < 500) {
         // Only synthesize short responses to keep latency low
-        const ttsRes = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+        const ttsRes = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${nimKey}` },
           body: JSON.stringify({
@@ -81,7 +83,7 @@ ${agentResult ? `\nYou just executed the "${intent.label}" tool. Here are the re
             temperature: 0.8,
           }),
           signal: AbortSignal.timeout(5000),
-        });
+        }, { ruleId: "agents.voice-assistant.route.2", allowedHosts: ["integrate.api.nvidia.com"] });
 
         if (ttsRes.ok) {
           // Voice chat returns text optimized for speech

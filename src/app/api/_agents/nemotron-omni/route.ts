@@ -1,5 +1,7 @@
 import { createAgentRoute } from "@/lib/agent-factory";
 
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 function getNimKey(): string {
   return process.env.NVIDIA_NIM_API_KEY || process.env.NVIDIA_API_KEY || "";
 }
@@ -62,9 +64,7 @@ export const POST = createAgentRoute({
         ? "nvidia/nemotron-nano-12b-v2-vl" // Vision-language model
         : "nvidia/llama-3.1-nemotron-ultra-253b-v1"; // Text/voice
 
-    const res = await fetch(
-      "https://integrate.api.nvidia.com/v1/chat/completions",
-      {
+    const res = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${key}`,
@@ -77,8 +77,7 @@ export const POST = createAgentRoute({
           temperature: 0.7,
           stream: false,
         }),
-      },
-    );
+      }, { ruleId: "agents.nemotron-omni.route.1", allowedHosts: ["integrate.api.nvidia.com"] });
 
     if (!res.ok) {
       const err = await res.text();

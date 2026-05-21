@@ -7,6 +7,8 @@ import { getNimKey } from "@/lib/nvidia";
  * Generates ad copy, social campaigns, brand storytelling, video scripts.
  */
 
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 const STYLE_GUIDES: Record<string, string> = {
   professional: "Polished, authoritative, data-driven. Think McKinsey meets Apple.",
   bold: "Provocative, disruptive, attention-grabbing. Think Ogilvy meets Nike.",
@@ -38,7 +40,7 @@ export const POST = createAgentRoute({
     const { brief, style, platform, count } = input as z.infer<typeof schema>;
     const start = Date.now();
 
-    const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+    const res = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${await getNimKey()}` },
       body: JSON.stringify({
@@ -53,7 +55,7 @@ export const POST = createAgentRoute({
         max_tokens: 1200,
         temperature: 0.8,
       }),
-    });
+    }, { ruleId: "agents.creative-director.route.1", allowedHosts: ["integrate.api.nvidia.com"] });
 
     if (!res.ok) throw new Error(`NIM API returned ${res.status}`);
     const data = await res.json();

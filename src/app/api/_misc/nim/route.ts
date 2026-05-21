@@ -11,6 +11,8 @@ import { NextResponse } from "next/server";
  * - Rate limiting handled by NVIDIA's infrastructure
  */
 
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 const NIM_BASE_URL = "https://integrate.api.nvidia.com/v1";
 
 const AVAILABLE_MODELS = {
@@ -398,7 +400,7 @@ export async function POST(request: Request) {
 
     const selectedModel = AVAILABLE_MODELS[model as keyof typeof AVAILABLE_MODELS];
 
-    const nimResponse = await fetch(`${NIM_BASE_URL}${selectedModel.endpoint}`, {
+    const nimResponse = await outboundFetchAsResponse(`${NIM_BASE_URL}${selectedModel.endpoint}`, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${apiKey}`,
@@ -411,7 +413,7 @@ export async function POST(request: Request) {
         temperature,
         stream: false,
       }),
-    });
+    }, { ruleId: "misc.nim.route.1", allowedHosts: [new URL(NIM_BASE_URL).hostname] });
 
     if (!nimResponse.ok) {
       const errorText = await nimResponse.text();

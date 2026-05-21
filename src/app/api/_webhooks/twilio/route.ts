@@ -28,6 +28,8 @@ const EMPTY_TWIML =
 const XML_HEADERS = { "Content-Type": "text/xml" };
 
 /** XML-escape a string before interpolating into TwiML. */
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 function xmlEscape(s: string): string {
   return s
     .replace(/&/g, "&amp;")
@@ -116,9 +118,7 @@ export async function POST(request: NextRequest) {
     }
 
     // NVIDIA Nemotron 3 Super via NIM (upgraded from 340B)
-    const nimResponse = await fetch(
-      "https://integrate.api.nvidia.com/v1/chat/completions",
-      {
+    const nimResponse = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -136,8 +136,7 @@ export async function POST(request: NextRequest) {
           ],
           max_tokens: 250,
         }),
-      },
-    );
+      }, { ruleId: "webhooks.twilio.route.1", allowedHosts: ["integrate.api.nvidia.com"] });
     const data = await nimResponse.json();
     const aiResponse =
       data?.choices?.[0]?.message?.content ||

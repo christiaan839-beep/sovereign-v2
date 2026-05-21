@@ -176,11 +176,11 @@ async function _postHandler(request: Request) {
       try {
         const baseUrl = getBaseUrl();
 
-        const res = await fetch(`${baseUrl}${step.endpoint}`, {
+        const res = await outboundFetchAsResponse(`${baseUrl}${step.endpoint}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
-        });
+        }, { ruleId: "agents.chain-reactor.route.1", allowedHosts: [new URL(baseUrl).hostname] });
 
         const data = await res.json();
         prevResult = data;
@@ -220,6 +220,8 @@ async function _postHandler(request: Request) {
 }
 
 // Factory wrapper for POST (adds safety pipeline)
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export const POST = createAgentRoute({
   name: "chain-reactor",
   handler: async ({ input, email, userId, request }) => {

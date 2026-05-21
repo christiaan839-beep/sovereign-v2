@@ -20,6 +20,8 @@ import { getBaseUrl } from "@/lib/base-url";
  * Output: { plan, results, summary, verified? }
  */
 
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 const AVAILABLE_AGENTS = [
   "leads", "blog-gen", "seo-dominator", "site-assassin", "competitor-scan",
   "email-sequence", "smart-router", "vision", "translate", "embed",
@@ -139,12 +141,12 @@ Agent params:
       }
 
       try {
-        const res = await fetch(`${baseUrl}/api/agents/${step.agent}`, {
+        const res = await outboundFetchAsResponse(`${baseUrl}/api/agents/${step.agent}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ ...body, confirmed: true }),
           signal: AbortSignal.timeout(45000),
-        });
+        }, { ruleId: "agents.super-agent.route.1", allowedHosts: [new URL(baseUrl).hostname] });
 
         const data = await res.json();
         const duration_ms = Date.now() - start;

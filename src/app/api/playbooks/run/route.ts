@@ -168,6 +168,8 @@ type RunnerStep = {
  * Used by both the for-loop runner and the DAG runner so the network
  * shape stays uniform.
  */
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 async function callAgent(
   baseUrl: string,
   step: RunnerStep,
@@ -195,7 +197,7 @@ async function callAgent(
     );
   }
 
-  const res = await fetch(`${baseUrl}/api/agents/${step.agent}`, {
+  const res = await outboundFetchAsResponse(`${baseUrl}/api/agents/${step.agent}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -206,7 +208,7 @@ async function callAgent(
     },
     body: JSON.stringify({ ...params, confirmed: true }),
     signal: AbortSignal.timeout(90_000),
-  });
+  }, { ruleId: "playbooks.run.route.1", allowedHosts: [new URL(baseUrl).hostname] });
 
   const data = await res.json();
   return typeof data === "string" ? data : JSON.stringify(data);

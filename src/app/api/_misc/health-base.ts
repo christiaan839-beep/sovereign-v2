@@ -12,6 +12,8 @@ import { getPineconeClient } from "@/lib/memory";
  */
 
 // ── Cached deep health result ──
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 let cachedHealthResult: Record<string, unknown> | null = null;
 let healthCacheExpiry = 0;
 const HEALTH_CACHE_TTL = 30_000; // 30s
@@ -38,11 +40,11 @@ async function checkNim(): Promise<ServiceStatus> {
 
   const start = Date.now();
   try {
-    const res = await fetch("https://integrate.api.nvidia.com/v1/models", {
+    const res = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/models", {
       method: "HEAD",
       headers: { "Authorization": `Bearer ${nimKey}` },
       signal: AbortSignal.timeout(3000),
-    });
+    }, { ruleId: "misc.health-base.1", allowedHosts: ["integrate.api.nvidia.com"] });
     return { status: res.ok ? "up" : "down", latencyMs: Date.now() - start };
   } catch (err) {
     return { status: "down", latencyMs: Date.now() - start, error: String(err) };
@@ -69,9 +71,9 @@ function checkClerk(): ServiceStatus {
 async function checkOllama(): Promise<ServiceStatus> {
   const start = Date.now();
   try {
-    const res = await fetch("http://localhost:11434/api/tags", {
+    const res = await outboundFetchAsResponse("http://localhost:11434/api/tags", {
       signal: AbortSignal.timeout(2000),
-    });
+    }, { ruleId: "misc.health-base.2", allowedHosts: ["localhost"] });
     return { status: res.ok ? "up" : "down", latencyMs: Date.now() - start };
   } catch {
     return { status: "down", latencyMs: Date.now() - start, error: "Ollama not running locally" };

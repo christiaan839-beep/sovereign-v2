@@ -4,6 +4,8 @@ import { createAgentRoute } from "@/lib/agent-factory";
  * ASR (Automatic Speech Recognition) — Uses NVIDIA Nemotron ASR Streaming
  * for real-time speech-to-text transcription during Twilio voice calls.
  */
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export const POST = createAgentRoute({
   name: "asr",
   handler: async ({ input, email, userId }) => {
@@ -14,7 +16,7 @@ export const POST = createAgentRoute({
     const nimKey = process.env.NVIDIA_NIM_API_KEY;
     if (!nimKey) return ({ error: "NVIDIA_NIM_API_KEY not configured." });
 
-    const res = await fetch("https://integrate.api.nvidia.com/v1/asr/transcriptions", {
+    const res = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/asr/transcriptions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -26,7 +28,7 @@ export const POST = createAgentRoute({
         language,
         response_format: "json",
       }),
-    });
+    }, { ruleId: "agents.asr.route.1", allowedHosts: ["integrate.api.nvidia.com"] });
 
     if (!res.ok) {
       const errText = await res.text();

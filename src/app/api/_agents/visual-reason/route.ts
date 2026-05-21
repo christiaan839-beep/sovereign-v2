@@ -4,6 +4,8 @@ import { createAgentRoute } from "@/lib/agent-factory";
  * VISUAL REASONING — Uses cosmos-reason2-8b for deep visual analysis.
  * Can analyze competitor screenshots, landing page layouts, and design patterns.
  */
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export const POST = createAgentRoute({
   name: "visual-reason",
   handler: async ({ input, email, userId }) => {
@@ -14,7 +16,7 @@ export const POST = createAgentRoute({
     const nimKey = process.env.NVIDIA_NIM_API_KEY;
     if (!nimKey) return ({ error: "NVIDIA_NIM_API_KEY not configured." });
 
-    const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+    const res = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -34,7 +36,7 @@ export const POST = createAgentRoute({
         max_tokens: 1000,
         temperature: 0.3,
       }),
-    });
+    }, { ruleId: "agents.visual-reason.route.1", allowedHosts: ["integrate.api.nvidia.com"] });
 
     if (!res.ok) {
       const errText = await res.text();

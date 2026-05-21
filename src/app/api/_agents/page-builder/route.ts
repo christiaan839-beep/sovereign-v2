@@ -8,6 +8,8 @@ import { getNimKey } from "@/lib/nvidia";
  * Flow: Text prompt → Stitch API → Full HTML + Screenshot
  */
 
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export const POST = createAgentRoute({
   name: "page-builder",
   requiredFields: ["prompt"],
@@ -24,9 +26,7 @@ export const POST = createAgentRoute({
         );
       }
 
-      const nimRes = await fetch(
-        "https://integrate.api.nvidia.com/v1/chat/completions",
-        {
+      const nimRes = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -94,8 +94,7 @@ PREFER:
             max_tokens: 4096,
             temperature: 0.6,
           }),
-        },
-      );
+        }, { ruleId: "agents.page-builder.route.1", allowedHosts: ["integrate.api.nvidia.com"] });
 
       const nimData = await nimRes.json();
       const generatedHtml =

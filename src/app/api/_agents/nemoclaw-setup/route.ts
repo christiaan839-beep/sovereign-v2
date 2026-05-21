@@ -16,9 +16,9 @@ export async function GET() {
   // Check if local NemoClaw daemon is running
   let localStatus = "offline";
   try {
-    const res = await fetch("http://127.0.0.1:18789/health", {
+    const res = await outboundFetchAsResponse("http://127.0.0.1:18789/health", {
       signal: AbortSignal.timeout(2000),
-    });
+    }, { ruleId: "agents.nemoclaw-setup.route.1", allowedHosts: ["127.0.0.1"] });
     if (res.ok) localStatus = "online";
   } catch {
     // Not running locally
@@ -100,6 +100,8 @@ async function _postHandler(request: Request) {
 
 
 // Factory wrapper for POST (adds safety pipeline)
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export const POST = createAgentRoute({
   name: "nemoclaw-setup",
   handler: async ({ input, email, userId, request }) => {

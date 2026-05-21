@@ -8,6 +8,8 @@ import { getNimKey } from "@/lib/nvidia";
  * Powers: Visual Studio, VSL Hacker, Content Factory video generation.
  */
 
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export const POST = createAgentRoute({
   name: "cosmos-video",
   handler: async ({ input, email, userId }) => {
@@ -23,7 +25,7 @@ export const POST = createAgentRoute({
       ? "nvidia/cosmos-transfer2.5-2b"
       : "nvidia/cosmos-predict1-5b";
 
-    const nimRes = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+    const nimRes = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -41,7 +43,7 @@ export const POST = createAgentRoute({
         max_tokens: 1024,
         temperature: 0.5,
       }),
-    });
+    }, { ruleId: "agents.cosmos-video.route.1", allowedHosts: ["integrate.api.nvidia.com"] });
 
     const nimData = await nimRes.json();
     const sceneData = nimData?.choices?.[0]?.message?.content || "Scene generation pending.";

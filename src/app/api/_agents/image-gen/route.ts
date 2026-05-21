@@ -7,6 +7,8 @@ import { getNimKey } from "@/lib/nvidia";
  * Generates social media imagery, product shots, marketing assets.
  */
 
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 const schema = z.object({
   prompt: z.string().min(3, "Prompt is required").max(2000),
   negative_prompt: z.string().max(500).optional().default(""),
@@ -23,7 +25,7 @@ export const POST = createAgentRoute({
   handler: async ({ input }) => {
     const { prompt, negative_prompt, width, height, steps } = input as z.infer<typeof schema>;
 
-    const nimRes = await fetch("https://integrate.api.nvidia.com/v1/images/generations", {
+    const nimRes = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/images/generations", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -38,7 +40,7 @@ export const POST = createAgentRoute({
         steps,
         n: 1,
       }),
-    });
+    }, { ruleId: "agents.image-gen.route.1", allowedHosts: ["integrate.api.nvidia.com"] });
 
     if (!nimRes.ok) {
       const errorText = await nimRes.text();
