@@ -459,6 +459,49 @@ export const POST = createAgentRoute({
   // agency hands their client — safety bar must be high. ~+200ms p50
   // worth paying.
   useVerifier: true,
+  // Wave 114 M3 batch 8: memory hooks. Per-client weekly packets compound —
+  // last week's brand voice / audience / what landed informs this week's
+  // packet without re-stating the agency's full client brief.
+  memory: {
+    search: {
+      query: (input) =>
+        `agency-packet client:${input.clientDomain ?? ""} ${input.clientName ?? ""}`.trim(),
+      limit: 2,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as {
+          clientName?: string;
+          clientDomain?: string;
+          brandVoice?: string;
+          audience?: string;
+          assets?: {
+            blog?: { title?: string };
+            ads?: Array<{ headline?: string }>;
+          };
+        };
+        if (!r.clientDomain && !r.clientName) return null;
+        const headline = r.assets?.blog?.title?.slice(0, 100) ?? "";
+        const adHook = r.assets?.ads?.[0]?.headline?.slice(0, 80) ?? "";
+        return (
+          [
+            r.clientName ? `client=${r.clientName}` : "",
+            r.brandVoice ? `voice=${r.brandVoice}` : "",
+            r.audience ? `aud=${r.audience.slice(0, 80)}` : "",
+            headline ? `blog="${headline}"` : "",
+            adHook ? `ad="${adHook}"` : "",
+          ]
+            .filter(Boolean)
+            .join(" · ") || null
+        );
+      },
+      metadata: (input) => ({
+        clientDomain:
+          typeof input.clientDomain === "string" ? input.clientDomain : "",
+        kind: "agency-packet",
+      }),
+    },
+  },
   handler: async ({ input, userId }) => {
     const parsed = agencyPacketSchema.parse(input);
     const packet = await buildAgencyPacket(parsed);
