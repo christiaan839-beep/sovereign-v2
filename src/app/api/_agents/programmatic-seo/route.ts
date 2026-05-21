@@ -27,12 +27,49 @@ ${ANTI_SLOP_RULES}
 export const POST = createAgentRoute({
   name: "programmatic-seo",
   requiredFields: ["action"],
-  handler: async ({ input }) => {
+  // Wave-111.1 batch 7: memory hooks. Per-niche keyword discovery
+  // + per-keyword article generation history compounds — surface
+  // previously-discovered keywords to avoid duplicates, surface
+  // prior article titles to prevent content cannibalization.
+  memory: {
+    search: {
+      query: (input) =>
+        `programmatic-seo niche:${input.niche ?? ""} keyword:${input.keyword ?? ""}`,
+      limit: 3,
+    },
+    store: {
+      extract: (result, input) => {
+        if (input.action === "discover") {
+          const r = result as { keywords?: Array<{ keyword?: string }> };
+          const kws = (r.keywords ?? [])
+            .slice(0, 5)
+            .map((k) => k.keyword)
+            .filter(Boolean)
+            .join(", ");
+          return kws ? `Discovered: ${kws}` : null;
+        }
+        if (input.action === "generate") {
+          const r = result as { title?: string; metaDescription?: string };
+          if (!r.title) return null;
+          return `${r.title}: ${r.metaDescription ?? ""}`;
+        }
+        return null;
+      },
+      metadata: (input) => ({
+        niche: String(input.niche ?? ""),
+        keyword: String(input.keyword ?? ""),
+        action: String(input.action ?? ""),
+        kind: "programmatic-seo",
+      }),
+    },
+  },
+  handler: async ({ input, pastContextAsPrompt }) => {
     const { action, niche, difficulty, keyword, contentAngle } =
       input as Record<string, unknown>;
+    const pastSeo = pastContextAsPrompt();
 
     if (action === "discover") {
-      const discoveryPrompt = `You are a keyword research expert. Discover 8 high-intent, low-competition keyword opportunities for the niche: "${niche || "AI marketing automation"}".
+      const discoveryPrompt = `You are a keyword research expert. Discover 8 high-intent, low-competition keyword opportunities for the niche: "${niche || "AI marketing automation"}".${pastSeo ? `\n\nPRIOR DISCOVERED KEYWORDS for this niche (historical FACTS — do NOT re-suggest these, find NEW opportunities):\n${pastSeo}\n` : ""}
 
 Filter by difficulty: ${difficulty || "Low - Medium (Long Tail)"}
 
