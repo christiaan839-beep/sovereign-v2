@@ -12,7 +12,28 @@ import { nimChat } from "@/lib/nvidia";
  */
 export const POST = createAgentRoute({
   name: "meeting-notes",
-  handler: async ({ input }) => {
+  // Wave-111.1 batch 4: memory hooks. Meetings on similar titles
+  // (e.g. weekly "Engineering Sync") compound — past action items
+  // can be cross-checked against this week's decisions to surface
+  // unfollowed-through commitments.
+  memory: {
+    search: {
+      query: (input) => `meeting title:${input.title ?? "Untitled Meeting"}`,
+      limit: 3,
+    },
+    store: {
+      extract: (result, input) => {
+        const r = result as { summary?: string };
+        if (!r.summary) return null;
+        return `${input.title ?? "Untitled"}: ${r.summary.slice(0, 600)}`;
+      },
+      metadata: (input) => ({
+        title: String(input.title ?? "Untitled Meeting"),
+        kind: "meeting-notes",
+      }),
+    },
+  },
+  handler: async ({ input, pastContextAsPrompt }) => {
     // The agent-factory has already authenticated + parsed `input`;
     // the legacy guardRoute / request.json() paths below are dead and
     // would re-do work the factory has done. Use `input` directly.
@@ -24,6 +45,8 @@ export const POST = createAgentRoute({
     if (!transcript) {
       return errorResponse("Missing 'transcript' field", 400, "MISSING_FIELD");
     }
+
+    const pastMeetings = pastContextAsPrompt();
 
     const result = await nimChat(
       "nvidia/nemotron-ultra-253b-v1",
@@ -51,7 +74,7 @@ Be concise and factual. Do not add information not in the transcript.`,
         },
         {
           role: "user",
-          content: `Meeting: "${meetingTitle}"\n\nTranscript:\n${transcript}`,
+          content: `Meeting: "${meetingTitle}"${pastMeetings ? `\n\nPRIOR MEETING NOTES on this title (historical FACTS — surface unfollowed-through action items, do NOT restate):\n${pastMeetings}` : ""}\n\nTranscript:\n${transcript}`,
         },
       ],
       { maxTokens: 2000, temperature: 0.2 },

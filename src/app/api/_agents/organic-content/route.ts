@@ -38,7 +38,31 @@ export const POST = createAgentRoute({
   name: "organic-content",
   schema,
   skipQualityCheck: true, // Agent has its own 3-pass quality system
-  handler: async ({ input }) => {
+  // Wave-111.1 batch 4: memory hooks. Per-content-type + topic
+  // history compounds brand-voice + avoids repeating hooks/angles.
+  memory: {
+    search: {
+      query: (input) =>
+        `organic-content type:${input.contentType ?? ""} topic:${input.topic ?? ""} voice:${input.voice ?? ""} platform:${input.platform ?? ""}`,
+      limit: 3,
+    },
+    store: {
+      extract: (result, input) => {
+        const r = result as { content?: string; raw?: string };
+        const piece = (r.content ?? r.raw ?? "").slice(0, 400);
+        if (!piece) return null;
+        return `${input.contentType ?? "content"} on ${input.topic ?? ""}: ${piece}`;
+      },
+      metadata: (input) => ({
+        contentType: String(input.contentType ?? ""),
+        topic: String(input.topic ?? ""),
+        voice: String(input.voice ?? ""),
+        platform: String(input.platform ?? ""),
+        kind: "organic-content",
+      }),
+    },
+  },
+  handler: async ({ input, pastContextAsPrompt }) => {
     const {
       contentType,
       topic,
@@ -49,6 +73,7 @@ export const POST = createAgentRoute({
       keywords,
       context,
     } = input as z.infer<typeof schema>;
+    const pastContent = pastContextAsPrompt();
 
     const voicePreset =
       VOICE_PRESETS[(voice as VoicePreset) || "conversational"];
@@ -67,7 +92,10 @@ export const POST = createAgentRoute({
       thread: `Write a Twitter/X thread about: ${topic}\n\nTARGET: ${targetAudience || "Business/tech professionals"}\n\n8-12 tweets under 280 chars each.\nTweet 1: viral standalone. Include data, contrarian take. Last tweet: CTA.\nFormat: 1/, 2/, etc.`,
     };
 
-    const contentPrompt = contentPrompts[contentType];
+    const basePrompt = contentPrompts[contentType];
+    const contentPrompt = pastContent
+      ? `${basePrompt}\n\nPRIOR CONTENT on similar topics (historical FACTS — avoid duplicating hooks/angles already used):\n${pastContent}`
+      : basePrompt;
 
     // PASS 1: Generate with anti-slop rules
     const systemPrompt = `${voicePreset}\n\n${ANTI_SLOP_RULES}\n\n${platformRules}`;

@@ -17,7 +17,39 @@ import { nimChat } from "@/lib/nvidia";
 export const POST = createAgentRoute({
   name: "competitive-radar",
   requiredFields: ["url"],
-  handler: async ({ input }) => {
+  // Wave-111.1 batch 4: memory hooks. Per-URL radar scans compound —
+  // last quarter's tech stack + vulnerabilities + recommended actions
+  // inform this scan. Surface what changed without re-stating
+  // everything.
+  memory: {
+    search: {
+      query: (input) => `competitive-radar url:${input.url ?? ""}`,
+      limit: 2,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as {
+          target_url?: string;
+          intelligence?: {
+            company_name?: string;
+            tech_stack?: string[];
+            vulnerabilities?: string[];
+            market_position?: string;
+          };
+        };
+        const i = r.intelligence;
+        if (!i?.company_name) return null;
+        const stack = (i.tech_stack ?? []).slice(0, 5).join(", ");
+        const vulns = (i.vulnerabilities ?? []).slice(0, 3).join("; ");
+        return `${i.company_name} (${r.target_url ?? ""}): tech [${stack}]. vulns: ${vulns}. position: ${i.market_position ?? "?"}`;
+      },
+      metadata: (input) => ({
+        url: String(input.url ?? ""),
+        kind: "competitive-radar",
+      }),
+    },
+  },
+  handler: async ({ input, pastContextAsPrompt }) => {
     const url = input.url as string;
 
     // Step 1: Fetch target site metadata
@@ -32,8 +64,13 @@ export const POST = createAgentRoute({
       // Extract key signals from HTML (first 15KB only)
       const truncated = html.slice(0, 15000);
       const title = truncated.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1] || "";
-      const description = truncated.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)/i)?.[1] || "";
-      const h1s = Array.from(truncated.matchAll(/<h1[^>]*>([^<]+)<\/h1>/gi)).map(m => m[1]).slice(0, 5);
+      const description =
+        truncated.match(
+          /<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)/i,
+        )?.[1] || "";
+      const h1s = Array.from(truncated.matchAll(/<h1[^>]*>([^<]+)<\/h1>/gi))
+        .map((m) => m[1])
+        .slice(0, 5);
       const techSignals: string[] = [];
       if (truncated.includes("next/")) techSignals.push("Next.js");
       if (truncated.includes("react")) techSignals.push("React");
@@ -45,7 +82,8 @@ export const POST = createAgentRoute({
       if (truncated.includes("stripe")) techSignals.push("Stripe");
       if (truncated.includes("intercom")) techSignals.push("Intercom");
       if (truncated.includes("hubspot")) techSignals.push("HubSpot");
-      if (truncated.includes("gtag") || truncated.includes("analytics")) techSignals.push("Google Analytics");
+      if (truncated.includes("gtag") || truncated.includes("analytics"))
+        techSignals.push("Google Analytics");
       if (truncated.includes("hotjar")) techSignals.push("Hotjar");
       if (truncated.includes("segment")) techSignals.push("Segment");
 
@@ -66,7 +104,13 @@ Content-Type: ${headers["content-type"] || ""}`;
       siteData = `URL: ${url}\nFailed to fetch — site may block automated requests.`;
     }
 
-    // Step 2: Deep analysis with DeepSeek V3.2
+    // Step 2: Deep analysis with DeepSeek V3.2 — past scans on this
+    // URL are weaved into the user prompt so the model surfaces
+    // deltas rather than restating last quarter's findings.
+    const pastScans = pastContextAsPrompt();
+    const userContent = pastScans
+      ? `${siteData}\n\nPRIOR RADAR SCANS on this URL (historical FACTS — surface what's changed, do NOT restate):\n${pastScans}`
+      : siteData;
     const analysis = await nimChat(
       "deepseek-ai/deepseek-v3-2-0324",
       [
@@ -91,15 +135,18 @@ Return JSON only:
   "recommended_actions": ["3-5 specific counter-moves"]
 }`,
         },
-        { role: "user", content: siteData },
+        { role: "user", content: userContent },
       ],
-      { maxTokens: 1500, temperature: 0.3 }
+      { maxTokens: 1500, temperature: 0.3 },
     );
 
     // Parse the analysis
     let parsed;
     try {
-      const cleaned = analysis.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
+      const cleaned = analysis
+        .replace(/```json?\n?/g, "")
+        .replace(/```/g, "")
+        .trim();
       parsed = JSON.parse(cleaned);
     } catch {
       parsed = { raw_analysis: analysis, parse_error: true };
