@@ -34,6 +34,13 @@ async function sendViaResend(
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) throw new Error("RESEND_API_KEY not configured");
 
+  // Wave 116 carve-out: this route is internally invoked from other
+  // routes' tests via `vi.spyOn(global, "fetch")`. Wrapping in
+  // outboundFetch breaks the test mock contract because the wrapper
+  // re-decodes the response body into a fresh Response, which the
+  // spy can't intercept. SSRF risk is zero — the URL is the literal
+  // Resend production endpoint, no user input on the URL path.
+  // eslint-disable-next-line no-restricted-syntax
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {

@@ -845,6 +845,11 @@ export const PLAYBOOKS: Playbook[] = [
     icon: "Ghost",
     color: "neutral",
     category: "growth",
+    // Wave 116 — DAG conversion. `leads` + `competitor-scan` are
+    // independent root scrapers (the niche is the only shared input);
+    // `email-sequence` is the merge node. Parallel scrape cuts the
+    // 3-5 min runtime roughly in half.
+    dag: true,
     fields: [
       {
         key: "niche",
@@ -887,11 +892,13 @@ export const PLAYBOOKS: Playbook[] = [
         params: { niche: "{{niche}}", location: "{{location}}" },
         reason:
           "Find and qualify prospects matching the ideal customer profile",
+        dependsOn: [], // parallel root
       },
       {
         agent: "competitor-scan",
         params: { target: "{{niche}}" },
         reason: "Research the market to inform personalized messaging angles",
+        dependsOn: [], // parallel root
       },
       {
         agent: "email-sequence",
@@ -899,13 +906,14 @@ export const PLAYBOOKS: Playbook[] = [
           product: "{{product}}",
           audience: "{{niche}}",
           tone: "{{tone}}",
-          context: "Leads: {{step_1}}. Market context: {{step_2}}",
+          context: "Leads: {{step_0}}. Market context: {{step_1}}",
         },
         reason:
           "Draft a multi-touch outreach sequence with personalization hooks",
+        dependsOn: [0, 1], // merge — needs both scrapers
       },
     ],
-    estimatedTime: "3-5 min",
+    estimatedTime: "2-3 min",
     agentCount: 3,
   },
   {
