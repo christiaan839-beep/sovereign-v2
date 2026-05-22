@@ -1,19 +1,24 @@
 /**
- * SOVEREIGN MATRIX — /immersive Open Graph image (Wave 122).
+ * SOVEREIGN MATRIX — /immersive Open Graph image (Wave 122 + Wave 124).
  *
  * Server-rendered social card via `next/og`. When the immersive URL
  * is shared (Slack / Twitter / WhatsApp / iMessage), the preview
  * shows the brand chrome instead of a blank Next.js default.
  *
+ * Wave 124 — fetches the LIVE cost-saved-30d number from the M8
+ * metrics endpoint at edge runtime and stamps it into the card.
+ * Cached at the Vercel edge for `revalidate` seconds so we don't
+ * thrash the metrics endpoint on every social-card hit.
+ *
+ * Failure-mode discipline: if the metrics fetch fails (cold DB, fresh
+ * deploy with zero runs, network blip), the card falls back to a
+ * static tagline. NEVER renders a fake "$0 saved" stat.
+ *
  * Design rules:
  *   - 1200×630 (OpenGraph + Twitter Cards spec)
  *   - Dark substrate (#020202) matching the live page
  *   - Cyan accent + faint receipt-paper grid
- *   - Sans-serif system stack — no remote font load; `next/og` would
- *     have to fetch a font file at edge runtime if we use serif here.
- *
- * Cached aggressively by Vercel's edge — re-rendered only when this
- * file changes. No runtime data dependency.
+ *   - Sans-serif system stack — no remote font load
  */
 
 import { ImageResponse } from "next/og";
@@ -22,8 +27,63 @@ export const runtime = "edge";
 export const alt = "Sovereign Matrix — A Verifiable Interface";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
+// Re-render the OG card at most every 5 minutes — the underlying
+// metrics endpoint caches 60s upstream, so 5m at the social-card layer
+// keeps fan-out reasonable while still surfacing live deltas.
+export const revalidate = 300;
+
+interface ExtendedMetricsPayload {
+  totalRuns?: number;
+  costSavings?: { savedUsd?: number };
+}
+
+async function fetchSavedUsd(): Promise<{
+  savedUsd: number | null;
+  totalRuns: number | null;
+}> {
+  try {
+    // Use the absolute public URL when set so the edge runtime resolves
+    // a real hostname; fall back to the relative path which Vercel
+    // resolves to the deployment's own origin.
+    const base = process.env.NEXT_PUBLIC_BASE_URL ?? "";
+    const url = `${base}/api/status/metrics/extended?window=30d`;
+    const res = await fetch(url, {
+      next: { revalidate: 300 },
+    });
+    if (!res.ok) return { savedUsd: null, totalRuns: null };
+    const data = (await res.json()) as ExtendedMetricsPayload;
+    const saved = data.costSavings?.savedUsd;
+    const runs = data.totalRuns;
+    return {
+      savedUsd:
+        typeof saved === "number" && Number.isFinite(saved) && saved > 0
+          ? saved
+          : null,
+      totalRuns:
+        typeof runs === "number" && Number.isFinite(runs) && runs > 0
+          ? runs
+          : null,
+    };
+  } catch {
+    return { savedUsd: null, totalRuns: null };
+  }
+}
+
+function fmtUsd(n: number): string {
+  if (n < 1) return `$${n.toFixed(2)}`;
+  if (n < 1000) return `$${n.toFixed(2)}`;
+  if (n < 1_000_000) return `$${(n / 1000).toFixed(1)}k`;
+  return `$${(n / 1_000_000).toFixed(2)}m`;
+}
 
 export default async function Image() {
+  const { savedUsd, totalRuns } = await fetchSavedUsd();
+  const liveLine: string = savedUsd
+    ? `${fmtUsd(savedUsd)} saved vs Claude-Sonnet baseline · last 30 days`
+    : "Every output, signed and verifiable.";
+  const runsLine: string = totalRuns
+    ? `${totalRuns.toLocaleString()} signed runs in the last 30 days`
+    : "ML-DSA-65, post-quantum, on every run.";
   return new ImageResponse(
     <div
       style={{
@@ -198,10 +258,15 @@ export default async function Image() {
             lineHeight: 1.4,
             color: "rgba(163,163,163,0.95)",
             maxWidth: 540,
+            display: "flex",
+            flexDirection: "column",
+            gap: 6,
           }}
         >
-          Every agent output ships with a signed receipt. ML-DSA-65,
-          post-quantum, on every run.
+          <span>{liveLine}</span>
+          <span style={{ color: "rgba(163,163,163,0.7)", fontSize: 18 }}>
+            {runsLine}
+          </span>
         </div>
       </div>
 

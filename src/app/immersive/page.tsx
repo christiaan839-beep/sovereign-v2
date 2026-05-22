@@ -38,6 +38,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import dynamic from "next/dynamic";
 import { HudFrame } from "@/components/landing/HudFrame";
 import { SystemBootLoader } from "@/components/landing/SystemBootLoader";
+import {
+  ImmersiveErrorBoundary,
+  StaticOrbFallback,
+} from "@/components/landing/ImmersiveErrorBoundary";
 import { useReceiptPulse } from "@/lib/use-receipt-pulse";
 
 // Heavy 3D component — dynamic-imported with SSR off so the static
@@ -158,13 +162,23 @@ export default function ImmersivePage() {
     <main ref={containerRef} className="relative bg-[#020202] text-neutral-200">
       <SystemBootLoader />
 
-      {/* Sticky 3D canvas — sits behind all sections, never re-mounts */}
+      {/* Sticky 3D canvas — sits behind all sections, never re-mounts.
+          Wave 124 — wrapped in an error boundary so WebGL context-loss
+          on old GPUs falls back to a static SVG orb instead of white-
+          screening the page. The boundary catches any throw from R3F's
+          render path (e.g. shader compile failure on intel-on-linux). */}
       <div className="sticky top-0 -mb-[100vh] h-screen w-full">
-        <ReceiptOrb
-          pulseToken={pulseToken}
-          accent={current?.accent ?? "cyan"}
-          className="h-full w-full"
-        />
+        <ImmersiveErrorBoundary
+          fallback={() => (
+            <StaticOrbFallback accent={current?.accent ?? "cyan"} />
+          )}
+        >
+          <ReceiptOrb
+            pulseToken={pulseToken}
+            accent={current?.accent ?? "cyan"}
+            className="h-full w-full"
+          />
+        </ImmersiveErrorBoundary>
         <HudFrame
           frameId={current?.frameId}
           systemLabel="SYS·LINK ESTABLISHED"
@@ -206,16 +220,21 @@ export default function ImmersivePage() {
         </AnimatePresence>
       </div>
 
-      {/* Foreground scrolling sections */}
+      {/* Foreground scrolling sections.
+          Wave 124 a11y — each section gets a stable `id` + a
+          headline with matching `id={s.id}-heading` so screen
+          readers announce it via aria-labelledby. */}
       <div className="relative z-10">
         {SECTIONS.map((s, i) => (
           <section
             key={s.id}
+            id={s.id}
             ref={(el) => {
               sectionRefs.current[i] = el;
             }}
             className="relative flex min-h-screen items-center justify-center px-6 py-24 sm:px-12"
             data-frame={s.frameId}
+            aria-labelledby={`${s.id}-heading`}
           >
             <div className="relative mx-auto w-full max-w-3xl">
               <motion.div
@@ -237,7 +256,10 @@ export default function ImmersivePage() {
                   />
                   {s.eyebrow}
                 </div>
-                <h2 className="font-serif text-[clamp(2.5rem,7vw,5.5rem)] font-extrabold leading-[1.02] tracking-[-0.025em] text-white whitespace-pre-line">
+                <h2
+                  id={`${s.id}-heading`}
+                  className="font-serif text-[clamp(2.5rem,7vw,5.5rem)] font-extrabold leading-[1.02] tracking-[-0.025em] text-white whitespace-pre-line"
+                >
                   {s.headline}
                 </h2>
                 <p className="mt-6 max-w-xl text-[15px] leading-relaxed text-neutral-400 sm:text-[16px]">

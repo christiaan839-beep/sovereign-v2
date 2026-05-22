@@ -181,25 +181,34 @@ export function ReceiptOrb({
   starField = true,
 }: ReceiptOrbProps) {
   const [reduceMotion, setReduceMotion] = useState(false);
-  // Wave 123 — mobile perf hardening. Detect coarse-pointer / narrow
-  // viewport once at mount and cap the particle count + dpr so the
-  // canvas keeps 60fps on low-end Android. The decision is sticky for
-  // the component's lifetime (no resize-driven re-render) which means
-  // a desktop user dragging the window to mobile width keeps the
-  // higher-quality renderer they paid the GPU cost for at first paint.
+  // Wave 123 + Wave 124 — mobile perf hardening with resize awareness.
+  // Detect coarse-pointer / narrow viewport. If a desktop user drags the
+  // window past the breakpoint OR an iPad rotates from landscape to
+  // portrait, the matchMedia listeners fire and we re-evaluate. The
+  // canvas does NOT remount — only the props change, which is cheap.
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReduceMotion(mq.matches);
-    const onChange = () => setReduceMotion(mq.matches);
-    mq.addEventListener("change", onChange);
+    const reduceMq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setReduceMotion(reduceMq.matches);
+    const onReduceChange = () => setReduceMotion(reduceMq.matches);
+    reduceMq.addEventListener("change", onReduceChange);
 
-    const coarse = window.matchMedia("(pointer: coarse)").matches;
-    const narrow = window.matchMedia("(max-width: 768px)").matches;
-    setIsMobile(coarse || narrow);
+    // Wave 124 — listen to coarse + narrow as live media queries. The
+    // OR-of-two-mqs pattern means EITHER trigger flips us into mobile
+    // mode and either flipping back flips us out.
+    const coarseMq = window.matchMedia("(pointer: coarse)");
+    const narrowMq = window.matchMedia("(max-width: 768px)");
+    const recompute = () => setIsMobile(coarseMq.matches || narrowMq.matches);
+    recompute();
+    coarseMq.addEventListener("change", recompute);
+    narrowMq.addEventListener("change", recompute);
 
-    return () => mq.removeEventListener("change", onChange);
+    return () => {
+      reduceMq.removeEventListener("change", onReduceChange);
+      coarseMq.removeEventListener("change", recompute);
+      narrowMq.removeEventListener("change", recompute);
+    };
   }, []);
 
   const accentColor = accent === "cyan" ? CYAN : COPPER;
