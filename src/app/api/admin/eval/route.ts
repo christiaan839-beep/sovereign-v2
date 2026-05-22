@@ -76,16 +76,35 @@ export async function GET(req: Request) {
     100,
   );
   const agentFilter = url.searchParams.get("agent")?.trim() || undefined;
+  const useLlmJudge = url.searchParams.get("judge") === "llm";
+
+  // Wave-150: dynamically load the LLM judge so the heuristic path
+  // stays zero-cost when the operator doesn't opt in.
+  let judge:
+    | ((input: string, output: string, agentName: string) => Promise<number>)
+    | undefined;
+  if (useLlmJudge) {
+    try {
+      const { llmJudge } = await import("@/lib/eval-llm-judge");
+      judge = llmJudge;
+    } catch {
+      // Falls through to heuristic when the judge module fails to load
+    }
+  }
 
   const report = await computeEvalReport({
     windowDays,
     samplesPerAgent,
     agentFilter,
+    judge,
   });
 
-  return NextResponse.json(report, {
-    headers: {
-      "Cache-Control": "private, max-age=300, s-maxage=300",
+  return NextResponse.json(
+    { ...report, judgeMode: useLlmJudge ? "llm" : "heuristic" },
+    {
+      headers: {
+        "Cache-Control": "private, max-age=300, s-maxage=300",
+      },
     },
-  });
+  );
 }
