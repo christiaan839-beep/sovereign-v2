@@ -34,6 +34,11 @@ node_modules
 # throwaway demo keypair (the secret was discarded after generation).
 # It's safe to commit; the .pem extension is misleading here.
 !public/sample-bundle.ed25519.pem
+# Conformance suite public verification key — needed by the cross-
+# language harness so external auditors can re-run the suite. Public
+# half only; the private signing key is generated per-rotation and
+# discarded after re-signing the v2 fixtures.
+!packages/verifiable-receipts/conformance/public-key.pem
 
 # debug
 npm-debug.log*
