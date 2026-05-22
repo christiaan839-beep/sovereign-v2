@@ -23,6 +23,7 @@ import {
   probeOssEndpoint,
 } from "@/lib/oss-inference";
 import { isGcpExportConfigured } from "@/lib/bigquery-export";
+import { isVertexSearchConfigured } from "@/lib/vertex-search";
 
 const log = createLogger("admin-infrastructure");
 
@@ -159,6 +160,24 @@ export async function GET(req: Request) {
     ],
     savingsNote:
       "Off-loads cohort + extended-metrics queries from Neon. Flat $5/TB scan cost; sub-second on 100M rows.",
+  });
+
+  // ─── Vertex AI Search (Wave 137) ────────────────────────────────
+  const vertexOk = isVertexSearchConfigured();
+  entries.push({
+    id: "vertex-search",
+    label: "Vertex AI Search",
+    description:
+      "Google Cloud Discovery Engine — structured citations + generative summaries. Augments url-context + grounded-search agents when wired.",
+    mode: vertexOk ? "managed" : "not-configured",
+    envVars: [
+      "GCP_VERTEX_SEARCH_PROJECT",
+      "GCP_VERTEX_SEARCH_ENGINE_ID",
+      "GCP_VERTEX_SEARCH_LOCATION",
+      "GCP_VERTEX_SEARCH_ACCESS_TOKEN",
+    ],
+    savingsNote:
+      "Higher-quality grounding than Tavily + structured citations the Gemini google_search tool doesn't expose.",
   });
 
   // ─── Riva voice (self-host placeholder) ─────────────────────────
