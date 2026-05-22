@@ -8,6 +8,32 @@ function getNimKey(): string {
 
 export const POST = createAgentRoute({
   name: "nemotron-omni",
+  // Wave 128 M3 batch 18: memory hooks. Multimodal continuity — prior
+  // image/audio analyses inform the next prompt with the same media kind
+  // ("you saw this chart before, here's what it shows now").
+  memory: {
+    search: {
+      query: (input) =>
+        `omni ${input.mode ?? "text"} ${String(input.prompt ?? "").slice(0, 60)}`,
+      limit: 2,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as {
+          mode?: string;
+          model?: string;
+          result?: string;
+        };
+        if (!r.result) return null;
+        const head = r.result.slice(0, 200).replace(/\s+/g, " ");
+        return `omni[${r.mode ?? "text"}]: ${head}`;
+      },
+      metadata: (input) => ({
+        kind: "nemotron-omni",
+        mode: typeof input.mode === "string" ? input.mode : "text",
+      }),
+    },
+  },
   handler: async ({ input }) => {
     const {
       prompt = "",
@@ -64,7 +90,9 @@ export const POST = createAgentRoute({
         ? "nvidia/nemotron-nano-12b-v2-vl" // Vision-language model
         : "nvidia/llama-3.1-nemotron-ultra-253b-v1"; // Text/voice
 
-    const res = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
+    const res = await outboundFetchAsResponse(
+      "https://integrate.api.nvidia.com/v1/chat/completions",
+      {
         method: "POST",
         headers: {
           Authorization: `Bearer ${key}`,
@@ -77,7 +105,12 @@ export const POST = createAgentRoute({
           temperature: 0.7,
           stream: false,
         }),
-      }, { ruleId: "agents.nemotron-omni.route.1", allowedHosts: ["integrate.api.nvidia.com"] });
+      },
+      {
+        ruleId: "agents.nemotron-omni.route.1",
+        allowedHosts: ["integrate.api.nvidia.com"],
+      },
+    );
 
     if (!res.ok) {
       const err = await res.text();

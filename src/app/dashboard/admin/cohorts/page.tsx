@@ -126,7 +126,7 @@ export default function AdminCohortsPage() {
               <p className="mt-2 max-w-2xl text-[14px] leading-relaxed text-neutral-400">
                 Aggregated from the agent_runs receipt fabric. Use to screen for
                 retention pockets, identify super-user accounts to nurture, and
-                surface which week's onboarding cohort is still firing.
+                surface which week&apos;s onboarding cohort is still firing.
               </p>
             </div>
 

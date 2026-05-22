@@ -11,10 +11,36 @@ import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
 
 export const POST = createAgentRoute({
   name: "benchmark",
+  // Wave 128 M3 batch 18: memory hooks. Prior benchmark winners + tokens/sec
+  // let the next run compare against trend — "model X is now 14% faster than
+  // last week" — instead of standalone numbers.
+  memory: {
+    search: {
+      query: (input) => `benchmark ${String(input.prompt ?? "").slice(0, 60)}`,
+      limit: 2,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as {
+          winners?: { fastest?: string; highest_throughput?: string };
+          models_tested?: number;
+          benchmarks?: Array<{ model?: string; tokens_per_second?: number }>;
+        };
+        if (!r.winners && !r.benchmarks) return null;
+        const top = (r.benchmarks ?? [])
+          .filter((b) => b.tokens_per_second)
+          .slice(0, 3)
+          .map((b) => `${b.model}=${b.tokens_per_second}t/s`)
+          .join(" · ");
+        return `benchmark ${r.models_tested ?? 0}m fastest=${r.winners?.fastest ?? "?"} ${top}`;
+      },
+      metadata: () => ({ kind: "benchmark" }),
+    },
+  },
   handler: async ({ input, email, userId }) => {
-
-    const { prompt = "Write a 100-word analysis of how AI will impact marketing in 2026." } = input as Record<string, unknown>;
-    
+    const {
+      prompt = "Write a 100-word analysis of how AI will impact marketing in 2026.",
+    } = input as Record<string, unknown>;
 
     const models = [
       { id: "deepseek-ai/deepseek-v3.2", name: "DeepSeek V3.2" },
@@ -26,24 +52,32 @@ export const POST = createAgentRoute({
       models.map(async (model) => {
         const start = Date.now();
         try {
-          const res = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${await getNimKey()}`,
+          const res = await outboundFetchAsResponse(
+            "https://integrate.api.nvidia.com/v1/chat/completions",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${await getNimKey()}`,
+              },
+              body: JSON.stringify({
+                model: model.id,
+                messages: [{ role: "user", content: prompt }],
+                max_tokens: 300,
+                temperature: 0.7,
+              }),
             },
-            body: JSON.stringify({
-              model: model.id,
-              messages: [{ role: "user", content: prompt }],
-              max_tokens: 300,
-              temperature: 0.7,
-            }),
-          }, { ruleId: "agents.benchmark.route.1", allowedHosts: ["integrate.api.nvidia.com"] });
+            {
+              ruleId: "agents.benchmark.route.1",
+              allowedHosts: ["integrate.api.nvidia.com"],
+            },
+          );
 
           const data = await res.json();
           const output = data?.choices?.[0]?.message?.content || "";
           const duration = Date.now() - start;
-          const tokens = data?.usage?.total_tokens || output.split(/\s+/).length;
+          const tokens =
+            data?.usage?.total_tokens || output.split(/\s+/).length;
 
           return {
             model: model.name,
@@ -67,14 +101,16 @@ export const POST = createAgentRoute({
             status: "❌ Failed",
           };
         }
-      })
+      }),
     );
 
-    const successful = benchmarks.filter(b => b.status === "✅ Success");
+    const successful = benchmarks.filter((b) => b.status === "✅ Success");
     const fastest = successful.sort((a, b) => a.duration_ms - b.duration_ms)[0];
-    const highest_throughput = successful.sort((a, b) => b.tokens_per_second - a.tokens_per_second)[0];
+    const highest_throughput = successful.sort(
+      (a, b) => b.tokens_per_second - a.tokens_per_second,
+    )[0];
 
-    return ({
+    return {
       success: true,
       prompt,
       models_tested: models.length,
@@ -83,8 +119,6 @@ export const POST = createAgentRoute({
         fastest: fastest?.model || "N/A",
         highest_throughput: highest_throughput?.model || "N/A",
       },
-    });
-  
+    };
   },
 });
-

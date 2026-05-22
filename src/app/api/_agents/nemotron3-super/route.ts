@@ -16,6 +16,32 @@ import { nimChat } from "@/lib/nvidia";
 
 export const POST = createAgentRoute({
   name: "nemotron3-super",
+  // Wave 128 M3 batch 18: memory hooks. Long-context reasoning chains
+  // compound — prior step's conclusion + mode lets follow-up calls reference
+  // the chain ("from your last analyze: …") instead of rebuilding it.
+  memory: {
+    search: {
+      query: (input) =>
+        `nemotron3-super ${input.mode ?? "reason"} ${String(input.prompt ?? "").slice(0, 60)}`,
+      limit: 2,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as {
+          mode?: string;
+          result?: string;
+          duration_ms?: number;
+        };
+        if (!r.result) return null;
+        const head = r.result.slice(0, 220).replace(/\s+/g, " ");
+        return `n3s[${r.mode ?? "reason"}/${r.duration_ms ?? 0}ms]: ${head}`;
+      },
+      metadata: (input) => ({
+        kind: "nemotron3-super",
+        mode: typeof input.mode === "string" ? input.mode : "reason",
+      }),
+    },
+  },
   handler: async ({ input, email, userId }) => {
     const {
       prompt = "",

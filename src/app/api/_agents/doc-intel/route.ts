@@ -25,6 +25,36 @@ export const POST = createAgentRoute({
   name: "doc-intel",
   schema,
   skipQualityCheck: true, // OCR output quality is domain-specific
+  // Wave 128 M3 batch 18: memory hooks. Per-image OCR history lets the next
+  // extraction reference the prior structure ("table column headers were X")
+  // so re-scans of similar docs converge faster.
+  memory: {
+    search: {
+      query: (input) =>
+        `doc-intel ${String(input.imageUrl ?? "").slice(0, 80)}`,
+      limit: 2,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as {
+          text?: string;
+          wordCount?: number;
+          structure?: string;
+        };
+        if (!r.text && !r.structure) return null;
+        const head = (r.text ?? "").slice(0, 140).replace(/\s+/g, " ");
+        const struct = (r.structure ?? "").slice(0, 80).replace(/\s+/g, " ");
+        return `doc-intel ${r.wordCount ?? 0}w: ${head} [${struct}]`;
+      },
+      metadata: (input) => ({
+        url:
+          typeof input.imageUrl === "string"
+            ? input.imageUrl.slice(0, 200)
+            : "",
+        kind: "doc-intel",
+      }),
+    },
+  },
   handler: async ({ input }) => {
     const { imageUrl, imageBase64, extractTables } = input as z.infer<
       typeof schema
