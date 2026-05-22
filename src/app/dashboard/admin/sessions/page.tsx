@@ -30,6 +30,7 @@ import {
   Clock,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { bucketFreshness } from "@/lib/admin-sessions-helpers";
 
 interface SessionSummary {
   id: string;
@@ -95,6 +96,51 @@ function truncate(s: string, max: number): string {
   return s.length > max ? `${s.slice(0, max)}…` : s;
 }
 
+/**
+ * Render a state JSON blob as a compact list of top-level keys for
+ * scanning. Falls back to the raw string if parsing fails.
+ *
+ * Examples:
+ *   "{}" → "—"
+ *   '{"phase":"plan","step":3}' → "phase=plan · step=3"
+ *   "garbage" → "garbage"
+ */
+function prettyStatePreview(raw: string): string {
+  if (!raw || raw === "{}" || raw === "null") return "—";
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return truncate(raw, 80);
+  }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    return truncate(String(parsed), 80);
+  }
+  const entries = Object.entries(parsed as Record<string, unknown>);
+  if (entries.length === 0) return "—";
+  return entries
+    .slice(0, 4)
+    .map(([k, v]) => {
+      const value =
+        typeof v === "object" && v !== null
+          ? Array.isArray(v)
+            ? `[${v.length}]`
+            : "{…}"
+          : String(v);
+      return `${k}=${truncate(value, 24)}`;
+    })
+    .join(" · ");
+}
+
+const FRESHNESS_TEXT_COLOR: Record<
+  ReturnType<typeof bucketFreshness>,
+  string
+> = {
+  fresh: "text-neutral-400",
+  cooling: "text-amber-300/80",
+  stuck: "text-amber-300",
+};
+
 export default function AdminSessionsPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [agentFilter, setAgentFilter] = useState<string>("");
@@ -142,7 +188,12 @@ export default function AdminSessionsPage() {
       else if (s.status === "done") t.done++;
       else if (s.status === "failed") t.failed++;
       else if (s.status === "abandoned") t.abandoned++;
-      if (s.status === "active" && ageMinutes(s.lastTouchedAt) > 10) t.stuck++;
+      if (
+        s.status === "active" &&
+        bucketFreshness(ageMinutes(s.lastTouchedAt)) === "stuck"
+      ) {
+        t.stuck++;
+      }
     }
     return t;
   }, [data]);
@@ -326,16 +377,25 @@ export default function AdminSessionsPage() {
                           </td>
                           <td
                             className={`px-5 py-3 font-mono ${
-                              s.status === "active" &&
-                              ageMinutes(s.lastTouchedAt) > 10
-                                ? "text-amber-300"
-                                : "text-neutral-400"
+                              s.status === "active"
+                                ? FRESHNESS_TEXT_COLOR[
+                                    bucketFreshness(ageMinutes(s.lastTouchedAt))
+                                  ]
+                                : "text-neutral-500"
                             }`}
+                            title={
+                              s.status === "active"
+                                ? bucketFreshness(ageMinutes(s.lastTouchedAt))
+                                : undefined
+                            }
                           >
                             {ageMinutes(s.lastTouchedAt)}m
                           </td>
-                          <td className="px-5 py-3 font-mono text-neutral-500">
-                            {truncate(s.statePreview, 80)}
+                          <td
+                            className="px-5 py-3 font-mono text-neutral-500"
+                            title={s.statePreview}
+                          >
+                            {prettyStatePreview(s.statePreview)}
                           </td>
                         </tr>
                       ))}
