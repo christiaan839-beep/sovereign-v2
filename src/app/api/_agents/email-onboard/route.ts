@@ -81,6 +81,35 @@ Write the email body only. Make it warm, professional, and actionable. Use markd
 export const POST = createAgentRoute({
   name: "email-onboard",
   requiredFields: ["email"],
+  // Wave 130 M3 batch 20: memory hooks. Per-email onboarding-sequence
+  // continuity — prior welcome/day-3/day-7 sends let the next action
+  // skip already-completed steps and pick up at the right cadence.
+  memory: {
+    search: {
+      query: (input) =>
+        `email-onboard ${input.action ?? "send-welcome"} ${String(input.email ?? "").slice(0, 60)}`,
+      limit: 3,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as {
+          action?: string;
+          status?: string;
+          step?: string;
+          email?: string;
+        };
+        const head = `${r.action ?? "?"}/${r.status ?? "?"}${r.step ? ` step=${r.step}` : ""}`;
+        if (!head.trim()) return null;
+        return `email-onboard[${r.email ?? "?"}]: ${head}`;
+      },
+      metadata: (input) => ({
+        kind: "email-onboard",
+        email: typeof input.email === "string" ? input.email.slice(0, 100) : "",
+        action:
+          typeof input.action === "string" ? input.action : "send-welcome",
+      }),
+    },
+  },
   handler: async ({ input }) => {
     const {
       email,
@@ -103,19 +132,26 @@ export const POST = createAgentRoute({
       );
 
       if (resendKey) {
-        const res = await outboundFetchAsResponse("https://api.resend.com/emails", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${resendKey}`,
+        const res = await outboundFetchAsResponse(
+          "https://api.resend.com/emails",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${resendKey}`,
+            },
+            body: JSON.stringify({
+              from: fromEmail,
+              to: [email],
+              subject: welcomeEmail.subject,
+              text: welcomeEmail.body,
+            }),
           },
-          body: JSON.stringify({
-            from: fromEmail,
-            to: [email],
-            subject: welcomeEmail.subject,
-            text: welcomeEmail.body,
-          }),
-        }, { ruleId: "agents.email-onboard.route.1", allowedHosts: ["api.resend.com"] });
+          {
+            ruleId: "agents.email-onboard.route.1",
+            allowedHosts: ["api.resend.com"],
+          },
+        );
 
         const data = await res.json();
 

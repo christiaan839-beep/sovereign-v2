@@ -8,6 +8,30 @@ import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
 
 export const POST = createAgentRoute({
   name: "ocr",
+  // Wave 130 M3 batch 20: memory hooks. Per-image OCR continuity — Ghost
+  // Fleet SDR rescans same competitor screenshots over time; prior text
+  // extract lets the next scan emit deltas instead of restating.
+  memory: {
+    search: {
+      query: (input) => `ocr ${String(input.imageUrl ?? "").slice(0, 100)}`,
+      limit: 2,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as { text?: string; model?: string };
+        if (!r.text) return null;
+        const head = r.text.slice(0, 220).replace(/\s+/g, " ");
+        return `ocr[${r.model ?? "?"}]: ${head}`;
+      },
+      metadata: (input) => ({
+        kind: "ocr",
+        url:
+          typeof input.imageUrl === "string"
+            ? input.imageUrl.slice(0, 200)
+            : "",
+      }),
+    },
+  },
   handler: async ({ input, email, userId }) => {
     const { imageBase64, imageUrl } = input as {
       imageBase64?: string;
@@ -39,7 +63,9 @@ export const POST = createAgentRoute({
       });
     }
 
-    const res = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
+    const res = await outboundFetchAsResponse(
+      "https://integrate.api.nvidia.com/v1/chat/completions",
+      {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -51,7 +77,12 @@ export const POST = createAgentRoute({
           max_tokens: 2000,
           temperature: 0.1,
         }),
-      }, { ruleId: "agents.ocr.route.1", allowedHosts: ["integrate.api.nvidia.com"] });
+      },
+      {
+        ruleId: "agents.ocr.route.1",
+        allowedHosts: ["integrate.api.nvidia.com"],
+      },
+    );
 
     if (!res.ok) {
       const errText = await res.text();
