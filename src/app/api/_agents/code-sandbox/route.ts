@@ -1,7 +1,6 @@
 import { createAgentRoute } from "@/lib/agent-factory";
 import { executeCode, analyzeData } from "@/lib/colab-mcp";
 
-
 /**
  * CODE SANDBOX AGENT — Execute Python code in a cloud sandbox.
  * Uses Gemini Code Execution (built-in) with Colab MCP as future upgrade.
@@ -12,6 +11,37 @@ import { executeCode, analyzeData } from "@/lib/colab-mcp";
  */
 export const POST = createAgentRoute({
   name: "code-sandbox",
+  // Wave 129 M3 batch 19: memory hooks. Per-user code session continuity —
+  // prior task description + execution result helps next "modify the
+  // function" or "fix the error from last run" land without re-pasting.
+  memory: {
+    search: {
+      query: (input) =>
+        `code-sandbox ${input.action ?? "execute"} ${String(input.task ?? "").slice(0, 60)} ${String(input.code ?? "").slice(0, 60)}`,
+      limit: 2,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as {
+          action?: string;
+          output?: string;
+          stdout?: string;
+          stderr?: string;
+          success?: boolean;
+        };
+        const out = (r.stdout ?? r.output ?? "")
+          .slice(0, 180)
+          .replace(/\s+/g, " ");
+        const err = (r.stderr ?? "").slice(0, 100).replace(/\s+/g, " ");
+        if (!out && !err) return null;
+        return `code-sandbox[${r.action ?? "?"}/${r.success ? "ok" : "err"}]: ${out}${err ? ` ERR=${err}` : ""}`;
+      },
+      metadata: (input) => ({
+        kind: "code-sandbox",
+        action: typeof input.action === "string" ? input.action : "execute",
+      }),
+    },
+  },
   handler: async ({ input, email, userId }) => {
     const {
       action = "execute",

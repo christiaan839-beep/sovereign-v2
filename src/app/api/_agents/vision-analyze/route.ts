@@ -27,8 +27,16 @@ const NIM_BASE = "https://integrate.api.nvidia.com/v1/chat/completions";
 /** Vision model cascade — tried in order until one succeeds */
 const VISION_MODELS = [
   { id: "moonshotai/kimi-k2.5", label: "kimi-k2.5", maxTokens: 4096 },
-  { id: "nvidia/nemotron-nano-12b-v2-vl", label: "nemotron-nano-vl", maxTokens: 2000 },
-  { id: "meta/llama-3.2-90b-vision-instruct", label: "llama-3.2-90b-vision", maxTokens: 2000 },
+  {
+    id: "nvidia/nemotron-nano-12b-v2-vl",
+    label: "nemotron-nano-vl",
+    maxTokens: 2000,
+  },
+  {
+    id: "meta/llama-3.2-90b-vision-instruct",
+    label: "llama-3.2-90b-vision",
+    maxTokens: 2000,
+  },
 ] as const;
 
 async function callVisionModel(
@@ -41,16 +49,16 @@ async function callVisionModel(
   try {
     const res = await fetch(NIM_BASE, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${nimKey}` },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${nimKey}`,
+      },
       body: JSON.stringify({
         model: modelId,
         messages: [
           {
             role: "user",
-            content: [
-              imageContent,
-              { type: "text", text: question },
-            ],
+            content: [imageContent, { type: "text", text: question }],
           },
         ],
         max_tokens: maxTokens,
@@ -60,7 +68,10 @@ async function callVisionModel(
 
     if (!res.ok) {
       const errBody = await res.text().catch(() => "");
-      return { ok: false, error: `${res.status} ${res.statusText}: ${errBody.slice(0, 200)}` };
+      return {
+        ok: false,
+        error: `${res.status} ${res.statusText}: ${errBody.slice(0, 200)}`,
+      };
     }
 
     const data = await res.json();
@@ -68,17 +79,47 @@ async function callVisionModel(
     if (!text) return { ok: false, error: "Empty response from model" };
     return { ok: true, text };
   } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : "Unknown fetch error" };
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Unknown fetch error",
+    };
   }
 }
 
 export const POST = createAgentRoute({
   name: "vision-analyze",
   requiredFields: [],
+  // Wave 129 M3 batch 19: memory hooks. Per-image vision continuity —
+  // the prior analysis of the same imageUrl gives the next call a base
+  // to report changes against ("the chart now shows… vs last time").
+  memory: {
+    search: {
+      query: (input) =>
+        `vision-analyze ${String(input.imageUrl ?? "").slice(0, 80)} ${String(input.question ?? "").slice(0, 60)}`,
+      limit: 2,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as { analysis?: string; model?: string };
+        if (!r.analysis) return null;
+        const head = r.analysis.slice(0, 220).replace(/\s+/g, " ");
+        return `vision-analyze[${r.model ?? "?"}]: ${head}`;
+      },
+      metadata: (input) => ({
+        kind: "vision-analyze",
+        url:
+          typeof input.imageUrl === "string"
+            ? input.imageUrl.slice(0, 200)
+            : "",
+      }),
+    },
+  },
   handler: async ({ input }) => {
     const imageUrl = input.imageUrl as string | undefined;
     const imageBase64 = input.imageBase64 as string | undefined;
-    const question = (input.question as string) || "Analyze this image in detail. Describe what you see, extract any text, identify the purpose, and note anything notable.";
+    const question =
+      (input.question as string) ||
+      "Analyze this image in detail. Describe what you see, extract any text, identify the purpose, and note anything notable.";
     const preferredModel = input.model as string | undefined;
 
     if (!imageUrl && !imageBase64) {
@@ -87,12 +128,18 @@ export const POST = createAgentRoute({
 
     const nimKey = await getNimKey();
     if (!nimKey) {
-      return { error: "AI model API key not configured. Add it in Settings > API Keys." };
+      return {
+        error:
+          "AI model API key not configured. Add it in Settings > API Keys.",
+      };
     }
 
     const imageContent = imageUrl
       ? { type: "image_url" as const, image_url: { url: imageUrl } }
-      : { type: "image_url" as const, image_url: { url: `data:image/png;base64,${imageBase64}` } };
+      : {
+          type: "image_url" as const,
+          image_url: { url: `data:image/png;base64,${imageBase64}` },
+        };
 
     // Try Qwen 3.5 VLM 400B (multimodalAnalyze) first — best multimodal model on NIM.
     // Only when no specific model is preferred and we have a URL (not base64, since
@@ -100,7 +147,9 @@ export const POST = createAgentRoute({
     if (!preferredModel && imageUrl) {
       try {
         log.info("Trying multimodalAnalyze (Qwen 3.5 VLM 400B)");
-        const result = await multimodalAnalyze(imageUrl, question, { maxTokens: 4096 });
+        const result = await multimodalAnalyze(imageUrl, question, {
+          maxTokens: 4096,
+        });
         if (result) {
           log.info("multimodalAnalyze succeeded");
           return { analysis: result, model: "qwen3.5-vl-400b" };
@@ -115,8 +164,12 @@ export const POST = createAgentRoute({
     // If caller requested a specific model, try it first
     const modelQueue = preferredModel
       ? [
-          ...VISION_MODELS.filter(m => m.id === preferredModel || m.label === preferredModel),
-          ...VISION_MODELS.filter(m => m.id !== preferredModel && m.label !== preferredModel),
+          ...VISION_MODELS.filter(
+            (m) => m.id === preferredModel || m.label === preferredModel,
+          ),
+          ...VISION_MODELS.filter(
+            (m) => m.id !== preferredModel && m.label !== preferredModel,
+          ),
         ]
       : [...VISION_MODELS];
 
@@ -124,7 +177,13 @@ export const POST = createAgentRoute({
     const errors: string[] = [];
     for (const model of modelQueue) {
       log.info("Trying vision model", { model: model.label });
-      const result = await callVisionModel(model.id, imageContent, question, model.maxTokens, nimKey);
+      const result = await callVisionModel(
+        model.id,
+        imageContent,
+        question,
+        model.maxTokens,
+        nimKey,
+      );
 
       if (result.ok) {
         log.info("Vision model succeeded", { model: model.label });
@@ -135,7 +194,10 @@ export const POST = createAgentRoute({
         };
       }
 
-      log.warn("Vision model failed, trying next", { model: model.label, error: result.error });
+      log.warn("Vision model failed, trying next", {
+        model: model.label,
+        error: result.error,
+      });
       errors.push(`${model.label}: ${result.error}`);
     }
 

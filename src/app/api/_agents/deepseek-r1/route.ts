@@ -14,23 +14,65 @@ export const POST = createAgentRoute({
     domain: z.string().max(50).optional().default("general"),
     prompt: z.string().optional(),
   }),
+  // Wave 129 M3 batch 19: memory hooks. Reasoning over a problem class
+  // (math/code/logic) compounds — the prior chain-of-thought gives the
+  // next attempt a head start ("you tried induction here, ran into…").
+  memory: {
+    search: {
+      query: (input) =>
+        `deepseek-r1 ${input.domain ?? "general"} ${String(input.problem ?? "").slice(0, 80)}`,
+      limit: 2,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as {
+          domain?: string;
+          final_answer?: string;
+          reasoning_trace?: string;
+        };
+        const head = (r.final_answer ?? r.reasoning_trace ?? "")
+          .slice(0, 220)
+          .replace(/\s+/g, " ");
+        if (!head) return null;
+        return `deepseek-r1[${r.domain ?? "general"}]: ${head}`;
+      },
+      metadata: (input) => ({
+        kind: "deepseek-r1",
+        domain: typeof input.domain === "string" ? input.domain : "general",
+      }),
+    },
+  },
   handler: async ({ input }) => {
     const problem = input.problem as string;
     const domain = input.domain as string;
     const start = Date.now();
 
-    const res = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${await getNimKey()}` },
-      body: JSON.stringify({
-        model: "deepseek-ai/deepseek-r1-distill-qwen-32b",
-        messages: [
-          { role: "system", content: `You are a deep reasoning engine specializing in ${domain}. Show complete chain of thought. Use <think>...</think> tags for reasoning.` },
-          { role: "user", content: problem },
-        ],
-        max_tokens: 2048, temperature: 0.1,
-      }),
-    }, { ruleId: "agents.deepseek-r1.route.1", allowedHosts: ["integrate.api.nvidia.com"] });
+    const res = await outboundFetchAsResponse(
+      "https://integrate.api.nvidia.com/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${await getNimKey()}`,
+        },
+        body: JSON.stringify({
+          model: "deepseek-ai/deepseek-r1-distill-qwen-32b",
+          messages: [
+            {
+              role: "system",
+              content: `You are a deep reasoning engine specializing in ${domain}. Show complete chain of thought. Use <think>...</think> tags for reasoning.`,
+            },
+            { role: "user", content: problem },
+          ],
+          max_tokens: 2048,
+          temperature: 0.1,
+        }),
+      },
+      {
+        ruleId: "agents.deepseek-r1.route.1",
+        allowedHosts: ["integrate.api.nvidia.com"],
+      },
+    );
 
     if (!res.ok) throw new Error(`NIM returned ${res.status}`);
     const data = await res.json();
@@ -41,7 +83,9 @@ export const POST = createAgentRoute({
     const answer = fullResponse.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
 
     return {
-      success: true, model: "DeepSeek R1", domain,
+      success: true,
+      model: "DeepSeek R1",
+      domain,
       reasoning_trace: reasoning || "Reasoning embedded in answer",
       final_answer: answer || fullResponse,
       duration_ms: Date.now() - start,
