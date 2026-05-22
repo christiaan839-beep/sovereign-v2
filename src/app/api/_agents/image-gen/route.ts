@@ -20,27 +20,59 @@ const schema = z.object({
 export const POST = createAgentRoute({
   name: "image-gen",
   schema,
+  // Wave 127 M3 batch 17: per-prompt + per-dimensions style continuity.
+  // The orchestrating agent gets prior generations from similar prompts
+  // — surfaces what dimensions/steps produced strong visual results.
+  memory: {
+    search: {
+      query: (input) =>
+        `image-gen ${input.width ?? 1024}x${input.height ?? 1024} ${String(input.prompt ?? "").slice(0, 120)}`,
+      limit: 2,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as {
+          imageUrl?: string;
+          prompt?: string;
+          width?: number;
+          height?: number;
+        };
+        if (!r.imageUrl && !r.prompt) return null;
+        return `${r.width ?? 1024}x${r.height ?? 1024}: ${(r.prompt ?? "").slice(0, 200).replace(/\s+/g, " ")}`;
+      },
+      metadata: () => ({ kind: "image-gen" }),
+    },
+  },
   skipQualityCheck: true, // Image output is binary, not text
   skipPiiScan: true, // Image URLs don't contain PII text
   handler: async ({ input }) => {
-    const { prompt, negative_prompt, width, height, steps } = input as z.infer<typeof schema>;
+    const { prompt, negative_prompt, width, height, steps } = input as z.infer<
+      typeof schema
+    >;
 
-    const nimRes = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/images/generations", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${await getNimKey()}`,
+    const nimRes = await outboundFetchAsResponse(
+      "https://integrate.api.nvidia.com/v1/images/generations",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${await getNimKey()}`,
+        },
+        body: JSON.stringify({
+          model: "black-forest-labs/flux1-schnell",
+          prompt: `${prompt}, ultra high quality, professional photography, 8k resolution, sharp focus`,
+          negative_prompt: `${negative_prompt}, blurry, low quality, pixelated, watermark, text`,
+          width: Math.min(width, 1024),
+          height: Math.min(height, 1024),
+          steps,
+          n: 1,
+        }),
       },
-      body: JSON.stringify({
-        model: "black-forest-labs/flux1-schnell",
-        prompt: `${prompt}, ultra high quality, professional photography, 8k resolution, sharp focus`,
-        negative_prompt: `${negative_prompt}, blurry, low quality, pixelated, watermark, text`,
-        width: Math.min(width, 1024),
-        height: Math.min(height, 1024),
-        steps,
-        n: 1,
-      }),
-    }, { ruleId: "agents.image-gen.route.1", allowedHosts: ["integrate.api.nvidia.com"] });
+      {
+        ruleId: "agents.image-gen.route.1",
+        allowedHosts: ["integrate.api.nvidia.com"],
+      },
+    );
 
     if (!nimRes.ok) {
       const errorText = await nimRes.text();
