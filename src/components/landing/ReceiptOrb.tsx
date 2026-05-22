@@ -180,17 +180,25 @@ export function ReceiptOrb({
   className,
   starField = true,
 }: ReceiptOrbProps) {
-  const [reduceMotion, setReduceMotion] = useState(false);
-  // Wave 123 + Wave 124 — mobile perf hardening with resize awareness.
-  // Detect coarse-pointer / narrow viewport. If a desktop user drags the
-  // window past the breakpoint OR an iPad rotates from landscape to
-  // portrait, the matchMedia listeners fire and we re-evaluate. The
-  // canvas does NOT remount — only the props change, which is cheap.
-  const [isMobile, setIsMobile] = useState(false);
+  // Wave 124 polish — lazy-init both signals so we never call setState
+  // synchronously inside useEffect (React 19 lint rule
+  // react-hooks/set-state-in-effect would flag a cascading render).
+  // SSR-safe via typeof window guard; mount renders the right value
+  // first paint, no flicker.
+  const [reduceMotion, setReduceMotion] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  });
+  const [isMobile, setIsMobile] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return (
+      window.matchMedia("(pointer: coarse)").matches ||
+      window.matchMedia("(max-width: 768px)").matches
+    );
+  });
 
   useEffect(() => {
     const reduceMq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReduceMotion(reduceMq.matches);
     const onReduceChange = () => setReduceMotion(reduceMq.matches);
     reduceMq.addEventListener("change", onReduceChange);
 
@@ -200,7 +208,6 @@ export function ReceiptOrb({
     const coarseMq = window.matchMedia("(pointer: coarse)");
     const narrowMq = window.matchMedia("(max-width: 768px)");
     const recompute = () => setIsMobile(coarseMq.matches || narrowMq.matches);
-    recompute();
     coarseMq.addEventListener("change", recompute);
     narrowMq.addEventListener("change", recompute);
 

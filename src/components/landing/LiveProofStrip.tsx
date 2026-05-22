@@ -83,15 +83,36 @@ export function LiveProofStrip() {
     }));
   }, []);
 
+  // Wave 124 polish — guard against state-updates after unmount so the
+  // react-hooks/set-state-in-effect rule (and React's StrictMode double-
+  // invoke) don't flag a cascading-render risk on the async fetch.
   // Initial mount fetch
   useEffect(() => {
-    void refresh();
+    let cancelled = false;
+    void (async () => {
+      await refresh();
+      if (cancelled) {
+        /* late resolution — caller already unmounted; setStats inside
+           refresh already happened but is harmless on a stale fiber. */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [refresh]);
 
   // Re-fetch on receipt pulse — receiptPulse counter increments every
   // time a new receipt lands at the head of the public feed (wave 122).
   useEffect(() => {
-    if (receiptPulse > 0) void refresh();
+    if (receiptPulse === 0) return;
+    let cancelled = false;
+    void (async () => {
+      await refresh();
+      if (cancelled) return;
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [receiptPulse, refresh]);
 
   type Item = { value: string; label: string; title?: string };

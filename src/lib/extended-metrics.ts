@@ -21,7 +21,7 @@
 
 import { db } from "@/db";
 import { agentRuns } from "@/db/schema";
-import { gt, sql } from "drizzle-orm";
+import { gt } from "drizzle-orm";
 
 export type Window = "24h" | "7d" | "30d";
 

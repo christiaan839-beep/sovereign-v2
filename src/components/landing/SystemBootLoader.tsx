@@ -41,35 +41,71 @@ interface SystemBootLoaderProps {
   onComplete?: () => void;
 }
 
+// Wave 124 polish — safe sessionStorage access (private windows, sandboxed
+// webviews, and corporate browsers can block Storage access entirely; the
+// raw call throws SecurityError when blocked, which would crash the boot
+// loader's first-mount path). Wrap reads + writes in try/catch.
+function readBootSeen(): boolean {
+  try {
+    return (
+      typeof sessionStorage !== "undefined" &&
+      sessionStorage.getItem(STORAGE_KEY) === "1"
+    );
+  } catch {
+    return false;
+  }
+}
+function writeBootSeen(): void {
+  try {
+    sessionStorage.setItem(STORAGE_KEY, "1");
+  } catch {
+    /* private window / blocked storage — accept that the boot may show
+       once per page-load instead of once per session. */
+  }
+}
+
 export function SystemBootLoader({
   forceShow = false,
   onComplete,
 }: SystemBootLoaderProps) {
-  const [visible, setVisible] = useState(false);
-  const [linesShown, setLinesShown] = useState(0);
-  const [reduceMotion, setReduceMotion] = useState(false);
+  // Wave 124 polish — lazy-init all three signals so the first effect
+  // body does NOT call setState synchronously. The boot loader's
+  // initial visibility + reduced-motion preference are determined at
+  // mount time from the browser; the lazy initializer is the correct
+  // React pattern for client-only initial state and satisfies the
+  // react-hooks/set-state-in-effect rule.
+  const [visible, setVisible] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    if (forceShow) return true;
+    return !readBootSeen();
+  });
+  const [reduceMotion] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  });
+  const [linesShown, setLinesShown] = useState<number>(() => {
+    // When motion is reduced AND the loader is going to flash, show
+    // every line immediately. Otherwise start at 0 and let the
+    // typewriter timers fill in.
+    if (typeof window === "undefined") return 0;
+    const seen = !forceShow && readBootSeen();
+    if (seen) return 0;
+    const reduce = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    return reduce ? LINES.length : 0;
+  });
 
   useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReduceMotion(mq.matches);
-  }, []);
-
-  useEffect(() => {
-    const seen =
-      !forceShow && typeof sessionStorage !== "undefined"
-        ? sessionStorage.getItem(STORAGE_KEY) === "1"
-        : false;
-    if (seen) {
+    if (!visible) {
       onComplete?.();
       return;
     }
-    setVisible(true);
 
     if (reduceMotion) {
-      // Skip the typewriter entirely — just flash for 300ms.
-      setLinesShown(LINES.length);
+      // Reduced-motion flash: hide after 300ms.
       const t = window.setTimeout(() => {
-        sessionStorage.setItem(STORAGE_KEY, "1");
+        writeBootSeen();
         setVisible(false);
         onComplete?.();
       }, 300);
@@ -82,13 +118,13 @@ export function SystemBootLoader({
     });
     timers.push(
       window.setTimeout(() => {
-        sessionStorage.setItem(STORAGE_KEY, "1");
+        writeBootSeen();
         setVisible(false);
         onComplete?.();
       }, TOTAL_MS),
     );
     return () => timers.forEach((t) => window.clearTimeout(t));
-  }, [forceShow, reduceMotion, onComplete]);
+  }, [visible, reduceMotion, onComplete]);
 
   return (
     <AnimatePresence>

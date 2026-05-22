@@ -141,7 +141,13 @@ function stopPolling() {
     document.removeEventListener("visibilitychange", onVisibility);
     visibilityListenerAttached = false;
   }
-  lastSeenId = null;
+  // Wave 124 polish — do NOT reset lastSeenId here. Resetting would
+  // make a return-to-page subscriber treat the existing head receipt
+  // as "first load" and skip the pulse — which makes the orb silent
+  // even though the receipt fabric IS active. Keep the cursor; the
+  // next subscribe → poll → diff naturally fires only on receipts
+  // that landed WHILE the user was away. Reset only via
+  // __test_only__.reset (which clears module state for tests).
 }
 
 /**

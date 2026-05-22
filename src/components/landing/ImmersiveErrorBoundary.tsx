@@ -45,6 +45,41 @@ export class ImmersiveErrorBoundary extends Component<Props, State> {
     this.props.onError?.(error, info);
   }
 
+  // Wave 124 polish — listen for WebGL context-restored events on the
+  // window. Modern browsers can restore a lost WebGL context (driver
+  // reset, tab background-then-restore, GPU process crash recovery).
+  // If we caught from a WebGL-related error and the browser signals
+  // restoration, clear the fallback so the orb tries to mount again.
+  // Wrapped in lifecycle methods (legacy class API) because functional
+  // components don't expose componentDidMount + componentWillUnmount.
+  private webglRestoreHandler = (e: Event) => {
+    // Custom event some browsers fire on context restore. We also
+    // accept a manual trigger via dispatching this event from code.
+    if (e.type === "webglcontextrestored") {
+      this.setState({ error: null });
+    }
+  };
+
+  componentDidMount(): void {
+    if (typeof window !== "undefined") {
+      window.addEventListener(
+        "webglcontextrestored",
+        this.webglRestoreHandler,
+        true,
+      );
+    }
+  }
+
+  componentWillUnmount(): void {
+    if (typeof window !== "undefined") {
+      window.removeEventListener(
+        "webglcontextrestored",
+        this.webglRestoreHandler,
+        true,
+      );
+    }
+  }
+
   render(): ReactNode {
     if (this.state.error) return this.props.fallback(this.state.error);
     return this.props.children;

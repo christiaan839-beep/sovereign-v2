@@ -25,7 +25,6 @@ import {
   executeDag,
   normalisedDependsOn,
   validateDag,
-  type DagStep,
 } from "@/lib/dag-executor";
 
 describe("normalisedDependsOn — for-loop compat default", () => {

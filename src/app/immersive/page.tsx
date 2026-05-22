@@ -120,9 +120,14 @@ export default function ImmersivePage() {
     latestId,
     latestAgent,
   } = useReceiptPulse({ intervalMs: 15_000 });
-  useEffect(() => {
-    if (receiptPulse > 0) setPulseToken((t) => t + 1);
-  }, [receiptPulse]);
+
+  // Wave 124 polish — combine the orbital pulseToken (section-change +
+  // 6s heartbeat) with the receipt-fabric pulseToken via simple addition
+  // when we pass it to the orb. The orb's useFrame just needs the prop
+  // value to CHANGE on each event — it doesn't care about the absolute
+  // counter. Folding here removes a useEffect + setState-in-effect that
+  // the react-hooks rule (correctly) flags as a cascading render risk.
+  const combinedPulseToken = pulseToken + receiptPulse;
 
   // IntersectionObserver tracks which section is in view.
   useEffect(() => {
@@ -174,7 +179,7 @@ export default function ImmersivePage() {
           )}
         >
           <ReceiptOrb
-            pulseToken={pulseToken}
+            pulseToken={combinedPulseToken}
             accent={current?.accent ?? "cyan"}
             className="h-full w-full"
           />

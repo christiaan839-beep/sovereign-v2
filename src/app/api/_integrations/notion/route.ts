@@ -10,8 +10,15 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { guardRoute, errorResponse, sanitizeString, sanitizeNumber, validateRequired } from "@/lib/api-guard";
+import {
+  guardRoute,
+  errorResponse,
+  sanitizeString,
+  sanitizeNumber,
+  validateRequired,
+} from "@/lib/api-guard";
 import { createLogger } from "@/lib/logger";
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
 
 const log = createLogger("integration:notion");
 
@@ -43,7 +50,7 @@ export async function POST(req: Request) {
       return errorResponse(
         "Notion not configured. Add NOTION_API_KEY to env vars.",
         503,
-        "NOTION_NOT_CONFIGURED"
+        "NOTION_NOT_CONFIGURED",
       );
     }
 
@@ -62,9 +69,7 @@ export async function POST(req: Request) {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const pagePayload: Record<string, any> = {
-      parent: isDatabase
-        ? { database_id: parentId }
-        : { page_id: parentId },
+      parent: isDatabase ? { database_id: parentId } : { page_id: parentId },
       properties: {
         title: {
           title: [
@@ -89,16 +94,27 @@ export async function POST(req: Request) {
       }));
     }
 
-    const res = await outboundFetchAsResponse(`${NOTION_BASE}/pages`, {
-      method: "POST",
-      headers: notionHeaders(apiKey),
-      body: JSON.stringify(pagePayload),
-    }, { ruleId: "integrations.notion.route.1", allowedHosts: [new URL(NOTION_BASE).hostname] });
+    const res = await outboundFetchAsResponse(
+      `${NOTION_BASE}/pages`,
+      {
+        method: "POST",
+        headers: notionHeaders(apiKey),
+        body: JSON.stringify(pagePayload),
+      },
+      {
+        ruleId: "integrations.notion.route.1",
+        allowedHosts: [new URL(NOTION_BASE).hostname],
+      },
+    );
 
     if (!res.ok) {
       const errBody = await res.json().catch(() => ({}));
       log.error("Notion create error", { status: res.status, error: errBody });
-      return errorResponse(`Notion API error: ${res.status}`, 502, "NOTION_API_ERROR");
+      return errorResponse(
+        `Notion API error: ${res.status}`,
+        502,
+        "NOTION_API_ERROR",
+      );
     }
 
     const page = await res.json();
@@ -128,7 +144,7 @@ export async function GET(req: NextRequest) {
       return errorResponse(
         "Notion not configured. Add NOTION_API_KEY to env vars.",
         503,
-        "NOTION_NOT_CONFIGURED"
+        "NOTION_NOT_CONFIGURED",
       );
     }
 
@@ -138,27 +154,40 @@ export async function GET(req: NextRequest) {
 
     log.info("Searching Notion", { query, pageSize, userId: auth.userId });
 
-    const res = await outboundFetchAsResponse(`${NOTION_BASE}/search`, {
-      method: "POST", // Notion search is POST
-      headers: notionHeaders(apiKey),
-      body: JSON.stringify({
-        query,
-        page_size: pageSize,
-        sort: {
-          direction: "descending",
-          timestamp: "last_edited_time",
-        },
-      }),
-    }, { ruleId: "integrations.notion.route.2", allowedHosts: [new URL(NOTION_BASE).hostname] });
+    const res = await outboundFetchAsResponse(
+      `${NOTION_BASE}/search`,
+      {
+        method: "POST", // Notion search is POST
+        headers: notionHeaders(apiKey),
+        body: JSON.stringify({
+          query,
+          page_size: pageSize,
+          sort: {
+            direction: "descending",
+            timestamp: "last_edited_time",
+          },
+        }),
+      },
+      {
+        ruleId: "integrations.notion.route.2",
+        allowedHosts: [new URL(NOTION_BASE).hostname],
+      },
+    );
 
     if (!res.ok) {
       const errBody = await res.json().catch(() => ({}));
       log.error("Notion search error", { status: res.status, error: errBody });
-      return errorResponse(`Notion API error: ${res.status}`, 502, "NOTION_API_ERROR");
+      return errorResponse(
+        `Notion API error: ${res.status}`,
+        502,
+        "NOTION_API_ERROR",
+      );
     }
 
     const data = await res.json();
-    log.info("Notion search complete", { resultCount: data.results?.length ?? 0 });
+    log.info("Notion search complete", {
+      resultCount: data.results?.length ?? 0,
+    });
 
     return NextResponse.json({
       success: true,
@@ -166,8 +195,7 @@ export async function GET(req: NextRequest) {
         id: r.id,
         object: r.object,
         url: r.url,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        title: extractTitle(r as any),
+        title: extractTitle(r as NotionPage),
         lastEdited: r.last_edited_time,
       })),
       hasMore: data.has_more,
@@ -189,14 +217,20 @@ function splitIntoChunks(text: string, maxLen: number): string[] {
   return chunks.length > 0 ? chunks : [""];
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+interface NotionPage {
+  properties?: Record<string, unknown>;
+  child_page?: { title?: string };
+  child_database?: { title?: string };
+}
 
-function extractTitle(page: any): string {
+function extractTitle(page: NotionPage): string {
   try {
     const props = page.properties ?? {};
     for (const key of Object.keys(props)) {
-      const prop = props[key];
+      const prop = props[key] as {
+        type?: string;
+        title?: Array<{ plain_text?: string }>;
+      };
       if (prop?.type === "title" && prop.title?.[0]?.plain_text) {
         return prop.title[0].plain_text;
       }
