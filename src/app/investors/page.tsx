@@ -191,7 +191,7 @@ export default function InvestorsPage() {
             <ArrowRight className="w-4 h-4" />
           </Link>
           <Link
-            href="/demo/verify-receipt"
+            href="/verify"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-white/10 text-neutral-300 hover:text-white hover:border-white/20 transition-colors text-sm"
           >
             Verify a real receipt in 60s

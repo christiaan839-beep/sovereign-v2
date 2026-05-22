@@ -1568,6 +1568,7 @@ function Footer() {
               { href: "/dashboard/playbooks", label: "Playbooks" },
               { href: "/dashboard", label: "Dashboard" },
               { href: "/marketplace", label: "Marketplace" },
+              { href: "/verify", label: "Verify a receipt" },
               { href: "/trust", label: "Trust" },
             ]}
           />
