@@ -1010,7 +1010,7 @@ export default function AdminPage() {
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
-          className="mb-6 grid gap-3 sm:grid-cols-3"
+          className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
         >
           <Link
             href="/dashboard/admin/cohorts"
@@ -1067,6 +1067,25 @@ export default function AdminPage() {
                 </div>
               </div>
               <ChevronRight className="h-4 w-4 text-neutral-600 transition group-hover:translate-x-0.5 group-hover:text-emerald-300" />
+            </div>
+          </Link>
+          <Link
+            href="/dashboard/admin/memories"
+            className="group rounded-2xl border border-violet-500/[0.12] bg-gradient-to-br from-violet-500/[0.06] via-violet-500/[0.02] to-transparent p-4 transition hover:border-violet-500/30 hover:bg-violet-500/[0.04]"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <Database className="h-4 w-4 text-violet-300" />
+                <div>
+                  <div className="text-sm font-semibold text-white">
+                    Memory browser
+                  </div>
+                  <div className="text-[10px] text-neutral-500">
+                    Vector pool · cross-user · cross-agent · curate + delete
+                  </div>
+                </div>
+              </div>
+              <ChevronRight className="h-4 w-4 text-neutral-600 transition group-hover:translate-x-0.5 group-hover:text-violet-300" />
             </div>
           </Link>
         </motion.div>
