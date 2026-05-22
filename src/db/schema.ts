@@ -1149,3 +1149,38 @@ export const agentTokens = pgTable(
     index("idx_agent_tokens_expires").on(table.expiresAt),
   ],
 );
+
+// ─── Wave 126 — Persistent agent sessions ──────────────────────────
+// Long-running workflows (multi-turn closer conversation, lead-blitz
+// across days, audit-resume-from-checkpoint) need to survive process
+// restarts + cold starts. This table holds the durable state.
+//
+// `state` is a JSON blob owned by the agent — schema is per-agent.
+// `steps` lists the trajectory so consumers can render a timeline.
+// `expiresAt` enables TTL cleanup via a cron job (operator-bound;
+// fail-soft until then — stale sessions just stay queryable).
+export const agentSessions = pgTable(
+  "agent_sessions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id").notNull(),
+    agentName: text("agent_name").notNull(),
+    /** active | done | failed | abandoned. Free text; agents define their own terminal states. */
+    status: text("status").notNull().default("active"),
+    /** JSON blob — agent-defined state shape. Cap 64 KB per row. */
+    state: text("state").notNull().default("{}"),
+    /** Array of step records (JSON-encoded). Capped at 50 entries by appendStep. */
+    steps: text("steps").notNull().default("[]"),
+    stepCount: integer("step_count").notNull().default(0),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    lastTouchedAt: timestamp("last_touched_at").notNull().defaultNow(),
+    /** TTL — operator's cleanup cron deletes rows where now() > expiresAt. */
+    expiresAt: timestamp("expires_at"),
+  },
+  (table) => [
+    index("idx_agent_sessions_user").on(table.userId, table.lastTouchedAt),
+    index("idx_agent_sessions_agent").on(table.agentName),
+    index("idx_agent_sessions_status").on(table.status),
+    index("idx_agent_sessions_expires").on(table.expiresAt),
+  ],
+);
