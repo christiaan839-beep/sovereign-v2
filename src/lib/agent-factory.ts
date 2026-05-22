@@ -1030,6 +1030,17 @@ export function createAgentRoute(config: AgentConfig) {
         } catch {
           /* best-effort */
         }
+        // Wave-145: extract entities + write knowledge graph nodes.
+        // Best-effort, fail-soft on missing graph_nodes / graph_edges
+        // tables. Cap at 12 entities + 1 agent node per run.
+        try {
+          if (userId) {
+            const { recordRunAsGraph } = await import("@/lib/knowledge-graph");
+            await recordRunAsGraph(userId, config.name, finalResult);
+          }
+        } catch {
+          /* best-effort */
+        }
       } catch {
         /* run persistence is best-effort and must never block */
       }
