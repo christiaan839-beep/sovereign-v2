@@ -170,6 +170,7 @@ export default function ImmersivePage() {
           systemLabel="SYS·LINK ESTABLISHED"
           frameLabel="FRAME LOCKED"
           buildLabel="VAOS · v2.1"
+          accent={current?.accent ?? "cyan"}
         />
         {/* Wave 122 — fresh-receipt caption. Animates in for ~3s on every
             real receipt-fabric pulse, then fades. Sits above the HUD

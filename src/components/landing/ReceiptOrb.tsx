@@ -112,14 +112,21 @@ function OrbCore({
   );
 }
 
-function StarField({ reduceMotion }: { reduceMotion: boolean }) {
+function StarField({
+  reduceMotion,
+  particleCount,
+}: {
+  reduceMotion: boolean;
+  particleCount: number;
+}) {
   const ref = useRef<THREE.Points>(null);
 
-  // Pre-allocate 600 particles distributed on a 3-sphere shell.
+  // Pre-allocate particles distributed on a 3-sphere shell. Count is
+  // capped lower on mobile to keep the canvas responsive at 60fps.
   const positions = useRef<Float32Array | null>(null);
   if (positions.current === null) {
-    const arr = new Float32Array(600 * 3);
-    for (let i = 0; i < 600; i++) {
+    const arr = new Float32Array(particleCount * 3);
+    for (let i = 0; i < particleCount; i++) {
       // Sphere-shell distribution at radius 2.4-3.2
       const theta = Math.random() * Math.PI * 2;
       const phi = Math.acos(2 * Math.random() - 1);
@@ -174,16 +181,33 @@ export function ReceiptOrb({
   starField = true,
 }: ReceiptOrbProps) {
   const [reduceMotion, setReduceMotion] = useState(false);
+  // Wave 123 — mobile perf hardening. Detect coarse-pointer / narrow
+  // viewport once at mount and cap the particle count + dpr so the
+  // canvas keeps 60fps on low-end Android. The decision is sticky for
+  // the component's lifetime (no resize-driven re-render) which means
+  // a desktop user dragging the window to mobile width keeps the
+  // higher-quality renderer they paid the GPU cost for at first paint.
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
     setReduceMotion(mq.matches);
     const onChange = () => setReduceMotion(mq.matches);
     mq.addEventListener("change", onChange);
+
+    const coarse = window.matchMedia("(pointer: coarse)").matches;
+    const narrow = window.matchMedia("(max-width: 768px)").matches;
+    setIsMobile(coarse || narrow);
+
     return () => mq.removeEventListener("change", onChange);
   }, []);
 
   const accentColor = accent === "cyan" ? CYAN : COPPER;
+  const particleCount = isMobile ? 220 : 600;
+  // dpr cap: mobile 1.2 (saves GPU), desktop 1.8 (crisp on retina).
+  // Below the dpr floor of 1 the canvas would visibly pixelate; we
+  // never go that low even on mobile.
+  const dpr: [number, number] = isMobile ? [1, 1.2] : [1, 1.8];
 
   return (
     <div
@@ -206,8 +230,12 @@ export function ReceiptOrb({
 
       <Canvas
         camera={{ position: [0, 0, 5], fov: 45 }}
-        dpr={[1, 1.8]}
-        gl={{ antialias: true, alpha: true }}
+        dpr={dpr}
+        gl={{
+          antialias: !isMobile,
+          alpha: true,
+          powerPreference: "high-performance",
+        }}
       >
         <ambientLight intensity={0.4} />
         <directionalLight
@@ -222,7 +250,10 @@ export function ReceiptOrb({
           accent={accent}
         />
         {starField && !reduceMotion && (
-          <StarField reduceMotion={reduceMotion} />
+          <StarField
+            reduceMotion={reduceMotion}
+            particleCount={particleCount}
+          />
         )}
       </Canvas>
     </div>
