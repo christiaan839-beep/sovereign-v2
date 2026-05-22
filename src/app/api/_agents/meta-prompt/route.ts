@@ -19,6 +19,23 @@ export const POST = createAgentRoute({
     task: z.string().min(3).max(5000),
     prompt: z.string().optional(),
   }),
+  // Wave 118 M3 batch 15: memory hooks. Per-task prompt-engineering
+  // history — past generated prompts for similar tasks expose what
+  // structure produced consistent LLM behaviour.
+  memory: {
+    search: {
+      query: (input) => `meta-prompt ${String(input.task ?? "").slice(0, 120)}`,
+      limit: 2,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as { generatedPrompt?: string; task?: string };
+        if (!r.generatedPrompt) return null;
+        return r.generatedPrompt.slice(0, 280).replace(/\s+/g, " ");
+      },
+      metadata: () => ({ kind: "meta-prompt" }),
+    },
+  },
   handler: async ({ input }) => {
     // Cost: meta-prompt rewriting at 1500 tokens — NIM Nemotron handles
     // prompt-engineering tasks on par with Claude at $0.

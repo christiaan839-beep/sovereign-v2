@@ -15,6 +15,34 @@ import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
 
 export const POST = createAgentRoute({
   name: "video-gen",
+  // Wave 118 M3 batch 15: memory hooks. Per-prompt-class video history —
+  // past generation prompts surface which style/length combinations
+  // produced strong output; reduces "throwaway take" cost on iteration.
+  memory: {
+    search: {
+      query: (input) =>
+        `video-gen ${input.provider ?? "any"} ${String(input.prompt ?? "").slice(0, 120)}`,
+      limit: 2,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as {
+          videoUrl?: string;
+          enhancedPrompt?: string;
+          provider?: string;
+          duration?: number;
+        };
+        if (!r.videoUrl && !r.enhancedPrompt) return null;
+        const prompt =
+          r.enhancedPrompt?.slice(0, 180).replace(/\s+/g, " ") ?? "";
+        return `[${r.provider ?? "?"}] ${prompt}${r.duration ? ` (${r.duration}s)` : ""}`;
+      },
+      metadata: (input) => ({
+        provider: typeof input.provider === "string" ? input.provider : "luma",
+        kind: "video-gen",
+      }),
+    },
+  },
   handler: async ({ input, email, userId }) => {
     const {
       prompt,
@@ -73,7 +101,9 @@ Return ONLY the enhanced prompt (no explanations). The enhanced prompt should:
     }
 
     if (provider === "luma") {
-      const response = await outboundFetchAsResponse("https://api.lumalabs.ai/dream-machine/v1/generations", {
+      const response = await outboundFetchAsResponse(
+        "https://api.lumalabs.ai/dream-machine/v1/generations",
+        {
           method: "POST",
           headers: {
             Authorization: `Bearer ${apiKey}`,
@@ -83,7 +113,12 @@ Return ONLY the enhanced prompt (no explanations). The enhanced prompt should:
             prompt: cinematicPrompt,
             aspect_ratio: "16:9",
           }),
-        }, { ruleId: "agents.video-gen.route.1", allowedHosts: ["api.lumalabs.ai"] });
+        },
+        {
+          ruleId: "agents.video-gen.route.1",
+          allowedHosts: ["api.lumalabs.ai"],
+        },
+      );
 
       if (!response.ok) {
         const errDump = await response.text();

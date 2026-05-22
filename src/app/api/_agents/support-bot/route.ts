@@ -13,8 +13,37 @@ import { nimChat } from "@/lib/nvidia";
 export const POST = createAgentRoute({
   name: "support-bot",
   requiredFields: ["question"],
+  // Wave 118 M3 batch 15: memory hooks. Per-question-class support
+  // history — past resolved tickets on similar questions surface the
+  // resolution path so repeat issues skip re-investigation. Already
+  // bounds its own conversation history (last 10 turns); memory adds
+  // CROSS-conversation knowledge.
+  memory: {
+    search: {
+      query: (input) =>
+        `support-bot ${String(input.question ?? "").slice(0, 120)}`,
+      limit: 2,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as {
+          answer?: string;
+          confidence?: number;
+          shouldEscalate?: boolean;
+        };
+        if (!r.answer) return null;
+        const head = r.answer.slice(0, 220).replace(/\s+/g, " ");
+        return `${head}${r.shouldEscalate ? " [escalated]" : ""}${r.confidence ? ` (conf=${r.confidence})` : ""}`;
+      },
+      metadata: () => ({ kind: "support-bot" }),
+    },
+  },
   handler: async ({ input }) => {
-    const { question, context, history: rawHistory } = input as Record<string, unknown>;
+    const {
+      question,
+      context,
+      history: rawHistory,
+    } = input as Record<string, unknown>;
     const questionStr = question as string;
     const contextStr = (context as string) || "";
 
@@ -34,7 +63,10 @@ export const POST = createAgentRoute({
         if (Array.isArray(memories) && memories.length > 0) {
           ragContext = memories
             .slice(0, 5)
-            .map((m: { entry: { text: string }; score: number }) => m.entry.text || "")
+            .map(
+              (m: { entry: { text: string }; score: number }) =>
+                m.entry.text || "",
+            )
             .filter(Boolean)
             .join("\n\n");
         }
@@ -70,14 +102,18 @@ Rules:
     // Extract confidence from response
     let confidence = 0.7;
     let category = "general";
-    const jsonMatch = resultStr.match(/\{"confidence":\s*([\d.]+).*?"category":\s*"(\w+)"\}/);
+    const jsonMatch = resultStr.match(
+      /\{"confidence":\s*([\d.]+).*?"category":\s*"(\w+)"\}/,
+    );
     if (jsonMatch) {
       confidence = parseFloat(jsonMatch[1]);
       category = jsonMatch[2];
     }
 
     // Clean the JSON block from the visible answer
-    const answer = resultStr.replace(/\s*\{["']?confidence["']?:.*\}\s*$/, "").trim();
+    const answer = resultStr
+      .replace(/\s*\{["']?confidence["']?:.*\}\s*$/, "")
+      .trim();
     const shouldEscalate = confidence < 0.5;
 
     return {

@@ -13,6 +13,37 @@ import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
 
 export const POST = createAgentRoute({
   name: "music-gen",
+  // Wave 118 M3 batch 15: memory hooks. Per-style+instruments music
+  // history — past prompts surface which arrangements landed; speeds
+  // brand-consistent track iteration.
+  memory: {
+    search: {
+      query: (input) => {
+        const style = typeof input.style === "string" ? input.style : "";
+        const prompt =
+          typeof input.prompt === "string" ? input.prompt.slice(0, 80) : "";
+        return `music-gen ${style} ${prompt}`.trim();
+      },
+      limit: 2,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as {
+          audioUrl?: string;
+          style?: string;
+          duration?: number;
+          prompt?: string;
+        };
+        if (!r.audioUrl && !r.prompt) return null;
+        const p = (r.prompt ?? "").slice(0, 180).replace(/\s+/g, " ");
+        return `[${r.style ?? "?"}] ${p}${r.duration ? ` (${r.duration}s)` : ""}`;
+      },
+      metadata: (input) => ({
+        style: typeof input.style === "string" ? input.style : "",
+        kind: "music-gen",
+      }),
+    },
+  },
   handler: async ({ input, email, userId }) => {
     const {
       prompt = "",
@@ -36,7 +67,9 @@ export const POST = createAgentRoute({
     if (instruments) enhancedPrompt += `. Instruments: ${instruments}`;
 
     // Lyria 3 Pro API via Gemini API
-    const res = await outboundFetchAsResponse(`https://generativelanguage.googleapis.com/v1beta/models/lyria-3-pro:generateMusic?key=${apiKey}`, {
+    const res = await outboundFetchAsResponse(
+      `https://generativelanguage.googleapis.com/v1beta/models/lyria-3-pro:generateMusic?key=${apiKey}`,
+      {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -45,7 +78,12 @@ export const POST = createAgentRoute({
             durationSeconds: Math.min(duration, 180), // Max 3 minutes
           },
         }),
-      }, { ruleId: "agents.music-gen.route.1", allowedHosts: ["generativelanguage.googleapis.com"] });
+      },
+      {
+        ruleId: "agents.music-gen.route.1",
+        allowedHosts: ["generativelanguage.googleapis.com"],
+      },
+    );
 
     if (!res.ok) {
       const errorText = await res.text();
