@@ -9,7 +9,7 @@
  * Regenerate: npm run gen:registry
  * Verify:     npm run gen:registry -- --check (exit 1 if stale)
  *
- * Count: 140 agents
+ * Count: 141 agents
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -133,6 +133,7 @@ export const AGENT_REGISTRY: Record<string, () => Promise<RouteModule>> = {
   "supply-chain": () => import("@/app/api/_agents/supply-chain/route"),
   "support-bot": () => import("@/app/api/_agents/support-bot/route"),
   "swarm": () => import("@/app/api/_agents/swarm/route"),
+  "swarm-dispatch": () => import("@/app/api/_agents/swarm-dispatch/route"),
   "telegram-router": () => import("@/app/api/_agents/telegram-router/route"),
   "threat-hunt": () => import("@/app/api/_agents/threat-hunt/route"),
   "translate": () => import("@/app/api/_agents/translate/route"),
