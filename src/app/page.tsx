@@ -1569,6 +1569,7 @@ function Footer() {
               { href: "/dashboard", label: "Dashboard" },
               { href: "/marketplace", label: "Marketplace" },
               { href: "/verify", label: "Verify a receipt" },
+              { href: "/immersive", label: "Immersive" },
               { href: "/trust", label: "Trust" },
             ]}
           />
