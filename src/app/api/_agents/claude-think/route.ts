@@ -24,6 +24,27 @@ import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
 export const POST = createAgentRoute({
   name: "claude-think",
   requiredFields: ["problem"],
+  // Wave 118 M3 batch 14: memory hooks. Per-problem-class extended-
+  // thinking history surfaces which reasoning frameworks held up vs
+  // which got revised on similar problems.
+  memory: {
+    search: {
+      query: (input) =>
+        `claude-think ${String(input.problem ?? "").slice(0, 120)}`,
+      limit: 2,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as {
+          solution?: string;
+          thinking?: string;
+        };
+        if (!r.solution) return null;
+        return r.solution.slice(0, 240).replace(/\s+/g, " ");
+      },
+      metadata: () => ({ kind: "claude-think" }),
+    },
+  },
   handler: async ({ input }) => {
     const problem = input.problem as string;
     const context = (input.context as string) || "";
@@ -57,30 +78,37 @@ export const POST = createAgentRoute({
     });
 
     try {
-      const res = await outboundFetchAsResponse("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": apiKey,
-          "anthropic-version": "2023-06-01",
-        },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-6",
-          max_tokens: 16000,
-          thinking: {
-            type: "enabled",
-            budget_tokens: maxThinkingTokens,
+      const res = await outboundFetchAsResponse(
+        "https://api.anthropic.com/v1/messages",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": apiKey,
+            "anthropic-version": "2023-06-01",
           },
-          messages: [
-            {
-              role: "user",
-              content: context
-                ? `Context:\n${context}\n\nProblem:\n${problem}`
-                : problem,
+          body: JSON.stringify({
+            model: "claude-sonnet-4-6",
+            max_tokens: 16000,
+            thinking: {
+              type: "enabled",
+              budget_tokens: maxThinkingTokens,
             },
-          ],
-        }),
-      }, { ruleId: "agents.claude-think.route.1", allowedHosts: ["api.anthropic.com"] });
+            messages: [
+              {
+                role: "user",
+                content: context
+                  ? `Context:\n${context}\n\nProblem:\n${problem}`
+                  : problem,
+              },
+            ],
+          }),
+        },
+        {
+          ruleId: "agents.claude-think.route.1",
+          allowedHosts: ["api.anthropic.com"],
+        },
+      );
 
       if (!res.ok) {
         const errorText = await res.text();
