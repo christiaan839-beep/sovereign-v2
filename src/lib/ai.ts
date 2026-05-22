@@ -317,6 +317,9 @@ export async function smartAi(
     thinking?: boolean;
     maxTokens?: number;
     escalate?: boolean;
+    /** Wave-142: when set, smartAi consults the Thompson bandit
+     *  for (agentName, category) and prefers the sampled winner. */
+    agentName?: string;
   } = {},
 ): Promise<{
   answer: string;
@@ -390,6 +393,22 @@ Then give your final answer after your reasoning.`
   let escalated = false;
   let ossSucceeded = false;
 
+  // Wave-142: consult the Thompson bandit FIRST when agentName is
+  // pinned. The bandit's posterior selection lets the platform
+  // auto-route to the model that's been winning on this agent
+  // class. Falls through silently when no arms are registered.
+  let banditPick: { model: string } | null = null;
+  if (options.agentName) {
+    try {
+      const { pickArmAsync } = await import("@/lib/model-bandit");
+      banditPick = await pickArmAsync(options.agentName, category ?? "default");
+    } catch (err) {
+      log.warn("bandit pick failed; falling through", {
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
+
   // Wave-133: when a self-hosted OSS inference endpoint is configured
   // (vLLM / NIM Microservices / Triton), route there FIRST. Marginal
   // cost is ~$0 per call once the GPU is provisioned. Falls through to
@@ -405,8 +424,11 @@ Then give your final answer after your reasoning.`
       const ossAnswer = await smartOssChat(ossMessages, { maxTokens });
       if (ossAnswer && ossAnswer.length > 0) {
         answer = ossAnswer;
+        // Wave-142: bandit pick wins over env default when present
         modelUsed =
-          process.env.OSS_INFERENCE_DEFAULT_MODEL?.trim() || "oss-self-host";
+          banditPick?.model ||
+          process.env.OSS_INFERENCE_DEFAULT_MODEL?.trim() ||
+          "oss-self-host";
         ossSucceeded = true;
       }
     }
