@@ -15,6 +15,33 @@ import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
 export const POST = createAgentRoute({
   name: "ai-gateway",
   requiredFields: ["messages"],
+  // Wave 125 M3 batch 16: per-model conversational continuity. The
+  // gateway already has the immediate `messages` history; memory adds
+  // CROSS-session patterns ("with this model + last system prompt,
+  // user got X kind of answer").
+  memory: {
+    search: {
+      query: (input) => {
+        const msgs = Array.isArray(input.messages) ? input.messages : [];
+        const last = msgs[msgs.length - 1] as { content?: unknown } | undefined;
+        const tail =
+          typeof last?.content === "string" ? last.content.slice(0, 100) : "";
+        return `ai-gateway ${input.model ?? "any"} ${tail}`.trim();
+      },
+      limit: 2,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as { model?: string; output?: string };
+        if (!r.output) return null;
+        return `[${r.model ?? "?"}] ${r.output.slice(0, 220).replace(/\s+/g, " ")}`;
+      },
+      metadata: (input) => ({
+        model: typeof input.model === "string" ? input.model : "",
+        kind: "ai-gateway",
+      }),
+    },
+  },
   handler: async ({ input }) => {
     const {
       messages,
@@ -28,38 +55,49 @@ export const POST = createAgentRoute({
     }
 
     // Vercel AI Gateway uses the standard OpenAI-compatible endpoint
-    const gatewayResponse = await outboundFetchAsResponse("https://api.vercel.ai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.VERCEL_AI_GATEWAY_KEY || await getNimKey()}`,
+    const gatewayResponse = await outboundFetchAsResponse(
+      "https://api.vercel.ai/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.VERCEL_AI_GATEWAY_KEY || (await getNimKey())}`,
+        },
+        body: JSON.stringify({
+          model,
+          messages,
+          max_tokens,
+          temperature,
+          stream: false,
+        }),
       },
-      body: JSON.stringify({
-        model,
-        messages,
-        max_tokens,
-        temperature,
-        stream: false,
-      }),
-    }, { ruleId: "agents.ai-gateway.route.1", allowedHosts: ["api.vercel.ai"] });
+      { ruleId: "agents.ai-gateway.route.1", allowedHosts: ["api.vercel.ai"] },
+    );
 
     if (!gatewayResponse.ok) {
       // Fallback to NVIDIA NIM if Vercel AI Gateway is not configured
       if (await getNimKey()) {
-        const fallbackRes = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${await getNimKey()}`,
+        const fallbackRes = await outboundFetchAsResponse(
+          "https://integrate.api.nvidia.com/v1/chat/completions",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${await getNimKey()}`,
+            },
+            body: JSON.stringify({
+              model: "minimaxai/minimax-m2.1",
+              messages,
+              max_tokens,
+              temperature,
+              stream: false,
+            }),
           },
-          body: JSON.stringify({
-            model: "minimaxai/minimax-m2.1",
-            messages,
-            max_tokens,
-            temperature,
-            stream: false,
-          }),
-        }, { ruleId: "agents.ai-gateway.route.2", allowedHosts: ["integrate.api.nvidia.com"] });
+          {
+            ruleId: "agents.ai-gateway.route.2",
+            allowedHosts: ["integrate.api.nvidia.com"],
+          },
+        );
         const fallbackData = await fallbackRes.json();
         return {
           success: true,
