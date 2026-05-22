@@ -30,7 +30,9 @@ async function submitVeoGeneration(
   }
 
   try {
-    const res = await outboundFetchAsResponse("https://generativelanguage.googleapis.com/v1beta/models/veo-3.1-generate-001:predictLongRunning", {
+    const res = await outboundFetchAsResponse(
+      "https://generativelanguage.googleapis.com/v1beta/models/veo-3.1-generate-001:predictLongRunning",
+      {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -44,7 +46,12 @@ async function submitVeoGeneration(
             sampleCount: 1,
           },
         }),
-      }, { ruleId: "agents.filmmaker.route.1", allowedHosts: ["generativelanguage.googleapis.com"] });
+      },
+      {
+        ruleId: "agents.filmmaker.route.1",
+        allowedHosts: ["generativelanguage.googleapis.com"],
+      },
+    );
 
     if (!res.ok) {
       const errorBody = await res.text();
@@ -72,6 +79,33 @@ async function submitVeoGeneration(
 export const POST = createAgentRoute({
   name: "filmmaker",
   requiredFields: ["topic"],
+  // Wave 118 M3 batch 13: memory hooks. Per-topic film treatment history
+  // — last script/storyboard on a similar topic exposes which beats hit
+  // vs which were cut, so the next treatment skips dead structure.
+  memory: {
+    search: {
+      query: (input) => `filmmaker ${String(input.topic ?? "").slice(0, 120)}`,
+      limit: 2,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as {
+          topic?: string;
+          treatment?: string;
+          scenes?: Array<{ title?: string }>;
+        };
+        if (!r.treatment && !r.scenes?.length) return null;
+        const head = (r.treatment ?? "").slice(0, 200).replace(/\s+/g, " ");
+        const sceneTitles = (r.scenes ?? [])
+          .slice(0, 3)
+          .map((s) => s.title ?? "")
+          .filter(Boolean)
+          .join(" → ");
+        return `${head}${sceneTitles ? ` [scenes: ${sceneTitles}]` : ""}`;
+      },
+      metadata: () => ({ kind: "filmmaker" }),
+    },
+  },
   handler: async ({ input }) => {
     const {
       topic,
@@ -111,7 +145,9 @@ Output a highly structured JSON array of 5 exact visual prompts to be fed into V
     });
 
     // Step 1: Generate the production brief via Gemini
-    const response = await outboundFetchAsResponse(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${GEMINI_API_KEY}`, {
+    const response = await outboundFetchAsResponse(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${GEMINI_API_KEY}`,
+      {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -130,7 +166,12 @@ Output a highly structured JSON array of 5 exact visual prompts to be fed into V
             responseMimeType: "application/json",
           },
         }),
-      }, { ruleId: "agents.filmmaker.route.2", allowedHosts: ["generativelanguage.googleapis.com"] });
+      },
+      {
+        ruleId: "agents.filmmaker.route.2",
+        allowedHosts: ["generativelanguage.googleapis.com"],
+      },
+    );
 
     if (!response.ok) {
       throw new Error(`Google AI API Error: ${response.statusText}`);

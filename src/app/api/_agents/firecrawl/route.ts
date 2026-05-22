@@ -13,6 +13,34 @@ import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
 
 export const POST = createAgentRoute({
   name: "firecrawl",
+  // Wave 118 M3 batch 13: memory hooks. Per-URL scrape history surfaces
+  // structure deltas — what changed since last crawl, what content
+  // already landed in the corpus, what sections are stable boilerplate.
+  memory: {
+    search: {
+      query: (input) => `firecrawl url:${input.url ?? ""}`,
+      limit: 2,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as {
+          url?: string;
+          markdown?: string;
+          title?: string;
+          wordCount?: number;
+        };
+        if (!r.url) return null;
+        const head = (r.title ?? r.markdown ?? "")
+          .slice(0, 180)
+          .replace(/\s+/g, " ");
+        return `${r.url}: ${head}${r.wordCount ? ` (${r.wordCount}w)` : ""}`;
+      },
+      metadata: (input) => ({
+        url: typeof input.url === "string" ? input.url : "",
+        kind: "firecrawl",
+      }),
+    },
+  },
   handler: async ({ input, email, userId }) => {
     const { url, formats = ["markdown"] } = input as Record<string, unknown>;
 
@@ -41,17 +69,24 @@ export const POST = createAgentRoute({
     }
 
     // Call Firecrawl Scrape API
-    const response = await outboundFetchAsResponse("https://api.firecrawl.dev/v1/scrape", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
+    const response = await outboundFetchAsResponse(
+      "https://api.firecrawl.dev/v1/scrape",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          url,
+          formats,
+        }),
       },
-      body: JSON.stringify({
-        url,
-        formats,
-      }),
-    }, { ruleId: "agents.firecrawl.route.1", allowedHosts: ["api.firecrawl.dev"] });
+      {
+        ruleId: "agents.firecrawl.route.1",
+        allowedHosts: ["api.firecrawl.dev"],
+      },
+    );
 
     if (!response.ok) {
       const errorText = await response.text();

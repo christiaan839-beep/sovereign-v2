@@ -7,6 +7,7 @@ interface StripStats {
   models: number;
   industries: number;
   uptime: string;
+  savedUsd: number | null;
 }
 
 const STATIC_FALLBACK: StripStats = {
@@ -14,40 +15,89 @@ const STATIC_FALLBACK: StripStats = {
   models: 39,
   industries: 14,
   uptime: "99.9%",
+  savedUsd: null,
 };
 
+interface ExtendedMetricsResponse {
+  costSavings?: {
+    savedUsd?: number;
+    savedPct?: number;
+  };
+}
+
 /**
- * LiveProofStrip — Thin horizontal strip with 4 live stats.
- * Fetches from /api/agents/dashboard-stats with static fallback.
- * JetBrains Mono, copper values, copper separator dots.
+ * LiveProofStrip — Thin horizontal strip with live platform stats.
+ *
+ * Fetches from /api/agents/dashboard-stats (counts) + /api/status/metrics/extended
+ * (live cost-saved-vs-Claude-Sonnet baseline, wave-116 M8). Falls back
+ * silently to static numbers when either endpoint is unavailable.
+ *
+ * JetBrains Mono, copper values, copper separator dots. Cost-savings
+ * cell only renders when the M8 endpoint returns a non-zero number —
+ * a fresh deploy with zero runs doesn't display a fake "$0 saved" stat.
  */
+function fmtUsd(n: number): string {
+  if (n < 0.01) return `$${n.toFixed(3)}`;
+  if (n < 1) return `$${n.toFixed(2)}`;
+  if (n < 1000) return `$${n.toFixed(2)}`;
+  if (n < 1_000_000) return `$${(n / 1000).toFixed(1)}k`;
+  return `$${(n / 1_000_000).toFixed(2)}m`;
+}
+
 export function LiveProofStrip() {
   const [stats, setStats] = useState<StripStats>(STATIC_FALLBACK);
 
   useEffect(() => {
-    fetch("/api/agents/dashboard-stats", { cache: "no-store" })
-      .then((r) => r.json())
-      .then((data) => {
-        if (data && typeof data.agentCount === "number") {
-          setStats({
-            agents: data.agentCount ?? STATIC_FALLBACK.agents,
-            models: data.modelCount ?? STATIC_FALLBACK.models,
-            industries: data.industries ?? STATIC_FALLBACK.industries,
-            uptime: data.uptime ?? STATIC_FALLBACK.uptime,
-          });
-        }
-      })
-      .catch(() => {
-        // silently keep static fallback
+    // Run both fetches in parallel so the strip surfaces whichever resolves.
+    void Promise.all([
+      fetch("/api/agents/dashboard-stats", { cache: "no-store" })
+        .then((r) => r.json())
+        .catch(() => null),
+      fetch("/api/status/metrics/extended?window=30d", { cache: "no-store" })
+        .then((r) => r.json() as Promise<ExtendedMetricsResponse>)
+        .catch(() => null),
+    ]).then(([dash, metrics]) => {
+      const dashOk = dash && typeof dash.agentCount === "number";
+      const savedRaw = metrics?.costSavings?.savedUsd;
+      const savedUsd =
+        typeof savedRaw === "number" &&
+        Number.isFinite(savedRaw) &&
+        savedRaw > 0
+          ? savedRaw
+          : null;
+      setStats({
+        agents: dashOk
+          ? (dash.agentCount ?? STATIC_FALLBACK.agents)
+          : STATIC_FALLBACK.agents,
+        models: dashOk
+          ? (dash.modelCount ?? STATIC_FALLBACK.models)
+          : STATIC_FALLBACK.models,
+        industries: dashOk
+          ? (dash.industries ?? STATIC_FALLBACK.industries)
+          : STATIC_FALLBACK.industries,
+        uptime: dashOk
+          ? (dash.uptime ?? STATIC_FALLBACK.uptime)
+          : STATIC_FALLBACK.uptime,
+        savedUsd,
       });
+    });
   }, []);
 
-  const items = [
+  type Item = { value: string; label: string; title?: string };
+  const items: Item[] = [
     { value: stats.agents.toString(), label: "agents live" },
     { value: stats.models.toString(), label: "models" },
     { value: stats.industries.toString(), label: "industries" },
     { value: stats.uptime, label: "uptime" },
   ];
+  if (stats.savedUsd !== null) {
+    items.push({
+      value: fmtUsd(stats.savedUsd),
+      label: "saved · 30d",
+      title:
+        "Cost saved vs an all-Claude-Sonnet baseline over the last 30 days. Live from /api/status/metrics/extended (M8).",
+    });
+  }
 
   return (
     <div
@@ -65,7 +115,10 @@ export function LiveProofStrip() {
                 style={{ background: "rgba(181,83,44,0.5)" }}
               />
             )}
-            <span className="font-mono text-[12px] tracking-tight whitespace-nowrap">
+            <span
+              className="font-mono text-[12px] tracking-tight whitespace-nowrap"
+              title={item.title}
+            >
               <span className="text-[#B5532C] font-semibold">{item.value}</span>
               <span className="text-neutral-500 ml-1.5">{item.label}</span>
             </span>

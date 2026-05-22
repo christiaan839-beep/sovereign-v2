@@ -1167,6 +1167,11 @@ export const PLAYBOOKS: Playbook[] = [
     icon: "Rocket",
     color: "emerald",
     category: "operations",
+    // Wave 118 — third playbook to use the wave-115 DAG executor.
+    // site-assassin and leads are independent (leads only needs the
+    // client name + a generic niche template, not the brand analysis).
+    // proposal-generator is the merge node that consumes both.
+    dag: true,
     fields: [
       {
         key: "client_url",
@@ -1195,28 +1200,29 @@ export const PLAYBOOKS: Playbook[] = [
         agent: "site-assassin",
         params: { url: "{{client_url}}" },
         reason: "Analyze client's website, brand positioning, and messaging",
+        dependsOn: [], // parallel root
       },
       {
         agent: "leads",
         params: {
           niche: "Prospects for {{client_name}}",
           location: "worldwide",
-          context:
-            "Based on this brand analysis, find 10 sample prospects that would be ideal customers for this client. Brand data: {{step_1}}",
         },
         reason: "Find 10 sample prospects for the client",
+        dependsOn: [], // parallel root — only needs client_name, no brand data
       },
       {
         agent: "proposal-generator",
         params: {
           prompt:
-            "Draft an initial proposal for {{client_name}} for {{service}}. Include findings from the website analysis and sample prospect list as proof of capability. Website analysis: {{step_1}} Sample prospects: {{step_2}}",
-          context: "{{step_1}}",
+            "Draft an initial proposal for {{client_name}} for {{service}}. Include findings from the website analysis and sample prospect list as proof of capability. Website analysis: {{step_0}} Sample prospects: {{step_1}}",
+          context: "{{step_0}}",
         },
         reason: "Draft an initial proposal based on findings",
+        dependsOn: [0, 1], // merge node — needs both
       },
     ],
-    estimatedTime: "3-5 min",
+    estimatedTime: "2-3 min",
     agentCount: 3,
   },
 
