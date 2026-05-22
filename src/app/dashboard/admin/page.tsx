@@ -1010,7 +1010,7 @@ export default function AdminPage() {
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
-          className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
+          className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5"
         >
           <Link
             href="/dashboard/admin/cohorts"
@@ -1086,6 +1086,25 @@ export default function AdminPage() {
                 </div>
               </div>
               <ChevronRight className="h-4 w-4 text-neutral-600 transition group-hover:translate-x-0.5 group-hover:text-violet-300" />
+            </div>
+          </Link>
+          <Link
+            href="/dashboard/admin/knowledge-graph"
+            className="group rounded-2xl border border-rose-500/[0.12] bg-gradient-to-br from-rose-500/[0.06] via-rose-500/[0.02] to-transparent p-4 transition hover:border-rose-500/30 hover:bg-rose-500/[0.04]"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <Activity className="h-4 w-4 text-rose-300" />
+                <div>
+                  <div className="text-sm font-semibold text-white">
+                    Knowledge graph
+                  </div>
+                  <div className="text-[10px] text-neutral-500">
+                    Entity-relationship map · top-degree nodes · per user
+                  </div>
+                </div>
+              </div>
+              <ChevronRight className="h-4 w-4 text-neutral-600 transition group-hover:translate-x-0.5 group-hover:text-rose-300" />
             </div>
           </Link>
         </motion.div>
