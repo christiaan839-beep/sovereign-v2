@@ -39,6 +39,7 @@ import { createAgentRoute } from "@/lib/agent-factory";
 import { z } from "zod";
 import { claudeToolUse, research_ai } from "@/lib/ai";
 import { searchMemory, storeMemory } from "@/lib/vector-memory";
+import { runCode, RUN_CODE_TOOL_DEF } from "@/lib/run-code";
 import { outboundFetch } from "@/lib/outbound-fetch";
 import { resolvedHostIsSafe } from "@/lib/federation-puller";
 import { lookup as dnsLookup } from "node:dns/promises";
@@ -78,6 +79,7 @@ interface CompetitorReport {
 /** Tool registry. Names match the JSON schema below — when Claude
  *  invokes a tool, the executor switches on `name`. */
 const TOOL_DEFS = [
+  RUN_CODE_TOOL_DEF,
   {
     name: "search_past_scans",
     description:
@@ -216,6 +218,28 @@ export function buildToolExecutor(ctx: CompetitorScanContext) {
     let output: string;
     try {
       switch (name) {
+        case "run_code": {
+          const code = String(input.code ?? "");
+          const timeoutMs =
+            typeof input.timeoutMs === "number" ? input.timeoutMs : undefined;
+          if (!code) {
+            output = "ERROR: code required";
+            break;
+          }
+          try {
+            const r = runCode(code, { timeoutMs });
+            output = JSON.stringify({
+              success: r.success,
+              result: r.result,
+              stdout: r.stdout?.slice(0, 1_000),
+              durationMs: r.durationMs,
+              error: r.error,
+            }).slice(0, 3_500);
+          } catch (err) {
+            output = `ERROR: run_code threw — ${err instanceof Error ? err.message : "err"}`;
+          }
+          break;
+        }
         case "search_past_scans": {
           // Wave-110.1 M1 fix: skip memory ops for anon sessions so a
           // (theoretical) public:true flip doesn't cross-pollute a

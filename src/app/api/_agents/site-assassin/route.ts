@@ -37,6 +37,7 @@ import { z } from "zod";
 import { claudeToolUse, research_ai } from "@/lib/ai";
 import { nimChat } from "@/lib/nvidia";
 import { searchMemory, storeMemory } from "@/lib/vector-memory";
+import { runCode, RUN_CODE_TOOL_DEF } from "@/lib/run-code";
 import { outboundFetch } from "@/lib/outbound-fetch";
 import { resolvedHostIsSafe } from "@/lib/safe-host";
 import { lookup as dnsLookup } from "node:dns/promises";
@@ -68,6 +69,7 @@ interface AuditReport {
 }
 
 const TOOL_DEFS = [
+  RUN_CODE_TOOL_DEF,
   {
     name: "search_past_audits",
     description:
@@ -219,6 +221,28 @@ export function buildToolExecutor(ctx: SiteAssassinContext) {
     let output: string;
     try {
       switch (name) {
+        case "run_code": {
+          const code = String(input.code ?? "");
+          const timeoutMs =
+            typeof input.timeoutMs === "number" ? input.timeoutMs : undefined;
+          if (!code) {
+            output = "ERROR: code required";
+            break;
+          }
+          try {
+            const r = runCode(code, { timeoutMs });
+            output = JSON.stringify({
+              success: r.success,
+              result: r.result,
+              stdout: r.stdout?.slice(0, 1_000),
+              durationMs: r.durationMs,
+              error: r.error,
+            }).slice(0, 3_500);
+          } catch (err) {
+            output = `ERROR: run_code threw — ${err instanceof Error ? err.message : "err"}`;
+          }
+          break;
+        }
         case "search_past_audits": {
           // Wave-110.1 M1: skip memory ops for anon sessions.
           if (!ctx.userId || ctx.userId === "anon") {
