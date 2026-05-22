@@ -32,6 +32,7 @@ export type CtaName =
   | "mobile-nav-run-free"
   | "hero-marketplace"
   | "hero-pilot-bundle"
+  | "hero-immersive"
   | "pricing-teaser-full"
   | "footer-colophon";
 

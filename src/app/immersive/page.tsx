@@ -34,10 +34,11 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { ArrowRight, ShieldCheck, FileSignature, Activity } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import dynamic from "next/dynamic";
 import { HudFrame } from "@/components/landing/HudFrame";
 import { SystemBootLoader } from "@/components/landing/SystemBootLoader";
+import { useReceiptPulse } from "@/lib/use-receipt-pulse";
 
 // Heavy 3D component — dynamic-imported with SSR off so the static
 // HTML stays fast + we never ship Three.js to a search crawler.
@@ -106,6 +107,19 @@ export default function ImmersivePage() {
   const containerRef = useRef<HTMLDivElement>(null);
   const sectionRefs = useRef<Array<HTMLElement | null>>([]);
 
+  // Wave 122 — real receipt pulses. The orb fires every time a new
+  // receipt lands at the head of the public feed. Combined with the
+  // section-change pulse + 6s heartbeat, the orb visibly tracks live
+  // platform activity.
+  const {
+    pulseToken: receiptPulse,
+    latestId,
+    latestAgent,
+  } = useReceiptPulse({ intervalMs: 15_000 });
+  useEffect(() => {
+    if (receiptPulse > 0) setPulseToken((t) => t + 1);
+  }, [receiptPulse]);
+
   // IntersectionObserver tracks which section is in view.
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -157,6 +171,38 @@ export default function ImmersivePage() {
           frameLabel="FRAME LOCKED"
           buildLabel="VAOS · v2.1"
         />
+        {/* Wave 122 — fresh-receipt caption. Animates in for ~3s on every
+            real receipt-fabric pulse, then fades. Sits above the HUD
+            chrome so it never gets clipped. */}
+        <AnimatePresence>
+          {latestId && (
+            <motion.div
+              key={latestId}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.45, ease: "easeOut" }}
+              className="pointer-events-none absolute bottom-20 left-1/2 z-20 -translate-x-1/2"
+              aria-live="polite"
+            >
+              <Link
+                href={`/r/${latestId}`}
+                className="pointer-events-auto group inline-flex items-center gap-2 rounded-full border border-cyan-500/20 bg-[#020202]/80 px-4 py-2 font-mono text-[10px] uppercase tracking-[0.18em] text-cyan-300 backdrop-blur-xl transition hover:border-cyan-500/40 hover:text-cyan-200"
+              >
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-400 opacity-70" />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-cyan-400" />
+                </span>
+                <span>
+                  fresh receipt{latestAgent ? ` · ${latestAgent}` : ""}
+                </span>
+                <span className="opacity-50 transition-opacity group-hover:opacity-100">
+                  →
+                </span>
+              </Link>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Foreground scrolling sections */}
