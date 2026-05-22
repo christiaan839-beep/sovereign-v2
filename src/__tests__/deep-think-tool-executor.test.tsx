@@ -56,6 +56,32 @@ vi.mock("@/lib/ai", () => ({
 vi.mock("@/lib/outbound-fetch", () => ({
   outboundFetchAsResponse: outboundFetchMock,
 }));
+vi.mock("@/lib/run-code", () => ({
+  runCode: (code, opts) => {
+    if (code === "throw new Error('boom')") {
+      throw new Error("boom");
+    }
+    if (code === "2 + 2") {
+      return {
+        success: true,
+        result: 4,
+        stdout: "",
+        durationMs: 1,
+      };
+    }
+    return {
+      success: true,
+      result: undefined,
+      stdout: "",
+      durationMs: opts?.timeoutMs ?? 5,
+    };
+  },
+  RUN_CODE_TOOL_DEF: {
+    name: "run_code",
+    description: "test",
+    input_schema: { type: "object", properties: {}, required: [] },
+  },
+}));
 vi.mock("@/lib/execution-budget", () => ({
   checkpoint: budgetCheckpointMock,
 }));
@@ -235,6 +261,28 @@ describe("run_sub_reasoning", () => {
     const exec = buildToolExecutor(freshCtx());
     const out = await exec("run_sub_reasoning", {});
     expect(out).toMatch(/^ERROR/);
+  });
+});
+
+describe("run_code", () => {
+  it("returns a JSON-encoded result on success", async () => {
+    const exec = buildToolExecutor(freshCtx());
+    const out = await exec("run_code", { code: "2 + 2" });
+    const parsed = JSON.parse(out);
+    expect(parsed.success).toBe(true);
+    expect(parsed.result).toBe(4);
+  });
+
+  it("returns ERROR when code is missing", async () => {
+    const exec = buildToolExecutor(freshCtx());
+    const out = await exec("run_code", {});
+    expect(out).toMatch(/^ERROR/);
+  });
+
+  it("captures runCode throws without aborting the loop", async () => {
+    const exec = buildToolExecutor(freshCtx());
+    const out = await exec("run_code", { code: "throw new Error('boom')" });
+    expect(out).toMatch(/run_code threw/);
   });
 });
 

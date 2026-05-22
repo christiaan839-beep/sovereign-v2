@@ -3,6 +3,7 @@ import { ai, claudeToolUse, research_ai } from "@/lib/ai";
 import { verifiedAi } from "@/lib/consensus";
 import { checkpoint as budgetCheckpoint } from "@/lib/execution-budget";
 import { storeMemory, searchMemory } from "@/lib/vector-memory";
+import { runCode, RUN_CODE_TOOL_DEF } from "@/lib/run-code";
 import { createHash } from "node:crypto";
 import { createLogger } from "@/lib/logger";
 
@@ -130,6 +131,7 @@ const TOOL_DEFS = [
       required: ["subproblem"],
     },
   },
+  RUN_CODE_TOOL_DEF,
   {
     name: "store_insight",
     description:
@@ -376,6 +378,28 @@ export function buildToolExecutor(ctx: DeepThinkContext) {
           }
           output = await callGeminiDeepThink(sub, subCtx, ctx.thinkingBudget);
           output = output.slice(0, 3_500);
+          break;
+        }
+        case "run_code": {
+          const code = String(input.code ?? "");
+          const timeoutMs =
+            typeof input.timeoutMs === "number" ? input.timeoutMs : undefined;
+          if (!code) {
+            output = "ERROR: code required";
+            break;
+          }
+          try {
+            const r = runCode(code, { timeoutMs });
+            output = JSON.stringify({
+              success: r.success,
+              result: r.result,
+              stdout: r.stdout?.slice(0, 1_000),
+              durationMs: r.durationMs,
+              error: r.error,
+            }).slice(0, 3_500);
+          } catch (err) {
+            output = `ERROR: run_code threw — ${err instanceof Error ? err.message : "err"}`;
+          }
           break;
         }
         case "store_insight": {
