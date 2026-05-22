@@ -19,6 +19,7 @@
 import { NextResponse } from "next/server";
 import { runNightly } from "@/lib/cron-orchestrator";
 import { buildDailyRoot } from "@/lib/merkle-receipts";
+import type { AutoSeedSummary } from "@/lib/bandit-autoseed";
 import {
   computeEvalReport,
   detectRegressions,
@@ -122,9 +123,21 @@ export async function POST(req: Request) {
     { regressionThresholdPct: 5 },
   );
 
-  return NextResponse.json(result, {
-    headers: { "Cache-Control": "no-store" },
-  });
+  // Wave-149: auto-seed the bandit from yesterday's observed
+  // (agent × model) pairs. Idempotent — existing arms preserved.
+  // Failures are non-fatal; logged into the nightly result.
+  let autoSeed: AutoSeedSummary | null = null;
+  try {
+    const { runAutoSeed } = await import("@/lib/bandit-autoseed");
+    autoSeed = await runAutoSeed({ windowDays: 30, minSamples: 3 });
+  } catch (err) {
+    log.warn("nightly auto-seed failed", { error: String(err) });
+  }
+
+  return NextResponse.json(
+    { ...result, autoSeed },
+    { headers: { "Cache-Control": "no-store" } },
+  );
 }
 
 // Vercel Cron sends GET by default — alias for convenience
