@@ -26,6 +26,12 @@ import { agentSessions } from "@/db/schema";
 import { desc, eq, and } from "drizzle-orm";
 import { rateLimit } from "@/lib/rate-limit";
 import { createLogger } from "@/lib/logger";
+import {
+  clampLimit,
+  normalizeStatus,
+  parseLastStepLabel,
+  isMissingTableError,
+} from "@/lib/admin-sessions-helpers";
 
 const log = createLogger("admin-sessions");
 
@@ -33,8 +39,6 @@ const ADMIN_EMAILS = new Set<string>([
   "christiaan839@gmail.com",
   "christiaandewet28@icloud.com",
 ]);
-
-const VALID_STATUSES = new Set(["active", "done", "failed", "abandoned"]);
 
 const limiter = rateLimit({ interval: 60, limit: 60 });
 
@@ -52,12 +56,6 @@ async function isCurrentUserAdmin(): Promise<boolean> {
   }
 }
 
-function clampLimit(raw: string | null): number {
-  const n = Number.parseInt(raw ?? "", 10);
-  if (!Number.isFinite(n)) return 50;
-  return Math.min(Math.max(n, 1), 200);
-}
-
 interface SessionSummary {
   id: string;
   userId: string;
@@ -71,26 +69,6 @@ interface SessionSummary {
   lastStepLabel: string | null;
   /** Truncated state preview — first 200 chars of the JSON blob. */
   statePreview: string;
-}
-
-function parseLastStepLabel(stepsBlob: string): string | null {
-  try {
-    const arr = JSON.parse(stepsBlob);
-    if (!Array.isArray(arr) || arr.length === 0) return null;
-    const last = arr[arr.length - 1];
-    if (last && typeof last === "object" && typeof last.label === "string") {
-      return last.label.slice(0, 80);
-    }
-    return null;
-  } catch {
-    return null;
-  }
-}
-
-function isMissingTableError(err: unknown): boolean {
-  const code = (err as { code?: string })?.code;
-  const msg = err instanceof Error ? err.message : String(err);
-  return code === "42P01" || /does not exist/.test(msg);
 }
 
 export async function GET(req: Request) {
@@ -107,13 +85,13 @@ export async function GET(req: Request) {
 
   const url = new URL(req.url);
   const agentName = url.searchParams.get("agentName")?.trim() || null;
-  const statusFilter = url.searchParams.get("status")?.trim() || null;
+  const statusFilter = normalizeStatus(url.searchParams.get("status"));
   const limit = clampLimit(url.searchParams.get("limit"));
 
   try {
     const conds = [] as ReturnType<typeof eq>[];
     if (agentName) conds.push(eq(agentSessions.agentName, agentName));
-    if (statusFilter && VALID_STATUSES.has(statusFilter)) {
+    if (statusFilter) {
       conds.push(eq(agentSessions.status, statusFilter));
     }
     const where = conds.length > 0 ? and(...conds) : undefined;
