@@ -1010,7 +1010,7 @@ export default function AdminPage() {
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
-          className="mb-6 grid gap-3 sm:grid-cols-2"
+          className="mb-6 grid gap-3 sm:grid-cols-3"
         >
           <Link
             href="/dashboard/admin/cohorts"
@@ -1048,6 +1048,25 @@ export default function AdminPage() {
                 </div>
               </div>
               <ChevronRight className="h-4 w-4 text-neutral-600 transition group-hover:translate-x-0.5 group-hover:text-amber-300" />
+            </div>
+          </Link>
+          <Link
+            href="/dashboard/admin/infrastructure"
+            className="group rounded-2xl border border-emerald-500/[0.12] bg-gradient-to-br from-emerald-500/[0.06] via-emerald-500/[0.02] to-transparent p-4 transition hover:border-emerald-500/30 hover:bg-emerald-500/[0.04]"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <Cpu className="h-4 w-4 text-emerald-300" />
+                <div>
+                  <div className="text-sm font-semibold text-white">
+                    Infrastructure
+                  </div>
+                  <div className="text-[10px] text-neutral-500">
+                    Self-hosted vs managed · OSS · NIM · BigQuery · Riva
+                  </div>
+                </div>
+              </div>
+              <ChevronRight className="h-4 w-4 text-neutral-600 transition group-hover:translate-x-0.5 group-hover:text-emerald-300" />
             </div>
           </Link>
         </motion.div>

@@ -385,25 +385,53 @@ Then give your final answer after your reasoning.`
   // to Gemini happens only when (a) NIM fails or (b) the `escalate`
   // flag is set AND the output looks too short — which already runs
   // a separate escalation pass via nimChat() at line 401 below.
-  let answer: string;
+  let answer: string = "";
   let modelUsed = "nemotron-ultra-253b-v1";
   let escalated = false;
+  let ossSucceeded = false;
 
+  // Wave-133: when a self-hosted OSS inference endpoint is configured
+  // (vLLM / NIM Microservices / Triton), route there FIRST. Marginal
+  // cost is ~$0 per call once the GPU is provisioned. Falls through to
+  // NIM-managed if the endpoint is unreachable or returns empty.
   try {
-    answer = await ai(fullPrompt, {
-      system: systemPrompt,
-      maxTokens,
-      model: "nim",
+    const { isOssInferenceConfigured, smartOssChat } =
+      await import("@/lib/oss-inference");
+    if (isOssInferenceConfigured()) {
+      const ossMessages = [
+        ...(systemPrompt ? [{ role: "system", content: systemPrompt }] : []),
+        { role: "user", content: fullPrompt },
+      ];
+      const ossAnswer = await smartOssChat(ossMessages, { maxTokens });
+      if (ossAnswer && ossAnswer.length > 0) {
+        answer = ossAnswer;
+        modelUsed =
+          process.env.OSS_INFERENCE_DEFAULT_MODEL?.trim() || "oss-self-host";
+        ossSucceeded = true;
+      }
+    }
+  } catch (err) {
+    log.warn("oss-inference path failed; falling back to NIM", {
+      error: err instanceof Error ? err.message : String(err),
     });
-  } catch {
-    // NIM unreachable / rate-limited — fall back to Gemini Flash.
-    answer = await ai(fullPrompt, {
-      system: systemPrompt,
-      maxTokens,
-      model: "gemini",
-    });
-    modelUsed = "gemini-2.5-flash";
   }
+
+  if (!ossSucceeded)
+    try {
+      answer = await ai(fullPrompt, {
+        system: systemPrompt,
+        maxTokens,
+        model: "nim",
+      });
+    } catch {
+      // NIM unreachable / rate-limited — fall back to Gemini Flash.
+      answer = await ai(fullPrompt, {
+        system: systemPrompt,
+        maxTokens,
+        model: "gemini",
+      });
+      modelUsed = "gemini-2.5-flash";
+    }
 
   // Phase 4: ESCALATE if output is too short or looks low quality
   if (escalate && answer.length < 100 && prompt.length > 50) {
