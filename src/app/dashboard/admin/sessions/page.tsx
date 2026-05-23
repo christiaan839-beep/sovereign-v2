@@ -180,6 +180,73 @@ export default function AdminSessionsPage() {
     return () => clearInterval(id);
   }, [fetchSessions]);
 
+  const controlSession = async (
+    sessionId: string,
+    sessionUserId: string,
+    action: "abandon" | "fail" | "extend",
+    onDone: () => void | Promise<void>,
+  ) => {
+    if (
+      action === "abandon" &&
+      !confirm(`Mark session ${sessionId.slice(0, 8)}… abandoned?`)
+    ) {
+      return;
+    }
+    try {
+      const body: Record<string, unknown> = {
+        sessionId,
+        userId: sessionUserId,
+        action,
+      };
+      if (action === "extend") body.addMinutes = 60;
+      const res = await fetch("/api/admin/sessions/control", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const json = (await res.json().catch(() => ({}))) as {
+        affected?: number;
+        error?: string;
+      };
+      if (!res.ok) {
+        alert(`${action} failed: ${json.error ?? `HTTP ${res.status}`}`);
+        return;
+      }
+      await onDone();
+    } catch (err) {
+      alert(`${action} failed: ${err instanceof Error ? err.message : "err"}`);
+    }
+  };
+
+  const sweepStale = useCallback(async () => {
+    if (
+      !confirm(
+        "Mark all active sessions idle > 30 minutes as 'abandoned'? This cannot be undone.",
+      )
+    )
+      return;
+    try {
+      const res = await fetch("/api/admin/sessions/control", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "cleanup", staleAfterMinutes: 30 }),
+      });
+      const json = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        flipped?: number;
+        error?: string;
+      };
+      if (!res.ok || !json.ok) {
+        alert(`Sweep failed: ${json.error ?? `HTTP ${res.status}`}`);
+        return;
+      }
+      alert(`Flipped ${json.flipped ?? 0} stale sessions to 'abandoned'.`);
+      void fetchSessions();
+    } catch (err) {
+      alert(`Sweep failed: ${err instanceof Error ? err.message : "err"}`);
+    }
+  }, [fetchSessions]);
+
   const tallies = useMemo(() => {
     const t = { active: 0, done: 0, failed: 0, abandoned: 0, stuck: 0 };
     if (!data) return t;
@@ -235,17 +302,27 @@ export default function AdminSessionsPage() {
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={fetchSessions}
-              disabled={loading}
-              className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-2 text-neutral-400 backdrop-blur-xl transition hover:text-neutral-200 disabled:opacity-50"
-              aria-label="Refresh"
-            >
-              <RefreshCw
-                className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
-              />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={sweepStale}
+                className="rounded-lg border border-amber-500/30 bg-amber-500/[0.06] px-3 py-1.5 text-[11px] font-medium text-amber-300 transition hover:bg-amber-500/[0.12]"
+                title="Mark all active sessions idle > 30 minutes as 'abandoned'"
+              >
+                Sweep stale ≥30m
+              </button>
+              <button
+                type="button"
+                onClick={fetchSessions}
+                disabled={loading}
+                className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-2 text-neutral-400 backdrop-blur-xl transition hover:text-neutral-200 disabled:opacity-50"
+                aria-label="Refresh"
+              >
+                <RefreshCw
+                  className={`h-4 w-4 ${loading ? "animate-spin" : ""}`}
+                />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -341,6 +418,7 @@ export default function AdminSessionsPage() {
                           "Touched",
                           "Age",
                           "State preview",
+                          "Actions",
                         ].map((c) => (
                           <th
                             key={c}
@@ -396,6 +474,46 @@ export default function AdminSessionsPage() {
                             title={s.statePreview}
                           >
                             {prettyStatePreview(s.statePreview)}
+                          </td>
+                          <td className="px-5 py-3">
+                            {s.status === "active" ? (
+                              <div className="flex items-center gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    controlSession(
+                                      s.id,
+                                      s.userId,
+                                      "abandon",
+                                      fetchSessions,
+                                    )
+                                  }
+                                  className="rounded-md border border-neutral-500/30 bg-neutral-500/[0.05] px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-neutral-300 hover:bg-neutral-500/[0.12] hover:text-white"
+                                  title="Mark abandoned"
+                                >
+                                  abandon
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    controlSession(
+                                      s.id,
+                                      s.userId,
+                                      "extend",
+                                      fetchSessions,
+                                    )
+                                  }
+                                  className="rounded-md border border-cyan-500/30 bg-cyan-500/[0.05] px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-cyan-300 hover:bg-cyan-500/[0.12]"
+                                  title="Extend TTL +60m"
+                                >
+                                  +60m
+                                </button>
+                              </div>
+                            ) : (
+                              <span className="text-[10px] text-neutral-600">
+                                —
+                              </span>
+                            )}
                           </td>
                         </tr>
                       ))}
