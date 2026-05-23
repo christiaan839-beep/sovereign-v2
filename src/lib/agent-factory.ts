@@ -942,6 +942,27 @@ export function createAgentRoute(config: AgentConfig) {
               } catch {
                 /* best-effort */
               }
+              // Wave-152: emit a blocked tick to the war-room stream
+              try {
+                const { publishTick } =
+                  await import("@/lib/agent-activity-bus");
+                const modelForTick =
+                  typeof (verifierOutput as unknown as { _model?: string })
+                    ._model === "string"
+                    ? (verifierOutput as unknown as { _model?: string })._model!
+                    : "agent-factory";
+                publishTick({
+                  id: `blocked-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                  agentName: config.name,
+                  modelUsed: modelForTick,
+                  userId: userId ?? null,
+                  status: "blocked",
+                  durationMs: Date.now() - startTime,
+                  at: new Date().toISOString(),
+                });
+              } catch {
+                /* best-effort */
+              }
               // Do NOT increment usage — the user gets their credit back
               // because we refused to deliver the output.
               return NextResponse.json(
@@ -1037,6 +1058,30 @@ export function createAgentRoute(config: AgentConfig) {
           if (userId) {
             const { recordRunAsGraph } = await import("@/lib/knowledge-graph");
             await recordRunAsGraph(userId, config.name, finalResult);
+          }
+        } catch {
+          /* best-effort */
+        }
+        // Wave-152: emit a live activity tick to the in-process bus
+        // so the admin war-room SSE stream sees this run in real time.
+        // Pure in-memory — never blocks the response.
+        try {
+          if (receiptRow) {
+            const { publishTick } = await import("@/lib/agent-activity-bus");
+            const modelForTick =
+              typeof (finalResult as Record<string, unknown>)._model ===
+              "string"
+                ? ((finalResult as Record<string, unknown>)._model as string)
+                : "agent-factory";
+            publishTick({
+              id: receiptRow.id,
+              agentName: config.name,
+              modelUsed: modelForTick,
+              userId: userId ?? null,
+              status: "auto-approved",
+              durationMs: Date.now() - startTime,
+              at: new Date().toISOString(),
+            });
           }
         } catch {
           /* best-effort */

@@ -1010,7 +1010,7 @@ export default function AdminPage() {
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
-          className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5"
+          className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"
         >
           <Link
             href="/dashboard/admin/cohorts"
@@ -1105,6 +1105,25 @@ export default function AdminPage() {
                 </div>
               </div>
               <ChevronRight className="h-4 w-4 text-neutral-600 transition group-hover:translate-x-0.5 group-hover:text-rose-300" />
+            </div>
+          </Link>
+          <Link
+            href="/dashboard/admin/war-room"
+            className="group rounded-2xl border border-cyan-500/[0.12] bg-gradient-to-br from-cyan-500/[0.06] via-cyan-500/[0.02] to-transparent p-4 transition hover:border-cyan-500/30 hover:bg-cyan-500/[0.04]"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <Zap className="h-4 w-4 text-cyan-300" />
+                <div>
+                  <div className="text-sm font-semibold text-white">
+                    War room
+                  </div>
+                  <div className="text-[10px] text-neutral-500">
+                    Live agent ticker · SSE stream · per-status counters
+                  </div>
+                </div>
+              </div>
+              <ChevronRight className="h-4 w-4 text-neutral-600 transition group-hover:translate-x-0.5 group-hover:text-cyan-300" />
             </div>
           </Link>
         </motion.div>
