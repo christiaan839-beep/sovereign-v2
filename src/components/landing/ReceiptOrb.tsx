@@ -21,7 +21,7 @@
  * the orb just breathes on idle.
  */
 
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useMemo } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import {
   Sphere,
@@ -112,6 +112,39 @@ function OrbCore({
   );
 }
 
+/**
+ * Seeded LCG — deterministic so the React render is pure
+ * (Wave 158: closes `react-hooks/purity` warnings). Same
+ * particle layout on every mount, every server pre-render,
+ * every hydration — no impurity, no hydration mismatch.
+ */
+function seededRandom(seed: number): () => number {
+  let s = seed >>> 0;
+  return () => {
+    s = (s * 1664525 + 1013904223) >>> 0;
+    return s / 0x1_0000_0000;
+  };
+}
+
+function buildStarfield(particleCount: number): Float32Array {
+  const arr = new Float32Array(particleCount * 3);
+  // Fixed seed produces a stable visual layout across renders.
+  // The starfield is a 600-point background; any deterministic
+  // distribution looks indistinguishable from a random one.
+  // Seed chosen deterministically; any constant works. "SOVRGN" in hex.
+  const rng = seededRandom(0x534f5652474e);
+  for (let i = 0; i < particleCount; i++) {
+    // Sphere-shell distribution at radius 2.4-3.2
+    const theta = rng() * Math.PI * 2;
+    const phi = Math.acos(2 * rng() - 1);
+    const r = 2.4 + rng() * 0.8;
+    arr[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+    arr[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+    arr[i * 3 + 2] = r * Math.cos(phi);
+  }
+  return arr;
+}
+
 function StarField({
   reduceMotion,
   particleCount,
@@ -121,22 +154,13 @@ function StarField({
 }) {
   const ref = useRef<THREE.Points>(null);
 
-  // Pre-allocate particles distributed on a 3-sphere shell. Count is
-  // capped lower on mobile to keep the canvas responsive at 60fps.
-  const positions = useRef<Float32Array | null>(null);
-  if (positions.current === null) {
-    const arr = new Float32Array(particleCount * 3);
-    for (let i = 0; i < particleCount; i++) {
-      // Sphere-shell distribution at radius 2.4-3.2
-      const theta = Math.random() * Math.PI * 2;
-      const phi = Math.acos(2 * Math.random() - 1);
-      const r = 2.4 + Math.random() * 0.8;
-      arr[i * 3] = r * Math.sin(phi) * Math.cos(theta);
-      arr[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
-      arr[i * 3 + 2] = r * Math.cos(phi);
-    }
-    positions.current = arr;
-  }
+  // Pre-allocate particles distributed on a 3-sphere shell using
+  // a SEEDED LCG so the render is pure — no Math.random in the
+  // render path. useMemo caches once per particleCount change.
+  const positions = useMemo(
+    () => buildStarfield(particleCount),
+    [particleCount],
+  );
 
   useFrame((state) => {
     if (ref.current && !reduceMotion) {
@@ -145,12 +169,7 @@ function StarField({
   });
 
   return (
-    <Points
-      ref={ref}
-      positions={positions.current}
-      stride={3}
-      frustumCulled={false}
-    >
+    <Points ref={ref} positions={positions} stride={3} frustumCulled={false}>
       <PointMaterial
         color={CYAN}
         size={0.018}
