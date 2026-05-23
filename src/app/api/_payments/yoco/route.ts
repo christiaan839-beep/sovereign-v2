@@ -17,6 +17,8 @@ import { getPublicUrl } from "@/lib/base-url";
 import { PLANS as CANONICAL_PLANS, normalizePlanId } from "@/lib/plans";
 
 // Derive Yoco amounts from canonical plans.ts
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 function getYocoAmount(planId: string): { name: string; amountCents: number } | null {
   const id = normalizePlanId(planId);
   const plan = CANONICAL_PLANS[id];
@@ -57,7 +59,7 @@ export async function POST(req: Request) {
     const baseUrl = getPublicUrl();
 
     // Create Yoco checkout session
-    const res = await fetch("https://payments.yoco.com/api/checkouts", {
+    const res = await outboundFetchAsResponse("https://payments.yoco.com/api/checkouts", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${secretKey}`,
@@ -76,7 +78,7 @@ export async function POST(req: Request) {
           customerName: name || "unknown",
         },
       }),
-    });
+    }, { ruleId: "payments.yoco.route.1", allowedHosts: ["payments.yoco.com"] });
 
     const data = await res.json();
 

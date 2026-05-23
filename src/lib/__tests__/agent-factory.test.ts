@@ -770,6 +770,186 @@ describe("createAgentRoute", () => {
       expect(stored).toContain("[stripped:");
     });
 
+    // ─── Wave 114 L5: coverage gaps in the wave-111 memory hooks ───
+
+    it("wave 114 L5(a): extractor that throws synchronously is swallowed; no storeMemory call", async () => {
+      const handler = createAgentRoute({
+        name: "test-agent",
+        skipJailbreakCheck: true,
+        skipSafetyCheck: true,
+        skipPiiScan: true,
+        skipQualityCheck: true,
+        memory: {
+          store: {
+            extract: () => {
+              throw new Error("extractor exploded");
+            },
+          },
+        },
+        handler: async () => ({ ok: true }),
+      });
+      const res = await handler(makeRequest({ q: "x" }));
+      await new Promise((r) => setTimeout(r, 30));
+      // Response still 200 — extractor failure is best-effort and must not
+      // surface to the user.
+      expect(res.status).toBe(200);
+      // Nothing reached storeMemory.
+      expect(mockStoreMemory).not.toHaveBeenCalled();
+    });
+
+    it("wave 114 L5(b): extractor returning number/object is filtered (typeof guard); no storeMemory call", async () => {
+      const handler = createAgentRoute({
+        name: "test-agent",
+        skipJailbreakCheck: true,
+        skipSafetyCheck: true,
+        skipPiiScan: true,
+        skipQualityCheck: true,
+        memory: {
+          store: {
+            // Type-narrowing escape: cast through unknown so the test
+            // can deliberately violate the declared return shape and
+            // verify runtime defense.
+            extract: () => 42 as unknown as string,
+          },
+        },
+        handler: async () => ({ ok: true }),
+      });
+      await handler(makeRequest({ q: "x" }));
+      await new Promise((r) => setTimeout(r, 30));
+      expect(mockStoreMemory).not.toHaveBeenCalled();
+
+      const handler2 = createAgentRoute({
+        name: "test-agent-2",
+        skipJailbreakCheck: true,
+        skipSafetyCheck: true,
+        skipPiiScan: true,
+        skipQualityCheck: true,
+        memory: {
+          store: {
+            extract: () => ({ not: "a string" }) as unknown as string,
+          },
+        },
+        handler: async () => ({ ok: true }),
+      });
+      await handler2(makeRequest({ q: "x" }));
+      await new Promise((r) => setTimeout(r, 30));
+      expect(mockStoreMemory).not.toHaveBeenCalled();
+
+      const handler3 = createAgentRoute({
+        name: "test-agent-3",
+        skipJailbreakCheck: true,
+        skipSafetyCheck: true,
+        skipPiiScan: true,
+        skipQualityCheck: true,
+        memory: {
+          store: {
+            extract: () =>
+              [
+                "real string",
+                99,
+                { nope: true },
+                "another",
+              ] as unknown as string[],
+          },
+        },
+        handler: async () => ({ ok: true }),
+      });
+      await handler3(makeRequest({ q: "x" }));
+      await new Promise((r) => setTimeout(r, 30));
+      // Only the two string entries make it through the typeof filter.
+      expect(mockStoreMemory).toHaveBeenCalledTimes(2);
+      expect(mockStoreMemory.mock.calls[0][2]).toBe("real string");
+      expect(mockStoreMemory.mock.calls[1][2]).toBe("another");
+    });
+
+    it("wave 114 L5(c): pastContextAsPrompt is available on the retry handler invocation", async () => {
+      // Force a quality retry by returning a failing score the first
+      // time scoreOutput is called, then a passing score on the
+      // retry's score. The handler should be invoked twice — and
+      // BOTH invocations must see populated pastContext.
+      const { scoreOutput } = await import("@/lib/quality-scorer");
+      vi.mocked(scoreOutput).mockResolvedValueOnce({
+        overall: 0.3,
+        passed: false,
+        helpfulness: 0.3,
+        coherence: 0.3,
+        correctness: 0.3,
+        verbosity: 0.3,
+      });
+      vi.mocked(scoreOutput).mockResolvedValueOnce({
+        overall: 0.9,
+        passed: true,
+        helpfulness: 0.9,
+        coherence: 0.9,
+        correctness: 0.9,
+        verbosity: 0.8,
+      });
+
+      mockSearchMemory.mockResolvedValueOnce([
+        {
+          content: "past finding alpha",
+          agentName: "test-agent",
+          similarity: 0.81,
+          createdAt: "2026-05-15T00:00:00Z",
+        },
+      ]);
+
+      const handlerCalls: Array<string> = [];
+      const handler = createAgentRoute({
+        name: "test-agent",
+        skipJailbreakCheck: true,
+        skipSafetyCheck: true,
+        skipPiiScan: true,
+        memory: { search: { query: () => "q" } },
+        handler: async (ctx) => {
+          // Capture the rendered prompt on each invocation. If memory
+          // threading is intact, both calls return a non-empty string.
+          handlerCalls.push(ctx.pastContextAsPrompt());
+          return {
+            output:
+              "a sufficiently long stub output to clear the >=20 char " +
+              "minimum the quality scorer enforces before judging the response",
+          };
+        },
+      });
+
+      await handler(makeRequest({ q: "what's up" }));
+      // Two invocations expected: initial + post-fail retry.
+      expect(handlerCalls.length).toBe(2);
+      // Both rendered prompts contain the past finding — context survives
+      // the retry boundary.
+      expect(handlerCalls[0]).toContain("past finding alpha");
+      expect(handlerCalls[1]).toContain("past finding alpha");
+    });
+
+    it("wave 114 L5(d): post-store doesn't run when a pre-handler safety gate blocks the request", async () => {
+      // Override content-safety to block this one request. The store
+      // hook must never fire because the handler never executes — no
+      // result to extract from, and blocked outputs would otherwise
+      // poison future searches if stored.
+      const { checkContentSafety } = await import("@/lib/content-safety");
+      vi.mocked(checkContentSafety).mockResolvedValueOnce({
+        safe: false,
+        category: "violence",
+        reason: "test-block",
+      });
+
+      const handler = createAgentRoute({
+        name: "test-agent",
+        // safety NOT skipped — we want the gate to run.
+        skipJailbreakCheck: true,
+        skipPiiScan: true,
+        skipQualityCheck: true,
+        memory: { store: { extract: () => "this would be stored if reached" } },
+        handler: async () => ({ ok: true }),
+      });
+
+      const res = await handler(makeRequest({ prompt: "x".repeat(50) }));
+      await new Promise((r) => setTimeout(r, 30));
+      expect(res.status).toBe(403);
+      expect(mockStoreMemory).not.toHaveBeenCalled();
+    });
+
     it("wave-111.1 H1: store extractor receives the post-retry finalResult, not pre-retry result", async () => {
       // Captures which object reference reaches the extractor. The
       // factory promises finalResult — the version that survived

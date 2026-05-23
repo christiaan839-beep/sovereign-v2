@@ -58,6 +58,15 @@ jobs:
           done
           exit 1
 
+      # Wave 114: build workspace packages BEFORE typecheck. Compliance
+      # routes (`src/app/api/_admin/compliance/[framework]/generate`) +
+      # compliance pages import `@sovereign-matrix/*` workspace packages
+      # whose `main` + `types` point at `./dist/*` — non-existent until
+      # the tsc-per-package build runs. Without this step, the type
+      # checker can't resolve those imports and emits 25+ TS2307 errors.
+      - name: Build workspace packages
+        run: npm run build:packages
+
       - name: Run ESLint
         run: npm run lint
 
@@ -103,6 +112,12 @@ jobs:
           done
           exit 1
 
+      # Wave 114: same workspace-package precondition as lint-and-typecheck.
+      # Each CI job is its own runner with a fresh checkout, so the
+      # `dist/` files compiled in the lint job aren't visible here.
+      - name: Build workspace packages
+        run: npm run build:packages
+
       - name: Build application
         run: npm run build
         env:
@@ -140,6 +155,11 @@ jobs:
             sleep $((attempt * 5))
           done
           exit 1
+
+      # Wave 114: workspace packages are imported transitively by some
+      # vitest suites — build them so the imports resolve.
+      - name: Build workspace packages
+        run: npm run build:packages
 
       - name: Run tests
         run: npm test

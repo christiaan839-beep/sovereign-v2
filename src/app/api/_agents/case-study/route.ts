@@ -18,6 +18,8 @@ import { isAdmin } from "@/lib/admin-auth";
  * touches the DB — useful for previewing copy before saving.
  */
 
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 const schema = z
   .object({
     clientName: z.string().max(200).optional(),
@@ -62,6 +64,49 @@ function makeSlug(name: string): string {
 export const POST = createAgentRoute({
   name: "case-study",
   schema,
+  // Wave 114 M3 batch 8: memory hooks. Per-industry case studies compound —
+  // "what stuck for similar clients" informs which angle / metrics framing
+  // to lean on this time. Surface that as `pastContextAsPrompt()` without
+  // re-stating the entire prior case study.
+  memory: {
+    search: {
+      query: (input) => {
+        const industry =
+          (typeof input.industry === "string" && input.industry) || "general";
+        const playbook =
+          (typeof input.playbook === "string" && input.playbook) || "";
+        return `case-study industry:${industry} playbook:${playbook}`.trim();
+      },
+      limit: 2,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as {
+          clientName?: string;
+          industry?: string;
+          playbook?: string;
+          metric?: string;
+          outcome?: string;
+        };
+        if (!r.clientName && !r.industry) return null;
+        const head = [
+          r.clientName ? `client=${r.clientName}` : "",
+          r.industry ? `industry=${r.industry}` : "",
+          r.playbook ? `playbook=${r.playbook}` : "",
+          r.metric ? `metric=${r.metric}` : "",
+          r.outcome ? `outcome=${r.outcome.slice(0, 160)}` : "",
+        ]
+          .filter(Boolean)
+          .join(" · ");
+        return head || null;
+      },
+      metadata: (input) => ({
+        industry: typeof input.industry === "string" ? input.industry : "",
+        playbook: typeof input.playbook === "string" ? input.playbook : "",
+        kind: "case-study",
+      }),
+    },
+  },
   handler: async ({ input }) => {
     const clientName = (input.clientName as string) || "";
     const industry = (input.industry as string) || "Technology";
@@ -71,9 +116,7 @@ export const POST = createAgentRoute({
     const prompt = (input.prompt || input.topic || "") as string;
     const context = (input.context || "") as string;
 
-    const nimRes = await fetch(
-      "https://integrate.api.nvidia.com/v1/chat/completions",
-      {
+    const nimRes = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -106,8 +149,7 @@ Outcome: ${outcome || "Not specified"}`,
           max_tokens: 3000,
           temperature: 0.7,
         }),
-      },
-    );
+      }, { ruleId: "agents.case-study.route.1", allowedHosts: ["integrate.api.nvidia.com"] });
 
     if (!nimRes.ok) {
       throw new Error(`NIM API returned ${nimRes.status}`);

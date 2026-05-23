@@ -1,14 +1,34 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSafeUser } from "@/lib/safe-clerk";
 import {
-  Shield, Users, Activity, Cpu, Settings,
-  RefreshCw, AlertTriangle, Lock, CheckCircle2,
-  XCircle, Clock, Zap, Server, Database,
-  Key, Wifi, WifiOff, Trash2, HeartPulse,
-  Crown, ChevronRight, Search,
+  Shield,
+  Users,
+  Activity,
+  Cpu,
+  Settings,
+  RefreshCw,
+  AlertTriangle,
+  Lock,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  Zap,
+  Server,
+  Database,
+  Key,
+  Wifi,
+  WifiOff,
+  Trash2,
+  HeartPulse,
+  Crown,
+  ChevronRight,
+  Search,
+  TrendingUp,
+  Layers,
 } from "lucide-react";
 
 /* ─── Constants ─── */
@@ -19,31 +39,134 @@ const ADMIN_EMAILS = [
 ];
 
 const AGENT_LIST = [
-  "abm-artillery", "ad-report", "ads", "agent-performance", "agentic-chain",
-  "agentic-planner", "ai-gateway", "analytics", "asr", "audit", "auto-heal",
-  "auto-onboard", "benchmark", "billing", "blog-gen", "booking", "brand-audit",
-  "brand-voice", "calendar", "case-study", "chain-reactor", "claude-capabilities",
-  "claude-think", "claw-queue", "client-report", "closer", "code-agent",
-  "code-reviewer", "code-sandbox", "collab-room", "comms", "competitive-radar",
-  "competitor", "competitor-scan", "computer-use", "content", "content-safety",
-  "contract-analyzer", "coordinator", "cosmos-video", "creative-director",
-  "dashboard-stats", "deep-search", "deep-think", "deepseek-r1", "design",
-  "digital-human", "doc-analyst", "doc-intel", "email-onboard", "email-sequence",
-  "embed", "error-log", "feedback", "filmmaker", "firecrawl", "florence-ocr",
-  "flux-image", "flywheel", "funnel-xray", "ghost-fleet", "gliner-pii",
-  "god-brain", "grounded-search", "image-gen", "imagen", "leads", "marketplace",
-  "meeting-notes", "meeting-transcriber", "memory", "meta-prompt",
-  "multilingual-voice", "music-gen", "nemoclaw", "nemoclaw-setup", "nemotron-omni",
-  "nemotron3-super", "ocr", "omni-search", "orchestrate", "orchestrator",
-  "organic-content", "outbound", "page-builder", "page-builder-stream", "pii-guard",
-  "pii-redactor", "pipeline", "predictive-deploy", "programmatic-seo",
-  "proposal-generator", "rag-pipeline", "reasoning-chain", "replays", "reputation",
-  "rerank", "scheduled-report", "scheduler", "seo", "seo-dominator", "site-assassin",
-  "smart-router", "social-router", "super-agent", "support-bot", "swarm",
-  "telegram-router", "translate", "trigger", "url-context", "vertex-search",
-  "verticals", "video-gen", "vision", "vision-analyze", "visual-reason", "voice",
-  "voice-assistant", "voice-chat", "voice-closer", "voice-synth", "voicechat",
-  "war-room", "webhook-gateway", "weekly-report", "whitelabel", "workflow-engine",
+  "abm-artillery",
+  "ad-report",
+  "ads",
+  "agent-performance",
+  "agentic-chain",
+  "agentic-planner",
+  "ai-gateway",
+  "analytics",
+  "asr",
+  "audit",
+  "auto-heal",
+  "auto-onboard",
+  "benchmark",
+  "billing",
+  "blog-gen",
+  "booking",
+  "brand-audit",
+  "brand-voice",
+  "calendar",
+  "case-study",
+  "chain-reactor",
+  "claude-capabilities",
+  "claude-think",
+  "claw-queue",
+  "client-report",
+  "closer",
+  "code-agent",
+  "code-reviewer",
+  "code-sandbox",
+  "collab-room",
+  "comms",
+  "competitive-radar",
+  "competitor",
+  "competitor-scan",
+  "computer-use",
+  "content",
+  "content-safety",
+  "contract-analyzer",
+  "coordinator",
+  "cosmos-video",
+  "creative-director",
+  "dashboard-stats",
+  "deep-search",
+  "deep-think",
+  "deepseek-r1",
+  "design",
+  "digital-human",
+  "doc-analyst",
+  "doc-intel",
+  "email-onboard",
+  "email-sequence",
+  "embed",
+  "error-log",
+  "feedback",
+  "filmmaker",
+  "firecrawl",
+  "florence-ocr",
+  "flux-image",
+  "flywheel",
+  "funnel-xray",
+  "ghost-fleet",
+  "gliner-pii",
+  "god-brain",
+  "grounded-search",
+  "image-gen",
+  "imagen",
+  "leads",
+  "marketplace",
+  "meeting-notes",
+  "meeting-transcriber",
+  "memory",
+  "meta-prompt",
+  "multilingual-voice",
+  "music-gen",
+  "nemoclaw",
+  "nemoclaw-setup",
+  "nemotron-omni",
+  "nemotron3-super",
+  "ocr",
+  "omni-search",
+  "orchestrate",
+  "orchestrator",
+  "organic-content",
+  "outbound",
+  "page-builder",
+  "page-builder-stream",
+  "pii-guard",
+  "pii-redactor",
+  "pipeline",
+  "predictive-deploy",
+  "programmatic-seo",
+  "proposal-generator",
+  "rag-pipeline",
+  "reasoning-chain",
+  "replays",
+  "reputation",
+  "rerank",
+  "scheduled-report",
+  "scheduler",
+  "seo",
+  "seo-dominator",
+  "site-assassin",
+  "smart-router",
+  "social-router",
+  "super-agent",
+  "support-bot",
+  "swarm",
+  "telegram-router",
+  "translate",
+  "trigger",
+  "url-context",
+  "vertex-search",
+  "verticals",
+  "video-gen",
+  "vision",
+  "vision-analyze",
+  "visual-reason",
+  "voice",
+  "voice-assistant",
+  "voice-chat",
+  "voice-closer",
+  "voice-synth",
+  "voicechat",
+  "war-room",
+  "webhook-gateway",
+  "weekly-report",
+  "whitelabel",
+  "workflow-engine",
   "workflows",
 ];
 
@@ -66,7 +189,11 @@ const MODEL_LIST: { name: string; provider: string; category: string }[] = [
   { name: "Llama 3.2 Vision 11B", provider: "NVIDIA NIM", category: "Vision" },
   { name: "Nemotron Parse 1.1", provider: "NVIDIA NIM", category: "Vision" },
   { name: "Cosmos Reason 7B", provider: "NVIDIA NIM", category: "Vision" },
-  { name: "Nemotron Nano 2 VL 12B", provider: "NVIDIA NIM", category: "Vision" },
+  {
+    name: "Nemotron Nano 2 VL 12B",
+    provider: "NVIDIA NIM",
+    category: "Vision",
+  },
   { name: "Nemotron Nano 9B V2", provider: "NVIDIA NIM", category: "Vision" },
   // NIM Image Gen
   { name: "FLUX.1 Dev", provider: "NVIDIA NIM", category: "Image Gen" },
@@ -75,17 +202,45 @@ const MODEL_LIST: { name: string; provider: string; category: string }[] = [
   { name: "FLUX.1 Canny", provider: "NVIDIA NIM", category: "Image Gen" },
   // NIM Embedding
   { name: "NV-EmbedQA 1B", provider: "NVIDIA NIM", category: "Embedding" },
-  { name: "NV-EmbedQA Multilingual 7B", provider: "NVIDIA NIM", category: "Embedding" },
-  { name: "NemoRetriever VLM 1B", provider: "NVIDIA NIM", category: "Embedding" },
+  {
+    name: "NV-EmbedQA Multilingual 7B",
+    provider: "NVIDIA NIM",
+    category: "Embedding",
+  },
+  {
+    name: "NemoRetriever VLM 1B",
+    provider: "NVIDIA NIM",
+    category: "Embedding",
+  },
   // NIM Speech
   { name: "Parakeet v2 ASR", provider: "NVIDIA NIM", category: "Speech" },
-  { name: "Parakeet v3 Multilingual", provider: "NVIDIA NIM", category: "Speech" },
-  { name: "Nemotron Speech Streaming", provider: "NVIDIA NIM", category: "Speech" },
+  {
+    name: "Parakeet v3 Multilingual",
+    provider: "NVIDIA NIM",
+    category: "Speech",
+  },
+  {
+    name: "Nemotron Speech Streaming",
+    provider: "NVIDIA NIM",
+    category: "Speech",
+  },
   // NIM Safety
   { name: "NemoGuard Jailbreak", provider: "NVIDIA NIM", category: "Safety" },
-  { name: "NemoGuard Content Safety 8B", provider: "NVIDIA NIM", category: "Safety" },
-  { name: "NemoGuard Topic Control 8B", provider: "NVIDIA NIM", category: "Safety" },
-  { name: "Content Safety Reasoning 4B", provider: "NVIDIA NIM", category: "Safety" },
+  {
+    name: "NemoGuard Content Safety 8B",
+    provider: "NVIDIA NIM",
+    category: "Safety",
+  },
+  {
+    name: "NemoGuard Topic Control 8B",
+    provider: "NVIDIA NIM",
+    category: "Safety",
+  },
+  {
+    name: "Content Safety Reasoning 4B",
+    provider: "NVIDIA NIM",
+    category: "Safety",
+  },
   // Gemini
   { name: "Gemini 2.5 Flash", provider: "Google", category: "Text" },
   { name: "Gemini 2.5 Pro", provider: "Google", category: "Text" },
@@ -107,7 +262,11 @@ const MODEL_LIST: { name: string; provider: string; category: string }[] = [
 
 type TabId = "users" | "agents" | "models" | "system";
 
-const TABS: { id: TabId; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+const TABS: {
+  id: TabId;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+}[] = [
   { id: "users", label: "Users", icon: Users },
   { id: "agents", label: "Agents", icon: Activity },
   { id: "models", label: "Models", icon: Cpu },
@@ -202,7 +361,9 @@ function UsersTab({ stats }: { stats: DashboardStats | null }) {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         <div className="p-5 rounded-2xl border border-cyan-500/10 bg-cyan-500/[0.02]">
           <Users className="w-4 h-4 text-cyan-400 mb-2" />
-          <div className="text-2xl font-bold text-white">{stats?.agentExecutions ? "Active" : "--"}</div>
+          <div className="text-2xl font-bold text-white">
+            {stats?.agentExecutions ? "Active" : "--"}
+          </div>
           <div className="text-[10px] text-neutral-500">Total Users</div>
         </div>
         <div className="p-5 rounded-2xl border border-emerald-500/10 bg-emerald-500/[0.02]">
@@ -226,20 +387,33 @@ function UsersTab({ stats }: { stats: DashboardStats | null }) {
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-white/[0.06]">
-                <th className="px-6 py-3 text-[10px] uppercase tracking-wider text-neutral-500 font-medium">Email</th>
-                <th className="px-6 py-3 text-[10px] uppercase tracking-wider text-neutral-500 font-medium">Plan</th>
-                <th className="px-6 py-3 text-[10px] uppercase tracking-wider text-neutral-500 font-medium">Signed Up</th>
-                <th className="px-6 py-3 text-[10px] uppercase tracking-wider text-neutral-500 font-medium">Last Active</th>
-                <th className="px-6 py-3 text-[10px] uppercase tracking-wider text-neutral-500 font-medium">Status</th>
+                <th className="px-6 py-3 text-[10px] uppercase tracking-wider text-neutral-500 font-medium">
+                  Email
+                </th>
+                <th className="px-6 py-3 text-[10px] uppercase tracking-wider text-neutral-500 font-medium">
+                  Plan
+                </th>
+                <th className="px-6 py-3 text-[10px] uppercase tracking-wider text-neutral-500 font-medium">
+                  Signed Up
+                </th>
+                <th className="px-6 py-3 text-[10px] uppercase tracking-wider text-neutral-500 font-medium">
+                  Last Active
+                </th>
+                <th className="px-6 py-3 text-[10px] uppercase tracking-wider text-neutral-500 font-medium">
+                  Status
+                </th>
               </tr>
             </thead>
             <tbody>
               <tr>
                 <td colSpan={5} className="px-6 py-12 text-center">
                   <Database className="w-6 h-6 text-neutral-600 mx-auto mb-3" />
-                  <p className="text-sm text-neutral-400 mb-1">No user data available</p>
+                  <p className="text-sm text-neutral-400 mb-1">
+                    No user data available
+                  </p>
                   <p className="text-xs text-neutral-600">
-                    Connect DATABASE_URL and run migrations to see real user data.
+                    Connect DATABASE_URL and run migrations to see real user
+                    data.
                   </p>
                 </td>
               </tr>
@@ -257,7 +431,7 @@ function AgentsTab({ stats }: { stats: DashboardStats | null }) {
   const [searchQuery, setSearchQuery] = useState("");
 
   const filtered = AGENT_LIST.filter((a) =>
-    a.toLowerCase().includes(searchQuery.toLowerCase())
+    a.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
@@ -272,7 +446,9 @@ function AgentsTab({ stats }: { stats: DashboardStats | null }) {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div className="p-5 rounded-2xl border border-violet-500/10 bg-violet-500/[0.02]">
           <Activity className="w-4 h-4 text-violet-400 mb-2" />
-          <div className="text-2xl font-bold text-white">{AGENT_LIST.length}</div>
+          <div className="text-2xl font-bold text-white">
+            {AGENT_LIST.length}
+          </div>
           <div className="text-[10px] text-neutral-500">Registered Agents</div>
         </div>
         <div className="p-5 rounded-2xl border border-emerald-500/10 bg-emerald-500/[0.02]">
@@ -285,7 +461,9 @@ function AgentsTab({ stats }: { stats: DashboardStats | null }) {
         <div className="p-5 rounded-2xl border border-cyan-500/10 bg-cyan-500/[0.02]">
           <Clock className="w-4 h-4 text-cyan-400 mb-2" />
           <div className="text-2xl font-bold text-white">
-            {stats?.totalTokens ? `${Math.round(stats.totalTokens / 1000)}K` : "--"}
+            {stats?.totalTokens
+              ? `${Math.round(stats.totalTokens / 1000)}K`
+              : "--"}
           </div>
           <div className="text-[10px] text-neutral-500">Total Tokens</div>
         </div>
@@ -309,7 +487,9 @@ function AgentsTab({ stats }: { stats: DashboardStats | null }) {
       <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
         <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between">
           <h3 className="text-sm font-semibold text-white">Agent Registry</h3>
-          <span className="text-[10px] text-neutral-500">{filtered.length} agents</span>
+          <span className="text-[10px] text-neutral-500">
+            {filtered.length} agents
+          </span>
         </div>
         <div className="max-h-[500px] overflow-y-auto">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-white/[0.04]">
@@ -324,7 +504,9 @@ function AgentsTab({ stats }: { stats: DashboardStats | null }) {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500/60" />
-                    <span className="text-xs text-neutral-300 font-mono">{agent}</span>
+                    <span className="text-xs text-neutral-300 font-mono">
+                      {agent}
+                    </span>
                   </div>
                   <ChevronRight className="w-3 h-3 text-neutral-700 group-hover:text-neutral-500 transition-colors" />
                 </div>
@@ -342,13 +524,18 @@ function AgentsTab({ stats }: { stats: DashboardStats | null }) {
 function ModelsTab({ health }: { health: HealthData | null }) {
   const [filterProvider, setFilterProvider] = useState<string>("all");
 
-  const providers = ["all", ...Array.from(new Set(MODEL_LIST.map((m) => m.provider)))];
+  const providers = [
+    "all",
+    ...Array.from(new Set(MODEL_LIST.map((m) => m.provider))),
+  ];
   const filtered =
     filterProvider === "all"
       ? MODEL_LIST
       : MODEL_LIST.filter((m) => m.provider === filterProvider);
 
-  const providerStatus = (provider: string): "online" | "offline" | "unknown" => {
+  const providerStatus = (
+    provider: string,
+  ): "online" | "offline" | "unknown" => {
     if (!health?.services) return "unknown";
     const map: Record<string, string> = {
       "NVIDIA NIM": "nim",
@@ -378,7 +565,9 @@ function ModelsTab({ health }: { health: HealthData | null }) {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div className="p-5 rounded-2xl border border-emerald-500/10 bg-emerald-500/[0.02]">
           <Cpu className="w-4 h-4 text-emerald-400 mb-2" />
-          <div className="text-2xl font-bold text-white">{MODEL_LIST.length}</div>
+          <div className="text-2xl font-bold text-white">
+            {MODEL_LIST.length}
+          </div>
           <div className="text-[10px] text-neutral-500">Total Models</div>
         </div>
         <div className="p-5 rounded-2xl border border-cyan-500/10 bg-cyan-500/[0.02]">
@@ -391,7 +580,11 @@ function ModelsTab({ health }: { health: HealthData | null }) {
         <div className="p-5 rounded-2xl border border-violet-500/10 bg-violet-500/[0.02]">
           <HeartPulse className="w-4 h-4 text-violet-400 mb-2" />
           <div className="text-2xl font-bold text-white">
-            {health?.status === "ok" ? "Healthy" : health?.status === "degraded" ? "Degraded" : "--"}
+            {health?.status === "ok"
+              ? "Healthy"
+              : health?.status === "degraded"
+                ? "Degraded"
+                : "--"}
           </div>
           <div className="text-[10px] text-neutral-500">System Health</div>
         </div>
@@ -418,16 +611,26 @@ function ModelsTab({ health }: { health: HealthData | null }) {
       <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] overflow-hidden">
         <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between">
           <h3 className="text-sm font-semibold text-white">Model Registry</h3>
-          <span className="text-[10px] text-neutral-500">{filtered.length} models</span>
+          <span className="text-[10px] text-neutral-500">
+            {filtered.length} models
+          </span>
         </div>
         <div className="max-h-[500px] overflow-y-auto">
           <table className="w-full text-left">
             <thead className="sticky top-0 bg-[#0A0A0A]">
               <tr className="border-b border-white/[0.06]">
-                <th className="px-6 py-3 text-[10px] uppercase tracking-wider text-neutral-500 font-medium">Model</th>
-                <th className="px-6 py-3 text-[10px] uppercase tracking-wider text-neutral-500 font-medium">Provider</th>
-                <th className="px-6 py-3 text-[10px] uppercase tracking-wider text-neutral-500 font-medium">Category</th>
-                <th className="px-6 py-3 text-[10px] uppercase tracking-wider text-neutral-500 font-medium">Status</th>
+                <th className="px-6 py-3 text-[10px] uppercase tracking-wider text-neutral-500 font-medium">
+                  Model
+                </th>
+                <th className="px-6 py-3 text-[10px] uppercase tracking-wider text-neutral-500 font-medium">
+                  Provider
+                </th>
+                <th className="px-6 py-3 text-[10px] uppercase tracking-wider text-neutral-500 font-medium">
+                  Category
+                </th>
+                <th className="px-6 py-3 text-[10px] uppercase tracking-wider text-neutral-500 font-medium">
+                  Status
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -442,10 +645,14 @@ function ModelsTab({ health }: { health: HealthData | null }) {
                     className="border-b border-white/[0.04] hover:bg-white/[0.02] transition-colors"
                   >
                     <td className="px-6 py-3">
-                      <span className="text-xs text-neutral-200 font-medium">{model.name}</span>
+                      <span className="text-xs text-neutral-200 font-medium">
+                        {model.name}
+                      </span>
                     </td>
                     <td className="px-6 py-3">
-                      <span className="text-xs text-neutral-400">{model.provider}</span>
+                      <span className="text-xs text-neutral-400">
+                        {model.provider}
+                      </span>
                     </td>
                     <td className="px-6 py-3">
                       <span className="inline-flex px-2 py-0.5 rounded-md bg-white/[0.04] text-[10px] text-neutral-400">
@@ -453,21 +660,29 @@ function ModelsTab({ health }: { health: HealthData | null }) {
                       </span>
                     </td>
                     <td className="px-6 py-3">
-                      <span className={`inline-flex items-center gap-1.5 text-[10px] font-medium ${
-                        status === "online"
-                          ? "text-emerald-400"
-                          : status === "offline"
-                          ? "text-red-400"
-                          : "text-neutral-500"
-                      }`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${
+                      <span
+                        className={`inline-flex items-center gap-1.5 text-[10px] font-medium ${
                           status === "online"
-                            ? "bg-emerald-500"
+                            ? "text-emerald-400"
                             : status === "offline"
-                            ? "bg-red-500"
-                            : "bg-neutral-600"
-                        }`} />
-                        {status === "online" ? "Online" : status === "offline" ? "Offline" : "Unknown"}
+                              ? "text-red-400"
+                              : "text-neutral-500"
+                        }`}
+                      >
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full ${
+                            status === "online"
+                              ? "bg-emerald-500"
+                              : status === "offline"
+                                ? "bg-red-500"
+                                : "bg-neutral-600"
+                          }`}
+                        />
+                        {status === "online"
+                          ? "Online"
+                          : status === "offline"
+                            ? "Offline"
+                            : "Unknown"}
                       </span>
                     </td>
                   </motion.tr>
@@ -483,7 +698,13 @@ function ModelsTab({ health }: { health: HealthData | null }) {
 
 /* ─── System Tab ─── */
 
-function SystemTab({ health, onHealthCheck }: { health: HealthData | null; onHealthCheck: () => void }) {
+function SystemTab({
+  health,
+  onHealthCheck,
+}: {
+  health: HealthData | null;
+  onHealthCheck: () => void;
+}) {
   const [clearing, setClearing] = useState(false);
 
   const handleClearCache = () => {
@@ -492,7 +713,9 @@ function SystemTab({ health, onHealthCheck }: { health: HealthData | null; onHea
     setTimeout(() => setClearing(false), 1500);
   };
 
-  const serviceEntries = health?.services ? Object.entries(health.services) : [];
+  const serviceEntries = health?.services
+    ? Object.entries(health.services)
+    : [];
 
   const keyLabels: Record<string, string> = {
     nim: "NVIDIA NIM",
@@ -518,7 +741,11 @@ function SystemTab({ health, onHealthCheck }: { health: HealthData | null; onHea
         <div className="p-5 rounded-2xl border border-emerald-500/10 bg-emerald-500/[0.02]">
           <HeartPulse className="w-4 h-4 text-emerald-400 mb-2" />
           <div className="text-2xl font-bold text-white">
-            {health?.status === "ok" ? "Operational" : health?.status === "degraded" ? "Degraded" : "--"}
+            {health?.status === "ok"
+              ? "Operational"
+              : health?.status === "degraded"
+                ? "Degraded"
+                : "--"}
           </div>
           <div className="text-[10px] text-neutral-500">System Status</div>
         </div>
@@ -536,7 +763,8 @@ function SystemTab({ health, onHealthCheck }: { health: HealthData | null; onHea
         <div className="p-5 rounded-2xl border border-violet-500/10 bg-violet-500/[0.02]">
           <Database className="w-4 h-4 text-violet-400 mb-2" />
           <div className="text-2xl font-bold text-white">
-            {health?.database?.latencyMs != null && health.database.latencyMs >= 0
+            {health?.database?.latencyMs != null &&
+            health.database.latencyMs >= 0
               ? `${health.database.latencyMs}ms`
               : "--"}
           </div>
@@ -555,34 +783,45 @@ function SystemTab({ health, onHealthCheck }: { health: HealthData | null; onHea
         <div className="divide-y divide-white/[0.04]">
           {serviceEntries.length > 0 ? (
             serviceEntries.map(([key, status]) => (
-              <div key={key} className="px-6 py-3.5 flex items-center justify-between">
+              <div
+                key={key}
+                className="px-6 py-3.5 flex items-center justify-between"
+              >
                 <div className="flex items-center gap-3">
                   {status === "ok" ? (
                     <Wifi className="w-3.5 h-3.5 text-emerald-400" />
                   ) : (
                     <WifiOff className="w-3.5 h-3.5 text-red-400" />
                   )}
-                  <span className="text-xs text-neutral-300">{keyLabels[key] || key}</span>
+                  <span className="text-xs text-neutral-300">
+                    {keyLabels[key] || key}
+                  </span>
                 </div>
                 <span
                   className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-medium ${
                     status === "ok"
                       ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
                       : status === "unconfigured"
-                      ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
-                      : "bg-red-500/10 text-red-400 border border-red-500/20"
+                        ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                        : "bg-red-500/10 text-red-400 border border-red-500/20"
                   }`}
                 >
                   {status === "ok" && <CheckCircle2 className="w-2.5 h-2.5" />}
-                  {status === "unconfigured" && <AlertTriangle className="w-2.5 h-2.5" />}
-                  {(status === "unreachable" || status === "error") && <XCircle className="w-2.5 h-2.5" />}
+                  {status === "unconfigured" && (
+                    <AlertTriangle className="w-2.5 h-2.5" />
+                  )}
+                  {(status === "unreachable" || status === "error") && (
+                    <XCircle className="w-2.5 h-2.5" />
+                  )}
                   {status}
                 </span>
               </div>
             ))
           ) : (
             <div className="px-6 py-8 text-center">
-              <p className="text-xs text-neutral-500">Run a health check to see service status.</p>
+              <p className="text-xs text-neutral-500">
+                Run a health check to see service status.
+              </p>
             </div>
           )}
         </div>
@@ -599,21 +838,31 @@ function SystemTab({ health, onHealthCheck }: { health: HealthData | null; onHea
         <div className="divide-y divide-white/[0.04]">
           <div className="px-6 py-3.5 flex items-center justify-between">
             <span className="text-xs text-neutral-400">Version</span>
-            <span className="text-xs text-neutral-200 font-mono">{health?.version || "2.0.0"}</span>
+            <span className="text-xs text-neutral-200 font-mono">
+              {health?.version || "2.0.0"}
+            </span>
           </div>
           <div className="px-6 py-3.5 flex items-center justify-between">
             <span className="text-xs text-neutral-400">Total Agents</span>
-            <span className="text-xs text-neutral-200 font-mono">{health?.agents?.totalAgents || AGENT_LIST.length}</span>
+            <span className="text-xs text-neutral-200 font-mono">
+              {health?.agents?.totalAgents || AGENT_LIST.length}
+            </span>
           </div>
           <div className="px-6 py-3.5 flex items-center justify-between">
             <span className="text-xs text-neutral-400">Total Models</span>
-            <span className="text-xs text-neutral-200 font-mono">{health?.models?.totalModels || MODEL_LIST.length}</span>
+            <span className="text-xs text-neutral-200 font-mono">
+              {health?.models?.totalModels || MODEL_LIST.length}
+            </span>
           </div>
           <div className="px-6 py-3.5 flex items-center justify-between">
             <span className="text-xs text-neutral-400">Database</span>
-            <span className={`text-xs font-mono ${
-              health?.database?.status === "ok" ? "text-emerald-400" : "text-red-400"
-            }`}>
+            <span
+              className={`text-xs font-mono ${
+                health?.database?.status === "ok"
+                  ? "text-emerald-400"
+                  : "text-red-400"
+              }`}
+            >
               {health?.database?.status || "unknown"}
             </span>
           </div>
@@ -663,8 +912,12 @@ export default function AdminPage() {
     setLoading(true);
     try {
       const [statsRes, healthRes] = await Promise.all([
-        fetch("/api/agents/dashboard-stats").then((r) => (r.ok ? r.json() : null)).catch(() => null),
-        fetch("/api/health").then((r) => (r.ok ? r.json() : null)).catch(() => null),
+        fetch("/api/agents/dashboard-stats")
+          .then((r) => (r.ok ? r.json() : null))
+          .catch(() => null),
+        fetch("/api/health")
+          .then((r) => (r.ok ? r.json() : null))
+          .catch(() => null),
       ]);
 
       if (statsRes) {
@@ -725,8 +978,12 @@ export default function AdminPage() {
                 <Shield className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-white tracking-tight">Admin Panel</h1>
-                <p className="text-sm text-neutral-500">Platform Administration</p>
+                <h1 className="text-2xl font-bold text-white tracking-tight">
+                  Admin Panel
+                </h1>
+                <p className="text-sm text-neutral-500">
+                  Platform Administration
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -739,11 +996,136 @@ export default function AdminPage() {
                 onClick={fetchAll}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.06] text-[10px] text-neutral-400 hover:text-white hover:bg-white/[0.08] transition-all cursor-pointer"
               >
-                <RefreshCw className={`w-3 h-3 ${loading ? "animate-spin" : ""}`} />
+                <RefreshCw
+                  className={`w-3 h-3 ${loading ? "animate-spin" : ""}`}
+                />
                 Refresh
               </button>
             </div>
           </div>
+        </motion.div>
+
+        {/* ─── Deep Dives ─── */}
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"
+        >
+          <Link
+            href="/dashboard/admin/cohorts"
+            className="group rounded-2xl border border-cyan-500/[0.12] bg-gradient-to-br from-cyan-500/[0.06] via-cyan-500/[0.02] to-transparent p-4 transition hover:border-cyan-500/30 hover:bg-cyan-500/[0.04]"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <TrendingUp className="h-4 w-4 text-cyan-300" />
+                <div>
+                  <div className="text-sm font-semibold text-white">
+                    Cohort intel
+                  </div>
+                  <div className="text-[10px] text-neutral-500">
+                    Retention pockets · super-users · weekly buckets
+                  </div>
+                </div>
+              </div>
+              <ChevronRight className="h-4 w-4 text-neutral-600 transition group-hover:translate-x-0.5 group-hover:text-cyan-300" />
+            </div>
+          </Link>
+          <Link
+            href="/dashboard/admin/sessions"
+            className="group rounded-2xl border border-amber-500/[0.12] bg-gradient-to-br from-amber-500/[0.06] via-amber-500/[0.02] to-transparent p-4 transition hover:border-amber-500/30 hover:bg-amber-500/[0.04]"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <Layers className="h-4 w-4 text-amber-300" />
+                <div>
+                  <div className="text-sm font-semibold text-white">
+                    Agent sessions
+                  </div>
+                  <div className="text-[10px] text-neutral-500">
+                    Resumable state · stuck-run detection · step history
+                  </div>
+                </div>
+              </div>
+              <ChevronRight className="h-4 w-4 text-neutral-600 transition group-hover:translate-x-0.5 group-hover:text-amber-300" />
+            </div>
+          </Link>
+          <Link
+            href="/dashboard/admin/infrastructure"
+            className="group rounded-2xl border border-emerald-500/[0.12] bg-gradient-to-br from-emerald-500/[0.06] via-emerald-500/[0.02] to-transparent p-4 transition hover:border-emerald-500/30 hover:bg-emerald-500/[0.04]"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <Cpu className="h-4 w-4 text-emerald-300" />
+                <div>
+                  <div className="text-sm font-semibold text-white">
+                    Infrastructure
+                  </div>
+                  <div className="text-[10px] text-neutral-500">
+                    Self-hosted vs managed · OSS · NIM · BigQuery · Riva
+                  </div>
+                </div>
+              </div>
+              <ChevronRight className="h-4 w-4 text-neutral-600 transition group-hover:translate-x-0.5 group-hover:text-emerald-300" />
+            </div>
+          </Link>
+          <Link
+            href="/dashboard/admin/memories"
+            className="group rounded-2xl border border-violet-500/[0.12] bg-gradient-to-br from-violet-500/[0.06] via-violet-500/[0.02] to-transparent p-4 transition hover:border-violet-500/30 hover:bg-violet-500/[0.04]"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <Database className="h-4 w-4 text-violet-300" />
+                <div>
+                  <div className="text-sm font-semibold text-white">
+                    Memory browser
+                  </div>
+                  <div className="text-[10px] text-neutral-500">
+                    Vector pool · cross-user · cross-agent · curate + delete
+                  </div>
+                </div>
+              </div>
+              <ChevronRight className="h-4 w-4 text-neutral-600 transition group-hover:translate-x-0.5 group-hover:text-violet-300" />
+            </div>
+          </Link>
+          <Link
+            href="/dashboard/admin/knowledge-graph"
+            className="group rounded-2xl border border-rose-500/[0.12] bg-gradient-to-br from-rose-500/[0.06] via-rose-500/[0.02] to-transparent p-4 transition hover:border-rose-500/30 hover:bg-rose-500/[0.04]"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <Activity className="h-4 w-4 text-rose-300" />
+                <div>
+                  <div className="text-sm font-semibold text-white">
+                    Knowledge graph
+                  </div>
+                  <div className="text-[10px] text-neutral-500">
+                    Entity-relationship map · top-degree nodes · per user
+                  </div>
+                </div>
+              </div>
+              <ChevronRight className="h-4 w-4 text-neutral-600 transition group-hover:translate-x-0.5 group-hover:text-rose-300" />
+            </div>
+          </Link>
+          <Link
+            href="/dashboard/admin/war-room"
+            className="group rounded-2xl border border-cyan-500/[0.12] bg-gradient-to-br from-cyan-500/[0.06] via-cyan-500/[0.02] to-transparent p-4 transition hover:border-cyan-500/30 hover:bg-cyan-500/[0.04]"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <Zap className="h-4 w-4 text-cyan-300" />
+                <div>
+                  <div className="text-sm font-semibold text-white">
+                    War room
+                  </div>
+                  <div className="text-[10px] text-neutral-500">
+                    Live agent ticker · SSE stream · per-status counters
+                  </div>
+                </div>
+              </div>
+              <ChevronRight className="h-4 w-4 text-neutral-600 transition group-hover:translate-x-0.5 group-hover:text-cyan-300" />
+            </div>
+          </Link>
         </motion.div>
 
         {/* ─── Tabs ─── */}
@@ -768,7 +1150,10 @@ export default function AdminPage() {
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[...Array(3)].map((_, i) => (
-                <div key={i} className="p-5 rounded-2xl border border-white/[0.06] bg-white/[0.02] animate-pulse">
+                <div
+                  key={i}
+                  className="p-5 rounded-2xl border border-white/[0.06] bg-white/[0.02] animate-pulse"
+                >
                   <div className="h-4 w-4 bg-white/[0.04] rounded mb-3" />
                   <div className="h-7 w-20 bg-white/[0.04] rounded mb-2" />
                   <div className="h-2.5 w-24 bg-white/[0.04] rounded" />
@@ -783,7 +1168,9 @@ export default function AdminPage() {
             {activeTab === "users" && <UsersTab stats={stats} />}
             {activeTab === "agents" && <AgentsTab stats={stats} />}
             {activeTab === "models" && <ModelsTab health={health} />}
-            {activeTab === "system" && <SystemTab health={health} onHealthCheck={fetchAll} />}
+            {activeTab === "system" && (
+              <SystemTab health={health} onHealthCheck={fetchAll} />
+            )}
           </AnimatePresence>
         )}
       </div>

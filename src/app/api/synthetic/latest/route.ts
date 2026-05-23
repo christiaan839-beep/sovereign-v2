@@ -113,6 +113,11 @@ async function runOne(
   const timer = setTimeout(() => ctrl.abort(), spec.timeoutMs);
   const start = Date.now();
   try {
+    // Wave 116 carve-out: synthetic probe of own deployment endpoints.
+    // baseUrl is operator-configured; spec.path is from an internal
+    // allowlist (not user input). SSRF risk is zero; tests mock fetch
+    // to assert the probe sequence.
+    // eslint-disable-next-line no-restricted-syntax
     const res = await fetch(`${baseUrl}${spec.path}`, {
       method: "GET",
       headers: {

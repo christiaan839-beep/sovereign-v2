@@ -922,6 +922,47 @@ export function createAgentRoute(config: AgentConfig) {
                 trustDecision: verdict.trustDecision,
                 blockReason: verdict.blockReason,
               });
+              // Wave-142: feed the blocked outcome to the bandit so
+              // the (agent × model) posterior reflects this miss too.
+              try {
+                const modelForBandit =
+                  typeof (verifierOutput as unknown as { _model?: string })
+                    ._model === "string"
+                    ? (verifierOutput as unknown as { _model?: string })._model!
+                    : null;
+                if (modelForBandit) {
+                  const { recordOutcome } = await import("@/lib/model-bandit");
+                  await recordOutcome(
+                    config.name,
+                    "default",
+                    modelForBandit,
+                    false,
+                  );
+                }
+              } catch {
+                /* best-effort */
+              }
+              // Wave-152: emit a blocked tick to the war-room stream
+              try {
+                const { publishTick } =
+                  await import("@/lib/agent-activity-bus");
+                const modelForTick =
+                  typeof (verifierOutput as unknown as { _model?: string })
+                    ._model === "string"
+                    ? (verifierOutput as unknown as { _model?: string })._model!
+                    : "agent-factory";
+                publishTick({
+                  id: `blocked-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                  agentName: config.name,
+                  modelUsed: modelForTick,
+                  userId: userId ?? null,
+                  status: "blocked",
+                  durationMs: Date.now() - startTime,
+                  at: new Date().toISOString(),
+                });
+              } catch {
+                /* best-effort */
+              }
               // Do NOT increment usage — the user gets their credit back
               // because we refused to deliver the output.
               return NextResponse.json(
@@ -988,6 +1029,62 @@ export function createAgentRoute(config: AgentConfig) {
             signature: receiptRow.signature,
             url: `/r/${receiptRow.id}`,
           };
+        }
+        // Wave-142: feed the trust outcome into the Thompson bandit
+        // so the per-(agent × model) posterior updates on every call.
+        // Best-effort — DB outage / missing table never blocks the
+        // agent response.
+        try {
+          const modelForBandit =
+            typeof (finalResult as Record<string, unknown>)._model === "string"
+              ? ((finalResult as Record<string, unknown>)._model as string)
+              : null;
+          if (modelForBandit && modelForBandit !== "agent-factory") {
+            const { recordOutcome } = await import("@/lib/model-bandit");
+            await recordOutcome(
+              config.name,
+              "default",
+              modelForBandit,
+              true, // auto-approved path is positive
+            );
+          }
+        } catch {
+          /* best-effort */
+        }
+        // Wave-145: extract entities + write knowledge graph nodes.
+        // Best-effort, fail-soft on missing graph_nodes / graph_edges
+        // tables. Cap at 12 entities + 1 agent node per run.
+        try {
+          if (userId) {
+            const { recordRunAsGraph } = await import("@/lib/knowledge-graph");
+            await recordRunAsGraph(userId, config.name, finalResult);
+          }
+        } catch {
+          /* best-effort */
+        }
+        // Wave-152: emit a live activity tick to the in-process bus
+        // so the admin war-room SSE stream sees this run in real time.
+        // Pure in-memory — never blocks the response.
+        try {
+          if (receiptRow) {
+            const { publishTick } = await import("@/lib/agent-activity-bus");
+            const modelForTick =
+              typeof (finalResult as Record<string, unknown>)._model ===
+              "string"
+                ? ((finalResult as Record<string, unknown>)._model as string)
+                : "agent-factory";
+            publishTick({
+              id: receiptRow.id,
+              agentName: config.name,
+              modelUsed: modelForTick,
+              userId: userId ?? null,
+              status: "auto-approved",
+              durationMs: Date.now() - startTime,
+              at: new Date().toISOString(),
+            });
+          }
+        } catch {
+          /* best-effort */
         }
       } catch {
         /* run persistence is best-effort and must never block */

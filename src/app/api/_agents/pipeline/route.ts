@@ -94,11 +94,11 @@ async function _postHandler(request: Request) {
       const payload = step.transform(input || {}, prevResults);
 
       try {
-        const res = await fetch(`${baseUrl}/api/agents/${step.agent}`, {
+        const res = await outboundFetchAsResponse(`${baseUrl}/api/agents/${step.agent}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
-        });
+        }, { ruleId: "agents.pipeline.route.1", allowedHosts: [new URL(baseUrl).hostname] });
 
         const data = await res.json();
         prevResults.push(data);
@@ -150,6 +150,8 @@ export async function GET() {
 
 
 // Factory wrapper for POST (adds safety pipeline)
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export const POST = createAgentRoute({
   name: "pipeline",
   handler: async ({ input, email, userId, request }) => {

@@ -3,6 +3,8 @@ import { headers } from "next/headers";
 import { createLogger } from "@/lib/logger";
 import { rateLimit } from "@/lib/rate-limit";
 import { alreadyProcessed } from "@/lib/idempotency";
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 const log = createLogger("telegram-webhook");
 
 const limiter = rateLimit({ interval: 60, limit: 30 });
@@ -33,9 +35,7 @@ async function sendTelegramMessage(chatId: string | number, text: string) {
   }
 
   try {
-    await fetch(
-      `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
-      {
+    await outboundFetchAsResponse(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -43,8 +43,7 @@ async function sendTelegramMessage(chatId: string | number, text: string) {
           text: text,
           parse_mode: "MarkdownV2",
         }),
-      },
-    );
+      }, { ruleId: "webhooks.telegram.route.1", allowedHosts: ["api.telegram.org"] });
   } catch (error) {
     log.error("Telegram transport error", error as Record<string, unknown>);
   }

@@ -8,6 +8,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import type { Metadata } from "next";
+import { LiveInvestorProof } from "@/components/investors/LiveInvestorProof";
 
 /**
  * /investors — Data-room front door (Cook 144).
@@ -190,13 +191,23 @@ export default function InvestorsPage() {
             <ArrowRight className="w-4 h-4" />
           </Link>
           <Link
-            href="/demo/verify-receipt"
+            href="/verify"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-white/10 text-neutral-300 hover:text-white hover:border-white/20 transition-colors text-sm"
           >
             Verify a real receipt in 60s
           </Link>
         </div>
       </header>
+
+      {/* Wave 119 — live diligence-grade proof tiles above the static
+          inventory. Each number is verifiable via the linked endpoint
+          and re-checkable by computing locally from open sources. */}
+      <section className="max-w-6xl mx-auto px-6 pt-12">
+        <h2 className="text-sm uppercase tracking-[0.3em] text-neutral-500 mb-6">
+          Live diligence proof
+        </h2>
+        <LiveInvestorProof />
+      </section>
 
       <section className="max-w-6xl mx-auto px-6 py-12">
         <h2 className="text-sm uppercase tracking-[0.3em] text-neutral-500 mb-6">

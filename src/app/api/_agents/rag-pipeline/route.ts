@@ -5,8 +5,32 @@ import { createAgentRoute } from "@/lib/agent-factory";
  * Combines: embed → search → rerank → generate.
  * This is the NVIDIA NeMo Retriever Blueprint implemented as a single endpoint.
  */
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export const POST = createAgentRoute({
   name: "rag-pipeline",
+  // Wave 116 M3 batch 11: memory hooks. Per-query retrieval compounds —
+  // similar queries on the same corpus surface the most-relevant chunks
+  // and prior synthesis so the LLM doesn't re-rank the same set blind.
+  memory: {
+    search: {
+      query: (input) => `rag ${String(input.query ?? "").slice(0, 120)}`,
+      limit: 2,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as {
+          answer?: string;
+          retrieved?: Array<{ chunk?: string }>;
+        };
+        if (!r.answer) return null;
+        const head = r.answer.slice(0, 200).replace(/\s+/g, " ");
+        const topChunk = r.retrieved?.[0]?.chunk?.slice(0, 80) ?? "";
+        return `${head}${topChunk ? ` [top: ${topChunk}]` : ""}`;
+      },
+      metadata: () => ({ kind: "rag-pipeline" }),
+    },
+  },
   handler: async ({ input, email, userId }) => {
     const {
       query,
@@ -19,7 +43,7 @@ export const POST = createAgentRoute({
     if (!nimKey) return { error: "NVIDIA_NIM_API_KEY not configured." };
 
     // Step 1: Embed the query
-    const embedRes = await fetch(
+    const embedRes = await outboundFetchAsResponse(
       "https://integrate.api.nvidia.com/v1/embeddings",
       {
         method: "POST",
@@ -33,6 +57,10 @@ export const POST = createAgentRoute({
           encoding_format: "float",
         }),
       },
+      {
+        ruleId: "agents.rag-pipeline.route.1",
+        allowedHosts: ["integrate.api.nvidia.com"],
+      },
     );
     const embedData = embedRes.ok ? await embedRes.json() : null;
     const queryEmbedding = embedData?.data?.[0]?.embedding || [];
@@ -41,7 +69,7 @@ export const POST = createAgentRoute({
     let rankedDocs = documents;
     if (documents.length > 0) {
       // Use reranker for better results
-      const rerankRes = await fetch(
+      const rerankRes = await outboundFetchAsResponse(
         "https://integrate.api.nvidia.com/v1/ranking",
         {
           method: "POST",
@@ -54,6 +82,10 @@ export const POST = createAgentRoute({
             query: { text: query },
             passages: documents.map((d: string) => ({ text: d })),
           }),
+        },
+        {
+          ruleId: "agents.rag-pipeline.route.2",
+          allowedHosts: ["integrate.api.nvidia.com"],
         },
       );
 
@@ -74,7 +106,7 @@ export const POST = createAgentRoute({
         ? `\n\nContext from retrieved documents:\n${rankedDocs.map((d: string, i: number) => `[${i + 1}] ${d}`).join("\n")}`
         : "";
 
-    const genRes = await fetch(
+    const genRes = await outboundFetchAsResponse(
       "https://integrate.api.nvidia.com/v1/chat/completions",
       {
         method: "POST",
@@ -94,6 +126,10 @@ export const POST = createAgentRoute({
           max_tokens: 500,
           temperature: 0.2,
         }),
+      },
+      {
+        ruleId: "agents.rag-pipeline.route.3",
+        allowedHosts: ["integrate.api.nvidia.com"],
       },
     );
     const genData = genRes.ok

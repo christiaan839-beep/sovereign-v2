@@ -9,6 +9,8 @@ const log = createLogger("page-generator");
  * Uses Gemini 2.5 Pro to generate complete landing page HTML
  * with copy, structure, and styling based on a business description.
  */
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export async function POST(req: Request) {
   const auth = await requireAuth(); if (auth.error) return auth.error;
   try {
@@ -34,14 +36,14 @@ export async function POST(req: Request) {
        stream: false
     };
 
-    const nimRes = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+    const nimRes = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
        method: "POST",
        headers: { 
           "Content-Type": "application/json",
           "Authorization": `Bearer ${process.env.NVIDIA_API_KEY}`
        },
        body: JSON.stringify(nimPayload)
-    });
+    }, { ruleId: "misc.pages.generate.route.1", allowedHosts: ["integrate.api.nvidia.com"] });
 
     if (!nimRes.ok) {
        throw new Error("NVIDIA NIM Matrix Offline. Check API Key validity.");

@@ -6,8 +6,40 @@ import { getNimKey } from "@/lib/nvidia";
  * document OCR, image captioning, and visual question answering.
  */
 
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export const POST = createAgentRoute({
   name: "florence-ocr",
+  // Wave 130 M3 batch 20: memory hooks. Per-image caption/OCR/VQA history —
+  // prior caption gives next VQA query a base ("you said the chart shows
+  // X, now identify the trend") without re-describing the image.
+  memory: {
+    search: {
+      query: (input) =>
+        `florence-ocr ${input.action ?? "caption"} ${String(input.image_url ?? "").slice(0, 80)} ${String(input.question ?? "").slice(0, 60)}`,
+      limit: 2,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as {
+          action?: string;
+          result?: string;
+          word_count?: number;
+        };
+        if (!r.result) return null;
+        const head = r.result.slice(0, 220).replace(/\s+/g, " ");
+        return `florence-ocr[${r.action ?? "caption"}/${r.word_count ?? 0}w]: ${head}`;
+      },
+      metadata: (input) => ({
+        kind: "florence-ocr",
+        url:
+          typeof input.image_url === "string"
+            ? input.image_url.slice(0, 200)
+            : "",
+        action: typeof input.action === "string" ? input.action : "caption",
+      }),
+    },
+  },
   handler: async ({ input, email, userId }) => {
     const {
       action = "caption",
@@ -26,7 +58,7 @@ export const POST = createAgentRoute({
       vqa: question || "What is shown in this image?",
     };
 
-    const res = await fetch(
+    const res = await outboundFetchAsResponse(
       "https://integrate.api.nvidia.com/v1/chat/completions",
       {
         method: "POST",
@@ -48,6 +80,10 @@ export const POST = createAgentRoute({
           max_tokens: 2048,
           temperature: 0.2,
         }),
+      },
+      {
+        ruleId: "agents.florence-ocr.route.1",
+        allowedHosts: ["integrate.api.nvidia.com"],
       },
     );
 

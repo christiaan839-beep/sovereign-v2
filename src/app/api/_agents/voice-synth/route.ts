@@ -156,6 +156,8 @@ export async function POST(request: Request) {
 }
 
 /** NVIDIA Magpie TTS via NIM — extracted for reuse in fallback paths */
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 async function magpieTTS(
   text: string,
   voice: string,
@@ -166,7 +168,7 @@ async function magpieTTS(
       ? "nvidia/magpie-tts-zeroshot"
       : "nvidia/magpie-tts-flow";
 
-  return fetch("https://integrate.api.nvidia.com/v1/audio/speech", {
+  return outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/audio/speech", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -178,5 +180,5 @@ async function magpieTTS(
       voice: "alloy",
       speed,
     }),
-  });
+  }, { ruleId: "agents.voice-synth.route.1", allowedHosts: ["integrate.api.nvidia.com"] });
 }

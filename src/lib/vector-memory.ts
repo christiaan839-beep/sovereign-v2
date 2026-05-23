@@ -30,6 +30,59 @@ const log = createLogger("vector-memory");
 const NIM_EMBED_URL = "https://integrate.api.nvidia.com/v1/embeddings";
 const EMBED_MODEL = "nvidia/llama-3.2-nv-embedqa-1b-v2";
 
+// ─── Wave 114 H2: Per-user storeMemory write cap ──────────────────────────
+//
+// Without a cap, a user running a memory-storing agent in a loop fills Neon
+// storage (cost) AND degrades IVFFlat recall as N grows (per-user query plan
+// touches more pages). Two reviews (wave-110 + wave-111) flagged this.
+//
+// Policy: 10K rows per user. After each successful insert, evict the oldest
+// rows so the table holds at most MAX rows for that user. LRU semantics by
+// `created_at` since we don't track per-row access time and the wave-111
+// retention story is "compounding context", which favors recent over ancient.
+//
+// Override via MEMORY_PER_USER_CAP env var for tests / per-deployment tuning.
+const DEFAULT_MAX_MEMORIES_PER_USER = 10_000;
+
+function maxMemoriesPerUser(): number {
+  const raw = process.env.MEMORY_PER_USER_CAP;
+  if (!raw) return DEFAULT_MAX_MEMORIES_PER_USER;
+  const n = Number.parseInt(raw, 10);
+  return Number.isFinite(n) && n > 0 ? n : DEFAULT_MAX_MEMORIES_PER_USER;
+}
+
+/**
+ * LRU eviction after insert. Keeps the user's row count at-or-below the cap
+ * by deleting the oldest rows (by created_at) beyond the limit.
+ *
+ * Best-effort: any failure is logged and swallowed. The user's write already
+ * succeeded — eviction failure means we'll re-attempt on the next write.
+ *
+ * Atomicity: we evict in a single `DELETE ... WHERE id IN (...)` so the row
+ * count converges. Concurrent inserts may briefly push past the cap; that's
+ * fine because the next eviction call clamps back.
+ */
+async function evictOldestBeyondCap(userId: string): Promise<void> {
+  const cap = maxMemoriesPerUser();
+  try {
+    await db.execute(sql`
+      DELETE FROM agent_memories
+      WHERE id IN (
+        SELECT id FROM agent_memories
+        WHERE user_id = ${userId}
+        ORDER BY created_at DESC
+        OFFSET ${cap}
+      )
+    `);
+  } catch (err) {
+    log.warn("memory eviction failed", {
+      userId,
+      cap,
+      error: String(err),
+    });
+  }
+}
+
 // ─── Initialize pgvector extension + table ──────────────────────────────────
 
 let _initialized = false;
@@ -55,13 +108,17 @@ async function ensureVectorTable(): Promise<boolean> {
     `);
 
     // Create index for fast similarity search
-    await db.execute(sql`
+    await db
+      .execute(
+        sql`
       CREATE INDEX IF NOT EXISTS agent_memories_embedding_idx
       ON agent_memories USING ivfflat (embedding vector_cosine_ops)
       WITH (lists = 100)
-    `).catch(() => {
-      // IVFFlat index needs some rows first — skip on empty table
-    });
+    `,
+      )
+      .catch(() => {
+        // IVFFlat index needs some rows first — skip on empty table
+      });
 
     // Create index for user lookups
     await db.execute(sql`
@@ -88,7 +145,7 @@ async function embedText(text: string): Promise<number[] | null> {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${nimKey}`,
+        Authorization: `Bearer ${nimKey}`,
       },
       body: JSON.stringify({
         model: EMBED_MODEL,
@@ -119,7 +176,7 @@ export async function storeMemory(
   userId: string,
   agentName: string,
   content: string,
-  metadata: Record<string, unknown> = {}
+  metadata: Record<string, unknown> = {},
 ): Promise<boolean> {
   const ready = await ensureVectorTable();
   if (!ready) return false;
@@ -132,6 +189,8 @@ export async function storeMemory(
         INSERT INTO agent_memories (user_id, agent_name, content, metadata)
         VALUES (${userId}, ${agentName}, ${content.slice(0, 5000)}, ${JSON.stringify(metadata)})
       `);
+      // Wave 114 H2: clamp per-user row count after every successful write.
+      await evictOldestBeyondCap(userId);
       return true;
     } catch {
       return false;
@@ -144,6 +203,8 @@ export async function storeMemory(
       INSERT INTO agent_memories (user_id, agent_name, content, metadata, embedding)
       VALUES (${userId}, ${agentName}, ${content.slice(0, 5000)}, ${JSON.stringify(metadata)}, ${vectorStr}::vector)
     `);
+    // Wave 114 H2: same eviction after embedded inserts.
+    await evictOldestBeyondCap(userId);
     return true;
   } catch (err) {
     log.error("Failed to store memory", { error: String(err) });
@@ -158,8 +219,15 @@ export async function storeMemory(
 export async function searchMemory(
   userId: string,
   query: string,
-  limit: number = 3
-): Promise<Array<{ content: string; agentName: string; similarity: number; createdAt: string }>> {
+  limit: number = 3,
+): Promise<
+  Array<{
+    content: string;
+    agentName: string;
+    similarity: number;
+    createdAt: string;
+  }>
+> {
   const ready = await ensureVectorTable();
   if (!ready) return [];
 
@@ -199,7 +267,7 @@ export async function searchMemory(
  */
 export async function getMemoryContextForPrompt(
   userId: string,
-  query: string
+  query: string,
 ): Promise<string> {
   const memories = await searchMemory(userId, query);
 

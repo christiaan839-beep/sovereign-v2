@@ -23,11 +23,36 @@ interface AgentActivity {
 
 function generateMockActivity(): AgentActivity[] {
   return [
-    { agentName: "SEO Dominator", runs: 47, avgDurationMs: 3200, successRate: 0.96 },
-    { agentName: "Lead Finder", runs: 32, avgDurationMs: 4800, successRate: 0.91 },
-    { agentName: "Content Generator", runs: 28, avgDurationMs: 6100, successRate: 0.93 },
-    { agentName: "Competitor Radar", runs: 15, avgDurationMs: 5500, successRate: 0.87 },
-    { agentName: "Email Sequence", runs: 12, avgDurationMs: 2900, successRate: 0.95 },
+    {
+      agentName: "SEO Dominator",
+      runs: 47,
+      avgDurationMs: 3200,
+      successRate: 0.96,
+    },
+    {
+      agentName: "Lead Finder",
+      runs: 32,
+      avgDurationMs: 4800,
+      successRate: 0.91,
+    },
+    {
+      agentName: "Content Generator",
+      runs: 28,
+      avgDurationMs: 6100,
+      successRate: 0.93,
+    },
+    {
+      agentName: "Competitor Radar",
+      runs: 15,
+      avgDurationMs: 5500,
+      successRate: 0.87,
+    },
+    {
+      agentName: "Email Sequence",
+      runs: 12,
+      avgDurationMs: 2900,
+      successRate: 0.95,
+    },
     { agentName: "God Brain", runs: 8, avgDurationMs: 8400, successRate: 1.0 },
   ];
 }
@@ -62,7 +87,7 @@ function getWeekStart(): string {
 
 function buildReportHtml(
   summary: ReturnType<typeof generateReportSummary>,
-  activity: AgentActivity[]
+  activity: AgentActivity[],
 ): string {
   const activityRows = activity
     .map(
@@ -72,7 +97,7 @@ function buildReportHtml(
         <td style="padding: 10px 16px; border-bottom: 1px solid #1a1a2e; color: #e0e0e0; text-align: center;">${a.runs}</td>
         <td style="padding: 10px 16px; border-bottom: 1px solid #1a1a2e; color: #e0e0e0; text-align: center;">${(a.avgDurationMs / 1000).toFixed(1)}s</td>
         <td style="padding: 10px 16px; border-bottom: 1px solid #1a1a2e; color: #e0e0e0; text-align: center;">${Math.round(a.successRate * 100)}%</td>
-      </tr>`
+      </tr>`,
     )
     .join("");
 
@@ -147,6 +172,31 @@ export const POST = createAgentRoute({
   skipJailbreakCheck: true,
   skipSafetyCheck: true,
   skipQualityCheck: true,
+  // Wave 116 M3 batch 11: memory hooks. Per-recipient report cadence
+  // compounds — last week's headline + KPI deltas inform the new
+  // report's framing (what changed vs what's still the same story).
+  memory: {
+    search: {
+      query: (input) =>
+        `scheduled-report email:${input.email ?? ""} ${input.report_type ?? ""}`.trim(),
+      limit: 2,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as {
+          email?: string;
+          headline?: string;
+          summary?: string;
+        };
+        if (!r.email) return null;
+        return `[${r.email}] ${(r.headline ?? r.summary ?? "").slice(0, 180)}`;
+      },
+      metadata: (input) => ({
+        email: typeof input.email === "string" ? input.email : "",
+        kind: "scheduled-report",
+      }),
+    },
+  },
 
   handler: async ({ input }) => {
     const email = input.email as string;

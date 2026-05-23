@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { sql } from "drizzle-orm";
 import { rateLimit } from "@/lib/rate-limit";
 import { createLogger } from "@/lib/logger";
+import { outboundFetch } from "@/lib/outbound-fetch";
 
 const log = createLogger("waitlist");
 
@@ -58,19 +59,22 @@ async function sendWelcomeEmail(email: string) {
   if (!resendKey) return; // Email not configured
 
   try {
-    await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${resendKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from:
-          process.env.RESEND_FROM_EMAIL ||
-          "Sovereign Matrix <hello@sovereignmatrix.agency>",
-        to: email,
-        subject: "You're on the list — here's your free competitor scan",
-        html: `
+    await outboundFetch(
+      "https://api.resend.com/emails",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${resendKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from:
+            process.env.RESEND_FROM_EMAIL ||
+            "Sovereign Matrix <hello@sovereignmatrix.agency>",
+          to: email,
+          subject: "You're on the list — here's your free competitor scan",
+          // prettier-ignore
+          html: `
           <div style="font-family: system-ui, sans-serif; max-width: 520px; margin: 0 auto; padding: 40px 20px; color: #e5e5e5; background: #010101;">
             <div style="text-align: center; margin-bottom: 32px;">
               <div style="display: inline-block; padding: 8px 16px; border-radius: 8px; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2);">
@@ -101,8 +105,13 @@ async function sendWelcomeEmail(email: string) {
             </p>
           </div>
         `,
-      }),
-    });
+        }),
+      },
+      {
+        ruleId: "waitlist.welcome-email",
+        allowedHosts: ["api.resend.com"],
+      },
+    );
   } catch {
     // Silent fail — email is supplementary
   }

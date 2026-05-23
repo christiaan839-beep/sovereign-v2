@@ -94,11 +94,11 @@ async function _postHandler(request: Request) {
       const endpoint = agentEndpoints[to];
       if (endpoint) {
         const baseUrl = getBaseUrl();
-        const res = await fetch(`${baseUrl}${endpoint}`, {
+        const res = await outboundFetchAsResponse(`${baseUrl}${endpoint}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
-        });
+        }, { ruleId: "agents.comms.route.1", allowedHosts: [new URL(baseUrl).hostname] });
         executionResult = await res.json();
         message.processed = true;
       }
@@ -124,6 +124,8 @@ async function _postHandler(request: Request) {
 }
 
 // Factory wrapper for POST (adds safety pipeline)
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export const POST = createAgentRoute({
   name: "comms",
   handler: async ({ input, email, userId, request }) => {

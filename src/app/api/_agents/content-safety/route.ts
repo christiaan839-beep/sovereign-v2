@@ -6,6 +6,8 @@ import { NextResponse } from "next/server";
  * to detect prompt injection, toxic outputs, and unsafe content.
  * This should be used as a pre-flight check on all user-facing AI endpoints.
  */
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export const POST = createAgentRoute({
   name: "content-safety",
   handler: async ({ input, email, userId }) => {
@@ -16,7 +18,7 @@ export const POST = createAgentRoute({
     const nimKey = process.env.NVIDIA_NIM_API_KEY;
     if (!nimKey) return ({ error: "NVIDIA_NIM_API_KEY not configured." });
 
-    const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+    const res = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -31,7 +33,7 @@ export const POST = createAgentRoute({
         max_tokens: 150,
         temperature: 0.1,
       }),
-    });
+    }, { ruleId: "agents.content-safety.route.1", allowedHosts: ["integrate.api.nvidia.com"] });
 
     if (!res.ok) {
       // Fail-open: if the safety model is down, allow the request but flag it

@@ -37,12 +37,16 @@ import { z } from "zod";
 import { claudeToolUse, research_ai } from "@/lib/ai";
 import { nimChat } from "@/lib/nvidia";
 import { searchMemory, storeMemory } from "@/lib/vector-memory";
+import { runCode, RUN_CODE_TOOL_DEF } from "@/lib/run-code";
 import { outboundFetch } from "@/lib/outbound-fetch";
 import { resolvedHostIsSafe } from "@/lib/safe-host";
 import { lookup as dnsLookup } from "node:dns/promises";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("site-assassin");
+
+// Wave 114 L3: env-configurable User-Agent (see competitor-scan).
+const USER_AGENT = process.env.SOVEREIGN_USER_AGENT || "SovereignBot/1.0";
 
 const schema = z.object({
   url: z.string().min(1).max(500),
@@ -65,6 +69,7 @@ interface AuditReport {
 }
 
 const TOOL_DEFS = [
+  RUN_CODE_TOOL_DEF,
   {
     name: "search_past_audits",
     description:
@@ -216,6 +221,28 @@ export function buildToolExecutor(ctx: SiteAssassinContext) {
     let output: string;
     try {
       switch (name) {
+        case "run_code": {
+          const code = String(input.code ?? "");
+          const timeoutMs =
+            typeof input.timeoutMs === "number" ? input.timeoutMs : undefined;
+          if (!code) {
+            output = "ERROR: code required";
+            break;
+          }
+          try {
+            const r = runCode(code, { timeoutMs });
+            output = JSON.stringify({
+              success: r.success,
+              result: r.result,
+              stdout: r.stdout?.slice(0, 1_000),
+              durationMs: r.durationMs,
+              error: r.error,
+            }).slice(0, 3_500);
+          } catch (err) {
+            output = `ERROR: run_code threw — ${err instanceof Error ? err.message : "err"}`;
+          }
+          break;
+        }
         case "search_past_audits": {
           // Wave-110.1 M1: skip memory ops for anon sessions.
           if (!ctx.userId || ctx.userId === "anon") {
@@ -261,7 +288,7 @@ export function buildToolExecutor(ctx: SiteAssassinContext) {
           try {
             const result = await outboundFetch(
               url,
-              { method: "GET", headers: { "User-Agent": "SovereignBot/1.0" } },
+              { method: "GET", headers: { "User-Agent": USER_AGENT } },
               {
                 ruleId: "site-assassin.fetch_page",
                 tenantId: ctx.userId,
@@ -368,7 +395,11 @@ export function buildToolExecutor(ctx: SiteAssassinContext) {
       });
       output = `ERROR: tool "${name}" threw — ${err instanceof Error ? err.message : String(err)}`;
     }
-    ctx.trace.push({ tool: name, input, output: output.slice(0, 400) });
+    // Wave 114 L4: cap the per-request trace at 50 entries (see
+    // competitor-scan for full rationale).
+    if (ctx.trace.length < 50) {
+      ctx.trace.push({ tool: name, input, output: output.slice(0, 400) });
+    }
     return output;
   };
 }

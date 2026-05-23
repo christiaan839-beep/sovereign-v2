@@ -125,6 +125,10 @@ async function runProbe(
   const timer = setTimeout(() => ctrl.abort(), spec.timeoutMs);
   const start = Date.now();
   try {
+    // Wave 116 carve-out: same as synthetic/latest — internal probe
+    // of own deployment from an operator-allowlisted spec.path. Tests
+    // mock fetch to assert the probe sequence.
+    // eslint-disable-next-line no-restricted-syntax
     const res = await fetch(`${baseUrl}${spec.path}`, {
       method: "GET",
       headers: {

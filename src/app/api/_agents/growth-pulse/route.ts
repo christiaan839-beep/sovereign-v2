@@ -459,6 +459,40 @@ export const POST = createAgentRoute({
   name: "growth-pulse",
   schema: growthPulseSchema,
   useCritic: false,
+  // Wave 115 M3 batch 9: memory hooks. Per-business growth-pulse history
+  // compounds — last month's SEO checklist + which campaign promo
+  // resonated informs the next month's pulse so the operator gets a
+  // delta, not the same checklist over and over.
+  memory: {
+    search: {
+      query: (input) =>
+        `growth-pulse business:${input.businessName ?? ""} ${input.industry ?? ""}`.trim(),
+      limit: 2,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as {
+          businessName?: string;
+          industry?: string;
+          assets?: {
+            promo?: { offerHeadline?: string };
+            seo?: { topChecklistItems?: string[] };
+          };
+        };
+        if (!r.businessName) return null;
+        const promo = r.assets?.promo?.offerHeadline?.slice(0, 100) ?? "";
+        const seoTop = (r.assets?.seo?.topChecklistItems ?? [])
+          .slice(0, 2)
+          .join(" · ");
+        return `growth ${r.businessName} (${r.industry ?? "?"}): promo="${promo}" seo=[${seoTop}]`;
+      },
+      metadata: (input) => ({
+        business:
+          typeof input.businessName === "string" ? input.businessName : "",
+        kind: "growth-pulse",
+      }),
+    },
+  },
   handler: async ({ input, userId }) => {
     const parsed = growthPulseSchema.parse(input);
     const pulse = await buildGrowthPulse(parsed);

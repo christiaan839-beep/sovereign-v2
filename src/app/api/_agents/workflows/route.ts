@@ -29,16 +29,16 @@ async function _postHandler(request: Request) {
         steps.push("Auditing competitor site...");
         
         // Step 1: Audit the site
-        const auditRes = await fetch(`${baseUrl}/api/agents/audit`, {
+        const auditRes = await outboundFetchAsResponse(`${baseUrl}/api/agents/audit`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ url: target || "competitor.com" }),
-        }).catch(() => null);
+        }, { ruleId: "agents.workflows.route.1", allowedHosts: [new URL(baseUrl).hostname] }).catch(() => null);
         results.audit = auditRes ? await auditRes.json() : { error: "Audit unavailable" };
         steps.push("Site audited ✅");
 
         // Step 2: Generate pitch script
-        const pitchRes = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+        const pitchRes = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
           method: "POST",
           headers: { "Content-Type": "application/json", "Authorization": `Bearer ${nimKey}` },
           body: JSON.stringify({
@@ -49,12 +49,12 @@ async function _postHandler(request: Request) {
             ],
             max_tokens: 200,
           }),
-        });
+        }, { ruleId: "agents.workflows.route.2", allowedHosts: ["integrate.api.nvidia.com"] });
         results.pitch = pitchRes.ok ? (await pitchRes.json()).choices?.[0]?.message?.content : "";
         steps.push("Pitch generated ✅");
 
         // Step 3: Log to email
-        await fetch(`${baseUrl}/api/email`, {
+        await outboundFetchAsResponse(`${baseUrl}/api/email`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -62,7 +62,7 @@ async function _postHandler(request: Request) {
             template: "audit_report",
             data: { targetUrl: target, vulnCount: ((results.audit as Record<string, unknown>)?.vulnerabilities as unknown[] | undefined)?.length || 0 },
           }),
-        }).catch(() => {});
+        }, { ruleId: "agents.workflows.route.3", allowedHosts: [new URL(baseUrl).hostname] }).catch(() => {});
         steps.push("Report emailed ✅");
         break;
       }
@@ -74,16 +74,16 @@ async function _postHandler(request: Request) {
       case "lead-to-close": {
         steps.push("Scraping leads...");
         
-        const leadRes = await fetch(`${baseUrl}/api/leads/capture`, {
+        const leadRes = await outboundFetchAsResponse(`${baseUrl}/api/leads/capture`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ source: "workflow", url: target || "g2.com" }),
-        }).catch(() => null);
+        }, { ruleId: "agents.workflows.route.4", allowedHosts: [new URL(baseUrl).hostname] }).catch(() => null);
         results.leads = leadRes ? await leadRes.json() : {};
         steps.push("Leads captured ✅");
 
         // Draft outreach email
-        const emailRes = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+        const emailRes = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
           method: "POST",
           headers: { "Content-Type": "application/json", "Authorization": `Bearer ${nimKey}` },
           body: JSON.stringify({
@@ -94,16 +94,16 @@ async function _postHandler(request: Request) {
             ],
             max_tokens: 200,
           }),
-        });
+        }, { ruleId: "agents.workflows.route.5", allowedHosts: ["integrate.api.nvidia.com"] });
         results.email = emailRes.ok ? (await emailRes.json()).choices?.[0]?.message?.content : "";
         steps.push("Outreach email drafted ✅");
 
         // Queue a voice call
-        await fetch(`${baseUrl}/api/agents/claw-queue`, {
+        await outboundFetchAsResponse(`${baseUrl}/api/agents/claw-queue`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ type: "form-fill", payload: { url: target, fields: { subject: "Follow-up" } } }),
-        }).catch(() => {});
+        }, { ruleId: "agents.workflows.route.6", allowedHosts: [new URL(baseUrl).hostname] }).catch(() => {});
         steps.push("Follow-up call queued ✅");
         break;
       }
@@ -120,7 +120,7 @@ async function _postHandler(request: Request) {
           const platform = platforms[i];
           steps.push(`Generating ${platform} post...`);
           
-          const postRes = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+          const postRes = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
             method: "POST",
             headers: { "Content-Type": "application/json", "Authorization": `Bearer ${nimKey}` },
             body: JSON.stringify({
@@ -131,7 +131,7 @@ async function _postHandler(request: Request) {
               ],
               max_tokens: 300,
             }),
-          });
+          }, { ruleId: "agents.workflows.route.7", allowedHosts: ["integrate.api.nvidia.com"] });
           results[`post_${platform.toLowerCase()}`] = postRes.ok 
             ? (await postRes.json()).choices?.[0]?.message?.content 
             : `[${platform} post placeholder]`;
@@ -146,17 +146,17 @@ async function _postHandler(request: Request) {
       // ═══════════════════════════════════════
       case "morning-briefing": {
         steps.push("Checking system health...");
-        const healthRes = await fetch(`${baseUrl}/api/health`).catch(() => null);
+        const healthRes = await outboundFetchAsResponse(`${baseUrl}/api/health`, {}, { ruleId: "agents.workflows.route.8", allowedHosts: [new URL(baseUrl).hostname] }).catch(() => null);
         results.health = healthRes ? await healthRes.json() : { status: "unknown" };
         steps.push("Health checked ✅");
 
         steps.push("Pulling analytics...");
-        const analyticsRes = await fetch(`${baseUrl}/api/agents/analytics`).catch(() => null);
+        const analyticsRes = await outboundFetchAsResponse(`${baseUrl}/api/agents/analytics`, {}, { ruleId: "agents.workflows.route.9", allowedHosts: [new URL(baseUrl).hostname] }).catch(() => null);
         results.analytics = analyticsRes ? await analyticsRes.json() : {};
         steps.push("Analytics pulled ✅");
 
         // Generate briefing summary
-        const briefRes = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+        const briefRes = await outboundFetchAsResponse("https://integrate.api.nvidia.com/v1/chat/completions", {
           method: "POST",
           headers: { "Content-Type": "application/json", "Authorization": `Bearer ${nimKey}` },
           body: JSON.stringify({
@@ -167,7 +167,7 @@ async function _postHandler(request: Request) {
             ],
             max_tokens: 300,
           }),
-        });
+        }, { ruleId: "agents.workflows.route.10", allowedHosts: ["integrate.api.nvidia.com"] });
         results.briefing = briefRes.ok ? (await briefRes.json()).choices?.[0]?.message?.content : "";
         steps.push("Briefing compiled ✅");
         break;
@@ -205,6 +205,8 @@ export async function GET() {
 
 
 // Factory wrapper for POST (adds safety pipeline)
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export const POST = createAgentRoute({
   name: "workflows",
   handler: async ({ input, email, userId, request }) => {

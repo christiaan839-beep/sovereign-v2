@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { persistRead } from "@/lib/persist";
 import { requireCronAuth } from "@/lib/cron-auth";
+import { outboundFetch } from "@/lib/outbound-fetch";
 
 /**
  * CRON WEEKLY REPORT — Triggered via Vercel Cron every Sunday at midnight.
@@ -70,19 +71,26 @@ export async function GET(req: Request) {
       for (const client of activeClients) {
         const clientObj = client as { name?: string; email?: string };
         if (clientObj.email) {
-          await fetch("https://api.resend.com/emails", {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-              "Content-Type": "application/json",
+          await outboundFetch(
+            "https://api.resend.com/emails",
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                from: fromEmail,
+                to: clientObj.email,
+                subject: `📊 Sovereign Matrix — Weekly Report`,
+                html: emailContent,
+              }),
             },
-            body: JSON.stringify({
-              from: fromEmail,
-              to: clientObj.email,
-              subject: `📊 Sovereign Matrix — Weekly Report`,
-              html: emailContent,
-            }),
-          });
+            {
+              ruleId: "cron.weekly-report.resend",
+              allowedHosts: ["api.resend.com"],
+            },
+          );
         }
       }
     }

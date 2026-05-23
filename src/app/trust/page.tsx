@@ -289,6 +289,15 @@ export default function TrustPage() {
           Posture generated at{" "}
           <code className="text-neutral-400">{posture.generatedAt}</code>
         </p>
+        <div className="mt-6 flex flex-wrap gap-2">
+          <Link
+            href="/trust/crypto"
+            className="inline-flex items-center gap-1.5 rounded-full border border-cyan-500/30 bg-cyan-500/[0.08] px-3 py-1.5 text-[11px] font-medium text-cyan-300 transition-colors hover:bg-cyan-500/[0.15]"
+          >
+            Cryptographic trust · Merkle root + cohort claim
+            <ArrowRight className="h-3 w-3" />
+          </Link>
+        </div>
       </header>
 
       <section className="max-w-5xl mx-auto px-6 py-8">

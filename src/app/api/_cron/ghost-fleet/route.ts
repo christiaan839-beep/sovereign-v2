@@ -14,6 +14,8 @@ const X_API_KEY = process.env.X_API_KEY;
  * rather than attacking competitors or making unsubstantiated claims.
  */
 
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export async function GET(req: Request) {
   const authErr = requireCronAuth(req);
   if (authErr) return authErr;
@@ -45,9 +47,7 @@ Return a JSON array of 3 strings (the tweets in sequence). No markdown formattin
       );
     }
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${GEMINI_API_KEY}`,
-      {
+    const response = await outboundFetchAsResponse(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${GEMINI_API_KEY}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -63,8 +63,7 @@ Return a JSON array of 3 strings (the tweets in sequence). No markdown formattin
           systemInstruction: { parts: [{ text: systemInstruction }] },
           generationConfig: { temperature: 0.6 },
         }),
-      },
-    );
+      }, { ruleId: "cron.ghost-fleet.route.1", allowedHosts: ["generativelanguage.googleapis.com"] });
 
     if (!response.ok) {
       throw new Error(`Gemini API error: ${response.statusText}`);

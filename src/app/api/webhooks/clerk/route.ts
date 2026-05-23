@@ -72,7 +72,7 @@ async function sendWelcomeEmail(email: string, firstName: string | null) {
   // Inline-styled HTML for maximum email-client compatibility (Gmail
   // strips <style>, Outlook is Word). Cyan = #00B7FF.
   try {
-    const res = await fetch("https://api.resend.com/emails", {
+    const res = await outboundFetchAsResponse("https://api.resend.com/emails", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${resendKey}`,
@@ -157,7 +157,7 @@ async function sendWelcomeEmail(email: string, firstName: string | null) {
           </div>
         `,
       }),
-    });
+    }, { ruleId: "webhooks.clerk.route.1", allowedHosts: ["api.resend.com"] });
 
     if (!res.ok) {
       const body = await res.text();
@@ -278,6 +278,8 @@ async function processReferral(
 // ── POST /api/webhooks/clerk ──
 // Handles Clerk webhook events (verified via svix).
 // Currently supports: user.created
+
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
 
 export async function POST(req: NextRequest) {
   const webhookSecret = process.env.CLERK_WEBHOOK_SECRET;

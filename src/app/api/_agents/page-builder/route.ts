@@ -8,9 +8,34 @@ import { getNimKey } from "@/lib/nvidia";
  * Flow: Text prompt → Stitch API → Full HTML + Screenshot
  */
 
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export const POST = createAgentRoute({
   name: "page-builder",
   requiredFields: ["prompt"],
+  // Wave 116 M3 batch 11: memory hooks. Per-prompt-class page generation
+  // compounds — last build's layout choices + section ordering inform
+  // the next request on a similar prompt for visual consistency.
+  memory: {
+    search: {
+      query: (input) =>
+        `page-builder ${String(input.prompt ?? "").slice(0, 120)}`,
+      limit: 2,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as {
+          html?: string;
+          summary?: string;
+          theme?: string;
+        };
+        const summary = r.summary?.slice(0, 200) ?? "";
+        if (!summary) return null;
+        return `${r.theme ? `[${r.theme}] ` : ""}${summary}`;
+      },
+      metadata: () => ({ kind: "page-builder" }),
+    },
+  },
   handler: async ({ input }) => {
     const { prompt, projectId } = input as Record<string, unknown>;
 
@@ -24,7 +49,7 @@ export const POST = createAgentRoute({
         );
       }
 
-      const nimRes = await fetch(
+      const nimRes = await outboundFetchAsResponse(
         "https://integrate.api.nvidia.com/v1/chat/completions",
         {
           method: "POST",
@@ -94,6 +119,10 @@ PREFER:
             max_tokens: 4096,
             temperature: 0.6,
           }),
+        },
+        {
+          ruleId: "agents.page-builder.route.1",
+          allowedHosts: ["integrate.api.nvidia.com"],
         },
       );
 

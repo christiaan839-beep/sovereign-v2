@@ -16,25 +16,94 @@ import { getBaseUrl } from "@/lib/base-url";
  * Output: { result, steps[], toolCalls }
  */
 
-const AVAILABLE_TOOLS: Record<string, { description: string; endpoint: string; paramKey: string }> = {
-  search: { description: "Search the web for current information", endpoint: "/api/_agents/grounded-search", paramKey: "query" },
-  analyze_competitor: { description: "Analyze a competitor website", endpoint: "/api/_agents/competitive-radar", paramKey: "url" },
-  generate_content: { description: "Generate marketing content", endpoint: "/api/_agents/blog-gen", paramKey: "topic" },
-  generate_image: { description: "Generate an image", endpoint: "/api/_agents/flux-image", paramKey: "prompt" },
-  translate: { description: "Translate text to another language", endpoint: "/api/_agents/translate", paramKey: "text" },
-  scan_pii: { description: "Check text for personal data", endpoint: "/api/_agents/pii-guard", paramKey: "text" },
-  audit_website: { description: "Audit a website for SEO and security", endpoint: "/api/_agents/audit", paramKey: "url" },
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
+const AVAILABLE_TOOLS: Record<
+  string,
+  { description: string; endpoint: string; paramKey: string }
+> = {
+  search: {
+    description: "Search the web for current information",
+    endpoint: "/api/_agents/grounded-search",
+    paramKey: "query",
+  },
+  analyze_competitor: {
+    description: "Analyze a competitor website",
+    endpoint: "/api/_agents/competitive-radar",
+    paramKey: "url",
+  },
+  generate_content: {
+    description: "Generate marketing content",
+    endpoint: "/api/_agents/blog-gen",
+    paramKey: "topic",
+  },
+  generate_image: {
+    description: "Generate an image",
+    endpoint: "/api/_agents/flux-image",
+    paramKey: "prompt",
+  },
+  translate: {
+    description: "Translate text to another language",
+    endpoint: "/api/_agents/translate",
+    paramKey: "text",
+  },
+  scan_pii: {
+    description: "Check text for personal data",
+    endpoint: "/api/_agents/pii-guard",
+    paramKey: "text",
+  },
+  audit_website: {
+    description: "Audit a website for SEO and security",
+    endpoint: "/api/_agents/audit",
+    paramKey: "url",
+  },
 };
 
 export const POST = createAgentRoute({
   name: "agentic-chain",
   requiredFields: ["goal"],
+  // Wave 131 M3 batch 21: memory hooks. Per-goal multi-step chain
+  // continuity — prior tool-chain attempts at the same goal give the
+  // planner a "what worked / what didn't" reference instead of
+  // re-exploring the tool space cold.
+  memory: {
+    search: {
+      query: (input) =>
+        `agentic-chain goal:${String(input.goal ?? "").slice(0, 100)}`,
+      limit: 2,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as {
+          goal?: string;
+          steps?: Array<{ tool?: string; observation?: string }>;
+          final?: string;
+          totalSteps?: number;
+        };
+        const final = (r.final ?? "").slice(0, 160).replace(/\s+/g, " ");
+        const tools = (r.steps ?? [])
+          .map((s) => s.tool ?? "?")
+          .filter((t) => t !== "?")
+          .slice(0, 6)
+          .join("→");
+        if (!final && !tools) return null;
+        return `chain[${r.totalSteps ?? 0}/${tools}]: ${final}`;
+      },
+      metadata: () => ({ kind: "agentic-chain" }),
+    },
+  },
   handler: async ({ input }) => {
     const goal = input.goal as string;
     const maxSteps = Math.min((input.maxSteps as number) || 5, 8);
-    const enabledTools = (input.tools as string[]) || Object.keys(AVAILABLE_TOOLS);
+    const enabledTools =
+      (input.tools as string[]) || Object.keys(AVAILABLE_TOOLS);
 
-    const steps: Array<{ step: number; action: string; tool?: string; observation: string }> = [];
+    const steps: Array<{
+      step: number;
+      action: string;
+      tool?: string;
+      observation: string;
+    }> = [];
     let context = "";
 
     for (let step = 1; step <= maxSteps; step++) {
@@ -63,7 +132,12 @@ Decide the next step. If the goal is already achieved, call the "done" tool.`;
               description: AVAILABLE_TOOLS[t].description,
               parameters: {
                 type: "object",
-                properties: { input: { type: "string", description: `The ${AVAILABLE_TOOLS[t].paramKey} to pass to the tool` } },
+                properties: {
+                  input: {
+                    type: "string",
+                    description: `The ${AVAILABLE_TOOLS[t].paramKey} to pass to the tool`,
+                  },
+                },
                 required: ["input"],
               },
             },
@@ -72,10 +146,16 @@ Decide the next step. If the goal is already achieved, call the "done" tool.`;
           type: "function" as const,
           function: {
             name: "done",
-            description: "Mark the task as complete and provide a final summary",
+            description:
+              "Mark the task as complete and provide a final summary",
             parameters: {
               type: "object",
-              properties: { result: { type: "string", description: "Final summary of what was accomplished" } },
+              properties: {
+                result: {
+                  type: "string",
+                  description: "Final summary of what was accomplished",
+                },
+              },
               required: ["result"],
             },
           },
@@ -83,7 +163,12 @@ Decide the next step. If the goal is already achieved, call the "done" tool.`;
       ];
 
       // Try nimToolCall first (GLM-4.7 — 90.6% tool use benchmark), fall back to nimChat
-      let plan: { action: string; tool: string; input?: string; result?: string };
+      let plan: {
+        action: string;
+        tool: string;
+        input?: string;
+        result?: string;
+      };
       try {
         const toolResult = await nimToolCall(planPrompt, nimTools, {
           system: `You are an autonomous agent. Pick the best tool for each step toward the goal: "${goal}"`,
@@ -100,7 +185,11 @@ Decide the next step. If the goal is already achieved, call the "done" tool.`;
           };
         } else {
           // nimToolCall returned text but no tool calls — parse as done
-          plan = { action: "task complete", tool: "done", result: toolResult.text || "Goal achieved" };
+          plan = {
+            action: "task complete",
+            tool: "done",
+            result: toolResult.text || "Goal achieved",
+          };
         }
       } catch {
         // Fallback: use nimChat with manual JSON parsing (original approach)
@@ -108,38 +197,61 @@ Decide the next step. If the goal is already achieved, call the "done" tool.`;
         const planResult = await nimChat(
           "mistralai/mistral-nemotron",
           [{ role: "user", content: fallbackPrompt }],
-          { maxTokens: 300, temperature: 0.2 }
+          { maxTokens: 300, temperature: 0.2 },
         );
         try {
-          const cleaned = planResult.replace(/```json?\n?/g, "").replace(/```/g, "").trim();
+          const cleaned = planResult
+            .replace(/```json?\n?/g, "")
+            .replace(/```/g, "")
+            .trim();
           plan = JSON.parse(cleaned);
         } catch {
-          steps.push({ step, action: "Planning failed — completing", observation: planResult });
+          steps.push({
+            step,
+            action: "Planning failed — completing",
+            observation: planResult,
+          });
           break;
         }
       }
 
       // ─── Done: Return result ───
       if (plan.tool === "done") {
-        steps.push({ step, action: plan.action, observation: plan.result || "Goal achieved" });
+        steps.push({
+          step,
+          action: plan.action,
+          observation: plan.result || "Goal achieved",
+        });
         break;
       }
 
       // ─── Execute: Call the tool ───
       const tool = AVAILABLE_TOOLS[plan.tool];
       if (!tool) {
-        steps.push({ step, action: plan.action, tool: plan.tool, observation: `Tool "${plan.tool}" not found` });
+        steps.push({
+          step,
+          action: plan.action,
+          tool: plan.tool,
+          observation: `Tool "${plan.tool}" not found`,
+        });
         context += `Step ${step}: Tried ${plan.tool} but it doesn't exist.\n`;
         continue;
       }
 
       try {
-        const toolRes = await fetch(`${getBaseUrl()}${tool.endpoint}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ [tool.paramKey]: plan.input }),
-          signal: AbortSignal.timeout(15000),
-        });
+        const toolRes = await outboundFetchAsResponse(
+          `${getBaseUrl()}${tool.endpoint}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ [tool.paramKey]: plan.input }),
+            signal: AbortSignal.timeout(15000),
+          },
+          {
+            ruleId: "agents.agentic-chain.route.1",
+            allowedHosts: [new URL(`${getBaseUrl()}${tool.endpoint}`).hostname],
+          },
+        );
 
         const toolData = await toolRes.json();
         const observation = JSON.stringify(toolData).slice(0, 1000);
@@ -148,7 +260,12 @@ Decide the next step. If the goal is already achieved, call the "done" tool.`;
         context += `Step ${step}: Used ${plan.tool} with "${plan.input}". Result: ${observation.slice(0, 300)}\n`;
       } catch (err) {
         const errMsg = err instanceof Error ? err.message : "Unknown error";
-        steps.push({ step, action: plan.action, tool: plan.tool, observation: `Tool failed: ${errMsg}` });
+        steps.push({
+          step,
+          action: plan.action,
+          tool: plan.tool,
+          observation: `Tool failed: ${errMsg}`,
+        });
         context += `Step ${step}: ${plan.tool} failed: ${errMsg}\n`;
       }
     }
@@ -158,7 +275,8 @@ Decide the next step. If the goal is already achieved, call the "done" tool.`;
       steps,
       totalSteps: steps.length,
       maxSteps,
-      model: "glm-4.7 (nimToolCall planner) + mistral-nemotron (fallback) + multi-tool execution",
+      model:
+        "glm-4.7 (nimToolCall planner) + mistral-nemotron (fallback) + multi-tool execution",
     };
   },
 });

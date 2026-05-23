@@ -1,5 +1,7 @@
 import { createAgentRoute } from "@/lib/agent-factory";
 import { createLogger } from "@/lib/logger";
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 const log = createLogger("closer-agent");
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
@@ -7,6 +9,60 @@ const META_ACCESS_TOKEN = process.env.META_ACCESS_TOKEN; // For Instagram Graph 
 
 export const POST = createAgentRoute({
   name: "closer",
+  // Wave 129 M3 batch 19: memory hooks. Per-lead sales-thread continuity.
+  // The prior turn's qualifying answer + the reply we sent keep the next
+  // inbound message on-thread — no "as I mentioned…" because the agent
+  // can see what it already asked.
+  memory: {
+    search: {
+      query: (input) => {
+        const senderId =
+          (
+            input as {
+              entry?: Array<{
+                messaging?: Array<{ sender?: { id?: string } }>;
+              }>;
+            }
+          )?.entry?.[0]?.messaging?.[0]?.sender?.id ?? "?";
+        const msg =
+          (
+            input as {
+              entry?: Array<{
+                messaging?: Array<{ message?: { text?: string } }>;
+              }>;
+              message?: string;
+            }
+          )?.entry?.[0]?.messaging?.[0]?.message?.text ??
+          (input as { message?: string })?.message ??
+          "";
+        return `closer lead:${senderId} ${String(msg).slice(0, 80)}`;
+      },
+      limit: 3,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as {
+          status?: string;
+          agentResponse?: string;
+          leadId?: string;
+        };
+        if (!r.agentResponse) return null;
+        const head = r.agentResponse.slice(0, 200).replace(/\s+/g, " ");
+        return `closer[lead:${r.leadId ?? "?"}]: ${head}`;
+      },
+      metadata: (input) => {
+        const senderId =
+          (
+            input as {
+              entry?: Array<{
+                messaging?: Array<{ sender?: { id?: string } }>;
+              }>;
+            }
+          )?.entry?.[0]?.messaging?.[0]?.sender?.id ?? "";
+        return { kind: "closer", leadId: senderId };
+      },
+    },
+  },
   handler: async ({ input }) => {
     const data = input as Record<string, unknown> & {
       message?: string;
@@ -41,7 +97,7 @@ Keep replies under 3 sentences. Don't waste their time.`;
     }
 
     // Google Gemini 1.5 Flash REST API (Bypassing NPM lockouts)
-    const response = await fetch(
+    const response = await outboundFetchAsResponse(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
       {
         method: "POST",
@@ -57,6 +113,10 @@ Keep replies under 3 sentences. Don't waste their time.`;
           },
         }),
       },
+      {
+        ruleId: "agents.closer.route.1",
+        allowedHosts: ["generativelanguage.googleapis.com"],
+      },
     );
 
     if (!response.ok) {
@@ -70,7 +130,7 @@ Keep replies under 3 sentences. Don't waste their time.`;
 
     // Production Meta Hook Dispatch
     if (META_ACCESS_TOKEN && senderId !== "test_lead_id") {
-      await fetch(
+      await outboundFetchAsResponse(
         `https://graph.facebook.com/v18.0/me/messages?access_token=${META_ACCESS_TOKEN}`,
         {
           method: "POST",
@@ -79,6 +139,10 @@ Keep replies under 3 sentences. Don't waste their time.`;
             recipient: { id: senderId },
             message: { text: replyText },
           }),
+        },
+        {
+          ruleId: "agents.closer.route.2",
+          allowedHosts: ["graph.facebook.com"],
         },
       );
     }

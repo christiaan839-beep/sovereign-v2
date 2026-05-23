@@ -6,6 +6,8 @@ import { requireAuth } from "@/lib/auth-guard";
 import { createLogger } from "@/lib/logger";
 import { checkpoint as budgetCheckpoint } from "@/lib/execution-budget";
 import { createHash } from "node:crypto";
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 const log = createLogger("ai-stream");
 
 export async function POST(req: Request) {
@@ -120,9 +122,7 @@ export async function POST(req: Request) {
                   model: "deepseek-r1-distill-llama-70b",
                   promptHash,
                 });
-                const res = await fetch(
-                  "https://api.groq.com/openai/v1/chat/completions",
-                  {
+                const res = await outboundFetchAsResponse("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST",
                     headers: {
                       "Content-Type": "application/json",
@@ -142,8 +142,7 @@ export async function POST(req: Request) {
                       temperature: 0.6,
                     }),
                     signal,
-                  },
-                );
+                  }, { ruleId: "misc.ai.stream.route.1", allowedHosts: ["api.groq.com"] });
                 const data = await res.json();
                 thinkingResult = data?.choices?.[0]?.message?.content || "";
               }

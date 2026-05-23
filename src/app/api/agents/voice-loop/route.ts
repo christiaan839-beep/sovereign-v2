@@ -19,6 +19,8 @@ import { requireAuth } from "@/lib/auth-guard";
 import { createLogger } from "@/lib/logger";
 import { runVoiceLoop, type VoiceLoopDeps } from "@/lib/voice-loop";
 
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 const log = createLogger("voice-loop-route");
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -36,14 +38,11 @@ async function asrViaGroq(audio: {
     "audio",
   );
   form.append("model", "whisper-large-v3");
-  const res = await fetch(
-    "https://api.groq.com/openai/v1/audio/transcriptions",
-    {
+  const res = await outboundFetchAsResponse("https://api.groq.com/openai/v1/audio/transcriptions", {
       method: "POST",
       headers: { Authorization: `Bearer ${key}` },
       body: form,
-    },
-  );
+    }, { ruleId: "agents.voice-loop.route.1", allowedHosts: ["api.groq.com"] });
   if (!res.ok) {
     throw new Error(`Groq ASR returned ${res.status}`);
   }
@@ -58,9 +57,7 @@ async function ttsViaElevenLabs(
   if (!key) throw new Error("ELEVENLABS_API_KEY not configured");
   // Generic voice id. Production maps per-tenant.
   const voiceId = process.env.ELEVENLABS_VOICE_ID ?? "21m00Tcm4TlvDq8ikWAM";
-  const res = await fetch(
-    `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
-    {
+  const res = await outboundFetchAsResponse(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
       method: "POST",
       headers: {
         "xi-api-key": key,
@@ -72,8 +69,7 @@ async function ttsViaElevenLabs(
         model_id: "eleven_turbo_v2_5",
         voice_settings: { stability: 0.5, similarity_boost: 0.75 },
       }),
-    },
-  );
+    }, { ruleId: "agents.voice-loop.route.2", allowedHosts: ["api.elevenlabs.io"] });
   if (!res.ok) {
     throw new Error(`ElevenLabs TTS returned ${res.status}`);
   }

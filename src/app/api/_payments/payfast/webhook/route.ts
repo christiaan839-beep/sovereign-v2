@@ -8,6 +8,8 @@ import crypto from "crypto";
 import { getPublicUrl } from "@/lib/base-url";
 import { alreadyProcessed } from "@/lib/idempotency";
 import { PLANS, type PlanId } from "@/lib/plans";
+import { getInternalWebhookSecret } from "@/lib/internal-secret";
+import { outboundFetch } from "@/lib/outbound-fetch";
 
 const log = createLogger("payfast-webhook");
 
@@ -249,27 +251,39 @@ export async function POST(req: Request) {
         });
       }
 
-      // 3. Trigger auto-onboard (best effort) with internal-secret header
+      // 3. Trigger auto-onboard (best effort) with internal-secret header.
+      // Wave 114 H3: skip when secret is unset — the receiver fail-closes
+      // anyway, but this turns a silent drop into a single startup warning.
       const baseUrl = getPublicUrl();
-      const internalSecret = process.env.INTERNAL_WEBHOOK_SECRET || "";
-      try {
-        await fetch(`${baseUrl}/api/_agents/auto-onboard`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-sovereign-internal-secret": internalSecret,
-          },
-          signal: AbortSignal.timeout(10_000),
-          body: JSON.stringify({
-            clientName:
-              `${data.name_first || ""} ${data.name_last || ""}`.trim() ||
-              "New Client",
-            email,
-            plan,
-          }),
-        });
-      } catch {
-        /* auto-onboard is best-effort */
+      const internalSecret = getInternalWebhookSecret();
+      if (internalSecret) {
+        try {
+          const onboardUrl = `${baseUrl}/api/_agents/auto-onboard`;
+          await outboundFetch(
+            onboardUrl,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "x-sovereign-internal-secret": internalSecret,
+              },
+              signal: AbortSignal.timeout(10_000),
+              body: JSON.stringify({
+                clientName:
+                  `${data.name_first || ""} ${data.name_last || ""}`.trim() ||
+                  "New Client",
+                email,
+                plan,
+              }),
+            },
+            {
+              ruleId: "payfast.auto-onboard",
+              allowedHosts: [new URL(onboardUrl).hostname],
+            },
+          );
+        } catch {
+          /* auto-onboard is best-effort */
+        }
       }
 
       persistAppend(

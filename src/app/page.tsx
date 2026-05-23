@@ -596,6 +596,27 @@ function Hero() {
               →
             </span>
           </Link>
+          {/* Wave 122 — Cinematic doorway. Discreet link to the immersive
+              3-section sticky-scroll trailer. Same row as the marketplace
+              CTA so visitors who want the dramatic version find it
+              without distracting from the workhorse hero. */}
+          <Link
+            href="/immersive"
+            onClick={() => trackCtaClick("hero-immersive")}
+            className="group inline-flex items-center gap-1.5 px-6 py-3.5 font-mono text-[13px] tracking-tight text-cyan-300/70 hover:text-cyan-200 transition-colors"
+          >
+            <span
+              aria-hidden="true"
+              className="inline-block h-1.5 w-1.5 rounded-full bg-cyan-400/60 group-hover:bg-cyan-300"
+            />
+            Cinematic
+            <span
+              aria-hidden="true"
+              className="transition-transform group-hover:translate-x-0.5"
+            >
+              →
+            </span>
+          </Link>
         </motion.div>
 
         {/* Pricing micro-line */}
@@ -1568,6 +1589,8 @@ function Footer() {
               { href: "/dashboard/playbooks", label: "Playbooks" },
               { href: "/dashboard", label: "Dashboard" },
               { href: "/marketplace", label: "Marketplace" },
+              { href: "/verify", label: "Verify a receipt" },
+              { href: "/immersive", label: "Immersive" },
               { href: "/trust", label: "Trust" },
             ]}
           />
@@ -1591,6 +1614,7 @@ function Footer() {
                 label: "MCP Server",
                 external: true,
               },
+              { href: "/metrics", label: "Live metrics" },
               { href: "/changelog", label: "Changelog" },
             ]}
           />

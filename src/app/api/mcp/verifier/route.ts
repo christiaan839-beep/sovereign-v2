@@ -171,6 +171,13 @@ async function handleToolsCall(
         if (!canonical || !signature) {
           throw new Error("Both `canonical` and `signature` are required.");
         }
+        // Wave 116 carve-out: same-deployment self-call to /api/verify.
+        // baseUrl is the operator-controlled deployment URL (never user-
+        // supplied), so SSRF risk is zero. Tests mock `fetch` directly to
+        // assert the forwarded payload; wrapping in outboundFetch would
+        // require an SSRF-aware test-mode shim — deferred. Self-call URL
+        // shape is the explicit M1 carve-out class.
+        // eslint-disable-next-line no-restricted-syntax
         const res = await fetch(`${baseUrl}/api/verify`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -187,6 +194,7 @@ async function handleToolsCall(
             "`receipt_id` must be 32-40 hex chars with optional dashes.",
           );
         }
+        // eslint-disable-next-line no-restricted-syntax -- same-deployment self-call (M1 carve-out, see above)
         const res = await fetch(`${baseUrl}/api/agent-runs/${receiptId}`);
         if (res.status === 404) {
           throw new Error(
@@ -198,6 +206,7 @@ async function handleToolsCall(
       }
 
       case "latest_public_receipt": {
+        // eslint-disable-next-line no-restricted-syntax -- same-deployment self-call (M1 carve-out)
         const res = await fetch(`${baseUrl}/api/agent-runs/latest-public`);
         payload = await res.json();
         break;
@@ -206,6 +215,7 @@ async function handleToolsCall(
       case "recent_public_receipts": {
         const rawLimit = Number(args.limit ?? 10);
         const limit = Math.min(Math.max(1, Math.floor(rawLimit) || 10), 50);
+        // eslint-disable-next-line no-restricted-syntax -- same-deployment self-call (M1 carve-out)
         const res = await fetch(
           `${baseUrl}/api/agent-runs/recent-public?limit=${limit}`,
         );

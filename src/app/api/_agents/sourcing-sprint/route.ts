@@ -397,6 +397,37 @@ export const POST = createAgentRoute({
   name: "sourcing-sprint",
   schema: sourcingSprintSchema,
   useCritic: false,
+  // Wave 116 M3 batch 10: memory hooks. Per-product sourcing history
+  // compounds — last sprint's supplier list + validated quotes inform
+  // the next sprint so the operator doesn't re-investigate dead leads.
+  memory: {
+    search: {
+      query: (input) =>
+        `sourcing product:${input.productName ?? ""} ${input.category ?? ""}`.trim(),
+      limit: 2,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as {
+          productName?: string;
+          assets?: {
+            suppliers?: Array<{ name?: string; country?: string }>;
+            recommendation?: { topPick?: string };
+          };
+        };
+        if (!r.productName) return null;
+        const topSuppliers = (r.assets?.suppliers ?? [])
+          .slice(0, 3)
+          .map((s) => `${s.name ?? "?"}(${s.country ?? "?"})`)
+          .join(" · ");
+        return `sourcing ${r.productName}: pick=${r.assets?.recommendation?.topPick ?? "?"} suppliers=[${topSuppliers}]`;
+      },
+      metadata: (input) => ({
+        product: typeof input.productName === "string" ? input.productName : "",
+        kind: "sourcing-sprint",
+      }),
+    },
+  },
   handler: async ({ input, userId }) => {
     const parsed = sourcingSprintSchema.parse(input);
     const sprint = await buildSourcingSprint(parsed);

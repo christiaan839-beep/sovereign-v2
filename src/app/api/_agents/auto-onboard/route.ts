@@ -3,6 +3,8 @@ import crypto from "crypto";
 import { createAgentRoute } from "@/lib/agent-factory";
 import { sendOnboardingEmail } from "@/lib/onboarding-emails";
 import { getBaseUrl } from "@/lib/base-url";
+import { getInternalWebhookSecret } from "@/lib/internal-secret";
+import { outboundFetch, outboundFetchAsResponse } from "@/lib/outbound-fetch";
 
 function escapeHtml(str: string): string {
   return str
@@ -66,11 +68,18 @@ const handler = createAgentRoute({
     const baseUrl = getBaseUrl();
 
     try {
-      const verticalRes = await fetch(`${baseUrl}/api/agents/verticals`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ verticalId: vertical, clientName }),
-      });
+      const verticalRes = await outboundFetchAsResponse(
+        `${baseUrl}/api/agents/verticals`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ verticalId: vertical, clientName }),
+        },
+        {
+          ruleId: "agents.auto-onboard.route.1",
+          allowedHosts: [new URL(baseUrl).hostname],
+        },
+      );
       const verticalData = await verticalRes.json();
       onboardingSteps.push({
         step: "Deploy Vertical Template",
@@ -100,17 +109,19 @@ const handler = createAgentRoute({
 
     if (resendKey) {
       try {
-        await fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${resendKey}`,
-          },
-          body: JSON.stringify({
-            from: fromEmail,
-            to: email,
-            subject: `Welcome to Sovereign Matrix — Your AI Fleet is Live, ${escapeHtml(clientName as string)}`,
-            html: `
+        await outboundFetch(
+          "https://api.resend.com/emails",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${resendKey}`,
+            },
+            body: JSON.stringify({
+              from: fromEmail,
+              to: email,
+              subject: `Welcome to Sovereign Matrix — Your AI Fleet is Live, ${escapeHtml(clientName as string)}`,
+              html: `
               <div style="font-family:system-ui;max-width:600px;margin:0 auto;padding:40px;background:#000;color:#fff">
                 <h1 style="color:#00B7FF;font-size:24px">Welcome, ${escapeHtml(clientName as string)}</h1>
                 <p style="color:#999;font-size:14px">Your autonomous AI fleet has been deployed and is ready to work.</p>
@@ -126,8 +137,13 @@ const handler = createAgentRoute({
                 <p style="color:#666;font-size:11px;margin-top:30px">Sovereign Matrix — Your AI Army, Deployed.</p>
               </div>
             `,
-          }),
-        });
+            }),
+          },
+          {
+            ruleId: "auto-onboard.welcome-email",
+            allowedHosts: ["api.resend.com"],
+          },
+        );
         onboardingSteps.push({
           step: "Send Welcome Email",
           status: "done",
@@ -168,17 +184,28 @@ const handler = createAgentRoute({
 
     // Step 4: Store initial memory
     try {
-      await fetch(`${baseUrl}/api/agents/memory`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "store",
-          userId: clientId,
-          agentId: "system",
-          content: `New client onboarded: ${clientName} (${email}). Plan: ${plan}. Vertical: ${vertical}. Company: ${companyUrl || "N/A"}.`,
-          type: "fact",
-        }),
-      });
+      const memoryUrl = `${baseUrl}/api/agents/memory`;
+      await outboundFetch(
+        memoryUrl,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "store",
+            userId: clientId,
+            agentId: "system",
+            content: `New client onboarded: ${clientName} (${email}). Plan: ${plan}. Vertical: ${vertical}. Company: ${companyUrl || "N/A"}.`,
+            type: "fact",
+          }),
+        },
+        {
+          ruleId: "auto-onboard.memory-init",
+          // Self-call — host is whatever baseUrl resolves to. Trust the
+          // resolved public URL; the inner SSRF guard still rejects
+          // attempts to swing it at a private IP.
+          allowedHosts: [new URL(memoryUrl).hostname],
+        },
+      );
       onboardingSteps.push({
         step: "Initialize Agent Memory",
         status: "done",
@@ -227,12 +254,14 @@ const handler = createAgentRoute({
  * burning Resend credits and torching domain reputation.
  */
 export async function POST(req: Request): Promise<Response> {
-  const internalSecret = process.env.INTERNAL_WEBHOOK_SECRET || "";
+  // Wave 114 H3: `getInternalWebhookSecret()` returns null when the env var
+  // is unset or empty — so a missing secret can never match an empty
+  // presented header (even before the length-zero shortcircuit below).
+  const internalSecret = getInternalWebhookSecret();
   const presented = req.headers.get("x-sovereign-internal-secret") || "";
 
   const internalOk =
-    internalSecret.length > 0 &&
-    timingSafeStringEqual(presented, internalSecret);
+    internalSecret !== null && timingSafeStringEqual(presented, internalSecret);
 
   if (internalOk) {
     // Trusted server-to-server caller — skip Clerk and proceed.

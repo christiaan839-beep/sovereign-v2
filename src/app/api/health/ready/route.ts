@@ -29,6 +29,8 @@ import { NextResponse } from "next/server";
  * health endpoint and starve the entire app pool.
  */
 
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
@@ -143,10 +145,10 @@ async function probeRedis(): Promise<ProbeResult> {
   try {
     const res = await withTimeout(
       () =>
-        fetch(`${url}/ping`, {
+        outboundFetchAsResponse(`${url}/ping`, {
           headers: { Authorization: `Bearer ${token}` },
           signal: AbortSignal.timeout(PROBE_TIMEOUT_MS),
-        }),
+        }, { ruleId: "health.ready.route.1", allowedHosts: [new URL(url).hostname] }),
       PROBE_TIMEOUT_MS,
     );
     if (!res.ok) {

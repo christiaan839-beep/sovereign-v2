@@ -25,6 +25,8 @@ import { splitRevenue } from "@/lib/marketplace-core";
 import { auditLog } from "@/lib/audit-log";
 import { createLogger } from "@/lib/logger";
 
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 const log = createLogger("marketplace/run");
 
 export const dynamic = "force-dynamic";
@@ -90,7 +92,7 @@ export async function POST(
   const cookieHeader = req.headers.get("cookie") ?? "";
   const authHeader = req.headers.get("authorization") ?? "";
 
-  const res = await fetch(`${origin}/api/agents/${listing.slug}`, {
+  const res = await outboundFetchAsResponse(`${origin}/api/agents/${listing.slug}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -99,7 +101,7 @@ export async function POST(
     },
     body: JSON.stringify(input),
     signal: AbortSignal.timeout(120_000),
-  });
+  }, { ruleId: "marketplace.listings.[slug].run.route.1", allowedHosts: [new URL(origin).hostname] });
 
   if (!res.ok) {
     return NextResponse.json(

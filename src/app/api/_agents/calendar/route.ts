@@ -9,6 +9,36 @@ import { ANTI_SLOP_RULES } from "@/lib/content-engine";
 
 export const POST = createAgentRoute({
   name: "calendar",
+  // Wave 131 M3 batch 21: memory hooks. Per-niche content calendar
+  // continuity — prior calendars for the same niche+platforms+goal
+  // let the next plan dedupe topics and rotate pillars instead of
+  // repeating the same Monday-Wednesday-Friday cadence verbatim.
+  memory: {
+    search: {
+      query: (input) =>
+        `calendar ${input.niche ?? "?"} ${Array.isArray(input.platforms) ? (input.platforms as string[]).slice(0, 3).join(",") : ""} ${String(input.contentGoal ?? "").slice(0, 60)}`,
+      limit: 2,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as {
+          calendar?: Array<{ week?: number; days?: Array<{ topic?: string }> }>;
+          niche?: string;
+        };
+        if (!r.calendar?.length) return null;
+        const topics = r.calendar
+          .flatMap((w) => (w.days ?? []).map((d) => d.topic ?? "?"))
+          .filter((t) => t !== "?")
+          .slice(0, 5)
+          .join(" · ");
+        return `calendar[${r.niche ?? "?"}]: ${topics}`;
+      },
+      metadata: (input) => ({
+        kind: "calendar",
+        niche: typeof input.niche === "string" ? input.niche.slice(0, 80) : "",
+      }),
+    },
+  },
   handler: async ({ input }) => {
     const { niche, platforms, weeks, contentGoal } = input as {
       niche?: string;

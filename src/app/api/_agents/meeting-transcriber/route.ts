@@ -9,6 +9,42 @@ import { nimChat } from "@/lib/nvidia";
 
 export const POST = createAgentRoute({
   name: "meeting-transcriber",
+  // Wave 116 M3 batch 10: memory hooks. Per-attendee-set + meeting-type
+  // history compounds — last sprint's action items + recurring decisions
+  // inform "what's still open vs delivered" framing.
+  memory: {
+    search: {
+      query: (input) => {
+        const attendees = Array.isArray(input.attendees)
+          ? input.attendees.slice(0, 3).join(",")
+          : "";
+        return `meeting ${input.meeting_type ?? "general"} ${attendees}`.trim();
+      },
+      limit: 2,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as {
+          decisions?: string[];
+          action_items?: Array<{ owner?: string; task?: string }>;
+        };
+        const dec = (r.decisions ?? []).slice(0, 2).join(" · ");
+        const act = (r.action_items ?? [])
+          .slice(0, 2)
+          .map((a) => `${a.owner ?? "?"}:${a.task ?? ""}`)
+          .join(" · ");
+        if (!dec && !act) return null;
+        return `decisions=[${dec}] actions=[${act}]`;
+      },
+      metadata: (input) => ({
+        meetingType:
+          typeof input.meeting_type === "string"
+            ? input.meeting_type
+            : "general",
+        kind: "meeting-transcriber",
+      }),
+    },
+  },
   handler: async ({ input, email, userId }) => {
     const {
       transcript = "",

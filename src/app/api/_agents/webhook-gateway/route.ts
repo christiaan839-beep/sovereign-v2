@@ -60,11 +60,11 @@ async function _postHandler(request: Request) {
     const baseUrl = getBaseUrl();
 
     const startTime = Date.now();
-    const res = await fetch(`${baseUrl}${endpoint}`, {
+    const res = await outboundFetchAsResponse(`${baseUrl}${endpoint}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload || {}),
-    });
+    }, { ruleId: "agents.webhook-gateway.route.1", allowedHosts: [new URL(baseUrl).hostname] });
 
     const result = await res.json();
 
@@ -95,6 +95,8 @@ export async function GET() {
 
 
 // Factory wrapper for POST (adds safety pipeline)
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export const POST = createAgentRoute({
   name: "webhook-gateway",
   handler: async ({ input, email, userId, request }) => {

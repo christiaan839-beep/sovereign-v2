@@ -8,6 +8,8 @@ import { getPublicUrl } from "@/lib/base-url";
 const log = createLogger("page-builder-stream");
 
 // Vercel Serverless Function Config
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export const maxDuration = 60; // Max allowed for hobby/pro before timeout
 export const dynamic = "force-dynamic";
 
@@ -201,7 +203,7 @@ export async function POST(req: Request) {
           // The latter trusts the incoming Host/X-Forwarded-Host headers,
           // which an attacker can spoof to send this cookie-bearing request
           // to an attacker-controlled origin.
-          await fetch(`${getPublicUrl()}/api/generations`, {
+          await outboundFetchAsResponse(`${getPublicUrl()}/api/generations`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -217,7 +219,7 @@ export async function POST(req: Request) {
               ),
               output: cleanCode,
             }),
-          });
+          }, { ruleId: "agents.page-builder-stream.route.1", allowedHosts: [new URL(`${getPublicUrl()}/api/generations`).hostname] });
         } catch (dbErr) {
           log.error("DB save error", dbErr as Record<string, unknown>);
         }

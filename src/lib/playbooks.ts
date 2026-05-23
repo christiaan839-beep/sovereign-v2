@@ -27,6 +27,31 @@ export interface PlaybookStep {
   agent: string;
   params: Record<string, string>;
   reason: string;
+  /**
+   * Wave 115 M5 — DAG dependency fields (only honoured when the parent
+   * playbook has `dag: true`). All optional for backwards compat with
+   * the 35 existing playbooks.
+   *
+   * Step indices this step waits for. Omit to default to `[i - 1]`
+   * (the linear / for-loop behaviour). Use `[]` to make the step
+   * independent of all earlier steps (a true fan-out root).
+   */
+  dependsOn?: number[];
+  /**
+   * Conditional edge — skip this step unless the parent's output
+   * satisfies the predicate. Comparison is case-insensitive.
+   */
+  condition?: {
+    ifStep: number;
+    contains?: string;
+    equals?: string;
+  };
+  /**
+   * When true, a failed status on this step does NOT cause downstream
+   * steps to be skipped. Useful for "best effort" sub-tasks like
+   * Telegram notify or background memory store.
+   */
+  optional?: boolean;
 }
 
 export interface Playbook {
@@ -50,6 +75,12 @@ export interface Playbook {
     minScore?: number; // e.g., quality score > 0.7
     maxAiDetection?: number; // e.g., < 10% AI detection
   };
+  /**
+   * Wave 115 M5 — Opt into the DAG executor (parallel fan-out +
+   * conditional edges) instead of the legacy for-loop. When false or
+   * omitted, the playbook keeps strictly sequential semantics.
+   */
+  dag?: boolean;
 }
 
 // ─── Playbook Definitions ───────────────────────────────────────────────────
@@ -495,6 +526,11 @@ export const PLAYBOOKS: Playbook[] = [
     icon: "Swords",
     color: "red",
     category: "intelligence",
+    // Wave 116 — first playbook to opt into the wave-115 DAG executor.
+    // site-assassin + seo-dominator run in parallel (both only need the
+    // URL); smart-router merges their outputs. Cuts wall-clock time
+    // roughly in half vs the strict for-loop.
+    dag: true,
     fields: [
       {
         key: "url",
@@ -517,23 +553,31 @@ export const PLAYBOOKS: Playbook[] = [
         params: { url: "{{url}}" },
         reason:
           "Deep scrape and analyze competitor's website structure and messaging",
+        // Wave-116 DAG root — no dependencies; fires immediately in parallel
+        // with seo-dominator below.
+        dependsOn: [],
       },
       {
         agent: "seo-dominator",
-        params: { url: "{{url}}", context: "{{step_1}}" },
+        params: { url: "{{url}}", mode: "audit" },
         reason: "Analyze their SEO strategy, rankings, and keyword gaps",
+        // Parallel root — independent of site-assassin so both scrapers
+        // hit the network at the same time.
+        dependsOn: [],
       },
       {
         agent: "smart-router",
         params: {
           prompt:
-            "Based on this competitive analysis, create a battle card with 5 counter-positioning strategies. Competitor data: {{step_1}} SEO data: {{step_2}}",
+            "Based on this competitive analysis, create a battle card with 5 counter-positioning strategies. Competitor data: {{step_0}} SEO data: {{step_1}}",
           task_type: "analysis",
         },
         reason: "Synthesize findings into an actionable competitive strategy",
+        // Merge node — waits for both scrapers to finish before synthesising.
+        dependsOn: [0, 1],
       },
     ],
-    estimatedTime: "3-5 min",
+    estimatedTime: "2-3 min",
     agentCount: 3,
     guarantee:
       "5+ counter-positioning strategies with specific action items or re-run free",
@@ -801,6 +845,11 @@ export const PLAYBOOKS: Playbook[] = [
     icon: "Ghost",
     color: "neutral",
     category: "growth",
+    // Wave 116 — DAG conversion. `leads` + `competitor-scan` are
+    // independent root scrapers (the niche is the only shared input);
+    // `email-sequence` is the merge node. Parallel scrape cuts the
+    // 3-5 min runtime roughly in half.
+    dag: true,
     fields: [
       {
         key: "niche",
@@ -843,11 +892,13 @@ export const PLAYBOOKS: Playbook[] = [
         params: { niche: "{{niche}}", location: "{{location}}" },
         reason:
           "Find and qualify prospects matching the ideal customer profile",
+        dependsOn: [], // parallel root
       },
       {
         agent: "competitor-scan",
         params: { target: "{{niche}}" },
         reason: "Research the market to inform personalized messaging angles",
+        dependsOn: [], // parallel root
       },
       {
         agent: "email-sequence",
@@ -855,13 +906,14 @@ export const PLAYBOOKS: Playbook[] = [
           product: "{{product}}",
           audience: "{{niche}}",
           tone: "{{tone}}",
-          context: "Leads: {{step_1}}. Market context: {{step_2}}",
+          context: "Leads: {{step_0}}. Market context: {{step_1}}",
         },
         reason:
           "Draft a multi-touch outreach sequence with personalization hooks",
+        dependsOn: [0, 1], // merge — needs both scrapers
       },
     ],
-    estimatedTime: "3-5 min",
+    estimatedTime: "2-3 min",
     agentCount: 3,
   },
   {
@@ -1115,6 +1167,11 @@ export const PLAYBOOKS: Playbook[] = [
     icon: "Rocket",
     color: "emerald",
     category: "operations",
+    // Wave 118 — third playbook to use the wave-115 DAG executor.
+    // site-assassin and leads are independent (leads only needs the
+    // client name + a generic niche template, not the brand analysis).
+    // proposal-generator is the merge node that consumes both.
+    dag: true,
     fields: [
       {
         key: "client_url",
@@ -1143,28 +1200,29 @@ export const PLAYBOOKS: Playbook[] = [
         agent: "site-assassin",
         params: { url: "{{client_url}}" },
         reason: "Analyze client's website, brand positioning, and messaging",
+        dependsOn: [], // parallel root
       },
       {
         agent: "leads",
         params: {
           niche: "Prospects for {{client_name}}",
           location: "worldwide",
-          context:
-            "Based on this brand analysis, find 10 sample prospects that would be ideal customers for this client. Brand data: {{step_1}}",
         },
         reason: "Find 10 sample prospects for the client",
+        dependsOn: [], // parallel root — only needs client_name, no brand data
       },
       {
         agent: "proposal-generator",
         params: {
           prompt:
-            "Draft an initial proposal for {{client_name}} for {{service}}. Include findings from the website analysis and sample prospect list as proof of capability. Website analysis: {{step_1}} Sample prospects: {{step_2}}",
-          context: "{{step_1}}",
+            "Draft an initial proposal for {{client_name}} for {{service}}. Include findings from the website analysis and sample prospect list as proof of capability. Website analysis: {{step_0}} Sample prospects: {{step_1}}",
+          context: "{{step_0}}",
         },
         reason: "Draft an initial proposal based on findings",
+        dependsOn: [0, 1], // merge node — needs both
       },
     ],
-    estimatedTime: "3-5 min",
+    estimatedTime: "2-3 min",
     agentCount: 3,
   },
 

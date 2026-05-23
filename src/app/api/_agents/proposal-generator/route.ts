@@ -7,29 +7,89 @@ import { runSwarm } from "@/lib/swarm";
  * Uses the Swarm (Creator/Critic) for high output quality.
  */
 
-const schema = z.object({
-  client_name: z.string().max(200).optional(),
-  client: z.string().max(200).optional(),
-  project_type: z.string().max(200).optional(),
-  service: z.string().max(200).optional(),
-  product: z.string().max(200).optional(),
-  requirements: z.string().max(5000).optional(),
-  prompt: z.string().max(5000).optional(),
-  budget_range: z.string().max(200).optional(),
-  budget: z.string().max(200).optional(),
-  timeline: z.string().max(200).optional(),
-  context: z.string().max(5000).optional(),
-}).refine(
-  (d) => d.client_name || d.client || d.project_type || d.service || d.requirements || d.prompt,
-  { message: "Provide at least a client name, project type, or requirements" }
-);
+const schema = z
+  .object({
+    client_name: z.string().max(200).optional(),
+    client: z.string().max(200).optional(),
+    project_type: z.string().max(200).optional(),
+    service: z.string().max(200).optional(),
+    product: z.string().max(200).optional(),
+    requirements: z.string().max(5000).optional(),
+    prompt: z.string().max(5000).optional(),
+    budget_range: z.string().max(200).optional(),
+    budget: z.string().max(200).optional(),
+    timeline: z.string().max(200).optional(),
+    context: z.string().max(5000).optional(),
+  })
+  .refine(
+    (d) =>
+      d.client_name ||
+      d.client ||
+      d.project_type ||
+      d.service ||
+      d.requirements ||
+      d.prompt,
+    {
+      message: "Provide at least a client name, project type, or requirements",
+    },
+  );
 
 export const POST = createAgentRoute({
   name: "proposal-generator",
   schema,
+  // Wave 116 M3 batch 10: memory hooks. Per-client proposal compounding —
+  // last project's scope + accepted price-points + objections inform the
+  // next proposal so the framing stays consistent with prior wins.
+  memory: {
+    search: {
+      query: (input) => {
+        const client =
+          (typeof input.client_name === "string" && input.client_name) ||
+          (typeof input.client === "string" && input.client) ||
+          "";
+        const service =
+          (typeof input.service === "string" && input.service) ||
+          (typeof input.project_type === "string" && input.project_type) ||
+          "";
+        return `proposal client:${client} svc:${service}`.trim();
+      },
+      limit: 2,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as {
+          client_name?: string;
+          headline?: string;
+          quoted_price?: string;
+          scope_summary?: string;
+        };
+        if (!r.client_name && !r.headline) return null;
+        return [
+          r.client_name ? `client=${r.client_name}` : "",
+          r.headline ? `headline="${r.headline.slice(0, 80)}"` : "",
+          r.quoted_price ? `price=${r.quoted_price}` : "",
+          r.scope_summary ? `scope=${r.scope_summary.slice(0, 100)}` : "",
+        ]
+          .filter(Boolean)
+          .join(" · ");
+      },
+      metadata: (input) => ({
+        client:
+          typeof input.client_name === "string"
+            ? input.client_name
+            : typeof input.client === "string"
+              ? input.client
+              : "",
+        kind: "proposal-generator",
+      }),
+    },
+  },
   handler: async ({ input }) => {
     const client_name = (input.client_name || input.client || "") as string;
-    const project_type = (input.project_type || input.service || input.product || "") as string;
+    const project_type = (input.project_type ||
+      input.service ||
+      input.product ||
+      "") as string;
     const requirements = (input.requirements || input.prompt || "") as string;
     const budget_range = (input.budget_range || input.budget || "") as string;
     const timeline = (input.timeline || "") as string;
@@ -57,8 +117,10 @@ OUTPUT STRUCTURE:
 8. NEXT STEPS (clear CTA with scheduling link)
 
 Write in confident but warm professional tone. No jargon. No filler.`,
-      creatorSystem: "You are a proposal writer who has closed $50M+ in consulting deals. Your proposals are clear, visually structured, and always end with a strong call to action.",
-      criticSystem: "You are a procurement officer. Check: Is the pricing clear? Are deliverables specific enough? Is there vague language that could cause scope creep? If perfect, output FINAL_APPROVED.",
+      creatorSystem:
+        "You are a proposal writer who has closed $50M+ in consulting deals. Your proposals are clear, visually structured, and always end with a strong call to action.",
+      criticSystem:
+        "You are a procurement officer. Check: Is the pricing clear? Are deliverables specific enough? Is there vague language that could cause scope creep? If perfect, output FINAL_APPROVED.",
       maxRounds: 2,
     });
 

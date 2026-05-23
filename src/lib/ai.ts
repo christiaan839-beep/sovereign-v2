@@ -317,6 +317,9 @@ export async function smartAi(
     thinking?: boolean;
     maxTokens?: number;
     escalate?: boolean;
+    /** Wave-142: when set, smartAi consults the Thompson bandit
+     *  for (agentName, category) and prefers the sampled winner. */
+    agentName?: string;
   } = {},
 ): Promise<{
   answer: string;
@@ -385,25 +388,72 @@ Then give your final answer after your reasoning.`
   // to Gemini happens only when (a) NIM fails or (b) the `escalate`
   // flag is set AND the output looks too short — which already runs
   // a separate escalation pass via nimChat() at line 401 below.
-  let answer: string;
+  let answer: string = "";
   let modelUsed = "nemotron-ultra-253b-v1";
   let escalated = false;
+  let ossSucceeded = false;
 
-  try {
-    answer = await ai(fullPrompt, {
-      system: systemPrompt,
-      maxTokens,
-      model: "nim",
-    });
-  } catch {
-    // NIM unreachable / rate-limited — fall back to Gemini Flash.
-    answer = await ai(fullPrompt, {
-      system: systemPrompt,
-      maxTokens,
-      model: "gemini",
-    });
-    modelUsed = "gemini-2.5-flash";
+  // Wave-142: consult the Thompson bandit FIRST when agentName is
+  // pinned. The bandit's posterior selection lets the platform
+  // auto-route to the model that's been winning on this agent
+  // class. Falls through silently when no arms are registered.
+  let banditPick: { model: string } | null = null;
+  if (options.agentName) {
+    try {
+      const { pickArmAsync } = await import("@/lib/model-bandit");
+      banditPick = await pickArmAsync(options.agentName, category ?? "default");
+    } catch (err) {
+      log.warn("bandit pick failed; falling through", {
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
   }
+
+  // Wave-133: when a self-hosted OSS inference endpoint is configured
+  // (vLLM / NIM Microservices / Triton), route there FIRST. Marginal
+  // cost is ~$0 per call once the GPU is provisioned. Falls through to
+  // NIM-managed if the endpoint is unreachable or returns empty.
+  try {
+    const { isOssInferenceConfigured, smartOssChat } =
+      await import("@/lib/oss-inference");
+    if (isOssInferenceConfigured()) {
+      const ossMessages = [
+        ...(systemPrompt ? [{ role: "system", content: systemPrompt }] : []),
+        { role: "user", content: fullPrompt },
+      ];
+      const ossAnswer = await smartOssChat(ossMessages, { maxTokens });
+      if (ossAnswer && ossAnswer.length > 0) {
+        answer = ossAnswer;
+        // Wave-142: bandit pick wins over env default when present
+        modelUsed =
+          banditPick?.model ||
+          process.env.OSS_INFERENCE_DEFAULT_MODEL?.trim() ||
+          "oss-self-host";
+        ossSucceeded = true;
+      }
+    }
+  } catch (err) {
+    log.warn("oss-inference path failed; falling back to NIM", {
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
+
+  if (!ossSucceeded)
+    try {
+      answer = await ai(fullPrompt, {
+        system: systemPrompt,
+        maxTokens,
+        model: "nim",
+      });
+    } catch {
+      // NIM unreachable / rate-limited — fall back to Gemini Flash.
+      answer = await ai(fullPrompt, {
+        system: systemPrompt,
+        maxTokens,
+        model: "gemini",
+      });
+      modelUsed = "gemini-2.5-flash";
+    }
 
   // Phase 4: ESCALATE if output is too short or looks low quality
   if (escalate && answer.length < 100 && prompt.length > 50) {
@@ -945,10 +995,63 @@ export async function claudeToolUse(
   const client = new Anthropic({ apiKey });
 
   const MAX_ITERATIONS = 10;
+  // Wave 114 L4: cap the per-call tool-trace at 50 entries so a
+  // model that loops on the same tool can't grow this array
+  // without bound. Callers that surface the trace already slice
+  // it (response shape stays the same).
+  const MAX_TOOL_CALL_TRACE = 50;
+  // Wave 114 M7: tool_result content older than this many user-turns
+  // gets summarised to a one-line stub. Keeps the request token cost
+  // bounded (each iteration re-sends the full message history to
+  // Claude, so 10 iterations of 50KB tool results = 500KB sent on
+  // the final iteration without this cap).
+  const KEEP_FULL_TOOL_RESULT_TURNS = 2;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const messages: any[] = [{ role: "user", content: prompt }];
   const allToolCalls: Array<{ name: string; input: Record<string, unknown> }> =
     [];
+
+  /**
+   * Walk back through `messages` and replace tool_result content with a
+   * short summary for everything older than the last
+   * KEEP_FULL_TOOL_RESULT_TURNS user-turns. The `tool_use_id` stays
+   * intact (Anthropic requires the assistant's tool_use blocks to be
+   * mirrored by user tool_result blocks with matching IDs).
+   */
+  const summariseOldToolResults = (): void => {
+    // Count user-turns from the end. A user-turn here means a `role: "user"`
+    // message whose `content` is an array of tool_result blocks. The
+    // initial user prompt is also `role: "user"` but with a string content,
+    // so it's naturally excluded.
+    let toolResultTurnsSeen = 0;
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const msg = messages[i];
+      if (
+        msg?.role !== "user" ||
+        !Array.isArray(msg.content) ||
+        msg.content.length === 0 ||
+        msg.content[0]?.type !== "tool_result"
+      ) {
+        continue;
+      }
+      toolResultTurnsSeen += 1;
+      if (toolResultTurnsSeen <= KEEP_FULL_TOOL_RESULT_TURNS) continue;
+      // Summarise every tool_result block in this older turn.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      msg.content = msg.content.map((block: any) => {
+        if (block?.type !== "tool_result") return block;
+        const raw =
+          typeof block.content === "string"
+            ? block.content
+            : JSON.stringify(block.content ?? "");
+        if (raw.length <= 200) return block;
+        return {
+          ...block,
+          content: `[summarised — original ${raw.length} chars] ${raw.slice(0, 160)}…`,
+        };
+      });
+    }
+  };
 
   // Wave-110 kill-switch coverage. Hash the prompt once outside the
   // loop; checkpoint EACH iteration inside the loop. This means:
@@ -993,9 +1096,11 @@ export async function claudeToolUse(
         return { id: tu.id, name: tu.name, input: tu.input };
       });
 
-    allToolCalls.push(
-      ...iterToolCalls.map(({ name, input }) => ({ name, input })),
-    );
+    // Wave 114 L4: bounded push — never let the trace exceed the cap.
+    for (const { name, input } of iterToolCalls) {
+      if (allToolCalls.length >= MAX_TOOL_CALL_TRACE) break;
+      allToolCalls.push({ name, input });
+    }
 
     // If no tool calls or no executor, return immediately (legacy single-call behavior)
     if (
@@ -1030,6 +1135,9 @@ export async function claudeToolUse(
       });
     }
     messages.push({ role: "user", content: toolResults });
+    // Wave 114 M7: clamp older tool_result payloads to a one-line summary
+    // so the next iteration's send size stays bounded.
+    summariseOldToolResults();
   }
 
   // Max iterations reached — return whatever text we have

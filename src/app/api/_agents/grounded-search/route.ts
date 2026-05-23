@@ -30,12 +30,14 @@ interface GeminiSearchResult {
 }
 
 /** Run a single Gemini grounded search for one query */
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 async function geminiGroundedSearch(
   query: string,
   context: string,
   geminiKey: string,
 ): Promise<GeminiSearchResult> {
-  const res = await fetch(
+  const res = await outboundFetchAsResponse(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${geminiKey}`,
     {
       method: "POST",
@@ -71,6 +73,10 @@ async function geminiGroundedSearch(
         },
       }),
     },
+    {
+      ruleId: "agents.grounded-search.route.1",
+      allowedHosts: ["generativelanguage.googleapis.com"],
+    },
   );
 
   if (!res.ok) {
@@ -102,6 +108,33 @@ async function geminiGroundedSearch(
 export const POST = createAgentRoute({
   name: "grounded-search",
   requiredFields: ["query"],
+  // Wave 118 M3 batch 14: memory hooks. Per-query grounded-search history
+  // surfaces prior citation set + synthesis so the model can build on or
+  // contradict the previous answer instead of starting cold.
+  memory: {
+    search: {
+      query: (input) =>
+        `grounded-search ${String(input.query ?? "").slice(0, 120)}`,
+      limit: 2,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as {
+          answer?: string;
+          sources?: Array<{ url?: string; title?: string }>;
+        };
+        if (!r.answer) return null;
+        const head = r.answer.slice(0, 200).replace(/\s+/g, " ");
+        const src = (r.sources ?? [])
+          .slice(0, 2)
+          .map((s) => s.title?.slice(0, 40) ?? "")
+          .filter(Boolean)
+          .join(" | ");
+        return `${head}${src ? ` [${src}]` : ""}`;
+      },
+      metadata: () => ({ kind: "grounded-search" }),
+    },
+  },
   handler: async ({ input }) => {
     const query = input.query as string;
     const context = (input.context as string) || "";

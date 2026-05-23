@@ -126,6 +126,7 @@ export const AGENT_SLUGS: ReadonlyArray<string> = Object.freeze([
   "supply-chain",
   "support-bot",
   "swarm",
+  "swarm-dispatch",
   "telegram-router",
   "threat-hunt",
   "translate",

@@ -1,20 +1,21 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { persistAppend } from "@/lib/persist";
+import { outboundFetch } from "@/lib/outbound-fetch";
 
 /**
  * VOICE AI CLOSER — Twilio + NVIDIA Riva voice qualification agent.
- * 
+ *
  * Handles inbound calls, qualifies leads with AI-powered voice,
  * and routes hot leads to the Commander via Telegram.
- * 
+ *
  * GET: Returns voice AI status and capabilities
  * POST: Generates TwiML for Twilio voice webhook
  */
 
 export async function GET() {
   const twilioConfigured = !!process.env.TWILIO_ACCOUNT_SID;
-  
+
   return NextResponse.json({
     agent: "Voice AI Closer",
     status: twilioConfigured ? "ready" : "not_configured",
@@ -26,20 +27,40 @@ export async function GET() {
       "Call recording and transcription",
       "Multi-language support (11 languages)",
     ],
-    supported_languages: ["en", "af", "zu", "xh", "st", "tn", "ts", "ss", "ve", "nr", "fr"],
-    setup: twilioConfigured ? null : {
-      step1: "Get a Twilio account at twilio.com",
-      step2: "Purchase a South African phone number (+27)",
-      step3: "Set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE in env vars",
-      step4: "Point Twilio webhook to https://sovereignmatrix.agency/api/agents/voice-closer",
-    },
+    supported_languages: [
+      "en",
+      "af",
+      "zu",
+      "xh",
+      "st",
+      "tn",
+      "ts",
+      "ss",
+      "ve",
+      "nr",
+      "fr",
+    ],
+    setup: twilioConfigured
+      ? null
+      : {
+          step1: "Get a Twilio account at twilio.com",
+          step2: "Purchase a South African phone number (+27)",
+          step3:
+            "Set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE in env vars",
+          step4:
+            "Point Twilio webhook to https://sovereignmatrix.agency/api/agents/voice-closer",
+        },
   });
 }
 
 export async function POST(req: Request) {
   try {
     const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+    if (!userId)
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401 },
+      );
     const body = await req.text();
     const params = new URLSearchParams(body);
     const callerNumber = params.get("From") || "unknown";
@@ -68,34 +89,50 @@ export async function POST(req: Request) {
   </Gather>
   <Say voice="Polly.Amy">I didn't catch that. Transferring you to a human operator.</Say>
 </Response>`;
-      return new NextResponse(twiml, { headers: { "Content-Type": "text/xml" } });
+      return new NextResponse(twiml, {
+        headers: { "Content-Type": "text/xml" },
+      });
     }
 
     // AI-powered response based on speech input
     let responseText = "";
     const lowerSpeech = speechResult.toLowerCase();
 
-    if (lowerSpeech.includes("price") || lowerSpeech.includes("cost") || lowerSpeech.includes("how much")) {
-      responseText = "Our Sovereign Node starts at 9,997 Rand per month, which gives you a full autonomous AI marketing team. The Growth plan at 24,997 includes unlimited AI generations and priority processing. Would you like me to send you a detailed proposal?";
+    if (
+      lowerSpeech.includes("price") ||
+      lowerSpeech.includes("cost") ||
+      lowerSpeech.includes("how much")
+    ) {
+      responseText =
+        "Our Sovereign Node starts at 9,997 Rand per month, which gives you a full autonomous AI marketing team. The Growth plan at 24,997 includes unlimited AI generations and priority processing. Would you like me to send you a detailed proposal?";
     } else if (lowerSpeech.includes("demo") || lowerSpeech.includes("show")) {
-      responseText = "I'd love to arrange a live demonstration for you. Our team will walk you through the entire platform including the War Room, Visual Studio, and NemoClaw automation. Can I get your email address to schedule this?";
+      responseText =
+        "I'd love to arrange a live demonstration for you. Our team will walk you through the entire platform including the War Room, Visual Studio, and NemoClaw automation. Can I get your email address to schedule this?";
     } else if (lowerSpeech.includes("agent") || lowerSpeech.includes("what")) {
-      responseText = "The Sovereign Matrix runs 72 autonomous AI agents powered by NVIDIA. These agents handle everything from content creation to competitor analysis, outbound sales, voice AI, and visual design. All running 24/7 without human intervention. Would you like to know which agents are best for your industry?";
+      responseText =
+        "The Sovereign Matrix runs 72 autonomous AI agents powered by NVIDIA. These agents handle everything from content creation to competitor analysis, outbound sales, voice AI, and visual design. All running 24/7 without human intervention. Would you like to know which agents are best for your industry?";
     } else {
       responseText = `I understand you're asking about ${speechResult}. Let me connect you with our specialist who can give you detailed information. One moment please.`;
     }
 
     // Notify Telegram about the call
     if (process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID) {
-      fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chat_id: process.env.TELEGRAM_CHAT_ID,
-          text: `📞 Voice AI Call\nFrom: ${callerNumber}\nSaid: "${speechResult}"\nResponse: Qualification in progress`,
-          parse_mode: "HTML",
-        }),
-      }).catch(() => {});
+      outboundFetch(
+        `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chat_id: process.env.TELEGRAM_CHAT_ID,
+            text: `📞 Voice AI Call\nFrom: ${callerNumber}\nSaid: "${speechResult}"\nResponse: Qualification in progress`,
+            parse_mode: "HTML",
+          }),
+        },
+        {
+          ruleId: "voice-closer.telegram-notify",
+          allowedHosts: ["api.telegram.org"],
+        },
+      ).catch(() => {});
     }
 
     const twiml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -112,6 +149,8 @@ export async function POST(req: Request) {
 <Response>
   <Say voice="Polly.Amy">I apologize, but I'm experiencing a temporary issue. Please try again or visit sovereign matrix agency online.</Say>
 </Response>`;
-    return new NextResponse(errorTwiml, { headers: { "Content-Type": "text/xml" } });
+    return new NextResponse(errorTwiml, {
+      headers: { "Content-Type": "text/xml" },
+    });
   }
 }

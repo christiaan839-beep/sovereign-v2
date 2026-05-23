@@ -16,6 +16,8 @@ const log = createLogger("cron:playbook-scheduler");
  * already exists within the schedule window. If yes, we skip it.
  * This means the cron can fire multiple times safely.
  */
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 interface ScheduledEntry {
   playbookId: string;
   /** How often to run: hourly = 50min window, daily = 23h, weekly = 6.5 days */
@@ -85,7 +87,7 @@ export async function GET(req: Request) {
 
     // Fire the playbook asynchronously so the cron doesn't time out
     try {
-      const res = await fetch(`${baseUrl}/api/playbooks/run`, {
+      const res = await outboundFetchAsResponse(`${baseUrl}/api/playbooks/run`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -99,7 +101,7 @@ export async function GET(req: Request) {
           async: true,
         }),
         signal: AbortSignal.timeout(15_000),
-      });
+      }, { ruleId: "cron.playbook-scheduler.route.1", allowedHosts: [new URL(baseUrl).hostname] });
 
       if (res.ok) {
         fired++;

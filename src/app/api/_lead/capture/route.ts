@@ -21,6 +21,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { rateLimit } from "@/lib/rate-limit";
 import { createLogger } from "@/lib/logger";
+import { outboundFetch } from "@/lib/outbound-fetch";
 
 const log = createLogger("lead-capture");
 const limiter = rateLimit({ interval: 60, limit: 5 });
@@ -63,19 +64,30 @@ export async function POST(req: Request) {
 
   try {
     const apiBase = process.env.NEXT_PUBLIC_BASE_URL ?? "";
-    const sendUrl = apiBase ? `${apiBase}/api/_email/send` : "/api/_email/send";
-    await fetch(sendUrl, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        to: founderEmail,
-        subject,
-        html,
-        replyTo: body.email,
-      }),
-    }).catch(() => {
-      /* swallow — we still want to log + return ok */
-    });
+    // Only send when we have an absolute base — outboundFetch can't
+    // resolve a relative path. Logging still fires below.
+    if (apiBase) {
+      const sendUrl = `${apiBase}/api/_email/send`;
+      await outboundFetch(
+        sendUrl,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            to: founderEmail,
+            subject,
+            html,
+            replyTo: body.email,
+          }),
+        },
+        {
+          ruleId: "lead.capture.founder-email",
+          allowedHosts: [new URL(sendUrl).hostname],
+        },
+      ).catch(() => {
+        /* swallow — we still want to log + return ok */
+      });
+    }
   } catch {
     /* swallow */
   }

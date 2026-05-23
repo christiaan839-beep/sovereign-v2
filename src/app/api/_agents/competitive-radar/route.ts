@@ -1,6 +1,12 @@
 import { createAgentRoute } from "@/lib/agent-factory";
 import { nimChat } from "@/lib/nvidia";
 
+// Wave 114 L3: env-configurable User-Agent. Keeps the Mozilla-compat
+// shape so anti-bot heuristics on target sites stay happy.
+const USER_AGENT =
+  process.env.SOVEREIGN_USER_AGENT ||
+  "Mozilla/5.0 (compatible; SovereignBot/1.0)";
+
 /**
  * COMPETITIVE INTELLIGENCE RADAR
  *
@@ -56,7 +62,7 @@ export const POST = createAgentRoute({
     let siteData = "";
     try {
       const res = await fetch(url, {
-        headers: { "User-Agent": "Mozilla/5.0 (compatible; SovereignBot/1.0)" },
+        headers: { "User-Agent": USER_AGENT },
         signal: AbortSignal.timeout(8000),
       });
       const html = await res.text();

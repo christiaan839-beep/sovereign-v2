@@ -9,6 +9,36 @@ import { nimChat } from "@/lib/nvidia";
 
 export const POST = createAgentRoute({
   name: "voicechat",
+  // Wave 130 M3 batch 20: memory hooks. Per-conversation voicechat
+  // continuity — prior turn's response in the same context (support /
+  // sales / receptionist / appointment) lets next reply pick up the
+  // thread without restating "as I mentioned earlier".
+  memory: {
+    search: {
+      query: (input) =>
+        `voicechat ${input.context ?? "customer-support"} ${String(input.text ?? "").slice(0, 80)}`,
+      limit: 3,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as {
+          context?: string;
+          voice_style?: string;
+          response?: string;
+        };
+        if (!r.response) return null;
+        const head = r.response.slice(0, 200).replace(/\s+/g, " ");
+        return `voicechat[${r.context ?? "?"}/${r.voice_style ?? "?"}]: ${head}`;
+      },
+      metadata: (input) => ({
+        kind: "voicechat",
+        context:
+          typeof input.context === "string"
+            ? input.context
+            : "customer-support",
+      }),
+    },
+  },
   handler: async ({ input, email, userId }) => {
     const {
       text = "",

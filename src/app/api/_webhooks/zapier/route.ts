@@ -87,6 +87,8 @@ export async function GET(req: Request) {
 }
 
 // POST: Execute an action or register a webhook
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export async function POST(req: Request) {
   const limited = await limiter.check(req);
   if (limited) return limited;
@@ -139,7 +141,7 @@ export async function POST(req: Request) {
       // request Host header (SSRF-adjacent on misconfigured deploys).
       const baseUrl = getPublicUrl();
 
-      const agentRes = await fetch(`${baseUrl}/api/agents/${agent}`, {
+      const agentRes = await outboundFetchAsResponse(`${baseUrl}/api/agents/${agent}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -147,7 +149,7 @@ export async function POST(req: Request) {
         },
         body: JSON.stringify({ ...params, confirmed: true }),
         signal: AbortSignal.timeout(45000),
-      });
+      }, { ruleId: "webhooks.zapier.route.1", allowedHosts: [new URL(baseUrl).hostname] });
 
       const data = await agentRes.json();
       return NextResponse.json(data, { status: agentRes.status });
@@ -159,7 +161,7 @@ export async function POST(req: Request) {
       // request Host header (SSRF-adjacent on misconfigured deploys).
       const baseUrl = getPublicUrl();
 
-      const coordRes = await fetch(`${baseUrl}/api/agents/coordinator`, {
+      const coordRes = await outboundFetchAsResponse(`${baseUrl}/api/agents/coordinator`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -172,7 +174,7 @@ export async function POST(req: Request) {
           confirmed: true,
         }),
         signal: AbortSignal.timeout(120000),
-      });
+      }, { ruleId: "webhooks.zapier.route.2", allowedHosts: [new URL(baseUrl).hostname] });
 
       const data = await coordRes.json();
       return NextResponse.json(data, { status: coordRes.status });

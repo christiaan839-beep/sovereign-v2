@@ -14,20 +14,49 @@ import { getNimKey } from "@/lib/nvidia";
  * Output: { images: [{ base64, mimeType }] }
  */
 
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export const POST = createAgentRoute({
   name: "imagen",
   requiredFields: ["prompt"],
+  // Wave 127 M3 batch 17: per-aspect-ratio prompt history. Past
+  // generations surface which prompts produced the desired
+  // composition for portrait vs landscape vs square outputs.
+  memory: {
+    search: {
+      query: (input) =>
+        `imagen ${input.aspectRatio ?? "1:1"} ${String(input.prompt ?? "").slice(0, 120)}`,
+      limit: 2,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as {
+          prompt?: string;
+          aspectRatio?: string;
+          images?: Array<unknown>;
+        };
+        if (!r.prompt) return null;
+        return `[${r.aspectRatio ?? "1:1"}] ${(r.prompt ?? "").slice(0, 220).replace(/\s+/g, " ")} (${r.images?.length ?? 0} img)`;
+      },
+      metadata: (input) => ({
+        aspectRatio:
+          typeof input.aspectRatio === "string" ? input.aspectRatio : "1:1",
+        kind: "imagen",
+      }),
+    },
+  },
   handler: async ({ input }) => {
     const prompt = input.prompt as string;
     const aspectRatio = (input.aspectRatio as string) || "1:1";
     const numberOfImages = Math.min((input.numberOfImages as number) || 1, 4);
 
-    const geminiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY;
+    const geminiKey =
+      process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY;
 
     // --- Strategy 1: Google Imagen 4 ---
     if (geminiKey) {
       try {
-        const res = await fetch(
+        const res = await outboundFetchAsResponse(
           `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${geminiKey}`,
           {
             method: "POST",
@@ -40,7 +69,11 @@ export const POST = createAgentRoute({
                 personGeneration: "allow_adult",
               },
             }),
-          }
+          },
+          {
+            ruleId: "agents.imagen.route.1",
+            allowedHosts: ["generativelanguage.googleapis.com"],
+          },
         );
 
         if (res.ok) {
@@ -49,7 +82,7 @@ export const POST = createAgentRoute({
             (pred: { bytesBase64Encoded: string; mimeType?: string }) => ({
               base64: pred.bytesBase64Encoded,
               mimeType: pred.mimeType || "image/png",
-            })
+            }),
           );
 
           if (images.length > 0) {
@@ -75,7 +108,10 @@ export const POST = createAgentRoute({
     try {
       const nimKey = await getNimKey();
       if (!nimKey) {
-        return { error: "No image generation backend available. Set GEMINI_API_KEY for Imagen 4 or NVIDIA_NIM_API_KEY for FLUX.1." };
+        return {
+          error:
+            "No image generation backend available. Set GEMINI_API_KEY for Imagen 4 or NVIDIA_NIM_API_KEY for FLUX.1.",
+        };
       }
 
       // Map aspect ratios to pixel dimensions for FLUX
@@ -88,22 +124,29 @@ export const POST = createAgentRoute({
       };
       const dims = dimensionMap[aspectRatio] || { width: 1024, height: 1024 };
 
-      const nimRes = await fetch("https://integrate.api.nvidia.com/v1/images/generations", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${nimKey}`,
+      const nimRes = await outboundFetchAsResponse(
+        "https://integrate.api.nvidia.com/v1/images/generations",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${nimKey}`,
+          },
+          body: JSON.stringify({
+            model: "black-forest-labs/flux1-schnell",
+            prompt: `${prompt}, ultra high quality, professional photography, 8k resolution, sharp focus`,
+            negative_prompt: "blurry, low quality, pixelated, watermark, text",
+            width: dims.width,
+            height: dims.height,
+            steps: 28,
+            n: numberOfImages,
+          }),
         },
-        body: JSON.stringify({
-          model: "black-forest-labs/flux1-schnell",
-          prompt: `${prompt}, ultra high quality, professional photography, 8k resolution, sharp focus`,
-          negative_prompt: "blurry, low quality, pixelated, watermark, text",
-          width: dims.width,
-          height: dims.height,
-          steps: 28,
-          n: numberOfImages,
-        }),
-      });
+        {
+          ruleId: "agents.imagen.route.2",
+          allowedHosts: ["integrate.api.nvidia.com"],
+        },
+      );
 
       if (!nimRes.ok) {
         const errorText = await nimRes.text();
@@ -119,7 +162,7 @@ export const POST = createAgentRoute({
           base64: img.b64_json || null,
           url: img.url || null,
           mimeType: "image/png",
-        })
+        }),
       );
 
       return {

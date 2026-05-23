@@ -26,6 +26,39 @@ interface OrchestratorStep {
 export const POST = createAgentRoute({
   name: "orchestrator",
   requiredFields: ["target"],
+  // Wave 125 M3 batch 16: per-target+chain orchestration history.
+  // Past audit/blitz/intel runs on the same target surface which
+  // sub-agent sequence executed cleanly vs which sub-step failed —
+  // bias the next orchestration toward proven chains.
+  memory: {
+    search: {
+      query: (input) =>
+        `orchestrator ${input.chain_type ?? "?"} target:${input.target ?? ""}`,
+      limit: 2,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as {
+          target?: string;
+          chain_type?: string;
+          chain?: Array<{ agent?: string; status?: string }>;
+          verdict?: string;
+        };
+        if (!r.chain?.length) return null;
+        const seq = r.chain
+          .slice(0, 6)
+          .map((c) => `${c.agent ?? "?"}${c.status === "failed" ? "✗" : ""}`)
+          .join(" → ");
+        return `[${r.chain_type ?? "?"}] ${r.target ?? ""}: ${seq}${r.verdict ? ` (${r.verdict})` : ""}`;
+      },
+      metadata: (input) => ({
+        target: typeof input.target === "string" ? input.target : "",
+        chain_type:
+          typeof input.chain_type === "string" ? input.chain_type : "",
+        kind: "orchestrator",
+      }),
+    },
+  },
   handler: async ({ input }) => {
     const {
       target,

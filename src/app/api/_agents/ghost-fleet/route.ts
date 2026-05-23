@@ -1,19 +1,49 @@
 import { createAgentRoute } from "@/lib/agent-factory";
 import { NextResponse } from "next/server";
 
+import { outboundFetchAsResponse } from "@/lib/outbound-fetch";
+
 export const POST = createAgentRoute({
   name: "ghost-fleet",
+  // Wave 118 M3 batch 14: memory hooks. Per-competitor ghost-fleet
+  // history — past attack-surface analyses on the same competitor
+  // surface what's still exposed vs what they patched.
+  memory: {
+    search: {
+      query: (input) => `ghost-fleet competitor:${input.competitorName ?? ""}`,
+      limit: 2,
+    },
+    store: {
+      extract: (result) => {
+        const r = result as {
+          competitorName?: string;
+          weaknesses?: Array<{ vector?: string; severity?: string }>;
+          score?: number;
+        };
+        if (!r.competitorName) return null;
+        const top = (r.weaknesses ?? [])
+          .slice(0, 3)
+          .map((w) => `[${w.severity ?? "?"}] ${w.vector ?? ""}`)
+          .join(" · ");
+        return `${r.competitorName}: score=${r.score ?? "?"} weak=[${top}]`;
+      },
+      metadata: (input) => ({
+        competitor:
+          typeof input.competitorName === "string" ? input.competitorName : "",
+        kind: "ghost-fleet",
+      }),
+    },
+  },
   handler: async ({ input, email, userId }) => {
-
     const { competitorName } = input as Record<string, unknown>;
 
     if (!competitorName) {
-      return ({ error: "Missing competitor target." });
+      return { error: "Missing competitor target." };
     }
 
     const nimKey = process.env.NVIDIA_NIM_API_KEY;
     if (!nimKey) {
-      return ({ error: "NVIDIA_NIM_API_KEY is not configured." });
+      return { error: "NVIDIA_NIM_API_KEY is not configured." };
     }
 
     // Phase 1: Simulate/Execute Tavily Search for Complaints
@@ -41,20 +71,27 @@ Respond ONLY in strict JSON format:
   "draftMessage": "The 3 sentence message..."
 }`;
 
-    const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${nimKey}`,
+    const res = await outboundFetchAsResponse(
+      "https://integrate.api.nvidia.com/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${nimKey}`,
+        },
+        body: JSON.stringify({
+          model: "nvidia/nemotron-4-340b-instruct",
+          messages: [{ role: "user", content: prompt }],
+          temperature: 0.7,
+          max_tokens: 800,
+          response_format: { type: "json_object" },
+        }),
       },
-      body: JSON.stringify({
-        model: "nvidia/nemotron-4-340b-instruct",
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.7,
-        max_tokens: 800,
-        response_format: { type: "json_object" }
-      }),
-    });
+      {
+        ruleId: "agents.ghost-fleet.route.1",
+        allowedHosts: ["integrate.api.nvidia.com"],
+      },
+    );
 
     if (!res.ok) {
       throw new Error(`NIM API error: ${res.status}`);
@@ -63,21 +100,18 @@ Respond ONLY in strict JSON format:
     const data = await res.json();
     let resultJson;
     try {
-        resultJson = JSON.parse(data.choices[0].message.content);
+      resultJson = JSON.parse(data.choices[0].message.content);
     } catch {
-        // Fallback if the model failed to return pure JSON
-        const rawContent = data.choices[0].message.content;
-        const match = rawContent.match(/\{[\s\S]*\}/);
-        if (match) {
-            resultJson = JSON.parse(match[0]);
-        } else {
-            throw new Error("Failed to parse AI JSON response.");
-        }
+      // Fallback if the model failed to return pure JSON
+      const rawContent = data.choices[0].message.content;
+      const match = rawContent.match(/\{[\s\S]*\}/);
+      if (match) {
+        resultJson = JSON.parse(match[0]);
+      } else {
+        throw new Error("Failed to parse AI JSON response.");
+      }
     }
 
     return NextResponse.json(resultJson);
-
-  
   },
 });
-

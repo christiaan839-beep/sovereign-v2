@@ -3,20 +3,24 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { persistAppend, persistRead } from "@/lib/persist";
 import { ai } from "@/lib/ai";
+import { outboundFetch } from "@/lib/outbound-fetch";
 
 /**
  * WEEKLY PDF REPORT GENERATOR — Auto-generates performance reports.
- * 
+ *
  * Compiles agent activity, conversion metrics, and recommendations
  * into a branded PDF report. Sends via Resend every Monday.
- * 
+ *
  * GET: Returns latest report summary
  * POST: Generates and sends a new report
  */
 
 export async function GET() {
   const reports = persistRead("weekly-reports", []);
-  const latest = Array.isArray(reports) && reports.length > 0 ? reports[reports.length - 1] : null;
+  const latest =
+    Array.isArray(reports) && reports.length > 0
+      ? reports[reports.length - 1]
+      : null;
 
   return NextResponse.json({
     agent: "Weekly Report Generator",
@@ -39,9 +43,16 @@ export async function GET() {
 async function _postHandler(request: Request) {
   try {
     const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    const { clientEmail, clientName, period } = await request.json().catch(() => ({}));
-    const reportPeriod = period || `${new Date().toLocaleDateString("en-ZA")} Weekly Report`;
+    if (!userId)
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401 },
+      );
+    const { clientEmail, clientName, period } = await request
+      .json()
+      .catch(() => ({}));
+    const reportPeriod =
+      period || `${new Date().toLocaleDateString("en-ZA")} Weekly Report`;
 
     // Pull real metrics from persistence layer
     const generations = persistRead("generations", []);
@@ -74,12 +85,17 @@ Based on these metrics, provide:
 Return as JSON with keys: executive_summary (string), top_agents (array of {agent, actions, output}), recommendations (array of strings).
 Return ONLY valid JSON, no markdown fences.`,
       {
-        system: "You are a marketing analytics expert who writes concise, data-driven executive reports. Always return valid JSON.",
+        system:
+          "You are a marketing analytics expert who writes concise, data-driven executive reports. Always return valid JSON.",
         maxTokens: 1000,
-      }
+      },
     );
 
-    let aiData: { executive_summary?: string; top_agents?: Array<{ agent: string; actions: number; output: string }>; recommendations?: string[] } = {};
+    let aiData: {
+      executive_summary?: string;
+      top_agents?: Array<{ agent: string; actions: number; output: string }>;
+      recommendations?: string[];
+    } = {};
     try {
       aiData = JSON.parse(aiSummary);
     } catch {
@@ -98,15 +114,40 @@ Return ONLY valid JSON, no markdown fences.`,
           contentPiecesGenerated: genCount,
           leadsGenerated: leadCount,
           competitorAuditsRun: auditCount,
-          estimatedROI: agentActionCount > 0 ? `${Math.round((agentActionCount / Math.max(genCount, 1)) * 100)}%` : "N/A — no data yet",
-          narrative: aiData.executive_summary || "Report generated with available metrics.",
+          estimatedROI:
+            agentActionCount > 0
+              ? `${Math.round((agentActionCount / Math.max(genCount, 1)) * 100)}%`
+              : "N/A — no data yet",
+          narrative:
+            aiData.executive_summary ||
+            "Report generated with available metrics.",
         },
         top_performing_agents: aiData.top_agents || [
-          { agent: "Kilo-Writer", actions: 147, output: "42 articles, 18 social posts" },
-          { agent: "Ghost Fleet", actions: 89, output: "234 outbound emails, 12% reply rate" },
-          { agent: "War Room", actions: 23, output: "8 competitor audits, 47 gaps found" },
-          { agent: "Visual Studio", actions: 56, output: "28 product mockups, 12 ad creatives" },
-          { agent: "NemoClaw", actions: 34, output: "156 pages scraped, 89 data points extracted" },
+          {
+            agent: "Kilo-Writer",
+            actions: 147,
+            output: "42 articles, 18 social posts",
+          },
+          {
+            agent: "Ghost Fleet",
+            actions: 89,
+            output: "234 outbound emails, 12% reply rate",
+          },
+          {
+            agent: "War Room",
+            actions: 23,
+            output: "8 competitor audits, 47 gaps found",
+          },
+          {
+            agent: "Visual Studio",
+            actions: 56,
+            output: "28 product mockups, 12 ad creatives",
+          },
+          {
+            agent: "NemoClaw",
+            actions: 34,
+            output: "156 pages scraped, 89 data points extracted",
+          },
         ],
         recommendations: aiData.recommendations || [
           "Increase Ghost Fleet outbound volume — reply rates above industry average",
@@ -119,19 +160,22 @@ Return ONLY valid JSON, no markdown fences.`,
 
     // Send via Resend if configured
     if (process.env.RESEND_API_KEY && clientEmail) {
-      const fromEmail = process.env.RESEND_FROM_EMAIL || "reports@sovereignmatrix.agency";
-      
-      await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${process.env.RESEND_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          from: fromEmail,
-          to: clientEmail,
-          subject: `📊 ${report.title}`,
-          html: `
+      const fromEmail =
+        process.env.RESEND_FROM_EMAIL || "reports@sovereignmatrix.agency";
+
+      await outboundFetch(
+        "https://api.resend.com/emails",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            from: fromEmail,
+            to: clientEmail,
+            subject: `📊 ${report.title}`,
+            html: `
             <div style="font-family: 'Helvetica Neue', sans-serif; max-width: 600px; margin: 0 auto; background: #0a0a0a; color: #ffffff; padding: 40px; border-radius: 16px;">
               <h1 style="font-size: 24px; font-weight: 700; margin-bottom: 8px;">Sovereign Matrix</h1>
               <p style="color: #10B981; font-size: 12px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 32px;">Weekly Intelligence Report</p>
@@ -149,25 +193,38 @@ Return ONLY valid JSON, no markdown fences.`,
               </div>
 
               <h2 style="font-size: 18px; margin-bottom: 16px;">Top Performing Agents</h2>
-              ${report.sections.top_performing_agents.map(a => `
+              ${report.sections.top_performing_agents
+                .map(
+                  (a) => `
                 <div style="background: rgba(255,255,255,0.02); padding: 12px 16px; border-radius: 8px; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.04);">
                   <p style="font-weight: 600; margin-bottom: 4px;">${a.agent}</p>
                   <p style="color: #a3a3a3; font-size: 13px;">${a.output}</p>
                 </div>
-              `).join("")}
+              `,
+                )
+                .join("")}
 
               <h2 style="font-size: 18px; margin-top: 32px; margin-bottom: 16px;">AI Recommendations</h2>
-              ${report.sections.recommendations.map(r => `
+              ${report.sections.recommendations
+                .map(
+                  (r) => `
                 <p style="color: #a3a3a3; font-size: 13px; margin-bottom: 8px;">→ ${r}</p>
-              `).join("")}
+              `,
+                )
+                .join("")}
 
               <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.06);">
                 <a href="https://sovereignmatrix.agency/dashboard" style="display: inline-block; background: #ffffff; color: #000000; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">View Full Dashboard →</a>
               </div>
             </div>
           `,
-        }),
-      });
+          }),
+        },
+        {
+          ruleId: "weekly-report.resend",
+          allowedHosts: ["api.resend.com"],
+        },
+      );
     }
 
     // Persist the report
@@ -175,10 +232,12 @@ Return ONLY valid JSON, no markdown fences.`,
 
     return NextResponse.json({ success: true, report });
   } catch {
-    return NextResponse.json({ error: "Report generation failed" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Report generation failed" },
+      { status: 500 },
+    );
   }
 }
-
 
 // Factory wrapper for POST (adds safety pipeline)
 export const POST = createAgentRoute({

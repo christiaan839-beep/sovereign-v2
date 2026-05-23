@@ -65,6 +65,22 @@ vi.mock("@/lib/agent-factory", () => ({
   // exported helpers from the route module.
   createAgentRoute: (config: unknown) => config,
 }));
+vi.mock("@/lib/run-code", () => ({
+  runCode: (code: string) => {
+    if (code === "throw new Error('boom')") {
+      throw new Error("boom");
+    }
+    if (code === "2 + 2") {
+      return { success: true, result: 4, stdout: "", durationMs: 1 };
+    }
+    return { success: true, result: undefined, stdout: "", durationMs: 1 };
+  },
+  RUN_CODE_TOOL_DEF: {
+    name: "run_code",
+    description: "test",
+    input_schema: { type: "object", properties: {}, required: [] },
+  },
+}));
 
 import {
   buildToolExecutor,
@@ -377,5 +393,27 @@ describe("buildToolExecutor — trace bookkeeping", () => {
     const exec = buildToolExecutor(ctx);
     await exec("web_research", { query: "x" });
     expect(ctx.trace[0].output.length).toBeLessThanOrEqual(400);
+  });
+});
+
+describe("buildToolExecutor — run_code (Wave 136)", () => {
+  it("returns JSON-encoded result on success", async () => {
+    const exec = buildToolExecutor(freshCtx());
+    const out = await exec("run_code", { code: "2 + 2" });
+    const parsed = JSON.parse(out);
+    expect(parsed.success).toBe(true);
+    expect(parsed.result).toBe(4);
+  });
+
+  it("returns ERROR sentinel when code is missing", async () => {
+    const exec = buildToolExecutor(freshCtx());
+    const out = await exec("run_code", {});
+    expect(out).toMatch(/^ERROR/);
+  });
+
+  it("captures runCode throws without aborting the loop", async () => {
+    const exec = buildToolExecutor(freshCtx());
+    const out = await exec("run_code", { code: "throw new Error('boom')" });
+    expect(out).toMatch(/run_code threw/);
   });
 });
