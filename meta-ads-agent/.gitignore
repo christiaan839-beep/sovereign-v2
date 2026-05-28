@@ -1,0 +1,11 @@
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+
+# Runtime outputs (regenerated each run)
+pending_ad_payload.json
+agent_brain/historical_performance.csv
+config/agent_config.json

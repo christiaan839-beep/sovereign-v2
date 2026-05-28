@@ -1,0 +1,59 @@
+{
+  "account": {
+    "ad_account_id": "act_REPLACE_ME",
+    "page_id": "REPLACE_ME"
+  },
+  "persona": "REPLACE_ME - e.g., CFOs of mid-market manufacturing companies facing supply-chain overhead",
+  "value_proposition": "REPLACE_ME - your unique mechanism / product differentiator",
+  "tone": "Scientific, precise, authoritative, completely void of marketing fluff.",
+  "economics": {
+    "target_cpa": 45.0,
+    "currency": "USD"
+  },
+  "diagnostics": {
+    "lookback_days": 7,
+    "frequency_fatigue_threshold": 2.3,
+    "ctr_decline_pct_threshold": 15.0,
+    "budget_bleed_cpa_multiple": 1.5,
+    "fragmentation_adsets_per_campaign": 4
+  },
+  "creative": {
+    "variations_per_fatigued_ad": 3,
+    "link_url": "https://REPLACE_ME.example.com",
+    "max_synthesis_retries": 3
+  },
+  "anti_slop_banned_phrases": [
+    "unlock your potential",
+    "revolutionize",
+    "in today's digital age",
+    "look no further",
+    "game-changer",
+    "game changer",
+    "delve",
+    "supercharge",
+    "tap into",
+    "elevate",
+    "seamless",
+    "cutting-edge",
+    "leverage synergies",
+    "unleash",
+    "transform your",
+    "take it to the next level",
+    "best-in-class"
+  ],
+  "schedule": {
+    "cadence_days": 3,
+    "note": "Meta's Andromeda model exhausts audiences ~3x faster than before; fatigue now surfaces in 5-7 days. Read every 2-3 days, act weekly. Prefer system cron or a real scheduler over the built-in --loop."
+  },
+  "mcp": {
+    "server": "pipeboard-co/meta-ads-mcp",
+    "endpoint": "https://meta-ads.mcp.pipeboard.co/",
+    "tool_prefix": "mcp_meta_ads_",
+    "transport": "streamable_http"
+  },
+  "paths": {
+    "constraints_file": "meta_api_constraints.json",
+    "pending_payload_file": "pending_ad_payload.json",
+    "brain_csv": "agent_brain/historical_performance.csv"
+  }
+}

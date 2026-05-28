@@ -1,0 +1,2 @@
+# Persistent agent memory lives here. historical_performance.csv accumulates at runtime
+# and is gitignored. This .gitkeep preserves the directory in version control.
