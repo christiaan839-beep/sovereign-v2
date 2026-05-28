@@ -1,0 +1,528 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>DigitlSky — Marketing that performs. Concept redesign.</title>
+<meta name="description" content="Full-service digital marketing built on strategy, creative and results. Concept homepage redesign for DigitlSky — designed and built with Claude Code." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+<style>
+  /* ─────────────────────────────────────────────────────────────
+     DigitlSky — concept homepage. Single-file, no build, no CDN,
+     works offline. Designed + built with Claude Code.
+     Theme: "dawn over the digital horizon" — deep night indigo
+     base, dawn-gradient accent (amber→coral→indigo→cyan). Ties to
+     the affiliated uxconstellation (celestial) brand.
+     ───────────────────────────────────────────────────────────── */
+
+  :root {
+    --night: #070a14;
+    --night-2: #0b1020;
+    --surface: #0e1426;
+    --surface-2: #131b32;
+    --ink: #f4f6ff;
+    --muted: #9aa3c0;
+    --muted-2: #6b7290;
+    --line: rgba(255, 255, 255, 0.09);
+    --line-strong: rgba(255, 255, 255, 0.16);
+    --amber: #ff9a3d;
+    --coral: #ff5c7c;
+    --indigo: #7c8cff;
+    --cyan: #34e0ff;
+    --grad: linear-gradient(100deg, #ff9a3d 0%, #ff5c7c 34%, #7c8cff 68%, #34e0ff 100%);
+    --grad-soft: linear-gradient(100deg, rgba(255,154,61,.16), rgba(255,92,124,.16) 40%, rgba(124,140,255,.16) 70%, rgba(52,224,255,.16));
+    --radius: 18px;
+    --maxw: 1180px;
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+  body {
+    background: var(--night);
+    color: var(--ink);
+    font-family: "Inter", system-ui, -apple-system, sans-serif;
+    line-height: 1.6;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  ::selection { background: rgba(255, 92, 124, 0.3); color: #fff; }
+  a { color: inherit; text-decoration: none; }
+  img { max-width: 100%; display: block; }
+
+  .wrap { width: 100%; max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
+  .display { font-family: "Sora", system-ui, sans-serif; font-weight: 800; letter-spacing: -0.03em; line-height: 1.02; }
+  .serif { font-family: "Instrument Serif", Georgia, serif; font-weight: 400; }
+  .mono-eyebrow {
+    font-family: "Sora", monospace; font-size: 11px; font-weight: 600;
+    letter-spacing: 0.28em; text-transform: uppercase; color: var(--muted);
+  }
+  .grad-text {
+    background: var(--grad); -webkit-background-clip: text; background-clip: text;
+    color: transparent;
+  }
+
+  /* ── Background field ── */
+  .field { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+  .field .glow {
+    position: absolute; border-radius: 50%; filter: blur(120px); opacity: 0.5;
+  }
+  .field .g1 { top: -10%; left: -5%; width: 50vw; height: 50vw; background: radial-gradient(circle, rgba(255,92,124,.22), transparent 65%); }
+  .field .g2 { top: 20%; right: -10%; width: 45vw; height: 45vw; background: radial-gradient(circle, rgba(124,140,255,.20), transparent 65%); }
+  .field .g3 { bottom: -15%; left: 30%; width: 55vw; height: 55vw; background: radial-gradient(circle, rgba(52,224,255,.12), transparent 65%); }
+  .stars { position: absolute; inset: 0; background-image:
+      radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,.7), transparent),
+      radial-gradient(1px 1px at 60% 70%, rgba(255,255,255,.5), transparent),
+      radial-gradient(1px 1px at 80% 20%, rgba(255,255,255,.6), transparent),
+      radial-gradient(1px 1px at 35% 80%, rgba(255,255,255,.4), transparent),
+      radial-gradient(1.5px 1.5px at 50% 45%, rgba(255,255,255,.5), transparent),
+      radial-gradient(1px 1px at 90% 60%, rgba(255,255,255,.45), transparent),
+      radial-gradient(1px 1px at 12% 62%, rgba(255,255,255,.4), transparent);
+    opacity: 0.5; }
+  main, header, footer { position: relative; z-index: 1; }
+
+  /* ── Header ── */
+  header {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+    transition: background 0.4s var(--ease), border-color 0.4s var(--ease), backdrop-filter 0.4s;
+    border-bottom: 1px solid transparent;
+  }
+  header.scrolled {
+    background: rgba(7, 10, 20, 0.72); backdrop-filter: blur(18px) saturate(140%);
+    border-bottom: 1px solid var(--line);
+  }
+  .nav { display: flex; align-items: center; justify-content: space-between; height: 72px; }
+  .logo { display: flex; align-items: center; gap: 10px; font-family: "Sora"; font-weight: 700; font-size: 19px; letter-spacing: -0.02em; }
+  .logo .mark {
+    width: 28px; height: 28px; border-radius: 8px; background: var(--grad);
+    display: grid; place-items: center; box-shadow: 0 6px 20px -6px rgba(255,92,124,.7);
+  }
+  .logo .mark::after { content: ""; width: 11px; height: 11px; border-radius: 3px; background: var(--night); }
+  .nav-links { display: flex; align-items: center; gap: 30px; }
+  .nav-links a { font-size: 14px; color: var(--muted); transition: color 0.2s; }
+  .nav-links a:hover { color: var(--ink); }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px; font-family: "Sora";
+    font-weight: 600; font-size: 14px; padding: 11px 20px; border-radius: 999px;
+    cursor: pointer; border: 1px solid transparent; transition: transform 0.25s var(--ease), box-shadow 0.25s var(--ease), background 0.25s;
+    white-space: nowrap;
+  }
+  .btn-primary { background: var(--grad); color: #0a0a12; box-shadow: 0 10px 28px -10px rgba(255,92,124,.65); }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 16px 38px -10px rgba(255,92,124,.8); }
+  .btn-ghost { border-color: var(--line-strong); color: var(--ink); background: rgba(255,255,255,0.02); }
+  .btn-ghost:hover { border-color: var(--ink); transform: translateY(-2px); }
+  .btn .arrow { transition: transform 0.25s var(--ease); }
+  .btn:hover .arrow { transform: translateX(3px); }
+  .nav .menu-btn { display: none; background: none; border: 0; color: var(--ink); cursor: pointer; }
+
+  /* ── Hero ── */
+  .hero { padding: 168px 0 90px; }
+  .hero-eyebrow { display: inline-flex; align-items: center; gap: 10px; margin-bottom: 28px;
+    padding: 7px 14px; border: 1px solid var(--line); border-radius: 999px; background: rgba(255,255,255,0.02); }
+  .hero-eyebrow .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 10px var(--cyan); animation: pulse 2.4s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:.35;} }
+  h1.hero-title { font-size: clamp(2.8rem, 7.5vw, 6.2rem); margin-bottom: 26px; max-width: 16ch; }
+  .morph { display: inline-block; position: relative; }
+  .morph .word { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .hero-sub { font-size: clamp(1.05rem, 1.6vw, 1.3rem); color: var(--muted); max-width: 56ch; margin-bottom: 38px; line-height: 1.6; }
+  .hero-cta { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; margin-bottom: 40px; }
+  .hero-trust { font-size: 13px; color: var(--muted-2); display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+  .hero-trust b { color: var(--muted); font-weight: 600; }
+
+  /* ── Marquee ── */
+  .marquee-sec { padding: 22px 0 8px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: rgba(255,255,255,0.012); overflow: hidden; }
+  .marquee-label { text-align: center; margin-bottom: 18px; }
+  .marquee { display: flex; gap: 56px; align-items: center; width: max-content; animation: scroll 32s linear infinite; }
+  .marquee:hover { animation-play-state: paused; }
+  @keyframes scroll { to { transform: translateX(-50%); } }
+  .marquee .client { font-family: "Sora"; font-weight: 700; font-size: 22px; color: #aeb6d4; opacity: 0.62; letter-spacing: -0.01em; transition: opacity 0.3s, color 0.3s; white-space: nowrap; }
+  .marquee .client:hover { opacity: 1; color: #fff; }
+  .marquee-mask { mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
+
+  /* ── Section scaffolding ── */
+  section.block { padding: 96px 0; }
+  .sec-head { max-width: 640px; margin-bottom: 56px; }
+  .sec-head .mono-eyebrow { display: block; margin-bottom: 18px; }
+  .sec-head h2 { font-size: clamp(2rem, 4.4vw, 3.4rem); margin-bottom: 18px; }
+  .sec-head p { color: var(--muted); font-size: 1.05rem; }
+
+  /* ── Stats ── */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+  .stat { padding: 30px 26px; border: 1px solid var(--line); border-radius: var(--radius); background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(255,255,255,0.01)); }
+  .stat .num { font-family: "Sora"; font-weight: 800; font-size: clamp(2.4rem, 4vw, 3.2rem); letter-spacing: -0.03em; line-height: 1; margin-bottom: 8px; }
+  .stat .lbl { color: var(--muted); font-size: 14px; }
+
+  /* ── Services ── */
+  .grid-services { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .card {
+    position: relative; padding: 32px 28px; border: 1px solid var(--line); border-radius: var(--radius);
+    background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.012));
+    overflow: hidden; transition: transform 0.4s var(--ease), border-color 0.4s var(--ease);
+  }
+  .card::before {
+    content: ""; position: absolute; inset: 0; border-radius: var(--radius); padding: 1px;
+    background: var(--grad); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor; mask-composite: exclude; opacity: 0; transition: opacity 0.4s;
+  }
+  .card:hover { transform: translateY(-6px); }
+  .card:hover::before { opacity: 1; }
+  .card .ic { width: 46px; height: 46px; border-radius: 12px; background: var(--grad-soft); display: grid; place-items: center; margin-bottom: 20px; font-size: 22px; }
+  .card h3 { font-family: "Sora"; font-weight: 700; font-size: 1.25rem; margin-bottom: 10px; letter-spacing: -0.01em; }
+  .card p { color: var(--muted); font-size: 14.5px; }
+  .card .tag { position: absolute; top: 26px; right: 26px; font-family: "Sora"; font-size: 11px; color: var(--muted-2); font-weight: 600; }
+
+  /* ── Story ── */
+  .story { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
+  .story .lede { font-family: "Instrument Serif", Georgia, serif; font-size: clamp(1.7rem, 3vw, 2.6rem); line-height: 1.3; letter-spacing: -0.01em; }
+  .story .lede em { font-style: italic; }
+  .story-panel { border: 1px solid var(--line); border-radius: 22px; padding: 38px; background: linear-gradient(160deg, rgba(124,140,255,0.08), rgba(255,92,124,0.04)); }
+  .timeline { list-style: none; display: flex; flex-direction: column; gap: 22px; }
+  .timeline li { display: flex; gap: 18px; }
+  .timeline .yr { font-family: "Sora"; font-weight: 700; color: var(--cyan); font-size: 14px; min-width: 64px; padding-top: 2px; }
+  .timeline .txt { color: var(--muted); font-size: 15px; }
+  .timeline .txt b { color: var(--ink); font-weight: 600; }
+
+  /* ── Work ── */
+  .grid-work { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .work {
+    position: relative; aspect-ratio: 4/3; border-radius: var(--radius); overflow: hidden;
+    border: 1px solid var(--line); display: flex; flex-direction: column; justify-content: flex-end;
+    padding: 26px; transition: transform 0.4s var(--ease);
+  }
+  .work:hover { transform: translateY(-6px); }
+  .work .bg { position: absolute; inset: 0; z-index: 0; opacity: 0.9; transition: transform 0.6s var(--ease); }
+  .work:hover .bg { transform: scale(1.06); }
+  .work.w1 .bg { background: linear-gradient(150deg, #1a2342, #ff5c7c33); }
+  .work.w2 .bg { background: linear-gradient(150deg, #15203a, #7c8cff40); }
+  .work.w3 .bg { background: linear-gradient(150deg, #1c1830, #ff9a3d33); }
+  .work.w4 .bg { background: linear-gradient(150deg, #122036, #34e0ff2e); }
+  .work.w5 .bg { background: linear-gradient(150deg, #201a2e, #ff5c7c2e); }
+  .work.w6 .bg { background: linear-gradient(150deg, #16213c, #7c8cff33); }
+  .work .meta { position: relative; z-index: 1; }
+  .work .cat { font-family: "Sora"; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(255,255,255,0.6); margin-bottom: 6px; }
+  .work .name { font-family: "Sora"; font-weight: 700; font-size: 1.3rem; }
+
+  /* ── CTA ── */
+  .cta-block { position: relative; border-radius: 28px; padding: 80px 40px; text-align: center; overflow: hidden;
+    border: 1px solid var(--line-strong); background: radial-gradient(ellipse 70% 120% at 50% 0%, rgba(255,92,124,0.16), transparent 60%), var(--surface); }
+  .cta-block h2 { font-size: clamp(2.2rem, 5vw, 4rem); margin-bottom: 20px; max-width: 18ch; margin-inline: auto; }
+  .cta-block p { color: var(--muted); font-size: 1.1rem; max-width: 46ch; margin: 0 auto 36px; }
+
+  /* ── Footer ── */
+  footer { border-top: 1px solid var(--line); padding: 64px 0 40px; margin-top: 40px; }
+  .foot-grid { display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr; gap: 40px; margin-bottom: 56px; }
+  .foot-grid h4 { font-family: "Sora"; font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted-2); margin-bottom: 18px; }
+  .foot-grid ul { list-style: none; display: flex; flex-direction: column; gap: 11px; }
+  .foot-grid a { color: var(--muted); font-size: 14px; transition: color 0.2s; }
+  .foot-grid a:hover { color: var(--ink); }
+  .foot-blurb { color: var(--muted); font-size: 14.5px; max-width: 34ch; margin-top: 16px; }
+  .foot-base { display: flex; justify-content: space-between; align-items: center; padding-top: 28px; border-top: 1px solid var(--line); flex-wrap: wrap; gap: 16px; }
+  .foot-base p { color: var(--muted-2); font-size: 13px; }
+
+  /* ── Concept badge ── */
+  .concept-badge {
+    position: fixed; bottom: 18px; right: 18px; z-index: 60;
+    display: flex; align-items: center; gap: 9px; padding: 10px 15px; border-radius: 999px;
+    background: rgba(7,10,20,0.82); backdrop-filter: blur(12px); border: 1px solid var(--line-strong);
+    font-family: "Sora"; font-size: 12px; color: var(--muted); box-shadow: 0 10px 30px -8px rgba(0,0,0,.6);
+    transition: transform 0.3s var(--ease);
+  }
+  .concept-badge:hover { transform: translateY(-2px); }
+  .concept-badge .spark { width: 8px; height: 8px; border-radius: 2px; background: var(--grad); }
+  .concept-badge b { color: var(--ink); font-weight: 600; }
+
+  /* ── Reveal animation ── */
+  .reveal { opacity: 0; transform: translateY(26px); transition: opacity 0.8s var(--ease), transform 0.8s var(--ease); }
+  .reveal.in { opacity: 1; transform: none; }
+  .reveal.d1 { transition-delay: 0.08s; } .reveal.d2 { transition-delay: 0.16s; }
+  .reveal.d3 { transition-delay: 0.24s; } .reveal.d4 { transition-delay: 0.32s; }
+  .reveal.d5 { transition-delay: 0.40s; }
+
+  /* ── Responsive ── */
+  @media (max-width: 900px) {
+    .nav-links { display: none; }
+    .nav .menu-btn { display: block; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .grid-services, .grid-work { grid-template-columns: 1fr; }
+    .story { grid-template-columns: 1fr; gap: 36px; }
+    .foot-grid { grid-template-columns: 1fr 1fr; gap: 32px; }
+    .hero { padding: 130px 0 70px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { opacity: 1; transform: none; transition: none; }
+    .marquee { animation: none; }
+    .hero-eyebrow .dot { animation: none; }
+    html { scroll-behavior: auto; }
+  }
+</style>
+</head>
+<body>
+
+<div class="field" aria-hidden="true">
+  <div class="stars"></div>
+  <div class="glow g1"></div>
+  <div class="glow g2"></div>
+  <div class="glow g3"></div>
+</div>
+
+<header id="header">
+  <div class="wrap nav">
+    <a href="#top" class="logo"><span class="mark"></span> DigitlSky</a>
+    <nav class="nav-links">
+      <a href="#services">Services</a>
+      <a href="#work">Work</a>
+      <a href="#story">About</a>
+      <a href="#contact">Contact</a>
+    </nav>
+    <a href="#contact" class="btn btn-primary">Start a project <span class="arrow">→</span></a>
+    <button class="menu-btn" aria-label="Menu">☰</button>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="wrap">
+      <div class="hero-eyebrow reveal">
+        <span class="dot"></span>
+        <span class="mono-eyebrow">Full-service digital · Cape Town → worldwide</span>
+      </div>
+      <h1 class="hero-title display reveal d1">
+        We don't just run ads.<br />
+        We engineer <span class="morph"><span class="word" id="morphWord">growth</span></span>.
+      </h1>
+      <p class="hero-sub reveal d2">
+        From a one-person studio to a 30+ strong team trusted by 100+ brands across
+        South Africa, Europe and the US — we build the strategy, the creative and the
+        websites that turn attention into revenue.
+      </p>
+      <div class="hero-cta reveal d3">
+        <a href="#contact" class="btn btn-primary">Start a project <span class="arrow">→</span></a>
+        <a href="#work" class="btn btn-ghost">See our work</a>
+      </div>
+      <div class="hero-trust reveal d4">
+        <b>Trusted by</b>
+        <span>Sony Africa · Audi · Volkswagen · SPAR · FreshStop</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- CLIENT MARQUEE -->
+  <section class="marquee-sec">
+    <div class="wrap marquee-label">
+      <span class="mono-eyebrow">100+ brands have flown with us</span>
+    </div>
+    <div class="marquee-mask">
+      <div class="marquee" id="marquee">
+        <!-- duplicated in JS for seamless loop -->
+        <span class="client">Sony Africa</span>
+        <span class="client">Audi</span>
+        <span class="client">Volkswagen</span>
+        <span class="client">SPAR</span>
+        <span class="client">FreshStop</span>
+        <span class="client">Simply Sinks USA</span>
+        <span class="client">Cape Tiles</span>
+        <span class="client">Sundale Dairy</span>
+        <span class="client">Raubex Infra</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <section class="block">
+    <div class="wrap">
+      <div class="stats">
+        <div class="stat reveal">    <div class="num grad-text">100+</div><div class="lbl">Brands grown</div></div>
+        <div class="stat reveal d1"><div class="num grad-text">30+</div><div class="lbl">Specialists in-house</div></div>
+        <div class="stat reveal d2"><div class="num grad-text">3</div><div class="lbl">Continents served</div></div>
+        <div class="stat reveal d3"><div class="num grad-text">1</div><div class="lbl">Obsession — results</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SERVICES -->
+  <section class="block" id="services">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="mono-eyebrow">What we do</span>
+        <h2 class="display">One team for the whole funnel.</h2>
+        <p>Strategy, creative, media and build — under one roof, measured to the rand. No hand-offs, no finger-pointing, no vanity metrics.</p>
+      </div>
+      <div class="grid-services">
+        <div class="card reveal">
+          <div class="ic">📈</div><span class="tag">01</span>
+          <h3>Performance Marketing</h3>
+          <p>Meta, TikTok, Google and email built to a CPA you can defend in a board meeting — not a screenshot of impressions.</p>
+        </div>
+        <div class="card reveal d1">
+          <div class="ic">🧭</div><span class="tag">02</span>
+          <h3>Content Strategy</h3>
+          <p>A plan tied to business goals and buying intent, so every post, page and pixel earns its place in the journey.</p>
+        </div>
+        <div class="card reveal d2">
+          <div class="ic">🛰️</div><span class="tag">03</span>
+          <h3>Custom Websites</h3>
+          <p>Creativity, speed, SEO and conversion in one build — sites that scale with you and turn visitors into customers.</p>
+        </div>
+        <div class="card reveal">
+          <div class="ic">📺</div><span class="tag">04</span>
+          <h3>Digital Screen CMS</h3>
+          <p>A cost-effective content management system for in-store and out-of-home screens — update everywhere in one click.</p>
+        </div>
+        <div class="card reveal d1">
+          <div class="ic">🎥</div><span class="tag">05</span>
+          <h3>Photo & Videography</h3>
+          <p>Scroll-stopping creative shot in-house — the kind of frames that make a feed stop and a brand look inevitable.</p>
+        </div>
+        <div class="card reveal d2">
+          <div class="ic">🔍</div><span class="tag">06</span>
+          <h3>SEO & Organic Growth</h3>
+          <p>Rank, capture, convert. Compounding organic demand that keeps paying long after the ad budget switches off.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STORY -->
+  <section class="block" id="story">
+    <div class="wrap story">
+      <div class="reveal">
+        <span class="mono-eyebrow" style="display:block;margin-bottom:18px;">The DigitlSky story</span>
+        <p class="lede">Built on service, strategy and results — <em>from a one-man studio to a team trusted by the brands you grew up with.</em></p>
+      </div>
+      <div class="story-panel reveal d1">
+        <ul class="timeline">
+          <li><span class="yr">Day 1</span><span class="txt">One designer, one laptop, a refusal to ship work that doesn't move a number.</span></li>
+          <li><span class="yr">Growth</span><span class="txt"><b>A full-service team of 30+</b> — strategists, media buyers, designers, developers and a film crew.</span></li>
+          <li><span class="yr">Today</span><span class="txt"><b>100+ brands across 3 continents</b> — from Sony Africa and Audi to the corner store down the road.</span></li>
+          <li><span class="yr">Always</span><span class="txt">The same promise: <b>service, strategy, results</b> — in that order.</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- WORK -->
+  <section class="block" id="work">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="mono-eyebrow">Selected work</span>
+        <h2 class="display">Brands we've helped take off.</h2>
+        <p>A snapshot across automotive, retail, FMCG and infrastructure — global names and local heroes alike.</p>
+      </div>
+      <div class="grid-work">
+        <div class="work w1 reveal"><div class="bg"></div><div class="meta"><div class="cat">Automotive</div><div class="name">Audi</div></div></div>
+        <div class="work w2 reveal d1"><div class="bg"></div><div class="meta"><div class="cat">Automotive</div><div class="name">Volkswagen</div></div></div>
+        <div class="work w3 reveal d2"><div class="bg"></div><div class="meta"><div class="cat">Electronics</div><div class="name">Sony Africa</div></div></div>
+        <div class="work w4 reveal"><div class="bg"></div><div class="meta"><div class="cat">Retail · FMCG</div><div class="name">SPAR · FreshStop</div></div></div>
+        <div class="work w5 reveal d1"><div class="bg"></div><div class="meta"><div class="cat">E-commerce · USA</div><div class="name">Simply Sinks</div></div></div>
+        <div class="work w6 reveal d2"><div class="bg"></div><div class="meta"><div class="cat">Infrastructure</div><div class="name">Raubex Infra</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="block" id="contact">
+    <div class="wrap">
+      <div class="cta-block reveal">
+        <h2 class="display">Let's build the thing that grows your <span class="grad-text">numbers</span>.</h2>
+        <p>Tell us where you want to be in 12 months. We'll show you the strategy, the creative and the build to get there.</p>
+        <div class="hero-cta" style="justify-content:center;">
+          <a href="mailto:hello@digitlsky.com" class="btn btn-primary">Book a strategy call <span class="arrow">→</span></a>
+          <a href="#work" class="btn btn-ghost">See the work first</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <a href="#top" class="logo"><span class="mark"></span> DigitlSky</a>
+        <p class="foot-blurb">A full-service digital marketing agency built on service, strategy and results. Cape Town → worldwide.</p>
+      </div>
+      <div>
+        <h4>Services</h4>
+        <ul>
+          <li><a href="#services">Performance Marketing</a></li>
+          <li><a href="#services">Content Strategy</a></li>
+          <li><a href="#services">Custom Websites</a></li>
+          <li><a href="#services">Photo & Video</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Agency</h4>
+        <ul>
+          <li><a href="#story">About</a></li>
+          <li><a href="#work">Work</a></li>
+          <li><a href="#contact">Contact</a></li>
+          <li><a href="#contact">Careers</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Connect</h4>
+        <ul>
+          <li><a href="#">Instagram</a></li>
+          <li><a href="#">LinkedIn</a></li>
+          <li><a href="#">TikTok</a></li>
+          <li><a href="mailto:hello@digitlsky.com">hello@digitlsky.com</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-base">
+      <p>© <span id="yr"></span> DigitlSky — concept redesign. All client marks belong to their owners.</p>
+      <p>Designed &amp; built with Claude Code</p>
+    </div>
+  </div>
+</footer>
+
+<a class="concept-badge" href="#top" title="This is a concept redesign, not the live DigitlSky site">
+  <span class="spark"></span>
+  <span><b>Concept</b> · built with Claude Code in one session</span>
+</a>
+
+<script>
+  /* Header scroll state */
+  var header = document.getElementById('header');
+  var onScroll = function () { header.classList.toggle('scrolled', window.scrollY > 24); };
+  onScroll();
+  window.addEventListener('scroll', onScroll, { passive: true });
+
+  /* Morphing hero word */
+  var words = ['growth', 'demand', 'momentum', 'revenue', 'attention', 'results'];
+  var i = 0;
+  var el = document.getElementById('morphWord');
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (el && !reduce) {
+    setInterval(function () {
+      el.style.transition = 'opacity .3s, filter .3s, transform .3s';
+      el.style.opacity = '0'; el.style.filter = 'blur(8px)'; el.style.transform = 'translateY(8px)';
+      setTimeout(function () {
+        i = (i + 1) % words.length;
+        el.textContent = words[i];
+        el.style.opacity = '1'; el.style.filter = 'none'; el.style.transform = 'none';
+      }, 300);
+    }, 2200);
+  }
+
+  /* Seamless marquee — clone the row */
+  var mq = document.getElementById('marquee');
+  if (mq) { mq.innerHTML += mq.innerHTML; }
+
+  /* Reveal on scroll */
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, { threshold: 0.14, rootMargin: '0px 0px -40px 0px' });
+  document.querySelectorAll('.reveal').forEach(function (n) { io.observe(n); });
+
+  /* Year */
+  document.getElementById('yr').textContent = new Date().getFullYear();
+</script>
+</body>
+</html>
