@@ -55,13 +55,17 @@ async function ensureVectorTable(): Promise<boolean> {
     `);
 
     // Create index for fast similarity search
-    await db.execute(sql`
+    await db
+      .execute(
+        sql`
       CREATE INDEX IF NOT EXISTS agent_memories_embedding_idx
       ON agent_memories USING ivfflat (embedding vector_cosine_ops)
       WITH (lists = 100)
-    `).catch(() => {
-      // IVFFlat index needs some rows first — skip on empty table
-    });
+    `,
+      )
+      .catch(() => {
+        // IVFFlat index needs some rows first — skip on empty table
+      });
 
     // Create index for user lookups
     await db.execute(sql`
@@ -88,7 +92,7 @@ async function embedText(text: string): Promise<number[] | null> {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${nimKey}`,
+        Authorization: `Bearer ${nimKey}`,
       },
       body: JSON.stringify({
         model: EMBED_MODEL,
@@ -109,6 +113,64 @@ async function embedText(text: string): Promise<number[] | null> {
   }
 }
 
+// ─── Per-user write cap (BACKLOG H2) ────────────────────────────────────────
+
+/**
+ * Hard ceiling on rows per user_id. Without it, one user running a
+ * memory-storing agent in a loop fills Neon storage, and IVFFlat
+ * recall quality degrades as N grows. Oldest rows are pruned first —
+ * memory is a recency-weighted cache, not an archive.
+ */
+const DEFAULT_MAX_MEMORIES_PER_USER = 10_000;
+
+function maxMemoriesPerUser(): number {
+  const raw = Number(process.env.MEMORY_MAX_ROWS_PER_USER);
+  if (Number.isFinite(raw) && raw >= 100) return Math.floor(raw);
+  return DEFAULT_MAX_MEMORIES_PER_USER;
+}
+
+/**
+ * Pre-flight quota check: when the user is at/over the cap, delete the
+ * oldest rows to open exactly one slot. Concurrent writers can briefly
+ * overshoot by the number of in-flight writes; the next write's
+ * `count - cap + 1` delete self-heals the drift, so the cap holds
+ * without a serializable transaction.
+ *
+ * Fail-open by design: if the count query errors the insert proceeds —
+ * the cap is a storage quota, not a security boundary, and a DB error
+ * here means the insert is about to fail anyway.
+ */
+async function enforcePerUserCap(userId: string): Promise<void> {
+  try {
+    const cap = maxMemoriesPerUser();
+    const res = await db.execute(sql`
+      SELECT count(*)::int AS n FROM agent_memories WHERE user_id = ${userId}
+    `);
+    const n = Number(res.rows?.[0]?.n ?? 0);
+    if (n < cap) return;
+
+    const toDelete = n - cap + 1;
+    await db.execute(sql`
+      DELETE FROM agent_memories
+      WHERE id IN (
+        SELECT id FROM agent_memories
+        WHERE user_id = ${userId}
+        ORDER BY created_at ASC, id ASC
+        LIMIT ${toDelete}
+      )
+    `);
+    log.warn("Per-user memory cap reached — pruned oldest rows", {
+      userId,
+      cap,
+      pruned: toDelete,
+    });
+  } catch (err) {
+    log.warn("Memory cap check failed — proceeding with insert", {
+      error: String(err),
+    });
+  }
+}
+
 // ─── Public API ─────────────────────────────────────────────────────────────
 
 /**
@@ -119,10 +181,18 @@ export async function storeMemory(
   userId: string,
   agentName: string,
   content: string,
-  metadata: Record<string, unknown> = {}
+  metadata: Record<string, unknown> = {},
 ): Promise<boolean> {
+  // Invariant #7 defense-in-depth: the agent factory and the direct
+  // tool-use callers already skip anon sessions, but the primitive
+  // refuses them too so no future caller can pollute the shared
+  // "anon" namespace.
+  if (!userId || userId === "anon") return false;
+
   const ready = await ensureVectorTable();
   if (!ready) return false;
+
+  await enforcePerUserCap(userId);
 
   const embedding = await embedText(content);
   if (!embedding) {
@@ -158,8 +228,18 @@ export async function storeMemory(
 export async function searchMemory(
   userId: string,
   query: string,
-  limit: number = 3
-): Promise<Array<{ content: string; agentName: string; similarity: number; createdAt: string }>> {
+  limit: number = 3,
+): Promise<
+  Array<{
+    content: string;
+    agentName: string;
+    similarity: number;
+    createdAt: string;
+  }>
+> {
+  // Invariant #7 defense-in-depth — mirror of the storeMemory guard.
+  if (!userId || userId === "anon") return [];
+
   const ready = await ensureVectorTable();
   if (!ready) return [];
 
@@ -199,7 +279,7 @@ export async function searchMemory(
  */
 export async function getMemoryContextForPrompt(
   userId: string,
-  query: string
+  query: string,
 ): Promise<string> {
   const memories = await searchMemory(userId, query);
 

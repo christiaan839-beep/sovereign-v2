@@ -918,6 +918,48 @@ export async function groqTranscribe(
 }
 
 /**
+ * Tool-result compaction for the claudeToolUse loop (BACKLOG M7).
+ *
+ * Without this, every iteration re-sends every prior tool result at
+ * full size — token cost grows quadratically across the 10-iteration
+ * loop. Results older than the most recent TOOL_RESULT_KEEP_FULL
+ * turns are truncated in place to a short prefix; the model already
+ * consumed them in the turn they answered.
+ */
+const TOOL_RESULT_KEEP_FULL = 2;
+const TOOL_RESULT_SUMMARY_CHARS = 200;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function compactOldToolResults(messages: any[]): void {
+  const toolResultMsgIdx: number[] = [];
+  for (let i = 0; i < messages.length; i++) {
+    const m = messages[i];
+    if (
+      m?.role === "user" &&
+      Array.isArray(m.content) &&
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      m.content.some((b: any) => b?.type === "tool_result")
+    ) {
+      toolResultMsgIdx.push(i);
+    }
+  }
+  const truncateUpTo = toolResultMsgIdx.length - TOOL_RESULT_KEEP_FULL;
+  for (let k = 0; k < truncateUpTo; k++) {
+    for (const block of messages[toolResultMsgIdx[k]].content) {
+      if (
+        block?.type === "tool_result" &&
+        typeof block.content === "string" &&
+        block.content.length > TOOL_RESULT_SUMMARY_CHARS
+      ) {
+        block.content =
+          block.content.slice(0, TOOL_RESULT_SUMMARY_CHARS) +
+          " …[truncated — full result was consumed in an earlier turn]";
+      }
+    }
+  }
+}
+
+/**
  * Claude Tool Use — Agentic loop with automatic tool execution.
  * Calls Claude with tools, executes tool_use blocks via the provided executor,
  * feeds results back, and repeats until stop_reason === "end_turn" or max iterations.
@@ -1030,6 +1072,9 @@ export async function claudeToolUse(
       });
     }
     messages.push({ role: "user", content: toolResults });
+
+    // Keep the conversation token-bounded before the next API call.
+    compactOldToolResults(messages);
   }
 
   // Max iterations reached — return whatever text we have

@@ -58,6 +58,14 @@ jobs:
           done
           exit 1
 
+      # The @sovereign-matrix/* workspace packages publish from dist/.
+      # Only verifiable-receipts self-builds via its prepare script; the
+      # 15 wrapper/exporter packages need this explicit build or
+      # `tsc --noEmit` fails with ~25 TS2307 module-not-found errors in
+      # the compliance pages. Mirrors vercel.json's installCommand.
+      - name: Build workspace packages
+        run: npm run build:packages
+
       - name: Run ESLint
         run: npm run lint
 
@@ -102,6 +110,12 @@ jobs:
             sleep $((attempt * 5))
           done
           exit 1
+
+      # Same workspace-dist requirement as lint-and-typecheck — next
+      # build type-checks (ignoreBuildErrors: false) and the compliance
+      # pages import @sovereign-matrix/* packages at build time.
+      - name: Build workspace packages
+        run: npm run build:packages
 
       - name: Build application
         run: npm run build
@@ -199,7 +213,15 @@ jobs:
   dependency-review:
     name: Dependency Review
     runs-on: ubuntu-22.04
-    if: github.event_name == 'pull_request'
+    # SKIPPED until the operator enables Dependency Graph (repo
+    # Settings → Security analysis) — the action hard-errors with
+    # "Dependency review is not supported on this repository" without
+    # it, red-Xing every PR on a non-code condition while providing
+    # zero coverage. The blocking `npm audit` job above still gates
+    # high-severity advisories meanwhile. BACKLOG O8: enable the
+    # setting, then set repo variable ENABLE_DEPENDENCY_REVIEW=true —
+    # the job comes back FULLY BLOCKING (no continue-on-error).
+    if: github.event_name == 'pull_request' && vars.ENABLE_DEPENDENCY_REVIEW == 'true'
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
@@ -297,6 +319,11 @@ jobs:
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
+
+      # Same workspace-dist requirement as the other build jobs — the
+      # compliance pages import @sovereign-matrix/* at build time.
+      - name: Build workspace packages
+        run: npm run build:packages
 
       - name: Build the app for the smoke run
         # Same env shape as the Build job — dummy values are fine since

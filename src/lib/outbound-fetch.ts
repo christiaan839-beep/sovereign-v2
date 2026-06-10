@@ -46,6 +46,18 @@ import { createLogger } from "@/lib/logger";
 
 const log = createLogger("outbound-fetch");
 
+/**
+ * User-Agent for outbound page fetches (BACKLOG L3). Env-overridable so
+ * operators can brand their crawler / satisfy robots policies without a
+ * code change. Single source of truth for every scraping tool.
+ */
+export function scraperUserAgent(): string {
+  return (
+    process.env.SOVEREIGN_SCRAPER_UA?.trim() ||
+    "Mozilla/5.0 (compatible; SovereignBot/1.0)"
+  );
+}
+
 export class EgressBlockedError extends Error {
   readonly violation: EgressViolation;
   readonly url: string;

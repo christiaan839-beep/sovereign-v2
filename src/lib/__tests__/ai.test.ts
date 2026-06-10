@@ -106,7 +106,7 @@ vi.mock("@tavily/core", () => ({
 
 // ── Import after mocks ──
 
-import { ai } from "@/lib/ai";
+import { ai, claudeToolUse } from "@/lib/ai";
 
 // ── Tests ──
 
@@ -226,5 +226,119 @@ describe("ai() — Unified Router", () => {
     const result = await ai("deepseek prompt", { model: "deepseek" });
     expect(result).toBe("groq-response");
     expect(mockGroqCreate).toHaveBeenCalled();
+  });
+});
+
+// ─── claudeToolUse — M7 tool-result compaction ───
+
+describe("claudeToolUse — tool-result compaction (BACKLOG M7)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("truncates tool results older than the last 2 turns; recent 2 stay full", async () => {
+    const LONG = "x".repeat(1000);
+    let call = 0;
+    // 4 iterations of tool_use, then end_turn on the 5th.
+    mockClaudeCreate.mockImplementation(async () => {
+      call++;
+      if (call <= 4) {
+        return {
+          stop_reason: "tool_use",
+          content: [
+            {
+              type: "tool_use",
+              id: `t${call}`,
+              name: "fetch",
+              input: { n: call },
+            },
+          ],
+        };
+      }
+      return {
+        stop_reason: "end_turn",
+        content: [{ type: "text", text: "done" }],
+      };
+    });
+
+    const result = await claudeToolUse(
+      "scan the target",
+      [
+        {
+          name: "fetch",
+          description: "fetch a page",
+          input_schema: { type: "object" },
+        },
+      ],
+      undefined,
+      1024,
+      async () => LONG,
+    );
+
+    expect(result.text).toBe("done");
+    expect(result.toolCalls).toHaveLength(4);
+
+    // The conversation array is shared/mutated across iterations — by the
+    // final API call it must hold 4 tool-result messages with the older
+    // two compacted and the most recent two intact.
+    const finalMessages = mockClaudeCreate.mock.calls[4][0].messages as Array<{
+      role: string;
+      content: unknown;
+    }>;
+    const toolResultContents = finalMessages
+      .filter((m) => m.role === "user" && Array.isArray(m.content))
+      .map(
+        (m) =>
+          (m.content as Array<{ type: string; content: string }>).find(
+            (b) => b.type === "tool_result",
+          )?.content ?? "",
+      );
+    expect(toolResultContents).toHaveLength(4);
+    expect(toolResultContents[0]).toContain("…[truncated");
+    expect(toolResultContents[0].length).toBeLessThan(300);
+    expect(toolResultContents[1]).toContain("…[truncated");
+    expect(toolResultContents[2]).toBe(LONG);
+    expect(toolResultContents[3]).toBe(LONG);
+  });
+
+  it("leaves short tool results untouched regardless of age", async () => {
+    let call = 0;
+    mockClaudeCreate.mockImplementation(async () => {
+      call++;
+      if (call <= 3) {
+        return {
+          stop_reason: "tool_use",
+          content: [
+            { type: "tool_use", id: `t${call}`, name: "fetch", input: {} },
+          ],
+        };
+      }
+      return {
+        stop_reason: "end_turn",
+        content: [{ type: "text", text: "done" }],
+      };
+    });
+
+    await claudeToolUse(
+      "scan",
+      [{ name: "fetch", description: "d", input_schema: { type: "object" } }],
+      undefined,
+      1024,
+      async () => "short result",
+    );
+
+    const finalMessages = mockClaudeCreate.mock.calls[3][0].messages as Array<{
+      role: string;
+      content: unknown;
+    }>;
+    for (const m of finalMessages) {
+      if (m.role === "user" && Array.isArray(m.content)) {
+        for (const b of m.content as Array<{ type: string; content: string }>) {
+          if (b.type === "tool_result") {
+            expect(b.content).toBe("short result");
+          }
+        }
+      }
+    }
   });
 });

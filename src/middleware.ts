@@ -1,6 +1,5 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { apiLogger } from "@/lib/api-logger";
 
 /**
@@ -283,9 +282,19 @@ const isProtectedRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, request) => {
+  // Clerk types the callback param loosely, but the Edge runtime always
+  // hands us a NextRequest. Narrow with instanceof (BACKLOG L2) instead
+  // of a blind cast — and fail CLOSED if the assumption ever breaks,
+  // because falling through would skip the CSRF gate (invariant #3).
+  if (!(request instanceof NextRequest)) {
+    return new NextResponse("middleware: unexpected request type", {
+      status: 500,
+    });
+  }
+
   // Wave-107: CSRF/origin check FIRST — before auth lookup. Reject obvious
   // cross-site attacks at the edge with a 403 so they never touch Clerk.
-  const csrfBlock = enforceCsrfOrigin(request as NextRequest);
+  const csrfBlock = enforceCsrfOrigin(request);
   if (csrfBlock) return csrfBlock;
 
   if (isProtectedRoute(request)) {
@@ -296,7 +305,7 @@ export default clerkMiddleware(async (auth, request) => {
       return NextResponse.redirect(signInUrl);
     }
   }
-  return sovereignMiddleware(request as NextRequest);
+  return sovereignMiddleware(request);
 });
 
 async function sovereignMiddleware(request: NextRequest) {

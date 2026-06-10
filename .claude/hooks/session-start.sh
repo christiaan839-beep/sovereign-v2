@@ -35,4 +35,11 @@ cd "$CLAUDE_PROJECT_DIR"
 echo "[session-start] running npm install..."
 npm install --no-audit --no-fund --loglevel=error
 
+# Workspace packages (@sovereign-matrix/*) publish from dist/; without
+# this, `npm run typecheck` fails on ~25 TS2307 module-not-found errors
+# in the compliance pages. Idempotent — skips packages with fresh dist/.
+# Mirrors vercel.json's installCommand.
+echo "[session-start] building workspace packages..."
+npm run build:packages
+
 echo "[session-start] dependencies ready."

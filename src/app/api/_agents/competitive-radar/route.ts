@@ -1,4 +1,5 @@
 import { createAgentRoute } from "@/lib/agent-factory";
+import { scraperUserAgent } from "@/lib/outbound-fetch";
 import { nimChat } from "@/lib/nvidia";
 
 /**
@@ -56,7 +57,7 @@ export const POST = createAgentRoute({
     let siteData = "";
     try {
       const res = await fetch(url, {
-        headers: { "User-Agent": "Mozilla/5.0 (compatible; SovereignBot/1.0)" },
+        headers: { "User-Agent": scraperUserAgent() },
         signal: AbortSignal.timeout(8000),
       });
       const html = await res.text();

@@ -34,6 +34,11 @@ node_modules
 # throwaway demo keypair (the secret was discarded after generation).
 # It's safe to commit; the .pem extension is misleading here.
 !public/sample-bundle.ed25519.pem
+# Conformance-corpus verification key — the *public* half of the Ed25519
+# keypair that signed the frozen v2 fixtures (private half discarded by
+# generate-fixtures.mjs). All three language harnesses load this file;
+# the corpus is unverifiable without it. MUST be committed.
+!packages/verifiable-receipts/conformance/public-key.pem
 
 # debug
 npm-debug.log*
