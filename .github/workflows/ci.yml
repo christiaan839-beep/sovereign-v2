@@ -213,17 +213,16 @@ jobs:
   dependency-review:
     name: Dependency Review
     runs-on: ubuntu-22.04
-    if: github.event_name == 'pull_request'
-    timeout-minutes: 5
-    # INFORMATIONAL until the operator enables Dependency Graph
-    # (Settings → Security analysis) — the action hard-errors with
+    # SKIPPED until the operator enables Dependency Graph (repo
+    # Settings → Security analysis) — the action hard-errors with
     # "Dependency review is not supported on this repository" without
-    # it, which red-Xes every PR on a non-code condition. This is NOT
-    # a weakened gate: with the setting off the action provides zero
-    # coverage either way, and the blocking `npm audit` job above
-    # still gates high-severity advisories. Flip this back to
-    # blocking when BACKLOG O8 is done.
-    continue-on-error: true
+    # it, red-Xing every PR on a non-code condition while providing
+    # zero coverage. The blocking `npm audit` job above still gates
+    # high-severity advisories meanwhile. BACKLOG O8: enable the
+    # setting, then set repo variable ENABLE_DEPENDENCY_REVIEW=true —
+    # the job comes back FULLY BLOCKING (no continue-on-error).
+    if: github.event_name == 'pull_request' && vars.ENABLE_DEPENDENCY_REVIEW == 'true'
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
       - uses: actions/dependency-review-action@v4

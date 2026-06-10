@@ -107,7 +107,7 @@ The platform is production-deployable RIGHT NOW for: agency operators automating
 | O5  | Add `CLERK_WEBHOOK_SECRET` env var from Clerk Dashboard → Webhooks.                                                        | Operator           |
 | O6  | (If pursuing) SOC 2 readiness assessment using the existing audit-grade infrastructure as the basis.                       | Operator + auditor |
 | O7  | (If pursuing) HIPAA BAA paperwork with downstream providers (Anthropic, NVIDIA, etc.) before marketing as HIPAA-compliant. | Operator + legal   |
-| O8  | Enable **Dependency Graph** in GitHub repo Settings → Security analysis, then flip the `dependency-review` CI job back to blocking (remove `continue-on-error` — see comment in ci.yml). The action hard-errors without the setting. | Operator           |
+| O8  | Enable **Dependency Graph** in GitHub repo Settings → Security analysis, then set repo variable `ENABLE_DEPENDENCY_REVIEW=true` (Settings → Secrets and variables → Actions → Variables) — the `dependency-review` CI job is skipped until then and comes back fully blocking after. The action hard-errors without the setting. | Operator           |
 
 ---
 
