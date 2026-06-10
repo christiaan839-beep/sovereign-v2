@@ -320,6 +320,11 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
+      # Same workspace-dist requirement as the other build jobs — the
+      # compliance pages import @sovereign-matrix/* at build time.
+      - name: Build workspace packages
+        run: npm run build:packages
+
       - name: Build the app for the smoke run
         # Same env shape as the Build job — dummy values are fine since
         # smoke doesn't sign in or hit Stripe; the build needs them only
