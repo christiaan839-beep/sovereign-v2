@@ -71,6 +71,7 @@ The platform is production-deployable RIGHT NOW for: agency operators automating
 | ~~H1~~ | ~~DNS-rebinding hardening at `outboundFetch` layer~~ — **SHIPPED in wave 107.2.** `safeResolveOrNull` + `resolvedHostIsSafe` promoted to `src/lib/safe-host.ts`; wired into `outboundFetch` so every caller inherits the defense. Federation-puller re-exports the shared symbols for backward-compat. | DONE     | 17 tests pin the contract.                                                                                                        |
 | ~~H2~~ | ~~Per-user `storeMemory` write cap~~ — **SHIPPED in wave 114.** `enforcePerUserCap()` pre-flight in `storeMemory`: count per user_id, prune oldest (`created_at ASC`) to open a slot at the 10K default cap (`MEMORY_MAX_ROWS_PER_USER` env override, floor 100). Fail-open on count errors (quota guard, not a security boundary). Anon-namespace refusal also moved INTO the primitives (`storeMemory`/`searchMemory`) as invariant-7 defense-in-depth. 9 tests. | DONE | Concurrent writers can briefly overshoot; next write self-heals via `count - cap + 1` delete. |
 | ~~H3~~ | ~~`INTERNAL_WEBHOOK_SECRET \|\| ""` fallback~~ — **SHIPPED in wave 114.** New `src/lib/internal-secret.ts` is the only sanctioned access path: `getInternalWebhookSecret()` returns non-empty string or null (never `""`), `verifyInternalSecret()` is the fail-closed header check. 3 call sites migrated; senders now SKIP the auto-onboard call when the env is unset instead of mailing a doomed empty header. Registered in env-check as `important`. 7 tests pin the empty-vs-empty non-match. | DONE | |
+| H4     | **payfast webhook signature weaknesses** (pre-existing, surfaced by wave-114 security review): (a) accepts a passphrase-less MD5 signature when `PAYFAST_PASSPHRASE` is unset, (b) non-constant-time `hash === signature` compare (paystack handler already uses `timingSafeHexEqual`), (c) derives `sourceIP` from the FIRST `x-forwarded-for` entry while the middleware rate-limiter deliberately trusts the LAST. `src/app/api/_payments/payfast/webhook/route.ts:48-107`. | 1-2 hours | Align with the paystack handler's patterns; require passphrase in production. |
 
 ### MEDIUM — quality/cost/architecture improvements that aren't blockers
 
@@ -106,6 +107,7 @@ The platform is production-deployable RIGHT NOW for: agency operators automating
 | O5  | Add `CLERK_WEBHOOK_SECRET` env var from Clerk Dashboard → Webhooks.                                                        | Operator           |
 | O6  | (If pursuing) SOC 2 readiness assessment using the existing audit-grade infrastructure as the basis.                       | Operator + auditor |
 | O7  | (If pursuing) HIPAA BAA paperwork with downstream providers (Anthropic, NVIDIA, etc.) before marketing as HIPAA-compliant. | Operator + legal   |
+| O8  | Enable **Dependency Graph** in GitHub repo Settings → Security analysis, then flip the `dependency-review` CI job back to blocking (remove `continue-on-error` — see comment in ci.yml). The action hard-errors without the setting. | Operator           |
 
 ---
 
