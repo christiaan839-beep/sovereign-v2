@@ -3,7 +3,7 @@
   "receipt": {
     "canonical": "{\"agentSlug\":\"loan-underwriter\",\"issuedAt\":\"2026-05-18T10:00:00Z\",\"overall\":\"pass\",\"rules\":[{\"ruleId\":\"hipaa-no-raw-ssn\",\"verdict\":\"pass\",\"durationMs\":2}],\"runId\":\"run_conformance_001\",\"tokenId\":\"tok_001\",\"verdictId\":\"v_conf_001\"}",
     "contentHash": "sha256:98832a2541b54553101a911f5980cd98ce800da7e1bc0e6364367b9f434d6da0",
-    "signature": "v2=CvcXPgB+4SWMTs2/GABvkxpecq/G8Uk67DQsCRJOeWd1XuR6qCbBvZRhJ2D6nANLyw80qraFu5CW2Zdd/jBBAg=="
+    "signature": "v2=6QSK1l9g3AlvN13MXQQpbpIqbb/lBGsV7Shcbdn1QE9fN3krnPdqZnlqgecOR4XXpnm8goINpPJpEWrV8E3pBQ=="
   },
   "expected": {
     "ok": false,

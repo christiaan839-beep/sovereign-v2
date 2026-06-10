@@ -5,6 +5,7 @@ import { createLogger } from "@/lib/logger";
 import { getPublicUrl } from "@/lib/base-url";
 import { alreadyProcessed } from "@/lib/idempotency";
 import { PLANS, type PlanId, normalizePlanId } from "@/lib/plans";
+import { getInternalWebhookSecret } from "@/lib/internal-secret";
 
 const log = createLogger("paystack-webhook");
 
@@ -73,7 +74,9 @@ export async function POST(req: Request) {
     );
 
     const baseUrl = getPublicUrl();
-    const internalSecret = process.env.INTERNAL_WEBHOOK_SECRET || "";
+    // null when INTERNAL_WEBHOOK_SECRET is unset — auto-onboard is then
+    // skipped outright instead of sending a doomed empty header.
+    const internalSecret = getInternalWebhookSecret();
 
     switch (event.event) {
       case "charge.success": {
@@ -129,7 +132,7 @@ export async function POST(req: Request) {
         );
 
         // Trigger auto-onboard (best-effort) with internal-secret header
-        if (email) {
+        if (email && internalSecret) {
           try {
             await fetch(`${baseUrl}/api/_agents/auto-onboard`, {
               method: "POST",

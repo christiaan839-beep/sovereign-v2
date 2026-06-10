@@ -22,33 +22,90 @@ interface EnvVar {
 const ENV_VARS: EnvVar[] = [
   // ── CRITICAL: Platform won't start properly ──
   { key: "DATABASE_URL", label: "Neon PostgreSQL database", level: "critical" },
-  { key: "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", label: "Clerk auth (public)", level: "critical" },
+  {
+    key: "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
+    label: "Clerk auth (public)",
+    level: "critical",
+  },
   { key: "CLERK_SECRET_KEY", label: "Clerk auth (secret)", level: "critical" },
 
   // ── IMPORTANT: Core features degraded ──
-  { key: "NVIDIA_NIM_API_KEY", label: "NVIDIA NIM (39+ AI models)", level: "important" },
-  { key: "GOOGLE_GENERATIVE_AI_API_KEY", label: "Google Gemini AI", level: "important" },
-  { key: "UPSTASH_REDIS_REST_URL", label: "Distributed rate limiting (Upstash Redis)", level: "important" },
-  { key: "UPSTASH_REDIS_REST_TOKEN", label: "Distributed rate limiting (Upstash token)", level: "important" },
+  {
+    key: "NVIDIA_NIM_API_KEY",
+    label: "NVIDIA NIM (39+ AI models)",
+    level: "important",
+  },
+  {
+    key: "GOOGLE_GENERATIVE_AI_API_KEY",
+    label: "Google Gemini AI",
+    level: "important",
+  },
+  {
+    key: "UPSTASH_REDIS_REST_URL",
+    label: "Distributed rate limiting (Upstash Redis)",
+    level: "important",
+  },
+  {
+    key: "UPSTASH_REDIS_REST_TOKEN",
+    label: "Distributed rate limiting (Upstash token)",
+    level: "important",
+  },
   { key: "YOCO_SECRET_KEY", label: "Yoco payments", level: "important" },
-  { key: "RESEND_API_KEY", label: "Transactional email (Resend)", level: "important" },
-  { key: "TAVILY_API_KEY", label: "Live web research (Tavily)", level: "important" },
+  {
+    key: "RESEND_API_KEY",
+    label: "Transactional email (Resend)",
+    level: "important",
+  },
+  {
+    key: "TAVILY_API_KEY",
+    label: "Live web research (Tavily)",
+    level: "important",
+  },
   { key: "NEXT_PUBLIC_APP_URL", label: "Production URL", level: "important" },
-  { key: "CRON_SECRET", label: "Cron endpoint authentication", level: "important" },
+  {
+    key: "CRON_SECRET",
+    label: "Cron endpoint authentication",
+    level: "important",
+  },
   { key: "ENCRYPTION_KEY", label: "Data encryption key", level: "important" },
+  {
+    key: "INTERNAL_WEBHOOK_SECRET",
+    label: "Internal server-to-server auth (auto-onboard)",
+    level: "important",
+  },
 
   // ── OPTIONAL: Specific integrations ──
   { key: "ANTHROPIC_API_KEY", label: "Anthropic Claude", level: "optional" },
   { key: "GROQ_API_KEY", label: "Groq (fast inference)", level: "optional" },
-  { key: "FIRECRAWL_API_KEY", label: "Firecrawl (web scraping)", level: "optional" },
-  { key: "PINECONE_API_KEY", label: "Pinecone (vector memory)", level: "optional" },
+  {
+    key: "FIRECRAWL_API_KEY",
+    label: "Firecrawl (web scraping)",
+    level: "optional",
+  },
+  {
+    key: "PINECONE_API_KEY",
+    label: "Pinecone (vector memory)",
+    level: "optional",
+  },
   { key: "PINECONE_INDEX", label: "Pinecone index name", level: "optional" },
   { key: "PINECONE_HOST", label: "Pinecone host URL", level: "optional" },
-  { key: "ELEVENLABS_API_KEY", label: "ElevenLabs (voice synthesis)", level: "optional" },
+  {
+    key: "ELEVENLABS_API_KEY",
+    label: "ElevenLabs (voice synthesis)",
+    level: "optional",
+  },
   { key: "HUBSPOT_ACCESS_TOKEN", label: "HubSpot CRM", level: "optional" },
-  { key: "TWILIO_ACCOUNT_SID", label: "Twilio (WhatsApp/SMS)", level: "optional" },
+  {
+    key: "TWILIO_ACCOUNT_SID",
+    label: "Twilio (WhatsApp/SMS)",
+    level: "optional",
+  },
   { key: "TELEGRAM_BOT_TOKEN", label: "Telegram bot", level: "optional" },
-  { key: "TELEGRAM_ADMIN_CHAT_ID", label: "Telegram admin alerts", level: "optional" },
+  {
+    key: "TELEGRAM_ADMIN_CHAT_ID",
+    label: "Telegram admin alerts",
+    level: "optional",
+  },
   { key: "NOTION_API_KEY", label: "Notion integration", level: "optional" },
   { key: "SLACK_WEBHOOK_URL", label: "Slack notifications", level: "optional" },
   { key: "META_ACCESS_TOKEN", label: "Meta/Facebook Ads", level: "optional" },
@@ -94,12 +151,16 @@ export function validateEnvironment(): EnvCheckResult {
 
   // Log results
   if (critical.length > 0) {
-    log.error(`🔴 ${critical.length} CRITICAL env vars missing (platform will malfunction):`);
+    log.error(
+      `🔴 ${critical.length} CRITICAL env vars missing (platform will malfunction):`,
+    );
     critical.forEach((m) => log.error(`   ✗ ${m}`));
   }
 
   if (important.length > 0) {
-    log.warn(`🟡 ${important.length} IMPORTANT env vars missing (features degraded):`);
+    log.warn(
+      `🟡 ${important.length} IMPORTANT env vars missing (features degraded):`,
+    );
     important.forEach((m) => log.warn(`   ○ ${m}`));
   }
 
@@ -108,10 +169,13 @@ export function validateEnvironment(): EnvCheckResult {
   }
 
   const total = ENV_VARS.length;
-  const configured = total - critical.length - important.length - optional.length;
+  const configured =
+    total - critical.length - important.length - optional.length;
 
   if (critical.length === 0) {
-    log.info(`✓ Environment check passed — ${configured}/${total} vars configured`);
+    log.info(
+      `✓ Environment check passed — ${configured}/${total} vars configured`,
+    );
   }
 
   _cachedResult = {

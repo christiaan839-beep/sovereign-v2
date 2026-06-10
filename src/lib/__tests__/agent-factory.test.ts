@@ -119,6 +119,19 @@ vi.mock("@/lib/quality-scorer", () => ({
   }),
 }));
 
+// Wave-111.1 L5(d) — output verifier, dynamically imported by the
+// factory. Default approved so unrelated tests are unaffected; the
+// verifier-block test overrides per-call.
+const mockVerifyOutput = vi.fn().mockResolvedValue({
+  approved: true,
+  trustDecision: "auto-approved",
+  executionTimeMs: 1,
+  safetyResult: {},
+});
+vi.mock("@/lib/output-verifier", () => ({
+  verifyOutput: (...args: unknown[]) => mockVerifyOutput(...args),
+}));
+
 vi.mock("@/lib/audit-log", () => ({
   auditLog: vi.fn().mockResolvedValue(undefined),
 }));
@@ -799,6 +812,152 @@ describe("createAgentRoute", () => {
       // the same object the response was built from.
       expect(extractorSawObject).not.toBeNull();
       expect(extractorSawObject).toEqual({ output: "first-pass output" });
+    });
+
+    // ─── Wave-111.1 L5 — review-flagged coverage gaps ───
+
+    it("L5(a): a synchronously-throwing extractor never crashes the response or stores", async () => {
+      const handler = createAgentRoute({
+        name: "test-agent",
+        skipJailbreakCheck: true,
+        skipSafetyCheck: true,
+        skipPiiScan: true,
+        skipQualityCheck: true,
+        memory: {
+          store: {
+            extract: () => {
+              throw new Error("extractor exploded synchronously");
+            },
+          },
+        },
+        handler: async () => ({ ok: true }),
+      });
+      const res = await handler(makeRequest({ q: "x" }));
+      expect(res.status).toBe(200);
+      await new Promise((r) => setTimeout(r, 30));
+      expect(mockStoreMemory).not.toHaveBeenCalled();
+    });
+
+    it("L5(b): non-string extractor returns (number / object) are skipped, not stored", async () => {
+      for (const weird of [42, { not: "a string" }]) {
+        mockStoreMemory.mockClear();
+        const handler = createAgentRoute({
+          name: "test-agent",
+          skipJailbreakCheck: true,
+          skipSafetyCheck: true,
+          skipPiiScan: true,
+          skipQualityCheck: true,
+          memory: {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            store: { extract: () => weird as any },
+          },
+          handler: async () => ({ ok: true }),
+        });
+        const res = await handler(makeRequest({ q: "x" }));
+        expect(res.status).toBe(200);
+        await new Promise((r) => setTimeout(r, 30));
+        expect(mockStoreMemory).not.toHaveBeenCalled();
+      }
+    });
+
+    it("L5(c): pastContext threads into the quality-retry handler invocation", async () => {
+      const seededMemories = [
+        {
+          content: "Past finding: checkout page lacks trust badges",
+          agentName: "leads",
+          similarity: 0.8,
+          createdAt: "2026-05-15T00:00:00Z",
+        },
+      ];
+      mockSearchMemory.mockResolvedValue(seededMemories);
+
+      const { scoreOutput } = await import("@/lib/quality-scorer");
+      const scoreMock = vi.mocked(scoreOutput);
+      // First pass fails quality → factory re-invokes the handler with
+      // _qualityRetry; the retry's score passes.
+      scoreMock
+        .mockResolvedValueOnce({
+          overall: 0.3,
+          passed: false,
+          helpfulness: 0.3,
+          coherence: 0.3,
+          correctness: 0.3,
+          verbosity: 0.3,
+        })
+        .mockResolvedValueOnce({
+          overall: 0.9,
+          passed: true,
+          helpfulness: 0.9,
+          coherence: 0.9,
+          correctness: 0.9,
+          verbosity: 0.9,
+        });
+
+      const invocations: Array<{
+        retry: boolean;
+        pastContext: unknown;
+      }> = [];
+      const handler = createAgentRoute({
+        name: "test-agent",
+        skipJailbreakCheck: true,
+        skipSafetyCheck: true,
+        skipPiiScan: true,
+        skipQualityCheck: false,
+        useCritic: false,
+        memory: { search: { query: () => "q" } },
+        handler: async (ctx) => {
+          invocations.push({
+            retry: ctx.input._qualityRetry === true,
+            pastContext: ctx.pastContext,
+          });
+          return { summary: "a result long enough to be quality-scored" };
+        },
+      });
+
+      const res = await handler(makeRequest({ q: "improve my fintech site" }));
+      expect(res.status).toBe(200);
+      expect(invocations).toHaveLength(2);
+      expect(invocations[0].retry).toBe(false);
+      expect(invocations[1].retry).toBe(true);
+      // The same memory context reaches BOTH invocations — the retry
+      // plans with the same past knowledge as the first attempt.
+      expect(invocations[0].pastContext).toEqual(seededMemories);
+      expect(invocations[1].pastContext).toEqual(seededMemories);
+    });
+
+    it("L5(d): memory store does NOT run when the output verifier blocks", async () => {
+      mockVerifyOutput.mockResolvedValueOnce({
+        approved: false,
+        trustDecision: "blocked",
+        blockReason: "policy violation (test)",
+        safetyResult: { layer: "llamaguard" },
+        executionTimeMs: 1,
+      });
+
+      const handler = createAgentRoute({
+        name: "test-agent",
+        skipJailbreakCheck: true,
+        skipSafetyCheck: true,
+        // Verifier requires BOTH pii-scan and quality-check active.
+        skipPiiScan: false,
+        skipQualityCheck: false,
+        useCritic: false,
+        memory: {
+          store: { extract: (result) => String(result.summary ?? "") },
+        },
+        handler: async () => ({
+          summary: "an output long enough to reach the verifier gate",
+        }),
+      });
+
+      const res = await handler(makeRequest({ q: "run the test agent" }));
+      expect(res.status).toBe(403);
+      const body = await res.json();
+      expect(body.code).toBe("VERIFIER_BLOCKED");
+      // A blocked output must never be written to memory — it would be
+      // re-fed into future prompts via pastContextAsPrompt.
+      await new Promise((r) => setTimeout(r, 30));
+      expect(mockStoreMemory).not.toHaveBeenCalled();
     });
   });
 });

@@ -45,6 +45,7 @@ vi.mock("@/lib/nvidia", () => ({
 }));
 vi.mock("@/lib/outbound-fetch", () => ({
   outboundFetch: outboundFetchMock,
+  scraperUserAgent: () => "Mozilla/5.0 (compatible; SovereignBot/1.0)",
 }));
 vi.mock("node:dns/promises", () => ({
   lookup: dnsLookupMock,

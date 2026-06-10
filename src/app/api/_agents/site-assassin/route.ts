@@ -37,7 +37,7 @@ import { z } from "zod";
 import { claudeToolUse, research_ai } from "@/lib/ai";
 import { nimChat } from "@/lib/nvidia";
 import { searchMemory, storeMemory } from "@/lib/vector-memory";
-import { outboundFetch } from "@/lib/outbound-fetch";
+import { outboundFetch, scraperUserAgent } from "@/lib/outbound-fetch";
 import { resolvedHostIsSafe } from "@/lib/safe-host";
 import { lookup as dnsLookup } from "node:dns/promises";
 import { createLogger } from "@/lib/logger";
@@ -261,7 +261,7 @@ export function buildToolExecutor(ctx: SiteAssassinContext) {
           try {
             const result = await outboundFetch(
               url,
-              { method: "GET", headers: { "User-Agent": "SovereignBot/1.0" } },
+              { method: "GET", headers: { "User-Agent": scraperUserAgent() } },
               {
                 ruleId: "site-assassin.fetch_page",
                 tenantId: ctx.userId,
@@ -368,7 +368,11 @@ export function buildToolExecutor(ctx: SiteAssassinContext) {
       });
       output = `ERROR: tool "${name}" threw — ${err instanceof Error ? err.message : String(err)}`;
     }
-    ctx.trace.push({ tool: name, input, output: output.slice(0, 400) });
+    // Bounded (BACKLOG L4): error-retry loops could otherwise grow the
+    // trace without limit; the response only surfaces the first 12.
+    if (ctx.trace.length < 50) {
+      ctx.trace.push({ tool: name, input, output: output.slice(0, 400) });
+    }
     return output;
   };
 }
