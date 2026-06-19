@@ -12,15 +12,17 @@ Welcome to the Sovereign Matrix repository. This file serves as the core instruc
 - **ORM**: Drizzle ORM (`src/db`)
 - **Authentication**: Clerk (`@clerk/nextjs`)
 
-## Core Agent Intelligence Nodes (`src/app/api/agents/`)
+## Core Agent Intelligence Nodes (`src/app/api/_agents/`)
 
-The platform leverages multiple specialized LLMs (Google Gemini, Anthropic Claude, NVIDIA NIM, Groq, local Ollama) connected via a single unified AI router located in `src/lib/ai.ts`.
+The platform leverages multiple specialized LLMs (Google Gemini, Anthropic Claude, NVIDIA NIM, Cerebras, Groq, local Ollama) connected via a single unified AI router located in `src/lib/ai.ts`.
+
+Individual agent route handlers live under `src/app/api/_agents/<name>/route.ts` (underscore-prefixed so Next.js does not treat them as public segments). They are surfaced through the static registry (`src/app/api/agents/registry.ts`, ~140 agents) and the catch-all dispatcher at `src/app/api/agents/[...slug]/route.ts`.
 
 Key endpoints:
 
 - `god-brain`: Master meta-prompter and architect.
 - `war-room`: Debate arena for multi-agent synthesis.
-- `computer-use`: Native Claude 3.5 Sonnet browser/bash controller.
+- `computer-use`: Native Claude browser/bash controller.
 - `image-gen`: Generates images via Black Forest Labs FLUX.1.
 - `smart-router`: Dynamically routes tasks to the best open-source model based on a registry.
 
@@ -28,11 +30,15 @@ Key endpoints:
 
 - **Development**: `npm run dev`
 - **Compiling**: `npm run build`
-- **Testing**: `npm run test` (vitest)
-- **Linting**: `npm run lint`
+- **Testing**: `npm run test` (vitest run)
+- **Linting**: `npm run lint` (eslint)
+- **Type check**: `npm run typecheck` (tsc --noEmit)
+- **E2E smoke**: `npm run smoke` (Playwright, `e2e/smoke.spec.ts`)
 - **WebSocket server**: `npm run ws` (ts-node server/ws.ts)
 - **Install/Reset**: `rm -rf node_modules && npm install`
 - **Drizzle migrations**: `npx drizzle-kit generate` to create, run SQL in Neon Console
+- **Migration check**: `npm run check:migrations` (CI gate); agent registry: `npm run gen:registry` / `npm run check:registry`
+- **Git hooks**: `npm run hooks:install` wires a pre-push gate (lint + tests + migration check)
 
 ## Formatting & Design Protocols
 
@@ -57,6 +63,8 @@ _You are operating as a Sovereign Node. Execute all tasks defensively and accura
 
 When a wave ships: update `BACKLOG.md`. When a new gap is found: add it.
 This is how the engineering memory survives context resets.
+
+Other root docs worth knowing: `README.md` (overview), `HANDOVER.md` (operator handover), `CHANGELOG.md`, `API_KEYS.md` (env-key inventory), `SECURITY.md`, `CONTRIBUTING.md`, and `sovereign-matrix-agents.md` (agent catalog).
 
 ## Critical Patterns & Gotchas
 
@@ -105,7 +113,7 @@ This is how the engineering memory survives context resets.
 - Goal → Playbook mapping: leads→lead-blitz, content→content-machine, compete→competitor-takedown
 - User API keys stored encrypted in settings table — `crypto.ts` safeDecrypt for retrieval
 
-### Lib Architecture (`src/lib/` — 120+ modules)
+### Lib Architecture (`src/lib/` — 270+ modules)
 
 - Security: `auth-guard.ts`, `api-guard.ts`, `input-sanitizer.ts`, `jailbreak-detect.ts`, `content-safety.ts`, `nemo-guardrails.ts`
 - Reliability: `circuit-breaker.ts`, `retry.ts`, `error-recovery.ts`, `rate-limit.ts` (Upstash)
@@ -114,7 +122,7 @@ This is how the engineering memory survives context resets.
 - Revenue: `plans.ts`, `plan-enforcement.ts`, `stripe.ts`, `payments.ts`, `paywall.ts`, `budget-controls.ts`
 - Agent framework: `agent-factory.ts`, `agent-memory.ts`, `agent-teams.ts`, `swarm-protocol.ts`, `playbooks.ts`
 
-### Database Schema (38 tables in `src/db/schema.ts`)
+### Database Schema (48 tables in `src/db/schema.ts`)
 
 - Core: tenants, users, settings, organizations, orgMembers
 - AI: generations, conversations, chatMessages, agentActivity, jobs
@@ -137,10 +145,10 @@ This is how the engineering memory survives context resets.
 
 ### Claude Code Infrastructure
 
-- **MCP servers** (`.mcp.json`): `sovereign-matrix` (custom, exposes sovereign_run_agent/playbook/health/api_catalog against production) + `context7` (live library API docs — use it instead of guessing signatures for Drizzle, Clerk, Stripe, Vercel AI SDK, etc.)
-- **Agents** (`.claude/agents/`): `sovereign-optimizer` (broad quality), `design-slop-blocker` (UI), `security-reviewer` (API/auth/payment audits — triggers automatically on API route changes)
-- **Skills** (`.claude/skills/`): `/deploy-check` (pre-push verification gate, catches the 6 build gotchas), `/ship` (full dev→prod pipeline with security gate, user-invocation only)
-- **Hooks** (`.claude/settings.json`): PreToolUse blocks `.env*` edits (exit 2), PostToolUse auto-formats `.ts/.tsx/.js/.jsx/.json/.md/.css` via Prettier — do NOT override or duplicate these
+- **MCP servers** (`.mcp.json`): `sovereign-matrix` (custom, exposes sovereign_run_agent/playbook/health/api_catalog against production) + `context7` (live library API docs — use it instead of guessing signatures for Drizzle, Clerk, Stripe, Vercel AI SDK, etc.) + `sentry` (error monitoring) + `playwright` (browser automation for E2E)
+- **Agents** (`.claude/agents/`): `sovereign-optimizer` (broad quality), `design-slop-blocker` (UI), `security-reviewer` (API/auth/payment audits — triggers automatically on API route changes), `ai-cost-auditor` (flags expensive AI routing in `ai()` callers)
+- **Skills** (`.claude/skills/`): `/deploy-check` (pre-push verification gate, catches the build gotchas), `/ship` (full dev→prod pipeline with security gate), `/security-check` (regression tests + security-reviewer sweep), `/new-api-route` (scaffolds a secured App Router route), `/db-migrate` (Drizzle migration workflow)
+- **Hooks** (`.claude/settings.json`): SessionStart runs `.claude/hooks/session-start.sh`; PreToolUse blocks `.env*` + lockfile edits (exit 2); PostToolUse auto-formats `.ts/.tsx/.js/.jsx/.json/.md/.css` via Prettier — do NOT override or duplicate these. `enabledPlugins`: context7, figma.
 - **Env config** in `.env.local` (30+ keys: AI providers, Stripe, Clerk, Twilio, ElevenLabs, Sentry, etc.)
 
 ### Pending Manual Steps
