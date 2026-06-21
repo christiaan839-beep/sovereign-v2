@@ -162,7 +162,7 @@ const INDUSTRY_STACKS: Record<string, IndustryStack> = {
       {
         id: "pii-redactor",
         name: "PII Redactor",
-        purpose: "HIPAA-compliant data anonymization",
+        purpose: "HIPAA-aware data anonymization",
       },
       {
         id: "voicechat",

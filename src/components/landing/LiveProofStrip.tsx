@@ -6,14 +6,12 @@ interface StripStats {
   agents: number;
   models: number;
   industries: number;
-  uptime: string;
 }
 
 const STATIC_FALLBACK: StripStats = {
-  agents: 137,
+  agents: 130,
   models: 39,
   industries: 14,
-  uptime: "99.9%",
 };
 
 /**
@@ -33,7 +31,6 @@ export function LiveProofStrip() {
             agents: data.agentCount ?? STATIC_FALLBACK.agents,
             models: data.modelCount ?? STATIC_FALLBACK.models,
             industries: data.industries ?? STATIC_FALLBACK.industries,
-            uptime: data.uptime ?? STATIC_FALLBACK.uptime,
           });
         }
       })
@@ -46,7 +43,6 @@ export function LiveProofStrip() {
     { value: stats.agents.toString(), label: "agents live" },
     { value: stats.models.toString(), label: "models" },
     { value: stats.industries.toString(), label: "industries" },
-    { value: stats.uptime, label: "uptime" },
   ];
 
   return (

@@ -7,7 +7,7 @@ underneath. Receipts in, regulator-ready reports out. Closed-source
 vendors charge $5K-300K/year per framework; we ship all six as
 Apache 2.0.
 
-[![Tests](https://img.shields.io/badge/tests-3852_passing-brightgreen)](./src/__tests__)
+[![Tests](https://img.shields.io/badge/tests-4471_passing-brightgreen)](./src/__tests__)
 [![License: Apache 2.0](https://img.shields.io/badge/packages-Apache_2.0-blue)](./LICENSE)
 [![License: MIT](https://img.shields.io/badge/app-MIT-blue)](./LICENSE)
 [![Live](https://img.shields.io/badge/live-sovereignmatrix.agency-black)](https://sovereignmatrix.agency)
@@ -191,7 +191,7 @@ production prompts.
 
 ```
 $ npm test
-✓ 3852 tests passing (256 files)
+✓ 4471 tests passing (293 files)
 ✓ 4 skipped
 
 $ npx tsc --noEmit

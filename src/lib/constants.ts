@@ -18,7 +18,6 @@ export const METRICS = {
   agentCount: 130,
   modelCount: "39+",
   perTokenCost: "$0",
-  avgLatency: "<200ms",
   safetyLayers: 5,
   nimModelCount: 26,
   agentEndpoints: 118,

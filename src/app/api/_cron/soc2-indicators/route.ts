@@ -22,35 +22,53 @@
 import { NextResponse } from "next/server";
 import { createLogger } from "@/lib/logger";
 import { buildPosture } from "@/lib/soc2-monitor";
-import { collectFromInputs } from "@/lib/soc2-collector";
+import { collectFromInputs, type CollectorInputs } from "@/lib/soc2-collector";
+import { db } from "@/db";
+import { agentActivity } from "@/db/schema";
+import { and, gte, sql } from "drizzle-orm";
 
 const log = createLogger("cron-soc2-indicators");
 
 export const dynamic = "force-dynamic";
 
 /**
- * Derive readings from observable platform state via the Cook 93
- * collector. Inputs are stubbed today; production wires Drizzle +
- * Sentry fetches into `CollectorInputs` and the collector returns
- * audit-honest readings (conservative defaults on missing data).
+ * Derive readings from observable platform state via the collector.
+ *
+ * Only inputs we can measure directly from our own database (agent-run
+ * pass rate) are wired here. Indicators that depend on external systems we
+ * don't query server-side (Sentry MTTR, Vercel deploys, Clerk admin MFA,
+ * DSR SLA) are intentionally LEFT UNSET so the collector applies its
+ * conservative "missing data" defaults rather than fabricated-perfect
+ * numbers. This keeps the posture audit-honest: the snapshot reports what
+ * we actually observe and nothing more.
  */
-function collectReadings() {
-  return collectFromInputs({
-    // Sample inputs reflecting recent platform state. Production wires
-    // these to the real Drizzle queries + Sentry + Vercel APIs.
-    agentRuns24h: 1000,
-    agentRunsPassed24h: 995,
-    driftEvents7d: 2,
-    replays7d: 1000,
-    redTeamCriticals7d: 0,
-    deploys90d: 200,
-    failedDeploys90d: 6,
-    incidentMttrHours: 1.9,
-    adminTotal: 4,
-    adminMfaEnrolled: 4,
-    dsrTotal30d: 50,
-    dsrInSla30d: 48,
-  });
+async function collectReadings() {
+  const inputs: CollectorInputs = {};
+
+  // Real agent-run pass rate over the last 24h, from agent_activity.
+  try {
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const rows = await db
+      .select({
+        runs: sql<number>`count(*)::int`,
+        passed: sql<number>`count(*) filter (where ${agentActivity.action} = 'completed')::int`,
+      })
+      .from(agentActivity)
+      .where(and(gte(agentActivity.createdAt, since)));
+    const runs = Number(rows[0]?.runs ?? 0);
+    const passed = Number(rows[0]?.passed ?? 0);
+    if (runs > 0) {
+      inputs.agentRuns24h = runs;
+      inputs.agentRunsPassed24h = passed;
+    }
+  } catch (err) {
+    // Missing table / transient error → leave unset (conservative default).
+    log.warn("agent_activity pass-rate query failed; using collector default", {
+      error: String(err),
+    });
+  }
+
+  return collectFromInputs(inputs);
 }
 
 export async function GET(req: Request) {
@@ -60,7 +78,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const now = new Date();
-  const readings = collectReadings();
+  const readings = await collectReadings();
   const posture = buildPosture(readings, { now });
 
   log.info("SOC 2 posture snapshot", {
@@ -70,6 +88,10 @@ export async function GET(req: Request) {
 
   return NextResponse.json({
     ok: true,
+    // This is a self-monitored control snapshot derived from live platform
+    // state — NOT a third-party SOC 2 attestation. Consumers must not present
+    // it as certification.
+    attested: false,
     posture,
   });
 }

@@ -10,22 +10,25 @@ import { buildScorecard } from "@/lib/compliance-mappings";
 import type { Metadata } from "next";
 
 /**
- * /trust — Live trust posture page (Cook 89).
+ * /trust — Trust posture page (Cook 89).
  *
- * Pulls the same baseline indicator readings used by the Cook 73 cron
- * (in-memory snapshot until /api/_cron/soc2-indicators persists them)
- * and renders the SOC 2 posture + compliance framework coverage for
- * sales + procurement teams.
+ * Renders the SOC 2 control posture + compliance framework coverage for
+ * sales + procurement teams from BASELINE_READINGS — reference control
+ * targets, NOT a live measured feed or a third-party attestation. The
+ * /api/_cron/soc2-indicators route derives a self-monitored snapshot from
+ * real platform state separately.
  */
 
 export const metadata: Metadata = {
-  title:
-    "Trust Posture · Live SOC 2 + EU AI Act + NIST + ISO · Sovereign Matrix",
+  title: "Trust Posture · SOC 2 + EU AI Act + NIST + ISO · Sovereign Matrix",
   description:
-    "Continuous control posture, cryptographic receipts, replayable audit trail. Live framework coverage across SOC 2 / EU AI Act / NIST AI RMF / ISO 42001.",
+    "Control posture, cryptographic receipts, replayable audit trail. Reference framework coverage across SOC 2 / EU AI Act / NIST AI RMF / ISO 42001.",
   alternates: { canonical: "/trust" },
 };
 
+// Reference control targets shown on the posture page. These are baseline
+// figures (not a live feed and not a SOC 2 attestation) — see the disclaimer
+// rendered below the posture header.
 const BASELINE_READINGS: IndicatorReading[] = [
   { id: "encryption-at-rest-coverage", value: 1.0 },
   { id: "mfa-admin-fraction", value: 1.0 },
@@ -273,20 +276,24 @@ export default function TrustPage() {
 
       <header className="max-w-5xl mx-auto px-6 pt-20 pb-12">
         <p className="text-[10px] uppercase tracking-[0.4em] text-emerald-400 mb-4 inline-flex items-center gap-2">
-          <ShieldCheck className="w-3.5 h-3.5" /> Live posture
+          <ShieldCheck className="w-3.5 h-3.5" /> Reference posture
         </p>
         <h1 className="text-4xl md:text-5xl font-black tracking-tight text-white max-w-3xl">
-          Continuous control posture, on-demand replay.
+          Control posture, on-demand replay.
         </h1>
         <p className="mt-6 text-neutral-400 text-base leading-relaxed max-w-2xl">
-          Every SOC 2 Trust Services Criterion that powers our enterprise
-          assurance is monitored continuously — not at audit time. Pass / warn /
-          fail per control, mapped to the platform capabilities that enforce
-          each one. Procurement teams can request the underlying receipt id and
+          Each SOC 2 Trust Services Criterion is mapped to the platform
+          capability that enforces it, with a pass / warn / fail target per
+          control. Procurement teams can request the underlying receipt id and
           replay any decision from the last 365 days.
         </p>
-        <p className="text-[11px] text-neutral-500 mt-3">
-          Posture generated at{" "}
+        <p className="text-[11px] text-neutral-500 mt-3 max-w-2xl leading-relaxed">
+          These are reference control targets, not a live measured feed or a
+          third-party attestation. SOC 2 Type II is in progress (see{" "}
+          <Link href="/security" className="text-neutral-400 underline">
+            /security
+          </Link>
+          ). Snapshot rendered at{" "}
           <code className="text-neutral-400">{posture.generatedAt}</code>
         </p>
       </header>

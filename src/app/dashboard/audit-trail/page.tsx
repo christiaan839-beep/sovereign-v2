@@ -3,8 +3,16 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Shield, ChevronLeft, ChevronRight, Loader2, Filter, Clock,
-  Users, Activity, AlertTriangle, Search,
+  Shield,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  Filter,
+  Clock,
+  Users,
+  Activity,
+  AlertTriangle,
+  Search,
 } from "lucide-react";
 
 interface AuditLog {
@@ -48,7 +56,11 @@ const ACTION_TYPES = [
 function formatDate(dateStr: string) {
   const d = new Date(dateStr);
   return d.toLocaleString("en-US", {
-    month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
   });
 }
 
@@ -56,7 +68,8 @@ function truncateDetails(details: string | null, max = 60): string {
   if (!details) return "-";
   try {
     const parsed = JSON.parse(details);
-    const str = typeof parsed === "object" ? JSON.stringify(parsed) : String(parsed);
+    const str =
+      typeof parsed === "object" ? JSON.stringify(parsed) : String(parsed);
     return str.length > max ? str.slice(0, max) + "..." : str;
   } catch {
     return details.length > max ? details.slice(0, max) + "..." : details;
@@ -64,18 +77,28 @@ function truncateDetails(details: string | null, max = 60): string {
 }
 
 function actionBadgeColor(action: string): string {
-  if (action.startsWith("user.")) return "bg-blue-500/20 text-blue-400 border-blue-500/30";
-  if (action.startsWith("agent.")) return "bg-emerald-500/20 text-emerald-400 border-emerald-500/30";
-  if (action.startsWith("api_key.")) return "bg-amber-500/20 text-amber-400 border-amber-500/30";
-  if (action.startsWith("data.")) return "bg-red-500/20 text-red-400 border-red-500/30";
-  if (action.startsWith("settings.")) return "bg-violet-500/20 text-violet-400 border-violet-500/30";
-  if (action.startsWith("subscription.")) return "bg-cyan-500/20 text-cyan-400 border-cyan-500/30";
+  if (action.startsWith("user."))
+    return "bg-blue-500/20 text-blue-400 border-blue-500/30";
+  if (action.startsWith("agent."))
+    return "bg-emerald-500/20 text-emerald-400 border-emerald-500/30";
+  if (action.startsWith("api_key."))
+    return "bg-amber-500/20 text-amber-400 border-amber-500/30";
+  if (action.startsWith("data."))
+    return "bg-red-500/20 text-red-400 border-red-500/30";
+  if (action.startsWith("settings."))
+    return "bg-violet-500/20 text-violet-400 border-violet-500/30";
+  if (action.startsWith("subscription."))
+    return "bg-cyan-500/20 text-cyan-400 border-cyan-500/30";
   return "bg-white/10 text-neutral-300 border-white/10";
 }
 
 export default function AuditTrailPage() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
-  const [summary, setSummary] = useState<Summary>({ totalEvents: 0, uniqueUsers: 0, topAction: "N/A" });
+  const [summary, setSummary] = useState<Summary>({
+    totalEvents: 0,
+    uniqueUsers: 0,
+    topAction: "N/A",
+  });
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [since, setSince] = useState("7d");
@@ -94,7 +117,9 @@ export default function AuditTrailPage() {
       const data = await res.json();
       setLogs(data.logs || []);
       setTotalPages(data.totalPages || 1);
-      setSummary(data.summary || { totalEvents: 0, uniqueUsers: 0, topAction: "N/A" });
+      setSummary(
+        data.summary || { totalEvents: 0, uniqueUsers: 0, topAction: "N/A" },
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
@@ -123,16 +148,32 @@ export default function AuditTrailPage() {
           Audit Trail
         </h1>
         <p className="text-neutral-400 text-sm">
-          SOC 2-compliant activity log. Every action across agents, settings, and data is recorded here.
+          Audit-grade activity log. Every action across agents, settings, and
+          data is recorded here.
         </p>
       </motion.div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
-          { label: "Total Events", value: summary.totalEvents.toLocaleString(), icon: Activity, color: "text-emerald-400" },
-          { label: "Unique Users", value: String(summary.uniqueUsers), icon: Users, color: "text-blue-400" },
-          { label: "Top Action", value: summary.topAction, icon: AlertTriangle, color: "text-amber-400" },
+          {
+            label: "Total Events",
+            value: summary.totalEvents.toLocaleString(),
+            icon: Activity,
+            color: "text-emerald-400",
+          },
+          {
+            label: "Unique Users",
+            value: String(summary.uniqueUsers),
+            icon: Users,
+            color: "text-blue-400",
+          },
+          {
+            label: "Top Action",
+            value: summary.topAction,
+            icon: AlertTriangle,
+            color: "text-amber-400",
+          },
         ].map((card) => (
           <motion.div
             key={card.label}
@@ -142,9 +183,13 @@ export default function AuditTrailPage() {
           >
             <div className="flex items-center gap-3 mb-2">
               <card.icon className={`w-5 h-5 ${card.color}`} />
-              <span className="text-xs text-neutral-500 uppercase tracking-widest font-semibold">{card.label}</span>
+              <span className="text-xs text-neutral-500 uppercase tracking-widest font-semibold">
+                {card.label}
+              </span>
             </div>
-            <p className="text-2xl font-bold text-white truncate">{card.value}</p>
+            <p className="text-2xl font-bold text-white truncate">
+              {card.value}
+            </p>
           </motion.div>
         ))}
       </div>
@@ -153,7 +198,9 @@ export default function AuditTrailPage() {
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2 text-neutral-400">
           <Clock className="w-4 h-4" />
-          <span className="text-xs uppercase tracking-widest font-semibold">Range</span>
+          <span className="text-xs uppercase tracking-widest font-semibold">
+            Range
+          </span>
         </div>
         <div className="flex gap-1">
           {TIME_RANGES.map((r) => (
@@ -175,7 +222,9 @@ export default function AuditTrailPage() {
 
         <div className="flex items-center gap-2 text-neutral-400">
           <Filter className="w-4 h-4" />
-          <span className="text-xs uppercase tracking-widest font-semibold">Action</span>
+          <span className="text-xs uppercase tracking-widest font-semibold">
+            Action
+          </span>
         </div>
         <select
           value={action}
@@ -183,7 +232,9 @@ export default function AuditTrailPage() {
           className="bg-black/60 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-neutral-300 focus:outline-none focus:border-emerald-500/50 appearance-none cursor-pointer"
         >
           {ACTION_TYPES.map((a) => (
-            <option key={a.value} value={a.value}>{a.label}</option>
+            <option key={a.value} value={a.value}>
+              {a.label}
+            </option>
           ))}
         </select>
       </div>
@@ -206,19 +257,33 @@ export default function AuditTrailPage() {
         ) : logs.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-16 text-neutral-500 gap-2">
             <Search className="w-8 h-8" />
-            <p className="text-sm">No audit events found for the selected filters.</p>
+            <p className="text-sm">
+              No audit events found for the selected filters.
+            </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/5">
-                  <th className="text-left px-4 py-3 text-xs text-neutral-500 uppercase tracking-widest font-semibold">Time</th>
-                  <th className="text-left px-4 py-3 text-xs text-neutral-500 uppercase tracking-widest font-semibold">User</th>
-                  <th className="text-left px-4 py-3 text-xs text-neutral-500 uppercase tracking-widest font-semibold">Action</th>
-                  <th className="text-left px-4 py-3 text-xs text-neutral-500 uppercase tracking-widest font-semibold">Resource</th>
-                  <th className="text-left px-4 py-3 text-xs text-neutral-500 uppercase tracking-widest font-semibold">Details</th>
-                  <th className="text-left px-4 py-3 text-xs text-neutral-500 uppercase tracking-widest font-semibold">IP</th>
+                  <th className="text-left px-4 py-3 text-xs text-neutral-500 uppercase tracking-widest font-semibold">
+                    Time
+                  </th>
+                  <th className="text-left px-4 py-3 text-xs text-neutral-500 uppercase tracking-widest font-semibold">
+                    User
+                  </th>
+                  <th className="text-left px-4 py-3 text-xs text-neutral-500 uppercase tracking-widest font-semibold">
+                    Action
+                  </th>
+                  <th className="text-left px-4 py-3 text-xs text-neutral-500 uppercase tracking-widest font-semibold">
+                    Resource
+                  </th>
+                  <th className="text-left px-4 py-3 text-xs text-neutral-500 uppercase tracking-widest font-semibold">
+                    Details
+                  </th>
+                  <th className="text-left px-4 py-3 text-xs text-neutral-500 uppercase tracking-widest font-semibold">
+                    IP
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -239,7 +304,9 @@ export default function AuditTrailPage() {
                         {log.userId}
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded-md border ${actionBadgeColor(log.action)}`}>
+                        <span
+                          className={`inline-block px-2 py-0.5 text-xs font-medium rounded-md border ${actionBadgeColor(log.action)}`}
+                        >
                           {log.action}
                         </span>
                       </td>

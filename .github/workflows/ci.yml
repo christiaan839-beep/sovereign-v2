@@ -58,6 +58,13 @@ jobs:
           done
           exit 1
 
+      # Build the @sovereign-matrix/* workspace packages so their compiled
+      # .d.ts outputs exist before type-checking app code that imports them.
+      # Without this, `tsc --noEmit` fails with TS2307 "Cannot find module
+      # '@sovereign-matrix/*'" on the compliance routes/pages.
+      - name: Build workspace packages
+        run: npm run build:packages
+
       - name: Run ESLint
         run: npm run lint
 
@@ -102,6 +109,11 @@ jobs:
             sleep $((attempt * 5))
           done
           exit 1
+
+      # Build workspace packages before the Next.js build resolves their
+      # imports (the compliance routes/pages import @sovereign-matrix/*).
+      - name: Build workspace packages
+        run: npm run build:packages
 
       - name: Build application
         run: npm run build

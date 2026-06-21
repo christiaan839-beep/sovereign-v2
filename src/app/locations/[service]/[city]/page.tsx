@@ -11,8 +11,8 @@ export const dynamic = "force-dynamic";
 
 export default async function ProgrammaticLocationPage({ params }: Props) {
   // Format to match how it was stored
-  const servicePath = params.service.toLowerCase().replace(/\\s+/g, '-');
-  const cityPath = params.city.toLowerCase().replace(/\\s+/g, '-');
+  const servicePath = params.service.toLowerCase().replace(/\\s+/g, "-");
+  const cityPath = params.city.toLowerCase().replace(/\\s+/g, "-");
   const path = `/locations/${servicePath}/${cityPath}`;
 
   // Query the God-Brain for this exact page payload
@@ -25,7 +25,8 @@ export default async function ProgrammaticLocationPage({ params }: Props) {
   }
 
   // Extract the payload stored in metadata
-  const payload = (results[0] as { entry: Record<string, unknown> }).entry.metadata as Record<string, string>;
+  const payload = (results[0] as { entry: Record<string, unknown> }).entry
+    .metadata as Record<string, string>;
 
   if (payload.type !== "programmatic-page" || payload.path !== path) {
     notFound();
@@ -34,32 +35,44 @@ export default async function ProgrammaticLocationPage({ params }: Props) {
   // Ensure arrays are parsed correctly if they were stringified during Pinecone SDK storage
   let benefits = [];
   try {
-     benefits = typeof payload.benefits === "string" ? JSON.parse(payload.benefits) : payload.benefits;
-  } catch(_e) {
-     benefits = ["Elite AI Services", "24/7 Automation", "Guaranteed ROI"];
+    benefits =
+      typeof payload.benefits === "string"
+        ? JSON.parse(payload.benefits)
+        : payload.benefits;
+  } catch (_e) {
+    benefits = ["Elite AI Services", "24/7 Automation", "Measurable Results"];
   }
 
   return (
     <div className="min-h-screen bg-midnight font-sans text-text-primary selection:bg-electric/30">
-      
       {/* JSON-LD Schema — safely parsed and re-serialized to prevent XSS */}
-      {payload.schema && typeof payload.schema === "string" && (() => {
-        try {
-          // Strip HTML tags, parse as JSON, then re-serialize to guarantee safe output
-          const cleaned = (payload.schema as string).replace(/<[^>]*>/g, "");
-          const parsed = JSON.parse(cleaned);
-          return <script type="application/ld+json">{JSON.stringify(parsed)}</script>;
-        } catch {
-          return null; // Invalid JSON-LD — skip silently
-        }
-      })()}
+      {payload.schema &&
+        typeof payload.schema === "string" &&
+        (() => {
+          try {
+            // Strip HTML tags, parse as JSON, then re-serialize to guarantee safe output
+            const cleaned = (payload.schema as string).replace(/<[^>]*>/g, "");
+            const parsed = JSON.parse(cleaned);
+            return (
+              <script type="application/ld+json">
+                {JSON.stringify(parsed)}
+              </script>
+            );
+          } catch {
+            return null; // Invalid JSON-LD — skip silently
+          }
+        })()}
 
       {/* Navigation Bar */}
       <nav className="fixed top-0 inset-x-0 z-50 bg-midnight/80 backdrop-blur-md border-b border-glass-border">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-electric to-rose-glow flex items-center justify-center text-xs font-bold text-white shadow-[0_0_15px_rgba(45,110,255,0.3)]">U</div>
-            <span className="text-xl font-bold tracking-[0.15em] uppercase text-white">SOVEREIGN</span>
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-electric to-rose-glow flex items-center justify-center text-xs font-bold text-white shadow-[0_0_15px_rgba(45,110,255,0.3)]">
+              U
+            </div>
+            <span className="text-xl font-bold tracking-[0.15em] uppercase text-white">
+              SOVEREIGN
+            </span>
           </div>
           <button className="px-6 py-2.5 rounded-full bg-white text-midnight text-sm font-bold shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.5)] transition-gpu">
             Get Pricing
@@ -75,19 +88,21 @@ export default async function ProgrammaticLocationPage({ params }: Props) {
         <div className="max-w-4xl mx-auto relative z-10">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-glass-border bg-glass-bg backdrop-blur-sm mb-8">
             <MapPin className="w-4 h-4 text-rose-glow" />
-            <span className="text-sm font-semibold tracking-wide text-white uppercase">{payload.city} Exclusive Deployment</span>
+            <span className="text-sm font-semibold tracking-wide text-white uppercase">
+              {payload.city} Exclusive Deployment
+            </span>
           </div>
 
           <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 serif-text leading-tight drop-shadow-2xl">
             {payload.h1}
           </h1>
-          
+
           <h2 className="text-xl md:text-2xl text-text-secondary font-medium mb-12 max-w-3xl mx-auto leading-relaxed">
             {payload.h2}
           </h2>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-20">
-             <button className="w-full sm:w-auto px-8 py-4 rounded-full bg-gradient-to-r from-electric to-rose-glow text-white font-bold text-lg shadow-[0_0_20px_rgba(45,110,255,0.4)] hover:shadow-[0_0_40px_rgba(45,110,255,0.6)] transition-gpu flex items-center justify-center gap-2 group">
+            <button className="w-full sm:w-auto px-8 py-4 rounded-full bg-gradient-to-r from-electric to-rose-glow text-white font-bold text-lg shadow-[0_0_20px_rgba(45,110,255,0.4)] hover:shadow-[0_0_40px_rgba(45,110,255,0.6)] transition-gpu flex items-center justify-center gap-2 group">
               <Sparkles className="w-5 h-5 group-hover:animate-pulse" />
               Claim {payload.city} Market
             </button>
@@ -100,63 +115,71 @@ export default async function ProgrammaticLocationPage({ params }: Props) {
 
         {/* Dynamic AI Copy Section */}
         <section className="text-left mt-24 max-w-5xl mx-auto glass-card p-12 border border-glass-border relative overflow-hidden">
-           <div className="absolute top-0 right-0 w-64 h-64 bg-rose-glow/10 blur-[80px]" />
-           
-           <div className="relative z-10 grid md:grid-cols-2 gap-16 items-center">
-             <div>
-               <h3 className="text-3xl font-bold text-white mb-6 font-serif">Dominate {payload.city}</h3>
-               <p className="text-lg text-text-secondary leading-relaxed mb-8">
-                 {payload.heroCopy}
-               </p>
-               
-               <div className="space-y-4">
-                 {benefits?.map((benefit: string, i: number) => (
-                   <div key={i} className="flex items-start gap-4">
-                     <div className="mt-1 flex-shrink-0">
-                       <CheckCircle2 className="w-6 h-6 text-emerald-400 drop-shadow-[0_0_10px_rgba(52,211,153,0.5)]" />
-                     </div>
-                     <p className="text-white font-medium text-lg">{benefit}</p>
-                   </div>
-                 ))}
-               </div>
-             </div>
-             
-             <div className="bg-onyx/50 border border-glass-border rounded-2xl p-8 flex flex-col justify-center min-h-[400px]">
-               <div className="text-center">
-                 <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-electric to-rose-glow mx-auto mb-6 flex items-center justify-center shadow-[0_0_30px_rgba(45,110,255,0.3)]">
-                   <Sparkles className="w-10 h-10 text-white" />
-                 </div>
-                 <h4 className="text-xl font-bold text-white mb-2">SOVEREIGN Autonomous Engine</h4>
-                 <p className="text-sm text-text-secondary mb-8">Currently monitoring 244 competitors in {payload.city}.</p>
-                 <button className="w-full py-4 rounded-xl bg-white text-midnight font-bold shadow-lg hover:bg-gray-100 transition-colors">
-                   Deploy Now
-                 </button>
-               </div>
-             </div>
-           </div>
-        </section>
+          <div className="absolute top-0 right-0 w-64 h-64 bg-rose-glow/10 blur-[80px]" />
 
+          <div className="relative z-10 grid md:grid-cols-2 gap-16 items-center">
+            <div>
+              <h3 className="text-3xl font-bold text-white mb-6 font-serif">
+                Dominate {payload.city}
+              </h3>
+              <p className="text-lg text-text-secondary leading-relaxed mb-8">
+                {payload.heroCopy}
+              </p>
+
+              <div className="space-y-4">
+                {benefits?.map((benefit: string, i: number) => (
+                  <div key={i} className="flex items-start gap-4">
+                    <div className="mt-1 flex-shrink-0">
+                      <CheckCircle2 className="w-6 h-6 text-emerald-400 drop-shadow-[0_0_10px_rgba(52,211,153,0.5)]" />
+                    </div>
+                    <p className="text-white font-medium text-lg">{benefit}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-onyx/50 border border-glass-border rounded-2xl p-8 flex flex-col justify-center min-h-[400px]">
+              <div className="text-center">
+                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-electric to-rose-glow mx-auto mb-6 flex items-center justify-center shadow-[0_0_30px_rgba(45,110,255,0.3)]">
+                  <Sparkles className="w-10 h-10 text-white" />
+                </div>
+                <h4 className="text-xl font-bold text-white mb-2">
+                  SOVEREIGN Autonomous Engine
+                </h4>
+                <p className="text-sm text-text-secondary mb-8">
+                  Currently monitoring 244 competitors in {payload.city}.
+                </p>
+                <button className="w-full py-4 rounded-xl bg-white text-midnight font-bold shadow-lg hover:bg-gray-100 transition-colors">
+                  Deploy Now
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
       </main>
 
       {/* Footer */}
       <footer className="border-t border-glass-border py-12 text-center text-text-secondary text-sm">
         <p>© 2026 SOVEREIGN Intelligence Systems. All rights reserved.</p>
-        <p className="mt-2 text-xs">Serving enterprise clients in {payload.city}.</p>
+        <p className="mt-2 text-xs">
+          Serving enterprise clients in {payload.city}.
+        </p>
       </footer>
     </div>
   );
 }
 
 export async function generateMetadata({ params }: Props) {
-  const servicePath = params.service.toLowerCase().replace(/\\s+/g, '-');
-  const cityPath = params.city.toLowerCase().replace(/\\s+/g, '-');
+  const servicePath = params.service.toLowerCase().replace(/\\s+/g, "-");
+  const cityPath = params.city.toLowerCase().replace(/\\s+/g, "-");
   const path = `/locations/${servicePath}/${cityPath}`;
 
   const memQuery = `PROGRAMMATIC_PAGE_DATA: Path: ${path}`;
   const results = await recall(memQuery, 1);
 
   if (results.length > 0 && results[0].score > 0.8) {
-    const payload = (results[0] as { entry: Record<string, unknown> }).entry.metadata as Record<string, string>;
+    const payload = (results[0] as { entry: Record<string, unknown> }).entry
+      .metadata as Record<string, string>;
     return {
       title: payload.title,
       description: payload.description,
@@ -165,6 +188,6 @@ export async function generateMetadata({ params }: Props) {
 
   return {
     title: `Local Services in ${params.city} | SOVEREIGN`,
-    description: `Leading autonomous marketing services in ${params.city}.`
+    description: `Leading autonomous marketing services in ${params.city}.`,
   };
 }

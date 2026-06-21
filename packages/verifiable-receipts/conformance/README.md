@@ -95,11 +95,28 @@ Fixtures cover:
 10 fixtures × 3 verifiers = **30 cross-language conformance checks
 per CI run.**
 
+## The signing key (published, by design)
+
+`public-key.pem` is the Ed25519 verification key for every v2 fixture. As
+with the CT, JOSE, and Sigstore conformance suites, the signing key is a
+**published test key, not a secret** — publishing it is what lets anyone
+re-verify the corpus from a clean clone. The keypair is derived
+deterministically from a documented fixed seed by `generate-fixtures.mjs`, so
+the corpus is fully reproducible:
+
+```bash
+node packages/verifiable-receipts/conformance/generate-fixtures.mjs
+```
+
+Running it re-emits `public-key.pem` and re-signs the key-dependent fixtures
+byte-for-byte identically. The base64-malformed, wrong-version, and RFC-9162
+inclusion fixtures are key-independent and are never touched.
+
 ## How to add a fixture
 
-1. Generate signed bytes via the TypeScript canonical implementation
-   (`@sovereign-matrix/verifiable-receipts`). Issuer-side signing is
-   the only canonical path.
+1. Add the key-dependent inputs to `generate-fixtures.mjs` (or hand-write a
+   key-independent fixture), then run the generator to sign it with the
+   published test key. Issuer-side signing is the only canonical path.
 2. Write the fixture to `fixtures/<name>.json`.
 3. Run all three harnesses. They MUST all agree on the new
    fixture's expected outcome.
@@ -107,14 +124,13 @@ per CI run.**
 
 ## Stability guarantee
 
-Fixtures in this corpus are **frozen**. Once a fixture is published
-in a tagged release, its byte contents (including the keypair used
-to sign it) MUST NOT change. New tests are added; existing fixtures
-are never silently mutated.
+Fixtures in this corpus are **stable and reproducible**. The generator is
+deterministic (fixed seed → fixed Ed25519 signatures), so the byte contents —
+including the published keypair — do not change between runs. New tests are
+added; existing fixtures are never silently mutated.
 
-This guarantee lets external auditors pin a fixture by its
-sha256 and re-run the harness against any future verifier version
-to detect verification drift.
+This lets external auditors pin a fixture by its sha256 and re-run the
+harness against any future verifier version to detect verification drift.
 
 ## License
 

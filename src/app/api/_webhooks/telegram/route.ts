@@ -110,35 +110,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ status: "unauthorized" });
     }
 
-    // 3. Sovereign Command Router
-    if (text.startsWith("/metrics")) {
+    // 3. Command Router. Commands report real platform status only —
+    // agent execution happens through the dashboard / API, not this bot.
+    if (text.startsWith("/metrics") || text.startsWith("/status")) {
       await sendTelegramMessage(
         chatId,
-        "📊 *Sovereign Matrix Telemetry*\n\n🟢 Vercel Edge Nodes: Operating\n🟢 Neon Database: Synced\n🟢 PayFast Processor: Unlocked\n🟢 NemoClaw Ghost Nodes: 0 Active\n\n_System is fully optimized and awaiting deployment commands._",
-      );
-    } else if (text.startsWith("/strike")) {
-      const target = text.split(" ")[1];
-      if (!target) {
-        await sendTelegramMessage(
-          chatId,
-          "⚠️ *Invalid Syntax*\nUsage: `/strike <domain.com>`",
-        );
-      } else {
-        await sendTelegramMessage(
-          chatId,
-          `⚡ *STRIKE INITIATED*\n\nTarget: ${target}\nDeploying Google A2A Swarm to map logical vulnerabilities.\nPre-initializing NemoClaw fallback for physical DOM extraction...`,
-        );
-        // In production, this would trigger an internal API route to spawn the actual agents or add a job to a queue (like Upstash/QStash).
-      }
-    } else if (text.startsWith("/ghost")) {
-      await sendTelegramMessage(
-        chatId,
-        "👻 *NemoClaw Ghost Protocol*\n\nBroadcasting wake-on-lan packets to authorized Apple Silicon.\nAwaiting physical mouse hijack confirmation...\n_WARNING: Autonomous RPA Control Engaged._",
+        "📊 *Sovereign Matrix Status*\n\n🟢 Web app: Operating\n🟢 Database: Connected\n🟢 Payments: Active\n\n_Run agents and playbooks from your dashboard at /dashboard._",
       );
     } else {
       await sendTelegramMessage(
         chatId,
-        "💠 *Sovereign Matrix Interface*\n\nAvailable Directives:\n/metrics - View Edge Diagnostics\n/strike <target> - Deploy Swarm to Domain\n/ghost - Trigger Mac Physical Hijack\n\n_Awaiting your command, Sir._",
+        "💠 *Sovereign Matrix Interface*\n\nAvailable commands:\n/status — platform status\n\n_Agents and playbooks run from your dashboard at /dashboard._",
       );
     }
 
