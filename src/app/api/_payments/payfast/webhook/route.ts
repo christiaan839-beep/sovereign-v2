@@ -8,6 +8,7 @@ import crypto from "crypto";
 import { getPublicUrl } from "@/lib/base-url";
 import { alreadyProcessed } from "@/lib/idempotency";
 import { PLANS, type PlanId } from "@/lib/plans";
+import { getInternalWebhookSecret } from "@/lib/internal-webhook";
 
 const log = createLogger("payfast-webhook");
 
@@ -249,27 +250,36 @@ export async function POST(req: Request) {
         });
       }
 
-      // 3. Trigger auto-onboard (best effort) with internal-secret header
+      // 3. Trigger auto-onboard (best effort) with internal-secret header.
+      // Skip when the secret is unconfigured — the receiver fails closed on
+      // an empty header, so firing the request only hides the misconfig.
       const baseUrl = getPublicUrl();
-      const internalSecret = process.env.INTERNAL_WEBHOOK_SECRET || "";
-      try {
-        await fetch(`${baseUrl}/api/_agents/auto-onboard`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-sovereign-internal-secret": internalSecret,
-          },
-          signal: AbortSignal.timeout(10_000),
-          body: JSON.stringify({
-            clientName:
-              `${data.name_first || ""} ${data.name_last || ""}`.trim() ||
-              "New Client",
-            email,
-            plan,
-          }),
-        });
-      } catch {
-        /* auto-onboard is best-effort */
+      const internalSecret = getInternalWebhookSecret();
+      if (internalSecret) {
+        try {
+          await fetch(`${baseUrl}/api/_agents/auto-onboard`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-sovereign-internal-secret": internalSecret,
+            },
+            signal: AbortSignal.timeout(10_000),
+            body: JSON.stringify({
+              clientName:
+                `${data.name_first || ""} ${data.name_last || ""}`.trim() ||
+                "New Client",
+              email,
+              plan,
+            }),
+          });
+        } catch {
+          /* auto-onboard is best-effort */
+        }
+      } else {
+        log.warn(
+          "Skipping auto-onboard: INTERNAL_WEBHOOK_SECRET is not configured",
+          { mPaymentId },
+        );
       }
 
       persistAppend(
