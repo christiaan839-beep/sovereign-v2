@@ -55,13 +55,17 @@ async function ensureVectorTable(): Promise<boolean> {
     `);
 
     // Create index for fast similarity search
-    await db.execute(sql`
+    await db
+      .execute(
+        sql`
       CREATE INDEX IF NOT EXISTS agent_memories_embedding_idx
       ON agent_memories USING ivfflat (embedding vector_cosine_ops)
       WITH (lists = 100)
-    `).catch(() => {
-      // IVFFlat index needs some rows first — skip on empty table
-    });
+    `,
+      )
+      .catch(() => {
+        // IVFFlat index needs some rows first — skip on empty table
+      });
 
     // Create index for user lookups
     await db.execute(sql`
@@ -88,7 +92,7 @@ async function embedText(text: string): Promise<number[] | null> {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${nimKey}`,
+        Authorization: `Bearer ${nimKey}`,
       },
       body: JSON.stringify({
         model: EMBED_MODEL,
@@ -109,6 +113,56 @@ async function embedText(text: string): Promise<number[] | null> {
   }
 }
 
+// ─── Per-user write cap (BACKLOG H2) ────────────────────────────────────────
+
+/**
+ * Hard ceiling on rows per user in `agent_memories`. Without it, an agent
+ * storing memory in a loop fills Neon storage unbounded and IVFFlat recall
+ * degrades as N grows. When a user is at/over the cap we prune the oldest
+ * rows (FIFO) to make room for the incoming write, keeping the working set
+ * bounded and recall sharp.
+ */
+export const MAX_MEMORIES_PER_USER = 10_000;
+
+/**
+ * Enforce the per-user row cap before an insert. Counts the user's rows and,
+ * when at/over `MAX_MEMORIES_PER_USER`, deletes the oldest rows so the table
+ * stays within cap after the pending insert. Best-effort: a failed prune must
+ * never block the write (storage growth is the lesser evil vs. a dropped
+ * memory), so failures are logged and swallowed.
+ */
+async function enforceUserMemoryCap(userId: string): Promise<void> {
+  try {
+    const countRes = await db.execute(sql`
+      SELECT COUNT(*)::int AS n FROM agent_memories WHERE user_id = ${userId}
+    `);
+    const n = Number(
+      (countRes.rows?.[0] as { n?: number | string } | undefined)?.n ?? 0,
+    );
+    if (n < MAX_MEMORIES_PER_USER) return;
+
+    // Delete enough oldest rows to land at cap-1, leaving room for the insert.
+    const overBy = n - MAX_MEMORIES_PER_USER + 1;
+    await db.execute(sql`
+      DELETE FROM agent_memories
+      WHERE id IN (
+        SELECT id FROM agent_memories
+        WHERE user_id = ${userId}
+        ORDER BY created_at ASC
+        LIMIT ${overBy}
+      )
+    `);
+    log.warn("agent_memories per-user cap reached — pruned oldest rows", {
+      pruned: overBy,
+      cap: MAX_MEMORIES_PER_USER,
+    });
+  } catch (err) {
+    log.error("Memory cap enforcement failed (write proceeds)", {
+      error: String(err),
+    });
+  }
+}
+
 // ─── Public API ─────────────────────────────────────────────────────────────
 
 /**
@@ -119,10 +173,13 @@ export async function storeMemory(
   userId: string,
   agentName: string,
   content: string,
-  metadata: Record<string, unknown> = {}
+  metadata: Record<string, unknown> = {},
 ): Promise<boolean> {
   const ready = await ensureVectorTable();
   if (!ready) return false;
+
+  // Bound per-user storage before inserting (FIFO prune at cap).
+  await enforceUserMemoryCap(userId);
 
   const embedding = await embedText(content);
   if (!embedding) {
@@ -158,8 +215,15 @@ export async function storeMemory(
 export async function searchMemory(
   userId: string,
   query: string,
-  limit: number = 3
-): Promise<Array<{ content: string; agentName: string; similarity: number; createdAt: string }>> {
+  limit: number = 3,
+): Promise<
+  Array<{
+    content: string;
+    agentName: string;
+    similarity: number;
+    createdAt: string;
+  }>
+> {
   const ready = await ensureVectorTable();
   if (!ready) return [];
 
@@ -199,7 +263,7 @@ export async function searchMemory(
  */
 export async function getMemoryContextForPrompt(
   userId: string,
-  query: string
+  query: string,
 ): Promise<string> {
   const memories = await searchMemory(userId, query);
 
