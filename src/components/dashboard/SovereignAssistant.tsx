@@ -289,6 +289,7 @@ function CopyBtn({ text }: { text: string }) {
       }}
       className="p-1 rounded hover:bg-white/10 text-neutral-600 hover:text-white transition-colors"
       title="Copy"
+      aria-label={copied ? "Copied" : "Copy to clipboard"}
     >
       {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
     </button>
@@ -608,6 +609,7 @@ function ScrollToBottomBtn({ scrollRef }: { scrollRef: React.RefObject<HTMLDivEl
         })
       }
       className="absolute bottom-2 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-white/10 border border-white/10 backdrop-blur-sm flex items-center justify-center hover:bg-white/20 transition-colors z-10"
+      aria-label="Scroll to bottom"
     >
       <ArrowDown className="w-3.5 h-3.5 text-neutral-400" />
     </motion.button>
@@ -707,6 +709,8 @@ export function SovereignAssistant() {
             ? "bg-white/10 border border-white/20 backdrop-blur-xl"
             : "bg-white text-black hover:bg-neutral-200 hover:shadow-[0_0_30px_rgba(255,255,255,0.15)]"
         }`}
+        aria-label={open ? "Close assistant" : "Open assistant"}
+        aria-expanded={open}
       >
         <AnimatePresence mode="wait">
           {open ? (
@@ -942,6 +946,7 @@ export function SovereignAssistant() {
                       onClick={() => sendMessage(input)}
                       disabled={loading}
                       className="w-8 h-8 mb-0.5 rounded-lg bg-emerald-500 text-white flex items-center justify-center hover:bg-emerald-400 disabled:opacity-30 transition-all shrink-0"
+                      aria-label="Send message"
                     >
                       <Send className="w-3.5 h-3.5" />
                     </motion.button>
