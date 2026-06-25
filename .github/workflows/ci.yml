@@ -45,15 +45,15 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
-      # Retry npm ci up to 3x with backoff. Most "Lint & Type Check"
+      # Retry npm install --workspaces up to 3x with backoff. Most "Lint & Type Check"
       # failures across recent PRs were short-duration runner /
       # registry flakes — a single retry pass eliminates the noise
       # without burning quota on hung runs.
       - name: Install dependencies
         run: |
           for attempt in 1 2 3; do
-            if npm ci; then exit 0; fi
-            echo "npm ci attempt $attempt failed; backing off..."
+            if npm install --workspaces; then exit 0; fi
+            echo "npm install --workspaces attempt $attempt failed; backing off..."
             sleep $((attempt * 5))
           done
           exit 1
@@ -90,15 +90,15 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
-      # Retry npm ci up to 3x with backoff. Most "Lint & Type Check"
+      # Retry npm install --workspaces up to 3x with backoff. Most "Lint & Type Check"
       # failures across recent PRs were short-duration runner /
       # registry flakes — a single retry pass eliminates the noise
       # without burning quota on hung runs.
       - name: Install dependencies
         run: |
           for attempt in 1 2 3; do
-            if npm ci; then exit 0; fi
-            echo "npm ci attempt $attempt failed; backing off..."
+            if npm install --workspaces; then exit 0; fi
+            echo "npm install --workspaces attempt $attempt failed; backing off..."
             sleep $((attempt * 5))
           done
           exit 1
@@ -128,15 +128,15 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
-      # Retry npm ci up to 3x with backoff. Most "Lint & Type Check"
+      # Retry npm install --workspaces up to 3x with backoff. Most "Lint & Type Check"
       # failures across recent PRs were short-duration runner /
       # registry flakes — a single retry pass eliminates the noise
       # without burning quota on hung runs.
       - name: Install dependencies
         run: |
           for attempt in 1 2 3; do
-            if npm ci; then exit 0; fi
-            echo "npm ci attempt $attempt failed; backing off..."
+            if npm install --workspaces; then exit 0; fi
+            echo "npm install --workspaces attempt $attempt failed; backing off..."
             sleep $((attempt * 5))
           done
           exit 1
@@ -161,8 +161,8 @@ jobs:
       - name: Install dependencies
         run: |
           for attempt in 1 2 3; do
-            if npm ci; then exit 0; fi
-            echo "npm ci attempt $attempt failed; backing off..."
+            if npm install --workspaces; then exit 0; fi
+            echo "npm install --workspaces attempt $attempt failed; backing off..."
             sleep $((attempt * 5))
           done
           exit 1
@@ -228,15 +228,15 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
-      # Retry npm ci up to 3x with backoff. Most "Lint & Type Check"
+      # Retry npm install --workspaces up to 3x with backoff. Most "Lint & Type Check"
       # failures across recent PRs were short-duration runner /
       # registry flakes — a single retry pass eliminates the noise
       # without burning quota on hung runs.
       - name: Install dependencies
         run: |
           for attempt in 1 2 3; do
-            if npm ci; then exit 0; fi
-            echo "npm ci attempt $attempt failed; backing off..."
+            if npm install --workspaces; then exit 0; fi
+            echo "npm install --workspaces attempt $attempt failed; backing off..."
             sleep $((attempt * 5))
           done
           exit 1
@@ -282,15 +282,15 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
-      # Retry npm ci up to 3x with backoff. Most "Lint & Type Check"
+      # Retry npm install --workspaces up to 3x with backoff. Most "Lint & Type Check"
       # failures across recent PRs were short-duration runner /
       # registry flakes — a single retry pass eliminates the noise
       # without burning quota on hung runs.
       - name: Install dependencies
         run: |
           for attempt in 1 2 3; do
-            if npm ci; then exit 0; fi
-            echo "npm ci attempt $attempt failed; backing off..."
+            if npm install --workspaces; then exit 0; fi
+            echo "npm install --workspaces attempt $attempt failed; backing off..."
             sleep $((attempt * 5))
           done
           exit 1

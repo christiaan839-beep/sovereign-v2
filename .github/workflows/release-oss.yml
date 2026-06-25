@@ -80,8 +80,8 @@ jobs:
       - name: Install workspace dependencies
         run: |
           for attempt in 1 2 3; do
-            if npm ci; then exit 0; fi
-            echo "npm ci attempt $attempt failed; backing off..."
+            if npm install --workspaces; then exit 0; fi
+            echo "npm install --workspaces attempt $attempt failed; backing off..."
             sleep $((attempt * 5))
           done
           exit 1
