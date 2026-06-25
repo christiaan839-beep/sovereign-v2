@@ -54,7 +54,7 @@ jobs:
 
       - name: Install dependencies (workspace root)
         working-directory: .
-        run: npm ci --ignore-scripts
+        run: npm install --workspaces --ignore-scripts
 
       - name: Build OSS package
         run: |
