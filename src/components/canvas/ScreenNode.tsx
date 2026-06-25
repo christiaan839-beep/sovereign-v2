@@ -51,19 +51,21 @@ export function ScreenNode({ id, data }: NodeProps) {
               <div className="flex items-center gap-0.5 mr-1 px-1 py-0.5 rounded bg-white/[0.03] border border-white/[0.04]">
                 {([["desktop", Monitor], ["tablet", Tablet], ["mobile", Smartphone]] as const).map(([dev, Icon]) => (
                   <button key={dev} onClick={(e) => { e.stopPropagation(); setDevice(dev); }}
+                    aria-label={`Switch to ${dev} view`}
+                    title={`Switch to ${dev} view`}
                     className={`p-0.5 rounded transition-colors ${device === dev ? "text-[#00B7FF]" : "text-neutral-600 hover:text-neutral-400"}`}>
                     <Icon className="w-2.5 h-2.5" />
                   </button>
                 ))}
               </div>
             )}
-            <button onClick={handleCopy} className="p-1 rounded hover:bg-white/10 text-neutral-500 hover:text-white transition-colors">
+            <button onClick={handleCopy} aria-label={copied ? "Copied to clipboard" : "Copy code"} title={copied ? "Copied" : "Copy code"} className="p-1 rounded hover:bg-white/10 text-neutral-500 hover:text-white transition-colors">
               {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
             </button>
-            <button onClick={(e) => { e.stopPropagation(); d.onExpand?.(id); }} className="p-1 rounded hover:bg-white/10 text-neutral-500 hover:text-white transition-colors">
+            <button onClick={(e) => { e.stopPropagation(); d.onExpand?.(id); }} aria-label="Expand view" title="Expand view" className="p-1 rounded hover:bg-white/10 text-neutral-500 hover:text-white transition-colors">
               <Maximize2 className="w-3 h-3" />
             </button>
-            <button onClick={(e) => { e.stopPropagation(); d.onDelete?.(id); }} className="p-1 rounded hover:bg-white/10 text-neutral-500 hover:text-red-400 transition-colors">
+            <button onClick={(e) => { e.stopPropagation(); d.onDelete?.(id); }} aria-label="Delete screen" title="Delete screen" className="p-1 rounded hover:bg-white/10 text-neutral-500 hover:text-red-400 transition-colors">
               <X className="w-3 h-3" />
             </button>
           </div>
