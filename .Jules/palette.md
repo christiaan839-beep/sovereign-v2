@@ -1,0 +1,3 @@
+## 2025-06-26 - [Keyboard Accessibility for Notification Actions]
+**Learning:** Found a common pattern where secondary actions inside notification cards (like "mark as read" and "dismiss") were hidden by default using `opacity-0 group-hover:opacity-100`. This made them completely inaccessible to keyboard users because they wouldn't appear when focused, rendering the UI broken for non-mouse navigation.
+**Action:** When using `opacity-0 group-hover:opacity-100` on a container, always pair it with `focus-within:opacity-100`. Then, ensure the interactive elements inside have clear `focus-visible:ring` states. This keeps the UI clean for mouse users while providing an excellent, visible experience for keyboard users.
