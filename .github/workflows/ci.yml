@@ -58,6 +58,9 @@ jobs:
           done
           exit 1
 
+      - name: Build local packages
+        run: npm run build:packages
+
       - name: Run ESLint
         run: npm run lint
 
