@@ -124,6 +124,25 @@ export async function storeMemory(
   const ready = await ensureVectorTable();
   if (!ready) return false;
 
+  // Enforce 10k per-user row limit (DoS / Resource exhaustion defense)
+  try {
+    const countRes = await db.execute(sql`SELECT count(*) FROM agent_memories WHERE user_id = ${userId}`);
+    const count = Number(countRes.rows?.[0]?.count || 0);
+    if (count >= 10000) {
+      await db.execute(sql`
+        DELETE FROM agent_memories
+        WHERE id IN (
+          SELECT id FROM agent_memories
+          WHERE user_id = ${userId}
+          ORDER BY created_at ASC
+          LIMIT 1
+        )
+      `);
+    }
+  } catch (err) {
+    log.error("Failed to enforce memory cap", { error: String(err) });
+  }
+
   const embedding = await embedText(content);
   if (!embedding) {
     // Store without embedding — still useful as text memory

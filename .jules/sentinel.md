@@ -1,0 +1,4 @@
+## 2024-05-15 - Missing write cap in agent_memories
+**Vulnerability:** Missing per-user write cap on `storeMemory` function allows unbounded inserts to the `agent_memories` table. A user could intentionally or unintentionally run an agent in a loop to fill the Neon database storage (DoS attack), which also degrades IVFFlat vector search recall as rows increase without limit.
+**Learning:** Hard limits on database writes per user are necessary to prevent resource exhaustion and ensure consistent vector search performance. Unbounded writes expose the application to DoS attacks.
+**Prevention:** Implement a hard limit on the number of memories stored per user. Before inserting a new memory, query the user's current count. If it exceeds the limit (e.g., 10,000), enforce a retention policy such as deleting the oldest memory.
