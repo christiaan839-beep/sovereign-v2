@@ -67,7 +67,18 @@
     "resend": "^6.9.4",
     "stripe": "^20.4.1",
     "twilio": "^5.13.0",
-    "ws": "^8.20.0"
+    "ws": "^8.20.0",
+    "@sovereign-matrix/ai-constitution": "workspace:*",
+    "@sovereign-matrix/annex-iv": "workspace:*",
+    "@sovereign-matrix/eu-cra": "workspace:*",
+    "@sovereign-matrix/gdpr-dpia": "workspace:*",
+    "@sovereign-matrix/hipaa-security": "workspace:*",
+    "@sovereign-matrix/iso-23894": "workspace:*",
+    "@sovereign-matrix/iso-42001": "workspace:*",
+    "@sovereign-matrix/nist-ai-rmf": "workspace:*",
+    "@sovereign-matrix/soc2-evidence": "workspace:*",
+    "@sovereign-matrix/verifiable-receipts": "workspace:*",
+    "zod": "^3.23.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",

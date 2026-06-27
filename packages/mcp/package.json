@@ -57,16 +57,16 @@
     "registry": "https://registry.npmjs.org/"
   },
   "peerDependencies": {
-    "@sovereign-matrix/verifiable-receipts": ">=0.3.0",
-    "@sovereign-matrix/annex-iv": ">=0.1.0",
-    "@sovereign-matrix/iso-42001": ">=0.1.0",
-    "@sovereign-matrix/iso-23894": ">=0.1.0",
-    "@sovereign-matrix/nist-ai-rmf": ">=0.1.0",
-    "@sovereign-matrix/soc2-evidence": ">=0.1.0",
-    "@sovereign-matrix/gdpr-dpia": ">=0.1.0",
-    "@sovereign-matrix/hipaa-security": ">=0.1.0",
-    "@sovereign-matrix/eu-cra": ">=0.1.0",
-    "@sovereign-matrix/ai-constitution": ">=0.1.0"
+    "@sovereign-matrix/verifiable-receipts": "workspace:*",
+    "@sovereign-matrix/annex-iv": "workspace:*",
+    "@sovereign-matrix/iso-42001": "workspace:*",
+    "@sovereign-matrix/iso-23894": "workspace:*",
+    "@sovereign-matrix/nist-ai-rmf": "workspace:*",
+    "@sovereign-matrix/soc2-evidence": "workspace:*",
+    "@sovereign-matrix/gdpr-dpia": "workspace:*",
+    "@sovereign-matrix/hipaa-security": "workspace:*",
+    "@sovereign-matrix/eu-cra": "workspace:*",
+    "@sovereign-matrix/ai-constitution": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5"
