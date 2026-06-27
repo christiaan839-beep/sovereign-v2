@@ -49,7 +49,7 @@
     "registry": "https://registry.npmjs.org/"
   },
   "peerDependencies": {
-    "@sovereign-matrix/verifiable-receipts": "workspace:*"
+    "@sovereign-matrix/verifiable-receipts": ">=0.3.0"
   },
   "devDependencies": {
     "typescript": "^5"

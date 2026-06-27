@@ -57,7 +57,7 @@
   },
   "peerDependencies": {
     "@google/generative-ai": ">=0.20.0",
-    "@sovereign-matrix/verifiable-receipts": "workspace:*"
+    "@sovereign-matrix/verifiable-receipts": ">=0.3.0"
   },
   "devDependencies": {
     "typescript": "^5"
