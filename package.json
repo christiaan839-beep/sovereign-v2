@@ -45,6 +45,7 @@
     "@simplewebauthn/server": "^13.3.0",
     "@tailwindcss/oxide": "^4.2.2",
     "@tavily/core": "^0.7.2",
+    "@types/three": "0.170.0",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.37.0",
     "@vercel/analytics": "^2.0.1",
@@ -66,6 +67,7 @@
     "react-markdown": "^10.1.0",
     "resend": "^6.9.4",
     "stripe": "^20.4.1",
+    "three": "0.170.0",
     "twilio": "^5.13.0",
     "ws": "^8.20.0"
   },
