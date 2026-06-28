@@ -52,7 +52,7 @@ jobs:
       - name: Install dependencies
         run: |
           for attempt in 1 2 3; do
-            if npm ci; then exit 0; fi
+            if npm ci --no-workspaces; then exit 0; fi
             echo "npm ci attempt $attempt failed; backing off..."
             sleep $((attempt * 5))
           done
@@ -97,7 +97,7 @@ jobs:
       - name: Install dependencies
         run: |
           for attempt in 1 2 3; do
-            if npm ci; then exit 0; fi
+            if npm ci --no-workspaces; then exit 0; fi
             echo "npm ci attempt $attempt failed; backing off..."
             sleep $((attempt * 5))
           done
@@ -135,7 +135,7 @@ jobs:
       - name: Install dependencies
         run: |
           for attempt in 1 2 3; do
-            if npm ci; then exit 0; fi
+            if npm ci --no-workspaces; then exit 0; fi
             echo "npm ci attempt $attempt failed; backing off..."
             sleep $((attempt * 5))
           done
@@ -161,7 +161,7 @@ jobs:
       - name: Install dependencies
         run: |
           for attempt in 1 2 3; do
-            if npm ci; then exit 0; fi
+            if npm ci --no-workspaces; then exit 0; fi
             echo "npm ci attempt $attempt failed; backing off..."
             sleep $((attempt * 5))
           done
@@ -235,7 +235,7 @@ jobs:
       - name: Install dependencies
         run: |
           for attempt in 1 2 3; do
-            if npm ci; then exit 0; fi
+            if npm ci --no-workspaces; then exit 0; fi
             echo "npm ci attempt $attempt failed; backing off..."
             sleep $((attempt * 5))
           done
@@ -289,7 +289,7 @@ jobs:
       - name: Install dependencies
         run: |
           for attempt in 1 2 3; do
-            if npm ci; then exit 0; fi
+            if npm ci --no-workspaces; then exit 0; fi
             echo "npm ci attempt $attempt failed; backing off..."
             sleep $((attempt * 5))
           done
