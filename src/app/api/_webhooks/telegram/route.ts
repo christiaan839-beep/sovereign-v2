@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
+import crypto from "node:crypto";
 import { createLogger } from "@/lib/logger";
 import { rateLimit } from "@/lib/rate-limit";
 import { alreadyProcessed } from "@/lib/idempotency";
@@ -69,9 +70,25 @@ export async function POST(req: Request) {
     }
 
     const headerPayload = await headers();
-    const secretToken = headerPayload.get("X-Telegram-Bot-Api-Secret-Token");
+    const secretToken = headerPayload.get("X-Telegram-Bot-Api-Secret-Token") || "";
 
-    if (secretToken !== expectedSecret) {
+    // SECURITY: Use timingSafeEqual to prevent side-channel timing attacks that could
+    // allow an attacker to guess the Telegram webhook secret one byte at a time.
+    // timingSafeEqual throws if lengths mismatch, so we length-check first.
+    const a = Buffer.from(secretToken, "utf8");
+    const b = Buffer.from(expectedSecret, "utf8");
+
+    // Fail secure: We enforce that expectedSecret must exist (length > 0) to avoid
+    // an auth bypass where both secretToken and expectedSecret evaluate to empty string.
+    let isValid = false;
+    if (a.length > 0 && a.length === b.length) {
+      isValid = crypto.timingSafeEqual(a, b);
+    } else {
+      // decoy comparison to avoid fast path
+      crypto.timingSafeEqual(b, b);
+    }
+
+    if (!isValid) {
       log.error("Unauthorized webhook invocation detected");
       return NextResponse.json(
         { error: "Unauthorized Interception" },
