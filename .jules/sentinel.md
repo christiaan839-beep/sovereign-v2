@@ -1,0 +1,4 @@
+## 2025-02-14 - Telegram Webhook Timing Attack Vulnerability
+**Vulnerability:** The Telegram webhook (`src/app/api/_webhooks/telegram/route.ts`) was using a standard string comparison (`!==`) to validate the `X-Telegram-Bot-Api-Secret-Token`.
+**Learning:** Standard string comparisons fail fast on the first mismatched byte, creating a measurable timing difference. While Telegram bot tokens might be rotated, allowing an attacker to guess the secret token one byte at a time opens up the endpoint to unauthorized spoofing (which in this case allows issuing commands to the swarm). The fix requires a safe comparison.
+**Prevention:** Always use `crypto.timingSafeEqual()` for cryptographic secrets. Because this function throws an error if the two `Buffer`s are not equal length, a length check (`a.length === b.length`) must be performed first.
