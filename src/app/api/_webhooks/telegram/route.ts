@@ -76,7 +76,7 @@ export async function POST(req: Request) {
     // allow an attacker to guess the Telegram webhook secret one byte at a time.
     // timingSafeEqual throws if lengths mismatch, so we length-check first.
     const a = Buffer.from(secretToken, "utf8");
-    const b = Buffer.from(expectedSecret || "", "utf8");
+    const b = Buffer.from(expectedSecret, "utf8");
 
     // Fail secure: We enforce that expectedSecret must exist (length > 0) to avoid
     // an auth bypass where both secretToken and expectedSecret evaluate to empty string.
