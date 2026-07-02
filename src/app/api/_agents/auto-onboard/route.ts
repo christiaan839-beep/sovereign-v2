@@ -227,7 +227,9 @@ const handler = createAgentRoute({
  * burning Resend credits and torching domain reputation.
  */
 export async function POST(req: Request): Promise<Response> {
-  const internalSecret = process.env.INTERNAL_WEBHOOK_SECRET || "";
+  const internalSecret = process.env.INTERNAL_WEBHOOK_SECRET;
+  if (!internalSecret) throw new Error("Missing INTERNAL_WEBHOOK_SECRET");
+
   const presented = req.headers.get("x-sovereign-internal-secret") || "";
 
   const internalOk =
