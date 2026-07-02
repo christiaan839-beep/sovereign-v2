@@ -251,8 +251,9 @@ export async function POST(req: Request) {
 
       // 3. Trigger auto-onboard (best effort) with internal-secret header
       const baseUrl = getPublicUrl();
-      const internalSecret = process.env.INTERNAL_WEBHOOK_SECRET || "";
+      const internalSecret = process.env.INTERNAL_WEBHOOK_SECRET;
       try {
+        if (!internalSecret) throw new Error("Missing INTERNAL_WEBHOOK_SECRET");
         await fetch(`${baseUrl}/api/_agents/auto-onboard`, {
           method: "POST",
           headers: {
