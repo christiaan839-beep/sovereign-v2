@@ -194,18 +194,6 @@ jobs:
       - name: Verify package signatures (best-effort)
         run: npm audit signatures || true
 
-  # PR-only: surface added/changed dependencies and any new advisories
-  # right on the diff, before the audit job even has to fail.
-  dependency-review:
-    name: Dependency Review
-    runs-on: ubuntu-22.04
-    if: github.event_name == 'pull_request'
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/dependency-review-action@v4
-        with:
-          fail-on-severity: high
 
   migration-parity:
     name: Migration Parity
