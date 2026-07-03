@@ -174,19 +174,19 @@ describe("witness CLI — argv parsing", () => {
       "Test",
       "--once",
     ]);
-    expect(r.status).toBe(1);
+    expect(r.status).toBe(2);
     expect(r.stderr).toMatch(/--url/);
   });
 
   it("exits 2 when --key is missing", () => {
     const r = runCli(["--url", "http://x", "--witness-id", "Test", "--once"]);
-    expect(r.status).toBe(1);
+    expect(r.status).toBe(2);
     expect(r.stderr).toMatch(/--key/);
   });
 
   it("exits 2 when --witness-id is missing", () => {
     const r = runCli(["--url", "http://x", "--key", witnessKeyPath, "--once"]);
-    expect(r.status).toBe(1);
+    expect(r.status).toBe(2);
     expect(r.stderr).toMatch(/witness-id/);
   });
 });
