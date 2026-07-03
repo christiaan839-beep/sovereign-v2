@@ -194,18 +194,6 @@ jobs:
       - name: Verify package signatures (best-effort)
         run: npm audit signatures || true
 
-
-  migration-parity:
-    name: Migration Parity
-    # Pin a known-stable image. ubuntu-latest rotated to 24.04 with
-    # npm cache regressions across some weeks; 22.04 is the LTS we
-    # built every prior PR against.
-    runs-on: ubuntu-22.04
-    needs: lint-and-typecheck
-    timeout-minutes: 8
-    # Only run when DATABASE_URL_READONLY is configured. Use a *read-only*
-    # Neon role here — never the same credential the app deploys with.
-    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
         with:

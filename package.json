@@ -69,6 +69,9 @@
     "twilio": "^5.13.0",
     "ws": "^8.20.0"
   },
+  "overrides": {
+    "esbuild": "0.27.4"
+  },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
     "@tailwindcss/postcss": "^4",
