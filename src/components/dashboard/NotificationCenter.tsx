@@ -3,8 +3,14 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Bell, CheckCircle, AlertTriangle, XCircle, Info,
-  Check, X, ExternalLink,
+  Bell,
+  CheckCircle,
+  AlertTriangle,
+  XCircle,
+  Info,
+  Check,
+  X,
+  ExternalLink,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -19,12 +25,15 @@ import {
 
 /* ─── Type → Icon/Color mapping ─── */
 
-const TYPE_CONFIG: Record<NotificationType, {
-  icon: React.ComponentType<{ className?: string }>;
-  color: string;
-  bg: string;
-  border: string;
-}> = {
+const TYPE_CONFIG: Record<
+  NotificationType,
+  {
+    icon: React.ComponentType<{ className?: string }>;
+    color: string;
+    bg: string;
+    border: string;
+  }
+> = {
   workflow_complete: {
     icon: CheckCircle,
     color: "text-emerald-400",
@@ -67,10 +76,10 @@ function timeAgo(timestamp: string): string {
 export function NotificationCenter() {
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>(() =>
-    typeof window !== "undefined" ? getNotifications() : []
+    typeof window !== "undefined" ? getNotifications() : [],
   );
   const [unreadCount, setUnreadCount] = useState(() =>
-    typeof window !== "undefined" ? getUnreadCount() : 0
+    typeof window !== "undefined" ? getUnreadCount() : 0,
   );
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -95,7 +104,10 @@ export function NotificationCenter() {
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
         setOpen(false);
       }
     };
@@ -161,7 +173,9 @@ export function NotificationCenter() {
           >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
-              <h3 className="text-sm font-semibold text-white">Notifications</h3>
+              <h3 className="text-sm font-semibold text-white">
+                Notifications
+              </h3>
               {unreadCount > 0 && (
                 <button
                   onClick={handleMarkAllRead}
@@ -177,7 +191,9 @@ export function NotificationCenter() {
               {notifications.length === 0 ? (
                 <div className="py-12 text-center">
                   <Bell className="w-8 h-8 text-neutral-700 mx-auto mb-3" />
-                  <p className="text-xs text-neutral-500">No notifications yet</p>
+                  <p className="text-xs text-neutral-500">
+                    No notifications yet
+                  </p>
                 </div>
               ) : (
                 notifications.slice(0, 50).map((n) => {
@@ -195,27 +211,38 @@ export function NotificationCenter() {
                       }`}
                     >
                       {/* Icon */}
-                      <div className={`w-8 h-8 rounded-lg ${config.bg} ${config.border} border flex items-center justify-center shrink-0 mt-0.5`}>
+                      <div
+                        className={`w-8 h-8 rounded-lg ${config.bg} ${config.border} border flex items-center justify-center shrink-0 mt-0.5`}
+                      >
                         <Icon className={`w-4 h-4 ${config.color}`} />
                       </div>
 
                       {/* Content */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
-                          <p className={`text-sm leading-tight ${n.read ? "text-neutral-300" : "text-white font-medium"}`}>
+                          <p
+                            className={`text-sm leading-tight ${n.read ? "text-neutral-300" : "text-white font-medium"}`}
+                          >
                             {n.title}
                           </p>
                           {!n.read && (
                             <span className="w-2 h-2 rounded-full bg-[#00B7FF] shrink-0 mt-1.5" />
                           )}
                         </div>
-                        <p className="text-xs text-neutral-500 mt-0.5 line-clamp-2">{n.body}</p>
+                        <p className="text-xs text-neutral-500 mt-0.5 line-clamp-2">
+                          {n.body}
+                        </p>
                         <div className="flex items-center gap-3 mt-1.5">
-                          <span className="text-[10px] text-neutral-600">{timeAgo(n.timestamp)}</span>
+                          <span className="text-[10px] text-neutral-600">
+                            {timeAgo(n.timestamp)}
+                          </span>
                           {n.href && (
                             <Link
                               href={n.href}
-                              onClick={() => { handleMarkRead(n.id); setOpen(false); }}
+                              onClick={() => {
+                                handleMarkRead(n.id);
+                                setOpen(false);
+                              }}
                               className="text-[10px] text-[#00B7FF] hover:underline inline-flex items-center gap-0.5"
                             >
                               View <ExternalLink className="w-2.5 h-2.5" />
@@ -225,12 +252,12 @@ export function NotificationCenter() {
                       </div>
 
                       {/* Actions (visible on hover) */}
-                      <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                      <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity shrink-0">
                         {!n.read && (
                           <button
                             onClick={() => handleMarkRead(n.id)}
                             aria-label="Mark as read"
-                            className="p-1 rounded text-neutral-500 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors"
+                            className="p-1 rounded text-neutral-500 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:outline-none"
                           >
                             <Check className="w-3 h-3" />
                           </button>
@@ -238,7 +265,7 @@ export function NotificationCenter() {
                         <button
                           onClick={() => handleRemove(n.id)}
                           aria-label="Dismiss notification"
-                          className="p-1 rounded text-neutral-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                          className="p-1 rounded text-neutral-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors focus-visible:ring-2 focus-visible:ring-rose-400/50 focus-visible:outline-none"
                         >
                           <X className="w-3 h-3" />
                         </button>

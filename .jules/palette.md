@@ -1,0 +1,3 @@
+## 2024-07-03 - [Keyboard Focus Traps in Hover-Only Action Containers]
+**Learning:** When placing interactive elements (like buttons) inside containers that are visually hidden until hovered (`opacity-0 group-hover:opacity-100`), these elements become keyboard focus traps. Screen reader and keyboard-only users will tab into invisible elements without any visual context.
+**Action:** Always pair `opacity-0 group-hover:opacity-100` with `focus-within:opacity-100` on the parent container, and add `focus-visible:ring-*` to the child interactive elements to ensure the container reveals itself when navigating via keyboard.
