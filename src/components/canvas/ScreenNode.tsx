@@ -1,11 +1,23 @@
 "use client";
 
 import { Handle, Position, type NodeProps } from "@xyflow/react";
-import { X, Maximize2, Copy, Check, Monitor, Tablet, Smartphone } from "lucide-react";
+import {
+  X,
+  Maximize2,
+  Copy,
+  Check,
+  Monitor,
+  Tablet,
+  Smartphone,
+} from "lucide-react";
 import { useState } from "react";
 
 type DevicePreview = "desktop" | "tablet" | "mobile";
-const DEVICE_WIDTHS: Record<DevicePreview, number> = { desktop: 360, tablet: 280, mobile: 180 };
+const DEVICE_WIDTHS: Record<DevicePreview, number> = {
+  desktop: 360,
+  tablet: 280,
+  mobile: 180,
+};
 
 export interface ScreenNodeData {
   label: string;
@@ -32,38 +44,88 @@ export function ScreenNode({ id, data }: NodeProps) {
 
   return (
     <div className="group relative">
-      <Handle type="target" position={Position.Left} className="!bg-[#00B7FF]/60 !w-2.5 !h-2.5 !border-2 !border-[#050505]" />
-      <Handle type="source" position={Position.Right} className="!bg-[#00B7FF]/60 !w-2.5 !h-2.5 !border-2 !border-[#050505]" />
+      <Handle
+        type="target"
+        position={Position.Left}
+        className="!bg-[#00B7FF]/60 !w-2.5 !h-2.5 !border-2 !border-[#050505]"
+      />
+      <Handle
+        type="source"
+        position={Position.Right}
+        className="!bg-[#00B7FF]/60 !w-2.5 !h-2.5 !border-2 !border-[#050505]"
+      />
 
-      <div className="rounded-2xl border border-white/[0.08] bg-[#0A0A0A] shadow-2xl shadow-black/40 overflow-hidden hover:border-[#00B7FF]/20 transition-gpu" style={{ width: DEVICE_WIDTHS[device] + 0 }}>
+      <div
+        className="rounded-2xl border border-white/[0.08] bg-[#0A0A0A] shadow-2xl shadow-black/40 overflow-hidden hover:border-[#00B7FF]/20 transition-gpu"
+        style={{ width: DEVICE_WIDTHS[device] + 0 }}
+      >
         {/* Title bar */}
         <div className="flex items-center justify-between px-3 py-2 border-b border-white/[0.06] bg-white/[0.02]">
           <div className="flex items-center gap-2 min-w-0">
             <span className="w-2 h-2 rounded-full bg-[#00B7FF] shrink-0" />
-            <span className="text-[10px] font-semibold text-white truncate">{d.label || "Screen"}</span>
+            <span className="text-[10px] font-semibold text-white truncate">
+              {d.label || "Screen"}
+            </span>
             {d.vibe && (
-              <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-[#00B7FF]/10 text-[#00B7FF] border border-[#00B7FF]/20 shrink-0">{d.vibe}</span>
+              <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-[#00B7FF]/10 text-[#00B7FF] border border-[#00B7FF]/20 shrink-0">
+                {d.vibe}
+              </span>
             )}
           </div>
-          <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
             {/* Device toggles */}
             {d.status === "ready" && (
               <div className="flex items-center gap-0.5 mr-1 px-1 py-0.5 rounded bg-white/[0.03] border border-white/[0.04]">
-                {([["desktop", Monitor], ["tablet", Tablet], ["mobile", Smartphone]] as const).map(([dev, Icon]) => (
-                  <button key={dev} onClick={(e) => { e.stopPropagation(); setDevice(dev); }}
-                    className={`p-0.5 rounded transition-colors ${device === dev ? "text-[#00B7FF]" : "text-neutral-600 hover:text-neutral-400"}`}>
+                {(
+                  [
+                    ["desktop", Monitor],
+                    ["tablet", Tablet],
+                    ["mobile", Smartphone],
+                  ] as const
+                ).map(([dev, Icon]) => (
+                  <button
+                    key={dev}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDevice(dev);
+                    }}
+                    aria-label={`Preview on ${dev}`}
+                    className={`p-0.5 rounded transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#00B7FF] ${device === dev ? "text-[#00B7FF]" : "text-neutral-600 hover:text-neutral-400"}`}
+                  >
                     <Icon className="w-2.5 h-2.5" />
                   </button>
                 ))}
               </div>
             )}
-            <button onClick={handleCopy} className="p-1 rounded hover:bg-white/10 text-neutral-500 hover:text-white transition-colors">
-              {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+            <button
+              onClick={handleCopy}
+              aria-label="Copy HTML"
+              className="p-1 rounded hover:bg-white/10 text-neutral-500 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/20"
+            >
+              {copied ? (
+                <Check className="w-3 h-3 text-emerald-400" />
+              ) : (
+                <Copy className="w-3 h-3" />
+              )}
             </button>
-            <button onClick={(e) => { e.stopPropagation(); d.onExpand?.(id); }} className="p-1 rounded hover:bg-white/10 text-neutral-500 hover:text-white transition-colors">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                d.onExpand?.(id);
+              }}
+              aria-label="Expand preview"
+              className="p-1 rounded hover:bg-white/10 text-neutral-500 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/20"
+            >
               <Maximize2 className="w-3 h-3" />
             </button>
-            <button onClick={(e) => { e.stopPropagation(); d.onDelete?.(id); }} className="p-1 rounded hover:bg-white/10 text-neutral-500 hover:text-red-400 transition-colors">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                d.onDelete?.(id);
+              }}
+              aria-label="Delete screen"
+              className="p-1 rounded hover:bg-white/10 text-neutral-500 hover:text-red-400 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-red-400/50"
+            >
               <X className="w-3 h-3" />
             </button>
           </div>
@@ -74,16 +136,23 @@ export function ScreenNode({ id, data }: NodeProps) {
           {d.status === "generating" ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#050505]">
               <div className="w-8 h-8 border-2 border-[#00B7FF] border-t-transparent rounded-full animate-spin mb-3" />
-              <span className="text-[10px] text-neutral-400">Generating...</span>
+              <span className="text-[10px] text-neutral-400">
+                Generating...
+              </span>
               {d.progress !== undefined && (
                 <div className="w-32 h-1 bg-white/[0.06] rounded-full mt-2 overflow-hidden">
-                  <div className="h-full bg-[#00B7FF]/60 rounded-full transition-gpu duration-500" style={{ width: `${d.progress}%` }} />
+                  <div
+                    className="h-full bg-[#00B7FF]/60 rounded-full transition-gpu duration-500"
+                    style={{ width: `${d.progress}%` }}
+                  />
                 </div>
               )}
             </div>
           ) : d.status === "error" ? (
             <div className="absolute inset-0 flex items-center justify-center bg-[#050505]">
-              <span className="text-[10px] text-red-400">Generation failed</span>
+              <span className="text-[10px] text-red-400">
+                Generation failed
+              </span>
             </div>
           ) : d.html ? (
             <iframe
