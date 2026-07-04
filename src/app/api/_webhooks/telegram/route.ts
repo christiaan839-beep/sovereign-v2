@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
+import crypto from "crypto";
 import { createLogger } from "@/lib/logger";
 import { rateLimit } from "@/lib/rate-limit";
 import { alreadyProcessed } from "@/lib/idempotency";
@@ -71,7 +72,9 @@ export async function POST(req: Request) {
     const headerPayload = await headers();
     const secretToken = headerPayload.get("X-Telegram-Bot-Api-Secret-Token");
 
-    if (secretToken !== expectedSecret) {
+    const a = Buffer.from(secretToken ?? "", "utf8");
+    const b = Buffer.from(expectedSecret, "utf8");
+    if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
       log.error("Unauthorized webhook invocation detected");
       return NextResponse.json(
         { error: "Unauthorized Interception" },
