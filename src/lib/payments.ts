@@ -169,7 +169,9 @@ export function verifyPayFastSignature(
     .createHash("md5")
     .update(withPassphrase)
     .digest("hex");
-  return expectedSig === receivedSig;
+  const expectedBuf = Buffer.from(expectedSig, "utf8");
+  const receivedBuf = Buffer.from(receivedSig || "", "utf8");
+  return expectedBuf.length === receivedBuf.length && crypto.timingSafeEqual(expectedBuf, receivedBuf);
 }
 
 // ─── Paystack ───────────────────────────────────────────────────
@@ -238,7 +240,9 @@ export function verifyPaystackWebhook(
   if (!key) return false;
 
   const hash = crypto.createHmac("sha512", key).update(body).digest("hex");
-  return hash === signature;
+  const hashBuf = Buffer.from(hash, "utf8");
+  const sigBuf = Buffer.from(signature || "", "utf8");
+  return hashBuf.length === sigBuf.length && crypto.timingSafeEqual(hashBuf, sigBuf);
 }
 
 // ─── Yoco ─────────────────────────────────────────────────────────
