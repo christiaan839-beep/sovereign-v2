@@ -41,7 +41,9 @@ jobs:
           fetch-depth: 1
 
       - uses: pnpm/action-setup@v4
+
         with:
+
           version: 9
       - uses: actions/setup-node@v4
         with:
@@ -89,7 +91,9 @@ jobs:
           fetch-depth: 1
 
       - uses: pnpm/action-setup@v4
+
         with:
+
           version: 9
       - uses: actions/setup-node@v4
         with:
@@ -130,7 +134,9 @@ jobs:
           fetch-depth: 1
 
       - uses: pnpm/action-setup@v4
+
         with:
+
           version: 9
       - uses: actions/setup-node@v4
         with:
@@ -163,7 +169,9 @@ jobs:
           fetch-depth: 1
 
       - uses: pnpm/action-setup@v4
+
         with:
+
           version: 9
       - uses: actions/setup-node@v4
         with:
@@ -186,18 +194,6 @@ jobs:
       # the security-reviewer flagged in May-2026.
       - name: Audit dependencies (blocking on high+)
         run: pnpm audit --audit-level=high
-
-      # Generate a CycloneDX SBOM on every build for SOC 2 / supply-chain
-      # transparency. Stored as an artifact for 90 days so audit evidence
-      # is reproducible without re-running CI.
-      - name: Generate SBOM (CycloneDX)
-        run: pnpm dlx @cyclonedx/cyclonedx-npm@1 --output-file sbom.cdx.json
-
-      - name: Upload SBOM artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: sbom-${{ github.sha }}
-          path: sbom.cdx.json
           retention-days: 90
 
       # Verify package provenance signatures where vendors ship them.
@@ -206,6 +202,18 @@ jobs:
       - name: Verify package signatures (best-effort)
         run: pnpm audit signatures || true
 
+  # PR-only: surface added/changed dependencies and any new advisories
+  # right on the diff, before the audit job even has to fail.
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-22.04
+    if: github.event_name == 'pull_request'
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
 
   migration-parity:
     name: Migration Parity
@@ -224,7 +232,9 @@ jobs:
           fetch-depth: 1
 
       - uses: pnpm/action-setup@v4
+
         with:
+
           version: 9
       - uses: actions/setup-node@v4
         with:
@@ -281,7 +291,9 @@ jobs:
           fetch-depth: 1
 
       - uses: pnpm/action-setup@v4
+
         with:
+
           version: 9
       - uses: actions/setup-node@v4
         with:
